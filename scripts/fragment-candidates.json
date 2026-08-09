@@ -1,0 +1,1926 @@
+[
+  {
+    "fragment": "IN",
+    "totalMatches": 5533,
+    "familiarMatches": 464,
+    "sampleFamiliar": [
+      "into",
+      "think",
+      "being",
+      "going",
+      "something",
+      "find"
+    ]
+  },
+  {
+    "fragment": "ER",
+    "totalMatches": 5565,
+    "familiarMatches": 406,
+    "sampleFamiliar": [
+      "were",
+      "there",
+      "her",
+      "other",
+      "after",
+      "over"
+    ]
+  },
+  {
+    "fragment": "RE",
+    "totalMatches": 3468,
+    "familiarMatches": 370,
+    "sampleFamiliar": [
+      "are",
+      "more",
+      "were",
+      "there",
+      "where",
+      "here"
+    ]
+  },
+  {
+    "fragment": "EN",
+    "totalMatches": 3181,
+    "familiarMatches": 332,
+    "sampleFamiliar": [
+      "when",
+      "been",
+      "then",
+      "even",
+      "between",
+      "end"
+    ]
+  },
+  {
+    "fragment": "ON",
+    "totalMatches": 3864,
+    "familiarMatches": 331,
+    "sampleFamiliar": [
+      "one",
+      "only",
+      "long",
+      "money",
+      "second",
+      "someone"
+    ]
+  },
+  {
+    "fragment": "TI",
+    "totalMatches": 4201,
+    "familiarMatches": 290,
+    "sampleFamiliar": [
+      "time",
+      "still",
+      "until",
+      "getting",
+      "times",
+      "national"
+    ]
+  },
+  {
+    "fragment": "NG",
+    "totalMatches": 2930,
+    "familiarMatches": 281,
+    "sampleFamiliar": [
+      "being",
+      "going",
+      "long",
+      "something",
+      "during",
+      "thing"
+    ]
+  },
+  {
+    "fragment": "AL",
+    "totalMatches": 3297,
+    "familiarMatches": 261,
+    "sampleFamiliar": [
+      "all",
+      "also",
+      "really",
+      "always",
+      "real",
+      "already"
+    ]
+  },
+  {
+    "fragment": "NT",
+    "totalMatches": 2633,
+    "familiarMatches": 254,
+    "sampleFamiliar": [
+      "into",
+      "want",
+      "until",
+      "different",
+      "government",
+      "point"
+    ]
+  },
+  {
+    "fragment": "AT",
+    "totalMatches": 3713,
+    "familiarMatches": 253,
+    "sampleFamiliar": [
+      "that",
+      "what",
+      "great",
+      "state",
+      "water",
+      "national"
+    ]
+  },
+  {
+    "fragment": "ST",
+    "totalMatches": 2961,
+    "familiarMatches": 243,
+    "sampleFamiliar": [
+      "just",
+      "first",
+      "most",
+      "still",
+      "last",
+      "best"
+    ]
+  },
+  {
+    "fragment": "AR",
+    "totalMatches": 2772,
+    "familiarMatches": 220,
+    "sampleFamiliar": [
+      "are",
+      "year",
+      "part",
+      "around",
+      "care",
+      "start"
+    ]
+  },
+  {
+    "fragment": "ED",
+    "totalMatches": 2367,
+    "familiarMatches": 219,
+    "sampleFamiliar": [
+      "need",
+      "used",
+      "based",
+      "united",
+      "needs",
+      "red"
+    ]
+  },
+  {
+    "fragment": "AN",
+    "totalMatches": 3043,
+    "familiarMatches": 216,
+    "sampleFamiliar": [
+      "and",
+      "can",
+      "than",
+      "any",
+      "want",
+      "many"
+    ]
+  },
+  {
+    "fragment": "OR",
+    "totalMatches": 2490,
+    "familiarMatches": 209,
+    "sampleFamiliar": [
+      "for",
+      "more",
+      "work",
+      "before",
+      "world",
+      "support"
+    ]
+  },
+  {
+    "fragment": "LE",
+    "totalMatches": 3095,
+    "familiarMatches": 202,
+    "sampleFamiliar": [
+      "people",
+      "while",
+      "little",
+      "please",
+      "left",
+      "let"
+    ]
+  },
+  {
+    "fragment": "EA",
+    "totalMatches": 1510,
+    "familiarMatches": 190,
+    "sampleFamiliar": [
+      "really",
+      "year",
+      "great",
+      "each",
+      "team",
+      "please"
+    ]
+  },
+  {
+    "fragment": "ES",
+    "totalMatches": 2154,
+    "familiarMatches": 167,
+    "sampleFamiliar": [
+      "these",
+      "best",
+      "does",
+      "business",
+      "times",
+      "yes"
+    ]
+  },
+  {
+    "fragment": "IT",
+    "totalMatches": 2068,
+    "familiarMatches": 163,
+    "sampleFamiliar": [
+      "with",
+      "its",
+      "little",
+      "without",
+      "city",
+      "white"
+    ]
+  },
+  {
+    "fragment": "IC",
+    "totalMatches": 2634,
+    "familiarMatches": 150,
+    "sampleFamiliar": [
+      "which",
+      "public",
+      "music",
+      "service",
+      "office",
+      "nice"
+    ]
+  },
+  {
+    "fragment": "LY",
+    "totalMatches": 2037,
+    "familiarMatches": 143,
+    "sampleFamiliar": [
+      "only",
+      "really",
+      "family",
+      "actually",
+      "early",
+      "probably"
+    ]
+  },
+  {
+    "fragment": "EL",
+    "totalMatches": 1608,
+    "familiarMatches": 140,
+    "sampleFamiliar": [
+      "well",
+      "help",
+      "feel",
+      "tell",
+      "believe",
+      "level"
+    ]
+  },
+  {
+    "fragment": "NE",
+    "totalMatches": 2187,
+    "familiarMatches": 138,
+    "sampleFamiliar": [
+      "one",
+      "new",
+      "need",
+      "never",
+      "next",
+      "money"
+    ]
+  },
+  {
+    "fragment": "IS",
+    "totalMatches": 2483,
+    "familiarMatches": 137,
+    "sampleFamiliar": [
+      "this",
+      "his",
+      "history",
+      "list",
+      "issue",
+      "miss"
+    ]
+  },
+  {
+    "fragment": "OU",
+    "totalMatches": 1523,
+    "familiarMatches": 130,
+    "sampleFamiliar": [
+      "you",
+      "your",
+      "about",
+      "out",
+      "would",
+      "our"
+    ]
+  },
+  {
+    "fragment": "TH",
+    "totalMatches": 1245,
+    "familiarMatches": 120,
+    "sampleFamiliar": [
+      "the",
+      "that",
+      "with",
+      "this",
+      "they",
+      "their"
+    ]
+  },
+  {
+    "fragment": "TR",
+    "totalMatches": 1588,
+    "familiarMatches": 119,
+    "sampleFamiliar": [
+      "try",
+      "country",
+      "trying",
+      "control",
+      "true",
+      "street"
+    ]
+  },
+  {
+    "fragment": "ND",
+    "totalMatches": 1403,
+    "familiarMatches": 117,
+    "sampleFamiliar": [
+      "and",
+      "around",
+      "find",
+      "under",
+      "end",
+      "found"
+    ]
+  },
+  {
+    "fragment": "EC",
+    "totalMatches": 1114,
+    "familiarMatches": 115,
+    "sampleFamiliar": [
+      "because",
+      "second",
+      "become",
+      "special",
+      "check",
+      "project"
+    ]
+  },
+  {
+    "fragment": "PR",
+    "totalMatches": 1063,
+    "familiarMatches": 115,
+    "sampleFamiliar": [
+      "president",
+      "problem",
+      "pretty",
+      "probably",
+      "program",
+      "process"
+    ]
+  },
+  {
+    "fragment": "AS",
+    "totalMatches": 1308,
+    "familiarMatches": 111,
+    "sampleFamiliar": [
+      "was",
+      "last",
+      "please",
+      "case",
+      "based",
+      "season"
+    ]
+  },
+  {
+    "fragment": "CH",
+    "totalMatches": 1408,
+    "familiarMatches": 106,
+    "sampleFamiliar": [
+      "which",
+      "much",
+      "such",
+      "school",
+      "each",
+      "change"
+    ]
+  },
+  {
+    "fragment": "AC",
+    "totalMatches": 1310,
+    "familiarMatches": 105,
+    "sampleFamiliar": [
+      "back",
+      "place",
+      "each",
+      "actually",
+      "black",
+      "face"
+    ]
+  },
+  {
+    "fragment": "CT",
+    "totalMatches": 998,
+    "familiarMatches": 102,
+    "sampleFamiliar": [
+      "actually",
+      "fact",
+      "act",
+      "action",
+      "project",
+      "perfect"
+    ]
+  },
+  {
+    "fragment": "OM",
+    "totalMatches": 1083,
+    "familiarMatches": 101,
+    "sampleFamiliar": [
+      "from",
+      "some",
+      "home",
+      "something",
+      "come",
+      "someone"
+    ]
+  },
+  {
+    "fragment": "UN",
+    "totalMatches": 1819,
+    "familiarMatches": 97,
+    "sampleFamiliar": [
+      "around",
+      "under",
+      "found",
+      "until",
+      "run",
+      "country"
+    ]
+  },
+  {
+    "fragment": "IL",
+    "totalMatches": 1356,
+    "familiarMatches": 95,
+    "sampleFamiliar": [
+      "will",
+      "still",
+      "while",
+      "family",
+      "until",
+      "children"
+    ]
+  },
+  {
+    "fragment": "ET",
+    "totalMatches": 1370,
+    "familiarMatches": 93,
+    "sampleFamiliar": [
+      "get",
+      "something",
+      "between",
+      "better",
+      "let",
+      "set"
+    ]
+  },
+  {
+    "fragment": "RT",
+    "totalMatches": 861,
+    "familiarMatches": 93,
+    "sampleFamiliar": [
+      "part",
+      "start",
+      "support",
+      "party",
+      "important",
+      "court"
+    ]
+  },
+  {
+    "fragment": "US",
+    "totalMatches": 1450,
+    "familiarMatches": 88,
+    "sampleFamiliar": [
+      "just",
+      "because",
+      "use",
+      "used",
+      "house",
+      "must"
+    ]
+  },
+  {
+    "fragment": "OL",
+    "totalMatches": 1397,
+    "familiarMatches": 83,
+    "sampleFamiliar": [
+      "old",
+      "school",
+      "told",
+      "following",
+      "whole",
+      "control"
+    ]
+  },
+  {
+    "fragment": "IV",
+    "totalMatches": 917,
+    "familiarMatches": 81,
+    "sampleFamiliar": [
+      "give",
+      "live",
+      "five",
+      "given",
+      "university",
+      "living"
+    ]
+  },
+  {
+    "fragment": "AI",
+    "totalMatches": 685,
+    "familiarMatches": 79,
+    "sampleFamiliar": [
+      "said",
+      "again",
+      "against",
+      "air",
+      "wait",
+      "available"
+    ]
+  },
+  {
+    "fragment": "AD",
+    "totalMatches": 893,
+    "familiarMatches": 78,
+    "sampleFamiliar": [
+      "had",
+      "made",
+      "already",
+      "read",
+      "bad",
+      "head"
+    ]
+  },
+  {
+    "fragment": "EM",
+    "totalMatches": 852,
+    "familiarMatches": 78,
+    "sampleFamiliar": [
+      "them",
+      "system",
+      "problem",
+      "remember",
+      "member",
+      "themselves"
+    ]
+  },
+  {
+    "fragment": "ID",
+    "totalMatches": 811,
+    "familiarMatches": 74,
+    "sampleFamiliar": [
+      "said",
+      "did",
+      "side",
+      "president",
+      "video",
+      "idea"
+    ]
+  },
+  {
+    "fragment": "SH",
+    "totalMatches": 1112,
+    "familiarMatches": 72,
+    "sampleFamiliar": [
+      "she",
+      "should",
+      "show",
+      "short",
+      "shot",
+      "share"
+    ]
+  },
+  {
+    "fragment": "EE",
+    "totalMatches": 728,
+    "familiarMatches": 68,
+    "sampleFamiliar": [
+      "been",
+      "see",
+      "need",
+      "three",
+      "between",
+      "feel"
+    ]
+  },
+  {
+    "fragment": "UT",
+    "totalMatches": 782,
+    "familiarMatches": 68,
+    "sampleFamiliar": [
+      "but",
+      "about",
+      "out",
+      "without",
+      "put",
+      "south"
+    ]
+  },
+  {
+    "fragment": "IG",
+    "totalMatches": 717,
+    "familiarMatches": 67,
+    "sampleFamiliar": [
+      "right",
+      "high",
+      "big",
+      "might",
+      "night",
+      "light"
+    ]
+  },
+  {
+    "fragment": "OT",
+    "totalMatches": 860,
+    "familiarMatches": 65,
+    "sampleFamiliar": [
+      "not",
+      "other",
+      "got",
+      "both",
+      "another",
+      "lot"
+    ]
+  },
+  {
+    "fragment": "EX",
+    "totalMatches": 520,
+    "familiarMatches": 64,
+    "sampleFamiliar": [
+      "next",
+      "example",
+      "experience",
+      "sex",
+      "exactly",
+      "except"
+    ]
+  },
+  {
+    "fragment": "OW",
+    "totalMatches": 507,
+    "familiarMatches": 61,
+    "sampleFamiliar": [
+      "how",
+      "now",
+      "know",
+      "down",
+      "own",
+      "show"
+    ]
+  },
+  {
+    "fragment": "PL",
+    "totalMatches": 654,
+    "familiarMatches": 59,
+    "sampleFamiliar": [
+      "people",
+      "place",
+      "please",
+      "play",
+      "plan",
+      "example"
+    ]
+  },
+  {
+    "fragment": "BL",
+    "totalMatches": 1268,
+    "familiarMatches": 58,
+    "sampleFamiliar": [
+      "public",
+      "black",
+      "able",
+      "problem",
+      "probably",
+      "possible"
+    ]
+  },
+  {
+    "fragment": "CK",
+    "totalMatches": 779,
+    "familiarMatches": 58,
+    "sampleFamiliar": [
+      "back",
+      "black",
+      "check",
+      "attack",
+      "pick",
+      "rock"
+    ]
+  },
+  {
+    "fragment": "IM",
+    "totalMatches": 810,
+    "familiarMatches": 58,
+    "sampleFamiliar": [
+      "time",
+      "him",
+      "times",
+      "important",
+      "sometimes",
+      "himself"
+    ]
+  },
+  {
+    "fragment": "MP",
+    "totalMatches": 721,
+    "familiarMatches": 57,
+    "sampleFamiliar": [
+      "company",
+      "important",
+      "example",
+      "complete",
+      "simple",
+      "simply"
+    ]
+  },
+  {
+    "fragment": "AG",
+    "totalMatches": 702,
+    "familiarMatches": 56,
+    "sampleFamiliar": [
+      "again",
+      "against",
+      "ago",
+      "age",
+      "average",
+      "league"
+    ]
+  },
+  {
+    "fragment": "AP",
+    "totalMatches": 788,
+    "familiarMatches": 56,
+    "sampleFamiliar": [
+      "happy",
+      "happen",
+      "perhaps",
+      "paper",
+      "capital",
+      "approach"
+    ]
+  },
+  {
+    "fragment": "OO",
+    "totalMatches": 758,
+    "familiarMatches": 55,
+    "sampleFamiliar": [
+      "good",
+      "too",
+      "look",
+      "school",
+      "looking",
+      "took"
+    ]
+  },
+  {
+    "fragment": "SP",
+    "totalMatches": 738,
+    "familiarMatches": 55,
+    "sampleFamiliar": [
+      "special",
+      "space",
+      "especially",
+      "hospital",
+      "respect",
+      "response"
+    ]
+  },
+  {
+    "fragment": "EP",
+    "totalMatches": 580,
+    "familiarMatches": 53,
+    "sampleFamiliar": [
+      "keep",
+      "report",
+      "department",
+      "step",
+      "deep",
+      "sleep"
+    ]
+  },
+  {
+    "fragment": "EV",
+    "totalMatches": 381,
+    "familiarMatches": 53,
+    "sampleFamiliar": [
+      "even",
+      "never",
+      "every",
+      "ever",
+      "however",
+      "everything"
+    ]
+  },
+  {
+    "fragment": "OP",
+    "totalMatches": 759,
+    "familiarMatches": 53,
+    "sampleFamiliar": [
+      "people",
+      "top",
+      "stop",
+      "open",
+      "hope",
+      "development"
+    ]
+  },
+  {
+    "fragment": "CR",
+    "totalMatches": 715,
+    "familiarMatches": 52,
+    "sampleFamiliar": [
+      "across",
+      "increase",
+      "crazy",
+      "create",
+      "credit",
+      "cross"
+    ]
+  },
+  {
+    "fragment": "GR",
+    "totalMatches": 663,
+    "familiarMatches": 52,
+    "sampleFamiliar": [
+      "great",
+      "group",
+      "program",
+      "ground",
+      "green",
+      "growth"
+    ]
+  },
+  {
+    "fragment": "AM",
+    "totalMatches": 881,
+    "familiarMatches": 51,
+    "sampleFamiliar": [
+      "same",
+      "game",
+      "team",
+      "family",
+      "name",
+      "came"
+    ]
+  },
+  {
+    "fragment": "AB",
+    "totalMatches": 1117,
+    "familiarMatches": 46,
+    "sampleFamiliar": [
+      "about",
+      "able",
+      "probably",
+      "available",
+      "baby",
+      "above"
+    ]
+  },
+  {
+    "fragment": "CL",
+    "totalMatches": 476,
+    "familiarMatches": 45,
+    "sampleFamiliar": [
+      "class",
+      "close",
+      "clear",
+      "include",
+      "club",
+      "article"
+    ]
+  },
+  {
+    "fragment": "RD",
+    "totalMatches": 542,
+    "familiarMatches": 44,
+    "sampleFamiliar": [
+      "hard",
+      "order",
+      "third",
+      "according",
+      "word",
+      "board"
+    ]
+  },
+  {
+    "fragment": "WA",
+    "totalMatches": 563,
+    "familiarMatches": 44,
+    "sampleFamiliar": [
+      "was",
+      "want",
+      "way",
+      "always",
+      "away",
+      "water"
+    ]
+  },
+  {
+    "fragment": "RM",
+    "totalMatches": 531,
+    "familiarMatches": 43,
+    "sampleFamiliar": [
+      "information",
+      "form",
+      "former",
+      "term",
+      "performance",
+      "army"
+    ]
+  },
+  {
+    "fragment": "EF",
+    "totalMatches": 390,
+    "familiarMatches": 42,
+    "sampleFamiliar": [
+      "before",
+      "left",
+      "chief",
+      "effect",
+      "definitely",
+      "defense"
+    ]
+  },
+  {
+    "fragment": "RN",
+    "totalMatches": 435,
+    "familiarMatches": 42,
+    "sampleFamiliar": [
+      "government",
+      "international",
+      "morning",
+      "turn",
+      "return",
+      "learn"
+    ]
+  },
+  {
+    "fragment": "WI",
+    "totalMatches": 386,
+    "familiarMatches": 42,
+    "sampleFamiliar": [
+      "with",
+      "will",
+      "without",
+      "following",
+      "within",
+      "win"
+    ]
+  },
+  {
+    "fragment": "AY",
+    "totalMatches": 339,
+    "familiarMatches": 40,
+    "sampleFamiliar": [
+      "way",
+      "may",
+      "day",
+      "say",
+      "always",
+      "away"
+    ]
+  },
+  {
+    "fragment": "IP",
+    "totalMatches": 493,
+    "familiarMatches": 34,
+    "sampleFamiliar": [
+      "relationship",
+      "ship",
+      "multiple",
+      "trip",
+      "equipment",
+      "leadership"
+    ]
+  },
+  {
+    "fragment": "LT",
+    "totalMatches": 336,
+    "familiarMatches": 34,
+    "sampleFamiliar": [
+      "health",
+      "although",
+      "result",
+      "felt",
+      "built",
+      "difficult"
+    ]
+  },
+  {
+    "fragment": "UM",
+    "totalMatches": 709,
+    "familiarMatches": 34,
+    "sampleFamiliar": [
+      "number",
+      "human",
+      "summer",
+      "album",
+      "trump",
+      "volume"
+    ]
+  },
+  {
+    "fragment": "SC",
+    "totalMatches": 751,
+    "familiarMatches": 32,
+    "sampleFamiliar": [
+      "school",
+      "science",
+      "scene",
+      "screen",
+      "scale",
+      "score"
+    ]
+  },
+  {
+    "fragment": "UG",
+    "totalMatches": 251,
+    "familiarMatches": 31,
+    "sampleFamiliar": [
+      "through",
+      "thought",
+      "enough",
+      "though",
+      "although",
+      "brought"
+    ]
+  },
+  {
+    "fragment": "DR",
+    "totalMatches": 382,
+    "familiarMatches": 30,
+    "sampleFamiliar": [
+      "children",
+      "drive",
+      "drop",
+      "address",
+      "dream",
+      "drink"
+    ]
+  },
+  {
+    "fragment": "IF",
+    "totalMatches": 452,
+    "familiarMatches": 30,
+    "sampleFamiliar": [
+      "life",
+      "different",
+      "wife",
+      "beautiful",
+      "difficult",
+      "specific"
+    ]
+  },
+  {
+    "fragment": "AV",
+    "totalMatches": 348,
+    "familiarMatches": 29,
+    "sampleFamiliar": [
+      "have",
+      "leave",
+      "available",
+      "gave",
+      "average",
+      "save"
+    ]
+  },
+  {
+    "fragment": "LD",
+    "totalMatches": 284,
+    "familiarMatches": 27,
+    "sampleFamiliar": [
+      "would",
+      "could",
+      "should",
+      "world",
+      "old",
+      "told"
+    ]
+  },
+  {
+    "fragment": "RG",
+    "totalMatches": 270,
+    "familiarMatches": 22,
+    "sampleFamiliar": [
+      "large",
+      "energy",
+      "forget",
+      "charge",
+      "organization",
+      "target"
+    ]
+  },
+  {
+    "fragment": "FR",
+    "totalMatches": 300,
+    "familiarMatches": 21,
+    "sampleFamiliar": [
+      "from",
+      "free",
+      "friend",
+      "front",
+      "freedom",
+      "fresh"
+    ]
+  },
+  {
+    "fragment": "NK",
+    "totalMatches": 280,
+    "familiarMatches": 21,
+    "sampleFamiliar": [
+      "think",
+      "thank",
+      "thanks",
+      "thinking",
+      "bank",
+      "link"
+    ]
+  },
+  {
+    "fragment": "PT",
+    "totalMatches": 331,
+    "familiarMatches": 21,
+    "sampleFamiliar": [
+      "except",
+      "kept",
+      "captain",
+      "accept",
+      "attempt",
+      "option"
+    ]
+  },
+  {
+    "fragment": "UP",
+    "totalMatches": 347,
+    "familiarMatches": 21,
+    "sampleFamiliar": [
+      "group",
+      "support",
+      "couple",
+      "upon",
+      "cup",
+      "super"
+    ]
+  },
+  {
+    "fragment": "EW",
+    "totalMatches": 229,
+    "familiarMatches": 20,
+    "sampleFamiliar": [
+      "new",
+      "few",
+      "news",
+      "knew",
+      "view",
+      "review"
+    ]
+  },
+  {
+    "fragment": "RK",
+    "totalMatches": 223,
+    "familiarMatches": 20,
+    "sampleFamiliar": [
+      "work",
+      "working",
+      "york",
+      "market",
+      "works",
+      "park"
+    ]
+  },
+  {
+    "fragment": "FL",
+    "totalMatches": 403,
+    "familiarMatches": 18,
+    "sampleFamiliar": [
+      "floor",
+      "flight",
+      "influence",
+      "fly",
+      "flat",
+      "flying"
+    ]
+  },
+  {
+    "fragment": "SL",
+    "totalMatches": 425,
+    "familiarMatches": 18,
+    "sampleFamiliar": [
+      "sleep",
+      "island",
+      "seriously",
+      "slow",
+      "previously",
+      "obviously"
+    ]
+  },
+  {
+    "fragment": "SM",
+    "totalMatches": 506,
+    "familiarMatches": 16,
+    "sampleFamiliar": [
+      "small",
+      "smith",
+      "smart",
+      "smaller",
+      "smoke",
+      "smile"
+    ]
+  },
+  {
+    "fragment": "AW",
+    "totalMatches": 204,
+    "familiarMatches": 15,
+    "sampleFamiliar": [
+      "away",
+      "law",
+      "saw",
+      "awesome",
+      "award",
+      "draw"
+    ]
+  },
+  {
+    "fragment": "GL",
+    "totalMatches": 431,
+    "familiarMatches": 14,
+    "sampleFamiliar": [
+      "single",
+      "global",
+      "glad",
+      "glass",
+      "struggle",
+      "strongly"
+    ]
+  },
+  {
+    "fragment": "MB",
+    "totalMatches": 357,
+    "familiarMatches": 14,
+    "sampleFamiliar": [
+      "number",
+      "remember",
+      "member",
+      "combined",
+      "assembly",
+      "combination"
+    ]
+  },
+  {
+    "fragment": "LF",
+    "totalMatches": 87,
+    "familiarMatches": 12,
+    "sampleFamiliar": [
+      "half",
+      "myself",
+      "yourself",
+      "himself",
+      "self",
+      "itself"
+    ]
+  },
+  {
+    "fragment": "SW",
+    "totalMatches": 163,
+    "familiarMatches": 9,
+    "sampleFamiliar": [
+      "answer",
+      "sweet",
+      "switch",
+      "swear",
+      "swimming",
+      "sword"
+    ]
+  },
+  {
+    "fragment": "ING",
+    "totalMatches": 2458,
+    "familiarMatches": 237,
+    "sampleFamiliar": [
+      "being",
+      "going",
+      "something",
+      "during",
+      "thing",
+      "doing"
+    ]
+  },
+  {
+    "fragment": "ENT",
+    "totalMatches": 1224,
+    "familiarMatches": 150,
+    "sampleFamiliar": [
+      "different",
+      "government",
+      "went",
+      "president",
+      "development",
+      "current"
+    ]
+  },
+  {
+    "fragment": "TER",
+    "totalMatches": 1157,
+    "familiarMatches": 83,
+    "sampleFamiliar": [
+      "after",
+      "better",
+      "water",
+      "later",
+      "matter",
+      "international"
+    ]
+  },
+  {
+    "fragment": "ATE",
+    "totalMatches": 1014,
+    "familiarMatches": 74,
+    "sampleFamiliar": [
+      "state",
+      "water",
+      "later",
+      "late",
+      "date",
+      "private"
+    ]
+  },
+  {
+    "fragment": "IVE",
+    "totalMatches": 651,
+    "familiarMatches": 62,
+    "sampleFamiliar": [
+      "give",
+      "live",
+      "five",
+      "given",
+      "university",
+      "received"
+    ]
+  },
+  {
+    "fragment": "EST",
+    "totalMatches": 422,
+    "familiarMatches": 44,
+    "sampleFamiliar": [
+      "best",
+      "question",
+      "west",
+      "rest",
+      "test",
+      "interest"
+    ]
+  },
+  {
+    "fragment": "STR",
+    "totalMatches": 444,
+    "familiarMatches": 40,
+    "sampleFamiliar": [
+      "street",
+      "strong",
+      "industry",
+      "district",
+      "straight",
+      "construction"
+    ]
+  },
+  {
+    "fragment": "INT",
+    "totalMatches": 476,
+    "familiarMatches": 39,
+    "sampleFamiliar": [
+      "into",
+      "point",
+      "international",
+      "interest",
+      "interesting",
+      "interested"
+    ]
+  },
+  {
+    "fragment": "GHT",
+    "totalMatches": 265,
+    "familiarMatches": 37,
+    "sampleFamiliar": [
+      "right",
+      "might",
+      "night",
+      "thought",
+      "light",
+      "fight"
+    ]
+  },
+  {
+    "fragment": "AND",
+    "totalMatches": 401,
+    "familiarMatches": 35,
+    "sampleFamiliar": [
+      "and",
+      "hand",
+      "understand",
+      "land",
+      "stand",
+      "standard"
+    ]
+  },
+  {
+    "fragment": "ORT",
+    "totalMatches": 309,
+    "familiarMatches": 35,
+    "sampleFamiliar": [
+      "support",
+      "important",
+      "north",
+      "short",
+      "report",
+      "worth"
+    ]
+  },
+  {
+    "fragment": "ITY",
+    "totalMatches": 522,
+    "familiarMatches": 34,
+    "sampleFamiliar": [
+      "city",
+      "university",
+      "community",
+      "security",
+      "quality",
+      "ability"
+    ]
+  },
+  {
+    "fragment": "OUN",
+    "totalMatches": 230,
+    "familiarMatches": 34,
+    "sampleFamiliar": [
+      "around",
+      "found",
+      "country",
+      "young",
+      "account",
+      "county"
+    ]
+  },
+  {
+    "fragment": "BLE",
+    "totalMatches": 780,
+    "familiarMatches": 33,
+    "sampleFamiliar": [
+      "able",
+      "problem",
+      "possible",
+      "available",
+      "table",
+      "double"
+    ]
+  },
+  {
+    "fragment": "ANT",
+    "totalMatches": 593,
+    "familiarMatches": 32,
+    "sampleFamiliar": [
+      "want",
+      "important",
+      "anti",
+      "significant",
+      "meant",
+      "plant"
+    ]
+  },
+  {
+    "fragment": "END",
+    "totalMatches": 273,
+    "familiarMatches": 32,
+    "sampleFamiliar": [
+      "end",
+      "friend",
+      "send",
+      "spend",
+      "independent",
+      "weekend"
+    ]
+  },
+  {
+    "fragment": "ART",
+    "totalMatches": 259,
+    "familiarMatches": 30,
+    "sampleFamiliar": [
+      "part",
+      "start",
+      "party",
+      "heart",
+      "art",
+      "department"
+    ]
+  },
+  {
+    "fragment": "OUS",
+    "totalMatches": 706,
+    "familiarMatches": 28,
+    "sampleFamiliar": [
+      "house",
+      "various",
+      "serious",
+      "previous",
+      "seriously",
+      "religious"
+    ]
+  },
+  {
+    "fragment": "UND",
+    "totalMatches": 358,
+    "familiarMatches": 25,
+    "sampleFamiliar": [
+      "around",
+      "under",
+      "found",
+      "understand",
+      "ground",
+      "sound"
+    ]
+  },
+  {
+    "fragment": "ARD",
+    "totalMatches": 315,
+    "familiarMatches": 22,
+    "sampleFamiliar": [
+      "hard",
+      "board",
+      "forward",
+      "towards",
+      "card",
+      "standard"
+    ]
+  },
+  {
+    "fragment": "OUR",
+    "totalMatches": 144,
+    "familiarMatches": 22,
+    "sampleFamiliar": [
+      "your",
+      "our",
+      "four",
+      "course",
+      "court",
+      "yourself"
+    ]
+  },
+  {
+    "fragment": "ONT",
+    "totalMatches": 200,
+    "familiarMatches": 21,
+    "sampleFamiliar": [
+      "control",
+      "front",
+      "month",
+      "continue",
+      "content",
+      "contact"
+    ]
+  },
+  {
+    "fragment": "PLE",
+    "totalMatches": 162,
+    "familiarMatches": 21,
+    "sampleFamiliar": [
+      "people",
+      "please",
+      "example",
+      "couple",
+      "complete",
+      "simple"
+    ]
+  },
+  {
+    "fragment": "MPL",
+    "totalMatches": 109,
+    "familiarMatches": 19,
+    "sampleFamiliar": [
+      "example",
+      "complete",
+      "simple",
+      "simply",
+      "completely",
+      "complex"
+    ]
+  },
+  {
+    "fragment": "OMP",
+    "totalMatches": 184,
+    "familiarMatches": 19,
+    "sampleFamiliar": [
+      "company",
+      "complete",
+      "completely",
+      "computer",
+      "competition",
+      "complex"
+    ]
+  },
+  {
+    "fragment": "ANG",
+    "totalMatches": 231,
+    "familiarMatches": 17,
+    "sampleFamiliar": [
+      "change",
+      "range",
+      "language",
+      "exchange",
+      "dangerous",
+      "angry"
+    ]
+  },
+  {
+    "fragment": "IND",
+    "totalMatches": 255,
+    "familiarMatches": 17,
+    "sampleFamiliar": [
+      "find",
+      "kind",
+      "mind",
+      "behind",
+      "industry",
+      "individual"
+    ]
+  },
+  {
+    "fragment": "OUT",
+    "totalMatches": 208,
+    "familiarMatches": 17,
+    "sampleFamiliar": [
+      "about",
+      "out",
+      "without",
+      "south",
+      "outside",
+      "throughout"
+    ]
+  },
+  {
+    "fragment": "ULT",
+    "totalMatches": 139,
+    "familiarMatches": 17,
+    "sampleFamiliar": [
+      "result",
+      "difficult",
+      "culture",
+      "multiple",
+      "adult",
+      "cultural"
+    ]
+  },
+  {
+    "fragment": "UNT",
+    "totalMatches": 181,
+    "familiarMatches": 17,
+    "sampleFamiliar": [
+      "until",
+      "country",
+      "account",
+      "county",
+      "amount",
+      "count"
+    ]
+  },
+  {
+    "fragment": "ORD",
+    "totalMatches": 120,
+    "familiarMatches": 16,
+    "sampleFamiliar": [
+      "order",
+      "according",
+      "word",
+      "record",
+      "lord",
+      "ordered"
+    ]
+  },
+  {
+    "fragment": "ONG",
+    "totalMatches": 139,
+    "familiarMatches": 15,
+    "sampleFamiliar": [
+      "long",
+      "wrong",
+      "along",
+      "among",
+      "song",
+      "strong"
+    ]
+  },
+  {
+    "fragment": "IMP",
+    "totalMatches": 210,
+    "familiarMatches": 14,
+    "sampleFamiliar": [
+      "important",
+      "simple",
+      "simply",
+      "impact",
+      "improve",
+      "impossible"
+    ]
+  },
+  {
+    "fragment": "EMP",
+    "totalMatches": 96,
+    "familiarMatches": 13,
+    "sampleFamiliar": [
+      "attempt",
+      "temperature",
+      "empty",
+      "employment",
+      "empire",
+      "employee"
+    ]
+  },
+  {
+    "fragment": "TCH",
+    "totalMatches": 174,
+    "familiarMatches": 12,
+    "sampleFamiliar": [
+      "watch",
+      "match",
+      "watching",
+      "catch",
+      "watched",
+      "kitchen"
+    ]
+  },
+  {
+    "fragment": "ALT",
+    "totalMatches": 96,
+    "familiarMatches": 11,
+    "sampleFamiliar": [
+      "health",
+      "although",
+      "healthy",
+      "alternative",
+      "salt",
+      "wealth"
+    ]
+  },
+  {
+    "fragment": "ARK",
+    "totalMatches": 86,
+    "familiarMatches": 11,
+    "sampleFamiliar": [
+      "market",
+      "park",
+      "mark",
+      "dark",
+      "marketing",
+      "marked"
+    ]
+  },
+  {
+    "fragment": "ENG",
+    "totalMatches": 57,
+    "familiarMatches": 11,
+    "sampleFamiliar": [
+      "challenge",
+      "engine",
+      "engineering",
+      "strength",
+      "length",
+      "engaged"
+    ]
+  },
+  {
+    "fragment": "OND",
+    "totalMatches": 123,
+    "familiarMatches": 11,
+    "sampleFamiliar": [
+      "second",
+      "beyond",
+      "wonder",
+      "condition",
+      "wonderful",
+      "bond"
+    ]
+  },
+  {
+    "fragment": "THR",
+    "totalMatches": 105,
+    "familiarMatches": 11,
+    "sampleFamiliar": [
+      "through",
+      "three",
+      "throughout",
+      "throw",
+      "threat",
+      "bathroom"
+    ]
+  },
+  {
+    "fragment": "ANK",
+    "totalMatches": 102,
+    "familiarMatches": 9,
+    "sampleFamiliar": [
+      "thank",
+      "thanks",
+      "bank",
+      "frank",
+      "tank",
+      "rank"
+    ]
+  },
+  {
+    "fragment": "INK",
+    "totalMatches": 109,
+    "familiarMatches": 9,
+    "sampleFamiliar": [
+      "think",
+      "thinking",
+      "link",
+      "drink",
+      "links",
+      "drinking"
+    ]
+  },
+  {
+    "fragment": "IRT",
+    "totalMatches": 46,
+    "familiarMatches": 8,
+    "sampleFamiliar": [
+      "birth",
+      "birthday",
+      "shirt",
+      "dirty",
+      "thirty",
+      "virtual"
+    ]
+  },
+  {
+    "fragment": "ORK",
+    "totalMatches": 94,
+    "familiarMatches": 8,
+    "sampleFamiliar": [
+      "work",
+      "working",
+      "york",
+      "works",
+      "worked",
+      "network"
+    ]
+  },
+  {
+    "fragment": "TLE",
+    "totalMatches": 165,
+    "familiarMatches": 8,
+    "sampleFamiliar": [
+      "little",
+      "title",
+      "battle",
+      "bottle",
+      "settlement",
+      "castle"
+    ]
+  },
+  {
+    "fragment": "TION",
+    "totalMatches": 1473,
+    "familiarMatches": 133,
+    "sampleFamiliar": [
+      "national",
+      "information",
+      "international",
+      "question",
+      "education",
+      "action"
+    ]
+  },
+  {
+    "fragment": "MENT",
+    "totalMatches": 408,
+    "familiarMatches": 54,
+    "sampleFamiliar": [
+      "government",
+      "development",
+      "moment",
+      "department",
+      "management",
+      "treatment"
+    ]
+  }
+]

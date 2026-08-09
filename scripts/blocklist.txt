@@ -1,0 +1,44 @@
+# Words excluded from the curated dictionary regardless of frequency.
+# Categories: slurs/offensive terms, mild profanity, and abbreviations that
+# leaked in from the system word list. This list is deliberately hand-curated
+# and reviewed -- keep entries alphabetized within each section and explain
+# non-obvious calls with a trailing comment.
+
+# --- slurs / offensive terms ---
+bastard
+bitch
+boob
+chink
+chinks
+coon
+cripple
+gook
+jap
+kike
+molest
+molestation
+molester
+negro
+niggardly        # sounds like a slur despite unrelated etymology; not worth the confusion
+nigger
+pussy
+retard
+retarded
+slut
+slutty
+squaw
+twat
+unmolested
+wetback
+whore
+wop
+
+# --- mild profanity ---
+piss
+
+# --- abbreviations, not full words in normal usage ---
+aka
+ave
+corp
+ibid
+vol
