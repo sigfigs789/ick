@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Evaluates candidate 2-3 letter fragments against the curated dictionary and
+Evaluates candidate 2-3 letter drops against the curated dictionary and
 picks the ones with plenty of familiar (Common/Very Common) matches, per the
-"avoid fragments so hard only obscure words work" requirement.
+"avoid drops so hard only obscure words work" requirement.
 
 Run:
-    python3 scripts/select-fragments.py
+    python3 scripts/select-drops.py
 """
 import json
 import string
@@ -22,7 +22,7 @@ FAMILIAR_RARITIES = {"Very Common", "Common"}
 # Hand-picked candidate pool: digraphs/trigraphs that are common English
 # letter clusters (blends, common syllables) rather than an exhaustive
 # brute-force of all 26^2 / 26^3 combinations, which would surface mostly
-# unusable fragments.
+# unusable drops.
 CANDIDATES_2 = [
     "OU", "TH", "ER", "IN", "ON", "AN", "EN", "AR", "OR", "AT", "ST", "RE",
     "LE", "TI", "ES", "LY", "CK", "SH", "CH", "GR", "PL", "TR", "SP", "BL",
@@ -47,8 +47,8 @@ CANDIDATES_3 = [
 ]
 
 
-def contains_fragment(word: str, frag: str) -> bool:
-    return frag in word
+def contains_drop(word: str, drop: str) -> bool:
+    return drop in word
 
 
 def main() -> None:
@@ -56,27 +56,27 @@ def main() -> None:
     rarity = json.loads((DATA_DIR / "rarity.json").read_text())
 
     results = []
-    for frag in sorted(set(CANDIDATES_2 + CANDIDATES_3), key=lambda f: (len(f), f)):
-        f = frag.lower()
+    for drop in sorted(set(CANDIDATES_2 + CANDIDATES_3), key=lambda f: (len(f), f)):
+        f = drop.lower()
         matches = [w for w in dictionary if f in w]
         familiar = [w for w in matches if rarity[w]["rarity"] in FAMILIAR_RARITIES]
         if len(matches) >= MIN_TOTAL_MATCHES and len(familiar) >= MIN_FAMILIAR_MATCHES:
             results.append({
-                "fragment": frag.upper(),
+                "drop": drop.upper(),
                 "totalMatches": len(matches),
                 "familiarMatches": len(familiar),
                 "sampleFamiliar": sorted(familiar, key=lambda w: -rarity[w]["zipf"])[:6],
             })
 
-    results.sort(key=lambda r: (len(r["fragment"]), -r["familiarMatches"]))
+    results.sort(key=lambda r: (len(r["drop"]), -r["familiarMatches"]))
 
-    print(f"{len(results)} fragments passed thresholds "
+    print(f"{len(results)} drops passed thresholds "
           f"(total>={MIN_TOTAL_MATCHES}, familiar>={MIN_FAMILIAR_MATCHES})\n")
     for r in results:
-        print(f"  {r['fragment']:5s} total={r['totalMatches']:4d} "
+        print(f"  {r['drop']:5s} total={r['totalMatches']:4d} "
               f"familiar={r['familiarMatches']:4d}  e.g. {', '.join(r['sampleFamiliar'])}")
 
-    out_path = ROOT / "scripts" / "fragment-candidates.json"
+    out_path = ROOT / "scripts" / "drop-candidates.json"
     out_path.write_text(json.dumps(results, indent=2))
     print(f"\nWrote {out_path}")
 

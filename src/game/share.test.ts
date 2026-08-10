@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { buildShareText, puzzleNumber } from "./share";
-import fragmentData from "../data/fragments.json";
+import dropData from "../data/drops.json";
 import type { AcceptedWord } from "./types";
 
 describe("puzzleNumber", () => {
   it("is 1 on the epoch date", () => {
-    expect(puzzleNumber(fragmentData.epoch)).toBe(1);
+    expect(puzzleNumber(dropData.epoch)).toBe(1);
   });
 
   it("increments by 1 per day", () => {
@@ -20,7 +20,7 @@ describe("buildShareText", () => {
     { word: "aardvark", rarity: "Extremely Rare", zipf: 2.4 },
   ];
 
-  it("includes the puzzle number and fragment, never the words themselves", () => {
+  it("includes the puzzle number and drop, never the words themselves", () => {
     const text = buildShareText("2024-01-05", "str", words);
     expect(text).toContain(`Ink #${puzzleNumber("2024-01-05")}`);
     expect(text).toContain('"str"');

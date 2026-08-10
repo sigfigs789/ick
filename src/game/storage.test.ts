@@ -37,24 +37,24 @@ describe("newProgress / loadOrCreateProgress", () => {
     const p = newProgress("2024-01-01", "str");
     expect(p).toMatchObject({
       date: "2024-01-01",
-      fragment: "str",
+      drop: "str",
       acceptedWords: [],
       rejectedAttempts: [],
       completed: false,
     });
   });
 
-  it("loads existing progress for the same fragment instead of recreating it", () => {
+  it("loads existing progress for the same drop instead of recreating it", () => {
     recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
     const loaded = loadOrCreateProgress("2024-01-01", "str");
     expect(loaded.acceptedWords).toEqual([word("strange")]);
   });
 
-  it("discards stale progress if the day's fragment has since changed", () => {
+  it("discards stale progress if the day's drop has since changed", () => {
     recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
     const loaded = loadOrCreateProgress("2024-01-01", "ou");
     expect(loaded.acceptedWords).toEqual([]);
-    expect(loaded.fragment).toBe("ou");
+    expect(loaded.drop).toBe("ou");
   });
 });
 

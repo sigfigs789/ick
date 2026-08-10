@@ -4,14 +4,14 @@ import type { AcceptedWord, SubmissionResult } from "./types";
 
 const WORD_CHARS = /^[a-z]+$/;
 
-/** True if `fragment`'s letters appear contiguously and in order inside `word`. */
-export function containsFragmentInOrder(word: string, fragment: string): boolean {
-  return word.toLowerCase().includes(fragment.toLowerCase());
+/** True if `drop`'s letters appear contiguously and in order inside `word`. */
+export function containsDropInOrder(word: string, drop: string): boolean {
+  return word.toLowerCase().includes(drop.toLowerCase());
 }
 
 export function evaluateSubmission(
   rawInput: string,
-  fragment: string,
+  drop: string,
   alreadyAccepted: AcceptedWord[]
 ): SubmissionResult {
   const word = rawInput.trim().toLowerCase();
@@ -22,8 +22,8 @@ export function evaluateSubmission(
   if (!WORD_CHARS.test(word)) {
     return { ok: false, reason: "not-a-word" };
   }
-  if (!containsFragmentInOrder(word, fragment)) {
-    return { ok: false, reason: "missing-fragment" };
+  if (!containsDropInOrder(word, drop)) {
+    return { ok: false, reason: "missing-drop" };
   }
   if (alreadyAccepted.some((w) => w.word === word)) {
     return { ok: false, reason: "already-used" };
@@ -51,7 +51,7 @@ export function evaluateSubmission(
 export const REJECTION_MESSAGES: Record<string, string> = {
   empty: "Type a word first.",
   "not-a-word": "That's not in the word list.",
-  "missing-fragment": "That word doesn't contain the fragment.",
+  "missing-drop": "That word doesn't contain the drop.",
   "already-used": "You've already submitted that word.",
   "same-root-as-used": "That's too close to a word you already used.",
 };

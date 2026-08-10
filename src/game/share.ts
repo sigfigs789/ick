@@ -2,7 +2,7 @@ import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
 import { MAX_GUESSES } from "./constants";
 import { rarityScore } from "./dictionary";
 import { bestWord } from "./rank";
-import fragmentData from "../data/fragments.json";
+import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
 // Mirrors the in-app "loot tier" rarity palette (grey -> green -> blue ->
@@ -20,24 +20,24 @@ const RARITY_SYMBOL: Record<Rarity, string> = {
 };
 
 export function puzzleNumber(dateStr: string): number {
-  return daysSinceEpoch(dateStr, fragmentData.epoch) + 1;
+  return daysSinceEpoch(dateStr, dropData.epoch) + 1;
 }
 
 /**
- * Spoiler-free: shows rarity symbols and the fragment, never the words
+ * Spoiler-free: shows rarity symbols and the drop, never the words
  * themselves. Squares are in guess order (like a Wordle grid); the "best"
  * line calls out the single rarest word, since that's the goal now.
  */
 export function buildShareText(
   dateStr: string,
-  fragment: string,
+  drop: string,
   words: AcceptedWord[]
 ): string {
   const n = puzzleNumber(dateStr);
   const squares = words.map((w) => RARITY_SYMBOL[w.rarity]).join(" ");
   const label = formatDateLabel(dateStr);
   const best = bestWord(words);
-  const lines = [`Ink #${n} (${label}) — fragment "${fragment}"`, squares];
+  const lines = [`Ink #${n} (${label}) — drop "${drop}"`, squares];
   if (best) {
     const score = rarityScore(best.zipf).toFixed(1);
     lines.push(`Best: ${best.rarity} (${score}) · ${words.length}/${MAX_GUESSES} guesses`);
@@ -45,6 +45,6 @@ export function buildShareText(
   return lines.join("\n");
 }
 
-export function todayShareText(fragment: string, words: AcceptedWord[]): string {
-  return buildShareText(toDateString(new Date()), fragment, words);
+export function todayShareText(drop: string, words: AcceptedWord[]): string {
+  return buildShareText(toDateString(new Date()), drop, words);
 }

@@ -24,7 +24,7 @@ export function GuessLog({ acceptedWords, onSelectWord }: Props) {
 
       {acceptedWords.length === 0 ? (
         <p className="guess-log__empty">
-          No guesses yet — enter a word below that contains the fragment.
+          No guesses yet — enter a word below that contains the drop.
         </p>
       ) : (
         <ol className="guess-log__list">

@@ -45,7 +45,7 @@ export function InstructionsModal({ open, onClose }: Props) {
           </button>
         </div>
         <ol className="modal__steps">
-          <li>Every day everyone gets splashed with the same letter fragment — say, INK. Your job is to dip into your vocabulary and pull out words stained with it, like dr<strong>INK</strong>, th<strong>INK</strong>, or p<strong>INK</strong>.</li>
+          <li>Every day everyone gets splashed with the same letter drop — say, INK. Your job is to dip into your vocabulary and pull out words stained with it, like dr<strong>INK</strong>, th<strong>INK</strong>, or p<strong>INK</strong>.</li>
           <li>Enter valid English words that contain those letters together, in that order — you get up to 6 distinct words.</li>
           <li>Blot the page all you want: submitting an invalid word just gives you feedback — no penalty, no timer, and it doesn't use up a guess.</li>
           <li>Each accepted word reveals a rarity, from Very Common to Extremely Rare. The goal is finding the rarest word you can — your inkiest gem gets crowned 👑 in the log.</li>

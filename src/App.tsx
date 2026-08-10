@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FragmentDisplay } from "./components/FragmentDisplay";
+import { DropDisplay } from "./components/DropDisplay";
 import { GuessLog } from "./components/GuessLog";
 import { SubmitForm } from "./components/SubmitForm";
 import { LockInButton } from "./components/LockInButton";
@@ -22,7 +22,7 @@ export default function App() {
     goToPrevious,
     goToNext,
     goToToday,
-    fragment,
+    drop,
     progress,
     streak,
     feedback,
@@ -91,7 +91,7 @@ export default function App() {
       </header>
 
       <main>
-        <FragmentDisplay fragment={fragment} />
+        <DropDisplay drop={drop} />
         <GuessLog
           acceptedWords={progress.acceptedWords}
           onSelectWord={(word) => setPrefill({ word, token: Date.now() })}
@@ -99,7 +99,7 @@ export default function App() {
 
         {!progress.completed && (
           <SubmitForm
-            fragment={fragment}
+            drop={drop}
             disabled={progress.completed}
             feedback={feedback}
             prefill={prefill}
@@ -121,7 +121,7 @@ export default function App() {
         {!progress.completed && <StreakDisplay streak={streak} />}
 
         {progress.completed && (
-          <ResultsPanel fragment={fragment} words={progress.acceptedWords} streak={streak} />
+          <ResultsPanel drop={drop} words={progress.acceptedWords} streak={streak} />
         )}
       </main>
 

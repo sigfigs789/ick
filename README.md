@@ -1,7 +1,7 @@
-# Ick
+# Ink
 
-A daily word-fragment puzzle inspired by Wordle and BombParty. Every player
-gets the same 2- or 3-letter fragment each day (like `STR`, `OU`, or `MP`)
+A daily word-drop puzzle inspired by Wordle and BombParty. Every player
+gets the same 2- or 3-letter drop each day (like `STR`, `OU`, or `MP`)
 and enters valid English words that contain it, in order, for up to 6
 distinct guesses. The goal is finding the rarest word you can — your best
 one is crowned in the log. No timer, no login, no traditional score, just
@@ -33,7 +33,7 @@ npm run test:watch
 npm run test:ui   # Vitest's browser UI
 ```
 
-Coverage focuses on `src/game/` (fragment selection, word validation,
+Coverage focuses on `src/game/` (drop selection, word validation,
 dedup/stemming, rarity lookup, streak/completion persistence, share text)
 since that's where the rules live, plus a couple of component tests
 (`GuessLog`, `SubmitForm`) for the click-to-reuse and lock-in interactions.
@@ -41,12 +41,12 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
 
 ## How the game works
 
-- **Fragment selection** (`src/game/fragment.ts`, `src/data/fragments.json`):
-  the day's fragment is picked deterministically from a curated list, keyed
+- **Drop selection** (`src/game/drop.ts`, `src/data/drops.json`):
+  the day's drop is picked deterministically from a curated list, keyed
   off the number of days since a fixed epoch — every player on the same
-  calendar date gets the same fragment, no server required.
+  calendar date gets the same drop, no server required.
 - **Word validation** (`src/game/submit.ts`): a submission must contain the
-  fragment as a contiguous, in-order substring, be in the curated
+  drop as a contiguous, in-order substring, be in the curated
   dictionary, and not be the same word (or an obvious inflection of the
   same word — see `src/game/stem.ts`) as one already accepted that day.
 - **Rarity** (`src/game/dictionary.ts`, `src/data/rarity.json`): precomputed
@@ -64,7 +64,7 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   puzzle is marked complete it can't be re-completed, but players can
   still revisit their result afterward.
 - **Sharing** (`src/game/share.ts`): a spoiler-free, plain-text result
-  (fragment + rarity squares in guess order + your best rarity, no words)
+  (drop + rarity squares in guess order + your best rarity, no words)
   suitable for pasting anywhere.
 
 ## Regenerating the word/rarity data
@@ -75,7 +75,7 @@ To regenerate them:
 ```bash
 pip3 install --user wordfreq
 npm run generate-data     # writes src/data/dictionary.json + rarity.json
-npm run select-fragments  # writes scripts/fragment-candidates.json (diagnostic)
+npm run select-drops  # writes scripts/drop-candidates.json (diagnostic)
 ```
 
 `scripts/generate-data.py` starts from the macOS system dictionary
@@ -88,8 +88,8 @@ profanity, and stray abbreviations). Rarity bands are tuned in the
 `RARITY_BANDS` constant at the top of the script — adjust and rerun as
 playtesting suggests.
 
-`scripts/select-fragments.py` evaluates a hand-picked pool of candidate
-2- and 3-letter fragments against the generated dictionary and keeps only
+`scripts/select-drops.py` evaluates a hand-picked pool of candidate
+2- and 3-letter drops against the generated dictionary and keeps only
 ones with plenty of common-word matches, so no daily puzzle depends on
 obscure answers.
 

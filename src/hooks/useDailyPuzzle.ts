@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { addDays, todayDateString } from "../game/date";
-import { fragmentForDate } from "../game/fragment";
+import { dropForDate } from "../game/drop";
 import { puzzleNumber } from "../game/share";
-import fragmentData from "../data/fragments.json";
+import dropData from "../data/drops.json";
 import {
   loadOrCreateProgress,
   loadStreak,
@@ -24,13 +24,13 @@ export interface Feedback {
 export function useDailyPuzzle() {
   const today = useMemo(() => todayDateString(), []);
   const [viewedDate, setViewedDate] = useState(today);
-  const fragment = useMemo(() => fragmentForDate(viewedDate), [viewedDate]);
+  const drop = useMemo(() => dropForDate(viewedDate), [viewedDate]);
   const isToday = viewedDate === today;
-  const canGoToPrevious = viewedDate > fragmentData.epoch;
+  const canGoToPrevious = viewedDate > dropData.epoch;
   const canGoToNext = viewedDate < today;
 
   const [progress, setProgress] = useState<DailyProgress>(() =>
-    loadOrCreateProgress(viewedDate, fragment)
+    loadOrCreateProgress(viewedDate, drop)
   );
   const [streak, setStreak] = useState<StreakState>(() => loadStreak());
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -40,13 +40,13 @@ export function useDailyPuzzle() {
   // each date's progress is saved independently (see storage.ts), so
   // switching back to a puzzle you'd already started resumes it.
   useEffect(() => {
-    setProgress(loadOrCreateProgress(viewedDate, fragment));
+    setProgress(loadOrCreateProgress(viewedDate, drop));
     setFeedback(null);
-  }, [viewedDate, fragment]);
+  }, [viewedDate, drop]);
 
   const submitWord = useCallback(
     (raw: string) => {
-      const result = evaluateSubmission(raw, fragment, progress.acceptedWords);
+      const result = evaluateSubmission(raw, drop, progress.acceptedWords);
       feedbackKey.current += 1;
 
       if (!result.ok || !result.word) {
@@ -67,7 +67,7 @@ export function useDailyPuzzle() {
       });
       return result;
     },
-    [fragment, progress]
+    [drop, progress]
   );
 
   /** Player-initiated early finish: bank the best word(s) so far instead of using all 6 guesses. */
@@ -78,7 +78,7 @@ export function useDailyPuzzle() {
   }, [progress]);
 
   const goToPrevious = useCallback(() => {
-    setViewedDate((d) => (d > fragmentData.epoch ? addDays(d, -1) : d));
+    setViewedDate((d) => (d > dropData.epoch ? addDays(d, -1) : d));
   }, []);
 
   const goToNext = useCallback(() => {
@@ -96,7 +96,7 @@ export function useDailyPuzzle() {
     goToPrevious,
     goToNext,
     goToToday,
-    fragment,
+    drop,
     progress,
     streak,
     feedback,

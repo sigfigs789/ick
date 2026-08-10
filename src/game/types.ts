@@ -21,7 +21,7 @@ export interface AcceptedWord {
 export type RejectionReason =
   | "empty"
   | "too-short"
-  | "missing-fragment"
+  | "missing-drop"
   | "not-a-word"
   | "already-used"
   | "same-root-as-used";
@@ -35,7 +35,7 @@ export interface SubmissionResult {
 /** Persisted per calendar date in localStorage. */
 export interface DailyProgress {
   date: string; // YYYY-MM-DD
-  fragment: string;
+  drop: string;
   acceptedWords: AcceptedWord[];
   rejectedAttempts: string[];
   completed: boolean;

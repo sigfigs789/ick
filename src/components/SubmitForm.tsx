@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Feedback } from "../hooks/useDailyPuzzle";
 
 interface Props {
-  fragment: string;
+  drop: string;
   disabled: boolean;
   feedback: Feedback | null;
   /** Set by clicking a word in the guess log; consumed once, then cleared by the parent. */
@@ -10,7 +10,7 @@ interface Props {
   onSubmit: (word: string) => void;
 }
 
-export function SubmitForm({ fragment, disabled, feedback, prefill, onSubmit }: Props) {
+export function SubmitForm({ drop, disabled, feedback, prefill, onSubmit }: Props) {
   const [value, setValue] = useState("");
   const rowRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +48,7 @@ export function SubmitForm({ fragment, disabled, feedback, prefill, onSubmit }: 
       <label className="submit-form__label" htmlFor="word-input">
         {disabled
           ? "You've completed this puzzle"
-          : `Enter a word containing "${fragment.toUpperCase()}"`}
+          : `Enter a word containing "${drop.toUpperCase()}"`}
       </label>
       <div className="submit-form__row" ref={rowRef}>
         <input

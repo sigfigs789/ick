@@ -2,7 +2,7 @@
   "name": "ick",
   "private": true,
   "version": "0.0.0",
-  "description": "A daily word-fragment puzzle inspired by Wordle and BombParty.",
+  "description": "A daily word-drop puzzle inspired by Wordle and BombParty.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,7 +13,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "generate-data": "python3 scripts/generate-data.py",
-    "select-fragments": "python3 scripts/select-fragments.py"
+    "select-drops": "python3 scripts/select-drops.py"
   },
   "dependencies": {
     "react": "^18.3.1",

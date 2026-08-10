@@ -22,20 +22,20 @@ function saveProgress(progress: DailyProgress): void {
   localStorage.setItem(PROGRESS_PREFIX + progress.date, JSON.stringify(progress));
 }
 
-export function newProgress(date: string, fragment: string): DailyProgress {
+export function newProgress(date: string, drop: string): DailyProgress {
   return {
     date,
-    fragment,
+    drop,
     acceptedWords: [],
     rejectedAttempts: [],
     completed: false,
   };
 }
 
-export function loadOrCreateProgress(date: string, fragment: string): DailyProgress {
+export function loadOrCreateProgress(date: string, drop: string): DailyProgress {
   const existing = loadProgress(date);
-  if (existing && existing.fragment === fragment) return existing;
-  return newProgress(date, fragment);
+  if (existing && existing.drop === drop) return existing;
+  return newProgress(date, drop);
 }
 
 export function loadStreak(): StreakState {

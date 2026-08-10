@@ -6,13 +6,13 @@ import { ShareButton } from "./ShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
 
 interface Props {
-  fragment: string;
+  drop: string;
   words: AcceptedWord[];
   streak: StreakState;
 }
 
-export function ResultsPanel({ fragment, words, streak }: Props) {
-  const shareText = todayShareText(fragment, words);
+export function ResultsPanel({ drop, words, streak }: Props) {
+  const shareText = todayShareText(drop, words);
   const best = bestWord(words);
 
   return (
@@ -20,7 +20,7 @@ export function ResultsPanel({ fragment, words, streak }: Props) {
       <h2 id="results-heading">Puzzle complete!</h2>
       <p className="results-panel__summary">
         You found {words.length} word{words.length === 1 ? "" : "s"} containing{" "}
-        <strong>{fragment.toUpperCase()}</strong> in {words.length} of {MAX_GUESSES} guesses.
+        <strong>{drop.toUpperCase()}</strong> in {words.length} of {MAX_GUESSES} guesses.
       </p>
 
       {best && (
