@@ -146,6 +146,16 @@ describe("recordAcceptedWord", () => {
     expect(loadStreak()).toMatchObject({ crushedIt: 1, elite: 1 });
   });
 
+  it("counts each qualifying rarity once per puzzle", () => {
+    let p = newProgress("2024-01-01", "str");
+    p = recordAcceptedWord(p, word("rare", 3.2, "Rare"));
+    p = recordAcceptedWord(p, word("rarer", 3.1, "Rare"));
+    p = recordAcceptedWord(p, word("elite", 2.4, "Extremely Rare"));
+    recordAcceptedWord(p, word("eliter", 2.3, "Extremely Rare"));
+
+    expect(loadStreak()).toMatchObject({ crushedIt: 1, elite: 1 });
+  });
+
   it("is a no-op once the puzzle is already completed", () => {
     let p = newProgress("2024-01-01", "str");
     for (let i = 0; i < MAX_GUESSES; i++) {

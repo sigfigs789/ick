@@ -63,6 +63,12 @@ function saveStreak(streak: StreakState): void {
  */
 export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord): DailyProgress {
   if (progress.completed) return progress; // no further official changes once complete
+  const hasWinningWord = progress.acceptedWords.some((acceptedWord) =>
+    isWinningRarity(acceptedWord.rarity)
+  );
+  const hasEliteWord = progress.acceptedWords.some((acceptedWord) =>
+    isEliteRarity(acceptedWord.rarity)
+  );
   const acceptedWords = [...progress.acceptedWords, word];
   const justCompleted = acceptedWords.length >= MAX_GUESSES;
   const won = acceptedWords.some((acceptedWord) => isWinningRarity(acceptedWord.rarity));
@@ -78,7 +84,10 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
 
   updateHighScore(word.zipf);
 
-  if (isWinningRarity(word.rarity)) updateRarityScore(word.rarity);
+  updateRarityScore({
+    shouldIncrementCrushedIt: isWinningRarity(word.rarity) && !hasWinningWord,
+    shouldIncrementElite: isEliteRarity(word.rarity) && !hasEliteWord,
+  });
 
   if (justCompleted && won) {
     updateStreakOnCompletion(progress.date);
@@ -149,13 +158,20 @@ function updateStreakOnCompletion(date: string): void {
   saveStreak(updated);
 }
 
-/** Rarity scores apply to every qualifying word, including archive puzzles. */
-function updateRarityScore(rarity: AcceptedWord["rarity"]): void {
+/** Rarity scores apply once per puzzle, including archive puzzles. */
+function updateRarityScore({
+  shouldIncrementCrushedIt,
+  shouldIncrementElite,
+}: {
+  shouldIncrementCrushedIt: boolean;
+  shouldIncrementElite: boolean;
+}): void {
+  if (!shouldIncrementCrushedIt && !shouldIncrementElite) return;
   const streak = loadStreak();
   saveStreak({
     ...streak,
-    crushedIt: streak.crushedIt + 1,
-    elite: streak.elite + (isEliteRarity(rarity) ? 1 : 0),
+    crushedIt: streak.crushedIt + (shouldIncrementCrushedIt ? 1 : 0),
+    elite: streak.elite + (shouldIncrementElite ? 1 : 0),
   });
 }
 
