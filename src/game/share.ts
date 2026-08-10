@@ -24,16 +24,17 @@ export function puzzleNumber(dateStr: string): number {
 }
 
 export interface ShareOptions {
-  /** Defaults to true: rarity symbols only, never the words themselves. */
+  /** Defaults to true: omit the words-with-rarity line, squares only. */
   spoilerFree?: boolean;
 }
 
 /**
- * Spoiler-free (the default): shows rarity symbols and the drop, never the
- * words themselves -- squares are in guess order, like a Wordle grid. Pass
- * `spoilerFree: false` to swap that line for the actual words instead. The
- * "best" line calls out the single rarest word either way, since that's
- * the goal now.
+ * The rarity squares (guess order, like a Wordle grid) are always
+ * included -- they're the part that's genuinely spoiler-free regardless of
+ * the option below. Pass `spoilerFree: false` to add a second line with
+ * the actual words (plus rarity label and score) alongside the squares,
+ * rather than replacing them. The "best" line calls out the single rarest
+ * word either way, since that's the goal now.
  */
 export function buildShareText(
   dateStr: string,
@@ -46,11 +47,14 @@ export function buildShareText(
   const label = formatDateLabel(dateStr);
   const best = bestWord(words);
 
-  const resultLine = spoilerFree
-    ? words.map((w) => RARITY_SYMBOL[w.rarity]).join(" ")
-    : words.map((w) => `${w.word} (${w.rarity}, ${rarityScore(w.zipf).toFixed(1)})`).join(" · ");
+  const squaresLine = words.map((w) => RARITY_SYMBOL[w.rarity]).join(" ");
 
-  const lines = [`Ink #${n} (${label}) — drop "${drop}"`, resultLine];
+  const lines = [`Ink #${n} (${label}) — drop "${drop}"`, squaresLine];
+  if (!spoilerFree) {
+    lines.push(
+      words.map((w) => `${w.word} (${w.rarity}, ${rarityScore(w.zipf).toFixed(1)})`).join(" · ")
+    );
+  }
   if (best) {
     const score = rarityScore(best.zipf).toFixed(1);
     lines.push(`Best: ${best.rarity} (${score}) · ${words.length}/${MAX_GUESSES} guesses`);

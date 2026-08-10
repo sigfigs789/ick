@@ -61,6 +61,13 @@ describe("buildShareText", () => {
     expect(text).toContain("aardvark (Extremely Rare, 7.6)");
   });
 
+  it("still includes the rarity squares alongside the words when spoilerFree is false", () => {
+    const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
+    const squareLine = text.split("\n")[1];
+    expect(squareLine.split(" ")).toHaveLength(words.length);
+    expect(squareLine).not.toMatch(/[a-z]/);
+  });
+
   it("still includes the best-word line when spoilers are shown", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     expect(text).toContain("Best: Extremely Rare (7.6) · 3/6 guesses");

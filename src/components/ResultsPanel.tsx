@@ -14,12 +14,13 @@ interface Props {
 }
 
 export function ResultsPanel({ drop, words, streak }: Props) {
-  // Defaults to spoiler-free -- showing words is an opt-in the player
-  // reaches for deliberately, not something that leaks by default. Drives
-  // both the plain-text share (squares vs. words) and the image share
-  // (word text blurred vs. legible) the same way.
-  const [showWords, setShowWords] = useState(false);
-  const shareText = todayShareText(drop, words, { spoilerFree: !showWords });
+  // Defaults to unchecked (full result: squares + words) -- hiding words
+  // is an opt-in the player reaches for deliberately when sharing
+  // somewhere spoilers matter, not the default. Drives both the
+  // plain-text share (squares, plus words unless spoiler-free) and the
+  // image share (word text blurred vs. legible) the same way.
+  const [spoilerFree, setSpoilerFree] = useState(false);
+  const shareText = todayShareText(drop, words, { spoilerFree });
   const best = bestWord(words);
   const captureRef = useRef<HTMLDivElement>(null);
 
@@ -63,15 +64,15 @@ export function ResultsPanel({ drop, words, streak }: Props) {
       <label className="results-panel__spoiler-toggle">
         <input
           type="checkbox"
-          checked={showWords}
-          onChange={(e) => setShowWords(e.target.checked)}
+          checked={spoilerFree}
+          onChange={(e) => setSpoilerFree(e.target.checked)}
         />
-        Show words in shared result
+        Spoiler free
       </label>
 
       <div className="results-panel__share-actions">
         <ShareButton text={shareText} />
-        <ShareImageButton targetRef={captureRef} spoilerFree={!showWords} />
+        <ShareImageButton targetRef={captureRef} spoilerFree={spoilerFree} />
       </div>
       <pre className="results-panel__preview" aria-hidden="true">
         {shareText}

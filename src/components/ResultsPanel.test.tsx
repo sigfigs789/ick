@@ -12,25 +12,26 @@ const words: AcceptedWord[] = [
 const streak: StreakState = { currentStreak: 1, longestStreak: 1, totalCompleted: 1 };
 
 describe("ResultsPanel share toggle", () => {
-  it("defaults to spoiler-free: the shared text preview has no words in it", () => {
+  it("defaults to unchecked: the shared text preview includes the words", () => {
     render(<ResultsPanel drop="str" words={words} streak={streak} />);
-    const toggle = screen.getByRole("checkbox", { name: /show words in shared result/i });
+    const toggle = screen.getByRole("checkbox", { name: /spoiler free/i });
     expect(toggle).not.toBeChecked();
 
     const preview = document.querySelector(".results-panel__preview");
-    expect(preview?.textContent).not.toContain("strange");
-    expect(preview?.textContent).not.toContain("aardvark");
+    expect(preview?.textContent).toContain("strange");
+    expect(preview?.textContent).toContain("aardvark");
   });
 
-  it("reveals the words in the shared text once toggled on", async () => {
+  it("hides the words in the shared text once toggled on, but keeps the rarity squares", async () => {
     render(<ResultsPanel drop="str" words={words} streak={streak} />);
-    const toggle = screen.getByRole("checkbox", { name: /show words in shared result/i });
+    const toggle = screen.getByRole("checkbox", { name: /spoiler free/i });
 
     await userEvent.click(toggle);
     expect(toggle).toBeChecked();
 
     const preview = document.querySelector(".results-panel__preview");
-    expect(preview?.textContent).toContain("strange");
-    expect(preview?.textContent).toContain("aardvark");
+    expect(preview?.textContent).not.toContain("strange");
+    expect(preview?.textContent).not.toContain("aardvark");
+    expect(preview?.textContent).toMatch(/⬜|🟩|🟦|🟪|🟧/);
   });
 });
