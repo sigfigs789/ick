@@ -14,7 +14,9 @@ can be tuned independently.
 Run:
     pip3 install --user wordfreq
     python3 scripts/generate-data.py
+    python3 scripts/generate-data.py --word-list /path/to/scowl-us-60.txt
 """
+import argparse
 import json
 import re
 import sys
@@ -23,7 +25,7 @@ from pathlib import Path
 from wordfreq import zipf_frequency
 
 ROOT = Path(__file__).resolve().parent.parent
-SYSTEM_DICT = Path("/usr/share/dict/words")
+DEFAULT_WORD_LIST = Path("/usr/share/dict/words")
 OUT_DIR = ROOT / "src" / "data"
 BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
@@ -31,10 +33,10 @@ EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
 MIN_LEN = 3
 MAX_LEN = 15
 
-# Below this Zipf value a word is either not in wordfreq's data at all
-# (returned as 0.0) or so obscure it reads as archaic/extremely-technical/a
-# misspelling. Tune this via playtesting.
-MIN_ZIPF = 1.8
+# SCOWL/ESDB is the acceptance authority, so this floor only limits the
+# frequency range we score. Keeping entries down to 1.5 makes the 8.5+ Mythic
+# tier reachable without accepting unknown corpus tokens.
+MIN_ZIPF = 1.5
 
 # Rarity bucket boundaries (inclusive lower bound), tuned by eyeballing the
 # resulting distribution -- see the printed histogram when this script runs.
@@ -45,7 +47,7 @@ RARITY_BANDS = [
     (4.2, "Common"),
     (3.3, "Uncommon"),
     (2.5, "Rare"),
-    (1.5, "Extremely Rare"),
+    (1.6, "Extremely Rare"),
     (0.0, "Mythic"),
 ]
 
@@ -67,6 +69,11 @@ def rarity_for_zipf(z: float) -> str:
         if z >= threshold:
             return label
     return RARITY_BANDS[-1][1]
+
+
+def displayed_zipf(z: float) -> float:
+    """Match the one-decimal Zipf value stored and shown by the app."""
+    return round(z * 10) / 10
 
 
 def load_blocklist() -> set[str]:
@@ -92,13 +99,22 @@ def load_extra_words() -> set[str]:
 
 
 def main() -> None:
-    if not SYSTEM_DICT.exists():
-        sys.exit(f"System dictionary not found at {SYSTEM_DICT}")
+    parser = argparse.ArgumentParser(description="Generate Ick's dictionary and rarity data.")
+    parser.add_argument(
+        "--word-list",
+        type=Path,
+        default=DEFAULT_WORD_LIST,
+        help="newline-delimited source words (default: macOS system dictionary)",
+    )
+    args = parser.parse_args()
+    word_list = args.word_list
+    if not word_list.exists():
+        sys.exit(f"Word list not found at {word_list}")
 
     blocklist = load_blocklist()
     print(f"Loaded {len(blocklist)} blocklisted terms")
 
-    raw_words = SYSTEM_DICT.read_text(errors="ignore").splitlines()
+    raw_words = word_list.read_text(errors="ignore").splitlines()
     raw_words = set(raw_words) | load_extra_words()
     print(f"Read {len(raw_words)} candidate entries")
 
@@ -124,7 +140,7 @@ def main() -> None:
     # Histogram for tuning RARITY_BANDS.
     from collections import Counter
 
-    hist = Counter(rarity_for_zipf(z) for z in kept.values())
+    hist = Counter(rarity_for_zipf(displayed_zipf(z)) for z in kept.values())
     for _, label in RARITY_BANDS:
         print(f"  {label:16s} {hist.get(label, 0)}")
 
@@ -134,7 +150,7 @@ def main() -> None:
     # rather than keyed by word again -- repeating every word as a JSON
     # object key doubled the payload size for no benefit, since the app
     # already has the word list from dictionary.json.
-    codes = "".join(RARITY_CODE[rarity_for_zipf(kept[w])] for w in dictionary)
+    codes = "".join(RARITY_CODE[rarity_for_zipf(displayed_zipf(kept[w]))] for w in dictionary)
     zipf_tenths = [round(kept[w] * 10) for w in dictionary]
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)

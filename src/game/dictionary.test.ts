@@ -41,6 +41,12 @@ describe("rarityFor", () => {
     expect(rare).toBeDefined();
     expect(rare!.zipf).toBeLessThan(common!.zipf);
   });
+
+  it("classifies a score of 8.5 as Mythic", () => {
+    const mythic = rarityFor("abased");
+    expect(mythic).toMatchObject({ rarity: "Mythic", zipf: 1.5 });
+    expect(rarityScore(mythic!.zipf)).toBe(8.5);
+  });
 });
 
 describe("rarityScore", () => {

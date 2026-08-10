@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bestWord } from "./rank";
+import { bestWord, isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord } from "./types";
 
 describe("bestWord", () => {
@@ -27,5 +27,12 @@ describe("bestWord", () => {
       { word: "second", rarity: "Rare", zipf: 3.0 },
     ];
     expect(bestWord(words)?.word).toBe("first");
+  });
+});
+
+describe("rarity thresholds", () => {
+  it("treats Mythic as a winning Elite tier", () => {
+    expect(isWinningRarity("Mythic")).toBe(true);
+    expect(isEliteRarity("Mythic")).toBe(true);
   });
 });
