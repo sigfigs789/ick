@@ -23,7 +23,7 @@ export function ResultsPanel({ drop, words, streak }: Props) {
     highScore: streak.highScore,
   });
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
-  const dropText = `Drop: ${drop.toUpperCase()}`;
+  const dropText = `Ink: ${drop.toUpperCase()}`;
   const [headingBeforeDrop, headingAfterDrop] = shareHeading.split(dropText);
 
   return (

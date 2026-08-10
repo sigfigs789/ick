@@ -9,7 +9,7 @@ interface Props {
 
 const STEPS: Array<{ text: string; bold?: string[] }> = [
   {
-    text: 'Ink gives everyone the same daily drop — say, INK. Your job is to dip into your vocabulary and pull out words stained with it, like drINK, thINK, or pINK.',
+    text: 'WordInk gives everyone the same daily ink — say, “INK”. Your job is to dip into your vocabulary and pull out words stained with it, like drINK, thINK, or pINK.',
     bold: ["INK", "drINK", "thINK", "pINK"],
   },
   { text: "Enter valid English words that contain those letters together, in that order — you get up to 6 distinct words." },

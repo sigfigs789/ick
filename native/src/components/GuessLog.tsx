@@ -32,7 +32,7 @@ export function GuessLog({ acceptedWords, onSelectWord }: Props) {
       {acceptedWords.length === 0 ? (
         <View style={[styles.empty, { borderColor: theme.border, backgroundColor: theme.bgInset }]}>
           <Text style={[styles.emptyText, { color: theme.fgMuted }]}>
-            No guesses yet — enter a word below that contains the drop.
+            No guesses yet — enter a word below that contains the ink.
           </Text>
         </View>
       ) : (

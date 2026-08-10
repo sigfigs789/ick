@@ -30,7 +30,7 @@ export function DropDisplay({ drop }: Props) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={[styles.label, { color: theme.fgFaint }]}>Today's drop</Text>
+      <Text style={[styles.label, { color: theme.fgFaint }]}>Today's ink</Text>
       <View style={styles.row}>
         {drop.split("").map((ch, i) => {
           const anim = anims[i];

@@ -66,7 +66,7 @@ export function buildShareText(
         )
         .join("\n");
 
-  const lines = [`Wordink #${n} (${label}) — Drop: ${drop.toUpperCase()}`, resultLine];
+  const lines = [`Ink #${n} (${label}) — Ink: ${drop.toUpperCase()}`, resultLine];
   if (best) {
     const score = rarityScore(best.zipf).toFixed(1);
     lines.push(`Best: ${best.rarity} (${score}) · ${words.length}/${MAX_GUESSES} guesses`);

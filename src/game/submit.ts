@@ -51,7 +51,7 @@ export function evaluateSubmission(
 export const REJECTION_MESSAGES: Record<string, string> = {
   empty: "Type a word first.",
   "not-a-word": "That's not in the word list.",
-  "missing-drop": "That word doesn't contain the drop.",
+  "missing-drop": "That word doesn't contain the ink.",
   "already-used": "You've already submitted that word.",
   "same-root-as-used": "That's too close to a word you already used.",
 };

@@ -34,7 +34,7 @@ export function GuessLog({
 
       {acceptedWords.length === 0 ? (
         <p className="guess-log__empty">
-          No guesses yet — enter a word below that contains the drop.
+          No guesses yet — enter a word below that contains the ink.
         </p>
       ) : (
         <ol className="guess-log__list">
