@@ -68,11 +68,12 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   - **Text**: `buildShareText`'s `spoilerFree` option (default `true`)
     swaps between rarity squares and the actual words.
   - **Image**: `ShareImageButton` rasterizes the results card (via
-    `html-to-image`) and hands it to the native share sheet if available,
-    falling back to a clipboard image copy, then a plain download. When
-    spoiler-free, word text is blurred for the capture only (a transient
-    `.spoiler-blur` class added/removed around the `toBlob` call) --
-    rarity badges are a sibling element and stay legible either way.
+    `html-to-image`) and copies it straight to the clipboard -- no
+    share-sheet dialog in between, so it's click-then-paste. Falls back to
+    a plain download only if the Clipboard API has no image-write support
+    at all. When spoiler-free, word text is blurred for the capture only
+    (a transient `.spoiler-blur` class added/removed around the `toBlob`
+    call) -- rarity badges are a sibling element and stay legible either way.
 
 ## Regenerating the word/rarity data
 

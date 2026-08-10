@@ -38,12 +38,6 @@ describe("ShareImageButton", () => {
       value: { write: writeMock },
       configurable: true,
     });
-    // jsdom has no Web Share API by default -- explicitly absent so the
-    // clipboard fallback path is exercised.
-    // @ts-expect-error -- test-only removal of an optional browser API
-    delete navigator.canShare;
-    // @ts-expect-error -- test-only removal of an optional browser API
-    delete navigator.share;
   });
 
   afterEach(() => {
@@ -79,7 +73,7 @@ describe("ShareImageButton", () => {
     expect(document.querySelector(".spoiler-blur")).toBeNull();
   });
 
-  it("falls back to copying the image to the clipboard when Web Share is unavailable", async () => {
+  it("copies the image straight to the clipboard, with no share sheet in between", async () => {
     vi.mocked(toBlob).mockResolvedValue(new Blob(["fake-png"], { type: "image/png" }));
     render(<Harness spoilerFree={false} />);
     await userEvent.click(screen.getByRole("button"));
@@ -89,5 +83,36 @@ describe("ShareImageButton", () => {
     expect(items[0].types).toContain("image/png");
 
     expect(await screen.findByRole("button", { name: /image copied/i })).toBeInTheDocument();
+  });
+
+  it("falls back to a file download when the Clipboard API has no image support at all", async () => {
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    vi.mocked(toBlob).mockResolvedValue(new Blob(["fake-png"], { type: "image/png" }));
+
+    // jsdom doesn't implement object URLs; stub just enough for the
+    // download-fallback branch to run without throwing.
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL: vi.fn(() => "blob:mock"),
+      revokeObjectURL: vi.fn(),
+    });
+
+    const clickSpy = vi.fn();
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
+      const el = originalCreateElement(tag);
+      if (tag === "a") el.click = clickSpy;
+      return el;
+    });
+
+    render(<Harness spoilerFree={false} />);
+    await userEvent.click(screen.getByRole("button"));
+
+    expect(writeMock).not.toHaveBeenCalled();
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole("button", { name: /image copied/i })).toBeInTheDocument();
+
+    vi.mocked(document.createElement).mockRestore();
+    vi.unstubAllGlobals();
   });
 });

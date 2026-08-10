@@ -9,20 +9,20 @@ interface Props {
   fileName?: string;
 }
 
-type Status = "idle" | "working" | "shared" | "copied" | "error";
+type Status = "idle" | "working" | "copied" | "error";
 
 const LABELS: Record<Status, string> = {
-  idle: "📸 Share image",
+  idle: "📸 Copy image",
   working: "Generating…",
-  shared: "Shared!",
   copied: "Image copied!",
   error: "Couldn't create image",
 };
 
 /**
- * Captures `targetRef` as a PNG and hands it off via, in order of
- * preference: the native share sheet (best on mobile), the clipboard (best
- * on desktop), or a plain file download (universal last resort).
+ * Captures `targetRef` as a PNG and copies it straight to the clipboard --
+ * no share-sheet/dialog in between, so a paste into Messages, Discord,
+ * etc. is a single click-then-paste. Falls back to a plain file download
+ * only if the Clipboard API's image write isn't available at all.
  */
 export function ShareImageButton({ targetRef, spoilerFree, fileName = "ink-result.png" }: Props) {
   const [status, setStatus] = useState<Status>("idle");
@@ -47,14 +47,8 @@ export function ShareImageButton({ targetRef, spoilerFree, fileName = "ink-resul
       const blob = await toBlob(node, { pixelRatio: 2, backgroundColor });
       if (!blob) throw new Error("toBlob returned null");
 
-      const file = new File([blob], fileName, { type: "image/png" });
-
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Ink result" });
-        setStatus("shared");
-      } else if (navigator.clipboard && "write" in navigator.clipboard) {
+      if (navigator.clipboard && "write" in navigator.clipboard) {
         await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        setStatus("copied");
       } else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -62,13 +56,10 @@ export function ShareImageButton({ targetRef, spoilerFree, fileName = "ink-resul
         a.download = fileName;
         a.click();
         URL.revokeObjectURL(url);
-        setStatus("copied");
       }
-    } catch (err) {
-      // A user cancelling the native share sheet also lands here (AbortError)
-      // -- that's not really a failure, so don't show an error state for it.
-      const cancelled = err instanceof DOMException && err.name === "AbortError";
-      setStatus(cancelled ? "idle" : "error");
+      setStatus("copied");
+    } catch {
+      setStatus("error");
     } finally {
       wordEls?.forEach((el) => el.classList.remove("spoiler-blur"));
       window.setTimeout(() => setStatus("idle"), 2200);
