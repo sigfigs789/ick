@@ -2,9 +2,11 @@ import { useState } from "react";
 
 interface Props {
   text: string;
+  /** Called after the result has been copied to the player's clipboard. */
+  onShared?: () => void;
 }
 
-export function ShareButton({ text }: Props) {
+export function ShareButton({ text, onShared }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleClick() {
@@ -23,6 +25,7 @@ export function ShareButton({ text }: Props) {
       document.body.removeChild(textarea);
     }
     setCopied(true);
+    onShared?.();
     window.setTimeout(() => setCopied(false), 2000);
   }
 

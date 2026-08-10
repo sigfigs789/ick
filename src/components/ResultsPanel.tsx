@@ -2,14 +2,16 @@ import { useState } from "react";
 import { todayShareText } from "../game/share";
 import { ShareButton } from "./ShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
+import { trackResultShared } from "../analytics";
 
 interface Props {
+  date: string;
   drop: string;
   words: AcceptedWord[];
   streak: StreakState;
 }
 
-export function ResultsPanel({ drop, words, streak }: Props) {
+export function ResultsPanel({ date, drop, words, streak }: Props) {
   // Defaults to unchecked (full result: squares + words) -- hiding words
   // is an opt-in the player reaches for deliberately when sharing
   // somewhere spoilers matter, not the default. It controls whether the
@@ -38,7 +40,10 @@ export function ResultsPanel({ drop, words, streak }: Props) {
         {shareDetailLines.length > 0 && `\n${shareDetailLines.join("\n")}`}
       </pre>
       <div className="results-panel__share-actions">
-        <ShareButton text={shareText} />
+        <ShareButton
+          text={shareText}
+          onShared={() => trackResultShared(date, streak.currentStreak)}
+        />
       </div>
     </section>
   );

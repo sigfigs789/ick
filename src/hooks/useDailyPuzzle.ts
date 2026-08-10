@@ -12,6 +12,7 @@ import {
 } from "../game/storage";
 import { evaluateSubmission, REJECTION_MESSAGES } from "../game/submit";
 import type { DailyProgress, Rarity, StreakState } from "../game/types";
+import { trackAcceptedAnswer, trackPuzzleCompleted } from "../analytics";
 
 export interface Feedback {
   kind: "accepted" | "rejected";
@@ -58,7 +59,12 @@ export function useDailyPuzzle() {
 
       const updated = recordAcceptedWord(progress, result.word);
       setProgress(updated);
-      setStreak(loadStreak());
+      const updatedStreak = loadStreak();
+      setStreak(updatedStreak);
+      trackAcceptedAnswer(viewedDate, result.word, updated.acceptedWords.length, updatedStreak.currentStreak);
+      if (updated.completed) {
+        trackPuzzleCompleted(updated, "all_answers", updatedStreak);
+      }
       setFeedback({
         kind: "accepted",
         message: `"${result.word.word}" accepted — ${result.word.rarity}.`,
@@ -67,14 +73,18 @@ export function useDailyPuzzle() {
       });
       return result;
     },
-    [drop, progress]
+    [drop, progress, viewedDate]
   );
 
   /** Player-initiated early finish: bank the best word(s) so far instead of using all 6 guesses. */
   const lockIn = useCallback(() => {
     const updated = lockInResult(progress);
     setProgress(updated);
-    if (updated.won) setStreak(loadStreak());
+    const updatedStreak = loadStreak();
+    if (updated.won) setStreak(updatedStreak);
+    if (updated.completed && !progress.completed) {
+      trackPuzzleCompleted(updated, "locked_in", updatedStreak);
+    }
   }, [progress]);
 
   const goToPrevious = useCallback(() => {

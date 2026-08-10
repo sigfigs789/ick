@@ -13,6 +13,7 @@ import { ConfettiBurst } from "./components/ConfettiBurst";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { isWinningRarity } from "./game/rank";
+import { Analytics } from "@vercel/analytics/react";
 
 export default function App() {
   const {
@@ -96,6 +97,7 @@ export default function App() {
         </button>
       </header>
 
+      <Analytics />
       <main>
         <DropDisplay drop={drop} />
         <GuessLog
@@ -129,7 +131,12 @@ export default function App() {
         {!progress.completed && <StreakDisplay streak={streak} />}
 
         {progress.completed && (
-          <ResultsPanel drop={drop} words={progress.acceptedWords} streak={streak} />
+          <ResultsPanel
+            date={date}
+            drop={drop}
+            words={progress.acceptedWords}
+            streak={streak}
+          />
         )}
       </main>
 
