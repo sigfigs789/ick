@@ -62,9 +62,11 @@ export function buildShareText(
         )
         .join("\n");
 
-  const lines = [`WordInk #${n} (${label}) — Ink: ${drop.toUpperCase()}`, resultLine];
+  const lines = [`WordInk #${n} (${label}) — Ink: ${drop.toUpperCase()}`];
+  if (resultLine) lines.push("", resultLine);
   if (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined) {
     const streak = options.streak ?? 0;
+    if (resultLine) lines.push("");
     lines.push(
       `Streak: ${streak} day${streak === 1 ? "" : "s"} · Crushed it: ${options.crushedIt ?? 0} · Elite: ${options.elite ?? 0}`
     );

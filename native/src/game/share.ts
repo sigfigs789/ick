@@ -32,7 +32,8 @@ export function buildShareText(
   const n = puzzleNumber(dateStr);
   const squares = words.map((w) => RARITY_SYMBOL[w.rarity]).join(" ");
   const label = formatDateLabel(dateStr);
-  const lines = [`WordInk #${n} (${label}) — Ink: ${drop.toUpperCase()}`, squares];
+  const lines = [`WordInk #${n} (${label}) — Ink: ${drop.toUpperCase()}`];
+  if (squares) lines.push("", squares);
   return lines.join("\n");
 }
 

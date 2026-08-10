@@ -31,8 +31,13 @@ describe("buildShareText", () => {
 
   it("puts each spoiler-free rarity square and score on its own line", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    const resultLines = text.split("\n").slice(1, 1 + words.length);
+    const resultLines = text.split("\n").slice(2, 2 + words.length);
     expect(resultLines).toEqual(["⬜ 2.3", "🟩 5.4", "🟧 7.6"]);
+  });
+
+  it("separates the heading from the shared guesses", () => {
+    const text = buildShareText("2024-01-05", "str", words);
+    expect(text).toContain("Ink: STR\n\n⬜ 2.3");
   });
 
   it("omits the best-word summary", () => {
@@ -57,7 +62,7 @@ describe("buildShareText", () => {
 
   it("puts each word and its rarity square on a separate line", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
-    const resultLines = text.split("\n").slice(1, 1 + words.length);
+    const resultLines = text.split("\n").slice(2, 2 + words.length);
     // aardvark: Extremely Rare -> 🟧
     expect(resultLines).toContain("🟧 aardvark (Extremely Rare, 7.6)");
     // the: Very Common -> ⬜
@@ -83,6 +88,6 @@ describe("buildShareText", () => {
       highScore: 8.5,
     });
 
-    expect(text).toContain("Streak: 4 days · Crushed it: 7 · Elite: 2\nHigh score: 8.5");
+    expect(text).toContain("🟧 7.6\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nHigh score: 8.5");
   });
 });

@@ -23,9 +23,6 @@ export function ResultsPanel({ drop, words, streak }: Props) {
     highScore: streak.highScore,
   });
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
-  const dropText = `Ink: ${drop.toUpperCase()}`;
-  const [headingBeforeDrop, headingAfterDrop] = shareHeading.split(dropText);
-
   return (
     <section className="results-panel" aria-label="Share result">
       <label className="results-panel__spoiler-toggle">
@@ -37,9 +34,7 @@ export function ResultsPanel({ drop, words, streak }: Props) {
         Spoiler free
       </label>
       <pre className="results-panel__preview" aria-hidden="true">
-        {headingBeforeDrop}
-        <strong>{dropText}</strong>
-        {headingAfterDrop}
+        <strong>{shareHeading}</strong>
         {shareDetailLines.length > 0 && `\n${shareDetailLines.join("\n")}`}
       </pre>
       <div className="results-panel__share-actions">
