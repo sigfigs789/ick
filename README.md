@@ -62,11 +62,17 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   streak counter live in `localStorage`, keyed by calendar date. Once the
   puzzle is marked complete it can't be re-completed, but players can
   still revisit their result afterward.
-- **Sharing** (`src/game/share.ts`): a plain-text result suitable for
-  pasting anywhere. Defaults to spoiler-free (drop + rarity squares in
-  guess order + your best rarity, no words); a toggle in `ResultsPanel`
-  lets the player opt into showing the actual words instead of the
-  squares (`buildShareText`'s `spoilerFree` option, default `true`).
+- **Sharing** (`src/game/share.ts`, `src/components/ShareImageButton.tsx`):
+  two ways to share a result, both spoiler-free by default via the same
+  toggle in `ResultsPanel`.
+  - **Text**: `buildShareText`'s `spoilerFree` option (default `true`)
+    swaps between rarity squares and the actual words.
+  - **Image**: `ShareImageButton` rasterizes the results card (via
+    `html-to-image`) and hands it to the native share sheet if available,
+    falling back to a clipboard image copy, then a plain download. When
+    spoiler-free, word text is blurred for the capture only (a transient
+    `.spoiler-blur` class added/removed around the `toBlob` call) --
+    rarity badges are a sibling element and stay legible either way.
 
 ## Regenerating the word/rarity data
 

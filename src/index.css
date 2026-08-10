@@ -548,17 +548,26 @@ h2 {
   min-height: 2.85rem;
   transition: background-color 0.15s var(--ease-standard), transform 0.1s var(--ease-standard);
 }
-.submit-form button:disabled {
+.submit-form button:disabled,
+.share-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 .submit-form button:not(:disabled):hover,
-.share-button:hover {
+.share-button:not(:disabled):hover {
   background: var(--accent-hover);
 }
 .submit-form button:not(:disabled):active,
-.share-button:active {
+.share-button:not(:disabled):active {
   transform: scale(0.97);
+}
+.share-button--image {
+  background: var(--bg-inset);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+}
+.share-button--image:not(:disabled):hover {
+  background: var(--border);
 }
 
 /* Live feedback */
@@ -727,6 +736,19 @@ h2 {
   height: 1rem;
   accent-color: var(--accent);
   cursor: pointer;
+}
+.results-panel__share-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+/* Applied transiently (via JS, not a persistent style) to word text only,
+   for the duration of an image capture -- rarity badges are a sibling
+   element and stay untouched, so the rarity is still visible at a glance. */
+.spoiler-blur {
+  filter: blur(7px);
+  user-select: none;
 }
 .results-panel__preview {
   margin-top: 1.1rem;

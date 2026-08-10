@@ -16,6 +16,7 @@
     "select-drops": "python3 scripts/select-drops.py"
   },
   "dependencies": {
+    "html-to-image": "^1.11.13",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
