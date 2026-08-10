@@ -34,7 +34,7 @@ MIN_LEN = 3
 MAX_LEN = 15
 
 # SCOWL/ESDB is the acceptance authority, so this floor only limits the
-# frequency range we score. Keeping entries down to 1.5 makes the 8.5+ Mythic
+# frequency range we score. Keeping entries down to 1.5 makes the 8.5+ Elusive
 # tier reachable without accepting unknown corpus tokens.
 MIN_ZIPF = 1.5
 
@@ -48,7 +48,7 @@ RARITY_BANDS = [
     (3.3, "Uncommon"),
     (2.5, "Rare"),
     (1.6, "Extremely Rare"),
-    (0.0, "Mythic"),
+    (0.0, "Elusive"),
 ]
 
 WORD_RE = re.compile(r"^[a-z]+$")
@@ -60,7 +60,7 @@ RARITY_CODE = {
     "Uncommon": "U",
     "Rare": "R",
     "Extremely Rare": "X",
-    "Mythic": "M",
+    "Elusive": "M",
 }
 
 
