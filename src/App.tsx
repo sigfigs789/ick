@@ -122,7 +122,7 @@ export default function App() {
           </p>
         )}
 
-        {!progress.completed && hasWinningWord && (
+        {!progress.completed && progress.acceptedWords.length > 0 && (
           <LockInButton onLockIn={lockIn} />
         )}
 

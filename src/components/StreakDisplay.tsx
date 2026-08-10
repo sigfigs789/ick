@@ -11,9 +11,11 @@ export function StreakDisplay({ streak }: Props) {
       aria-label={`Current streak: ${streak.currentStreak} days. Crushed it: ${streak.crushedIt}. Elite: ${streak.elite}. High score: ${streak.highScore.toFixed(1)}.`}
     >
       <div className="streak-display__row">
-        <span className="streak-display__flame" aria-hidden="true">
-          🔥
-        </span>
+        {streak.currentStreak >= 2 ? (
+          <span className="streak-display__flame" aria-hidden="true">
+            🔥
+          </span>
+        ) : null}
         <span className="streak-display__count">{streak.currentStreak}</span>
         <span className="streak-display__unit">day streak</span>
         <span className="streak-display__tracker">
