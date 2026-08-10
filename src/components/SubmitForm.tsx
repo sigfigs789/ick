@@ -47,7 +47,7 @@ export function SubmitForm({ fragment, disabled, feedback, prefill, onSubmit }: 
     <form className="submit-form" onSubmit={handleSubmit}>
       <label className="submit-form__label" htmlFor="word-input">
         {disabled
-          ? "You've completed today's puzzle"
+          ? "You've completed this puzzle"
           : `Enter a word containing "${fragment.toUpperCase()}"`}
       </label>
       <div className="submit-form__row" ref={rowRef}>

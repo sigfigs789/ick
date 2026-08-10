@@ -111,10 +111,14 @@ obscure answers.
   Audio API rather than shipped as files — no assets to load, and the
   accept chime's pitch scales with rarity. Muted via a header toggle,
   persisted in `localStorage`.
-- **The dev-only "new fragment" button** (`src/components/DevRerollButton.tsx`)
-  only renders when `import.meta.env.DEV` is true and is stripped entirely
-  from production builds; it swaps in a random fragment and an
-  in-memory-only puzzle so testing never touches real daily/streak data.
+- **Puzzle archive** (`src/components/PuzzleNav.tsx`): the ‹ › arrows next
+  to the puzzle number browse any past date back to the epoch (never into
+  the future). Each date's progress persists independently, so revisiting
+  one resumes where you left off. Completing an archived puzzle still
+  saves and locks it (so it's reviewable later) but never touches the
+  streak — only a puzzle finished on its own real calendar date counts.
+  That check lives in `storage.ts`'s `updateStreakOnCompletion`, which
+  bails out unless the puzzle's date equals `todayDateString()`.
 
 ## Not in v1 (by design)
 

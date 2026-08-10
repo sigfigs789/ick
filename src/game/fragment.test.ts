@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fragmentData from "../data/fragments.json";
-import { fragmentForDate, randomFragment } from "./fragment";
+import { fragmentForDate } from "./fragment";
 
 describe("fragmentForDate", () => {
   it("is deterministic for the same date", () => {
@@ -21,20 +21,5 @@ describe("fragmentForDate", () => {
 
   it("only ever returns fragments from the curated list", () => {
     expect(fragmentData.fragments).toContain(fragmentForDate("2025-03-17"));
-  });
-});
-
-describe("randomFragment", () => {
-  it("always returns a fragment from the curated list", () => {
-    for (let i = 0; i < 20; i++) {
-      expect(fragmentData.fragments).toContain(randomFragment());
-    }
-  });
-
-  it("never returns the excluded fragment", () => {
-    const excluded = fragmentData.fragments[0];
-    for (let i = 0; i < 50; i++) {
-      expect(randomFragment(excluded)).not.toBe(excluded);
-    }
   });
 });

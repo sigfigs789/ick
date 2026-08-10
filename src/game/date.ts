@@ -27,6 +27,26 @@ export function daysSinceEpoch(dateStr: string, epochStr: string): number {
   return Math.round((dateUTC - epochUTC) / msPerDay);
 }
 
+/** Adds (or subtracts, for negative values) whole calendar days to a date string. */
+export function addDays(dateStr: string, delta: number): string {
+  const { y, m, d } = parseDateString(dateStr);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + delta);
+  // Built and read back via UTC fields throughout so this never drifts a
+  // day depending on the host's timezone offset.
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    dt.getUTCDate()
+  ).padStart(2, "0")}`;
+}
+
+/** Short display label for a date string, e.g. "Aug 9". */
+export function formatDateLabel(dateStr: string): string {
+  return new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function parseDateString(s: string): { y: number; m: number; d: number } {
   const [y, m, d] = s.split("-").map(Number);
   return { y, m, d };

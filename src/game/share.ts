@@ -1,4 +1,4 @@
-import { daysSinceEpoch, toDateString } from "./date";
+import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
 import { MAX_GUESSES } from "./constants";
 import { rarityScore } from "./dictionary";
 import { bestWord } from "./rank";
@@ -35,10 +35,7 @@ export function buildShareText(
 ): string {
   const n = puzzleNumber(dateStr);
   const squares = words.map((w) => RARITY_SYMBOL[w.rarity]).join(" ");
-  const label = new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
+  const label = formatDateLabel(dateStr);
   const best = bestWord(words);
   const lines = [`Ick #${n} (${label}) — fragment "${fragment}"`, squares];
   if (best) {

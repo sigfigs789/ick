@@ -1,3 +1,4 @@
+import { addDays, todayDateString } from "./date";
 import { MAX_GUESSES } from "./constants";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 
@@ -51,21 +52,14 @@ function saveStreak(streak: StreakState): void {
   localStorage.setItem(STREAK_KEY, JSON.stringify(streak));
 }
 
-function previousDateString(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() - 1);
-  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(
-    dt.getUTCDate()
-  ).padStart(2, "0")}`;
-}
-
 /**
  * Records an accepted word for the day. Once `MAX_GUESSES` distinct words
- * have been accepted the puzzle auto-completes (and the streak updates);
- * before that, the player can keep guessing or call `lockInResult` to stop
- * early and bank their best word so far -- "one official completion per
- * puzzle" either way.
+ * have been accepted the puzzle auto-completes; before that, the player can
+ * keep guessing or call `lockInResult` to stop early and bank their best
+ * word so far -- "one official completion per puzzle" either way. The
+ * streak only moves if `progress.date` is the real calendar date *right
+ * now* (see `updateStreakOnCompletion`) -- completing a past puzzle you
+ * browsed back to via the archive is always just practice.
  */
 export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord): DailyProgress {
   if (progress.completed) return progress; // no further official changes once complete
@@ -114,11 +108,14 @@ export function lockInResult(progress: DailyProgress): DailyProgress {
   return updated;
 }
 
+/** Only a puzzle completed on its own real calendar date moves the streak. */
 function updateStreakOnCompletion(date: string): void {
+  if (date !== todayDateString()) return;
+
   const streak = loadStreak();
   if (streak.lastCompletedDate === date) return; // already counted
 
-  const yesterday = previousDateString(date);
+  const yesterday = addDays(date, -1);
   const continuesStreak = streak.lastCompletedDate === yesterday;
   const currentStreak = continuesStreak ? streak.currentStreak + 1 : 1;
 

@@ -8,26 +8,36 @@ import { StreakDisplay } from "./components/StreakDisplay";
 import { ResultsPanel } from "./components/ResultsPanel";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { SoundToggle } from "./components/SoundToggle";
-import { DevRerollButton } from "./components/DevRerollButton";
+import { PuzzleNav } from "./components/PuzzleNav";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
-import { puzzleNumber } from "./game/share";
 
 export default function App() {
   const {
     date,
+    puzzleNumber,
+    isToday,
+    canGoToPrevious,
+    canGoToNext,
+    goToPrevious,
+    goToNext,
+    goToToday,
     fragment,
     progress,
     streak,
     feedback,
     submitWord,
     lockIn,
-    isDevPuzzle,
-    rerollDev,
   } = useDailyPuzzle();
   const [showInstructions, setShowInstructions] = useState(false);
   const [prefill, setPrefill] = useState<{ word: string; token: number } | null>(null);
   const sound = useSound();
+
+  // Clear any pending prefill when the viewed puzzle changes so a stale
+  // click-to-reuse value from a different day's log can't leak in.
+  useEffect(() => {
+    setPrefill(null);
+  }, [date]);
 
   // Play a chime/buzz on every submission, pitched by rarity when accepted.
   useEffect(() => {
@@ -59,7 +69,16 @@ export default function App() {
         <SoundToggle enabled={sound.enabled} onToggle={sound.toggle} />
         <div className="app__header-titles">
           <h1>Ick</h1>
-          <p className="app__puzzle-number">Puzzle #{puzzleNumber(date)}</p>
+          <PuzzleNav
+            date={date}
+            puzzleNumber={puzzleNumber}
+            isToday={isToday}
+            canGoToPrevious={canGoToPrevious}
+            canGoToNext={canGoToNext}
+            onPrevious={goToPrevious}
+            onNext={goToNext}
+            onToday={goToToday}
+          />
         </div>
         <button
           type="button"
@@ -89,6 +108,12 @@ export default function App() {
         )}
         <FeedbackRegion feedback={feedback} />
 
+        {!progress.completed && !isToday && (
+          <p className="archive-note">
+            You're playing an old puzzle — this is just for fun and won't affect your streak.
+          </p>
+        )}
+
         {!progress.completed && progress.acceptedWords.length > 0 && (
           <LockInButton onLockIn={lockIn} />
         )}
@@ -97,10 +122,6 @@ export default function App() {
 
         {progress.completed && (
           <ResultsPanel fragment={fragment} words={progress.acceptedWords} streak={streak} />
-        )}
-
-        {import.meta.env.DEV && (
-          <DevRerollButton onReroll={rerollDev} isDevPuzzle={isDevPuzzle} />
         )}
       </main>
 

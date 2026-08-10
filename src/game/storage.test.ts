@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MAX_GUESSES } from "./constants";
 import {
   loadOrCreateProgress,
@@ -15,8 +15,21 @@ function word(w: string, zipf = 5): AcceptedWord {
   return { word: w, rarity: "Common", zipf };
 }
 
+function setToday(dateStr: string) {
+  vi.setSystemTime(new Date(`${dateStr}T12:00:00`));
+}
+
 beforeEach(() => {
   localStorage.clear();
+  vi.useFakeTimers();
+  // Most tests use "2024-01-01" as their fixture date; pin the clock there
+  // by default so streak assertions (which now require the completed
+  // puzzle's date to match "today") hold without every test setting it.
+  setToday("2024-01-01");
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("newProgress / loadOrCreateProgress", () => {
@@ -79,6 +92,19 @@ describe("recordAcceptedWord", () => {
     expect(extra).toBe(p);
     expect(extra.acceptedWords).toHaveLength(MAX_GUESSES);
   });
+
+  it("completes and saves an archived (non-today) puzzle without touching the streak", () => {
+    // "Today" is pinned to 2024-01-01 by the top-level beforeEach; this
+    // puzzle's own date is in the past relative to that.
+    let p = newProgress("2023-12-15", "str");
+    for (let i = 0; i < MAX_GUESSES; i++) {
+      p = recordAcceptedWord(p, word(`word${i}`));
+    }
+    expect(p.completed).toBe(true);
+    expect(loadProgress("2023-12-15")?.completed).toBe(true);
+    expect(loadStreak().currentStreak).toBe(0);
+    expect(loadStreak().totalCompleted).toBe(0);
+  });
 });
 
 describe("recordRejectedAttempt", () => {
@@ -111,10 +137,20 @@ describe("lockInResult", () => {
     const locked = lockInResult(p);
     expect(lockInResult(locked)).toBe(locked);
   });
+
+  it("locks in an archived (non-today) puzzle without touching the streak", () => {
+    let p = newProgress("2023-06-01", "str");
+    p = recordAcceptedWord(p, word("strange"));
+    const locked = lockInResult(p);
+    expect(locked.completed).toBe(true);
+    expect(loadStreak().currentStreak).toBe(0);
+    expect(loadStreak().totalCompleted).toBe(0);
+  });
 });
 
 describe("streak continuation", () => {
   function complete(date: string) {
+    setToday(date);
     let p = newProgress(date, "str");
     p = recordAcceptedWord(p, word(`w-${date}`));
     return lockInResult(p);
@@ -151,5 +187,21 @@ describe("streak continuation", () => {
     // Re-completing (shouldn't normally happen, but guard against double count)
     lockInResult(locked);
     expect(loadStreak().totalCompleted).toBe(1);
+  });
+
+  it("does not let completing an old puzzle out of order corrupt an existing streak", () => {
+    complete("2024-01-01");
+    complete("2024-01-02");
+    expect(loadStreak().currentStreak).toBe(2);
+
+    // Go back and (belatedly) finish a much older, previously-missed puzzle.
+    setToday("2024-01-02"); // "today" stays where the streak left off
+    let old = newProgress("2023-11-01", "str");
+    old = recordAcceptedWord(old, word("old-word"));
+    lockInResult(old);
+
+    const streak = loadStreak();
+    expect(streak.currentStreak).toBe(2); // unchanged
+    expect(streak.totalCompleted).toBe(2); // the archive play didn't count
   });
 });

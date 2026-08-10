@@ -178,10 +178,11 @@ h2 {
   text-transform: uppercase;
 }
 .app__puzzle-number {
-  margin: 0.15rem 0 0;
+  margin: 0;
   font-size: 0.75rem;
   color: var(--fg-faint);
   letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
 }
 .app__icon-button {
   width: 2.35rem;
@@ -203,37 +204,60 @@ h2 {
 .app__icon-button:active {
   transform: scale(0.94);
 }
-.app__header-spacer {
-  width: 2.35rem;
+/* Puzzle archive navigation */
+.puzzle-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+.puzzle-nav__arrow {
+  width: 1.5rem;
+  height: 1.5rem;
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--fg-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
+}
+.puzzle-nav__arrow:not(:disabled):hover {
+  background: var(--bg-inset);
+  color: var(--fg);
+}
+.puzzle-nav__arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.puzzle-nav__archive-tag {
+  color: var(--rarity-uncommon-fg);
+  font-weight: 700;
+}
+.puzzle-nav__today {
+  display: block;
+  margin: 0.35rem auto 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--focus-ring);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
-/* Dev-only reroll control (see App.tsx -- gated on import.meta.env.DEV) */
-.dev-reroll {
-  margin-top: 1.75rem;
-  padding-top: 1.25rem;
-  border-top: 1px dashed var(--border);
-  text-align: center;
-}
-.dev-reroll__button {
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 700;
-  padding: 0.5rem 0.9rem;
-  border-radius: 0.6rem;
-  border: 1px dashed var(--border-strong);
-  background: var(--bg-inset);
+.archive-note {
+  margin: -0.4rem 0 1rem;
+  font-size: 0.82rem;
   color: var(--fg-muted);
-  cursor: pointer;
-}
-.dev-reroll__button:hover {
-  color: var(--fg);
-  border-color: var(--fg-muted);
-}
-.dev-reroll__note {
-  margin: 0.5rem 0 0;
-  font-size: 0.75rem;
-  color: var(--fg-faint);
+  text-align: center;
 }
 
 /* Fragment display */

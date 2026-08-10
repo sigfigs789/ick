@@ -1,12 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { MAX_GUESSES } from "../game/constants";
-import { todayDateString } from "../game/date";
-import { fragmentForDate, randomFragment } from "../game/fragment";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { addDays, todayDateString } from "../game/date";
+import { fragmentForDate } from "../game/fragment";
+import { puzzleNumber } from "../game/share";
+import fragmentData from "../data/fragments.json";
 import {
   loadOrCreateProgress,
   loadStreak,
   lockInResult,
-  newProgress,
   recordAcceptedWord,
   recordRejectedAttempt,
 } from "../game/storage";
@@ -22,22 +22,27 @@ export interface Feedback {
 }
 
 export function useDailyPuzzle() {
-  const date = useMemo(() => todayDateString(), []);
-  const officialFragment = useMemo(() => fragmentForDate(date), [date]);
-
-  // Dev-only escape hatch (see rerollDev below): when set, gameplay uses
-  // this fragment and an in-memory-only progress instead of the real
-  // day's puzzle, so testing never reads or writes real daily/streak data.
-  const [devFragment, setDevFragment] = useState<string | null>(null);
-  const fragment = devFragment ?? officialFragment;
-  const isDevPuzzle = devFragment !== null;
+  const today = useMemo(() => todayDateString(), []);
+  const [viewedDate, setViewedDate] = useState(today);
+  const fragment = useMemo(() => fragmentForDate(viewedDate), [viewedDate]);
+  const isToday = viewedDate === today;
+  const canGoToPrevious = viewedDate > fragmentData.epoch;
+  const canGoToNext = viewedDate < today;
 
   const [progress, setProgress] = useState<DailyProgress>(() =>
-    loadOrCreateProgress(date, officialFragment)
+    loadOrCreateProgress(viewedDate, fragment)
   );
   const [streak, setStreak] = useState<StreakState>(() => loadStreak());
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const feedbackKey = useRef(0);
+
+  // Reload whenever the viewed puzzle changes (browsing the archive) --
+  // each date's progress is saved independently (see storage.ts), so
+  // switching back to a puzzle you'd already started resumes it.
+  useEffect(() => {
+    setProgress(loadOrCreateProgress(viewedDate, fragment));
+    setFeedback(null);
+  }, [viewedDate, fragment]);
 
   const submitWord = useCallback(
     (raw: string) => {
@@ -46,25 +51,14 @@ export function useDailyPuzzle() {
 
       if (!result.ok || !result.word) {
         const message = REJECTION_MESSAGES[result.reason ?? "not-a-word"];
-        setProgress((p) =>
-          isDevPuzzle
-            ? { ...p, rejectedAttempts: [...p.rejectedAttempts, raw.trim()] }
-            : recordRejectedAttempt(p, raw.trim())
-        );
+        setProgress((p) => recordRejectedAttempt(p, raw.trim()));
         setFeedback({ kind: "rejected", message, key: feedbackKey.current });
         return result;
       }
 
-      if (isDevPuzzle) {
-        setProgress((p) => {
-          const acceptedWords = [...p.acceptedWords, result.word!];
-          return { ...p, acceptedWords, completed: acceptedWords.length >= MAX_GUESSES };
-        });
-      } else {
-        const updated = recordAcceptedWord(progress, result.word);
-        setProgress(updated);
-        if (updated.completed) setStreak(loadStreak());
-      }
+      const updated = recordAcceptedWord(progress, result.word);
+      setProgress(updated);
+      if (updated.completed) setStreak(loadStreak());
       setFeedback({
         kind: "accepted",
         message: `"${result.word.word}" accepted — ${result.word.rarity}.`,
@@ -73,41 +67,40 @@ export function useDailyPuzzle() {
       });
       return result;
     },
-    [fragment, progress, isDevPuzzle]
+    [fragment, progress]
   );
 
   /** Player-initiated early finish: bank the best word(s) so far instead of using all 6 guesses. */
   const lockIn = useCallback(() => {
-    if (isDevPuzzle) {
-      setProgress((p) =>
-        p.completed || p.acceptedWords.length === 0
-          ? p
-          : { ...p, completed: true, completedAt: new Date().toISOString() }
-      );
-      return;
-    }
     const updated = lockInResult(progress);
     setProgress(updated);
     if (updated.completed) setStreak(loadStreak());
-  }, [progress, isDevPuzzle]);
+  }, [progress]);
 
-  /** Dev-only: swap in a random fragment and a fresh, unsaved puzzle to test against. */
-  const rerollDev = useCallback(() => {
-    const next = randomFragment(fragment);
-    setDevFragment(next);
-    setProgress(newProgress(date, next));
-    setFeedback(null);
-  }, [fragment, date]);
+  const goToPrevious = useCallback(() => {
+    setViewedDate((d) => (d > fragmentData.epoch ? addDays(d, -1) : d));
+  }, []);
+
+  const goToNext = useCallback(() => {
+    setViewedDate((d) => (d < today ? addDays(d, 1) : d));
+  }, [today]);
+
+  const goToToday = useCallback(() => setViewedDate(today), [today]);
 
   return {
-    date,
+    date: viewedDate,
+    puzzleNumber: puzzleNumber(viewedDate),
+    isToday,
+    canGoToPrevious,
+    canGoToNext,
+    goToPrevious,
+    goToNext,
+    goToToday,
     fragment,
     progress,
     streak,
     feedback,
     submitWord,
     lockIn,
-    isDevPuzzle,
-    rerollDev,
   };
 }

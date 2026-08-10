@@ -35,7 +35,7 @@ describe("SubmitForm", () => {
       <SubmitForm fragment="str" disabled={true} feedback={null} prefill={null} onSubmit={vi.fn()} />
     );
     expect(screen.getByRole("button", { name: /submit/i })).toBeDisabled();
-    expect(screen.getByText(/completed today's puzzle/i)).toBeInTheDocument();
+    expect(screen.getByText(/completed this puzzle/i)).toBeInTheDocument();
   });
 
   it("loads a prefill value into the input and focuses it", () => {
