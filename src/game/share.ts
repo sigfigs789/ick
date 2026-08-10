@@ -37,7 +37,7 @@ export function buildShareText(
   const squares = words.map((w) => RARITY_SYMBOL[w.rarity]).join(" ");
   const label = formatDateLabel(dateStr);
   const best = bestWord(words);
-  const lines = [`Ick #${n} (${label}) — fragment "${fragment}"`, squares];
+  const lines = [`Ink #${n} (${label}) — fragment "${fragment}"`, squares];
   if (best) {
     const score = rarityScore(best.zipf).toFixed(1);
     lines.push(`Best: ${best.rarity} (${score}) · ${words.length}/${MAX_GUESSES} guesses`);
