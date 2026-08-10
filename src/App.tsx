@@ -76,7 +76,7 @@ export default function App() {
       <header className="app__header">
         <SoundToggle enabled={sound.enabled} onToggle={sound.toggle} />
         <div className="app__header-titles">
-          <h1>Ink</h1>
+          <h1>WordInk</h1>
           <PuzzleNav
             date={date}
             puzzleNumber={puzzleNumber}

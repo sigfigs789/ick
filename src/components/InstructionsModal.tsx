@@ -33,7 +33,7 @@ export function InstructionsModal({ open, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal__header">
-          <h2 id="instructions-heading">How to play Ink</h2>
+          <h2 id="instructions-heading">How to play WordInk</h2>
           <button
             ref={closeRef}
             type="button"

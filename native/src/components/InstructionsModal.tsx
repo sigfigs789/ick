@@ -30,7 +30,7 @@ export function InstructionsModal({ open, onClose }: Props) {
           onPress={(e) => e.stopPropagation()}
         >
           <View style={styles.header}>
-            <Text style={[styles.heading, { color: theme.fg }]}>How to play Ink</Text>
+            <Text style={[styles.heading, { color: theme.fg }]}>How to play WordInk</Text>
             <Pressable
               onPress={onClose}
               accessibilityLabel="Close instructions"

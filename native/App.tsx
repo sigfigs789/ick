@@ -129,7 +129,7 @@ export default function App() {
           <View style={[styles.header, { borderBottomColor: theme.border }]}>
             <SoundToggle enabled={sound.enabled} onToggle={sound.toggle} />
             <View style={styles.headerTitles}>
-              <Text style={[styles.title, { color: theme.fg }]}>Ink</Text>
+              <Text style={[styles.title, { color: theme.fg }]}>WordInk</Text>
               <PuzzleNav
                 date={date}
                 puzzleNumber={puzzleNumber}
