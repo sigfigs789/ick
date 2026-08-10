@@ -61,11 +61,13 @@ describe("buildShareText", () => {
     expect(text).toContain("aardvark (Extremely Rare, 7.6)");
   });
 
-  it("still includes the rarity squares alongside the words when spoilerFree is false", () => {
+  it("puts each word's rarity square directly in front of the word, not on a separate line", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
-    const squareLine = text.split("\n")[1];
-    expect(squareLine.split(" ")).toHaveLength(words.length);
-    expect(squareLine).not.toMatch(/[a-z]/);
+    const resultLine = text.split("\n")[1];
+    // aardvark: Extremely Rare -> 🟧
+    expect(resultLine).toContain("🟧 aardvark (Extremely Rare, 7.6)");
+    // the: Very Common -> ⬜
+    expect(resultLine).toContain("⬜ the (Very Common,");
   });
 
   it("still includes the best-word line when spoilers are shown", () => {
