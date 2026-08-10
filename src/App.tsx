@@ -14,6 +14,7 @@ import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { isWinningRarity } from "./game/rank";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 export default function App() {
   const {
@@ -98,6 +99,7 @@ export default function App() {
       </header>
 
       <Analytics />
+      <SpeedInsights />
       <main>
         <DropDisplay drop={drop} />
         <GuessLog
