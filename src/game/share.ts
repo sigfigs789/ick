@@ -1,7 +1,5 @@
 import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
-import { MAX_GUESSES } from "./constants";
 import { rarityScore } from "./dictionary";
-import { bestWord } from "./rank";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -42,8 +40,7 @@ export interface ShareOptions {
  * no words. Pass `spoilerFree: false` to
  * swap that for one line per word, each with its own rarity square
  * directly in front of it, so the color is legible right next to the
- * word it describes rather than in a separate row. The "best" line calls
- * out the single rarest word either way, since that's the goal now.
+ * word it describes rather than in a separate row.
  */
 export function buildShareText(
   dateStr: string,
@@ -54,7 +51,6 @@ export function buildShareText(
   const spoilerFree = options.spoilerFree ?? true;
   const n = puzzleNumber(dateStr);
   const label = formatDateLabel(dateStr);
-  const best = bestWord(words);
 
   const resultLine = spoilerFree
     ? words
@@ -67,10 +63,6 @@ export function buildShareText(
         .join("\n");
 
   const lines = [`WordInk #${n} (${label}) — Ink: ${drop.toUpperCase()}`, resultLine];
-  if (best) {
-    const score = rarityScore(best.zipf).toFixed(1);
-    lines.push(`Best: ${best.rarity} (${score}) · ${words.length}/${MAX_GUESSES} guesses`);
-  }
   if (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined) {
     const streak = options.streak ?? 0;
     lines.push(

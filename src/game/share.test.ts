@@ -35,14 +35,8 @@ describe("buildShareText", () => {
     expect(resultLines).toEqual(["⬜ 2.3", "🟩 5.4", "🟧 7.6"]);
   });
 
-  it("calls out the best (rarest) word's rarity, score, and the guess count", () => {
+  it("omits the best-word summary", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    // aardvark: zipf 2.4 -> score (10 - 2.4) = 7.6 (higher score = rarer)
-    expect(text).toContain("Best: Extremely Rare (7.6) · 3/6 guesses");
-  });
-
-  it("omits the best-word line when nothing has been accepted yet", () => {
-    const text = buildShareText("2024-01-05", "str", []);
     expect(text).not.toContain("Best:");
   });
 
@@ -71,9 +65,9 @@ describe("buildShareText", () => {
     expect(resultLines).toHaveLength(words.length);
   });
 
-  it("still includes the best-word line when spoilers are shown", () => {
+  it("omits the best-word summary when spoilers are shown", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
-    expect(text).toContain("Best: Extremely Rare (7.6) · 3/6 guesses");
+    expect(text).not.toContain("Best:");
   });
 
   it("includes the current streak when provided", () => {

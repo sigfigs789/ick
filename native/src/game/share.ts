@@ -1,7 +1,4 @@
 import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
-import { MAX_GUESSES } from "./constants";
-import { rarityScore } from "./dictionary";
-import { bestWord } from "./rank";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -25,8 +22,7 @@ export function puzzleNumber(dateStr: string): number {
 
 /**
  * Spoiler-free: shows rarity symbols and the drop, never the words
- * themselves. Squares are in guess order (like a Wordle grid); the "best"
- * line calls out the single rarest word, since that's the goal now.
+ * themselves. Squares are in guess order (like a Wordle grid).
  */
 export function buildShareText(
   dateStr: string,
@@ -36,12 +32,7 @@ export function buildShareText(
   const n = puzzleNumber(dateStr);
   const squares = words.map((w) => RARITY_SYMBOL[w.rarity]).join(" ");
   const label = formatDateLabel(dateStr);
-  const best = bestWord(words);
   const lines = [`WordInk #${n} (${label}) — Ink: ${drop.toUpperCase()}`, squares];
-  if (best) {
-    const score = rarityScore(best.zipf).toFixed(1);
-    lines.push(`Best: ${best.rarity} (${score}) · ${words.length}/${MAX_GUESSES} guesses`);
-  }
   return lines.join("\n");
 }
 
