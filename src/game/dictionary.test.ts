@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidWord, rarityFor } from "./dictionary";
+import { isValidWord, rarityFor, rarityScore } from "./dictionary";
 
 describe("isValidWord", () => {
   it("accepts a common real word", () => {
@@ -40,5 +40,18 @@ describe("rarityFor", () => {
     expect(common).toBeDefined();
     expect(rare).toBeDefined();
     expect(rare!.zipf).toBeLessThan(common!.zipf);
+  });
+});
+
+describe("rarityScore", () => {
+  it("flips Zipf's polarity so a higher score means rarer", () => {
+    const common = rarityFor("the")!;
+    const rare = rarityFor("aardvark")!;
+    expect(rarityScore(rare.zipf)).toBeGreaterThan(rarityScore(common.zipf));
+  });
+
+  it("computes 10 minus zipf, rounded to one decimal", () => {
+    expect(rarityScore(2.4)).toBeCloseTo(7.6);
+    expect(rarityScore(7.7)).toBeCloseTo(2.3);
   });
 });

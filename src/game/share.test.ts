@@ -35,9 +35,10 @@ describe("buildShareText", () => {
     expect(squareLine.split(" ")).toHaveLength(words.length);
   });
 
-  it("calls out the best (rarest) word's rarity and the guess count", () => {
+  it("calls out the best (rarest) word's rarity, score, and the guess count", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    expect(text).toContain("Best: Extremely Rare · 3/6 guesses");
+    // aardvark: zipf 2.4 -> score (10 - 2.4) = 7.6 (higher score = rarer)
+    expect(text).toContain("Best: Extremely Rare (7.6) · 3/6 guesses");
   });
 
   it("omits the best-word line when nothing has been accepted yet", () => {

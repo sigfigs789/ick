@@ -1,3 +1,4 @@
+import { rarityScore } from "../game/dictionary";
 import type { Rarity } from "../game/types";
 
 // Short text tags reinforce the color so rarity is never color-only
@@ -14,7 +15,7 @@ const RARITY_META: Record<Rarity, { tag: string; className: string }> = {
 
 interface Props {
   rarity: Rarity;
-  /** Precomputed Zipf frequency (lower = rarer) -- shown so ties within a label can be told apart. */
+  /** Precomputed Zipf frequency -- converted to a rarity score (higher = rarer) for display. */
   zipf?: number;
 }
 
@@ -24,7 +25,9 @@ export function RarityBadge({ rarity, zipf }: Props) {
     <span className={`rarity-badge ${meta.className}`}>
       <span className="rarity-badge__dot" aria-hidden="true" />
       {meta.tag}
-      {zipf !== undefined && <span className="rarity-badge__zipf">{zipf.toFixed(1)}</span>}
+      {zipf !== undefined && (
+        <span className="rarity-badge__score">{rarityScore(zipf).toFixed(1)}</span>
+      )}
     </span>
   );
 }

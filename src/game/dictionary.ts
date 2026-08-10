@@ -45,3 +45,16 @@ export const RARITY_ORDER: Rarity[] = [
   "Common",
   "Very Common",
 ];
+
+/**
+ * A player-facing "rarity score" derived from Zipf frequency, but with the
+ * polarity flipped: wordfreq's Zipf scale runs *higher* for more common
+ * words (e.g. "the" ~7.7, "aardvark" ~2.4), which reads backwards for a
+ * rarity score -- here, bigger number = rarer, matching the loot-tier
+ * intuition ("higher rarity" should feel like "higher number"). Internal
+ * ranking (see rank.ts's bestWord) still compares raw Zipf directly; this
+ * is purely a display transform.
+ */
+export function rarityScore(zipf: number): number {
+  return Math.round((10 - zipf) * 10) / 10;
+}

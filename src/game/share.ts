@@ -1,5 +1,6 @@
 import { daysSinceEpoch, toDateString } from "./date";
 import { MAX_GUESSES } from "./constants";
+import { rarityScore } from "./dictionary";
 import { bestWord } from "./rank";
 import fragmentData from "../data/fragments.json";
 import type { AcceptedWord, Rarity } from "./types";
@@ -40,7 +41,10 @@ export function buildShareText(
   });
   const best = bestWord(words);
   const lines = [`Ick #${n} (${label}) — fragment "${fragment}"`, squares];
-  if (best) lines.push(`Best: ${best.rarity} · ${words.length}/${MAX_GUESSES} guesses`);
+  if (best) {
+    const score = rarityScore(best.zipf).toFixed(1);
+    lines.push(`Best: ${best.rarity} (${score}) · ${words.length}/${MAX_GUESSES} guesses`);
+  }
   return lines.join("\n");
 }
 

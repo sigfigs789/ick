@@ -407,12 +407,12 @@ h2 {
   border-radius: 999px;
   flex: none;
 }
-.rarity-badge__zipf {
+.rarity-badge__score {
   font-variant-numeric: tabular-nums;
   opacity: 0.7;
   font-weight: 700;
 }
-.rarity-badge__zipf::before {
+.rarity-badge__score::before {
   content: "· ";
 }
 .rarity--very-common {
