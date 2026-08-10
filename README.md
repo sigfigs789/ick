@@ -25,6 +25,20 @@ npm run dev
 Open the printed local URL. `npm run build` produces a production build in
 `dist/`; `npm run lint` runs ESLint.
 
+## Testing
+
+```bash
+npm test          # run once (Vitest)
+npm run test:watch
+npm run test:ui   # Vitest's browser UI
+```
+
+Coverage focuses on `src/game/` (fragment selection, word validation,
+dedup/stemming, rarity lookup, streak/completion persistence, share text)
+since that's where the rules live, plus a couple of component tests
+(`GuessLog`, `SubmitForm`) for the click-to-reuse and lock-in interactions.
+Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
+
 ## How the game works
 
 - **Fragment selection** (`src/game/fragment.ts`, `src/data/fragments.json`):
