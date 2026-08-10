@@ -33,7 +33,7 @@ export function ShareButton({ text }: Props) {
       onClick={handleClick}
       aria-live="polite"
     >
-      {copied ? "Copied!" : "Share result"}
+      {copied ? "Copied!" : "Share"}
     </button>
   );
 }

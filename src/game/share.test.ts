@@ -29,10 +29,10 @@ describe("buildShareText", () => {
     }
   });
 
-  it("includes one rarity square per accepted word", () => {
+  it("puts each spoiler-free rarity square and score on its own line", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    const squareLine = text.split("\n")[1];
-    expect(squareLine.split(" ")).toHaveLength(words.length);
+    const resultLines = text.split("\n").slice(1, 1 + words.length);
+    expect(resultLines).toEqual(["⬜ 2.3", "🟩 5.4", "🟧 7.6"]);
   });
 
   it("calls out the best (rarest) word's rarity, score, and the guess count", () => {
@@ -61,17 +61,23 @@ describe("buildShareText", () => {
     expect(text).toContain("aardvark (Extremely Rare, 7.6)");
   });
 
-  it("puts each word's rarity square directly in front of the word, not on a separate line", () => {
+  it("puts each word and its rarity square on a separate line", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
-    const resultLine = text.split("\n")[1];
+    const resultLines = text.split("\n").slice(1, 1 + words.length);
     // aardvark: Extremely Rare -> 🟧
-    expect(resultLine).toContain("🟧 aardvark (Extremely Rare, 7.6)");
+    expect(resultLines).toContain("🟧 aardvark (Extremely Rare, 7.6)");
     // the: Very Common -> ⬜
-    expect(resultLine).toContain("⬜ the (Very Common,");
+    expect(resultLines).toContain("⬜ the (Very Common, 2.3)");
+    expect(resultLines).toHaveLength(words.length);
   });
 
   it("still includes the best-word line when spoilers are shown", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     expect(text).toContain("Best: Extremely Rare (7.6) · 3/6 guesses");
+  });
+
+  it("includes the current streak when provided", () => {
+    expect(buildShareText("2024-01-05", "str", words, { streak: 1 })).toContain("Streak: 1 day");
+    expect(buildShareText("2024-01-05", "str", words, { streak: 4 })).toContain("Streak: 4 days");
   });
 });

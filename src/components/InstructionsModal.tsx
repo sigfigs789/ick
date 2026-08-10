@@ -46,7 +46,7 @@ export function InstructionsModal({ open, onClose }: Props) {
         </div>
         <ol className="modal__steps">
           <li>Ink gives everyone the same daily drop — say, INK. Your job is to dip into your vocabulary and pull out words stained with it, like dr<strong>INK</strong>, th<strong>INK</strong>, or p<strong>INK</strong>.</li>
-          <li>Stop anytime with "Lock in my result," or use all 6 guesses — either way completes the day and keeps your streak going.</li>
+          <li>Stop anytime with "Lock in answers," or use all 6 guesses — either way completes the day and keeps your streak going.</li>
         </ol>
       </div>
     </div>

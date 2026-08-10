@@ -1,10 +1,9 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { MAX_GUESSES } from "../game/constants";
 import { bestWord } from "../game/rank";
 import { todayShareText } from "../game/share";
 import { RarityBadge } from "./RarityBadge";
 import { ShareButton } from "./ShareButton";
-import { ShareImageButton } from "./ShareImageButton";
 import type { AcceptedWord, StreakState } from "../game/types";
 
 interface Props {
@@ -16,19 +15,18 @@ interface Props {
 export function ResultsPanel({ drop, words, streak }: Props) {
   // Defaults to unchecked (full result: squares + words) -- hiding words
   // is an opt-in the player reaches for deliberately when sharing
-  // somewhere spoilers matter, not the default. Drives both the
-  // plain-text share (squares, plus words unless spoiler-free) and the
-  // image share (word text blurred vs. legible) the same way.
+  // somewhere spoilers matter, not the default. It controls whether the
+  // plain-text share includes the submitted words or rarity squares only.
   const [spoilerFree, setSpoilerFree] = useState(false);
-  const shareText = todayShareText(drop, words, { spoilerFree });
+  const shareText = todayShareText(drop, words, { spoilerFree, streak: streak.currentStreak });
   const best = bestWord(words);
-  const captureRef = useRef<HTMLDivElement>(null);
+  const [shareHeading, ...shareDetailLines] = shareText.split("\n");
+  const dropText = `"${drop}"`;
+  const [headingBeforeDrop, headingAfterDrop] = shareHeading.split(dropText);
 
   return (
     <section className="results-panel" aria-labelledby="results-heading">
-      {/* Only this wrapper is rasterized for image sharing -- the toggle
-          and buttons below it are deliberately siblings, not children. */}
-      <div ref={captureRef} className="results-panel__capture">
+      <div className="results-panel__capture">
         <h2 id="results-heading">Puzzle complete!</h2>
         <p className="results-panel__summary">
           You found {words.length} word{words.length === 1 ? "" : "s"} containing{" "}
@@ -69,14 +67,15 @@ export function ResultsPanel({ drop, words, streak }: Props) {
         />
         Spoiler free
       </label>
-
+      <pre className="results-panel__preview" aria-hidden="true">
+        {headingBeforeDrop}
+        <strong>{drop.toUpperCase()}</strong>
+        {headingAfterDrop}
+        {shareDetailLines.length > 0 && `\n${shareDetailLines.join("\n")}`}
+      </pre>
       <div className="results-panel__share-actions">
         <ShareButton text={shareText} />
-        <ShareImageButton targetRef={captureRef} spoilerFree={spoilerFree} />
       </div>
-      <pre className="results-panel__preview" aria-hidden="true">
-        {shareText}
-      </pre>
     </section>
   );
 }
