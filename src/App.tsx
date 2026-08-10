@@ -9,8 +9,10 @@ import { ResultsPanel } from "./components/ResultsPanel";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { SoundToggle } from "./components/SoundToggle";
 import { PuzzleNav } from "./components/PuzzleNav";
+import { ConfettiBurst } from "./components/ConfettiBurst";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
+import { isWinningRarity } from "./game/rank";
 
 export default function App() {
   const {
@@ -21,7 +23,6 @@ export default function App() {
     canGoToNext,
     goToPrevious,
     goToNext,
-    goToToday,
     drop,
     progress,
     streak,
@@ -31,6 +32,7 @@ export default function App() {
   } = useDailyPuzzle();
   const [showInstructions, setShowInstructions] = useState(false);
   const [prefill, setPrefill] = useState<{ word: string; token: number } | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
 
   // Clear any pending prefill when the viewed puzzle changes so a stale
@@ -52,19 +54,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
-  // Play the completion fanfare only on the transition into "completed",
-  // not on mount when reopening an already-finished puzzle.
-  const wasCompleted = useRef(progress.completed);
+  const hasWinningWord = progress.acceptedWords.some((word) => isWinningRarity(word.rarity));
+  // Celebrate the first qualifying word only, never a puzzle restored
+  // from storage that already contains one.
+  const hadWinningWord = useRef(hasWinningWord);
   useEffect(() => {
-    if (progress.completed && !wasCompleted.current) {
+    if (hasWinningWord && !hadWinningWord.current) {
+      hadWinningWord.current = true;
       sound.complete();
+      setShowConfetti(true);
+      const timeout = window.setTimeout(() => setShowConfetti(false), 1800);
+      return () => window.clearTimeout(timeout);
     }
-    wasCompleted.current = progress.completed;
+    hadWinningWord.current = hasWinningWord;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progress.completed]);
+  }, [hasWinningWord]);
 
   return (
     <div className="app">
+      {showConfetti && <ConfettiBurst />}
       <header className="app__header">
         <SoundToggle enabled={sound.enabled} onToggle={sound.toggle} />
         <div className="app__header-titles">
@@ -72,12 +80,10 @@ export default function App() {
           <PuzzleNav
             date={date}
             puzzleNumber={puzzleNumber}
-            isToday={isToday}
             canGoToPrevious={canGoToPrevious}
             canGoToNext={canGoToNext}
             onPrevious={goToPrevious}
             onNext={goToNext}
-            onToday={goToToday}
           />
         </div>
         <button
@@ -95,6 +101,8 @@ export default function App() {
         <GuessLog
           acceptedWords={progress.acceptedWords}
           onSelectWord={(word) => setPrefill({ word, token: Date.now() })}
+          completed={progress.completed}
+          streak={streak}
         />
 
         {!progress.completed && (
@@ -114,7 +122,7 @@ export default function App() {
           </p>
         )}
 
-        {!progress.completed && progress.acceptedWords.length > 0 && (
+        {!progress.completed && hasWinningWord && (
           <LockInButton onLockIn={lockIn} />
         )}
 

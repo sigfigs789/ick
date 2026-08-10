@@ -23,6 +23,7 @@ const CODE_TO_RARITY: Record<string, Rarity> = {
   U: "Uncommon",
   R: "Rare",
   X: "Extremely Rare",
+  M: "Elusive",
 };
 
 const rarityCodes: string = rarityData.codes;
@@ -39,6 +40,7 @@ export function rarityFor(word: string): RarityInfo | undefined {
 }
 
 export const RARITY_ORDER: Rarity[] = [
+  "Elusive",
   "Extremely Rare",
   "Rare",
   "Uncommon",

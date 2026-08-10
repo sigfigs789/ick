@@ -86,15 +86,23 @@ npm run generate-data     # writes src/data/dictionary.json + rarity.json
 npm run select-drops  # writes scripts/drop-candidates.json (diagnostic)
 ```
 
-`scripts/generate-data.py` starts from the macOS system dictionary
-(`/usr/share/dict/words`), keeps only pure lowercase a-z entries (which
-drops proper nouns, possessives, contractions, and hyphenated compounds in
-one pass), scores each word's Zipf frequency via `wordfreq`, drops anything
-below a frequency floor (filters out most archaic words and misspellings),
-and removes anything in `scripts/blocklist.txt` (hand-curated slurs,
-profanity, and stray abbreviations). Rarity bands are tuned in the
-`RARITY_BANDS` constant at the top of the script — adjust and rerun as
-playtesting suggests.
+`scripts/generate-data.py` accepts a newline-delimited source list via
+`--word-list`; the checked-in data is generated from an ESDB/SCOWL US English
+size-60 list with abbreviations and special categories excluded. The script
+also keeps only pure lowercase a-z entries (which drops proper nouns,
+possessives, contractions, and hyphenated compounds), scores each word's Zipf
+frequency via `wordfreq`, drops anything below a frequency floor, and removes
+anything in `scripts/blocklist.txt` (hand-curated slurs, profanity, and stray
+abbreviations). Rarity bands are tuned in the `RARITY_BANDS` constant at the
+top of the script — adjust and rerun as playtesting suggests.
+
+To recreate the ESDB/SCOWL source list:
+
+```bash
+git clone https://github.com/en-wl/wordlist.git /tmp/esdb
+/tmp/esdb/scowl word-list 60 A 1 --wo-poses=abbr --categories= > /tmp/scowl-us-60.txt
+python3 scripts/generate-data.py --word-list /tmp/scowl-us-60.txt
+```
 
 `scripts/select-drops.py` evaluates a hand-picked pool of candidate
 2- and 3-letter drops against the generated dictionary and keeps only

@@ -17,6 +17,7 @@ const RARITY_SYMBOL: Record<Rarity, string> = {
   Uncommon: "🟦",
   Rare: "🟪",
   "Extremely Rare": "🟧",
+  Elusive: "🟥",
 };
 
 export function puzzleNumber(dateStr: string): number {
@@ -28,6 +29,12 @@ export interface ShareOptions {
   spoilerFree?: boolean;
   /** Current consecutive-day streak to include in the shared result. */
   streak?: number;
+  /** Total Rare-or-better results to include in the shared result. */
+  crushedIt?: number;
+  /** Total Extremely Rare-or-better results to include in the shared result. */
+  elite?: number;
+  /** Highest rarity score to include in the shared result. */
+  highScore?: number;
 }
 
 /**
@@ -64,8 +71,14 @@ export function buildShareText(
     const score = rarityScore(best.zipf).toFixed(1);
     lines.push(`Best: ${best.rarity} (${score}) · ${words.length}/${MAX_GUESSES} guesses`);
   }
-  if (options.streak !== undefined) {
-    lines.push(`Streak: ${options.streak} day${options.streak === 1 ? "" : "s"}`);
+  if (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined) {
+    const streak = options.streak ?? 0;
+    lines.push(
+      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Crushed it: ${options.crushedIt ?? 0} · Elite: ${options.elite ?? 0}`
+    );
+  }
+  if (options.highScore !== undefined) {
+    lines.push(`High score: ${options.highScore.toFixed(1)}`);
   }
   return lines.join("\n");
 }

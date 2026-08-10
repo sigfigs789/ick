@@ -80,4 +80,15 @@ describe("buildShareText", () => {
     expect(buildShareText("2024-01-05", "str", words, { streak: 1 })).toContain("Streak: 1 day");
     expect(buildShareText("2024-01-05", "str", words, { streak: 4 })).toContain("Streak: 4 days");
   });
+
+  it("puts streak trackers on one row and the high score below", () => {
+    const text = buildShareText("2024-01-05", "str", words, {
+      streak: 4,
+      crushedIt: 7,
+      elite: 2,
+      highScore: 8.5,
+    });
+
+    expect(text).toContain("Streak: 4 days · Crushed it: 7 · Elite: 2\nHigh score: 8.5");
+  });
 });

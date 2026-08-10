@@ -58,7 +58,7 @@ export function useDailyPuzzle() {
 
       const updated = recordAcceptedWord(progress, result.word);
       setProgress(updated);
-      if (updated.completed) setStreak(loadStreak());
+      setStreak(loadStreak());
       setFeedback({
         kind: "accepted",
         message: `"${result.word.word}" accepted — ${result.word.rarity}.`,
@@ -74,7 +74,7 @@ export function useDailyPuzzle() {
   const lockIn = useCallback(() => {
     const updated = lockInResult(progress);
     setProgress(updated);
-    if (updated.completed) setStreak(loadStreak());
+    if (updated.won) setStreak(loadStreak());
   }, [progress]);
 
   const goToPrevious = useCallback(() => {

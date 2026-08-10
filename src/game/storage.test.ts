@@ -9,10 +9,10 @@ import {
   recordAcceptedWord,
   recordRejectedAttempt,
 } from "./storage";
-import type { AcceptedWord } from "./types";
+import type { AcceptedWord, Rarity } from "./types";
 
-function word(w: string, zipf = 5): AcceptedWord {
-  return { word: w, rarity: "Common", zipf };
+function word(w: string, zipf = 5, rarity: Rarity = "Common"): AcceptedWord {
+  return { word: w, rarity, zipf };
 }
 
 function setToday(dateStr: string) {
@@ -58,6 +58,16 @@ describe("newProgress / loadOrCreateProgress", () => {
   });
 });
 
+describe("loadStreak", () => {
+  it("adds zeroed rarity counters to existing streak data", () => {
+    localStorage.setItem(
+      "ick:streak",
+      JSON.stringify({ currentStreak: 2, longestStreak: 3, totalCompleted: 3 })
+    );
+    expect(loadStreak()).toMatchObject({ crushedIt: 0, elite: 0, highScore: 0 });
+  });
+});
+
 describe("recordAcceptedWord", () => {
   it("appends the word and persists it", () => {
     const p1 = newProgress("2024-01-01", "str");
@@ -72,15 +82,68 @@ describe("recordAcceptedWord", () => {
     expect(p.completed).toBe(false);
   });
 
-  it("auto-completes on the MAX_GUESSES-th word and updates the streak", () => {
+  it("ends as a loss on the MAX_GUESSES-th lower-rarity word without updating the streak", () => {
     let p = newProgress("2024-01-01", "str");
     for (let i = 0; i < MAX_GUESSES; i++) {
       p = recordAcceptedWord(p, word(`word${i}`));
     }
     expect(p.completed).toBe(true);
+    expect(p.won).toBe(false);
     expect(p.acceptedWords).toHaveLength(MAX_GUESSES);
-    expect(loadStreak().currentStreak).toBe(1);
-    expect(loadStreak().totalCompleted).toBe(1);
+    expect(loadStreak().currentStreak).toBe(0);
+    expect(loadStreak().totalCompleted).toBe(0);
+  });
+
+  it("keeps the puzzle active after a Rare-or-better word", () => {
+    let p = newProgress("2024-01-01", "str");
+    p = recordAcceptedWord(p, word("strange"));
+    p = recordAcceptedWord(p, word("stranger", 3.2, "Rare"));
+    expect(p.completed).toBe(false);
+    expect(p.won).toBeUndefined();
+    expect(p.acceptedWords).toHaveLength(2);
+    expect(loadStreak().currentStreak).toBe(0);
+    expect(loadStreak().crushedIt).toBe(1);
+  });
+
+  it("scores an archived Extremely Rare word immediately without changing the streak", () => {
+    const p = recordAcceptedWord(
+      newProgress("2023-06-01", "str"),
+      word("stranger", 2.4, "Extremely Rare")
+    );
+    expect(p.completed).toBe(false);
+    expect(loadStreak()).toMatchObject({
+      currentStreak: 0,
+      totalCompleted: 0,
+      crushedIt: 1,
+      elite: 1,
+      highScore: 7.6,
+    });
+  });
+
+  it("keeps the highest rarity score across accepted words", () => {
+    let p = recordAcceptedWord(newProgress("2023-06-01", "str"), word("common", 5.4));
+    p = recordAcceptedWord(p, word("rare", 2.4, "Extremely Rare"));
+    recordAcceptedWord(p, word("later", 4.6));
+    expect(loadStreak().highScore).toBe(7.6);
+  });
+
+  it("wins on the sixth accepted word when a qualifying word was found", () => {
+    let p = newProgress("2024-01-01", "str");
+    for (let i = 0; i < MAX_GUESSES; i++) {
+      p = recordAcceptedWord(p, word(`word${i}`, i === 2 ? 3.2 : 5, i === 2 ? "Rare" : "Common"));
+    }
+    expect(p).toMatchObject({ completed: true, won: true });
+    expect(loadStreak()).toMatchObject({ currentStreak: 1, crushedIt: 1, elite: 0 });
+  });
+
+  it("tracks an Extremely Rare locked-in win as Elite", () => {
+    let p = recordAcceptedWord(
+      newProgress("2024-01-01", "str"),
+      word("stranger", 2.4, "Extremely Rare")
+    );
+    p = lockInResult(p);
+    expect(p.won).toBe(true);
+    expect(loadStreak()).toMatchObject({ crushedIt: 1, elite: 1 });
   });
 
   it("is a no-op once the puzzle is already completed", () => {
@@ -101,6 +164,7 @@ describe("recordAcceptedWord", () => {
       p = recordAcceptedWord(p, word(`word${i}`));
     }
     expect(p.completed).toBe(true);
+    expect(p.won).toBe(false);
     expect(loadProgress("2023-12-15")?.completed).toBe(true);
     expect(loadStreak().currentStreak).toBe(0);
     expect(loadStreak().totalCompleted).toBe(0);
@@ -122,29 +186,46 @@ describe("lockInResult", () => {
     expect(lockInResult(p)).toBe(p);
   });
 
-  it("marks the puzzle complete early and updates the streak", () => {
+  it("locks in a qualifying result and updates the streak", () => {
     let p = newProgress("2024-01-01", "str");
-    p = recordAcceptedWord(p, word("strange"));
+    p = recordAcceptedWord(p, word("strange", 3.2, "Rare"));
     const locked = lockInResult(p);
     expect(locked.completed).toBe(true);
+    expect(locked.won).toBe(true);
     expect(locked.acceptedWords).toHaveLength(1);
     expect(loadStreak().currentStreak).toBe(1);
   });
 
   it("is a no-op once already completed", () => {
     let p = newProgress("2024-01-01", "str");
-    p = recordAcceptedWord(p, word("strange"));
+    p = recordAcceptedWord(p, word("strange", 3.2, "Rare"));
     const locked = lockInResult(p);
     expect(lockInResult(locked)).toBe(locked);
   });
 
-  it("locks in an archived (non-today) puzzle without touching the streak", () => {
+  it("counts an archived Rare win without advancing the streak", () => {
     let p = newProgress("2023-06-01", "str");
-    p = recordAcceptedWord(p, word("strange"));
+    p = recordAcceptedWord(p, word("strange", 3.2, "Rare"));
     const locked = lockInResult(p);
     expect(locked.completed).toBe(true);
-    expect(loadStreak().currentStreak).toBe(0);
-    expect(loadStreak().totalCompleted).toBe(0);
+    expect(loadStreak()).toMatchObject({
+      currentStreak: 0,
+      totalCompleted: 1,
+      crushedIt: 1,
+      elite: 0,
+    });
+  });
+
+  it("counts an archived Extremely Rare win as Elite without advancing the streak", () => {
+    let p = newProgress("2023-06-01", "str");
+    p = recordAcceptedWord(p, word("stranger", 2.4, "Extremely Rare"));
+    lockInResult(p);
+    expect(loadStreak()).toMatchObject({
+      currentStreak: 0,
+      totalCompleted: 1,
+      crushedIt: 1,
+      elite: 1,
+    });
   });
 });
 
@@ -152,7 +233,7 @@ describe("streak continuation", () => {
   function complete(date: string) {
     setToday(date);
     let p = newProgress(date, "str");
-    p = recordAcceptedWord(p, word(`w-${date}`));
+    p = recordAcceptedWord(p, word(`w-${date}`, 3.2, "Rare"));
     return lockInResult(p);
   }
 
@@ -182,7 +263,7 @@ describe("streak continuation", () => {
 
   it("only counts a given day's completion once", () => {
     let p = newProgress("2024-01-01", "str");
-    p = recordAcceptedWord(p, word("strange"));
+    p = recordAcceptedWord(p, word("strange", 3.2, "Rare"));
     const locked = lockInResult(p);
     // Re-completing (shouldn't normally happen, but guard against double count)
     lockInResult(locked);
@@ -197,11 +278,12 @@ describe("streak continuation", () => {
     // Go back and (belatedly) finish a much older, previously-missed puzzle.
     setToday("2024-01-02"); // "today" stays where the streak left off
     let old = newProgress("2023-11-01", "str");
-    old = recordAcceptedWord(old, word("old-word"));
+    old = recordAcceptedWord(old, word("old-word", 3.2, "Rare"));
     lockInResult(old);
 
     const streak = loadStreak();
     expect(streak.currentStreak).toBe(2); // unchanged
-    expect(streak.totalCompleted).toBe(2); // the archive play didn't count
+    expect(streak.totalCompleted).toBe(3); // the archive win still counts toward the score
+    expect(streak.crushedIt).toBe(3);
   });
 });

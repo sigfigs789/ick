@@ -3,23 +3,19 @@ import { formatDateLabel } from "../game/date";
 interface Props {
   date: string;
   puzzleNumber: number;
-  isToday: boolean;
   canGoToPrevious: boolean;
   canGoToNext: boolean;
   onPrevious: () => void;
   onNext: () => void;
-  onToday: () => void;
 }
 
 export function PuzzleNav({
   date,
   puzzleNumber,
-  isToday,
   canGoToPrevious,
   canGoToNext,
   onPrevious,
   onNext,
-  onToday,
 }: Props) {
   return (
     <div className="puzzle-nav">
@@ -34,7 +30,6 @@ export function PuzzleNav({
       </button>
       <p className="app__puzzle-number" aria-live="polite">
         Puzzle #{puzzleNumber} · {formatDateLabel(date)}
-        {!isToday && <span className="puzzle-nav__archive-tag"> (archive)</span>}
       </p>
       <button
         type="button"
@@ -45,11 +40,6 @@ export function PuzzleNav({
       >
         ›
       </button>
-      {!isToday && (
-        <button type="button" className="puzzle-nav__today" onClick={onToday}>
-          Back to today
-        </button>
-      )}
     </div>
   );
 }
