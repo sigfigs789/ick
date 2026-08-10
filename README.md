@@ -8,12 +8,11 @@ one is crowned in the log. No timer, no login, no traditional score, just
 a friendly rarity reveal (Very Common → Extremely Rare) on every accepted
 word. Stop anytime with "Lock in my result," or use all 6 guesses.
 
-Built in React + TypeScript (Vite) with an eye toward eventually porting to
-iOS/Android via React Native — game logic in `src/game/` is plain
-TypeScript with no DOM or React dependencies, so it should port with
-minimal changes; only `src/components/` and `src/hooks/` are React-specific,
-and `src/game/storage.ts` is the one module that talks to `localStorage`
-(swap for `AsyncStorage` on native).
+Built in React + TypeScript (Vite). Game logic in `src/game/` is plain
+TypeScript with no DOM or React dependencies, which is what made
+`native/` possible — a React Native (Expo) port for iOS/Android sharing
+that logic and all three data files verbatim; see `native/README.md` for
+what's shared vs. rewritten.
 
 ## Getting started
 
