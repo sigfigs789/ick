@@ -45,4 +45,24 @@ describe("buildShareText", () => {
     const text = buildShareText("2024-01-05", "str", []);
     expect(text).not.toContain("Best:");
   });
+
+  it("is spoiler-free by default, with no explicit option passed", () => {
+    const withDefault = buildShareText("2024-01-05", "str", words);
+    const withExplicitTrue = buildShareText("2024-01-05", "str", words, { spoilerFree: true });
+    expect(withDefault).toBe(withExplicitTrue);
+  });
+
+  it("shows the actual words, with rarity and score, when spoilerFree is false", () => {
+    const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
+    for (const w of words) {
+      expect(text).toContain(w.word);
+    }
+    // aardvark: zipf 2.4 -> score 7.6
+    expect(text).toContain("aardvark (Extremely Rare, 7.6)");
+  });
+
+  it("still includes the best-word line when spoilers are shown", () => {
+    const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
+    expect(text).toContain("Best: Extremely Rare (7.6) · 3/6 guesses");
+  });
 });

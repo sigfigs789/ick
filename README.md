@@ -62,9 +62,11 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   streak counter live in `localStorage`, keyed by calendar date. Once the
   puzzle is marked complete it can't be re-completed, but players can
   still revisit their result afterward.
-- **Sharing** (`src/game/share.ts`): a spoiler-free, plain-text result
-  (drop + rarity squares in guess order + your best rarity, no words)
-  suitable for pasting anywhere.
+- **Sharing** (`src/game/share.ts`): a plain-text result suitable for
+  pasting anywhere. Defaults to spoiler-free (drop + rarity squares in
+  guess order + your best rarity, no words); a toggle in `ResultsPanel`
+  lets the player opt into showing the actual words instead of the
+  squares (`buildShareText`'s `spoilerFree` option, default `true`).
 
 ## Regenerating the word/rarity data
 

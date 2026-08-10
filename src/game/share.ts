@@ -23,21 +23,34 @@ export function puzzleNumber(dateStr: string): number {
   return daysSinceEpoch(dateStr, dropData.epoch) + 1;
 }
 
+export interface ShareOptions {
+  /** Defaults to true: rarity symbols only, never the words themselves. */
+  spoilerFree?: boolean;
+}
+
 /**
- * Spoiler-free: shows rarity symbols and the drop, never the words
- * themselves. Squares are in guess order (like a Wordle grid); the "best"
- * line calls out the single rarest word, since that's the goal now.
+ * Spoiler-free (the default): shows rarity symbols and the drop, never the
+ * words themselves -- squares are in guess order, like a Wordle grid. Pass
+ * `spoilerFree: false` to swap that line for the actual words instead. The
+ * "best" line calls out the single rarest word either way, since that's
+ * the goal now.
  */
 export function buildShareText(
   dateStr: string,
   drop: string,
-  words: AcceptedWord[]
+  words: AcceptedWord[],
+  options: ShareOptions = {}
 ): string {
+  const spoilerFree = options.spoilerFree ?? true;
   const n = puzzleNumber(dateStr);
-  const squares = words.map((w) => RARITY_SYMBOL[w.rarity]).join(" ");
   const label = formatDateLabel(dateStr);
   const best = bestWord(words);
-  const lines = [`Ink #${n} (${label}) — drop "${drop}"`, squares];
+
+  const resultLine = spoilerFree
+    ? words.map((w) => RARITY_SYMBOL[w.rarity]).join(" ")
+    : words.map((w) => `${w.word} (${w.rarity}, ${rarityScore(w.zipf).toFixed(1)})`).join(" · ");
+
+  const lines = [`Ink #${n} (${label}) — drop "${drop}"`, resultLine];
   if (best) {
     const score = rarityScore(best.zipf).toFixed(1);
     lines.push(`Best: ${best.rarity} (${score}) · ${words.length}/${MAX_GUESSES} guesses`);
@@ -45,6 +58,10 @@ export function buildShareText(
   return lines.join("\n");
 }
 
-export function todayShareText(drop: string, words: AcceptedWord[]): string {
-  return buildShareText(toDateString(new Date()), drop, words);
+export function todayShareText(
+  drop: string,
+  words: AcceptedWord[],
+  options?: ShareOptions
+): string {
+  return buildShareText(toDateString(new Date()), drop, words, options);
 }

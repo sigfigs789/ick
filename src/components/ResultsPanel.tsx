@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { MAX_GUESSES } from "../game/constants";
 import { bestWord } from "../game/rank";
 import { todayShareText } from "../game/share";
@@ -12,7 +13,10 @@ interface Props {
 }
 
 export function ResultsPanel({ drop, words, streak }: Props) {
-  const shareText = todayShareText(drop, words);
+  // Defaults to spoiler-free -- showing words is an opt-in the player
+  // reaches for deliberately, not something that leaks by default.
+  const [showWords, setShowWords] = useState(false);
+  const shareText = todayShareText(drop, words, { spoilerFree: !showWords });
   const best = bestWord(words);
 
   return (
@@ -47,6 +51,16 @@ export function ResultsPanel({ drop, words, streak }: Props) {
           ? ` · best: ${streak.longestStreak}`
           : ""}
       </p>
+
+      <label className="results-panel__spoiler-toggle">
+        <input
+          type="checkbox"
+          checked={showWords}
+          onChange={(e) => setShowWords(e.target.checked)}
+        />
+        Show words in shared result
+      </label>
+
       <ShareButton text={shareText} />
       <pre className="results-panel__preview" aria-hidden="true">
         {shareText}
