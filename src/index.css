@@ -750,6 +750,14 @@ h2 {
   filter: blur(7px);
   user-select: none;
 }
+/* Also applied transiently (via JS), only around the image capture --
+   .results-panel__capture has no horizontal padding of its own on screen
+   (the surrounding card provides it there), but the card isn't part of
+   the capture, so the exported PNG needs its own breathing room. */
+.results-panel__capture--exporting {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
 .results-panel__preview {
   margin-top: 1.1rem;
   padding: 0.85rem;

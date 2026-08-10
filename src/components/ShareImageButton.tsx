@@ -12,7 +12,7 @@ interface Props {
 type Status = "idle" | "working" | "copied" | "error";
 
 const LABELS: Record<Status, string> = {
-  idle: "📸 Copy image",
+  idle: "📸 Share image",
   working: "Generating…",
   copied: "Image copied!",
   error: "Couldn't create image",
@@ -41,6 +41,13 @@ export function ShareImageButton({ targetRef, spoilerFree, fileName = "ink-resul
       : null;
     wordEls?.forEach((el) => el.classList.add("spoiler-blur"));
 
+    // `node` itself has no horizontal padding -- on screen it visually
+    // gets some from the surrounding card, but that card isn't part of
+    // the capture, so without this the exported image runs edge-to-edge.
+    // Added/removed around the capture only, so the on-screen layout
+    // (which already looks right) doesn't shift.
+    node.classList.add("results-panel__capture--exporting");
+
     try {
       await document.fonts?.ready;
       const backgroundColor = getComputedStyle(node).backgroundColor;
@@ -62,6 +69,7 @@ export function ShareImageButton({ targetRef, spoilerFree, fileName = "ink-resul
       setStatus("error");
     } finally {
       wordEls?.forEach((el) => el.classList.remove("spoiler-blur"));
+      node.classList.remove("results-panel__capture--exporting");
       window.setTimeout(() => setStatus("idle"), 2200);
     }
   }

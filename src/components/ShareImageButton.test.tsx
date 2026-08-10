@@ -13,7 +13,7 @@ function Harness({ spoilerFree }: { spoilerFree: boolean }) {
   const ref = createRef<HTMLDivElement>();
   return (
     <div>
-      <div ref={ref}>
+      <div ref={ref} data-testid="capture-target">
         <span className="results-panel__word">strange</span>
         <span className="rarity-badge">COMMON</span>
       </div>
@@ -64,6 +64,24 @@ describe("ShareImageButton", () => {
 
     capture.resolve(new Blob(["fake-png"], { type: "image/png" }));
     await vi.waitFor(() => expect(word).not.toHaveClass("spoiler-blur"));
+  });
+
+  it("adds extra horizontal padding for the capture and removes it after", async () => {
+    const capture = deferred<Blob>();
+    vi.mocked(toBlob).mockReturnValue(capture.promise);
+
+    render(<Harness spoilerFree={false} />);
+    const node = screen.getByTestId("capture-target");
+
+    void userEvent.click(screen.getByRole("button"));
+    await vi.waitFor(() =>
+      expect(node).toHaveClass("results-panel__capture--exporting")
+    );
+
+    capture.resolve(new Blob(["fake-png"], { type: "image/png" }));
+    await vi.waitFor(() =>
+      expect(node).not.toHaveClass("results-panel__capture--exporting")
+    );
   });
 
   it("does not blur anything when spoilerFree is false", async () => {
