@@ -15,7 +15,13 @@ export function ResultsPanel({ drop, words, streak }: Props) {
   // somewhere spoilers matter, not the default. It controls whether the
   // plain-text share includes the submitted words or rarity squares only.
   const [spoilerFree, setSpoilerFree] = useState(false);
-  const shareText = todayShareText(drop, words, { spoilerFree, streak: streak.currentStreak });
+  const shareText = todayShareText(drop, words, {
+    spoilerFree,
+    streak: streak.currentStreak,
+    crushedIt: streak.crushedIt,
+    elite: streak.elite,
+    highScore: streak.highScore,
+  });
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   const dropText = `Drop: ${drop.toUpperCase()}`;
   const [headingBeforeDrop, headingAfterDrop] = shareHeading.split(dropText);

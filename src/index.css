@@ -679,7 +679,7 @@ h2 {
 }
 .streak-display__high-score strong {
   font-family: var(--font-display);
-  font-size: 1.12rem;
+  font-size: 1rem;
   color: var(--fg);
 }
 
