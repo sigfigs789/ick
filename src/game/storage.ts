@@ -1,8 +1,8 @@
+import { MAX_GUESSES } from "./constants";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 
 const PROGRESS_PREFIX = "ick:progress:";
 const STREAK_KEY = "ick:streak";
-const WORDS_TO_WIN = 3;
 
 function safeParse<T>(raw: string | null): T | null {
   if (!raw) return null;
@@ -61,14 +61,16 @@ function previousDateString(dateStr: string): string {
 }
 
 /**
- * Records an accepted word for the day. Returns the updated progress.
- * Completion (and streak update) is only triggered once, the moment the
- * third distinct word is accepted -- "one official completion per puzzle."
+ * Records an accepted word for the day. Once `MAX_GUESSES` distinct words
+ * have been accepted the puzzle auto-completes (and the streak updates);
+ * before that, the player can keep guessing or call `lockInResult` to stop
+ * early and bank their best word so far -- "one official completion per
+ * puzzle" either way.
  */
 export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord): DailyProgress {
   if (progress.completed) return progress; // no further official changes once complete
   const acceptedWords = [...progress.acceptedWords, word];
-  const justCompleted = acceptedWords.length >= WORDS_TO_WIN;
+  const justCompleted = acceptedWords.length >= MAX_GUESSES;
 
   const updated: DailyProgress = {
     ...progress,
@@ -91,6 +93,24 @@ export function recordRejectedAttempt(progress: DailyProgress, rawWord: string):
     rejectedAttempts: [...progress.rejectedAttempts, rawWord],
   };
   saveProgress(updated);
+  return updated;
+}
+
+/**
+ * Player-initiated early finish: bank whatever's been accepted so far as
+ * the official result, without using all `MAX_GUESSES` attempts. No-op if
+ * there's nothing accepted yet or the day is already complete.
+ */
+export function lockInResult(progress: DailyProgress): DailyProgress {
+  if (progress.completed || progress.acceptedWords.length === 0) return progress;
+
+  const updated: DailyProgress = {
+    ...progress,
+    completed: true,
+    completedAt: new Date().toISOString(),
+  };
+  saveProgress(updated);
+  updateStreakOnCompletion(progress.date);
   return updated;
 }
 

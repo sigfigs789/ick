@@ -2,9 +2,11 @@
 
 A daily word-fragment puzzle inspired by Wordle and BombParty. Every player
 gets the same 2- or 3-letter fragment each day (like `STR`, `OU`, or `MP`)
-and finds three different valid English words that contain it, in order.
-No timer, no login, no points — just a friendly rarity reveal (Very Common
-→ Extremely Rare) once you're done.
+and enters valid English words that contain it, in order, for up to 6
+distinct guesses. The goal is finding the rarest word you can — your best
+one is crowned in the log. No timer, no login, no traditional score, just
+a friendly rarity reveal (Very Common → Extremely Rare) on every accepted
+word. Stop anytime with "Lock in my result," or use all 6 guesses.
 
 Built in React + TypeScript (Vite) with an eye toward eventually porting to
 iOS/Android via React Native — game logic in `src/game/` is plain
@@ -35,14 +37,21 @@ Open the printed local URL. `npm run build` produces a production build in
   same word — see `src/game/stem.ts`) as one already accepted that day.
 - **Rarity** (`src/game/dictionary.ts`, `src/data/rarity.json`): precomputed
   offline from [wordfreq](https://github.com/rspeer/wordfreq)'s Zipf
-  frequency values, bucketed into five friendly labels. Gameplay never
-  makes a live frequency lookup.
+  frequency values (exact value kept, not just the label — see
+  `src/game/rank.ts`), bucketed into five friendly labels for display.
+  Gameplay never makes a live frequency lookup.
+- **Guesses** (`src/game/constants.ts`): up to `MAX_GUESSES` (6) distinct
+  words per day. Only accepted words consume a guess — rejected submissions
+  are free and unlimited. The puzzle auto-completes at 6, or the player can
+  call it early via "Lock in my result" (`src/game/storage.ts`'s
+  `lockInResult`) once they've got at least one word.
 - **Persistence** (`src/game/storage.ts`): today's progress and the
   streak counter live in `localStorage`, keyed by calendar date. Once the
-  third word is accepted the puzzle is marked complete and can't be
-  re-completed, but players can still revisit their result afterward.
+  puzzle is marked complete it can't be re-completed, but players can
+  still revisit their result afterward.
 - **Sharing** (`src/game/share.ts`): a spoiler-free, plain-text result
-  (fragment + rarity squares, no words) suitable for pasting anywhere.
+  (fragment + rarity squares in guess order + your best rarity, no words)
+  suitable for pasting anywhere.
 
 ## Regenerating the word/rarity data
 
@@ -72,8 +81,8 @@ obscure answers.
 
 ## Design decisions worth knowing about
 
-- **Plurals/conjugations are accepted** as distinct words, but three forms
-  of the same root (`play`, `plays`, `played`) can't all count — see
+- **Plurals/conjugations are accepted** as distinct words, but two forms
+  of the same root (`play`, `plays`, `played`) can't both count — see
   `src/game/stem.ts` for the (deliberately simple, non-linguistic)
   duplicate check.
 - **The curated dictionary and frequency data are separate files** by
@@ -81,6 +90,17 @@ obscure answers.
   data only decides how it's *labeled*. They can be edited independently.
 - **Rarity is index-aligned, not keyed by word**, in `rarity.json` to keep
   the payload small — see the comment in `src/game/dictionary.ts`.
+- **Clicking a word already in the log** reloads it into the guess box
+  (`SubmitForm`'s `prefill` prop) so it's easy to tweak and resubmit a
+  near-miss.
+- **Sound effects** (`src/audio/sound.ts`) are synthesized with the Web
+  Audio API rather than shipped as files — no assets to load, and the
+  accept chime's pitch scales with rarity. Muted via a header toggle,
+  persisted in `localStorage`.
+- **The dev-only "new fragment" button** (`src/components/DevRerollButton.tsx`)
+  only renders when `import.meta.env.DEV` is true and is stripped entirely
+  from production builds; it swaps in a random fragment and an
+  in-memory-only puzzle so testing never touches real daily/streak data.
 
 ## Not in v1 (by design)
 
