@@ -9,7 +9,14 @@ const words: AcceptedWord[] = [
   { word: "aardvark", rarity: "Extremely Rare", zipf: 2.4 },
 ];
 
-const streak: StreakState = { currentStreak: 1, longestStreak: 1, totalCompleted: 1 };
+const streak: StreakState = {
+  currentStreak: 1,
+  longestStreak: 1,
+  totalCompleted: 1,
+  crushedIt: 1,
+  elite: 0,
+  highScore: 6.8,
+};
 
 describe("ResultsPanel share toggle", () => {
   it("defaults to unchecked: the shared text preview includes the words", () => {

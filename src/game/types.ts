@@ -3,7 +3,8 @@ export type Rarity =
   | "Common"
   | "Uncommon"
   | "Rare"
-  | "Extremely Rare";
+  | "Extremely Rare"
+  | "Mythic";
 
 export interface RarityInfo {
   zipf: number;
@@ -39,6 +40,8 @@ export interface DailyProgress {
   acceptedWords: AcceptedWord[];
   rejectedAttempts: string[];
   completed: boolean;
+  /** Whether this completed puzzle met the Rare-or-better win condition. */
+  won?: boolean;
   completedAt?: string; // ISO timestamp
 }
 
@@ -47,4 +50,8 @@ export interface StreakState {
   longestStreak: number;
   lastCompletedDate?: string; // YYYY-MM-DD
   totalCompleted: number;
+  crushedIt: number;
+  elite: number;
+  /** Highest rarity score earned from any accepted word. */
+  highScore: number;
 }

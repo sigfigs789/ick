@@ -2,7 +2,16 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { GuessLog } from "./GuessLog";
-import type { AcceptedWord } from "../game/types";
+import type { AcceptedWord, StreakState } from "../game/types";
+
+const streak: StreakState = {
+  currentStreak: 1,
+  longestStreak: 1,
+  totalCompleted: 1,
+  crushedIt: 1,
+  elite: 0,
+  highScore: 6.8,
+};
 
 describe("GuessLog", () => {
   it("shows an empty state with no guesses", () => {
@@ -40,5 +49,21 @@ describe("GuessLog", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /reuse "strange"/i }));
     expect(onSelectWord).toHaveBeenCalledWith("strange");
+  });
+
+  it("shows all trackers without a duplicate completion heading", () => {
+    const words: AcceptedWord[] = [{ word: "strut", rarity: "Rare", zipf: 3.2 }];
+    render(
+      <GuessLog
+        acceptedWords={words}
+        onSelectWord={vi.fn()}
+        completed
+        streak={streak}
+      />
+    );
+    expect(screen.queryByRole("heading", { name: /you won/i })).not.toBeInTheDocument();
+    expect(screen.getByText("Crushed it")).toBeInTheDocument();
+    expect(screen.getByText("Elite")).toBeInTheDocument();
+    expect(screen.queryByText(/guess.*left/i)).not.toBeInTheDocument();
   });
 });

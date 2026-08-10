@@ -1,26 +1,36 @@
 import { MAX_GUESSES } from "../game/constants";
 import { bestWord } from "../game/rank";
 import { RarityBadge } from "./RarityBadge";
-import type { AcceptedWord } from "../game/types";
+import { StreakDisplay } from "./StreakDisplay";
+import type { AcceptedWord, StreakState } from "../game/types";
 
 interface Props {
   acceptedWords: AcceptedWord[];
   /** Clicking a logged word loads it back into the guess input for tweaking. */
   onSelectWord: (word: string) => void;
+  completed?: boolean;
+  streak?: StreakState;
 }
 
-export function GuessLog({ acceptedWords, onSelectWord }: Props) {
+export function GuessLog({
+  acceptedWords,
+  onSelectWord,
+  completed = false,
+  streak,
+}: Props) {
   const best = bestWord(acceptedWords);
   const guessesLeft = MAX_GUESSES - acceptedWords.length;
 
   return (
-    <section className="guess-log" aria-label="Your guesses">
-      <div className="guess-log__header">
-        <h2 className="guess-log__title">Guess log</h2>
-        <span className="guess-log__count">
-          {acceptedWords.length} of {MAX_GUESSES} used
-        </span>
-      </div>
+    <section className={`guess-log${completed ? " guess-log--completed" : ""}`} aria-label="Your guesses">
+      {!completed && (
+        <div className="guess-log__header">
+          <h2 className="guess-log__title">Guess log</h2>
+          <span className="guess-log__count">
+            {acceptedWords.length} of {MAX_GUESSES} used
+          </span>
+        </div>
+      )}
 
       {acceptedWords.length === 0 ? (
         <p className="guess-log__empty">
@@ -52,10 +62,16 @@ export function GuessLog({ acceptedWords, onSelectWord }: Props) {
         </ol>
       )}
 
-      {guessesLeft > 0 && acceptedWords.length > 0 && (
+      {!completed && guessesLeft > 0 && acceptedWords.length > 0 && (
         <p className="guess-log__remaining">
           {guessesLeft} guess{guessesLeft === 1 ? "" : "es"} left. Aim for the highest rarity you can find.
         </p>
+      )}
+
+      {completed && streak && (
+        <div className="guess-log__completion-trackers">
+          <StreakDisplay streak={streak} />
+        </div>
       )}
     </section>
   );
