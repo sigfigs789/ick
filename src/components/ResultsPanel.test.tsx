@@ -20,6 +20,7 @@ describe("ResultsPanel share toggle", () => {
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).toContain("strange");
     expect(preview?.textContent).toContain("aardvark");
+    expect(preview?.querySelector("strong")?.textContent).toBe("Drop: STR");
   });
 
   it("hides the words in the shared text once toggled on, but keeps the rarity squares", async () => {

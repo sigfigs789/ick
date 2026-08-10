@@ -21,7 +21,7 @@ export function ResultsPanel({ drop, words, streak }: Props) {
   const shareText = todayShareText(drop, words, { spoilerFree, streak: streak.currentStreak });
   const best = bestWord(words);
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
-  const dropText = `"${drop}"`;
+  const dropText = `Drop: ${drop.toUpperCase()}`;
   const [headingBeforeDrop, headingAfterDrop] = shareHeading.split(dropText);
 
   return (
@@ -69,7 +69,7 @@ export function ResultsPanel({ drop, words, streak }: Props) {
       </label>
       <pre className="results-panel__preview" aria-hidden="true">
         {headingBeforeDrop}
-        <strong>{drop.toUpperCase()}</strong>
+        <strong>{dropText}</strong>
         {headingAfterDrop}
         {shareDetailLines.length > 0 && `\n${shareDetailLines.join("\n")}`}
       </pre>

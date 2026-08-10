@@ -59,7 +59,7 @@ export function buildShareText(
         )
         .join("\n");
 
-  const lines = [`Ink #${n} (${label}) — drop "${drop}"`, resultLine];
+  const lines = [`Ink #${n} (${label}) — Drop: ${drop.toUpperCase()}`, resultLine];
   if (best) {
     const score = rarityScore(best.zipf).toFixed(1);
     lines.push(`Best: ${best.rarity} (${score}) · ${words.length}/${MAX_GUESSES} guesses`);
