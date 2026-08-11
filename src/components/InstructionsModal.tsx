@@ -45,13 +45,13 @@ export function InstructionsModal({ open, onClose }: Props) {
           </button>
         </div>
         <ol className="modal__steps">
-          <li>WordInk gives everyone the same daily ink—say, “INK”. Find the rarest English word you can that contains it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</li>
+          <li>WordInk gives everyone the same daily drop—say, “INK”. Find the rarest English word you can that contains it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</li>
           <li>After your first valid word, lock in or keep guessing up to 6 times. A Rare-or-better result keeps your streak going.</li>
         </ol>
         <p className="modal__rarity-note">
-          Rarity scores reflect how often words appear across sources including books, news, web text,
-          subtitles, and social media—not how complex a word looks. The highest rank is Elusive, at 9.9+
-          rarity.
+          Rarity scores reflect how often words appear across sources including books, news, movies,
+          websites, social media, and more. They do not reflect how complex a word is. The highest rank is
+          Elusive, at 9.9+ rarity.
         </p>
       </div>
     </div>

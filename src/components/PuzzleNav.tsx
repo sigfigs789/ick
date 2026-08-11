@@ -26,7 +26,8 @@ export function PuzzleNav({
         disabled={!canGoToPrevious}
         aria-label="Previous puzzle"
       >
-        ‹
+        <span aria-hidden="true">‹</span>
+        <span>Previous</span>
       </button>
       <p className="app__puzzle-number" aria-live="polite">
         Puzzle #{puzzleNumber} · {formatDateLabel(date)}
@@ -38,7 +39,8 @@ export function PuzzleNav({
         disabled={!canGoToNext}
         aria-label="Next puzzle"
       >
-        ›
+        <span>Next</span>
+        <span aria-hidden="true">›</span>
       </button>
     </div>
   );

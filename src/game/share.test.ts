@@ -24,7 +24,7 @@ describe("buildShareText", () => {
   it("includes the puzzle number and drop, never the words themselves", () => {
     const text = buildShareText("2024-01-05", "str", words);
     expect(text).toContain(`https://wordink.app #${puzzleNumber("2024-01-05")}`);
-    expect(text).toContain("Ink: STR");
+    expect(text).toContain("Drop: STR");
     for (const w of words) {
       expect(text).not.toContain(w.word);
     }
@@ -38,7 +38,7 @@ describe("buildShareText", () => {
 
   it("separates the heading from the shared guesses", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    expect(text).toContain("Ink: STR\n\n⬜ 0.0");
+    expect(text).toContain("Drop: STR\n\n⬜ 0.0");
   });
 
   it("omits the best-word summary", () => {

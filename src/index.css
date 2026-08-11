@@ -227,27 +227,32 @@ h2 {
   margin-top: 0.25rem;
 }
 .puzzle-nav__arrow {
-  width: 1.5rem;
-  height: 1.5rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.55rem;
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--fg-muted);
-  font-size: 1rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: background-color 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
-}
-.puzzle-nav__arrow:not(:disabled):hover {
+  gap: 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-strong);
   background: var(--bg-inset);
   color: var(--fg);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s var(--ease-standard), color 0.15s var(--ease-standard), transform 0.15s var(--ease-standard);
+}
+.puzzle-nav__arrow:not(:disabled):hover {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.puzzle-nav__arrow:not(:disabled):active {
+  transform: scale(0.96);
 }
 .puzzle-nav__arrow:disabled {
-  opacity: 0.3;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 .puzzle-nav__archive-tag {

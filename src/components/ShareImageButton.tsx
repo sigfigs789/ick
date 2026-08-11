@@ -24,7 +24,7 @@ const LABELS: Record<Status, string> = {
  * etc. is a single click-then-paste. Falls back to a plain file download
  * only if the Clipboard API's image write isn't available at all.
  */
-export function ShareImageButton({ targetRef, spoilerFree, fileName = "ink-result.png" }: Props) {
+export function ShareImageButton({ targetRef, spoilerFree, fileName = "drop-result.png" }: Props) {
   const [status, setStatus] = useState<Status>("idle");
 
   async function handleClick() {
