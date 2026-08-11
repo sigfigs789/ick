@@ -1,6 +1,5 @@
 import { useMemo } from "react";
-import { bestWordForDrop } from "../game/dictionary";
-import { RarityBadge } from "./RarityBadge";
+import { bestWordForDrop, rarityScore } from "../game/dictionary";
 
 interface Props {
   drop: string;
@@ -27,7 +26,7 @@ export function DropDisplay({ drop, completed = false }: Props) {
       </p>
       {best && (
         <p className="drop-display__ceiling">
-          Best possible: <RarityBadge rarity={best.rarity} zipf={best.zipf} />
+          Best possible: {rarityScore(best.zipf).toFixed(1)}
         </p>
       )}
       {completed && best && (

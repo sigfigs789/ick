@@ -1,12 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { DropDisplay } from "./DropDisplay";
-import { bestWordForDrop } from "../game/dictionary";
+import { bestWordForDrop, rarityScore } from "../game/dictionary";
 
 describe("DropDisplay", () => {
-  it("shows the best-possible rarity but not the word while playing", () => {
+  it("shows the best-possible score but not the rarity or word while playing", () => {
     render(<DropDisplay drop="str" />);
-    expect(screen.getByText(/best possible/i)).toBeInTheDocument();
+    const best = bestWordForDrop("str");
+    expect(screen.getByText(`Best possible: ${rarityScore(best!.zipf).toFixed(1)}`)).toBeInTheDocument();
+    expect(screen.queryByText(/elusive/i)).not.toBeInTheDocument();
     expect(document.querySelector(".drop-display__ceiling-word")).not.toBeInTheDocument();
   });
 
