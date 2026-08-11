@@ -15,7 +15,7 @@ const RARITY_SYMBOL: Record<Rarity, string> = {
   Uncommon: "🟦",
   Rare: "🟪",
   "Extremely Rare": "🟧",
-  Elusive: "🟥",
+  Mythic: "🟥",
 };
 
 export function puzzleNumber(dateStr: string): number {

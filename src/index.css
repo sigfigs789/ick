@@ -47,9 +47,9 @@
   --rarity-extremely-rare-fg: #b0630a;
   --rarity-extremely-rare-dot: #f0980f;
 
-  --rarity-elusive-bg: #fde6f0;
-  --rarity-elusive-fg: #9d1a53;
-  --rarity-elusive-dot: #e13a7c;
+  --rarity-mythic-bg: #fde6f0;
+  --rarity-mythic-fg: #9d1a53;
+  --rarity-mythic-dot: #e13a7c;
 
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -96,9 +96,9 @@
     --rarity-extremely-rare-fg: #f7c260;
     --rarity-extremely-rare-dot: #f2a30f;
 
-    --rarity-elusive-bg: #3a1025;
-    --rarity-elusive-fg: #f38ac0;
-    --rarity-elusive-dot: #e7438d;
+    --rarity-mythic-bg: #3a1025;
+    --rarity-mythic-fg: #f38ac0;
+    --rarity-mythic-dot: #e7438d;
   }
 }
 
@@ -539,13 +539,13 @@ h2 {
   background: var(--rarity-extremely-rare-dot);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-extremely-rare-dot) 25%, transparent);
 }
-.rarity--elusive {
-  background: var(--rarity-elusive-bg);
-  color: var(--rarity-elusive-fg);
+.rarity--mythic {
+  background: var(--rarity-mythic-bg);
+  color: var(--rarity-mythic-fg);
 }
-.rarity--elusive .rarity-badge__dot {
-  background: var(--rarity-elusive-dot);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-elusive-dot) 28%, transparent);
+.rarity--mythic .rarity-badge__dot {
+  background: var(--rarity-mythic-dot);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-mythic-dot) 28%, transparent);
 }
 
 /* Submit form */

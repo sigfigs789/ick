@@ -25,7 +25,15 @@ function safeParse<T>(raw: string | null): T | null {
 }
 
 export function loadProgress(date: string): DailyProgress | null {
-  return safeParse<DailyProgress>(localStorage.getItem(PROGRESS_PREFIX + date));
+  const progress = safeParse<DailyProgress>(localStorage.getItem(PROGRESS_PREFIX + date));
+  if (!progress) return null;
+
+  // Keep progress saved under the former top-tier name playable after the
+  // rank was renamed to Mythic.
+  const acceptedWords = progress.acceptedWords.map((word) =>
+    (word.rarity as string) === "Elusive" ? { ...word, rarity: "Mythic" as const } : word
+  );
+  return { ...progress, acceptedWords };
 }
 
 function saveProgress(progress: DailyProgress): void {

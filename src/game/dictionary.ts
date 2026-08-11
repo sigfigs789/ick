@@ -103,11 +103,11 @@ function rarityForZipf(zipf: number): Rarity {
   if (zipf >= 3.3) return "Uncommon";
   if (zipf >= 2.5) return "Rare";
   if (zipf >= 1.6) return "Extremely Rare";
-  return "Elusive";
+  return "Mythic";
 }
 
 export const RARITY_ORDER: Rarity[] = [
-  "Elusive",
+  "Mythic",
   "Extremely Rare",
   "Rare",
   "Uncommon",

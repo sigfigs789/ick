@@ -49,10 +49,10 @@ describe("rarityFor", () => {
     expect(rarityFor("alertness")).toEqual(alert);
   });
 
-  it("classifies the dictionary's rarest word as Elusive, scoring a perfect 10", () => {
-    const elusive = rarityFor("abash");
-    expect(elusive).toMatchObject({ rarity: "Elusive", zipf: 1 });
-    expect(rarityScore(elusive!.zipf)).toBe(10);
+  it("classifies the dictionary's rarest word as Mythic, scoring a perfect 10", () => {
+    const mythic = rarityFor("abash");
+    expect(mythic).toMatchObject({ rarity: "Mythic", zipf: 1 });
+    expect(rarityScore(mythic!.zipf)).toBe(10);
   });
 });
 

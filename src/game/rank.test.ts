@@ -31,8 +31,8 @@ describe("bestWord", () => {
 });
 
 describe("rarity thresholds", () => {
-  it("treats Elusive as a winning Elite tier", () => {
-    expect(isWinningRarity("Elusive")).toBe(true);
-    expect(isEliteRarity("Elusive")).toBe(true);
+  it("treats Mythic as a winning Elite tier", () => {
+    expect(isWinningRarity("Mythic")).toBe(true);
+    expect(isEliteRarity("Mythic")).toBe(true);
   });
 });

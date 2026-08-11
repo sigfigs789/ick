@@ -48,7 +48,7 @@ RARITY_BANDS = [
     (3.3, "Uncommon"),
     (2.5, "Rare"),
     (1.6, "Extremely Rare"),
-    (0.0, "Elusive"),
+    (0.0, "Mythic"),
 ]
 
 WORD_RE = re.compile(r"^[a-z]+$")
@@ -60,7 +60,7 @@ RARITY_CODE = {
     "Uncommon": "U",
     "Rare": "R",
     "Extremely Rare": "X",
-    "Elusive": "M",
+    "Mythic": "M",
 }
 
 

@@ -7,9 +7,9 @@ export function bestWord(words: AcceptedWord[]): AcceptedWord | undefined {
 }
 
 export function isWinningRarity(rarity: Rarity): boolean {
-  return rarity === "Rare" || rarity === "Extremely Rare" || rarity === "Elusive";
+  return rarity === "Rare" || rarity === "Extremely Rare" || rarity === "Mythic";
 }
 
 export function isEliteRarity(rarity: Rarity): boolean {
-  return rarity === "Extremely Rare" || rarity === "Elusive";
+  return rarity === "Extremely Rare" || rarity === "Mythic";
 }

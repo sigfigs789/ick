@@ -57,6 +57,18 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loaded.acceptedWords).toEqual([]);
     expect(loaded.drop).toBe("ou");
   });
+
+  it("migrates the former Elusive rank to Mythic in saved progress", () => {
+    localStorage.setItem(
+      "ick:progress:2024-01-01",
+      JSON.stringify({
+        ...newProgress("2024-01-01", "str"),
+        acceptedWords: [{ word: "abash", rarity: "Elusive", zipf: 1 }],
+      })
+    );
+
+    expect(loadProgress("2024-01-01")?.acceptedWords[0].rarity).toBe("Mythic");
+  });
 });
 
 describe("loadStreak", () => {
