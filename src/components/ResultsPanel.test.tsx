@@ -55,6 +55,6 @@ describe("ResultsPanel share toggle", () => {
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).toContain("strange");
     expect(preview?.textContent).toContain("aardvark");
-    expect(preview?.querySelector("strong")?.textContent).toMatch(/WordInk #.*Ink: STR/);
+    expect(preview?.querySelector("strong")?.textContent).toMatch(/https:\/\/wordink\.app #.*Ink: STR/);
   });
 });

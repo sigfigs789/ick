@@ -62,7 +62,7 @@ export function buildShareText(
         )
         .join("\n");
 
-  const lines = [`WordInk #${n} (${label}) — Ink: ${drop.toUpperCase()}`];
+  const lines = [`https://wordink.app #${n} (${label}) — Ink: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
   if (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined) {
     const streak = options.streak ?? 0;

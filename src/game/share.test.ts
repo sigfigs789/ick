@@ -22,7 +22,7 @@ describe("buildShareText", () => {
 
   it("includes the puzzle number and drop, never the words themselves", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    expect(text).toContain(`WordInk #${puzzleNumber("2024-01-05")}`);
+    expect(text).toContain(`https://wordink.app #${puzzleNumber("2024-01-05")}`);
     expect(text).toContain("Ink: STR");
     for (const w of words) {
       expect(text).not.toContain(w.word);
