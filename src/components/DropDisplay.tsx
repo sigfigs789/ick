@@ -26,7 +26,7 @@ export function DropDisplay({ drop, completed = false }: Props) {
       </p>
       {best && (
         <p className="drop-display__ceiling">
-          Best possible: {rarityScore(best.zipf).toFixed(1)}
+          Best possible score: {rarityScore(best.zipf).toFixed(1)}
         </p>
       )}
       {completed && best && (
