@@ -42,6 +42,13 @@ describe("rarityFor", () => {
     expect(rare!.zipf).toBeLessThan(common!.zipf);
   });
 
+  it("caps transparent derived words at their more common base word's score", () => {
+    const alert = rarityFor("alert")!;
+
+    expect(rarityFor("alertly")).toEqual(alert);
+    expect(rarityFor("alertness")).toEqual(alert);
+  });
+
   it("classifies the dictionary's rarest word as Elusive, scoring a perfect 10", () => {
     const elusive = rarityFor("abased");
     expect(elusive).toMatchObject({ rarity: "Elusive", zipf: 1.5 });

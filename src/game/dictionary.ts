@@ -1,5 +1,6 @@
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
+import { baseForm } from "./stem";
 import type { AcceptedWord, Rarity, RarityInfo } from "./types";
 
 /**
@@ -11,22 +12,11 @@ const WORDS: readonly string[] = dictionaryWords as string[];
 const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, i]));
 
 /**
- * Frequency-derived rarity, precomputed offline from wordfreq's Zipf
- * frequency values -- gameplay never needs a live lookup. Index-aligned
- * with dictionary.json (same word order) rather than keyed by word, which
- * keeps the payload small (no word repeated as both a dictionary entry and
- * a JSON object key).
+ * Frequency data, precomputed offline from wordfreq's Zipf values --
+ * gameplay never needs a live lookup. Index-aligned with dictionary.json
+ * (same word order) rather than keyed by word, which keeps the payload
+ * small (no word repeated as both a dictionary entry and a JSON object key).
  */
-const CODE_TO_RARITY: Record<string, Rarity> = {
-  V: "Very Common",
-  C: "Common",
-  U: "Uncommon",
-  R: "Rare",
-  X: "Extremely Rare",
-  M: "Elusive",
-};
-
-const rarityCodes: string = rarityData.codes;
 const zipfTenths: number[] = rarityData.zipfTenths;
 
 /**
@@ -52,9 +42,11 @@ export function isValidWord(word: string): boolean {
 }
 
 export function rarityFor(word: string): RarityInfo | undefined {
-  const i = WORD_INDEX.get(word.toLowerCase());
+  const normalized = word.toLowerCase();
+  const i = WORD_INDEX.get(normalized);
   if (i === undefined) return undefined;
-  return { rarity: CODE_TO_RARITY[rarityCodes[i]], zipf: zipfTenths[i] / 10 };
+  const zipf = adjustedZipf(normalized, zipfTenths[i] / 10);
+  return { rarity: rarityForZipf(zipf), zipf };
 }
 
 /**
@@ -68,12 +60,50 @@ export function bestWordForDrop(drop: string): AcceptedWord | undefined {
   let best: AcceptedWord | undefined;
   for (let i = 0; i < WORDS.length; i++) {
     if (!WORDS[i].includes(needle)) continue;
-    const zipf = zipfTenths[i] / 10;
-    if (!best || zipf < best.zipf) {
-      best = { word: WORDS[i], rarity: CODE_TO_RARITY[rarityCodes[i]], zipf };
+    const info = rarityFor(WORDS[i])!;
+    if (!best || info.zipf < best.zipf) {
+      best = { word: WORDS[i], ...info };
     }
   }
   return best;
+}
+
+/**
+ * Frequency data can undercount familiar derived forms such as "alertly"
+ * even when their base words are common. Cap those forms at the base word's
+ * frequency so a transparent suffix cannot turn an everyday word into a
+ * top-tier answer.
+ */
+function adjustedZipf(word: string, zipf: number): number {
+  const base = scoringBaseForm(word);
+  if (!base) return zipf;
+
+  const baseIndex = WORD_INDEX.get(base);
+  if (baseIndex === undefined) return zipf;
+  return Math.max(zipf, zipfTenths[baseIndex] / 10);
+}
+
+function scoringBaseForm(word: string): string | undefined {
+  const inflected = baseForm(word);
+  if (inflected !== word && WORD_INDEX.has(inflected)) return inflected;
+
+  for (const suffix of ["ness", "ly"]) {
+    if (!word.endsWith(suffix) || word.length <= suffix.length + 2) continue;
+    const stem = word.slice(0, -suffix.length);
+    const candidates = [stem, stem.endsWith("i") ? `${stem.slice(0, -1)}y` : ""];
+    const base = candidates.find((candidate) => candidate && WORD_INDEX.has(candidate));
+    if (base) return base;
+  }
+  return undefined;
+}
+
+function rarityForZipf(zipf: number): Rarity {
+  if (zipf >= 5.2) return "Very Common";
+  if (zipf >= 4.2) return "Common";
+  if (zipf >= 3.3) return "Uncommon";
+  if (zipf >= 2.5) return "Rare";
+  if (zipf >= 1.6) return "Extremely Rare";
+  return "Elusive";
 }
 
 export const RARITY_ORDER: Rarity[] = [
