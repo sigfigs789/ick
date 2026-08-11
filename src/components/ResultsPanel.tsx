@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { todayShareText } from "../game/share";
+import { buildShareText } from "../game/share";
 import { ShareButton } from "./ShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
 import { trackResultShared } from "../analytics";
@@ -17,7 +17,7 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
   // spoilers is the exception, not the default. It controls whether the
   // plain-text share includes the submitted words or rarity squares only.
   const [spoilerFree, setSpoilerFree] = useState(true);
-  const shareText = todayShareText(drop, words, {
+  const shareText = buildShareText(date, drop, words, {
     spoilerFree,
     streak: streak.currentStreak,
     crushedIt: streak.crushedIt,
