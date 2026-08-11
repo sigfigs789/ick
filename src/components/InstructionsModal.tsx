@@ -45,7 +45,7 @@ export function InstructionsModal({ open, onClose }: Props) {
           </button>
         </div>
         <ol className="modal__steps">
-          <li>WordInk gives everyone the same daily ink — say, “INK”. Your job is to dip into your vocabulary and pull out words stained with it, like dr<strong>INK</strong>, th<strong>INK</strong>, or p<strong>INK</strong>.</li>
+          <li>WordInk gives everyone the same daily ink — say, “INK”. Your job is to dip into your vocabulary and pull out words stained with it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</li>
           <li>After your first valid word, lock in or keep guessing up to 6 times. A Rare-or-better result keeps your streak going.</li>
         </ol>
       </div>
