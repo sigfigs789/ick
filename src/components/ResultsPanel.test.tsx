@@ -20,10 +20,10 @@ const streak: StreakState = {
 };
 
 describe("ResultsPanel share toggle", () => {
-  it("defaults to checked: the shared text preview hides the words but keeps the rarity squares", () => {
+  it("defaults to unchecked: the shared text preview hides the words but keeps the rarity squares", () => {
     render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
-    const toggle = screen.getByRole("checkbox", { name: /spoiler free/i });
-    expect(toggle).toBeChecked();
+    const toggle = screen.getByRole("checkbox", { name: /show my answers/i });
+    expect(toggle).not.toBeChecked();
 
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).not.toContain("strange");
@@ -45,12 +45,12 @@ describe("ResultsPanel share toggle", () => {
     }).split("\n")[0]);
   });
 
-  it("shows the words in the shared text once toggled off", async () => {
+  it("shows the words in the shared text once checked", async () => {
     render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
-    const toggle = screen.getByRole("checkbox", { name: /spoiler free/i });
+    const toggle = screen.getByRole("checkbox", { name: /show my answers/i });
 
     await userEvent.click(toggle);
-    expect(toggle).not.toBeChecked();
+    expect(toggle).toBeChecked();
 
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).toContain("strange");
