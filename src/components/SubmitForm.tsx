@@ -20,6 +20,10 @@ export function SubmitForm({ drop, disabled, feedback, prefill, onSubmit }: Prop
     if (!value.trim() || disabled) return;
     onSubmit(value);
     setValue("");
+    // Tapping the on-screen Submit button (as opposed to the keyboard's own
+    // "go"/"done" key) shouldn't dismiss the mobile keyboard -- re-focus so
+    // the player can keep typing their next guess without tapping back in.
+    inputRef.current?.focus();
   }
 
   // A log entry was clicked: load its word into the box and focus it so
@@ -66,7 +70,14 @@ export function SubmitForm({ drop, disabled, feedback, prefill, onSubmit }: Prop
           placeholder={disabled ? "" : "type a word…"}
           maxLength={30}
         />
-        <button type="submit" disabled={disabled || !value.trim()}>
+        <button
+          type="submit"
+          disabled={disabled || !value.trim()}
+          // Without this, tapping Submit on mobile focuses the button first
+          // (stealing focus from the input) and closes the keyboard before
+          // the click/submit even fires.
+          onMouseDown={(e) => e.preventDefault()}
+        >
           Submit
         </button>
       </div>
