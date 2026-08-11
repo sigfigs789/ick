@@ -32,12 +32,12 @@ describe("buildShareText", () => {
   it("puts each spoiler-free rarity square and score on its own line", () => {
     const text = buildShareText("2024-01-05", "str", words);
     const resultLines = text.split("\n").slice(2, 2 + words.length);
-    expect(resultLines).toEqual(["⬜ 2.3", "🟩 5.4", "🟧 7.6"]);
+    expect(resultLines).toEqual(["⬜ 0.0", "🟩 5.0", "🟧 8.5"]);
   });
 
   it("separates the heading from the shared guesses", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    expect(text).toContain("Ink: STR\n\n⬜ 2.3");
+    expect(text).toContain("Ink: STR\n\n⬜ 0.0");
   });
 
   it("omits the best-word summary", () => {
@@ -56,17 +56,17 @@ describe("buildShareText", () => {
     for (const w of words) {
       expect(text).toContain(w.word);
     }
-    // aardvark: zipf 2.4 -> score 7.6
-    expect(text).toContain("aardvark (Extremely Rare, 7.6)");
+    // aardvark: zipf 2.4 -> score 8.5
+    expect(text).toContain("aardvark (Extremely Rare, 8.5)");
   });
 
   it("puts each word and its rarity square on a separate line", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     const resultLines = text.split("\n").slice(2, 2 + words.length);
     // aardvark: Extremely Rare -> 🟧
-    expect(resultLines).toContain("🟧 aardvark (Extremely Rare, 7.6)");
+    expect(resultLines).toContain("🟧 aardvark (Extremely Rare, 8.5)");
     // the: Very Common -> ⬜
-    expect(resultLines).toContain("⬜ the (Very Common, 2.3)");
+    expect(resultLines).toContain("⬜ the (Very Common, 0.0)");
     expect(resultLines).toHaveLength(words.length);
   });
 
@@ -88,6 +88,6 @@ describe("buildShareText", () => {
       highScore: 8.5,
     });
 
-    expect(text).toContain("🟧 7.6\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nHigh score: 8.5");
+    expect(text).toContain("🟧 8.5\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nHigh score: 8.5");
   });
 });

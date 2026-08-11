@@ -12,11 +12,11 @@ interface Props {
 }
 
 export function ResultsPanel({ date, drop, words, streak }: Props) {
-  // Defaults to unchecked (full result: squares + words) -- hiding words
-  // is an opt-in the player reaches for deliberately when sharing
-  // somewhere spoilers matter, not the default. It controls whether the
+  // Defaults to checked (rarity squares only) -- showing the submitted
+  // words is an opt-in the player reaches for deliberately, since sharing
+  // spoilers is the exception, not the default. It controls whether the
   // plain-text share includes the submitted words or rarity squares only.
-  const [spoilerFree, setSpoilerFree] = useState(false);
+  const [spoilerFree, setSpoilerFree] = useState(true);
   const shareText = todayShareText(drop, words, {
     spoilerFree,
     streak: streak.currentStreak,

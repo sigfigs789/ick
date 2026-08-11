@@ -101,7 +101,7 @@ export default function App() {
       <Analytics />
       <SpeedInsights />
       <main>
-        <DropDisplay drop={drop} />
+        <DropDisplay drop={drop} completed={progress.completed} />
         <GuessLog
           acceptedWords={progress.acceptedWords}
           onSelectWord={(word) => setPrefill({ word, token: Date.now() })}
