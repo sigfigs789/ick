@@ -48,6 +48,11 @@ export function InstructionsModal({ open, onClose }: Props) {
           <li>WordInk gives everyone the same daily ink — say, “INK”. Your job is to dip into your vocabulary and pull out words stained with it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</li>
           <li>After your first valid word, lock in or keep guessing up to 6 times. A Rare-or-better result keeps your streak going.</li>
         </ol>
+        <p className="modal__rarity-note">
+          Rarity scores reflect how often words appear across sources including books, news, web text,
+          subtitles, and social media—not how complex a word looks. The highest rank is Elusive, at 9.9+
+          rarity.
+        </p>
       </div>
     </div>
   );
