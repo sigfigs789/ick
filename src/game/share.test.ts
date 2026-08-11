@@ -52,21 +52,21 @@ describe("buildShareText", () => {
     expect(withDefault).toBe(withExplicitTrue);
   });
 
-  it("shows the actual words, with rarity and score, when spoilerFree is false", () => {
+  it("shows the actual words and rarity scores, without rarity labels, when spoilerFree is false", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     for (const w of words) {
       expect(text).toContain(w.word);
     }
-    expect(text).toContain(`aardvark (Extremely Rare, ${rarityScore(2.4).toFixed(1)})`);
+    expect(text).toContain(`aardvark (${rarityScore(2.4).toFixed(1)})`);
+    expect(text).not.toContain("Extremely Rare");
   });
 
   it("puts each word and its rarity square on a separate line", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     const resultLines = text.split("\n").slice(2, 2 + words.length);
     // aardvark: Extremely Rare -> 🟧
-    expect(resultLines).toContain(`🟧 aardvark (Extremely Rare, ${rarityScore(2.4).toFixed(1)})`);
-    // the: Very Common -> ⬜
-    expect(resultLines).toContain("⬜ the (Very Common, 0.0)");
+    expect(resultLines).toContain(`🟧 aardvark (${rarityScore(2.4).toFixed(1)})`);
+    expect(resultLines).toContain("⬜ the (0.0)");
     expect(resultLines).toHaveLength(words.length);
   });
 

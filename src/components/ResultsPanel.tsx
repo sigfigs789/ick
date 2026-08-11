@@ -12,13 +12,11 @@ interface Props {
 }
 
 export function ResultsPanel({ date, drop, words, streak }: Props) {
-  // Defaults to checked (rarity squares only) -- showing the submitted
-  // words is an opt-in the player reaches for deliberately, since sharing
-  // spoilers is the exception, not the default. It controls whether the
-  // plain-text share includes the submitted words or rarity squares only.
-  const [spoilerFree, setSpoilerFree] = useState(true);
+  // Showing submitted words is opt-in so shared results remain spoiler-free
+  // unless the player explicitly asks to include their answers.
+  const [showAnswers, setShowAnswers] = useState(false);
   const shareText = buildShareText(date, drop, words, {
-    spoilerFree,
+    spoilerFree: !showAnswers,
     streak: streak.currentStreak,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
@@ -30,10 +28,10 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
       <label className="results-panel__spoiler-toggle">
         <input
           type="checkbox"
-          checked={spoilerFree}
-          onChange={(e) => setSpoilerFree(e.target.checked)}
+          checked={showAnswers}
+          onChange={(e) => setShowAnswers(e.target.checked)}
         />
-        Spoiler free
+        Show my answers
       </label>
       <pre className="results-panel__preview" aria-hidden="true">
         <strong>{shareHeading}</strong>

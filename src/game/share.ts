@@ -38,9 +38,8 @@ export interface ShareOptions {
 /**
  * Spoiler-free (the default): one line per rarity square and score, with
  * no words. Pass `spoilerFree: false` to
- * swap that for one line per word, each with its own rarity square
- * directly in front of it, so the color is legible right next to the
- * word it describes rather than in a separate row.
+ * swap that for one line per word, each with its own rarity square and
+ * numeric rarity score.
  */
 export function buildShareText(
   dateStr: string,
@@ -58,7 +57,7 @@ export function buildShareText(
         .join("\n")
     : words
         .map(
-          (w) => `${RARITY_SYMBOL[w.rarity]} ${w.word} (${w.rarity}, ${rarityScore(w.zipf).toFixed(1)})`
+          (w) => `${RARITY_SYMBOL[w.rarity]} ${w.word} (${rarityScore(w.zipf).toFixed(1)})`
         )
         .join("\n");
 
