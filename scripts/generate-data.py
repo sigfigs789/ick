@@ -34,9 +34,9 @@ MIN_LEN = 3
 MAX_LEN = 15
 
 # SCOWL/ESDB is the acceptance authority, so this floor only limits the
-# frequency range we score. Keeping entries down to 1.5 makes the 8.5+ Elusive
-# tier reachable without accepting unknown corpus tokens.
-MIN_ZIPF = 1.5
+# frequency range we score. Wordfreq's English "best" list bottoms out near
+# 1.0, so 0.5 includes every word for which it has a frequency estimate.
+MIN_ZIPF = 0.5
 
 # Rarity bucket boundaries (inclusive lower bound), tuned by eyeballing the
 # resulting distribution -- see the printed histogram when this script runs.

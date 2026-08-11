@@ -9,6 +9,7 @@ import {
   recordAcceptedWord,
   recordRejectedAttempt,
 } from "./storage";
+import { rarityScore } from "./dictionary";
 import type { AcceptedWord, Rarity } from "./types";
 
 function word(w: string, zipf = 5, rarity: Rarity = "Common"): AcceptedWord {
@@ -116,7 +117,7 @@ describe("recordAcceptedWord", () => {
       totalCompleted: 0,
       crushedIt: 1,
       elite: 1,
-      highScore: 8.5,
+      highScore: rarityScore(2.4),
     });
   });
 
@@ -124,7 +125,7 @@ describe("recordAcceptedWord", () => {
     let p = recordAcceptedWord(newProgress("2023-06-01", "str"), word("common", 5.4));
     p = recordAcceptedWord(p, word("rare", 2.4, "Extremely Rare"));
     recordAcceptedWord(p, word("later", 4.6));
-    expect(loadStreak().highScore).toBe(8.5);
+    expect(loadStreak().highScore).toBe(rarityScore(2.4));
   });
 
   it("wins on the sixth accepted word when a qualifying word was found", () => {

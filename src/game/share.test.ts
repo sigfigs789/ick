@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildShareText, puzzleNumber } from "./share";
 import dropData from "../data/drops.json";
+import { rarityScore } from "./dictionary";
 import type { AcceptedWord } from "./types";
 
 describe("puzzleNumber", () => {
@@ -32,7 +33,7 @@ describe("buildShareText", () => {
   it("puts each spoiler-free rarity square and score on its own line", () => {
     const text = buildShareText("2024-01-05", "str", words);
     const resultLines = text.split("\n").slice(2, 2 + words.length);
-    expect(resultLines).toEqual(["⬜ 0.0", "🟩 5.0", "🟧 8.5"]);
+    expect(resultLines).toEqual(["⬜", "🟩", "🟧"].map((symbol, i) => `${symbol} ${rarityScore(words[i].zipf).toFixed(1)}`));
   });
 
   it("separates the heading from the shared guesses", () => {
@@ -56,15 +57,14 @@ describe("buildShareText", () => {
     for (const w of words) {
       expect(text).toContain(w.word);
     }
-    // aardvark: zipf 2.4 -> score 8.5
-    expect(text).toContain("aardvark (Extremely Rare, 8.5)");
+    expect(text).toContain(`aardvark (Extremely Rare, ${rarityScore(2.4).toFixed(1)})`);
   });
 
   it("puts each word and its rarity square on a separate line", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     const resultLines = text.split("\n").slice(2, 2 + words.length);
     // aardvark: Extremely Rare -> 🟧
-    expect(resultLines).toContain("🟧 aardvark (Extremely Rare, 8.5)");
+    expect(resultLines).toContain(`🟧 aardvark (Extremely Rare, ${rarityScore(2.4).toFixed(1)})`);
     // the: Very Common -> ⬜
     expect(resultLines).toContain("⬜ the (Very Common, 0.0)");
     expect(resultLines).toHaveLength(words.length);
@@ -88,6 +88,6 @@ describe("buildShareText", () => {
       highScore: 8.5,
     });
 
-    expect(text).toContain("🟧 8.5\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nHigh score: 8.5");
+    expect(text).toContain(`🟧 ${rarityScore(2.4).toFixed(1)}\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nHigh score: 8.5`);
   });
 });

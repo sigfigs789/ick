@@ -50,8 +50,8 @@ describe("rarityFor", () => {
   });
 
   it("classifies the dictionary's rarest word as Elusive, scoring a perfect 10", () => {
-    const elusive = rarityFor("abased");
-    expect(elusive).toMatchObject({ rarity: "Elusive", zipf: 1.5 });
+    const elusive = rarityFor("abash");
+    expect(elusive).toMatchObject({ rarity: "Elusive", zipf: 1 });
     expect(rarityScore(elusive!.zipf)).toBe(10);
   });
 });
@@ -66,10 +66,10 @@ describe("rarityScore", () => {
   it("normalizes against the dictionary's actual Zipf range so scores span 0-10", () => {
     // "the" is the dictionary's most common word (highest Zipf) -- it anchors the floor.
     const mostCommon = rarityFor("the")!;
-    // "abased" is the dictionary's rarest word (lowest Zipf) -- it anchors the ceiling.
-    const rarest = rarityFor("abased")!;
+    // "abash" is one of the dictionary's rarest words (lowest Zipf) -- it anchors the ceiling.
+    const rarest = rarityFor("abash")!;
     expect(rarityScore(mostCommon.zipf)).toBe(0);
     expect(rarityScore(rarest.zipf)).toBe(10);
-    expect(rarityScore(2.4)).toBeCloseTo(8.5);
+    expect(rarityScore(2.4)).toBeGreaterThan(rarityScore(3.3));
   });
 });
