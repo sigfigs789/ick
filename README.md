@@ -9,10 +9,7 @@ a friendly rarity reveal (Very Common → Extremely Rare) on every accepted
 word. Stop anytime with "Lock in my result," or use all 6 guesses.
 
 Built in React + TypeScript (Vite). Game logic in `src/game/` is plain
-TypeScript with no DOM or React dependencies, which is what made
-`native/` possible — a React Native (Expo) port for iOS/Android sharing
-that logic and all three data files verbatim; see `native/README.md` for
-what's shared vs. rewritten.
+TypeScript with no DOM or React dependencies.
 
 ## Getting started
 
