@@ -1,4 +1,4 @@
-# Ink
+# WordInk
 
 A daily word-drop puzzle inspired by Wordle and BombParty. Every player
 gets the same 2- or 3-letter drop each day (like `STR`, `OU`, or `MP`)

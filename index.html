@@ -2,20 +2,93 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔤</text></svg>" />
+
+    <!-- Favicons / app icons -->
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Ink — a daily word-fragment puzzle. Find three words that contain today's letters." />
     <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121213" media="(prefers-color-scheme: dark)" />
+
+    <title>WordInk — daily word fragment puzzle</title>
+    <meta
+      name="description"
+      content="WordInk is a daily word-drop puzzle: everyone gets the same letters, you find the rarest word you can that contains them. No timer, no login -- just a daily vocabulary challenge inspired by Wordle."
+    />
+    <link rel="canonical" href="https://wordink.app/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="WordInk" />
+    <meta property="og:title" content="WordInk — daily word fragment puzzle" />
+    <meta
+      property="og:description"
+      content="Everyone gets the same daily letters. Find the rarest word you can that contains them, in up to 6 guesses."
+    />
+    <meta property="og:url" content="https://wordink.app/" />
+    <meta property="og:image" content="https://wordink.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="WordInk — daily word fragment puzzle" />
+    <meta
+      name="twitter:description"
+      content="Everyone gets the same daily letters. Find the rarest word you can that contains them, in up to 6 guesses."
+    />
+    <meta name="twitter:image" content="https://wordink.app/og-image.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Libre+Franklin:wght@600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <title>WordInk — daily word fragment puzzle</title>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Game",
+        "name": "WordInk",
+        "url": "https://wordink.app/",
+        "description": "A daily word-drop puzzle: everyone gets the same letters, and finds the rarest word they can that contains them.",
+        "genre": "Word game",
+        "applicationCategory": "Game",
+        "operatingSystem": "Any (web browser)",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!--
+        Static fallback for crawlers/clients that don't run JS. React's
+        createRoot() replaces this on mount, but that happens after the
+        page paints, so it's visually hidden (not display:none, which
+        some crawlers ignore the content of) to avoid a flash of this
+        text before the app takes over.
+      -->
+      <main style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;">
+        <h1>WordInk</h1>
+        <p>
+          A daily word-drop puzzle inspired by Wordle. Every player gets the
+          same 2- or 3-letter drop each day and finds valid English words that
+          contain it, in order, for up to 6 distinct guesses. The goal:
+          find the rarest word you can.
+        </p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
