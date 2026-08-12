@@ -30,10 +30,10 @@ export function loadProgress(date: string): DailyProgress | null {
 
   // Keep progress saved under the former top-tier name playable after the
   // rank was renamed to Mythic. Also refresh words saved with the former
-  // unknown-frequency fallbacks now that the dictionary uses 0.5.
+  // unknown-frequency fallbacks now that the dictionary uses 1.4.
   let migrated = false;
   const acceptedWords = progress.acceptedWords.map((word) => {
-    if (word.zipf === 0.1 || word.zipf === 0.3) {
+    if (word.zipf === 0.1 || word.zipf === 0.3 || word.zipf === 0.5) {
       const current = rarityFor(word.word);
       if (current) {
         migrated = true;
