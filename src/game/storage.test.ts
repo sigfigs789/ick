@@ -71,7 +71,7 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loadProgress("2024-01-01")?.acceptedWords[0].rarity).toBe("Mythic");
   });
 
-  it.each([0.1, 0.3])("refreshes words saved with the former %s unknown-frequency fallback", (zipf) => {
+  it.each([0.1, 0.3, 0.5])("refreshes words saved with the former %s unknown-frequency fallback", (zipf) => {
     localStorage.setItem(
       "ick:progress:2024-01-01",
       JSON.stringify({
@@ -83,7 +83,7 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loadProgress("2024-01-01")?.acceptedWords[0]).toEqual({
       word: "dustcart",
       rarity: "Extremely Rare",
-      zipf: 0.5,
+      zipf: 1.4,
     });
   });
 

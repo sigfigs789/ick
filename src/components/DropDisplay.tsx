@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { formatDateLabel } from "../game/date";
-import { bestWordForDrop, rarityScore } from "../game/dictionary";
+import { bestWordForDrop } from "../game/dictionary";
 
 interface Props {
   drop: string;
@@ -29,7 +29,7 @@ export function DropDisplay({ drop, date, isToday = true, completed = false }: P
       </p>
       {best && (
         <p className="drop-display__ceiling">
-          Best possible score: {rarityScore(best.zipf).toFixed(1)}
+          Best possible score: 10.0
         </p>
       )}
       {completed && best && (
