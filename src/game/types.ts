@@ -52,6 +52,4 @@ export interface StreakState {
   totalCompleted: number;
   crushedIt: number;
   elite: number;
-  /** Highest rarity score earned from any accepted word. */
-  highScore: number;
 }

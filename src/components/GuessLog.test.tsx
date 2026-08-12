@@ -10,7 +10,6 @@ const streak: StreakState = {
   totalCompleted: 1,
   crushedIt: 1,
   elite: 0,
-  highScore: 6.8,
 };
 
 describe("GuessLog", () => {

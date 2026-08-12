@@ -135,3 +135,8 @@ export function totalRarityScore(words: readonly Pick<AcceptedWord, "zipf">[]): 
   const total = words.reduce((sum, word) => sum + rarityScore(word.zipf), 0);
   return Math.round(total * 10) / 10;
 }
+
+/** Highest displayed rarity score earned during one puzzle. */
+export function topRarityScore(words: readonly Pick<AcceptedWord, "zipf">[]): number {
+  return Math.max(0, ...words.map((word) => rarityScore(word.zipf)));
+}

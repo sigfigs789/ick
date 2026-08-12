@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidWord, rarityFor, rarityScore } from "./dictionary";
+import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
 describe("isValidWord", () => {
   it("accepts a common real word", () => {
@@ -77,5 +77,15 @@ describe("rarityScore", () => {
     expect(rarityScore(rarest.zipf)).toBeLessThan(10);
     expect(rarityScore(0)).toBe(10);
     expect(rarityScore(2.4)).toBeGreaterThan(rarityScore(3.3));
+  });
+});
+
+describe("topRarityScore", () => {
+  it("returns the highest score from the current puzzle's accepted words", () => {
+    expect(topRarityScore([{ zipf: 4.6 }, { zipf: 2.4 }])).toBe(rarityScore(2.4));
+  });
+
+  it("returns zero before a puzzle has accepted any words", () => {
+    expect(topRarityScore([])).toBe(0);
   });
 });

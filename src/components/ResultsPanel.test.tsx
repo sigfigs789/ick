@@ -16,7 +16,6 @@ const streak: StreakState = {
   totalCompleted: 1,
   crushedIt: 1,
   elite: 0,
-  highScore: 6.8,
 };
 
 describe("ResultsPanel share toggle", () => {
@@ -41,7 +40,6 @@ describe("ResultsPanel share toggle", () => {
       streak: streak.currentStreak,
       crushedIt: streak.crushedIt,
       elite: streak.elite,
-      topRarity: streak.highScore,
     }).split("\n")[0]);
   });
 

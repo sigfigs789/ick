@@ -1,6 +1,6 @@
 import { addDays, todayDateString } from "./date";
 import { MAX_GUESSES } from "./constants";
-import { rarityFor, rarityScore } from "./dictionary";
+import { rarityFor } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 
@@ -12,7 +12,6 @@ const EMPTY_STREAK: StreakState = {
   totalCompleted: 0,
   crushedIt: 0,
   elite: 0,
-  highScore: 0,
 };
 
 function safeParse<T>(raw: string | null): T | null {
@@ -111,8 +110,6 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
   };
   saveProgress(updated);
 
-  updateHighScore(word.zipf);
-
   updateRarityScore({
     shouldIncrementCrushedIt: isWinningRarity(word.rarity) && !hasWinningWord,
     shouldIncrementElite: isEliteRarity(word.rarity) && !hasEliteWord,
@@ -202,12 +199,4 @@ function updateRarityScore({
     crushedIt: streak.crushedIt + (shouldIncrementCrushedIt ? 1 : 0),
     elite: streak.elite + (shouldIncrementElite ? 1 : 0),
   });
-}
-
-/** Keep the player's all-time best rarity score, including archive play. */
-function updateHighScore(zipf: number): void {
-  const streak = loadStreak();
-  const score = rarityScore(zipf);
-  if (score <= streak.highScore) return;
-  saveStreak({ ...streak, highScore: score });
 }
