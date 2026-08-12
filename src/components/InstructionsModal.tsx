@@ -46,7 +46,7 @@ export function InstructionsModal({ open, onClose }: Props) {
         </div>
         <ol className="modal__steps">
           <li>WordInk gives everyone the same daily drop—say, “INK”. Find the rarest English word you can that contains it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</li>
-          <li>A Rare-or-better word immediately keeps your streak going. After your first valid word, you can lock in or keep guessing up to 6 times.</li>
+          <li>A Common-or-better word keeps your streak going. Miss a day and your streak resets to 0. After your first valid word, you can lock in or keep guessing up to 6 times.</li>
         </ol>
         <p className="modal__rarity-note">
           Rarity scores reflect how often words appear across sources including books, news, movies,
