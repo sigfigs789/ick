@@ -714,13 +714,20 @@ h2 {
   color: var(--fg);
   font-size: 1rem;
 }
-.streak-display__high-score {
+.streak-display__rarity-scores {
   display: flex;
   align-items: baseline;
-  gap: 0.4rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
   color: var(--fg-muted);
 }
-.streak-display__high-score strong {
+.streak-display__rarity-score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+.streak-display__rarity-score strong {
   font-family: var(--font-display);
   font-size: 1rem;
   color: var(--fg);
