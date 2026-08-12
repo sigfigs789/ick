@@ -13,7 +13,7 @@ import {
 } from "../game/storage";
 import { evaluateSubmission, REJECTION_MESSAGES } from "../game/submit";
 import type { DailyProgress, Rarity, StreakState } from "../game/types";
-import { trackAcceptedAnswer, trackPuzzleCompleted } from "../analytics";
+import { trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer } from "../analytics";
 
 export interface Feedback {
   kind: "accepted" | "rejected";
@@ -52,8 +52,10 @@ export function useDailyPuzzle() {
       feedbackKey.current += 1;
 
       if (!result.ok || !result.word) {
-        const message = REJECTION_MESSAGES[result.reason ?? "not-a-word"];
+        const reason = result.reason ?? "not-a-word";
+        const message = REJECTION_MESSAGES[reason];
         setProgress((p) => recordRejectedAttempt(p, raw.trim()));
+        trackRejectedAnswer(viewedDate, raw, reason);
         setFeedback({ kind: "rejected", message, key: feedbackKey.current });
         return result;
       }
