@@ -119,8 +119,7 @@ export const RARITY_ORDER: Rarity[] = [
  * rarity score) and then normalized between the 1.0 floor for measured
  * wordfreq values and the dictionary's most common word. An unknown-frequency
  * lookup is stored as 1.4 and consequently scores 9.4, while a measured 1.0
- * earns a perfect 10.
- * Internal ranking
+ * earns a perfect 10. Internal ranking
  * (see rank.ts's bestWord) still compares raw Zipf directly; this is
  * purely a display transform.
  */
@@ -132,4 +131,9 @@ export function rarityScore(zipf: number): number {
 export function totalRarityScore(words: readonly Pick<AcceptedWord, "zipf">[]): number {
   const total = words.reduce((sum, word) => sum + rarityScore(word.zipf), 0);
   return Math.round(total * 10) / 10;
+}
+
+/** Highest displayed rarity score earned in the current puzzle. */
+export function topRarityScore(words: readonly Pick<AcceptedWord, "zipf">[]): number {
+  return words.reduce((top, word) => Math.max(top, rarityScore(word.zipf)), 0);
 }

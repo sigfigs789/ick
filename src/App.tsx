@@ -13,7 +13,7 @@ import { ConfettiBurst } from "./components/ConfettiBurst";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { isWinningRarity } from "./game/rank";
-import { totalRarityScore } from "./game/dictionary";
+import { topRarityScore, totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 
@@ -142,6 +142,7 @@ export default function App() {
           <StreakDisplay
             streak={streak}
             totalRarity={totalRarityScore(progress.acceptedWords)}
+            topRarity={topRarityScore(progress.acceptedWords)}
           />
         )}
 
