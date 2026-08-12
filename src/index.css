@@ -31,25 +31,30 @@
   --rarity-very-common-fg: #4b4f57;
   --rarity-very-common-dot: #9aa0a8;
 
-  --rarity-common-bg: #e3f6e8;
-  --rarity-common-fg: #1c7a3d;
-  --rarity-common-dot: #2fa457;
+  --rarity-common-bg: #fbf1cf;
+  --rarity-common-fg: #856404;
+  --rarity-common-dot: #eab308;
 
-  --rarity-uncommon-bg: #e2eefd;
-  --rarity-uncommon-fg: #1450b8;
-  --rarity-uncommon-dot: #2f78e0;
+  --rarity-uncommon-bg: #e3f6e8;
+  --rarity-uncommon-fg: #1c7a3d;
+  --rarity-uncommon-dot: #2fa457;
 
-  --rarity-rare-bg: #f1e6fc;
-  --rarity-rare-fg: #7222c2;
-  --rarity-rare-dot: #9b4fe0;
+  --rarity-rare-bg: #e2eefd;
+  --rarity-rare-fg: #1450b8;
+  --rarity-rare-dot: #2f78e0;
 
-  --rarity-extremely-rare-bg: #fdf0dc;
-  --rarity-extremely-rare-fg: #b0630a;
-  --rarity-extremely-rare-dot: #f0980f;
+  --rarity-extremely-rare-bg: #f1e6fc;
+  --rarity-extremely-rare-fg: #7222c2;
+  --rarity-extremely-rare-dot: #9b4fe0;
 
-  --rarity-mythic-bg: #fde6f0;
-  --rarity-mythic-fg: #9d1a53;
-  --rarity-mythic-dot: #e13a7c;
+  --rarity-mythic-bg: #fdeae8;
+  --rarity-mythic-fg: #b42318;
+  --rarity-mythic-dot: #e5484d;
+
+  /* The crowned best-word highlight keeps its own orange accent, independent
+     of the rarity palette so retinting a tier never recolors the crown. */
+  --best-word-accent: #f0980f;
+  --best-word-bg: #fdf0dc;
 
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -80,25 +85,28 @@
     --rarity-very-common-fg: #c2c5cb;
     --rarity-very-common-dot: #8a8d93;
 
-    --rarity-common-bg: #0f2b19;
-    --rarity-common-fg: #7fe0a3;
-    --rarity-common-dot: #3bbf6c;
+    --rarity-common-bg: #2c2708;
+    --rarity-common-fg: #f2e08a;
+    --rarity-common-dot: #e6c020;
 
-    --rarity-uncommon-bg: #0f2140;
-    --rarity-uncommon-fg: #8bb6fb;
-    --rarity-uncommon-dot: #4a8ff2;
+    --rarity-uncommon-bg: #0f2b19;
+    --rarity-uncommon-fg: #7fe0a3;
+    --rarity-uncommon-dot: #3bbf6c;
 
-    --rarity-rare-bg: #2a1440;
-    --rarity-rare-fg: #cd9bf7;
-    --rarity-rare-dot: #ab5ff0;
+    --rarity-rare-bg: #0f2140;
+    --rarity-rare-fg: #8bb6fb;
+    --rarity-rare-dot: #4a8ff2;
 
-    --rarity-extremely-rare-bg: #3a2408;
-    --rarity-extremely-rare-fg: #f7c260;
-    --rarity-extremely-rare-dot: #f2a30f;
+    --rarity-extremely-rare-bg: #2a1440;
+    --rarity-extremely-rare-fg: #cd9bf7;
+    --rarity-extremely-rare-dot: #ab5ff0;
 
-    --rarity-mythic-bg: #3a1025;
-    --rarity-mythic-fg: #f38ac0;
-    --rarity-mythic-dot: #e7438d;
+    --rarity-mythic-bg: #3a1414;
+    --rarity-mythic-fg: #f7a19a;
+    --rarity-mythic-dot: #e5484d;
+
+    --best-word-accent: #f2a30f;
+    --best-word-bg: #3a2408;
   }
 }
 
@@ -444,8 +452,8 @@ h2 {
   transform-origin: center;
 }
 .guess-log__entry--best {
-  border-color: var(--rarity-extremely-rare-dot);
-  background: color-mix(in srgb, var(--rarity-extremely-rare-bg) 55%, var(--card-bg));
+  border-color: var(--best-word-accent);
+  background: color-mix(in srgb, var(--best-word-bg) 55%, var(--card-bg));
 }
 @keyframes slot-fill {
   0% {
@@ -786,8 +794,8 @@ h2 {
   padding: 1rem 1.5rem;
   margin: 0 0 1.25rem;
   border-radius: 0.85rem;
-  background: color-mix(in srgb, var(--rarity-extremely-rare-bg) 65%, transparent);
-  border: 1px solid var(--rarity-extremely-rare-dot);
+  background: color-mix(in srgb, var(--best-word-bg) 65%, transparent);
+  border: 1px solid var(--best-word-accent);
 }
 .results-panel__best-label {
   margin: 0;
