@@ -65,9 +65,9 @@ function saveStreak(streak: StreakState): void {
 }
 
 /**
- * A Rare or Extremely Rare word qualifies the player to lock in and is added
- * to the lifetime rarity score immediately. Reaching `MAX_GUESSES` ends the
- * puzzle, winning only if a qualifying word was found.
+ * A Rare-or-better word immediately advances today's streak. The player can
+ * still keep guessing until `MAX_GUESSES`, or lock in early, without counting
+ * that streak win a second time.
  */
 export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord): DailyProgress {
   if (progress.completed) return progress; // no further official changes once complete
@@ -97,8 +97,11 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
     shouldIncrementElite: isEliteRarity(word.rarity) && !hasEliteWord,
   });
 
+  if (isWinningRarity(word.rarity) && !hasWinningWord) {
+    updateStreakOnWin(progress.date);
+  }
   if (justCompleted && won) {
-    updateStreakOnCompletion(progress.date);
+    incrementCompletionTotal();
   }
 
   return updated;
@@ -128,25 +131,18 @@ export function lockInResult(progress: DailyProgress): DailyProgress {
   };
   saveProgress(updated);
   if (updated.won) {
-    updateStreakOnCompletion(progress.date);
+    incrementCompletionTotal();
   }
   return updated;
 }
 
 /**
- * Count every winning puzzle toward the completion total. Only a puzzle
- * completed on its own real calendar date can change the daily streak.
+ * Advance the streak as soon as today's first Rare-or-better word is accepted.
  */
-function updateStreakOnCompletion(date: string): void {
+function updateStreakOnWin(date: string): void {
   const streak = loadStreak();
 
-  if (date !== todayDateString()) {
-    saveStreak({
-      ...streak,
-      totalCompleted: streak.totalCompleted + 1,
-    });
-    return;
-  }
+  if (date !== todayDateString()) return;
 
   if (streak.lastCompletedDate === date) return; // already counted
 
@@ -159,11 +155,15 @@ function updateStreakOnCompletion(date: string): void {
     currentStreak,
     longestStreak: Math.max(streak.longestStreak, currentStreak),
     lastCompletedDate: date,
-    totalCompleted: streak.totalCompleted + 1,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
   };
   saveStreak(updated);
+}
+
+function incrementCompletionTotal(): void {
+  const streak = loadStreak();
+  saveStreak({ ...streak, totalCompleted: streak.totalCompleted + 1 });
 }
 
 /** Rarity scores apply once per puzzle, including archive puzzles. */

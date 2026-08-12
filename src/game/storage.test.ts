@@ -107,14 +107,15 @@ describe("recordAcceptedWord", () => {
     expect(loadStreak().totalCompleted).toBe(0);
   });
 
-  it("keeps the puzzle active after a Rare-or-better word", () => {
+  it("keeps the puzzle active and updates the streak immediately after a Rare-or-better word", () => {
     let p = newProgress("2024-01-01", "str");
     p = recordAcceptedWord(p, word("strange"));
     p = recordAcceptedWord(p, word("stranger", 3.2, "Rare"));
     expect(p.completed).toBe(false);
     expect(p.won).toBeUndefined();
     expect(p.acceptedWords).toHaveLength(2);
-    expect(loadStreak().currentStreak).toBe(0);
+    expect(loadStreak().currentStreak).toBe(1);
+    expect(loadStreak().totalCompleted).toBe(0);
     expect(loadStreak().crushedIt).toBe(1);
   });
 
@@ -209,14 +210,17 @@ describe("lockInResult", () => {
     expect(lockInResult(p)).toBe(p);
   });
 
-  it("locks in a qualifying result and updates the streak", () => {
+  it("locks in a qualifying result without updating the streak again", () => {
     let p = newProgress("2024-01-01", "str");
     p = recordAcceptedWord(p, word("strange", 3.2, "Rare"));
+    const streakBeforeLockIn = loadStreak().currentStreak;
     const locked = lockInResult(p);
     expect(locked.completed).toBe(true);
     expect(locked.won).toBe(true);
     expect(locked.acceptedWords).toHaveLength(1);
     expect(loadStreak().currentStreak).toBe(1);
+    expect(loadStreak().currentStreak).toBe(streakBeforeLockIn);
+    expect(loadStreak().totalCompleted).toBe(1);
   });
 
   it("is a no-op once already completed", () => {
