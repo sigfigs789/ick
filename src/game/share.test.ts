@@ -33,7 +33,7 @@ describe("buildShareText", () => {
   it("puts each spoiler-free rarity square and score on its own line", () => {
     const text = buildShareText("2024-01-05", "str", words);
     const resultLines = text.split("\n").slice(2, 2 + words.length);
-    expect(resultLines).toEqual(["⬜", "🟩", "🟧"].map((symbol, i) => `${symbol} ${rarityScore(words[i].zipf).toFixed(1)}`));
+    expect(resultLines).toEqual(["⬜", "🟨", "🟪"].map((symbol, i) => `${symbol} ${rarityScore(words[i].zipf).toFixed(1)}`));
   });
 
   it("separates the heading from the shared guesses", () => {
@@ -64,8 +64,8 @@ describe("buildShareText", () => {
   it("puts each word and its rarity square on a separate line", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     const resultLines = text.split("\n").slice(2, 2 + words.length);
-    // aardvark: Extremely Rare -> 🟧
-    expect(resultLines).toContain(`🟧 aardvark (${rarityScore(2.4).toFixed(1)})`);
+    // aardvark: Extremely Rare -> 🟪
+    expect(resultLines).toContain(`🟪 aardvark (${rarityScore(2.4).toFixed(1)})`);
     expect(resultLines).toContain("⬜ the (0.0)");
     expect(resultLines).toHaveLength(words.length);
   });
@@ -89,6 +89,6 @@ describe("buildShareText", () => {
     });
 
     const total = words.reduce((sum, word) => sum + rarityScore(word.zipf), 0);
-    expect(text).toContain(`🟧 ${rarityScore(2.4).toFixed(1)}\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nTotal: ${total.toFixed(1)} · Top: 8.5`);
+    expect(text).toContain(`🟪 ${rarityScore(2.4).toFixed(1)}\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nTotal: ${total.toFixed(1)} · Top: 8.5`);
   });
 });
