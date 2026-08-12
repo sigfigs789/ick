@@ -1,5 +1,6 @@
 import { MAX_GUESSES } from "../game/constants";
 import { bestWord } from "../game/rank";
+import { totalRarityScore } from "../game/dictionary";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -70,7 +71,7 @@ export function GuessLog({
 
       {completed && streak && (
         <div className="guess-log__completion-trackers">
-          <StreakDisplay streak={streak} />
+          <StreakDisplay streak={streak} totalRarity={totalRarityScore(acceptedWords)} />
         </div>
       )}
     </section>

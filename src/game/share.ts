@@ -1,5 +1,5 @@
 import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
-import { rarityScore } from "./dictionary";
+import { rarityScore, totalRarityScore } from "./dictionary";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -31,8 +31,8 @@ export interface ShareOptions {
   crushedIt?: number;
   /** Total Extremely Rare-or-better results to include in the shared result. */
   elite?: number;
-  /** Highest rarity score to include in the shared result. */
-  highScore?: number;
+  /** Highest all-time rarity score to include in the shared result. */
+  topRarity?: number;
 }
 
 /**
@@ -70,9 +70,11 @@ export function buildShareText(
       `Streak: ${streak} day${streak === 1 ? "" : "s"} · Crushed it: ${options.crushedIt ?? 0} · Elite: ${options.elite ?? 0}`
     );
   }
-  if (options.highScore !== undefined) {
-    lines.push(`High score: ${options.highScore.toFixed(1)}`);
+  const raritySummary = [`Total: ${totalRarityScore(words).toFixed(1)}`];
+  if (options.topRarity !== undefined) {
+    raritySummary.push(`Top: ${options.topRarity.toFixed(1)}`);
   }
+  lines.push(raritySummary.join(" · "));
   return lines.join("\n");
 }
 

@@ -129,3 +129,9 @@ export const RARITY_ORDER: Rarity[] = [
 export function rarityScore(zipf: number): number {
   return Math.round(((MAX_ZIPF - zipf) / ZIPF_RANGE) * 100) / 10;
 }
+
+/** Sum the displayed rarity scores earned during one game session. */
+export function totalRarityScore(words: readonly Pick<AcceptedWord, "zipf">[]): number {
+  const total = words.reduce((sum, word) => sum + rarityScore(word.zipf), 0);
+  return Math.round(total * 10) / 10;
+}
