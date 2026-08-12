@@ -35,17 +35,17 @@
   --rarity-common-fg: #1c7a3d;
   --rarity-common-dot: #2fa457;
 
-  --rarity-uncommon-bg: #e2eefd;
-  --rarity-uncommon-fg: #1450b8;
-  --rarity-uncommon-dot: #2f78e0;
+  --rarity-uncommon-bg: #d7f0f7;
+  --rarity-uncommon-fg: #0e6d8a;
+  --rarity-uncommon-dot: #0891b2;
 
-  --rarity-rare-bg: #f1e6fc;
-  --rarity-rare-fg: #7222c2;
-  --rarity-rare-dot: #9b4fe0;
+  --rarity-rare-bg: #e2eefd;
+  --rarity-rare-fg: #1450b8;
+  --rarity-rare-dot: #2f78e0;
 
-  --rarity-extremely-rare-bg: #fdf0dc;
-  --rarity-extremely-rare-fg: #b0630a;
-  --rarity-extremely-rare-dot: #f0980f;
+  --rarity-extremely-rare-bg: #f1e6fc;
+  --rarity-extremely-rare-fg: #7222c2;
+  --rarity-extremely-rare-dot: #9b4fe0;
 
   --rarity-mythic-bg: #fde6f0;
   --rarity-mythic-fg: #9d1a53;
@@ -84,17 +84,17 @@
     --rarity-common-fg: #7fe0a3;
     --rarity-common-dot: #3bbf6c;
 
-    --rarity-uncommon-bg: #0f2140;
-    --rarity-uncommon-fg: #8bb6fb;
-    --rarity-uncommon-dot: #4a8ff2;
+    --rarity-uncommon-bg: #0a2830;
+    --rarity-uncommon-fg: #6fd6ec;
+    --rarity-uncommon-dot: #22b8d8;
 
-    --rarity-rare-bg: #2a1440;
-    --rarity-rare-fg: #cd9bf7;
-    --rarity-rare-dot: #ab5ff0;
+    --rarity-rare-bg: #0f2140;
+    --rarity-rare-fg: #8bb6fb;
+    --rarity-rare-dot: #4a8ff2;
 
-    --rarity-extremely-rare-bg: #3a2408;
-    --rarity-extremely-rare-fg: #f7c260;
-    --rarity-extremely-rare-dot: #f2a30f;
+    --rarity-extremely-rare-bg: #2a1440;
+    --rarity-extremely-rare-fg: #cd9bf7;
+    --rarity-extremely-rare-dot: #ab5ff0;
 
     --rarity-mythic-bg: #3a1025;
     --rarity-mythic-fg: #f38ac0;
