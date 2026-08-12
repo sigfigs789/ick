@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bestWord, isEliteRarity, isWinningRarity } from "./rank";
+import { bestWord, isEliteRarity, isStreakRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord } from "./types";
 
 describe("bestWord", () => {
@@ -34,5 +34,11 @@ describe("rarity thresholds", () => {
   it("treats Mythic as a winning Elite tier", () => {
     expect(isWinningRarity("Mythic")).toBe(true);
     expect(isEliteRarity("Mythic")).toBe(true);
+  });
+
+  it("treats Common through Mythic as streak-qualifying tiers", () => {
+    expect(isStreakRarity("Very Common")).toBe(false);
+    expect(isStreakRarity("Common")).toBe(true);
+    expect(isStreakRarity("Mythic")).toBe(true);
   });
 });
