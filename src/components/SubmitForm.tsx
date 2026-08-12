@@ -14,6 +14,12 @@ export function SubmitForm({ drop, disabled, feedback, prefill, onSubmit }: Prop
   const [value, setValue] = useState("");
   const rowRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // A random, non-semantic field name so browsers (esp. Chrome/Android) can't
+  // match this box to a saved autofill profile and pop an autofill dropdown.
+  // Generated once per mount and never reused across fields.
+  const [fieldName] = useState(
+    () => `word-${Math.random().toString(36).slice(2, 10)}`,
+  );
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -58,8 +64,10 @@ export function SubmitForm({ drop, disabled, feedback, prefill, onSubmit }: Prop
         <input
           id="word-input"
           ref={inputRef}
+          name={fieldName}
           type="text"
           inputMode="text"
+          enterKeyHint="go"
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
