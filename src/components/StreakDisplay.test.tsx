@@ -24,8 +24,8 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("🔥")).toBeInTheDocument();
   });
 
-  it("shows the current game's total rarity before the all-time top rarity", () => {
-    render(<StreakDisplay streak={{ ...streak, highScore: 8.7 }} totalRarity={21.4} />);
+  it("shows the current puzzle's total and top rarity", () => {
+    render(<StreakDisplay streak={{ ...streak, highScore: 9.3 }} totalRarity={21.4} topRarity={8.7} />);
 
     const scores = document.querySelector(".streak-display__rarity-scores");
     expect(scores?.textContent).toBe("Total21.4Top8.7");

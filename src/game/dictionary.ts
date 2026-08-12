@@ -18,20 +18,17 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  * small (no word repeated as both a dictionary entry and a JSON object key).
  */
 const zipfTenths: number[] = rarityData.zipfTenths;
-const UNKNOWN_ZIPF = 0.5;
+const UNKNOWN_ZIPF = 1.4;
+const MIN_MEASURED_ZIPF = 1;
 
-/**
- * The dictionary's upper Zipf bound, computed once from the loaded data.
- * The lower bound stays at the scale's true 0.0 floor so an unknown-frequency
- * fallback such as 0.5 does not get rescaled back to a perfect 10.
- */
+/** The dictionary's upper Zipf bound, computed once from the loaded data. */
 // Plain loop rather than Math.min(...zipfTenths) -- spreading ~60k elements
 // as call arguments risks blowing the stack on some engines (e.g. Safari).
 let maxZipfTenths = -Infinity;
 for (const z of zipfTenths) {
   if (z > maxZipfTenths) maxZipfTenths = z;
 }
-const MIN_ZIPF = 0;
+const MIN_ZIPF = MIN_MEASURED_ZIPF;
 const MAX_ZIPF = maxZipfTenths / 10;
 const ZIPF_RANGE = MAX_ZIPF - MIN_ZIPF;
 
@@ -119,10 +116,10 @@ export const RARITY_ORDER: Rarity[] = [
  * A player-facing "rarity score" derived from Zipf frequency, with the
  * polarity flipped (wordfreq's Zipf scale runs *higher* for more common
  * words -- e.g. "the" ~7.7, "aardvark" ~2.4 -- which reads backwards for a
- * rarity score) and then normalized between Zipf 0.0 and the dictionary's
- * most common word. An unknown-frequency fallback of 0.5 therefore remains
- * slightly below a perfect 10 instead of becoming the scale's new ceiling.
- * Internal ranking
+ * rarity score) and then normalized between the 1.0 floor for measured
+ * wordfreq values and the dictionary's most common word. An unknown-frequency
+ * lookup is stored as 1.4 and consequently scores 9.4, while a measured 1.0
+ * earns a perfect 10. Internal ranking
  * (see rank.ts's bestWord) still compares raw Zipf directly; this is
  * purely a display transform.
  */
@@ -134,4 +131,9 @@ export function rarityScore(zipf: number): number {
 export function totalRarityScore(words: readonly Pick<AcceptedWord, "zipf">[]): number {
   const total = words.reduce((sum, word) => sum + rarityScore(word.zipf), 0);
   return Math.round(total * 10) / 10;
+}
+
+/** Highest displayed rarity score earned in the current puzzle. */
+export function topRarityScore(words: readonly Pick<AcceptedWord, "zipf">[]): number {
+  return words.reduce((top, word) => Math.max(top, rarityScore(word.zipf)), 0);
 }

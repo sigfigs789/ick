@@ -35,8 +35,9 @@ MAX_LEN = 15
 
 # SCOWL/ESDB is the acceptance authority. A 0.0 from wordfreq means that it
 # has no usable frequency estimate, not that the entry is invalid. Keep those
-# words and score them just below wordfreq's measured range instead.
-UNKNOWN_ZIPF = 0.5
+# words just below the 1.0 lower limit of wordfreq's measured large wordlist.
+# This maps to a displayed rarity score of 9.4; measured 1.0 words score 10.0.
+UNKNOWN_ZIPF = 1.4
 
 # Rarity bucket boundaries (inclusive lower bound), tuned by eyeballing the
 # resulting distribution -- see the printed histogram when this script runs.
