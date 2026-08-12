@@ -218,6 +218,22 @@ h2 {
 .app__icon-button:active {
   transform: scale(0.94);
 }
+
+.dev-reset-button {
+  display: block;
+  margin: 1rem auto 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg-faint);
+  font: inherit;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.dev-reset-button:hover {
+  color: var(--fg);
+}
 /* Puzzle archive navigation */
 .puzzle-nav {
   display: flex;

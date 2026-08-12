@@ -32,6 +32,7 @@ export default function App() {
     feedback,
     submitWord,
     lockIn,
+    resetAnswers,
   } = useDailyPuzzle();
   const [showInstructions, setShowInstructions] = useState(false);
   const [prefill, setPrefill] = useState<{ word: string; token: number } | null>(null);
@@ -120,6 +121,12 @@ export default function App() {
           />
         )}
         <FeedbackRegion feedback={feedback} />
+
+        {import.meta.env.DEV && (
+          <button type="button" className="dev-reset-button" onClick={resetAnswers}>
+            Reset answers
+          </button>
+        )}
 
         {!progress.completed && !isToday && (
           <p className="archive-note">

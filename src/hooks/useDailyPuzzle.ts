@@ -9,6 +9,7 @@ import {
   lockInResult,
   recordAcceptedWord,
   recordRejectedAttempt,
+  resetProgress,
 } from "../game/storage";
 import { evaluateSubmission, REJECTION_MESSAGES } from "../game/submit";
 import type { DailyProgress, Rarity, StreakState } from "../game/types";
@@ -87,6 +88,11 @@ export function useDailyPuzzle() {
     }
   }, [progress]);
 
+  const resetAnswers = useCallback(() => {
+    setProgress(resetProgress(viewedDate, drop));
+    setFeedback(null);
+  }, [viewedDate, drop]);
+
   const goToPrevious = useCallback(() => {
     setViewedDate((d) => (d > dropData.epoch ? addDays(d, -1) : d));
   }, []);
@@ -112,5 +118,6 @@ export function useDailyPuzzle() {
     feedback,
     submitWord,
     lockIn,
+    resetAnswers,
   };
 }

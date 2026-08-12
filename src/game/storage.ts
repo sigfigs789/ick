@@ -71,6 +71,12 @@ export function loadOrCreateProgress(date: string, drop: string): DailyProgress 
   return newProgress(date, drop);
 }
 
+/** Development-only UI uses this to start the viewed puzzle over. */
+export function resetProgress(date: string, drop: string): DailyProgress {
+  localStorage.removeItem(PROGRESS_PREFIX + date);
+  return newProgress(date, drop);
+}
+
 export function loadStreak(): StreakState {
   return { ...EMPTY_STREAK, ...safeParse<StreakState>(localStorage.getItem(STREAK_KEY)) };
 }

@@ -8,6 +8,7 @@ import {
   newProgress,
   recordAcceptedWord,
   recordRejectedAttempt,
+  resetProgress,
 } from "./storage";
 import { rarityScore } from "./dictionary";
 import type { AcceptedWord, Rarity } from "./types";
@@ -84,6 +85,17 @@ describe("newProgress / loadOrCreateProgress", () => {
       rarity: "Extremely Rare",
       zipf: 0.5,
     });
+  });
+
+  it("clears saved progress for a development reset", () => {
+    recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+
+    expect(resetProgress("2024-01-01", "str")).toMatchObject({
+      acceptedWords: [],
+      rejectedAttempts: [],
+      completed: false,
+    });
+    expect(loadProgress("2024-01-01")).toBeNull();
   });
 });
 
