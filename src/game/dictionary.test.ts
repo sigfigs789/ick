@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidWord, rarityFor, rarityScore } from "./dictionary";
+import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
 describe("isValidWord", () => {
   it("accepts a common real word", () => {
@@ -77,5 +77,15 @@ describe("rarityScore", () => {
     expect(rarityScore(rarest.zipf)).toBeLessThan(10);
     expect(rarityScore(0)).toBe(10);
     expect(rarityScore(2.4)).toBeGreaterThan(rarityScore(3.3));
+  });
+});
+
+describe("topRarityScore", () => {
+  it("returns the highest score from the current puzzle's accepted words", () => {
+    const common = rarityFor("the")!;
+    const rare = rarityFor("aardvark")!;
+
+    expect(topRarityScore([common, rare])).toBe(rarityScore(rare.zipf));
+    expect(topRarityScore([])).toBe(0);
   });
 });
