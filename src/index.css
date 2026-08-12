@@ -51,6 +51,11 @@
   --rarity-mythic-fg: #9d1a53;
   --rarity-mythic-dot: #e13a7c;
 
+  /* The crowned best-word highlight keeps its own orange accent, independent
+     of the rarity palette so retinting a tier never recolors the crown. */
+  --best-word-accent: #f0980f;
+  --best-word-bg: #fdf0dc;
+
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -99,6 +104,9 @@
     --rarity-mythic-bg: #3a1025;
     --rarity-mythic-fg: #f38ac0;
     --rarity-mythic-dot: #e7438d;
+
+    --best-word-accent: #f2a30f;
+    --best-word-bg: #3a2408;
   }
 }
 
@@ -444,8 +452,8 @@ h2 {
   transform-origin: center;
 }
 .guess-log__entry--best {
-  border-color: var(--rarity-extremely-rare-dot);
-  background: color-mix(in srgb, var(--rarity-extremely-rare-bg) 55%, var(--card-bg));
+  border-color: var(--best-word-accent);
+  background: color-mix(in srgb, var(--best-word-bg) 55%, var(--card-bg));
 }
 @keyframes slot-fill {
   0% {
@@ -786,8 +794,8 @@ h2 {
   padding: 1rem 1.5rem;
   margin: 0 0 1.25rem;
   border-radius: 0.85rem;
-  background: color-mix(in srgb, var(--rarity-extremely-rare-bg) 65%, transparent);
-  border: 1px solid var(--rarity-extremely-rare-dot);
+  background: color-mix(in srgb, var(--best-word-bg) 65%, transparent);
+  border: 1px solid var(--best-word-accent);
 }
 .results-panel__best-label {
   margin: 0;
