@@ -5,12 +5,11 @@ import type { AcceptedWord, Rarity } from "./types";
 
 // Mirrors the in-app "loot tier" rarity palette (grey -> yellow -> green ->
 // blue -> purple -> red, see index.css) so the shared result matches what
-// showed up in-game. The emoji square set has no cyan or pink, so Uncommon
-// borrows green and Common yellow to keep all six squares distinct. Squares
-// only vary by color, which is fine here because this text is for sharing
-// outside the app -- inside the app, rarity is always shown as a plain-text
-// label too (see RarityBadge), which is what keeps things color-independent
-// for accessibility.
+// showed up in-game -- each square is the emoji that matches its badge color.
+// Squares only vary by color, which is fine here because this text is for
+// sharing outside the app -- inside the app, rarity is always shown as a
+// plain-text label too (see RarityBadge), which is what keeps things
+// color-independent for accessibility.
 const RARITY_SYMBOL: Record<Rarity, string> = {
   "Very Common": "⬜",
   Common: "🟨",

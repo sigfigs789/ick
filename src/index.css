@@ -31,13 +31,13 @@
   --rarity-very-common-fg: #4b4f57;
   --rarity-very-common-dot: #9aa0a8;
 
-  --rarity-common-bg: #e3f6e8;
-  --rarity-common-fg: #1c7a3d;
-  --rarity-common-dot: #2fa457;
+  --rarity-common-bg: #fbf1cf;
+  --rarity-common-fg: #856404;
+  --rarity-common-dot: #eab308;
 
-  --rarity-uncommon-bg: #d7f0f7;
-  --rarity-uncommon-fg: #0e6d8a;
-  --rarity-uncommon-dot: #0891b2;
+  --rarity-uncommon-bg: #e3f6e8;
+  --rarity-uncommon-fg: #1c7a3d;
+  --rarity-uncommon-dot: #2fa457;
 
   --rarity-rare-bg: #e2eefd;
   --rarity-rare-fg: #1450b8;
@@ -47,9 +47,9 @@
   --rarity-extremely-rare-fg: #7222c2;
   --rarity-extremely-rare-dot: #9b4fe0;
 
-  --rarity-mythic-bg: #fde6f0;
-  --rarity-mythic-fg: #9d1a53;
-  --rarity-mythic-dot: #e13a7c;
+  --rarity-mythic-bg: #fdeae8;
+  --rarity-mythic-fg: #b42318;
+  --rarity-mythic-dot: #e5484d;
 
   /* The crowned best-word highlight keeps its own orange accent, independent
      of the rarity palette so retinting a tier never recolors the crown. */
@@ -85,13 +85,13 @@
     --rarity-very-common-fg: #c2c5cb;
     --rarity-very-common-dot: #8a8d93;
 
-    --rarity-common-bg: #0f2b19;
-    --rarity-common-fg: #7fe0a3;
-    --rarity-common-dot: #3bbf6c;
+    --rarity-common-bg: #2c2708;
+    --rarity-common-fg: #f2e08a;
+    --rarity-common-dot: #e6c020;
 
-    --rarity-uncommon-bg: #0a2830;
-    --rarity-uncommon-fg: #6fd6ec;
-    --rarity-uncommon-dot: #22b8d8;
+    --rarity-uncommon-bg: #0f2b19;
+    --rarity-uncommon-fg: #7fe0a3;
+    --rarity-uncommon-dot: #3bbf6c;
 
     --rarity-rare-bg: #0f2140;
     --rarity-rare-fg: #8bb6fb;
@@ -101,9 +101,9 @@
     --rarity-extremely-rare-fg: #cd9bf7;
     --rarity-extremely-rare-dot: #ab5ff0;
 
-    --rarity-mythic-bg: #3a1025;
-    --rarity-mythic-fg: #f38ac0;
-    --rarity-mythic-dot: #e7438d;
+    --rarity-mythic-bg: #3a1414;
+    --rarity-mythic-fg: #f7a19a;
+    --rarity-mythic-dot: #e5484d;
 
     --best-word-accent: #f2a30f;
     --best-word-bg: #3a2408;
