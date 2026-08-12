@@ -48,6 +48,13 @@ describe("evaluateSubmission", () => {
     expect(result.word).toEqual({ word: "the", rarity: "Very Common", zipf: 7.7 });
   });
 
+  it("accepts curtaining even though wordfreq has no direct estimate", () => {
+    const result = evaluateSubmission("curtaining", "tain", []);
+
+    expect(result.ok).toBe(true);
+    expect(result.word?.word).toBe("curtaining");
+  });
+
   it("trims and lowercases the input before validating", () => {
     const result = evaluateSubmission("  THE  ", "the", []);
     expect(result.ok).toBe(true);
