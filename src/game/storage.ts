@@ -1,7 +1,7 @@
 import { addDays, todayDateString } from "./date";
 import { MAX_GUESSES } from "./constants";
 import { rarityFor, rarityScore } from "./dictionary";
-import { isEliteRarity, isStreakRarity, isWinningRarity } from "./rank";
+import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 
 const PROGRESS_PREFIX = "ick:progress:";
@@ -95,15 +95,12 @@ function saveStreak(streak: StreakState): void {
 }
 
 /**
- * A Common-or-better word immediately advances today's streak. The player can
+ * The first valid word immediately advances today's streak. The player can
  * still keep guessing until `MAX_GUESSES`, or lock in early, without counting
  * that streak win a second time.
  */
 export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord): DailyProgress {
   if (progress.completed) return progress; // no further official changes once complete
-  const hasStreakWord = progress.acceptedWords.some((acceptedWord) =>
-    isStreakRarity(acceptedWord.rarity)
-  );
   const hasWinningWord = progress.acceptedWords.some((acceptedWord) =>
     isWinningRarity(acceptedWord.rarity)
   );
@@ -130,8 +127,8 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
     shouldIncrementElite: isEliteRarity(word.rarity) && !hasEliteWord,
   });
 
-  if (isStreakRarity(word.rarity) && !hasStreakWord) {
-    updateStreakOnQualifiedAnswer(progress.date);
+  if (progress.acceptedWords.length === 0) {
+    updateStreakOnValidAnswer(progress.date);
   }
   if (justCompleted && won) {
     incrementCompletionTotal();
@@ -170,9 +167,9 @@ export function lockInResult(progress: DailyProgress): DailyProgress {
 }
 
 /**
- * Advance the streak as soon as today's first Common-or-better word is accepted.
+ * Advance the streak as soon as today's first valid word is accepted.
  */
-function updateStreakOnQualifiedAnswer(date: string): void {
+function updateStreakOnValidAnswer(date: string): void {
   const streak = loadStreak();
 
   if (date !== todayDateString()) return;

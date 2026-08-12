@@ -131,7 +131,7 @@ obscure answers.
   the future). Each date's progress persists independently, so revisiting
   one resumes where you left off. Completing an archived puzzle still
   saves and locks it (so it's reviewable later) but never touches the
-  streak — only a Common-or-better answer on its own real calendar date
+  streak — only a valid answer submitted on its own real calendar date
   counts. Missing a day resets the streak to zero. Those checks live in
   `storage.ts`, which ignores archive puzzles and clears expired streaks on
   load.

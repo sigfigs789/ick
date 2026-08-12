@@ -133,7 +133,7 @@ describe("recordAcceptedWord", () => {
     expect(p.completed).toBe(false);
   });
 
-  it("ends as a loss on the MAX_GUESSES-th Common word while keeping the streak", () => {
+  it("ends as a loss on the MAX_GUESSES-th valid word while keeping the streak", () => {
     let p = newProgress("2024-01-01", "str");
     for (let i = 0; i < MAX_GUESSES; i++) {
       p = recordAcceptedWord(p, word(`word${i}`));
@@ -145,22 +145,17 @@ describe("recordAcceptedWord", () => {
     expect(loadStreak().totalCompleted).toBe(0);
   });
 
-  it("keeps the puzzle active and updates the streak immediately after a Common-or-better word", () => {
-    let p = newProgress("2024-01-01", "str");
-    p = recordAcceptedWord(p, word("strange", 4.6, "Common"));
-    p = recordAcceptedWord(p, word("stranger", 3.2, "Rare"));
+  it("keeps the puzzle active and updates the streak immediately after any valid word", () => {
+    const p = recordAcceptedWord(
+      newProgress("2024-01-01", "str"),
+      word("the", 7.7, "Very Common")
+    );
     expect(p.completed).toBe(false);
     expect(p.won).toBeUndefined();
-    expect(p.acceptedWords).toHaveLength(2);
+    expect(p.acceptedWords).toHaveLength(1);
     expect(loadStreak().currentStreak).toBe(1);
     expect(loadStreak().totalCompleted).toBe(0);
-    expect(loadStreak().crushedIt).toBe(1);
-  });
-
-  it("does not advance the streak for a Very Common word", () => {
-    recordAcceptedWord(newProgress("2024-01-01", "str"), word("the", 7.7, "Very Common"));
-
-    expect(loadStreak().currentStreak).toBe(0);
+    expect(loadStreak().crushedIt).toBe(0);
   });
 
   it("scores an archived Extremely Rare word immediately without changing the streak", () => {
