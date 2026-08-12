@@ -33,10 +33,10 @@ EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
 MIN_LEN = 3
 MAX_LEN = 15
 
-# SCOWL/ESDB is the acceptance authority, so this floor only limits the
-# frequency range we score. Wordfreq's English "best" list bottoms out near
-# 1.0, so 0.5 includes every word for which it has a frequency estimate.
-MIN_ZIPF = 0.5
+# SCOWL/ESDB is the acceptance authority. A 0.0 from wordfreq means that it
+# has no usable frequency estimate, not that the entry is invalid. Keep those
+# words and score them just below wordfreq's measured range instead.
+UNKNOWN_ZIPF = 0.5
 
 # Rarity bucket boundaries (inclusive lower bound), tuned by eyeballing the
 # resulting distribution -- see the printed histogram when this script runs.
@@ -65,6 +65,10 @@ RARITY_CODE = {
 
 
 def rarity_for_zipf(z: float) -> str:
+    # Unknown-frequency words use a conservative score just below the Mythic
+    # display threshold; lack of corpus data is not proof of exceptional rarity.
+    if z == UNKNOWN_ZIPF:
+        return "Extremely Rare"
     for threshold, label in RARITY_BANDS:
         if z >= threshold:
             return label
@@ -132,26 +136,26 @@ def main() -> None:
             continue
         if wl in blocklist:
             continue
-        candidates[wl] = zipf_frequency(wl, "en", wordlist="best")
+        zipf = zipf_frequency(wl, "en", wordlist="best")
+        candidates[wl] = UNKNOWN_ZIPF if zipf == 0.0 else zipf
 
-    kept = {w: z for w, z in candidates.items() if z >= MIN_ZIPF}
-    print(f"{len(candidates)} candidates -> {len(kept)} kept after Zipf >= {MIN_ZIPF} cutoff")
+    print(f"Kept all {len(candidates)} eligible candidates ({UNKNOWN_ZIPF} Zipf fallback for unknowns)")
 
     # Histogram for tuning RARITY_BANDS.
     from collections import Counter
 
-    hist = Counter(rarity_for_zipf(displayed_zipf(z)) for z in kept.values())
+    hist = Counter(rarity_for_zipf(displayed_zipf(z)) for z in candidates.values())
     for _, label in RARITY_BANDS:
         print(f"  {label:16s} {hist.get(label, 0)}")
 
-    dictionary = sorted(kept.keys())
+    dictionary = sorted(candidates.keys())
 
     # rarity.json is index-aligned with dictionary.json (same sort order)
     # rather than keyed by word again -- repeating every word as a JSON
     # object key doubled the payload size for no benefit, since the app
     # already has the word list from dictionary.json.
-    codes = "".join(RARITY_CODE[rarity_for_zipf(displayed_zipf(kept[w]))] for w in dictionary)
-    zipf_tenths = [round(kept[w] * 10) for w in dictionary]
+    codes = "".join(RARITY_CODE[rarity_for_zipf(displayed_zipf(candidates[w]))] for w in dictionary)
+    zipf_tenths = [round(candidates[w] * 10) for w in dictionary]
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "dictionary.json").write_text(json.dumps(dictionary, separators=(",", ":")))

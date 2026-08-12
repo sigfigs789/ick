@@ -88,8 +88,9 @@ npm run select-drops  # writes scripts/drop-candidates.json (diagnostic)
 size-80 list with abbreviations and special categories excluded. The script
 also keeps only pure lowercase a-z entries (which drops proper nouns,
 possessives, contractions, and hyphenated compounds), scores each word's Zipf
-frequency via `wordfreq`, drops anything below a frequency floor, and removes
-anything in `scripts/blocklist.txt` (hand-curated slurs, profanity, and stray
+frequency via `wordfreq`, treats words without a frequency estimate (`0.0`) as
+Zipf `0.5` and Extremely Rare rather than Mythic, and removes anything in
+`scripts/blocklist.txt` (hand-curated slurs, profanity, and stray
 abbreviations). Rarity bands are tuned in the `RARITY_BANDS` constant at the
 top of the script — adjust and rerun as playtesting suggests.
 

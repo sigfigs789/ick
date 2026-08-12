@@ -1,6 +1,6 @@
 import { addDays, todayDateString } from "./date";
 import { MAX_GUESSES } from "./constants";
-import { rarityScore } from "./dictionary";
+import { rarityFor, rarityScore } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 
@@ -29,11 +29,26 @@ export function loadProgress(date: string): DailyProgress | null {
   if (!progress) return null;
 
   // Keep progress saved under the former top-tier name playable after the
-  // rank was renamed to Mythic.
-  const acceptedWords = progress.acceptedWords.map((word) =>
-    (word.rarity as string) === "Elusive" ? { ...word, rarity: "Mythic" as const } : word
-  );
-  return { ...progress, acceptedWords };
+  // rank was renamed to Mythic. Also refresh words saved with the former
+  // unknown-frequency fallbacks now that the dictionary uses 0.5.
+  let migrated = false;
+  const acceptedWords = progress.acceptedWords.map((word) => {
+    if (word.zipf === 0.1 || word.zipf === 0.3) {
+      const current = rarityFor(word.word);
+      if (current) {
+        migrated = true;
+        return { word: word.word, ...current };
+      }
+    }
+    if ((word.rarity as string) === "Elusive") {
+      migrated = true;
+      return { ...word, rarity: "Mythic" as const };
+    }
+    return word;
+  });
+  const loaded = { ...progress, acceptedWords };
+  if (migrated) saveProgress(loaded);
+  return loaded;
 }
 
 function saveProgress(progress: DailyProgress): void {

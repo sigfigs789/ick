@@ -18,22 +18,20 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  * small (no word repeated as both a dictionary entry and a JSON object key).
  */
 const zipfTenths: number[] = rarityData.zipfTenths;
+const UNKNOWN_ZIPF = 0.5;
 
 /**
- * The dictionary's actual Zipf range, computed once from the loaded data
- * rather than assumed -- rarityScore normalizes against these so the
- * rarest word in the dictionary always scores exactly 10, whatever the
- * underlying wordfreq values happen to be after a data regeneration.
+ * The dictionary's upper Zipf bound, computed once from the loaded data.
+ * The lower bound stays at the scale's true 0.0 floor so an unknown-frequency
+ * fallback such as 0.5 does not get rescaled back to a perfect 10.
  */
 // Plain loop rather than Math.min(...zipfTenths) -- spreading ~60k elements
 // as call arguments risks blowing the stack on some engines (e.g. Safari).
-let minZipfTenths = Infinity;
 let maxZipfTenths = -Infinity;
 for (const z of zipfTenths) {
-  if (z < minZipfTenths) minZipfTenths = z;
   if (z > maxZipfTenths) maxZipfTenths = z;
 }
-const MIN_ZIPF = minZipfTenths / 10;
+const MIN_ZIPF = 0;
 const MAX_ZIPF = maxZipfTenths / 10;
 const ZIPF_RANGE = MAX_ZIPF - MIN_ZIPF;
 
@@ -98,6 +96,8 @@ function scoringBaseForm(word: string): string | undefined {
 }
 
 function rarityForZipf(zipf: number): Rarity {
+  // Missing corpus data is not evidence that a word is genuinely Mythic.
+  if (zipf === UNKNOWN_ZIPF) return "Extremely Rare";
   if (zipf >= 5.2) return "Very Common";
   if (zipf >= 4.2) return "Common";
   if (zipf >= 3.3) return "Uncommon";
@@ -119,10 +119,10 @@ export const RARITY_ORDER: Rarity[] = [
  * A player-facing "rarity score" derived from Zipf frequency, with the
  * polarity flipped (wordfreq's Zipf scale runs *higher* for more common
  * words -- e.g. "the" ~7.7, "aardvark" ~2.4 -- which reads backwards for a
- * rarity score) and then normalized against the dictionary's actual Zipf
- * range so scores span the full 0-10 loot-tier scale: the single rarest
- * word in the dictionary scores exactly 10, the most common scores 0,
- * and everything else is scaled proportionally between. Internal ranking
+ * rarity score) and then normalized between Zipf 0.0 and the dictionary's
+ * most common word. An unknown-frequency fallback of 0.5 therefore remains
+ * slightly below a perfect 10 instead of becoming the scale's new ceiling.
+ * Internal ranking
  * (see rank.ts's bestWord) still compares raw Zipf directly; this is
  * purely a display transform.
  */

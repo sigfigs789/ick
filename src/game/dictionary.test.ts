@@ -10,6 +10,10 @@ describe("isValidWord", () => {
     expect(isValidWord("THE")).toBe(true);
   });
 
+  it("accepts SCOWL words that have no wordfreq estimate", () => {
+    expect(isValidWord("curtaining")).toBe(true);
+  });
+
   it("rejects gibberish", () => {
     expect(isValidWord("zzzzqx")).toBe(false);
   });
@@ -47,12 +51,13 @@ describe("rarityFor", () => {
 
     expect(rarityFor("alertly")).toEqual(alert);
     expect(rarityFor("alertness")).toEqual(alert);
+    expect(rarityFor("curtaining")).toEqual(rarityFor("curtain"));
   });
 
-  it("classifies the dictionary's rarest word as Mythic, scoring a perfect 10", () => {
-    const mythic = rarityFor("abash");
-    expect(mythic).toMatchObject({ rarity: "Mythic", zipf: 1 });
-    expect(rarityScore(mythic!.zipf)).toBe(10);
+  it("scores an unmeasured word at 9.4 without awarding Mythic", () => {
+    const unknown = rarityFor("assonant");
+    expect(unknown).toMatchObject({ rarity: "Extremely Rare", zipf: 0.5 });
+    expect(rarityScore(unknown!.zipf)).toBe(9.4);
   });
 });
 
@@ -63,13 +68,14 @@ describe("rarityScore", () => {
     expect(rarityScore(rare.zipf)).toBeGreaterThan(rarityScore(common.zipf));
   });
 
-  it("normalizes against the dictionary's actual Zipf range so scores span 0-10", () => {
+  it("normalizes against Zipf's 0.0 floor and the dictionary's upper bound", () => {
     // "the" is the dictionary's most common word (highest Zipf) -- it anchors the floor.
     const mostCommon = rarityFor("the")!;
-    // "abash" is one of the dictionary's rarest words (lowest Zipf) -- it anchors the ceiling.
-    const rarest = rarityFor("abash")!;
+    // Unmeasured SCOWL words use the 0.5 fallback and remain below the 10.0 ceiling.
+    const rarest = rarityFor("assonant")!;
     expect(rarityScore(mostCommon.zipf)).toBe(0);
-    expect(rarityScore(rarest.zipf)).toBe(10);
+    expect(rarityScore(rarest.zipf)).toBeLessThan(10);
+    expect(rarityScore(0)).toBe(10);
     expect(rarityScore(2.4)).toBeGreaterThan(rarityScore(3.3));
   });
 });
