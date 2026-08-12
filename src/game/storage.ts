@@ -78,7 +78,16 @@ export function resetProgress(date: string, drop: string): DailyProgress {
 }
 
 export function loadStreak(): StreakState {
-  return { ...EMPTY_STREAK, ...safeParse<StreakState>(localStorage.getItem(STREAK_KEY)) };
+  const streak = { ...EMPTY_STREAK, ...safeParse<StreakState>(localStorage.getItem(STREAK_KEY)) };
+  const yesterday = addDays(todayDateString(), -1);
+
+  if (streak.currentStreak > 0 && streak.lastCompletedDate && streak.lastCompletedDate < yesterday) {
+    const reset = { ...streak, currentStreak: 0 };
+    saveStreak(reset);
+    return reset;
+  }
+
+  return streak;
 }
 
 function saveStreak(streak: StreakState): void {
@@ -86,7 +95,7 @@ function saveStreak(streak: StreakState): void {
 }
 
 /**
- * A Rare-or-better word immediately advances today's streak. The player can
+ * The first valid word immediately advances today's streak. The player can
  * still keep guessing until `MAX_GUESSES`, or lock in early, without counting
  * that streak win a second time.
  */
@@ -118,8 +127,8 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
     shouldIncrementElite: isEliteRarity(word.rarity) && !hasEliteWord,
   });
 
-  if (isWinningRarity(word.rarity) && !hasWinningWord) {
-    updateStreakOnWin(progress.date);
+  if (progress.acceptedWords.length === 0) {
+    updateStreakOnValidAnswer(progress.date);
   }
   if (justCompleted && won) {
     incrementCompletionTotal();
@@ -158,9 +167,9 @@ export function lockInResult(progress: DailyProgress): DailyProgress {
 }
 
 /**
- * Advance the streak as soon as today's first Rare-or-better word is accepted.
+ * Advance the streak as soon as today's first valid word is accepted.
  */
-function updateStreakOnWin(date: string): void {
+function updateStreakOnValidAnswer(date: string): void {
   const streak = loadStreak();
 
   if (date !== todayDateString()) return;

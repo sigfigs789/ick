@@ -107,6 +107,16 @@ describe("loadStreak", () => {
     );
     expect(loadStreak()).toMatchObject({ crushedIt: 0, elite: 0, highScore: 0 });
   });
+
+  it("resets an expired streak to zero after a missed day", () => {
+    setToday("2024-01-03");
+    localStorage.setItem(
+      "ick:streak",
+      JSON.stringify({ currentStreak: 2, longestStreak: 2, lastCompletedDate: "2024-01-01" })
+    );
+
+    expect(loadStreak()).toMatchObject({ currentStreak: 0, longestStreak: 2 });
+  });
 });
 
 describe("recordAcceptedWord", () => {
@@ -123,7 +133,7 @@ describe("recordAcceptedWord", () => {
     expect(p.completed).toBe(false);
   });
 
-  it("ends as a loss on the MAX_GUESSES-th lower-rarity word without updating the streak", () => {
+  it("ends as a loss on the MAX_GUESSES-th valid word while keeping the streak", () => {
     let p = newProgress("2024-01-01", "str");
     for (let i = 0; i < MAX_GUESSES; i++) {
       p = recordAcceptedWord(p, word(`word${i}`));
@@ -131,20 +141,21 @@ describe("recordAcceptedWord", () => {
     expect(p.completed).toBe(true);
     expect(p.won).toBe(false);
     expect(p.acceptedWords).toHaveLength(MAX_GUESSES);
-    expect(loadStreak().currentStreak).toBe(0);
+    expect(loadStreak().currentStreak).toBe(1);
     expect(loadStreak().totalCompleted).toBe(0);
   });
 
-  it("keeps the puzzle active and updates the streak immediately after a Rare-or-better word", () => {
-    let p = newProgress("2024-01-01", "str");
-    p = recordAcceptedWord(p, word("strange"));
-    p = recordAcceptedWord(p, word("stranger", 3.2, "Rare"));
+  it("keeps the puzzle active and updates the streak immediately after any valid word", () => {
+    const p = recordAcceptedWord(
+      newProgress("2024-01-01", "str"),
+      word("the", 7.7, "Very Common")
+    );
     expect(p.completed).toBe(false);
     expect(p.won).toBeUndefined();
-    expect(p.acceptedWords).toHaveLength(2);
+    expect(p.acceptedWords).toHaveLength(1);
     expect(loadStreak().currentStreak).toBe(1);
     expect(loadStreak().totalCompleted).toBe(0);
-    expect(loadStreak().crushedIt).toBe(1);
+    expect(loadStreak().crushedIt).toBe(0);
   });
 
   it("scores an archived Extremely Rare word immediately without changing the streak", () => {
