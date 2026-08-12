@@ -54,10 +54,10 @@ describe("rarityFor", () => {
     expect(rarityFor("curtaining")).toEqual(rarityFor("curtain"));
   });
 
-  it("scores an unmeasured word at 9.4 without awarding Mythic", () => {
+  it("scores an unmeasured word at 10 without awarding Mythic", () => {
     const unknown = rarityFor("assonant");
     expect(unknown).toMatchObject({ rarity: "Extremely Rare", zipf: 0.5 });
-    expect(rarityScore(unknown!.zipf)).toBe(9.4);
+    expect(rarityScore(unknown!.zipf)).toBe(10);
   });
 });
 
@@ -68,13 +68,13 @@ describe("rarityScore", () => {
     expect(rarityScore(rare.zipf)).toBeGreaterThan(rarityScore(common.zipf));
   });
 
-  it("normalizes against Zipf's 0.0 floor and the dictionary's upper bound", () => {
+  it("normalizes against the dictionary's measured Zipf range", () => {
     // "the" is the dictionary's most common word (highest Zipf) -- it anchors the floor.
     const mostCommon = rarityFor("the")!;
-    // Unmeasured SCOWL words use the 0.5 fallback and remain below the 10.0 ceiling.
+    // The rarest available answer, including an unmeasured fallback, reaches the ceiling.
     const rarest = rarityFor("assonant")!;
     expect(rarityScore(mostCommon.zipf)).toBe(0);
-    expect(rarityScore(rarest.zipf)).toBeLessThan(10);
+    expect(rarityScore(rarest.zipf)).toBe(10);
     expect(rarityScore(0)).toBe(10);
     expect(rarityScore(2.4)).toBeGreaterThan(rarityScore(3.3));
   });

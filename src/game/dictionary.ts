@@ -20,18 +20,16 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
 const zipfTenths: number[] = rarityData.zipfTenths;
 const UNKNOWN_ZIPF = 0.5;
 
-/**
- * The dictionary's upper Zipf bound, computed once from the loaded data.
- * The lower bound stays at the scale's true 0.0 floor so an unknown-frequency
- * fallback such as 0.5 does not get rescaled back to a perfect 10.
- */
+/** The dictionary's measured Zipf range, computed once from the loaded data. */
 // Plain loop rather than Math.min(...zipfTenths) -- spreading ~60k elements
 // as call arguments risks blowing the stack on some engines (e.g. Safari).
+let minZipfTenths = Infinity;
 let maxZipfTenths = -Infinity;
 for (const z of zipfTenths) {
+  if (z < minZipfTenths) minZipfTenths = z;
   if (z > maxZipfTenths) maxZipfTenths = z;
 }
-const MIN_ZIPF = 0;
+const MIN_ZIPF = minZipfTenths / 10;
 const MAX_ZIPF = maxZipfTenths / 10;
 const ZIPF_RANGE = MAX_ZIPF - MIN_ZIPF;
 
@@ -119,15 +117,16 @@ export const RARITY_ORDER: Rarity[] = [
  * A player-facing "rarity score" derived from Zipf frequency, with the
  * polarity flipped (wordfreq's Zipf scale runs *higher* for more common
  * words -- e.g. "the" ~7.7, "aardvark" ~2.4 -- which reads backwards for a
- * rarity score) and then normalized between Zipf 0.0 and the dictionary's
- * most common word. An unknown-frequency fallback of 0.5 therefore remains
- * slightly below a perfect 10 instead of becoming the scale's new ceiling.
- * Internal ranking
+ * rarity score) and then normalized across the dictionary's measured range,
+ * so the rarest attainable answer scores a perfect 10. Unknown-frequency
+ * fallbacks may sit below the measured range, so the display score is capped
+ * at 10. Internal ranking
  * (see rank.ts's bestWord) still compares raw Zipf directly; this is
  * purely a display transform.
  */
 export function rarityScore(zipf: number): number {
-  return Math.round(((MAX_ZIPF - zipf) / ZIPF_RANGE) * 100) / 10;
+  const score = ((MAX_ZIPF - zipf) / ZIPF_RANGE) * 10;
+  return Math.round(Math.min(10, Math.max(0, score)) * 10) / 10;
 }
 
 /** Sum the displayed rarity scores earned during one game session. */
