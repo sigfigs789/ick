@@ -2,11 +2,10 @@ import { track } from "@vercel/analytics";
 import { rarityScore } from "./game/dictionary";
 import { bestWord } from "./game/rank";
 import { puzzleNumber } from "./game/share";
-import type { AcceptedWord, DailyProgress, StreakState } from "./game/types";
+import type { AcceptedWord, DailyProgress, RejectionReason, StreakState } from "./game/types";
 
 /**
- * Send aggregate game activity to Vercel without including submitted words
- * or any player-identifying information.
+ * Send game activity to Vercel without player-identifying information.
  */
 export function trackAcceptedAnswer(
   date: string,
@@ -22,6 +21,16 @@ export function trackAcceptedAnswer(
     score: rarityScore(word.zipf),
     rarity: word.rarity,
     streak_days: streakDays,
+  });
+}
+
+/** Record rejected submissions so the word list can be reviewed over time. */
+export function trackRejectedAnswer(date: string, rawWord: string, reason: RejectionReason) {
+  track("answer_rejected", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    word: rawWord.trim().toLowerCase(),
+    rejection_reason: reason,
   });
 }
 
