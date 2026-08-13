@@ -65,17 +65,18 @@ export function bestWordForDrop(drop: string): AcceptedWord | undefined {
 
 /**
  * Frequency data can undercount familiar derived forms such as "alertly"
- * even when their base words are common. Cap those forms at the base word's
- * frequency so a transparent suffix cannot turn an everyday word into a
- * top-tier answer.
+ * even when their base words are common. Tense inflections inherit their
+ * base word's frequency outright; other transparent suffixes are capped at
+ * the base frequency so they cannot turn an everyday word into a top-tier
+ * answer.
  */
 function adjustedZipf(word: string, zipf: number): number {
+  const tenseBase = tenseBaseForm(word);
+  if (tenseBase) return zipfFor(tenseBase);
+
   const base = scoringBaseForm(word);
   if (!base) return zipf;
-
-  const baseIndex = WORD_INDEX.get(base);
-  if (baseIndex === undefined) return zipf;
-  return Math.max(zipf, zipfTenths[baseIndex] / 10);
+  return Math.max(zipf, zipfFor(base));
 }
 
 function scoringBaseForm(word: string): string | undefined {
@@ -90,6 +91,48 @@ function scoringBaseForm(word: string): string | undefined {
     if (base) return base;
   }
   return undefined;
+}
+
+/**
+ * Return a dictionary-backed base for the common past (-ed) and ongoing
+ * (-ing) verb forms. These must use the base frequency exactly: "rated"
+ * scores as "rate", and "making" scores as "make".
+ */
+function tenseBaseForm(word: string): string | undefined {
+  const candidates: string[] = [];
+
+  if (word.length > 5 && word.endsWith("ied")) {
+    candidates.push(`${word.slice(0, -3)}y`);
+  } else if (word.length > 4 && word.endsWith("ed")) {
+    const stem = word.slice(0, -2);
+    // Prefer the silent-e spelling where both candidates are words (rated -> rate, not rat).
+    candidates.push(`${stem}e`, stem, stripDoubledConsonant(stem));
+  }
+
+  if (word.length > 4 && word.endsWith("ying")) {
+    candidates.push(`${word.slice(0, -4)}y`, `${word.slice(0, -4)}ie`);
+  } else if (word.length > 5 && word.endsWith("ing")) {
+    const stem = word.slice(0, -3);
+    // Prefer the silent-e spelling where both candidates are words (making -> make, not mak).
+    candidates.push(`${stem}e`, stem, stripDoubledConsonant(stem));
+  }
+
+  return candidates.find((candidate) => WORD_INDEX.has(candidate));
+}
+
+function zipfFor(word: string): number {
+  return zipfTenths[WORD_INDEX.get(word)!] / 10;
+}
+
+function stripDoubledConsonant(stem: string): string {
+  if (
+    stem.length > 3 &&
+    stem[stem.length - 1] === stem[stem.length - 2] &&
+    /[bcdfghjklmnpqrstvwxyz]/.test(stem[stem.length - 1])
+  ) {
+    return stem.slice(0, -1);
+  }
+  return stem;
 }
 
 function rarityForZipf(zipf: number): Rarity {

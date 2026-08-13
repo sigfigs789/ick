@@ -92,6 +92,16 @@ describe("rarityFor", () => {
     expect(rarityFor("curtaining")).toEqual(rarityFor("curtain"));
   });
 
+  it("uses the base word's exact frequency for past and ongoing verb forms", () => {
+    expect(rarityFor("played")).toEqual(rarityFor("play"));
+    expect(rarityFor("rated")).toEqual(rarityFor("rate"));
+    expect(rarityFor("planned")).toEqual(rarityFor("plan"));
+    expect(rarityFor("studied")).toEqual(rarityFor("study"));
+    expect(rarityFor("making")).toEqual(rarityFor("make"));
+    expect(rarityFor("running")).toEqual(rarityFor("run"));
+    expect(rarityFor("dying")).toEqual(rarityFor("die"));
+  });
+
   it("scores an unmeasured word at 9.4 without awarding Mythic", () => {
     const unknown = rarityFor("assonant");
     expect(unknown).toMatchObject({ rarity: "Extremely Rare", zipf: 1.4 });
