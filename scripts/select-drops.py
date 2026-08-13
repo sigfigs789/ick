@@ -8,8 +8,6 @@ Run:
     python3 scripts/select-drops.py
 """
 import json
-import string
-from itertools import product
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -17,7 +15,7 @@ DATA_DIR = ROOT / "src" / "data"
 
 MIN_TOTAL_MATCHES = 25
 MIN_FAMILIAR_MATCHES = 8  # Very Common + Common
-FAMILIAR_RARITIES = {"Very Common", "Common"}
+MIN_FAMILIAR_ZIPF_TENTHS = 42  # Common, Very Common, or Quotidian
 
 # Hand-picked candidate pool: digraphs/trigraphs that are common English
 # letter clusters (blends, common syllables) rather than an exhaustive
@@ -54,18 +52,35 @@ def contains_drop(word: str, drop: str) -> bool:
 def main() -> None:
     dictionary = json.loads((DATA_DIR / "dictionary.json").read_text())
     rarity = json.loads((DATA_DIR / "rarity.json").read_text())
+    zipf_tenths = rarity["zipfTenths"]
+    word_indexes = {word: i for i, word in enumerate(dictionary)}
 
     results = []
-    for drop in sorted(set(CANDIDATES_2 + CANDIDATES_3), key=lambda f: (len(f), f)):
+    candidates = {
+        candidate
+        for candidate in CANDIDATES_2 + CANDIDATES_3
+        if len(candidate) in (2, 3)
+    }
+    # Consider every 2- and 3-letter sequence present in the dictionary;
+    # the thresholds below retain only drops with enough approachable answers.
+    for word in dictionary:
+        for length in (2, 3):
+            candidates.update(word[i:i + length].upper() for i in range(len(word) - length + 1))
+
+    for drop in sorted(candidates, key=lambda f: (len(f), f)):
         f = drop.lower()
-        matches = [w for w in dictionary if f in w]
-        familiar = [w for w in matches if rarity[w]["rarity"] in FAMILIAR_RARITIES]
+        match_indexes = [i for i, word in enumerate(dictionary) if f in word]
+        matches = [dictionary[i] for i in match_indexes]
+        familiar = [dictionary[i] for i in match_indexes if zipf_tenths[i] >= MIN_FAMILIAR_ZIPF_TENTHS]
         if len(matches) >= MIN_TOTAL_MATCHES and len(familiar) >= MIN_FAMILIAR_MATCHES:
             results.append({
                 "drop": drop.upper(),
                 "totalMatches": len(matches),
                 "familiarMatches": len(familiar),
-                "sampleFamiliar": sorted(familiar, key=lambda w: -rarity[w]["zipf"])[:6],
+                "sampleFamiliar": sorted(
+                    familiar,
+                    key=lambda word: -zipf_tenths[word_indexes[word]],
+                )[:6],
             })
 
     results.sort(key=lambda r: (len(r["drop"]), -r["familiarMatches"]))
@@ -79,6 +94,11 @@ def main() -> None:
     out_path = ROOT / "scripts" / "drop-candidates.json"
     out_path.write_text(json.dumps(results, indent=2))
     print(f"\nWrote {out_path}")
+
+    drops_path = DATA_DIR / "drops.json"
+    existing = json.loads(drops_path.read_text())
+    drops_path.write_text(json.dumps({"epoch": existing["epoch"], "drops": [r["drop"] for r in results]}, indent=2) + "\n")
+    print(f"Wrote {drops_path}")
 
 
 if __name__ == "__main__":
