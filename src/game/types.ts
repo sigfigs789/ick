@@ -1,4 +1,5 @@
 export type Rarity =
+  | "Quotidian"
   | "Very Common"
   | "Common"
   | "Uncommon"
@@ -21,8 +22,8 @@ export interface AcceptedWord {
 /** Why a submission was rejected, for user-facing feedback. */
 export type RejectionReason =
   | "empty"
-  | "too-short"
   | "missing-drop"
+  | "same-as-drop"
   | "not-a-word"
   | "already-used"
   | "same-root-as-used";

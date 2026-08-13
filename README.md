@@ -84,8 +84,9 @@ npm run select-drops  # writes scripts/drop-candidates.json (diagnostic)
 ```
 
 `scripts/generate-data.py` accepts a newline-delimited source list via
-`--word-list`; the checked-in data is generated from an ESDB/SCOWL US English
-size-80 list with abbreviations and special categories excluded. The script
+`--word-list`; the checked-in data is generated from an ESDB/SCOWL size-80
+list with American, British, Canadian, and Australian spellings, with
+abbreviations and special categories excluded. The script
 also keeps only pure lowercase a-z entries (which drops proper nouns,
 possessives, contractions, and hyphenated compounds), scores each word's Zipf
 frequency via `wordfreq`, treats words without a frequency estimate (`0.0`) as
@@ -99,8 +100,8 @@ To recreate the ESDB/SCOWL source list:
 ```bash
 git clone https://github.com/en-wl/wordlist.git /tmp/esdb
 cd /tmp/esdb && make
-/tmp/esdb/scowl word-list 80 A 1 --wo-poses=abbr --categories= > /tmp/scowl-us-80.txt
-python3 scripts/generate-data.py --word-list /tmp/scowl-us-80.txt
+/tmp/esdb/scowl word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > /tmp/scowl-regional-80.txt
+python3 scripts/generate-data.py --word-list /tmp/scowl-regional-80.txt
 ```
 
 `scripts/select-drops.py` evaluates a hand-picked pool of candidate
@@ -131,9 +132,10 @@ obscure answers.
   the future). Each date's progress persists independently, so revisiting
   one resumes where you left off. Completing an archived puzzle still
   saves and locks it (so it's reviewable later) but never touches the
-  streak — only a puzzle finished on its own real calendar date counts.
-  That check lives in `storage.ts`'s `updateStreakOnCompletion`, which
-  bails out unless the puzzle's date equals `todayDateString()`.
+  streak — only a valid answer submitted on its own real calendar date
+  counts. Missing a day resets the streak to zero. Those checks live in
+  `storage.ts`, which ignores archive puzzles and clears expired streaks on
+  load.
 
 ## Not in v1 (by design)
 

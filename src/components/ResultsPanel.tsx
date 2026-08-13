@@ -20,7 +20,6 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
     streak: streak.currentStreak,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
-    topRarity: streak.highScore,
   });
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (

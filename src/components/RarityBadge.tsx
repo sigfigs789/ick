@@ -6,6 +6,7 @@ import type { Rarity } from "../game/types";
 // thing a sighted player does. The dot is decorative reinforcement, not a
 // second channel of meaning on its own.
 const RARITY_META: Record<Rarity, { tag: string; className: string }> = {
+  Quotidian: { tag: "QUOTIDIAN", className: "rarity--quotidian" },
   "Very Common": { tag: "VERY COMMON", className: "rarity--very-common" },
   Common: { tag: "COMMON", className: "rarity--common" },
   Uncommon: { tag: "UNCOMMON", className: "rarity--uncommon" },

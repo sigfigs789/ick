@@ -96,6 +96,7 @@ function rarityForZipf(zipf: number): Rarity {
   // Missing corpus data is not evidence that a word is genuinely Mythic.
   if (zipf === UNKNOWN_ZIPF) return "Extremely Rare";
   if (rarityScore(zipf) >= 9.5) return "Mythic";
+  if (zipf >= 6.4) return "Quotidian";
   if (zipf >= 5.2) return "Very Common";
   if (zipf >= 4.2) return "Common";
   if (zipf >= 3.3) return "Uncommon";
@@ -110,6 +111,7 @@ export const RARITY_ORDER: Rarity[] = [
   "Uncommon",
   "Common",
   "Very Common",
+  "Quotidian",
 ];
 
 /**

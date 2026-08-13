@@ -1,9 +1,22 @@
 import { describe, expect, it } from "vitest";
+import dictionaryWords from "../data/dictionary.json";
 import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
+const explicitlyCuratedWords = ["endling"];
+
 describe("isValidWord", () => {
+  it("keeps the curated dictionary size intentional", () => {
+    // Update this only when deliberately regenerating or editing the word list.
+    expect(dictionaryWords).toHaveLength(188_923);
+  });
+
   it("accepts a common real word", () => {
     expect(isValidWord("the")).toBe(true);
+  });
+
+  it("accepts one- and two-letter dictionary words", () => {
+    expect(isValidWord("a")).toBe(true);
+    expect(isValidWord("at")).toBe(true);
   });
 
   it("is case-insensitive", () => {
@@ -12,6 +25,21 @@ describe("isValidWord", () => {
 
   it("accepts SCOWL words that have no wordfreq estimate", () => {
     expect(isValidWord("curtaining")).toBe(true);
+  });
+
+  it("accepts explicitly curated additions", () => {
+    for (const word of explicitlyCuratedWords) {
+      expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
+    }
+  });
+
+  it("accepts spelling variants from supported English regions", () => {
+    expect(isValidWord("color")).toBe(true);
+    expect(isValidWord("colour")).toBe(true);
+    expect(isValidWord("organize")).toBe(true);
+    expect(isValidWord("organise")).toBe(true);
+    expect(isValidWord("paycheque")).toBe(true);
+    expect(isValidWord("bikkie")).toBe(true);
   });
 
   it("rejects gibberish", () => {
@@ -30,8 +58,14 @@ describe("isValidWord", () => {
 describe("rarityFor", () => {
   it("returns a rarity and zipf score for a known word", () => {
     const info = rarityFor("the");
-    expect(info?.rarity).toBe("Very Common");
+    expect(info?.rarity).toBe("Quotidian");
     expect(info?.zipf).toBeGreaterThan(7);
+  });
+
+  it("reserves Quotidian for scores below 2.0", () => {
+    expect(rarityFor("about")?.rarity).toBe("Quotidian");
+    expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThan(2);
+    expect(rarityFor("there")?.rarity).toBe("Very Common");
   });
 
   it("returns undefined for a word not in the dictionary", () => {

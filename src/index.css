@@ -27,6 +27,10 @@
   /* "Loot tier" rarity scale -- a familiar convention from games (common
      grey through legendary gold) that reads as a fun reveal rather than a
      value judgment on the player's word choice. */
+  --rarity-quotidian-bg: #000;
+  --rarity-quotidian-fg: #fff;
+  --rarity-quotidian-dot: #fff;
+
   --rarity-very-common-bg: #eceef1;
   --rarity-very-common-fg: #4b4f57;
   --rarity-very-common-dot: #9aa0a8;
@@ -80,6 +84,10 @@
     --success-fg: #9fe0b6;
     --success-bg: #10301c;
     --focus-ring: #6d9bff;
+
+    --rarity-quotidian-bg: #000;
+    --rarity-quotidian-fg: #fff;
+    --rarity-quotidian-dot: #fff;
 
     --rarity-very-common-bg: #232326;
     --rarity-very-common-fg: #c2c5cb;
@@ -526,6 +534,13 @@ h2 {
 }
 .rarity-badge__score::before {
   content: "· ";
+}
+.rarity--quotidian {
+  background: var(--rarity-quotidian-bg);
+  color: var(--rarity-quotidian-fg);
+}
+.rarity--quotidian .rarity-badge__dot {
+  background: var(--rarity-quotidian-dot);
 }
 .rarity--very-common {
   background: var(--rarity-very-common-bg);

@@ -37,15 +37,20 @@ describe("evaluateSubmission", () => {
     expect(result).toEqual({ ok: false, reason: "missing-drop" });
   });
 
+  it("rejects the drop itself as an answer", () => {
+    const result = evaluateSubmission("AT", "at", []);
+    expect(result).toEqual({ ok: false, reason: "same-as-drop" });
+  });
+
   it("rejects a word not in the dictionary", () => {
     const result = evaluateSubmission("zzzzqx", "zz", []);
     expect(result).toEqual({ ok: false, reason: "not-a-word" });
   });
 
-  it("accepts a valid word containing the drop", () => {
-    const result = evaluateSubmission("the", "the", []);
+  it("accepts a valid word containing the drop without matching it exactly", () => {
+    const result = evaluateSubmission("thee", "the", []);
     expect(result.ok).toBe(true);
-    expect(result.word).toEqual({ word: "the", rarity: "Very Common", zipf: 7.7 });
+    expect(result.word?.word).toBe("thee");
   });
 
   it("accepts curtaining even though wordfreq has no direct estimate", () => {
@@ -56,9 +61,9 @@ describe("evaluateSubmission", () => {
   });
 
   it("trims and lowercases the input before validating", () => {
-    const result = evaluateSubmission("  THE  ", "the", []);
+    const result = evaluateSubmission("  THEE  ", "the", []);
     expect(result.ok).toBe(true);
-    expect(result.word?.word).toBe("the");
+    expect(result.word?.word).toBe("thee");
   });
 
   it("rejects an exact repeat of an already-accepted word", () => {

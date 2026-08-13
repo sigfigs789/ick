@@ -1,0 +1,76 @@
+name: Add curated word
+
+on:
+  workflow_dispatch:
+    inputs:
+      word:
+        description: English word to add to the curated dictionary
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  add-word:
+    runs-on: ubuntu-latest
+    env:
+      WORD: ${{ inputs.word }}
+
+    steps:
+      - name: Check out WordInk
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check out ESDB/SCOWL
+        uses: actions/checkout@v4
+        with:
+          repository: en-wl/wordlist
+          path: .tmp/esdb
+
+      - name: Install data-generation dependency
+        run: python -m pip install wordfreq==3.1.1
+
+      - name: Add word and regenerate dictionary data
+        run: |
+          python scripts/manage-extra-word.py add "$WORD"
+          make -C .tmp/esdb
+          .tmp/esdb/scowl --db .tmp/esdb/scowl.db word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > .tmp/scowl-regional-80.txt
+          python scripts/generate-data.py --word-list .tmp/scowl-regional-80.txt
+          python scripts/manage-extra-word.py update-size-test
+          python scripts/manage-extra-word.py update-curated-word-test "$WORD"
+
+      - name: Verify the curated word is a valid input
+        run: |
+          npm ci
+          npm test -- --run src/game/dictionary.test.ts
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automated/add-word-${{ github.run_id }}
+          delete-branch: true
+          commit-message: Add ${{ inputs.word }} to curated dictionary
+          title: Add ${{ inputs.word }} to curated dictionary
+          body: |
+            Adds `${{ inputs.word }}` to `scripts/extra-words.txt` and regenerates
+            the dictionary and rarity mappings.
+
+            The dictionary-size regression test was updated automatically.
+          add-paths: |
+            scripts/extra-words.txt
+            src/data/dictionary.json
+            src/data/rarity.json
+            src/game/dictionary.test.ts
