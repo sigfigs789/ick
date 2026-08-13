@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
+import dictionaryWords from "../data/dictionary.json";
 import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
 describe("isValidWord", () => {
+  it("keeps the curated dictionary size intentional", () => {
+    // Update this only when deliberately regenerating or editing the word list.
+    expect(dictionaryWords).toHaveLength(188_728);
+  });
+
   it("accepts a common real word", () => {
     expect(isValidWord("the")).toBe(true);
   });
