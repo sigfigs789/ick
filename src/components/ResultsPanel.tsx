@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { buildShareText } from "../game/share";
 import { ShareButton } from "./ShareButton";
+import { TwitterShareButton } from "./TwitterShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
 import { trackResultShared } from "../analytics";
 
@@ -21,6 +22,13 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
     crushedIt: streak.crushedIt,
     elite: streak.elite,
   });
+  const twitterShareText = buildShareText(date, drop, words, {
+    spoilerFree: !showAnswers,
+    streak: streak.currentStreak,
+    crushedIt: streak.crushedIt,
+    elite: streak.elite,
+    source: "twitter",
+  });
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (
     <section className="results-panel" aria-label="Share result">
@@ -39,6 +47,10 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
       <div className="results-panel__share-actions">
         <ShareButton
           text={shareText}
+          onShared={() => trackResultShared(date, streak.currentStreak)}
+        />
+        <TwitterShareButton
+          text={twitterShareText}
           onShared={() => trackResultShared(date, streak.currentStreak)}
         />
       </div>

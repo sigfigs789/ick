@@ -54,6 +54,17 @@ describe("ResultsPanel share toggle", () => {
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).toContain("strange");
     expect(preview?.textContent).toContain("aardvark");
-    expect(preview?.querySelector("strong")?.textContent).toMatch(/https:\/\/wordink\.app #.*Drop: STR/);
+    expect(preview?.querySelector("strong")?.textContent).toMatch(/https:\/\/wordink\.app\/\?utm_source=share #.*Drop: STR/);
+  });
+
+  it("offers a Twitter composer link with a Twitter-tagged result URL", () => {
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+
+    const twitterLink = screen.getByRole("link", { name: /share on twitter/i });
+    expect(twitterLink).toHaveAttribute("target", "_blank");
+    expect(twitterLink.getAttribute("href")).toContain("twitter.com/intent/tweet");
+    expect(decodeURIComponent(twitterLink.getAttribute("href") ?? "")).toContain(
+      "https://wordink.app/?utm_source=twitter"
+    );
   });
 });

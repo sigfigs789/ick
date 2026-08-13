@@ -1,6 +1,6 @@
 import { track } from "@vercel/analytics";
 import { describe, expect, it, vi } from "vitest";
-import { trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer, trackResultShared, trackWordSuggestion } from "./analytics";
+import { trackAcceptedAnswer, trackCampaignArrival, trackPuzzleCompleted, trackRejectedAnswer, trackResultShared, trackWordSuggestion } from "./analytics";
 import { puzzleNumber } from "./game/share";
 import type { DailyProgress, StreakState } from "./game/types";
 
@@ -75,6 +75,12 @@ describe("remaining game analytics", () => {
       share_format: "text",
       streak_days: 3,
     });
+  });
+
+  it("tracks a campaign-tagged arrival by source", () => {
+    trackCampaignArrival("twitter");
+
+    expect(track).toHaveBeenCalledWith("campaign_arrival", { source: "twitter" });
   });
 });
 

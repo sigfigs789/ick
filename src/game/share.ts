@@ -20,6 +20,12 @@ const RARITY_SYMBOL: Record<Rarity, string> = {
   Mythic: "🟥",
 };
 
+export type ShareSource = "share" | "twitter";
+
+function shareUrl(source: ShareSource): string {
+  return `https://wordink.app/?utm_source=${source}`;
+}
+
 export function puzzleNumber(dateStr: string): number {
   return daysSinceEpoch(dateStr, dropData.epoch) + 1;
 }
@@ -33,6 +39,8 @@ export interface ShareOptions {
   crushedIt?: number;
   /** Total Extremely Rare-or-better results to include in the shared result. */
   elite?: number;
+  /** Identifies the channel through which this result was shared. */
+  source?: ShareSource;
 }
 
 /**
@@ -48,6 +56,7 @@ export function buildShareText(
   options: ShareOptions = {}
 ): string {
   const spoilerFree = options.spoilerFree ?? true;
+  const source = options.source ?? "share";
   const n = puzzleNumber(dateStr);
   const label = formatDateLabel(dateStr);
 
@@ -61,7 +70,7 @@ export function buildShareText(
         )
         .join("\n");
 
-  const lines = [`https://wordink.app #${n} (${label}) — Drop: ${drop.toUpperCase()}`];
+  const lines = [`${shareUrl(source)} #${n} (${label}) — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
   if (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined) {
     const streak = options.streak ?? 0;

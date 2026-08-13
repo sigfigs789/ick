@@ -23,7 +23,7 @@ describe("buildShareText", () => {
 
   it("includes the puzzle number and drop, never the words themselves", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    expect(text).toContain(`https://wordink.app #${puzzleNumber("2024-01-05")}`);
+    expect(text).toContain(`https://wordink.app/?utm_source=share #${puzzleNumber("2024-01-05")}`);
     expect(text).toContain("Drop: STR");
     for (const w of words) {
       expect(text).not.toContain(w.word);
@@ -50,6 +50,12 @@ describe("buildShareText", () => {
     const withDefault = buildShareText("2024-01-05", "str", words);
     const withExplicitTrue = buildShareText("2024-01-05", "str", words, { spoilerFree: true });
     expect(withDefault).toBe(withExplicitTrue);
+  });
+
+  it("uses the requested source in the shared URL", () => {
+    expect(buildShareText("2024-01-05", "str", words, { source: "twitter" })).toContain(
+      "https://wordink.app/?utm_source=twitter"
+    );
   });
 
   it("shows the actual words and rarity scores, without rarity labels, when spoilerFree is false", () => {

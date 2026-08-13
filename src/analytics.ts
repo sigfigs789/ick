@@ -69,3 +69,8 @@ export function trackResultShared(date: string, streakDays: number) {
     streak_days: streakDays,
   });
 }
+
+/** Record visitors who arrive through a campaign-tagged share link. */
+export function trackCampaignArrival(source: string) {
+  track("campaign_arrival", { source });
+}
