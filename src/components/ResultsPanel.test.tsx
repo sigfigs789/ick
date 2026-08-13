@@ -57,11 +57,12 @@ describe("ResultsPanel share toggle", () => {
     expect(preview?.querySelector("strong")?.textContent).toMatch(/https:\/\/wordink\.app\/\?utm_source=share #.*Drop: STR/);
   });
 
-  it("offers a Twitter composer link with a Twitter-tagged result URL", () => {
+  it("offers an accessible X composer link with a Twitter-tagged result URL", () => {
     render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
 
-    const twitterLink = screen.getByRole("link", { name: /share on twitter/i });
+    const twitterLink = screen.getByRole("link", { name: /share on x/i });
     expect(twitterLink).toHaveAttribute("target", "_blank");
+    expect(twitterLink).toHaveAttribute("title", "Share on X");
     expect(twitterLink.getAttribute("href")).toContain("twitter.com/intent/tweet");
     expect(decodeURIComponent(twitterLink.getAttribute("href") ?? "")).toContain(
       "https://wordink.app/?utm_source=twitter"
