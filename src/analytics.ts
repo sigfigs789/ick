@@ -11,6 +11,7 @@ export function trackAcceptedAnswer(
   date: string,
   word: AcceptedWord,
   answerCount: number,
+  totalScore: number,
   streakDays: number
 ) {
   track("answer_accepted", {
@@ -19,16 +20,18 @@ export function trackAcceptedAnswer(
     answer_count: answerCount,
     word: word.word,
     score: rarityScore(word.zipf),
+    total_score: totalScore,
     rarity: word.rarity,
     streak_days: streakDays,
   });
 }
 
 /** Record rejected submissions so the word list can be reviewed over time. */
-export function trackRejectedAnswer(date: string, rawWord: string, reason: RejectionReason) {
+export function trackRejectedAnswer(date: string, drop: string, rawWord: string, reason: RejectionReason) {
   track("answer_rejected", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
+    drop: drop.toLowerCase(),
     word: rawWord.trim().toLowerCase(),
     rejection_reason: reason,
   });
