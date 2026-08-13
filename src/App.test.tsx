@@ -83,7 +83,7 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByText(/playing an old puzzle/i)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /lock in/i }));
+    await userEvent.click(screen.getByRole("button", { name: /i'm done guessing/i }));
     expect(lockIn).toHaveBeenCalledTimes(1);
   });
 
