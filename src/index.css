@@ -697,6 +697,24 @@ h2 {
   background: var(--danger-bg);
   color: var(--danger-fg);
 }
+.feedback__more-info {
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.3rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.feedback__more-info:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
 
 /* Lock-in */
 .lock-in-button {
@@ -1014,6 +1032,58 @@ h2 {
   color: var(--fg-faint);
   font-size: 0.82rem;
   line-height: 1.45;
+}
+.modal__copy {
+  margin: 0 0 0.8rem;
+  color: var(--fg-muted);
+  line-height: 1.5;
+}
+.modal__copy:last-child {
+  margin-bottom: 0;
+}
+.word-suggestion {
+  margin-top: 1.2rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border);
+  color: var(--fg-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.word-suggestion__row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.45rem;
+}
+.word-suggestion input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  background: var(--bg-inset);
+  color: var(--fg);
+  font: inherit;
+  font-weight: 500;
+}
+.word-suggestion button {
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.word-suggestion button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.word-suggestion__thanks {
+  margin: 0.5rem 0 0;
+  color: var(--success-fg);
+  font-weight: 700;
 }
 
 @media (max-width: 420px) {

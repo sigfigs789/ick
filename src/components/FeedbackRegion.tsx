@@ -3,9 +3,10 @@ import type { Feedback } from "../hooks/useDailyPuzzle";
 
 interface Props {
   feedback: Feedback | null;
+  onWordRules: () => void;
 }
 
-const VISIBLE_MS = 3200;
+const VISIBLE_MS = 6000;
 
 /**
  * A single polite live region, styled as a small toast that fades in and
@@ -14,7 +15,7 @@ const VISIBLE_MS = 3200;
  * React to treat the text as new content -- the fade is purely visual and
  * doesn't affect what's read.
  */
-export function FeedbackRegion({ feedback }: Props) {
+export function FeedbackRegion({ feedback, onWordRules }: Props) {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
@@ -36,6 +37,15 @@ export function FeedbackRegion({ feedback }: Props) {
       aria-live="polite"
     >
       {feedback ? `${feedback.message}${filler}` : ""}
+      {feedback?.kind === "rejected" && (
+        <button
+          type="button"
+          className="feedback__more-info"
+          onClick={onWordRules}
+        >
+          More info
+        </button>
+      )}
     </p>
   );
 }
