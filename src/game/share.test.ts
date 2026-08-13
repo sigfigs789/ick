@@ -52,9 +52,9 @@ describe("buildShareText", () => {
     expect(withDefault).toBe(withExplicitTrue);
   });
 
-  it("uses the requested source in the shared URL", () => {
-    expect(buildShareText("2024-01-05", "str", words, { source: "twitter" })).toContain(
-      "https://wordink.app/?utm_source=twitter"
+  it("can omit the source parameter from the shared URL", () => {
+    expect(buildShareText("2024-01-05", "str", words, { source: null })).toContain(
+      "https://wordink.app #"
     );
   });
 

@@ -27,7 +27,7 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
     streak: streak.currentStreak,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
-    source: "twitter",
+    source: null,
   });
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (
