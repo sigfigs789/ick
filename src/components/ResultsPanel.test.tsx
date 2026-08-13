@@ -41,7 +41,6 @@ describe("ResultsPanel share toggle", () => {
       streak: streak.currentStreak,
       crushedIt: streak.crushedIt,
       elite: streak.elite,
-      topRarity: streak.highScore,
     }).split("\n")[0]);
   });
 
