@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
 import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
-const explicitlyCuratedWords = ["endling"];
+const explicitlyCuratedWords = ["atwill", "endling"];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(188_923);
+    expect(dictionaryWords).toHaveLength(188_924);
   });
 
   it("accepts a common real word", () => {
