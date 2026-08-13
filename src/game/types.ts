@@ -1,4 +1,5 @@
 export type Rarity =
+  | "Quotidian"
   | "Very Common"
   | "Common"
   | "Uncommon"

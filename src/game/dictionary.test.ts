@@ -54,7 +54,7 @@ describe("isValidWord", () => {
 describe("rarityFor", () => {
   it("returns a rarity and zipf score for a known word", () => {
     const info = rarityFor("the");
-    expect(info?.rarity).toBe("Very Common");
+    expect(info?.rarity).toBe("Quotidian");
     expect(info?.zipf).toBeGreaterThan(7);
   });
 

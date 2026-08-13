@@ -44,6 +44,7 @@ UNKNOWN_ZIPF = 1.4
 # These are intentionally generous toward "common" since the goal is that a
 # player using everyday words still gets a satisfying, mostly-green result.
 RARITY_BANDS = [
+    (6.2, "Quotidian"),
     (5.2, "Very Common"),
     (4.2, "Common"),
     (3.3, "Uncommon"),
@@ -56,6 +57,7 @@ WORD_RE = re.compile(r"^[a-z]+$")
 
 # Single-char codes for rarity.json, index-aligned with dictionary.json.
 RARITY_CODE = {
+    "Quotidian": "Q",
     "Very Common": "V",
     "Common": "C",
     "Uncommon": "U",
