@@ -8,11 +8,12 @@ vi.mock("@vercel/analytics", () => ({ track: vi.fn() }));
 
 describe("trackRejectedAnswer", () => {
   it("records the normalized word and rejection reason", () => {
-    trackRejectedAnswer("2026-08-12", "  BaNANA  ", "not-a-word");
+    trackRejectedAnswer("2026-08-12", "AR", "  BaNANA  ", "not-a-word");
 
     expect(track).toHaveBeenCalledWith("answer_rejected", {
       puzzle_date: "2026-08-12",
       puzzle_number: puzzleNumber("2026-08-12"),
+      category: "drop: ar",
       word: "banana",
       rejection_reason: "not-a-word",
     });
@@ -30,11 +31,12 @@ describe("remaining game analytics", () => {
   };
 
   it("tracks accepted answers with their score and current streak", () => {
-    trackAcceptedAnswer("2026-08-12", { word: "aardvark", rarity: "Extremely Rare", zipf: 2.4 }, 2, 3);
+    trackAcceptedAnswer("2026-08-12", { word: "aardvark", rarity: "Extremely Rare", zipf: 2.4 }, 2, 14.8, 3);
 
     expect(track).toHaveBeenCalledWith("answer_accepted", expect.objectContaining({
       answer_count: 2,
       word: "aardvark",
+      total_score: 14.8,
       rarity: "Extremely Rare",
       streak_days: 3,
     }));

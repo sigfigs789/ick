@@ -12,6 +12,7 @@ import {
   resetProgress,
 } from "../game/storage";
 import { evaluateSubmission, REJECTION_MESSAGES } from "../game/submit";
+import { totalRarityScore } from "../game/dictionary";
 import type { DailyProgress, Rarity, StreakState } from "../game/types";
 import { trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer } from "../analytics";
 
@@ -55,7 +56,7 @@ export function useDailyPuzzle() {
         const reason = result.reason ?? "not-a-word";
         const message = REJECTION_MESSAGES[reason];
         setProgress((p) => recordRejectedAttempt(p, raw.trim()));
-        trackRejectedAnswer(viewedDate, raw, reason);
+        trackRejectedAnswer(viewedDate, drop, raw, reason);
         setFeedback({ kind: "rejected", message, key: feedbackKey.current });
         return result;
       }
@@ -64,7 +65,13 @@ export function useDailyPuzzle() {
       setProgress(updated);
       const updatedStreak = loadStreak();
       setStreak(updatedStreak);
-      trackAcceptedAnswer(viewedDate, result.word, updated.acceptedWords.length, updatedStreak.currentStreak);
+      trackAcceptedAnswer(
+        viewedDate,
+        result.word,
+        updated.acceptedWords.length,
+        totalRarityScore(updated.acceptedWords),
+        updatedStreak.currentStreak
+      );
       if (updated.completed) {
         trackPuzzleCompleted(updated, "all_answers", updatedStreak);
       }
