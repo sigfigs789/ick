@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
+import extraWords from "../../scripts/extra-words.txt?raw";
 import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
+
+const curatedAdditions = extraWords
+  .split(/\r?\n/)
+  .map((word) => word.trim().toLowerCase())
+  .filter((word) => word && !word.startsWith("#"));
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
@@ -26,7 +32,9 @@ describe("isValidWord", () => {
   });
 
   it("accepts explicitly curated additions", () => {
-    expect(isValidWord("endling")).toBe(true);
+    for (const word of curatedAdditions) {
+      expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
+    }
   });
 
   it("accepts spelling variants from supported English regions", () => {

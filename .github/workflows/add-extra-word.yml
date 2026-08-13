@@ -50,7 +50,7 @@ jobs:
           python scripts/generate-data.py --word-list .tmp/scowl-regional-80.txt
           python scripts/manage-extra-word.py update-size-test
 
-      - name: Validate generated data
+      - name: Verify the curated word is a valid input
         run: |
           npm ci
           npm test -- --run src/game/dictionary.test.ts
