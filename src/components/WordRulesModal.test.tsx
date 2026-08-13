@@ -12,8 +12,9 @@ describe("WordRulesModal", () => {
     render(<WordRulesModal open onClose={onClose} />);
 
     const dialog = screen.getByRole("dialog", { name: /word rules/i });
-    expect(dialog).toHaveTextContent(/curated game word list is based on scowl size 80/i);
+    expect(dialog).toHaveTextContent(/curated word list includes 180,000\+ words drawn from scowl and other sources/i);
     expect(dialog).toHaveTextContent(/proper nouns, abbreviations, hyphenated words/i);
+    expect(dialog).toHaveTextContent(/built and maintained by one solo developer/i);
     expect(dialog).toHaveTextContent(/continuously expanding the list to include more delightful and interesting words/i);
     expect(screen.getByRole("button", { name: /close word rules/i })).toHaveFocus();
 
