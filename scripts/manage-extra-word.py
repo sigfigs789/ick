@@ -14,6 +14,9 @@ DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
 
 WORD_RE = re.compile(r"^[a-z]{1,15}$")
 SIZE_ASSERTION_RE = re.compile(r"(expect\(dictionaryWords\)\.toHaveLength\()\d[\d_]*(\);)")
+CURATED_WORDS_RE = re.compile(
+    r'(const explicitlyCuratedWords = )\[[^\]]*\](;)', re.DOTALL
+)
 
 
 def listed_words(path: Path) -> set[str]:
@@ -55,18 +58,38 @@ def update_size_test() -> None:
     print(f"Updated dictionary-size assertion to {count:,}")
 
 
+def update_curated_word_test(raw_word: str) -> None:
+    word = raw_word.strip().lower()
+    contents = DICTIONARY_TEST_PATH.read_text()
+    match = CURATED_WORDS_RE.search(contents)
+    if not match:
+        sys.exit("Could not find the explicitly curated words test list.")
+
+    existing_words = re.findall(r'"([a-z]+)"', match.group(0))
+    words = sorted(set(existing_words) | {word})
+    formatted_words = ", ".join(f'"{item}"' for item in words)
+    replacement = f"{match.group(1)}[{formatted_words}]{match.group(2)}"
+    updated = contents[: match.start()] + replacement + contents[match.end() :]
+    DICTIONARY_TEST_PATH.write_text(updated)
+    print(f"Added {word!r} to the curated-word validity test.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     command = parser.add_subparsers(dest="command", required=True)
     add = command.add_parser("add")
     add.add_argument("word")
     command.add_parser("update-size-test")
+    word_test = command.add_parser("update-curated-word-test")
+    word_test.add_argument("word")
     args = parser.parse_args()
 
     if args.command == "add":
         add_word(args.word)
-    else:
+    elif args.command == "update-size-test":
         update_size_test()
+    else:
+        update_curated_word_test(args.word)
 
 
 if __name__ == "__main__":
