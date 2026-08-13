@@ -12,7 +12,7 @@ BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
 
-WORD_RE = re.compile(r"^[a-z]{3,15}$")
+WORD_RE = re.compile(r"^[a-z]{1,15}$")
 SIZE_ASSERTION_RE = re.compile(r"(expect\(dictionaryWords\)\.toHaveLength\()\d[\d_]*(\);)")
 
 
@@ -29,7 +29,7 @@ def listed_words(path: Path) -> set[str]:
 def add_word(raw_word: str) -> None:
     word = raw_word.strip().lower()
     if not WORD_RE.fullmatch(word):
-        sys.exit("Word must contain only English letters and be 3–15 characters long.")
+        sys.exit("Word must contain only English letters and be 1–15 characters long.")
     if word in listed_words(BLOCKLIST_PATH):
         sys.exit(f"{word!r} is blocklisted and cannot be added.")
     if word in json.loads(DICTIONARY_PATH.read_text()):

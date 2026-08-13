@@ -3,14 +3,15 @@ import { rarityScore, totalRarityScore } from "./dictionary";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
-// Mirrors the in-app "loot tier" rarity palette (grey -> yellow -> green ->
-// blue -> purple -> red, see index.css) so the shared result matches what
-// showed up in-game -- each square is the emoji that matches its badge color.
+// Mirrors the in-app "loot tier" rarity palette (black -> grey -> yellow ->
+// green -> blue -> purple -> red, see index.css) so the shared result matches
+// what showed up in-game. Quotidian's egg is an intentional Easter egg.
 // Squares only vary by color, which is fine here because this text is for
 // sharing outside the app -- inside the app, rarity is always shown as a
 // plain-text label too (see RarityBadge), which is what keeps things
 // color-independent for accessibility.
 const RARITY_SYMBOL: Record<Rarity, string> = {
+  Quotidian: "🥚",
   "Very Common": "⬜",
   Common: "🟨",
   Uncommon: "🟩",

@@ -30,7 +30,7 @@ OUT_DIR = ROOT / "src" / "data"
 BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
 
-MIN_LEN = 3
+MIN_LEN = 1
 MAX_LEN = 15
 
 # SCOWL/ESDB is the acceptance authority. A 0.0 from wordfreq means that it
@@ -44,6 +44,7 @@ UNKNOWN_ZIPF = 1.4
 # These are intentionally generous toward "common" since the goal is that a
 # player using everyday words still gets a satisfying, mostly-green result.
 RARITY_BANDS = [
+    (6.4, "Quotidian"),
     (5.2, "Very Common"),
     (4.2, "Common"),
     (3.3, "Uncommon"),
@@ -56,6 +57,7 @@ WORD_RE = re.compile(r"^[a-z]+$")
 
 # Single-char codes for rarity.json, index-aligned with dictionary.json.
 RARITY_CODE = {
+    "Quotidian": "Q",
     "Very Common": "V",
     "Common": "C",
     "Uncommon": "U",

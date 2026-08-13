@@ -51,12 +51,13 @@ function tone(c: AudioContext, freq: number, startTime: number, duration: number
 }
 
 const RARITY_RANK: Record<Rarity, number> = {
-  "Very Common": 0,
-  Common: 1,
-  Uncommon: 2,
-  Rare: 3,
-  "Extremely Rare": 4,
-  Mythic: 5,
+  Quotidian: 0,
+  "Very Common": 1,
+  Common: 2,
+  Uncommon: 3,
+  Rare: 4,
+  "Extremely Rare": 5,
+  Mythic: 6,
 };
 
 /** A short rising two-note chime. Rarer words are pitched a little higher and get an extra sparkle note. */
@@ -68,7 +69,7 @@ export function playAccept(rarity: Rarity): void {
   const base = 520 + rank * 55;
   tone(c, base, now, 0.11, { peakGain: 0.16 });
   tone(c, base * 1.5, now + 0.09, 0.16, { peakGain: 0.14 });
-  if (rank >= 3) {
+  if (rank >= 4) {
     tone(c, base * 2, now + 0.17, 0.16, { type: "triangle", peakGain: 0.1 });
   }
 }
