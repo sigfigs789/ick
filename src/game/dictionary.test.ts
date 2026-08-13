@@ -5,7 +5,7 @@ import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionar
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(188_729);
+    expect(dictionaryWords).toHaveLength(188_730);
   });
 
   it("accepts a common real word", () => {
