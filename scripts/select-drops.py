@@ -97,22 +97,37 @@ def main() -> None:
 
     drops_path = DATA_DIR / "drops.json"
     existing = json.loads(drops_path.read_text())
-    two_letter = [result for result in results if len(result["drop"]) == 2]
-    three_letter = [result for result in results if len(result["drop"]) == 3]
+    locked_drops = existing.get("lockedDrops", [])
+    seeded_drops = existing.get("seededDrops", [])
+    locked_set = set(locked_drops + seeded_drops)
+    two_letter = [
+        result for result in results
+        if len(result["drop"]) == 2 and result["drop"] not in locked_set
+    ]
+    three_letter = [
+        result for result in results
+        if len(result["drop"]) == 3 and result["drop"] not in locked_set
+    ]
+    remaining_count = len(two_letter) + len(three_letter)
     two_positions = {
-        int((index + 0.5) * len(results) / len(two_letter))
+        int((index + 0.5) * remaining_count / len(two_letter))
         for index in range(len(two_letter))
     }
-    ordered_drops = []
+    ordered_drops = list(locked_drops + seeded_drops)
     two_index = three_index = 0
-    for position in range(len(results)):
+    for position in range(remaining_count):
         if position in two_positions:
             ordered_drops.append(two_letter[two_index]["drop"])
             two_index += 1
         else:
             ordered_drops.append(three_letter[three_index]["drop"])
             three_index += 1
-    drops_path.write_text(json.dumps({"epoch": existing["epoch"], "drops": ordered_drops}, indent=2) + "\n")
+    drops_path.write_text(json.dumps({
+        "epoch": existing["epoch"],
+        "lockedDrops": locked_drops,
+        "seededDrops": seeded_drops,
+        "drops": ordered_drops,
+    }, indent=2) + "\n")
     print(f"Wrote {drops_path}")
 
 
