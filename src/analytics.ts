@@ -37,6 +37,11 @@ export function trackRejectedAnswer(date: string, drop: string, rawWord: string,
   });
 }
 
+/** Record player suggestions for future curated-list reviews. */
+export function trackWordSuggestion(rawWord: string) {
+  track("word_suggested", { word: rawWord.trim().toLowerCase() });
+}
+
 export function trackPuzzleCompleted(
   progress: DailyProgress,
   completionMethod: "locked_in" | "all_answers",

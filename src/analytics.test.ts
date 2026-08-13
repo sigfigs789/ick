@@ -1,6 +1,6 @@
 import { track } from "@vercel/analytics";
 import { describe, expect, it, vi } from "vitest";
-import { trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer, trackResultShared } from "./analytics";
+import { trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer, trackResultShared, trackWordSuggestion } from "./analytics";
 import { puzzleNumber } from "./game/share";
 import type { DailyProgress, StreakState } from "./game/types";
 
@@ -75,5 +75,13 @@ describe("remaining game analytics", () => {
       share_format: "text",
       streak_days: 3,
     });
+  });
+});
+
+describe("trackWordSuggestion", () => {
+  it("records a normalized suggested word", () => {
+    trackWordSuggestion("  GastroEnterology ");
+
+    expect(track).toHaveBeenCalledWith("word_suggested", { word: "gastroenterology" });
   });
 });

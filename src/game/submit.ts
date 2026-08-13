@@ -53,7 +53,7 @@ export function evaluateSubmission(
 
 export const REJECTION_MESSAGES: Record<string, string> = {
   empty: "Type a word first.",
-  "not-a-word": "That's not in the word list.",
+  "not-a-word": "That word is not in WordInk's curated list.",
   "missing-drop": "That word doesn't contain the drop.",
   "same-as-drop": "Your answer can't be the drop itself.",
   "already-used": "You've already submitted that word.",

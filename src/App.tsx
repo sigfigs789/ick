@@ -7,6 +7,7 @@ import { FeedbackRegion } from "./components/FeedbackRegion";
 import { StreakDisplay } from "./components/StreakDisplay";
 import { ResultsPanel } from "./components/ResultsPanel";
 import { InstructionsModal } from "./components/InstructionsModal";
+import { WordRulesModal } from "./components/WordRulesModal";
 import { SoundToggle } from "./components/SoundToggle";
 import { PuzzleNav } from "./components/PuzzleNav";
 import { ConfettiBurst } from "./components/ConfettiBurst";
@@ -35,6 +36,7 @@ export default function App() {
     resetAnswers,
   } = useDailyPuzzle();
   const [showInstructions, setShowInstructions] = useState(false);
+  const [showWordRules, setShowWordRules] = useState(false);
   const [prefill, setPrefill] = useState<{ word: string; token: number } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
@@ -120,7 +122,7 @@ export default function App() {
             onSubmit={submitWord}
           />
         )}
-        <FeedbackRegion feedback={feedback} />
+        <FeedbackRegion feedback={feedback} onWordRules={() => setShowWordRules(true)} />
 
         {import.meta.env.DEV && (
           <button type="button" className="dev-reset-button" onClick={resetAnswers}>
@@ -157,6 +159,7 @@ export default function App() {
       </main>
 
       <InstructionsModal open={showInstructions} onClose={() => setShowInstructions(false)} />
+      <WordRulesModal open={showWordRules} onClose={() => setShowWordRules(false)} />
     </div>
   );
 }
