@@ -80,15 +80,14 @@ describe("buildShareText", () => {
     expect(buildShareText("2024-01-05", "str", words, { streak: 4 })).toContain("Streak: 4 days");
   });
 
-  it("puts the session total directly before the all-time top rarity", () => {
+  it("puts the session total directly before the current puzzle's top rarity", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       streak: 4,
       crushedIt: 7,
       elite: 2,
-      topRarity: 8.5,
     });
 
     const total = words.reduce((sum, word) => sum + rarityScore(word.zipf), 0);
-    expect(text).toContain(`🟪 ${rarityScore(2.4).toFixed(1)}\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nTotal: ${total.toFixed(1)} · Top: 8.5`);
+    expect(text).toContain(`🟪 ${rarityScore(2.4).toFixed(1)}\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nTotal: ${total.toFixed(1)} · Top: ${rarityScore(2.4).toFixed(1)}`);
   });
 });
