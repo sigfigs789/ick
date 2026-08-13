@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
+import dictionaryWords from "../data/dictionary.json";
 import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
 describe("isValidWord", () => {
+  it("keeps the curated dictionary size intentional", () => {
+    // Update this only when deliberately regenerating or editing the word list.
+    expect(dictionaryWords).toHaveLength(188_729);
+  });
+
   it("accepts a common real word", () => {
     expect(isValidWord("the")).toBe(true);
   });
@@ -12,6 +18,19 @@ describe("isValidWord", () => {
 
   it("accepts SCOWL words that have no wordfreq estimate", () => {
     expect(isValidWord("curtaining")).toBe(true);
+  });
+
+  it("accepts explicitly curated additions", () => {
+    expect(isValidWord("endling")).toBe(true);
+  });
+
+  it("accepts spelling variants from supported English regions", () => {
+    expect(isValidWord("color")).toBe(true);
+    expect(isValidWord("colour")).toBe(true);
+    expect(isValidWord("organize")).toBe(true);
+    expect(isValidWord("organise")).toBe(true);
+    expect(isValidWord("paycheque")).toBe(true);
+    expect(isValidWord("bikkie")).toBe(true);
   });
 
   it("rejects gibberish", () => {
