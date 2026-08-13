@@ -697,26 +697,22 @@ h2 {
   background: var(--danger-bg);
   color: var(--danger-fg);
 }
-.feedback__info {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
+.feedback__more-info {
   margin-left: 0.4rem;
-  padding: 0;
-  border: 1px solid currentColor;
-  border-radius: 999px;
+  padding: 0.1rem 0.3rem;
+  border: 0;
+  border-radius: 0.25rem;
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 800;
   line-height: 1;
   cursor: pointer;
-  vertical-align: text-bottom;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
-.feedback__info:hover {
+.feedback__more-info:hover {
   background: color-mix(in srgb, currentColor 12%, transparent);
 }
 

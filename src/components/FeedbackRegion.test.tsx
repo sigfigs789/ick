@@ -24,7 +24,7 @@ describe("FeedbackRegion", () => {
     expect(region).toHaveTextContent("That word is not in WordInk's curated list.");
     expect(region).toHaveClass("feedback--rejected", "feedback--shown");
 
-    act(() => vi.advanceTimersByTime(3200));
+    act(() => vi.advanceTimersByTime(6000));
     expect(region).not.toHaveClass("feedback--shown");
   });
 
@@ -43,7 +43,7 @@ describe("FeedbackRegion", () => {
       />
     );
 
-    await userEvent.click(screen.getByRole("button", { name: /learn about wordink's word rules/i }));
+    await userEvent.click(screen.getByRole("button", { name: "More info" }));
     expect(onWordRules).toHaveBeenCalledOnce();
   });
 });

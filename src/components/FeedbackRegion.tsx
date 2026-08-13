@@ -6,7 +6,7 @@ interface Props {
   onWordRules: () => void;
 }
 
-const VISIBLE_MS = 3200;
+const VISIBLE_MS = 6000;
 
 /**
  * A single polite live region, styled as a small toast that fades in and
@@ -40,11 +40,10 @@ export function FeedbackRegion({ feedback, onWordRules }: Props) {
       {feedback?.kind === "rejected" && (
         <button
           type="button"
-          className="feedback__info"
+          className="feedback__more-info"
           onClick={onWordRules}
-          aria-label="Learn about WordInk's word rules"
         >
-          i
+          More info
         </button>
       )}
     </p>
