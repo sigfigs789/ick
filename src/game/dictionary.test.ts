@@ -7,7 +7,7 @@ const explicitlyCuratedWords = ["endling"];
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(188_923);
+    expect(dictionaryWords).toHaveLength(188_924);
   });
 
   it("accepts a common real word", () => {
@@ -25,6 +25,10 @@ describe("isValidWord", () => {
 
   it("accepts SCOWL words that have no wordfreq estimate", () => {
     expect(isValidWord("curtaining")).toBe(true);
+  });
+
+  it("accepts long SCOWL words", () => {
+    expect(isValidWord("gastroenterology")).toBe(true);
   });
 
   it("accepts explicitly curated additions", () => {

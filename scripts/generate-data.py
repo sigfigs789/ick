@@ -31,7 +31,6 @@ BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
 
 MIN_LEN = 1
-MAX_LEN = 15
 
 # SCOWL/ESDB is the acceptance authority. A 0.0 from wordfreq means that it
 # has no usable frequency estimate, not that the entry is invalid. Keep those
@@ -135,7 +134,7 @@ def main() -> None:
             continue
         if not WORD_RE.match(wl):
             continue
-        if not (MIN_LEN <= len(wl) <= MAX_LEN):
+        if len(wl) < MIN_LEN:
             continue
         if wl in blocklist:
             continue
