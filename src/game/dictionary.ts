@@ -95,12 +95,12 @@ function scoringBaseForm(word: string): string | undefined {
 function rarityForZipf(zipf: number): Rarity {
   // Missing corpus data is not evidence that a word is genuinely Mythic.
   if (zipf === UNKNOWN_ZIPF) return "Extremely Rare";
+  if (rarityScore(zipf) >= 9.5) return "Mythic";
   if (zipf >= 5.2) return "Very Common";
   if (zipf >= 4.2) return "Common";
   if (zipf >= 3.3) return "Uncommon";
   if (zipf >= 2.5) return "Rare";
-  if (zipf >= 1.6) return "Extremely Rare";
-  return "Mythic";
+  return "Extremely Rare";
 }
 
 export const RARITY_ORDER: Rarity[] = [

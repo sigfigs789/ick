@@ -59,6 +59,16 @@ describe("rarityFor", () => {
     expect(unknown).toMatchObject({ rarity: "Extremely Rare", zipf: 1.4 });
     expect(rarityScore(unknown!.zipf)).toBe(9.4);
   });
+
+  it("awards Mythic only for a rank of 9.5 or higher", () => {
+    const belowMythic = rarityFor("assonant")!;
+    const mythic = rarityFor("abatis")!;
+
+    expect(rarityScore(belowMythic.zipf)).toBeLessThan(9.5);
+    expect(belowMythic.rarity).not.toBe("Mythic");
+    expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.5);
+    expect(mythic.rarity).toBe("Mythic");
+  });
 });
 
 describe("rarityScore", () => {
