@@ -31,7 +31,7 @@ export function trackRejectedAnswer(date: string, drop: string, rawWord: string,
   track("answer_rejected", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
-    category: `drop: ${drop.toLowerCase()}`,
+    drop: drop.toLowerCase(),
     word: rawWord.trim().toLowerCase(),
     rejection_reason: reason,
   });

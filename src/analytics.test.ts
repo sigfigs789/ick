@@ -13,7 +13,7 @@ describe("trackRejectedAnswer", () => {
     expect(track).toHaveBeenCalledWith("answer_rejected", {
       puzzle_date: "2026-08-12",
       puzzle_number: puzzleNumber("2026-08-12"),
-      category: "drop: ar",
+      drop: "ar",
       word: "banana",
       rejection_reason: "not-a-word",
     });
