@@ -14,11 +14,13 @@ describe("isValidWord", () => {
     expect(isValidWord("curtaining")).toBe(true);
   });
 
-  it("accepts both American and British spelling variants", () => {
+  it("accepts spelling variants from supported English regions", () => {
     expect(isValidWord("color")).toBe(true);
     expect(isValidWord("colour")).toBe(true);
     expect(isValidWord("organize")).toBe(true);
     expect(isValidWord("organise")).toBe(true);
+    expect(isValidWord("paycheque")).toBe(true);
+    expect(isValidWord("bikkie")).toBe(true);
   });
 
   it("rejects gibberish", () => {

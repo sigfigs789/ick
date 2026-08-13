@@ -85,8 +85,8 @@ npm run select-drops  # writes scripts/drop-candidates.json (diagnostic)
 
 `scripts/generate-data.py` accepts a newline-delimited source list via
 `--word-list`; the checked-in data is generated from an ESDB/SCOWL size-80
-list with American and British spellings, with abbreviations and special
-categories excluded. The script
+list with American, British, Canadian, and Australian spellings, with
+abbreviations and special categories excluded. The script
 also keeps only pure lowercase a-z entries (which drops proper nouns,
 possessives, contractions, and hyphenated compounds), scores each word's Zipf
 frequency via `wordfreq`, treats words without a frequency estimate (`0.0`) as
@@ -100,8 +100,8 @@ To recreate the ESDB/SCOWL source list:
 ```bash
 git clone https://github.com/en-wl/wordlist.git /tmp/esdb
 cd /tmp/esdb && make
-/tmp/esdb/scowl word-list 80 A,B,Z 1 --wo-poses=abbr --categories= > /tmp/scowl-us-uk-80.txt
-python3 scripts/generate-data.py --word-list /tmp/scowl-us-uk-80.txt
+/tmp/esdb/scowl word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > /tmp/scowl-regional-80.txt
+python3 scripts/generate-data.py --word-list /tmp/scowl-regional-80.txt
 ```
 
 `scripts/select-drops.py` evaluates a hand-picked pool of candidate
