@@ -95,7 +95,7 @@ function scoringBaseForm(word: string): string | undefined {
 function rarityForZipf(zipf: number): Rarity {
   // Missing corpus data is not evidence that a word is genuinely Mythic.
   if (zipf === UNKNOWN_ZIPF) return "Extremely Rare";
-  if (zipf >= 6.2) return "Quotidian";
+  if (zipf >= 6.4) return "Quotidian";
   if (zipf >= 5.2) return "Very Common";
   if (zipf >= 4.2) return "Common";
   if (zipf >= 3.3) return "Uncommon";

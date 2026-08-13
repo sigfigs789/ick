@@ -58,6 +58,12 @@ describe("rarityFor", () => {
     expect(info?.zipf).toBeGreaterThan(7);
   });
 
+  it("reserves Quotidian for scores below 2.0", () => {
+    expect(rarityFor("about")?.rarity).toBe("Quotidian");
+    expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThan(2);
+    expect(rarityFor("there")?.rarity).toBe("Very Common");
+  });
+
   it("returns undefined for a word not in the dictionary", () => {
     expect(rarityFor("zzzzqx")).toBeUndefined();
   });

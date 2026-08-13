@@ -44,7 +44,7 @@ UNKNOWN_ZIPF = 1.4
 # These are intentionally generous toward "common" since the goal is that a
 # player using everyday words still gets a satisfying, mostly-green result.
 RARITY_BANDS = [
-    (6.2, "Quotidian"),
+    (6.4, "Quotidian"),
     (5.2, "Very Common"),
     (4.2, "Common"),
     (3.3, "Uncommon"),
