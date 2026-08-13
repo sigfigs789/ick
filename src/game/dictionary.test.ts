@@ -5,11 +5,16 @@ import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionar
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(188_729);
+    expect(dictionaryWords).toHaveLength(188_923);
   });
 
   it("accepts a common real word", () => {
     expect(isValidWord("the")).toBe(true);
+  });
+
+  it("accepts one- and two-letter dictionary words", () => {
+    expect(isValidWord("a")).toBe(true);
+    expect(isValidWord("at")).toBe(true);
   });
 
   it("is case-insensitive", () => {

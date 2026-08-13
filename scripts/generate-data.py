@@ -30,7 +30,7 @@ OUT_DIR = ROOT / "src" / "data"
 BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
 
-MIN_LEN = 3
+MIN_LEN = 1
 MAX_LEN = 15
 
 # SCOWL/ESDB is the acceptance authority. A 0.0 from wordfreq means that it

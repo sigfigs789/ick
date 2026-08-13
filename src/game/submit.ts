@@ -22,6 +22,9 @@ export function evaluateSubmission(
   if (!WORD_CHARS.test(word)) {
     return { ok: false, reason: "not-a-word" };
   }
+  if (word === drop.toLowerCase()) {
+    return { ok: false, reason: "same-as-drop" };
+  }
   if (!containsDropInOrder(word, drop)) {
     return { ok: false, reason: "missing-drop" };
   }
@@ -52,6 +55,7 @@ export const REJECTION_MESSAGES: Record<string, string> = {
   empty: "Type a word first.",
   "not-a-word": "That's not in the word list.",
   "missing-drop": "That word doesn't contain the drop.",
+  "same-as-drop": "Your answer can't be the drop itself.",
   "already-used": "You've already submitted that word.",
   "same-root-as-used": "That's too close to a word you already used.",
 };
