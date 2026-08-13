@@ -57,7 +57,7 @@ export function WordRulesModal({ open, onClose }: Props) {
           </button>
         </div>
         <p className="modal__copy">
-          WordInk's curated word list includes 180,000+ words from SCOWL-80. Proper nouns, abbreviations, hyphenated words, and words with punctuation aren't accepted.
+          WordInk's curated word list is sourced from SCOWL-80 and contains more than 180,000 words. To keep play consistent, proper nouns, abbreviations, hyphenated words, and words with punctuation aren't eligible for WordInk.
         </p>
         <p className="modal__copy">
           WordInk is built and maintained by one solo developer. I'm continuously expanding the list to include more delightful and interesting words while keeping the game fair and consistent for everyone. Thank you for playing!
