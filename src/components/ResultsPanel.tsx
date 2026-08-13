@@ -22,13 +22,13 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
     crushedIt: streak.crushedIt,
     elite: streak.elite,
   });
-  const twitterShareText = buildShareText(date, drop, words, {
+  const twitterShareText = `\n\n──────────\n${buildShareText(date, drop, words, {
     spoilerFree: !showAnswers,
     streak: streak.currentStreak,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
     source: null,
-  });
+  })}`;
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (
     <section className="results-panel" aria-label="Share result">
