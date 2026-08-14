@@ -66,6 +66,12 @@ describe("buildShareText", () => {
     );
   });
 
+  it("uses a compact X attribution code without a protocol prefix", () => {
+    expect(buildShareText("2024-01-05", "str", words, { source: "twitter" })).toMatch(
+      /wordink\.app\/\?s=t$/
+    );
+  });
+
   it("shows the actual words and rarity scores, without rarity labels, when spoilerFree is false", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     for (const w of words) {

@@ -65,7 +65,7 @@ describe("ResultsPanel share toggle", () => {
     expect(twitterLink).toHaveAttribute("title", "Share on X");
     expect(twitterLink.getAttribute("href")).toContain("twitter.com/intent/tweet");
     expect(decodeURIComponent(twitterLink.getAttribute("href") ?? "")).toMatch(
-      /\n\n────\n.*\nwordink\.app$/s
+      /\n\n────\n.*\nwordink\.app\/\?s=t$/s
     );
   });
 
