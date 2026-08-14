@@ -17,20 +17,32 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  * (same word order) rather than keyed by word, which keeps the payload
  * small (no word repeated as both a dictionary entry and a JSON object key).
  */
-const zipfTenths: number[] = rarityData.zipfTenths;
-const UNKNOWN_ZIPF = 1.4;
-const MIN_MEASURED_ZIPF = 1;
+// Stored as hundredths of a Zipf value (integers) so the compressed deep-tail
+// band still has the resolution for two-decimal scores. Values can be negative
+// for the rarest words (see scripts/generate-data.py).
+const zipfHundredths: number[] = rarityData.zipfHundredths;
 
-/** The dictionary's upper Zipf bound, computed once from the loaded data. */
-// Plain loop rather than Math.min(...zipfTenths) -- spreading ~60k elements
-// as call arguments risks blowing the stack on some engines (e.g. Safari).
-let maxZipfTenths = -Infinity;
-for (const z of zipfTenths) {
-  if (z > maxZipfTenths) maxZipfTenths = z;
+/** The dictionary's Zipf bounds, computed once from the loaded data. */
+// Plain loop rather than Math.min/max(...) -- spreading ~200k elements as call
+// arguments risks blowing the stack on some engines (e.g. Safari).
+let maxZipfHundredths = -Infinity;
+let minZipfHundredths = Infinity;
+for (const z of zipfHundredths) {
+  if (z > maxZipfHundredths) maxZipfHundredths = z;
+  if (z < minZipfHundredths) minZipfHundredths = z;
 }
-const MIN_ZIPF = MIN_MEASURED_ZIPF;
-const MAX_ZIPF = maxZipfTenths / 10;
-const ZIPF_RANGE = MAX_ZIPF - MIN_ZIPF;
+const MAX_ZIPF = maxZipfHundredths / 100;
+// The rarest Zipf in the data (the sentinel assigned to words no corpus
+// attests); it anchors the top of the deep-tail band at a perfect 10.0.
+const MIN_ZIPF = minZipfHundredths / 100;
+// Scores split into two bands at wordfreq's measurement floor (see
+// scripts/generate-data.py). Words wordfreq can measure sit at Zipf >=
+// MEASURED_FLOOR and fill the 0..NORMAL_CEILING range. The deep tail -- words
+// only Norvig/Google Books attest, plus words no corpus attests -- sits below
+// MEASURED_FLOOR and gets its own elite NORMAL_CEILING..10 band, so any
+// deep-tail word always outscores any merely-measured one.
+const MEASURED_FLOOR = 1;
+const NORMAL_CEILING = 9.5;
 
 export function isValidWord(word: string): boolean {
   return WORD_INDEX.has(word.toLowerCase());
@@ -40,7 +52,7 @@ export function rarityFor(word: string): RarityInfo | undefined {
   const normalized = word.toLowerCase();
   const i = WORD_INDEX.get(normalized);
   if (i === undefined) return undefined;
-  const zipf = adjustedZipf(normalized, zipfTenths[i] / 10);
+  const zipf = adjustedZipf(normalized, zipfHundredths[i] / 100);
   return { rarity: rarityForZipf(zipf), zipf };
 }
 
@@ -132,7 +144,7 @@ function tenseBaseForm(word: string): string | undefined {
 }
 
 function zipfFor(word: string): number {
-  return zipfTenths[WORD_INDEX.get(word)!] / 10;
+  return zipfHundredths[WORD_INDEX.get(word)!] / 100;
 }
 
 function stripDoubledConsonant(stem: string): string {
@@ -147,9 +159,7 @@ function stripDoubledConsonant(stem: string): string {
 }
 
 function rarityForZipf(zipf: number): Rarity {
-  // Missing corpus data is not evidence that a word is genuinely Mythic.
-  if (zipf === UNKNOWN_ZIPF) return "Extremely Rare";
-  if (rarityScore(zipf) >= 9.5) return "Mythic";
+  if (zipf < MEASURED_FLOOR) return "Mythic"; // the deep-tail library is its own top rank
   if (zipf >= 6.4) return "Quotidian";
   if (zipf >= 5.2) return "Very Common";
   if (zipf >= 4.2) return "Common";
@@ -172,15 +182,34 @@ export const RARITY_ORDER: Rarity[] = [
  * A player-facing "rarity score" derived from Zipf frequency, with the
  * polarity flipped (wordfreq's Zipf scale runs *higher* for more common
  * words -- e.g. "the" ~7.7, "aardvark" ~2.4 -- which reads backwards for a
- * rarity score) and then normalized between the 1.0 floor for measured
- * wordfreq values and the dictionary's most common word. An unknown-frequency
- * lookup is stored as 1.4 and consequently scores 9.4, while a measured 1.0
- * earns a perfect 10. Internal ranking
- * (see rank.ts's bestWord) still compares raw Zipf directly; this is
- * purely a display transform.
+ * rarity score). It splits into two bands at MEASURED_FLOOR: words wordfreq
+ * can measure spread across 0..NORMAL_CEILING (rarest measured word tops out
+ * at NORMAL_CEILING, one decimal of resolution), while the deep-tail library
+ * fills NORMAL_CEILING..10 -- so a word only the fallback corpora attest always
+ * beats a measured one. The deep-tail band normalizes against MIN_ZIPF (the
+ * rarest word in the data), so only words no corpus attests reach a perfect 10;
+ * attested-but-vanishingly-rare words land just below. Because that band is
+ * narrow, it carries two decimals of resolution. Internal ranking (see rank.ts)
+ * still compares raw Zipf directly; this is purely a display transform.
  */
 export function rarityScore(zipf: number): number {
-  return Math.round(((MAX_ZIPF - zipf) / ZIPF_RANGE) * 100) / 10;
+  if (zipf >= MEASURED_FLOOR) {
+    const score = (NORMAL_CEILING * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
+    return Math.round(score * 10) / 10;
+  }
+  const score =
+    NORMAL_CEILING + ((10 - NORMAL_CEILING) * (MEASURED_FLOOR - zipf)) / (MEASURED_FLOOR - MIN_ZIPF);
+  return Math.round(Math.min(score, 10) * 100) / 100;
+}
+
+/**
+ * Format a word's rarity score for display: the compressed deep-tail band
+ * (NORMAL_CEILING..10) shows two decimals so its fine gradient is visible,
+ * while the measured band keeps a single decimal.
+ */
+export function formatRarityScore(zipf: number): string {
+  const score = rarityScore(zipf);
+  return score >= NORMAL_CEILING ? score.toFixed(2) : score.toFixed(1);
 }
 
 /** Sum the displayed rarity scores earned during one game session. */

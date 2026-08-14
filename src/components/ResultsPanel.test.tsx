@@ -74,7 +74,7 @@ describe("ResultsPanel share toggle", () => {
     await userEvent.click(screen.getByRole("checkbox", { name: /show my answers/i }));
 
     const xPost = decodeURIComponent(screen.getByRole("link", { name: /share on x/i }).getAttribute("href") ?? "");
-    expect(xPost).toContain("strange (4.6)");
+    expect(xPost).toContain("strange (4.4)");
     expect(xPost).not.toContain("Streak:");
     expect(xPost).not.toContain("Top:");
   });

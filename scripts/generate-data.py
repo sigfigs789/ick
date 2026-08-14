@@ -19,7 +19,9 @@ Run:
 """
 import argparse
 import json
+import math
 import re
+import statistics
 import sys
 from pathlib import Path
 
@@ -30,26 +32,41 @@ BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
 WIKTIONARY_ACCEPTED_PATH = ROOT / "scripts" / "wiktionary-accepted.txt"
 
+# Deep-tail frequency sources, layered *below* wordfreq's measurement floor so
+# words wordfreq can't score still get a real, distinct rarity instead of all
+# collapsing to one value. Both are tab-separated `word<TAB>count` lists used
+# only at generation time -- they never ship to the browser.
+#   - Norvig's Google Web 1T unigram counts (norvig.com/ngrams/count_1w.txt)
+#   - Google Books English 1-grams (v3 20200217), pre-filtered to our words.
+NORVIG_COUNTS_PATH = ROOT / "scripts" / "norvig-count-1w.txt"
+GOOGLE_BOOKS_COUNTS_PATH = ROOT / "scripts" / "google-books-counts.txt"
+
 MIN_LEN = 1
 
-# SCOWL/ESDB is the acceptance authority. A 0.0 from wordfreq means that it
-# has no usable frequency estimate, not that the entry is invalid. Keep those
-# words just below the 1.0 lower limit of wordfreq's measured large wordlist.
-# This maps to a displayed rarity score of 9.4; measured 1.0 words score 10.0.
-UNKNOWN_ZIPF = 1.4
+# Words absent from every corpus (wordfreq, Norvig, and Google Books) are the
+# rarest we can attest -- floored to 0.0 so they earn the top displayed score.
+UNKNOWN_ZIPF = 0.0
+
+# wordfreq's measurement floor. Everything wordfreq can score sits at or above
+# this; the "deep tail" (words only Norvig/Google Books attest, plus the
+# found-nowhere floor) is remapped strictly below it so a single Zipf boundary
+# separates the two scoring bands. See rarityScore in src/game/dictionary.ts:
+# measured words fill scores 0..9.5, the deep tail gets its own 9.5..10 band.
+MEASURED_FLOOR = 1.0
 
 # Rarity bucket boundaries (inclusive lower bound), tuned by eyeballing the
 # resulting distribution -- see the printed histogram when this script runs.
 # These are intentionally generous toward "common" since the goal is that a
 # player using everyday words still gets a satisfying, mostly-green result.
+# The deep tail (Zipf < MEASURED_FLOOR) is its own top rank, so these bands
+# only cover the measured range.
 RARITY_BANDS = [
     (6.4, "Quotidian"),
     (5.2, "Very Common"),
     (4.2, "Common"),
     (3.3, "Uncommon"),
     (2.5, "Rare"),
-    (1.6, "Extremely Rare"),
-    (0.0, "Mythic"),
+    (1.0, "Extremely Rare"),
 ]
 
 WORD_RE = re.compile(r"^[a-z]+$")
@@ -67,14 +84,118 @@ RARITY_CODE = {
 
 
 def rarity_for_zipf(z: float) -> str:
-    # Unknown-frequency words use a conservative score just below the Mythic
-    # display threshold; lack of corpus data is not proof of exceptional rarity.
-    if z == UNKNOWN_ZIPF:
-        return "Extremely Rare"
+    if z < MEASURED_FLOOR:
+        return "Mythic"  # the deep-tail library is its own top rank
     for threshold, label in RARITY_BANDS:
         if z >= threshold:
             return label
     return RARITY_BANDS[-1][1]
+
+
+def load_counts(path: Path) -> dict[str, int]:
+    """Load a `word<TAB>count` frequency list, keeping pure a-z tokens."""
+    counts: dict[str, int] = {}
+    if not path.exists():
+        return counts
+    for line in path.read_text(errors="ignore").splitlines():
+        word, _, count = line.partition("\t")
+        word = word.strip().lower()
+        if not count or not WORD_RE.match(word):
+            continue
+        try:
+            counts[word] = counts.get(word, 0) + int(count)
+        except ValueError:
+            continue
+    return counts
+
+
+def refresh_rarity() -> None:
+    """Recompute rarity.json over the existing dictionary.json using the
+    frequency waterfall, without rebuilding the curated word list itself.
+
+    Two bands, split at MEASURED_FLOOR:
+      - Words wordfreq can measure keep their real Zipf (>= MEASURED_FLOOR)
+        and later map to displayed scores 0..9.5.
+      - The deep tail (words only Norvig/Google Books attest, plus words no
+        corpus attests) is ranked by its raw log-frequency and remapped into
+        [0, MEASURED_FLOOR), later mapping to the elite 9.5..10 band. Words
+        found nowhere sit at the 0.0 floor -> a perfect 10.0.
+    """
+    from wordfreq import zipf_frequency
+
+    dictionary = json.loads((OUT_DIR / "dictionary.json").read_text())
+
+    norvig = load_counts(NORVIG_COUNTS_PATH)
+    norvig_log_total = math.log10(sum(norvig.values())) if norvig else None
+
+    def norvig_zipf(word: str):
+        count = norvig.get(word)
+        if not count or norvig_log_total is None:
+            return None
+        return math.log10(count) - norvig_log_total + 9
+
+    google = load_counts(GOOGLE_BOOKS_COUNTS_PATH)
+    # Anchor Google Books to the Norvig scale: pick the offset that makes the
+    # two agree (in the median) on the words they both contain.
+    overlap = [
+        math.log10(google[w]) - norvig_zipf(w)
+        for w in google
+        if norvig_zipf(w) is not None
+    ]
+    google_offset = statistics.median(overlap) if overlap else 0.0
+
+    def google_zipf(word: str):
+        count = google.get(word)
+        if not count:
+            return None
+        return math.log10(count) - google_offset
+
+    # Each word keeps its real waterfall Zipf: wordfreq where measured, else the
+    # Norvig or Google Books estimate, else the 0.0 floor for words no corpus
+    # attests. The single Zipf < MEASURED_FLOOR boundary in rarityScore (see
+    # src/game/dictionary.ts) then decides the band -- no per-source remapping.
+    def raw_zipf(word: str):
+        wf = zipf_frequency(word, "en", wordlist="best")
+        if wf > 0:
+            return wf
+        for candidate in (norvig_zipf(word), google_zipf(word)):
+            if candidate is not None:
+                return candidate  # kept unclamped: the deepest attested words
+        return None  # no corpus attests this word
+
+    raw = [raw_zipf(word) for word in dictionary]
+
+    # Words no corpus attests are the rarest we can claim, so they get a
+    # sentinel just below the rarest *attested* Zipf -- reserving the perfect
+    # 10.0 for them while an attested-but-vanishingly-rare word lands just under.
+    attested = [z for z in raw if z is not None]
+    sentinel = round(min(attested) - 0.1, 2)
+    zipfs = [z if z is not None else sentinel for z in raw]
+
+    deep = sum(1 for z in zipfs if z < MEASURED_FLOOR)
+    unattested = sum(1 for z in raw if z is None)
+    print(
+        f"Frequency sources: Norvig {len(norvig)}, "
+        f"Google Books {len(google)} (offset {round(google_offset, 4)})"
+    )
+    print(
+        f"Bands: measured/common {len(dictionary) - deep} (score 0..9.5), "
+        f"deep tail {deep} (Zipf < {MEASURED_FLOOR}, score 9.5..10); "
+        f"{unattested} unattested at the {sentinel} sentinel -> 10.0"
+    )
+
+    from collections import Counter
+
+    hist = Counter(rarity_for_zipf(z) for z in zipfs)
+    for label in ("Mythic", *[label for _, label in RARITY_BANDS]):
+        print(f"  {label:16s} {hist.get(label, 0)}")
+
+    codes = "".join(RARITY_CODE[rarity_for_zipf(z)] for z in zipfs)
+    zipf_hundredths = [round(z * 100) for z in zipfs]
+    (OUT_DIR / "rarity.json").write_text(
+        json.dumps({"codes": codes, "zipfHundredths": zipf_hundredths}, separators=(",", ":"))
+    )
+    print(f"Wrote {OUT_DIR / 'rarity.json'} ({len(dictionary)} entries, index-aligned)")
 
 
 def displayed_zipf(z: float) -> float:
@@ -202,11 +323,20 @@ def main() -> None:
         help="optional ESDB SQLite database used to generate rejection metadata",
     )
     parser.add_argument(
+        "--refresh-rarity",
+        action="store_true",
+        help="recompute rarity.json over the existing dictionary.json via the "
+        "frequency waterfall, without rebuilding the curated word list",
+    )
+    parser.add_argument(
         "--metadata-only",
         action="store_true",
         help="refresh rejection metadata from --esdb-db without regenerating dictionary data",
     )
     args = parser.parse_args()
+    if args.refresh_rarity:
+        refresh_rarity()
+        return
     if args.metadata_only:
         if not args.esdb_db:
             parser.error("--metadata-only requires --esdb-db")
@@ -277,13 +407,17 @@ def main() -> None:
     # rather than keyed by word again -- repeating every word as a JSON
     # object key doubled the payload size for no benefit, since the app
     # already has the word list from dictionary.json.
-    codes = "".join(RARITY_CODE[rarity_for_zipf(displayed_zipf(candidates[w]))] for w in dictionary)
-    zipf_tenths = [round(candidates[w] * 10) for w in dictionary]
+    # NOTE: this full rebuild floors unknown-frequency words flat (UNKNOWN_ZIPF)
+    # instead of applying the Norvig/Google Books waterfall -- run
+    # --refresh-rarity afterward to grade the deep tail. Emitted in the same
+    # hundredths format the app expects (see refresh_rarity).
+    codes = "".join(RARITY_CODE[rarity_for_zipf(candidates[w])] for w in dictionary)
+    zipf_hundredths = [round(candidates[w] * 100) for w in dictionary]
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "dictionary.json").write_text(json.dumps(dictionary, separators=(",", ":")))
     (OUT_DIR / "rarity.json").write_text(
-        json.dumps({"codes": codes, "zipfTenths": zipf_tenths}, separators=(",", ":"))
+        json.dumps({"codes": codes, "zipfHundredths": zipf_hundredths}, separators=(",", ":"))
     )
     metadata = rejection_metadata(classification, set(dictionary))
     write_rejection_metadata(metadata)

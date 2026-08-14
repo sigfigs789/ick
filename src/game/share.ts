@@ -1,5 +1,5 @@
 import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
-import { rarityScore, topRarityScore, totalRarityScore } from "./dictionary";
+import { formatRarityScore, topRarityScore, totalRarityScore } from "./dictionary";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -66,12 +66,12 @@ export function buildShareText(
 
   const resultLine = spoilerFree
     ? words
-        .map((w) => `${RARITY_SYMBOL[w.rarity]} ${rarityScore(w.zipf).toFixed(1)}`)
+        .map((w) => `${RARITY_SYMBOL[w.rarity]} ${formatRarityScore(w.zipf)}`)
         .join("\n")
     : words
         .map(
           (w) =>
-            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${rarityScore(w.zipf).toFixed(1)})`
+            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${formatRarityScore(w.zipf)})`
         )
         .join("\n");
 

@@ -83,7 +83,7 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loadProgress("2024-01-01")?.acceptedWords[0]).toEqual({
       word: "dustcart",
       rarity: "Extremely Rare",
-      zipf: 1.4,
+      zipf: 1.11,
     });
   });
 

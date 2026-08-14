@@ -1,4 +1,4 @@
-import { rarityScore } from "../game/dictionary";
+import { formatRarityScore } from "../game/dictionary";
 import type { Rarity } from "../game/types";
 
 // Short text tags reinforce the color so rarity is never color-only
@@ -28,7 +28,7 @@ export function RarityBadge({ rarity, zipf }: Props) {
       <span className="rarity-badge__dot" aria-hidden="true" />
       {meta.tag}
       {zipf !== undefined && (
-        <span className="rarity-badge__score">{rarityScore(zipf).toFixed(1)}</span>
+        <span className="rarity-badge__score">{formatRarityScore(zipf)}</span>
       )}
     </span>
   );
