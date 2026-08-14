@@ -83,7 +83,7 @@ pip3 install --user wordfreq
 git clone https://github.com/en-wl/wordlist.git /tmp/esdb
 make -C /tmp/esdb
 /tmp/esdb/scowl --db /tmp/esdb/scowl.db word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > /tmp/scowl-regional-80.txt
-python3 scripts/import-wiktionary-science.py # refreshes scripts/wiktionary-accepted.txt
+python3 scripts/import-wiktionary-science.py # streams the full English Wiktionary extract
 npm run generate-data -- --word-list /tmp/scowl-regional-80.txt --esdb-db /tmp/esdb/scowl.db
 npm run select-drops  # writes scripts/drop-candidates.json (diagnostic)
 ```
@@ -92,11 +92,13 @@ npm run select-drops  # writes scripts/drop-candidates.json (diagnostic)
 `--word-list`; the checked-in data is generated from an ESDB/SCOWL size-80
 list with American, British, Canadian, and Australian spellings, with
 abbreviations and special categories excluded, plus the scored single-word
-science terms in `scripts/wiktionary-accepted.txt`. That supplement is derived
-from English Wiktionary's science category and is available under
-[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The script
-also keeps only pure lowercase a-z entries (which drops proper nouns,
-possessives, contractions, and hyphenated compounds), scores each word's Zipf
+terms in `scripts/wiktionary-accepted.txt`. That supplement is derived from
+the full English Wiktionary extract and is available under
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); words that
+ESDB flags as abbreviations, proper nouns, or names are dropped from the
+supplement at merge time so lowercase spellings (e.g. `paris`) do not slip
+into play. The script also keeps only pure lowercase a-z entries (which drops
+proper nouns, possessives, contractions, and hyphenated compounds), scores each word's Zipf
 frequency via `wordfreq`, treats words without a frequency estimate (`0.0`) as
 Zipf `1.4` and Extremely Rare rather than Mythic, and removes anything in
 `scripts/blocklist.txt` (hand-curated slurs, profanity, and stray

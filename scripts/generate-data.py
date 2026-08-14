@@ -112,13 +112,21 @@ def load_wiktionary_words() -> set[str]:
     return load_word_file(WIKTIONARY_ACCEPTED_PATH)
 
 
-def rejection_metadata(esdb_db: Path, dictionary: set[str]) -> dict[str, str]:
-    """Return high-confidence reasons for ESDB words excluded from the game.
+# ESDB reasons that mark a word as ineligible for play regardless of source.
+# Wiktionary can supply lowercase spellings of these (e.g. "paris"), which SCOWL
+# excludes only because it lists them capitalized, so the supplement is filtered
+# against this set. "obsolete" is intentionally absent: those are real, rare
+# words we are happy to accept.
+NAME_LIKE_REASONS = {"abbreviation", "proper-noun", "name-or-abbreviation"}
 
-    The game intentionally ships a small, static map instead of ESDB's full
-    SQLite database.  A word can have several ESDB entries, so collect the
-    strongest explanation for its lower-case form.  Unknown words are left out
-    and receive the normal curated-list message in the client.
+
+def esdb_classification(esdb_db: Path) -> dict[str, str]:
+    """Strongest ESDB-derived reason for each lowercase word.
+
+    A word can have several ESDB entries, so collect the strongest explanation
+    for its lower-case form. This ignores whether the word is currently
+    accepted; callers decide how to use the classification (rejection messages
+    vs. keeping names/abbreviations out of the merged word list).
     """
     import sqlite3
 
@@ -134,7 +142,7 @@ def rejection_metadata(esdb_db: Path, dictionary: set[str]) -> dict[str, str]:
     with sqlite3.connect(esdb_db) as conn:
         for word, base_pos, pos_class, size in conn.execute(query):
             normalized = word.lower()
-            if normalized in dictionary or not WORD_RE.match(normalized):
+            if not WORD_RE.match(normalized):
                 continue
 
             reason = None
@@ -157,6 +165,17 @@ def rejection_metadata(esdb_db: Path, dictionary: set[str]) -> dict[str, str]:
             ):
                 reasons[normalized] = reason
     return reasons
+
+
+def rejection_metadata(classification: dict[str, str], dictionary: set[str]) -> dict[str, str]:
+    """High-confidence reasons for ESDB words excluded from the game.
+
+    The game intentionally ships a small, static map instead of ESDB's full
+    SQLite database. Accepted words are dropped so a word is never both playable
+    and flagged; unknown words are left out and receive the normal curated-list
+    message in the client.
+    """
+    return {word: reason for word, reason in classification.items() if word not in dictionary}
 
 
 def write_rejection_metadata(metadata: dict[str, str]) -> None:
@@ -192,7 +211,7 @@ def main() -> None:
         if not args.esdb_db:
             parser.error("--metadata-only requires --esdb-db")
         dictionary = set(json.loads((OUT_DIR / "dictionary.json").read_text()))
-        metadata = rejection_metadata(args.esdb_db, dictionary)
+        metadata = rejection_metadata(esdb_classification(args.esdb_db), dictionary)
         write_rejection_metadata(metadata)
         print(f"Wrote {OUT_DIR / 'rejection-metadata.json'} ({len(metadata)} explanations)")
         return
@@ -210,12 +229,20 @@ def main() -> None:
     blocklist = load_blocklist()
     print(f"Loaded {len(blocklist)} blocklisted terms")
 
+    classification = esdb_classification(args.esdb_db)
+    excluded = {word for word, reason in classification.items() if reason in NAME_LIKE_REASONS}
+
     extra_words = load_extra_words()
     wiktionary_words = load_wiktionary_words()
+    # Wiktionary lists lowercase spellings of names/abbreviations that SCOWL
+    # excludes only by capitalization; drop them so the supplement can't smuggle
+    # ineligible words (e.g. "paris") back into play.
+    blocked = wiktionary_words & excluded
+    wiktionary_words -= excluded
     raw_words = word_list.read_text(errors="ignore").splitlines()
     raw_words = set(raw_words) | extra_words | wiktionary_words
     print(f"Loaded {len(extra_words)} manually curated extra words")
-    print(f"Loaded {len(wiktionary_words)} Wiktionary science terms")
+    print(f"Loaded {len(wiktionary_words)} Wiktionary terms ({len(blocked)} name/abbr excluded)")
     print(f"Read {len(raw_words)} candidate entries")
 
     candidates: dict[str, float] = {}
@@ -258,7 +285,7 @@ def main() -> None:
     (OUT_DIR / "rarity.json").write_text(
         json.dumps({"codes": codes, "zipfTenths": zipf_tenths}, separators=(",", ":"))
     )
-    metadata = rejection_metadata(args.esdb_db, set(dictionary))
+    metadata = rejection_metadata(classification, set(dictionary))
     write_rejection_metadata(metadata)
     print(f"Wrote {OUT_DIR / 'dictionary.json'} ({len(dictionary)} words)")
     print(f"Wrote {OUT_DIR / 'rarity.json'} ({len(dictionary)} entries, index-aligned)")
