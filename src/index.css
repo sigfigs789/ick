@@ -659,6 +659,15 @@ h2 {
   min-height: 2.85rem;
   transition: background-color 0.15s var(--ease-standard), transform 0.1s var(--ease-standard);
 }
+.share-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+.share-button__copy-icon {
+  flex: none;
+}
 .submit-form button:disabled,
 .share-button:disabled {
   opacity: 0.4;
