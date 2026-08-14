@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { buildShareText } from "../game/share";
 import { ShareButton } from "./ShareButton";
+import { TwitterShareButton } from "./TwitterShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
-import { trackResultShared } from "../analytics";
+import { trackResultCopied, trackResultSharedOnX } from "../analytics";
 
 interface Props {
   date: string;
@@ -15,12 +16,22 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
   // Showing submitted words is opt-in so shared results remain spoiler-free
   // unless the player explicitly asks to include their answers.
   const [showAnswers, setShowAnswers] = useState(false);
-  const shareText = buildShareText(date, drop, words, {
+  const sharedResultOptions = {
     spoilerFree: !showAnswers,
     streak: streak.currentStreak,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
+  };
+  const shareText = buildShareText(date, drop, words, sharedResultOptions);
+  const copiedShareText = buildShareText(date, drop, words, {
+    ...sharedResultOptions,
+    source: "share",
   });
+  const twitterShareText = `\n\n────\n${buildShareText(date, drop, words, {
+    spoilerFree: !showAnswers,
+    source: "twitter",
+    format: "x",
+  })}`;
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (
     <section className="results-panel" aria-label="Share result">
@@ -38,8 +49,12 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
       </pre>
       <div className="results-panel__share-actions">
         <ShareButton
-          text={shareText}
-          onShared={() => trackResultShared(date, streak.currentStreak)}
+          text={copiedShareText}
+          onShared={trackResultCopied}
+        />
+        <TwitterShareButton
+          text={twitterShareText}
+          onShared={trackResultSharedOnX}
         />
       </div>
     </section>

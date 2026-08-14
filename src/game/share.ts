@@ -20,6 +20,14 @@ const RARITY_SYMBOL: Record<Rarity, string> = {
   Mythic: "🟥",
 };
 
+export type ShareSource = "share" | "twitter";
+
+function shareUrl(source: ShareSource | null): string {
+  if (source === "share") return "https://wordink.app/?s=sh";
+  if (source === "twitter") return "wordink.app/?s=t";
+  return "wordink.app";
+}
+
 export function puzzleNumber(dateStr: string): number {
   return daysSinceEpoch(dateStr, dropData.epoch) + 1;
 }
@@ -33,6 +41,10 @@ export interface ShareOptions {
   crushedIt?: number;
   /** Total Extremely Rare-or-better results to include in the shared result. */
   elite?: number;
+  /** Adds attribution to a link at the moment it is shared. */
+  source?: ShareSource | null;
+  /** Uses the shorter X post layout while keeping the selected spoiler setting. */
+  format?: "default" | "x";
 }
 
 /**
@@ -48,7 +60,8 @@ export function buildShareText(
   options: ShareOptions = {}
 ): string {
   const spoilerFree = options.spoilerFree ?? true;
-  const n = puzzleNumber(dateStr);
+  const source = options.source ?? null;
+  const format = options.format ?? "default";
   const label = formatDateLabel(dateStr);
 
   const resultLine = spoilerFree
@@ -57,13 +70,14 @@ export function buildShareText(
         .join("\n")
     : words
         .map(
-          (w) => `${RARITY_SYMBOL[w.rarity]} ${w.word} (${rarityScore(w.zipf).toFixed(1)})`
+          (w) =>
+            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${rarityScore(w.zipf).toFixed(1)})`
         )
         .join("\n");
 
-  const lines = [`https://wordink.app #${n} (${label}) — Drop: ${drop.toUpperCase()}`];
+  const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
-  if (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined) {
+  if (format === "default" && (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined)) {
     const streak = options.streak ?? 0;
     if (resultLine) lines.push("");
     lines.push(
@@ -71,8 +85,9 @@ export function buildShareText(
     );
   }
   const raritySummary = [`Total: ${totalRarityScore(words).toFixed(1)}`];
-  raritySummary.push(`Top: ${topRarityScore(words).toFixed(1)}`);
+  if (format === "default") raritySummary.push(`Top: ${topRarityScore(words).toFixed(1)}`);
   lines.push(raritySummary.join(" · "));
+  lines.push(shareUrl(source));
   return lines.join("\n");
 }
 

@@ -17,6 +17,7 @@ import { isWinningRarity } from "./game/rank";
 import { topRarityScore, totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { campaignSourceFromSearch, trackCampaignArrival } from "./analytics";
 
 export default function App() {
   const {
@@ -40,6 +41,13 @@ export default function App() {
   const [prefill, setPrefill] = useState<{ word: string; token: number } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
+
+  // The compact share-link code identifies its origin without exposing a
+  // long UTM parameter in the result text.
+  useEffect(() => {
+    const source = campaignSourceFromSearch(window.location.search);
+    if (source) trackCampaignArrival(source);
+  }, []);
 
   // Clear any pending prefill when the viewed puzzle changes so a stale
   // click-to-reuse value from a different day's log can't leak in.

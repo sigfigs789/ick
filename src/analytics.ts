@@ -61,11 +61,25 @@ export function trackPuzzleCompleted(
   });
 }
 
-export function trackResultShared(date: string, streakDays: number) {
-  track("result_shared", {
-    puzzle_date: date,
-    puzzle_number: puzzleNumber(date),
-    share_format: "text",
-    streak_days: streakDays,
-  });
+/** Record a successful copy from the standard Share button. */
+export function trackResultCopied() {
+  track("result_copied");
+}
+
+/** Record a click on the X share button. */
+export function trackResultSharedOnX() {
+  track("result_shared_on_x");
+}
+
+/** Record visitors who arrive through a campaign-tagged share link. */
+export function trackCampaignArrival(source: string) {
+  track("campaign_arrival", { source });
+}
+
+/** Convert compact share-link codes into analytics campaign sources. */
+export function campaignSourceFromSearch(search: string): "share" | "twitter" | null {
+  const code = new URLSearchParams(search).get("s");
+  if (code === "sh") return "share";
+  if (code === "t") return "twitter";
+  return null;
 }

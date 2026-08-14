@@ -1,6 +1,6 @@
 import { track } from "@vercel/analytics";
 import { describe, expect, it, vi } from "vitest";
-import { trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer, trackResultShared, trackWordSuggestion } from "./analytics";
+import { campaignSourceFromSearch, trackAcceptedAnswer, trackCampaignArrival, trackPuzzleCompleted, trackRejectedAnswer, trackResultCopied, trackResultSharedOnX, trackWordSuggestion } from "./analytics";
 import { puzzleNumber } from "./game/share";
 import type { DailyProgress, StreakState } from "./game/types";
 
@@ -66,15 +66,24 @@ describe("remaining game analytics", () => {
     }));
   });
 
-  it("tracks a shared text result without answer content", () => {
-    trackResultShared("2026-08-12", 3);
+  it("tracks copied results separately from X shares", () => {
+    trackResultCopied();
+    trackResultSharedOnX();
 
-    expect(track).toHaveBeenCalledWith("result_shared", {
-      puzzle_date: "2026-08-12",
-      puzzle_number: puzzleNumber("2026-08-12"),
-      share_format: "text",
-      streak_days: 3,
-    });
+    expect(track).toHaveBeenCalledWith("result_copied");
+    expect(track).toHaveBeenCalledWith("result_shared_on_x");
+  });
+
+  it("tracks a campaign-tagged arrival by source", () => {
+    trackCampaignArrival("twitter");
+
+    expect(track).toHaveBeenCalledWith("campaign_arrival", { source: "twitter" });
+  });
+
+  it("maps the compact share-link code to its campaign source", () => {
+    expect(campaignSourceFromSearch("?s=sh")).toBe("share");
+    expect(campaignSourceFromSearch("?s=t")).toBe("twitter");
+    expect(campaignSourceFromSearch("?s=other")).toBeNull();
   });
 });
 

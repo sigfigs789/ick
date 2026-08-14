@@ -54,6 +54,28 @@ describe("ResultsPanel share toggle", () => {
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).toContain("strange");
     expect(preview?.textContent).toContain("aardvark");
-    expect(preview?.querySelector("strong")?.textContent).toMatch(/https:\/\/wordink\.app #.*Drop: STR/);
+    expect(preview?.querySelector("strong")?.textContent).toBe("Jan 1 — Drop: STR");
+  });
+
+  it("offers an accessible X composer link with space for a player note", () => {
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+
+    const twitterLink = screen.getByRole("link", { name: /share on x/i });
+    expect(twitterLink).toHaveAttribute("target", "_blank");
+    expect(twitterLink).toHaveAttribute("title", "Share on X");
+    expect(twitterLink.getAttribute("href")).toContain("twitter.com/intent/tweet");
+    expect(decodeURIComponent(twitterLink.getAttribute("href") ?? "")).toMatch(
+      /\n\n────\n.*\nwordink\.app\/\?s=t$/s
+    );
+  });
+
+  it("keeps answers in the X post when the player opts in, using the compact layout", async () => {
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+    await userEvent.click(screen.getByRole("checkbox", { name: /show my answers/i }));
+
+    const xPost = decodeURIComponent(screen.getByRole("link", { name: /share on x/i }).getAttribute("href") ?? "");
+    expect(xPost).toContain("strange (4.6)");
+    expect(xPost).not.toContain("Streak:");
+    expect(xPost).not.toContain("Top:");
   });
 });
