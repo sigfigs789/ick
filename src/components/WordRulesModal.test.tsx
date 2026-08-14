@@ -14,7 +14,7 @@ describe("WordRulesModal", () => {
     const dialog = screen.getByRole("dialog", { name: /word rules/i });
     expect(dialog).toHaveTextContent(/curated word list is built from established english-language lexical resources and has over 180,000 words/i);
     expect(dialog).toHaveTextContent(/proper nouns, abbreviations, archaic or obsolete words, hyphenated words/i);
-    expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for wordink/i);
+    expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for play/i);
     expect(dialog).toHaveTextContent(/built and maintained by a solo developer/i);
     expect(dialog).toHaveTextContent(/continuously expanding the list to include more delightful and interesting words/i);
     expect(dialog).toHaveTextContent(/have a good word in mind\? suggest it and improve the experience for everyone/i);
