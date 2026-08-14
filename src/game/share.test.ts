@@ -23,7 +23,8 @@ describe("buildShareText", () => {
 
   it("includes the puzzle number and drop, never the words themselves", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    expect(text).toContain(`wordink.app/?utm_source=share #${puzzleNumber("2024-01-05")}`);
+    expect(text).toContain(`#${puzzleNumber("2024-01-05")}`);
+    expect(text).toMatch(/wordink\.app\/\?utm_source=share$/);
     expect(text).toContain("Drop: STR");
     for (const w of words) {
       expect(text).not.toContain(w.word);
@@ -54,7 +55,7 @@ describe("buildShareText", () => {
 
   it("can omit the source parameter from the shared URL", () => {
     expect(buildShareText("2024-01-05", "str", words, { source: null })).toContain(
-      "wordink.app #"
+      "\nwordink.app"
     );
   });
 

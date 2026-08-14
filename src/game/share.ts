@@ -70,7 +70,7 @@ export function buildShareText(
         )
         .join("\n");
 
-  const lines = [`${shareUrl(source)} #${n} (${label}) — Drop: ${drop.toUpperCase()}`];
+  const lines = [`#${n} (${label}) — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
   if (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined) {
     const streak = options.streak ?? 0;
@@ -82,6 +82,7 @@ export function buildShareText(
   const raritySummary = [`Total: ${totalRarityScore(words).toFixed(1)}`];
   raritySummary.push(`Top: ${topRarityScore(words).toFixed(1)}`);
   lines.push(raritySummary.join(" · "));
+  lines.push(shareUrl(source));
   return lines.join("\n");
 }
 
