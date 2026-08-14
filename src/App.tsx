@@ -17,7 +17,7 @@ import { isWinningRarity } from "./game/rank";
 import { topRarityScore, totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { trackCampaignArrival } from "./analytics";
+import { campaignSourceFromSearch, trackCampaignArrival } from "./analytics";
 
 export default function App() {
   const {
@@ -42,13 +42,11 @@ export default function App() {
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
 
-  // The share links identify their origin with utm_source. Track only the
-  // known campaign sources so arbitrary query strings never create events.
+  // The compact share-link code identifies its origin without exposing a
+  // long UTM parameter in the result text.
   useEffect(() => {
-    const source = new URLSearchParams(window.location.search).get("utm_source");
-    if (source === "share" || source === "twitter" || source === "reddit") {
-      trackCampaignArrival(source);
-    }
+    const source = campaignSourceFromSearch(window.location.search);
+    if (source) trackCampaignArrival(source);
   }, []);
 
   // Clear any pending prefill when the viewed puzzle changes so a stale

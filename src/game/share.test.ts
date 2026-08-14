@@ -60,9 +60,15 @@ describe("buildShareText", () => {
     );
   });
 
-  it("adds share attribution only when explicitly requested", () => {
+  it("adds compact share attribution only when explicitly requested", () => {
     expect(buildShareText("2024-01-05", "str", words, { source: "share" })).toMatch(
-      /https:\/\/wordink\.app\/\?utm_source=share$/
+      /https:\/\/wordink\.app\/\?s=sh$/
+    );
+  });
+
+  it("uses the compact X attribution code for X shares", () => {
+    expect(buildShareText("2024-01-05", "str", words, { source: "twitter" })).toMatch(
+      /https:\/\/wordink\.app\/\?s=x$/
     );
   });
 

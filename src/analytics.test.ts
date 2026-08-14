@@ -1,6 +1,6 @@
 import { track } from "@vercel/analytics";
 import { describe, expect, it, vi } from "vitest";
-import { trackAcceptedAnswer, trackCampaignArrival, trackPuzzleCompleted, trackRejectedAnswer, trackResultShared, trackWordSuggestion } from "./analytics";
+import { campaignSourceFromSearch, trackAcceptedAnswer, trackCampaignArrival, trackPuzzleCompleted, trackRejectedAnswer, trackResultShared, trackWordSuggestion } from "./analytics";
 import { puzzleNumber } from "./game/share";
 import type { DailyProgress, StreakState } from "./game/types";
 
@@ -81,6 +81,12 @@ describe("remaining game analytics", () => {
     trackCampaignArrival("twitter");
 
     expect(track).toHaveBeenCalledWith("campaign_arrival", { source: "twitter" });
+  });
+
+  it("maps compact share-link codes to campaign sources", () => {
+    expect(campaignSourceFromSearch("?s=sh")).toBe("share");
+    expect(campaignSourceFromSearch("?s=x")).toBe("twitter");
+    expect(campaignSourceFromSearch("?s=other")).toBeNull();
   });
 });
 

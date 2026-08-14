@@ -29,7 +29,7 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
   });
   const twitterShareText = `\n\n────\n${buildShareText(date, drop, words, {
     spoilerFree: !showAnswers,
-    source: null,
+    source: "twitter",
     format: "x",
   })}`;
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");

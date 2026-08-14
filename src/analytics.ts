@@ -74,3 +74,11 @@ export function trackResultShared(date: string, streakDays: number) {
 export function trackCampaignArrival(source: string) {
   track("campaign_arrival", { source });
 }
+
+/** Convert compact share-link codes into analytics campaign sources. */
+export function campaignSourceFromSearch(search: string): "share" | "twitter" | null {
+  const code = new URLSearchParams(search).get("s");
+  if (code === "sh") return "share";
+  if (code === "x") return "twitter";
+  return null;
+}
