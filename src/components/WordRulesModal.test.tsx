@@ -17,6 +17,7 @@ describe("WordRulesModal", () => {
     expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for wordink/i);
     expect(dialog).toHaveTextContent(/built and maintained by a solo developer/i);
     expect(dialog).toHaveTextContent(/continuously expanding the list to include more delightful and interesting words/i);
+    expect(dialog).toHaveTextContent(/have a good word in mind\? suggest it and improve the experience for everyone/i);
     expect(screen.getByRole("button", { name: /close word rules/i })).toHaveFocus();
 
     await userEvent.click(screen.getByRole("button", { name: /close word rules/i }));

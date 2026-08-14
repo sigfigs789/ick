@@ -62,7 +62,7 @@ export function WordRulesModal({ open, onClose }: Props) {
           To keep play consistent, proper nouns, abbreviations, archaic or obsolete words, hyphenated words, and words with punctuation aren't eligible for WordInk.
         </p>
         <p className="modal__copy">
-          WordInk is built and maintained by a solo developer. I'm continuously expanding the list to include more delightful and interesting words while keeping the game fair and consistent for everyone. Thank you for playing!
+          WordInk is built and maintained by a solo developer. I'm continuously expanding the list to include more delightful and interesting words. Have a good word in mind? Suggest it and improve the experience for everyone!
         </p>
         <form className="word-suggestion" onSubmit={submitSuggestion}>
           <label htmlFor="word-suggestion">Know a word we should consider?</label>
