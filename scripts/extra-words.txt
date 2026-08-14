@@ -1,3 +1,6 @@
+endling
+fenestron
+
 # Common words wrongly dropped by the lowercase-only source filter (they only
 # appeared capitalized in the system word list). Rarity is still derived from
 # frequency, so obscure ones just land in a rare band rather than being blocked.

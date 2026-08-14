@@ -3,6 +3,8 @@ import dictionaryWords from "../data/dictionary.json";
 import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
 const explicitlyCuratedWords = [
+  "endling",
+  "fenestron",
   // Common words wrongly dropped by the source list's lowercase-only filter.
   "amir",
   "awol",
@@ -26,7 +28,7 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(224_871);
+    expect(dictionaryWords).toHaveLength(224_873);
   });
 
   it("accepts a common real word", () => {
