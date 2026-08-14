@@ -660,13 +660,20 @@ h2 {
   transition: background-color 0.15s var(--ease-standard), transform 0.1s var(--ease-standard);
 }
 .share-button {
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
 }
-.share-button__copy-icon {
+.share-button .share-button__copy-icon {
   flex: none;
+  fill: none;
+}
+.share-button svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: currentColor;
 }
 .submit-form button:disabled,
 .share-button:disabled {
@@ -1006,6 +1013,9 @@ h2 {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.9rem;
+}
+.modal__header--close-only {
+  justify-content: flex-end;
 }
 .modal__header h2 {
   margin: 0;

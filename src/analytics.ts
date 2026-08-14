@@ -27,12 +27,20 @@ export function trackAcceptedAnswer(
 }
 
 /** Record rejected submissions so the word list can be reviewed over time. */
-export function trackRejectedAnswer(date: string, drop: string, rawWord: string, reason: RejectionReason) {
+export function trackRejectedAnswer(date: string, drop: string, rawWord: string) {
   track("answer_rejected", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     drop: drop.toLowerCase(),
     word: rawWord.trim().toLowerCase(),
+  });
+}
+
+/** Record the specific rejection feedback shown to a player. */
+export function trackRejectionMessage(date: string, reason: RejectionReason) {
+  track("rejection_message_shown", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
     rejection_reason: reason,
   });
 }
@@ -61,11 +69,30 @@ export function trackPuzzleCompleted(
   });
 }
 
-export function trackResultShared(date: string, streakDays: number) {
-  track("result_shared", {
-    puzzle_date: date,
-    puzzle_number: puzzleNumber(date),
-    share_format: "text",
-    streak_days: streakDays,
-  });
+/** Record a successful copy from the standard Share button. */
+export function trackResultCopied() {
+  track("result_copied");
+}
+
+/** Record a click on the X share button. */
+export function trackResultSharedOnX() {
+  track("result_shared_on_x");
+}
+
+/** Record visitors who arrive through an X share link. */
+export function trackTwitterArrival() {
+  track("arrived_from_twitter");
+}
+
+/** Record visitors who arrive through a copied Share link. */
+export function trackShareArrival() {
+  track("arrived_from_share");
+}
+
+/** Convert compact share-link codes into analytics campaign sources. */
+export function campaignSourceFromSearch(search: string): "share" | "twitter" | null {
+  const code = new URLSearchParams(search).get("s");
+  if (code === "sh") return "share";
+  if (code === "t") return "twitter";
+  return null;
 }

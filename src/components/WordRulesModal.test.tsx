@@ -12,11 +12,13 @@ describe("WordRulesModal", () => {
     render(<WordRulesModal open onClose={onClose} />);
 
     const dialog = screen.getByRole("dialog", { name: /word rules/i });
+    expect(screen.getByRole("heading", { name: "Word rules" })).toBeInTheDocument();
     expect(dialog).toHaveTextContent(/curated word list is sourced from scowl and contains more than 180,000 words/i);
-    expect(dialog).toHaveTextContent(/proper nouns, abbreviations, hyphenated words/i);
-    expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for wordink/i);
-    expect(dialog).toHaveTextContent(/built and maintained by one solo developer/i);
+    expect(dialog).toHaveTextContent(/proper nouns, abbreviations, archaic or obsolete words, hyphenated words/i);
+    expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for play/i);
+    expect(dialog).not.toHaveTextContent(/built and maintained by a solo developer/i);
     expect(dialog).toHaveTextContent(/continuously expanding the list to include more delightful and interesting words/i);
+    expect(dialog).toHaveTextContent(/have a good word in mind\? suggest it and improve the experience for everyone/i);
     expect(screen.getByRole("button", { name: /close word rules/i })).toHaveFocus();
 
     await userEvent.click(screen.getByRole("button", { name: /close word rules/i }));
@@ -29,8 +31,9 @@ describe("WordRulesModal", () => {
     render(<WordRulesModal open onClose={vi.fn()} />);
 
     const input = screen.getByLabelText(/know a word we should consider/i);
+    expect(input).toHaveAttribute("placeholder", "Enter word");
     await userEvent.type(input, "  Splashy ");
-    await userEvent.click(screen.getByRole("button", { name: /suggest a word/i }));
+    await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
 
     expect(analytics.trackWordSuggestion).toHaveBeenCalledWith("splashy");
     expect(input).toHaveValue("");
