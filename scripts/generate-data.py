@@ -28,6 +28,7 @@ DEFAULT_WORD_LIST = Path("/usr/share/dict/words")
 OUT_DIR = ROOT / "src" / "data"
 BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
+WIKTIONARY_ACCEPTED_PATH = ROOT / "scripts" / "wiktionary-accepted.txt"
 
 MIN_LEN = 1
 
@@ -92,15 +93,23 @@ def load_blocklist() -> set[str]:
     return words
 
 
-def load_extra_words() -> set[str]:
-    if not EXTRA_WORDS_PATH.exists():
+def load_word_file(path: Path) -> set[str]:
+    if not path.exists():
         return set()
     words = set()
-    for line in EXTRA_WORDS_PATH.read_text().splitlines():
+    for line in path.read_text().splitlines():
         line = line.strip().lower()
         if line and not line.startswith("#") and WORD_RE.match(line):
             words.add(line)
     return words
+
+
+def load_extra_words() -> set[str]:
+    return load_word_file(EXTRA_WORDS_PATH)
+
+
+def load_wiktionary_words() -> set[str]:
+    return load_word_file(WIKTIONARY_ACCEPTED_PATH)
 
 
 def rejection_metadata(esdb_db: Path, dictionary: set[str]) -> dict[str, str]:
@@ -201,8 +210,12 @@ def main() -> None:
     blocklist = load_blocklist()
     print(f"Loaded {len(blocklist)} blocklisted terms")
 
+    extra_words = load_extra_words()
+    wiktionary_words = load_wiktionary_words()
     raw_words = word_list.read_text(errors="ignore").splitlines()
-    raw_words = set(raw_words) | load_extra_words()
+    raw_words = set(raw_words) | extra_words | wiktionary_words
+    print(f"Loaded {len(extra_words)} manually curated extra words")
+    print(f"Loaded {len(wiktionary_words)} Wiktionary science terms")
     print(f"Read {len(raw_words)} candidate entries")
 
     candidates: dict[str, float] = {}

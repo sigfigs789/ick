@@ -3,11 +3,12 @@ import dictionaryWords from "../data/dictionary.json";
 import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
 const explicitlyCuratedWords = ["endling", "fenestron"];
+const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(194_857);
+    expect(dictionaryWords).toHaveLength(194_871);
   });
 
   it("accepts a common real word", () => {
@@ -34,6 +35,13 @@ describe("isValidWord", () => {
   it("accepts explicitly curated additions", () => {
     for (const word of explicitlyCuratedWords) {
       expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
+    }
+  });
+
+  it("accepts scored Wiktionary science terms", () => {
+    for (const word of wiktionaryScienceWords) {
+      expect(isValidWord(word)).toBe(true);
+      expect(rarityFor(word)?.zipf).not.toBe(1.4);
     }
   });
 
