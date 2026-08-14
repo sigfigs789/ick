@@ -83,7 +83,7 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loadProgress("2024-01-01")?.acceptedWords[0]).toEqual({
       word: "dustcart",
       rarity: "Extremely Rare",
-      zipf: 1.4,
+      zipf: 1.4, // pre-cutover puzzle -> legacy scoring, where unknowns floor to 1.4
     });
   });
 
@@ -169,7 +169,7 @@ describe("recordAcceptedWord", () => {
       totalCompleted: 0,
       crushedIt: 1,
       elite: 1,
-      highScore: rarityScore(2.4),
+      highScore: rarityScore(2.4, "2023-06-01"),
     });
   });
 
@@ -177,7 +177,7 @@ describe("recordAcceptedWord", () => {
     let p = recordAcceptedWord(newProgress("2023-06-01", "str"), word("common", 5.4));
     p = recordAcceptedWord(p, word("rare", 2.4, "Extremely Rare"));
     recordAcceptedWord(p, word("later", 4.6));
-    expect(loadStreak().highScore).toBe(rarityScore(2.4));
+    expect(loadStreak().highScore).toBe(rarityScore(2.4, "2023-06-01"));
   });
 
   it("wins on the sixth accepted word when a qualifying word was found", () => {

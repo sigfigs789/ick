@@ -1,5 +1,5 @@
 import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
-import { rarityScore, topRarityScore, totalRarityScore } from "./dictionary";
+import { formatRarityScore, formatScore, topRarityScore, totalRarityScore } from "./dictionary";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -66,12 +66,12 @@ export function buildShareText(
 
   const resultLine = spoilerFree
     ? words
-        .map((w) => `${RARITY_SYMBOL[w.rarity]} ${rarityScore(w.zipf).toFixed(1)}`)
+        .map((w) => `${RARITY_SYMBOL[w.rarity]} ${formatRarityScore(w.zipf, dateStr)}`)
         .join("\n")
     : words
         .map(
           (w) =>
-            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${rarityScore(w.zipf).toFixed(1)})`
+            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${formatRarityScore(w.zipf, dateStr)})`
         )
         .join("\n");
 
@@ -84,8 +84,9 @@ export function buildShareText(
       `Streak: ${streak} day${streak === 1 ? "" : "s"} · Crushed it: ${options.crushedIt ?? 0} · Elite: ${options.elite ?? 0}`
     );
   }
-  const raritySummary = [`Total: ${totalRarityScore(words).toFixed(1)}`];
-  if (format === "default") raritySummary.push(`Top: ${topRarityScore(words).toFixed(1)}`);
+  const raritySummary = [`Total: ${totalRarityScore(words, dateStr).toFixed(1)}`];
+  if (format === "default")
+    raritySummary.push(`Top: ${formatScore(topRarityScore(words, dateStr), dateStr)}`);
   lines.push(raritySummary.join(" · "));
   lines.push(shareUrl(source));
   return lines.join("\n");

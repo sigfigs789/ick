@@ -66,19 +66,19 @@ describe("isValidWord", () => {
     ["amir", "Uncommon", 3.4],
     ["awol", "Rare", 2.7],
     ["boney", "Rare", 2.5],
-    ["brahman", "Rare", 2.8],
+    ["brahman", "Rare", 2.81],
     ["chateau", "Uncommon", 3.3],
-    ["corinthian", "Rare", 2.8],
-    ["easter", "Uncommon", 4.1],
-    ["gorgonzola", "Extremely Rare", 2.2],
-    ["nan", "Uncommon", 3.5],
-    ["olympian", "Uncommon", 3.3],
-    ["passe", "Rare", 2.5],
-    ["pentecostal", "Rare", 2.9],
-    ["raja", "Uncommon", 3.3],
-    ["savannah", "Uncommon", 3.6],
-    ["trojan", "Uncommon", 3.4],
-    ["victorian", "Uncommon", 4.1],
+    ["corinthian", "Rare", 2.85],
+    ["easter", "Uncommon", 4.12],
+    ["gorgonzola", "Extremely Rare", 2.22],
+    ["nan", "Uncommon", 3.49],
+    ["olympian", "Rare", 3.29],
+    ["passe", "Rare", 2.53],
+    ["pentecostal", "Rare", 2.86],
+    ["raja", "Uncommon", 3.31],
+    ["savannah", "Uncommon", 3.62],
+    ["trojan", "Uncommon", 3.41],
+    ["victorian", "Uncommon", 4.12],
   ];
 
   it.each(droppedCommonWords)(
@@ -161,15 +161,18 @@ describe("rarityFor", () => {
     expect(rarityFor("dying")).toEqual(rarityFor("die"));
   });
 
-  it("scores an unmeasured word at 9.4 without awarding Mythic", () => {
-    const unknown = rarityFor("assonant");
-    expect(unknown).toMatchObject({ rarity: "Extremely Rare", zipf: 1.4 });
-    expect(rarityScore(unknown!.zipf)).toBe(9.4);
+  it("awards the 10.0 max and Mythic to a word no corpus attests", () => {
+    // "autecism" is absent from every frequency source (and its stem too), so
+    // the waterfall gives it the rarest-word sentinel -- the only Zipf that
+    // earns a perfect 10.
+    const floored = rarityFor("autecism")!;
+    expect(floored.rarity).toBe("Mythic");
+    expect(rarityScore(floored.zipf)).toBe(10);
   });
 
   it("awards Mythic only for a rank of 9.5 or higher", () => {
     const belowMythic = rarityFor("assonant")!;
-    const mythic = rarityFor("abatis")!;
+    const mythic = rarityFor("autecism")!;
 
     expect(rarityScore(belowMythic.zipf)).toBeLessThan(9.5);
     expect(belowMythic.rarity).not.toBe("Mythic");
@@ -186,13 +189,13 @@ describe("rarityScore", () => {
   });
 
   it("normalizes against the dictionary's Zipf range", () => {
-    // "the" is the dictionary's most common word (highest Zipf) -- it anchors the floor.
+    // "the" is the dictionary's most common word (highest Zipf) -- it anchors
+    // the 0.0 score. Only the rarest-word sentinel (words no corpus attests)
+    // anchors 10.0; an attested-but-rare word lands just below it.
     const mostCommon = rarityFor("the")!;
-    // A measured Zipf 1.0 anchors the 10.0 ceiling; unmeasured words use 1.4.
-    const unknown = rarityFor("assonant")!;
+    const floored = rarityFor("autecism")!;
     expect(rarityScore(mostCommon.zipf)).toBe(0);
-    expect(rarityScore(1)).toBe(10);
-    expect(rarityScore(unknown.zipf)).toBe(9.4);
+    expect(rarityScore(floored.zipf)).toBe(10);
     expect(rarityScore(2.4)).toBeGreaterThan(rarityScore(3.3));
   });
 });

@@ -120,6 +120,7 @@ export default function App() {
           onSelectWord={(word) => setPrefill({ word, token: Date.now() })}
           completed={progress.completed}
           streak={streak}
+          date={date}
         />
 
         {!progress.completed && (
@@ -152,8 +153,9 @@ export default function App() {
         {!progress.completed && (
           <StreakDisplay
             streak={streak}
-            totalRarity={totalRarityScore(progress.acceptedWords)}
-            topRarity={topRarityScore(progress.acceptedWords)}
+            totalRarity={totalRarityScore(progress.acceptedWords, date)}
+            topRarity={topRarityScore(progress.acceptedWords, date)}
+            date={date}
           />
         )}
 

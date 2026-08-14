@@ -11,6 +11,8 @@ interface Props {
   onSelectWord: (word: string) => void;
   completed?: boolean;
   streak?: StreakState;
+  /** Puzzle date, so scores use the scoring system in effect that day. */
+  date?: string;
 }
 
 export function GuessLog({
@@ -18,6 +20,7 @@ export function GuessLog({
   onSelectWord,
   completed = false,
   streak,
+  date,
 }: Props) {
   const best = bestWord(acceptedWords);
   const guessesLeft = MAX_GUESSES - acceptedWords.length;
@@ -56,7 +59,7 @@ export function GuessLog({
                   )}
                   <span className="guess-log__word">{w.word}</span>
                 </button>
-                <RarityBadge rarity={w.rarity} zipf={w.zipf} />
+                <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
               </li>
             );
           })}
@@ -73,8 +76,9 @@ export function GuessLog({
         <div className="guess-log__completion-trackers">
           <StreakDisplay
             streak={streak}
-            totalRarity={totalRarityScore(acceptedWords)}
-            topRarity={topRarityScore(acceptedWords)}
+            totalRarity={totalRarityScore(acceptedWords, date)}
+            topRarity={topRarityScore(acceptedWords, date)}
+            date={date}
           />
         </div>
       )}
