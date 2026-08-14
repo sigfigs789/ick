@@ -85,7 +85,7 @@ describe("remaining game analytics", () => {
 
   it("maps compact share-link codes to campaign sources", () => {
     expect(campaignSourceFromSearch("?s=sh")).toBe("share");
-    expect(campaignSourceFromSearch("?s=tw")).toBe("twitter");
+    expect(campaignSourceFromSearch("?s=t")).toBe("twitter");
     expect(campaignSourceFromSearch("?s=other")).toBeNull();
   });
 });

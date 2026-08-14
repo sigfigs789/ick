@@ -79,6 +79,6 @@ export function trackCampaignArrival(source: string) {
 export function campaignSourceFromSearch(search: string): "share" | "twitter" | null {
   const code = new URLSearchParams(search).get("s");
   if (code === "sh") return "share";
-  if (code === "tw") return "twitter";
+  if (code === "t") return "twitter";
   return null;
 }
