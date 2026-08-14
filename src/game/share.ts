@@ -1,5 +1,5 @@
 import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
-import { formatRarityScore, topRarityScore, totalRarityScore } from "./dictionary";
+import { formatRarityScore, formatScore, topRarityScore, totalRarityScore } from "./dictionary";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -85,7 +85,7 @@ export function buildShareText(
     );
   }
   const raritySummary = [`Total: ${totalRarityScore(words).toFixed(1)}`];
-  if (format === "default") raritySummary.push(`Top: ${topRarityScore(words).toFixed(1)}`);
+  if (format === "default") raritySummary.push(`Top: ${formatScore(topRarityScore(words))}`);
   lines.push(raritySummary.join(" · "));
   lines.push(shareUrl(source));
   return lines.join("\n");

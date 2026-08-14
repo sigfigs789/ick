@@ -1,3 +1,4 @@
+import { formatScore } from "../game/dictionary";
 import type { StreakState } from "../game/types";
 
 interface Props {
@@ -10,7 +11,7 @@ export function StreakDisplay({ streak, totalRarity = 0, topRarity = 0 }: Props)
   return (
     <div
       className="streak-display"
-      aria-label={`Current streak: ${streak.currentStreak} days. Crushed it: ${streak.crushedIt}. Elite: ${streak.elite}. Total: ${totalRarity.toFixed(1)}. Top: ${topRarity.toFixed(1)}.`}
+      aria-label={`Current streak: ${streak.currentStreak} days. Crushed it: ${streak.crushedIt}. Elite: ${streak.elite}. Total: ${totalRarity.toFixed(1)}. Top: ${formatScore(topRarity)}.`}
     >
       <div className="streak-display__row">
         {streak.currentStreak >= 2 ? (
@@ -36,7 +37,7 @@ export function StreakDisplay({ streak, totalRarity = 0, topRarity = 0 }: Props)
         </span>
         <span className="streak-display__rarity-score">
           <span>Top</span>
-          <strong>{topRarity.toFixed(1)}</strong>
+          <strong>{formatScore(topRarity)}</strong>
         </span>
       </div>
     </div>

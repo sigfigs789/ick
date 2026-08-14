@@ -203,13 +203,18 @@ export function rarityScore(zipf: number): number {
 }
 
 /**
- * Format a word's rarity score for display: the compressed deep-tail band
- * (NORMAL_CEILING..10) shows two decimals so its fine gradient is visible,
- * while the measured band keeps a single decimal.
+ * Format a rarity-score value for display: scores in the compressed deep-tail
+ * band (NORMAL_CEILING..10) show two decimals so its fine gradient is visible,
+ * while the measured band keeps a single decimal. Applies to a single word's
+ * score (or the top score), not to summed totals.
  */
-export function formatRarityScore(zipf: number): string {
-  const score = rarityScore(zipf);
+export function formatScore(score: number): string {
   return score >= NORMAL_CEILING ? score.toFixed(2) : score.toFixed(1);
+}
+
+/** Format a word's rarity score for display, keyed off its Zipf. */
+export function formatRarityScore(zipf: number): string {
+  return formatScore(rarityScore(zipf));
 }
 
 /** Sum the displayed rarity scores earned during one game session. */
