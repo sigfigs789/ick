@@ -33,7 +33,8 @@ export function containsDropInOrder(word: string, drop: string): boolean {
 export function evaluateSubmission(
   rawInput: string,
   drop: string,
-  alreadyAccepted: AcceptedWord[]
+  alreadyAccepted: AcceptedWord[],
+  date?: string
 ): SubmissionResult {
   const word = rawInput.trim().toLowerCase();
 
@@ -59,7 +60,7 @@ export function evaluateSubmission(
     return { ok: false, reason: rejectionReasonFor(word) ?? "not-a-word" };
   }
 
-  const info = rarityFor(word);
+  const info = rarityFor(word, date);
   // Every word in the dictionary has a precomputed rarity entry; this guard
   // is just defensive in case the two datasets ever drift apart.
   if (!info) {

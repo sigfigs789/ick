@@ -49,7 +49,7 @@ export function useDailyPuzzle() {
 
   const submitWord = useCallback(
     (raw: string) => {
-      const result = evaluateSubmission(raw, drop, progress.acceptedWords);
+      const result = evaluateSubmission(raw, drop, progress.acceptedWords, viewedDate);
       feedbackKey.current += 1;
 
       if (!result.ok || !result.word) {
@@ -70,7 +70,7 @@ export function useDailyPuzzle() {
         viewedDate,
         result.word,
         updated.acceptedWords.length,
-        totalRarityScore(updated.acceptedWords),
+        totalRarityScore(updated.acceptedWords, viewedDate),
         updatedStreak.currentStreak
       );
       if (updated.completed) {

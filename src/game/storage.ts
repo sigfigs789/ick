@@ -34,7 +34,7 @@ export function loadProgress(date: string): DailyProgress | null {
   let migrated = false;
   const acceptedWords = progress.acceptedWords.map((word) => {
     if (word.zipf === 0.1 || word.zipf === 0.3 || word.zipf === 0.5) {
-      const current = rarityFor(word.word);
+      const current = rarityFor(word.word, date);
       if (current) {
         migrated = true;
         return { word: word.word, ...current };
@@ -120,7 +120,7 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
   };
   saveProgress(updated);
 
-  updateHighScore(word.zipf);
+  updateHighScore(word.zipf, progress.date);
 
   updateRarityScore({
     shouldIncrementCrushedIt: isWinningRarity(word.rarity) && !hasWinningWord,
@@ -214,9 +214,9 @@ function updateRarityScore({
 }
 
 /** Keep the player's all-time best rarity score, including archive play. */
-function updateHighScore(zipf: number): void {
+function updateHighScore(zipf: number, date: string): void {
   const streak = loadStreak();
-  const score = rarityScore(zipf);
+  const score = rarityScore(zipf, date);
   if (score <= streak.highScore) return;
   saveStreak({ ...streak, highScore: score });
 }

@@ -13,7 +13,7 @@ interface Props {
 export function DropDisplay({ drop, date, isToday = true, completed = false }: Props) {
   // Recomputed only when the drop itself changes -- a full dictionary scan,
   // so it's not something we want re-running on unrelated re-renders.
-  const best = useMemo(() => bestWordForDrop(drop), [drop]);
+  const best = useMemo(() => bestWordForDrop(drop, date), [drop, date]);
 
   return (
     <div className="drop-display">

@@ -19,16 +19,18 @@ interface Props {
   rarity: Rarity;
   /** Precomputed Zipf frequency -- converted to a rarity score (higher = rarer) for display. */
   zipf?: number;
+  /** Puzzle date, so the score uses the scoring system in effect that day. */
+  date?: string;
 }
 
-export function RarityBadge({ rarity, zipf }: Props) {
+export function RarityBadge({ rarity, zipf, date }: Props) {
   const meta = RARITY_META[rarity];
   return (
     <span className={`rarity-badge ${meta.className}`}>
       <span className="rarity-badge__dot" aria-hidden="true" />
       {meta.tag}
       {zipf !== undefined && (
-        <span className="rarity-badge__score">{formatRarityScore(zipf)}</span>
+        <span className="rarity-badge__score">{formatRarityScore(zipf, date)}</span>
       )}
     </span>
   );
