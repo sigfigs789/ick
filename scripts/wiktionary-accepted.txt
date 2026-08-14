@@ -2,7 +2,7 @@
 # Source extract: https://kaikki.org/dictionary/rawdata.html
 # License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)
 # Filtered to lowercase single words with an exact wordfreq Zipf score.
-# Regenerate with: python3 scripts/import-wiktionary-science.py
+# Regenerate with: python3 scripts/import-wiktionary-words.py
 
 a
 aa

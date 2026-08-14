@@ -83,7 +83,7 @@ pip3 install --user wordfreq
 git clone https://github.com/en-wl/wordlist.git /tmp/esdb
 make -C /tmp/esdb
 /tmp/esdb/scowl --db /tmp/esdb/scowl.db word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > /tmp/scowl-regional-80.txt
-python3 scripts/import-wiktionary-science.py # streams the full English Wiktionary extract
+python3 scripts/import-wiktionary-words.py # streams the full English Wiktionary extract
 npm run generate-data -- --word-list /tmp/scowl-regional-80.txt --esdb-db /tmp/esdb/scowl.db
 npm run select-drops  # writes scripts/drop-candidates.json (diagnostic)
 ```

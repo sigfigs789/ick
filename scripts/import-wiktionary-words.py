@@ -46,7 +46,7 @@ def wiktionary_words() -> tuple[set[str], int]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Import scored English science terms from Wiktionary.")
+    parser = argparse.ArgumentParser(description="Import scored English terms from Wiktionary.")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
     try:
@@ -63,7 +63,7 @@ def main() -> None:
         "# Source extract: https://kaikki.org/dictionary/rawdata.html",
         f"# License: CC BY-SA 4.0 ({LICENSE_URL})",
         "# Filtered to lowercase single words with an exact wordfreq Zipf score.",
-        "# Regenerate with: python3 scripts/import-wiktionary-science.py",
+        "# Regenerate with: python3 scripts/import-wiktionary-words.py",
         "",
     ]
     args.output.write_text("\n".join(header + accepted) + "\n")
