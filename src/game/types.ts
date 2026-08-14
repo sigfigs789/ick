@@ -36,6 +36,8 @@ export interface SubmissionResult {
   ok: boolean;
   reason?: RejectionReason;
   word?: AcceptedWord;
+  /** A close, common dictionary word when the input looks like a typo. */
+  suggestion?: string;
 }
 
 /** Persisted per calendar date in localStorage. */

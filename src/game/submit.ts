@@ -1,4 +1,4 @@
-import { isValidWord, rarityFor } from "./dictionary";
+import { isValidWord, rarityFor, suggestionFor } from "./dictionary";
 import rejectionMetadata from "../data/rejection-metadata.json";
 import { baseForm } from "./stem";
 import type { AcceptedWord, SubmissionResult } from "./types";
@@ -56,7 +56,13 @@ export function evaluateSubmission(
     return { ok: false, reason: "same-root-as-used" };
   }
   if (!isValidWord(word)) {
-    return { ok: false, reason: rejectionReasonFor(word) ?? "not-a-word" };
+    const metadataReason = rejectionReasonFor(word);
+    // A metadata reason (proper noun, abbreviation, obsolete) already explains
+    // itself; only the generic "not in the dictionary" case gets a typo nudge.
+    if (metadataReason) {
+      return { ok: false, reason: metadataReason };
+    }
+    return { ok: false, reason: "not-a-word", suggestion: suggestionFor(word, drop) };
   }
 
   const info = rarityFor(word);

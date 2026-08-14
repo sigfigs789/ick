@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
-import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
+import {
+  isValidWord,
+  RARITY_ORDER,
+  rarityFor,
+  rarityScore,
+  suggestionFor,
+  topRarityScore,
+} from "./dictionary";
 
 const explicitlyCuratedWords = ["endling", "fenestron"];
 
@@ -145,5 +152,46 @@ describe("topRarityScore", () => {
 
     expect(topRarityScore([common, rare])).toBe(rarityScore(rare.zipf));
     expect(topRarityScore([])).toBe(0);
+  });
+});
+
+describe("suggestionFor", () => {
+  it("suggests the common word behind a single-letter typo", () => {
+    // "friemd" is one substitution from "friend", which contains the drop "rie".
+    expect(suggestionFor("friemd", "rie")).toBe("friend");
+  });
+
+  it("catches a two-edit letter swap for a common-or-more-common word", () => {
+    // "freind" -> "friend" is a transposition (edit distance 2); "friend" is
+    // Very Common, so the wider two-edit tolerance applies.
+    expect(suggestionFor("freind", "rie")).toBe("friend");
+  });
+
+  it("holds Uncommon words to an exact one-letter fix", () => {
+    // "bananas" is Uncommon, so a two-edit typo of it earns no suggestion...
+    expect(rarityFor("bananas")?.rarity).toBe("Uncommon");
+    expect(suggestionFor("bxnanax", "ana")).toBeUndefined();
+    // ...while a single-edit typo in the same neighbourhood still gets help.
+    expect(suggestionFor("bananax", "ana")).toBeDefined();
+  });
+
+  it("returns nothing for gibberish with no close word", () => {
+    expect(suggestionFor("xqzptw", "qz")).toBeUndefined();
+  });
+
+  it("never hands back a Rare-or-rarer word", () => {
+    // "aahinx" is one edit from the Extremely Rare "aahing" (drop "ahi"),
+    // but that tier is above the Uncommon cap, so it is withheld.
+    const suggestion = suggestionFor("aahinx", "ahi");
+    expect(suggestion).not.toBe("aahing");
+    if (suggestion) {
+      const rank = RARITY_ORDER.indexOf(rarityFor(suggestion)!.rarity);
+      expect(rank).toBeGreaterThanOrEqual(RARITY_ORDER.indexOf("Uncommon"));
+    }
+  });
+
+  it("only suggests words that still contain the drop", () => {
+    // "weapon" is one edit from "peapon" but does not contain the drop "pea".
+    expect(suggestionFor("peapon", "pea")).toBeUndefined();
   });
 });

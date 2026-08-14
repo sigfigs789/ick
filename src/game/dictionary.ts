@@ -36,6 +36,78 @@ export function isValidWord(word: string): boolean {
   return WORD_INDEX.has(word.toLowerCase());
 }
 
+/**
+ * A single "did you mean...?" correction for a rejected word, or undefined.
+ *
+ * Deliberately conservative so it stays a typo-rescuer, not an answer oracle:
+ *  - must still contain the drop, so the suggestion is an actionable answer;
+ *  - Rare-or-rarer words are never suggested -- we don't hand a player a find
+ *    they didn't earn (see RARITY_ORDER; higher rarity = rarer);
+ *  - how far a typo may stray depends on the candidate's tier: Common-and-more-
+ *    common words tolerate up to two edits (so letter swaps like "freind" ->
+ *    "friend" are caught), while Uncommon words demand an exact one-letter fix.
+ * The closest spelling wins, ties breaking toward the more common word. Only
+ * runs on a rejection, never the accept path, so the scan is off the hot path.
+ */
+export function suggestionFor(word: string, drop: string): string | undefined {
+  const normalized = word.toLowerCase();
+  const needle = drop.toLowerCase();
+  const uncommonIndex = RARITY_ORDER.indexOf("Uncommon");
+
+  let best: string | undefined;
+  let bestDistance = Infinity;
+  let bestZipf = -Infinity;
+  for (let i = 0; i < WORDS.length; i++) {
+    const candidate = WORDS[i];
+    if (Math.abs(candidate.length - normalized.length) > 2) continue;
+    if (candidate === needle) continue;
+    if (!candidate.includes(needle)) continue;
+
+    const info = rarityFor(candidate)!;
+    const rank = RARITY_ORDER.indexOf(info.rarity);
+    if (rank < uncommonIndex) continue; // Rare or rarer: never suggested.
+    const maxDistance = rank === uncommonIndex ? 1 : 2;
+
+    const distance = editDistanceUpTo(normalized, candidate, maxDistance);
+    if (distance > maxDistance) continue;
+
+    if (distance < bestDistance || (distance === bestDistance && info.zipf > bestZipf)) {
+      bestDistance = distance;
+      bestZipf = info.zipf;
+      best = candidate;
+    }
+  }
+  return best;
+}
+
+/**
+ * Levenshtein distance between `a` and `b`, abandoned early once it is known to
+ * exceed `max` (returning `max + 1`). Bounding keeps the per-candidate cost
+ * tiny -- we only ever care whether a word is within one or two edits.
+ */
+function editDistanceUpTo(a: string, b: string, max: number): number {
+  const la = a.length;
+  const lb = b.length;
+  if (Math.abs(la - lb) > max) return max + 1;
+
+  let prev = new Array<number>(lb + 1);
+  for (let j = 0; j <= lb; j++) prev[j] = j;
+
+  for (let i = 1; i <= la; i++) {
+    const curr = new Array<number>(lb + 1);
+    curr[0] = i;
+    let rowMin = curr[0];
+    for (let j = 1; j <= lb; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+      if (curr[j] < rowMin) rowMin = curr[j];
+    }
+    if (rowMin > max) return max + 1;
+    prev = curr;
+  }
+  return prev[lb];
+}
+
 export function rarityFor(word: string): RarityInfo | undefined {
   const normalized = word.toLowerCase();
   const i = WORD_INDEX.get(normalized);

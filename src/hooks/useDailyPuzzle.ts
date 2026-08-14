@@ -54,7 +54,9 @@ export function useDailyPuzzle() {
 
       if (!result.ok || !result.word) {
         const reason = result.reason ?? "not-a-word";
-        const message = REJECTION_MESSAGES[reason];
+        const message = result.suggestion
+          ? `${REJECTION_MESSAGES[reason]} Did you mean “${result.suggestion}”?`
+          : REJECTION_MESSAGES[reason];
         setProgress((p) => recordRejectedAttempt(p, raw.trim()));
         trackRejectedAnswer(viewedDate, drop, raw);
         trackRejectionMessage(viewedDate, reason);
