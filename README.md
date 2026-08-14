@@ -74,12 +74,16 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
 
 ## Regenerating the word/rarity data
 
-The dictionary and rarity data are precomputed offline, not queried live.
+The dictionary, rarity, and rejection guidance data are precomputed offline,
+not queried live.
 To regenerate them:
 
 ```bash
 pip3 install --user wordfreq
-npm run generate-data     # writes src/data/dictionary.json + rarity.json
+git clone https://github.com/en-wl/wordlist.git /tmp/esdb
+make -C /tmp/esdb
+/tmp/esdb/scowl word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > /tmp/scowl-regional-80.txt
+npm run generate-data -- --word-list /tmp/scowl-regional-80.txt --esdb-db /tmp/esdb/scowl.db
 npm run select-drops  # writes scripts/drop-candidates.json (diagnostic)
 ```
 
@@ -103,6 +107,21 @@ cd /tmp/esdb && make
 /tmp/esdb/scowl word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > /tmp/scowl-regional-80.txt
 python3 scripts/generate-data.py --word-list /tmp/scowl-regional-80.txt
 ```
+
+The ESDB database is required when regenerating the word data so the
+high-confidence explanations for excluded proper names, abbreviations, and
+words not considered current modern English stay in sync. To refresh only the
+rejection explanations against the checked-in dictionary:
+
+```bash
+git clone https://github.com/en-wl/wordlist.git /tmp/esdb
+make -C /tmp/esdb
+python3 scripts/generate-data.py --metadata-only --esdb-db /tmp/esdb/scowl.db
+```
+
+`src/data/rejection-metadata.json` is a compact, generated lookup used only
+after a word misses the curated dictionary. It intentionally has a generic
+fallback for unknown words and ambiguous entries.
 
 `scripts/select-drops.py` evaluates a hand-picked pool of candidate
 2- and 3-letter drops against the generated dictionary and keeps only
