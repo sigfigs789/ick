@@ -24,10 +24,8 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
   });
   const twitterShareText = `\n\n──────────\n${buildShareText(date, drop, words, {
     spoilerFree: !showAnswers,
-    streak: streak.currentStreak,
-    crushedIt: streak.crushedIt,
-    elite: streak.elite,
     source: null,
+    format: "x",
   })}`;
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (

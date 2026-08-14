@@ -68,6 +68,25 @@ describe("buildShareText", () => {
     expect(text).not.toContain("Extremely Rare");
   });
 
+  it("uses a compact X layout without progress stats or parenthesized answer scores", () => {
+    const text = buildShareText("2024-01-05", "str", words, {
+      spoilerFree: false,
+      streak: 4,
+      crushedIt: 7,
+      elite: 2,
+      source: null,
+      format: "x",
+    });
+
+    expect(text).toContain(`🟪 aardvark ${rarityScore(2.4).toFixed(1)}`);
+    expect(text).not.toContain("aardvark (");
+    expect(text).not.toContain("Streak:");
+    expect(text).not.toContain("Crushed it:");
+    expect(text).not.toContain("Elite:");
+    expect(text).not.toContain("Top:");
+    expect(text).toContain("Total:");
+  });
+
   it("puts each word and its rarity square on a separate line", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     const resultLines = text.split("\n").slice(2, 2 + words.length);

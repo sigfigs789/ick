@@ -41,6 +41,8 @@ export interface ShareOptions {
   elite?: number;
   /** Identifies the channel through which this result was shared. */
   source?: ShareSource | null;
+  /** Uses the shorter X post layout while keeping the selected spoiler setting. */
+  format?: "default" | "x";
 }
 
 /**
@@ -57,6 +59,7 @@ export function buildShareText(
 ): string {
   const spoilerFree = options.spoilerFree ?? true;
   const source = options.source === undefined ? "share" : options.source;
+  const format = options.format ?? "default";
   const n = puzzleNumber(dateStr);
   const label = formatDateLabel(dateStr);
 
@@ -66,13 +69,14 @@ export function buildShareText(
         .join("\n")
     : words
         .map(
-          (w) => `${RARITY_SYMBOL[w.rarity]} ${w.word} (${rarityScore(w.zipf).toFixed(1)})`
+          (w) =>
+            `${RARITY_SYMBOL[w.rarity]} ${w.word}${format === "x" ? " " : " ("}${rarityScore(w.zipf).toFixed(1)}${format === "x" ? "" : ")"}`
         )
         .join("\n");
 
   const lines = [`#${n} (${label}) — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
-  if (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined) {
+  if (format === "default" && (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined)) {
     const streak = options.streak ?? 0;
     if (resultLine) lines.push("");
     lines.push(
@@ -80,7 +84,7 @@ export function buildShareText(
     );
   }
   const raritySummary = [`Total: ${totalRarityScore(words).toFixed(1)}`];
-  raritySummary.push(`Top: ${topRarityScore(words).toFixed(1)}`);
+  if (format === "default") raritySummary.push(`Top: ${topRarityScore(words).toFixed(1)}`);
   lines.push(raritySummary.join(" · "));
   lines.push(shareUrl(source));
   return lines.join("\n");

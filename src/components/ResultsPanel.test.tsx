@@ -68,4 +68,15 @@ describe("ResultsPanel share toggle", () => {
       /\n\n──────────\n#.*\nwordink\.app$/s
     );
   });
+
+  it("keeps answers in the X post when the player opts in, using the compact layout", async () => {
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+    await userEvent.click(screen.getByRole("checkbox", { name: /show my answers/i }));
+
+    const xPost = decodeURIComponent(screen.getByRole("link", { name: /share on x/i }).getAttribute("href") ?? "");
+    expect(xPost).toContain("strange 4.6");
+    expect(xPost).not.toContain("strange (4.6)");
+    expect(xPost).not.toContain("Streak:");
+    expect(xPost).not.toContain("Top:");
+  });
 });
