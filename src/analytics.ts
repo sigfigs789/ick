@@ -27,12 +27,20 @@ export function trackAcceptedAnswer(
 }
 
 /** Record rejected submissions so the word list can be reviewed over time. */
-export function trackRejectedAnswer(date: string, drop: string, rawWord: string, reason: RejectionReason) {
+export function trackRejectedAnswer(date: string, drop: string, rawWord: string) {
   track("answer_rejected", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     drop: drop.toLowerCase(),
     word: rawWord.trim().toLowerCase(),
+  });
+}
+
+/** Record the specific rejection feedback shown to a player. */
+export function trackRejectionMessage(date: string, reason: RejectionReason) {
+  track("rejection_message_shown", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
     rejection_reason: reason,
   });
 }
