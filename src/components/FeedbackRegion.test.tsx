@@ -14,14 +14,14 @@ describe("FeedbackRegion", () => {
       <FeedbackRegion
         feedback={{
           kind: "rejected",
-          message: "That word is not in WordInk's curated list.",
+          message: "We don't recognize that word.",
           key: 1,
         }}
         onWordRules={vi.fn()}
       />
     );
     const region = screen.getByRole("status");
-    expect(region).toHaveTextContent("That word is not in WordInk's curated list.");
+    expect(region).toHaveTextContent("We don't recognize that word.");
     expect(region).toHaveClass("feedback--rejected", "feedback--shown");
 
     act(() => vi.advanceTimersByTime(6000));
@@ -38,7 +38,7 @@ describe("FeedbackRegion", () => {
     const onWordRules = vi.fn();
     render(
       <FeedbackRegion
-        feedback={{ kind: "rejected", message: "That word is not in WordInk's curated list.", key: 1 }}
+        feedback={{ kind: "rejected", message: "We don't recognize that word.", key: 1 }}
         onWordRules={onWordRules}
       />
     );

@@ -54,8 +54,10 @@ export function useDailyPuzzle() {
 
       if (!result.ok || !result.word) {
         const reason = result.reason ?? "not-a-word";
+        // A near dictionary match means the input reads like a typo -- nudge
+        // the player to recheck their spelling without revealing the word.
         const message = result.suggestion
-          ? `${REJECTION_MESSAGES[reason]} Did you mean “${result.suggestion}”?`
+          ? "Did you misspell the word?"
           : REJECTION_MESSAGES[reason];
         setProgress((p) => recordRejectedAttempt(p, raw.trim()));
         trackRejectedAnswer(viewedDate, drop, raw);

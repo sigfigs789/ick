@@ -80,7 +80,7 @@ export function evaluateSubmission(
 
 export const REJECTION_MESSAGES: Record<string, string> = {
   empty: "Type a word first.",
-  "not-a-word": "That word is not in WordInk's curated list.",
+  "not-a-word": "We don't recognize that word.",
   "proper-noun": "This looks like a proper noun.",
   abbreviation: "This looks like an abbreviation or acronym.",
   "name-or-abbreviation": "This looks like a proper noun or abbreviation.",
