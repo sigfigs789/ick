@@ -12,7 +12,8 @@ describe("WordRulesModal", () => {
     render(<WordRulesModal open onClose={onClose} />);
 
     const dialog = screen.getByRole("dialog", { name: /word rules/i });
-    expect(dialog).toHaveTextContent(/curated word list is built from established english-language lexical resources and has over 180,000 words/i);
+    expect(screen.getByRole("heading", { name: "Word rules" })).toBeInTheDocument();
+    expect(dialog).toHaveTextContent(/curated word list is sourced from scowl and contains more than 180,000 words/i);
     expect(dialog).toHaveTextContent(/proper nouns, abbreviations, archaic or obsolete words, hyphenated words/i);
     expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for play/i);
     expect(dialog).toHaveTextContent(/built and maintained by a solo developer/i);
