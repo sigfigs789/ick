@@ -2,12 +2,32 @@ import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
 import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
-const explicitlyCuratedWords = ["endling", "fenestron"];
+const explicitlyCuratedWords = [
+  "endling",
+  "fenestron",
+  // Common words wrongly dropped by the source list's lowercase-only filter.
+  "amir",
+  "awol",
+  "boney",
+  "brahman",
+  "chateau",
+  "corinthian",
+  "easter",
+  "gorgonzola",
+  "nan",
+  "olympian",
+  "passe",
+  "pentecostal",
+  "raja",
+  "savannah",
+  "trojan",
+  "victorian",
+];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(194_857);
+    expect(dictionaryWords).toHaveLength(194_873);
   });
 
   it("accepts a common real word", () => {
@@ -36,6 +56,37 @@ describe("isValidWord", () => {
       expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
     }
   });
+
+  // These common words only appeared capitalized in the source list, so the
+  // lowercase-only filter dropped them; they were re-added via extra-words.txt.
+  // Pin their frequency-derived rarity so a future regen can't silently shift
+  // them without a deliberate update here.
+  const droppedCommonWords: ReadonlyArray<[string, string, number]> = [
+    ["amir", "Uncommon", 3.4],
+    ["awol", "Rare", 2.7],
+    ["boney", "Rare", 2.5],
+    ["brahman", "Rare", 2.8],
+    ["chateau", "Uncommon", 3.3],
+    ["corinthian", "Rare", 2.8],
+    ["easter", "Uncommon", 4.1],
+    ["gorgonzola", "Extremely Rare", 2.2],
+    ["nan", "Uncommon", 3.5],
+    ["olympian", "Uncommon", 3.3],
+    ["passe", "Rare", 2.5],
+    ["pentecostal", "Rare", 2.9],
+    ["raja", "Uncommon", 3.3],
+    ["savannah", "Uncommon", 3.6],
+    ["trojan", "Uncommon", 3.4],
+    ["victorian", "Uncommon", 4.1],
+  ];
+
+  it.each(droppedCommonWords)(
+    "accepts re-added common word %s with its expected rarity",
+    (word, rarity, zipf) => {
+      expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
+      expect(rarityFor(word)).toEqual({ rarity, zipf });
+    },
+  );
 
   it("accepts spelling variants from supported English regions", () => {
     expect(isValidWord("color")).toBe(true);
