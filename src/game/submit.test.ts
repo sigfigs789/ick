@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { containsDropInOrder, evaluateSubmission } from "./submit";
+import { containsDropInOrder, evaluateSubmission, REJECTION_MESSAGES } from "./submit";
 import type { AcceptedWord } from "./types";
 
 describe("containsDropInOrder", () => {
@@ -22,6 +22,13 @@ describe("containsDropInOrder", () => {
 });
 
 describe("evaluateSubmission", () => {
+  it("uses concise diagnostic messages for word-rule rejections", () => {
+    expect(REJECTION_MESSAGES["proper-noun"]).toBe("This looks like a proper noun.");
+    expect(REJECTION_MESSAGES.abbreviation).toBe("This looks like an abbreviation or acronym.");
+    expect(REJECTION_MESSAGES["name-or-abbreviation"]).toBe("This looks like a proper noun or abbreviation.");
+    expect(REJECTION_MESSAGES.obsolete).toBe("This looks archaic or obsolete.");
+  });
+
   it("rejects an empty submission", () => {
     const result = evaluateSubmission("   ", "the", []);
     expect(result).toEqual({ ok: false, reason: "empty" });
@@ -45,6 +52,24 @@ describe("evaluateSubmission", () => {
   it("rejects a word not in the dictionary", () => {
     const result = evaluateSubmission("zzzzqx", "zz", []);
     expect(result).toEqual({ ok: false, reason: "not-a-word" });
+  });
+
+  it("explains rejected proper names and abbreviations from ESDB metadata", () => {
+    expect(evaluateSubmission("Paris", "ari", [])).toEqual({
+      ok: false,
+      reason: "name-or-abbreviation",
+    });
+    expect(evaluateSubmission("FBI", "fb", [])).toEqual({
+      ok: false,
+      reason: "abbreviation",
+    });
+  });
+
+  it("explains words ESDB marks as not current modern English", () => {
+    expect(evaluateSubmission("abactor", "act", [])).toEqual({
+      ok: false,
+      reason: "obsolete",
+    });
   });
 
   it("accepts a valid word containing the drop without matching it exactly", () => {

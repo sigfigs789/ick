@@ -1,21 +1,26 @@
 import { track } from "@vercel/analytics";
 import { describe, expect, it, vi } from "vitest";
-import { trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer, trackResultShared, trackWordSuggestion } from "./analytics";
+import { campaignSourceFromSearch, trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage, trackResultCopied, trackResultSharedOnX, trackShareArrival, trackTwitterArrival, trackWordSuggestion } from "./analytics";
 import { puzzleNumber } from "./game/share";
 import type { DailyProgress, StreakState } from "./game/types";
 
 vi.mock("@vercel/analytics", () => ({ track: vi.fn() }));
 
-describe("trackRejectedAnswer", () => {
-  it("records the normalized word and rejection reason", () => {
-    trackRejectedAnswer("2026-08-12", "AR", "  BaNANA  ", "not-a-word");
+describe("rejection analytics", () => {
+  it("records a rejected answer separately from its feedback message", () => {
+    trackRejectedAnswer("2026-08-12", "AR", "  BaNANA  ");
+    trackRejectionMessage("2026-08-12", "proper-noun");
 
     expect(track).toHaveBeenCalledWith("answer_rejected", {
       puzzle_date: "2026-08-12",
       puzzle_number: puzzleNumber("2026-08-12"),
       drop: "ar",
       word: "banana",
-      rejection_reason: "not-a-word",
+    });
+    expect(track).toHaveBeenCalledWith("rejection_message_shown", {
+      puzzle_date: "2026-08-12",
+      puzzle_number: puzzleNumber("2026-08-12"),
+      rejection_reason: "proper-noun",
     });
   });
 });
@@ -66,15 +71,26 @@ describe("remaining game analytics", () => {
     }));
   });
 
-  it("tracks a shared text result without answer content", () => {
-    trackResultShared("2026-08-12", 3);
+  it("tracks copied results separately from X shares", () => {
+    trackResultCopied();
+    trackResultSharedOnX();
 
-    expect(track).toHaveBeenCalledWith("result_shared", {
-      puzzle_date: "2026-08-12",
-      puzzle_number: puzzleNumber("2026-08-12"),
-      share_format: "text",
-      streak_days: 3,
-    });
+    expect(track).toHaveBeenCalledWith("result_copied");
+    expect(track).toHaveBeenCalledWith("result_shared_on_x");
+  });
+
+  it("tracks Twitter and Share arrivals as separate events", () => {
+    trackTwitterArrival();
+    trackShareArrival();
+
+    expect(track).toHaveBeenCalledWith("arrived_from_twitter");
+    expect(track).toHaveBeenCalledWith("arrived_from_share");
+  });
+
+  it("maps the compact share-link code to its campaign source", () => {
+    expect(campaignSourceFromSearch("?s=sh")).toBe("share");
+    expect(campaignSourceFromSearch("?s=t")).toBe("twitter");
+    expect(campaignSourceFromSearch("?s=other")).toBeNull();
   });
 });
 

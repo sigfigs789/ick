@@ -105,7 +105,6 @@ function tenseBaseForm(word: string): string | undefined {
     candidates.push(`${word.slice(0, -3)}y`);
   } else if (word.length > 4 && word.endsWith("ed")) {
     const stem = word.slice(0, -2);
-    // Prefer the silent-e spelling where both candidates are words (rated -> rate, not rat).
     candidates.push(`${stem}e`, stem, stripDoubledConsonant(stem));
   }
 
@@ -113,11 +112,23 @@ function tenseBaseForm(word: string): string | undefined {
     candidates.push(`${word.slice(0, -4)}y`, `${word.slice(0, -4)}ie`);
   } else if (word.length > 5 && word.endsWith("ing")) {
     const stem = word.slice(0, -3);
-    // Prefer the silent-e spelling where both candidates are words (making -> make, not mak).
     candidates.push(`${stem}e`, stem, stripDoubledConsonant(stem));
   }
 
-  return candidates.find((candidate) => WORD_INDEX.has(candidate));
+  // Prefer the most common valid base so that a rare homograph of a candidate
+  // spelling can't hijack the form: "played" scores as "play" (5.6), not the
+  // obscure "playe"; "rated" still scores as "rate" (5.1), not "rat".
+  let base: string | undefined;
+  let baseZipf = -Infinity;
+  for (const candidate of candidates) {
+    if (!WORD_INDEX.has(candidate)) continue;
+    const zipf = zipfFor(candidate);
+    if (zipf > baseZipf) {
+      base = candidate;
+      baseZipf = zipf;
+    }
+  }
+  return base;
 }
 
 function zipfFor(word: string): number {

@@ -21,9 +21,11 @@ describe("buildShareText", () => {
     { word: "aardvark", rarity: "Extremely Rare", zipf: 2.4 },
   ];
 
-  it("includes the puzzle number and drop, never the words themselves", () => {
+  it("includes the date and drop, never the words themselves", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    expect(text).toContain(`https://wordink.app #${puzzleNumber("2024-01-05")}`);
+    expect(text).toContain("Jan 5 — Drop: STR");
+    expect(text).toMatch(/wordink\.app$/);
+    expect(text).not.toContain("utm_source");
     expect(text).toContain("Drop: STR");
     for (const w of words) {
       expect(text).not.toContain(w.word);
@@ -52,6 +54,24 @@ describe("buildShareText", () => {
     expect(withDefault).toBe(withExplicitTrue);
   });
 
+  it("can omit the source parameter from the shared URL", () => {
+    expect(buildShareText("2024-01-05", "str", words, { source: null })).toContain(
+      "\nwordink.app"
+    );
+  });
+
+  it("adds compact share attribution only when explicitly requested", () => {
+    expect(buildShareText("2024-01-05", "str", words, { source: "share" })).toMatch(
+      /https:\/\/wordink\.app\/\?s=sh$/
+    );
+  });
+
+  it("uses a compact X attribution code without a protocol prefix", () => {
+    expect(buildShareText("2024-01-05", "str", words, { source: "twitter" })).toMatch(
+      /wordink\.app\/\?s=t$/
+    );
+  });
+
   it("shows the actual words and rarity scores, without rarity labels, when spoilerFree is false", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     for (const w of words) {
@@ -59,6 +79,24 @@ describe("buildShareText", () => {
     }
     expect(text).toContain(`aardvark (${rarityScore(2.4).toFixed(1)})`);
     expect(text).not.toContain("Extremely Rare");
+  });
+
+  it("uses a compact X layout without progress stats while preserving parenthesized answer scores", () => {
+    const text = buildShareText("2024-01-05", "str", words, {
+      spoilerFree: false,
+      streak: 4,
+      crushedIt: 7,
+      elite: 2,
+      source: null,
+      format: "x",
+    });
+
+    expect(text).toContain(`🟪 aardvark (${rarityScore(2.4).toFixed(1)})`);
+    expect(text).not.toContain("Streak:");
+    expect(text).not.toContain("Crushed it:");
+    expect(text).not.toContain("Elite:");
+    expect(text).not.toContain("Top:");
+    expect(text).toContain("Total:");
   });
 
   it("puts each word and its rarity square on a separate line", () => {

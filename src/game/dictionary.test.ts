@@ -23,11 +23,12 @@ const explicitlyCuratedWords = [
   "trojan",
   "victorian",
 ];
+const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(194_873);
+    expect(dictionaryWords).toHaveLength(224_873);
   });
 
   it("accepts a common real word", () => {
@@ -87,6 +88,13 @@ describe("isValidWord", () => {
       expect(rarityFor(word)).toEqual({ rarity, zipf });
     },
   );
+
+  it("accepts scored Wiktionary science terms", () => {
+    for (const word of wiktionaryScienceWords) {
+      expect(isValidWord(word)).toBe(true);
+      expect(rarityFor(word)?.zipf).not.toBe(1.4);
+    }
+  });
 
   it("accepts spelling variants from supported English regions", () => {
     expect(isValidWord("color")).toBe(true);
