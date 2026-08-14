@@ -16,13 +16,18 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
   // Showing submitted words is opt-in so shared results remain spoiler-free
   // unless the player explicitly asks to include their answers.
   const [showAnswers, setShowAnswers] = useState(false);
-  const shareText = buildShareText(date, drop, words, {
+  const sharedResultOptions = {
     spoilerFree: !showAnswers,
     streak: streak.currentStreak,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
+  };
+  const shareText = buildShareText(date, drop, words, sharedResultOptions);
+  const copiedShareText = buildShareText(date, drop, words, {
+    ...sharedResultOptions,
+    source: "share",
   });
-  const twitterShareText = `\n\n──────────\n${buildShareText(date, drop, words, {
+  const twitterShareText = `\n\n────\n${buildShareText(date, drop, words, {
     spoilerFree: !showAnswers,
     source: null,
     format: "x",
@@ -44,7 +49,7 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
       </pre>
       <div className="results-panel__share-actions">
         <ShareButton
-          text={shareText}
+          text={copiedShareText}
           onShared={() => trackResultShared(date, streak.currentStreak)}
         />
         <TwitterShareButton

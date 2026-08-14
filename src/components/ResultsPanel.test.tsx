@@ -54,7 +54,7 @@ describe("ResultsPanel share toggle", () => {
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).toContain("strange");
     expect(preview?.textContent).toContain("aardvark");
-    expect(preview?.querySelector("strong")?.textContent).toMatch(/#.*Drop: STR/);
+    expect(preview?.querySelector("strong")?.textContent).toBe("Jan 1 — Drop: STR");
   });
 
   it("offers an accessible X composer link with space for a player note", () => {
@@ -65,7 +65,7 @@ describe("ResultsPanel share toggle", () => {
     expect(twitterLink).toHaveAttribute("title", "Share on X");
     expect(twitterLink.getAttribute("href")).toContain("twitter.com/intent/tweet");
     expect(decodeURIComponent(twitterLink.getAttribute("href") ?? "")).toMatch(
-      /\n\n──────────\n#.*\nwordink\.app$/s
+      /\n\n────\n.*\nwordink\.app$/s
     );
   });
 
@@ -74,8 +74,7 @@ describe("ResultsPanel share toggle", () => {
     await userEvent.click(screen.getByRole("checkbox", { name: /show my answers/i }));
 
     const xPost = decodeURIComponent(screen.getByRole("link", { name: /share on x/i }).getAttribute("href") ?? "");
-    expect(xPost).toContain("strange 4.6");
-    expect(xPost).not.toContain("strange (4.6)");
+    expect(xPost).toContain("strange (4.6)");
     expect(xPost).not.toContain("Streak:");
     expect(xPost).not.toContain("Top:");
   });

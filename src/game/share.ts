@@ -39,7 +39,7 @@ export interface ShareOptions {
   crushedIt?: number;
   /** Total Extremely Rare-or-better results to include in the shared result. */
   elite?: number;
-  /** Identifies the channel through which this result was shared. */
+  /** Adds attribution to a link at the moment it is shared. */
   source?: ShareSource | null;
   /** Uses the shorter X post layout while keeping the selected spoiler setting. */
   format?: "default" | "x";
@@ -58,9 +58,8 @@ export function buildShareText(
   options: ShareOptions = {}
 ): string {
   const spoilerFree = options.spoilerFree ?? true;
-  const source = options.source === undefined ? "share" : options.source;
+  const source = options.source ?? null;
   const format = options.format ?? "default";
-  const n = puzzleNumber(dateStr);
   const label = formatDateLabel(dateStr);
 
   const resultLine = spoilerFree
@@ -70,11 +69,11 @@ export function buildShareText(
     : words
         .map(
           (w) =>
-            `${RARITY_SYMBOL[w.rarity]} ${w.word}${format === "x" ? " " : " ("}${rarityScore(w.zipf).toFixed(1)}${format === "x" ? "" : ")"}`
+            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${rarityScore(w.zipf).toFixed(1)})`
         )
         .join("\n");
 
-  const lines = [`#${n} (${label}) — Drop: ${drop.toUpperCase()}`];
+  const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
   if (format === "default" && (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined)) {
     const streak = options.streak ?? 0;

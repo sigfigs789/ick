@@ -21,10 +21,11 @@ describe("buildShareText", () => {
     { word: "aardvark", rarity: "Extremely Rare", zipf: 2.4 },
   ];
 
-  it("includes the puzzle number and drop, never the words themselves", () => {
+  it("includes the date and drop, never the words themselves", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    expect(text).toContain(`#${puzzleNumber("2024-01-05")}`);
-    expect(text).toMatch(/wordink\.app\/\?utm_source=share$/);
+    expect(text).toContain("Jan 5 — Drop: STR");
+    expect(text).toMatch(/wordink\.app$/);
+    expect(text).not.toContain("utm_source");
     expect(text).toContain("Drop: STR");
     for (const w of words) {
       expect(text).not.toContain(w.word);
@@ -59,6 +60,12 @@ describe("buildShareText", () => {
     );
   });
 
+  it("adds share attribution only when explicitly requested", () => {
+    expect(buildShareText("2024-01-05", "str", words, { source: "share" })).toMatch(
+      /wordink\.app\/\?utm_source=share$/
+    );
+  });
+
   it("shows the actual words and rarity scores, without rarity labels, when spoilerFree is false", () => {
     const text = buildShareText("2024-01-05", "str", words, { spoilerFree: false });
     for (const w of words) {
@@ -68,7 +75,7 @@ describe("buildShareText", () => {
     expect(text).not.toContain("Extremely Rare");
   });
 
-  it("uses a compact X layout without progress stats or parenthesized answer scores", () => {
+  it("uses a compact X layout without progress stats while preserving parenthesized answer scores", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       spoilerFree: false,
       streak: 4,
@@ -78,8 +85,7 @@ describe("buildShareText", () => {
       format: "x",
     });
 
-    expect(text).toContain(`🟪 aardvark ${rarityScore(2.4).toFixed(1)}`);
-    expect(text).not.toContain("aardvark (");
+    expect(text).toContain(`🟪 aardvark (${rarityScore(2.4).toFixed(1)})`);
     expect(text).not.toContain("Streak:");
     expect(text).not.toContain("Crushed it:");
     expect(text).not.toContain("Elite:");
