@@ -29,6 +29,21 @@ def listed_words(path: Path) -> set[str]:
     }
 
 
+def rarity_score(word: str) -> float:
+    """Frequency-derived Zipf score for a word, matching generate-data.py.
+
+    A 0.0 means wordfreq has no usable estimate for the word. We refuse to add
+    such words instead of letting the pipeline assign them the arbitrary
+    unknown-frequency fallback (a displayed rarity of 9.4), which is a guess
+    rather than a real measurement.
+    """
+    try:
+        from wordfreq import zipf_frequency
+    except ModuleNotFoundError:
+        sys.exit("wordfreq is required; install it with: pip3 install --user wordfreq")
+    return zipf_frequency(word, "en", wordlist="best")
+
+
 def add_word(raw_word: str) -> None:
     word = raw_word.strip().lower()
     if not WORD_RE.fullmatch(word):
@@ -40,10 +55,14 @@ def add_word(raw_word: str) -> None:
     if word in listed_words(EXTRA_WORDS_PATH):
         sys.exit(f"{word!r} is already in scripts/extra-words.txt.")
 
+    zipf = rarity_score(word)
+    if zipf == 0.0:
+        sys.exit(f"{word!r} has no rarity score and cannot be added.")
+
     existing = EXTRA_WORDS_PATH.read_text() if EXTRA_WORDS_PATH.exists() else ""
     prefix = f"{existing.rstrip()}\n" if existing.strip() else ""
     EXTRA_WORDS_PATH.write_text(f"{prefix}{word}\n")
-    print(f"Added {word!r} to {EXTRA_WORDS_PATH}")
+    print(f"Added {word!r} to {EXTRA_WORDS_PATH} (rarity score {zipf:.2f})")
 
 
 def update_size_test() -> None:
