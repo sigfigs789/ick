@@ -68,7 +68,7 @@ describe("buildShareText", () => {
 
   it("uses the compact X attribution code for X shares", () => {
     expect(buildShareText("2024-01-05", "str", words, { source: "twitter" })).toMatch(
-      /https:\/\/wordink\.app\/\?s=x$/
+      /https:\/\/wordink\.app\/\?s=tw$/
     );
   });
 

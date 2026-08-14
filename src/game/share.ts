@@ -23,7 +23,7 @@ const RARITY_SYMBOL: Record<Rarity, string> = {
 export type ShareSource = "share" | "twitter";
 
 function shareUrl(source: ShareSource | null): string {
-  const code = source === "share" ? "sh" : source === "twitter" ? "x" : null;
+  const code = source === "share" ? "sh" : source === "twitter" ? "tw" : null;
   return code ? `https://wordink.app/?s=${code}` : "wordink.app";
 }
 
