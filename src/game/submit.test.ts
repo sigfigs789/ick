@@ -23,10 +23,10 @@ describe("containsDropInOrder", () => {
 
 describe("evaluateSubmission", () => {
   it("uses concise diagnostic messages for word-rule rejections", () => {
-    expect(REJECTION_MESSAGES["proper-noun"]).toBe("Word looks like a proper noun.");
-    expect(REJECTION_MESSAGES.abbreviation).toBe("Word looks like an abbreviation or acronym.");
-    expect(REJECTION_MESSAGES["name-or-abbreviation"]).toBe("Word looks like a proper noun or abbreviation.");
-    expect(REJECTION_MESSAGES.obsolete).toBe("Word looks archaic or obsolete.");
+    expect(REJECTION_MESSAGES["proper-noun"]).toBe("This looks like a proper noun.");
+    expect(REJECTION_MESSAGES.abbreviation).toBe("This looks like an abbreviation or acronym.");
+    expect(REJECTION_MESSAGES["name-or-abbreviation"]).toBe("This looks like a proper noun or abbreviation.");
+    expect(REJECTION_MESSAGES.obsolete).toBe("This looks archaic or obsolete.");
   });
 
   it("rejects an empty submission", () => {
