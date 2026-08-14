@@ -56,7 +56,7 @@ export function WordRulesModal({ open, onClose }: Props) {
           </button>
         </div>
         <p className="modal__copy">
-          WordInk's curated word list is sourced from SCOWL and contains more than 180,000 words.
+          WordInk’s curated word list is built from established English-language lexical resources and has over 180,000 words.
         </p>
         <p className="modal__copy">
           To keep play consistent, proper nouns, abbreviations, hyphenated words, and words with punctuation aren't eligible for WordInk.
