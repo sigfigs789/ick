@@ -29,8 +29,9 @@ describe("WordRulesModal", () => {
     render(<WordRulesModal open onClose={vi.fn()} />);
 
     const input = screen.getByLabelText(/know a word we should consider/i);
+    expect(input).toHaveAttribute("placeholder", "Enter word");
     await userEvent.type(input, "  Splashy ");
-    await userEvent.click(screen.getByRole("button", { name: /suggest a word/i }));
+    await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
 
     expect(analytics.trackWordSuggestion).toHaveBeenCalledWith("splashy");
     expect(input).toHaveValue("");

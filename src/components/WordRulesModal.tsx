@@ -74,12 +74,12 @@ export function WordRulesModal({ open, onClose }: Props) {
                 setSuggestion(event.target.value);
                 setSent(false);
               }}
-              placeholder="Enter a word"
+              placeholder="Enter word"
               autoComplete="off"
               maxLength={80}
             />
             <button type="submit" disabled={!suggestion.trim()}>
-              Suggest a word
+              Suggest word
             </button>
           </div>
           {sent && <p className="word-suggestion__thanks">Thanks for the suggestion!</p>}
