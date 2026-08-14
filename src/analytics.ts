@@ -79,9 +79,14 @@ export function trackResultSharedOnX() {
   track("result_shared_on_x");
 }
 
-/** Record visitors who arrive through a campaign-tagged share link. */
-export function trackCampaignArrival(source: string) {
-  track("campaign_arrival", { source });
+/** Record visitors who arrive through an X share link. */
+export function trackTwitterArrival() {
+  track("arrived_from_twitter");
+}
+
+/** Record visitors who arrive through a copied Share link. */
+export function trackShareArrival() {
+  track("arrived_from_share");
 }
 
 /** Convert compact share-link codes into analytics campaign sources. */

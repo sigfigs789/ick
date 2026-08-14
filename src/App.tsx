@@ -17,7 +17,7 @@ import { isWinningRarity } from "./game/rank";
 import { topRarityScore, totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { campaignSourceFromSearch, trackCampaignArrival } from "./analytics";
+import { campaignSourceFromSearch, trackShareArrival, trackTwitterArrival } from "./analytics";
 
 export default function App() {
   const {
@@ -46,7 +46,8 @@ export default function App() {
   // long UTM parameter in the result text.
   useEffect(() => {
     const source = campaignSourceFromSearch(window.location.search);
-    if (source) trackCampaignArrival(source);
+    if (source === "twitter") trackTwitterArrival();
+    if (source === "share") trackShareArrival();
   }, []);
 
   // Clear any pending prefill when the viewed puzzle changes so a stale

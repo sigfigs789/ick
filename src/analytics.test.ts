@@ -1,6 +1,6 @@
 import { track } from "@vercel/analytics";
 import { describe, expect, it, vi } from "vitest";
-import { campaignSourceFromSearch, trackAcceptedAnswer, trackCampaignArrival, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage, trackResultCopied, trackResultSharedOnX, trackWordSuggestion } from "./analytics";
+import { campaignSourceFromSearch, trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage, trackResultCopied, trackResultSharedOnX, trackShareArrival, trackTwitterArrival, trackWordSuggestion } from "./analytics";
 import { puzzleNumber } from "./game/share";
 import type { DailyProgress, StreakState } from "./game/types";
 
@@ -79,10 +79,12 @@ describe("remaining game analytics", () => {
     expect(track).toHaveBeenCalledWith("result_shared_on_x");
   });
 
-  it("tracks a campaign-tagged arrival by source", () => {
-    trackCampaignArrival("twitter");
+  it("tracks Twitter and Share arrivals as separate events", () => {
+    trackTwitterArrival();
+    trackShareArrival();
 
-    expect(track).toHaveBeenCalledWith("campaign_arrival", { source: "twitter" });
+    expect(track).toHaveBeenCalledWith("arrived_from_twitter");
+    expect(track).toHaveBeenCalledWith("arrived_from_share");
   });
 
   it("maps the compact share-link code to its campaign source", () => {
