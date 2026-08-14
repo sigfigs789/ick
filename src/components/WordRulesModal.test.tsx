@@ -13,9 +13,12 @@ describe("WordRulesModal", () => {
 
     const dialog = screen.getByRole("dialog", { name: /word rules/i });
     expect(screen.getByRole("heading", { name: "Word rules" })).toBeInTheDocument();
-    expect(dialog).toHaveTextContent(/curated word list is sourced from scowl and contains more than 180,000 words/i);
+    expect(dialog).toHaveTextContent(/curated word list is sourced from scowl and wiktionary .*and contains more than 200,000 words/i);
     expect(dialog).toHaveTextContent(/proper nouns, abbreviations, archaic or obsolete words, hyphenated words/i);
     expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for play/i);
+    expect(dialog).toHaveTextContent(/used under.*cc by-sa 4\.0/i);
+    expect(screen.getByRole("link", { name: "Wiktionary" })).toHaveAttribute("href", "https://en.wiktionary.org/");
+    expect(screen.getByRole("link", { name: "CC BY-SA 4.0" })).toHaveAttribute("href", "https://creativecommons.org/licenses/by-sa/4.0/");
     expect(dialog).not.toHaveTextContent(/built and maintained by a solo developer/i);
     expect(dialog).toHaveTextContent(/continuously expanding the list to include more delightful and interesting words/i);
     expect(dialog).toHaveTextContent(/have a good word in mind\? suggest it and improve the experience for everyone/i);
