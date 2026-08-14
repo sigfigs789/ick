@@ -3,7 +3,7 @@ import { buildShareText } from "../game/share";
 import { ShareButton } from "./ShareButton";
 import { TwitterShareButton } from "./TwitterShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
-import { trackResultShared } from "../analytics";
+import { trackResultCopied, trackResultSharedOnX } from "../analytics";
 
 interface Props {
   date: string;
@@ -50,11 +50,11 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
       <div className="results-panel__share-actions">
         <ShareButton
           text={copiedShareText}
-          onShared={() => trackResultShared(date, streak.currentStreak)}
+          onShared={trackResultCopied}
         />
         <TwitterShareButton
           text={twitterShareText}
-          onShared={() => trackResultShared(date, streak.currentStreak)}
+          onShared={trackResultSharedOnX}
         />
       </div>
     </section>
