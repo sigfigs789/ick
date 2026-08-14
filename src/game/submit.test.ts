@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { containsDropInOrder, evaluateSubmission } from "./submit";
+import { containsDropInOrder, evaluateSubmission, REJECTION_MESSAGES } from "./submit";
 import type { AcceptedWord } from "./types";
 
 describe("containsDropInOrder", () => {
@@ -22,6 +22,13 @@ describe("containsDropInOrder", () => {
 });
 
 describe("evaluateSubmission", () => {
+  it("uses concise diagnostic messages for word-rule rejections", () => {
+    expect(REJECTION_MESSAGES["proper-noun"]).toBe("Word looks like a proper noun.");
+    expect(REJECTION_MESSAGES.abbreviation).toBe("Word looks like an abbreviation or acronym.");
+    expect(REJECTION_MESSAGES["name-or-abbreviation"]).toBe("Word looks like a proper noun or abbreviation.");
+    expect(REJECTION_MESSAGES.obsolete).toBe("Word looks archaic or obsolete.");
+  });
+
   it("rejects an empty submission", () => {
     const result = evaluateSubmission("   ", "the", []);
     expect(result).toEqual({ ok: false, reason: "empty" });

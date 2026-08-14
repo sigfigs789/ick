@@ -60,7 +60,7 @@ export function WordRulesModal({ open, onClose }: Props) {
           WordInk's curated word list is sourced from SCOWL and contains more than 180,000 words. To keep play consistent, proper nouns, abbreviations, archaic or obsolete words, hyphenated words, and words with punctuation aren't eligible for play.
         </p>
         <p className="modal__copy">
-          WordInk is built and maintained by a solo developer. I'm continuously expanding the list to include more delightful and interesting words. Have a good word in mind? Suggest it and improve the experience for everyone!
+          I'm continuously expanding the list to include more delightful and interesting words. Have a good word in mind? Suggest it and improve the experience for everyone!
         </p>
         <form className="word-suggestion" onSubmit={submitSuggestion}>
           <label htmlFor="word-suggestion">Know a word we should consider?</label>
