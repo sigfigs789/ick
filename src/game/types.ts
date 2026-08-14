@@ -25,6 +25,10 @@ export type RejectionReason =
   | "missing-drop"
   | "same-as-drop"
   | "not-a-word"
+  | "proper-noun"
+  | "abbreviation"
+  | "name-or-abbreviation"
+  | "obsolete"
   | "already-used"
   | "same-root-as-used";
 

@@ -1,8 +1,29 @@
 import { isValidWord, rarityFor } from "./dictionary";
+import rejectionMetadata from "../data/rejection-metadata.json";
 import { baseForm } from "./stem";
 import type { AcceptedWord, SubmissionResult } from "./types";
 
 const WORD_CHARS = /^[a-z]+$/;
+const METADATA_REASONS = ["proper-noun", "abbreviation", "name-or-abbreviation", "obsolete"] as const;
+type MetadataReason = (typeof METADATA_REASONS)[number];
+const metadataByReason = rejectionMetadata as Record<MetadataReason, readonly string[]>;
+
+function includesSorted(words: readonly string[], word: string): boolean {
+  let low = 0;
+  let high = words.length - 1;
+  while (low <= high) {
+    const middle = low + Math.floor((high - low) / 2);
+    const candidate = words[middle];
+    if (candidate === word) return true;
+    if (candidate < word) low = middle + 1;
+    else high = middle - 1;
+  }
+  return false;
+}
+
+function rejectionReasonFor(word: string): MetadataReason | undefined {
+  return METADATA_REASONS.find((reason) => includesSorted(metadataByReason[reason] ?? [], word));
+}
 
 /** True if `drop`'s letters appear contiguously and in order inside `word`. */
 export function containsDropInOrder(word: string, drop: string): boolean {
@@ -35,7 +56,7 @@ export function evaluateSubmission(
     return { ok: false, reason: "same-root-as-used" };
   }
   if (!isValidWord(word)) {
-    return { ok: false, reason: "not-a-word" };
+    return { ok: false, reason: rejectionReasonFor(word) ?? "not-a-word" };
   }
 
   const info = rarityFor(word);
@@ -54,6 +75,10 @@ export function evaluateSubmission(
 export const REJECTION_MESSAGES: Record<string, string> = {
   empty: "Type a word first.",
   "not-a-word": "That word is not in WordInk's curated list.",
+  "proper-noun": "That appears to be a proper name, which WordInk doesn't accept.",
+  abbreviation: "Abbreviations and acronyms aren't eligible in WordInk.",
+  "name-or-abbreviation": "Proper names and abbreviations aren't eligible in WordInk.",
+  obsolete: "That word is recognized, but isn't considered current modern English.",
   "missing-drop": "That word doesn't contain the drop.",
   "same-as-drop": "Your answer can't be the drop itself.",
   "already-used": "You've already submitted that word.",

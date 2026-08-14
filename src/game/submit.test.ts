@@ -47,6 +47,24 @@ describe("evaluateSubmission", () => {
     expect(result).toEqual({ ok: false, reason: "not-a-word" });
   });
 
+  it("explains rejected proper names and abbreviations from ESDB metadata", () => {
+    expect(evaluateSubmission("Paris", "ari", [])).toEqual({
+      ok: false,
+      reason: "name-or-abbreviation",
+    });
+    expect(evaluateSubmission("FBI", "fb", [])).toEqual({
+      ok: false,
+      reason: "abbreviation",
+    });
+  });
+
+  it("explains words ESDB marks as not current modern English", () => {
+    expect(evaluateSubmission("abactor", "act", [])).toEqual({
+      ok: false,
+      reason: "obsolete",
+    });
+  });
+
   it("accepts a valid word containing the drop without matching it exactly", () => {
     const result = evaluateSubmission("thee", "the", []);
     expect(result.ok).toBe(true);
