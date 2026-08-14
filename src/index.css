@@ -998,6 +998,9 @@ h2 {
   justify-content: space-between;
   margin-bottom: 0.9rem;
 }
+.modal__header--close-only {
+  justify-content: flex-end;
+}
 .modal__header h2 {
   margin: 0;
   font-size: 1.3rem;

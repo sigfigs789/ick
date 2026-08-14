@@ -15,7 +15,7 @@ describe("WordRulesModal", () => {
     expect(dialog).toHaveTextContent(/curated word list is sourced from scowl and contains more than 180,000 words/i);
     expect(dialog).toHaveTextContent(/proper nouns, abbreviations, hyphenated words/i);
     expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for wordink/i);
-    expect(dialog).toHaveTextContent(/built and maintained by one solo developer/i);
+    expect(dialog).toHaveTextContent(/built and maintained by a solo developer/i);
     expect(dialog).toHaveTextContent(/continuously expanding the list to include more delightful and interesting words/i);
     expect(screen.getByRole("button", { name: /close word rules/i })).toHaveFocus();
 

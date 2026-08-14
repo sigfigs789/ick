@@ -41,11 +41,10 @@ export function WordRulesModal({ open, onClose }: Props) {
         className="modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="word-rules-heading"
+        aria-label="Word rules"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="modal__header">
-          <h2 id="word-rules-heading">Word rules</h2>
+        <div className="modal__header modal__header--close-only">
           <button
             ref={closeRef}
             type="button"
@@ -57,10 +56,13 @@ export function WordRulesModal({ open, onClose }: Props) {
           </button>
         </div>
         <p className="modal__copy">
-          WordInk's curated word list is sourced from SCOWL and contains more than 180,000 words. To keep play consistent, proper nouns, abbreviations, hyphenated words, and words with punctuation aren't eligible for WordInk.
+          WordInk's curated word list is sourced from SCOWL and contains more than 180,000 words.
         </p>
         <p className="modal__copy">
-          WordInk is built and maintained by one solo developer. I'm continuously expanding the list to include more delightful and interesting words while keeping the game fair and consistent for everyone. Thank you for playing!
+          To keep play consistent, proper nouns, abbreviations, hyphenated words, and words with punctuation aren't eligible for WordInk.
+        </p>
+        <p className="modal__copy">
+          WordInk is built and maintained by a solo developer. I'm continuously expanding the list to include more delightful and interesting words while keeping the game fair and consistent for everyone. Thank you for playing!
         </p>
         <form className="word-suggestion" onSubmit={submitSuggestion}>
           <label htmlFor="word-suggestion">Know a word we should consider?</label>
