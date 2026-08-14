@@ -664,6 +664,11 @@ h2 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.35rem;
+}
+.share-button .share-button__copy-icon {
+  flex: none;
+  fill: none;
 }
 .share-button svg {
   width: 1.1rem;
