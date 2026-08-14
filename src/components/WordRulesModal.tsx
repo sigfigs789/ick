@@ -59,7 +59,7 @@ export function WordRulesModal({ open, onClose }: Props) {
           WordInk’s curated word list is built from established English-language lexical resources and has over 180,000 words.
         </p>
         <p className="modal__copy">
-          To keep play consistent, proper nouns, abbreviations, hyphenated words, and words with punctuation aren't eligible for WordInk.
+          To keep play consistent, proper nouns, abbreviations, archaic or obsolete words, hyphenated words, and words with punctuation aren't eligible for WordInk.
         </p>
         <p className="modal__copy">
           WordInk is built and maintained by a solo developer. I'm continuously expanding the list to include more delightful and interesting words while keeping the game fair and consistent for everyone. Thank you for playing!
