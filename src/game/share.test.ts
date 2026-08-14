@@ -62,7 +62,7 @@ describe("buildShareText", () => {
 
   it("adds share attribution only when explicitly requested", () => {
     expect(buildShareText("2024-01-05", "str", words, { source: "share" })).toMatch(
-      /wordink\.app\/\?utm_source=share$/
+      /https:\/\/wordink\.app\/\?utm_source=share$/
     );
   });
 

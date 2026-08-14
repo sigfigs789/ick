@@ -23,7 +23,7 @@ const RARITY_SYMBOL: Record<Rarity, string> = {
 export type ShareSource = "share";
 
 function shareUrl(source: ShareSource | null): string {
-  return source ? `wordink.app/?utm_source=${source}` : "wordink.app";
+  return source ? `https://wordink.app/?utm_source=${source}` : "wordink.app";
 }
 
 export function puzzleNumber(dateStr: string): number {
