@@ -76,9 +76,8 @@ export function trackCampaignArrival(source: string) {
 }
 
 /** Convert compact share-link codes into analytics campaign sources. */
-export function campaignSourceFromSearch(search: string): "share" | "twitter" | null {
+export function campaignSourceFromSearch(search: string): "share" | null {
   const code = new URLSearchParams(search).get("s");
   if (code === "sh") return "share";
-  if (code === "t") return "twitter";
   return null;
 }

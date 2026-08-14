@@ -20,11 +20,10 @@ const RARITY_SYMBOL: Record<Rarity, string> = {
   Mythic: "🟥",
 };
 
-export type ShareSource = "share" | "twitter";
+export type ShareSource = "share";
 
 function shareUrl(source: ShareSource | null): string {
-  const code = source === "share" ? "sh" : source === "twitter" ? "t" : null;
-  return code ? `https://wordink.app/?s=${code}` : "wordink.app";
+  return source === "share" ? "https://wordink.app/?s=sh" : "wordink.app";
 }
 
 export function puzzleNumber(dateStr: string): number {

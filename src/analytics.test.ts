@@ -83,9 +83,8 @@ describe("remaining game analytics", () => {
     expect(track).toHaveBeenCalledWith("campaign_arrival", { source: "twitter" });
   });
 
-  it("maps compact share-link codes to campaign sources", () => {
+  it("maps the compact share-link code to its campaign source", () => {
     expect(campaignSourceFromSearch("?s=sh")).toBe("share");
-    expect(campaignSourceFromSearch("?s=t")).toBe("twitter");
     expect(campaignSourceFromSearch("?s=other")).toBeNull();
   });
 });
