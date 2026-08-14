@@ -54,7 +54,7 @@ describe("ResultsPanel share toggle", () => {
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).toContain("strange");
     expect(preview?.textContent).toContain("aardvark");
-    expect(preview?.querySelector("strong")?.textContent).toMatch(/https:\/\/wordink\.app\/\?utm_source=share #.*Drop: STR/);
+    expect(preview?.querySelector("strong")?.textContent).toMatch(/wordink\.app\/\?utm_source=share #.*Drop: STR/);
   });
 
   it("offers an accessible X composer link with space for a player note", () => {
@@ -65,7 +65,7 @@ describe("ResultsPanel share toggle", () => {
     expect(twitterLink).toHaveAttribute("title", "Share on X");
     expect(twitterLink.getAttribute("href")).toContain("twitter.com/intent/tweet");
     expect(decodeURIComponent(twitterLink.getAttribute("href") ?? "")).toContain(
-      "\n\n──────────\nhttps://wordink.app #"
+      "\n\n──────────\nwordink.app #"
     );
   });
 });
