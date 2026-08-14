@@ -1,21 +1,26 @@
 import { track } from "@vercel/analytics";
 import { describe, expect, it, vi } from "vitest";
-import { campaignSourceFromSearch, trackAcceptedAnswer, trackCampaignArrival, trackPuzzleCompleted, trackRejectedAnswer, trackResultCopied, trackResultSharedOnX, trackWordSuggestion } from "./analytics";
+import { campaignSourceFromSearch, trackAcceptedAnswer, trackCampaignArrival, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage, trackResultCopied, trackResultSharedOnX, trackWordSuggestion } from "./analytics";
 import { puzzleNumber } from "./game/share";
 import type { DailyProgress, StreakState } from "./game/types";
 
 vi.mock("@vercel/analytics", () => ({ track: vi.fn() }));
 
-describe("trackRejectedAnswer", () => {
-  it("records the normalized word and rejection reason", () => {
-    trackRejectedAnswer("2026-08-12", "AR", "  BaNANA  ", "not-a-word");
+describe("rejection analytics", () => {
+  it("records a rejected answer separately from its feedback message", () => {
+    trackRejectedAnswer("2026-08-12", "AR", "  BaNANA  ");
+    trackRejectionMessage("2026-08-12", "proper-noun");
 
     expect(track).toHaveBeenCalledWith("answer_rejected", {
       puzzle_date: "2026-08-12",
       puzzle_number: puzzleNumber("2026-08-12"),
       drop: "ar",
       word: "banana",
-      rejection_reason: "not-a-word",
+    });
+    expect(track).toHaveBeenCalledWith("rejection_message_shown", {
+      puzzle_date: "2026-08-12",
+      puzzle_number: puzzleNumber("2026-08-12"),
+      rejection_reason: "proper-noun",
     });
   });
 });
