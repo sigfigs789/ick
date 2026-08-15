@@ -186,13 +186,13 @@ describe("rarityFor", () => {
     expect(rarityScore(floored.zipf)).toBe(10);
   });
 
-  it("awards Mythic only for a rank of 9.5 or higher", () => {
+  it("awards Mythic only for a rank of 9.8 or higher", () => {
     const belowMythic = rarityFor("assonant")!;
     const mythic = rarityFor("autecism")!;
 
-    expect(rarityScore(belowMythic.zipf)).toBeLessThan(9.5);
+    expect(rarityScore(belowMythic.zipf)).toBeLessThan(9.8);
     expect(belowMythic.rarity).not.toBe("Mythic");
-    expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.5);
+    expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.8);
     expect(mythic.rarity).toBe("Mythic");
   });
 });
