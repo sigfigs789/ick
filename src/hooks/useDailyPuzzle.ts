@@ -12,7 +12,8 @@ import {
   resetProgress,
 } from "../game/storage";
 import { evaluateSubmission, REJECTION_MESSAGES } from "../game/submit";
-import { baseFormSubstitution, totalRarityScore } from "../game/dictionary";
+import { baseFormSubstitution, rarityForLiveWord, totalRarityScore } from "../game/dictionary";
+import { liveValidateWord } from "../game/liveValidate";
 import type { DailyProgress, Rarity, StreakState } from "../game/types";
 import { trackAcceptedAnswer, trackBaseFormSubstitution, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage } from "../analytics";
 
@@ -48,12 +49,26 @@ export function useDailyPuzzle() {
   }, [viewedDate, drop]);
 
   const submitWord = useCallback(
-    (raw: string) => {
-      const result = evaluateSubmission(raw, drop, progress.acceptedWords, viewedDate);
+    async (raw: string) => {
+      let result = evaluateSubmission(raw, drop, progress.acceptedWords, viewedDate);
       feedbackKey.current += 1;
+      let reason = result.reason ?? "not-a-word";
+
+      // Live fallback: only when the word simply isn't in the curated list --
+      // every other check (drop, duplicates, proper-noun/archaic tags) has
+      // already decided. Ask Merriam-Webster whether it's a real current word.
+      if (!result.ok && reason === "not-a-word") {
+        const word = raw.trim().toLowerCase();
+        const live = await liveValidateWord(word);
+        if (live?.valid) {
+          const info = rarityForLiveWord(viewedDate);
+          result = { ok: true, word: { word, rarity: info.rarity, zipf: info.zipf } };
+        } else if (live?.reason) {
+          reason = live.reason; // MW gave a more specific explanation than "not-a-word"
+        }
+      }
 
       if (!result.ok || !result.word) {
-        const reason = result.reason ?? "not-a-word";
         const message = REJECTION_MESSAGES[reason];
         setProgress((p) => recordRejectedAttempt(p, raw.trim()));
         trackRejectedAnswer(viewedDate, drop, raw);

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
-import { baseFormSubstitution, isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
+import {
+  baseFormSubstitution,
+  isValidWord,
+  rarityFor,
+  rarityForLiveWord,
+  rarityScore,
+  topRarityScore,
+} from "./dictionary";
 
 const explicitlyCuratedWords = [
   "endling",
@@ -237,6 +244,17 @@ describe("rarityFor", () => {
     expect(belowMythic.rarity).not.toBe("Mythic");
     expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.9);
     expect(mythic.rarity).toBe("Mythic");
+  });
+});
+
+describe("rarityForLiveWord", () => {
+  it("scores a live-confirmed off-dictionary word at the rarest measured tier, not Mythic", () => {
+    const info = rarityForLiveWord();
+    // Absent from the corpus-derived dictionary but confirmed real -- rare, but
+    // deliberately not the deep-tail Mythic floor a live lookup could farm.
+    expect(info.rarity).toBe("Extremely Rare");
+    expect(info.zipf).toBe(1);
+    expect(rarityScore(info.zipf)).toBeLessThan(10);
   });
 });
 

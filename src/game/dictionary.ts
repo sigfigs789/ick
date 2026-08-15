@@ -165,6 +165,15 @@ export function rarityFor(word: string, date?: string): RarityInfo | undefined {
   return { rarity: scoring.rarity(zipf), zipf };
 }
 
+// A word confirmed real by the live Merriam-Webster fallback but absent from the
+// corpus-derived dictionary has no measured frequency of its own. It scores at
+// the rarest *measured* tier -- deliberately NOT the deep-tail Mythic floor, so
+// a live lookup can't hand out the maximum score for any obscure word.
+export function rarityForLiveWord(date?: string): RarityInfo {
+  const scoring = scoringFor(date);
+  return { rarity: scoring.rarity(MEASURED_FLOOR), zipf: MEASURED_FLOOR };
+}
+
 /** A word whose rarity was inherited from a base form rather than its own data. */
 export interface BaseFormSubstitution {
   /** The word the player actually submitted. */
