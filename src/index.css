@@ -487,48 +487,26 @@ h2 {
   border-radius: 0.4rem;
   cursor: pointer;
   color: inherit;
-  /* Suppress the iOS text-selection callout so a long press copies cleanly. */
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
 }
 .guess-log__word-button:hover {
   background: var(--bg-inset);
 }
-.guess-log__entry-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.guess-log__word-button:hover .guess-log__copy-hint,
+.guess-log__word-button:focus-visible .guess-log__copy-hint {
+  opacity: 1;
 }
-.guess-log__copy-button {
+.guess-log__word-button--copied .guess-log__copy-hint {
+  opacity: 1;
+  color: var(--best-word-accent);
+}
+/* A faint copy affordance that firms up on hover/focus and turns into a
+ * checkmark once the word is copied. */
+.guess-log__copy-hint {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  border: 2px solid var(--border-strong);
-  background: none;
-  padding: 0.25rem 0.45rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
   color: var(--fg-muted);
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1;
-  transition: color 0.15s var(--ease-standard), border-color 0.15s var(--ease-standard);
-}
-.guess-log__copy-button:hover {
-  color: var(--fg);
-  border-color: var(--fg-muted);
-}
-.guess-log__copy-button--copied {
-  color: var(--best-word-accent);
-  border-color: var(--best-word-accent);
-}
-.guess-log__copy-icon {
-  flex-shrink: 0;
-}
-.guess-log__copy-label {
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  opacity: 0.45;
+  transition: opacity 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
 }
 .guess-log__crown {
   font-size: 1rem;
