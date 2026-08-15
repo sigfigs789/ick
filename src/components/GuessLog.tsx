@@ -59,7 +59,7 @@ export function GuessLog({
               <li key={w.word} className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}>
                 <button
                   type="button"
-                  className={`guess-log__word-button${isCopied ? " guess-log__word-button--copied" : ""}`}
+                  className={`guess-log__entry-button${isCopied ? " guess-log__entry-button--copied" : ""}`}
                   onClick={() => copyWord(w.word)}
                   aria-label={
                     isCopied
@@ -67,33 +67,37 @@ export function GuessLog({
                       : `Copy "${w.word}" (${w.rarity}, guess ${i + 1})`
                   }
                 >
-                  {isBest && (
-                    <span className="guess-log__crown" aria-hidden="true" title="Your best word so far">
-                      👑
-                    </span>
-                  )}
-                  <span className="guess-log__word">{w.word}</span>
-                  <span className="guess-log__copy-hint" aria-hidden="true">
-                    {isCopied ? (
-                      <svg viewBox="0 0 24 24" width="16" height="16">
-                        <path
-                          d="M5 12l5 5L19 7"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" width="16" height="16">
-                        <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-                        <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" strokeWidth="2" />
-                      </svg>
+                  <span className="guess-log__entry-main">
+                    {isBest && (
+                      <span className="guess-log__crown" aria-hidden="true" title="Your best word so far">
+                        👑
+                      </span>
                     )}
+                    <span className="guess-log__word">{w.word}</span>
+                  </span>
+                  <span className="guess-log__entry-meta">
+                    <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
+                    <span className="guess-log__copy-hint" aria-hidden="true">
+                      {isCopied ? (
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                          <path
+                            d="M5 12l5 5L19 7"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                          <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+                          <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" strokeWidth="2" />
+                        </svg>
+                      )}
+                    </span>
                   </span>
                 </button>
-                <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
               </li>
             );
           })}

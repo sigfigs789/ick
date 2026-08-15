@@ -446,12 +446,6 @@ h2 {
   gap: 0.55rem;
 }
 .guess-log__entry {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  min-height: 3.4rem;
-  padding: 0.4rem 0.5rem 0.4rem 0.9rem;
   border: 2px solid var(--border-strong);
   border-radius: 0.75rem;
   background: var(--card-bg);
@@ -476,26 +470,37 @@ h2 {
     transform: scale(1);
   }
 }
-.guess-log__word-button {
+/* The whole card is the tap target: pressing anywhere copies the word. */
+.guess-log__entry-button {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 3.4rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.9rem;
   border: none;
   background: none;
-  padding: 0.3rem 0.2rem;
-  margin: -0.3rem -0.2rem;
-  border-radius: 0.4rem;
+  border-radius: 0.7rem;
   cursor: pointer;
   color: inherit;
+  text-align: left;
+  font: inherit;
 }
-.guess-log__word-button:hover {
+.guess-log__entry-button:hover {
   background: var(--bg-inset);
 }
-.guess-log__word-button:hover .guess-log__copy-hint,
-.guess-log__word-button:focus-visible .guess-log__copy-hint {
+.guess-log__entry-main,
+.guess-log__entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.guess-log__entry-button:hover .guess-log__copy-hint,
+.guess-log__entry-button:focus-visible .guess-log__copy-hint {
   opacity: 1;
 }
-.guess-log__word-button--copied .guess-log__copy-hint {
+.guess-log__entry-button--copied .guess-log__copy-hint {
   opacity: 1;
   color: var(--best-word-accent);
 }
