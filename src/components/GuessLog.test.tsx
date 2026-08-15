@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GuessLog } from "./GuessLog";
 import type { AcceptedWord, StreakState } from "../game/types";
 
@@ -49,6 +49,66 @@ describe("GuessLog", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /reuse "strange"/i }));
     expect(onSelectWord).toHaveBeenCalledWith("strange");
+  });
+
+  describe("long-press to copy", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("copies the word and suppresses reselection on a held press", () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, { clipboard: { writeText } });
+      const onSelectWord = vi.fn();
+      const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
+      render(<GuessLog acceptedWords={words} onSelectWord={onSelectWord} />);
+
+      const button = screen.getByRole("button", { name: /reuse "strange"/i });
+      fireEvent.pointerDown(button);
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      fireEvent.pointerUp(button);
+      fireEvent.click(button);
+
+      expect(writeText).toHaveBeenCalledWith("strange");
+      expect(onSelectWord).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: /copied "strange"/i })).toBeInTheDocument();
+    });
+
+    it("reselects the word on a quick tap without copying", () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, { clipboard: { writeText } });
+      const onSelectWord = vi.fn();
+      const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
+      render(<GuessLog acceptedWords={words} onSelectWord={onSelectWord} />);
+
+      const button = screen.getByRole("button", { name: /reuse "strange"/i });
+      fireEvent.pointerDown(button);
+      vi.advanceTimersByTime(100);
+      fireEvent.pointerUp(button);
+      fireEvent.click(button);
+
+      expect(writeText).not.toHaveBeenCalled();
+      expect(onSelectWord).toHaveBeenCalledWith("strange");
+    });
+  });
+
+  it("copies the word when the copy button is clicked, without reselecting it", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    const onSelectWord = vi.fn();
+    const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
+    render(<GuessLog acceptedWords={words} onSelectWord={onSelectWord} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /copy "strange"/i }));
+
+    expect(writeText).toHaveBeenCalledWith("strange");
+    expect(onSelectWord).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /copied "strange"/i })).toBeInTheDocument();
   });
 
   it("shows all trackers without a duplicate completion heading", () => {
