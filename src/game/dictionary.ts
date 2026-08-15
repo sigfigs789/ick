@@ -80,22 +80,26 @@ interface Scoring {
 // deep-tail scores stable when even-rarer words are added later, and bounds the
 // scale below -- Zipf is a log scale with no natural floor.
 function twoBandScoring(ceiling: number, tailFloor: number): Scoring {
+  const score = (zipf: number): number => {
+    if (zipf >= MEASURED_FLOOR) {
+      const s = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
+      return Math.round(s * 10) / 10;
+    }
+    const clamped = Math.max(zipf, tailFloor);
+    const s = ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
+    return Math.round(Math.min(s, 10) * 100) / 100;
+  };
   return {
     zipfAt: (i) => zipfHundredths[i] / 100,
-    score: (zipf) => {
-      if (zipf >= MEASURED_FLOOR) {
-        const score = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
-        return Math.round(score * 10) / 10;
-      }
-      const clamped = Math.max(zipf, tailFloor);
-      const score =
-        ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
-      return Math.round(Math.min(score, 10) * 100) / 100;
-    },
-    // The deep-tail library (Zipf < MEASURED_FLOOR) is its own top rank.
-    rarity: (zipf) => (zipf < MEASURED_FLOOR ? "Legend" : measuredRarityModern(zipf)),
+    score,
+    // The top band -- the deep-tail library plus any measured word rare enough
+    // to reach the ceiling -- is its own rank, Legend; anything scoring below
+    // the ceiling gets a measured rank. Defining Legend by score (rather than
+    // strictly Zipf < 1) keeps the boundary word off the shared ceiling value,
+    // so a shown 9.9 always reads as Legend, never the top of Mythic.
+    rarity: (zipf) => (score(zipf) >= ceiling ? "Legend" : measuredRarityModern(zipf)),
     // The narrow deep-tail band shows two decimals so its gradient is visible.
-    format: (score) => (score >= ceiling ? score.toFixed(2) : score.toFixed(1)),
+    format: (s) => (s >= ceiling ? s.toFixed(2) : s.toFixed(1)),
   };
 }
 
