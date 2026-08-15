@@ -11,7 +11,9 @@ name: Add rare words found online
 # legacy re-alignment + score pinning.
 #
 # Only words a frequency corpus attests are added (their rarity is measured, not
-# guessed), so --forced is never used here.
+# guessed), so --forced is never used here. Each candidate is also run through
+# scripts/word_tags.py (Wiktextract + Merriam-Webster + Datamuse), which drops
+# proper nouns, abbreviations, and out-of-use words (obsolete/archaic/dated).
 #
 # NOTE: because every PR regenerates the shared data files, merging one makes the
 # others stale (dictionary length, size test, legacy alignment). Merge them one
@@ -60,6 +62,10 @@ jobs:
         env:
           TARGET_DATE: ${{ inputs.date }}
           MAX_ZIPF: ${{ inputs.max_zipf }}
+          # Per-word lexical tagging (proper noun / abbreviation / out-of-use).
+          # If unset, word_tags.py falls back to Wiktextract + Datamuse.
+          MW_COLLEGIATE_KEY: ${{ secrets.MW_COLLEGIATE_KEY }}
+          MW_MEDICAL_KEY: ${{ secrets.MW_MEDICAL_KEY }}
         run: |
           set -euo pipefail
           mkdir -p .tmp
@@ -92,6 +98,10 @@ jobs:
     env:
       WORD: ${{ matrix.word }}
       DROP: ${{ needs.discover.outputs.drop }}
+      # manage-extra-word.py add re-checks the word via word_tags.py; give it the
+      # MW keys too. Falls back to Wiktextract + Datamuse when unset.
+      MW_COLLEGIATE_KEY: ${{ secrets.MW_COLLEGIATE_KEY }}
+      MW_MEDICAL_KEY: ${{ secrets.MW_MEDICAL_KEY }}
     steps:
       - name: Check out WordInk
         uses: actions/checkout@v4
