@@ -93,7 +93,7 @@ function twoBandScoring(ceiling: number, tailFloor: number): Scoring {
       return Math.round(Math.min(score, 10) * 100) / 100;
     },
     // The deep-tail library (Zipf < MEASURED_FLOOR) is its own top rank.
-    rarity: (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf)),
+    rarity: (zipf) => (zipf < MEASURED_FLOOR ? "Legend" : measuredRarityModern(zipf)),
     // The narrow deep-tail band shows two decimals so its gradient is visible.
     format: (score) => (score >= ceiling ? score.toFixed(2) : score.toFixed(1)),
   };
@@ -118,7 +118,9 @@ const LEGACY_SCORING: Scoring = {
   format: (score) => score.toFixed(1),
 };
 
-// The Zipf-band labels for the measured range are identical across systems.
+// The Zipf-band labels for the measured range, used by the legacy single-band
+// system. The legacy top rank ("Mythic") is score-derived (see LEGACY_SCORING),
+// so this fallback tops out at "Extremely Rare".
 function measuredRarity(zipf: number): Rarity {
   if (zipf >= 6.4) return "Quotidian";
   if (zipf >= 5.2) return "Very Common";
@@ -126,6 +128,22 @@ function measuredRarity(zipf: number): Rarity {
   if (zipf >= 3.3) return "Uncommon";
   if (zipf >= 2.5) return "Rare";
   return "Extremely Rare";
+}
+
+// The modern (two-band) measured labels. The deep-tail library is its own top
+// rank ("Legend", see twoBandScoring), so the rarest *measured* slice becomes
+// "Mythic" -- one notch below Legend -- and "Extremely Rare" keeps the band
+// beneath it. The Zipf thresholds from Rare down are identical to the legacy
+// scale; only the top of the old "Extremely Rare" band (Zipf 1.0-1.2, ~score
+// 9.5-9.8) is split off into "Mythic".
+function measuredRarityModern(zipf: number): Rarity {
+  if (zipf >= 6.4) return "Quotidian";
+  if (zipf >= 5.2) return "Very Common";
+  if (zipf >= 4.2) return "Common";
+  if (zipf >= 3.3) return "Uncommon";
+  if (zipf >= 2.5) return "Rare";
+  if (zipf >= 1.2) return "Extremely Rare";
+  return "Mythic";
 }
 
 function scoringFor(date?: string): Scoring {
@@ -251,6 +269,7 @@ function stripDoubledConsonant(stem: string): string {
 }
 
 export const RARITY_ORDER: Rarity[] = [
+  "Legend",
   "Mythic",
   "Extremely Rare",
   "Rare",

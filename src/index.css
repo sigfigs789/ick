@@ -55,6 +55,13 @@
   --rarity-mythic-fg: #b42318;
   --rarity-mythic-dot: #e5484d;
 
+  /* Legend is the top rank -- an electric magenta that no other tier uses, so
+     it reads as "beyond Mythic" at a glance and stays vivid in both themes
+     (plain black would vanish in dark mode). */
+  --rarity-legend-bg: #fde4f1;
+  --rarity-legend-fg: #a3005c;
+  --rarity-legend-dot: #e5007a;
+
   /* The crowned best-word highlight keeps its own orange accent, independent
      of the rarity palette so retinting a tier never recolors the crown. */
   --best-word-accent: #f0980f;
@@ -112,6 +119,10 @@
     --rarity-mythic-bg: #3a1414;
     --rarity-mythic-fg: #f7a19a;
     --rarity-mythic-dot: #e5484d;
+
+    --rarity-legend-bg: #3a0a26;
+    --rarity-legend-fg: #ff8fce;
+    --rarity-legend-dot: #ff2fa8;
 
     --best-word-accent: #f2a30f;
     --best-word-bg: #3a2408;
@@ -617,6 +628,14 @@ h2 {
 .rarity--mythic .rarity-badge__dot {
   background: var(--rarity-mythic-dot);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-mythic-dot) 28%, transparent);
+}
+.rarity--legend {
+  background: var(--rarity-legend-bg);
+  color: var(--rarity-legend-fg);
+}
+.rarity--legend .rarity-badge__dot {
+  background: var(--rarity-legend-dot);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-legend-dot) 32%, transparent);
 }
 
 /* Submit form */

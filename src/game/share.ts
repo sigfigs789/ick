@@ -3,9 +3,11 @@ import { formatRarityScore, formatScore, topRarityScore, totalRarityScore } from
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
-// Mirrors the in-app "loot tier" rarity palette (black -> grey -> brown ->
-// green -> blue -> purple -> red, see index.css) so the shared result matches
-// what showed up in-game. Quotidian's egg is an intentional Easter egg.
+// Mirrors the in-app "loot tier" rarity palette (grey -> brown -> green ->
+// blue -> purple -> red -> black, see index.css) so the shared result matches
+// what showed up in-game. Legend, the top rank, gets the black square; the
+// badge itself renders electric magenta in-app (there is no magenta square
+// emoji). Quotidian's egg is an intentional Easter egg.
 // Squares only vary by color, which is fine here because this text is for
 // sharing outside the app -- inside the app, rarity is always shown as a
 // plain-text label too (see RarityBadge), which is what keeps things
@@ -18,6 +20,7 @@ export const RARITY_SYMBOL: Record<Rarity, string> = {
   Rare: "🟦",
   "Extremely Rare": "🟪",
   Mythic: "🟥",
+  Legend: "⬛",
 };
 
 export type ShareSource = "share" | "twitter";

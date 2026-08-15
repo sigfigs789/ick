@@ -5,7 +5,8 @@ export type Rarity =
   | "Uncommon"
   | "Rare"
   | "Extremely Rare"
-  | "Mythic";
+  | "Mythic"
+  | "Legend";
 
 export interface RarityInfo {
   zipf: number;

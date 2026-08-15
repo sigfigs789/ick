@@ -12,24 +12,25 @@ describe("date-gated scoring", () => {
   it("uses the legacy system before 2026-08-15 and the new system on/after", () => {
     // "autecism" is attested by no corpus. The legacy system floored such
     // words flat to Zipf 1.4 (Extremely Rare, score 9.4); the new system ranks
-    // it as the single rarest word (Mythic, a perfect 10.0).
+    // it as the single rarest word (Legend -- the deep-tail top rank -- with a
+    // perfect 10.0).
     const legacy = rarityFor("autecism", BEFORE)!;
     expect(legacy).toEqual({ rarity: "Extremely Rare", zipf: 1.4 });
     expect(rarityScore(legacy.zipf, BEFORE)).toBe(9.4);
 
     const current = rarityFor("autecism", ON)!;
-    expect(current.rarity).toBe("Mythic");
+    expect(current.rarity).toBe("Legend");
     expect(rarityScore(current.zipf, ON)).toBe(10);
   });
 
   it("defaults to the new system when no date is given", () => {
     const info = rarityFor("autecism")!;
-    expect(info.rarity).toBe("Mythic");
+    expect(info.rarity).toBe("Legend");
     expect(rarityScore(info.zipf)).toBe(10);
   });
 
   it("keeps later dates on the new system", () => {
-    expect(rarityFor("autecism", AFTER)!.rarity).toBe("Mythic");
+    expect(rarityFor("autecism", AFTER)!.rarity).toBe("Legend");
   });
 
   it("rescales even measured words across the cutover", () => {
