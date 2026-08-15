@@ -35,7 +35,7 @@ describe("buildShareText", () => {
   it("puts each spoiler-free rarity square and score on its own line", () => {
     const text = buildShareText("2024-01-05", "str", words);
     const resultLines = text.split("\n").slice(2, 2 + words.length);
-    expect(resultLines).toEqual(["🥚", "🟨", "🟪"].map((symbol, i) => `${symbol} ${rarityScore(words[i].zipf, "2024-01-05").toFixed(1)}`));
+    expect(resultLines).toEqual(["🥚", "🟫", "🟪"].map((symbol, i) => `${symbol} ${rarityScore(words[i].zipf, "2024-01-05").toFixed(1)}`));
   });
 
   it("separates the heading from the shared guesses", () => {

@@ -5,12 +5,10 @@ interface Props {
   drop: string;
   disabled: boolean;
   feedback: Feedback | null;
-  /** Set by clicking a word in the guess log; consumed once, then cleared by the parent. */
-  prefill: { word: string; token: number } | null;
   onSubmit: (word: string) => void;
 }
 
-export function SubmitForm({ drop, disabled, feedback, prefill, onSubmit }: Props) {
+export function SubmitForm({ drop, disabled, feedback, onSubmit }: Props) {
   const [value, setValue] = useState("");
   const rowRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -25,16 +23,6 @@ export function SubmitForm({ drop, disabled, feedback, prefill, onSubmit }: Prop
     // the player can keep typing their next guess without tapping back in.
     inputRef.current?.focus();
   }
-
-  // A log entry was clicked: load its word into the box and focus it so
-  // the player can tweak and resubmit it directly, per "click the text you
-  // want typed in."
-  useEffect(() => {
-    if (!prefill) return;
-    setValue(prefill.word);
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }, [prefill]);
 
   // Wordle-style shake on a rejected submission. Force a reflow before
   // re-adding the class so back-to-back rejections of the same word each
