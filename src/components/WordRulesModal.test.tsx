@@ -14,7 +14,7 @@ describe("WordRulesModal", () => {
     const dialog = screen.getByRole("dialog", { name: /word rules/i });
     expect(screen.getByRole("heading", { name: "Word rules" })).toBeInTheDocument();
     expect(dialog).toHaveTextContent(/curated word list is sourced from scowl and wiktionary .*and contains more than 200,000 words/i);
-    expect(dialog).toHaveTextContent(/proper nouns, abbreviations, archaic or obsolete words, hyphenated words/i);
+    expect(dialog).toHaveTextContent(/proper nouns, abbreviations, obsolete, archaic, or dated words, hyphenated words/i);
     expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for play/i);
     expect(dialog).toHaveTextContent(/used under.*cc by-sa 4\.0/i);
     expect(screen.getByRole("link", { name: "Wiktionary" })).toHaveAttribute("href", "https://en.wiktionary.org/");
