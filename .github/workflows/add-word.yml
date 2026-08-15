@@ -1,10 +1,13 @@
 name: Add a word
 
-# One workflow for all four flows, chosen by the inputs below:
-#   list=curated  | forced=false  -> add a maintainer-curated word (must be scored)
-#   list=curated  | forced=true   -> add it even if no corpus scores it (10.0 Mythic)
-#   list=suggested| forced=false  -> add an accepted player suggestion (must be scored)
-#   list=suggested| forced=true   -> add it even if no corpus scores it (10.0 Mythic)
+# One workflow to hand-add a single word to any provenance list, chosen below:
+#   list=curated   -> a maintainer-curated word (scripts/extra-words.txt)
+#   list=suggested -> an accepted player suggestion (scripts/suggested-words.txt)
+#   list=online    -> a rare word found online (scripts/online-words.txt); the
+#                     scheduled "Add rare words found online" workflow adds these
+#                     automatically, but this lets a maintainer add one by hand.
+# For each, forced=false requires the word to be scored; forced=true adds it even
+# if no corpus scores it (it lands at the reserved 10.0 / Mythic).
 #
 # "Scored" means the frequency waterfall (wordfreq -> Norvig -> Google Books)
 # attests the word. Without --forced, an unscored word fails the run.
@@ -24,6 +27,7 @@ on:
         options:
           - curated
           - suggested
+          - online
       forced:
         description: Add the word even if no frequency corpus scores it (it will score the max 10.0 / Mythic)
         required: false
@@ -98,7 +102,7 @@ jobs:
           title: "Add ${{ inputs.word }} to the ${{ inputs.list }} dictionary"
           body: |
             Adds `${{ inputs.word }}` to the **${{ inputs.list }}** word list
-            (`scripts/${{ inputs.list == 'suggested' && 'suggested-words.txt' || 'extra-words.txt' }}`)
+            (`scripts/${{ inputs.list == 'suggested' && 'suggested-words.txt' || inputs.list == 'online' && 'online-words.txt' || 'extra-words.txt' }}`)
             and regenerates the dictionary and rarity mappings.
 
             - forced: `${{ inputs.forced }}` (a forced word with no corpus frequency scores the maximum 10.0 / Mythic)
@@ -109,6 +113,7 @@ jobs:
           add-paths: |
             scripts/extra-words.txt
             scripts/suggested-words.txt
+            scripts/online-words.txt
             src/data/dictionary.json
             src/data/rarity.json
             src/data/rarity-legacy.json

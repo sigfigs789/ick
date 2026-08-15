@@ -31,6 +31,7 @@ OUT_DIR = ROOT / "src" / "data"
 BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
 SUGGESTED_WORDS_PATH = ROOT / "scripts" / "suggested-words.txt"
+ONLINE_WORDS_PATH = ROOT / "scripts" / "online-words.txt"
 WIKTIONARY_ACCEPTED_PATH = ROOT / "scripts" / "wiktionary-accepted.txt"
 
 MIN_LEN = 1
@@ -169,6 +170,10 @@ def load_suggested_words() -> set[str]:
     return load_word_file(SUGGESTED_WORDS_PATH)
 
 
+def load_online_words() -> set[str]:
+    return load_word_file(ONLINE_WORDS_PATH)
+
+
 def load_wiktionary_words() -> set[str]:
     return load_word_file(WIKTIONARY_ACCEPTED_PATH)
 
@@ -304,6 +309,7 @@ def main() -> None:
 
     extra_words = load_extra_words()
     suggested_words = load_suggested_words()
+    online_words = load_online_words()
     wiktionary_words = load_wiktionary_words()
     # Wiktionary lists lowercase spellings of names/abbreviations that SCOWL
     # excludes only by capitalization; drop them so the supplement can't smuggle
@@ -311,11 +317,15 @@ def main() -> None:
     blocked = wiktionary_words & excluded
     wiktionary_words -= excluded
     raw_words = word_list.read_text(errors="ignore").splitlines()
-    # Curated and player-suggested words are separate provenance lists but feed
-    # the same playable dictionary; the split only records where a word came from.
-    raw_words = set(raw_words) | extra_words | suggested_words | wiktionary_words
+    # Curated, player-suggested, and online-discovered words are separate
+    # provenance lists but feed the same playable dictionary; the split only
+    # records where a word came from.
+    raw_words = (
+        set(raw_words) | extra_words | suggested_words | online_words | wiktionary_words
+    )
     print(f"Loaded {len(extra_words)} manually curated extra words")
     print(f"Loaded {len(suggested_words)} player-suggested words")
+    print(f"Loaded {len(online_words)} online-discovered rare words")
     print(f"Loaded {len(wiktionary_words)} Wiktionary terms ({len(blocked)} name/abbr excluded)")
     print(f"Read {len(raw_words)} candidate entries")
 

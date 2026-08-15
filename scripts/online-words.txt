@@ -1,0 +1,6 @@
+# Very rare words discovered online for an upcoming drop by the "Add rare words
+# found online" GitHub Action (scripts/find-online-words.py). Kept separate from
+# extra-words.txt (maintainer-curated) and suggested-words.txt (player-suggested)
+# purely to record provenance -- all are merged into dictionary.json by
+# generate-data.py. Managed by the "Add a word" pipeline in
+# scripts/manage-extra-word.py (list=online).
