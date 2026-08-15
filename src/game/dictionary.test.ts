@@ -23,6 +23,12 @@ const explicitlyCuratedWords = [
   "trojan",
   "victorian",
 ];
+// Words added through the "Add a word" GitHub Action, pinned with the rarity and
+// Zipf the data pipeline gave them so the PR shows the word was added *and* how it
+// scored. Appended automatically by scripts/manage-extra-word.py record-word.
+// [word, rarity, zipf]
+const curatedWordScores: ReadonlyArray<[string, string, number]> = [];
+const suggestedWordScores: ReadonlyArray<[string, string, number]> = [];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
@@ -55,6 +61,16 @@ describe("isValidWord", () => {
   it("accepts explicitly curated additions", () => {
     for (const word of explicitlyCuratedWords) {
       expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
+    }
+  });
+
+  it("accepts words added via the action with their recorded rarity and score", () => {
+    for (const [word, rarity, zipf] of [...curatedWordScores, ...suggestedWordScores]) {
+      expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
+      expect(rarityFor(word), `${word} should keep its recorded rarity/zipf`).toEqual({
+        rarity,
+        zipf,
+      });
     }
   });
 
