@@ -15,7 +15,7 @@ const streak: StreakState = {
 
 describe("GuessLog", () => {
   it("shows an empty state with no guesses", () => {
-    render(<GuessLog acceptedWords={[]} onSelectWord={vi.fn()} />);
+    render(<GuessLog acceptedWords={[]} />);
     expect(screen.getByText(/no guesses yet/i)).toBeInTheDocument();
   });
 
@@ -24,7 +24,7 @@ describe("GuessLog", () => {
       { word: "strange", rarity: "Common", zipf: 4.6 },
       { word: "strut", rarity: "Rare", zipf: 3.2 },
     ];
-    render(<GuessLog acceptedWords={words} onSelectWord={vi.fn()} />);
+    render(<GuessLog acceptedWords={words} />);
     expect(screen.getByText("strange")).toBeInTheDocument();
     expect(screen.getByText("strut")).toBeInTheDocument();
     expect(screen.getByText("2 of 6 used")).toBeInTheDocument();
@@ -35,32 +35,29 @@ describe("GuessLog", () => {
       { word: "strange", rarity: "Common", zipf: 4.6 },
       { word: "strut", rarity: "Rare", zipf: 3.2 },
     ];
-    render(<GuessLog acceptedWords={words} onSelectWord={vi.fn()} />);
+    render(<GuessLog acceptedWords={words} />);
     const strutEntry = screen.getByText("strut").closest("li");
     expect(strutEntry).toHaveClass("guess-log__entry--best");
     const strangeEntry = screen.getByText("strange").closest("li");
     expect(strangeEntry).not.toHaveClass("guess-log__entry--best");
   });
 
-  it("calls onSelectWord with the word when a log entry is clicked", async () => {
-    const onSelectWord = vi.fn();
+  it("copies the tier square, word, and score when tapped and flashes a confirmation", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
     const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
-    render(<GuessLog acceptedWords={words} onSelectWord={onSelectWord} />);
+    render(<GuessLog acceptedWords={words} />);
 
-    await userEvent.click(screen.getByRole("button", { name: /reuse "strange"/i }));
-    expect(onSelectWord).toHaveBeenCalledWith("strange");
+    await userEvent.click(screen.getByRole("button", { name: /copy "strange"/i }));
+
+    // "🟫 strange (<score>)" — the brown square is the Common tier.
+    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/^🟫 strange \(.+\)$/));
+    expect(screen.getByText("Copied!")).toBeInTheDocument();
   });
 
   it("shows all trackers without a duplicate completion heading", () => {
     const words: AcceptedWord[] = [{ word: "strut", rarity: "Rare", zipf: 3.2 }];
-    render(
-      <GuessLog
-        acceptedWords={words}
-        onSelectWord={vi.fn()}
-        completed
-        streak={streak}
-      />
-    );
+    render(<GuessLog acceptedWords={words} completed streak={streak} />);
     expect(screen.queryByRole("heading", { name: /you won/i })).not.toBeInTheDocument();
     expect(screen.getByText("Crushed it")).toBeInTheDocument();
     expect(screen.getByText("Elite")).toBeInTheDocument();

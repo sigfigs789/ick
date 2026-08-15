@@ -35,9 +35,9 @@
   --rarity-very-common-fg: #4b4f57;
   --rarity-very-common-dot: #9aa0a8;
 
-  --rarity-common-bg: #fbf1cf;
-  --rarity-common-fg: #856404;
-  --rarity-common-dot: #eab308;
+  --rarity-common-bg: #ece1d4;
+  --rarity-common-fg: #6b4423;
+  --rarity-common-dot: #8b5a2b;
 
   --rarity-uncommon-bg: #e3f6e8;
   --rarity-uncommon-fg: #1c7a3d;
@@ -93,9 +93,9 @@
     --rarity-very-common-fg: #c2c5cb;
     --rarity-very-common-dot: #8a8d93;
 
-    --rarity-common-bg: #2c2708;
-    --rarity-common-fg: #f2e08a;
-    --rarity-common-dot: #e6c020;
+    --rarity-common-bg: #291c10;
+    --rarity-common-fg: #d8b98f;
+    --rarity-common-dot: #a9784b;
 
     --rarity-uncommon-bg: #0f2b19;
     --rarity-uncommon-fg: #7fe0a3;
@@ -446,12 +446,6 @@ h2 {
   gap: 0.55rem;
 }
 .guess-log__entry {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  min-height: 3.4rem;
-  padding: 0.4rem 0.5rem 0.4rem 0.9rem;
   border: 2px solid var(--border-strong);
   border-radius: 0.75rem;
   background: var(--card-bg);
@@ -476,20 +470,58 @@ h2 {
     transform: scale(1);
   }
 }
-.guess-log__word-button {
+/* The whole card is the tap target: pressing anywhere copies the word. */
+.guess-log__entry-button {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  min-height: 3.4rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.9rem;
   border: none;
   background: none;
-  padding: 0.3rem 0.2rem;
-  margin: -0.3rem -0.2rem;
-  border-radius: 0.4rem;
+  border-radius: 0.7rem;
   cursor: pointer;
   color: inherit;
+  text-align: left;
+  font: inherit;
 }
-.guess-log__word-button:hover {
+.guess-log__entry-button:hover {
   background: var(--bg-inset);
+}
+.guess-log__entry-main,
+.guess-log__entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.guess-log__entry-button:hover .guess-log__copy-hint,
+.guess-log__entry-button:focus-visible .guess-log__copy-hint {
+  opacity: 1;
+}
+.guess-log__entry-button--copied .guess-log__copy-hint {
+  opacity: 1;
+  color: var(--best-word-accent);
+}
+/* A faint copy affordance that firms up on hover/focus and turns into a
+ * checkmark once the word is copied. */
+.guess-log__copy-hint {
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-muted);
+  opacity: 0.45;
+  transition: opacity 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
+}
+/* Share-button-style "Copied!" confirmation that replaces the copy icon on tap. */
+.guess-log__copied {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--best-word-accent);
 }
 .guess-log__crown {
   font-size: 1rem;

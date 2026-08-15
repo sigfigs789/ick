@@ -7,7 +7,7 @@ describe("SubmitForm", () => {
   it("submits the typed word and clears the box", async () => {
     const onSubmit = vi.fn();
     render(
-      <SubmitForm drop="str" disabled={false} feedback={null} prefill={null} onSubmit={onSubmit} />
+      <SubmitForm drop="str" disabled={false} feedback={null} onSubmit={onSubmit} />
     );
 
     const input = screen.getByLabelText(/enter a word containing "STR"/i);
@@ -21,7 +21,7 @@ describe("SubmitForm", () => {
   it("does not submit an empty or whitespace-only value", async () => {
     const onSubmit = vi.fn();
     render(
-      <SubmitForm drop="str" disabled={false} feedback={null} prefill={null} onSubmit={onSubmit} />
+      <SubmitForm drop="str" disabled={false} feedback={null} onSubmit={onSubmit} />
     );
 
     const input = screen.getByLabelText(/enter a word containing "STR"/i);
@@ -32,24 +32,9 @@ describe("SubmitForm", () => {
 
   it("disables the input and button once the puzzle is complete", () => {
     render(
-      <SubmitForm drop="str" disabled={true} feedback={null} prefill={null} onSubmit={vi.fn()} />
+      <SubmitForm drop="str" disabled={true} feedback={null} onSubmit={vi.fn()} />
     );
     expect(screen.getByRole("button", { name: /submit/i })).toBeDisabled();
     expect(screen.getByText(/completed this puzzle/i)).toBeInTheDocument();
-  });
-
-  it("loads a prefill value into the input and focuses it", () => {
-    render(
-      <SubmitForm
-        drop="str"
-        disabled={false}
-        feedback={null}
-        prefill={{ word: "strange", token: 1 }}
-        onSubmit={vi.fn()}
-      />
-    );
-    const input = screen.getByLabelText(/enter a word containing "STR"/i);
-    expect(input).toHaveValue("strange");
-    expect(input).toHaveFocus();
   });
 });
