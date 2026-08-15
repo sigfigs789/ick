@@ -11,7 +11,10 @@ const RARITY_META: Record<Rarity, { tag: string; className: string }> = {
   Common: { tag: "COMMON", className: "rarity--common" },
   Uncommon: { tag: "UNCOMMON", className: "rarity--uncommon" },
   Rare: { tag: "RARE", className: "rarity--rare" },
-  "Extremely Rare": { tag: "EXTREMELY RARE", className: "rarity--extremely-rare" },
+  "Extremely Rare": {
+    tag: "EXTREMELY RARE",
+    className: "rarity--extremely-rare",
+  },
   Mythic: { tag: "MYTHIC", className: "rarity--mythic" },
   Legend: { tag: "LEGEND", className: "rarity--legend" },
 };
@@ -31,7 +34,9 @@ export function RarityBadge({ rarity, zipf, date }: Props) {
       <span className="rarity-badge__dot" aria-hidden="true" />
       {meta.tag}
       {zipf !== undefined && (
-        <span className="rarity-badge__score">{formatRarityScore(zipf, date)}</span>
+        <span className="rarity-badge__score">
+          {formatRarityScore(zipf, date, rarity)}
+        </span>
       )}
     </span>
   );

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { rarityFor, rarityScore, formatRarityScore, formatScore } from "./dictionary";
+import {
+  rarityFor,
+  rarityScore,
+  formatRarityScore,
+  formatScore,
+} from "./dictionary";
 
 // Expected values are hardcoded (not recomputed via the functions under test)
 // so a regression in the scoring math or the legacy dataset is actually caught.
@@ -74,8 +79,22 @@ describe("score formatting", () => {
     expect(formatScore(4.3)).toBe("4.3");
   });
 
+  it("keys precision off the shown tier so the number never contradicts its label", () => {
+    // A high, Mythic-magnitude score displayed under an "Extremely Rare" badge
+    // must read as one decimal -- the tier the player sees wins over the raw
+    // score (this is the "Extremely Rare shows 9.74" bug).
+    const zipf = rarityFor("aardwolf")!.zipf; // bare score 9.74 (two decimals)
+    expect(formatRarityScore(zipf)).toBe("9.74"); // no tier -> score-based fallback
+    expect(formatRarityScore(zipf, undefined, "Extremely Rare")).toBe("9.7");
+    expect(formatRarityScore(zipf, undefined, "Rare")).toBe("9.7");
+    expect(formatRarityScore(zipf, undefined, "Mythic")).toBe("9.74");
+    expect(formatRarityScore(zipf, undefined, "Legend")).toBe("9.74");
+  });
+
   it("always shows one decimal under the legacy system", () => {
-    expect(formatRarityScore(rarityFor("autecism", BEFORE)!.zipf, BEFORE)).toBe("9.4");
+    expect(formatRarityScore(rarityFor("autecism", BEFORE)!.zipf, BEFORE)).toBe(
+      "9.4",
+    );
     expect(formatScore(9.4, BEFORE)).toBe("9.4");
   });
 });

@@ -10,7 +10,9 @@ import type { AcceptedWord, Rarity, RarityInfo } from "./types";
  * hand-edited independently of frequency data.
  */
 const WORDS: readonly string[] = dictionaryWords as string[];
-const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, i]));
+const WORD_INDEX: ReadonlyMap<string, number> = new Map(
+  WORDS.map((w, i) => [w, i]),
+);
 
 /**
  * Rarity scoring has evolved across two cutovers, each date-gated so past
@@ -75,7 +77,10 @@ interface Scoring {
   zipfAt(index: number): number;
   score(zipf: number): number;
   rarity(zipf: number): Rarity;
-  format(score: number): string;
+  // Format a score for display. When the rarity tier being shown is passed, the
+  // decimal precision follows that tier (so the number can never contradict its
+  // label); without it, precision falls back to the score's own magnitude.
+  format(score: number, rarity?: Rarity): string;
   // Whether the bound derivational suffixes (-ization/-isation, -ability/
   // -ibility) inherit their base word's frequency. Introduced with the
   // 2026-08-16 wide-band cutover, so it's off for earlier systems to keep past
@@ -89,14 +94,21 @@ interface Scoring {
 // there. Pinning it to a fixed 0 (rather than the data's live minimum) keeps
 // deep-tail scores stable when even-rarer words are added later, and bounds the
 // scale below -- Zipf is a log scale with no natural floor.
-function twoBandScoring(ceiling: number, tailFloor: number, boundBaseForms: boolean): Scoring {
+function twoBandScoring(
+  ceiling: number,
+  tailFloor: number,
+  boundBaseForms: boolean,
+): Scoring {
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
       const s = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
       return Math.round(s * 100) / 100;
     }
     const clamped = Math.max(zipf, tailFloor);
-    const s = ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
+    const s =
+      ceiling +
+      ((10 - ceiling) * (MEASURED_FLOOR - clamped)) /
+        (MEASURED_FLOOR - tailFloor);
     return Math.round(Math.min(s, 10) * 100) / 100;
   };
   // Mythic and above show two decimals; Extremely Rare and below show one. The
@@ -109,10 +121,22 @@ function twoBandScoring(ceiling: number, tailFloor: number, boundBaseForms: bool
     // it gets a measured rank. Comparing the precise (two-decimal) score keeps
     // a word like "abashing" (true 9.87) in Mythic rather than rounding it up
     // to 9.9 and masquerading as Legend.
-    rarity: (zipf) => (score(zipf) >= ceiling ? "Legend" : measuredRarityModern(zipf)),
+    rarity: (zipf) =>
+      score(zipf) >= ceiling ? "Legend" : measuredRarityModern(zipf),
     // Two decimals for Mythic and Legend so near-ceiling scores read honestly
     // (9.87, not a rounded-up 9.9); one decimal for Extremely Rare and below.
-    format: (s) => (s > twoDecimalCutoff ? s.toFixed(2) : s.toFixed(1)),
+    // When the displayed tier is known, key the precision off it so the number
+    // always agrees with its label -- an "Extremely Rare" badge can never show
+    // two decimals even if its score sits near the Mythic boundary. Callers with
+    // no tier (e.g. a bare top score) fall back to the score-vs-cutoff test.
+    format: (s, rarity) =>
+      (
+        rarity === undefined
+          ? s > twoDecimalCutoff
+          : rarity === "Mythic" || rarity === "Legend"
+      )
+        ? s.toFixed(2)
+        : s.toFixed(1),
     boundBaseForms,
   };
 }
@@ -127,7 +151,9 @@ const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true);
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
   score: (zipf) =>
-    Math.round(((LEGACY_MAX_ZIPF - zipf) / (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) * 100) / 10,
+    Math.round(
+      ((LEGACY_MAX_ZIPF - zipf) / (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) * 100,
+    ) / 10,
   rarity: (zipf) => {
     // Missing corpus data is not evidence that a word is genuinely Mythic.
     if (zipf === LEGACY_UNKNOWN_ZIPF) return "Extremely Rare";
@@ -217,7 +243,7 @@ export interface BaseFormSubstitution {
  */
 export function baseFormSubstitution(
   word: string,
-  date?: string
+  date?: string,
 ): BaseFormSubstitution | undefined {
   const normalized = word.toLowerCase();
   const i = WORD_INDEX.get(normalized);
@@ -227,13 +253,19 @@ export function baseFormSubstitution(
 
   const tenseBase = tenseBaseForm(normalized, scoring);
   if (tenseBase && tenseBase !== normalized) {
-    return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
+    return {
+      word: normalized,
+      base: tenseBase,
+      ownZipf,
+      baseZipf: zipfFor(tenseBase, scoring),
+    };
   }
 
   const base = scoringBaseForm(normalized, scoring.boundBaseForms);
   if (base && base !== normalized) {
     const baseZipf = zipfFor(base, scoring);
-    if (baseZipf > ownZipf) return { word: normalized, base, ownZipf, baseZipf };
+    if (baseZipf > ownZipf)
+      return { word: normalized, base, ownZipf, baseZipf };
   }
   return undefined;
 }
@@ -244,7 +276,10 @@ export function baseFormSubstitution(
  * rarer, so this is a min-scan over the whole dictionary, same containment
  * rule as submit.ts's containsDropInOrder.
  */
-export function bestWordForDrop(drop: string, date?: string): AcceptedWord | undefined {
+export function bestWordForDrop(
+  drop: string,
+  date?: string,
+): AcceptedWord | undefined {
   const needle = drop.toLowerCase();
   let best: AcceptedWord | undefined;
   for (let i = 0; i < WORDS.length; i++) {
@@ -273,15 +308,23 @@ function adjustedZipf(word: string, zipf: number, scoring: Scoring): number {
   return Math.max(zipf, zipfFor(base, scoring));
 }
 
-function scoringBaseForm(word: string, includeBound: boolean): string | undefined {
+function scoringBaseForm(
+  word: string,
+  includeBound: boolean,
+): string | undefined {
   const inflected = baseForm(word);
   if (inflected !== word && WORD_INDEX.has(inflected)) return inflected;
 
   for (const suffix of ["ness", "ly"]) {
     if (!word.endsWith(suffix) || word.length <= suffix.length + 2) continue;
     const stem = word.slice(0, -suffix.length);
-    const candidates = [stem, stem.endsWith("i") ? `${stem.slice(0, -1)}y` : ""];
-    const base = candidates.find((candidate) => candidate && WORD_INDEX.has(candidate));
+    const candidates = [
+      stem,
+      stem.endsWith("i") ? `${stem.slice(0, -1)}y` : "",
+    ];
+    const base = candidates.find(
+      (candidate) => candidate && WORD_INDEX.has(candidate),
+    );
     if (base) return base;
   }
 
@@ -289,7 +332,9 @@ function scoringBaseForm(word: string, includeBound: boolean): string | undefine
   // the wide-band era. Capped at the base like the transparent suffixes above:
   // "aggrandization" scores as "aggrandize", never rarer than it.
   if (includeBound) {
-    const bound = boundBaseCandidates(word).find((candidate) => WORD_INDEX.has(candidate));
+    const bound = boundBaseCandidates(word).find((candidate) =>
+      WORD_INDEX.has(candidate),
+    );
     if (bound) return bound;
   }
   return undefined;
@@ -386,16 +431,24 @@ export function formatScore(score: number, date?: string): string {
   return scoringFor(date).format(score);
 }
 
-/** Format a word's rarity score for display, keyed off its Zipf. */
-export function formatRarityScore(zipf: number, date?: string): string {
+/**
+ * Format a word's rarity score for display, keyed off its Zipf. Pass the rarity
+ * tier being shown alongside it so the number's precision matches its label
+ * (Mythic/Legend show two decimals, Extremely Rare and below show one).
+ */
+export function formatRarityScore(
+  zipf: number,
+  date?: string,
+  rarity?: Rarity,
+): string {
   const scoring = scoringFor(date);
-  return scoring.format(scoring.score(zipf));
+  return scoring.format(scoring.score(zipf), rarity);
 }
 
 /** Sum the displayed rarity scores earned during one game session. */
 export function totalRarityScore(
   words: readonly Pick<AcceptedWord, "zipf">[],
-  date?: string
+  date?: string,
 ): number {
   const scoring = scoringFor(date);
   const total = words.reduce((sum, word) => sum + scoring.score(word.zipf), 0);
@@ -405,8 +458,11 @@ export function totalRarityScore(
 /** Highest displayed rarity score earned in the current puzzle. */
 export function topRarityScore(
   words: readonly Pick<AcceptedWord, "zipf">[],
-  date?: string
+  date?: string,
 ): number {
   const scoring = scoringFor(date);
-  return words.reduce((top, word) => Math.max(top, scoring.score(word.zipf)), 0);
+  return words.reduce(
+    (top, word) => Math.max(top, scoring.score(word.zipf)),
+    0,
+  );
 }

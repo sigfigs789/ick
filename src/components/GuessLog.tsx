@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { MAX_GUESSES } from "../game/constants";
 import { bestWord } from "../game/rank";
-import { formatRarityScore, topRarityScore, totalRarityScore } from "../game/dictionary";
+import {
+  formatRarityScore,
+  topRarityScore,
+  totalRarityScore,
+} from "../game/dictionary";
 import { copyText } from "../clipboard";
 import { RARITY_SYMBOL } from "../game/share";
 import { RarityBadge } from "./RarityBadge";
@@ -11,7 +15,10 @@ import type { AcceptedWord, StreakState } from "../game/types";
 /** The clipboard form of a logged word: "<tier square> <word> (<score>)".
  * Reuses the share-results palette so a pasted word matches the share text. */
 function copyTextForWord(w: AcceptedWord, date?: string): string {
-  const score = w.zipf !== undefined ? ` (${formatRarityScore(w.zipf, date)})` : "";
+  const score =
+    w.zipf !== undefined
+      ? ` (${formatRarityScore(w.zipf, date, w.rarity)})`
+      : "";
   return `${RARITY_SYMBOL[w.rarity]} ${w.word}${score}`;
 }
 
@@ -44,7 +51,10 @@ export function GuessLog({
   }
 
   return (
-    <section className={`guess-log${completed ? " guess-log--completed" : ""}`} aria-label="Your guesses">
+    <section
+      className={`guess-log${completed ? " guess-log--completed" : ""}`}
+      aria-label="Your guesses"
+    >
       {!completed && (
         <div className="guess-log__header">
           <h2 className="guess-log__title">Guess log</h2>
@@ -64,7 +74,10 @@ export function GuessLog({
             const isBest = best !== undefined && w.word === best.word;
             const isCopied = copiedWord === w.word;
             return (
-              <li key={w.word} className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}>
+              <li
+                key={w.word}
+                className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}
+              >
                 <button
                   type="button"
                   className={`guess-log__entry-button${isCopied ? " guess-log__entry-button--copied" : ""}`}
@@ -77,7 +90,11 @@ export function GuessLog({
                 >
                   <span className="guess-log__entry-main">
                     {isBest && (
-                      <span className="guess-log__crown" aria-hidden="true" title="Your best word so far">
+                      <span
+                        className="guess-log__crown"
+                        aria-hidden="true"
+                        title="Your best word so far"
+                      >
                         👑
                       </span>
                     )}
@@ -89,8 +106,22 @@ export function GuessLog({
                     ) : (
                       <span className="guess-log__copy-hint" aria-hidden="true">
                         <svg viewBox="0 0 24 24" width="16" height="16">
-                          <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-                          <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" strokeWidth="2" />
+                          <rect
+                            x="9"
+                            y="9"
+                            width="11"
+                            height="11"
+                            rx="2"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          />
+                          <path
+                            d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          />
                         </svg>
                       </span>
                     )}
@@ -107,7 +138,8 @@ export function GuessLog({
 
       {!completed && guessesLeft > 0 && acceptedWords.length > 0 && (
         <p className="guess-log__remaining">
-          {guessesLeft} guess{guessesLeft === 1 ? "" : "es"} left. Aim for the highest rarity you can find.
+          {guessesLeft} guess{guessesLeft === 1 ? "" : "es"} left. Aim for the
+          highest rarity you can find.
         </p>
       )}
 

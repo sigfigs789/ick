@@ -1,5 +1,10 @@
 import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
-import { formatRarityScore, formatScore, topRarityScore, totalRarityScore } from "./dictionary";
+import {
+  formatRarityScore,
+  formatScore,
+  topRarityScore,
+  totalRarityScore,
+} from "./dictionary";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -59,7 +64,7 @@ export function buildShareText(
   dateStr: string,
   drop: string,
   words: AcceptedWord[],
-  options: ShareOptions = {}
+  options: ShareOptions = {},
 ): string {
   const spoilerFree = options.spoilerFree ?? true;
   const source = options.source ?? null;
@@ -68,27 +73,39 @@ export function buildShareText(
 
   const resultLine = spoilerFree
     ? words
-        .map((w) => `${RARITY_SYMBOL[w.rarity]} ${formatRarityScore(w.zipf, dateStr)}`)
+        .map(
+          (w) =>
+            `${RARITY_SYMBOL[w.rarity]} ${formatRarityScore(w.zipf, dateStr, w.rarity)}`,
+        )
         .join("\n")
     : words
         .map(
           (w) =>
-            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${formatRarityScore(w.zipf, dateStr)})`
+            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${formatRarityScore(w.zipf, dateStr, w.rarity)})`,
         )
         .join("\n");
 
   const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
-  if (format === "default" && (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined)) {
+  if (
+    format === "default" &&
+    (options.streak !== undefined ||
+      options.crushedIt !== undefined ||
+      options.elite !== undefined)
+  ) {
     const streak = options.streak ?? 0;
     if (resultLine) lines.push("");
     lines.push(
-      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Crushed it: ${options.crushedIt ?? 0} · Elite: ${options.elite ?? 0}`
+      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Crushed it: ${options.crushedIt ?? 0} · Elite: ${options.elite ?? 0}`,
     );
   }
-  const raritySummary = [`Total: ${totalRarityScore(words, dateStr).toFixed(1)}`];
+  const raritySummary = [
+    `Total: ${totalRarityScore(words, dateStr).toFixed(1)}`,
+  ];
   if (format === "default")
-    raritySummary.push(`Top: ${formatScore(topRarityScore(words, dateStr), dateStr)}`);
+    raritySummary.push(
+      `Top: ${formatScore(topRarityScore(words, dateStr), dateStr)}`,
+    );
   lines.push(raritySummary.join(" · "));
   lines.push(shareUrl(source));
   return lines.join("\n");
@@ -97,7 +114,7 @@ export function buildShareText(
 export function todayShareText(
   drop: string,
   words: AcceptedWord[],
-  options?: ShareOptions
+  options?: ShareOptions,
 ): string {
   return buildShareText(toDateString(new Date()), drop, words, options);
 }
