@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Add a curated or suggested word and maintain the dictionary regression tests.
+"""Add a curated, suggested, or online word and maintain the regression tests.
 
-Two provenance lists feed the playable dictionary:
+Three provenance lists feed the playable dictionary:
   - scripts/extra-words.txt      -> "curated": words the maintainer chose to add
   - scripts/suggested-words.txt  -> "suggested": player-submitted words that were
                                     accepted
+  - scripts/online-words.txt     -> "online": rare words discovered online for an
+                                    upcoming drop by the "Add rare words found
+                                    online" GitHub Action (scripts/find-online-words.py)
 
-Both are merged into dictionary.json by generate-data.py; the split only records
-where a word came from. An added word is gated on the frequency waterfall
+All three are merged into dictionary.json by generate-data.py; the split only
+records where a word came from. An added word is gated on the frequency waterfall
 (wordfreq -> Norvig -> Google Books): by default a word no corpus attests is
 rejected, because its rarity would be a guess rather than a measurement.
 `--forced` overrides that and adds the word anyway; the data pipeline then gives
@@ -24,6 +27,7 @@ from frequency import FrequencyWaterfall
 ROOT = Path(__file__).resolve().parent.parent
 EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
 SUGGESTED_WORDS_PATH = ROOT / "scripts" / "suggested-words.txt"
+ONLINE_WORDS_PATH = ROOT / "scripts" / "online-words.txt"
 BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
@@ -54,8 +58,8 @@ RARITY_LABEL = {
     "M": "Mythic",
 }
 
-# The two provenance lists a word can be added to, and the JS test array that
-# pins each one's words with the rarity/Zipf the pipeline gave them.
+# The provenance lists a word can be added to, and the JS test array that pins
+# each one's words with the rarity/Zipf the pipeline gave them.
 LISTS = {
     "curated": {
         "path": EXTRA_WORDS_PATH,
@@ -66,6 +70,11 @@ LISTS = {
         "path": SUGGESTED_WORDS_PATH,
         "label": "suggested",
         "score_array": "suggestedWordScores",
+    },
+    "online": {
+        "path": ONLINE_WORDS_PATH,
+        "label": "online",
+        "score_array": "onlineWordScores",
     },
 }
 
@@ -208,15 +217,17 @@ def record_word(raw_word: str, list_name: str) -> None:
     print(f"Pinned {word!r} ({label}, Zipf {zipf}) in the {array_name} test.")
 
 
-def align_legacy(raw_word: str) -> None:
-    """Keep rarity-legacy.json index-aligned after a word is added.
+def align_legacy(raw_words: list[str]) -> None:
+    """Keep rarity-legacy.json index-aligned after one or more words are added.
 
     generate-data.py rebuilds dictionary.json and rarity.json, but the frozen
-    legacy rarity arrays are not regenerated. Inserting the new word's placeholder
-    at its sorted position preserves every existing legacy value while keeping the
-    arrays the same length as the dictionary (see LEGACY_UNKNOWN_* above).
+    legacy rarity arrays are not regenerated. Inserting each new word's
+    placeholder at its sorted position preserves every existing legacy value
+    while keeping the arrays the same length as the dictionary (see
+    LEGACY_UNKNOWN_* above). Inserting the words in ascending final-index order
+    keeps every remaining target index valid as the arrays grow.
     """
-    word = raw_word.strip().lower()
+    words = sorted({w.strip().lower() for w in raw_words})
     dictionary = json.loads(DICTIONARY_PATH.read_text())
     legacy = json.loads(LEGACY_RARITY_PATH.read_text())
     tenths = legacy["zipfTenths"]
@@ -225,21 +236,27 @@ def align_legacy(raw_word: str) -> None:
     if len(tenths) == len(dictionary):
         print("rarity-legacy.json already aligned; nothing to insert.")
         return
-    try:
-        index = dictionary.index(word)
-    except ValueError:
-        sys.exit(f"{word!r} is not in dictionary.json; regenerate the data first.")
-    if len(tenths) != len(dictionary) - 1:
+
+    indexes = []
+    for word in words:
+        try:
+            indexes.append(dictionary.index(word))
+        except ValueError:
+            sys.exit(f"{word!r} is not in dictionary.json; regenerate the data first.")
+    if len(tenths) != len(dictionary) - len(words):
         sys.exit(
             f"rarity-legacy.json is off by {len(dictionary) - len(tenths)} entries; "
-            f"expected exactly one missing. Refusing to guess the alignment."
+            f"expected exactly {len(words)} missing. Refusing to guess the alignment."
         )
 
-    tenths.insert(index, LEGACY_UNKNOWN_TENTHS)
-    legacy["codes"] = codes[:index] + LEGACY_UNKNOWN_CODE + codes[index:]
+    for index in sorted(indexes):
+        tenths.insert(index, LEGACY_UNKNOWN_TENTHS)
+        codes = codes[:index] + LEGACY_UNKNOWN_CODE + codes[index:]
+    legacy["codes"] = codes
     legacy["zipfTenths"] = tenths
     LEGACY_RARITY_PATH.write_text(json.dumps(legacy, separators=(",", ":")))
-    print(f"Inserted legacy alignment placeholder for {word!r} at index {index}.")
+    joined = ", ".join(f"{w!r}@{i}" for w, i in zip(words, sorted(indexes)))
+    print(f"Inserted {len(words)} legacy alignment placeholder(s): {joined}.")
 
 
 def main() -> None:
@@ -258,7 +275,7 @@ def main() -> None:
     record.add_argument("--list", choices=LISTS, default="curated", dest="list_name")
 
     legacy = command.add_parser("align-legacy")
-    legacy.add_argument("word")
+    legacy.add_argument("words", nargs="+")
 
     args = parser.parse_args()
 
@@ -267,7 +284,7 @@ def main() -> None:
     elif args.command == "update-size-test":
         update_size_test()
     elif args.command == "align-legacy":
-        align_legacy(args.word)
+        align_legacy(args.words)
     else:
         record_word(args.word, args.list_name)
 

@@ -29,6 +29,10 @@ const explicitlyCuratedWords = [
 // [word, rarity, zipf]
 const curatedWordScores: ReadonlyArray<[string, string, number]> = [];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [];
+// Rare words discovered online for an upcoming drop and added via the "Add rare
+// words found online" GitHub Action (list=online). Appended automatically by
+// scripts/manage-extra-word.py record-word.
+const onlineWordScores: ReadonlyArray<[string, string, number]> = [];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
@@ -65,7 +69,11 @@ describe("isValidWord", () => {
   });
 
   it("accepts words added via the action with their recorded rarity and score", () => {
-    for (const [word, rarity, zipf] of [...curatedWordScores, ...suggestedWordScores]) {
+    for (const [word, rarity, zipf] of [
+      ...curatedWordScores,
+      ...suggestedWordScores,
+      ...onlineWordScores,
+    ]) {
       expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
       expect(rarityFor(word), `${word} should keep its recorded rarity/zipf`).toEqual({
         rarity,
