@@ -151,7 +151,7 @@ describe("rarityFor", () => {
     expect(info?.zipf).toBeGreaterThan(7);
   });
 
-  it("reserves Quotidian for scores at/below 2.0", () => {
+  it("reserves Quotidian for scores at or below 2.0", () => {
     expect(rarityFor("about")?.rarity).toBe("Quotidian");
     expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThanOrEqual(2);
     expect(rarityFor("there")?.rarity).toBe("Very Common");
@@ -220,23 +220,32 @@ describe("rarityFor", () => {
     expect(rarityFor("trivialization")).toEqual(rarityFor("trivialize"));
   });
 
-  it("awards the 10.0 max and Mythic to a word no corpus attests", () => {
+  it("awards the 10.0 max and Legend to a word no corpus attests", () => {
     // "autecism" is absent from every frequency source (and its stem too), so
     // the waterfall gives it the rarest-word sentinel -- the only Zipf that
-    // earns a perfect 10.
+    // earns a perfect 10. The deep tail is its own top rank, Legend.
     const floored = rarityFor("autecism")!;
-    expect(floored.rarity).toBe("Mythic");
+    expect(floored.rarity).toBe("Legend");
     expect(rarityScore(floored.zipf)).toBe(10);
   });
 
-  it("awards Mythic only for a rank of 9.9 or higher", () => {
-    const belowMythic = rarityFor("assonant")!;
-    const mythic = rarityFor("autecism")!;
+  it("splits the top of the scale into Legend (deep tail), Mythic, and Extremely Rare", () => {
+    const legend = rarityFor("autecism")!; // deep tail, Zipf < 1
+    const mythic = rarityFor("aardwolf")!; // Zipf ~1.11, rarest measured slice
+    const extremelyRare = rarityFor("assonant")!; // Zipf ~1.53
 
-    expect(rarityScore(belowMythic.zipf)).toBeLessThan(9.9);
-    expect(belowMythic.rarity).not.toBe("Mythic");
-    expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.9);
+    // Legend is the deep-tail top rank (score >= the 9.9 ceiling).
+    expect(rarityScore(legend.zipf)).toBeGreaterThanOrEqual(9.9);
+    expect(legend.rarity).toBe("Legend");
+
+    // Mythic is the rarest measured band, one notch below Legend (~9.5-9.9).
+    expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.5);
+    expect(rarityScore(mythic.zipf)).toBeLessThan(9.9);
     expect(mythic.rarity).toBe("Mythic");
+
+    // Extremely Rare keeps the band beneath Mythic.
+    expect(rarityScore(extremelyRare.zipf)).toBeLessThan(9.5);
+    expect(extremelyRare.rarity).toBe("Extremely Rare");
   });
 });
 

@@ -105,6 +105,26 @@ Zipf `1.4` and Extremely Rare rather than Mythic, and removes anything in
 abbreviations). Rarity bands are tuned in the `RARITY_BANDS` constant at the
 top of the script — adjust and rerun as playtesting suggests.
 
+### Why size 80 (don't bump to 85)
+
+Size 80 is a deliberate cutoff — resist the urge to raise it to 85 "for more
+words." We measured it: SCOWL size 85 adds **50,458** entries over size 80, and
+they are overwhelmingly junk for a word game. ~98% are attested only at SCOWL's
+size-85 tier (which ESDB itself documents as "valid but potentially no longer
+used in modern English") and ~97% appear in **no** wordfreq corpus at all —
+archaic spellings (`abhominable`, `atwixt`), obsolete inflections (`abidden`),
+and dialectal forms (`naebody`, `brawlie`).
+
+The tempting counter-argument — "but 1,186 of them have modern wordfreq
+attestation" — doesn't survive inspection. Of those 1,186: **600 are proper
+nouns** whose lowercase forms merely appear in text (`alaska`, `albert`,
+`aesir`) — exactly what we already strip from the Wiktionary supplement — and
+the remaining ~586 are almost entirely foreign borrowings, Latin taxonomy, and
+transliterations (`auf`, `bien`, `deus`, `araceae`, `altezza`), not common
+English. Essentially none are genuinely useful words that size 80 was wrongly
+excluding. Individual real words that slip through size 80's net belong in
+`scripts/extra-words.txt`, not a blanket size bump.
+
 To recreate the ESDB/SCOWL source list:
 
 ```bash
