@@ -165,6 +165,47 @@ export function rarityFor(word: string, date?: string): RarityInfo | undefined {
   return { rarity: scoring.rarity(zipf), zipf };
 }
 
+/** A word whose rarity was inherited from a base form rather than its own data. */
+export interface BaseFormSubstitution {
+  /** The word the player actually submitted. */
+  word: string;
+  /** The base word whose frequency its score used instead. */
+  base: string;
+  /** The submitted word's own Zipf, before the base-form adjustment. */
+  ownZipf: number;
+  /** The base word's Zipf -- what the score was actually computed from. */
+  baseZipf: number;
+}
+
+/**
+ * If `word`'s rarity came from a base form rather than its own frequency, report
+ * the substitution (submitted word, base, and both Zipfs). Returns undefined when
+ * the word scored on its own data. Mirrors adjustedZipf: a tense base is used
+ * outright; a transparent/bound base only when it's more common than the word.
+ */
+export function baseFormSubstitution(
+  word: string,
+  date?: string
+): BaseFormSubstitution | undefined {
+  const normalized = word.toLowerCase();
+  const i = WORD_INDEX.get(normalized);
+  if (i === undefined) return undefined;
+  const scoring = scoringFor(date);
+  const ownZipf = scoring.zipfAt(i);
+
+  const tenseBase = tenseBaseForm(normalized, scoring);
+  if (tenseBase && tenseBase !== normalized) {
+    return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
+  }
+
+  const base = scoringBaseForm(normalized, scoring.boundBaseForms);
+  if (base && base !== normalized) {
+    const baseZipf = zipfFor(base, scoring);
+    if (baseZipf > ownZipf) return { word: normalized, base, ownZipf, baseZipf };
+  }
+  return undefined;
+}
+
 /**
  * The single rarest dictionary word containing `drop` as a substring -- the
  * best a player could theoretically submit for this drop. Lower Zipf means

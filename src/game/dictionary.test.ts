@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
-import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
+import { baseFormSubstitution, isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
 const explicitlyCuratedWords = [
   "endling",
@@ -227,6 +227,29 @@ describe("rarityFor", () => {
     expect(belowMythic.rarity).not.toBe("Mythic");
     expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.9);
     expect(mythic.rarity).toBe("Mythic");
+  });
+});
+
+describe("baseFormSubstitution", () => {
+  it("reports the base a bound derivational form inherited", () => {
+    const sub = baseFormSubstitution("trivialization");
+    expect(sub?.base).toBe("trivialize");
+    expect(sub?.word).toBe("trivialization");
+    expect(sub?.baseZipf).toBeGreaterThan(sub!.ownZipf);
+  });
+
+  it("reports the base verb for a tense form", () => {
+    expect(baseFormSubstitution("played")?.base).toBe("play");
+  });
+
+  it("returns undefined when a word scores on its own frequency", () => {
+    // "organization" is more common than "organize", so no substitution applies.
+    expect(baseFormSubstitution("organization")).toBeUndefined();
+    expect(baseFormSubstitution("the")).toBeUndefined();
+  });
+
+  it("returns undefined before the bound-suffix cutover", () => {
+    expect(baseFormSubstitution("trivialization", "2026-08-15")).toBeUndefined();
   });
 });
 
