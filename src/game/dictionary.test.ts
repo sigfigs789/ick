@@ -220,22 +220,24 @@ describe("rarityFor", () => {
     expect(rarityFor("trivialization")).toEqual(rarityFor("trivialize"));
   });
 
-  it("awards the 10.0 max and Mythic to a word no corpus attests", () => {
+  it("awards the 10.0 max and Legend to a word no corpus attests", () => {
     // "autecism" is absent from every frequency source (and its stem too), so
     // the waterfall gives it the rarest-word sentinel -- the only Zipf that
-    // earns a perfect 10.
+    // earns a perfect 10, which lands in the deep-tail Legend rank.
     const floored = rarityFor("autecism")!;
-    expect(floored.rarity).toBe("Mythic");
+    expect(floored.rarity).toBe("Legend");
     expect(rarityScore(floored.zipf)).toBe(10);
   });
 
-  it("awards Mythic only for a rank of 9.9 or higher", () => {
-    const belowMythic = rarityFor("assonant")!;
-    const mythic = rarityFor("autecism")!;
+  it("awards Legend for a rank of 9.9+ and Mythic for 9.5-9.89", () => {
+    const legend = rarityFor("autecism")!;
+    expect(rarityScore(legend.zipf)).toBeGreaterThanOrEqual(9.9);
+    expect(legend.rarity).toBe("Legend");
 
-    expect(rarityScore(belowMythic.zipf)).toBeLessThan(9.9);
-    expect(belowMythic.rarity).not.toBe("Mythic");
-    expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.9);
+    // "aardwolf" is the rarest measured slice -- score in [9.5, 9.9) -> Mythic.
+    const mythic = rarityFor("aardwolf")!;
+    expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.5);
+    expect(rarityScore(mythic.zipf)).toBeLessThan(9.9);
     expect(mythic.rarity).toBe("Mythic");
   });
 });
