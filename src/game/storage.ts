@@ -28,9 +28,10 @@ export function loadProgress(date: string): DailyProgress | null {
   const progress = safeParse<DailyProgress>(localStorage.getItem(PROGRESS_PREFIX + date));
   if (!progress) return null;
 
-  // Keep progress saved under the former top-tier name playable after the
-  // rank was renamed to Mythic. Also refresh words saved with the former
-  // unknown-frequency fallbacks now that the dictionary uses 1.4.
+  // Keep progress saved under a former top-tier name playable across renames.
+  // The deep-tail top rank has been "Elusive", then "Mythic", and is now
+  // "Legend". Also refresh words saved with the former unknown-frequency
+  // fallbacks now that the dictionary uses 1.4.
   let migrated = false;
   const acceptedWords = progress.acceptedWords.map((word) => {
     if (word.zipf === 0.1 || word.zipf === 0.3 || word.zipf === 0.5) {
@@ -42,7 +43,20 @@ export function loadProgress(date: string): DailyProgress | null {
     }
     if ((word.rarity as string) === "Elusive") {
       migrated = true;
-      return { ...word, rarity: "Mythic" as const };
+      return { ...word, rarity: "Legend" as const };
+    }
+    // The deep-tail top rank was renamed Mythic -> Legend at the 2026-08-16
+    // cutover, but the 2026-08-15 system still labels its deep tail Mythic. Only
+    // promote a saved deep-tail (Zipf < 1) Mythic when the puzzle's own date
+    // actually uses the Legend tier -- never the latest system's measured Mythic
+    // band (Zipf >= 1).
+    if (
+      (word.rarity as string) === "Mythic" &&
+      word.zipf < 1 &&
+      rarityFor(word.word, date)?.rarity === "Legend"
+    ) {
+      migrated = true;
+      return { ...word, rarity: "Legend" as const };
     }
     return word;
   });
