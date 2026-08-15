@@ -1,0 +1,5 @@
+# Player-suggested words that were accepted into the playable dictionary.
+# Kept separate from extra-words.txt (maintainer-curated) purely to record
+# provenance -- both lists are merged into dictionary.json by generate-data.py.
+# Managed by the "Add a word" GitHub Action (list=suggested); see
+# scripts/manage-extra-word.py.

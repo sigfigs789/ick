@@ -19,27 +19,19 @@ Run:
 """
 import argparse
 import json
-import math
 import re
-import statistics
 import sys
 from pathlib import Path
+
+from frequency import FrequencyWaterfall
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_WORD_LIST = Path("/usr/share/dict/words")
 OUT_DIR = ROOT / "src" / "data"
 BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
+SUGGESTED_WORDS_PATH = ROOT / "scripts" / "suggested-words.txt"
 WIKTIONARY_ACCEPTED_PATH = ROOT / "scripts" / "wiktionary-accepted.txt"
-
-# Deep-tail frequency sources, layered *below* wordfreq's measurement floor so
-# words wordfreq can't score still get a real, distinct rarity instead of all
-# collapsing to one value. Both are tab-separated `word<TAB>count` lists used
-# only at generation time -- they never ship to the browser.
-#   - Norvig's Google Web 1T unigram counts (norvig.com/ngrams/count_1w.txt)
-#   - Google Books English 1-grams (v3 20200217), pre-filtered to our words.
-NORVIG_COUNTS_PATH = ROOT / "scripts" / "norvig-count-1w.txt"
-GOOGLE_BOOKS_COUNTS_PATH = ROOT / "scripts" / "google-books-counts.txt"
 
 MIN_LEN = 1
 
@@ -92,23 +84,6 @@ def rarity_for_zipf(z: float) -> str:
     return RARITY_BANDS[-1][1]
 
 
-def load_counts(path: Path) -> dict[str, int]:
-    """Load a `word<TAB>count` frequency list, keeping pure a-z tokens."""
-    counts: dict[str, int] = {}
-    if not path.exists():
-        return counts
-    for line in path.read_text(errors="ignore").splitlines():
-        word, _, count = line.partition("\t")
-        word = word.strip().lower()
-        if not count or not WORD_RE.match(word):
-            continue
-        try:
-            counts[word] = counts.get(word, 0) + int(count)
-        except ValueError:
-            continue
-    return counts
-
-
 def refresh_rarity() -> None:
     """Recompute rarity.json over the existing dictionary.json using the
     frequency waterfall, without rebuilding the curated word list itself.
@@ -121,49 +96,10 @@ def refresh_rarity() -> None:
         [0, MEASURED_FLOOR), later mapping to the elite 9.5..10 band. Words
         found nowhere sit at the 0.0 floor -> a perfect 10.0.
     """
-    from wordfreq import zipf_frequency
-
     dictionary = json.loads((OUT_DIR / "dictionary.json").read_text())
 
-    norvig = load_counts(NORVIG_COUNTS_PATH)
-    norvig_log_total = math.log10(sum(norvig.values())) if norvig else None
-
-    def norvig_zipf(word: str):
-        count = norvig.get(word)
-        if not count or norvig_log_total is None:
-            return None
-        return math.log10(count) - norvig_log_total + 9
-
-    google = load_counts(GOOGLE_BOOKS_COUNTS_PATH)
-    # Anchor Google Books to the Norvig scale: pick the offset that makes the
-    # two agree (in the median) on the words they both contain.
-    overlap = [
-        math.log10(google[w]) - norvig_zipf(w)
-        for w in google
-        if norvig_zipf(w) is not None
-    ]
-    google_offset = statistics.median(overlap) if overlap else 0.0
-
-    def google_zipf(word: str):
-        count = google.get(word)
-        if not count:
-            return None
-        return math.log10(count) - google_offset
-
-    # Each word keeps its real waterfall Zipf: wordfreq where measured, else the
-    # Norvig or Google Books estimate, else the 0.0 floor for words no corpus
-    # attests. The single Zipf < MEASURED_FLOOR boundary in rarityScore (see
-    # src/game/dictionary.ts) then decides the band -- no per-source remapping.
-    def raw_zipf(word: str):
-        wf = zipf_frequency(word, "en", wordlist="best")
-        if wf > 0:
-            return wf
-        for candidate in (norvig_zipf(word), google_zipf(word)):
-            if candidate is not None:
-                return candidate  # kept unclamped: the deepest attested words
-        return None  # no corpus attests this word
-
-    raw = [raw_zipf(word) for word in dictionary]
+    waterfall = FrequencyWaterfall()
+    raw = [waterfall.zipf(word) for word in dictionary]
 
     # Words no corpus attests are the rarest we can claim, so they get a
     # sentinel just below the rarest *attested* Zipf -- reserving the perfect
@@ -175,8 +111,8 @@ def refresh_rarity() -> None:
     deep = sum(1 for z in zipfs if z < MEASURED_FLOOR)
     unattested = sum(1 for z in raw if z is None)
     print(
-        f"Frequency sources: Norvig {len(norvig)}, "
-        f"Google Books {len(google)} (offset {round(google_offset, 4)})"
+        f"Frequency sources: Norvig {len(waterfall.norvig)}, "
+        f"Google Books {len(waterfall.google)} (offset {round(waterfall.google_offset, 4)})"
     )
     print(
         f"Bands: measured/common {len(dictionary) - deep} (score 0..9.5), "
@@ -227,6 +163,10 @@ def load_word_file(path: Path) -> set[str]:
 
 def load_extra_words() -> set[str]:
     return load_word_file(EXTRA_WORDS_PATH)
+
+
+def load_suggested_words() -> set[str]:
+    return load_word_file(SUGGESTED_WORDS_PATH)
 
 
 def load_wiktionary_words() -> set[str]:
@@ -363,6 +303,7 @@ def main() -> None:
     excluded = {word for word, reason in classification.items() if reason in NAME_LIKE_REASONS}
 
     extra_words = load_extra_words()
+    suggested_words = load_suggested_words()
     wiktionary_words = load_wiktionary_words()
     # Wiktionary lists lowercase spellings of names/abbreviations that SCOWL
     # excludes only by capitalization; drop them so the supplement can't smuggle
@@ -370,8 +311,11 @@ def main() -> None:
     blocked = wiktionary_words & excluded
     wiktionary_words -= excluded
     raw_words = word_list.read_text(errors="ignore").splitlines()
-    raw_words = set(raw_words) | extra_words | wiktionary_words
+    # Curated and player-suggested words are separate provenance lists but feed
+    # the same playable dictionary; the split only records where a word came from.
+    raw_words = set(raw_words) | extra_words | suggested_words | wiktionary_words
     print(f"Loaded {len(extra_words)} manually curated extra words")
+    print(f"Loaded {len(suggested_words)} player-suggested words")
     print(f"Loaded {len(wiktionary_words)} Wiktionary terms ({len(blocked)} name/abbr excluded)")
     print(f"Read {len(raw_words)} candidate entries")
 

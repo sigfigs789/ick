@@ -1,0 +1,116 @@
+name: Add a word
+
+# One workflow for all four flows, chosen by the inputs below:
+#   list=curated  | forced=false  -> add a maintainer-curated word (must be scored)
+#   list=curated  | forced=true   -> add it even if no corpus scores it (10.0 Mythic)
+#   list=suggested| forced=false  -> add an accepted player suggestion (must be scored)
+#   list=suggested| forced=true   -> add it even if no corpus scores it (10.0 Mythic)
+#
+# "Scored" means the frequency waterfall (wordfreq -> Norvig -> Google Books)
+# attests the word. Without --forced, an unscored word fails the run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      word:
+        description: English word to add to the dictionary
+        required: true
+        type: string
+      list:
+        description: Which provenance list to add the word to
+        required: true
+        default: curated
+        type: choice
+        options:
+          - curated
+          - suggested
+      forced:
+        description: Add the word even if no frequency corpus scores it (it will score the max 10.0 / Mythic)
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  add-word:
+    runs-on: ubuntu-latest
+    env:
+      WORD: ${{ inputs.word }}
+      LIST: ${{ inputs.list }}
+      FORCED: ${{ inputs.forced }}
+
+    steps:
+      - name: Check out WordInk
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check out ESDB/SCOWL
+        uses: actions/checkout@v4
+        with:
+          repository: en-wl/wordlist
+          path: .tmp/esdb
+
+      - name: Install data-generation dependency
+        run: python -m pip install wordfreq==3.1.1
+
+      - name: Add word and regenerate dictionary data
+        run: |
+          FORCED_FLAG=""
+          if [ "$FORCED" = "true" ]; then FORCED_FLAG="--forced"; fi
+          python scripts/manage-extra-word.py add "$WORD" --list "$LIST" $FORCED_FLAG
+          make -C .tmp/esdb
+          .tmp/esdb/scowl --db .tmp/esdb/scowl.db word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > .tmp/scowl-regional-80.txt
+          python scripts/generate-data.py --word-list .tmp/scowl-regional-80.txt --esdb-db .tmp/esdb/scowl.db
+          # Grade the deep tail (Norvig/Google Books waterfall) and give unscored
+          # forced words the reserved 10.0 / Mythic. Then keep the frozen legacy
+          # rarity arrays index-aligned with the grown dictionary.
+          python scripts/generate-data.py --refresh-rarity
+          python scripts/manage-extra-word.py align-legacy "$WORD"
+          python scripts/manage-extra-word.py update-size-test
+          # Logs the word's Zipf + rarity score and pins them in a test.
+          python scripts/manage-extra-word.py record-word "$WORD" --list "$LIST"
+
+      - name: Verify the added word is a valid input
+        run: |
+          npm ci
+          npm test -- --run src/game/dictionary.test.ts
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automated/add-word-${{ github.run_id }}
+          delete-branch: true
+          commit-message: "Add ${{ inputs.word }} to the ${{ inputs.list }} dictionary"
+          title: "Add ${{ inputs.word }} to the ${{ inputs.list }} dictionary"
+          body: |
+            Adds `${{ inputs.word }}` to the **${{ inputs.list }}** word list
+            (`scripts/${{ inputs.list == 'suggested' && 'suggested-words.txt' || 'extra-words.txt' }}`)
+            and regenerates the dictionary and rarity mappings.
+
+            - forced: `${{ inputs.forced }}` (a forced word with no corpus frequency scores the maximum 10.0 / Mythic)
+            - The word's Zipf and rarity score are printed in the run log (see the
+              "Add word and regenerate dictionary data" step) and pinned in a test.
+            - The dictionary-size and validity/score tests were updated automatically.
+            - `rarity-legacy.json` was re-aligned to the new dictionary length.
+          add-paths: |
+            scripts/extra-words.txt
+            scripts/suggested-words.txt
+            src/data/dictionary.json
+            src/data/rarity.json
+            src/data/rarity-legacy.json
+            src/data/rejection-metadata.json
+            src/game/dictionary.test.ts
