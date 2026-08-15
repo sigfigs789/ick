@@ -79,16 +79,28 @@ describe("score formatting", () => {
     expect(formatScore(4.3)).toBe("4.3");
   });
 
-  it("keys precision off the shown tier so the number never contradicts its label", () => {
-    // A high, Mythic-magnitude score displayed under an "Extremely Rare" badge
-    // must read as one decimal -- the tier the player sees wins over the raw
-    // score (this is the "Extremely Rare shows 9.74" bug).
-    const zipf = rarityFor("aardwolf")!.zipf; // bare score 9.74 (two decimals)
-    expect(formatRarityScore(zipf)).toBe("9.74"); // no tier -> score-based fallback
-    expect(formatRarityScore(zipf, undefined, "Extremely Rare")).toBe("9.7");
-    expect(formatRarityScore(zipf, undefined, "Rare")).toBe("9.7");
-    expect(formatRarityScore(zipf, undefined, "Mythic")).toBe("9.74");
-    expect(formatRarityScore(zipf, undefined, "Legend")).toBe("9.74");
+  it("puts the two-decimal / one-decimal split at a score of 9.5", () => {
+    // Precision is a pure function of the scaled score: at or above 9.5 shows two
+    // decimals, below 9.5 shows one. The reported bug -- a sub-9.5 score rendered
+    // with two decimals -- can no longer happen.
+    expect(formatScore(9.5)).toBe("9.50");
+    expect(formatScore(9.87)).toBe("9.87");
+    expect(formatScore(9.18)).toBe("9.2"); // below 9.5 -> single decimal
+    expect(formatScore(9.49)).toBe("9.5"); // still below 9.5 -> single decimal
+    expect(formatScore(4.16)).toBe("4.2");
+  });
+
+  it("derives the label from the same 9.5 score threshold, so a sub-9.5 score is never Mythic", () => {
+    // A score below 9.5 is Extremely Rare (or lower), not Mythic; Mythic/Legend
+    // begin at 9.5. Label and precision move together off the scaled score.
+    const belowMythic = rarityFor("aardvark")!; // measured, well under 9.5
+    expect(rarityScore(belowMythic.zipf)).toBeLessThan(9.5);
+    expect(belowMythic.rarity).not.toBe("Mythic");
+
+    const mythic = rarityFor("aardwolf")!; // score 9.74 -> Mythic, two decimals
+    expect(rarityScore(mythic.zipf)).toBe(9.74);
+    expect(mythic.rarity).toBe("Mythic");
+    expect(formatRarityScore(mythic.zipf)).toBe("9.74");
   });
 
   it("always shows one decimal under the legacy system", () => {

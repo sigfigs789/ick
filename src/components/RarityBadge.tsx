@@ -35,7 +35,7 @@ export function RarityBadge({ rarity, zipf, date }: Props) {
       {meta.tag}
       {zipf !== undefined && (
         <span className="rarity-badge__score">
-          {formatRarityScore(zipf, date, rarity)}
+          {formatRarityScore(zipf, date)}
         </span>
       )}
     </span>

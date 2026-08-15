@@ -75,13 +75,13 @@ export function buildShareText(
     ? words
         .map(
           (w) =>
-            `${RARITY_SYMBOL[w.rarity]} ${formatRarityScore(w.zipf, dateStr, w.rarity)}`,
+            `${RARITY_SYMBOL[w.rarity]} ${formatRarityScore(w.zipf, dateStr)}`,
         )
         .join("\n")
     : words
         .map(
           (w) =>
-            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${formatRarityScore(w.zipf, dateStr, w.rarity)})`,
+            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${formatRarityScore(w.zipf, dateStr)})`,
         )
         .join("\n");
 

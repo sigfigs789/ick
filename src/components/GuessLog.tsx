@@ -16,9 +16,7 @@ import type { AcceptedWord, StreakState } from "../game/types";
  * Reuses the share-results palette so a pasted word matches the share text. */
 function copyTextForWord(w: AcceptedWord, date?: string): string {
   const score =
-    w.zipf !== undefined
-      ? ` (${formatRarityScore(w.zipf, date, w.rarity)})`
-      : "";
+    w.zipf !== undefined ? ` (${formatRarityScore(w.zipf, date)})` : "";
   return `${RARITY_SYMBOL[w.rarity]} ${w.word}${score}`;
 }
 
