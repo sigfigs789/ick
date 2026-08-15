@@ -111,9 +111,11 @@ def add_word(raw_word: str, list_name: str, forced: bool) -> None:
             )
 
     # "Has a rarity score" means any corpus in the waterfall attests it:
-    # wordfreq, else Norvig, else Google Books. Only a word none of them attest
-    # is unscored; without --forced that is a hard rejection.
-    zipf = FrequencyWaterfall().zipf(word)
+    # wordfreq, else Norvig, else Google Books -- or, for a bound derivational
+    # form no corpus attests directly, its base ("aggrandization" -> "aggrandize").
+    # Only a word none of these attest is unscored; without --forced that is a
+    # hard rejection.
+    zipf = FrequencyWaterfall().zipf(word, include_bound=True)
     if zipf is None and not forced:
         sys.exit(
             f"{word!r} has no rarity score in any frequency corpus and was not "

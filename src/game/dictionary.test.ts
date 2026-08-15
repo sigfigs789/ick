@@ -177,6 +177,39 @@ describe("rarityFor", () => {
     expect(rarityFor("dying")).toEqual(rarityFor("die"));
   });
 
+  it("caps bound derivational suffixes at their more common base word", () => {
+    // -ization/-isation is the noun of an -ize/-ise verb; -ability/-ibility the
+    // noun of an -able/-ible adjective. They can't score rarer than that base.
+    expect(rarityFor("trivialization")).toEqual(rarityFor("trivialize"));
+    expect(rarityFor("readability")).toEqual(rarityFor("readable"));
+    expect(rarityFor("acceptability")).toEqual(rarityFor("acceptable"));
+  });
+
+  it("never lets the cap make a bound form rarer than its own frequency", () => {
+    // "organization" (Zipf 4.92) is more common than "organize" (3.98); the cap
+    // only pulls toward a *more* common base, so it keeps its own score.
+    expect(rarityFor("organization")).not.toEqual(rarityFor("organize"));
+    expect(rarityFor("organization")!.zipf).toBeCloseTo(4.92, 5);
+  });
+
+  it("leaves opaque suffixes (-ment, -ism) on their own frequency", () => {
+    // "battlement" is not "battle" + ment, nor "arrivism" a form of "arrive";
+    // a spelling-only rule can't tell these from real derivations, so they stay.
+    expect(rarityFor("battlement")).not.toEqual(rarityFor("battle"));
+    expect(rarityFor("battlement")!.zipf).toBeCloseTo(1.77, 5);
+    expect(rarityFor("arrivism")).not.toEqual(rarityFor("arrive"));
+  });
+
+  it("applies the bound base-form only from the 2026-08-16 wide-band cutover", () => {
+    // Before the cutover the derived word keeps its own (rarer) frequency, so
+    // past puzzles never shift retroactively.
+    const before = "2026-08-15";
+    expect(rarityFor("trivialization", before)).not.toEqual(rarityFor("trivialize", before));
+    // On/after the cutover -- and for undated (newest) puzzles -- it inherits the base.
+    expect(rarityFor("trivialization", "2026-08-16")).toEqual(rarityFor("trivialize", "2026-08-16"));
+    expect(rarityFor("trivialization")).toEqual(rarityFor("trivialize"));
+  });
+
   it("awards the 10.0 max and Mythic to a word no corpus attests", () => {
     // "autecism" is absent from every frequency source (and its stem too), so
     // the waterfall gives it the rarest-word sentinel -- the only Zipf that
