@@ -49,7 +49,7 @@ const MIN_ZIPF = minZipfHundredths / 100;
 // can measure sit at Zipf >= MEASURED_FLOOR and fill 0..ceiling; the deep tail
 // -- words only Norvig/Google Books attest, plus words no corpus attests --
 // sits below it and gets its own elite ceiling..10 band. The band ceiling moved
-// from 9.5 to 9.8 at WIDE_BAND_START (see twoBandScoring).
+// from 9.5 to 9.9 at WIDE_BAND_START (see twoBandScoring).
 const MEASURED_FLOOR = 1;
 
 // -- Legacy frequency data (puzzles before NEW_SCORING_START) ---------------
@@ -74,7 +74,7 @@ interface Scoring {
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
-// deep-tail band begins (9.5 originally, 9.8 from WIDE_BAND_START). `tailFloor`
+// deep-tail band begins (9.5 originally, 9.9 from WIDE_BAND_START). `tailFloor`
 // is the Zipf that maps to a perfect 10.0: anything at or below it is clamped
 // there. Pinning it to a fixed 0 (rather than the data's live minimum) keeps
 // deep-tail scores stable when even-rarer words are added later, and bounds the
@@ -103,7 +103,7 @@ function twoBandScoring(ceiling: number, tailFloor: number): Scoring {
 // at the data's live minimum, so it kept negative Zipf resolution; the widened
 // system (from WIDE_BAND_START) clamps everything at/below Zipf 0 to a flat 10.
 const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF);
-const WIDE_SCORING: Scoring = twoBandScoring(9.8, 0);
+const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -134,15 +134,15 @@ function measuredRarity(zipf: number): Rarity {
 // rank ("Legend", see twoBandScoring), so the rarest *measured* slice becomes
 // "Mythic" -- one notch below Legend -- and "Extremely Rare" keeps the band
 // beneath it. The Zipf thresholds from Rare down are identical to the legacy
-// scale; only the top of the old "Extremely Rare" band (Zipf 1.0-1.2, ~score
-// 9.5-9.8) is split off into "Mythic".
+// scale; only the top of the old "Extremely Rare" band (Zipf 1.0-1.3, ~score
+// 9.5-9.9 under the widened ceiling) is split off into "Mythic".
 function measuredRarityModern(zipf: number): Rarity {
   if (zipf >= 6.4) return "Quotidian";
   if (zipf >= 5.2) return "Very Common";
   if (zipf >= 4.2) return "Common";
   if (zipf >= 3.3) return "Uncommon";
   if (zipf >= 2.5) return "Rare";
-  if (zipf >= 1.2) return "Extremely Rare";
+  if (zipf >= 1.3) return "Extremely Rare";
   return "Mythic";
 }
 

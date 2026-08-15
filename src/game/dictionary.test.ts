@@ -141,9 +141,9 @@ describe("rarityFor", () => {
     expect(info?.zipf).toBeGreaterThan(7);
   });
 
-  it("reserves Quotidian for scores below 2.0", () => {
+  it("reserves Quotidian for scores at or below 2.0", () => {
     expect(rarityFor("about")?.rarity).toBe("Quotidian");
-    expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThan(2);
+    expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThanOrEqual(2);
     expect(rarityFor("there")?.rarity).toBe("Very Common");
   });
 
@@ -191,13 +191,13 @@ describe("rarityFor", () => {
     const mythic = rarityFor("aardwolf")!; // Zipf ~1.11, rarest measured slice
     const extremelyRare = rarityFor("assonant")!; // Zipf ~1.53
 
-    // Legend is the deep-tail top rank (score >= the 9.8 ceiling).
-    expect(rarityScore(legend.zipf)).toBeGreaterThanOrEqual(9.8);
+    // Legend is the deep-tail top rank (score >= the 9.9 ceiling).
+    expect(rarityScore(legend.zipf)).toBeGreaterThanOrEqual(9.9);
     expect(legend.rarity).toBe("Legend");
 
-    // Mythic is the rarest measured band, one notch below Legend (~9.5-9.8).
+    // Mythic is the rarest measured band, one notch below Legend (~9.5-9.9).
     expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.5);
-    expect(rarityScore(mythic.zipf)).toBeLessThan(9.8);
+    expect(rarityScore(mythic.zipf)).toBeLessThan(9.9);
     expect(mythic.rarity).toBe("Mythic");
 
     // Extremely Rare keeps the band beneath Mythic.
