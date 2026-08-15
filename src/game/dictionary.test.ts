@@ -28,13 +28,15 @@ const explicitlyCuratedWords = [
 // scored. Appended automatically by scripts/manage-extra-word.py record-word.
 // [word, rarity, zipf]
 const curatedWordScores: ReadonlyArray<[string, string, number]> = [];
-const suggestedWordScores: ReadonlyArray<[string, string, number]> = [];
+const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
+  ["aggrandization", "Extremely Rare", 1.52],
+];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_465);
+    expect(dictionaryWords).toHaveLength(225_466);
   });
 
   it("accepts a common real word", () => {
