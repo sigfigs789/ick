@@ -19,6 +19,31 @@ export function baseForm(word: string): string {
   return w;
 }
 
+/**
+ * Candidate base spellings for the two *bound* derivational suffixes whose base
+ * is unambiguous: an "-ization"/"-isation" word is the noun of an "-ize"/"-ise"
+ * verb ("organization" -> "organize"), and an "-ability"/"-ibility" word is the
+ * noun of an "-able"/"-ible" adjective ("readability" -> "readable"). Opaque
+ * suffixes like -ment and -ism are deliberately excluded -- they collapse onto
+ * unrelated real words ("battlement" -> "battle", "arrivism" -> "arrive"), which
+ * a purely spelling-based rule can't tell apart from a genuine derivation. The
+ * caller confirms a candidate is a real word before trusting it.
+ */
+export function boundBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (base: string) => {
+    if (base.length >= 5 && base !== w && !out.includes(base)) out.push(base);
+  };
+  if (w.length > 8) {
+    if (w.endsWith("ization")) add(w.slice(0, -7) + "ize");
+    if (w.endsWith("isation")) add(w.slice(0, -7) + "ise");
+    if (w.endsWith("ability")) add(w.slice(0, -7) + "able");
+    if (w.endsWith("ibility")) add(w.slice(0, -7) + "ible");
+  }
+  return out;
+}
+
 /** "running" -> stripped to "runn" by the "ing" cut; trim the doubled consonant back to "run". */
 function stripDoubledConsonant(stem: string): string {
   const isConsonant = (c: string) => /[bcdfghjklmnpqrstvwxyz]/.test(c);
