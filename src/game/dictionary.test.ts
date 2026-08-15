@@ -36,13 +36,16 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
 // scripts/manage-extra-word.py record-word.
 const onlineWordScores: ReadonlyArray<[string, string, number]> = [
   ["payline", "Extremely Rare", 2.26],
+  ["pembina", "Extremely Rare", 2.2],
+  ["pomarine", "Extremely Rare", 1.45],
+  ["poussin", "Extremely Rare", 2.26],
 ];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_467);
+    expect(dictionaryWords).toHaveLength(225_470);
   });
 
   it("accepts a common real word", () => {
