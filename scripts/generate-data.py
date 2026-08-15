@@ -33,6 +33,7 @@ EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
 SUGGESTED_WORDS_PATH = ROOT / "scripts" / "suggested-words.txt"
 ONLINE_WORDS_PATH = ROOT / "scripts" / "online-words.txt"
 WIKTIONARY_ACCEPTED_PATH = ROOT / "scripts" / "wiktionary-accepted.txt"
+WIKTIONARY_REASONS_PATH = ROOT / "scripts" / "wiktionary-reasons.json"
 
 MIN_LEN = 1
 
@@ -181,9 +182,56 @@ def load_wiktionary_words() -> set[str]:
 # ESDB reasons that mark a word as ineligible for play regardless of source.
 # Wiktionary can supply lowercase spellings of these (e.g. "paris"), which SCOWL
 # excludes only because it lists them capitalized, so the supplement is filtered
-# against this set. "obsolete" is intentionally absent: those are real, rare
-# words we are happy to accept.
+# against this set. The out-of-use reasons (obsolete/archaic/dated) are
+# intentionally absent: they only enrich the *rejection message* for words that
+# were already excluded, and never drop a currently playable word.
 NAME_LIKE_REASONS = {"abbreviation", "proper-noun", "name-or-abbreviation"}
+
+# Every rejection reason ranked by strength. When a word is classified more than
+# once -- across ESDB entries, or between ESDB and Wiktextract -- the strongest
+# reason wins so the player sees the most specific explanation. Name/abbreviation
+# reasons outrank the out-of-use reasons, and within out-of-use "obsolete" (dead)
+# outranks "archaic" outranks "dated" (merely old-fashioned).
+REASON_PRIORITY = {
+    "dated": 1,
+    "archaic": 2,
+    "obsolete": 3,
+    "name-or-abbreviation": 4,
+    "proper-noun": 5,
+    "abbreviation": 6,
+}
+
+
+def load_wiktionary_reasons() -> dict[str, str]:
+    """Invert scripts/wiktionary-reasons.json into a {word: strongest reason} map.
+
+    The file is built by import-wiktionary-words.py from the Wiktextract dump and
+    groups words by reason; a word can appear under only one reason there, but we
+    still resolve by REASON_PRIORITY to stay robust to future overlaps.
+    """
+    if not WIKTIONARY_REASONS_PATH.exists():
+        return {}
+    grouped = json.loads(WIKTIONARY_REASONS_PATH.read_text())
+    reasons: dict[str, str] = {}
+    for reason, words in grouped.items():
+        for word in words:
+            if reason not in REASON_PRIORITY:
+                continue
+            if word not in reasons or REASON_PRIORITY[reason] > REASON_PRIORITY[reasons[word]]:
+                reasons[word] = reason
+    return reasons
+
+
+def merge_reasons(*maps: dict[str, str]) -> dict[str, str]:
+    """Combine {word: reason} maps, keeping the strongest reason per word."""
+    merged: dict[str, str] = {}
+    for reasons in maps:
+        for word, reason in reasons.items():
+            if reason not in REASON_PRIORITY:
+                continue
+            if word not in merged or REASON_PRIORITY[reason] > REASON_PRIORITY[merged[word]]:
+                merged[word] = reason
+    return merged
 
 
 def esdb_classification(esdb_db: Path) -> dict[str, str]:
@@ -199,7 +247,6 @@ def esdb_classification(esdb_db: Path) -> dict[str, str]:
     if not esdb_db.exists():
         sys.exit(f"ESDB database not found at {esdb_db}")
 
-    priorities = {"obsolete": 1, "proper-noun": 2, "name-or-abbreviation": 3, "abbreviation": 4}
     reasons: dict[str, str] = {}
     query = """
         select distinct word, base_pos, pos_class, size
@@ -227,7 +274,8 @@ def esdb_classification(esdb_db: Path) -> dict[str, str]:
                 reason = "obsolete"
 
             if reason and (
-                normalized not in reasons or priorities[reason] > priorities[reasons[normalized]]
+                normalized not in reasons
+                or REASON_PRIORITY[reason] > REASON_PRIORITY[reasons[normalized]]
             ):
                 reasons[normalized] = reason
     return reasons
@@ -286,7 +334,8 @@ def main() -> None:
         if not args.esdb_db:
             parser.error("--metadata-only requires --esdb-db")
         dictionary = set(json.loads((OUT_DIR / "dictionary.json").read_text()))
-        metadata = rejection_metadata(esdb_classification(args.esdb_db), dictionary)
+        classification = merge_reasons(esdb_classification(args.esdb_db), load_wiktionary_reasons())
+        metadata = rejection_metadata(classification, dictionary)
         write_rejection_metadata(metadata)
         print(f"Wrote {OUT_DIR / 'rejection-metadata.json'} ({len(metadata)} explanations)")
         return
@@ -373,7 +422,12 @@ def main() -> None:
     (OUT_DIR / "rarity.json").write_text(
         json.dumps({"codes": codes, "zipfHundredths": zipf_hundredths}, separators=(",", ":"))
     )
-    metadata = rejection_metadata(classification, set(dictionary))
+    # Enrich the rejection messages with Wiktextract's reasons (obsolete /
+    # archaic / dated / proper-noun / abbreviation). rejection_metadata drops any
+    # word that is actually playable, so this only ever adds a message for a word
+    # that was already excluded -- it never removes a word from the dictionary.
+    combined_reasons = merge_reasons(classification, load_wiktionary_reasons())
+    metadata = rejection_metadata(combined_reasons, set(dictionary))
     write_rejection_metadata(metadata)
     print(f"Wrote {OUT_DIR / 'dictionary.json'} ({len(dictionary)} words)")
     print(f"Wrote {OUT_DIR / 'rarity.json'} ({len(dictionary)} entries, index-aligned)")

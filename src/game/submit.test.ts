@@ -27,6 +27,8 @@ describe("evaluateSubmission", () => {
     expect(REJECTION_MESSAGES.abbreviation).toBe("This looks like an abbreviation or acronym.");
     expect(REJECTION_MESSAGES["name-or-abbreviation"]).toBe("This looks like a proper noun or abbreviation.");
     expect(REJECTION_MESSAGES.obsolete).toBe("This looks archaic or obsolete.");
+    expect(REJECTION_MESSAGES.archaic).toBe("This looks like an archaic word.");
+    expect(REJECTION_MESSAGES.dated).toBe("This looks dated — no longer in common use.");
   });
 
   it("rejects an empty submission", () => {
@@ -70,6 +72,27 @@ describe("evaluateSubmission", () => {
       ok: false,
       reason: "obsolete",
     });
+  });
+
+  it("distinguishes archaic and dated words via Wiktionary metadata", () => {
+    // "brast" (archaic past tense of burst) and "abrasure" (dated) are excluded
+    // words Wiktextract tags out of current use -- each gets its own message.
+    expect(evaluateSubmission("brast", "ras", [])).toEqual({
+      ok: false,
+      reason: "archaic",
+    });
+    expect(evaluateSubmission("abrasure", "bra", [])).toEqual({
+      ok: false,
+      reason: "dated",
+    });
+  });
+
+  it("keeps recognizable archaic words playable (no retroactive removals)", () => {
+    // Classic archaic words like "betwixt" remain in the dictionary; the new
+    // tags only ever add a message to a word that was already excluded.
+    const result = evaluateSubmission("betwixt", "wix", []);
+    expect(result.ok).toBe(true);
+    expect(result.word?.word).toBe("betwixt");
   });
 
   it("accepts a valid word containing the drop without matching it exactly", () => {

@@ -30,6 +30,8 @@ export type RejectionReason =
   | "abbreviation"
   | "name-or-abbreviation"
   | "obsolete"
+  | "archaic"
+  | "dated"
   | "already-used"
   | "same-root-as-used";
 
