@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
-import { baseFormSubstitution, isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
+import {
+  baseFormSubstitution,
+  formatRarityScore,
+  formatScore,
+  isValidWord,
+  rarityFor,
+  rarityScore,
+  topRarityScore,
+} from "./dictionary";
 
 const explicitlyCuratedWords = [
   "endling",
@@ -269,6 +277,37 @@ describe("baseFormSubstitution", () => {
 
   it("returns undefined before the bound-suffix cutover", () => {
     expect(baseFormSubstitution("trivialization", "2026-08-15")).toBeUndefined();
+  });
+});
+
+describe("formatScore", () => {
+  // The two-decimal cutoff and the Mythic/Legend ranks are pinned to fixed
+  // score values (9.5 and 9.9), so every scoring system behaves identically:
+  // the 9.5-ceiling system used on 2026-08-15 and the 9.9 wide system from
+  // 2026-08-16 must format and rank the same score the same way.
+  for (const date of ["2026-08-15", "2026-08-16"]) {
+    it(`shows one decimal below 9.5 and two at/above it (${date})`, () => {
+      expect(formatScore(9.4, date)).toBe("9.4");
+      expect(formatScore(9.49, date)).toBe("9.5"); // rounds, but still one decimal
+      expect(formatScore(9.5, date)).toBe("9.50");
+      expect(formatScore(9.87, date)).toBe("9.87");
+      expect(formatScore(9.9, date)).toBe("9.90");
+    });
+  }
+
+  it("keeps a below-9.5 Mythic-adjacent word at one decimal under the 9.5-ceiling system", () => {
+    // Regression: under the 2026-08-15 system "dentalium" (Zipf 1.23) scores
+    // 9.18 -- below 9.5, so Extremely Rare with one decimal -- not a
+    // two-decimal Mythic. Under the wide system it scores 9.56 (Mythic).
+    const early = rarityFor("dentalium", "2026-08-15")!;
+    expect(rarityScore(early.zipf, "2026-08-15")).toBeLessThan(9.5);
+    expect(early.rarity).toBe("Extremely Rare");
+    expect(formatRarityScore(early.zipf, "2026-08-15")).toBe("9.2");
+
+    const wide = rarityFor("dentalium", "2026-08-16")!;
+    expect(rarityScore(wide.zipf, "2026-08-16")).toBeGreaterThanOrEqual(9.5);
+    expect(wide.rarity).toBe("Mythic");
+    expect(formatRarityScore(wide.zipf, "2026-08-16")).toBe("9.56");
   });
 });
 
