@@ -28,10 +28,9 @@ export function loadProgress(date: string): DailyProgress | null {
   const progress = safeParse<DailyProgress>(localStorage.getItem(PROGRESS_PREFIX + date));
   if (!progress) return null;
 
-  // Keep progress saved under a former top-tier name playable across renames.
-  // The deep-tail top rank has been "Elusive", then "Mythic", and is now
-  // "Legend". Also refresh words saved with the former unknown-frequency
-  // fallbacks now that the dictionary uses 1.4.
+  // Keep progress saved under the former top-tier name playable after the
+  // rank was renamed to Mythic. Also refresh words saved with the former
+  // unknown-frequency fallbacks now that the dictionary uses 1.4.
   let migrated = false;
   const acceptedWords = progress.acceptedWords.map((word) => {
     if (word.zipf === 0.1 || word.zipf === 0.3 || word.zipf === 0.5) {
@@ -43,14 +42,7 @@ export function loadProgress(date: string): DailyProgress | null {
     }
     if ((word.rarity as string) === "Elusive") {
       migrated = true;
-      return { ...word, rarity: "Legend" as const };
-    }
-    // Only the deep tail (Zipf < 1) ever carried the old "Mythic" top rank, so
-    // this promotes those to "Legend" without touching the new measured Mythic
-    // band (Zipf 1.0-1.2).
-    if ((word.rarity as string) === "Mythic" && word.zipf < 1) {
-      migrated = true;
-      return { ...word, rarity: "Legend" as const };
+      return { ...word, rarity: "Mythic" as const };
     }
     return word;
   });

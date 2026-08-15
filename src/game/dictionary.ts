@@ -52,11 +52,6 @@ const MIN_ZIPF = minZipfHundredths / 100;
 // from 9.5 to 9.9 at WIDE_BAND_START (see twoBandScoring).
 const MEASURED_FLOOR = 1;
 
-// The Zipf boundary between Mythic (the rarest measured slice) and Extremely
-// Rare. Mythic and above show two-decimal scores so near-ceiling values read
-// honestly; Extremely Rare and below keep a single decimal.
-const MYTHIC_ZIPF = 1.28;
-
 // -- Legacy frequency data (puzzles before NEW_SCORING_START) ---------------
 // One-decimal Zipf values with unknown-frequency words floored flat to 1.4,
 // scored against a single 1.0..MAX range. Also index-aligned with
@@ -90,29 +85,22 @@ interface Scoring {
 // deep-tail scores stable when even-rarer words are added later, and bounds the
 // scale below -- Zipf is a log scale with no natural floor.
 function twoBandScoring(ceiling: number, tailFloor: number, boundBaseForms: boolean): Scoring {
-  const score = (zipf: number): number => {
-    if (zipf >= MEASURED_FLOOR) {
-      const s = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
-      return Math.round(s * 100) / 100;
-    }
-    const clamped = Math.max(zipf, tailFloor);
-    const s = ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
-    return Math.round(Math.min(s, 10) * 100) / 100;
-  };
-  // Mythic and above show two decimals; Extremely Rare and below show one. The
-  // cutoff is the score at the Mythic/Extremely-Rare boundary.
-  const twoDecimalCutoff = score(MYTHIC_ZIPF);
   return {
     zipfAt: (i) => zipfHundredths[i] / 100,
-    score,
-    // The top band -- score at/above the ceiling -- is Legend; anything below
-    // it gets a measured rank. Comparing the precise (two-decimal) score keeps
-    // a word like "abashing" (true 9.87) in Mythic rather than rounding it up
-    // to 9.9 and masquerading as Legend.
-    rarity: (zipf) => (score(zipf) >= ceiling ? "Legend" : measuredRarityModern(zipf)),
-    // Two decimals for Mythic and Legend so near-ceiling scores read honestly
-    // (9.87, not a rounded-up 9.9); one decimal for Extremely Rare and below.
-    format: (s) => (s > twoDecimalCutoff ? s.toFixed(2) : s.toFixed(1)),
+    score: (zipf) => {
+      if (zipf >= MEASURED_FLOOR) {
+        const score = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
+        return Math.round(score * 10) / 10;
+      }
+      const clamped = Math.max(zipf, tailFloor);
+      const score =
+        ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
+      return Math.round(Math.min(score, 10) * 100) / 100;
+    },
+    // The deep-tail library (Zipf < MEASURED_FLOOR) is its own top rank.
+    rarity: (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf)),
+    // The narrow deep-tail band shows two decimals so its gradient is visible.
+    format: (score) => (score >= ceiling ? score.toFixed(2) : score.toFixed(1)),
     boundBaseForms,
   };
 }
@@ -138,9 +126,7 @@ const LEGACY_SCORING: Scoring = {
   boundBaseForms: false,
 };
 
-// The Zipf-band labels for the measured range, used by the legacy single-band
-// system. The legacy top rank ("Mythic") is score-derived (see LEGACY_SCORING),
-// so this fallback tops out at "Extremely Rare".
+// The Zipf-band labels for the measured range are identical across systems.
 function measuredRarity(zipf: number): Rarity {
   if (zipf >= 6.4) return "Quotidian";
   if (zipf >= 5.2) return "Very Common";
@@ -148,24 +134,6 @@ function measuredRarity(zipf: number): Rarity {
   if (zipf >= 3.3) return "Uncommon";
   if (zipf >= 2.5) return "Rare";
   return "Extremely Rare";
-}
-
-// The modern (two-band) measured labels. The deep-tail library is its own top
-// rank ("Legend", see twoBandScoring), so the rarest *measured* slice becomes
-// "Mythic" -- one notch below Legend -- and "Extremely Rare" keeps the band
-// beneath it. The Zipf thresholds from Rare down are identical to the legacy
-// scale; only the top of the old "Extremely Rare" band (Zipf 1.0-1.28, ~score
-// 9.50-9.89 under the widened ceiling) is split off into "Mythic". Legend
-// (score >= ceiling) is applied first in twoBandScoring, so this only sees
-// scores below 9.9.
-function measuredRarityModern(zipf: number): Rarity {
-  if (zipf >= 6.4) return "Quotidian";
-  if (zipf >= 5.2) return "Very Common";
-  if (zipf >= 4.2) return "Common";
-  if (zipf >= 3.3) return "Uncommon";
-  if (zipf >= 2.5) return "Rare";
-  if (zipf >= MYTHIC_ZIPF) return "Extremely Rare";
-  return "Mythic";
 }
 
 function scoringFor(date?: string): Scoring {
@@ -349,7 +317,6 @@ function stripDoubledConsonant(stem: string): string {
 }
 
 export const RARITY_ORDER: Rarity[] = [
-  "Legend",
   "Mythic",
   "Extremely Rare",
   "Rare",
@@ -376,11 +343,10 @@ export function rarityScore(zipf: number, date?: string): number {
 }
 
 /**
- * Format a rarity-score value for display. Under the current system Mythic and
- * Legend scores show two decimals (so near-ceiling values read honestly rather
- * than rounding up into Legend's range); Extremely Rare and below, and all
- * legacy scores, keep a single decimal. Applies to a single word's score (or
- * the top score), not to summed totals.
+ * Format a rarity-score value for display. Under the current system the
+ * compressed deep-tail band (ceiling..10) shows two decimals; the
+ * measured band and all legacy scores keep a single decimal. Applies to a
+ * single word's score (or the top score), not to summed totals.
  */
 export function formatScore(score: number, date?: string): string {
   return scoringFor(date).format(score);
