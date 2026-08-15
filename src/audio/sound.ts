@@ -58,6 +58,7 @@ const RARITY_RANK: Record<Rarity, number> = {
   Rare: 4,
   "Extremely Rare": 5,
   Mythic: 6,
+  Legend: 7,
 };
 
 /** A short rising two-note chime. Rarer words are pitched a little higher and get an extra sparkle note. */

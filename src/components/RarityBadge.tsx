@@ -13,6 +13,7 @@ const RARITY_META: Record<Rarity, { tag: string; className: string }> = {
   Rare: { tag: "RARE", className: "rarity--rare" },
   "Extremely Rare": { tag: "EXTREMELY RARE", className: "rarity--extremely-rare" },
   Mythic: { tag: "MYTHIC", className: "rarity--mythic" },
+  Legend: { tag: "LEGEND", className: "rarity--legend" },
 };
 
 interface Props {

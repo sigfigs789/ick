@@ -59,7 +59,7 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loaded.drop).toBe("ou");
   });
 
-  it("migrates the former Elusive rank to Mythic in saved progress", () => {
+  it("migrates the former Elusive rank to Legend in saved progress", () => {
     localStorage.setItem(
       "ick:progress:2024-01-01",
       JSON.stringify({
@@ -68,7 +68,19 @@ describe("newProgress / loadOrCreateProgress", () => {
       })
     );
 
-    expect(loadProgress("2024-01-01")?.acceptedWords[0].rarity).toBe("Mythic");
+    expect(loadProgress("2024-01-01")?.acceptedWords[0].rarity).toBe("Legend");
+  });
+
+  it("promotes a former deep-tail Mythic save to Legend", () => {
+    localStorage.setItem(
+      "ick:progress:2024-01-01",
+      JSON.stringify({
+        ...newProgress("2024-01-01", "str"),
+        acceptedWords: [{ word: "abash", rarity: "Mythic", zipf: 0.6 }],
+      })
+    );
+
+    expect(loadProgress("2024-01-01")?.acceptedWords[0].rarity).toBe("Legend");
   });
 
   it.each([0.1, 0.3, 0.5])("refreshes words saved with the former %s unknown-frequency fallback", (zipf) => {
