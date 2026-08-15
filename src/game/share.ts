@@ -3,7 +3,7 @@ import { formatRarityScore, formatScore, topRarityScore, totalRarityScore } from
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
-// Mirrors the in-app "loot tier" rarity palette (black -> grey -> yellow ->
+// Mirrors the in-app "loot tier" rarity palette (black -> grey -> brown ->
 // green -> blue -> purple -> red, see index.css) so the shared result matches
 // what showed up in-game. Quotidian's egg is an intentional Easter egg.
 // Squares only vary by color, which is fine here because this text is for
@@ -13,7 +13,7 @@ import type { AcceptedWord, Rarity } from "./types";
 export const RARITY_SYMBOL: Record<Rarity, string> = {
   Quotidian: "🥚",
   "Very Common": "⬜",
-  Common: "🟨",
+  Common: "🟫",
   Uncommon: "🟩",
   Rare: "🟦",
   "Extremely Rare": "🟪",

@@ -50,8 +50,8 @@ describe("GuessLog", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /copy "strange"/i }));
 
-    // "🟨 strange (<score>)" — the yellow square is the Common tier.
-    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/^🟨 strange \(.+\)$/));
+    // "🟫 strange (<score>)" — the brown square is the Common tier.
+    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/^🟫 strange \(.+\)$/));
     expect(screen.getByText("Copied!")).toBeInTheDocument();
   });
 
