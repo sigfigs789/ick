@@ -141,9 +141,9 @@ describe("rarityFor", () => {
     expect(info?.zipf).toBeGreaterThan(7);
   });
 
-  it("reserves Quotidian for scores below 2.0", () => {
+  it("reserves Quotidian for scores at/below 2.0", () => {
     expect(rarityFor("about")?.rarity).toBe("Quotidian");
-    expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThan(2);
+    expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThanOrEqual(2);
     expect(rarityFor("there")?.rarity).toBe("Very Common");
   });
 
@@ -186,13 +186,13 @@ describe("rarityFor", () => {
     expect(rarityScore(floored.zipf)).toBe(10);
   });
 
-  it("awards Mythic only for a rank of 9.5 or higher", () => {
+  it("awards Mythic only for a rank of 9.9 or higher", () => {
     const belowMythic = rarityFor("assonant")!;
     const mythic = rarityFor("autecism")!;
 
-    expect(rarityScore(belowMythic.zipf)).toBeLessThan(9.5);
+    expect(rarityScore(belowMythic.zipf)).toBeLessThan(9.9);
     expect(belowMythic.rarity).not.toBe("Mythic");
-    expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.5);
+    expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.9);
     expect(mythic.rarity).toBe("Mythic");
   });
 });

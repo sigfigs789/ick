@@ -13,13 +13,18 @@ const WORDS: readonly string[] = dictionaryWords as string[];
 const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, i]));
 
 /**
- * Rarity scoring changed on 2026-08-15 (the frequency waterfall + two-band
- * scale). Puzzles dated on or after that use the new system; earlier puzzles
- * keep the old flat-1.4-unknown data and single-band formula so their scores
- * never shift retroactively. The puzzle date selects the `Scoring` profile;
- * callers that omit a date get the current system.
+ * Rarity scoring has evolved across two cutovers, each date-gated so past
+ * puzzles never shift retroactively:
+ *   - before 2026-08-15: the legacy flat-1.4-unknown data + single-band formula.
+ *   - 2026-08-15 to 2026-08-16: the frequency waterfall + two-band scale with
+ *     measured words filling 0..9.5 and the deep tail 9.5..10.
+ *   - on/after 2026-08-16: the same two-band scale with the measured band
+ *     widened so it fills 0..9.9 and the deep tail 9.9..10.
+ * The puzzle date selects the `Scoring` profile; callers that omit a date get
+ * the newest system.
  */
 const NEW_SCORING_START = "2026-08-15";
+const WIDE_BAND_START = "2026-08-16";
 function usesLegacyScoring(date?: string): boolean {
   return date !== undefined && date < NEW_SCORING_START;
 }
@@ -42,11 +47,13 @@ const MAX_ZIPF = maxZipfHundredths / 100;
 // attests); it anchors the top of the deep-tail band at a perfect 10.0.
 const MIN_ZIPF = minZipfHundredths / 100;
 // Scores split into two bands at wordfreq's measurement floor. Words wordfreq
-// can measure sit at Zipf >= MEASURED_FLOOR and fill 0..NORMAL_CEILING; the
-// deep tail -- words only Norvig/Google Books attest, plus words no corpus
-// attests -- sits below it and gets its own elite NORMAL_CEILING..10 band.
+// can measure sit at Zipf >= MEASURED_FLOOR and fill 0..ceiling; the deep tail
+// -- words only Norvig/Google Books attest, plus words no corpus attests --
+// sits below it and gets its own elite ceiling..10 band. The measured band's
+// ceiling widened from 9.5 to 9.9 at WIDE_BAND_START (see twoBandScoring).
 const MEASURED_FLOOR = 1;
 const NORMAL_CEILING = 9.5;
+const WIDE_CEILING = 9.9;
 
 // -- Legacy frequency data (puzzles before NEW_SCORING_START) ---------------
 // One-decimal Zipf values with unknown-frequency words floored flat to 1.4,
@@ -69,23 +76,33 @@ interface Scoring {
   format(score: number): string;
 }
 
-const CURRENT_SCORING: Scoring = {
-  zipfAt: (i) => zipfHundredths[i] / 100,
-  score: (zipf) => {
-    if (zipf >= MEASURED_FLOOR) {
-      const score = (NORMAL_CEILING * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
-      return Math.round(score * 10) / 10;
-    }
-    const score =
-      NORMAL_CEILING +
-      ((10 - NORMAL_CEILING) * (MEASURED_FLOOR - zipf)) / (MEASURED_FLOOR - MIN_ZIPF);
-    return Math.round(Math.min(score, 10) * 100) / 100;
-  },
-  // The deep-tail library (Zipf < MEASURED_FLOOR) is its own top rank.
-  rarity: (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf)),
-  // The narrow deep-tail band shows two decimals so its gradient is visible.
-  format: (score) => (score >= NORMAL_CEILING ? score.toFixed(2) : score.toFixed(1)),
-};
+// The two-band system, parameterized by where the measured band tops out.
+// `ceiling` is the score of the rarest measured word and the point where the
+// deep-tail band begins (9.5 before WIDE_BAND_START, 9.9 on/after). The rarest
+// attested Zipf (MIN_ZIPF) anchors the top of the deep tail at a perfect 10.0.
+function twoBandScoring(ceiling: number): Scoring {
+  return {
+    zipfAt: (i) => zipfHundredths[i] / 100,
+    score: (zipf) => {
+      if (zipf >= MEASURED_FLOOR) {
+        const score = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
+        return Math.round(score * 10) / 10;
+      }
+      const score =
+        ceiling + ((10 - ceiling) * (MEASURED_FLOOR - zipf)) / (MEASURED_FLOOR - MIN_ZIPF);
+      return Math.round(Math.min(score, 10) * 100) / 100;
+    },
+    // The deep-tail library (Zipf < MEASURED_FLOOR) is its own top rank.
+    rarity: (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf)),
+    // The narrow deep-tail band shows two decimals so its gradient is visible.
+    format: (score) => (score >= ceiling ? score.toFixed(2) : score.toFixed(1)),
+  };
+}
+
+// The 9.5 band scores puzzles from NEW_SCORING_START up to WIDE_BAND_START; the
+// widened 9.9 band takes over on/after WIDE_BAND_START.
+const CURRENT_SCORING: Scoring = twoBandScoring(NORMAL_CEILING);
+const WIDE_SCORING: Scoring = twoBandScoring(WIDE_CEILING);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -111,7 +128,9 @@ function measuredRarity(zipf: number): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  return usesLegacyScoring(date) ? LEGACY_SCORING : CURRENT_SCORING;
+  if (usesLegacyScoring(date)) return LEGACY_SCORING;
+  if (date !== undefined && date < WIDE_BAND_START) return CURRENT_SCORING;
+  return WIDE_SCORING;
 }
 
 export function isValidWord(word: string): boolean {
@@ -244,9 +263,10 @@ export const RARITY_ORDER: Rarity[] = [
  * polarity flipped (wordfreq's Zipf scale runs *higher* for more common
  * words -- e.g. "the" ~7.7, "aardvark" ~2.4 -- which reads backwards for a
  * rarity score). The current system splits into two bands at MEASURED_FLOOR:
- * measured words fill 0..NORMAL_CEILING and the deep-tail library fills
- * NORMAL_CEILING..10, with two decimals of resolution there. Puzzles before
- * NEW_SCORING_START use the legacy single-band 1.0..MAX map instead. Internal
+ * measured words fill 0..ceiling and the deep-tail library fills ceiling..10,
+ * with two decimals of resolution there (the ceiling is 9.5 before
+ * WIDE_BAND_START, 9.9 on/after). Puzzles before NEW_SCORING_START use the
+ * legacy single-band 1.0..MAX map instead. Internal
  * ranking (see rank.ts) still compares raw Zipf directly; this is purely a
  * display transform.
  */
@@ -256,7 +276,7 @@ export function rarityScore(zipf: number, date?: string): number {
 
 /**
  * Format a rarity-score value for display. Under the current system the
- * compressed deep-tail band (NORMAL_CEILING..10) shows two decimals; the
+ * compressed deep-tail band (ceiling..10) shows two decimals; the
  * measured band and all legacy scores keep a single decimal. Applies to a
  * single word's score (or the top score), not to summed totals.
  */
