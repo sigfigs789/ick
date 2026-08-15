@@ -55,17 +55,10 @@
   --rarity-mythic-fg: #b42318;
   --rarity-mythic-dot: #e5484d;
 
-  /* Legend is the top rank -- orange continues the warm progression past
-     Mythic's red (rather than looping back like magenta would), reads as a
-     clear escalation, and is backed by the orange square in shared results. */
-  --rarity-legend-bg: #fde6d0;
-  --rarity-legend-fg: #9a4300;
-  --rarity-legend-dot: #f97316;
-
-  /* The crowned best-word highlight uses a gold accent -- independent of the
-     rarity palette, and moved off orange so it never clashes with Legend. */
-  --best-word-accent: #d99a00;
-  --best-word-bg: #fbf3d6;
+  /* The crowned best-word highlight keeps its own orange accent, independent
+     of the rarity palette so retinting a tier never recolors the crown. */
+  --best-word-accent: #f0980f;
+  --best-word-bg: #fdf0dc;
 
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -120,12 +113,8 @@
     --rarity-mythic-fg: #f7a19a;
     --rarity-mythic-dot: #e5484d;
 
-    --rarity-legend-bg: #2e1a08;
-    --rarity-legend-fg: #fdba74;
-    --rarity-legend-dot: #fb923c;
-
-    --best-word-accent: #facc15;
-    --best-word-bg: #2e2607;
+    --best-word-accent: #f2a30f;
+    --best-word-bg: #3a2408;
   }
 }
 
@@ -628,14 +617,6 @@ h2 {
 .rarity--mythic .rarity-badge__dot {
   background: var(--rarity-mythic-dot);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-mythic-dot) 28%, transparent);
-}
-.rarity--legend {
-  background: var(--rarity-legend-bg);
-  color: var(--rarity-legend-fg);
-}
-.rarity--legend .rarity-badge__dot {
-  background: var(--rarity-legend-dot);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-legend-dot) 32%, transparent);
 }
 
 /* Submit form */

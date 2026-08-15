@@ -12,32 +12,31 @@ describe("date-gated scoring", () => {
   it("uses the legacy system before 2026-08-15 and the new system on/after", () => {
     // "autecism" is attested by no corpus. The legacy system floored such
     // words flat to Zipf 1.4 (Extremely Rare, score 9.4); the new system ranks
-    // it as the single rarest word (Legend -- the deep-tail top rank -- with a
-    // perfect 10.0).
+    // it as the single rarest word (Mythic, a perfect 10.0).
     const legacy = rarityFor("autecism", BEFORE)!;
     expect(legacy).toEqual({ rarity: "Extremely Rare", zipf: 1.4 });
     expect(rarityScore(legacy.zipf, BEFORE)).toBe(9.4);
 
     const current = rarityFor("autecism", ON)!;
-    expect(current.rarity).toBe("Legend");
+    expect(current.rarity).toBe("Mythic");
     expect(rarityScore(current.zipf, ON)).toBe(10);
   });
 
   it("defaults to the new system when no date is given", () => {
     const info = rarityFor("autecism")!;
-    expect(info.rarity).toBe("Legend");
+    expect(info.rarity).toBe("Mythic");
     expect(rarityScore(info.zipf)).toBe(10);
   });
 
   it("keeps later dates on the new system", () => {
-    expect(rarityFor("autecism", AFTER)!.rarity).toBe("Legend");
+    expect(rarityFor("autecism", AFTER)!.rarity).toBe("Mythic");
   });
 
   it("rescales even measured words across the cutover", () => {
     // "cat" is measured under every system; only the scale changes (the legacy
     // 1.0 floor vs the new 0 floor), so its score shifts slightly.
     expect(rarityScore(rarityFor("cat", BEFORE)!.zipf, BEFORE)).toBe(4.3);
-    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.16);
+    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.2);
   });
 
   it("widens the measured band from 9.5 to 9.9 on 2026-08-16", () => {
@@ -45,8 +44,8 @@ describe("date-gated scoring", () => {
     // from 9.5 to 9.9; every measured word rescales up proportionally.
     expect(rarityScore(1, ON)).toBe(9.5);
     expect(rarityScore(1, WIDE)).toBe(9.9);
-    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.16);
-    expect(rarityScore(rarityFor("cat", WIDE)!.zipf, WIDE)).toBe(4.34);
+    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.2);
+    expect(rarityScore(rarityFor("cat", WIDE)!.zipf, WIDE)).toBe(4.3);
   });
 });
 
@@ -66,11 +65,10 @@ describe("two-band rarity score (current system)", () => {
 });
 
 describe("score formatting", () => {
-  it("shows two decimals for Mythic and Legend, one decimal below", () => {
-    expect(formatRarityScore(0.5)).toBe("9.95"); // Legend (deep tail) -> two decimals
-    expect(formatRarityScore(rarityFor("aardwolf")!.zipf)).toBe("9.74"); // Mythic -> two decimals
-    expect(formatRarityScore(rarityFor("cat")!.zipf)).toBe("4.3"); // below Mythic -> one decimal
-    expect(formatScore(9.9)).toBe("9.90");
+  it("shows two decimals for deep-tail scores and one for measured (current system)", () => {
+    expect(formatRarityScore(0.5)).toBe("9.95"); // deep tail -> two decimals
+    expect(formatRarityScore(rarityFor("cat")!.zipf)).toBe("4.3"); // measured -> one
+    expect(formatScore(9.95)).toBe("9.95");
     expect(formatScore(4.3)).toBe("4.3");
   });
 
