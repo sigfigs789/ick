@@ -34,7 +34,7 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(224_873);
+    expect(dictionaryWords).toHaveLength(225_465);
   });
 
   it("accepts a common real word", () => {
