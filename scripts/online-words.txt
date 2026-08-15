@@ -5,3 +5,6 @@
 # generate-data.py. Managed by the "Add a word" pipeline in
 # scripts/manage-extra-word.py (list=online).
 payline
+poussin
+pembina
+pomarine
