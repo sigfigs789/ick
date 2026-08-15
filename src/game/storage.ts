@@ -45,10 +45,16 @@ export function loadProgress(date: string): DailyProgress | null {
       migrated = true;
       return { ...word, rarity: "Legend" as const };
     }
-    // Only the deep tail (Zipf < 1) ever carried the old "Mythic" top rank, so
-    // this promotes those to "Legend" without touching the new measured Mythic
-    // band (Zipf 1.0-1.2).
-    if ((word.rarity as string) === "Mythic" && word.zipf < 1) {
+    // The deep-tail top rank was renamed Mythic -> Legend at the 2026-08-16
+    // cutover, but the 2026-08-15 system still labels its deep tail Mythic. Only
+    // promote a saved deep-tail (Zipf < 1) Mythic when the puzzle's own date
+    // actually uses the Legend tier -- never the latest system's measured Mythic
+    // band (Zipf >= 1).
+    if (
+      (word.rarity as string) === "Mythic" &&
+      word.zipf < 1 &&
+      rarityFor(word.word, date)?.rarity === "Legend"
+    ) {
       migrated = true;
       return { ...word, rarity: "Legend" as const };
     }

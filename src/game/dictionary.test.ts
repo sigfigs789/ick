@@ -34,13 +34,18 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
 // Rare words discovered online for an upcoming drop and added via the "Add rare
 // words found online" GitHub Action (list=online). Appended automatically by
 // scripts/manage-extra-word.py record-word.
-const onlineWordScores: ReadonlyArray<[string, string, number]> = [];
+const onlineWordScores: ReadonlyArray<[string, string, number]> = [
+  ["payline", "Extremely Rare", 2.26],
+  ["pembina", "Extremely Rare", 2.2],
+  ["pomarine", "Extremely Rare", 1.45],
+  ["poussin", "Extremely Rare", 2.26],
+];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_466);
+    expect(dictionaryWords).toHaveLength(225_470);
   });
 
   it("accepts a common real word", () => {
@@ -151,7 +156,7 @@ describe("rarityFor", () => {
     expect(info?.zipf).toBeGreaterThan(7);
   });
 
-  it("reserves Quotidian for scores at or below 2.0", () => {
+  it("reserves Quotidian for scores at/below 2.0", () => {
     expect(rarityFor("about")?.rarity).toBe("Quotidian");
     expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThanOrEqual(2);
     expect(rarityFor("there")?.rarity).toBe("Very Common");
@@ -223,29 +228,22 @@ describe("rarityFor", () => {
   it("awards the 10.0 max and Legend to a word no corpus attests", () => {
     // "autecism" is absent from every frequency source (and its stem too), so
     // the waterfall gives it the rarest-word sentinel -- the only Zipf that
-    // earns a perfect 10. The deep tail is its own top rank, Legend.
+    // earns a perfect 10, which lands in the deep-tail Legend rank.
     const floored = rarityFor("autecism")!;
     expect(floored.rarity).toBe("Legend");
     expect(rarityScore(floored.zipf)).toBe(10);
   });
 
-  it("splits the top of the scale into Legend (deep tail), Mythic, and Extremely Rare", () => {
-    const legend = rarityFor("autecism")!; // deep tail, Zipf < 1
-    const mythic = rarityFor("aardwolf")!; // Zipf ~1.11, rarest measured slice
-    const extremelyRare = rarityFor("assonant")!; // Zipf ~1.53
-
-    // Legend is the deep-tail top rank (score >= the 9.9 ceiling).
+  it("awards Legend for a rank of 9.9+ and Mythic for 9.5-9.89", () => {
+    const legend = rarityFor("autecism")!;
     expect(rarityScore(legend.zipf)).toBeGreaterThanOrEqual(9.9);
     expect(legend.rarity).toBe("Legend");
 
-    // Mythic is the rarest measured band, one notch below Legend (~9.5-9.9).
+    // "aardwolf" is the rarest measured slice -- score in [9.5, 9.9) -> Mythic.
+    const mythic = rarityFor("aardwolf")!;
     expect(rarityScore(mythic.zipf)).toBeGreaterThanOrEqual(9.5);
     expect(rarityScore(mythic.zipf)).toBeLessThan(9.9);
     expect(mythic.rarity).toBe("Mythic");
-
-    // Extremely Rare keeps the band beneath Mythic.
-    expect(rarityScore(extremelyRare.zipf)).toBeLessThan(9.5);
-    expect(extremelyRare.rarity).toBe("Extremely Rare");
   });
 });
 

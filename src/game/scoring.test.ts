@@ -4,49 +4,54 @@ import { rarityFor, rarityScore, formatRarityScore, formatScore } from "./dictio
 // Expected values are hardcoded (not recomputed via the functions under test)
 // so a regression in the scoring math or the legacy dataset is actually caught.
 const BEFORE = "2026-08-14"; // last day on the legacy system
-const ON = "2026-08-15"; // the only day on the original two-band system (9.5 ceiling)
-const WIDE = "2026-08-16"; // first day on the widened band (9.9 ceiling)
+const ON = "2026-08-15"; // the only day on the original two-band system (9.5 ceiling, no Legend)
+const WIDE = "2026-08-16"; // first day on the latest widened system (9.9 ceiling + Legend)
 const AFTER = "2027-03-01";
 
 describe("date-gated scoring", () => {
-  it("uses the legacy system before 2026-08-15 and the new system on/after", () => {
-    // "autecism" is attested by no corpus. The legacy system floored such
-    // words flat to Zipf 1.4 (Extremely Rare, score 9.4); the new system ranks
-    // it as the single rarest word (Legend -- the deep-tail top rank -- with a
-    // perfect 10.0).
+  it("uses the legacy system before 2026-08-15 and a two-band system on/after", () => {
+    // "autecism" is attested by no corpus. The legacy system floored such words
+    // flat to Zipf 1.4 (Extremely Rare, score 9.4); every two-band system ranks
+    // it as the single rarest word with a perfect 10.0.
     const legacy = rarityFor("autecism", BEFORE)!;
     expect(legacy).toEqual({ rarity: "Extremely Rare", zipf: 1.4 });
     expect(rarityScore(legacy.zipf, BEFORE)).toBe(9.4);
 
+    // 2026-08-15: the deep-tail library is a single Mythic top rank (no Legend).
     const current = rarityFor("autecism", ON)!;
-    expect(current.rarity).toBe("Legend");
+    expect(current.rarity).toBe("Mythic");
     expect(rarityScore(current.zipf, ON)).toBe(10);
   });
 
-  it("defaults to the new system when no date is given", () => {
+  it("adds the Legend tier only from 2026-08-16", () => {
+    // Same word and same 10.0 score, but the deep-tail top rank is Mythic on
+    // 2026-08-15 and Legend from 2026-08-16 (and for undated/newest puzzles).
+    expect(rarityFor("autecism", ON)!.rarity).toBe("Mythic");
+    expect(rarityFor("autecism", WIDE)!.rarity).toBe("Legend");
+    expect(rarityFor("autecism", AFTER)!.rarity).toBe("Legend");
+    expect(rarityFor("autecism")!.rarity).toBe("Legend");
+  });
+
+  it("defaults to the latest system when no date is given", () => {
     const info = rarityFor("autecism")!;
     expect(info.rarity).toBe("Legend");
     expect(rarityScore(info.zipf)).toBe(10);
   });
 
-  it("keeps later dates on the new system", () => {
-    expect(rarityFor("autecism", AFTER)!.rarity).toBe("Legend");
-  });
-
-  it("rescales even measured words across the cutover", () => {
-    // "cat" is measured under every system; only the scale changes (the legacy
-    // 1.0 floor vs the new 0 floor), so its score shifts slightly.
-    expect(rarityScore(rarityFor("cat", BEFORE)!.zipf, BEFORE)).toBe(4.3);
-    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.16);
-  });
-
-  it("widens the measured band from 9.5 to 9.9 on 2026-08-16", () => {
-    // The rarest measured word (Zipf 1) tops out the measured band, which grew
-    // from 9.5 to 9.9; every measured word rescales up proportionally.
+  it("changes the Zipf-to-score conversion between 2026-08-15 and 2026-08-16", () => {
+    // The measured band widened from 0..9.5 to 0..9.9, so the rarest measured
+    // word (Zipf 1) tops out higher and every measured word rescales up. The
+    // latest system also carries two decimals where 2026-08-15 kept one.
     expect(rarityScore(1, ON)).toBe(9.5);
     expect(rarityScore(1, WIDE)).toBe(9.9);
-    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.16);
-    expect(rarityScore(rarityFor("cat", WIDE)!.zipf, WIDE)).toBe(4.34);
+    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.2); // one decimal
+    expect(rarityScore(rarityFor("cat", WIDE)!.zipf, WIDE)).toBe(4.34); // two decimals
+  });
+
+  it("rescales even measured words across the legacy cutover", () => {
+    // "cat" is measured under every system; only the scale changes.
+    expect(rarityScore(rarityFor("cat", BEFORE)!.zipf, BEFORE)).toBe(4.3); // legacy
+    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.2); // 2026-08-15
   });
 });
 

@@ -71,16 +71,31 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loadProgress("2024-01-01")?.acceptedWords[0].rarity).toBe("Legend");
   });
 
-  it("promotes a former deep-tail Mythic save to Legend", () => {
+  it("promotes a deep-tail Mythic save to Legend on a Legend-era puzzle", () => {
+    // 2026-08-16+ renamed the deep-tail top rank Mythic -> Legend.
     localStorage.setItem(
-      "ick:progress:2024-01-01",
+      "ick:progress:2026-08-16",
       JSON.stringify({
-        ...newProgress("2024-01-01", "str"),
-        acceptedWords: [{ word: "abash", rarity: "Mythic", zipf: 0.6 }],
+        ...newProgress("2026-08-16", "aut"),
+        acceptedWords: [{ word: "autecism", rarity: "Mythic", zipf: 0.6 }],
       })
     );
 
-    expect(loadProgress("2024-01-01")?.acceptedWords[0].rarity).toBe("Legend");
+    expect(loadProgress("2026-08-16")?.acceptedWords[0].rarity).toBe("Legend");
+  });
+
+  it("keeps a deep-tail Mythic save as Mythic on the 2026-08-15 puzzle", () => {
+    // 2026-08-15 legitimately labels its deep tail Mythic, so it must not be
+    // promoted to a tier that day's system never had.
+    localStorage.setItem(
+      "ick:progress:2026-08-15",
+      JSON.stringify({
+        ...newProgress("2026-08-15", "aut"),
+        acceptedWords: [{ word: "autecism", rarity: "Mythic", zipf: 0.6 }],
+      })
+    );
+
+    expect(loadProgress("2026-08-15")?.acceptedWords[0].rarity).toBe("Mythic");
   });
 
   it.each([0.1, 0.3, 0.5])("refreshes words saved with the former %s unknown-frequency fallback", (zipf) => {

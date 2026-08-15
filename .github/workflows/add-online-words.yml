@@ -2,11 +2,10 @@ name: Add rare words found online
 
 # Run this by hand (Actions tab -> "Add rare words found online" -> Run workflow).
 # It looks at the drop coming up the following day, searches online (Datamuse)
-# for very rare words that contain it, and opens ONE pull request PER WORD so
-# each candidate can be reviewed and approved on its own. Every PR adds a single
-# word to the new "online" provenance list (scripts/online-words.txt) -- distinct
-# from "curated" (extra-words.txt) and "suggested" (suggested-words.txt) -- and
-# reuses the exact same pipeline as the "Add a word" action:
+# for very rare words that contain it, and opens ONE pull request adding all of
+# them to the dictionary with the new "online" provenance -- distinct from
+# "curated" (extra-words.txt) and "suggested" (suggested-words.txt). It reuses
+# the exact same pipeline as the "Add a word" action:
 # scripts/manage-extra-word.py add --list online, then a full data regen +
 # legacy re-alignment + score pinning.
 #
@@ -14,10 +13,6 @@ name: Add rare words found online
 # guessed), so --forced is never used here. Each candidate is also run through
 # scripts/word_tags.py (Wiktextract + Merriam-Webster + Datamuse), which drops
 # proper nouns, abbreviations, and out-of-use words (obsolete/archaic/dated).
-#
-# NOTE: because every PR regenerates the shared data files, merging one makes the
-# others stale (dictionary length, size test, legacy alignment). Merge them one
-# at a time and re-run this workflow, or rebase/regenerate the remaining PRs.
 
 on:
   workflow_dispatch:
@@ -37,71 +32,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  # Resolve the upcoming drop and discover the rare candidates once, then hand
-  # the list to a fan-out matrix so each word gets its own job and its own PR.
-  discover:
+  add-online-words:
     runs-on: ubuntu-latest
-    outputs:
-      words: ${{ steps.find.outputs.words }}
-      drop: ${{ steps.find.outputs.drop }}
-      count: ${{ steps.find.outputs.count }}
-    steps:
-      - name: Check out WordInk
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install data-generation dependency
-        run: python -m pip install wordfreq==3.1.1
-
-      - name: Find rare words for the upcoming drop
-        id: find
-        env:
-          TARGET_DATE: ${{ inputs.date }}
-          MAX_ZIPF: ${{ inputs.max_zipf }}
-          # Per-word lexical tagging (proper noun / abbreviation / out-of-use).
-          # If unset, word_tags.py falls back to Wiktextract + Datamuse.
-          MW_COLLEGIATE_KEY: ${{ secrets.MW_COLLEGIATE_KEY }}
-          MW_MEDICAL_KEY: ${{ secrets.MW_MEDICAL_KEY }}
-        run: |
-          set -euo pipefail
-          mkdir -p .tmp
-          DATE_FLAG=""
-          if [ -n "$TARGET_DATE" ]; then DATE_FLAG="--date $TARGET_DATE"; fi
-          python scripts/find-online-words.py $DATE_FLAG \
-            --max-zipf "${MAX_ZIPF:-2.5}" \
-            --drop-out .tmp/drop.txt > .tmp/online-words.txt
-          echo "drop=$(cat .tmp/drop.txt)" >> "$GITHUB_OUTPUT"
-          echo "count=$(grep -c . .tmp/online-words.txt || true)" >> "$GITHUB_OUTPUT"
-          # Emit the discovered words as a JSON array for the matrix below.
-          words_json=$(jq -R -s -c 'split("\n") | map(select(length > 0))' < .tmp/online-words.txt)
-          echo "words=$words_json" >> "$GITHUB_OUTPUT"
-
-      - name: Report when nothing was found
-        if: steps.find.outputs.count == '0'
-        run: echo "No new rare words found for drop ${{ steps.find.outputs.drop }}; nothing to add."
-
-  # One job -- and therefore one PR -- per discovered word. fail-fast: false so a
-  # single failing word doesn't cancel the rest.
-  add-word:
-    needs: discover
-    if: needs.discover.outputs.count != '0'
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        word: ${{ fromJson(needs.discover.outputs.words) }}
-    env:
-      WORD: ${{ matrix.word }}
-      DROP: ${{ needs.discover.outputs.drop }}
-      # manage-extra-word.py add re-checks the word via word_tags.py; give it the
-      # MW keys too. Falls back to Wiktextract + Datamuse when unset.
-      MW_COLLEGIATE_KEY: ${{ secrets.MW_COLLEGIATE_KEY }}
-      MW_MEDICAL_KEY: ${{ secrets.MW_MEDICAL_KEY }}
     steps:
       - name: Check out WordInk
         uses: actions/checkout@v4
@@ -126,52 +58,98 @@ jobs:
       - name: Install data-generation dependency
         run: python -m pip install wordfreq==3.1.1
 
-      - name: Add the word and regenerate dictionary data
+      - name: Find rare words for the upcoming drop
+        id: find
+        env:
+          TARGET_DATE: ${{ inputs.date }}
+          MAX_ZIPF: ${{ inputs.max_zipf }}
+          # Per-word lexical tagging (proper noun / abbreviation / out-of-use).
+          # If unset, word_tags.py falls back to Wiktextract + Datamuse.
+          MW_COLLEGIATE_KEY: ${{ secrets.MW_COLLEGIATE_KEY }}
+          MW_MEDICAL_KEY: ${{ secrets.MW_MEDICAL_KEY }}
         run: |
           set -euo pipefail
-          # Add this one word through the same path as the "Add a word" action.
-          # No --forced: find-online-words.py only emits attested words.
-          python scripts/manage-extra-word.py add "$WORD" --list online
+          mkdir -p .tmp
+          DATE_FLAG=""
+          if [ -n "$TARGET_DATE" ]; then DATE_FLAG="--date $TARGET_DATE"; fi
+          python scripts/find-online-words.py $DATE_FLAG \
+            --max-zipf "${MAX_ZIPF:-2.5}" \
+            --drop-out .tmp/drop.txt > .tmp/online-words.txt
+          echo "drop=$(cat .tmp/drop.txt)" >> "$GITHUB_OUTPUT"
+          echo "count=$(grep -c . .tmp/online-words.txt || true)" >> "$GITHUB_OUTPUT"
+          {
+            echo "words<<WORDS_EOF"
+            cat .tmp/online-words.txt
+            echo "WORDS_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Report when nothing was found
+        if: steps.find.outputs.count == '0'
+        run: echo "No new rare words found for drop ${{ steps.find.outputs.drop }}; nothing to add."
+
+      - name: Add words and regenerate dictionary data
+        if: steps.find.outputs.count != '0'
+        env:
+          WORDS: ${{ steps.find.outputs.words }}
+          # manage-extra-word.py add re-checks each word via word_tags.py; give it
+          # the MW keys too. Falls back to Wiktextract + Datamuse when unset.
+          MW_COLLEGIATE_KEY: ${{ secrets.MW_COLLEGIATE_KEY }}
+          MW_MEDICAL_KEY: ${{ secrets.MW_MEDICAL_KEY }}
+        run: |
+          set -euo pipefail
+          # Add each discovered word through the same path as the "Add a word"
+          # action. No --forced: find-online-words.py only emits attested words.
+          while IFS= read -r word; do
+            [ -z "$word" ] && continue
+            python scripts/manage-extra-word.py add "$word" --list online
+          done <<< "$WORDS"
 
           make -C .tmp/esdb
           .tmp/esdb/scowl --db .tmp/esdb/scowl.db word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > .tmp/scowl-regional-80.txt
           python scripts/generate-data.py --word-list .tmp/scowl-regional-80.txt --esdb-db .tmp/esdb/scowl.db
           # Grade the deep tail (Norvig/Google Books waterfall), then keep the
-          # frozen legacy rarity arrays index-aligned with the grown dictionary.
+          # frozen legacy rarity arrays index-aligned with the grown dictionary
+          # -- one align-legacy call inserts a placeholder for every added word.
           python scripts/generate-data.py --refresh-rarity
-          python scripts/manage-extra-word.py align-legacy "$WORD"
+          python scripts/manage-extra-word.py align-legacy $WORDS
           python scripts/manage-extra-word.py update-size-test
-          # Log the word's Zipf + rarity score and pin them in a test.
-          python scripts/manage-extra-word.py record-word "$WORD" --list online
+          # Log each word's Zipf + rarity score and pin them in a test.
+          while IFS= read -r word; do
+            [ -z "$word" ] && continue
+            python scripts/manage-extra-word.py record-word "$word" --list online
+          done <<< "$WORDS"
 
-      - name: Verify the added word is a valid input
+      - name: Verify the added words are valid inputs
+        if: steps.find.outputs.count != '0'
         run: |
           npm ci
           npm test -- --run src/game/dictionary.test.ts
 
       - name: Open pull request
+        if: steps.find.outputs.count != '0'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: automated/add-online-word-${{ matrix.word }}-${{ github.run_id }}
+          branch: automated/add-online-words-${{ github.run_id }}
           delete-branch: true
-          commit-message: "Add ${{ matrix.word }} to the online dictionary"
-          title: "Add ${{ matrix.word }} to the online dictionary (${{ needs.discover.outputs.drop }} drop)"
+          commit-message: "Add ${{ steps.find.outputs.count }} online rare word(s) for the ${{ steps.find.outputs.drop }} drop"
+          title: "Add online rare words for the ${{ steps.find.outputs.drop }} drop"
           body: |
-            Adds the rare word `${{ matrix.word }}` -- discovered online (via the
-            Datamuse API) as containing the **${{ needs.discover.outputs.drop }}**
-            drop coming up the following day -- to the new **online** provenance
-            list (`scripts/online-words.txt`), and regenerates the dictionary and
-            rarity mappings.
+            Adds rare words discovered online (via the Datamuse API) that contain
+            the **${{ steps.find.outputs.drop }}** drop coming up the following day,
+            to the new **online** provenance list (`scripts/online-words.txt`), and
+            regenerates the dictionary and rarity mappings.
 
-            - Attested by a frequency corpus, so it is not forced.
-            - The word's Zipf and rarity score are printed in the run log (see the
-              "Add the word and regenerate dictionary data" step) and pinned in a test.
+            Words added (all attested by a frequency corpus, so none are forced):
+
+            ```
+            ${{ steps.find.outputs.words }}
+            ```
+
+            - Each word's Zipf and rarity score are printed in the run log (see the
+              "Add words and regenerate dictionary data" step) and pinned in a test.
             - The dictionary-size and validity/score tests were updated automatically.
             - `rarity-legacy.json` was re-aligned to the new dictionary length.
-
-            One word per PR: merging this makes any sibling online-word PRs stale
-            (shared data files), so re-run the workflow or rebase the rest after merge.
           add-paths: |
             scripts/online-words.txt
             src/data/dictionary.json
