@@ -4,3 +4,4 @@
 # purely to record provenance -- all are merged into dictionary.json by
 # generate-data.py. Managed by the "Add a word" pipeline in
 # scripts/manage-extra-word.py (list=online).
+poussin
