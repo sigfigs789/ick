@@ -198,12 +198,15 @@ export function rarityFor(word: string, date?: string): RarityInfo | undefined {
 }
 
 // A word confirmed real by the live Merriam-Webster fallback but absent from the
-// corpus-derived dictionary has no measured frequency of its own. It scores at
-// the rarest *measured* tier -- deliberately NOT the deep-tail Mythic floor, so
-// a live lookup can't hand out the maximum score for any obscure word.
+// corpus-derived dictionary has no measured frequency of its own. We place it in
+// the middle of the "Extremely Rare" band -- rare (it is, after all, missing from
+// a 225k-word list) but deliberately below the Mythic and Legend top ranks, so a
+// live lookup can never hand out a near-maximum score. Comfortably inside the
+// band (MYTHIC_ZIPF 1.28 .. 2.5) so every scoring system agrees on the label.
+const LIVE_WORD_ZIPF = 2.0;
 export function rarityForLiveWord(date?: string): RarityInfo {
   const scoring = scoringFor(date);
-  return { rarity: scoring.rarity(MEASURED_FLOOR), zipf: MEASURED_FLOOR };
+  return { rarity: scoring.rarity(LIVE_WORD_ZIPF), zipf: LIVE_WORD_ZIPF };
 }
 
 /** A word whose rarity was inherited from a base form rather than its own data. */

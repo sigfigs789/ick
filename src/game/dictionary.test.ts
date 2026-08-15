@@ -257,12 +257,12 @@ describe("rarityFor", () => {
 });
 
 describe("rarityForLiveWord", () => {
-  it("scores a live-confirmed off-dictionary word at the rarest measured tier, not Mythic", () => {
+  it("scores a live-confirmed off-dictionary word as Extremely Rare, below Mythic/Legend", () => {
     const info = rarityForLiveWord();
     // Absent from the corpus-derived dictionary but confirmed real -- rare, but
-    // deliberately not the deep-tail Mythic floor a live lookup could farm.
+    // deliberately below the Mythic and Legend top ranks a live lookup could farm.
     expect(info.rarity).toBe("Extremely Rare");
-    expect(info.zipf).toBe(1);
+    expect(info.zipf).toBe(2);
     expect(rarityScore(info.zipf)).toBeLessThan(10);
   });
 });
