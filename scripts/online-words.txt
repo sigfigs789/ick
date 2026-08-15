@@ -4,3 +4,40 @@
 # purely to record provenance -- all are merged into dictionary.json by
 # generate-data.py. Managed by the "Add a word" pipeline in
 # scripts/manage-extra-word.py (list=online).
+purrington
+pincio
+pasquin
+pleine
+pupin
+pascaline
+princessa
+poing
+pycnocline
+pomarine
+patrin
+pertinax
+proserpina
+prochein
+petrine
+petain
+pinero
+penquin
+peckinpah
+plantin
+pince
+pfenning
+popkin
+prine
+pinche
+pugin
+pring
+pontchartrain
+printf
+proserpine
+prinz
+pembina
+princesa
+proin
+platini
+poussin
+payline

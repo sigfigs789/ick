@@ -34,13 +34,51 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
 // Rare words discovered online for an upcoming drop and added via the "Add rare
 // words found online" GitHub Action (list=online). Appended automatically by
 // scripts/manage-extra-word.py record-word.
-const onlineWordScores: ReadonlyArray<[string, string, number]> = [];
+const onlineWordScores: ReadonlyArray<[string, string, number]> = [
+  ["pascaline", "Extremely Rare", 1.34],
+  ["pasquin", "Extremely Rare", 1.08],
+  ["patrin", "Extremely Rare", 1.47],
+  ["payline", "Extremely Rare", 2.26],
+  ["peckinpah", "Extremely Rare", 1.82],
+  ["pembina", "Extremely Rare", 2.2],
+  ["penquin", "Extremely Rare", 1.79],
+  ["pertinax", "Extremely Rare", 1.57],
+  ["petain", "Extremely Rare", 1.76],
+  ["petrine", "Extremely Rare", 1.73],
+  ["pfenning", "Extremely Rare", 1.88],
+  ["pince", "Extremely Rare", 1.87],
+  ["pinche", "Extremely Rare", 2.05],
+  ["pincio", "Extremely Rare", 1.05],
+  ["pinero", "Extremely Rare", 1.76],
+  ["plantin", "Extremely Rare", 1.84],
+  ["platini", "Extremely Rare", 2.22],
+  ["pleine", "Extremely Rare", 1.33],
+  ["poing", "Extremely Rare", 1.38],
+  ["pomarine", "Extremely Rare", 1.45],
+  ["pontchartrain", "Extremely Rare", 2.13],
+  ["popkin", "Extremely Rare", 1.92],
+  ["poussin", "Extremely Rare", 2.26],
+  ["princesa", "Extremely Rare", 2.2],
+  ["princessa", "Extremely Rare", 1.34],
+  ["prine", "Extremely Rare", 1.92],
+  ["pring", "Extremely Rare", 2.07],
+  ["printf", "Extremely Rare", 2.17],
+  ["prinz", "Extremely Rare", 2.19],
+  ["prochein", "Extremely Rare", 1.65],
+  ["proin", "Extremely Rare", 2.21],
+  ["proserpina", "Extremely Rare", 1.61],
+  ["proserpine", "Extremely Rare", 2.17],
+  ["pugin", "Extremely Rare", 2.05],
+  ["pupin", "Extremely Rare", 1.33],
+  ["purrington", "Extremely Rare", 1.03],
+  ["pycnocline", "Extremely Rare", 1.43],
+];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_466);
+    expect(dictionaryWords).toHaveLength(225_503);
   });
 
   it("accepts a common real word", () => {
