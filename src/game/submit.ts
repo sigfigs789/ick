@@ -4,7 +4,14 @@ import { baseForm, boundBaseCandidates } from "./stem";
 import type { AcceptedWord, SubmissionResult } from "./types";
 
 const WORD_CHARS = /^[a-z]+$/;
-const METADATA_REASONS = ["proper-noun", "abbreviation", "name-or-abbreviation", "obsolete"] as const;
+const METADATA_REASONS = [
+  "proper-noun",
+  "abbreviation",
+  "name-or-abbreviation",
+  "obsolete",
+  "archaic",
+  "dated",
+] as const;
 type MetadataReason = (typeof METADATA_REASONS)[number];
 const metadataByReason = rejectionMetadata as Record<MetadataReason, readonly string[]>;
 
@@ -97,6 +104,8 @@ export const REJECTION_MESSAGES: Record<string, string> = {
   abbreviation: "This looks like an abbreviation or acronym.",
   "name-or-abbreviation": "This looks like a proper noun or abbreviation.",
   obsolete: "This looks archaic or obsolete.",
+  archaic: "This looks like an archaic word.",
+  dated: "This looks dated — no longer in common use.",
   "missing-drop": "That word doesn't contain the drop.",
   "same-as-drop": "Your answer can't be the drop itself.",
   "already-used": "You've already submitted that word.",
