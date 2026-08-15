@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { MAX_GUESSES } from "../game/constants";
 import { bestWord } from "../game/rank";
-import { topRarityScore, totalRarityScore } from "../game/dictionary";
+import { formatRarityScore, topRarityScore, totalRarityScore } from "../game/dictionary";
 import { copyText } from "../clipboard";
+import { RARITY_SYMBOL } from "../game/share";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
+
+/** The clipboard form of a logged word: "<tier square> <word> (<score>)".
+ * Reuses the share-results palette so a pasted word matches the share text. */
+function copyTextForWord(w: AcceptedWord, date?: string): string {
+  const score = w.zipf !== undefined ? ` (${formatRarityScore(w.zipf, date)})` : "";
+  return `${RARITY_SYMBOL[w.rarity]} ${w.word}${score}`;
+}
 
 interface Props {
   acceptedWords: AcceptedWord[];
@@ -27,11 +35,11 @@ export function GuessLog({
   // Tap a logged word to copy it to the clipboard, flashing a brief confirmation.
   const [copiedWord, setCopiedWord] = useState<string | null>(null);
 
-  function copyWord(word: string) {
-    void copyText(word);
-    setCopiedWord(word);
+  function copyWord(w: AcceptedWord) {
+    void copyText(copyTextForWord(w, date));
+    setCopiedWord(w.word);
     window.setTimeout(() => {
-      setCopiedWord((current) => (current === word ? null : current));
+      setCopiedWord((current) => (current === w.word ? null : current));
     }, 1500);
   }
 
@@ -60,7 +68,7 @@ export function GuessLog({
                 <button
                   type="button"
                   className={`guess-log__entry-button${isCopied ? " guess-log__entry-button--copied" : ""}`}
-                  onClick={() => copyWord(w.word)}
+                  onClick={() => copyWord(w)}
                   aria-label={
                     isCopied
                       ? `Copied "${w.word}"`
@@ -74,28 +82,21 @@ export function GuessLog({
                       </span>
                     )}
                     <span className="guess-log__word">{w.word}</span>
-                  </span>
-                  <span className="guess-log__entry-meta">
-                    <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
-                    <span className="guess-log__copy-hint" aria-hidden="true">
-                      {isCopied ? (
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                          <path
-                            d="M5 12l5 5L19 7"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      ) : (
+                    {isCopied ? (
+                      <span className="guess-log__copied" role="status">
+                        Copied!
+                      </span>
+                    ) : (
+                      <span className="guess-log__copy-hint" aria-hidden="true">
                         <svg viewBox="0 0 24 24" width="16" height="16">
                           <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
                           <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" strokeWidth="2" />
                         </svg>
-                      )}
-                    </span>
+                      </span>
+                    )}
+                  </span>
+                  <span className="guess-log__entry-meta">
+                    <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
                   </span>
                 </button>
               </li>

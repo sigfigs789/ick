@@ -10,7 +10,7 @@ import type { AcceptedWord, Rarity } from "./types";
 // sharing outside the app -- inside the app, rarity is always shown as a
 // plain-text label too (see RarityBadge), which is what keeps things
 // color-independent for accessibility.
-const RARITY_SYMBOL: Record<Rarity, string> = {
+export const RARITY_SYMBOL: Record<Rarity, string> = {
   Quotidian: "🥚",
   "Very Common": "⬜",
   Common: "🟨",

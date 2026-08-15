@@ -513,6 +513,16 @@ h2 {
   opacity: 0.45;
   transition: opacity 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
 }
+/* Share-button-style "Copied!" confirmation that replaces the copy icon on tap. */
+.guess-log__copied {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--best-word-accent);
+}
 .guess-log__crown {
   font-size: 1rem;
   line-height: 1;

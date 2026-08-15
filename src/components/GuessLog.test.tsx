@@ -42,7 +42,7 @@ describe("GuessLog", () => {
     expect(strangeEntry).not.toHaveClass("guess-log__entry--best");
   });
 
-  it("copies the word to the clipboard when tapped and flashes a confirmation", async () => {
+  it("copies the tier square, word, and score when tapped and flashes a confirmation", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
@@ -50,8 +50,9 @@ describe("GuessLog", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /copy "strange"/i }));
 
-    expect(writeText).toHaveBeenCalledWith("strange");
-    expect(screen.getByRole("button", { name: /copied "strange"/i })).toBeInTheDocument();
+    // "🟨 strange (<score>)" — the yellow square is the Common tier.
+    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/^🟨 strange \(.+\)$/));
+    expect(screen.getByText("Copied!")).toBeInTheDocument();
   });
 
   it("shows all trackers without a duplicate completion heading", () => {
