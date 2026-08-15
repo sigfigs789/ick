@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
-import { isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
+import { baseFormSubstitution, isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
 
 const explicitlyCuratedWords = [
   "endling",
@@ -28,13 +28,19 @@ const explicitlyCuratedWords = [
 // scored. Appended automatically by scripts/manage-extra-word.py record-word.
 // [word, rarity, zipf]
 const curatedWordScores: ReadonlyArray<[string, string, number]> = [];
-const suggestedWordScores: ReadonlyArray<[string, string, number]> = [];
+const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
+  ["aggrandization", "Extremely Rare", 1.52],
+];
+// Rare words discovered online for an upcoming drop and added via the "Add rare
+// words found online" GitHub Action (list=online). Appended automatically by
+// scripts/manage-extra-word.py record-word.
+const onlineWordScores: ReadonlyArray<[string, string, number]> = [];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(224_873);
+    expect(dictionaryWords).toHaveLength(225_466);
   });
 
   it("accepts a common real word", () => {
@@ -65,7 +71,11 @@ describe("isValidWord", () => {
   });
 
   it("accepts words added via the action with their recorded rarity and score", () => {
-    for (const [word, rarity, zipf] of [...curatedWordScores, ...suggestedWordScores]) {
+    for (const [word, rarity, zipf] of [
+      ...curatedWordScores,
+      ...suggestedWordScores,
+      ...onlineWordScores,
+    ]) {
       expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
       expect(rarityFor(word), `${word} should keep its recorded rarity/zipf`).toEqual({
         rarity,
@@ -177,6 +187,39 @@ describe("rarityFor", () => {
     expect(rarityFor("dying")).toEqual(rarityFor("die"));
   });
 
+  it("caps bound derivational suffixes at their more common base word", () => {
+    // -ization/-isation is the noun of an -ize/-ise verb; -ability/-ibility the
+    // noun of an -able/-ible adjective. They can't score rarer than that base.
+    expect(rarityFor("trivialization")).toEqual(rarityFor("trivialize"));
+    expect(rarityFor("readability")).toEqual(rarityFor("readable"));
+    expect(rarityFor("acceptability")).toEqual(rarityFor("acceptable"));
+  });
+
+  it("never lets the cap make a bound form rarer than its own frequency", () => {
+    // "organization" (Zipf 4.92) is more common than "organize" (3.98); the cap
+    // only pulls toward a *more* common base, so it keeps its own score.
+    expect(rarityFor("organization")).not.toEqual(rarityFor("organize"));
+    expect(rarityFor("organization")!.zipf).toBeCloseTo(4.92, 5);
+  });
+
+  it("leaves opaque suffixes (-ment, -ism) on their own frequency", () => {
+    // "battlement" is not "battle" + ment, nor "arrivism" a form of "arrive";
+    // a spelling-only rule can't tell these from real derivations, so they stay.
+    expect(rarityFor("battlement")).not.toEqual(rarityFor("battle"));
+    expect(rarityFor("battlement")!.zipf).toBeCloseTo(1.77, 5);
+    expect(rarityFor("arrivism")).not.toEqual(rarityFor("arrive"));
+  });
+
+  it("applies the bound base-form only from the 2026-08-16 wide-band cutover", () => {
+    // Before the cutover the derived word keeps its own (rarer) frequency, so
+    // past puzzles never shift retroactively.
+    const before = "2026-08-15";
+    expect(rarityFor("trivialization", before)).not.toEqual(rarityFor("trivialize", before));
+    // On/after the cutover -- and for undated (newest) puzzles -- it inherits the base.
+    expect(rarityFor("trivialization", "2026-08-16")).toEqual(rarityFor("trivialize", "2026-08-16"));
+    expect(rarityFor("trivialization")).toEqual(rarityFor("trivialize"));
+  });
+
   it("awards the 10.0 max and Legend to a word no corpus attests", () => {
     // "autecism" is absent from every frequency source (and its stem too), so
     // the waterfall gives it the rarest-word sentinel -- the only Zipf that
@@ -203,6 +246,29 @@ describe("rarityFor", () => {
     // Extremely Rare keeps the band beneath Mythic.
     expect(rarityScore(extremelyRare.zipf)).toBeLessThan(9.5);
     expect(extremelyRare.rarity).toBe("Extremely Rare");
+  });
+});
+
+describe("baseFormSubstitution", () => {
+  it("reports the base a bound derivational form inherited", () => {
+    const sub = baseFormSubstitution("trivialization");
+    expect(sub?.base).toBe("trivialize");
+    expect(sub?.word).toBe("trivialization");
+    expect(sub?.baseZipf).toBeGreaterThan(sub!.ownZipf);
+  });
+
+  it("reports the base verb for a tense form", () => {
+    expect(baseFormSubstitution("played")?.base).toBe("play");
+  });
+
+  it("returns undefined when a word scores on its own frequency", () => {
+    // "organization" is more common than "organize", so no substitution applies.
+    expect(baseFormSubstitution("organization")).toBeUndefined();
+    expect(baseFormSubstitution("the")).toBeUndefined();
+  });
+
+  it("returns undefined before the bound-suffix cutover", () => {
+    expect(baseFormSubstitution("trivialization", "2026-08-15")).toBeUndefined();
   });
 });
 

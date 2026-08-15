@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Add a curated or suggested word and maintain the dictionary regression tests.
+"""Add a curated, suggested, or online word and maintain the regression tests.
 
-Two provenance lists feed the playable dictionary:
+Three provenance lists feed the playable dictionary:
   - scripts/extra-words.txt      -> "curated": words the maintainer chose to add
   - scripts/suggested-words.txt  -> "suggested": player-submitted words that were
                                     accepted
+  - scripts/online-words.txt     -> "online": rare words discovered online for an
+                                    upcoming drop by the "Add rare words found
+                                    online" GitHub Action (scripts/find-online-words.py)
 
-Both are merged into dictionary.json by generate-data.py; the split only records
-where a word came from. An added word is gated on the frequency waterfall
+All three are merged into dictionary.json by generate-data.py; the split only
+records where a word came from. An added word is gated on the frequency waterfall
 (wordfreq -> Norvig -> Google Books): by default a word no corpus attests is
 rejected, because its rarity would be a guess rather than a measurement.
 `--forced` overrides that and adds the word anyway; the data pipeline then gives
@@ -19,11 +22,12 @@ import re
 import sys
 from pathlib import Path
 
-from frequency import FrequencyWaterfall
+from frequency import FrequencyWaterfall, bound_base_candidates
 
 ROOT = Path(__file__).resolve().parent.parent
 EXTRA_WORDS_PATH = ROOT / "scripts" / "extra-words.txt"
 SUGGESTED_WORDS_PATH = ROOT / "scripts" / "suggested-words.txt"
+ONLINE_WORDS_PATH = ROOT / "scripts" / "online-words.txt"
 BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
@@ -38,24 +42,11 @@ DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
 LEGACY_UNKNOWN_TENTHS = 14
 LEGACY_UNKNOWN_CODE = "X"
 
-# Displayed-score scale, mirroring CURRENT_SCORING in src/game/dictionary.ts so
-# the action log reports the same rarity score a player sees. Words wordfreq can
-# measure (Zipf >= MEASURED_FLOOR) fill 0..NORMAL_CEILING; the deep tail below it
-# fills the elite NORMAL_CEILING..10 band.
-MEASURED_FLOOR = 1.0
-NORMAL_CEILING = 9.5
-RARITY_LABEL = {
-    "Q": "Quotidian",
-    "V": "Very Common",
-    "C": "Common",
-    "U": "Uncommon",
-    "R": "Rare",
-    "X": "Extremely Rare",
-    "M": "Mythic",
-}
+# Scoring constants, the rarity labels, and the base-form adjustment live with
+# word_rarity() below so a recorded word is pinned exactly as the game scores it.
 
-# The two provenance lists a word can be added to, and the JS test array that
-# pins each one's words with the rarity/Zipf the pipeline gave them.
+# The provenance lists a word can be added to, and the JS test array that pins
+# each one's words with the rarity/Zipf the pipeline gave them.
 LISTS = {
     "curated": {
         "path": EXTRA_WORDS_PATH,
@@ -66,6 +57,11 @@ LISTS = {
         "path": SUGGESTED_WORDS_PATH,
         "label": "suggested",
         "score_array": "suggestedWordScores",
+    },
+    "online": {
+        "path": ONLINE_WORDS_PATH,
+        "label": "online",
+        "score_array": "onlineWordScores",
     },
 }
 
@@ -111,9 +107,11 @@ def add_word(raw_word: str, list_name: str, forced: bool) -> None:
             )
 
     # "Has a rarity score" means any corpus in the waterfall attests it:
-    # wordfreq, else Norvig, else Google Books. Only a word none of them attest
-    # is unscored; without --forced that is a hard rejection.
-    zipf = FrequencyWaterfall().zipf(word)
+    # wordfreq, else Norvig, else Google Books -- or, for a bound derivational
+    # form no corpus attests directly, its base ("aggrandization" -> "aggrandize").
+    # Only a word none of these attest is unscored; without --forced that is a
+    # hard rejection.
+    zipf = FrequencyWaterfall().zipf(word, include_bound=True)
     if zipf is None and not forced:
         sys.exit(
             f"{word!r} has no rarity score in any frequency corpus and was not "
@@ -144,34 +142,148 @@ def update_size_test() -> None:
     print(f"Updated dictionary-size assertion to {count:,}")
 
 
-def current_score(zipf: float, max_zipf: float, min_zipf: float) -> float:
-    """Displayed 0..10 rarity score for a Zipf, mirroring src/game/dictionary.ts."""
+# -- Base-form adjustment, mirroring src/game/{dictionary,stem}.ts --------------
+# A recorded word must be pinned with the exact rarity/Zipf rarityFor() returns,
+# so word_rarity() applies the same adjustment the game does for the newest
+# (undated) system -- the 2026-08-16 wide band, where the bound suffixes are on.
+# Tense forms inherit their base's Zipf exactly; transparent (-ness/-ly) and
+# bound (-ization/-ability) suffixes are capped at their base.
+MEASURED_FLOOR = 1.0
+BAND_CEILING = 9.9
+TAIL_FLOOR = 0.0
+
+
+def _strip_doubled_consonant(stem: str) -> str:
+    if len(stem) > 3 and stem[-1] == stem[-2] and stem[-1] in "bcdfghjklmnpqrstvwxyz":
+        return stem[:-1]
+    return stem
+
+
+def _inflectional_stem(word: str) -> str:
+    """Mirror of baseForm() in src/game/stem.ts (tense/plural only)."""
+    w = word.lower()
+    if len(w) > 5 and w.endswith("ies"):
+        return w[:-3] + "y"
+    if len(w) > 6 and w.endswith("ying"):
+        return w[:-4] + "y"
+    if len(w) > 5 and w.endswith("ing"):
+        return _strip_doubled_consonant(w[:-3])
+    if len(w) > 5 and w.endswith("ied"):
+        return w[:-3] + "y"
+    if len(w) > 4 and w.endswith("ed"):
+        return _strip_doubled_consonant(w[:-2])
+    if len(w) > 4 and w.endswith("es"):
+        return w[:-2]
+    if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
+        return w[:-1]
+    return w
+
+
+def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
+    """Mirror of tenseBaseForm(): -ed/-ing inherit the most common valid base."""
+    candidates: list[str] = []
+    if len(word) > 5 and word.endswith("ied"):
+        candidates.append(word[:-3] + "y")
+    elif len(word) > 4 and word.endswith("ed"):
+        stem = word[:-2]
+        candidates += [stem + "e", stem, _strip_doubled_consonant(stem)]
+    if len(word) > 4 and word.endswith("ying"):
+        candidates += [word[:-4] + "y", word[:-4] + "ie"]
+    elif len(word) > 5 and word.endswith("ing"):
+        stem = word[:-3]
+        candidates += [stem + "e", stem, _strip_doubled_consonant(stem)]
+    base, base_zipf = None, float("-inf")
+    for candidate in candidates:
+        if candidate in index and zipf_at(candidate) > base_zipf:
+            base, base_zipf = candidate, zipf_at(candidate)
+    return base
+
+
+def _scoring_base(word: str, index: dict[str, int]) -> str | None:
+    """Mirror of scoringBaseForm() with the bound suffixes on (wide-band era)."""
+    inflected = _inflectional_stem(word)
+    if inflected != word and inflected in index:
+        return inflected
+    for suffix in ("ness", "ly"):
+        if not word.endswith(suffix) or len(word) <= len(suffix) + 2:
+            continue
+        stem = word[: -len(suffix)]
+        for candidate in (stem, stem[:-1] + "y" if stem.endswith("i") else ""):
+            if candidate and candidate in index:
+                return candidate
+    for candidate in bound_base_candidates(word):
+        if candidate in index:
+            return candidate
+    return None
+
+
+def measured_rarity(zipf: float) -> str:
+    if zipf >= 6.4:
+        return "Quotidian"
+    if zipf >= 5.2:
+        return "Very Common"
+    if zipf >= 4.2:
+        return "Common"
+    if zipf >= 3.3:
+        return "Uncommon"
+    if zipf >= 2.5:
+        return "Rare"
+    return "Extremely Rare"
+
+
+def rarity_label(zipf: float) -> str:
+    """Mirror of Scoring.rarity() for the wide band: deep tail is its own rank."""
+    return "Mythic" if zipf < MEASURED_FLOOR else measured_rarity(zipf)
+
+
+def current_score(zipf: float, max_zipf: float) -> float:
+    """Displayed 0..10 rarity score for a Zipf, mirroring WIDE_SCORING."""
     if zipf >= MEASURED_FLOOR:
-        score = NORMAL_CEILING * (max_zipf - zipf) / (max_zipf - MEASURED_FLOOR)
+        score = BAND_CEILING * (max_zipf - zipf) / (max_zipf - MEASURED_FLOOR)
         return round(score * 10) / 10
-    score = NORMAL_CEILING + (10 - NORMAL_CEILING) * (MEASURED_FLOOR - zipf) / (
-        MEASURED_FLOOR - min_zipf
+    clamped = max(zipf, TAIL_FLOOR)
+    score = BAND_CEILING + (10 - BAND_CEILING) * (MEASURED_FLOOR - clamped) / (
+        MEASURED_FLOOR - TAIL_FLOOR
     )
     return round(min(score, 10) * 100) / 100
 
 
 def format_score(score: float) -> str:
     """Two decimals in the elite deep-tail band, one otherwise (matches the app)."""
-    return f"{score:.2f}" if score >= NORMAL_CEILING else f"{score:.1f}"
+    return f"{score:.2f}" if score >= BAND_CEILING else f"{score:.1f}"
+
+
+def adjusted_zipf(word: str, index: dict[str, int], zipf_at) -> float:
+    """Mirror of adjustedZipf() in src/game/dictionary.ts (newest system)."""
+    own = zipf_at(word)
+    tense = _tense_base(word, index, zipf_at)
+    if tense is not None:
+        return zipf_at(tense)
+    base = _scoring_base(word, index)
+    if base is None:
+        return own
+    return max(own, zipf_at(base))
 
 
 def word_rarity(word: str) -> tuple[float, str, float]:
-    """(zipf, rarity label, displayed score) for a word from the generated data."""
+    """(zipf, rarity label, displayed score) as the game scores it (undated/newest).
+
+    Applies the same base-form adjustment as rarityFor() so the pinned value can
+    never drift from what a player sees.
+    """
     dictionary = json.loads(DICTIONARY_PATH.read_text())
     rarity = json.loads(RARITY_PATH.read_text())
-    try:
-        index = dictionary.index(word)
-    except ValueError:
-        sys.exit(f"{word!r} is not in dictionary.json; regenerate the data first.")
     hundredths = rarity["zipfHundredths"]
-    zipf = round(hundredths[index] / 100, 2)
-    label = RARITY_LABEL[rarity["codes"][index]]
-    score = current_score(zipf, max(hundredths) / 100, min(hundredths) / 100)
+    index = {w: i for i, w in enumerate(dictionary)}
+    if word not in index:
+        sys.exit(f"{word!r} is not in dictionary.json; regenerate the data first.")
+
+    def zipf_at(w: str) -> float:
+        return hundredths[index[w]] / 100
+
+    zipf = round(adjusted_zipf(word, index, zipf_at), 2)
+    label = rarity_label(zipf)
+    score = current_score(zipf, max(hundredths) / 100)
     return zipf, label, score
 
 
@@ -208,15 +320,17 @@ def record_word(raw_word: str, list_name: str) -> None:
     print(f"Pinned {word!r} ({label}, Zipf {zipf}) in the {array_name} test.")
 
 
-def align_legacy(raw_word: str) -> None:
-    """Keep rarity-legacy.json index-aligned after a word is added.
+def align_legacy(raw_words: list[str]) -> None:
+    """Keep rarity-legacy.json index-aligned after one or more words are added.
 
     generate-data.py rebuilds dictionary.json and rarity.json, but the frozen
-    legacy rarity arrays are not regenerated. Inserting the new word's placeholder
-    at its sorted position preserves every existing legacy value while keeping the
-    arrays the same length as the dictionary (see LEGACY_UNKNOWN_* above).
+    legacy rarity arrays are not regenerated. Inserting each new word's
+    placeholder at its sorted position preserves every existing legacy value
+    while keeping the arrays the same length as the dictionary (see
+    LEGACY_UNKNOWN_* above). Inserting the words in ascending final-index order
+    keeps every remaining target index valid as the arrays grow.
     """
-    word = raw_word.strip().lower()
+    words = sorted({w.strip().lower() for w in raw_words})
     dictionary = json.loads(DICTIONARY_PATH.read_text())
     legacy = json.loads(LEGACY_RARITY_PATH.read_text())
     tenths = legacy["zipfTenths"]
@@ -225,21 +339,27 @@ def align_legacy(raw_word: str) -> None:
     if len(tenths) == len(dictionary):
         print("rarity-legacy.json already aligned; nothing to insert.")
         return
-    try:
-        index = dictionary.index(word)
-    except ValueError:
-        sys.exit(f"{word!r} is not in dictionary.json; regenerate the data first.")
-    if len(tenths) != len(dictionary) - 1:
+
+    indexes = []
+    for word in words:
+        try:
+            indexes.append(dictionary.index(word))
+        except ValueError:
+            sys.exit(f"{word!r} is not in dictionary.json; regenerate the data first.")
+    if len(tenths) != len(dictionary) - len(words):
         sys.exit(
             f"rarity-legacy.json is off by {len(dictionary) - len(tenths)} entries; "
-            f"expected exactly one missing. Refusing to guess the alignment."
+            f"expected exactly {len(words)} missing. Refusing to guess the alignment."
         )
 
-    tenths.insert(index, LEGACY_UNKNOWN_TENTHS)
-    legacy["codes"] = codes[:index] + LEGACY_UNKNOWN_CODE + codes[index:]
+    for index in sorted(indexes):
+        tenths.insert(index, LEGACY_UNKNOWN_TENTHS)
+        codes = codes[:index] + LEGACY_UNKNOWN_CODE + codes[index:]
+    legacy["codes"] = codes
     legacy["zipfTenths"] = tenths
     LEGACY_RARITY_PATH.write_text(json.dumps(legacy, separators=(",", ":")))
-    print(f"Inserted legacy alignment placeholder for {word!r} at index {index}.")
+    joined = ", ".join(f"{w!r}@{i}" for w, i in zip(words, sorted(indexes)))
+    print(f"Inserted {len(words)} legacy alignment placeholder(s): {joined}.")
 
 
 def main() -> None:
@@ -258,7 +378,7 @@ def main() -> None:
     record.add_argument("--list", choices=LISTS, default="curated", dest="list_name")
 
     legacy = command.add_parser("align-legacy")
-    legacy.add_argument("word")
+    legacy.add_argument("words", nargs="+")
 
     args = parser.parse_args()
 
@@ -267,7 +387,7 @@ def main() -> None:
     elif args.command == "update-size-test":
         update_size_test()
     elif args.command == "align-legacy":
-        align_legacy(args.word)
+        align_legacy(args.words)
     else:
         record_word(args.word, args.list_name)
 

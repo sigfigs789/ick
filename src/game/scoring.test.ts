@@ -5,7 +5,7 @@ import { rarityFor, rarityScore, formatRarityScore, formatScore } from "./dictio
 // so a regression in the scoring math or the legacy dataset is actually caught.
 const BEFORE = "2026-08-14"; // last day on the legacy system
 const ON = "2026-08-15"; // the only day on the original two-band system (9.5 ceiling)
-const WIDE = "2026-08-16"; // first day on the widened band (9.8 ceiling)
+const WIDE = "2026-08-16"; // first day on the widened band (9.9 ceiling)
 const AFTER = "2027-03-01";
 
 describe("date-gated scoring", () => {

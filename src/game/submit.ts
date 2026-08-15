@@ -1,6 +1,6 @@
-import { isValidWord, rarityFor } from "./dictionary";
+import { boundBaseFormsActive, isValidWord, rarityFor } from "./dictionary";
 import rejectionMetadata from "../data/rejection-metadata.json";
-import { baseForm } from "./stem";
+import { baseForm, boundBaseCandidates } from "./stem";
 import type { AcceptedWord, SubmissionResult } from "./types";
 
 const WORD_CHARS = /^[a-z]+$/;
@@ -30,6 +30,21 @@ export function containsDropInOrder(word: string, drop: string): boolean {
   return word.toLowerCase().includes(drop.toLowerCase());
 }
 
+/**
+ * The key two submissions must share to count as the same root. Beyond the
+ * inflectional stemmer, the wide-band era also folds the bound derivational
+ * suffixes onto a real base, so a puzzle can't take both "organize" and
+ * "organization" (only when that base is itself a dictionary word).
+ */
+function rootKey(word: string, foldBoundSuffixes: boolean): string {
+  const inflected = baseForm(word);
+  if (foldBoundSuffixes) {
+    const bound = boundBaseCandidates(inflected).find(isValidWord);
+    if (bound) return baseForm(bound);
+  }
+  return inflected;
+}
+
 export function evaluateSubmission(
   rawInput: string,
   drop: string,
@@ -53,7 +68,9 @@ export function evaluateSubmission(
   if (alreadyAccepted.some((w) => w.word === word)) {
     return { ok: false, reason: "already-used" };
   }
-  if (alreadyAccepted.some((w) => baseForm(w.word) === baseForm(word))) {
+  const foldBoundSuffixes = boundBaseFormsActive(date);
+  const wordRoot = rootKey(word, foldBoundSuffixes);
+  if (alreadyAccepted.some((w) => rootKey(w.word, foldBoundSuffixes) === wordRoot)) {
     return { ok: false, reason: "same-root-as-used" };
   }
   if (!isValidWord(word)) {

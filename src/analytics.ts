@@ -1,5 +1,5 @@
 import { track } from "@vercel/analytics";
-import { rarityScore } from "./game/dictionary";
+import { rarityScore, type BaseFormSubstitution } from "./game/dictionary";
 import { bestWord } from "./game/rank";
 import { puzzleNumber } from "./game/share";
 import type { AcceptedWord, DailyProgress, RejectionReason, StreakState } from "./game/types";
@@ -42,6 +42,23 @@ export function trackRejectionMessage(date: string, reason: RejectionReason) {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     rejection_reason: reason,
+  });
+}
+
+/**
+ * Record when an accepted word's rarity was inherited from a base form (a tense,
+ * plural, or transparent/bound derivation) rather than its own frequency. Logs
+ * the original word and the base it mapped to, with both words' scores, so the
+ * base-form rules can be monitored for over- or under-scoring.
+ */
+export function trackBaseFormSubstitution(date: string, substitution: BaseFormSubstitution) {
+  track("base_form_substituted", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    original_word: substitution.word,
+    original_score: rarityScore(substitution.ownZipf, date),
+    base_word: substitution.base,
+    base_score: rarityScore(substitution.baseZipf, date),
   });
 }
 

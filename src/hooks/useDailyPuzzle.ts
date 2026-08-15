@@ -12,9 +12,9 @@ import {
   resetProgress,
 } from "../game/storage";
 import { evaluateSubmission, REJECTION_MESSAGES } from "../game/submit";
-import { totalRarityScore } from "../game/dictionary";
+import { baseFormSubstitution, totalRarityScore } from "../game/dictionary";
 import type { DailyProgress, Rarity, StreakState } from "../game/types";
-import { trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage } from "../analytics";
+import { trackAcceptedAnswer, trackBaseFormSubstitution, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage } from "../analytics";
 
 export interface Feedback {
   kind: "accepted" | "rejected";
@@ -73,6 +73,8 @@ export function useDailyPuzzle() {
         totalRarityScore(updated.acceptedWords, viewedDate),
         updatedStreak.currentStreak
       );
+      const substitution = baseFormSubstitution(result.word.word, viewedDate);
+      if (substitution) trackBaseFormSubstitution(viewedDate, substitution);
       if (updated.completed) {
         trackPuzzleCompleted(updated, "all_answers", updatedStreak);
       }

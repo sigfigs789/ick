@@ -109,4 +109,26 @@ describe("evaluateSubmission", () => {
     expect(result.ok).toBe(true);
     expect(result.word?.word).toBe("smart");
   });
+
+  it("folds a bound derivational form onto its base for same-root detection", () => {
+    // From the wide-band era, "organization" shares a root with "organize".
+    const already: AcceptedWord[] = [{ word: "organize", rarity: "Common", zipf: 3.98 }];
+    const result = evaluateSubmission("organization", "gan", already);
+    expect(result).toEqual({ ok: false, reason: "same-root-as-used" });
+  });
+
+  it("leaves opaque suffixes as their own root (battlement is not battle)", () => {
+    const already: AcceptedWord[] = [{ word: "battle", rarity: "Common", zipf: 4.94 }];
+    const result = evaluateSubmission("battlement", "att", already);
+    expect(result.ok).toBe(true);
+    expect(result.word?.word).toBe("battlement");
+  });
+
+  it("does not fold bound suffixes for pre-cutover puzzles", () => {
+    // Before 2026-08-16 the base-form folding is off, so past puzzles are frozen.
+    const already: AcceptedWord[] = [{ word: "organize", rarity: "Common", zipf: 3.98 }];
+    const result = evaluateSubmission("organization", "gan", already, "2026-08-15");
+    expect(result.ok).toBe(true);
+    expect(result.word?.word).toBe("organization");
+  });
 });

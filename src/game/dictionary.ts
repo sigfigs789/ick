@@ -1,7 +1,7 @@
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
-import { baseForm } from "./stem";
+import { baseForm, boundBaseCandidates } from "./stem";
 import type { AcceptedWord, Rarity, RarityInfo } from "./types";
 
 /**
@@ -19,7 +19,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *   - 2026-08-15 only: the frequency waterfall + two-band scale, measured words
  *     filling 0..9.5 and the deep tail 9.5..10.
  *   - on/after 2026-08-16: the same two-band scale widened so measured words
- *     fill 0..9.8 and the deep tail 9.8..10, with every word at/below Zipf 0
+ *     fill 0..9.9 and the deep tail 9.9..10, with every word at/below Zipf 0
  *     clamped to a flat 10 (so the scale is bounded below and stable when
  *     rarer words are added later).
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
@@ -76,6 +76,11 @@ interface Scoring {
   score(zipf: number): number;
   rarity(zipf: number): Rarity;
   format(score: number): string;
+  // Whether the bound derivational suffixes (-ization/-isation, -ability/
+  // -ibility) inherit their base word's frequency. Introduced with the
+  // 2026-08-16 wide-band cutover, so it's off for earlier systems to keep past
+  // puzzles' scores frozen (see WIDE_BAND_START).
+  boundBaseForms: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -84,7 +89,7 @@ interface Scoring {
 // there. Pinning it to a fixed 0 (rather than the data's live minimum) keeps
 // deep-tail scores stable when even-rarer words are added later, and bounds the
 // scale below -- Zipf is a log scale with no natural floor.
-function twoBandScoring(ceiling: number, tailFloor: number): Scoring {
+function twoBandScoring(ceiling: number, tailFloor: number, boundBaseForms: boolean): Scoring {
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
       const s = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
@@ -108,14 +113,16 @@ function twoBandScoring(ceiling: number, tailFloor: number): Scoring {
     // Two decimals for Mythic and Legend so near-ceiling scores read honestly
     // (9.87, not a rounded-up 9.9); one decimal for Extremely Rare and below.
     format: (s) => (s > twoDecimalCutoff ? s.toFixed(2) : s.toFixed(1)),
+    boundBaseForms,
   };
 }
 
 // The original two-band system (2026-08-15) anchored the top of the deep tail
 // at the data's live minimum, so it kept negative Zipf resolution; the widened
 // system (from WIDE_BAND_START) clamps everything at/below Zipf 0 to a flat 10.
-const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF);
-const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0);
+// The wide-band cutover also turns on the bound-suffix base-form adjustment.
+const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false);
+const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -128,6 +135,7 @@ const LEGACY_SCORING: Scoring = {
     return measuredRarity(zipf);
   },
   format: (score) => score.toFixed(1),
+  boundBaseForms: false,
 };
 
 // The Zipf-band labels for the measured range, used by the legacy single-band
@@ -171,6 +179,15 @@ export function isValidWord(word: string): boolean {
   return WORD_INDEX.has(word.toLowerCase());
 }
 
+/**
+ * Whether the bound-suffix base-form folding is active for a puzzle date. Used
+ * by both rarity scoring and same-root duplicate detection so a word's base is
+ * defined identically in both, and only from the 2026-08-16 wide-band cutover.
+ */
+export function boundBaseFormsActive(date?: string): boolean {
+  return scoringFor(date).boundBaseForms;
+}
+
 export function rarityFor(word: string, date?: string): RarityInfo | undefined {
   const normalized = word.toLowerCase();
   const i = WORD_INDEX.get(normalized);
@@ -178,6 +195,47 @@ export function rarityFor(word: string, date?: string): RarityInfo | undefined {
   const scoring = scoringFor(date);
   const zipf = adjustedZipf(normalized, scoring.zipfAt(i), scoring);
   return { rarity: scoring.rarity(zipf), zipf };
+}
+
+/** A word whose rarity was inherited from a base form rather than its own data. */
+export interface BaseFormSubstitution {
+  /** The word the player actually submitted. */
+  word: string;
+  /** The base word whose frequency its score used instead. */
+  base: string;
+  /** The submitted word's own Zipf, before the base-form adjustment. */
+  ownZipf: number;
+  /** The base word's Zipf -- what the score was actually computed from. */
+  baseZipf: number;
+}
+
+/**
+ * If `word`'s rarity came from a base form rather than its own frequency, report
+ * the substitution (submitted word, base, and both Zipfs). Returns undefined when
+ * the word scored on its own data. Mirrors adjustedZipf: a tense base is used
+ * outright; a transparent/bound base only when it's more common than the word.
+ */
+export function baseFormSubstitution(
+  word: string,
+  date?: string
+): BaseFormSubstitution | undefined {
+  const normalized = word.toLowerCase();
+  const i = WORD_INDEX.get(normalized);
+  if (i === undefined) return undefined;
+  const scoring = scoringFor(date);
+  const ownZipf = scoring.zipfAt(i);
+
+  const tenseBase = tenseBaseForm(normalized, scoring);
+  if (tenseBase && tenseBase !== normalized) {
+    return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
+  }
+
+  const base = scoringBaseForm(normalized, scoring.boundBaseForms);
+  if (base && base !== normalized) {
+    const baseZipf = zipfFor(base, scoring);
+    if (baseZipf > ownZipf) return { word: normalized, base, ownZipf, baseZipf };
+  }
+  return undefined;
 }
 
 /**
@@ -210,12 +268,12 @@ function adjustedZipf(word: string, zipf: number, scoring: Scoring): number {
   const tenseBase = tenseBaseForm(word, scoring);
   if (tenseBase) return zipfFor(tenseBase, scoring);
 
-  const base = scoringBaseForm(word);
+  const base = scoringBaseForm(word, scoring.boundBaseForms);
   if (!base) return zipf;
   return Math.max(zipf, zipfFor(base, scoring));
 }
 
-function scoringBaseForm(word: string): string | undefined {
+function scoringBaseForm(word: string, includeBound: boolean): string | undefined {
   const inflected = baseForm(word);
   if (inflected !== word && WORD_INDEX.has(inflected)) return inflected;
 
@@ -225,6 +283,14 @@ function scoringBaseForm(word: string): string | undefined {
     const candidates = [stem, stem.endsWith("i") ? `${stem.slice(0, -1)}y` : ""];
     const base = candidates.find((candidate) => candidate && WORD_INDEX.has(candidate));
     if (base) return base;
+  }
+
+  // Bound derivational suffixes (-ization/-isation, -ability/-ibility), gated to
+  // the wide-band era. Capped at the base like the transparent suffixes above:
+  // "aggrandization" scores as "aggrandize", never rarer than it.
+  if (includeBound) {
+    const bound = boundBaseCandidates(word).find((candidate) => WORD_INDEX.has(candidate));
+    if (bound) return bound;
   }
   return undefined;
 }
@@ -299,7 +365,7 @@ export const RARITY_ORDER: Rarity[] = [
  * words -- e.g. "the" ~7.7, "aardvark" ~2.4 -- which reads backwards for a
  * rarity score). The current system splits into two bands at MEASURED_FLOOR:
  * measured words fill 0..ceiling and the deep-tail library fills ceiling..10,
- * with two decimals of resolution there (ceiling is 9.8 from WIDE_BAND_START,
+ * with two decimals of resolution there (ceiling is 9.9 from WIDE_BAND_START,
  * 9.5 before it). Puzzles before NEW_SCORING_START use the legacy single-band
  * 1.0..MAX map instead. Internal
  * ranking (see rank.ts) still compares raw Zipf directly; this is purely a
