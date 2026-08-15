@@ -34,13 +34,15 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
 // Rare words discovered online for an upcoming drop and added via the "Add rare
 // words found online" GitHub Action (list=online). Appended automatically by
 // scripts/manage-extra-word.py record-word.
-const onlineWordScores: ReadonlyArray<[string, string, number]> = [];
+const onlineWordScores: ReadonlyArray<[string, string, number]> = [
+  ["proserpine", "Extremely Rare", 2.17],
+];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_466);
+    expect(dictionaryWords).toHaveLength(225_467);
   });
 
   it("accepts a common real word", () => {
