@@ -3,3 +3,4 @@
 # provenance -- both lists are merged into dictionary.json by generate-data.py.
 # Managed by the "Add a word" GitHub Action (list=suggested); see
 # scripts/manage-extra-word.py.
+aggrandization
