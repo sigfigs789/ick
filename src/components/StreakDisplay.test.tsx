@@ -28,7 +28,7 @@ describe("StreakDisplay", () => {
     render(<StreakDisplay streak={{ ...streak, highScore: 9.3 }} totalRarity={21.4} topRarity={8.7} />);
 
     const scores = document.querySelector(".streak-display__rarity-scores");
-    expect(scores?.textContent).toBe("Total21.4Top8.7");
+    expect(scores?.textContent).toBe("Total21.4Top8.70");
     expect(screen.queryByText("High score")).not.toBeInTheDocument();
   });
 });

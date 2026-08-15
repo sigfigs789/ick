@@ -37,7 +37,7 @@ describe("date-gated scoring", () => {
     // "cat" is measured under every system; only the scale changes (the legacy
     // 1.0 floor vs the new 0 floor), so its score shifts slightly.
     expect(rarityScore(rarityFor("cat", BEFORE)!.zipf, BEFORE)).toBe(4.3);
-    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.2);
+    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.16);
   });
 
   it("widens the measured band from 9.5 to 9.9 on 2026-08-16", () => {
@@ -45,8 +45,8 @@ describe("date-gated scoring", () => {
     // from 9.5 to 9.9; every measured word rescales up proportionally.
     expect(rarityScore(1, ON)).toBe(9.5);
     expect(rarityScore(1, WIDE)).toBe(9.9);
-    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.2);
-    expect(rarityScore(rarityFor("cat", WIDE)!.zipf, WIDE)).toBe(4.3);
+    expect(rarityScore(rarityFor("cat", ON)!.zipf, ON)).toBe(4.16);
+    expect(rarityScore(rarityFor("cat", WIDE)!.zipf, WIDE)).toBe(4.34);
   });
 });
 
@@ -66,11 +66,11 @@ describe("two-band rarity score (current system)", () => {
 });
 
 describe("score formatting", () => {
-  it("shows two decimals for deep-tail scores and one for measured (current system)", () => {
-    expect(formatRarityScore(0.5)).toBe("9.95"); // deep tail -> two decimals
-    expect(formatRarityScore(rarityFor("cat")!.zipf)).toBe("4.3"); // measured -> one
+  it("shows two decimals throughout the current system", () => {
+    expect(formatRarityScore(0.5)).toBe("9.95"); // deep tail
+    expect(formatRarityScore(rarityFor("cat")!.zipf)).toBe("4.34"); // measured, honest precision
     expect(formatScore(9.9)).toBe("9.90");
-    expect(formatScore(4.3)).toBe("4.3");
+    expect(formatScore(4.3)).toBe("4.30");
   });
 
   it("always shows one decimal under the legacy system", () => {
