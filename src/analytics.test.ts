@@ -1,6 +1,7 @@
 import { track } from "@vercel/analytics";
 import { describe, expect, it, vi } from "vitest";
-import { campaignSourceFromSearch, trackAcceptedAnswer, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage, trackResultCopied, trackResultSharedOnX, trackShareArrival, trackTwitterArrival, trackWordSuggestion } from "./analytics";
+import { campaignSourceFromSearch, trackAcceptedAnswer, trackBaseFormSubstitution, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage, trackResultCopied, trackResultSharedOnX, trackShareArrival, trackTwitterArrival, trackWordSuggestion } from "./analytics";
+import { rarityScore } from "./game/dictionary";
 import { puzzleNumber } from "./game/share";
 import type { DailyProgress, StreakState } from "./game/types";
 
@@ -99,5 +100,26 @@ describe("trackWordSuggestion", () => {
     trackWordSuggestion("  GastroEnterology ");
 
     expect(track).toHaveBeenCalledWith("word_suggested", { word: "gastroenterology" });
+  });
+});
+
+describe("trackBaseFormSubstitution", () => {
+  it("records the original and base words with both of their scores", () => {
+    const date = "2026-08-16";
+    trackBaseFormSubstitution(date, {
+      word: "trivialization",
+      base: "trivialize",
+      ownZipf: 1.64,
+      baseZipf: 2.1,
+    });
+
+    expect(track).toHaveBeenCalledWith("base_form_substituted", {
+      puzzle_date: date,
+      puzzle_number: puzzleNumber(date),
+      original_word: "trivialization",
+      original_score: rarityScore(1.64, date),
+      base_word: "trivialize",
+      base_score: rarityScore(2.1, date),
+    });
   });
 });

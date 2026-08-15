@@ -38,7 +38,6 @@ export default function App() {
   } = useDailyPuzzle();
   const [showInstructions, setShowInstructions] = useState(false);
   const [showWordRules, setShowWordRules] = useState(false);
-  const [prefill, setPrefill] = useState<{ word: string; token: number } | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
 
@@ -49,12 +48,6 @@ export default function App() {
     if (source === "twitter") trackTwitterArrival();
     if (source === "share") trackShareArrival();
   }, []);
-
-  // Clear any pending prefill when the viewed puzzle changes so a stale
-  // click-to-reuse value from a different day's log can't leak in.
-  useEffect(() => {
-    setPrefill(null);
-  }, [date]);
 
   // Play a chime/buzz on every submission, pitched by rarity when accepted.
   useEffect(() => {
@@ -117,7 +110,6 @@ export default function App() {
         <DropDisplay drop={drop} date={date} isToday={isToday} completed={progress.completed} />
         <GuessLog
           acceptedWords={progress.acceptedWords}
-          onSelectWord={(word) => setPrefill({ word, token: Date.now() })}
           completed={progress.completed}
           streak={streak}
           date={date}
@@ -128,7 +120,6 @@ export default function App() {
             drop={drop}
             disabled={progress.completed}
             feedback={feedback}
-            prefill={prefill}
             onSubmit={submitWord}
           />
         )}

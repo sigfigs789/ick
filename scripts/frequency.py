@@ -28,6 +28,32 @@ GOOGLE_BOOKS_COUNTS_PATH = ROOT / "scripts" / "google-books-counts.txt"
 WORD_RE = re.compile(r"^[a-z]+$")
 
 
+def bound_base_candidates(word: str) -> list[str]:
+    """Base spellings for the two *bound* derivational suffixes whose base is
+    unambiguous: -ization/-isation is the noun of an -ize/-ise verb, and
+    -ability/-ibility the noun of an -able/-ible adjective. Opaque suffixes like
+    -ment and -ism are excluded on purpose -- they collapse onto unrelated real
+    words ("battlement" -> "battle"), which a spelling-only rule can't detect.
+    Mirrors boundBaseCandidates() in src/game/stem.ts.
+    """
+    candidates: list[str] = []
+
+    def add(base: str) -> None:
+        if len(base) >= 5 and base != word and base not in candidates:
+            candidates.append(base)
+
+    if len(word) > 8:
+        if word.endswith("ization"):
+            add(word[:-7] + "ize")
+        if word.endswith("isation"):
+            add(word[:-7] + "ise")
+        if word.endswith("ability"):
+            add(word[:-7] + "able")
+        if word.endswith("ibility"):
+            add(word[:-7] + "ible")
+    return candidates
+
+
 def load_counts(path: Path) -> dict[str, int]:
     """Load a `word<TAB>count` frequency list, keeping pure a-z tokens."""
     counts: dict[str, int] = {}
@@ -79,12 +105,8 @@ class FrequencyWaterfall:
             return None
         return math.log10(count) - self.google_offset
 
-    def zipf(self, word: str):
-        """Waterfall Zipf for a word, or None when no corpus attests it.
-
-        wordfreq where measured, else the Norvig or Google Books estimate. Kept
-        unclamped so the deepest attested words keep their true position.
-        """
+    def _attested_zipf(self, word: str):
+        """Direct waterfall Zipf: wordfreq, else Norvig, else Google Books."""
         from wordfreq import zipf_frequency
 
         wf = zipf_frequency(word, "en", wordlist="best")
@@ -93,4 +115,25 @@ class FrequencyWaterfall:
         for candidate in (self.norvig_zipf(word), self.google_zipf(word)):
             if candidate is not None:
                 return candidate
+        return None
+
+    def zipf(self, word: str, *, include_bound: bool = False):
+        """Waterfall Zipf for a word, or None when no corpus attests it.
+
+        wordfreq where measured, else the Norvig or Google Books estimate. Kept
+        unclamped so the deepest attested words keep their true position.
+
+        With ``include_bound`` a word no corpus attests directly falls back to its
+        bound derivational base ("aggrandization" -> "aggrandize"), inheriting its
+        Zipf. Off by default so dictionary-wide scoring (generate-data.py) is
+        unchanged; the add-word gate opts in so such words aren't rejected.
+        """
+        direct = self._attested_zipf(word)
+        if direct is not None:
+            return direct
+        if include_bound:
+            for base in bound_base_candidates(word):
+                base_zipf = self._attested_zipf(base)
+                if base_zipf is not None:
+                    return base_zipf
         return None
