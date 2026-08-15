@@ -19,7 +19,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *   - 2026-08-15 only: the frequency waterfall + two-band scale, measured words
  *     filling 0..9.5 and the deep tail 9.5..10.
  *   - on/after 2026-08-16: the same two-band scale widened so measured words
- *     fill 0..9.8 and the deep tail 9.8..10, with every word at/below Zipf 0
+ *     fill 0..9.9 and the deep tail 9.9..10, with every word at/below Zipf 0
  *     clamped to a flat 10 (so the scale is bounded below and stable when
  *     rarer words are added later).
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
@@ -49,7 +49,7 @@ const MIN_ZIPF = minZipfHundredths / 100;
 // can measure sit at Zipf >= MEASURED_FLOOR and fill 0..ceiling; the deep tail
 // -- words only Norvig/Google Books attest, plus words no corpus attests --
 // sits below it and gets its own elite ceiling..10 band. The band ceiling moved
-// from 9.5 to 9.8 at WIDE_BAND_START (see twoBandScoring).
+// from 9.5 to 9.9 at WIDE_BAND_START (see twoBandScoring).
 const MEASURED_FLOOR = 1;
 
 // -- Legacy frequency data (puzzles before NEW_SCORING_START) ---------------
@@ -79,7 +79,7 @@ interface Scoring {
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
-// deep-tail band begins (9.5 originally, 9.8 from WIDE_BAND_START). `tailFloor`
+// deep-tail band begins (9.5 originally, 9.9 from WIDE_BAND_START). `tailFloor`
 // is the Zipf that maps to a perfect 10.0: anything at or below it is clamped
 // there. Pinning it to a fixed 0 (rather than the data's live minimum) keeps
 // deep-tail scores stable when even-rarer words are added later, and bounds the
@@ -110,7 +110,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, boundBaseForms: bool
 // system (from WIDE_BAND_START) clamps everything at/below Zipf 0 to a flat 10.
 // The wide-band cutover also turns on the bound-suffix base-form adjustment.
 const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false);
-const WIDE_SCORING: Scoring = twoBandScoring(9.8, 0, true);
+const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -291,7 +291,7 @@ export const RARITY_ORDER: Rarity[] = [
  * words -- e.g. "the" ~7.7, "aardvark" ~2.4 -- which reads backwards for a
  * rarity score). The current system splits into two bands at MEASURED_FLOOR:
  * measured words fill 0..ceiling and the deep-tail library fills ceiling..10,
- * with two decimals of resolution there (ceiling is 9.8 from WIDE_BAND_START,
+ * with two decimals of resolution there (ceiling is 9.9 from WIDE_BAND_START,
  * 9.5 before it). Puzzles before NEW_SCORING_START use the legacy single-band
  * 1.0..MAX map instead. Internal
  * ranking (see rank.ts) still compares raw Zipf directly; this is purely a
