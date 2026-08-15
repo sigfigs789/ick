@@ -28,3 +28,6 @@ __pycache__/
 *.pyc
 .venv/
 .vercel
+
+# Local secrets (Merriam-Webster API keys for per-word tagging)
+.env

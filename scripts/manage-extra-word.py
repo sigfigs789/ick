@@ -22,6 +22,7 @@ import re
 import sys
 from pathlib import Path
 
+import word_tags
 from frequency import FrequencyWaterfall, bound_base_candidates
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -89,7 +90,7 @@ def listed_words(path: Path) -> set[str]:
     }
 
 
-def add_word(raw_word: str, list_name: str, forced: bool) -> None:
+def add_word(raw_word: str, list_name: str, forced: bool, force_tag: bool) -> None:
     spec = LISTS[list_name]
     path = spec["path"]
     word = raw_word.strip().lower()
@@ -117,6 +118,20 @@ def add_word(raw_word: str, list_name: str, forced: bool) -> None:
             f"{word!r} has no rarity score in any frequency corpus and was not "
             f"added. Re-run with forced=true to add it anyway (it will score the "
             f"maximum 10.0 / Mythic)."
+        )
+
+    # Lexical-tag gate: keep proper nouns, abbreviations, and out-of-use words
+    # (obsolete/archaic/dated) out of the game, using the same sources as the
+    # online-discovery flow. Independent of --forced (which only overrides the
+    # frequency gate); --force-tag overrides this one.
+    tags = word_tags.classify(word)
+    if tags["disqualified"] and not force_tag:
+        source = tags["sources"]
+        sys.exit(
+            f"{word!r} looks like a {tags['reason']} word "
+            f"(Merriam-Webster: {source['merriam_webster']}, "
+            f"Wiktextract: {source['wiktextract'] or 'none'}) and was not added. "
+            f"Re-run with --force-tag to override."
         )
 
     existing = path.read_text() if path.exists() else ""
@@ -370,6 +385,12 @@ def main() -> None:
     add.add_argument("word")
     add.add_argument("--list", choices=LISTS, default="curated", dest="list_name")
     add.add_argument("--forced", action="store_true")
+    add.add_argument(
+        "--force-tag",
+        action="store_true",
+        dest="force_tag",
+        help="add even if lexical sources flag it as a proper noun / abbreviation / out-of-use word",
+    )
 
     command.add_parser("update-size-test")
 
@@ -383,7 +404,7 @@ def main() -> None:
     args = parser.parse_args()
 
     if args.command == "add":
-        add_word(args.word, args.list_name, args.forced)
+        add_word(args.word, args.list_name, args.forced, args.force_tag)
     elif args.command == "update-size-test":
         update_size_test()
     elif args.command == "align-legacy":

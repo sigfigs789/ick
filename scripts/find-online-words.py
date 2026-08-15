@@ -32,6 +32,7 @@ import urllib.request
 from datetime import date, timedelta
 from pathlib import Path
 
+import word_tags
 from frequency import FrequencyWaterfall
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -153,7 +154,9 @@ def main() -> None:
         "blocklisted": 0,
         "unattested": 0,
         "too_common": 0,
+        "disqualified": 0,
     }
+    disqualified: list[tuple[str, str]] = []
     for raw in found:
         word = raw.strip().lower()
         if word in seen:
@@ -183,6 +186,14 @@ def main() -> None:
         if zipf > args.max_zipf:
             skipped["too_common"] += 1
             continue
+        # Only the rare, new, attested tail reaches the per-word tag check, so it
+        # makes just a handful of API calls per run. Drop anything the sources
+        # flag as a proper noun, abbreviation, or out-of-use word.
+        tags = word_tags.classify(word)
+        if tags["disqualified"]:
+            skipped["disqualified"] += 1
+            disqualified.append((word, tags["reason"]))
+            continue
         candidates.append((zipf, word))
 
     log(
@@ -190,8 +201,11 @@ def main() -> None:
         f"{skipped['in_list']} already on a provenance list, "
         f"{skipped['blocklisted']} blocklisted, "
         f"{skipped['unattested']} unattested, "
-        f"{skipped['too_common']} above Zipf {args.max_zipf}"
+        f"{skipped['too_common']} above Zipf {args.max_zipf}, "
+        f"{skipped['disqualified']} disqualified by lexical tags"
     )
+    for word, reason in disqualified:
+        log(f"  dropped {word} ({reason})")
     candidates.sort()  # rarest (lowest Zipf) first
     log(f"{len(candidates)} new candidates <= Zipf {args.max_zipf}; adding all of them")
     for zipf, word in candidates:
