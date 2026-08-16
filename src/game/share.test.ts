@@ -119,13 +119,14 @@ describe("buildShareText", () => {
       source: null,
     });
     // aardvark (zipf 2.4) is the rarest: 10^(9 - 2.4) ≈ 3.98M -> "4M".
-    expect(text).toContain("\naardvark: 1 in 4M\nwordink.app");
+    expect(text).toContain("\naardvark: 1 in 4M words\nwordink.app");
   });
 
-  it("never reveals the rarest word in the spoiler-free share", () => {
+  it("shows the rarest word's odds under a generic label, never its name, in the spoiler-free share", () => {
     const text = buildShareText("2024-01-05", "str", words);
     expect(text).not.toContain("aardvark");
-    expect(text).not.toContain("1 in");
+    // aardvark (zipf 2.4) is the rarest: 10^(9 - 2.4) ≈ 3.98M -> "4M".
+    expect(text).toContain("\nRarest word: 1 in 4M words\nwordink.app");
   });
 
   it("includes the current streak when provided", () => {

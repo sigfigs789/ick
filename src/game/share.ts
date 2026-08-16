@@ -54,10 +54,10 @@ function abbreviateCount(n: number): string {
 }
 
 // A word's Zipf value is log10 of its frequency per billion words, so it occurs
-// once every 10^(9 - zipf) words. Render that as the "1 in X" odds of a word
-// being this rare or rarer.
+// once every 10^(9 - zipf) words. Render that as the "1 in X words" odds of a
+// word being this rare or rarer.
 export function formatFrequency(zipf: number): string {
-  return `1 in ${abbreviateCount(Math.pow(10, 9 - zipf))}`;
+  return `1 in ${abbreviateCount(Math.pow(10, 9 - zipf))} words`;
 }
 
 /** The rarest accepted word: lowest Zipf, i.e. the highest rarity score. */
@@ -124,11 +124,13 @@ export function buildShareText(
   if (format === "default")
     raritySummary.push(`Top: ${formatScore(topRarityScore(words, dateStr), dateStr)}`);
   lines.push(raritySummary.join(" · "));
-  // Only reveal the rarest word when spoilers are already shown, so the
-  // spoiler-free share keeps its guarantee of never naming a word.
-  if (!spoilerFree) {
-    const best = rarestWord(words);
-    if (best) lines.push(`${best.word}: ${formatFrequency(best.zipf)}`);
+  // Always show the rarest word's odds, but only name the word when spoilers
+  // are shown; the spoiler-free share labels it "Rarest word" instead so it
+  // keeps its guarantee of never naming a word.
+  const best = rarestWord(words);
+  if (best) {
+    const label = spoilerFree ? "Rarest word" : best.word;
+    lines.push(`${label}: ${formatFrequency(best.zipf)}`);
   }
   lines.push(shareUrl(source));
   return lines.join("\n");
