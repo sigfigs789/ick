@@ -1096,6 +1096,7 @@ h2 {
   color: var(--fg-faint);
   font-size: 0.82rem;
   line-height: 1.45;
+  text-align: center;
 }
 .modal__copy {
   margin: 0 0 0.8rem;
