@@ -96,6 +96,7 @@ function visitDimensions() {
   const state = currentVisit();
   return {
     source: visitSource(state?.source ?? null),
+    last_source: visitSource(state?.lastSource ?? null),
     visit_type: state && state.timesReturned > 0 ? "returning" : "first",
     times_returned: state?.timesReturned ?? 0,
     days_returned: state?.daysReturned ?? 0,
@@ -140,6 +141,7 @@ function visitProperties(outcome: VisitOutcome) {
   return {
     visit_type: outcome.isFirstVisit ? "first" : "returning",
     source: visitSource(outcome.state.source),
+    last_source: visitSource(outcome.state.lastSource ?? null),
     times_returned: outcome.state.timesReturned,
     days_returned: outcome.state.daysReturned,
     new_day: outcome.isNewDay,

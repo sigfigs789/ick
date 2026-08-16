@@ -22,6 +22,7 @@ function outcome(overrides: Partial<VisitOutcome["state"]> = {}, rest: Partial<V
     isNewDay: true,
     state: {
       source: "reddit",
+      lastSource: "t",
       firstVisitDate: "2024-01-01",
       lastVisitDate: "2024-01-03",
       timesReturned: 2,
@@ -41,6 +42,7 @@ describe("visit events", () => {
     const expected = {
       visit_type: "returning",
       source: "reddit",
+      last_source: "twitter",
       times_returned: 2,
       days_returned: 1,
       new_day: true,
@@ -87,19 +89,20 @@ describe("share attribution", () => {
     expect(track).toHaveBeenCalledWith("result_shared_on_x", expect.objectContaining({ method: "x" }));
   });
 
-  it("attributes a share to the sharer's origin and return cohort", () => {
+  it("stamps a share with both the original and most-recent origin", () => {
     localStorage.clear();
     sessionStorage.clear();
-    // First-ever visit from reddit, then a return session the player shares in.
-    recordVisit("?s=reddit");
+    // First arrival from a Reddit link, then a return via a Twitter link.
+    recordVisit("?s=r");
     sessionStorage.clear();
-    recordVisit("");
+    recordVisit("?s=t");
 
     trackResultCopied();
 
     expect(track).toHaveBeenCalledWith("result_copied", {
       method: "copy",
-      source: "reddit",
+      source: "reddit", // first-touch is sticky
+      last_source: "twitter", // last-touch follows the most recent link
       visit_type: "returning",
       times_returned: 1,
       days_returned: 0,
@@ -126,6 +129,7 @@ describe("share attribution", () => {
     expect(track).toHaveBeenCalledWith("result_shared_on_x", {
       method: "x",
       source: "direct",
+      last_source: "direct",
       visit_type: "first",
       times_returned: 0,
       days_returned: 0,

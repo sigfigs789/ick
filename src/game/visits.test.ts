@@ -58,6 +58,12 @@ describe("arrivalSource", () => {
   it("prefers an explicit s code over the referrer", () => {
     expect(arrivalSource("?s=t", "https://www.reddit.com/")).toBe("t");
   });
+
+  it("reads utm_source, ranked below our own s code and above the referrer", () => {
+    expect(arrivalSource("?utm_source=newsletter")).toBe("newsletter");
+    expect(arrivalSource("?s=r&utm_source=newsletter")).toBe("r");
+    expect(arrivalSource("?utm_source=newsletter", "https://www.reddit.com/")).toBe("newsletter");
+  });
 });
 
 describe("recordVisit", () => {
@@ -79,6 +85,23 @@ describe("recordVisit", () => {
   it("attributes an organic visit to its referring site when no s code is present", () => {
     const outcome = recordVisit("", undefined, "https://www.reddit.com/r/word");
     expect(outcome?.state.source).toBe("reddit");
+    expect(outcome?.state.lastSource).toBe("reddit");
+  });
+
+  it("keeps first-touch source but advances last-touch on a new origin", () => {
+    recordVisit("?s=r");
+    newSession();
+    const outcome = recordVisit("?s=t");
+    expect(outcome?.state.source).toBe("r");
+    expect(outcome?.state.lastSource).toBe("t");
+  });
+
+  it("holds the previous last-touch when a return carries no new origin", () => {
+    recordVisit("?s=r");
+    newSession();
+    const outcome = recordVisit(""); // direct return, no signal
+    expect(outcome?.state.source).toBe("r");
+    expect(outcome?.state.lastSource).toBe("r");
   });
 
   it("ignores reloads within the same session", () => {

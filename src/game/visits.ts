@@ -21,8 +21,11 @@ const VISIT_SESSION_KEY = "ick:visit-counted";
 const ENGAGED_SESSION_KEY = "ick:visit-engaged";
 
 export interface VisitState {
-  /** The `s=X` code the player first arrived with, e.g. "sh", "t", "reddit". */
+  /** First-touch: the origin the player *originally* arrived from (sticky). */
   source: string | null;
+  /** Last-touch: the most recent identifiable origin, holding its previous
+   * value across return visits that carry no new signal (direct/refresh). */
+  lastSource: string | null;
   firstVisitDate: string;
   lastVisitDate: string;
   /** Distinct return sessions after the very first visit. */
@@ -111,29 +114,37 @@ function referrerSource(referrer: string, selfHost: string): string | null {
   return /^[a-z0-9.-]+$/.test(cleaned) ? cleaned : null;
 }
 
+/** Normalizes a raw campaign token into a safe, bounded analytics dimension. */
+function sanitizeSource(raw: string | null): string | null {
+  if (!raw) return null;
+  const cleaned = raw.trim().toLowerCase().slice(0, 32);
+  return /^[a-z0-9_-]+$/.test(cleaned) ? cleaned : null;
+}
+
 /**
- * Determines where this visit came from. An explicit `s=X` campaign code wins;
- * otherwise the referring site is used so organic Reddit/Google/etc. traffic is
- * attributed instead of collapsing to "direct".
+ * Determines where this visit came from, in priority order: our compact `s=X`
+ * campaign code, then a standard `utm_source`, then the referring site — so
+ * organic Reddit/Google/etc. traffic is attributed instead of "direct".
  */
 export function arrivalSource(
   search: string,
   referrer: string = safeReferrer(),
   selfHost: string = safeSelfHost()
 ): string | null {
-  const code = new URLSearchParams(search).get("s");
-  if (code) {
-    const cleaned = code.trim().toLowerCase().slice(0, 32);
-    if (/^[a-z0-9_-]+$/.test(cleaned)) return cleaned;
-  }
-  return referrerSource(referrer, selfHost);
+  const params = new URLSearchParams(search);
+  return (
+    sanitizeSource(params.get("s")) ??
+    sanitizeSource(params.get("utm_source")) ??
+    referrerSource(referrer, selfHost)
+  );
 }
 
 /**
  * Records that the app was opened. Returns the visit outcome for the *first*
  * page load of a session, or `null` on later reloads in the same session (so
- * callers fire a visit event exactly once per session). The original arrival
- * source is sticky — a later visit without `s=X` never overwrites it.
+ * callers fire a visit event exactly once per session). First-touch `source`
+ * is sticky; last-touch `lastSource` tracks the most recent identifiable
+ * origin and holds its previous value when a return carries no new signal.
  */
 export function recordVisit(
   search: string,
@@ -150,6 +161,7 @@ export function recordVisit(
   if (!existing) {
     const state: VisitState = {
       source,
+      lastSource: source,
       firstVisitDate: today,
       lastVisitDate: today,
       timesReturned: 0,
@@ -160,6 +172,7 @@ export function recordVisit(
     const isNewDay = existing.lastVisitDate !== today;
     const state: VisitState = {
       source: existing.source ?? source,
+      lastSource: source ?? existing.lastSource ?? null,
       firstVisitDate: existing.firstVisitDate,
       lastVisitDate: today,
       timesReturned: existing.timesReturned + 1,
