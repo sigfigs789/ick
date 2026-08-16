@@ -1104,6 +1104,13 @@ h2 {
   font-size: 0.82rem;
   line-height: 1.45;
 }
+.modal__signoff {
+  margin: 1rem 0 0;
+  color: var(--fg-faint);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-align: center;
+}
 .modal__copy {
   margin: 0 0 0.8rem;
   color: var(--fg-muted);

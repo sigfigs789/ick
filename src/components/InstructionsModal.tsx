@@ -51,6 +51,7 @@ export function InstructionsModal({ open, onClose }: Props) {
           Rarity scores reflect how often words appear across sources including books, news, movies,
           websites, social media, and more. Values are then computed using Zipf’s law. They do not reflect how complex a word is. The highest ranks are Legend at 9.9+ rarity and Mythic at 9.5+ rarity.
         </p>
+        <p className="modal__signoff">Made by one person, for fun. Thanks for playing. 🙂</p>
       </div>
     </div>
   );
