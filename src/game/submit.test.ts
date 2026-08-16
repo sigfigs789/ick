@@ -27,6 +27,7 @@ describe("evaluateSubmission", () => {
     expect(REJECTION_MESSAGES["proper-noun"]).toBe("This looks like a proper noun.");
     expect(REJECTION_MESSAGES.abbreviation).toBe("This looks like an abbreviation or acronym.");
     expect(REJECTION_MESSAGES["name-or-abbreviation"]).toBe("This looks like a proper noun or abbreviation.");
+    expect(REJECTION_MESSAGES.misspelling).toBe("This looks like a misspelling of another word.");
     expect(REJECTION_MESSAGES.obsolete).toBe("This looks archaic or obsolete.");
     expect(REJECTION_MESSAGES.archaic).toBe("This looks like an archaic word.");
     expect(REJECTION_MESSAGES.dated).toBe("This looks dated — no longer in common use.");
@@ -165,6 +166,7 @@ describe("rejection metadata coverage", () => {
     abbreviation: 1821,
     archaic: 10309,
     dated: 2108,
+    misspelling: 1,
     "name-or-abbreviation": 11588,
     obsolete: 63353,
     "proper-noun": 18242,
@@ -180,6 +182,6 @@ describe("rejection metadata coverage", () => {
 
   it("pins the total number of words with a rejection reason", () => {
     const total = Object.values(metadata).reduce((sum, words) => sum + words.length, 0);
-    expect(total).toBe(107_421);
+    expect(total).toBe(107_422);
   });
 });

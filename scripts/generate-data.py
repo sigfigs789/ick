@@ -179,19 +179,21 @@ def load_wiktionary_words() -> set[str]:
     return load_word_file(WIKTIONARY_ACCEPTED_PATH)
 
 
-# ESDB reasons that mark a word as ineligible for play regardless of source.
-# Wiktionary can supply lowercase spellings of these (e.g. "paris"), which SCOWL
-# excludes only because it lists them capitalized, so the supplement is filtered
-# against this set. The out-of-use reasons (obsolete/archaic/dated) are
+# Reasons that mark a word as ineligible for play regardless of source. Wiktionary
+# can supply lowercase spellings of the name/abbreviation ones (e.g. "paris"),
+# which SCOWL excludes only because it lists them capitalized, so the supplement
+# is filtered against this set; "misspelling" is Wiktionary-only (ESDB/SCOWL
+# never emits it). The out-of-use reasons (obsolete/archaic/dated) are
 # intentionally absent: they only enrich the *rejection message* for words that
 # were already excluded, and never drop a currently playable word.
-NAME_LIKE_REASONS = {"abbreviation", "proper-noun", "name-or-abbreviation"}
+ALWAYS_EXCLUDED_REASONS = {"abbreviation", "proper-noun", "name-or-abbreviation", "misspelling"}
 
 # Every rejection reason ranked by strength. When a word is classified more than
 # once -- across ESDB entries, or between ESDB and Wiktextract -- the strongest
 # reason wins so the player sees the most specific explanation. Name/abbreviation
 # reasons outrank the out-of-use reasons, and within out-of-use "obsolete" (dead)
-# outranks "archaic" outranks "dated" (merely old-fashioned).
+# outranks "archaic" outranks "dated" (merely old-fashioned). "misspelling" wins
+# over everything: it's the most specific and unambiguous reason a word can have.
 REASON_PRIORITY = {
     "dated": 1,
     "archaic": 2,
@@ -199,6 +201,7 @@ REASON_PRIORITY = {
     "name-or-abbreviation": 4,
     "proper-noun": 5,
     "abbreviation": 6,
+    "misspelling": 7,
 }
 
 
@@ -353,16 +356,20 @@ def main() -> None:
     blocklist = load_blocklist()
     print(f"Loaded {len(blocklist)} blocklisted terms")
 
-    classification = esdb_classification(args.esdb_db)
-    excluded = {word for word, reason in classification.items() if reason in NAME_LIKE_REASONS}
+    # Merge in Wiktionary's own reasons (e.g. "misspelling") -- ESDB never emits
+    # those, so relying on ESDB alone here would silently let a Wiktionary-only
+    # exclusion reason back into the dictionary via wiktionary_words below.
+    classification = merge_reasons(esdb_classification(args.esdb_db), load_wiktionary_reasons())
+    excluded = {word for word, reason in classification.items() if reason in ALWAYS_EXCLUDED_REASONS}
 
     extra_words = load_extra_words()
     suggested_words = load_suggested_words()
     online_words = load_online_words()
     wiktionary_words = load_wiktionary_words()
     # Wiktionary lists lowercase spellings of names/abbreviations that SCOWL
-    # excludes only by capitalization; drop them so the supplement can't smuggle
-    # ineligible words (e.g. "paris") back into play.
+    # excludes only by capitalization, plus its own misspelling-only entries
+    # (e.g. "freind"); drop them so the supplement can't smuggle ineligible
+    # words back into play.
     blocked = wiktionary_words & excluded
     wiktionary_words -= excluded
     raw_words = word_list.read_text(errors="ignore").splitlines()
@@ -375,7 +382,7 @@ def main() -> None:
     print(f"Loaded {len(extra_words)} manually curated extra words")
     print(f"Loaded {len(suggested_words)} player-suggested words")
     print(f"Loaded {len(online_words)} online-discovered rare words")
-    print(f"Loaded {len(wiktionary_words)} Wiktionary terms ({len(blocked)} name/abbr excluded)")
+    print(f"Loaded {len(wiktionary_words)} Wiktionary terms ({len(blocked)} name/abbr/misspelling excluded)")
     print(f"Read {len(raw_words)} candidate entries")
 
     candidates: dict[str, float] = {}

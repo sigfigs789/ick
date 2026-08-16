@@ -53,6 +53,11 @@ STATUS_SEVERITY = {"obsolete": 3, "archaic": 2, "dated": 1}
 SEVERITY_REASON = {3: "obsolete", 2: "archaic", 1: "dated"}
 # Sense tags that mark a sense as an abbreviation rather than an ordinary word.
 ABBREV_TAGS = {"abbreviation", "initialism", "acronym"}
+# Sense tags that mark a sense as a misspelling of another headword (e.g.
+# "freind" glossed as "Misspelling of friend."), rather than a word in its own
+# right. wordfreq still assigns these a nonzero score -- people type them often
+# enough to show up in corpora -- so this check is what keeps them out of play.
+MISSPELLING_TAGS = {"misspelling", "pronunciation-spelling"}
 
 
 def sense_severity(tags: set[str]) -> int:
@@ -66,7 +71,8 @@ def stream_wiktionary() -> tuple[dict[str, dict], int]:
     Returns (records, english_entry_count). Each record collects the set of
     parts of speech seen for a headword plus, for its ordinary (non-name,
     non-abbreviation) senses, the out-of-use severity and whether the sense is
-    an abbreviation -- everything classify() needs and nothing else.
+    an abbreviation or a misspelling -- everything classify() needs and
+    nothing else.
     """
     request = Request(SOURCE_URL, headers={"User-Agent": "WordInk word-list builder (wordink.app)"})
     records: dict[str, dict] = {}
@@ -82,7 +88,9 @@ def stream_wiktionary() -> tuple[dict[str, dict], int]:
                 if not WORD_RE.fullmatch(word):
                     continue
 
-                record = records.setdefault(word, {"pos": set(), "ord_sev": [], "ord_abbrev": []})
+                record = records.setdefault(
+                    word, {"pos": set(), "ord_sev": [], "ord_abbrev": [], "ord_misspelling": []}
+                )
                 pos = entry.get("pos", "")
                 record["pos"].add(pos)
                 # Senses of a name/abbreviation entry say nothing about whether
@@ -96,6 +104,7 @@ def stream_wiktionary() -> tuple[dict[str, dict], int]:
                     tags = set(sense.get("tags") or []) | entry_tags
                     record["ord_sev"].append(sense_severity(tags))
                     record["ord_abbrev"].append(bool(tags & ABBREV_TAGS))
+                    record["ord_misspelling"].append(bool(tags & MISSPELLING_TAGS))
     return records, english_entries
 
 
@@ -120,6 +129,10 @@ def classify(record: dict) -> str | None:
     # Every ordinary sense is an abbreviation -> the word itself is one.
     if all(record["ord_abbrev"]):
         return "abbreviation"
+    # Every ordinary sense is a misspelling of another headword -> not a word
+    # of its own, regardless of how often people type it that way.
+    if all(record["ord_misspelling"]):
+        return "misspelling"
     # Every ordinary sense is out of current use -> pick the mildest register.
     if all(severity >= 1 for severity in severities):
         return SEVERITY_REASON[min(severities)]

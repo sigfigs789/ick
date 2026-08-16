@@ -4,7 +4,7 @@ name: Check a word
 #   - whether it's a valid (playable) submission -- i.e. on the curated list;
 #   - its rarity score, tier, and Zipf, scored exactly as the game shows them;
 #   - if it's not valid, why: blocklisted, a proper noun / abbreviation /
-#     archaic-or-obsolete word, or simply not on the list (and, in that case,
+#     misspelling / archaic-or-obsolete word, or simply not on the list (and, in that case,
 #     whether any frequency corpus attests it -- i.e. whether "Add a word" could
 #     score it).
 #

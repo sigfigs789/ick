@@ -29,6 +29,7 @@ export type RejectionReason =
   | "proper-noun"
   | "abbreviation"
   | "name-or-abbreviation"
+  | "misspelling"
   | "obsolete"
   | "archaic"
   | "dated"
