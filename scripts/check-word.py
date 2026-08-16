@@ -6,7 +6,7 @@ Answers three questions for one word, read-only:
   2. What is its rarity? -> the Zipf, rarity label, and 0..10 score the game shows,
      computed with the same base-form adjustment as manage-extra-word.py.
   3. If it is not valid, why? -> blocklisted, one of the four rejection-metadata
-     categories (proper noun / abbreviation / archaic-or-obsolete), or simply not
+     categories (proper noun / abbreviation / misspelling / archaic-or-obsolete), or simply not
      on the curated list. For a not-on-list word we also consult the frequency
      waterfall (wordfreq -> Norvig -> Google Books) to say whether any corpus
      attests it -- i.e. whether "Add a word" could score it without --forced.
@@ -37,12 +37,13 @@ BLOCKLIST_PATH = SCRIPTS / "blocklist.txt"
 # bound either, so long real words like "gastroenterologist" stay eligible).
 WORD_RE = re.compile(r"^[a-z]+$")
 
-# The four categories generate-data.py records in rejection-metadata.json, mapped
+# The categories generate-data.py records in rejection-metadata.json, mapped
 # to the same player-facing wording submit.ts shows in REJECTION_MESSAGES.
 REJECTION_MESSAGES = {
     "proper-noun": "This looks like a proper noun.",
     "abbreviation": "This looks like an abbreviation or acronym.",
     "name-or-abbreviation": "This looks like a proper noun or abbreviation.",
+    "misspelling": "This looks like a misspelling of another word.",
     "obsolete": "This looks archaic or obsolete.",
 }
 
@@ -79,7 +80,7 @@ def rejection_reason(word: str, metadata: dict) -> str | None:
     Each category is a sorted list (see write_rejection_metadata); a linear `in`
     is fine for a one-off check.
     """
-    for reason in ("proper-noun", "abbreviation", "name-or-abbreviation", "obsolete"):
+    for reason in ("proper-noun", "abbreviation", "name-or-abbreviation", "misspelling", "obsolete"):
         if word in metadata.get(reason, ()):
             return reason
     return None
@@ -137,8 +138,8 @@ def check(raw_word: str) -> tuple[bool, str]:
         lines.append(f"**Reason:** {REJECTION_MESSAGES[reason]}")
         lines.append("")
         lines.append(
-            "Proper nouns, abbreviations/acronyms, and archaic or obsolete words "
-            "are filtered out of the curated list to keep play consistent."
+            "Proper nouns, abbreviations/acronyms, misspellings, and archaic or "
+            "obsolete words are filtered out of the curated list to keep play consistent."
         )
         return False, "\n".join(lines)
 
