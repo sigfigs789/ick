@@ -65,15 +65,16 @@ describe("top-rank score cutoffs", () => {
     expect(topRankForScore(9.894)).toBe("Mythic"); // rounds to 9.89 -> stays Mythic
   });
 
-  it("starts Mythic at 9.5, including values that round up to it", () => {
+  it("starts Mythic wherever the score displays as 9.5 (raw >= 9.45)", () => {
     expect(topRankForScore(9.5)).toBe("Mythic");
-    expect(topRankForScore(9.495)).toBe("Mythic"); // rounds to 9.50 -> Mythic
-    expect(topRankForScore(9.494)).toBeUndefined(); // rounds to 9.49 -> below Mythic
-    expect(topRankForScore(9.48)).toBeUndefined(); // rounds to 9.48 -> below Mythic
+    expect(topRankForScore(9.495)).toBe("Mythic"); // shows 9.5 -> Mythic
+    expect(topRankForScore(9.48)).toBe("Mythic"); // rounds to 9.5 -> Mythic
+    expect(topRankForScore(9.46)).toBe("Mythic"); // rounds to 9.5 -> Mythic
+    expect(topRankForScore(9.45)).toBe("Mythic"); // 9.45 rounds up to 9.5
   });
 
-  it("leaves scores below 9.5 out of the top ranks", () => {
-    expect(topRankForScore(9.44)).toBeUndefined();
+  it("leaves scores that display below 9.5 (raw < 9.45) out of the top ranks", () => {
+    expect(topRankForScore(9.44)).toBeUndefined(); // rounds to 9.4 -> below Mythic
     expect(topRankForScore(4.3)).toBeUndefined();
     expect(topRankForScore(0)).toBeUndefined();
   });
