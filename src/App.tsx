@@ -179,11 +179,9 @@ export default function App() {
       <InstructionsModal open={showInstructions} onClose={() => setShowInstructions(false)} />
       <WordRulesModal open={showWordRules} onClose={() => setShowWordRules(false)} />
 
-      {import.meta.env.DEV && (
-        <footer className="app__footer">
-          <p>Force-update test — running v{APP_VERSION} 👋</p>
-        </footer>
-      )}
+      <footer className="app__footer">
+        <p>Force-update test — running v{APP_VERSION} 👋</p>
+      </footer>
     </div>
   );
 }
