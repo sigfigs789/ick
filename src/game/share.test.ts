@@ -113,6 +113,21 @@ describe("buildShareText", () => {
     expect(text).not.toContain("Best:");
   });
 
+  it("names the rarest word and its 1-in-X frequency, just before the URL, when spoilers are shown", () => {
+    const text = buildShareText("2024-01-05", "str", words, {
+      spoilerFree: false,
+      source: null,
+    });
+    // aardvark (zipf 2.4) is the rarest: 10^(9 - 2.4) ≈ 3.98M -> "4M".
+    expect(text).toContain("\naardvark: 1 in 4M\nwordink.app");
+  });
+
+  it("never reveals the rarest word in the spoiler-free share", () => {
+    const text = buildShareText("2024-01-05", "str", words);
+    expect(text).not.toContain("aardvark");
+    expect(text).not.toContain("1 in");
+  });
+
   it("includes the current streak when provided", () => {
     expect(buildShareText("2024-01-05", "str", words, { streak: 1 })).toContain("Streak: 1 day");
     expect(buildShareText("2024-01-05", "str", words, { streak: 4 })).toContain("Streak: 4 days");

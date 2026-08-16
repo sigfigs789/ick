@@ -47,17 +47,25 @@ function roundToCents(n: number): number {
   return Math.round(n * 100 + 1e-6) / 100;
 }
 
+// Round to one decimal with the same upward nudge, so 9.45 -> 9.5 despite
+// binary-float error. Used where the rank and display key off the one-decimal
+// value rather than the two-decimal one.
+function roundToTenths(n: number): number {
+  return Math.round(n * 10 + 1e-6) / 10;
+}
+
 /**
- * The score-based top ranks, keyed off the score's two-decimal value: Legend at
- * 9.9+ and Mythic at 9.5..9.89. A raw score is rounded to two decimals first, so
- * a value just under the line rounds up and flips the rank (9.895 -> Legend,
- * 9.495 -> Mythic). Anything lower returns undefined, so the caller falls back
- * to the measured Zipf-band label (Extremely Rare and below).
+ * The score-based top ranks, each keyed off the value the player actually sees:
+ * Legend at 9.9+ (Mythic and Legend show two decimals, so it keys off the
+ * two-decimal score, 9.895 -> 9.90 -> Legend) and Mythic wherever the score
+ * *displays* as 9.5 or higher. Extremely Rare and below show one decimal, so the
+ * Mythic cutoff keys off the one-decimal value: anything that rounds to 9.5
+ * (raw >= 9.45) is Mythic. Anything lower returns undefined, so the caller falls
+ * back to the measured Zipf-band label (Extremely Rare and below).
  */
 export function topRankForScore(score: number): Extract<Rarity, "Legend" | "Mythic"> | undefined {
-  const rounded = roundToCents(score);
-  if (rounded >= LEGEND_MIN_SCORE) return "Legend";
-  if (rounded >= MYTHIC_MIN_SCORE) return "Mythic";
+  if (roundToCents(score) >= LEGEND_MIN_SCORE) return "Legend";
+  if (roundToTenths(score) >= MYTHIC_MIN_SCORE) return "Mythic";
   return undefined;
 }
 
@@ -151,8 +159,10 @@ function twoBandScoring(
         // top rank, with no Legend above it.
         (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf)),
     format: legend
-      ? // Mythic and Legend (score >= 9.5) show two decimals; below shows one.
-        (s) => (s >= MYTHIC_MIN_SCORE ? s.toFixed(2) : s.toFixed(1))
+      ? // Mythic and Legend (score >= 9.5) show two decimals; below shows one,
+        // rounded with the same upward nudge so a raw 9.45 reads "9.5" -- the
+        // value the Mythic cutoff keys off (see topRankForScore).
+        (s) => (s >= MYTHIC_MIN_SCORE ? s.toFixed(2) : roundToTenths(s).toFixed(1))
       : // Only the deep-tail band (score >= ceiling) shows two decimals.
         (s) => (s >= ceiling ? s.toFixed(2) : s.toFixed(1)),
     boundBaseForms,
