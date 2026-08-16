@@ -17,7 +17,13 @@ import { isWinningRarity } from "./game/rank";
 import { topRarityScore, totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { campaignSourceFromSearch, trackShareArrival, trackTwitterArrival } from "./analytics";
+import {
+  campaignSourceFromSearch,
+  trackShareArrival,
+  trackTwitterArrival,
+  trackVisit,
+} from "./analytics";
+import { recordVisit } from "./game/visits";
 
 export default function App() {
   const {
@@ -47,6 +53,11 @@ export default function App() {
     const source = campaignSourceFromSearch(window.location.search);
     if (source === "twitter") trackTwitterArrival();
     if (source === "share") trackShareArrival();
+
+    // Count and report this open once per session (a reload does not recount),
+    // recording whether the player is new or returning and where they came from.
+    const visit = recordVisit(window.location.search);
+    if (visit) trackVisit(visit);
   }, []);
 
   // Play a chime/buzz on every submission, pitched by rarity when accepted.
