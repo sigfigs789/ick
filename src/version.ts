@@ -9,5 +9,11 @@
 // A running tab compares its baked-in APP_VERSION against the live
 // version.json's minVersion and silently reloads only when it's below the
 // floor. Reloading preserves all localStorage (game progress, streak, etc.).
-export const APP_VERSION = 1
-export const MIN_VERSION = 1
+//
+// INVARIANT: index.html must never be long-cached. The forced reload only
+// escapes the loop if it fetches a fresh index.html pointing at the new bundle;
+// if index.html were cached below the floor, stale tabs would reload forever.
+// vercel.json pins this with no-store on "/" and "/index.html" — keep it that
+// way if you ever touch the caching headers.
+export const APP_VERSION = 1;
+export const MIN_VERSION = 1;

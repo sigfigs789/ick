@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { APP_VERSION } from '../version'
+import { useEffect } from "react";
+import { APP_VERSION } from "../version";
 
 // Silently forces a stale tab onto the latest deploy when — and only when —
 // the running version is below the required-version floor (minVersion) that we
@@ -16,11 +16,11 @@ import { APP_VERSION } from '../version'
 // resurfaces: initial mount, tab foregrounding, and bfcache restore.
 async function checkRequiredVersion() {
   try {
-    const res = await fetch('/version.json', { cache: 'no-store' })
-    if (!res.ok) return
-    const { minVersion } = (await res.json()) as { minVersion?: number }
-    if (typeof minVersion === 'number' && APP_VERSION < minVersion) {
-      window.location.reload()
+    const res = await fetch("/version.json", { cache: "no-store" });
+    if (!res.ok) return;
+    const { minVersion } = (await res.json()) as { minVersion?: number };
+    if (typeof minVersion === "number" && APP_VERSION < minVersion) {
+      window.location.reload();
     }
   } catch {
     // Offline or transient failure — leave the tab alone and try again on the
@@ -30,22 +30,22 @@ async function checkRequiredVersion() {
 
 export function useForceUpdate() {
   useEffect(() => {
-    void checkRequiredVersion()
+    void checkRequiredVersion();
 
     const onVisible = () => {
-      if (document.visibilityState === 'visible') void checkRequiredVersion()
-    }
+      if (document.visibilityState === "visible") void checkRequiredVersion();
+    };
     const onPageShow = (e: PageTransitionEvent) => {
       // Restored from the back/forward cache — the tab reappeared without a
       // real load, so re-check.
-      if (e.persisted) void checkRequiredVersion()
-    }
+      if (e.persisted) void checkRequiredVersion();
+    };
 
-    document.addEventListener('visibilitychange', onVisible)
-    window.addEventListener('pageshow', onPageShow)
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onPageShow);
     return () => {
-      document.removeEventListener('visibilitychange', onVisible)
-      window.removeEventListener('pageshow', onPageShow)
-    }
-  }, [])
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, []);
 }
