@@ -65,6 +65,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: en-wl/wordlist
+          # Pinned so classification (proper-noun/abbreviation/etc.) can't
+          # drift out from under pinned test counts between runs. Only bump
+          # this alongside a full data regen -- see "Regenerating the
+          # word/rarity data" in README.md for the required re-pin steps.
+          ref: 1e5b7d3a72f47a71da5d28686c1dd4b397178485
           path: .tmp/esdb
 
       - name: Install data-generation dependency
