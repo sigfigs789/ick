@@ -122,10 +122,16 @@ export function trackShareArrival() {
   track("arrived_from_share");
 }
 
+/** Record visitors who arrive through a tagged Reddit link (`s=r`). */
+export function trackRedditArrival() {
+  track("arrived_from_reddit");
+}
+
 /** Map compact arrival codes to readable analytics source labels. */
 function visitSource(code: string | null): string {
   if (code === "sh") return "share";
   if (code === "t") return "twitter";
+  if (code === "r") return "reddit";
   return code ?? "direct";
 }
 
@@ -159,9 +165,10 @@ export function trackVisitEngaged(outcome: VisitOutcome) {
 }
 
 /** Convert compact share-link codes into analytics campaign sources. */
-export function campaignSourceFromSearch(search: string): "share" | "twitter" | null {
+export function campaignSourceFromSearch(search: string): "share" | "twitter" | "reddit" | null {
   const code = new URLSearchParams(search).get("s");
   if (code === "sh") return "share";
   if (code === "t") return "twitter";
+  if (code === "r") return "reddit";
   return null;
 }

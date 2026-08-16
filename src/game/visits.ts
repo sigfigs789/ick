@@ -69,12 +69,64 @@ function saveState(state: VisitState): void {
   safeSet(localStorage, VISITS_KEY, JSON.stringify(state));
 }
 
-/** Reads and sanitizes the `s=X` arrival code into a safe analytics dimension. */
-export function arrivalSource(search: string): string | null {
+/** The referring URL for this load, or "" when unavailable (e.g. tests, SSR). */
+function safeReferrer(): string {
+  try {
+    return document.referrer;
+  } catch {
+    return "";
+  }
+}
+
+/** This site's own hostname, used to treat internal navigations as direct. */
+function safeSelfHost(): string {
+  try {
+    return location.hostname;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Classifies the referring site into a coarse traffic source so organic
+ * arrivals (with no `s=X` code) are still attributed. Returns null for direct
+ * navigation, same-site hops, and malformed referrers.
+ */
+function referrerSource(referrer: string, selfHost: string): string | null {
+  let host: string;
+  try {
+    host = new URL(referrer).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  if (!host || host === selfHost) return null;
+  if (host.includes("reddit")) return "reddit";
+  if (host.includes("google")) return "google";
+  if (host === "t.co" || host.includes("twitter") || host === "x.com" || host.endsWith(".x.com")) return "twitter";
+  if (host.includes("facebook") || host.includes("fb.")) return "facebook";
+  if (host.includes("bing")) return "bing";
+  if (host.includes("duckduckgo")) return "duckduckgo";
+  // Unknown site: keep the bare host so it stays distinguishable from direct.
+  const cleaned = host.replace(/^www\./, "").slice(0, 40);
+  return /^[a-z0-9.-]+$/.test(cleaned) ? cleaned : null;
+}
+
+/**
+ * Determines where this visit came from. An explicit `s=X` campaign code wins;
+ * otherwise the referring site is used so organic Reddit/Google/etc. traffic is
+ * attributed instead of collapsing to "direct".
+ */
+export function arrivalSource(
+  search: string,
+  referrer: string = safeReferrer(),
+  selfHost: string = safeSelfHost()
+): string | null {
   const code = new URLSearchParams(search).get("s");
-  if (!code) return null;
-  const cleaned = code.trim().toLowerCase().slice(0, 32);
-  return /^[a-z0-9_-]+$/.test(cleaned) ? cleaned : null;
+  if (code) {
+    const cleaned = code.trim().toLowerCase().slice(0, 32);
+    if (/^[a-z0-9_-]+$/.test(cleaned)) return cleaned;
+  }
+  return referrerSource(referrer, selfHost);
 }
 
 /**
@@ -83,10 +135,15 @@ export function arrivalSource(search: string): string | null {
  * callers fire a visit event exactly once per session). The original arrival
  * source is sticky — a later visit without `s=X` never overwrites it.
  */
-export function recordVisit(search: string, today: string = todayDateString()): VisitOutcome | null {
+export function recordVisit(
+  search: string,
+  today: string = todayDateString(),
+  referrer: string = safeReferrer(),
+  selfHost: string = safeSelfHost()
+): VisitOutcome | null {
   if (safeGet(sessionStorage, VISIT_SESSION_KEY)) return null;
 
-  const source = arrivalSource(search);
+  const source = arrivalSource(search, referrer, selfHost);
   const existing = loadState();
 
   let outcome: VisitOutcome;

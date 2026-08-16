@@ -19,6 +19,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import {
   campaignSourceFromSearch,
+  trackRedditArrival,
   trackShareArrival,
   trackTwitterArrival,
   trackVisit,
@@ -53,6 +54,7 @@ export default function App() {
     const source = campaignSourceFromSearch(window.location.search);
     if (source === "twitter") trackTwitterArrival();
     if (source === "share") trackShareArrival();
+    if (source === "reddit") trackRedditArrival();
 
     // Count and report this open once per session (a reload does not recount),
     // recording whether the player is new or returning and where they came from.

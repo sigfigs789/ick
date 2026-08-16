@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { trackResultCopied, trackResultSharedOnX, trackVisit, trackVisitEngaged } from "./analytics";
+import {
+  campaignSourceFromSearch,
+  trackRedditArrival,
+  trackResultCopied,
+  trackResultSharedOnX,
+  trackVisit,
+  trackVisitEngaged,
+} from "./analytics";
 import { recordVisit, type VisitOutcome } from "./game/visits";
 
 const track = vi.hoisted(() => vi.fn());
@@ -45,11 +52,20 @@ describe("visit events", () => {
   it("maps share-link codes to readable source labels", () => {
     trackVisit(outcome({ source: "sh" }));
     trackVisit(outcome({ source: "t" }));
+    trackVisit(outcome({ source: "r" }));
     trackVisit(outcome({ source: null }));
     trackVisit(outcome({ source: "reddit" }));
 
     const sources = track.mock.calls.map((call) => (call[1] as { source: string }).source);
-    expect(sources).toEqual(["share", "twitter", "direct", "reddit"]);
+    expect(sources).toEqual(["share", "twitter", "reddit", "direct", "reddit"]);
+  });
+
+  it("passes an unrecognized s code through verbatim", () => {
+    trackVisit(outcome({ source: "z" }));
+    trackVisit(outcome({ source: "newsletter" }));
+
+    const sources = track.mock.calls.map((call) => (call[1] as { source: string }).source);
+    expect(sources).toEqual(["z", "newsletter"]);
   });
 
   it("tags a first-ever visit", () => {
@@ -114,5 +130,19 @@ describe("share attribution", () => {
       times_returned: 0,
       days_returned: 0,
     });
+  });
+});
+
+describe("campaign arrivals", () => {
+  it("maps the reddit share-link code to its campaign source", () => {
+    expect(campaignSourceFromSearch("?s=r")).toBe("reddit");
+    expect(campaignSourceFromSearch("?s=sh")).toBe("share");
+    expect(campaignSourceFromSearch("?s=t")).toBe("twitter");
+    expect(campaignSourceFromSearch("?s=other")).toBeNull();
+  });
+
+  it("records a Reddit arrival", () => {
+    trackRedditArrival();
+    expect(track).toHaveBeenCalledWith("arrived_from_reddit");
   });
 });
