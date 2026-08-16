@@ -119,7 +119,7 @@ describe("buildShareText", () => {
       source: null,
     });
     // aardvark (zipf 2.4) is the rarest: 10^(9 - 2.4) ≈ 3.98M -> "4M".
-    expect(text).toContain("\naardvark: 1 in 4M\nwordink.app");
+    expect(text).toContain("\naardvark: 1 in 4M words\nwordink.app");
   });
 
   it("never reveals the rarest word in the spoiler-free share", () => {

@@ -54,10 +54,10 @@ function abbreviateCount(n: number): string {
 }
 
 // A word's Zipf value is log10 of its frequency per billion words, so it occurs
-// once every 10^(9 - zipf) words. Render that as the "1 in X" odds of a word
-// being this rare or rarer.
+// once every 10^(9 - zipf) words. Render that as the "1 in X words" odds of a
+// word being this rare or rarer.
 export function formatFrequency(zipf: number): string {
-  return `1 in ${abbreviateCount(Math.pow(10, 9 - zipf))}`;
+  return `1 in ${abbreviateCount(Math.pow(10, 9 - zipf))} words`;
 }
 
 /** The rarest accepted word: lowest Zipf, i.e. the highest rarity score. */
