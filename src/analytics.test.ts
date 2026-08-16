@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { trackVisit, trackVisitEngaged } from "./analytics";
-import type { VisitOutcome } from "./game/visits";
+import { trackResultCopied, trackResultSharedOnX, trackVisit, trackVisitEngaged } from "./analytics";
+import { recordVisit, type VisitOutcome } from "./game/visits";
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
@@ -58,5 +58,61 @@ describe("visit events", () => {
       "site_visit",
       expect.objectContaining({ visit_type: "first" })
     );
+  });
+});
+
+describe("share attribution", () => {
+  it("tracks copied results separately from X shares, tagged by method", () => {
+    localStorage.clear();
+    trackResultCopied();
+    trackResultSharedOnX();
+
+    expect(track).toHaveBeenCalledWith("result_copied", expect.objectContaining({ method: "copy" }));
+    expect(track).toHaveBeenCalledWith("result_shared_on_x", expect.objectContaining({ method: "x" }));
+  });
+
+  it("attributes a share to the sharer's origin and return cohort", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    // First-ever visit from reddit, then a return session the player shares in.
+    recordVisit("?s=reddit");
+    sessionStorage.clear();
+    recordVisit("");
+
+    trackResultCopied();
+
+    expect(track).toHaveBeenCalledWith("result_copied", {
+      method: "copy",
+      source: "reddit",
+      visit_type: "returning",
+      times_returned: 1,
+      days_returned: 0,
+    });
+  });
+
+  it("labels share-link origins the same way visit events do", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    recordVisit("?s=t");
+
+    trackResultSharedOnX();
+
+    expect(track).toHaveBeenCalledWith(
+      "result_shared_on_x",
+      expect.objectContaining({ source: "twitter" })
+    );
+  });
+
+  it("falls back to a direct first-time cohort when no visit was recorded", () => {
+    localStorage.clear();
+    trackResultSharedOnX();
+
+    expect(track).toHaveBeenCalledWith("result_shared_on_x", {
+      method: "x",
+      source: "direct",
+      visit_type: "first",
+      times_returned: 0,
+      days_returned: 0,
+    });
   });
 });

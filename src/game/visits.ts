@@ -134,3 +134,12 @@ export function markSessionEngaged(): VisitOutcome | null {
     return null;
   }
 }
+
+/**
+ * The player's persisted visit state, or `null` before any visit is recorded.
+ * Lets non-visit events (like sharing) attach the player's original arrival
+ * source and return counts so those actions can be sliced by cohort.
+ */
+export function currentVisit(): VisitState | null {
+  return loadState();
+}

@@ -3,7 +3,7 @@ import { rarityScore, type BaseFormSubstitution } from "./game/dictionary";
 import { bestWord } from "./game/rank";
 import { puzzleNumber } from "./game/share";
 import type { AcceptedWord, DailyProgress, RejectionReason, StreakState } from "./game/types";
-import type { VisitOutcome } from "./game/visits";
+import { currentVisit, type VisitOutcome } from "./game/visits";
 
 /**
  * Send game activity to Vercel without player-identifying information.
@@ -87,14 +87,29 @@ export function trackPuzzleCompleted(
   });
 }
 
+/**
+ * Origin and retention dimensions for the current player, attached to share
+ * events so a share can be attributed to where the sharer first arrived from
+ * and whether they are a first-timer or a returning visitor.
+ */
+function visitDimensions() {
+  const state = currentVisit();
+  return {
+    source: visitSource(state?.source ?? null),
+    visit_type: state && state.timesReturned > 0 ? "returning" : "first",
+    times_returned: state?.timesReturned ?? 0,
+    days_returned: state?.daysReturned ?? 0,
+  };
+}
+
 /** Record a successful copy from the standard Share button. */
 export function trackResultCopied() {
-  track("result_copied");
+  track("result_copied", { method: "copy", ...visitDimensions() });
 }
 
 /** Record a click on the X share button. */
 export function trackResultSharedOnX() {
-  track("result_shared_on_x");
+  track("result_shared_on_x", { method: "x", ...visitDimensions() });
 }
 
 /** Record visitors who arrive through an X share link. */
