@@ -34,6 +34,40 @@ export function puzzleNumber(dateStr: string): number {
   return daysSinceEpoch(dateStr, dropData.epoch) + 1;
 }
 
+// Abbreviate a large count as e.g. 4M, 1.2B. One decimal below 10 (so 3.98M
+// reads as 4M, 1.23B as 1.2B), whole numbers above, no trailing ".0".
+function abbreviateCount(n: number): string {
+  const units: [number, string][] = [
+    [1e12, "T"],
+    [1e9, "B"],
+    [1e6, "M"],
+    [1e3, "K"],
+  ];
+  for (const [scale, suffix] of units) {
+    if (n >= scale) {
+      const v = n / scale;
+      const rounded = v >= 10 ? Math.round(v) : Math.round(v * 10) / 10;
+      return `${rounded}${suffix}`;
+    }
+  }
+  return `${Math.round(n)}`;
+}
+
+// A word's Zipf value is log10 of its frequency per billion words, so it occurs
+// once every 10^(9 - zipf) words. Render that as the "1 in X" odds of a word
+// being this rare or rarer.
+export function formatFrequency(zipf: number): string {
+  return `1 in ${abbreviateCount(Math.pow(10, 9 - zipf))}`;
+}
+
+/** The rarest accepted word: lowest Zipf, i.e. the highest rarity score. */
+function rarestWord(words: AcceptedWord[]): AcceptedWord | undefined {
+  return words.reduce<AcceptedWord | undefined>(
+    (best, w) => (best === undefined || w.zipf < best.zipf ? w : best),
+    undefined
+  );
+}
+
 export interface ShareOptions {
   /** Defaults to true: omit the words-with-rarity line, squares only. */
   spoilerFree?: boolean;
@@ -90,6 +124,12 @@ export function buildShareText(
   if (format === "default")
     raritySummary.push(`Top: ${formatScore(topRarityScore(words, dateStr), dateStr)}`);
   lines.push(raritySummary.join(" · "));
+  // Only reveal the rarest word when spoilers are already shown, so the
+  // spoiler-free share keeps its guarantee of never naming a word.
+  if (!spoilerFree) {
+    const best = rarestWord(words);
+    if (best) lines.push(`${best.word}: ${formatFrequency(best.zipf)}`);
+  }
   lines.push(shareUrl(source));
   return lines.join("\n");
 }
