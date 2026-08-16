@@ -165,9 +165,9 @@ describe("rejection metadata coverage", () => {
     abbreviation: 1821,
     archaic: 10309,
     dated: 2108,
-    "name-or-abbreviation": 11588,
+    "name-or-abbreviation": 11300,
     obsolete: 63353,
-    "proper-noun": 18242,
+    "proper-noun": 18530,
   };
   const metadata = rejectionMetadata as Record<string, readonly string[]>;
 
