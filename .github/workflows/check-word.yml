@@ -1,0 +1,46 @@
+name: Check a word
+
+# Read-only lookup for a single word. Enter a word and this reports:
+#   - whether it's a valid (playable) submission -- i.e. on the curated list;
+#   - its rarity score, tier, and Zipf, scored exactly as the game shows them;
+#   - if it's not valid, why: blocklisted, a proper noun / abbreviation /
+#     archaic-or-obsolete word, or simply not on the list (and, in that case,
+#     whether any frequency corpus attests it -- i.e. whether "Add a word" could
+#     score it).
+#
+# Nothing is written and no pull request is opened. The result is printed in the
+# run log and in the run's summary. To actually add a word, use "Add a word".
+
+on:
+  workflow_dispatch:
+    inputs:
+      word:
+        description: English word to check
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  check-word:
+    runs-on: ubuntu-latest
+    env:
+      WORD: ${{ inputs.word }}
+
+    steps:
+      - name: Check out WordInk
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Only needed for the "not on the list" case, so the report can say whether
+      # a frequency corpus attests the word (matching the "Add a word" gate).
+      - name: Install frequency dependency
+        run: python -m pip install wordfreq==3.1.1
+
+      - name: Check the word
+        run: python scripts/check-word.py "$WORD" | tee -a "$GITHUB_STEP_SUMMARY"
