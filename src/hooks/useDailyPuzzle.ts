@@ -14,7 +14,8 @@ import {
 import { evaluateSubmission, REJECTION_MESSAGES } from "../game/submit";
 import { baseFormSubstitution, totalRarityScore } from "../game/dictionary";
 import type { DailyProgress, Rarity, StreakState } from "../game/types";
-import { trackAcceptedAnswer, trackBaseFormSubstitution, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage } from "../analytics";
+import { trackAcceptedAnswer, trackBaseFormSubstitution, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage, trackVisitEngaged } from "../analytics";
+import { markSessionEngaged } from "../game/visits";
 
 export interface Feedback {
   kind: "accepted" | "rejected";
@@ -51,6 +52,11 @@ export function useDailyPuzzle() {
     (raw: string) => {
       const result = evaluateSubmission(raw, drop, progress.acceptedWords, viewedDate);
       feedbackKey.current += 1;
+
+      // The first submission of a session marks this visit as engaged play
+      // rather than an open-and-close, correlatable against site_visit volume.
+      const engagedVisit = markSessionEngaged();
+      if (engagedVisit) trackVisitEngaged(engagedVisit);
 
       if (!result.ok || !result.word) {
         const reason = result.reason ?? "not-a-word";

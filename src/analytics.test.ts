@@ -1,125 +1,152 @@
-import { track } from "@vercel/analytics";
-import { describe, expect, it, vi } from "vitest";
-import { campaignSourceFromSearch, trackAcceptedAnswer, trackBaseFormSubstitution, trackPuzzleCompleted, trackRejectedAnswer, trackRejectionMessage, trackResultCopied, trackResultSharedOnX, trackShareArrival, trackTwitterArrival, trackWordSuggestion } from "./analytics";
-import { rarityScore } from "./game/dictionary";
-import { puzzleNumber } from "./game/share";
-import type { DailyProgress, StreakState } from "./game/types";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  campaignSourceFromSearch,
+  trackRedditArrival,
+  trackResultCopied,
+  trackResultSharedOnX,
+  trackVisit,
+  trackVisitEngaged,
+} from "./analytics";
+import { recordVisit, type VisitOutcome } from "./game/visits";
 
-vi.mock("@vercel/analytics", () => ({ track: vi.fn() }));
+const track = vi.hoisted(() => vi.fn());
+vi.mock("@vercel/analytics", () => ({ track }));
 
-describe("rejection analytics", () => {
-  it("records a rejected answer separately from its feedback message", () => {
-    trackRejectedAnswer("2026-08-12", "AR", "  BaNANA  ");
-    trackRejectionMessage("2026-08-12", "proper-noun");
+afterEach(() => {
+  track.mockClear();
+});
 
-    expect(track).toHaveBeenCalledWith("answer_rejected", {
-      puzzle_date: "2026-08-12",
-      puzzle_number: puzzleNumber("2026-08-12"),
-      drop: "ar",
-      word: "banana",
+function outcome(overrides: Partial<VisitOutcome["state"]> = {}, rest: Partial<VisitOutcome> = {}): VisitOutcome {
+  return {
+    isFirstVisit: false,
+    isNewDay: true,
+    state: {
+      source: "reddit",
+      lastSource: "t",
+      firstVisitDate: "2024-01-01",
+      lastVisitDate: "2024-01-03",
+      timesReturned: 2,
+      daysReturned: 1,
+      ...overrides,
+    },
+    ...rest,
+  };
+}
+
+describe("visit events", () => {
+  it("site_visit and visit_engaged carry identical params", () => {
+    const o = outcome();
+    trackVisit(o);
+    trackVisitEngaged(o);
+
+    const expected = {
+      visit_type: "returning",
+      source: "reddit",
+      last_source: "twitter",
+      times_returned: 2,
+      days_returned: 1,
+      new_day: true,
+    };
+    expect(track).toHaveBeenNthCalledWith(1, "site_visit", expected);
+    expect(track).toHaveBeenNthCalledWith(2, "visit_engaged", expected);
+  });
+
+  it("maps share-link codes to readable source labels", () => {
+    trackVisit(outcome({ source: "sh" }));
+    trackVisit(outcome({ source: "t" }));
+    trackVisit(outcome({ source: "r" }));
+    trackVisit(outcome({ source: null }));
+    trackVisit(outcome({ source: "reddit" }));
+
+    const sources = track.mock.calls.map((call) => (call[1] as { source: string }).source);
+    expect(sources).toEqual(["share", "twitter", "reddit", "direct", "reddit"]);
+  });
+
+  it("passes an unrecognized s code through verbatim", () => {
+    trackVisit(outcome({ source: "z" }));
+    trackVisit(outcome({ source: "newsletter" }));
+
+    const sources = track.mock.calls.map((call) => (call[1] as { source: string }).source);
+    expect(sources).toEqual(["z", "newsletter"]);
+  });
+
+  it("tags a first-ever visit", () => {
+    trackVisit(outcome({ timesReturned: 0 }, { isFirstVisit: true }));
+    expect(track).toHaveBeenCalledWith(
+      "site_visit",
+      expect.objectContaining({ visit_type: "first" })
+    );
+  });
+});
+
+describe("share attribution", () => {
+  it("tracks copied results separately from X shares, tagged by method", () => {
+    localStorage.clear();
+    trackResultCopied();
+    trackResultSharedOnX();
+
+    expect(track).toHaveBeenCalledWith("result_copied", expect.objectContaining({ method: "copy" }));
+    expect(track).toHaveBeenCalledWith("result_shared_on_x", expect.objectContaining({ method: "x" }));
+  });
+
+  it("stamps a share with both the original and most-recent origin", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    // First arrival from a Reddit link, then a return via a Twitter link.
+    recordVisit("?s=r");
+    sessionStorage.clear();
+    recordVisit("?s=t");
+
+    trackResultCopied();
+
+    expect(track).toHaveBeenCalledWith("result_copied", {
+      method: "copy",
+      source: "reddit", // first-touch is sticky
+      last_source: "twitter", // last-touch follows the most recent link
+      visit_type: "returning",
+      times_returned: 1,
+      days_returned: 0,
     });
-    expect(track).toHaveBeenCalledWith("rejection_message_shown", {
-      puzzle_date: "2026-08-12",
-      puzzle_number: puzzleNumber("2026-08-12"),
-      rejection_reason: "proper-noun",
+  });
+
+  it("labels share-link origins the same way visit events do", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    recordVisit("?s=t");
+
+    trackResultSharedOnX();
+
+    expect(track).toHaveBeenCalledWith(
+      "result_shared_on_x",
+      expect.objectContaining({ source: "twitter" })
+    );
+  });
+
+  it("falls back to a direct first-time cohort when no visit was recorded", () => {
+    localStorage.clear();
+    trackResultSharedOnX();
+
+    expect(track).toHaveBeenCalledWith("result_shared_on_x", {
+      method: "x",
+      source: "direct",
+      last_source: "direct",
+      visit_type: "first",
+      times_returned: 0,
+      days_returned: 0,
     });
   });
 });
 
-describe("remaining game analytics", () => {
-  const streak: StreakState = {
-    currentStreak: 3,
-    longestStreak: 3,
-    totalCompleted: 3,
-    crushedIt: 2,
-    elite: 1,
-    highScore: 7,
-  };
-
-  it("tracks accepted answers with their score and current streak", () => {
-    trackAcceptedAnswer("2026-08-12", { word: "aardvark", rarity: "Extremely Rare", zipf: 2.4 }, 2, 14.8, 3);
-
-    expect(track).toHaveBeenCalledWith("answer_accepted", expect.objectContaining({
-      answer_count: 2,
-      word: "aardvark",
-      total_score: 14.8,
-      rarity: "Extremely Rare",
-      streak_days: 3,
-    }));
-  });
-
-  it("tracks completion using the rarest accepted word", () => {
-    const progress: DailyProgress = {
-      date: "2026-08-12",
-      drop: "ar",
-      acceptedWords: [
-        { word: "market", rarity: "Common", zipf: 4.6 },
-        { word: "aardvark", rarity: "Extremely Rare", zipf: 2.4 },
-      ],
-      rejectedAttempts: [],
-      completed: true,
-      won: true,
-    };
-    trackPuzzleCompleted(progress, "locked_in", streak);
-
-    expect(track).toHaveBeenCalledWith("puzzle_completed", expect.objectContaining({
-      answer_count: 2,
-      best_word: "aardvark",
-      best_rarity: "Extremely Rare",
-      won: true,
-      completion_method: "locked_in",
-      streak_days: 3,
-    }));
-  });
-
-  it("tracks copied results separately from X shares", () => {
-    trackResultCopied();
-    trackResultSharedOnX();
-
-    expect(track).toHaveBeenCalledWith("result_copied");
-    expect(track).toHaveBeenCalledWith("result_shared_on_x");
-  });
-
-  it("tracks Twitter and Share arrivals as separate events", () => {
-    trackTwitterArrival();
-    trackShareArrival();
-
-    expect(track).toHaveBeenCalledWith("arrived_from_twitter");
-    expect(track).toHaveBeenCalledWith("arrived_from_share");
-  });
-
-  it("maps the compact share-link code to its campaign source", () => {
+describe("campaign arrivals", () => {
+  it("maps the reddit share-link code to its campaign source", () => {
+    expect(campaignSourceFromSearch("?s=r")).toBe("reddit");
     expect(campaignSourceFromSearch("?s=sh")).toBe("share");
     expect(campaignSourceFromSearch("?s=t")).toBe("twitter");
     expect(campaignSourceFromSearch("?s=other")).toBeNull();
   });
-});
 
-describe("trackWordSuggestion", () => {
-  it("records a normalized suggested word", () => {
-    trackWordSuggestion("  GastroEnterology ");
-
-    expect(track).toHaveBeenCalledWith("word_suggested", { word: "gastroenterology" });
-  });
-});
-
-describe("trackBaseFormSubstitution", () => {
-  it("records the original and base words with both of their scores", () => {
-    const date = "2026-08-16";
-    trackBaseFormSubstitution(date, {
-      word: "trivialization",
-      base: "trivialize",
-      ownZipf: 1.64,
-      baseZipf: 2.1,
-    });
-
-    expect(track).toHaveBeenCalledWith("base_form_substituted", {
-      puzzle_date: date,
-      puzzle_number: puzzleNumber(date),
-      original_word: "trivialization",
-      original_score: rarityScore(1.64, date),
-      base_word: "trivialize",
-      base_score: rarityScore(2.1, date),
-    });
+  it("records a Reddit arrival", () => {
+    trackRedditArrival();
+    expect(track).toHaveBeenCalledWith("arrived_from_reddit");
   });
 });

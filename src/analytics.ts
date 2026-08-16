@@ -3,6 +3,7 @@ import { rarityScore, type BaseFormSubstitution } from "./game/dictionary";
 import { bestWord } from "./game/rank";
 import { puzzleNumber } from "./game/share";
 import type { AcceptedWord, DailyProgress, RejectionReason, StreakState } from "./game/types";
+import { currentVisit, type VisitOutcome } from "./game/visits";
 
 /**
  * Send game activity to Vercel without player-identifying information.
@@ -86,14 +87,30 @@ export function trackPuzzleCompleted(
   });
 }
 
+/**
+ * Origin and retention dimensions for the current player, attached to share
+ * events so a share can be attributed to where the sharer first arrived from
+ * and whether they are a first-timer or a returning visitor.
+ */
+function visitDimensions() {
+  const state = currentVisit();
+  return {
+    source: visitSource(state?.source ?? null),
+    last_source: visitSource(state?.lastSource ?? null),
+    visit_type: state && state.timesReturned > 0 ? "returning" : "first",
+    times_returned: state?.timesReturned ?? 0,
+    days_returned: state?.daysReturned ?? 0,
+  };
+}
+
 /** Record a successful copy from the standard Share button. */
 export function trackResultCopied() {
-  track("result_copied");
+  track("result_copied", { method: "copy", ...visitDimensions() });
 }
 
 /** Record a click on the X share button. */
 export function trackResultSharedOnX() {
-  track("result_shared_on_x");
+  track("result_shared_on_x", { method: "x", ...visitDimensions() });
 }
 
 /** Record visitors who arrive through an X share link. */
@@ -106,10 +123,54 @@ export function trackShareArrival() {
   track("arrived_from_share");
 }
 
+/** Record visitors who arrive through a tagged Reddit link (`s=r`). */
+export function trackRedditArrival() {
+  track("arrived_from_reddit");
+}
+
+/** Map compact arrival codes to readable analytics source labels. */
+function visitSource(code: string | null): string {
+  if (code === "sh") return "share";
+  if (code === "t") return "twitter";
+  if (code === "r") return "reddit";
+  return code ?? "direct";
+}
+
+/** The shared dimensions carried by both visit events so they line up 1:1. */
+function visitProperties(outcome: VisitOutcome) {
+  return {
+    visit_type: outcome.isFirstVisit ? "first" : "returning",
+    source: visitSource(outcome.state.source),
+    last_source: visitSource(outcome.state.lastSource ?? null),
+    times_returned: outcome.state.timesReturned,
+    days_returned: outcome.state.daysReturned,
+    new_day: outcome.isNewDay,
+  };
+}
+
+/**
+ * Record each first-of-session app open, tagged as a first-ever visit or a
+ * return. Carries the arrival source and both retention counters so returning
+ * visitors can be measured by count, by distinct days, and by origin.
+ */
+export function trackVisit(outcome: VisitOutcome) {
+  track("site_visit", visitProperties(outcome));
+}
+
+/**
+ * Record that a visit produced an actual submission rather than just an open
+ * and close. Carries the same params as `site_visit`, so comparing the two by
+ * source or return count gives the share of visits that convert to play.
+ */
+export function trackVisitEngaged(outcome: VisitOutcome) {
+  track("visit_engaged", visitProperties(outcome));
+}
+
 /** Convert compact share-link codes into analytics campaign sources. */
-export function campaignSourceFromSearch(search: string): "share" | "twitter" | null {
+export function campaignSourceFromSearch(search: string): "share" | "twitter" | "reddit" | null {
   const code = new URLSearchParams(search).get("s");
   if (code === "sh") return "share";
   if (code === "t") return "twitter";
+  if (code === "r") return "reddit";
   return null;
 }
