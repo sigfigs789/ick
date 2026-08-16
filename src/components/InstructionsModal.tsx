@@ -44,13 +44,12 @@ export function InstructionsModal({ open, onClose }: Props) {
             ×
           </button>
         </div>
-        <ol className="modal__steps">
-          <li>WordInk gives everyone the same daily drop—say, “INK”. Find the rarest English word you can that contains it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</li>
-        </ol>
+        <p className="modal__copy">WordInk gives everyone the same daily drop—say, “INK”. Find the rarest English word you can that contains it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</p>
         <p className="modal__rarity-note">
           Rarity scores reflect how often words appear across sources including books, news, movies,
           websites, social media, and more. Values are then computed using Zipf’s law. They do not reflect how complex a word is. The highest ranks are Legend at 9.9+ rarity and Mythic at 9.5+ rarity.
         </p>
+        <p className="modal__signoff">Made by one person, for fun. Thanks for playing. 🙂</p>
       </div>
     </div>
   );
