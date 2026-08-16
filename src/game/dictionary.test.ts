@@ -45,7 +45,7 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_470);
+    expect(dictionaryWords).toHaveLength(225_476);
   });
 
   it("accepts a common real word", () => {
@@ -147,6 +147,32 @@ describe("isValidWord", () => {
   it("rejects blocklisted abbreviations", () => {
     expect(isValidWord("aka")).toBe(false);
   });
+});
+
+// Legitimate words that players submitted but the game wrongly rejected, found
+// in the rejected-word analytics and re-added via scripts/extra-words.txt. Each
+// gets its own case pinning the rarity/Zipf the pipeline assigned it, so a future
+// regen can't silently drop or re-score one without a deliberate update here.
+describe("curated additions from rejected-word analytics", () => {
+  const analyticsAdditions: ReadonlyArray<[string, string, number]> = [
+    ["astroturf", "Extremely Rare", 2.46],
+    ["brobdingnagian", "Extremely Rare", 1.55],
+    ["stromboli", "Extremely Rare", 2.18],
+    ["carcinisation", "Legend", -1.57],
+    ["carcinization", "Legend", -1.57],
+    ["dendrimeric", "Legend", -1.57],
+  ];
+
+  it.each(analyticsAdditions)(
+    "accepts %s and pins its recorded rarity and Zipf",
+    (word, rarity, zipf) => {
+      expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
+      expect(rarityFor(word), `${word} should keep its recorded rarity/zipf`).toEqual({
+        rarity,
+        zipf,
+      });
+    },
+  );
 });
 
 describe("rarityFor", () => {

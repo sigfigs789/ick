@@ -32,8 +32,10 @@ RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 REJECTION_METADATA_PATH = ROOT / "src" / "data" / "rejection-metadata.json"
 BLOCKLIST_PATH = SCRIPTS / "blocklist.txt"
 
-# Same input gate as manage-extra-word.py's add: English letters, 1-15 long.
-WORD_RE = re.compile(r"^[a-z]{1,15}$")
+# Same input gate as manage-extra-word.py's add: English letters, no length cap
+# (the game's own validator in submit.ts and generate-data.py impose no upper
+# bound either, so long real words like "gastroenterologist" stay eligible).
+WORD_RE = re.compile(r"^[a-z]+$")
 
 # The four categories generate-data.py records in rejection-metadata.json, mapped
 # to the same player-facing wording submit.ts shows in REJECTION_MESSAGES.
@@ -93,8 +95,8 @@ def check(raw_word: str) -> tuple[bool, str]:
         lines += [
             "**❌ Not a valid input.**",
             "",
-            "A word must contain only English letters (a–z) and be 1–15 characters "
-            "long. Hyphens, spaces, digits, and punctuation aren't eligible.",
+            "A word must contain only English letters (a–z). Hyphens, spaces, "
+            "digits, and punctuation aren't eligible.",
         ]
         return False, "\n".join(lines)
 

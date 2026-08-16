@@ -165,9 +165,9 @@ describe("rejection metadata coverage", () => {
     abbreviation: 1821,
     archaic: 10309,
     dated: 2108,
-    "name-or-abbreviation": 11590,
+    "name-or-abbreviation": 11588,
     obsolete: 63353,
-    "proper-noun": 18243,
+    "proper-noun": 18242,
   };
   const metadata = rejectionMetadata as Record<string, readonly string[]>;
 
@@ -180,6 +180,6 @@ describe("rejection metadata coverage", () => {
 
   it("pins the total number of words with a rejection reason", () => {
     const total = Object.values(metadata).reduce((sum, words) => sum + words.length, 0);
-    expect(total).toBe(107_424);
+    expect(total).toBe(107_421);
   });
 });
