@@ -16,7 +16,7 @@ describe("InstructionsModal", () => {
   it("names Legend and Mythic as the highest ranks with their rarity thresholds", () => {
     render(<InstructionsModal open onClose={vi.fn()} />);
     expect(
-      screen.getByText(/the highest ranks are Legend at 9\.9\+ rarity and Mythic at 9\.5\+ rarity/i),
+      screen.getByText(/the highest ranks are Legend and Mythic at 9\.9\+ and 9\.5\+ rarity/i),
     ).toBeInTheDocument();
   });
 
