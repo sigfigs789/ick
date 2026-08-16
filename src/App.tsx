@@ -14,6 +14,7 @@ import { ConfettiBurst } from "./components/ConfettiBurst";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
+import { APP_VERSION } from "./version";
 import { isWinningRarity } from "./game/rank";
 import { topRarityScore, totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
@@ -177,6 +178,12 @@ export default function App() {
 
       <InstructionsModal open={showInstructions} onClose={() => setShowInstructions(false)} />
       <WordRulesModal open={showWordRules} onClose={() => setShowWordRules(false)} />
+
+      {import.meta.env.DEV && (
+        <footer className="app__footer">
+          <p>Force-update test — running v{APP_VERSION} 👋</p>
+        </footer>
+      )}
     </div>
   );
 }
