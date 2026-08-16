@@ -11,6 +11,15 @@ function emitVersionJson(): Plugin {
   return {
     name: 'emit-version-json',
     generateBundle() {
+      // Guard against the one config that bricks the app: a floor above the
+      // shipped bundle makes even fresh loads reload forever. Fail the build
+      // rather than deploy a reload loop.
+      if (MIN_VERSION > APP_VERSION) {
+        this.error(
+          `MIN_VERSION (${MIN_VERSION}) must not exceed APP_VERSION (${APP_VERSION}) — ` +
+            `this would force an infinite reload loop for all users. Fix src/version.ts.`,
+        )
+      }
       this.emitFile({
         type: 'asset',
         fileName: 'version.json',
