@@ -13,6 +13,7 @@ import { PuzzleNav } from "./components/PuzzleNav";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
+import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { topRarityScore, totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
@@ -27,6 +28,7 @@ import {
 import { recordVisit } from "./game/visits";
 
 export default function App() {
+  useForceUpdate();
   const {
     date,
     puzzleNumber,
