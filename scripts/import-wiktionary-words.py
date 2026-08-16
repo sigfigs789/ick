@@ -8,17 +8,20 @@ Two outputs from a single pass over the Wiktextract dump:
      names, and words with an unknown rarity score out of the game data.
 
   2. wiktionary-reasons.json -- for the words Wiktionary marks as ineligible
-     (proper nouns, abbreviations) or out of current use (obsolete / archaic /
-     dated), a `{reason: [sorted words]}` map in the same shape as
-     src/data/rejection-metadata.json. generate-data.py merges this with the
-     ESDB classification so a rejected word gets an accurate error message.
+     (proper nouns, abbreviations), a misspelling/mangling of another headword
+     (misspelling, pronunciation spelling, misconstruction), or out of current
+     use (obsolete / archaic / dated), a `{reason: [sorted words]}` map in the
+     same shape as src/data/rejection-metadata.json. generate-data.py merges
+     this with the ESDB classification so a rejected word gets an accurate
+     error message.
 
      Tags are per *sense*: a word archaic in one sense but current in another
-     stays playable. So a word earns a status reason only when *every* ordinary
-     sense is out of use, and a name/abbreviation reason only when it has no
-     ordinary part of speech at all. When a word is disqualified by more than
-     one status the mildest surviving register wins (dated over archaic over
-     obsolete) so the message never overstates how dead the word is.
+     stays playable. So a word earns a status or misspelling reason only when
+     *every* ordinary sense qualifies, and a name/abbreviation reason only when
+     it has no ordinary part of speech at all. When a word is disqualified by
+     more than one status the mildest surviving register wins (dated over
+     archaic over obsolete) so the message never overstates how dead the word
+     is.
 
 The resulting data is derived from Wiktionary and must remain attributed under
 CC BY-SA 4.0. See the header written to the output file.
@@ -53,11 +56,17 @@ STATUS_SEVERITY = {"obsolete": 3, "archaic": 2, "dated": 1}
 SEVERITY_REASON = {3: "obsolete", 2: "archaic", 1: "dated"}
 # Sense tags that mark a sense as an abbreviation rather than an ordinary word.
 ABBREV_TAGS = {"abbreviation", "initialism", "acronym"}
-# Sense tags that mark a sense as a misspelling of another headword (e.g.
-# "freind" glossed as "Misspelling of friend."), rather than a word in its own
-# right. wordfreq still assigns these a nonzero score -- people type them often
-# enough to show up in corpora -- so this check is what keeps them out of play.
-MISSPELLING_TAGS = {"misspelling", "pronunciation-spelling"}
+# Sense tags that mark a sense as not a word in its own right, but a wrong
+# rendering of another headword: a misspelling (e.g. "freind" glossed as
+# "Misspelling of friend."), a phonetic/pronunciation spelling of one (which
+# Wiktextract's {{eye dialect of}} template also tags this way), or a
+# grammatically wrong formation of one ({{misconstruction of}}, e.g.
+# "temptative" for "tentative"). wordfreq still assigns these a nonzero score
+# -- people type them often enough to show up in corpora -- so this check is
+# what keeps them out of play. Deliberately narrow: broader register tags like
+# "nonstandard"/"informal"/"rare" also mark plenty of legitimately playable
+# words, so they'd cause false exclusions if added here.
+MISSPELLING_TAGS = {"misspelling", "pronunciation-spelling", "misconstruction"}
 
 
 def sense_severity(tags: set[str]) -> int:
