@@ -78,9 +78,17 @@ The dictionary, rarity, and rejection guidance data are precomputed offline,
 not queried live.
 To regenerate them:
 
+The ESDB/SCOWL checkout below is pinned to a fixed commit (also pinned in the
+`add-word.yml`/`add-online-words.yml` GitHub Actions) so word classification
+(proper-noun/abbreviation/obsolete/etc.) can't silently drift between runs and
+break the counts pinned in `src/game/submit.test.ts`. Bump the SHA in all
+three places deliberately, then regenerate and re-pin any test counts that
+shift as a result.
+
 ```bash
 pip3 install --user wordfreq
 git clone https://github.com/en-wl/wordlist.git /tmp/esdb
+git -C /tmp/esdb checkout 1e5b7d3a72f47a71da5d28686c1dd4b397178485
 make -C /tmp/esdb
 /tmp/esdb/scowl --db /tmp/esdb/scowl.db word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > /tmp/scowl-regional-80.txt
 python3 scripts/import-wiktionary-words.py # streams the full English Wiktionary extract
@@ -129,7 +137,8 @@ To recreate the ESDB/SCOWL source list:
 
 ```bash
 git clone https://github.com/en-wl/wordlist.git /tmp/esdb
-cd /tmp/esdb && make
+git -C /tmp/esdb checkout 1e5b7d3a72f47a71da5d28686c1dd4b397178485
+make -C /tmp/esdb
 /tmp/esdb/scowl --db /tmp/esdb/scowl.db word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > /tmp/scowl-regional-80.txt
 python3 scripts/generate-data.py --word-list /tmp/scowl-regional-80.txt --esdb-db /tmp/esdb/scowl.db
 ```
@@ -141,6 +150,7 @@ rejection explanations against the checked-in dictionary:
 
 ```bash
 git clone https://github.com/en-wl/wordlist.git /tmp/esdb
+git -C /tmp/esdb checkout 1e5b7d3a72f47a71da5d28686c1dd4b397178485
 make -C /tmp/esdb
 python3 scripts/generate-data.py --metadata-only --esdb-db /tmp/esdb/scowl.db
 ```
