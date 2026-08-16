@@ -3,7 +3,7 @@ import { rarityScore, type BaseFormSubstitution } from "./game/dictionary";
 import { bestWord } from "./game/rank";
 import { puzzleNumber } from "./game/share";
 import type { AcceptedWord, DailyProgress, RejectionReason, StreakState } from "./game/types";
-import type { VisitOutcome, VisitState } from "./game/visits";
+import type { VisitOutcome } from "./game/visits";
 
 /**
  * Send game activity to Vercel without player-identifying information.
@@ -107,32 +107,40 @@ export function trackShareArrival() {
   track("arrived_from_share");
 }
 
+/** Map compact arrival codes to readable analytics source labels. */
+function visitSource(code: string | null): string {
+  if (code === "sh") return "share";
+  if (code === "t") return "twitter";
+  return code ?? "direct";
+}
+
+/** The shared dimensions carried by both visit events so they line up 1:1. */
+function visitProperties(outcome: VisitOutcome) {
+  return {
+    visit_type: outcome.isFirstVisit ? "first" : "returning",
+    source: visitSource(outcome.state.source),
+    times_returned: outcome.state.timesReturned,
+    days_returned: outcome.state.daysReturned,
+    new_day: outcome.isNewDay,
+  };
+}
+
 /**
  * Record each first-of-session app open, tagged as a first-ever visit or a
  * return. Carries the arrival source and both retention counters so returning
  * visitors can be measured by count, by distinct days, and by origin.
  */
 export function trackVisit(outcome: VisitOutcome) {
-  track("site_visit", {
-    visit_type: outcome.isFirstVisit ? "first" : "returning",
-    source: outcome.state.source ?? "direct",
-    times_returned: outcome.state.timesReturned,
-    days_returned: outcome.state.daysReturned,
-    new_day: outcome.isNewDay,
-  });
+  track("site_visit", visitProperties(outcome));
 }
 
 /**
  * Record that a visit produced an actual submission rather than just an open
- * and close. Compared against `site_visit` volume, this gives the share of
- * visits that convert to play, broken out by source and return counts.
+ * and close. Carries the same params as `site_visit`, so comparing the two by
+ * source or return count gives the share of visits that convert to play.
  */
-export function trackVisitEngaged(state: VisitState) {
-  track("visit_engaged", {
-    source: state.source ?? "direct",
-    times_returned: state.timesReturned,
-    days_returned: state.daysReturned,
-  });
+export function trackVisitEngaged(outcome: VisitOutcome) {
+  track("visit_engaged", visitProperties(outcome));
 }
 
 /** Convert compact share-link codes into analytics campaign sources. */

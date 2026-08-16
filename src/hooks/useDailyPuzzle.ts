@@ -55,8 +55,8 @@ export function useDailyPuzzle() {
 
       // The first submission of a session marks this visit as engaged play
       // rather than an open-and-close, correlatable against site_visit volume.
-      const engagedState = markSessionEngaged();
-      if (engagedState) trackVisitEngaged(engagedState);
+      const engagedVisit = markSessionEngaged();
+      if (engagedVisit) trackVisitEngaged(engagedVisit);
 
       if (!result.ok || !result.word) {
         const reason = result.reason ?? "not-a-word";

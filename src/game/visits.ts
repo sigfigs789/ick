@@ -15,6 +15,8 @@ import { todayDateString } from "./date";
  */
 
 const VISITS_KEY = "ick:visits";
+// Holds this session's VisitOutcome as JSON, so both the visit and the later
+// engagement event report identical params, and reloads don't recount.
 const VISIT_SESSION_KEY = "ick:visit-counted";
 const ENGAGED_SESSION_KEY = "ick:visit-engaged";
 
@@ -83,11 +85,11 @@ export function arrivalSource(search: string): string | null {
  */
 export function recordVisit(search: string, today: string = todayDateString()): VisitOutcome | null {
   if (safeGet(sessionStorage, VISIT_SESSION_KEY)) return null;
-  safeSet(sessionStorage, VISIT_SESSION_KEY, "1");
 
   const source = arrivalSource(search);
   const existing = loadState();
 
+  let outcome: VisitOutcome;
   if (!existing) {
     const state: VisitState = {
       source,
@@ -96,30 +98,39 @@ export function recordVisit(search: string, today: string = todayDateString()): 
       timesReturned: 0,
       daysReturned: 0,
     };
-    saveState(state);
-    return { state, isFirstVisit: true, isNewDay: true };
+    outcome = { state, isFirstVisit: true, isNewDay: true };
+  } else {
+    const isNewDay = existing.lastVisitDate !== today;
+    const state: VisitState = {
+      source: existing.source ?? source,
+      firstVisitDate: existing.firstVisitDate,
+      lastVisitDate: today,
+      timesReturned: existing.timesReturned + 1,
+      daysReturned: existing.daysReturned + (isNewDay ? 1 : 0),
+    };
+    outcome = { state, isFirstVisit: false, isNewDay };
   }
 
-  const isNewDay = existing.lastVisitDate !== today;
-  const state: VisitState = {
-    source: existing.source ?? source,
-    firstVisitDate: existing.firstVisitDate,
-    lastVisitDate: today,
-    timesReturned: existing.timesReturned + 1,
-    daysReturned: existing.daysReturned + (isNewDay ? 1 : 0),
-  };
-  saveState(state);
-  return { state, isFirstVisit: false, isNewDay };
+  saveState(outcome.state);
+  safeSet(sessionStorage, VISIT_SESSION_KEY, JSON.stringify(outcome));
+  return outcome;
 }
 
 /**
  * Marks that the player actually engaged this session (submitted an answer)
- * rather than just opening and closing. Returns the current visit state the
- * first time it's called in a session so the caller can fire an engagement
- * event once, or `null` on subsequent submissions in the same session.
+ * rather than just opening and closing. Returns this session's visit outcome
+ * the first time it's called so the caller can fire an engagement event with
+ * the same params as the visit, or `null` on later submissions in the session
+ * (or if no visit was recorded first).
  */
-export function markSessionEngaged(): VisitState | null {
+export function markSessionEngaged(): VisitOutcome | null {
   if (safeGet(sessionStorage, ENGAGED_SESSION_KEY)) return null;
+  const raw = safeGet(sessionStorage, VISIT_SESSION_KEY);
+  if (!raw) return null;
   safeSet(sessionStorage, ENGAGED_SESSION_KEY, "1");
-  return loadState();
+  try {
+    return JSON.parse(raw) as VisitOutcome;
+  } catch {
+    return null;
+  }
 }

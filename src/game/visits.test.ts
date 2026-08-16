@@ -121,20 +121,27 @@ describe("recordVisit", () => {
 });
 
 describe("markSessionEngaged", () => {
-  it("returns the visit state once per session then null", () => {
+  it("returns this session's visit outcome once, then null", () => {
     recordVisit("?s=reddit");
     const first = markSessionEngaged();
-    expect(first).toMatchObject({ source: "reddit", timesReturned: 0 });
+    expect(first).toMatchObject({
+      isFirstVisit: true,
+      isNewDay: true,
+      state: { source: "reddit", timesReturned: 0 },
+    });
     expect(markSessionEngaged()).toBeNull();
 
     newSession();
     // recordVisit re-arms this session before the player engages again.
     recordVisit("");
-    expect(markSessionEngaged()).not.toBeNull();
+    expect(markSessionEngaged()).toMatchObject({
+      isFirstVisit: false,
+      state: { timesReturned: 1 },
+    });
   });
 
-  it("returns null state when engaged before any visit was recorded", () => {
-    // No recordVisit call: nothing persisted yet.
+  it("returns null when engaged before any visit was recorded", () => {
+    // No recordVisit call: nothing stashed for this session yet.
     expect(markSessionEngaged()).toBeNull();
   });
 });
