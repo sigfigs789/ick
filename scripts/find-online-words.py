@@ -6,7 +6,7 @@ same way the app does -- see src/game/drop.ts and src/game/date.ts over
 src/data/drops.json -- then asks Datamuse (a free, key-less word API) for words
 whose spelling contains the drop substring, and keeps only the ones that are:
 
-  - valid inputs (1-15 lowercase a-z letters) that actually contain the drop,
+  - valid inputs (lowercase a-z letters, any length) that actually contain the drop,
   - not blocklisted,
   - not already playable (absent from dictionary.json and every provenance list),
   - attested by the frequency waterfall (wordfreq -> Norvig -> Google Books), so
@@ -46,7 +46,8 @@ LIST_PATHS = [
 ]
 
 DATAMUSE_URL = "https://api.datamuse.com/words"
-WORD_RE = re.compile(r"^[a-z]{1,15}$")
+# English letters only, no upper length cap (long real words stay eligible).
+WORD_RE = re.compile(r"^[a-z]+$")
 
 
 def log(message: str) -> None:
