@@ -616,3 +616,16 @@ zendik
 zinco
 zizzle
 zymic
+
+# Legitimate words players submitted that were wrongly rejected (from the
+# rejected-word analytics). Proper nouns, archaic terms, and misspellings from
+# that same data are intentionally excluded; these are the standard-English
+# survivors. "astroturf" (generic verb) and "brobdingnagian" only appeared
+# capitalized upstream; "stromboli" (the food) upstream was a proper noun; the
+# carcini(s/z)ation pair and "dendrimeric" are attested but too rare to score.
+brobdingnagian
+astroturf
+stromboli
+carcinisation
+carcinization
+dendrimeric
