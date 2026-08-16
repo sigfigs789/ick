@@ -81,9 +81,25 @@ To regenerate them:
 The ESDB/SCOWL checkout below is pinned to a fixed commit (also pinned in the
 `add-word.yml`/`add-online-words.yml` GitHub Actions) so word classification
 (proper-noun/abbreviation/obsolete/etc.) can't silently drift between runs and
-break the counts pinned in `src/game/submit.test.ts`. Bump the SHA in all
-three places deliberately, then regenerate and re-pin any test counts that
-shift as a result.
+break the counts pinned in `src/game/submit.test.ts`.
+
+**Whenever you do a full regen and want to pick up a newer ESDB/SCOWL
+commit** (rather than reusing the pinned one below), update the pin
+everywhere it's referenced, in this order, or `add-word.yml`/
+`add-online-words.yml` will silently regenerate against a stale ESDB commit
+on their next run and reclassify words out from under whatever you just
+checked in:
+
+1. Note the new commit's SHA from `en-wl/wordlist` (default branch `v2`).
+2. Regenerate locally against that commit and commit the resulting
+   `dictionary.json`/`rarity.json`/`rejection-metadata.json`.
+3. Re-pin the same SHA in the `ref:` of the "Check out ESDB/SCOWL" step in
+   both `add-word.yml` and `add-online-words.yml`.
+4. Update the SHA in this README's three `git checkout` commands below.
+5. Run the full test suite and re-pin any counts in `src/game/submit.test.ts`
+   (and other pinned-count tests) that shifted as a result.
+
+All of the above should land in the same commit/PR.
 
 ```bash
 pip3 install --user wordfreq
