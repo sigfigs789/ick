@@ -37,8 +37,8 @@ const MW_STATUS_SEVERITY: Record<string, number> = { obsolete: 3, archaic: 2 };
 // the input's own, so long real words ("gastroenterologist") stay eligible.
 const WORD_RE = /^[a-z]{2,30}$/;
 const USER_AGENT = "WordInk live word check (wordink.app)";
-// Upstream calls are bounded so the function can't hang; the client has already
-// stopped waiting after 1s, but a wedged request would still burn quota.
+// Upstream calls are bounded so the function can't hang; the client stops waiting
+// after LIVE_HANDOFF_MS, but a wedged request would still hold quota.
 const UPSTREAM_TIMEOUT_MS = 5000;
 
 type Outcome = "playable" | "rejected" | "unknown" | "error";
@@ -61,8 +61,14 @@ interface LiveCheckBody {
   pos: string[];
   /** MW's first-known-use date, e.g. "1961" or "12th century". */
   firstUse: string | null;
-  /** Which MW reference answered: "collegiate", "medical", or null on a miss. */
+  /** Which MW reference answered: "collegiate", "medical", "collegiate+medical", or null. */
   source?: string | null;
+  /**
+   * A lookup problem that did not stop an answer being produced -- one reference
+   * failed while the other still replied. The verdict stands, but the caller
+   * should report this so a half-broken lookup is visible.
+   */
+  failure?: { reason: string; detail: string; status: number | null } | null;
 }
 
 // Only the fields we read from an MW entry. The sense tree under `def` is deeply
@@ -349,47 +355,78 @@ export default async function handler(request: Request): Promise<Response> {
     );
   }
 
-  // The references are consulted in order and the first one that actually has
-  // the word decides. Collegiate is the general-English authority, so it is
-  // asked first; Medical is only reached for a word Collegiate has never heard
-  // of (like "piloerection"). Each reference has its own daily quota, so
-  // stopping early means an ordinary word costs one request rather than two.
+  // Both references are queried at the same time, and their matching entries are
+  // pooled before classifying. That means a word either one lists as current is
+  // playable: Collegiate calling a sense archaic cannot veto Medical listing it
+  // as a live clinical term, because the per-sense rule only rejects when *every*
+  // ordinary sense found anywhere is out of use. Running them concurrently also
+  // costs one round-trip rather than two.
+  const settled = await Promise.allSettled(
+    configured.map(([reference, key]) =>
+      fetchMw(reference, word, key).then((data) => ({ reference, data }))
+    )
+  );
+
   const entries: MwEntry[] = [];
-  let source: string | null = null;
-  for (const [reference, key] of configured) {
-    let data: unknown[];
-    try {
-      data = await fetchMw(reference, word, key);
-    } catch (error) {
-      // Quota and key problems are reported, not swallowed -- silently treating
-      // them as "no opinion" is exactly how a broken lookup goes unnoticed.
-      if (error instanceof UpstreamError) return json(errorBody(word, error), 502, false);
-      throw error;
+  const sources: string[] = [];
+  let failure: UpstreamError | undefined;
+  for (const result of settled) {
+    if (result.status === "rejected") {
+      // Keep the first upstream problem so it can be reported even if the other
+      // reference still answers -- a silently half-broken lookup is the thing
+      // most likely to go unnoticed.
+      if (result.reason instanceof UpstreamError) failure ??= result.reason;
+      else throw result.reason;
+      continue;
     }
-    for (const raw of data) {
+    const matches = result.value.data.filter((raw) => {
       // A miss comes back as an array of spelling-suggestion strings.
-      if (!raw || typeof raw !== "object") continue;
-      const entry = raw as MwEntry;
-      const stem = String(entry.meta?.id ?? "").split(":")[0];
-      if (stem.toLowerCase() === word) entries.push(entry);
-    }
-    if (entries.length > 0) {
-      source = reference;
-      break;
+      if (!raw || typeof raw !== "object") return false;
+      const stem = String((raw as MwEntry).meta?.id ?? "").split(":")[0];
+      return stem.toLowerCase() === word;
+    }) as MwEntry[];
+    if (matches.length > 0) {
+      entries.push(...matches);
+      sources.push(result.value.reference);
     }
   }
 
+  // No evidence at all *and* something broke: "unknown" would be an assertion we
+  // can't support, since the failed reference may well have had the word.
+  if (entries.length === 0 && failure) {
+    return json(errorBody(word, failure), 502, false);
+  }
+
+  const source = sources.join("+") || null;
   const classification = classify(entries);
+
+  // If a reference approved the word, that is a success, full stop -- a problem
+  // reaching the *other* reference changed nothing about the answer, so it is not
+  // reported as a failure. A partial failure only matters when the word was not
+  // approved: there, the reference we couldn't reach might have been the one that
+  // would have approved it, so the verdict is genuinely incomplete and the client
+  // reports it. Such a response is also left uncached, since a fuller answer may
+  // be available on the next try.
+  const partial =
+    failure && classification.outcome !== "playable"
+      ? { reason: failure.reason, detail: failure.detail, status: failure.status ?? null }
+      : null;
+
   if (classification.outcome !== "playable") {
-    return json({
-      word,
-      outcome: classification.outcome,
-      reason: classification.reason,
-      zipf: null,
-      pos: classification.pos,
-      firstUse: classification.firstUse,
-      source,
-    });
+    return json(
+      {
+        word,
+        outcome: classification.outcome,
+        reason: classification.reason,
+        zipf: null,
+        pos: classification.pos,
+        firstUse: classification.firstUse,
+        source,
+        failure: partial,
+      },
+      200,
+      partial === null
+    );
   }
 
   // The word is playable; try for a real frequency so it scores on a gradient
@@ -402,13 +439,18 @@ export default async function handler(request: Request): Promise<Response> {
     zipf = null;
   }
 
-  return json({
-    word,
-    outcome: "playable",
-    reason: null,
-    zipf,
-    pos: classification.pos,
-    firstUse: classification.firstUse,
-    source,
-  });
+  return json(
+    {
+      word,
+      outcome: "playable",
+      reason: null,
+      zipf,
+      pos: classification.pos,
+      firstUse: classification.firstUse,
+      source,
+      failure: partial,
+    },
+    200,
+    partial === null
+  );
 }

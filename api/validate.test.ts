@@ -272,63 +272,81 @@ describe("api/validate failure reporting", () => {
 });
 
 describe("api/validate reference coverage", () => {
-  /** Collegiate misses (spelling suggestions); the medical reference has it. */
-  function stubMedicalOnly(entry: unknown) {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: string | URL | Request) => {
-        const href = String(url);
-        if (href.includes("datamuse")) return new Response("[]", { status: 200 });
-        const body = href.includes("/medical/") ? [entry] : ["piloerector", "pilocarpine"];
-        return new Response(JSON.stringify(body), { status: 200 });
-      })
-    );
+  /** Per-reference control: what collegiate and medical each answer. */
+  function stubReferences(options: {
+    collegiate?: unknown;
+    medical?: unknown;
+    collegiateStatus?: number;
+    medicalStatus?: number;
+    body?: string;
+  }) {
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      const href = String(url);
+      if (href.includes("datamuse")) return new Response("[]", { status: 200 });
+      const medical = href.includes("/medical/");
+      const status = medical ? options.medicalStatus : options.collegiateStatus;
+      if (status && status !== 200) {
+        return new Response(options.body ?? "You have exceeded your daily request limit.", {
+          status,
+        });
+      }
+      // A miss answers with spelling-suggestion strings, not entries.
+      const data = (medical ? options.medical : options.collegiate) ?? ["suggestion"];
+      return new Response(JSON.stringify(data), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
   }
+
+  const ORDINARY = (id: string) => ({ meta: { id }, fl: "noun", def: [{}] });
+  const ARCHAIC = (id: string) => ({
+    meta: { id },
+    fl: "noun",
+    def: [{ sls: ["archaic"], sseq: [[["sense", {}]]] }],
+  });
+
+  it("queries both references at once rather than one after the other", async () => {
+    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
+    const fetchMock = stubReferences({ collegiate: [ORDINARY("cat")] });
+    await handler(request("cat"));
+
+    const references = fetchMock.mock.calls.map(([url]) => String(url));
+    expect(references.some((u) => u.includes("/collegiate/"))).toBe(true);
+    expect(references.some((u) => u.includes("/medical/"))).toBe(true);
+  });
 
   it("accepts a word only the medical reference attests", async () => {
     withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
-    stubMedicalOnly({ meta: { id: "piloerection" }, fl: "noun", def: [{}] });
-    expect(await body(await handler(request("piloerection")))).toMatchObject({
-      outcome: "playable",
-    });
-  });
-
-  it("stops at collegiate when it has the word, sparing the medical quota", async () => {
-    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
-    const fetchMock = stubFetch({ mw: [CAT] });
-    const result = await body(await handler(request("cat")));
-
-    expect(result).toMatchObject({ outcome: "playable", source: "collegiate" });
-    const references = fetchMock.mock.calls.map(([url]) => String(url));
-    expect(references.some((u) => u.includes("/collegiate/"))).toBe(true);
-    expect(references.some((u) => u.includes("/medical/"))).toBe(false);
-  });
-
-  it("only reaches medical for a word collegiate has never heard of", async () => {
-    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
-    stubMedicalOnly({ meta: { id: "piloerection" }, fl: "noun", def: [{}] });
-    expect(await body(await handler(request("piloerection")))).toMatchObject({
+    stubReferences({ medical: [ORDINARY("costochondritis")] });
+    expect(await body(await handler(request("costochondritis")))).toMatchObject({
       outcome: "playable",
       source: "medical",
     });
   });
 
-  it("decides from collegiate even when its verdict is a rejection", async () => {
-    // "atm" is an abbreviation in collegiate; medical must not be asked to
-    // second-guess it, which would double the quota cost of every rejection.
+  it("accepts a word medical lists as current even when collegiate calls it archaic", async () => {
+    // The point of pooling both references: one reference calling a sense archaic
+    // cannot veto the other listing it as a live term.
     withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
-    const fetchMock = stubFetch({ mw: [{ meta: { id: "atm" }, fl: "abbreviation" }] });
-    expect(await body(await handler(request("atm")))).toMatchObject({
-      outcome: "rejected",
-      reason: "abbreviation",
-      source: "collegiate",
+    stubReferences({ collegiate: [ARCHAIC("emesis")], medical: [ORDINARY("emesis")] });
+    expect(await body(await handler(request("emesis")))).toMatchObject({
+      outcome: "playable",
+      source: "collegiate+medical",
     });
-    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/medical/"))).toBe(false);
+  });
+
+  it("still rejects a word both references call archaic", async () => {
+    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
+    stubReferences({ collegiate: [ARCHAIC("erst")], medical: [ARCHAIC("erst")] });
+    expect(await body(await handler(request("erst")))).toMatchObject({
+      outcome: "rejected",
+      reason: "archaic",
+    });
   });
 
   it("reports no source when neither reference has the word", async () => {
     withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
-    stubFetch({ mw: ["suggestion"] });
+    stubReferences({});
     expect(await body(await handler(request("zzzzqx")))).toMatchObject({
       outcome: "unknown",
       source: null,
@@ -341,6 +359,76 @@ describe("api/validate reference coverage", () => {
     expect(await body(await handler(request("cat")))).toMatchObject({
       reason: "quota-exceeded",
       status: 429,
+    });
+  });
+});
+
+describe("api/validate partial failures", () => {
+  function stubReferences(options: {
+    collegiate?: unknown;
+    medical?: unknown;
+    collegiateStatus?: number;
+    medicalStatus?: number;
+  }) {
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      const href = String(url);
+      if (href.includes("datamuse")) return new Response("[]", { status: 200 });
+      const medical = href.includes("/medical/");
+      const status = medical ? options.medicalStatus : options.collegiateStatus;
+      if (status && status !== 200) {
+        return new Response("You have exceeded your daily request limit.", { status });
+      }
+      const data = (medical ? options.medical : options.collegiate) ?? ["suggestion"];
+      return new Response(JSON.stringify(data), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  const ORDINARY = (id: string) => ({ meta: { id }, fl: "noun", def: [{}] });
+
+  it("counts an approval as a success even when the other reference failed", async () => {
+    // One reference being down changed nothing about the answer, so it is not
+    // reported as a failure.
+    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
+    const response = await (async () => {
+      stubReferences({ collegiateStatus: 403, medical: [ORDINARY("costochondritis")] });
+      return handler(request("costochondritis"));
+    })();
+
+    expect(await body(response)).toMatchObject({
+      outcome: "playable",
+      source: "medical",
+      failure: null,
+    });
+    // A definitive approval is still worth caching.
+    expect(response.headers.get("cache-control")).toContain("s-maxage=86400");
+  });
+
+  it("reports the failure when the surviving reference did not approve", async () => {
+    // Here the reference we couldn't reach might have been the one that would
+    // have approved it, so the verdict is genuinely incomplete.
+    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
+    stubReferences({ collegiateStatus: 403, medical: [{ meta: { id: "atm" }, fl: "abbreviation" }] });
+    const response = await handler(request("atm"));
+
+    expect(await body(response)).toMatchObject({
+      outcome: "rejected",
+      reason: "abbreviation",
+      failure: { reason: "quota-exceeded", status: 403 },
+    });
+    // An incomplete verdict must not be cached for a day.
+    expect(response.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("errors rather than claiming a word is unknown when a reference failed", async () => {
+    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
+    stubReferences({ collegiateStatus: 403 });
+    const response = await handler(request("zzzzqx"));
+    expect(response.status).toBe(502);
+    expect(await body(response)).toMatchObject({
+      outcome: "error",
+      reason: "quota-exceeded",
     });
   });
 });

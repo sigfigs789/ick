@@ -8,6 +8,7 @@
 //      and whatever it finds is still reported (and still counted, see
 //      useDailyPuzzle).
 
+import { todayDateString } from "./date";
 import type { RejectionReason } from "./types";
 
 /**
@@ -41,7 +42,22 @@ const ELIGIBLE_RE = /^[a-z]{2,30}$/;
  */
 const PERMANENT_FAILURES = new Set(["quota-exceeded", "invalid-key", "unconfigured", "forbidden"]);
 
+/**
+ * The most lookups one browser may trigger in a day. MW's non-commercial
+ * allowance is 1,000 requests per reference per day for the whole game, so no
+ * single player gets to spend more than a small slice of it: 50 caps one browser
+ * at 5%, while still being far more than a real session of six guesses a day
+ * could use.
+ *
+ * This is a client-side budget, so it deters ordinary over-use rather than
+ * enforcing anything -- clearing site data resets it. A hard limit would need
+ * per-IP state on the server, which this deployment has nowhere to keep.
+ */
+export const LIVE_DAILY_LOOKUP_CAP = 50;
+
 const DISABLED_KEY = "ick:live-check-disabled";
+const COUNT_KEY = "ick:live-check-count";
+const REPORTED_KEY = "ick:live-check-reported";
 
 /**
  * Fallback for when sessionStorage is unavailable (Safari private mode throws on
@@ -69,11 +85,57 @@ function disabledReason(): string | null {
   }
 }
 
-/** Clear the session's disabled flag. Exists for tests and the dev reset. */
+/**
+ * How many lookups this browser has already spent today. Keyed by date so the
+ * budget refills when MW's own daily allowance does.
+ */
+function lookupsToday(): number {
+  try {
+    const raw = localStorage.getItem(COUNT_KEY);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw) as { date?: string; count?: number };
+    if (parsed.date !== todayDateString()) return 0;
+    return typeof parsed.count === "number" ? parsed.count : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function countLookup(): void {
+  try {
+    localStorage.setItem(
+      COUNT_KEY,
+      JSON.stringify({ date: todayDateString(), count: lookupsToday() + 1 })
+    );
+  } catch {
+    // Without storage the budget can't be tracked; the request still goes ahead.
+  }
+}
+
+/**
+ * Whether a failure with this reason still needs reporting this session. A
+ * half-broken lookup (one reference down, the other answering) would otherwise
+ * fire an identical event on every single word.
+ */
+export function shouldReportFailure(reason: string): boolean {
+  try {
+    const seen = (sessionStorage.getItem(REPORTED_KEY) ?? "").split(",").filter(Boolean);
+    if (seen.includes(reason)) return false;
+    sessionStorage.setItem(REPORTED_KEY, [...seen, reason].join(","));
+    return true;
+  } catch {
+    // Can't dedupe without storage; better to report twice than never.
+    return true;
+  }
+}
+
+/** Clear this session's flags and today's budget. For tests and the dev reset. */
 export function resetLiveCheckSession(): void {
   disabledInMemory = null;
   try {
     sessionStorage.removeItem(DISABLED_KEY);
+    sessionStorage.removeItem(REPORTED_KEY);
+    localStorage.removeItem(COUNT_KEY);
   } catch {
     // Nothing persisted, nothing to clear.
   }
@@ -110,8 +172,13 @@ export interface LiveCheck {
   pos: string[];
   /** MW's first-known-use date, e.g. "1961" or "12th century". */
   firstUse: string | null;
-  /** Which MW reference answered: "collegiate", "medical", or null on a miss. */
+  /** Which MW reference answered: "collegiate", "medical", "collegiate+medical", or null. */
   source: string | null;
+  /**
+   * A lookup problem worth reporting even though a verdict was produced -- one MW
+   * reference failed while the other answered. Null when the lookup was clean.
+   */
+  failure: { reason: string; detail: string | null; status: number | null } | null;
   /** Wall-clock time the lookup took, for latency reporting. */
   elapsedMs: number;
 }
@@ -166,8 +233,32 @@ function blank(
     pos: [],
     firstUse: null,
     source: null,
+    failure: outcome === "error" && reason ? { reason, detail, status } : null,
     elapsedMs,
   };
+}
+
+/**
+ * The lookup problem, if any, that the caller should report. The endpoint sends a
+ * `failure` object when one MW reference broke while the other still answered
+ * *and* the word wasn't approved; a total failure carries its reason at the top
+ * level instead, so both shapes normalise to the same thing here.
+ */
+function parsedFailure(
+  parsed: { failure?: LiveCheck["failure"] },
+  reason: string | null,
+  detail: string | null,
+  status: number | null
+): LiveCheck["failure"] {
+  const sent = parsed.failure;
+  if (sent && typeof sent === "object" && typeof sent.reason === "string") {
+    return {
+      reason: sent.reason,
+      detail: typeof sent.detail === "string" ? sent.detail : null,
+      status: typeof sent.status === "number" ? sent.status : null,
+    };
+  }
+  return reason ? { reason, detail, status } : null;
 }
 
 /**
@@ -182,6 +273,12 @@ export async function checkWordLive(word: string): Promise<LiveCheck> {
   // round-trip discovering it again on every subsequent word.
   const disabled = disabledReason();
   if (disabled) return blank(normalized, "disabled", disabled, 0);
+
+  // One browser may not spend an unbounded share of the game's daily allowance.
+  if (lookupsToday() >= LIVE_DAILY_LOOKUP_CAP) {
+    return blank(normalized, "disabled", "user-cap-reached", 0);
+  }
+  countLookup();
 
   const started = Date.now();
   const elapsed = () => Date.now() - started;
@@ -225,16 +322,25 @@ export async function checkWordLive(word: string): Promise<LiveCheck> {
     disableForSession(reason);
   }
 
+  const detail = typeof parsed.detail === "string" ? parsed.detail : null;
+  const status = typeof parsed.status === "number" ? parsed.status : null;
+
   return {
     word: normalized,
     outcome,
     reason,
-    detail: typeof parsed.detail === "string" ? parsed.detail : null,
-    status: typeof parsed.status === "number" ? parsed.status : null,
+    detail,
+    status,
     zipf: typeof parsed.zipf === "number" && Number.isFinite(parsed.zipf) ? parsed.zipf : null,
     pos: Array.isArray(parsed.pos) ? parsed.pos.filter((p): p is string => typeof p === "string") : [],
     firstUse: typeof parsed.firstUse === "string" ? parsed.firstUse : null,
     source: typeof parsed.source === "string" ? parsed.source : null,
+    // Only a total failure puts its reason at the top level; otherwise the
+    // endpoint's own `failure` object is the only source.
+    failure:
+      outcome === "error"
+        ? parsedFailure(parsed, reason, detail, status)
+        : parsedFailure(parsed, null, null, null),
     elapsedMs: elapsed(),
   };
 }

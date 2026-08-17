@@ -111,14 +111,18 @@ export function trackMerriamWebsterApproved(
  * malformed-response cases. A failure says nothing about the word itself.
  */
 export function trackMerriamWebsterFailed(date: string, drop: string, check: LiveCheck) {
+  // A half-broken lookup carries its problem in `failure` while the top-level
+  // fields describe the verdict, so the failure object is the source of truth.
+  const failure = check.failure;
   track("merriam_webster_failed", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     drop: drop.toLowerCase(),
     word: check.word,
-    reason: check.reason ?? "unknown",
-    detail: (check.detail ?? "").slice(0, 200) || "none",
-    status: check.status ?? 0,
+    reason: failure?.reason ?? check.reason ?? "unknown",
+    detail: (failure?.detail ?? check.detail ?? "").slice(0, 200) || "none",
+    status: failure?.status ?? check.status ?? 0,
+    partial: check.outcome !== "error",
     elapsed_ms: check.elapsedMs,
   });
 }

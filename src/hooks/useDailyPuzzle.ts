@@ -18,6 +18,7 @@ import {
   eligibleForLiveCheck,
   LIVE_INDICATOR_DELAY_MS,
   rejectionReasonForLive,
+  shouldReportFailure,
   STILL_PENDING,
   withHandoff,
   type LiveCheck,
@@ -168,7 +169,11 @@ export function useDailyPuzzle() {
         return { ok: false, reason: "not-a-word" };
       }
 
-      if (check.outcome === "error") {
+      // A word that was approved is a success even if the other reference broke,
+      // so nothing is reported there (see api/validate.ts). Anything else that
+      // carries a failure is reported once per reason per session -- a dead key
+      // would otherwise fire an identical event on every word.
+      if (check.failure && shouldReportFailure(check.failure.reason)) {
         trackMerriamWebsterFailed(viewedDate, drop, check);
       }
       const reason = rejectionReasonForLive(check);

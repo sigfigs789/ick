@@ -168,6 +168,7 @@ function liveCheck(overrides: Partial<LiveCheck> = {}): LiveCheck {
     pos: ["noun"],
     firstUse: "circa 1724",
     source: "collegiate",
+    failure: null,
     elapsedMs: 420,
     ...overrides,
   };
@@ -246,6 +247,7 @@ describe("merriam-webster events", () => {
       reason: "quota-exceeded",
       detail: "You have exceeded your daily request limit.",
       status: 403,
+      partial: false,
       elapsed_ms: 420,
     });
   });
