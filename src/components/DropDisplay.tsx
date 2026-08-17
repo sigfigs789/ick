@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { formatDateLabel } from "../game/date";
 import { bestWordForDrop } from "../game/dictionary";
+import { WordDefinition } from "./WordDefinition";
 
 interface Props {
   drop: string;
@@ -33,7 +34,10 @@ export function DropDisplay({ drop, date, isToday = true, completed = false }: P
         </p>
       )}
       {completed && best && (
-        <p className="drop-display__ceiling-word">{best.word}</p>
+        <p className="drop-display__ceiling-word">
+          <span className="drop-display__ceiling-word-text">{best.word}</span>
+          <WordDefinition word={best.word} />
+        </p>
       )}
     </div>
   );
