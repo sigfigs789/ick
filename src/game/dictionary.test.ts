@@ -258,13 +258,14 @@ describe("rarityFor", () => {
     expect(rarityFor("trivialization")).toEqual(rarityFor("trivialize"));
   });
 
-  it("awards the 10.0 max and Legend to a word no corpus attests", () => {
+  it("floors a word no corpus attests to 9.90 and Legend", () => {
     // "autecism" is absent from every frequency source (and its stem too), so
-    // the waterfall gives it the rarest-word sentinel -- the only Zipf that
-    // earns a perfect 10, which lands in the deep-tail Legend rank.
+    // the waterfall gives it the rarest-word sentinel. The latest system floors
+    // that sentinel to 9.90 -- the elite-band bottom, still the Legend rank --
+    // rather than the perfect 10, which is reserved for attested deep-tail words.
     const floored = rarityFor("autecism")!;
     expect(floored.rarity).toBe("Legend");
-    expect(rarityScore(floored.zipf)).toBe(10);
+    expect(rarityScore(floored.zipf)).toBe(9.9);
   });
 
   it("awards Legend for a rank of 9.9+ and Mythic for 9.5-9.89", () => {
@@ -312,12 +313,12 @@ describe("rarityScore", () => {
 
   it("normalizes against the dictionary's Zipf range", () => {
     // "the" is the dictionary's most common word (highest Zipf) -- it anchors
-    // the 0.0 score. Only the rarest-word sentinel (words no corpus attests)
-    // anchors 10.0; an attested-but-rare word lands just below it.
+    // the 0.0 score. An attested deep-tail word anchors the perfect 10; the
+    // rarest-word sentinel (words no corpus attests) floors to 9.90 instead.
     const mostCommon = rarityFor("the")!;
     const floored = rarityFor("autecism")!;
     expect(rarityScore(mostCommon.zipf)).toBe(0);
-    expect(rarityScore(floored.zipf)).toBe(10);
+    expect(rarityScore(floored.zipf)).toBe(9.9);
     expect(rarityScore(2.4)).toBeGreaterThan(rarityScore(3.3));
   });
 });
