@@ -153,7 +153,7 @@ def check(raw_word: str) -> tuple[bool, str]:
             "No frequency corpus (wordfreq → Norvig → Google Books) attests this "
             "word, so it has no measured rarity. The **Add a word** action would "
             "reject it unless run with `forced=true` (which scores it the maximum "
-            "10.0 / Mythic)."
+            "10.0 / Legend)."
         )
     else:
         lines.append(
