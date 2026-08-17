@@ -5,6 +5,7 @@ import { todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { isValidWord } from "../game/dictionary";
 import { resetLiveCheckSession } from "../game/liveValidate";
+import { LIVE_CHECK_NOTE } from "./useDailyPuzzle";
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
@@ -99,42 +100,55 @@ describe("useDailyPuzzle live fallback", () => {
     expect(accepted.rarity).toBe("Legend");
   });
 
-  it("shows nothing at all when the lookup answers quickly", async () => {
-    // The common case: the check must be invisible. A single feedback event --
-    // the acceptance -- means no "Looking deeper" flicker preceded it.
+  it("says a check is running from the moment it starts", async () => {
+    stubValidate(playable(3.0), 800);
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    let pending: Promise<unknown> | undefined;
+    await act(async () => {
+      pending = result.current.submitWord(OFF_LIST_WORD);
+      // Barely any time at all: the note is already up, so the wait is never
+      // an unexplained pause.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE);
+    expect(result.current.feedback).toBeNull();
+
+    await act(async () => {
+      await pending;
+    });
+
+    // The verdict arrives *alongside* the note, not instead of it -- the note is
+    // what the verdict gets rendered above (see FeedbackRegion).
+    expect(result.current.feedback?.kind).toBe("accepted");
+    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE);
+  });
+
+  it("carries no note for a submission that never needs a lookup", async () => {
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord("qqqqzz");
+    });
+
+    expect(result.current.liveNote).toBeNull();
+  });
+
+  it("clears the previous note when the next word is submitted", async () => {
     stubValidate(playable(3.0));
     const { result } = renderHook(() => useDailyPuzzle());
 
     await act(async () => {
       await result.current.submitWord(OFF_LIST_WORD);
     });
+    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE);
 
-    expect(result.current.feedback?.kind).toBe("accepted");
-    expect(result.current.feedback?.key).toBe(1);
+    await act(async () => {
+      await result.current.submitWord("qqqqzz");
+    });
+    expect(result.current.liveNote).toBeNull();
   });
-
-  it("explains a slow lookup once it passes 1.5s, then resolves it", async () => {
-    // Slow enough to earn the indicator, still inside the 4s budget.
-    stubValidate(playable(3.0), 2500);
-    const { result } = renderHook(() => useDailyPuzzle());
-
-    let pending: Promise<unknown> | undefined;
-    await act(async () => {
-      pending = result.current.submitWord(OFF_LIST_WORD);
-      await new Promise((resolve) => setTimeout(resolve, 1800));
-    });
-
-    expect(result.current.feedback?.kind).toBe("checking");
-    expect(result.current.feedback?.message).toBe("Looking deeper");
-
-    await act(async () => {
-      await pending;
-    });
-
-    // The indicator is replaced by the real verdict, not left behind.
-    expect(result.current.feedback?.kind).toBe("accepted");
-    expect(result.current.progress.acceptedWords).toHaveLength(1);
-  }, 15000);
 
   it("rejects a word Merriam-Webster knows but the game shouldn't take", async () => {
     stubValidate({
@@ -181,7 +195,7 @@ describe("useDailyPuzzle live fallback", () => {
 
   it("stops blocking after the handoff window, then still banks a late approval", async () => {
     // Answers well after LIVE_HANDOFF_MS, so the player is released first.
-    stubValidate(playable(3.0), 4400);
+    stubValidate(playable(3.0), 5400);
     const { result } = renderHook(() => useDailyPuzzle());
 
     await act(async () => {
@@ -270,7 +284,7 @@ describe("useDailyPuzzle live fallback", () => {
   });
 
   it("still reports an approval that lands after the handoff", async () => {
-    stubValidate(playable(3.0), 4400);
+    stubValidate(playable(3.0), 5400);
     const { result } = renderHook(() => useDailyPuzzle());
 
     await act(async () => {

@@ -16,7 +16,6 @@ import { baseFormSubstitution, rarityForZipf, totalRarityScore, unattestedZipf }
 import {
   checkWordLive,
   eligibleForLiveCheck,
-  LIVE_INDICATOR_DELAY_MS,
   rejectionReasonForLive,
   shouldReportFailure,
   STILL_PENDING,
@@ -44,8 +43,11 @@ import {
 } from "../analytics";
 import { markSessionEngaged } from "../game/visits";
 
+/** Shown from the moment a live lookup starts until the next submission. */
+export const LIVE_CHECK_NOTE = "Checking beyond the list…";
+
 export interface Feedback {
-  kind: "accepted" | "rejected" | "checking";
+  kind: "accepted" | "rejected";
   message: string;
   rarity?: Rarity;
   /** Bumped on every feedback event so screen readers re-announce repeats. */
@@ -73,6 +75,10 @@ export function useDailyPuzzle() {
   const [streak, setStreak] = useState<StreakState>(() => loadStreak());
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const feedbackKey = useRef(0);
+  // Set while a live lookup is running. It is deliberately *not* cleared when the
+  // verdict lands: the verdict renders above it and pushes it down, so the player
+  // sees what happened rather than a message that blinks out of existence.
+  const [liveNote, setLiveNote] = useState<string | null>(null);
 
   // A live lookup can settle long after `submitWord` returned, so the bookkeeping
   // it does must read the newest progress rather than the value captured by the
@@ -94,6 +100,7 @@ export function useDailyPuzzle() {
     progressRef.current = loaded;
     setProgress(loaded);
     setFeedback(null);
+    setLiveNote(null);
   }, [viewedDate, drop]);
 
   const showFeedback = useCallback((kind: Feedback["kind"], message: string, rarity?: Rarity) => {
@@ -186,6 +193,8 @@ export function useDailyPuzzle() {
   const submitWord = useCallback(
     async (raw: string): Promise<SubmissionResult> => {
       const result = evaluateSubmission(raw, drop, progressRef.current.acceptedWords, viewedDate);
+      // Each submission starts from a clean slate; last guess's note is gone.
+      setLiveNote(null);
 
       // The first submission of a session marks this visit as engaged play
       // rather than an open-and-close, correlatable against site_visit volume.
@@ -217,16 +226,11 @@ export function useDailyPuzzle() {
         () => inFlight.current.delete(word)
       );
 
-      // Say nothing at first. A lookup that answers quickly -- nearly all of
-      // them -- should be invisible: showing and then replacing a message inside
-      // a few hundred milliseconds is just a flicker. Only a wait long enough to
-      // look like a hang earns an explanation.
-      const indicator = window.setTimeout(
-        () => showFeedback("checking", "Looking deeper"),
-        LIVE_INDICATOR_DELAY_MS
-      );
+      // Say so immediately. An unexplained pause is what reads as broken; a
+      // stated one reads as work being done, which is why the wait can afford to
+      // be as long as LIVE_HANDOFF_MS.
+      setLiveNote(LIVE_CHECK_NOTE);
       const settled = await withHandoff(lookup);
-      window.clearTimeout(indicator);
       if (settled !== STILL_PENDING) {
         return applyLiveCheck(raw, settled);
       }
@@ -258,6 +262,7 @@ export function useDailyPuzzle() {
     progressRef.current = fresh;
     setProgress(fresh);
     setFeedback(null);
+    setLiveNote(null);
   }, [viewedDate, drop]);
 
   const goToPrevious = useCallback(() => {
@@ -286,5 +291,6 @@ export function useDailyPuzzle() {
     submitWord,
     lockIn,
     resetAnswers,
+    liveNote,
   };
 }

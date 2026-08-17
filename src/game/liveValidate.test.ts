@@ -4,7 +4,6 @@ import {
   resetLiveCheckSession,
   eligibleForLiveCheck,
   LIVE_HANDOFF_MS,
-  LIVE_INDICATOR_DELAY_MS,
   rejectionReasonForLive,
   STILL_PENDING,
   withHandoff,
@@ -184,14 +183,9 @@ describe("withHandoff", () => {
     expect(await withHandoff(failing, 10)).toBe(STILL_PENDING);
   });
 
-  it("defaults to the four-second player-facing budget", () => {
-    expect(LIVE_HANDOFF_MS).toBe(4000);
-  });
-
-  it("stays quiet for the first 1.5s, well inside the budget", () => {
-    // The indicator must appear before the handoff, or it would never show.
-    expect(LIVE_INDICATOR_DELAY_MS).toBe(1500);
-    expect(LIVE_INDICATOR_DELAY_MS).toBeLessThan(LIVE_HANDOFF_MS);
+  it("defaults to the five-second player-facing budget", () => {
+    // Affordable because the player is told a check is running from the start.
+    expect(LIVE_HANDOFF_MS).toBe(5000);
   });
 });
 

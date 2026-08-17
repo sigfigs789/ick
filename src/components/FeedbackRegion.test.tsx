@@ -34,6 +34,31 @@ describe("FeedbackRegion", () => {
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
+  it("keeps the note below the verdict so the verdict pushes it down", () => {
+    const { rerender } = render(
+      <FeedbackRegion feedback={null} note="Checking beyond the list…" onWordRules={vi.fn()} />
+    );
+
+    // While the check runs, the note is the only thing with text.
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    expect(screen.getByText("Checking beyond the list…")).toBeInTheDocument();
+
+    rerender(
+      <FeedbackRegion
+        feedback={{ kind: "accepted", message: '"emesis" accepted — Rare.', key: 1 }}
+        note="Checking beyond the list…"
+        onWordRules={vi.fn()}
+      />
+    );
+
+    // Both are present, and the verdict comes first in document order, so it
+    // renders above and displaces the note downward.
+    const stack = screen.getByText("Checking beyond the list…").parentElement!;
+    const texts = [...stack.children].map((child) => child.textContent);
+    expect(texts[0]).toContain('"emesis" accepted');
+    expect(texts[1]).toBe("Checking beyond the list…");
+  });
+
   it("offers rejected submissions a link to the word rules", async () => {
     const onWordRules = vi.fn();
     render(

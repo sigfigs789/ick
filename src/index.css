@@ -753,9 +753,15 @@ h2 {
   transform: scale(0.97);
 }
 /* Live feedback */
-.feedback {
+/* Reserves the toast's space so a verdict appearing doesn't shift the page. The
+   note sits below the verdict inside this stack, so when a verdict lands it takes
+   the top slot and pushes the note down rather than replacing it. */
+.feedback-stack {
   min-height: 1.6rem;
   margin: 0.6rem 0 1.25rem;
+}
+.feedback {
+  margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
   padding: 0;
@@ -780,12 +786,21 @@ h2 {
   color: var(--danger-fg);
 }
 /* A word not on the curated list is being checked against Merriam-Webster.
-   Deliberately neutral and centered: it is not a verdict yet, just a note that
-   the answer is still coming (see LIVE_HANDOFF_MS). */
-.feedback--checking {
-  background: color-mix(in srgb, currentColor 8%, transparent);
-  color: inherit;
+   Deliberately quiet and centered: it is not a verdict, just a note that the
+   answer is still coming (see LIVE_HANDOFF_MS). */
+.feedback-note {
+  margin: 0.35rem 0 0;
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   text-align: center;
+  opacity: 0;
+  background: color-mix(in srgb, currentColor 6%, transparent);
+  transition: opacity 0.35s var(--ease-standard);
+}
+.feedback-note--shown {
+  opacity: 0.75;
 }
 .feedback__more-info {
   margin-left: 0.4rem;
