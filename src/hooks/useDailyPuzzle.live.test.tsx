@@ -5,7 +5,7 @@ import { todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { isValidWord } from "../game/dictionary";
 import { resetLiveCheckSession } from "../game/liveValidate";
-import { LIVE_CHECK_NOTE } from "./useDailyPuzzle";
+import { LIVE_CHECK_NOTES } from "./useDailyPuzzle";
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
@@ -112,17 +112,34 @@ describe("useDailyPuzzle live fallback", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
 
-    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE);
+    expect(LIVE_CHECK_NOTES).toContain(result.current.liveNote);
     expect(result.current.feedback).toBeNull();
 
     await act(async () => {
       await pending;
     });
 
-    // The verdict arrives *alongside* the note, not instead of it -- the note is
-    // what the verdict gets rendered above (see FeedbackRegion).
+    // The verdict arrives *alongside* the note, not instead of it: the note sits
+    // under the guess log, which the accepted word has just grown by a row.
     expect(result.current.feedback?.kind).toBe("accepted");
-    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE);
+    expect(LIVE_CHECK_NOTES).toContain(result.current.liveNote);
+  });
+
+  it("moves through the rotation so two lookups never read the same", async () => {
+    stubValidate(playable(3.0));
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord(OFF_LIST_WORD);
+    });
+    const first = result.current.liveNote;
+
+    await act(async () => {
+      await result.current.submitWord(`${DROP.toLowerCase()}qxw`);
+    });
+
+    expect(result.current.liveNote).not.toBe(first);
+    expect(LIVE_CHECK_NOTES).toContain(result.current.liveNote);
   });
 
   it("carries no note for a submission that never needs a lookup", async () => {
@@ -142,7 +159,7 @@ describe("useDailyPuzzle live fallback", () => {
     await act(async () => {
       await result.current.submitWord(OFF_LIST_WORD);
     });
-    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE);
+    expect(LIVE_CHECK_NOTES).toContain(result.current.liveNote);
 
     await act(async () => {
       await result.current.submitWord("qqqqzz");

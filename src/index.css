@@ -753,15 +753,9 @@ h2 {
   transform: scale(0.97);
 }
 /* Live feedback */
-/* Reserves the toast's space so a verdict appearing doesn't shift the page. The
-   note sits below the verdict inside this stack, so when a verdict lands it takes
-   the top slot and pushes the note down rather than replacing it. */
-.feedback-stack {
+.feedback {
   min-height: 1.6rem;
   margin: 0.6rem 0 1.25rem;
-}
-.feedback {
-  margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
   padding: 0;
@@ -785,22 +779,24 @@ h2 {
   background: var(--danger-bg);
   color: var(--danger-fg);
 }
-/* A word not on the curated list is being checked against Merriam-Webster.
-   Deliberately quiet and centered: it is not a verdict, just a note that the
-   answer is still coming (see LIVE_HANDOFF_MS). */
-.feedback-note {
-  margin: 0.35rem 0 0;
-  padding: 0.35rem 0.7rem;
-  border-radius: 0.5rem;
+/* A word not on the curated list is being checked (see LIVE_HANDOFF_MS). Bare
+   left-aligned text with no container: it is not a verdict, just a quiet note
+   that an answer is still coming, so it must not compete with the toast. */
+.live-note {
+  margin: 0.5rem 0 0.75rem;
+  color: var(--fg-faint);
   font-size: 0.8rem;
   font-weight: 600;
-  text-align: center;
-  opacity: 0;
-  background: color-mix(in srgb, currentColor 6%, transparent);
-  transition: opacity 0.35s var(--ease-standard);
+  font-style: italic;
+  animation: live-note-in 0.35s var(--ease-standard);
 }
-.feedback-note--shown {
-  opacity: 0.75;
+@keyframes live-note-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .feedback__more-info {
   margin-left: 0.4rem;

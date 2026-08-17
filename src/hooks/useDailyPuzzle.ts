@@ -46,12 +46,35 @@ import { markSessionEngaged } from "../game/visits";
 /**
  * Shown from the moment a live lookup starts until the next submission.
  *
- * Deliberately says nothing about *where* the game is looking: naming a
- * dictionary would advertise the fallback and invite players to game it. A
- * playful present participle -- the same shape as a "thinking" indicator -- reads
- * as effort being spent on their word, which is all they need to know.
+ * Deliberately says nothing about *where* the game is looking: naming a second
+ * dictionary would advertise the fallback and invite players to fish for words
+ * the curated list doesn't have. These are playful present participles -- the
+ * same shape as a "thinking" indicator -- so they read as effort being spent on
+ * the player's word, which is all they need to know.
  */
-export const LIVE_CHECK_NOTE = "Rummaging…";
+export const LIVE_CHECK_NOTES = [
+  "Rummaging…",
+  "Digging…",
+  "Poring…",
+  "Sifting…",
+  "Foraging…",
+  "Delving…",
+  "Burrowing…",
+  "Ferreting…",
+  "Scrounging…",
+  "Spelunking…",
+] as const;
+
+// Advanced rather than randomised so two lookups in a row never show the same
+// word (which would read as a frozen message) and so tests stay predictable.
+let noteIndex = 0;
+
+/** The next note in the rotation. */
+export function nextLiveCheckNote(): string {
+  const note = LIVE_CHECK_NOTES[noteIndex % LIVE_CHECK_NOTES.length];
+  noteIndex += 1;
+  return note;
+}
 
 export interface Feedback {
   kind: "accepted" | "rejected";
@@ -236,7 +259,7 @@ export function useDailyPuzzle() {
       // Say so immediately. An unexplained pause is what reads as broken; a
       // stated one reads as work being done, which is why the wait can afford to
       // be as long as LIVE_HANDOFF_MS.
-      setLiveNote(LIVE_CHECK_NOTE);
+      setLiveNote(nextLiveCheckNote());
       const settled = await withHandoff(lookup);
       if (settled !== STILL_PENDING) {
         return applyLiveCheck(raw, settled);

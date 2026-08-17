@@ -131,6 +131,10 @@ export default function App() {
           date={date}
         />
 
+        {/* Sits directly under the log, so an accepted word pushes it down as the
+            log grows by a row. */}
+        {liveNote && <p className="live-note">{liveNote}</p>}
+
         {!progress.completed && (
           <SubmitForm
             drop={drop}
@@ -139,11 +143,7 @@ export default function App() {
             onSubmit={submitWord}
           />
         )}
-        <FeedbackRegion
-          feedback={feedback}
-          note={liveNote}
-          onWordRules={() => setShowWordRules(true)}
-        />
+        <FeedbackRegion feedback={feedback} onWordRules={() => setShowWordRules(true)} />
 
         {import.meta.env.DEV && (
           <button type="button" className="dev-reset-button" onClick={resetAnswers}>
