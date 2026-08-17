@@ -57,7 +57,7 @@ export function WordRulesModal({ open, onClose }: Props) {
           </button>
         </div>
         <p className="modal__copy">
-          WordInk's curated word list is sourced from SCOWL, <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>) and more, and contains over 200,000 words. It also uses <a href="https://dictionaryapi.com/" target="_blank" rel="noreferrer">Merriam-Webster</a> to check words that aren't on the list yet, so a real, current English word can still count. To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play.
+          WordInk's curated word list is sourced from SCOWL, <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>) and more, and contains over 200,000 words. To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play.
         </p>
         <p className="modal__copy">
           I'm continuously expanding the list to include more delightful and interesting words. Have a good word in mind? Suggest it and improve the experience for everyone!
