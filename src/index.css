@@ -238,7 +238,9 @@ h2 {
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.15s var(--ease-standard), transform 0.15s var(--ease-standard);
+  transition:
+    background-color 0.15s var(--ease-standard),
+    transform 0.15s var(--ease-standard);
 }
 .app__icon-button:hover {
   background: var(--bg-inset);
@@ -286,7 +288,10 @@ h2 {
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  transition: background-color 0.15s var(--ease-standard), color 0.15s var(--ease-standard), transform 0.15s var(--ease-standard);
+  transition:
+    background-color 0.15s var(--ease-standard),
+    color 0.15s var(--ease-standard),
+    transform 0.15s var(--ease-standard);
 }
 .puzzle-nav__arrow:not(:disabled):hover {
   background: var(--accent);
@@ -523,7 +528,9 @@ h2 {
   align-items: center;
   color: var(--fg-muted);
   opacity: 0.45;
-  transition: opacity 0.15s var(--ease-standard), color 0.15s var(--ease-standard);
+  transition:
+    opacity 0.15s var(--ease-standard),
+    color 0.15s var(--ease-standard);
 }
 /* Share-button-style "Copied!" confirmation that replaces the copy icon on tap. */
 .guess-log__copied {
@@ -620,7 +627,8 @@ h2 {
 }
 .rarity--extremely-rare .rarity-badge__dot {
   background: var(--rarity-extremely-rare-dot);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-extremely-rare-dot) 25%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--rarity-extremely-rare-dot) 25%, transparent);
 }
 .rarity--mythic {
   background: var(--rarity-mythic-bg);
@@ -628,7 +636,8 @@ h2 {
 }
 .rarity--mythic .rarity-badge__dot {
   background: var(--rarity-mythic-dot);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-mythic-dot) 28%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--rarity-mythic-dot) 28%, transparent);
 }
 .rarity--legend {
   background: var(--rarity-legend-bg);
@@ -636,7 +645,8 @@ h2 {
 }
 .rarity--legend .rarity-badge__dot {
   background: var(--rarity-legend-dot);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-legend-dot) 32%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--rarity-legend-dot) 32%, transparent);
 }
 
 /* Submit form */
@@ -709,7 +719,9 @@ h2 {
   color: var(--accent-fg);
   cursor: pointer;
   min-height: 2.85rem;
-  transition: background-color 0.15s var(--ease-standard), transform 0.1s var(--ease-standard);
+  transition:
+    background-color 0.15s var(--ease-standard),
+    transform 0.1s var(--ease-standard);
 }
 .share-button {
   text-decoration: none;
@@ -750,7 +762,9 @@ h2 {
   border-radius: 0.5rem;
   opacity: 0;
   transform: translateY(-4px);
-  transition: opacity 0.35s var(--ease-standard), transform 0.35s var(--ease-standard);
+  transition:
+    opacity 0.35s var(--ease-standard),
+    transform 0.35s var(--ease-standard);
 }
 .feedback--shown {
   opacity: 1;
@@ -799,7 +813,9 @@ h2 {
   color: var(--fg);
   cursor: pointer;
   margin-bottom: 0.75rem;
-  transition: border-color 0.15s var(--ease-standard), background-color 0.15s var(--ease-standard);
+  transition:
+    border-color 0.15s var(--ease-standard),
+    background-color 0.15s var(--ease-standard);
 }
 .lock-in-button:hover {
   border-color: var(--fg-muted);
@@ -942,13 +958,26 @@ h2 {
   font-size: 0.92rem;
 }
 .results-panel__spoiler-toggle {
+  margin: 0 0 0.425rem;
+  padding: 0;
+  border: 0;
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}
+.results-panel__spoiler-toggle legend {
+  padding: 0;
+  margin-bottom: 0.3rem;
+}
+.results-panel__spoiler-options {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.45rem;
-  margin-bottom: 0.425rem;
-  font-size: 0.85rem;
-  color: var(--fg-muted);
+  gap: 0.9rem;
+}
+.results-panel__spoiler-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   cursor: pointer;
 }
 .results-panel__spoiler-toggle input {
@@ -1012,7 +1041,8 @@ h2 {
 }
 @keyframes confetti-fall {
   to {
-    transform: translate(calc((var(--confetti-index) - 12) * 1.8vw), 108vh) rotate(540deg);
+    transform: translate(calc((var(--confetti-index) - 12) * 1.8vw), 108vh)
+      rotate(540deg);
     opacity: 0;
   }
 }
