@@ -37,17 +37,22 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
 // words found online" GitHub Action (list=online). Appended automatically by
 // scripts/manage-extra-word.py record-word.
 const onlineWordScores: ReadonlyArray<[string, string, number]> = [
+  ["eleatic", "Mythic", 1.17],
   ["payline", "Extremely Rare", 2.26],
   ["pembina", "Extremely Rare", 2.2],
   ["pomarine", "Extremely Rare", 1.45],
+  ["portation", "Extremely Rare", 2.28],
   ["poussin", "Extremely Rare", 2.26],
+  ["reassociation", "Extremely Rare", 1.49],
+  ["sation", "Extremely Rare", 1.37],
+  ["sideration", "Extremely Rare", 1.92],
 ];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_476);
+    expect(dictionaryWords).toHaveLength(225_481);
   });
 
   it("accepts a common real word", () => {
