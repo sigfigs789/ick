@@ -44,8 +44,6 @@ const onlineWordScores: ReadonlyArray<[string, string, number]> = [
   ["portation", "Extremely Rare", 2.28],
   ["poussin", "Extremely Rare", 2.26],
   ["reassociation", "Extremely Rare", 1.49],
-  ["salvati", "Extremely Rare", 1.42],
-  ["satie", "Extremely Rare", 2.0],
   ["sation", "Extremely Rare", 1.37],
   ["sideration", "Extremely Rare", 1.92],
 ];
@@ -54,7 +52,7 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_483);
+    expect(dictionaryWords).toHaveLength(225_481);
   });
 
   it("accepts a common real word", () => {
