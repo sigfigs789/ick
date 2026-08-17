@@ -779,6 +779,21 @@ h2 {
   background: var(--danger-bg);
   color: var(--danger-fg);
 }
+/* A word not on the curated list is being checked (see LIVE_HANDOFF_MS). Bare
+   left-aligned text with no container: it is not a verdict, just a quiet note
+   that an answer is still coming, so it must not compete with the toast. */
+.live-note {
+  margin: 0.5rem 0 0;
+  color: var(--fg-faint);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-style: italic;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease-standard);
+}
+.live-note--shown {
+  opacity: 1;
+}
 .feedback__more-info {
   margin-left: 0.4rem;
   padding: 0.1rem 0.3rem;

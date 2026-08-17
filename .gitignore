@@ -28,3 +28,7 @@ __pycache__/
 *.pyc
 .venv/
 .vercel
+
+# Local secrets (Merriam-Webster API keys); see .env.example
+.env
+.env.local

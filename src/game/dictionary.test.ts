@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
-import { baseFormSubstitution, isValidWord, rarityFor, rarityScore, topRarityScore } from "./dictionary";
+import {
+  baseFormSubstitution,
+  isValidWord,
+  rarityFor,
+  rarityForZipf,
+  rarityScore,
+  topRarityScore,
+  unattestedZipf,
+} from "./dictionary";
+import rarityData from "../data/rarity.json";
 
 const explicitlyCuratedWords = [
   "endling",
@@ -330,5 +339,39 @@ describe("topRarityScore", () => {
 
     expect(topRarityScore([common, rare])).toBe(rarityScore(rare.zipf));
     expect(topRarityScore([])).toBe(0);
+  });
+});
+
+describe("unattestedZipf", () => {
+  it("is the rarest Zipf in the shipped data -- the no-corpus sentinel", () => {
+    // A plain loop, not Math.min(...) -- spreading ~200k elements as call
+    // arguments overflows the stack (the same reason dictionary.ts avoids it).
+    let minHundredths = Infinity;
+    for (const z of rarityData.zipfHundredths) {
+      if (z < minHundredths) minHundredths = z;
+    }
+    const dataMinimum = minHundredths / 100;
+    expect(unattestedZipf()).toBe(dataMinimum);
+  });
+
+  it("floors to the elite-band bottom rather than a perfect 10 from 2026-08-18", () => {
+    // The sentinel-floor system: a word no corpus attests is Legend, but the
+    // perfect 10 stays reserved for genuine deep-tail frequency data.
+    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(9.9);
+    expect(rarityForZipf(unattestedZipf(), "2026-08-18")).toBe("Legend");
+  });
+
+  it("still earns a perfect 10 under the preceding wide-band system", () => {
+    // Guards the date gate: live words played on an earlier archive puzzle must
+    // score by that puzzle's own rules, not today's.
+    expect(rarityScore(unattestedZipf(), "2026-08-17")).toBe(10);
+  });
+
+  it("scores a live word from its own frequency when one is found", () => {
+    // A measured Zipf lands in the measured band, well short of the top ranks --
+    // so a live lookup that finds real data cannot hand out a Legend by default.
+    expect(rarityForZipf(1.54, "2026-08-18")).toBe("Extremely Rare");
+    expect(rarityScore(1.54, "2026-08-18")).toBeLessThan(9.5);
+    expect(rarityForZipf(4.29, "2026-08-18")).toBe("Common");
   });
 });

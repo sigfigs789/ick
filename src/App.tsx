@@ -41,6 +41,7 @@ export default function App() {
     progress,
     streak,
     feedback,
+    liveNote,
     submitWord,
     lockIn,
     resetAnswers,
@@ -138,7 +139,11 @@ export default function App() {
             onSubmit={submitWord}
           />
         )}
-        <FeedbackRegion feedback={feedback} onWordRules={() => setShowWordRules(true)} />
+        <FeedbackRegion
+          feedback={feedback}
+          note={liveNote}
+          onWordRules={() => setShowWordRules(true)}
+        />
 
         {import.meta.env.DEV && (
           <button type="button" className="dev-reset-button" onClick={resetAnswers}>
