@@ -30,7 +30,15 @@ function stubValidate(body: unknown, delayMs = 0) {
   const fetchMock = vi.fn(async () => {
     if (delayMs > 0)
       await new Promise((resolve) => setTimeout(resolve, delayMs));
-    return { status: 200, json: async () => body } as unknown as Response;
+    return {
+      status: 200,
+      // Same-origin JSON, i.e. the request actually reached the function rather
+      // than being intercepted (see the auth-redirect guard in liveValidate).
+      url: `${location.origin}/api/validate`,
+      redirected: false,
+      headers: new Headers({ "content-type": "application/json" }),
+      json: async () => body,
+    } as unknown as Response;
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;

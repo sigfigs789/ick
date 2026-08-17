@@ -63,7 +63,6 @@ export interface LiveCheckNote {
 
 export const LIVE_CHECK_NOTES: readonly LiveCheckNote[] = [
   { pending: "Rummaging…", done: "Rummaged." },
-  { pending: "Digging…", done: "Dug." },
   { pending: "Poring…", done: "Pored." },
   { pending: "Sifting…", done: "Sifted." },
   { pending: "Foraging…", done: "Foraged." },

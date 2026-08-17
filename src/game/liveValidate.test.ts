@@ -15,6 +15,9 @@ function stubResponse(body: unknown, status = 200, valid = true) {
     async () =>
       ({
         status,
+        url: `${location.origin}/api/validate`,
+        redirected: false,
+        headers: new Headers({ "content-type": "application/json" }),
         json: async () => {
           if (!valid) throw new Error("not json");
           return body;
@@ -233,5 +236,46 @@ describe("checkWordLive session shutoff", () => {
     await checkWordLive("cat");
     // What a reload leaves behind: sessionStorage, but fresh module state.
     expect(sessionStorage.getItem("ick:live-check-disabled")).toBe("quota-exceeded");
+  });
+});
+
+describe("checkWordLive interception", () => {
+  it("names a redirect away from our origin instead of the error it causes", () => {
+    // Vercel's Deployment Protection answers /api/* with a 302 to its SSO page;
+    // following it cross-origin fails in a way that says nothing about the cause.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        status: 200,
+        url: "https://vercel.com/sso-api?url=%2Fapi%2Fvalidate",
+        redirected: true,
+        headers: new Headers({ "content-type": "text/html" }),
+        json: async () => ({}),
+      }) as unknown as Response)
+    );
+
+    return expect(checkWordLive("piloerection")).resolves.toMatchObject({
+      outcome: "error",
+      reason: "auth-redirect",
+    });
+  });
+
+  it("names an HTML body served where the endpoint should be", () => {
+    // The same problem seen from the other side: a login or error page.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        status: 200,
+        url: `${location.origin}/api/validate`,
+        redirected: false,
+        headers: new Headers({ "content-type": "text/html; charset=utf-8" }),
+        json: async () => ({}),
+      }) as unknown as Response)
+    );
+
+    return expect(checkWordLive("piloerection")).resolves.toMatchObject({
+      outcome: "error",
+      reason: "not-json",
+    });
   });
 });

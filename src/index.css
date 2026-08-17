@@ -788,15 +788,11 @@ h2 {
   font-size: 0.8rem;
   font-weight: 600;
   font-style: italic;
-  animation: live-note-in 0.35s var(--ease-standard);
+  opacity: 0;
+  transition: opacity 0.35s var(--ease-standard);
 }
-@keyframes live-note-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.live-note--shown {
+  opacity: 1;
 }
 .feedback__more-info {
   margin-left: 0.4rem;

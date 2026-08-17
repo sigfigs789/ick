@@ -292,6 +292,35 @@ export async function checkWordLive(word: string): Promise<LiveCheck> {
     );
   }
 
+  // A redirect away from our own origin means something intercepted the request
+  // before it reached the function -- in practice Vercel's Deployment Protection
+  // bouncing it to an SSO page. Naming it beats reporting the CORS failure or
+  // HTML-parse error it eventually causes, which say nothing about the cause.
+  if (response.redirected || new URL(response.url, location.href).origin !== location.origin) {
+    return blank(
+      normalized,
+      "error",
+      "auth-redirect",
+      elapsed(),
+      `redirected to ${response.url}`,
+      response.status
+    );
+  }
+
+  // A body that isn't JSON is the same class of problem seen from the other
+  // side: an HTML login or error page served where the endpoint should be.
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    return blank(
+      normalized,
+      "error",
+      "not-json",
+      elapsed(),
+      `content-type: ${contentType || "none"}`,
+      response.status
+    );
+  }
+
   // The endpoint reports its own failures as a JSON body even on a non-2xx
   // status, so the body is parsed either way and only an unparsable one is a
   // client-side failure.

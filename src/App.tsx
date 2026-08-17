@@ -139,10 +139,11 @@ export default function App() {
             onSubmit={submitWord}
           />
         )}
-        {/* Directly under the input, above the verdict toast. */}
-        {liveNote && <p className="live-note">{liveNote}</p>}
-
-        <FeedbackRegion feedback={feedback} onWordRules={() => setShowWordRules(true)} />
+        <FeedbackRegion
+          feedback={feedback}
+          note={liveNote}
+          onWordRules={() => setShowWordRules(true)}
+        />
 
         {import.meta.env.DEV && (
           <button type="button" className="dev-reset-button" onClick={resetAnswers}>

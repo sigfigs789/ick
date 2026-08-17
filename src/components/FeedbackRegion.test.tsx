@@ -34,6 +34,43 @@ describe("FeedbackRegion", () => {
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
+  it("holds the live note while the lookup runs, with no verdict to outlive", () => {
+    vi.useFakeTimers();
+    render(<FeedbackRegion feedback={null} note="Rummaging…" onWordRules={vi.fn()} />);
+
+    const note = screen.getByText("Rummaging…");
+    expect(note).toHaveClass("live-note--shown");
+
+    // Well past the toast's window: a check still in flight must not fade out.
+    act(() => vi.advanceTimersByTime(12000));
+    expect(note).toHaveClass("live-note--shown");
+  });
+
+  it("fades the live note out together with the verdict it accompanies", () => {
+    vi.useFakeTimers();
+    const { rerender } = render(
+      <FeedbackRegion feedback={null} note="Rummaging…" onWordRules={vi.fn()} />
+    );
+
+    // The verdict lands and the note switches to its past tense.
+    rerender(
+      <FeedbackRegion
+        feedback={{ kind: "accepted", message: '"emesis" accepted — Rare.', key: 1 }}
+        note="Rummaged."
+        onWordRules={vi.fn()}
+      />
+    );
+    const note = screen.getByText("Rummaged.");
+    const toast = screen.getByRole("status");
+    expect(note).toHaveClass("live-note--shown");
+    expect(toast).toHaveClass("feedback--shown");
+
+    // One shared window, so neither is left behind on screen.
+    act(() => vi.advanceTimersByTime(6000));
+    expect(note).not.toHaveClass("live-note--shown");
+    expect(toast).not.toHaveClass("feedback--shown");
+  });
+
   it("offers rejected submissions a link to the word rules", async () => {
     const onWordRules = vi.fn();
     render(

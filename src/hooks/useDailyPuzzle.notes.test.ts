@@ -11,6 +11,10 @@ describe("live check notes", () => {
     }
   });
 
+  it("keeps enough verbs that a session rarely repeats one", () => {
+    expect(LIVE_CHECK_NOTES.length).toBeGreaterThanOrEqual(6);
+  });
+
   it("keeps every verb unique so the rotation never repeats itself", () => {
     const pending = LIVE_CHECK_NOTES.map((note) => note.pending);
     expect(new Set(pending).size).toBe(pending.length);
