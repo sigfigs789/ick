@@ -2,7 +2,14 @@ import { track } from "@vercel/analytics";
 import { rarityScore, type BaseFormSubstitution } from "./game/dictionary";
 import { bestWord } from "./game/rank";
 import { puzzleNumber } from "./game/share";
-import type { AcceptedWord, DailyProgress, RejectionReason, StreakState } from "./game/types";
+import { LIVE_HANDOFF_MS, type LiveCheck } from "./game/liveValidate";
+import type {
+  AcceptedWord,
+  DailyProgress,
+  RarityInfo,
+  RejectionReason,
+  StreakState,
+} from "./game/types";
 import { currentVisit, type VisitOutcome } from "./game/visits";
 
 /**
@@ -60,6 +67,58 @@ export function trackBaseFormSubstitution(date: string, substitution: BaseFormSu
     original_score: rarityScore(substitution.ownZipf, date),
     base_word: substitution.base,
     base_score: rarityScore(substitution.baseZipf, date),
+  });
+}
+
+/**
+ * Record a word the live Merriam-Webster fallback approved -- a word absent from
+ * the curated list that MW attests as ordinary, current and inoffensive. Carries
+ * the rarity it was scored at so the additions can be reviewed for balance, and
+ * `attested` distinguishes a real measured frequency from the unattested floor.
+ * `applied` is false when the verdict arrived too late to count (the puzzle had
+ * already finished), so approvals that never reached the player are separable.
+ */
+export function trackMerriamWebsterApproved(
+  date: string,
+  drop: string,
+  check: LiveCheck,
+  info: RarityInfo,
+  applied: boolean
+) {
+  track("merriam_webster_approved", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    drop: drop.toLowerCase(),
+    word: check.word,
+    rarity: info.rarity,
+    score: rarityScore(info.zipf, date),
+    zipf: Math.round(info.zipf * 100) / 100,
+    attested: check.zipf !== null,
+    first_use: check.firstUse ?? "unknown",
+    pos: check.pos.join(",") || "unknown",
+    elapsed_ms: check.elapsedMs,
+    within_handoff: check.elapsedMs <= LIVE_HANDOFF_MS,
+    applied,
+  });
+}
+
+/**
+ * Record a live lookup that failed, with the reason it failed. The reasons worth
+ * watching: `quota-exceeded` (MW's 1,000/day non-commercial cap is spent),
+ * `invalid-key` (a key was rotated or is wrong for that reference),
+ * `unconfigured` (no keys set on the deployment), plus network, timeout and
+ * malformed-response cases. A failure says nothing about the word itself.
+ */
+export function trackMerriamWebsterFailed(date: string, drop: string, check: LiveCheck) {
+  track("merriam_webster_failed", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    drop: drop.toLowerCase(),
+    word: check.word,
+    reason: check.reason ?? "unknown",
+    detail: (check.detail ?? "").slice(0, 200) || "none",
+    status: check.status ?? 0,
+    elapsed_ms: check.elapsedMs,
   });
 }
 

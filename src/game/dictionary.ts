@@ -231,6 +231,19 @@ export function isValidWord(word: string): boolean {
 }
 
 /**
+ * The Zipf that stands for "no corpus attests this word" -- the sentinel sitting
+ * at the bottom of rarity.json. Words validated live (see game/liveValidate.ts)
+ * are absent from the curated list, so rarity.json has no entry for them: it is
+ * a positional array index-aligned with dictionary.json, not a word map. A live
+ * word therefore scores from whatever frequency the live lookup can find, and
+ * from this sentinel when it finds none -- which under the current system floors
+ * to 9.90 (Legend) rather than the perfect 10 (see SENTINEL_FLOOR_START).
+ */
+export function unattestedZipf(): number {
+  return MIN_ZIPF;
+}
+
+/**
  * Whether the bound-suffix base-form folding is active for a puzzle date. Used
  * by both rarity scoring and same-root duplicate detection so a word's base is
  * defined identically in both, and only from the 2026-08-16 wide-band cutover.

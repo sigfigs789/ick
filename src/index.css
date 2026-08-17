@@ -779,6 +779,13 @@ h2 {
   background: var(--danger-bg);
   color: var(--danger-fg);
 }
+/* A word not on the curated list is being checked against Merriam-Webster.
+   Deliberately neutral: it is not a verdict yet, and it is replaced within a
+   second either way (see LIVE_HANDOFF_MS). */
+.feedback--checking {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  color: inherit;
+}
 .feedback__more-info {
   margin-left: 0.4rem;
   padding: 0.1rem 0.3rem;
