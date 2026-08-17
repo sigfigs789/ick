@@ -27,7 +27,9 @@ const explicitlyCuratedWords = [
 // Zipf the data pipeline gave them so the PR shows the word was added *and* how it
 // scored. Appended automatically by scripts/manage-extra-word.py record-word.
 // [word, rarity, zipf]
-const curatedWordScores: ReadonlyArray<[string, string, number]> = [];
+const curatedWordScores: ReadonlyArray<[string, string, number]> = [
+  ["invictus", "Rare", 2.5],
+];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
   ["aggrandization", "Extremely Rare", 1.52],
 ];
@@ -45,7 +47,7 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_475);
+    expect(dictionaryWords).toHaveLength(225_476);
   });
 
   it("accepts a common real word", () => {
