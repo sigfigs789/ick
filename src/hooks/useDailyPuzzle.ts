@@ -44,33 +44,42 @@ import {
 import { markSessionEngaged } from "../game/visits";
 
 /**
- * Shown from the moment a live lookup starts until the next submission.
+ * The note shown while a live lookup runs, and what it becomes once the lookup
+ * has answered -- the same verb moving from in-progress to done, so finishing
+ * reads as a completed action rather than a message that simply stops.
  *
  * Deliberately says nothing about *where* the game is looking: naming a second
  * dictionary would advertise the fallback and invite players to fish for words
- * the curated list doesn't have. These are playful present participles -- the
- * same shape as a "thinking" indicator -- so they read as effort being spent on
- * the player's word, which is all they need to know.
+ * the curated list doesn't have. These are playful verbs -- the same shape as a
+ * "thinking" indicator -- so they read as effort being spent on the player's
+ * word, which is all they need to know.
  */
-export const LIVE_CHECK_NOTES = [
-  "Rummaging…",
-  "Digging…",
-  "Poring…",
-  "Sifting…",
-  "Foraging…",
-  "Delving…",
-  "Burrowing…",
-  "Ferreting…",
-  "Scrounging…",
-  "Spelunking…",
-] as const;
+export interface LiveCheckNote {
+  /** While the lookup is in flight. */
+  pending: string;
+  /** Once it has answered. */
+  done: string;
+}
+
+export const LIVE_CHECK_NOTES: readonly LiveCheckNote[] = [
+  { pending: "Rummaging…", done: "Rummaged." },
+  { pending: "Digging…", done: "Dug." },
+  { pending: "Poring…", done: "Pored." },
+  { pending: "Sifting…", done: "Sifted." },
+  { pending: "Foraging…", done: "Foraged." },
+  { pending: "Delving…", done: "Delved." },
+  { pending: "Burrowing…", done: "Burrowed." },
+  { pending: "Ferreting…", done: "Ferreted." },
+  { pending: "Scrounging…", done: "Scrounged." },
+  { pending: "Spelunking…", done: "Spelunked." },
+];
 
 // Advanced rather than randomised so two lookups in a row never show the same
 // word (which would read as a frozen message) and so tests stay predictable.
 let noteIndex = 0;
 
 /** The next note in the rotation. */
-export function nextLiveCheckNote(): string {
+export function nextLiveCheckNote(): LiveCheckNote {
   const note = LIVE_CHECK_NOTES[noteIndex % LIVE_CHECK_NOTES.length];
   noteIndex += 1;
   return note;
@@ -105,10 +114,11 @@ export function useDailyPuzzle() {
   const [streak, setStreak] = useState<StreakState>(() => loadStreak());
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const feedbackKey = useRef(0);
-  // Set while a live lookup is running. It is deliberately *not* cleared when the
-  // verdict lands: the verdict renders above it and pushes it down, so the player
-  // sees what happened rather than a message that blinks out of existence.
+  // Set while a live lookup is running, then switched to the same verb's past
+  // tense once it answers. Deliberately not cleared on the verdict: the player
+  // should see that the search finished, not watch a message blink out.
   const [liveNote, setLiveNote] = useState<string | null>(null);
+  const liveNoteVerb = useRef<LiveCheckNote | null>(null);
 
   // A live lookup can settle long after `submitWord` returned, so the bookkeeping
   // it does must read the newest progress rather than the value captured by the
@@ -194,6 +204,8 @@ export function useDailyPuzzle() {
    */
   const applyLiveCheck = useCallback(
     (raw: string, check: LiveCheck): SubmissionResult => {
+      if (liveNoteVerb.current) setLiveNote(liveNoteVerb.current.done);
+
       if (check.outcome === "playable") {
         const info = liveRarity(check, viewedDate);
         const word: AcceptedWord = { word: check.word, ...info };
@@ -225,6 +237,7 @@ export function useDailyPuzzle() {
       const result = evaluateSubmission(raw, drop, progressRef.current.acceptedWords, viewedDate);
       // Each submission starts from a clean slate; last guess's note is gone.
       setLiveNote(null);
+      liveNoteVerb.current = null;
 
       // The first submission of a session marks this visit as engaged play
       // rather than an open-and-close, correlatable against site_visit volume.
@@ -259,7 +272,9 @@ export function useDailyPuzzle() {
       // Say so immediately. An unexplained pause is what reads as broken; a
       // stated one reads as work being done, which is why the wait can afford to
       // be as long as LIVE_HANDOFF_MS.
-      setLiveNote(nextLiveCheckNote());
+      const note = nextLiveCheckNote();
+      liveNoteVerb.current = note;
+      setLiveNote(note.pending);
       const settled = await withHandoff(lookup);
       if (settled !== STILL_PENDING) {
         return applyLiveCheck(raw, settled);

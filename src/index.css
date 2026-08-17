@@ -783,7 +783,7 @@ h2 {
    left-aligned text with no container: it is not a verdict, just a quiet note
    that an answer is still coming, so it must not compete with the toast. */
 .live-note {
-  margin: 0.5rem 0 0.75rem;
+  margin: 0.5rem 0 0;
   color: var(--fg-faint);
   font-size: 0.8rem;
   font-weight: 600;
