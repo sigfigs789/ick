@@ -96,6 +96,7 @@ export function trackMerriamWebsterApproved(
     attested: check.zipf !== null,
     first_use: check.firstUse ?? "unknown",
     pos: check.pos.join(",") || "unknown",
+    mw_source: check.source ?? "unknown",
     elapsed_ms: check.elapsedMs,
     within_handoff: check.elapsedMs <= LIVE_HANDOFF_MS,
     applied,

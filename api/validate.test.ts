@@ -293,13 +293,46 @@ describe("api/validate reference coverage", () => {
     });
   });
 
-  it("consults both references when both keys are set", async () => {
+  it("stops at collegiate when it has the word, sparing the medical quota", async () => {
     withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
-    const fetchMock = stubFetch({ mw: [] });
-    await handler(request("cat"));
+    const fetchMock = stubFetch({ mw: [CAT] });
+    const result = await body(await handler(request("cat")));
+
+    expect(result).toMatchObject({ outcome: "playable", source: "collegiate" });
     const references = fetchMock.mock.calls.map(([url]) => String(url));
     expect(references.some((u) => u.includes("/collegiate/"))).toBe(true);
-    expect(references.some((u) => u.includes("/medical/"))).toBe(true);
+    expect(references.some((u) => u.includes("/medical/"))).toBe(false);
+  });
+
+  it("only reaches medical for a word collegiate has never heard of", async () => {
+    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
+    stubMedicalOnly({ meta: { id: "piloerection" }, fl: "noun", def: [{}] });
+    expect(await body(await handler(request("piloerection")))).toMatchObject({
+      outcome: "playable",
+      source: "medical",
+    });
+  });
+
+  it("decides from collegiate even when its verdict is a rejection", async () => {
+    // "atm" is an abbreviation in collegiate; medical must not be asked to
+    // second-guess it, which would double the quota cost of every rejection.
+    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
+    const fetchMock = stubFetch({ mw: [{ meta: { id: "atm" }, fl: "abbreviation" }] });
+    expect(await body(await handler(request("atm")))).toMatchObject({
+      outcome: "rejected",
+      reason: "abbreviation",
+      source: "collegiate",
+    });
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/medical/"))).toBe(false);
+  });
+
+  it("reports no source when neither reference has the word", async () => {
+    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
+    stubFetch({ mw: ["suggestion"] });
+    expect(await body(await handler(request("zzzzqx")))).toMatchObject({
+      outcome: "unknown",
+      source: null,
+    });
   });
 
   it("treats a 429 as a spent quota", async () => {

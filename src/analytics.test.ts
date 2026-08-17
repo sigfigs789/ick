@@ -167,6 +167,7 @@ function liveCheck(overrides: Partial<LiveCheck> = {}): LiveCheck {
     zipf: 0.8351830698490437,
     pos: ["noun"],
     firstUse: "circa 1724",
+    source: "collegiate",
     elapsedMs: 420,
     ...overrides,
   };
@@ -189,6 +190,7 @@ describe("merriam-webster events", () => {
       attested: true,
       first_use: "circa 1724",
       pos: "noun",
+      mw_source: "collegiate",
       elapsed_ms: 420,
       within_handoff: true,
       applied: true,

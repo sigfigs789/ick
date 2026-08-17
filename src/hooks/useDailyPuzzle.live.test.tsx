@@ -4,6 +4,7 @@ import { useDailyPuzzle } from "./useDailyPuzzle";
 import { todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { isValidWord } from "../game/dictionary";
+import { resetLiveCheckSession } from "../game/liveValidate";
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
@@ -45,6 +46,7 @@ function playable(zipf: number | null) {
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+  resetLiveCheckSession();
   track.mockClear();
 });
 
@@ -300,6 +302,37 @@ describe("useDailyPuzzle live fallback", () => {
     expect(eventPayload("merriam_webster_approved")).toBeUndefined();
     expect(eventPayload("merriam_webster_failed")).toBeUndefined();
     vi.restoreAllMocks();
+  });
+
+  it("stops looking up words once the quota is spent, but reports it once", async () => {
+    const fetchMock = stubValidate({
+      word: OFF_LIST_WORD,
+      outcome: "error",
+      reason: "quota-exceeded",
+      detail: "daily limit",
+      status: 403,
+      zipf: null,
+      pos: [],
+      firstUse: null,
+    });
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord(OFF_LIST_WORD);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(eventPayload("merriam_webster_failed")).toBeDefined();
+
+    // A second off-list word spends no request and does not re-report the
+    // failure -- it was already reported when it was discovered.
+    track.mockClear();
+    await act(async () => {
+      await result.current.submitWord(`${DROP.toLowerCase()}qxw`);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(eventPayload("merriam_webster_failed")).toBeUndefined();
+    // The player still gets the ordinary rejection.
+    expect(result.current.feedback?.kind).toBe("rejected");
   });
 
   it("makes no lookup for an offline player", async () => {

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   checkWordLive,
+  resetLiveCheckSession,
   eligibleForLiveCheck,
   LIVE_HANDOFF_MS,
   LIVE_INDICATOR_DELAY_MS,
@@ -35,6 +36,7 @@ function check(overrides: Partial<LiveCheck> = {}): LiveCheck {
     zipf: null,
     pos: [],
     firstUse: null,
+    source: null,
     elapsedMs: 0,
     ...overrides,
   };
@@ -43,6 +45,7 @@ function check(overrides: Partial<LiveCheck> = {}): LiveCheck {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  resetLiveCheckSession();
 });
 
 describe("eligibleForLiveCheck", () => {
@@ -188,5 +191,52 @@ describe("withHandoff", () => {
     // The indicator must appear before the handoff, or it would never show.
     expect(LIVE_INDICATOR_DELAY_MS).toBe(1500);
     expect(LIVE_INDICATOR_DELAY_MS).toBeLessThan(LIVE_HANDOFF_MS);
+  });
+});
+
+describe("checkWordLive session shutoff", () => {
+  function stubFailure(reason: string) {
+    return stubResponse({ word: "cat", outcome: "error", reason, detail: "d", status: 403 }, 502);
+  }
+
+  it("stops asking for the rest of the session once the quota is spent", async () => {
+    const fetchMock = stubFailure("quota-exceeded");
+
+    // The first lookup discovers it and is reported as a failure.
+    expect(await checkWordLive("cat")).toMatchObject({
+      outcome: "error",
+      reason: "quota-exceeded",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    // Every later word short-circuits: no request, and nothing to report again.
+    const next = await checkWordLive("dog");
+    expect(next).toMatchObject({ outcome: "disabled", reason: "quota-exceeded" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["invalid-key", "unconfigured", "forbidden"])(
+    "also gives up for the session on %s",
+    async (reason) => {
+      const fetchMock = stubFailure(reason);
+      await checkWordLive("cat");
+      expect((await checkWordLive("dog")).outcome).toBe("disabled");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it("keeps trying after a transient failure", async () => {
+    // A network blip says nothing about the quota, so the next word still tries.
+    const fetchMock = stubFailure("upstream-error");
+    await checkWordLive("cat");
+    expect((await checkWordLive("dog")).outcome).toBe("error");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("survives a reload within the same tab session", async () => {
+    stubFailure("quota-exceeded");
+    await checkWordLive("cat");
+    // What a reload leaves behind: sessionStorage, but fresh module state.
+    expect(sessionStorage.getItem("ick:live-check-disabled")).toBe("quota-exceeded");
   });
 });

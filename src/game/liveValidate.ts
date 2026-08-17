@@ -32,6 +32,53 @@ const LIVE_ABORT_MS = 15000;
 /** Words worth spending quota on: the game's own input rule. */
 const ELIGIBLE_RE = /^[a-z]{2,30}$/;
 
+/**
+ * Failure reasons that will not fix themselves: the daily quota is spent, a key
+ * is wrong, or none is configured. Once one of these comes back there is no
+ * point asking again this session -- every further lookup would just be a
+ * guaranteed-failing round-trip (and, for a quota error, more requests against
+ * an allowance that is already gone).
+ */
+const PERMANENT_FAILURES = new Set(["quota-exceeded", "invalid-key", "unconfigured", "forbidden"]);
+
+const DISABLED_KEY = "ick:live-check-disabled";
+
+/**
+ * Fallback for when sessionStorage is unavailable (Safari private mode throws on
+ * access). Module-scoped, so it lasts as long as the page does.
+ */
+let disabledInMemory: string | null = null;
+
+/** Stop trying for the rest of this session, remembering why. */
+function disableForSession(reason: string): void {
+  disabledInMemory = reason;
+  try {
+    sessionStorage.setItem(DISABLED_KEY, reason);
+  } catch {
+    // In-memory flag already set; nothing more to do.
+  }
+}
+
+/** The reason live checks are switched off this session, if they are. */
+function disabledReason(): string | null {
+  if (disabledInMemory) return disabledInMemory;
+  try {
+    return sessionStorage.getItem(DISABLED_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** Clear the session's disabled flag. Exists for tests and the dev reset. */
+export function resetLiveCheckSession(): void {
+  disabledInMemory = null;
+  try {
+    sessionStorage.removeItem(DISABLED_KEY);
+  } catch {
+    // Nothing persisted, nothing to clear.
+  }
+}
+
 export type LiveOutcome =
   /** MW attests an ordinary, current, inoffensive sense -- the word counts. */
   | "playable"
@@ -42,7 +89,13 @@ export type LiveOutcome =
   /** The lookup failed; `reason`/`detail` say why. Says nothing about the word. */
   | "error"
   /** No connection, so no lookup was attempted. Not a failure -- reported nowhere. */
-  | "offline";
+  | "offline"
+  /**
+   * A permanent failure already happened this session (see PERMANENT_FAILURES),
+   * so no request was made. Reported nowhere: the failure that caused it was
+   * reported once, when it happened.
+   */
+  | "disabled";
 
 export interface LiveCheck {
   word: string;
@@ -57,6 +110,8 @@ export interface LiveCheck {
   pos: string[];
   /** MW's first-known-use date, e.g. "1961" or "12th century". */
   firstUse: string | null;
+  /** Which MW reference answered: "collegiate", "medical", or null on a miss. */
+  source: string | null;
   /** Wall-clock time the lookup took, for latency reporting. */
   elapsedMs: number;
 }
@@ -93,8 +148,26 @@ function online(): boolean {
   return typeof navigator === "undefined" || navigator.onLine !== false;
 }
 
-function blank(word: string, outcome: LiveOutcome, reason: string | null, elapsedMs: number, detail: string | null = null, status: number | null = null): LiveCheck {
-  return { word, outcome, reason, detail, status, zipf: null, pos: [], firstUse: null, elapsedMs };
+function blank(
+  word: string,
+  outcome: LiveOutcome,
+  reason: string | null,
+  elapsedMs: number,
+  detail: string | null = null,
+  status: number | null = null
+): LiveCheck {
+  return {
+    word,
+    outcome,
+    reason,
+    detail,
+    status,
+    zipf: null,
+    pos: [],
+    firstUse: null,
+    source: null,
+    elapsedMs,
+  };
 }
 
 /**
@@ -104,6 +177,11 @@ function blank(word: string, outcome: LiveOutcome, reason: string | null, elapse
 export async function checkWordLive(word: string): Promise<LiveCheck> {
   const normalized = word.trim().toLowerCase();
   if (!online()) return blank(normalized, "offline", null, 0);
+
+  // A spent quota or a bad key is settled for the session; don't spend a
+  // round-trip discovering it again on every subsequent word.
+  const disabled = disabledReason();
+  if (disabled) return blank(normalized, "disabled", disabled, 0);
 
   const started = Date.now();
   const elapsed = () => Date.now() - started;
@@ -140,15 +218,23 @@ export async function checkWordLive(word: string): Promise<LiveCheck> {
     return blank(normalized, "error", "client-bad-response", elapsed(), `unrecognized outcome`, response.status);
   }
 
+  const reason = typeof parsed.reason === "string" ? parsed.reason : null;
+  // Remember a failure that cannot resolve itself, so this is the last request
+  // this session. The failure is still reported by the caller -- once.
+  if (outcome === "error" && reason && PERMANENT_FAILURES.has(reason)) {
+    disableForSession(reason);
+  }
+
   return {
     word: normalized,
     outcome,
-    reason: typeof parsed.reason === "string" ? parsed.reason : null,
+    reason,
     detail: typeof parsed.detail === "string" ? parsed.detail : null,
     status: typeof parsed.status === "number" ? parsed.status : null,
     zipf: typeof parsed.zipf === "number" && Number.isFinite(parsed.zipf) ? parsed.zipf : null,
     pos: Array.isArray(parsed.pos) ? parsed.pos.filter((p): p is string => typeof p === "string") : [],
     firstUse: typeof parsed.firstUse === "string" ? parsed.firstUse : null,
+    source: typeof parsed.source === "string" ? parsed.source : null,
     elapsedMs: elapsed(),
   };
 }

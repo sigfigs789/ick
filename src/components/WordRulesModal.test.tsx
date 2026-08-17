@@ -13,7 +13,17 @@ describe("WordRulesModal", () => {
 
     const dialog = screen.getByRole("dialog", { name: /word rules/i });
     expect(screen.getByRole("heading", { name: "Word rules" })).toBeInTheDocument();
-    expect(dialog).toHaveTextContent(/curated word list is sourced from scowl and wiktionary .*and contains more than 200,000 words/i);
+    expect(dialog).toHaveTextContent(
+      /curated word list is sourced from scowl, wiktionary .*and more, and contains over 200,000 words/i
+    );
+    // The live fallback is named, so a player can tell why an off-list word counted.
+    expect(dialog).toHaveTextContent(
+      /also uses merriam-webster to check words that aren't on the list yet/i
+    );
+    expect(screen.getByRole("link", { name: "Merriam-Webster" })).toHaveAttribute(
+      "href",
+      "https://dictionaryapi.com/"
+    );
     expect(dialog).toHaveTextContent(/proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words/i);
     expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for play/i);
     expect(dialog).toHaveTextContent(/used under.*cc by-sa 4\.0/i);

@@ -61,6 +61,8 @@ interface LiveCheckBody {
   pos: string[];
   /** MW's first-known-use date, e.g. "1961" or "12th century". */
   firstUse: string | null;
+  /** Which MW reference answered: "collegiate", "medical", or null on a miss. */
+  source?: string | null;
 }
 
 // Only the fields we read from an MW entry. The sense tree under `def` is deeply
@@ -347,8 +349,13 @@ export default async function handler(request: Request): Promise<Response> {
     );
   }
 
-  // Both references are consulted; a word ordinary in either one is playable.
+  // The references are consulted in order and the first one that actually has
+  // the word decides. Collegiate is the general-English authority, so it is
+  // asked first; Medical is only reached for a word Collegiate has never heard
+  // of (like "piloerection"). Each reference has its own daily quota, so
+  // stopping early means an ordinary word costs one request rather than two.
   const entries: MwEntry[] = [];
+  let source: string | null = null;
   for (const [reference, key] of configured) {
     let data: unknown[];
     try {
@@ -366,6 +373,10 @@ export default async function handler(request: Request): Promise<Response> {
       const stem = String(entry.meta?.id ?? "").split(":")[0];
       if (stem.toLowerCase() === word) entries.push(entry);
     }
+    if (entries.length > 0) {
+      source = reference;
+      break;
+    }
   }
 
   const classification = classify(entries);
@@ -377,6 +388,7 @@ export default async function handler(request: Request): Promise<Response> {
       zipf: null,
       pos: classification.pos,
       firstUse: classification.firstUse,
+      source,
     });
   }
 
@@ -397,5 +409,6 @@ export default async function handler(request: Request): Promise<Response> {
     zipf,
     pos: classification.pos,
     firstUse: classification.firstUse,
+    source,
   });
 }
