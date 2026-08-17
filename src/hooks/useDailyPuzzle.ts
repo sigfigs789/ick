@@ -43,8 +43,15 @@ import {
 } from "../analytics";
 import { markSessionEngaged } from "../game/visits";
 
-/** Shown from the moment a live lookup starts until the next submission. */
-export const LIVE_CHECK_NOTE = "Checking beyond the list…";
+/**
+ * Shown from the moment a live lookup starts until the next submission.
+ *
+ * Deliberately says nothing about *where* the game is looking: naming a
+ * dictionary would advertise the fallback and invite players to game it. A
+ * playful present participle -- the same shape as a "thinking" indicator -- reads
+ * as effort being spent on their word, which is all they need to know.
+ */
+export const LIVE_CHECK_NOTE = "Rummaging…";
 
 export interface Feedback {
   kind: "accepted" | "rejected";
