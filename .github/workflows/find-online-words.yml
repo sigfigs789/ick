@@ -1,0 +1,85 @@
+name: Find rare words found online
+
+# Read-only preview for the upcoming drop. Run this by hand (Actions tab ->
+# "Find rare words found online" -> Run workflow). It resolves the drop coming
+# up the following day, searches online (Datamuse) for very rare words that
+# contain it, and REPORTS them in the run log (and run summary).
+#
+# Unlike "Add rare words found online", this workflow only *finds* the words --
+# nothing is written, no data is regenerated, and no pull request is opened. Use
+# it to preview what that action would add. To actually add them, run
+# "Add rare words found online".
+#
+# Only words a frequency corpus attests are reported (their rarity is measured,
+# not guessed), matching the add action's gate.
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Target drop date (YYYY-MM-DD). Defaults to tomorrow (UTC).
+        required: false
+        type: string
+      max_zipf:
+        description: Only report words at or below this Zipf frequency (lower = rarer)
+        required: false
+        default: "2.5"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  find-online-words:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out WordInk
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install frequency dependency
+        run: python -m pip install wordfreq==3.1.1
+
+      - name: Find rare words for the upcoming drop
+        env:
+          TARGET_DATE: ${{ inputs.date }}
+          MAX_ZIPF: ${{ inputs.max_zipf }}
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp
+          DATE_FLAG=""
+          if [ -n "$TARGET_DATE" ]; then DATE_FLAG="--date $TARGET_DATE"; fi
+          # find-online-words.py prints one word per line to stdout and its
+          # per-word Zipf diagnostics to stderr; capture stdout so we can both
+          # log the words and count them.
+          python scripts/find-online-words.py $DATE_FLAG \
+            --max-zipf "${MAX_ZIPF:-2.5}" \
+            --drop-out .tmp/drop.txt > .tmp/online-words.txt
+          DROP="$(cat .tmp/drop.txt)"
+          COUNT="$(grep -c . .tmp/online-words.txt || true)"
+
+          {
+            echo "## Rare online words for the \`$DROP\` drop"
+            echo
+            if [ "$COUNT" -eq 0 ]; then
+              echo "No new rare words found for drop \`$DROP\`; nothing to add."
+            else
+              echo "Found **$COUNT** new rare word(s). \"Add rare words found online\" would add these:"
+              echo
+              echo '```'
+              cat .tmp/online-words.txt
+              echo '```'
+            fi
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+          echo "----------------------------------------"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No new rare words found for drop '$DROP'."
+          else
+            echo "Found $COUNT new rare word(s) for drop '$DROP':"
+            cat .tmp/online-words.txt
+          fi
