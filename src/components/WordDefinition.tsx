@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchDefinition, type Definition } from "../game/definitions";
 
 interface Props {
@@ -12,41 +12,74 @@ type State =
   | { status: "loaded"; definition: Definition | null }
   | { status: "error" };
 
-/** A small ⓘ button beside a word that reveals its definition inline, fetched
- * on first open from Datamuse and then kept for the rest of the session. */
+/** A small ⓘ button beside a word that reveals its definition in a floating
+ * tooltip. On hover-capable devices it opens on hover/focus; on touch devices
+ * it toggles on tap (and dismisses on an outside tap). The definition is
+ * fetched from Datamuse on first reveal and kept for the rest of the session. */
 export function WordDefinition({ word }: Props) {
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<State>({ status: "idle" });
+  const containerRef = useRef<HTMLSpanElement>(null);
 
-  async function toggle() {
-    if (open) {
-      setOpen(false);
-      return;
-    }
+  // Decide once whether this device drives tooltips by hover or by tap.
+  const canHover = useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(hover: hover)").matches,
+    [],
+  );
+
+  function reveal() {
     setOpen(true);
-    // Only fetch once; a reopen just re-reveals what we already have.
-    if (state.status === "loaded" || state.status === "loading") return;
-    setState({ status: "loading" });
-    try {
-      const definition = await fetchDefinition(word);
-      setState({ status: "loaded", definition });
-    } catch {
-      setState({ status: "error" });
-    }
+    setState((prev) => {
+      // Fetch only the first time; a reopen re-uses what we already have.
+      if (prev.status !== "idle" && prev.status !== "error") return prev;
+      void fetchDefinition(word)
+        .then((definition) => setState({ status: "loaded", definition }))
+        .catch(() => setState({ status: "error" }));
+      return { status: "loading" };
+    });
   }
+
+  function close() {
+    setOpen(false);
+  }
+
+  // On touch, dismiss when the next tap lands outside the tooltip.
+  useEffect(() => {
+    if (!open || canHover) return;
+    function onPointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) close();
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open, canHover]);
+
+  const hoverHandlers = canHover
+    ? {
+        onMouseEnter: reveal,
+        onMouseLeave: close,
+        onFocus: reveal,
+        onBlur: close,
+      }
+    : { onClick: () => (open ? close() : reveal()) };
 
   const panelId = `word-definition-${word}`;
 
   return (
-    <span className="word-definition">
+    <span className="word-definition" ref={containerRef}>
       <button
         type="button"
         className="word-definition__toggle"
-        onClick={toggle}
         aria-expanded={open}
-        aria-controls={panelId}
+        aria-describedby={open ? panelId : undefined}
         aria-label={open ? `Hide definition of ${word}` : `Show definition of ${word}`}
         title={`What does "${word}" mean?`}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") close();
+        }}
+        {...hoverHandlers}
       >
         <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
           <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -55,7 +88,7 @@ export function WordDefinition({ word }: Props) {
         </svg>
       </button>
       {open && (
-        <span className="word-definition__panel" id={panelId} role="status">
+        <span className="word-definition__popover" id={panelId} role="tooltip">
           {state.status === "loading" && "Looking it up…"}
           {state.status === "error" && "Couldn't load the definition — check your connection."}
           {state.status === "loaded" &&

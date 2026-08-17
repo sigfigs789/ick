@@ -402,7 +402,9 @@ h2 {
   }
 }
 .word-definition {
-  display: inline;
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
 }
 .word-definition__toggle {
   appearance: none;
@@ -424,20 +426,52 @@ h2 {
   outline-offset: 2px;
   border-radius: 50%;
 }
-.word-definition__panel {
-  display: block;
-  margin: 0.4rem auto 0;
-  max-width: 34ch;
+/* Floating text box, centered above the icon, with a small pointer notch. */
+.word-definition__popover {
+  position: absolute;
+  bottom: calc(100% + 0.55rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content;
+  max-width: min(78vw, 260px);
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg-inset);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
   font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 400;
   line-height: 1.45;
+  text-align: left;
   text-transform: none;
-  color: var(--fg-muted);
+  white-space: normal;
+  color: var(--fg);
+  animation: word-definition-in 0.15s var(--ease-standard);
+}
+.word-definition__popover::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--bg-inset);
 }
 .word-definition__pos {
   font-style: italic;
   color: var(--fg-faint);
+}
+@keyframes word-definition-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 @keyframes tile-in {
   to {
