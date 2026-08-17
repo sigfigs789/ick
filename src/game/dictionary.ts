@@ -19,16 +19,21 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *   - 2026-08-15 only: the frequency waterfall + two-band scale, measured words
  *     filling 0..9.5 and the deep tail 9.5..10 (anchored at the data's live
  *     minimum), with the deep tail labeled Mythic. No Legend tier.
- *   - on/after 2026-08-16 (the latest system): the two-band scale widened so
- *     measured words fill 0..9.9 and the deep tail 9.9..10, with every word
- *     at/below Zipf 0 clamped to a flat 10. The top of the scale is split by
- *     score into two ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also
- *     where the bound-suffix base-form adjustment turns on.
+ *   - 2026-08-16 and 2026-08-17: the two-band scale widened so measured words
+ *     fill 0..9.9 and the deep tail 9.9..10, with every word at/below Zipf 0
+ *     clamped to a flat 10. The top of the scale is split by score into two
+ *     ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also where the
+ *     bound-suffix base-form adjustment turns on.
+ *   - on/after 2026-08-18 (the latest system): identical to the wide-band scale,
+ *     except words no corpus attests (the sentinel Zipf) no longer earn the
+ *     perfect 10 -- they floor to the elite-band bottom, 9.90 (still Legend), so
+ *     the perfect 10 is reserved for words with genuine deep-tail frequency data.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
 const NEW_SCORING_START = "2026-08-15";
 const WIDE_BAND_START = "2026-08-16";
+const SENTINEL_FLOOR_START = "2026-08-18";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -130,13 +135,22 @@ interface Scoring {
 // score-based two-decimal display. Without it (the 2026-08-15 system) the deep
 // tail is a single Mythic rank, the measured band keeps one decimal, and only
 // deep-tail scores show two.
+// `floorUnattested` (the 2026-08-18 system) stops words no corpus attests from
+// earning the perfect 10: a word still sitting at the sentinel Zipf after any
+// base-form adjustment scores exactly `ceiling` (9.90, the elite-band bottom),
+// keeping the perfect 10 for words with genuine deep-tail frequency data.
 function twoBandScoring(
   ceiling: number,
   tailFloor: number,
   boundBaseForms: boolean,
-  legend: boolean
+  legend: boolean,
+  floorUnattested: boolean
 ): Scoring {
   const score = (zipf: number): number => {
+    // A word left at the sentinel (min) Zipf is unattested -- adjustedZipf
+    // already raised anything with a more-common base form above it. It floors
+    // to the elite-band bottom rather than the perfect 10.
+    if (floorUnattested && zipf === MIN_ZIPF) return roundToCents(ceiling);
     if (zipf >= MEASURED_FLOOR) {
       const s = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
       // The Legend system carries two decimals across the whole band so its
@@ -171,10 +185,14 @@ function twoBandScoring(
 
 // The 2026-08-15 system: measured band 0..9.5, deep tail 9.5..10 anchored at the
 // data's live minimum, single Mythic top rank, no bound-suffix folding.
-const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false);
-// The latest system (from WIDE_BAND_START): measured band 0..9.9, deep tail
-// 9.9..10 clamped at a fixed 0, Legend + Mythic ranks, bound-suffix folding on.
-const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true);
+const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false, false);
+// The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
+// fixed 0, Legend + Mythic ranks, bound-suffix folding on. Unattested words
+// still earn the perfect 10.
+const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, false);
+// The latest system (from SENTINEL_FLOOR_START): the wide-band scale, but
+// unattested words floor to 9.90 (Legend) instead of the perfect 10.
+const SENTINEL_FLOOR_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -201,10 +219,11 @@ function measuredRarity(zipf: number): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return WIDE_SCORING; // newest system
+  if (date === undefined) return SENTINEL_FLOOR_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
-  return WIDE_SCORING;
+  if (date < SENTINEL_FLOOR_START) return WIDE_SCORING;
+  return SENTINEL_FLOOR_SCORING;
 }
 
 export function isValidWord(word: string): boolean {

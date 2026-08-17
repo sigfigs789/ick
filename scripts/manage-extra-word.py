@@ -19,7 +19,9 @@ An added word is gated on the frequency waterfall
 (wordfreq -> Norvig -> Google Books): by default a word no corpus attests is
 rejected, because its rarity would be a guess rather than a measurement.
 `--forced` overrides that and adds the word anyway; the data pipeline then gives
-an otherwise-unscored word the rarest-word floor, a perfect 10.0 / Legend.
+an otherwise-unscored word the rarest-word sentinel, which the newest scoring
+system floors to 9.90 / Legend (the perfect 10 is reserved for words with genuine
+deep-tail frequency data).
 """
 import argparse
 import bisect
@@ -137,7 +139,7 @@ def add_word(raw_word: str, list_name: str, forced: bool) -> None:
     if zipf is not None:
         rating = f"Zipf {zipf:.2f}"
     else:
-        rating = "no corpus attests it; forced, will score the maximum 10.0 / Legend"
+        rating = "no corpus attests it; forced, will floor to 9.90 / Legend"
     print(f"Added {word!r} to {path} as a {spec['label']} word ({rating}).")
 
 
@@ -290,14 +292,19 @@ def measured_rarity(zipf: float) -> str:
     return "Extremely Rare"
 
 
-def current_score(zipf: float, max_zipf: float) -> float:
-    """Displayed 0..10 rarity score for a Zipf, mirroring WIDE_SCORING.
+def current_score(zipf: float, max_zipf: float, sentinel: float) -> float:
+    """Displayed 0..10 rarity score for a Zipf, mirroring the newest system.
 
     Both bands round to two decimals with the same upward nudge the app uses
     (roundToCents), so the elite top of the scale has the resolution its Legend/
     Mythic cutoffs key off. The measured band fills 0..BAND_CEILING; the deep tail
     (Zipf < MEASURED_FLOOR) fills BAND_CEILING..10, clamped at TAIL_FLOOR -> 10.
+    A word left at the sentinel Zipf (no corpus attests it) floors to BAND_CEILING
+    (9.90), reserving the perfect 10 for words with genuine deep-tail data --
+    mirroring SENTINEL_FLOOR_SCORING in src/game/dictionary.ts.
     """
+    if zipf == sentinel:
+        return _round_to_cents(BAND_CEILING)
     if zipf >= MEASURED_FLOOR:
         score = BAND_CEILING * (max_zipf - zipf) / (max_zipf - MEASURED_FLOOR)
         return _round_to_cents(score)
@@ -322,14 +329,15 @@ def top_rank_for_score(score: float) -> str | None:
     return None
 
 
-def rarity_label(zipf: float, max_zipf: float) -> str:
-    """Mirror of WIDE_SCORING.rarity(): the top ranks key off the *score*.
+def rarity_label(zipf: float, max_zipf: float, sentinel: float) -> str:
+    """Mirror of the newest system's rarity(): the top ranks key off the *score*.
 
     The deep tail is not flatly "Mythic" -- a word scoring >= 9.9 is "Legend".
     So the label is derived from the displayed score (topRankForScore), falling
-    back to the measured Zipf-band label below the Mythic cutoff.
+    back to the measured Zipf-band label below the Mythic cutoff. A sentinel word
+    floors to 9.90, which is still Legend.
     """
-    return top_rank_for_score(current_score(zipf, max_zipf)) or measured_rarity(zipf)
+    return top_rank_for_score(current_score(zipf, max_zipf, sentinel)) or measured_rarity(zipf)
 
 
 def format_score(score: float) -> str:
@@ -370,8 +378,11 @@ def word_rarity(word: str) -> tuple[float, str, float]:
 
     zipf = round(adjusted_zipf(word, index, zipf_at), 2)
     max_zipf = max(hundredths) / 100
-    score = current_score(zipf, max_zipf)
-    label = rarity_label(zipf, max_zipf)
+    # The sentinel is the rarest value in the data (min(attested) - 0.1), assigned
+    # to every word no corpus attests -- see scripts/generate-data.py.
+    sentinel = min(hundredths) / 100
+    score = current_score(zipf, max_zipf, sentinel)
+    label = rarity_label(zipf, max_zipf, sentinel)
     return zipf, label, score
 
 
@@ -379,7 +390,7 @@ def record_word(raw_word: str, list_name: str) -> None:
     """Log the added word's Zipf/score and pin them in the dictionary test.
 
     Reads the regenerated rarity data, so run this after generate-data.py (and
-    --refresh-rarity) so a forced, otherwise-unscored word shows its final 10.0.
+    --refresh-rarity) so a forced, otherwise-unscored word shows its final 9.90.
     """
     array_name = LISTS[list_name]["score_array"]
     word = raw_word.strip().lower()
