@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { buildShareText } from "../game/share";
+import { buildShareText, type RevealMode } from "../game/share";
 import { ShareButton } from "./ShareButton";
 import { TwitterShareButton } from "./TwitterShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -12,12 +12,21 @@ interface Props {
   streak: StreakState;
 }
 
+// Naming answers is opt-in so shared results stay spoiler-free by default; the
+// player can reveal just their rarest word ("Top") or every word ("All").
+const REVEAL_OPTIONS: { value: RevealMode; label: string }[] = [
+  { value: "none", label: "Hide" },
+  { value: "top", label: "Top" },
+  { value: "all", label: "All" },
+];
+
 export function ResultsPanel({ date, drop, words, streak }: Props) {
-  // Showing submitted words is opt-in so shared results remain spoiler-free
-  // unless the player explicitly asks to include their answers.
-  const [showAnswers, setShowAnswers] = useState(false);
+  // Default to "top": name the player's rarest word as a low-stakes flex while
+  // keeping the rest anonymous. "Hide" stays available for a fully spoiler-free
+  // share.
+  const [reveal, setReveal] = useState<RevealMode>("top");
   const sharedResultOptions = {
-    spoilerFree: !showAnswers,
+    reveal,
     streak: streak.currentStreak,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
@@ -28,30 +37,36 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
     source: "share",
   });
   const twitterShareText = `\n\n────\n${buildShareText(date, drop, words, {
-    spoilerFree: !showAnswers,
+    reveal,
     source: "twitter",
     format: "x",
   })}`;
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (
     <section className="results-panel" aria-label="Share result">
-      <label className="results-panel__spoiler-toggle">
-        <input
-          type="checkbox"
-          checked={showAnswers}
-          onChange={(e) => setShowAnswers(e.target.checked)}
-        />
-        Show my answers
-      </label>
+      <fieldset className="results-panel__spoiler-toggle">
+        <legend>Show answers</legend>
+        <div className="results-panel__spoiler-options">
+          {REVEAL_OPTIONS.map((option) => (
+            <label key={option.value}>
+              <input
+                type="radio"
+                name="results-panel-reveal"
+                value={option.value}
+                checked={reveal === option.value}
+                onChange={() => setReveal(option.value)}
+              />
+              {option.label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <pre className="results-panel__preview" aria-hidden="true">
         <strong>{shareHeading}</strong>
         {shareDetailLines.length > 0 && `\n${shareDetailLines.join("\n")}`}
       </pre>
       <div className="results-panel__share-actions">
-        <ShareButton
-          text={copiedShareText}
-          onShared={trackResultCopied}
-        />
+        <ShareButton text={copiedShareText} onShared={trackResultCopied} />
         <TwitterShareButton
           text={twitterShareText}
           onShared={trackResultSharedOnX}

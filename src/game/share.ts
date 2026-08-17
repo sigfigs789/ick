@@ -1,5 +1,10 @@
 import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
-import { formatRarityScore, formatScore, topRarityScore, totalRarityScore } from "./dictionary";
+import {
+  formatRarityScore,
+  formatScore,
+  topRarityScore,
+  totalRarityScore,
+} from "./dictionary";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -64,12 +69,25 @@ export function formatFrequency(zipf: number): string {
 function rarestWord(words: AcceptedWord[]): AcceptedWord | undefined {
   return words.reduce<AcceptedWord | undefined>(
     (best, w) => (best === undefined || w.zipf < best.zipf ? w : best),
-    undefined
+    undefined,
   );
 }
 
+/**
+ * How much of the player's answers the shared result names:
+ * - `"none"`: squares and scores only, no words (the spoiler-free default).
+ * - `"top"`: name only the rarest word; the rest stay anonymous squares.
+ * - `"all"`: name every word.
+ */
+export type RevealMode = "none" | "top" | "all";
+
 export interface ShareOptions {
-  /** Defaults to true: omit the words-with-rarity line, squares only. */
+  /** How much to reveal in the result lines. Defaults to "none". */
+  reveal?: RevealMode;
+  /**
+   * @deprecated Use `reveal`. When `reveal` is unset, `true`/undefined maps to
+   * "none" and `false` maps to "all", preserving the original two-state API.
+   */
   spoilerFree?: boolean;
   /** Current consecutive-day streak to include in the shared result. */
   streak?: number;
@@ -84,52 +102,63 @@ export interface ShareOptions {
 }
 
 /**
- * Spoiler-free (the default): one line per rarity square and score, with
- * no words. Pass `spoilerFree: false` to
- * swap that for one line per word, each with its own rarity square and
- * numeric rarity score.
+ * Builds the shareable result text. `reveal` controls how much is named:
+ * "none" (the default) shows one line per rarity square and score with no
+ * words; "top" additionally names the rarest word; "all" names every word,
+ * each with its own rarity square and numeric rarity score.
  */
 export function buildShareText(
   dateStr: string,
   drop: string,
   words: AcceptedWord[],
-  options: ShareOptions = {}
+  options: ShareOptions = {},
 ): string {
-  const spoilerFree = options.spoilerFree ?? true;
+  const reveal: RevealMode =
+    options.reveal ?? (options.spoilerFree === false ? "all" : "none");
   const source = options.source ?? null;
   const format = options.format ?? "default";
   const label = formatDateLabel(dateStr);
 
-  const resultLine = spoilerFree
-    ? words
-        .map((w) => `${RARITY_SYMBOL[w.rarity]} ${formatRarityScore(w.zipf, dateStr)}`)
-        .join("\n")
-    : words
-        .map(
-          (w) =>
-            `${RARITY_SYMBOL[w.rarity]} ${w.word} (${formatRarityScore(w.zipf, dateStr)})`
-        )
-        .join("\n");
+  // The rarest word is the one "top" reveals, so resolve it up front and reuse
+  // it for both the per-word lines and the odds summary below.
+  const best = rarestWord(words);
+  const resultLine = words
+    .map((w) => {
+      const named = reveal === "all" || (reveal === "top" && w === best);
+      const score = formatRarityScore(w.zipf, dateStr);
+      return named
+        ? `${RARITY_SYMBOL[w.rarity]} ${w.word} (${score})`
+        : `${RARITY_SYMBOL[w.rarity]} ${score}`;
+    })
+    .join("\n");
 
   const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
-  if (format === "default" && (options.streak !== undefined || options.crushedIt !== undefined || options.elite !== undefined)) {
+  if (
+    format === "default" &&
+    (options.streak !== undefined ||
+      options.crushedIt !== undefined ||
+      options.elite !== undefined)
+  ) {
     const streak = options.streak ?? 0;
     if (resultLine) lines.push("");
     lines.push(
-      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Crushed it: ${options.crushedIt ?? 0} · Elite: ${options.elite ?? 0}`
+      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Crushed it: ${options.crushedIt ?? 0} · Elite: ${options.elite ?? 0}`,
     );
   }
-  const raritySummary = [`Total: ${totalRarityScore(words, dateStr).toFixed(1)}`];
+  const raritySummary = [
+    `Total: ${totalRarityScore(words, dateStr).toFixed(1)}`,
+  ];
   if (format === "default")
-    raritySummary.push(`Top: ${formatScore(topRarityScore(words, dateStr), dateStr)}`);
+    raritySummary.push(
+      `Top: ${formatScore(topRarityScore(words, dateStr), dateStr)}`,
+    );
   lines.push(raritySummary.join(" · "));
-  // Always show the rarest word's odds, but only name the word when spoilers
-  // are shown; the spoiler-free share labels it "Rarest word" instead so it
-  // keeps its guarantee of never naming a word.
-  const best = rarestWord(words);
+  // Always show the rarest word's odds, but only name the word once it is being
+  // revealed ("top" or "all"); the spoiler-free share labels it "Rarest word"
+  // instead so it keeps its guarantee of never naming a word.
   if (best) {
-    const label = spoilerFree ? "Rarest word" : best.word;
+    const label = reveal === "none" ? "Rarest word" : best.word;
     lines.push(`${label}: ${formatFrequency(best.zipf)}`);
   }
   lines.push(shareUrl(source));
@@ -139,7 +168,7 @@ export function buildShareText(
 export function todayShareText(
   drop: string,
   words: AcceptedWord[],
-  options?: ShareOptions
+  options?: ShareOptions,
 ): string {
   return buildShareText(toDateString(new Date()), drop, words, options);
 }

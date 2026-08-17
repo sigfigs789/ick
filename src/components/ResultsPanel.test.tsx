@@ -20,10 +20,35 @@ const streak: StreakState = {
 };
 
 describe("ResultsPanel share toggle", () => {
-  it("defaults to unchecked: the shared text preview hides the words but keeps the rarity squares", () => {
-    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
-    const toggle = screen.getByRole("checkbox", { name: /show my answers/i });
-    expect(toggle).not.toBeChecked();
+  it("defaults to Top: names only the rarest word, keeping the rest anonymous", () => {
+    render(
+      <ResultsPanel
+        date="2025-01-01"
+        drop="str"
+        words={words}
+        streak={streak}
+      />,
+    );
+    expect(screen.getByRole("radio", { name: /^top$/i })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /hide/i })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: /^all$/i })).not.toBeChecked();
+
+    const preview = document.querySelector(".results-panel__preview");
+    // aardvark (zipf 2.4) is the rarest of the two, so it is the only one named.
+    expect(preview?.textContent).toContain("aardvark");
+    expect(preview?.textContent).not.toContain("strange");
+  });
+
+  it("Hide keeps the share fully spoiler-free, showing squares but no words", async () => {
+    render(
+      <ResultsPanel
+        date="2025-01-01"
+        drop="str"
+        words={words}
+        streak={streak}
+      />,
+    );
+    await userEvent.click(screen.getByRole("radio", { name: /hide/i }));
 
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).not.toContain("strange");
@@ -33,47 +58,79 @@ describe("ResultsPanel share toggle", () => {
 
   it("uses the puzzle date in the shared heading", () => {
     const date = "2025-01-01";
-    render(<ResultsPanel date={date} drop="str" words={words} streak={streak} />);
+    render(
+      <ResultsPanel date={date} drop="str" words={words} streak={streak} />,
+    );
 
     const preview = document.querySelector(".results-panel__preview");
-    expect(preview?.textContent).toContain(buildShareText(date, "str", words, {
-      spoilerFree: true,
-      streak: streak.currentStreak,
-      crushedIt: streak.crushedIt,
-      elite: streak.elite,
-    }).split("\n")[0]);
+    expect(preview?.textContent).toContain(
+      buildShareText(date, "str", words, {
+        spoilerFree: true,
+        streak: streak.currentStreak,
+        crushedIt: streak.crushedIt,
+        elite: streak.elite,
+      }).split("\n")[0],
+    );
   });
 
-  it("shows the words in the shared text once checked", async () => {
-    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
-    const toggle = screen.getByRole("checkbox", { name: /show my answers/i });
+  it("shows every word in the shared text once All is selected", async () => {
+    render(
+      <ResultsPanel
+        date="2025-01-01"
+        drop="str"
+        words={words}
+        streak={streak}
+      />,
+    );
+    const allToggle = screen.getByRole("radio", { name: /^all$/i });
 
-    await userEvent.click(toggle);
-    expect(toggle).toBeChecked();
+    await userEvent.click(allToggle);
+    expect(allToggle).toBeChecked();
 
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).toContain("strange");
     expect(preview?.textContent).toContain("aardvark");
-    expect(preview?.querySelector("strong")?.textContent).toBe("Jan 1 — Drop: STR");
+    expect(preview?.querySelector("strong")?.textContent).toBe(
+      "Jan 1 — Drop: STR",
+    );
   });
 
   it("offers an accessible X composer link with space for a player note", () => {
-    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+    render(
+      <ResultsPanel
+        date="2025-01-01"
+        drop="str"
+        words={words}
+        streak={streak}
+      />,
+    );
 
     const twitterLink = screen.getByRole("link", { name: /share on x/i });
     expect(twitterLink).toHaveAttribute("target", "_blank");
     expect(twitterLink).toHaveAttribute("title", "Share on X");
-    expect(twitterLink.getAttribute("href")).toContain("twitter.com/intent/tweet");
+    expect(twitterLink.getAttribute("href")).toContain(
+      "twitter.com/intent/tweet",
+    );
     expect(decodeURIComponent(twitterLink.getAttribute("href") ?? "")).toMatch(
-      /\n\n────\n.*\nwordink\.app\/\?s=t$/s
+      /\n\n────\n.*\nwordink\.app\/\?s=t$/s,
     );
   });
 
   it("keeps answers in the X post when the player opts in, using the compact layout", async () => {
-    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
-    await userEvent.click(screen.getByRole("checkbox", { name: /show my answers/i }));
+    render(
+      <ResultsPanel
+        date="2025-01-01"
+        drop="str"
+        words={words}
+        streak={streak}
+      />,
+    );
+    await userEvent.click(screen.getByRole("radio", { name: /^all$/i }));
 
-    const xPost = decodeURIComponent(screen.getByRole("link", { name: /share on x/i }).getAttribute("href") ?? "");
+    const xPost = decodeURIComponent(
+      screen.getByRole("link", { name: /share on x/i }).getAttribute("href") ??
+        "",
+    );
     expect(xPost).toContain("strange (4.6)");
     expect(xPost).not.toContain("Streak:");
     expect(xPost).not.toContain("Top:");
