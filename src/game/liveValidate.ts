@@ -10,8 +10,21 @@
 
 import type { RejectionReason } from "./types";
 
-/** How long a player waits for a live verdict before the rejection is shown. */
-export const LIVE_HANDOFF_MS = 1000;
+/**
+ * How long a player waits for a live verdict before the rejection is shown.
+ * Almost every real lookup lands far inside this (a warm CDN hit is instant, a
+ * cold MW + Datamuse round-trip measured ~300ms), so the budget only bites on a
+ * slow connection.
+ */
+export const LIVE_HANDOFF_MS = 4000;
+
+/**
+ * How long a lookup must run before the player is told anything about it. Under
+ * this, the check finishes so quickly that showing and then replacing a message
+ * would just be a flicker -- so the game looks exactly as it always has, and
+ * "Looking deeper" appears only when the wait is long enough to need explaining.
+ */
+export const LIVE_INDICATOR_DELAY_MS = 1500;
 
 /** Hard ceiling on a single lookup, so a wedged request can't leak forever. */
 const LIVE_ABORT_MS = 15000;

@@ -780,11 +780,12 @@ h2 {
   color: var(--danger-fg);
 }
 /* A word not on the curated list is being checked against Merriam-Webster.
-   Deliberately neutral: it is not a verdict yet, and it is replaced within a
-   second either way (see LIVE_HANDOFF_MS). */
+   Deliberately neutral and centered: it is not a verdict yet, just a note that
+   the answer is still coming (see LIVE_HANDOFF_MS). */
 .feedback--checking {
   background: color-mix(in srgb, currentColor 8%, transparent);
   color: inherit;
+  text-align: center;
 }
 .feedback__more-info {
   margin-left: 0.4rem;

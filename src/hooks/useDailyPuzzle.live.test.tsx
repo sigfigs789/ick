@@ -23,7 +23,8 @@ const OFF_LIST_WORD = `${DROP.toLowerCase()}qxz`;
 /** Resolve /api/validate with `body`, optionally after a delay. */
 function stubValidate(body: unknown, delayMs = 0) {
   const fetchMock = vi.fn(async () => {
-    if (delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    if (delayMs > 0)
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     return { status: 200, json: async () => body } as unknown as Response;
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -75,7 +76,11 @@ describe("useDailyPuzzle live fallback", () => {
     });
     expect(result.current.progress.rejectedAttempts).toEqual([]);
     expect(result.current.feedback?.kind).toBe("accepted");
-    expect(result.current.feedback?.message).toContain("Merriam-Webster");
+    // Reads exactly like a curated word -- no mention of where the verdict came
+    // from, identical to what an offline acceptance produces.
+    expect(result.current.feedback?.message).toBe(
+      `"${OFF_LIST_WORD}" accepted — Rare.`,
+    );
   });
 
   it("falls back to the unattested floor when no frequency is found", async () => {
@@ -91,6 +96,43 @@ describe("useDailyPuzzle live fallback", () => {
     // The rarest tier -- the same treatment a curated word with no corpus data gets.
     expect(accepted.rarity).toBe("Legend");
   });
+
+  it("shows nothing at all when the lookup answers quickly", async () => {
+    // The common case: the check must be invisible. A single feedback event --
+    // the acceptance -- means no "Looking deeper" flicker preceded it.
+    stubValidate(playable(3.0));
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord(OFF_LIST_WORD);
+    });
+
+    expect(result.current.feedback?.kind).toBe("accepted");
+    expect(result.current.feedback?.key).toBe(1);
+  });
+
+  it("explains a slow lookup once it passes 1.5s, then resolves it", async () => {
+    // Slow enough to earn the indicator, still inside the 4s budget.
+    stubValidate(playable(3.0), 2500);
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    let pending: Promise<unknown> | undefined;
+    await act(async () => {
+      pending = result.current.submitWord(OFF_LIST_WORD);
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+    });
+
+    expect(result.current.feedback?.kind).toBe("checking");
+    expect(result.current.feedback?.message).toBe("Looking deeper");
+
+    await act(async () => {
+      await pending;
+    });
+
+    // The indicator is replaced by the real verdict, not left behind.
+    expect(result.current.feedback?.kind).toBe("accepted");
+    expect(result.current.progress.acceptedWords).toHaveLength(1);
+  }, 15000);
 
   it("rejects a word Merriam-Webster knows but the game shouldn't take", async () => {
     stubValidate({
@@ -137,7 +179,7 @@ describe("useDailyPuzzle live fallback", () => {
 
   it("stops blocking after the handoff window, then still banks a late approval", async () => {
     // Answers well after LIVE_HANDOFF_MS, so the player is released first.
-    stubValidate(playable(3.0), 1200);
+    stubValidate(playable(3.0), 4400);
     const { result } = renderHook(() => useDailyPuzzle());
 
     await act(async () => {
@@ -153,13 +195,13 @@ describe("useDailyPuzzle live fallback", () => {
       () => {
         expect(result.current.progress.acceptedWords).toHaveLength(1);
       },
-      { timeout: 3000 }
+      { timeout: 9000 },
     );
     expect(result.current.progress.acceptedWords[0].word).toBe(OFF_LIST_WORD);
     // A late approval must not also leave the word recorded as a rejection.
     expect(result.current.progress.rejectedAttempts).toEqual([]);
     expect(result.current.feedback?.kind).toBe("accepted");
-  });
+  }, 15000);
 
   it("reports an approved word, its rarity, and that it counted", async () => {
     stubValidate(playable(3.0));
@@ -226,7 +268,7 @@ describe("useDailyPuzzle live fallback", () => {
   });
 
   it("still reports an approval that lands after the handoff", async () => {
-    stubValidate(playable(3.0), 1200);
+    stubValidate(playable(3.0), 4400);
     const { result } = renderHook(() => useDailyPuzzle());
 
     await act(async () => {
@@ -238,13 +280,13 @@ describe("useDailyPuzzle live fallback", () => {
       () => {
         expect(eventPayload("merriam_webster_approved")).toBeDefined();
       },
-      { timeout: 3000 }
+      { timeout: 9000 },
     );
     expect(eventPayload("merriam_webster_approved")).toMatchObject({
       applied: true,
       within_handoff: false,
     });
-  });
+  }, 15000);
 
   it("sends no event at all for an offline player", async () => {
     stubValidate(playable(3.0));
@@ -284,11 +326,14 @@ describe("useDailyPuzzle live fallback", () => {
     });
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(result.current.feedback?.message).toContain("doesn't contain the drop");
+    expect(result.current.feedback?.message).toContain(
+      "doesn't contain the drop",
+    );
   });
 
   it("banks a word only once when it is submitted twice mid-flight", async () => {
-    stubValidate(playable(3.0), 1200);
+    // A short delay is enough: both submissions start before either resolves.
+    stubValidate(playable(3.0), 50);
     const { result } = renderHook(() => useDailyPuzzle());
 
     await act(async () => {
@@ -302,7 +347,7 @@ describe("useDailyPuzzle live fallback", () => {
       () => {
         expect(result.current.progress.acceptedWords).toHaveLength(1);
       },
-      { timeout: 3000 }
+      { timeout: 9000 },
     );
   });
 });

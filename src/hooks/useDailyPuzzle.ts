@@ -16,6 +16,7 @@ import { baseFormSubstitution, rarityForZipf, totalRarityScore, unattestedZipf }
 import {
   checkWordLive,
   eligibleForLiveCheck,
+  LIVE_INDICATOR_DELAY_MS,
   rejectionReasonForLive,
   STILL_PENDING,
   withHandoff,
@@ -100,9 +101,13 @@ export function useDailyPuzzle() {
   }, []);
 
   /**
-   * Bank an accepted word and fire its analytics. Returns false when the puzzle
-   * had already finished (storage refuses further changes), which only a
-   * late-arriving live verdict can hit.
+   * Bank an accepted word, fire its analytics, and show the acceptance. Returns
+   * false when the puzzle had already finished (storage refuses further
+   * changes), which only a late-arriving live verdict can hit.
+   *
+   * Every accepted word goes through here, so a word confirmed live reads
+   * exactly like one from the curated list -- where it came from is analytics'
+   * business, not the player's.
    */
   const acceptWord = useCallback(
     (word: AcceptedWord): boolean => {
@@ -125,9 +130,10 @@ export function useDailyPuzzle() {
       if (updated.completed) {
         trackPuzzleCompleted(updated, "all_answers", updatedStreak);
       }
+      showFeedback("accepted", `"${word.word}" accepted — ${word.rarity}.`, word.rarity);
       return true;
     },
-    [viewedDate]
+    [viewedDate, showFeedback]
   );
 
   /** Record and report a rejection, and show its message. */
@@ -155,16 +161,10 @@ export function useDailyPuzzle() {
         const word: AcceptedWord = { word: check.word, ...info };
         const applied = acceptWord(word);
         trackMerriamWebsterApproved(viewedDate, drop, check, info, applied);
-        if (applied) {
-          showFeedback(
-            "accepted",
-            `"${word.word}" accepted — ${word.rarity}, confirmed by Merriam-Webster.`,
-            word.rarity
-          );
-          return { ok: true, word };
-        }
-        // Approved, but the puzzle finished while the lookup was in flight.
-        showFeedback("rejected", `Merriam-Webster confirmed "${word.word}", but this puzzle is already finished.`);
+        if (applied) return { ok: true, word };
+        // Approved, but the puzzle finished while the lookup was in flight. The
+        // submit form is gone by then, so there is nothing useful to say and no
+        // new copy is invented -- the event records that it happened.
         return { ok: false, reason: "not-a-word" };
       }
 
@@ -175,7 +175,7 @@ export function useDailyPuzzle() {
       rejectWord(raw, reason);
       return { ok: false, reason };
     },
-    [viewedDate, drop, acceptWord, rejectWord, showFeedback]
+    [viewedDate, drop, acceptWord, rejectWord]
   );
 
   const submitWord = useCallback(
@@ -189,11 +189,6 @@ export function useDailyPuzzle() {
 
       if (result.ok && result.word) {
         acceptWord(result.word);
-        showFeedback(
-          "accepted",
-          `"${result.word.word}" accepted — ${result.word.rarity}.`,
-          result.word.rarity
-        );
         return result;
       }
 
@@ -217,8 +212,16 @@ export function useDailyPuzzle() {
         () => inFlight.current.delete(word)
       );
 
-      showFeedback("checking", `Checking "${word}" with Merriam-Webster…`);
+      // Say nothing at first. A lookup that answers quickly -- nearly all of
+      // them -- should be invisible: showing and then replacing a message inside
+      // a few hundred milliseconds is just a flicker. Only a wait long enough to
+      // look like a hang earns an explanation.
+      const indicator = window.setTimeout(
+        () => showFeedback("checking", "Looking deeper"),
+        LIVE_INDICATOR_DELAY_MS
+      );
       const settled = await withHandoff(lookup);
+      window.clearTimeout(indicator);
       if (settled !== STILL_PENDING) {
         return applyLiveCheck(raw, settled);
       }

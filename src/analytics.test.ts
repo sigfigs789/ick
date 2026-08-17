@@ -212,14 +212,14 @@ describe("merriam-webster events", () => {
     trackMerriamWebsterApproved(
       "2026-08-18",
       "TIO",
-      liveCheck({ elapsedMs: 4200 }),
+      liveCheck({ elapsedMs: 6200 }),
       { zipf: 0.83, rarity: "Legend" },
       false
     );
 
     expect(track).toHaveBeenCalledWith(
       "merriam_webster_approved",
-      expect.objectContaining({ applied: false, within_handoff: false, elapsed_ms: 4200 })
+      expect.objectContaining({ applied: false, within_handoff: false, elapsed_ms: 6200 })
     );
   });
 
