@@ -9,15 +9,22 @@ Three provenance lists feed the playable dictionary:
                                     upcoming drop by the "Add rare words found
                                     online" GitHub Action (scripts/find-online-words.py)
 
-All three are merged into dictionary.json by generate-data.py; the split only
-records where a word came from. An added word is gated on the frequency waterfall
+All three feed dictionary.json; the split only records where a word came from.
+Adding a word inserts it straight into dictionary.json (see insert_into_dictionary)
+and then reruns `generate-data.py --refresh-rarity` to grade it -- it no longer
+rebuilds the whole list from the ESDB/SCOWL source, whose unpinned upstream made
+every run silently re-size and re-score the entire dictionary. A full rebuild
+(generate-data.py --word-list) still re-merges all three lists from scratch.
+An added word is gated on the frequency waterfall
 (wordfreq -> Norvig -> Google Books): by default a word no corpus attests is
 rejected, because its rarity would be a guess rather than a measurement.
 `--forced` overrides that and adds the word anyway; the data pipeline then gives
-an otherwise-unscored word the rarest-word floor, a perfect 10.0 / Mythic.
+an otherwise-unscored word the rarest-word floor, a perfect 10.0 / Legend.
 """
 import argparse
+import bisect
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -118,18 +125,48 @@ def add_word(raw_word: str, list_name: str, forced: bool) -> None:
         sys.exit(
             f"{word!r} has no rarity score in any frequency corpus and was not "
             f"added. Re-run with forced=true to add it anyway (it will score the "
-            f"maximum 10.0 / Mythic)."
+            f"maximum 10.0 / Legend)."
         )
 
     existing = path.read_text() if path.exists() else ""
     prefix = f"{existing.rstrip()}\n" if existing.strip() else ""
     path.write_text(f"{prefix}{word}\n")
 
+    insert_into_dictionary(word)
+
     if zipf is not None:
         rating = f"Zipf {zipf:.2f}"
     else:
-        rating = "no corpus attests it; forced, will score the maximum 10.0 / Mythic"
+        rating = "no corpus attests it; forced, will score the maximum 10.0 / Legend"
     print(f"Added {word!r} to {path} as a {spec['label']} word ({rating}).")
+
+
+def insert_into_dictionary(word: str) -> None:
+    """Insert a newly added word into the curated dictionary.json in place.
+
+    The add-word flow grows the existing list by exactly the words added rather
+    than rebuilding the whole dictionary from the ESDB/SCOWL source. That rebuild
+    cloned an *unpinned* upstream (en-wl/wordlist), so every run re-derived -- and
+    silently re-sized and re-scored -- the entire dictionary from whatever the
+    source happened to be that day; the mismatch surfaced as align-legacy aborting
+    ("off by N entries"). Growing in place keeps the other ~225k words byte-for-byte
+    frozen; `generate-data.py --refresh-rarity` afterward recomputes rarity.json
+    over the +1 list from the local frequency corpora (no ESDB), and align-legacy
+    inserts the matching legacy placeholder.
+
+    dictionary.json is stored in the same ascending sort generate-data.py writes
+    (`sorted(...)`, i.e. Python's code-point order), and in the same compact JSON,
+    so a bisect insert preserves both the order and the on-disk format the
+    index-aligned rarity arrays depend on.
+    """
+    dictionary = json.loads(DICTIONARY_PATH.read_text())
+    # add_word() already rejects a word already present, but stay idempotent so a
+    # re-run can't double-insert and desync the rarity arrays.
+    if word in dictionary:
+        return
+    bisect.insort(dictionary, word)
+    DICTIONARY_PATH.write_text(json.dumps(dictionary, separators=(",", ":")))
+    print(f"Inserted {word!r} into dictionary.json (now {len(dictionary):,} words).")
 
 
 def update_size_test() -> None:
@@ -153,6 +190,26 @@ def update_size_test() -> None:
 MEASURED_FLOOR = 1.0
 BAND_CEILING = 9.9
 TAIL_FLOOR = 0.0
+# Score cutoffs for the wide band's two top ranks, keyed off the *displayed*
+# score, mirroring LEGEND_MIN_SCORE / MYTHIC_MIN_SCORE in src/game/dictionary.ts:
+# Legend at a two-decimal score >= 9.9, Mythic wherever the score displays as 9.5+.
+LEGEND_MIN_SCORE = 9.9
+MYTHIC_MIN_SCORE = 9.5
+
+
+def _js_round(n: float) -> int:
+    """Mirror JavaScript's Math.round (round half up), not Python's round-half-even."""
+    return math.floor(n + 0.5)
+
+
+def _round_to_cents(n: float) -> float:
+    """Mirror roundToCents(): two decimals with an upward nudge (9.895 -> 9.90)."""
+    return _js_round(n * 100 + 1e-6) / 100
+
+
+def _round_to_tenths(n: float) -> float:
+    """Mirror roundToTenths(): one decimal with an upward nudge (9.45 -> 9.5)."""
+    return _js_round(n * 10 + 1e-6) / 10
 
 
 def _strip_doubled_consonant(stem: str) -> str:
@@ -233,26 +290,54 @@ def measured_rarity(zipf: float) -> str:
     return "Extremely Rare"
 
 
-def rarity_label(zipf: float) -> str:
-    """Mirror of Scoring.rarity() for the wide band: deep tail is its own rank."""
-    return "Mythic" if zipf < MEASURED_FLOOR else measured_rarity(zipf)
-
-
 def current_score(zipf: float, max_zipf: float) -> float:
-    """Displayed 0..10 rarity score for a Zipf, mirroring WIDE_SCORING."""
+    """Displayed 0..10 rarity score for a Zipf, mirroring WIDE_SCORING.
+
+    Both bands round to two decimals with the same upward nudge the app uses
+    (roundToCents), so the elite top of the scale has the resolution its Legend/
+    Mythic cutoffs key off. The measured band fills 0..BAND_CEILING; the deep tail
+    (Zipf < MEASURED_FLOOR) fills BAND_CEILING..10, clamped at TAIL_FLOOR -> 10.
+    """
     if zipf >= MEASURED_FLOOR:
         score = BAND_CEILING * (max_zipf - zipf) / (max_zipf - MEASURED_FLOOR)
-        return round(score * 10) / 10
+        return _round_to_cents(score)
     clamped = max(zipf, TAIL_FLOOR)
     score = BAND_CEILING + (10 - BAND_CEILING) * (MEASURED_FLOOR - clamped) / (
         MEASURED_FLOOR - TAIL_FLOOR
     )
-    return round(min(score, 10) * 100) / 100
+    return _round_to_cents(min(score, 10))
+
+
+def top_rank_for_score(score: float) -> str | None:
+    """Mirror of topRankForScore(): the score-based Legend/Mythic ranks, or None.
+
+    Legend keys off the two-decimal score (>= 9.9); Mythic off the one-decimal
+    score (rounds to >= 9.5). Below that the caller falls back to the Zipf-band
+    label. Kept identical to src/game/dictionary.ts so a pinned label can't drift.
+    """
+    if _round_to_cents(score) >= LEGEND_MIN_SCORE:
+        return "Legend"
+    if _round_to_tenths(score) >= MYTHIC_MIN_SCORE:
+        return "Mythic"
+    return None
+
+
+def rarity_label(zipf: float, max_zipf: float) -> str:
+    """Mirror of WIDE_SCORING.rarity(): the top ranks key off the *score*.
+
+    The deep tail is not flatly "Mythic" -- a word scoring >= 9.9 is "Legend".
+    So the label is derived from the displayed score (topRankForScore), falling
+    back to the measured Zipf-band label below the Mythic cutoff.
+    """
+    return top_rank_for_score(current_score(zipf, max_zipf)) or measured_rarity(zipf)
 
 
 def format_score(score: float) -> str:
-    """Two decimals in the elite deep-tail band, one otherwise (matches the app)."""
-    return f"{score:.2f}" if score >= BAND_CEILING else f"{score:.1f}"
+    """Mirror of WIDE_SCORING.format(): two decimals for Mythic/Legend (score >=
+    9.5), one decimal (with the upward nudge) otherwise, matching the app."""
+    if score >= MYTHIC_MIN_SCORE:
+        return f"{score:.2f}"
+    return f"{_round_to_tenths(score):.1f}"
 
 
 def adjusted_zipf(word: str, index: dict[str, int], zipf_at) -> float:
@@ -284,8 +369,9 @@ def word_rarity(word: str) -> tuple[float, str, float]:
         return hundredths[index[w]] / 100
 
     zipf = round(adjusted_zipf(word, index, zipf_at), 2)
-    label = rarity_label(zipf)
-    score = current_score(zipf, max(hundredths) / 100)
+    max_zipf = max(hundredths) / 100
+    score = current_score(zipf, max_zipf)
+    label = rarity_label(zipf, max_zipf)
     return zipf, label, score
 
 

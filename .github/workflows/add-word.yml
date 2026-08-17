@@ -7,7 +7,7 @@ name: Add a word
 #                     scheduled "Add rare words found online" workflow adds these
 #                     automatically, but this lets a maintainer add one by hand.
 # For each, forced=false requires the word to be scored; forced=true adds it even
-# if no corpus scores it (it lands at the reserved 10.0 / Mythic).
+# if no corpus scores it (it lands at the reserved 10.0 / Legend).
 #
 # "Scored" means the frequency waterfall (wordfreq -> Norvig -> Google Books)
 # attests the word. Without --forced, an unscored word fails the run.
@@ -29,7 +29,7 @@ on:
           - suggested
           - online
       forced:
-        description: Add the word even if no frequency corpus scores it (it will score the max 10.0 / Mythic)
+        description: Add the word even if no frequency corpus scores it (it will score the max 10.0 / Legend)
         required: false
         default: false
         type: boolean
@@ -61,12 +61,6 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Check out ESDB/SCOWL
-        uses: actions/checkout@v4
-        with:
-          repository: en-wl/wordlist
-          path: .tmp/esdb
-
       - name: Install data-generation dependency
         run: python -m pip install wordfreq==3.1.1
 
@@ -74,13 +68,17 @@ jobs:
         run: |
           FORCED_FLAG=""
           if [ "$FORCED" = "true" ]; then FORCED_FLAG="--forced"; fi
+          # Grow the existing dictionary by exactly this word (manage-extra-word.py
+          # inserts it into dictionary.json in place). We deliberately do NOT rebuild
+          # the whole list from the ESDB/SCOWL source: that source was checked out
+          # unpinned, so each run re-derived -- and silently re-sized and re-scored --
+          # the entire dictionary from whatever upstream was that day, which broke
+          # align-legacy ("off by N entries") and would have shipped a drifted list.
           python scripts/manage-extra-word.py add "$WORD" --list "$LIST" $FORCED_FLAG
-          make -C .tmp/esdb
-          .tmp/esdb/scowl --db .tmp/esdb/scowl.db word-list 80 A,B,Z,C,D 1 --wo-poses=abbr --categories= > .tmp/scowl-regional-80.txt
-          python scripts/generate-data.py --word-list .tmp/scowl-regional-80.txt --esdb-db .tmp/esdb/scowl.db
-          # Grade the deep tail (Norvig/Google Books waterfall) and give unscored
-          # forced words the reserved 10.0 / Mythic. Then keep the frozen legacy
-          # rarity arrays index-aligned with the grown dictionary.
+          # Grade the deep tail (wordfreq -> Norvig -> Google Books waterfall; no
+          # ESDB needed) over the +1 dictionary, giving an unscored forced word the
+          # reserved 10.0 / Legend. Then keep the frozen legacy rarity arrays
+          # index-aligned with the grown dictionary.
           python scripts/generate-data.py --refresh-rarity
           python scripts/manage-extra-word.py align-legacy "$WORD"
           python scripts/manage-extra-word.py update-size-test
@@ -105,7 +103,7 @@ jobs:
             (`scripts/${{ inputs.list == 'suggested' && 'suggested-words.txt' || inputs.list == 'online' && 'online-words.txt' || 'extra-words.txt' }}`)
             and regenerates the dictionary and rarity mappings.
 
-            - forced: `${{ inputs.forced }}` (a forced word with no corpus frequency scores the maximum 10.0 / Mythic)
+            - forced: `${{ inputs.forced }}` (a forced word with no corpus frequency scores the maximum 10.0 / Legend)
             - The word's Zipf and rarity score are printed in the run log (see the
               "Add word and regenerate dictionary data" step) and pinned in a test.
             - The dictionary-size and validity/score tests were updated automatically.
