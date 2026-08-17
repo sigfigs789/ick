@@ -270,3 +270,44 @@ describe("api/validate failure reporting", () => {
     expect(response.headers.get("cache-control")).toContain("s-maxage=86400");
   });
 });
+
+describe("api/validate reference coverage", () => {
+  /** Collegiate misses (spelling suggestions); the medical reference has it. */
+  function stubMedicalOnly(entry: unknown) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL | Request) => {
+        const href = String(url);
+        if (href.includes("datamuse")) return new Response("[]", { status: 200 });
+        const body = href.includes("/medical/") ? [entry] : ["piloerector", "pilocarpine"];
+        return new Response(JSON.stringify(body), { status: 200 });
+      })
+    );
+  }
+
+  it("accepts a word only the medical reference attests", async () => {
+    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
+    stubMedicalOnly({ meta: { id: "piloerection" }, fl: "noun", def: [{}] });
+    expect(await body(await handler(request("piloerection")))).toMatchObject({
+      outcome: "playable",
+    });
+  });
+
+  it("consults both references when both keys are set", async () => {
+    withKeys({ MW_COLLEGIATE_KEY: "c", MW_MEDICAL_KEY: "m" });
+    const fetchMock = stubFetch({ mw: [] });
+    await handler(request("cat"));
+    const references = fetchMock.mock.calls.map(([url]) => String(url));
+    expect(references.some((u) => u.includes("/collegiate/"))).toBe(true);
+    expect(references.some((u) => u.includes("/medical/"))).toBe(true);
+  });
+
+  it("treats a 429 as a spent quota", async () => {
+    withKeys();
+    stubFetch({ mwStatus: 429, mwBody: "Too many requests" });
+    expect(await body(await handler(request("cat")))).toMatchObject({
+      reason: "quota-exceeded",
+      status: 429,
+    });
+  });
+});

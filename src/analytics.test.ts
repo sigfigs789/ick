@@ -4,9 +4,15 @@ import {
   trackRedditArrival,
   trackResultCopied,
   trackResultSharedOnX,
+  trackMerriamWebsterApproved,
+  trackMerriamWebsterFailed,
   trackVisit,
   trackVisitEngaged,
 } from "./analytics";
+import { unattestedZipf, rarityScore } from "./game/dictionary";
+import { puzzleNumber } from "./game/share";
+import type { LiveCheck } from "./game/liveValidate";
+import type { RarityInfo } from "./game/types";
 import { recordVisit, type VisitOutcome } from "./game/visits";
 
 const track = vi.hoisted(() => vi.fn());
@@ -148,5 +154,121 @@ describe("campaign arrivals", () => {
   it("records a Reddit arrival", () => {
     trackRedditArrival();
     expect(track).toHaveBeenCalledWith("arrived_from_reddit");
+  });
+});
+
+function liveCheck(overrides: Partial<LiveCheck> = {}): LiveCheck {
+  return {
+    word: "borborygmus",
+    outcome: "playable",
+    reason: null,
+    detail: null,
+    status: null,
+    zipf: 0.8351830698490437,
+    pos: ["noun"],
+    firstUse: "circa 1724",
+    elapsedMs: 420,
+    ...overrides,
+  };
+}
+
+describe("merriam-webster events", () => {
+  it("reports an approved word with the rarity it was scored at", () => {
+    const check = liveCheck();
+    const info: RarityInfo = { zipf: check.zipf!, rarity: "Legend" };
+    trackMerriamWebsterApproved("2026-08-18", "TIO", check, info, true);
+
+    expect(track).toHaveBeenCalledWith("merriam_webster_approved", {
+      puzzle_date: "2026-08-18",
+      puzzle_number: puzzleNumber("2026-08-18"),
+      drop: "tio",
+      word: "borborygmus",
+      rarity: "Legend",
+      score: rarityScore(check.zipf!, "2026-08-18"),
+      zipf: 0.84,
+      attested: true,
+      first_use: "circa 1724",
+      pos: "noun",
+      elapsed_ms: 420,
+      within_handoff: true,
+      applied: true,
+    });
+  });
+
+  it("marks a word scored from the unattested floor as unattested", () => {
+    const check = liveCheck({ zipf: null, firstUse: null, pos: [] });
+    trackMerriamWebsterApproved("2026-08-18", "TIO", check, {
+      zipf: unattestedZipf(),
+      rarity: "Legend",
+    }, true);
+
+    expect(track).toHaveBeenCalledWith(
+      "merriam_webster_approved",
+      expect.objectContaining({ attested: false, first_use: "unknown", pos: "unknown" })
+    );
+  });
+
+  it("separates an approval that arrived too late to count", () => {
+    trackMerriamWebsterApproved(
+      "2026-08-18",
+      "TIO",
+      liveCheck({ elapsedMs: 4200 }),
+      { zipf: 0.83, rarity: "Legend" },
+      false
+    );
+
+    expect(track).toHaveBeenCalledWith(
+      "merriam_webster_approved",
+      expect.objectContaining({ applied: false, within_handoff: false, elapsed_ms: 4200 })
+    );
+  });
+
+  it("names the reason a lookup failed, including a spent quota", () => {
+    trackMerriamWebsterFailed(
+      "2026-08-18",
+      "TIO",
+      liveCheck({
+        outcome: "error",
+        reason: "quota-exceeded",
+        detail: "You have exceeded your daily request limit.",
+        status: 403,
+        zipf: null,
+      })
+    );
+
+    expect(track).toHaveBeenCalledWith("merriam_webster_failed", {
+      puzzle_date: "2026-08-18",
+      puzzle_number: puzzleNumber("2026-08-18"),
+      drop: "tio",
+      word: "borborygmus",
+      reason: "quota-exceeded",
+      detail: "You have exceeded your daily request limit.",
+      status: 403,
+      elapsed_ms: 420,
+    });
+  });
+
+  it("keeps a runaway failure detail from bloating the event", () => {
+    trackMerriamWebsterFailed(
+      "2026-08-18",
+      "TIO",
+      liveCheck({ outcome: "error", reason: "upstream-error", detail: "x".repeat(500) })
+    );
+
+    const [, payload] = track.mock.calls[track.mock.calls.length - 1];
+    expect((payload as { detail: string }).detail).toHaveLength(200);
+  });
+
+  it("falls back to placeholders rather than sending empty fields", () => {
+    trackMerriamWebsterFailed(
+      "2026-08-18",
+      "TIO",
+      liveCheck({ outcome: "error", reason: null, detail: null, status: null })
+    );
+
+    expect(track).toHaveBeenCalledWith(
+      "merriam_webster_failed",
+      expect.objectContaining({ reason: "unknown", detail: "none", status: 0 })
+    );
   });
 });

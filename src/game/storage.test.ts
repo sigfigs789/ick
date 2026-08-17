@@ -380,3 +380,43 @@ describe("streak continuation", () => {
     expect(streak.crushedIt).toBe(3);
   });
 });
+
+describe("live-validated words", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it("survives a reload even though the word is not in the curated dictionary", () => {
+    // A word accepted via the live Merriam-Webster fallback has no entry in
+    // dictionary.json or rarity.json, so its saved rarity is the only record of
+    // what it scored. loadProgress must not try to re-derive (or drop) it.
+    const live: AcceptedWord = { word: "piloerection", rarity: "Extremely Rare", zipf: 1.54 };
+    recordAcceptedWord(newProgress("2026-08-18", "tio"), live);
+
+    const reloaded = loadProgress("2026-08-18");
+    expect(reloaded?.acceptedWords).toEqual([live]);
+  });
+
+  it("counts toward the streak and high score like any other accepted word", () => {
+    setToday("2026-08-18");
+    recordAcceptedWord(newProgress("2026-08-18", "tio"), {
+      word: "piloerection",
+      rarity: "Extremely Rare",
+      zipf: 1.54,
+    });
+
+    const streak = loadStreak();
+    expect(streak.currentStreak).toBe(1);
+    expect(streak.elite).toBe(1);
+    expect(streak.highScore).toBe(rarityScore(1.54, "2026-08-18"));
+  });
+
+  it("keeps a word scored at the unattested floor at the floor, not re-derived", () => {
+    // The sentinel Zipf is not one of the legacy fallbacks loadProgress migrates,
+    // and rarityFor can't answer for an off-list word -- so it must pass through.
+    const live: AcceptedWord = { word: "piloerection", rarity: "Legend", zipf: -1.57 };
+    recordAcceptedWord(newProgress("2026-08-18", "tio"), live);
+
+    expect(loadProgress("2026-08-18")?.acceptedWords[0]).toEqual(live);
+  });
+});
