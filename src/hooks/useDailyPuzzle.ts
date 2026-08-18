@@ -125,6 +125,13 @@ export function useDailyPuzzle() {
   // should see that the search finished, not watch a message blink out.
   const [liveNote, setLiveNote] = useState<string | null>(null);
   const liveNoteVerb = useRef<LiveCheckNote | null>(null);
+  // True only while the player is actually being made to wait on a lookup --
+  // set when one starts, cleared the moment it answers or hands off at
+  // LIVE_HANDOFF_MS. A lookup that outlives the handoff keeps running, but the
+  // input stops advertising it: the player has already been given a verdict and
+  // told to carry on, so a still-pulsing box would be claiming a wait that is
+  // no longer theirs.
+  const [checking, setChecking] = useState(false);
 
   // A live lookup can settle long after `submitWord` returned, so the bookkeeping
   // it does must read the newest progress rather than the value captured by the
@@ -147,6 +154,7 @@ export function useDailyPuzzle() {
     setProgress(loaded);
     setFeedback(null);
     setLiveNote(null);
+    setChecking(false);
   }, [viewedDate, drop]);
 
   const showFeedback = useCallback((kind: Feedback["kind"], message: string, rarity?: Rarity) => {
@@ -282,7 +290,9 @@ export function useDailyPuzzle() {
       const note = nextLiveCheckNote();
       liveNoteVerb.current = note;
       setLiveNote(note.pending);
+      setChecking(true);
       const settled = await withHandoff(lookup);
+      setChecking(false);
       if (settled !== STILL_PENDING) {
         return applyLiveCheck(raw, settled);
       }
@@ -315,6 +325,7 @@ export function useDailyPuzzle() {
     setProgress(fresh);
     setFeedback(null);
     setLiveNote(null);
+    setChecking(false);
   }, [viewedDate, drop]);
 
   const goToPrevious = useCallback(() => {
@@ -344,5 +355,6 @@ export function useDailyPuzzle() {
     lockIn,
     resetAnswers,
     liveNote,
+    checking,
   };
 }
