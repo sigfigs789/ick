@@ -9,6 +9,12 @@ Goal: the top of the scale should feel earned. A player who lands a Legend
 should have found something genuinely delightful — not typed an `-s` onto a word
 the game already ranks Legend.
 
+**Scope: one drop.** The only words in play are the ones containing the drop for
+the puzzle date — by default tomorrow's, Mountain Time. Nothing else is a
+finding, however wrong it looks: a word a player cannot reach on this puzzle is
+not this run's problem. Never widen the run into a dictionary-wide sweep, and
+never report counts that are not scoped to the drop.
+
 ## 1. Run the triage
 
 From the ick checkout (read-only; it changes nothing):
