@@ -1,6 +1,7 @@
 name: Add rare words found online
 
-# Run this by hand (Actions tab -> "Add rare words found online" -> Run workflow).
+# Runs daily on a schedule, and can also be run by hand (Actions tab -> "Add rare
+# words found online" -> Run workflow).
 # It looks at the drop coming up the following day, searches online (Datamuse)
 # for very rare words that contain it, and opens ONE pull request adding all of
 # them to the dictionary with the new "online" provenance -- distinct from
@@ -14,6 +15,15 @@ name: Add rare words found online
 # guessed), so --forced is never used here.
 
 on:
+  # 14:00 UTC is 08:00 MDT / 07:00 MST. The drop for a given puzzle date comes
+  # from the player's *local* calendar date (src/game/date.ts), and this workflow
+  # targets "tomorrow (UTC)" by default -- those agree only while the UTC and
+  # Mountain dates match, which holds from 07:00 UTC to midnight year-round. A
+  # mid-day-UTC cron therefore lands on tomorrow's Mountain drop in both DST
+  # halves, a full day before it goes live; an overnight-UTC one would silently
+  # target the wrong drop.
+  schedule:
+    - cron: "0 14 * * *"
   workflow_dispatch:
     inputs:
       date:
@@ -31,7 +41,41 @@ permissions:
   pull-requests: write
 
 jobs:
+  # Every run of this workflow edits dictionary.json, rarity.json and
+  # rarity-legacy.json -- three index-aligned files whose conflicts have to be
+  # resolved by hand. Two unreviewed PRs open at once means doing that, so a
+  # scheduled run stands down until the previous one has been merged or closed.
+  # A manual run is always deliberate, so it is never skipped.
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.check.outputs.proceed }}
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Check for an automated PR that is still open
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          open=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 100 \
+            --json headRefName \
+            --jq '[.[] | select(.headRefName | startswith("automated/add-online-words-"))] | length')
+          if [ "$open" = "0" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::$open automated online-words PR(s) still open; skipping this scheduled run."
+          fi
+
   add-online-words:
+    needs: guard
+    if: needs.guard.outputs.proceed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Check out WordInk
