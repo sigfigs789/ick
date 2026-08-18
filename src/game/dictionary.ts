@@ -244,8 +244,19 @@ const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
+  // The legacy scale is defined over LEGACY_MIN_ZIPF..LEGACY_MAX_ZIPF and has no
+  // clamp of its own, so a Zipf below its floor scores past 10. A live-validated
+  // word carries the *current* data's unattested sentinel (MIN_ZIPF, well below
+  // 1.0) whatever date it is played on, which scored 13.8 on an archived
+  // pre-NEW_SCORING_START puzzle. Clamping the input rather than the score keeps
+  // the value inside the scale's domain and maps the sentinel to exactly 10.0.
+  // Every curated legacy word already sits at or above the floor (the data's
+  // minimum is exactly 1.0), so no archived puzzle's scores move.
   score: (zipf) =>
-    Math.round(((LEGACY_MAX_ZIPF - zipf) / (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) * 100) / 10,
+    Math.round(
+      ((LEGACY_MAX_ZIPF - Math.max(zipf, LEGACY_MIN_ZIPF)) / (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) *
+        100
+    ) / 10,
   rarity: (zipf) => {
     // Missing corpus data is not evidence that a word is genuinely Mythic.
     if (zipf === LEGACY_UNKNOWN_ZIPF) return "Extremely Rare";

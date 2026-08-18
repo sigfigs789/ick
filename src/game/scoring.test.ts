@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { rarityFor, rarityScore, formatRarityScore, formatScore } from "./dictionary";
+import {
+  rarityFor,
+  rarityScore,
+  formatRarityScore,
+  formatScore,
+  unattestedZipf,
+} from "./dictionary";
 
 // Expected values are hardcoded (not recomputed via the functions under test)
 // so a regression in the scoring math or the legacy dataset is actually caught.
@@ -67,6 +73,36 @@ describe("two-band rarity score (current system)", () => {
     expect(rarityScore(0)).toBe(10); // the clamp floor
     expect(rarityScore(-0.31)).toBe(10); // below the floor -> clamped, not lower
     expect(rarityScore(-1.57)).toBe(10); // the unattested sentinel, same 10
+  });
+});
+
+describe("the unattested sentinel across every system", () => {
+  // A live-validated word carries the current data's sentinel Zipf on whatever
+  // date it is played, including an archived legacy puzzle whose own scale stops
+  // at Zipf 1.0. Every system has to land it at a perfect 10 rather than let it
+  // run off the top of the scale -- it scored 13.8 on legacy dates.
+  it("scores a flat 10 on every date, legacy puzzles included", () => {
+    const sentinel = unattestedZipf();
+    expect(sentinel).toBe(-1.57);
+    expect(rarityScore(sentinel, BEFORE)).toBe(10);
+    expect(rarityScore(sentinel, ON)).toBe(10);
+    expect(rarityScore(sentinel, WIDE)).toBe(10);
+    expect(rarityScore(sentinel, AFTER)).toBe(10);
+    expect(rarityScore(sentinel)).toBe(10);
+  });
+
+  it("never scores any Zipf above 10 under the legacy system", () => {
+    expect(rarityScore(1, BEFORE)).toBe(10); // the legacy scale's own floor
+    expect(rarityScore(0, BEFORE)).toBe(10); // below it -> clamped, not higher
+    expect(rarityScore(-5, BEFORE)).toBe(10); // far below -> still 10
+    expect(formatScore(rarityScore(unattestedZipf(), BEFORE), BEFORE)).toBe("10.0");
+  });
+
+  it("leaves the measured legacy words untouched", () => {
+    // The clamp only bites below Zipf 1.0 and the legacy data's minimum is
+    // exactly 1.0, so no archived puzzle's scores move.
+    expect(rarityScore(rarityFor("cat", BEFORE)!.zipf, BEFORE)).toBe(4.3);
+    expect(rarityScore(rarityFor("autecism", BEFORE)!.zipf, BEFORE)).toBe(9.4);
   });
 });
 
