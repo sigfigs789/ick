@@ -1,4 +1,22 @@
 {
+  "boate": {
+    "reason": "obsolete",
+    "since": "2026-08-19"
+  },
+  "cockateel": {
+    "note": "Misspelling of `cockatiel`.",
+    "reason": "misspelling",
+    "since": "2026-08-19"
+  },
+  "eate": {
+    "reason": "obsolete",
+    "since": "2026-08-19"
+  },
+  "hatefull": {
+    "note": "Misspelling of `hateful`.",
+    "reason": "misspelling",
+    "since": "2026-08-19"
+  },
   "reaccomodate": {
     "note": "Misspelling of `reaccommodate`.",
     "reason": "misspelling",
