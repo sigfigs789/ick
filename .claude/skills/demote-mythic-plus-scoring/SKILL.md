@@ -238,8 +238,19 @@ attested by definition; a Zipf-2.5 word in this band is a signal to keep, not to
 
 ## 4. Verify
 
-No pinned counts to update and no test edits: neither verdict touches the generated
-data, and both suites in `dictionary.test.ts` iterate whatever the data files hold.
+No pinned counts to update: neither verdict touches the generated data, and both
+suites in `dictionary.test.ts` iterate whatever the data files hold, so new entries
+become new cases on their own.
+
+**One assertion does need watching.** `"reports the substitution for analytics"`
+checks that the day before `since` the curated base is not yet in force. Words this
+skill demotes are often ones the stemmer *already* folds — every `-nesses` plural
+has its `-ness` singular in the dictionary, so `materialnesses` reported
+`materialness` (Zipf 0.65) long before it was capped at `material` (4.95), which is
+exactly why it displayed 9.94 rather than 10.00. If that case ever regresses to
+asserting *no* substitution before `since`, this whole class of demotion fails the
+suite. The scores are right; the assertion has to be about the reviewed base
+specifically.
 
 ```bash
 npx vitest run && npx tsc -b && npx eslint .
