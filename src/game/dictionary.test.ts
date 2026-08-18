@@ -303,6 +303,73 @@ describe("rarityFor", () => {
   });
 });
 
+describe("chained base forms (from 2026-08-19)", () => {
+  const before = "2026-08-18";
+  const after = "2026-08-19";
+
+  it("resolves a base through its own base instead of its raw frequency", () => {
+    // "materialness" is itself unattested and already scores as "material"
+    // (4.95). Reading its *raw* 0.65 is what left the plural at Legend.
+    expect(rarityFor("materialness", after)!.zipf).toBeCloseTo(4.95, 5);
+    expect(rarityFor("materialnesses", before)!.rarity).toBe("Legend");
+    expect(rarityFor("materialnesses", after)!.zipf).toBeCloseTo(4.95, 5);
+    expect(rarityFor("materialnesses", after)!.rarity).toBe("Common");
+  });
+
+  it("reports the link the score came from, not the one it passed through", () => {
+    expect(baseFormSubstitution("materialnesses", before)?.base).toBe("materialness");
+    expect(baseFormSubstitution("materialnesses", after)?.base).toBe("material");
+  });
+
+  it("caps the tense rule instead of inheriting a rarer base outright", () => {
+    // "beloved" is measured at 4.17, but "belove" sits at 1.10. Inheriting
+    // outright served an everyday word as a Mythic discovery.
+    expect(rarityFor("beloved", before)!.rarity).toBe("Mythic");
+    expect(rarityFor("beloved", after)!.zipf).toBeCloseTo(4.17, 5);
+    expect(baseFormSubstitution("beloved", after)).toBeUndefined();
+  });
+
+  it("still folds a tense form onto a more common base", () => {
+    expect(baseFormSubstitution("played", after)?.base).toBe("play");
+    expect(rarityFor("rated", after)).toEqual(rarityFor("rate", after));
+    expect(rarityFor("making", after)).toEqual(rarityFor("make", after));
+  });
+
+  it("counts five-letter -ied forms, which the -ed branch used to swallow", () => {
+    // The old guard required six letters, so "tried" fell through to the
+    // generic -ed branch and scored as "tri".
+    expect(baseFormSubstitution("tried", before)?.base).toBe("tri");
+    expect(baseFormSubstitution("tried", after)?.base).toBe("try");
+    expect(baseFormSubstitution("cried", after)?.base).toBe("cry");
+    expect(baseFormSubstitution("dried", after)?.base).toBe("dry");
+  });
+
+  it("never leaves a word rarer than its own measurement", () => {
+    // The invariant the cap buys: every fold pulls toward common, so no rule
+    // can manufacture a top-tier score out of a rare base.
+    const offenders = (dictionaryWords as string[]).filter(
+      (word, i) => rarityFor(word, after)!.zipf < rarityData.zipfHundredths[i] / 100 - 1e-9
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it("leaves puzzles before the cutover untouched", () => {
+    for (const word of ["materialnesses", "beloved", "tried"]) {
+      expect(rarityFor(word, before)).not.toEqual(rarityFor(word, after));
+      expect(rarityFor(word, before)).toEqual(rarityFor(word, "2026-08-16"));
+    }
+  });
+
+  it("terminates on words that fold onto each other", () => {
+    // "axes" -> "axis" -> "axes" is a cycle; the walk must not revisit a word
+    // already on its own path.
+    for (const word of ["axes", "axis"]) {
+      expect(() => rarityFor(word, after)).not.toThrow();
+      expect(Number.isFinite(rarityFor(word, after)!.zipf)).toBe(true);
+    }
+  });
+});
+
 describe("baseFormSubstitution", () => {
   it("reports the base a bound derivational form inherited", () => {
     const sub = baseFormSubstitution("trivialization");

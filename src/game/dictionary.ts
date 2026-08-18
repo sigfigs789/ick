@@ -31,6 +31,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  */
 const NEW_SCORING_START = "2026-08-15";
 const WIDE_BAND_START = "2026-08-16";
+const CHAINED_BASE_START = "2026-08-19";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -171,6 +172,12 @@ interface Scoring {
   // 2026-08-16 wide-band cutover, so it's off for earlier systems to keep past
   // puzzles' scores frozen (see WIDE_BAND_START).
   boundBaseForms: boolean;
+  // Whether a base form is resolved through its *own* base rather than read as a
+  // raw frequency -- see chainedBase. Also makes the tense rule cap instead of
+  // inherit outright, and widens the -ied guard to reach five-letter forms.
+  // Introduced with the 2026-08-19 cutover; off for earlier systems so past
+  // puzzles' scores stay frozen (see CHAINED_BASE_START).
+  chainedBaseForms: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -188,7 +195,8 @@ function twoBandScoring(
   ceiling: number,
   tailFloor: number,
   boundBaseForms: boolean,
-  legend: boolean
+  legend: boolean,
+  chainedBaseForms = false
 ): Scoring {
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
@@ -220,15 +228,19 @@ function twoBandScoring(
       : // Only the deep-tail band (score >= ceiling) shows two decimals.
         (s) => (s >= ceiling ? s.toFixed(2) : s.toFixed(1)),
     boundBaseForms,
+    chainedBaseForms,
   };
 }
 
 // The 2026-08-15 system: measured band 0..9.5, deep tail 9.5..10 anchored at the
 // data's live minimum, single Mythic top rank, no bound-suffix folding.
 const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false);
-// The latest system (from WIDE_BAND_START): measured band 0..9.9, deep tail
-// 9.9..10 clamped at a fixed 0, Legend + Mythic ranks, bound-suffix folding on.
+// The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
+// fixed 0, Legend + Mythic ranks, bound-suffix folding on, single-hop bases.
 const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true);
+// The latest system (from CHAINED_BASE_START): the same bands and ranks, with
+// base forms resolved through their own bases.
+const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -242,6 +254,7 @@ const LEGACY_SCORING: Scoring = {
   },
   format: (score) => score.toFixed(1),
   boundBaseForms: false,
+  chainedBaseForms: false,
 };
 
 // The Zipf-band labels for the measured range are identical across systems.
@@ -255,10 +268,11 @@ function measuredRarity(zipf: number): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return WIDE_SCORING; // newest system
+  if (date === undefined) return CHAINED_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
-  return WIDE_SCORING;
+  if (date < CHAINED_BASE_START) return WIDE_SCORING;
+  return CHAINED_SCORING;
 }
 
 // -- Curated rejections (src/data/word-rejections.json) ----------------------
@@ -397,9 +411,11 @@ export interface BaseFormSubstitution {
 /**
  * If `word`'s rarity came from a base form rather than its own frequency, report
  * the substitution (submitted word, base, and both Zipfs). Returns undefined when
- * the word scored on its own data. Mirrors adjustedZipf in both rule and order: a
- * reviewed override wins, then a tense base is used outright, then a
- * transparent/bound base only when it's more common than the word.
+ * the word scored on its own data. Mirrors adjustedZipf in both rule and order:
+ * under the chained system, the most common link of the fold chain, reported only
+ * when it beat the word's own frequency; under the older systems, a reviewed
+ * override first, then a tense base used outright, then a transparent/bound base
+ * only when it's more common than the word.
  */
 export function baseFormSubstitution(
   word: string,
@@ -410,6 +426,18 @@ export function baseFormSubstitution(
   if (i === undefined) return undefined;
   const scoring = scoringFor(date);
   const ownZipf = scoring.zipfAt(i);
+
+  // Under the chained system every fold is a cap, so a substitution happened
+  // only where the chain actually beat the word's own frequency. The base
+  // reported is the link the score came from -- "materialnesses" reports
+  // "material", not the intermediate "materialness" it merely passed through.
+  if (scoring.chainedBaseForms) {
+    const chained = chainedBase(normalized, scoring, date);
+    if (chained && chained.zipf > ownZipf) {
+      return { word: normalized, base: chained.base, ownZipf, baseZipf: chained.zipf };
+    }
+    return undefined;
+  }
 
   const override = overrideBase(normalized, date);
   if (override) {
@@ -462,6 +490,13 @@ export function bestWordForDrop(drop: string, date?: string): AcceptedWord | und
  * answer.
  */
 function adjustedZipf(word: string, zipf: number, scoring: Scoring, date?: string): number {
+  // The latest system resolves the whole fold chain and caps against every link,
+  // so no rule can leave a word rarer than its own measurement.
+  if (scoring.chainedBaseForms) {
+    const chained = chainedBase(word, scoring, date);
+    return chained ? Math.max(zipf, chained.zipf) : zipf;
+  }
+
   // A reviewed override outranks every spelling rule below it: it is a decision
   // about this exact word, not a guess from its ending. Capped rather than
   // inherited outright, like the transparent suffixes -- the override says "no
@@ -476,6 +511,63 @@ function adjustedZipf(word: string, zipf: number, scoring: Scoring, date?: strin
   const base = scoringBaseForm(word, scoring.boundBaseForms);
   if (!base) return zipf;
   return Math.max(zipf, zipfFor(base, scoring));
+}
+
+/** A base reached by folding, and the Zipf it lends the word that folded onto it. */
+interface ChainedBase {
+  base: string;
+  zipf: number;
+}
+
+// A fold chain runs at most four links in the current dictionary
+// ("notednesses" -> "notedness" -> "noted" -> "not"). The cap is a backstop
+// against a future dictionary growing a longer one, not a tuned limit.
+const MAX_FOLD_DEPTH = 8;
+
+/**
+ * The most common word reachable from `word` by folding, or undefined if nothing
+ * folds. Each link is the single hop `nextBaseForm` would take, applied again to
+ * whatever it lands on: "materialnesses" -> "materialness" -> "material".
+ *
+ * Reading the *raw* Zipf of one hop is what left "materialnesses" at Legend --
+ * "materialness" is itself an unattested word the engine had already re-scored as
+ * "material" (4.95), so folding onto its raw 0.65 inherited a number the engine
+ * had discarded. Walking the chain uses the score the base actually displays.
+ *
+ * The winner is the most common link, not the deepest: the caller caps against
+ * it, so a chain can only ever make a word more common. That monotonicity is
+ * what keeps a hop like "abashed" -> "abash" (whose base is rarer) from dragging
+ * a derived form *down* into the top ranks.
+ *
+ * `seen` breaks cycles: two words can fold onto each other ("axes" -> "axis" ->
+ * "axes"), and a chain must not revisit a word already on its own path.
+ */
+function chainedBase(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+  seen: ReadonlySet<string> = new Set([word])
+): ChainedBase | undefined {
+  const next = nextBaseForm(word, scoring, date);
+  if (!next || seen.has(next) || seen.size >= MAX_FOLD_DEPTH) return undefined;
+
+  const here: ChainedBase = { base: next, zipf: zipfFor(next, scoring) };
+  const deeper = chainedBase(next, scoring, date, new Set(seen).add(next));
+  return deeper && deeper.zipf > here.zipf ? deeper : here;
+}
+
+/**
+ * One fold: the base `word` would score against, in the same precedence the
+ * single-hop path uses -- a reviewed override first, then a tense inflection,
+ * then a transparent or bound suffix. Under the chained system every one of
+ * these is a cap rather than an inheritance, so the caller can treat them alike.
+ */
+function nextBaseForm(word: string, scoring: Scoring, date?: string): string | undefined {
+  return (
+    overrideBase(word, date) ??
+    tenseBaseForm(word, scoring) ??
+    scoringBaseForm(word, scoring.boundBaseForms)
+  );
 }
 
 function scoringBaseForm(word: string, includeBound: boolean): string | undefined {
@@ -502,13 +594,22 @@ function scoringBaseForm(word: string, includeBound: boolean): string | undefine
 
 /**
  * Return a dictionary-backed base for the common past (-ed) and ongoing
- * (-ing) verb forms. These must use the base frequency exactly: "rated"
- * scores as "rate", and "making" scores as "make".
+ * (-ing) verb forms: "rated" scores as "rate", and "making" scores as "make".
+ *
+ * Systems before CHAINED_BASE_START used this base's frequency *exactly*, which
+ * cut both ways: where the base was rarer than the word, the inheritance made
+ * the word rarer than anything had measured it, and "beloved" (4.17) scored as
+ * "belove" (1.10) -- a Mythic. The chained system caps against it instead, so
+ * these can only ever pull a word toward common.
  */
 function tenseBaseForm(word: string, scoring: Scoring): string | undefined {
   const candidates: string[] = [];
 
-  if (word.length > 5 && word.endsWith("ied")) {
+  // Five-letter forms ("tried", "cried", "dried") are -ied words too. The older
+  // systems required six, which dropped them into the generic -ed branch below
+  // and scored "tried" as "tri"; the chained system counts them properly.
+  const iedMin = scoring.chainedBaseForms ? 4 : 5;
+  if (word.length > iedMin && word.endsWith("ied")) {
     candidates.push(`${word.slice(0, -3)}y`);
   } else if (word.length > 4 && word.endsWith("ed")) {
     const stem = word.slice(0, -2);

@@ -259,9 +259,14 @@ def _inflectional_stem(word: str) -> str:
 
 
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
-    """Mirror of tenseBaseForm(): -ed/-ing inherit the most common valid base."""
+    """Mirror of tenseBaseForm(): -ed/-ing pick the most common valid base.
+
+    The newest system caps against this base rather than inheriting it outright,
+    so it can only pull a word toward common. It also counts five-letter -ied
+    forms ("tried", "cried"), which the older systems missed.
+    """
     candidates: list[str] = []
-    if len(word) > 5 and word.endswith("ied"):
+    if len(word) > 4 and word.endswith("ied"):
         candidates.append(word[:-3] + "y")
     elif len(word) > 4 and word.endswith("ed"):
         stem = word[:-2]
@@ -385,19 +390,43 @@ def _override_base(word: str, index: dict[str, int]) -> str | None:
     return base if base in index else None
 
 
+# Mirror of MAX_FOLD_DEPTH in src/game/dictionary.ts.
+MAX_FOLD_DEPTH = 8
+
+
+def _next_base(word: str, index: dict[str, int], zipf_at) -> str | None:
+    """Mirror of nextBaseForm(): one fold, override then tense then suffix."""
+    return (
+        _override_base(word, index)
+        or _tense_base(word, index, zipf_at)
+        or _scoring_base(word, index)
+    )
+
+
+def chained_base(
+    word: str, index: dict[str, int], zipf_at, seen: frozenset[str] | None = None
+) -> tuple[str, float] | None:
+    """Mirror of chainedBase(): the most common word reachable by folding.
+
+    Each link is one hop applied again to whatever it lands on, so
+    "materialnesses" -> "materialness" -> "material" rather than stopping at the
+    unattested middle. Returns (base, zipf), or None when nothing folds.
+    """
+    if seen is None:
+        seen = frozenset([word])
+    nxt = _next_base(word, index, zipf_at)
+    if nxt is None or nxt in seen or len(seen) >= MAX_FOLD_DEPTH:
+        return None
+    here = (nxt, zipf_at(nxt))
+    deeper = chained_base(nxt, index, zipf_at, seen | {nxt})
+    return deeper if deeper is not None and deeper[1] > here[1] else here
+
+
 def adjusted_zipf(word: str, index: dict[str, int], zipf_at) -> float:
     """Mirror of adjustedZipf() in src/game/dictionary.ts (newest system)."""
     own = zipf_at(word)
-    override = _override_base(word, index)
-    if override is not None:
-        return max(own, zipf_at(override))
-    tense = _tense_base(word, index, zipf_at)
-    if tense is not None:
-        return zipf_at(tense)
-    base = _scoring_base(word, index)
-    if base is None:
-        return own
-    return max(own, zipf_at(base))
+    chained = chained_base(word, index, zipf_at)
+    return max(own, chained[1]) if chained is not None else own
 
 
 def word_rarity(word: str) -> tuple[float, str, float]:
