@@ -16,7 +16,11 @@ A measured frequency is a measurement, so a rare word scoring rare is not a
 finding. What *is* a finding is a word whose rank comes from something other than
 being a rare word: an inflection the stemmer has no rule for, a suffix bolted onto
 an ordinary base, a misspelling nothing counts because it is a misspelling, or a
-word Wiktionary already classifies archaic. Those four are the buckets below.
+word Wiktionary classifies archaic. Those four are the buckets below.
+
+The last of those is a review signal only. A corpus label is not grounds to make a
+word unplayable -- see SKILL.md 2a, and prefer demotion to rejection whenever the
+word is a word.
 
 Scope is one drop -- by default tomorrow's, Mountain Time, the same puzzle the
 sibling audit defaults to. Even one drop reaches a few thousand words in this band,
@@ -143,7 +147,7 @@ JUDGE_SUFFIXES = [
 BUCKETS = ("classified", "misspelling", "fold", "fold-suspect", "derivation")
 
 BUCKET_BLURB = {
-    "classified": "Wiktionary classifies it archaic, dated, obsolete, an abbreviation or a proper noun -- the word rules exclude all five. Reject.",
+    "classified": "Wiktionary classifies it archaic, dated, obsolete, an abbreviation or a proper noun. A review signal, NOT a verdict -- the label is often wrong (`agminate` is current dermatology) and compound labels like \"archaic or literary\" are flattened on import. Reject only a word that is a *spelling* of another word; when in doubt keep it playable. See SKILL.md 2a.",
     "misspelling": "An attested near-spelling is materially more common. Reject as a misspelling if you can name the correct form; judge on the merits if the two are genuine variant spellings.",
     "fold": "Same word in another number, tense or degree, with a measured base that is materially more common. Demote to the base.",
     "fold-suspect": "The same, but onto a base everybody uses. The fold is usually still right (`evenest` really is the superlative of `even`), so check the *word* rather than the fold: this is where the classical-plural rule's misfires collect (`mosta`, `yeara`, `backa`) and where archaic forms hide (`whilest`, `madest`). Reject those; demote the rest.",
