@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import rejectionMetadata from "../data/rejection-metadata.json";
+import { isValidWord } from "./dictionary";
 import { containsDropInOrder, evaluateSubmission, REJECTION_MESSAGES } from "./submit";
 import type { AcceptedWord } from "./types";
 
@@ -166,7 +167,7 @@ describe("rejection metadata coverage", () => {
     abbreviation: 1821,
     archaic: 10309,
     dated: 2108,
-    misspelling: 1,
+    misspelling: 7,
     "name-or-abbreviation": 11588,
     obsolete: 63353,
     "proper-noun": 18242,
@@ -182,6 +183,34 @@ describe("rejection metadata coverage", () => {
 
   it("pins the total number of words with a rejection reason", () => {
     const total = Object.values(metadata).reduce((sum, words) => sum + words.length, 0);
-    expect(total).toBe(107_422);
+    expect(total).toBe(107_428);
+  });
+
+  // These six carried no frequency from any corpus, so they scored the
+  // unattested sentinel's perfect 10 -- a misspelling outranking every real word
+  // a player could find. Flagged as misspellings so they're rejected outright and
+  // a regen can't quietly reinstate them.
+  const removedMisspellings = [
+    "exhilirative",
+    "reaexportation",
+    "reassimiliate",
+    "reassimiliated",
+    "reassimiliates",
+    "reassimiliating",
+  ];
+
+  it.each(removedMisspellings)("rejects %s as a misspelling", (word) => {
+    expect(isValidWord(word)).toBe(false);
+    // The drop is checked before the word is looked up, so use a substring of the
+    // word itself -- otherwise these bounce on "missing-drop" and never reach the
+    // metadata lookup we're actually asserting on.
+    const result = evaluateSubmission(word, word.slice(1, 4), []);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe("misspelling");
+  });
+
+  it("keeps the correctly spelled words those typos shadowed", () => {
+    expect(isValidWord("exhilarative")).toBe(true);
+    expect(isValidWord("reexportation")).toBe(true);
   });
 });
