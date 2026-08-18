@@ -340,16 +340,51 @@ def format_score(score: float) -> str:
     return f"{_round_to_tenths(score):.1f}"
 
 
-def adjusted_zipf(word: str, index: dict[str, int], zipf_at) -> float:
+def _derived_base(word: str, own: float, index: dict[str, int], max_zipf: float) -> str | None:
+    """Mirror of derivedBaseForm(): the -er/-ers/-est and missed "-es" cap.
+
+    Only for forms already scoring Mythic or better on their own -- a word with an
+    everyday frequency defends its own score, which is what keeps "forest" and
+    "easter" from being read as inflections of "for" and "east".
+    """
+    if current_score(own, max_zipf) < MYTHIC_MIN_SCORE:
+        return None
+    candidates: list[str] = []
+
+    def add(base: str) -> None:
+        if len(base) >= 3 and base != word and base not in candidates:
+            candidates.append(base)
+
+    if len(word) > 5 and word.endswith("ers"):
+        stem = word[:-3]
+        add(stem)
+        add(stem + "e")
+        add(_strip_doubled_consonant(stem))
+    if len(word) > 4 and (word.endswith("er") or word.endswith("est")):
+        stem = word[:-3] if word.endswith("est") else word[:-2]
+        add(stem)
+        add(stem + "e")
+        add(_strip_doubled_consonant(stem))
+        if stem.endswith("i"):
+            add(stem[:-1] + "y")
+    if len(word) > 4 and word.endswith("es"):
+        add(word[:-1])
+
+    return next((c for c in candidates if c in index), None)
+
+
+def adjusted_zipf(word: str, index: dict[str, int], zipf_at, max_zipf: float) -> float:
     """Mirror of adjustedZipf() in src/game/dictionary.ts (newest system)."""
     own = zipf_at(word)
     tense = _tense_base(word, index, zipf_at)
     if tense is not None:
         return zipf_at(tense)
     base = _scoring_base(word, index)
-    if base is None:
-        return own
-    return max(own, zipf_at(base))
+    with_base = max(own, zipf_at(base)) if base is not None else own
+    derived = _derived_base(word, with_base, index, max_zipf)
+    if derived is not None:
+        return max(with_base, zipf_at(derived))
+    return with_base
 
 
 def word_rarity(word: str) -> tuple[float, str, float]:
@@ -368,8 +403,8 @@ def word_rarity(word: str) -> tuple[float, str, float]:
     def zipf_at(w: str) -> float:
         return hundredths[index[w]] / 100
 
-    zipf = round(adjusted_zipf(word, index, zipf_at), 2)
     max_zipf = max(hundredths) / 100
+    zipf = round(adjusted_zipf(word, index, zipf_at, max_zipf), 2)
     score = current_score(zipf, max_zipf)
     label = rarity_label(zipf, max_zipf)
     return zipf, label, score

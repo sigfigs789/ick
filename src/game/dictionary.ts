@@ -1,7 +1,7 @@
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
-import { baseForm, boundBaseCandidates } from "./stem";
+import { baseForm, boundBaseCandidates, derivedBaseCandidates } from "./stem";
 import type { AcceptedWord, Rarity, RarityInfo } from "./types";
 
 /**
@@ -24,11 +24,17 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     at/below Zipf 0 clamped to a flat 10. The top of the scale is split by
  *     score into two ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also
  *     where the bound-suffix base-form adjustment turns on.
+ *   - on/after 2026-08-19 (the latest system): identical to the wide-band scale,
+ *     except agent nouns and comparatives (-er/-ers/-est) and the plurals the
+ *     "-es" cut misses are also capped at their base word's frequency, so an
+ *     everyday word cannot be turned into a top-tier answer by appending two
+ *     letters ("patientest" scored 9.92 against "patient" at 4.35).
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
 const NEW_SCORING_START = "2026-08-15";
 const WIDE_BAND_START = "2026-08-16";
+const INFLECTION_FOLD_START = "2026-08-19";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -117,6 +123,10 @@ interface Scoring {
   // 2026-08-16 wide-band cutover, so it's off for earlier systems to keep past
   // puzzles' scores frozen (see WIDE_BAND_START).
   boundBaseForms: boolean;
+  // Whether -er/-ers/-est and the missed "-es" plurals are capped at their base
+  // word, from the 2026-08-19 cutover. Off for earlier systems so past puzzles'
+  // scores stay frozen (see INFLECTION_FOLD_START).
+  foldInflections: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -134,7 +144,8 @@ function twoBandScoring(
   ceiling: number,
   tailFloor: number,
   boundBaseForms: boolean,
-  legend: boolean
+  legend: boolean,
+  foldInflections: boolean
 ): Scoring {
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
@@ -166,15 +177,19 @@ function twoBandScoring(
       : // Only the deep-tail band (score >= ceiling) shows two decimals.
         (s) => (s >= ceiling ? s.toFixed(2) : s.toFixed(1)),
     boundBaseForms,
+    foldInflections,
   };
 }
 
 // The 2026-08-15 system: measured band 0..9.5, deep tail 9.5..10 anchored at the
 // data's live minimum, single Mythic top rank, no bound-suffix folding.
-const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false);
-// The latest system (from WIDE_BAND_START): measured band 0..9.9, deep tail
-// 9.9..10 clamped at a fixed 0, Legend + Mythic ranks, bound-suffix folding on.
-const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true);
+const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false, false);
+// The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
+// fixed 0, Legend + Mythic ranks, bound-suffix folding on.
+const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, false);
+// The latest system (from INFLECTION_FOLD_START): the wide-band scale, plus the
+// agent-noun/comparative/missed-plural cap.
+const INFLECTION_FOLD_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -188,6 +203,7 @@ const LEGACY_SCORING: Scoring = {
   },
   format: (score) => score.toFixed(1),
   boundBaseForms: false,
+  foldInflections: false,
 };
 
 // The Zipf-band labels for the measured range are identical across systems.
@@ -201,10 +217,11 @@ function measuredRarity(zipf: number): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return WIDE_SCORING; // newest system
+  if (date === undefined) return INFLECTION_FOLD_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
-  return WIDE_SCORING;
+  if (date < INFLECTION_FOLD_START) return WIDE_SCORING;
+  return INFLECTION_FOLD_SCORING;
 }
 
 export function isValidWord(word: string): boolean {
@@ -291,7 +308,12 @@ export function baseFormSubstitution(
     return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
   }
 
-  const base = scoringBaseForm(normalized, scoring.boundBaseForms);
+  const known = scoringBaseForm(normalized, scoring);
+  const knownZipf = known ? zipfFor(known, scoring) : ownZipf;
+  const derived = derivedBaseForm(normalized, Math.max(ownZipf, knownZipf), scoring);
+  // Report whichever base actually set the score.
+  const base =
+    derived && zipfFor(derived, scoring) > knownZipf ? derived : known;
   if (base && base !== normalized) {
     const baseZipf = zipfFor(base, scoring);
     if (baseZipf > ownZipf) return { word: normalized, base, ownZipf, baseZipf };
@@ -329,12 +351,31 @@ function adjustedZipf(word: string, zipf: number, scoring: Scoring): number {
   const tenseBase = tenseBaseForm(word, scoring);
   if (tenseBase) return zipfFor(tenseBase, scoring);
 
-  const base = scoringBaseForm(word, scoring.boundBaseForms);
-  if (!base) return zipf;
-  return Math.max(zipf, zipfFor(base, scoring));
+  const base = scoringBaseForm(word, scoring);
+  // The known suffix may itself land on another deep-tail form ("registerers" ->
+  // "registerer"), so the derived cap is tried against whatever that leaves.
+  const withBase = base ? Math.max(zipf, zipfFor(base, scoring)) : zipf;
+
+  const derived = derivedBaseForm(word, withBase, scoring);
+  if (derived) return Math.max(withBase, zipfFor(derived, scoring));
+  return withBase;
 }
 
-function scoringBaseForm(word: string, includeBound: boolean): string | undefined {
+/**
+ * The agent-noun/comparative/missed-plural cap (from INFLECTION_FOLD_START), and
+ * only for forms the corpora barely attest -- one already scoring Mythic or
+ * better on its own has no real frequency to defend, so it falls back to its base
+ * ("patientest" -> "patient"). That gate is what keeps the rule from mangling
+ * ordinary words which merely end in those letters: "forest" and "easter" have
+ * everyday frequencies, never come close to the elite band, and so are never
+ * mistaken for inflections of "for" and "east".
+ */
+function derivedBaseForm(word: string, zipf: number, scoring: Scoring): string | undefined {
+  if (!scoring.foldInflections || scoring.score(zipf) < MYTHIC_MIN_SCORE) return undefined;
+  return derivedBaseCandidates(word).find((candidate) => WORD_INDEX.has(candidate));
+}
+
+function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
   const inflected = baseForm(word);
   if (inflected !== word && WORD_INDEX.has(inflected)) return inflected;
 
@@ -349,7 +390,7 @@ function scoringBaseForm(word: string, includeBound: boolean): string | undefine
   // Bound derivational suffixes (-ization/-isation, -ability/-ibility), gated to
   // the wide-band era. Capped at the base like the transparent suffixes above:
   // "aggrandization" scores as "aggrandize", never rarer than it.
-  if (includeBound) {
+  if (scoring.boundBaseForms) {
     const bound = boundBaseCandidates(word).find((candidate) => WORD_INDEX.has(candidate));
     if (bound) return bound;
   }

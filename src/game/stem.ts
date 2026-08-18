@@ -44,6 +44,44 @@ export function boundBaseCandidates(word: string): string[] {
   return out;
 }
 
+/**
+ * Candidate base spellings for the endings `baseForm` deliberately leaves alone:
+ * agent nouns and comparatives (-er/-ers/-est) and the plurals whose two-character
+ * "-es" cut lands on a non-word ("patiences" -> "patienc", but "patience" is right
+ * there). Scoring-only -- `baseForm` also drives same-root duplicate detection in
+ * submit.ts, and widening that would change which submissions are rejected.
+ *
+ * Every candidate is only ever used as a *cap* (see adjustedZipf), so a wrong
+ * guess can pull a word toward a more common base but can never make it rarer.
+ * The caller confirms a candidate is a real word before trusting it.
+ */
+export function derivedBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (base: string) => {
+    if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
+  };
+
+  // Plural agent nouns first ("registerers" -> "register"), then the singular.
+  if (w.length > 5 && w.endsWith("ers")) {
+    const stem = w.slice(0, -3);
+    add(stem);
+    add(`${stem}e`);
+    add(stripDoubledConsonant(stem));
+  }
+  if (w.length > 4 && (w.endsWith("er") || w.endsWith("est"))) {
+    const stem = w.slice(0, w.endsWith("est") ? -3 : -2);
+    add(stem);
+    add(`${stem}e`);
+    add(stripDoubledConsonant(stem));
+    if (stem.endsWith("i")) add(`${stem.slice(0, -1)}y`);
+  }
+  // "-es" where dropping both characters misses the base ("wildlifes" -> "wildlif").
+  if (w.length > 4 && w.endsWith("es")) add(w.slice(0, -1));
+
+  return out;
+}
+
 /** "running" -> stripped to "runn" by the "ing" cut; trim the doubled consonant back to "run". */
 function stripDoubledConsonant(stem: string): string {
   const isConsonant = (c: string) => /[bcdfghjklmnpqrstvwxyz]/.test(c);
