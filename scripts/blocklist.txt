@@ -42,3 +42,11 @@ ave
 corp
 ibid
 vol
+
+# --- proper nouns the frequency corpora attest as ordinary rare words ---
+# Surfaced by the "Add rare words found online" pipeline for the ATI drop and
+# rejected by hand in #125; blocklisted so they stop being re-proposed.
+# (Notes stay on their own lines: the loaders do not strip trailing comments.)
+# salvati: Italian surname. satie: the composer Erik Satie.
+salvati
+satie
