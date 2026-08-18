@@ -149,6 +149,58 @@ python3 scripts/generate-data.py --metadata-only --esdb-db /tmp/esdb/scowl.db
 after a word misses the curated dictionary. It intentionally has a generic
 fallback for unknown words and ambiguous entries.
 
+### LLM-adjusted rarity scores
+
+Frequency data alone rewards the wrong words. "lactational" is barely attested
+(Zipf 1.13), so on its own numbers it scored **9.71, Mythic** -- rarer than
+"lactation" (Zipf 2.84, a 7.19 Rare) that anyone can bolt "-al" onto. The same
+went for "outtold", "greenier", "misplan" and thousands more: a player who
+learns the trick can farm a near-perfect score out of everyday words, which is
+exactly the kind of thing that stops a daily puzzle being fun.
+
+`src/game/dictionary.ts` already caps a few affixes this way (`-ly`, `-ness`,
+`-ization`, `-ability`, and the `-ed`/`-ing` tense forms), but those rules are
+deliberately spelling-only, so the productive affixes are left alone: no
+mechanical rule can tell "lactational" -> "lactation" (real) from "outrage" ->
+"rage" or "deliver" -> "liver" (coincidence). That judgement is what an LLM is
+for.
+
+`scripts/llm-base-forms.py` is the pipeline around it, in three steps:
+
+```bash
+python3 scripts/llm-base-forms.py --candidates > /tmp/candidates.tsv   # prefilter
+ANTHROPIC_API_KEY=... python3 scripts/llm-base-forms.py --adjudicate   # ask Claude
+python3 scripts/llm-base-forms.py --compile                            # build the JSON
+```
+
+1. **Prefilter** (deterministic, no API calls). Emits `(word, proposed base)`
+   pairs where the word still scores in the elite band after the existing
+   adjustment, an affix rule reaches a real dictionary word, and that base is
+   meaningfully more common. Thresholds are `--min-score` (9.5, the Mythic
+   floor), `--min-gap` (1.0 Zipf, a 10x frequency difference) and
+   `--min-base-zipf` (2.0).
+2. **Adjudicate.** Claude is asked, in batches, whether each pair is a genuine
+   transparent derivation, and to report *why* and how sure it is. Verdicts land
+   in `scripts/llm-base-forms.txt` as reviewable
+   `word<TAB>base<TAB>yes|no<TAB>reason<TAB>confidence` rows, so the judgement
+   shows up in the PR diff instead of an opaque blob.
+3. **Compile.** The confirmed rows become `src/data/llm-base-forms.json`, two
+   index arrays into `dictionary.json` (positional for the same reason
+   `rarity.json` is -- the words are already in the bundle).
+
+Two properties keep this from breaking the game:
+
+- **It only ever caps.** A confirmed word is scored no rarer than the word it is
+  built from, and keeps its own frequency when that is already the commoner of
+  the two. A wrong entry can cost a word its inflated score; it can never invent
+  a rarer one.
+- **Silence means "leave it alone."** A word with no verdict, a `no`, or a
+  low-confidence `yes` keeps its own frequency, so the failure mode of an unsure
+  model is the status quo. Only genuinely rare words stay rare.
+
+Like every other scoring change, it is date-gated (`LLM_BASE_START`,
+2026-08-19) so puzzles already played keep the scores they showed.
+
 `scripts/select-drops.py` evaluates a hand-picked pool of candidate
 2- and 3-letter drops against the generated dictionary and keeps only
 ones with plenty of common-word matches, so no daily puzzle depends on
@@ -156,6 +208,11 @@ obscure answers.
 
 ## Design decisions worth knowing about
 
+- **A derived word is never rarer than its root.** Two layers enforce it: the
+  spelling-only rules in `src/game/dictionary.ts` for unambiguous affixes, and
+  the LLM-adjudicated pairs in `src/data/llm-base-forms.json` for the productive
+  ones a mechanical rule would get wrong -- see "LLM-adjusted rarity scores"
+  above. Both are caps, so a bad entry can only ever *lower* a score.
 - **Plurals/conjugations are accepted** as distinct words, but two forms
   of the same root (`play`, `plays`, `played`) can't both count — see
   `src/game/stem.ts` for the (deliberately simple, non-linguistic)

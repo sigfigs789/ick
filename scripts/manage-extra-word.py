@@ -41,6 +41,7 @@ BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 LEGACY_RARITY_PATH = ROOT / "src" / "data" / "rarity-legacy.json"
+LLM_BASE_FORMS_PATH = ROOT / "src" / "data" / "llm-base-forms.json"
 DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
 
 # Legacy (pre-rescale) rarity placeholders for a freshly added word. The legacy
@@ -348,16 +349,40 @@ def format_score(score: float) -> str:
     return f"{_round_to_tenths(score):.1f}"
 
 
-def adjusted_zipf(word: str, index: dict[str, int], zipf_at) -> float:
-    """Mirror of adjustedZipf() in src/game/dictionary.ts (newest system)."""
+def load_llm_base_forms(index: dict[str, int]) -> dict[str, str]:
+    """word -> base from src/data/llm-base-forms.json (see llm-base-forms.py).
+
+    Missing file means the pipeline has not been run yet; an empty map is the
+    right answer there, since the game treats an absent entry as "no adjustment".
+    """
+    if not LLM_BASE_FORMS_PATH.exists():
+        return {}
+    data = json.loads(LLM_BASE_FORMS_PATH.read_text())
+    words = list(index)
+    return {words[w]: words[b] for w, b in zip(data["words"], data["bases"])}
+
+
+def adjusted_zipf(
+    word: str, index: dict[str, int], zipf_at, llm_bases: dict[str, str] | None = None
+) -> float:
+    """Mirror of adjustedZipf() in src/game/dictionary.ts (newest system).
+
+    `llm_bases` is the LLM-adjudicated map; pass it to mirror the current game,
+    or leave it out to get only the spelling-rule adjustment -- which is what
+    llm-base-forms.py wants when it measures a word's score *before* this layer.
+    """
     own = zipf_at(word)
     tense = _tense_base(word, index, zipf_at)
     if tense is not None:
         return zipf_at(tense)
+    adjusted = own
     base = _scoring_base(word, index)
-    if base is None:
-        return own
-    return max(own, zipf_at(base))
+    if base is not None:
+        adjusted = max(adjusted, zipf_at(base))
+    llm_base = (llm_bases or {}).get(word)
+    if llm_base is not None:
+        adjusted = max(adjusted, zipf_at(llm_base))
+    return adjusted
 
 
 def word_rarity(word: str) -> tuple[float, str, float]:
@@ -376,7 +401,7 @@ def word_rarity(word: str) -> tuple[float, str, float]:
     def zipf_at(w: str) -> float:
         return hundredths[index[w]] / 100
 
-    zipf = round(adjusted_zipf(word, index, zipf_at), 2)
+    zipf = round(adjusted_zipf(word, index, zipf_at, load_llm_base_forms(index)), 2)
     max_zipf = max(hundredths) / 100
     # The sentinel is the rarest value in the data (min(attested) - 0.1), assigned
     # to every word no corpus attests -- see scripts/generate-data.py.

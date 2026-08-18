@@ -1,6 +1,7 @@
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
+import llmBaseFormData from "../data/llm-base-forms.json";
 import { baseForm, boundBaseCandidates } from "./stem";
 import type { AcceptedWord, Rarity, RarityInfo } from "./types";
 
@@ -24,16 +25,22 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     clamped to a flat 10. The top of the scale is split by score into two
  *     ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also where the
  *     bound-suffix base-form adjustment turns on.
- *   - on/after 2026-08-18 (the latest system): identical to the wide-band scale,
+ *   - 2026-08-18: identical to the wide-band scale,
  *     except words no corpus attests (the sentinel Zipf) no longer earn the
  *     perfect 10 -- they floor to the elite-band bottom, 9.90 (still Legend), so
  *     the perfect 10 is reserved for words with genuine deep-tail frequency data.
+ *   - on/after 2026-08-19 (the latest system): the same scale, plus the
+ *     LLM-adjudicated base forms -- the productive affixes ("-al", "out-",
+ *     "mis-", comparatives ...) that the spelling-only rules below deliberately
+ *     refuse to guess at, confirmed word by word offline. "lactational" stops
+ *     out-scoring "lactation".
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
 const NEW_SCORING_START = "2026-08-15";
 const WIDE_BAND_START = "2026-08-16";
 const SENTINEL_FLOOR_START = "2026-08-18";
+const LLM_BASE_START = "2026-08-19";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -102,6 +109,23 @@ const MEASURED_FLOOR = 1;
 // One-decimal Zipf values with unknown-frequency words floored flat to 1.4,
 // scored against a single 1.0..MAX range. Also index-aligned with
 // dictionary.json (the word list has not changed).
+/**
+ * LLM-adjudicated base forms (see scripts/llm-base-forms.py). The spelling-only
+ * rules in scoringBaseForm deliberately cover only affixes whose base is
+ * unambiguous, which leaves the productive ones -- "-al", "-ic", "-ist",
+ * comparatives, "out-", "mis-", "pre-" and friends -- inflating scores:
+ * "lactational" is measured rarer than "lactation" purely because corpora rarely
+ * contain it. A mechanical rule cannot separate those from spelling accidents
+ * ("outrage" is not "out-" + "rage"), so the pairs here were confirmed offline,
+ * one at a time, and only the confident ones ship.
+ *
+ * Two index arrays into dictionary.json rather than a word map, positional for
+ * the same reason rarity.json is: the words are already in the bundle.
+ */
+const LLM_BASE_FORMS: ReadonlyMap<number, number> = new Map(
+  llmBaseFormData.words.map((word, i) => [word, llmBaseFormData.bases[i]] as const)
+);
+
 const legacyZipfTenths: number[] = legacyRarityData.zipfTenths;
 let maxLegacyTenths = -Infinity;
 for (const z of legacyZipfTenths) {
@@ -122,6 +146,9 @@ interface Scoring {
   // 2026-08-16 wide-band cutover, so it's off for earlier systems to keep past
   // puzzles' scores frozen (see WIDE_BAND_START).
   boundBaseForms: boolean;
+  // Whether the LLM-adjudicated base forms apply. On from LLM_BASE_START; off
+  // before it, so every puzzle already played keeps the score it showed.
+  llmBaseForms: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -144,7 +171,8 @@ function twoBandScoring(
   tailFloor: number,
   boundBaseForms: boolean,
   legend: boolean,
-  floorUnattested: boolean
+  floorUnattested: boolean,
+  llmBaseForms: boolean
 ): Scoring {
   const score = (zipf: number): number => {
     // A word left at the sentinel (min) Zipf is unattested -- adjustedZipf
@@ -180,19 +208,23 @@ function twoBandScoring(
       : // Only the deep-tail band (score >= ceiling) shows two decimals.
         (s) => (s >= ceiling ? s.toFixed(2) : s.toFixed(1)),
     boundBaseForms,
+    llmBaseForms,
   };
 }
 
 // The 2026-08-15 system: measured band 0..9.5, deep tail 9.5..10 anchored at the
 // data's live minimum, single Mythic top rank, no bound-suffix folding.
-const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false, false);
+const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false, false, false);
 // The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
 // fixed 0, Legend + Mythic ranks, bound-suffix folding on. Unattested words
 // still earn the perfect 10.
-const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, false);
-// The latest system (from SENTINEL_FLOOR_START): the wide-band scale, but
-// unattested words floor to 9.90 (Legend) instead of the perfect 10.
-const SENTINEL_FLOOR_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
+const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, false, false);
+// The 2026-08-18 system: the wide-band scale, but unattested words floor to
+// 9.90 (Legend) instead of the perfect 10.
+const SENTINEL_FLOOR_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true, false);
+// The latest system (from LLM_BASE_START): the same, plus the LLM-adjudicated
+// base forms capping derived words at the word they are built from.
+const LLM_BASE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true, true);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -206,6 +238,7 @@ const LEGACY_SCORING: Scoring = {
   },
   format: (score) => score.toFixed(1),
   boundBaseForms: false,
+  llmBaseForms: false,
 };
 
 // The Zipf-band labels for the measured range are identical across systems.
@@ -219,11 +252,12 @@ function measuredRarity(zipf: number): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return SENTINEL_FLOOR_SCORING; // newest system
+  if (date === undefined) return LLM_BASE_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
   if (date < SENTINEL_FLOOR_START) return WIDE_SCORING;
-  return SENTINEL_FLOOR_SCORING;
+  if (date < LLM_BASE_START) return SENTINEL_FLOOR_SCORING;
+  return LLM_BASE_SCORING;
 }
 
 export function isValidWord(word: string): boolean {
@@ -309,12 +343,22 @@ export function baseFormSubstitution(
     return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
   }
 
-  const base = scoringBaseForm(normalized, scoring.boundBaseForms);
-  if (base && base !== normalized) {
-    const baseZipf = zipfFor(base, scoring);
-    if (baseZipf > ownZipf) return { word: normalized, base, ownZipf, baseZipf };
+  // Both remaining rules are caps, so the base that actually set the score is
+  // the most common one available -- and only if it beats the word's own Zipf.
+  let base: string | undefined;
+  let baseZipf = ownZipf;
+  for (const candidate of [
+    scoringBaseForm(normalized, scoring.boundBaseForms),
+    llmBaseForm(normalized, scoring),
+  ]) {
+    if (!candidate || candidate === normalized) continue;
+    const candidateZipf = zipfFor(candidate, scoring);
+    if (candidateZipf > baseZipf) {
+      base = candidate;
+      baseZipf = candidateZipf;
+    }
   }
-  return undefined;
+  return base ? { word: normalized, base, ownZipf, baseZipf } : undefined;
 }
 
 /**
@@ -339,7 +383,8 @@ export function bestWordForDrop(drop: string, date?: string): AcceptedWord | und
 /**
  * Frequency data can undercount familiar derived forms such as "alertly"
  * even when their base words are common. Tense inflections inherit their
- * base word's frequency outright; other transparent suffixes are capped at
+ * base word's frequency outright; other transparent suffixes -- and, from
+ * LLM_BASE_START, the adjudicated forms in llm-base-forms.json -- are capped at
  * the base frequency so they cannot turn an everyday word into a top-tier
  * answer.
  */
@@ -347,9 +392,29 @@ function adjustedZipf(word: string, zipf: number, scoring: Scoring): number {
   const tenseBase = tenseBaseForm(word, scoring);
   if (tenseBase) return zipfFor(tenseBase, scoring);
 
+  // Caps, never demotions: a derived word is scored no rarer than the word it is
+  // built from, but keeps its own frequency when that is already the commoner of
+  // the two. A wrong entry can therefore only cost a word its inflated score --
+  // it can never invent a rarer one.
+  let adjusted = zipf;
   const base = scoringBaseForm(word, scoring.boundBaseForms);
-  if (!base) return zipf;
-  return Math.max(zipf, zipfFor(base, scoring));
+  if (base) adjusted = Math.max(adjusted, zipfFor(base, scoring));
+  const llmBase = llmBaseForm(word, scoring);
+  if (llmBase) adjusted = Math.max(adjusted, zipfFor(llmBase, scoring));
+  return adjusted;
+}
+
+/**
+ * The offline-confirmed base for `word`, or undefined when the word has no
+ * entry or the puzzle predates LLM_BASE_START. Absence is the common case and
+ * always means "score the word on its own data".
+ */
+function llmBaseForm(word: string, scoring: Scoring): string | undefined {
+  if (!scoring.llmBaseForms) return undefined;
+  const i = WORD_INDEX.get(word);
+  if (i === undefined) return undefined;
+  const base = LLM_BASE_FORMS.get(i);
+  return base === undefined ? undefined : WORDS[base];
 }
 
 function scoringBaseForm(word: string, includeBound: boolean): string | undefined {
