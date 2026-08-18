@@ -50,7 +50,7 @@ describe("agent-noun / comparative / missed-plural fold", () => {
 
   it("leaves no top-tier word outranking a base this rule covers", () => {
     // The regression guard, in the same terms as the daily drop audit
-    // (.claude/skills/audit-drop-mythics): no word scoring 9.7+ may outrank a
+    // (.claude/skills/audit-drop-mythics): no word scoring 9.5+ may outrank a
     // reachable base (Zipf 4.2+, i.e. Common or better) by 0.3 or more through
     // one of the endings this rule folds.
     const words = dictionaryWords as string[];
@@ -58,7 +58,7 @@ describe("agent-noun / comparative / missed-plural fold", () => {
     const violations: string[] = [];
     for (const word of words) {
       const s = score(word, AFTER);
-      if (s < 9.7) continue;
+      if (s < 9.5) continue;
       for (const candidate of derivedBaseCandidates(word)) {
         if (!known.has(candidate)) continue;
         // A base whose own score is inherited from a further base form can't cap

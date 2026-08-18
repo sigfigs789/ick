@@ -131,9 +131,9 @@ def main() -> None:
     ap.add_argument(
         "--min-score",
         type=float,
-        default=9.7,
-        help="only flag words scoring at least this (default 9.7: the very top of the scale, "
-        "where an undeserved rank is most visible)",
+        default=9.5,
+        help="only flag words scoring at least this (default 9.5: the Mythic line, where an "
+        "undeserved rank is visible to a player)",
     )
     ap.add_argument(
         "--min-base-zipf",

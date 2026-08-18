@@ -372,7 +372,20 @@ function adjustedZipf(word: string, zipf: number, scoring: Scoring): number {
  */
 function derivedBaseForm(word: string, zipf: number, scoring: Scoring): string | undefined {
   if (!scoring.foldInflections || scoring.score(zipf) < MYTHIC_MIN_SCORE) return undefined;
-  return derivedBaseCandidates(word).find((candidate) => WORD_INDEX.has(candidate));
+  // Prefer the most common valid candidate, the same way tenseBaseForm does, so a
+  // rare spelling can't hijack the fold: "eviller" caps at "evil" (4.8), not at
+  // the archaic "evill" that also happens to be on the list.
+  let base: string | undefined;
+  let baseZipf = -Infinity;
+  for (const candidate of derivedBaseCandidates(word)) {
+    if (!WORD_INDEX.has(candidate)) continue;
+    const candidateZipf = zipfFor(candidate, scoring);
+    if (candidateZipf > baseZipf) {
+      base = candidate;
+      baseZipf = candidateZipf;
+    }
+  }
+  return base;
 }
 
 function scoringBaseForm(word: string, scoring: Scoring): string | undefined {

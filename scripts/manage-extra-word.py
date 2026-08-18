@@ -340,7 +340,7 @@ def format_score(score: float) -> str:
     return f"{_round_to_tenths(score):.1f}"
 
 
-def _derived_base(word: str, own: float, index: dict[str, int], max_zipf: float) -> str | None:
+def _derived_base(word: str, own: float, index: dict[str, int], max_zipf: float, zipf_at) -> str | None:
     """Mirror of derivedBaseForm(): the -er/-ers/-est and missed "-es" cap.
 
     Only for forms already scoring Mythic or better on their own -- a word with an
@@ -370,7 +370,13 @@ def _derived_base(word: str, own: float, index: dict[str, int], max_zipf: float)
     if len(word) > 4 and word.endswith("es"):
         add(word[:-1])
 
-    return next((c for c in candidates if c in index), None)
+    # Most common valid candidate wins, mirroring derivedBaseForm(): a rare
+    # spelling ("evill") must not hijack the fold from the common one ("evil").
+    best, best_zipf = None, float("-inf")
+    for candidate in candidates:
+        if candidate in index and zipf_at(candidate) > best_zipf:
+            best, best_zipf = candidate, zipf_at(candidate)
+    return best
 
 
 def adjusted_zipf(word: str, index: dict[str, int], zipf_at, max_zipf: float) -> float:
@@ -381,7 +387,7 @@ def adjusted_zipf(word: str, index: dict[str, int], zipf_at, max_zipf: float) ->
         return zipf_at(tense)
     base = _scoring_base(word, index)
     with_base = max(own, zipf_at(base)) if base is not None else own
-    derived = _derived_base(word, with_base, index, max_zipf)
+    derived = _derived_base(word, with_base, index, max_zipf, zipf_at)
     if derived is not None:
         return max(with_base, zipf_at(derived))
     return with_base
