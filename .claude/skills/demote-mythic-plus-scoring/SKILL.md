@@ -77,16 +77,17 @@ word folded onto a base is still a junk word the game accepts.
 
 | bucket | what it means | usual verdict |
 | --- | --- | --- |
-| **classified** | Wiktionary already records it obsolete, archaic, dated, an abbreviation or a proper noun — all five excluded by the word rules | reject |
+| **classified** | Wiktionary records it obsolete, archaic, dated, an abbreviation or a proper noun | **read it — usually keep.** See §2a |
 | **misspelling** | an attested near-spelling is ≥1.0 Zipf more common, in one of the three shapes that mean *one word, two spellings* | reject, or keep if genuine variants |
 | **fold** | same word in another number, tense or degree, with a measured base materially more common | demote to the base |
 | **fold-suspect** | the same, but the base is a word everybody uses (Zipf ≥ 5.0). Often empty for a given drop | check the word, not the fold |
 | **derivation** | a suffix form of a measured base, where the suffix may or may not be doing real work | judge on the merits |
 
-For scale, the 2026-08-19 `ATE` drop: 2,430 attested words in the band, 40 unscored
-ones set aside for the sibling skill, 1,570 that deserve the rank, and 860 findings
-— 34 classified, 103 misspelling, 471 fold, 0 fold-suspect, 252 derivation. Every
-drop is different; read the run's own header rather than these numbers.
+For scale, the 2026-08-19 `ATE` drop after that day's judgements: 2,171 attested
+words in the band, 40 unscored ones set aside for the sibling skill, 1,403 that
+deserve the rank, and 737 findings — 0 classified, 92 misspelling, 393 fold, 0
+fold-suspect, 252 derivation. Every drop is different, and the ledger shrinks these
+as words are judged; read the run's own header rather than these numbers.
 
 **Ranking is by how far the displayed score would fall** if the word were folded —
 the overestimate as a player feels it, not as a Zipf delta. The deep tail compresses
@@ -101,12 +102,43 @@ gets a non-word accepted.
 
 ### a. Should it be playable at all?
 
-`WordRulesModal.tsx` excludes proper nouns, abbreviations, misspellings, and
-obsolete, archaic or dated words. Any of those is a rejection, not a rescore.
+**When in doubt, keep the word playable.** Rejection removes a word from the game
+outright; demotion only lowers a score. They are not comparable interventions, and
+rejection needs far stronger evidence.
 
-The **classified** bucket is Wiktionary's own verdict and is usually right — but read
-the word, because the classification is a corpus label and not a judgement about
-play (`capreolate` and `indagate` on the ATE drop are both fair rejections).
+**Reject only a word that is a *spelling* of another word** — a misspelling or an
+obsolete/alternative spelling, where the entry points at another headword
+(`hatefull` → `hateful`, `boate` → `boat`, `cockateel` → `cockatiel`). That is a
+structural fact about the entry, not a judgement about register. It is also the bar
+`main` has always used: before the 2026-08-19 drop, the entire rejection list was
+four misspellings of `reaccomodate`.
+
+**A Wiktionary `archaic`/`obsolete`/`dated` label is not sufficient grounds.** The
+`classified` bucket is a *review signal*, not a verdict. On the 2026-08-19 run it
+proposed 32 rejections; 28 were wrong and the list was cut to 4. Three ways the
+label misleads:
+
+- **It is sometimes simply wrong.** Wiktionary calls `agminate` archaic. It is
+  standard current dermatology — a 2025 JAAD review is titled *"Agminated skin
+  conditions"*.
+- **Compound labels are flattened on import.** `insatiate` is tagged "archaic *or
+  literary*", and `literary` means the word is still current in that register — but
+  `sense_severity()` in `scripts/import-wiktionary-words.py` takes `max()` over a
+  table holding only obsolete/archaic/dated, so the `literary` half scores 0 and
+  disappears. Dictionary.com carries `insatiate` with no label at all.
+- **A word with live senses can still be labelled.** `delate`'s first sense
+  ("chiefly Scots, to inform against") carries no out-of-use label, yet the word
+  arrived classified as archaic.
+
+Technical, regional, poetic and literary vocabulary all stay playable: `capreolate`
+is botany, `tetrabranchiate` zoology, `intonate` phonetics, `rebatement` heraldry,
+`lateritious` geology and medicine. A rare word scoring rare is the rarity tier
+working, not a defect.
+
+If you are still inclined to reject on a label, check a second dictionary first, and
+record the reasoning in the PR. Every one of the 28 words above was already
+playable; each rejection is a thing a player could do yesterday and cannot do
+today.
 
 The **misspelling** bucket is *suspects*, not conclusions, and its false-positive
 rate is real: the single-swapped-vowel shape flags `abaser` against `abuser` and
