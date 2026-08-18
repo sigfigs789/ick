@@ -706,6 +706,38 @@ h2 {
   font-weight: 400;
   font-family: var(--font-body);
 }
+/* A live lookup is running (see LIVE_HANDOFF_MS). An unmarked pause reads as a
+   dropped keystroke, so a thin grey line tracks across the base of the input --
+   the field only, not the Submit button beside it. Nothing else changes: no
+   colour, no layout, and typing stays enabled. */
+.submit-form__field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+}
+.submit-form__row--checking .submit-form__field::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--fg-faint), transparent);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: input-checking-sweep 1.2s var(--ease-standard) infinite;
+  pointer-events: none;
+}
+@keyframes input-checking-sweep {
+  from {
+    background-position: -45% 0;
+  }
+  to {
+    background-position: 145% 0;
+  }
+}
 .submit-form button,
 .share-button {
   font-family: var(--font-body);

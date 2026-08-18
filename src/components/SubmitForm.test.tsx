@@ -30,6 +30,25 @@ describe("SubmitForm", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("marks the row while a live lookup is running, without blocking typing", async () => {
+    const { container, rerender } = render(
+      <SubmitForm drop="str" disabled={false} feedback={null} checking={true} onSubmit={vi.fn()} />
+    );
+
+    expect(container.querySelector(".submit-form__row--checking")).toBeInTheDocument();
+    // The wait is indicated, not enforced -- the next word can be typed while
+    // the lookup runs.
+    const input = screen.getByLabelText(/enter a word containing "STR"/i);
+    expect(input).not.toBeDisabled();
+    await userEvent.type(input, "stray");
+    expect(input).toHaveValue("stray");
+
+    rerender(
+      <SubmitForm drop="str" disabled={false} feedback={null} checking={false} onSubmit={vi.fn()} />
+    );
+    expect(container.querySelector(".submit-form__row--checking")).not.toBeInTheDocument();
+  });
+
   it("disables the input and button once the puzzle is complete", () => {
     render(
       <SubmitForm drop="str" disabled={true} feedback={null} onSubmit={vi.fn()} />

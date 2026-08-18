@@ -5,10 +5,12 @@ interface Props {
   drop: string;
   disabled: boolean;
   feedback: Feedback | null;
+  /** A live lookup is running and the player is waiting on it. */
+  checking?: boolean;
   onSubmit: (word: string) => void;
 }
 
-export function SubmitForm({ drop, disabled, feedback, onSubmit }: Props) {
+export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmit }: Props) {
   const [value, setValue] = useState("");
   const rowRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,22 +44,29 @@ export function SubmitForm({ drop, disabled, feedback, onSubmit }: Props) {
           ? "You've completed this puzzle"
           : `Enter a word containing "${drop.toUpperCase()}"`}
       </label>
-      <div className="submit-form__row" ref={rowRef}>
-        <input
-          id="word-input"
-          ref={inputRef}
-          type="text"
-          inputMode="text"
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          value={value}
-          disabled={disabled}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={disabled ? "" : "type a word…"}
-          maxLength={30}
-        />
+      <div
+        className={`submit-form__row${checking ? " submit-form__row--checking" : ""}`}
+        ref={rowRef}
+      >
+        {/* Wraps the input alone so the checking bar spans the field and stops
+            short of the Submit button. */}
+        <span className="submit-form__field">
+          <input
+            id="word-input"
+            ref={inputRef}
+            type="text"
+            inputMode="text"
+            autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            value={value}
+            disabled={disabled}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={disabled ? "" : "type a word…"}
+            maxLength={30}
+          />
+        </span>
         <button
           type="submit"
           disabled={disabled || !value.trim()}

@@ -37,6 +37,7 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     lockIn,
     resetAnswers: vi.fn(),
     liveNote: null,
+    checking: false,
     ...overrides,
   };
 }

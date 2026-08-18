@@ -42,6 +42,7 @@ export default function App() {
     streak,
     feedback,
     liveNote,
+    checking,
     submitWord,
     lockIn,
     resetAnswers,
@@ -136,6 +137,7 @@ export default function App() {
             drop={drop}
             disabled={progress.completed}
             feedback={feedback}
+            checking={checking}
             onSubmit={submitWord}
           />
         )}
