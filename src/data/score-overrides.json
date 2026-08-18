@@ -9,6 +9,16 @@
     "reason": "Plural / third-person form of `bureaucratese`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "collegiates": {
+    "base": "collegiate",
+    "reason": "Plural / third-person form of `collegiate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "compassionates": {
+    "base": "compassionate",
+    "reason": "Plural / third-person form of `compassionate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
   "gravitater": {
     "base": "gravitate",
     "reason": "Comparative or agent noun of `gravitate`; a suffix is not a discovery.",
@@ -49,6 +59,16 @@
     "reason": "Plural of `nizamate`, which is itself only the -ate form of `nizam`; folded straight to `nizam` because the cap reads a base's raw Zipf, so folding onto `nizamate` would leave this at 10.00.",
     "since": "2026-08-19"
   },
+  "ornatest": {
+    "base": "ornate",
+    "reason": "Superlative of `ornate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "penultimates": {
+    "base": "penultimate",
+    "reason": "Plural / third-person form of `penultimate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
   "placation": {
     "base": "placate",
     "reason": "-ation noun of `placate`; a suffix is not a discovery.",
@@ -62,6 +82,11 @@
   "subdiaconates": {
     "base": "subdiaconate",
     "reason": "Plural / third-person form of `subdiaconate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "upstates": {
+    "base": "upstate",
+    "reason": "Plural / third-person form of `upstate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
   "vallates": {
