@@ -1,1 +1,22 @@
-{}
+{
+  "reaccomodate": {
+    "note": "Misspelling of `reaccommodate`.",
+    "reason": "misspelling",
+    "since": "2026-08-19"
+  },
+  "reaccomodated": {
+    "note": "Misspelling of `reaccommodate`.",
+    "reason": "misspelling",
+    "since": "2026-08-19"
+  },
+  "reaccomodates": {
+    "note": "Misspelling of `reaccommodate`.",
+    "reason": "misspelling",
+    "since": "2026-08-19"
+  },
+  "reaccomodating": {
+    "note": "Misspelling of `reaccommodate`.",
+    "reason": "misspelling",
+    "since": "2026-08-19"
+  }
+}

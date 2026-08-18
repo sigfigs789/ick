@@ -1,12 +1,77 @@
 {
+  "angulatenesses": {
+    "base": "angulate",
+    "reason": "Plural of an -ness noun of `angulate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "bureaucrateses": {
+    "base": "bureaucratese",
+    "reason": "Plural / third-person form of `bureaucratese`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "gravitater": {
+    "base": "gravitate",
+    "reason": "Comparative or agent noun of `gravitate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "gravitaters": {
+    "base": "gravitate",
+    "reason": "Plural agent noun of `gravitate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "iratest": {
+    "base": "irate",
+    "reason": "Superlative of `irate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "italianates": {
+    "base": "italianate",
+    "reason": "Plural / third-person form of `italianate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
   "lactational": {
     "base": "lactation",
-    "since": "2026-08-19",
-    "reason": "-al adjective of `lactation`; a suffix is not a discovery."
+    "reason": "-al adjective of `lactation`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "laevigates": {
+    "base": "laevigate",
+    "reason": "Plural / third-person form of `laevigate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "nizamate": {
+    "base": "nizam",
+    "reason": "-ate suffix form of `nizam`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "nizamates": {
+    "base": "nizam",
+    "reason": "Plural of `nizamate`, which is itself only the -ate form of `nizam`; folded straight to `nizam` because the cap reads a base's raw Zipf, so folding onto `nizamate` would leave this at 10.00.",
+    "since": "2026-08-19"
   },
   "placation": {
     "base": "placate",
-    "since": "2026-08-19",
-    "reason": "-ation noun of `placate`; a suffix is not a discovery."
+    "reason": "-ation noun of `placate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "sororates": {
+    "base": "sororate",
+    "reason": "Plural / third-person form of `sororate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "subdiaconates": {
+    "base": "subdiaconate",
+    "reason": "Plural / third-person form of `subdiaconate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "vallates": {
+    "base": "vallate",
+    "reason": "Plural / third-person form of `vallate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "waterbusses": {
+    "base": "waterbus",
+    "reason": "Plural / third-person form of `waterbus`; a suffix is not a discovery.",
+    "since": "2026-08-19"
   }
 }
