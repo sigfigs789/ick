@@ -27,8 +27,9 @@ Zipf *after* the game's existing base-form folding is still the sentinel. Nothin
 else is a finding this run:
 
 - A word with a real measured frequency is out of scope even if its rank looks
-  wrong. An attested inflection outranking its base is **audit-drop-mythics**'
-  territory, and it wants a stemmer rule, not this file.
+  wrong. An attested inflection outranking its base is a separate, deliberate
+  call — not this run's, and not a stemmer rule either; see "If you still think
+  the stemmer is the answer" below for why.
 - A word a player cannot reach on this puzzle is not this run's problem, however
   bad it looks. Never widen into a dictionary-wide sweep.
 
@@ -125,10 +126,41 @@ The point of the buckets is that the daily run stays cheap. Do not re-litigate:
 - **The no-base bucket** — that is the tier's content.
 - **The stemmer.** The tempting fix for a whole bucket at once is a wider
   `baseForm`. It has been measured and it is not worth it: a blanket bare-`s`
-  strip re-scores **10,877** words, changes **6,786** ranks and strips **2,189** of
+  strip re-scores **11,015** words, changes **6,892** ranks and strips **2,185** of
   a perfect 10 (`despites` 9.90 → 4.02, `aboves` 9.58 → 3.72). Removing or pinning
   seven words beats re-scoring ten thousand. That is why this skill uses a curated
   override file.
+
+### If you still think the stemmer is the answer — measure first
+
+Narrowing the rule does not rescue it. Restricting the same change to
+`-ise/-ize/-yse/-yze` still moves 1,471 words, changes 625 ranks and strips 375
+of a perfect 10 (`mayonnaises` 9.90 → 6.60, `expertises` 9.69 → 5.40).
+
+A scoring-policy change wearing a bug fix's clothes passes the existing suite,
+because the date gate freezes past puzzles — **the tests will not catch it for
+you.** #153 added an invariant sweep asserting no word scores rarer than its own
+measurement, which catches one specific class of regression; it says nothing
+about how many words a change re-scores. A green suite is not coverage here.
+
+To measure, drop a throwaway test in `src/game/` (real code, no
+reimplementation), run it, delete it:
+
+```ts
+import words from "../data/dictionary.json";
+import { rarityFor, rarityScore } from "./dictionary";
+// compare rarityFor(w, DAY_BEFORE_CUTOVER) against rarityFor(w, CUTOVER)
+// count: zipf changed, rank changed, lost a perfect 10; print the biggest movers
+```
+
+If you do ship a scoring change it needs a **new dated cutover** in
+`src/game/dictionary.ts` (follow `CHAINED_BASE_START`, the most recent one) so
+past puzzles never re-score, a mirror in `adjusted_zipf` in
+`scripts/manage-extra-word.py` — the audit skills read it, and they drift
+silently from the game if it is not updated in lockstep — and tests on both
+sides of the date. Note `baseForm` is shared with duplicate detection in `submit.ts` —
+change the scoring lookup, not the stemmer, or `glasses` stops folding to
+`glass`.
 
 ## 3. Apply the verdicts
 
