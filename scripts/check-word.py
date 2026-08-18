@@ -30,6 +30,7 @@ SCRIPTS = ROOT / "scripts"
 DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 REJECTION_METADATA_PATH = ROOT / "src" / "data" / "rejection-metadata.json"
+WORD_REJECTIONS_PATH = ROOT / "src" / "data" / "word-rejections.json"
 BLOCKLIST_PATH = SCRIPTS / "blocklist.txt"
 
 # Same input gate as manage-extra-word.py's add: English letters, no length cap
@@ -45,6 +46,9 @@ REJECTION_MESSAGES = {
     "name-or-abbreviation": "This looks like a proper noun or abbreviation.",
     "misspelling": "This looks like a misspelling of another word.",
     "obsolete": "This looks archaic or obsolete.",
+    "archaic": "This looks like an archaic word.",
+    "dated": "This looks dated — no longer in common use.",
+    "not-a-word": "That word is not in WordInk's curated list.",
 }
 
 
@@ -102,6 +106,27 @@ def check(raw_word: str) -> tuple[bool, str]:
         return False, "\n".join(lines)
 
     dictionary = set(json.loads(DICTIONARY_PATH.read_text()))
+
+    # A reviewed rejection (src/data/word-rejections.json) is checked before
+    # dictionary membership: such a word is deliberately still on the curated list
+    # -- so its rarity entry stays aligned and past puzzles keep scoring -- but it
+    # is not playable, and this is the only source that can say why.
+    rejections = (
+        json.loads(WORD_REJECTIONS_PATH.read_text()) if WORD_REJECTIONS_PATH.exists() else {}
+    )
+    if word in rejections:
+        entry = rejections[word]
+        lines += [
+            "**❌ Not valid** — this word was reviewed and rejected.",
+            "",
+            f"**Reason:** {REJECTION_MESSAGES.get(entry['reason'], entry['reason'])}",
+            "",
+            f"Rejected as `{entry['reason']}` for puzzles from **{entry['since']}** onward. "
+            + (f"{entry['note'].rstrip('.')}. " if entry.get("note") else "")
+            + "It stays in the curated list so earlier puzzles still score it, but it "
+            "can no longer be submitted.",
+        ]
+        return False, "\n".join(lines)
 
     if word in dictionary:
         # Valid: score it exactly as the game does (base-form adjustment included).

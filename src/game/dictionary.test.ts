@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
 import {
+  CURATED_REJECTION_REASONS,
   baseFormSubstitution,
+  bestWordForDrop,
+  curatedRejection,
   isValidWord,
   rarityFor,
   rarityForZipf,
@@ -11,6 +14,10 @@ import {
   unattestedZipf,
 } from "./dictionary";
 import rarityData from "../data/rarity.json";
+import scoreOverrides from "../data/score-overrides.json";
+import wordRejections from "../data/word-rejections.json";
+import { addDays } from "./date";
+import { REJECTION_MESSAGES, evaluateSubmission } from "./submit";
 
 const explicitlyCuratedWords = [
   "endling",
@@ -411,5 +418,142 @@ describe("isUnattestedZipf", () => {
     expect(isUnattestedZipf(unattestedZipf())).toBe(true);
     expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(10);
     expect(rarityScore(unattestedZipf(), "2026-08-15")).toBe(10);
+  });
+});
+
+// Curated demotions for words no corpus attests (src/data/score-overrides.json).
+// The file grows a batch per daily audit run, so nothing here pins a word list:
+// these are the invariants every entry must satisfy, asserted over whatever the
+// file currently holds.
+describe("curated base-form score overrides", () => {
+  const overrides = Object.entries(
+    scoreOverrides as Record<string, { base: string; since: string; reason?: string }>
+  );
+  const zipfByWord = new Map(dictionaryWords.map((w, i) => [w, rarityData.zipfHundredths[i] / 100]));
+  const overridden = new Set(overrides.map(([word]) => word));
+  // The wide-band cutover in dictionary.ts. An override taking effect before it
+  // would re-score puzzles played under an older system.
+  const WIDE_BAND_START = "2026-08-16";
+
+  it("ships at least one override, so the cases below are not vacuous", () => {
+    expect(overrides.length).toBeGreaterThan(0);
+  });
+
+  it.each(overrides)("%s -> %s is a well-formed, playable pair", (word, { base }) => {
+    expect(isValidWord(word), `${word} must be a dictionary word`).toBe(true);
+    expect(isValidWord(base), `${base} must be a dictionary word`).toBe(true);
+    expect(word).not.toBe(base);
+  });
+
+  it.each(overrides)("%s takes effect on a date in the current era", (_word, { since }) => {
+    expect(since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // Past puzzles must never re-score, so an override can only start on or after
+    // the newest system's cutover.
+    expect(since >= WIDE_BAND_START).toBe(true);
+  });
+
+  it.each(overrides)("%s is demoted by its base, never promoted", (word, { base }) => {
+    // The whole point is capping a derived form at the word it came from. A base
+    // rarer than the word would be a promotion, and Math.max would ignore it --
+    // so an entry like that is a review mistake, not a no-op worth shipping.
+    expect(zipfByWord.get(base)!).toBeGreaterThan(zipfByWord.get(word)!);
+  });
+
+  it.each(overrides)("%s folds one level only", (_word, { base }) => {
+    // adjustedZipf applies a single override and stops. If a base were itself
+    // overridden, the fold would silently stop one step short of the intended
+    // score, so chains are rejected outright rather than followed.
+    expect(overridden.has(base)).toBe(false);
+  });
+
+  it.each(overrides)("%s scores as its base from its start date on", (word, { base, since }) => {
+    expect(rarityFor(word, since)).toEqual({
+      rarity: rarityForZipf(zipfByWord.get(base)!, since),
+      zipf: zipfByWord.get(base)!,
+    });
+  });
+
+  it.each(overrides)("%s keeps its own, rarer score the day before", (word, { since }) => {
+    const before = addDays(since, -1);
+    expect(rarityFor(word, before)!.zipf).toBeLessThan(rarityFor(word, since)!.zipf);
+  });
+
+  it.each(overrides)("%s reports the substitution for analytics", (word, { base, since }) => {
+    expect(baseFormSubstitution(word, since)).toEqual({
+      word,
+      base,
+      ownZipf: zipfByWord.get(word)!,
+      baseZipf: zipfByWord.get(base)!,
+    });
+    expect(baseFormSubstitution(word, addDays(since, -1))).toBeUndefined();
+  });
+});
+
+// Reviewed rejections (src/data/word-rejections.json). A rejected word stays in
+// dictionary.json -- so rarity.json stays index-aligned and past puzzles keep
+// scoring it -- but stops being playable from its `since` date. Like the overrides
+// above, these cases iterate whatever the file holds rather than pinning a list.
+describe("curated word rejections", () => {
+  const rejections = Object.entries(
+    wordRejections as Record<string, { reason: string; since: string; note?: string }>
+  );
+  const WIDE_BAND_START = "2026-08-16";
+
+  it("keeps its reason vocabulary renderable by the submit flow", () => {
+    // Holds with or without entries in the data file: every reason a rejection is
+    // allowed to carry must have a message, or a player would get a blank one.
+    for (const reason of CURATED_REJECTION_REASONS) {
+      expect(REJECTION_MESSAGES[reason], `${reason} needs a player-facing message`).toBeTruthy();
+    }
+  });
+
+  it.each(rejections)("%s uses a reason the submit flow can show", (_word, { reason }) => {
+    expect(CURATED_REJECTION_REASONS).toContain(reason);
+  });
+
+  it.each(rejections)("%s is still in the dictionary, just unplayable", (word, { since }) => {
+    // The whole point of rejecting rather than removing: the word list and the
+    // index-aligned rarity arrays never move.
+    expect(dictionaryWords).toContain(word);
+    expect(rarityFor(word, since)).toBeDefined();
+    expect(isValidWord(word, since)).toBe(false);
+  });
+
+  it.each(rejections)("%s takes effect on a date in the current era", (_word, { since }) => {
+    expect(since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(since >= WIDE_BAND_START).toBe(true);
+  });
+
+  it.each(rejections)("%s was playable the day before", (word, { since }) => {
+    // An archived puzzle has to keep validating the words it validated when it was
+    // played, exactly like the dated score overrides.
+    expect(isValidWord(word, addDays(since, -1))).toBe(true);
+    expect(curatedRejection(word, addDays(since, -1))).toBeUndefined();
+  });
+
+  it.each(rejections)("%s reports its reason to the player", (word, { reason, since }) => {
+    // The drop is checked before the word is looked up, so use a substring of the
+    // word itself -- otherwise this bounces on "missing-drop" and never reaches
+    // the rejection.
+    const result = evaluateSubmission(word, word.slice(1, 4), [], since);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe(reason);
+    expect(curatedRejection(word, since)).toBe(reason);
+  });
+
+  it("never offers a rejected word as a drop's best possible answer", () => {
+    // bestWordForDrop scans dictionary.json directly and its result is shown to
+    // the player (DropDisplay), so the rejection has to be honoured there too.
+    for (const [word, { since }] of rejections) {
+      const best = bestWordForDrop(word.slice(1, 4), since);
+      expect(best?.word).not.toBe(word);
+    }
+  });
+
+  it("leaves words with no entry alone", () => {
+    expect(curatedRejection("placate")).toBeUndefined();
+    expect(isValidWord("placate")).toBe(true);
+    // And a word that was never in the dictionary is still simply invalid.
+    expect(isValidWord("zzzzqx")).toBe(false);
   });
 });

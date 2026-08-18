@@ -149,6 +149,29 @@ python3 scripts/generate-data.py --metadata-only --esdb-db /tmp/esdb/scowl.db
 after a word misses the curated dictionary. It intentionally has a generic
 fallback for unknown words and ambiguous entries.
 
+`src/data/word-rejections.json` is hand-written too: words that stay on the
+curated list but are no longer playable, each with the reason a player sees when
+they try one (`misspelling`, `archaic`, `proper-noun`, …). Rejecting this way
+rather than deleting the word keeps `rarity.json` index-aligned, leaves past
+puzzles scoring what they scored, needs no pinned-count updates, and — because
+this file is never regenerated — cannot be undone by a data refresh. Entries are
+dated like the overrides below. `scripts/blocklist.txt` remains the tool for
+content that must never enter the dictionary at all.
+
+`src/data/score-overrides.json` is the other **hand-written** data file: reviewed
+demotions for words no corpus attests. Such a word falls to the unattested
+sentinel and scores a perfect 10.0 / Legend, which is right for a genuine find
+(`enshittification`) and wrong for a mechanical derivation of an ordinary word
+(`iratest`, the superlative of a Zipf-2.78 word, which `scoringBaseForm` has no
+`-est` rule for). Each entry pins one word to the base it should score as, and
+carries its own `since` date so a demotion applies from the puzzle it was
+reviewed for onward and no past puzzle re-scores. It is scoring only —
+same-root duplicate detection is untouched. Widening the stemmer instead is
+deliberately avoided: a blanket bare-`s` strip re-scores 10,877 words and
+strips 2,189 of a perfect 10. Entries are added a drop at a time by the
+`audit-unscored-legends` skill (`.claude/skills/`), which is also what keeps
+this file reviewable.
+
 `scripts/select-drops.py` evaluates a hand-picked pool of candidate
 2- and 3-letter drops against the generated dictionary and keeps only
 ones with plenty of common-word matches, so no daily puzzle depends on

@@ -23,6 +23,7 @@ an otherwise-unscored word the rarest-word floor, a perfect 10.0 / Legend.
 """
 import argparse
 import bisect
+import functools
 import json
 import math
 import re
@@ -39,6 +40,7 @@ BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
 DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 LEGACY_RARITY_PATH = ROOT / "src" / "data" / "rarity-legacy.json"
+SCORE_OVERRIDES_PATH = ROOT / "src" / "data" / "score-overrides.json"
 DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
 
 # Legacy (pre-rescale) rarity placeholders for a freshly added word. The legacy
@@ -340,9 +342,37 @@ def format_score(score: float) -> str:
     return f"{_round_to_tenths(score):.1f}"
 
 
+@functools.cache
+def load_score_overrides() -> dict[str, dict]:
+    """The curated base-form demotions in src/data/score-overrides.json.
+
+    Mirror of SCORE_OVERRIDES in src/game/dictionary.ts. Every override is active
+    here because this module only ever scores a word under the newest (undated)
+    system, where each entry's `since` date has passed by definition.
+
+    Cached: adjusted_zipf() consults it per word, and callers that sweep the whole
+    dictionary (the audit skill) would otherwise re-read the file 225k times.
+    """
+    if not SCORE_OVERRIDES_PATH.exists():
+        return {}
+    return json.loads(SCORE_OVERRIDES_PATH.read_text())
+
+
+def _override_base(word: str, index: dict[str, int]) -> str | None:
+    """Mirror of overrideBase() for the newest system (no date gating)."""
+    override = load_score_overrides().get(word)
+    if not override:
+        return None
+    base = override.get("base")
+    return base if base in index else None
+
+
 def adjusted_zipf(word: str, index: dict[str, int], zipf_at) -> float:
     """Mirror of adjustedZipf() in src/game/dictionary.ts (newest system)."""
     own = zipf_at(word)
+    override = _override_base(word, index)
+    if override is not None:
+        return max(own, zipf_at(override))
     tense = _tense_base(word, index, zipf_at)
     if tense is not None:
         return zipf_at(tense)

@@ -1,7 +1,7 @@
-import { boundBaseFormsActive, isValidWord, rarityFor } from "./dictionary";
+import { boundBaseFormsActive, curatedRejection, isValidWord, rarityFor } from "./dictionary";
 import rejectionMetadata from "../data/rejection-metadata.json";
 import { baseForm, boundBaseCandidates } from "./stem";
-import type { AcceptedWord, SubmissionResult } from "./types";
+import type { AcceptedWord, RejectionReason, SubmissionResult } from "./types";
 
 const WORD_CHARS = /^[a-z]+$/;
 const METADATA_REASONS = [
@@ -29,8 +29,18 @@ function includesSorted(words: readonly string[], word: string): boolean {
   return false;
 }
 
-function rejectionReasonFor(word: string): MetadataReason | undefined {
-  return METADATA_REASONS.find((reason) => includesSorted(metadataByReason[reason] ?? [], word));
+/**
+ * Why `word` can't be played. A reviewed rejection (src/data/word-rejections.json)
+ * wins over the generated metadata: it is a decision about this exact word, and it
+ * is the only source that can explain a word still present in the dictionary.
+ * Falls back to the ESDB/Wiktionary categories for words that simply never made
+ * the curated list.
+ */
+function rejectionReasonFor(word: string, date?: string): RejectionReason | undefined {
+  return (
+    curatedRejection(word, date) ??
+    METADATA_REASONS.find((reason) => includesSorted(metadataByReason[reason] ?? [], word))
+  );
 }
 
 /** True if `drop`'s letters appear contiguously and in order inside `word`. */
@@ -44,10 +54,12 @@ export function containsDropInOrder(word: string, drop: string): boolean {
  * suffixes onto a real base, so a puzzle can't take both "organize" and
  * "organization" (only when that base is itself a dictionary word).
  */
-function rootKey(word: string, foldBoundSuffixes: boolean): string {
+function rootKey(word: string, foldBoundSuffixes: boolean, date?: string): string {
   const inflected = baseForm(word);
   if (foldBoundSuffixes) {
-    const bound = boundBaseCandidates(inflected).find(isValidWord);
+    // Wrapped rather than passed by reference: find() supplies (value, index),
+    // and isValidWord's second parameter is a date.
+    const bound = boundBaseCandidates(inflected).find((candidate) => isValidWord(candidate, date));
     if (bound) return baseForm(bound);
   }
   return inflected;
@@ -77,12 +89,12 @@ export function evaluateSubmission(
     return { ok: false, reason: "already-used" };
   }
   const foldBoundSuffixes = boundBaseFormsActive(date);
-  const wordRoot = rootKey(word, foldBoundSuffixes);
-  if (alreadyAccepted.some((w) => rootKey(w.word, foldBoundSuffixes) === wordRoot)) {
+  const wordRoot = rootKey(word, foldBoundSuffixes, date);
+  if (alreadyAccepted.some((w) => rootKey(w.word, foldBoundSuffixes, date) === wordRoot)) {
     return { ok: false, reason: "same-root-as-used" };
   }
-  if (!isValidWord(word)) {
-    return { ok: false, reason: rejectionReasonFor(word) ?? "not-a-word" };
+  if (!isValidWord(word, date)) {
+    return { ok: false, reason: rejectionReasonFor(word, date) ?? "not-a-word" };
   }
 
   const info = rarityFor(word, date);
