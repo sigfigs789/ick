@@ -242,15 +242,21 @@ No pinned counts to update: neither verdict touches the generated data, and both
 suites in `dictionary.test.ts` iterate whatever the data files hold, so new entries
 become new cases on their own.
 
-**One assertion does need watching.** `"reports the substitution for analytics"`
-checks that the day before `since` the curated base is not yet in force. Words this
-skill demotes are often ones the stemmer *already* folds — every `-nesses` plural
-has its `-ness` singular in the dictionary, so `materialnesses` reported
-`materialness` (Zipf 0.65) long before it was capped at `material` (4.95), which is
-exactly why it displayed 9.94 rather than 10.00. If that case ever regresses to
-asserting *no* substitution before `since`, this whole class of demotion fails the
-suite. The scores are right; the assertion has to be about the reviewed base
-specifically.
+**One assertion needs watching if you override a word the stemmer already folds.**
+`"reports the substitution for analytics"` asserts that the day before `since`
+there is *no* substitution at all, which assumes the overridden word has no
+natural fold of its own. Override one that does and the case fails on the
+day-before leg — the scores are right, the assertion is too strong, and the fix is
+to assert the *curated* base is not yet in force rather than that nothing is.
+
+Since the 2026-08-19 chained-base cutover (`CHAINED_BASE_START` in
+`src/game/dictionary.ts`) this is rarer than it was. The engine now resolves a
+base through its own base, so the `-nesses` plurals that used to need an override
+each — `materialnesses` reported `materialness` (Zipf 0.65) and displayed 9.94
+Legend — resolve to `material` (4.95) unaided and never reach this skill's band.
+Prefer letting a mechanical fold happen in the engine over recording it here: if
+a finding's base is one the stemmer can already reach, it is a scoring-rule gap,
+not an override.
 
 ```bash
 npx vitest run && npx tsc -b && npx eslint .

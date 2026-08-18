@@ -8,9 +8,9 @@ rest of the same band and skips the sentinel words outright: what is left is the
 words that *are* measured, just far out in the deep tail, where the wide-band curve
 maps any Zipf under 1.0 into 9.9..10 no matter how ordinary the word underneath is.
 
-    abandoner   Zipf 0.93  ->  9.91 Legend   while `abandon` sits at Zipf 4.02
-    welcomeness Zipf 0.94  ->  9.91 Legend   while `welcome` sits at Zipf 4.99
-    abaci       Zipf 1.19  ->  9.62 Mythic   while `abacus` sits at Zipf 2.65
+    abandoner      Zipf 0.93 ->  9.91 Legend  while `abandon` sits at Zipf 4.02
+    proportionates Zipf 0.42 ->  9.96 Legend  while `proportionate` sits at Zipf 3.04
+    abaci          Zipf 1.19 ->  9.62 Mythic  while `abacus` sits at Zipf 2.65
 
 A measured frequency is a measurement, so a rare word scoring rare is not a
 finding. What *is* a finding is a word whose rank comes from something other than
