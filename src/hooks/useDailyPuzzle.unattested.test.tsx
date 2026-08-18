@@ -77,8 +77,8 @@ describe("unattested-score tracking", () => {
     });
 
     expect(result.current.progress.acceptedWords).toHaveLength(1);
-    // Whatever stand-in today's system substitutes -- 9.90 from the sentinel-floor
-    // cutover, a perfect 10 before it. Both are guesses, both belong in the count.
+    // Whatever stand-in today's system substitutes for an unmeasured word -- a
+    // perfect 10 under the current system. A guess, and it belongs in the count.
     const standIn = rarityScore(unattestedZipf(), todayDateString());
     expect(unattestedEvents()).toEqual([
       expect.objectContaining({ word, source: "curated", score: standIn }),

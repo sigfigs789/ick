@@ -268,14 +268,13 @@ describe("rarityFor", () => {
     expect(rarityFor("trivialization")).toEqual(rarityFor("trivialize"));
   });
 
-  it("floors a word no corpus attests to 9.90 and Legend", () => {
+  it("awards the 10.0 max and Legend to a word no corpus attests", () => {
     // "autecism" is absent from every frequency source (and its stem too), so
-    // the waterfall gives it the rarest-word sentinel. The latest system floors
-    // that sentinel to 9.90 -- the elite-band bottom, still the Legend rank --
-    // rather than the perfect 10, which is reserved for attested deep-tail words.
+    // the waterfall gives it the rarest-word sentinel -- the only Zipf that
+    // earns a perfect 10, which lands in the deep-tail Legend rank.
     const floored = rarityFor("autecism")!;
     expect(floored.rarity).toBe("Legend");
-    expect(rarityScore(floored.zipf)).toBe(9.9);
+    expect(rarityScore(floored.zipf)).toBe(10);
   });
 
   it("awards Legend for a rank of 9.9+ and Mythic for 9.5-9.89", () => {
@@ -323,12 +322,12 @@ describe("rarityScore", () => {
 
   it("normalizes against the dictionary's Zipf range", () => {
     // "the" is the dictionary's most common word (highest Zipf) -- it anchors
-    // the 0.0 score. An attested deep-tail word anchors the perfect 10; the
-    // rarest-word sentinel (words no corpus attests) floors to 9.90 instead.
+    // the 0.0 score. Only the rarest-word sentinel (words no corpus attests)
+    // anchors 10.0; an attested-but-rare word lands just below it.
     const mostCommon = rarityFor("the")!;
     const floored = rarityFor("autecism")!;
     expect(rarityScore(mostCommon.zipf)).toBe(0);
-    expect(rarityScore(floored.zipf)).toBe(9.9);
+    expect(rarityScore(floored.zipf)).toBe(10);
     expect(rarityScore(2.4)).toBeGreaterThan(rarityScore(3.3));
   });
 });
@@ -355,17 +354,9 @@ describe("unattestedZipf", () => {
     expect(unattestedZipf()).toBe(dataMinimum);
   });
 
-  it("floors to the elite-band bottom rather than a perfect 10 from 2026-08-18", () => {
-    // The sentinel-floor system: a word no corpus attests is Legend, but the
-    // perfect 10 stays reserved for genuine deep-tail frequency data.
-    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(9.9);
+  it("earns the perfect 10 and Legend -- the rarest value we can claim", () => {
+    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(10);
     expect(rarityForZipf(unattestedZipf(), "2026-08-18")).toBe("Legend");
-  });
-
-  it("still earns a perfect 10 under the preceding wide-band system", () => {
-    // Guards the date gate: live words played on an earlier archive puzzle must
-    // score by that puzzle's own rules, not today's.
-    expect(rarityScore(unattestedZipf(), "2026-08-17")).toBe(10);
   });
 
   it("scores a live word from its own frequency when one is found", () => {
@@ -409,9 +400,10 @@ describe("isUnattestedZipf", () => {
   });
 
   it("holds across scoring systems, whatever stand-in they substitute", () => {
-    // 9.90 today, a perfect 10 before the floor -- both stand-ins, one bucket.
+    // The predicate is on the Zipf, not the score: every system substitutes some
+    // artificial value for an unattested word, and they all belong in one bucket.
     expect(isUnattestedZipf(unattestedZipf())).toBe(true);
-    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(9.9);
-    expect(rarityScore(unattestedZipf(), "2026-08-17")).toBe(10);
+    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(10);
+    expect(rarityScore(unattestedZipf(), "2026-08-15")).toBe(10);
   });
 });
