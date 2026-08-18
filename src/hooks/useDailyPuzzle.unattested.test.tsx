@@ -8,7 +8,6 @@ import {
   isValidWord,
   rarityFor,
   rarityScore,
-  unattestedZipf,
 } from "../game/dictionary";
 import { resetLiveCheckSession } from "../game/liveValidate";
 import dictionaryWords from "../data/dictionary.json";
@@ -37,7 +36,9 @@ function curatedWord(wantStandIn: boolean): string {
     const info = rarityFor(word);
     if (info && isUnattestedZipf(info.zipf) === wantStandIn) return word;
   }
-  throw new Error(`no curated ${wantStandIn ? "stand-in" : "measured"} word for "${DROP}"`);
+  throw new Error(
+    `no curated ${wantStandIn ? "stand-in" : "measured"} word for "${DROP}"`,
+  );
 }
 
 function stubValidate(zipf: number | null) {
@@ -77,9 +78,11 @@ describe("unattested-score tracking", () => {
     });
 
     expect(result.current.progress.acceptedWords).toHaveLength(1);
-    // Whatever stand-in today's system substitutes -- 9.90 from the sentinel-floor
-    // cutover, a perfect 10 before it. Both are guesses, both belong in the count.
-    const standIn = rarityScore(unattestedZipf(), todayDateString());
+    // Whatever stand-in today's system substitutes, read off the word itself
+    // rather than assumed: a perfect 10 before the 2026-08-18 cutover, and from
+    // it either 10 (graded a headword) or 9.90 (ungraded) depending on which word
+    // curatedWord() picked. All of them are guesses, and all belong in the count.
+    const standIn = rarityScore(rarityFor(word)!.zipf, todayDateString());
     expect(unattestedEvents()).toEqual([
       expect.objectContaining({ word, source: "curated", score: standIn }),
     ]);
