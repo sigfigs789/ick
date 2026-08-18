@@ -144,6 +144,12 @@ const AI_LEMMA: ReadonlySet<string> = new Set(aiTierData.tiers.lemma.words);
 const DERIVED_MAX_SCORE = aiTierData.tiers.derived.maxScore;
 const ARTIFACT_MAX_SCORE = aiTierData.tiers.artifact.maxScore;
 
+// How far a grade has to move a score before it is worth applying. A judgement
+// call should only overrule the measured default when it changes the answer
+// materially; below this the word keeps the score it already had, so a borderline
+// base cannot shave a hundredth off a word on nothing but a spelling guess.
+const MIN_GRADE_DROP = 0.3;
+
 /** A dated scoring system: how to read a word's Zipf, score it, and label it. */
 interface Scoring {
   zipfAt(index: number): number;
@@ -433,7 +439,12 @@ function adjustedZipf(word: string, zipf: number, scoring: Scoring): number {
   // ("aggrandization", which already folds onto "aggrandize").
   if (scoring.aiTiers && zipf === MIN_ZIPF) {
     const tiered = aiTieredZipf(word, scoring, measured);
-    if (tiered !== undefined) return tiered;
+    if (
+      tiered !== undefined &&
+      scoring.score(measured) - scoring.score(tiered) >= MIN_GRADE_DROP
+    ) {
+      return tiered;
+    }
   }
   return measured;
 }

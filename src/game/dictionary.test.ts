@@ -536,36 +536,54 @@ describe("ai-assigned tiers for unattested words", () => {
   });
 
   it("scores a Commonwealth spelling off its American twin", () => {
-    expect(rarityFor("microminiaturise")!.zipf).toBe(
-      rarityFor("microminiaturize")!.zipf,
-    );
+    // Equal scores, not necessarily equal Zipfs: both are deep-tail words at a
+    // perfect 10, so the grade moves nothing and never fires (see the drop
+    // threshold). What matters is that the pair cannot disagree.
+    const ise = rarityFor("microminiaturise")!;
+    const ize = rarityFor("microminiaturize")!;
+    expect(rarityScore(ise.zipf)).toBe(rarityScore(ize.zipf));
   });
 
-  it("never lets a derivation reach the perfect 10", () => {
+  it("never lets a derivation reach the perfect 10, once its grade applies", () => {
+    // A grade only fires when it moves the score materially, so a derivation is
+    // either capped at its ceiling or left exactly where it started -- never
+    // somewhere in between, and never nudged by a rounding-error amount.
     for (const [word] of derived) {
+      const graded = rarityScore(rarityFor(word)!.zipf);
+      const ungraded = rarityScore(rarityFor(word, WIDE_BAND)!.zipf, WIDE_BAND);
+      const applied = graded <= tiers.derived.maxScore;
       expect(
-        rarityScore(rarityFor(word)!.zipf),
-        `${word} should stay under 10`,
-      ).toBeLessThanOrEqual(tiers.derived.maxScore);
+        applied || graded === ungraded,
+        `${word} should be capped at ${tiers.derived.maxScore} or unchanged, got ${graded}`,
+      ).toBe(true);
     }
   });
 
-  it("never lets a suffix-machinery form reach Legend", () => {
+  it("never lets a suffix-machinery form reach Legend, once its grade applies", () => {
     for (const [word] of artifact) {
-      const info = rarityFor(word)!;
+      const graded = rarityScore(rarityFor(word)!.zipf);
+      const ungraded = rarityScore(rarityFor(word, WIDE_BAND)!.zipf, WIDE_BAND);
+      const applied = graded <= tiers.artifact.maxScore;
       expect(
-        rarityScore(info.zipf),
-        `${word} should stay at or under the artifact cap`,
-      ).toBeLessThanOrEqual(tiers.artifact.maxScore);
-      expect(info.rarity, `${word} should not be Legend`).not.toBe("Legend");
+        applied || graded === ungraded,
+        `${word} should be capped at ${tiers.artifact.maxScore} or unchanged, got ${graded}`,
+      ).toBe(true);
+      if (applied)
+        expect(
+          rarityFor(word)!.rarity,
+          `${word} should not be Legend`,
+        ).not.toBe("Legend");
     }
   });
 
   it("keeps the comparative of a deep-tail adjective rare, unlike one of a common noun", () => {
     // "quagmirier" inflects "quagmiry" (Zipf -0.23), not "quagmire" (2.75) -- the
     // two bases sit either side of the artifact line, so picking the wrong one
-    // flips the tier. "chichier" is the genuine artifact: "chichi" is common.
-    expect(rarityFor("quagmirier")!.zipf).toBe(rarityFor("quagmiry")!.zipf);
+    // flips the tier. Read off "quagmiry" it stays at the top and the grade never
+    // needs to fire; "chichier" is the genuine artifact, since "chichi" is common.
+    expect(rarityScore(rarityFor("quagmirier")!.zipf)).toBe(
+      rarityScore(rarityFor("quagmiry")!.zipf),
+    );
     expect(rarityScore(rarityFor("chichier")!.zipf)).toBeLessThanOrEqual(
       tiers.artifact.maxScore,
     );
@@ -584,6 +602,21 @@ describe("ai-assigned tiers for unattested words", () => {
         rarityScore(rarityFor(word, "2026-08-17")!.zipf, "2026-08-17"),
       ).toBe(10);
     }
+  });
+
+  it("ignores a grade that would barely move the score", () => {
+    // A judgement call is only worth overruling the measured default when it
+    // changes the answer materially. Every score this cutover does move, it
+    // moves by at least the threshold -- there are no hundredth-of-a-point
+    // adjustments made on the strength of a spelling guess.
+    const words = dictionaryWords as unknown as string[];
+    let smallest = Infinity;
+    for (const word of words) {
+      const before = rarityScore(rarityFor(word, WIDE_BAND)!.zipf, WIDE_BAND);
+      const after = rarityScore(rarityFor(word, GRADED)!.zipf, GRADED);
+      if (after !== before) smallest = Math.min(smallest, before - after);
+    }
+    expect(smallest).toBeGreaterThanOrEqual(0.3);
   });
 
   it("only ever lowers a score, never raises one", () => {

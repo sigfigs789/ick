@@ -56,8 +56,11 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   would otherwise tie at a perfect 10.00 — a genuine obscure headword (`kharzy`)
   alongside a form the suffix machinery merely permits (`agonisingliest`). That
   file grades those, and only those, making it the one place in the pipeline
-  where a score is **assigned rather than measured**. Grading only ever lowers a
-  score: finding a base can cost a word score, never earn it any. Every word is
+  where a score is **assigned rather than measured**. Two rules keep it modest:
+  grading only ever lowers a score (finding a base can cost a word score, never
+  earn it any), and a grade is ignored unless it moves the score by at least
+  `MIN_GRADE_DROP` (0.3), so a judgement call never nudges a word by a rounding
+  error. Every word is
   listed by name so the calls stay auditable, and editing the file overrides
   one. Applies to puzzles from 2026-08-19. Regenerate with
   `python3 scripts/classify-unattested.py`.

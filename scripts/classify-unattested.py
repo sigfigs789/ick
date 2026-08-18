@@ -16,9 +16,12 @@ That file is AI-assigned judgement, NOT measured data: every word in it is liste
 by name so the calls stay auditable and revisable. Nothing else in the pipeline
 invents scores this way.
 
-Grading only ever lowers a score -- finding a base can cost a word score, never
-earn it any. src/game/dictionary.test.ts asserts that across the whole
-dictionary.
+Two rules keep this modest, both asserted across the whole dictionary in
+src/game/dictionary.test.ts. Grading only ever lowers a score -- finding a base
+can cost a word score, never earn it any. And a grade is ignored unless it moves
+the score by at least MIN_GRADE_DROP (0.3, see src/game/dictionary.ts), so a
+word listed here may well keep the score it already had: the tier records the
+judgement, and scoring decides whether it is worth acting on.
 
 Tiers:
   inherit   -- a spelling variant or inflection of another dictionary word;
@@ -390,8 +393,11 @@ def main() -> None:
             "resolve are deliberately absent: they score off real data and need "
             "no judgement. These tiers are a judgement call about whether the "
             "word is a genuine rare headword or a form the suffix machinery "
-            "merely permits. Grading only ever lowers a score, never raises one. "
-            "Applies to puzzles from 2026-08-19. Regenerate with "
+            "merely permits. Grading only ever lowers a score, never raises one, "
+            "and is ignored entirely unless it moves the score by at least 0.3 "
+            "(MIN_GRADE_DROP in src/game/dictionary.ts) -- so a word listed here "
+            "may keep the score it already had. Applies to puzzles from "
+            "2026-08-19. Regenerate with "
             "scripts/classify-unattested.py; override individual calls by editing "
             "this file (the generator preserves nothing, so record manual edits "
             "in the repo history)."
