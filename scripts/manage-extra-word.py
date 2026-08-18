@@ -379,17 +379,64 @@ def _derived_base(word: str, own: float, index: dict[str, int], max_zipf: float,
     return best
 
 
-def adjusted_zipf(word: str, index: dict[str, int], zipf_at, max_zipf: float) -> float:
+def _resolved_zipf(
+    base: str,
+    word: str,
+    index: dict[str, int],
+    zipf_at,
+    max_zipf: float,
+    sentinel: float,
+    memo: dict[str, float],
+) -> float:
+    """Mirror of resolvedZipf(): the frequency a base contributes to its word.
+
+    The base's own adjustment is applied first, so a chain resolves all the way
+    down instead of stopping one step short ("prefigurativenesses" ->
+    "prefigurativeness" -> "prefigurative"). Takes the higher of raw and adjusted
+    so the fold stays a one-way cap and can never make a word rarer. Every
+    candidate base is strictly shorter than its word, so this terminates.
+    """
+    own = zipf_at(base)
+    if len(base) >= len(word):
+        return own
+    if base in memo:
+        return memo[base]
+    value = max(own, adjusted_zipf(base, index, zipf_at, max_zipf, sentinel, memo))
+    memo[base] = value
+    return value
+
+
+def adjusted_zipf(
+    word: str,
+    index: dict[str, int],
+    zipf_at,
+    max_zipf: float,
+    sentinel: float,
+    memo: dict[str, float] | None = None,
+) -> float:
     """Mirror of adjustedZipf() in src/game/dictionary.ts (newest system)."""
+    if memo is None:
+        memo = {}
     own = zipf_at(word)
     tense = _tense_base(word, index, zipf_at)
     if tense is not None:
-        return zipf_at(tense)
+        tense_zipf = _resolved_zipf(tense, word, index, zipf_at, max_zipf, sentinel, memo)
+        # A tense base no corpus attests carries no frequency to inherit, so the
+        # form keeps its own rather than taking the stand-in score.
+        if tense_zipf == sentinel and own != sentinel:
+            return own
+        return tense_zipf
     base = _scoring_base(word, index)
-    with_base = max(own, zipf_at(base)) if base is not None else own
+    with_base = (
+        max(own, _resolved_zipf(base, word, index, zipf_at, max_zipf, sentinel, memo))
+        if base is not None
+        else own
+    )
     derived = _derived_base(word, with_base, index, max_zipf, zipf_at)
     if derived is not None:
-        return max(with_base, zipf_at(derived))
+        return max(
+            with_base, _resolved_zipf(derived, word, index, zipf_at, max_zipf, sentinel, memo)
+        )
     return with_base
 
 
@@ -410,7 +457,8 @@ def word_rarity(word: str) -> tuple[float, str, float]:
         return hundredths[index[w]] / 100
 
     max_zipf = max(hundredths) / 100
-    zipf = round(adjusted_zipf(word, index, zipf_at, max_zipf), 2)
+    sentinel = min(hundredths) / 100
+    zipf = round(adjusted_zipf(word, index, zipf_at, max_zipf, sentinel), 2)
     score = current_score(zipf, max_zipf)
     label = rarity_label(zipf, max_zipf)
     return zipf, label, score

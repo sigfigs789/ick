@@ -24,17 +24,26 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     at/below Zipf 0 clamped to a flat 10. The top of the scale is split by
  *     score into two ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also
  *     where the bound-suffix base-form adjustment turns on.
- *   - on/after 2026-08-19 (the latest system): identical to the wide-band scale,
- *     except agent nouns and comparatives (-er/-ers/-est) and the plurals the
- *     "-es" cut misses are also capped at their base word's frequency, so an
- *     everyday word cannot be turned into a top-tier answer by appending two
- *     letters ("patientest" scored 9.92 against "patient" at 4.35).
+ *   - 2026-08-19 only: identical to the wide-band scale, except agent nouns and
+ *     comparatives (-er/-ers/-est) and the plurals the "-es" cut misses are also
+ *     capped at their base word's frequency, so an everyday word cannot be turned
+ *     into a top-tier answer by appending two letters ("patientest" scored 9.92
+ *     against "patient" at 4.35).
+ *   - on/after 2026-08-20 (the latest system): the same caps, but each base
+ *     contributes its *resolved* frequency rather than its raw one, so a chain
+ *     folds all the way down instead of stopping one step short
+ *     ("prefigurativenesses" -> "prefigurativeness" -> "prefigurative"), and a
+ *     tense base no corpus attests is declined rather than inherited, so a form
+ *     with real data keeps it ("farebeating" was scored as the unattested
+ *     "farebeat"). Both halves stop the fold from manufacturing rarity out of
+ *     missing data; it remains a one-way cap that can never make a word rarer.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
 const NEW_SCORING_START = "2026-08-15";
 const WIDE_BAND_START = "2026-08-16";
 const INFLECTION_FOLD_START = "2026-08-19";
+const TRANSITIVE_FOLD_START = "2026-08-20";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -127,6 +136,15 @@ interface Scoring {
   // word, from the 2026-08-19 cutover. Off for earlier systems so past puzzles'
   // scores stay frozen (see INFLECTION_FOLD_START).
   foldInflections: boolean;
+  // Whether the fold reads a base's *resolved* frequency rather than its raw one,
+  // and declines a base that has no frequency at all, from the 2026-08-20 cutover
+  // (see TRANSITIVE_FOLD_START). Both halves stop the fold from manufacturing
+  // rarity out of missing data.
+  transitiveBases: boolean;
+  // Per-era memo for the resolved fold. Each era resolves bases differently, so
+  // the cache lives on the era rather than in module scope. Only ever holds
+  // values for whole words, so it is safe to share across calls.
+  resolved: Map<string, number>;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -145,7 +163,8 @@ function twoBandScoring(
   tailFloor: number,
   boundBaseForms: boolean,
   legend: boolean,
-  foldInflections: boolean
+  foldInflections: boolean,
+  transitiveBases = false
 ): Scoring {
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
@@ -178,6 +197,8 @@ function twoBandScoring(
         (s) => (s >= ceiling ? s.toFixed(2) : s.toFixed(1)),
     boundBaseForms,
     foldInflections,
+    transitiveBases,
+    resolved: new Map(),
   };
 }
 
@@ -187,9 +208,12 @@ const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false, fal
 // The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
 // fixed 0, Legend + Mythic ranks, bound-suffix folding on.
 const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, false);
-// The latest system (from INFLECTION_FOLD_START): the wide-band scale, plus the
-// agent-noun/comparative/missed-plural cap.
+// The 2026-08-19 system: the wide-band scale, plus the agent-noun/comparative/
+// missed-plural cap.
 const INFLECTION_FOLD_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
+// The latest system (from TRANSITIVE_FOLD_START): the same caps, but reading each
+// base's resolved frequency and refusing a base that has none.
+const TRANSITIVE_FOLD_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true, true);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -204,6 +228,8 @@ const LEGACY_SCORING: Scoring = {
   format: (score) => score.toFixed(1),
   boundBaseForms: false,
   foldInflections: false,
+  transitiveBases: false,
+  resolved: new Map(),
 };
 
 // The Zipf-band labels for the measured range are identical across systems.
@@ -217,11 +243,12 @@ function measuredRarity(zipf: number): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return INFLECTION_FOLD_SCORING; // newest system
+  if (date === undefined) return TRANSITIVE_FOLD_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
   if (date < INFLECTION_FOLD_START) return WIDE_SCORING;
-  return INFLECTION_FOLD_SCORING;
+  if (date < TRANSITIVE_FOLD_START) return INFLECTION_FOLD_SCORING;
+  return TRANSITIVE_FOLD_SCORING;
 }
 
 export function isValidWord(word: string): boolean {
@@ -305,17 +332,22 @@ export function baseFormSubstitution(
 
   const tenseBase = tenseBaseForm(normalized, scoring);
   if (tenseBase && tenseBase !== normalized) {
-    return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
+    const baseZipf = resolvedZipf(tenseBase, normalized, scoring);
+    // No substitution happened when adjustedZipf declined an unattested tense
+    // base and kept the word's own Zipf (see TRANSITIVE_FOLD_START).
+    if (scoring.transitiveBases && baseZipf === MIN_ZIPF && ownZipf !== MIN_ZIPF) return undefined;
+    return { word: normalized, base: tenseBase, ownZipf, baseZipf };
   }
 
   const known = scoringBaseForm(normalized, scoring);
-  const knownZipf = known ? zipfFor(known, scoring) : ownZipf;
+  const knownZipf = known ? resolvedZipf(known, normalized, scoring) : ownZipf;
   const derived = derivedBaseForm(normalized, Math.max(ownZipf, knownZipf), scoring);
-  // Report whichever base actually set the score.
+  // Report whichever base actually set the score, at the frequency the score was
+  // computed from -- resolved, not raw, from the cutover.
   const base =
-    derived && zipfFor(derived, scoring) > knownZipf ? derived : known;
+    derived && resolvedZipf(derived, normalized, scoring) > knownZipf ? derived : known;
   if (base && base !== normalized) {
-    const baseZipf = zipfFor(base, scoring);
+    const baseZipf = resolvedZipf(base, normalized, scoring);
     if (baseZipf > ownZipf) return { word: normalized, base, ownZipf, baseZipf };
   }
   return undefined;
@@ -349,16 +381,58 @@ export function bestWordForDrop(drop: string, date?: string): AcceptedWord | und
  */
 function adjustedZipf(word: string, zipf: number, scoring: Scoring): number {
   const tenseBase = tenseBaseForm(word, scoring);
-  if (tenseBase) return zipfFor(tenseBase, scoring);
+  if (tenseBase) {
+    const tenseZipf = resolvedZipf(tenseBase, word, scoring);
+    // A tense form inherits its base *exactly* -- "making" scores as "make" even
+    // though that lowers it. But a base no corpus attests carries no frequency to
+    // inherit, and adopting it throws away the form's own real data for the
+    // stand-in score: "farebeating" (Zipf -0.18) scored as the unattested
+    // "farebeat". Keep the form's own Zipf in that case.
+    if (scoring.transitiveBases && tenseZipf === MIN_ZIPF && zipf !== MIN_ZIPF) return zipf;
+    return tenseZipf;
+  }
 
   const base = scoringBaseForm(word, scoring);
   // The known suffix may itself land on another deep-tail form ("registerers" ->
   // "registerer"), so the derived cap is tried against whatever that leaves.
-  const withBase = base ? Math.max(zipf, zipfFor(base, scoring)) : zipf;
+  const withBase = base ? Math.max(zipf, resolvedZipf(base, word, scoring)) : zipf;
 
   const derived = derivedBaseForm(word, withBase, scoring);
-  if (derived) return Math.max(withBase, zipfFor(derived, scoring));
+  if (derived) return Math.max(withBase, resolvedZipf(derived, word, scoring));
   return withBase;
+}
+
+/**
+ * The frequency a base contributes to the word it caps.
+ *
+ * Before TRANSITIVE_FOLD_START this is the base's raw Zipf, which stops the fold
+ * one step short: "prefigurativenesses" caps at "prefigurativeness", reads *its*
+ * unattested raw value, and so keeps a perfect 10 while the singular it came from
+ * resolves through "prefigurative" to 9.74 -- a plural outranking its own base.
+ * From the cutover the base's own adjustment is applied first, so a chain resolves
+ * all the way down.
+ *
+ * Resolving takes the *higher* of the base's raw and adjusted Zipf, never just the
+ * adjusted one. Resolution exists to see through missing data, not to pass a
+ * demotion down the chain: `ongoing` is itself scored as the rare `ongo` by the
+ * tense rule, and handing that down would make the plural `ongoings` rarer than
+ * the word it comes from (Zipf 5.02 -> a 9.49 Legend). Taking the max keeps the
+ * whole fold a one-way cap -- it can pull a word toward a more common base, and
+ * can never make one rarer.
+ *
+ * Terminating without a depth counter: every candidate any of the base-form rules
+ * produces is strictly shorter than the word it came from, so `shorter` holds for
+ * real chains and the walk cannot cycle. The check is also what makes the memo
+ * exact -- no entry can be recorded from a truncated walk.
+ */
+function resolvedZipf(base: string, word: string, scoring: Scoring): number {
+  const own = zipfFor(base, scoring);
+  if (!scoring.transitiveBases || base.length >= word.length) return own;
+  const cached = scoring.resolved.get(base);
+  if (cached !== undefined) return cached;
+  const value = Math.max(own, adjustedZipf(base, own, scoring));
+  scoring.resolved.set(base, value);
+  return value;
 }
 
 /**
