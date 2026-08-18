@@ -1,0 +1,12 @@
+{
+  "lactational": {
+    "base": "lactation",
+    "since": "2026-08-19",
+    "reason": "-al adjective of `lactation`; a suffix is not a discovery."
+  },
+  "placation": {
+    "base": "placate",
+    "since": "2026-08-19",
+    "reason": "-ation noun of `placate`; a suffix is not a discovery."
+  }
+}

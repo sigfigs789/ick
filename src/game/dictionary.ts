@@ -1,8 +1,10 @@
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
+import scoreOverrideData from "../data/score-overrides.json";
+import wordRejectionData from "../data/word-rejections.json";
 import { baseForm, boundBaseCandidates } from "./stem";
-import type { AcceptedWord, Rarity, RarityInfo } from "./types";
+import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types";
 
 /**
  * The curated dictionary decides whether a submission is allowed at all.
@@ -106,6 +108,58 @@ const LEGACY_MAX_ZIPF = maxLegacyTenths / 10;
 const LEGACY_MIN_ZIPF = 1; // wordfreq's measured lower bound
 const LEGACY_UNKNOWN_ZIPF = 1.4;
 
+// -- Curated base-form overrides (src/data/score-overrides.json) -------------
+/**
+ * A hand-reviewed demotion: `word` scores no rarer than `base` from `since` on.
+ * `reason` is review notes only -- nothing here reads it -- kept beside the entry
+ * so the data file explains itself.
+ */
+interface ScoreOverride {
+  base: string;
+  since: string;
+  reason?: string;
+}
+
+/**
+ * Words that carry no measured frequency at all and were reviewed as *not*
+ * deserving the perfect 10.00 / Legend the unattested sentinel hands out.
+ *
+ * The sentinel is the right score for a genuine find the corpora simply haven't
+ * caught up with ("enshittification"). It is the wrong score for a mechanical
+ * derivation of an ordinary word -- "iratest" is the unattested superlative of
+ * "irate" (Zipf 2.78), and `scoringBaseForm` below has no -est rule, so nothing
+ * caps it. Widening the stemmer instead is not an option at this scale: a blanket
+ * bare-`s` strip re-scores ~10,900 words and strips 2,189 of a perfect 10, which
+ * destroys far more good answers than it fixes. So each unattested word is
+ * reviewed one at a time (see .claude/skills/audit-unscored-legends) and pinned
+ * here to the base it should have scored as.
+ *
+ * Every entry carries its own `since` date rather than riding one global cutover,
+ * because the list grows a batch per day: a demotion applies from the puzzle it
+ * was reviewed for onward, and every earlier puzzle keeps the score it showed.
+ *
+ * Scoring only. Same-root duplicate detection (submit.ts's `rootKey`) is
+ * deliberately untouched, matching the -ness/-ly bases in `scoringBaseForm`:
+ * scoring a word as its base is not a claim that a player may only have one of
+ * them.
+ */
+const SCORE_OVERRIDES: ReadonlyMap<string, ScoreOverride> = new Map(
+  Object.entries(scoreOverrideData as Record<string, ScoreOverride>)
+);
+
+/**
+ * The curated base for `word` under `date`'s system, or undefined when no
+ * override applies. An omitted date means the newest system, where every
+ * override is active. A base missing from the dictionary is ignored rather than
+ * trusted -- a test pins that this never happens in the shipped data.
+ */
+function overrideBase(word: string, date?: string): string | undefined {
+  const override = SCORE_OVERRIDES.get(word);
+  if (!override) return undefined;
+  if (date !== undefined && date < override.since) return undefined;
+  return WORD_INDEX.has(override.base) ? override.base : undefined;
+}
+
 /** A dated scoring system: how to read a word's Zipf, score it, and label it. */
 interface Scoring {
   zipfAt(index: number): number;
@@ -207,8 +261,78 @@ function scoringFor(date?: string): Scoring {
   return WIDE_SCORING;
 }
 
-export function isValidWord(word: string): boolean {
-  return WORD_INDEX.has(word.toLowerCase());
+// -- Curated rejections (src/data/word-rejections.json) ----------------------
+/** A hand-reviewed rejection: `word` is unplayable from `since` on, with `reason`. */
+interface WordRejection {
+  reason: CuratedRejectionReason;
+  since: string;
+  /** Review notes only -- nothing here reads it. */
+  note?: string;
+}
+
+/**
+ * The reasons a reviewed rejection can carry: the specific messages `submit.ts`
+ * already knows how to show, plus the generic curated-list message for a word
+ * with no more specific fault.
+ */
+export const CURATED_REJECTION_REASONS = [
+  "proper-noun",
+  "abbreviation",
+  "name-or-abbreviation",
+  "misspelling",
+  "obsolete",
+  "archaic",
+  "dated",
+  "not-a-word",
+] as const;
+export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
+
+/**
+ * Words that stay in the dictionary but are no longer playable, each with the
+ * reason a player sees when they try it.
+ *
+ * Rejecting by *removal* was the older approach and it lost information. The five
+ * index-aligned structures (`dictionary[]`, `zipfHundredths[]`, `codes`,
+ * `zipfTenths[]`, legacy `codes`) had to be edited in lockstep; the verdict ended
+ * up split across `blocklist.txt`, `rejection-metadata.json` and
+ * `wiktionary-reasons.json` depending on the reason; and because a full rebuild
+ * re-derives the dictionary from its sources, keeping a word out meant keeping it
+ * out in whichever of those files happened to be regen-proof for that reason.
+ *
+ * Recording the verdict here instead means the word is judged exactly once. This
+ * file is hand-maintained and never regenerated, so the rejection cannot be
+ * undone by a data refresh, and the audit that produced it skips anything already
+ * listed rather than re-assessing it.
+ *
+ * Dated like the score overrides: a rejection applies from the puzzle it was
+ * reviewed for onward, so an archived puzzle still validates the words it
+ * validated on the day it was played.
+ */
+const WORD_REJECTIONS: ReadonlyMap<string, WordRejection> = new Map(
+  Object.entries(wordRejectionData as Record<string, WordRejection>)
+);
+
+/**
+ * The reviewed reason `word` is unplayable under `date`'s puzzle, or undefined
+ * when no rejection applies. An omitted date means the newest system, where every
+ * rejection is in force.
+ */
+export function curatedRejection(word: string, date?: string): RejectionReason | undefined {
+  const rejection = WORD_REJECTIONS.get(word.toLowerCase());
+  if (!rejection) return undefined;
+  if (date !== undefined && date < rejection.since) return undefined;
+  return rejection.reason;
+}
+
+/**
+ * Whether a submission is allowed. Membership in the curated dictionary, minus
+ * the reviewed rejections above -- a rejected word is still in `dictionary.json`
+ * (and still carries its rarity entry, so past puzzles keep scoring), but it is
+ * not playable from its rejection date on.
+ */
+export function isValidWord(word: string, date?: string): boolean {
+  const normalized = word.toLowerCase();
+  return WORD_INDEX.has(normalized) && curatedRejection(normalized, date) === undefined;
 }
 
 /**
@@ -254,7 +378,7 @@ export function rarityFor(word: string, date?: string): RarityInfo | undefined {
   const i = WORD_INDEX.get(normalized);
   if (i === undefined) return undefined;
   const scoring = scoringFor(date);
-  const zipf = adjustedZipf(normalized, scoring.zipfAt(i), scoring);
+  const zipf = adjustedZipf(normalized, scoring.zipfAt(i), scoring, date);
   return { rarity: scoring.rarity(zipf), zipf };
 }
 
@@ -273,8 +397,9 @@ export interface BaseFormSubstitution {
 /**
  * If `word`'s rarity came from a base form rather than its own frequency, report
  * the substitution (submitted word, base, and both Zipfs). Returns undefined when
- * the word scored on its own data. Mirrors adjustedZipf: a tense base is used
- * outright; a transparent/bound base only when it's more common than the word.
+ * the word scored on its own data. Mirrors adjustedZipf in both rule and order: a
+ * reviewed override wins, then a tense base is used outright, then a
+ * transparent/bound base only when it's more common than the word.
  */
 export function baseFormSubstitution(
   word: string,
@@ -285,6 +410,11 @@ export function baseFormSubstitution(
   if (i === undefined) return undefined;
   const scoring = scoringFor(date);
   const ownZipf = scoring.zipfAt(i);
+
+  const override = overrideBase(normalized, date);
+  if (override) {
+    return { word: normalized, base: override, ownZipf, baseZipf: zipfFor(override, scoring) };
+  }
 
   const tenseBase = tenseBaseForm(normalized, scoring);
   if (tenseBase && tenseBase !== normalized) {
@@ -304,12 +434,18 @@ export function baseFormSubstitution(
  * best a player could theoretically submit for this drop. Lower Zipf means
  * rarer, so this is a min-scan over the whole dictionary, same containment
  * rule as submit.ts's containsDropInOrder.
+ *
+ * Skips the reviewed rejections: this word is shown to the player as the drop's
+ * ceiling (see DropDisplay), so it has to be one they could actually have
+ * submitted. A rejected word is still in WORDS, which is exactly why the check
+ * is needed here and not just in submit.
  */
 export function bestWordForDrop(drop: string, date?: string): AcceptedWord | undefined {
   const needle = drop.toLowerCase();
   let best: AcceptedWord | undefined;
   for (let i = 0; i < WORDS.length; i++) {
     if (!WORDS[i].includes(needle)) continue;
+    if (curatedRejection(WORDS[i], date) !== undefined) continue;
     const info = rarityFor(WORDS[i], date)!;
     if (!best || info.zipf < best.zipf) {
       best = { word: WORDS[i], ...info };
@@ -325,7 +461,15 @@ export function bestWordForDrop(drop: string, date?: string): AcceptedWord | und
  * the base frequency so they cannot turn an everyday word into a top-tier
  * answer.
  */
-function adjustedZipf(word: string, zipf: number, scoring: Scoring): number {
+function adjustedZipf(word: string, zipf: number, scoring: Scoring, date?: string): number {
+  // A reviewed override outranks every spelling rule below it: it is a decision
+  // about this exact word, not a guess from its ending. Capped rather than
+  // inherited outright, like the transparent suffixes -- the override says "no
+  // rarer than its base", so a later data refresh that measures the word as
+  // *more* common than its base is still free to score it on its own frequency.
+  const override = overrideBase(word, date);
+  if (override) return Math.max(zipf, zipfFor(override, scoring));
+
   const tenseBase = tenseBaseForm(word, scoring);
   if (tenseBase) return zipfFor(tenseBase, scoring);
 
