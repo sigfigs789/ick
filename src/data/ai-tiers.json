@@ -1,5 +1,5 @@
 {
- "_readme": "AI-ASSIGNED, NOT MEASURED. Every word below is a curated dictionary entry that no frequency corpus attests, so it has no Zipf to score from. These tiers are a judgement call about whether the word is a genuine rare headword or a form the suffix machinery merely permits. Regenerate with scripts/classify-unattested.py; override individual calls by editing this file (the generator preserves nothing, so record manual edits in the repo history).",
+ "_readme": "AI-ASSIGNED, NOT MEASURED. Every word below is a curated dictionary entry that no frequency corpus attests AND that the base-form rules in src/game/dictionary.ts cannot fold onto a measured base -- so there is nothing at all to score it from. Words those rules do resolve are deliberately absent: they score off real data and need no judgement. These tiers are a judgement call about whether the word is a genuine rare headword or a form the suffix machinery merely permits. Grading only ever lowers a score, never raises one. Applies to puzzles from 2026-08-19. Regenerate with scripts/classify-unattested.py; override individual calls by editing this file (the generator preserves nothing, so record manual edits in the repo history).",
  "assignedBy": "claude-opus-5",
  "assignedOn": "2026-08-17",
  "heuristic": "ai-heuristic-v1",

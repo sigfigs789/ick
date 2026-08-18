@@ -51,12 +51,15 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   `src/game/rank.ts`), bucketed into five friendly labels for display.
   Gameplay never makes a live frequency lookup.
 - **Unattested words** (`src/data/ai-tiers.json`): ~8.8k curated words carry no
-  frequency in any corpus, so there is nothing to score them from and they would
-  all tie at a perfect 10.00 — a genuine obscure headword (`kharzy`) alongside a
-  form the suffix machinery merely permits (`agonisingliest`). That file grades
-  them, and is the one place in the pipeline where scores are **assigned rather
-  than measured**: every word is listed by name so the calls stay auditable and
-  can be overridden by editing it. Regenerate with
+  frequency in any corpus. The base-form rules above resolve most of them off a
+  base word; the ~2k they cannot place have nothing to score from at all, and
+  would otherwise tie at a perfect 10.00 — a genuine obscure headword (`kharzy`)
+  alongside a form the suffix machinery merely permits (`agonisingliest`). That
+  file grades those, and only those, making it the one place in the pipeline
+  where a score is **assigned rather than measured**. Grading only ever lowers a
+  score: finding a base can cost a word score, never earn it any. Every word is
+  listed by name so the calls stay auditable, and editing the file overrides
+  one. Applies to puzzles from 2026-08-19. Regenerate with
   `python3 scripts/classify-unattested.py`.
 - **Guesses** (`src/game/constants.ts`): up to `MAX_GUESSES` (6) distinct
   words per day. Only accepted words consume a guess — rejected submissions

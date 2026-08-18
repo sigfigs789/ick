@@ -1,17 +1,24 @@
 #!/usr/bin/env python3
-"""Assign rarity tiers to dictionary words no frequency corpus attests.
+"""Assign rarity tiers to the dictionary words nothing can score.
 
-The frequency waterfall (see frequency.py) leaves ~2k curated words with no Zipf
-at all. Scoring treats "no corpus attests this" as "maximally rare", which is
-right for a genuine obscure headword ("kharzy") and wrong for a form the suffix
-machinery merely permits ("agonisingliest") -- both would otherwise tie at a
-perfect 10.00.
+The frequency waterfall (see frequency.py) leaves ~8.8k curated words with no
+Zipf at all. Most are reachable anyway: the base-form rules in
+src/game/dictionary.ts fold them onto a measured base ("circularnesses" onto
+"circularness"), and those are none of this script's business -- they already
+score off real data. This script skips every one of them (see runtime_resolved)
+and grades only the ~2k left with nothing to score from.
 
-There is no measurement that separates the two, so this script applies a
-spelling heuristic and writes its verdict to src/data/ai-tiers.json. That file
-is AI-assigned judgement, NOT measured data: every word in it is listed by name
-so the calls stay auditable and revisable. Nothing else in the pipeline invents
-scores this way.
+Those would otherwise tie at a perfect 10.00, which is right for a genuine
+obscure headword ("kharzy") and wrong for a form the suffix machinery merely
+permits ("agonisingliest"). No measurement separates the two, so this script
+applies a spelling heuristic and writes its verdict to src/data/ai-tiers.json.
+That file is AI-assigned judgement, NOT measured data: every word in it is listed
+by name so the calls stay auditable and revisable. Nothing else in the pipeline
+invents scores this way.
+
+Grading only ever lowers a score -- finding a base can cost a word score, never
+earn it any. src/game/dictionary.test.ts asserts that across the whole
+dictionary.
 
 Tiers:
   inherit   -- a spelling variant or inflection of another dictionary word;
@@ -377,12 +384,17 @@ def main() -> None:
     payload = {
         "_readme": (
             "AI-ASSIGNED, NOT MEASURED. Every word below is a curated dictionary "
-            "entry that no frequency corpus attests, so it has no Zipf to score "
-            "from. These tiers are a judgement call about whether the word is a "
-            "genuine rare headword or a form the suffix machinery merely permits. "
-            "Regenerate with scripts/classify-unattested.py; override individual "
-            "calls by editing this file (the generator preserves nothing, so "
-            "record manual edits in the repo history)."
+            "entry that no frequency corpus attests AND that the base-form rules "
+            "in src/game/dictionary.ts cannot fold onto a measured base -- so "
+            "there is nothing at all to score it from. Words those rules do "
+            "resolve are deliberately absent: they score off real data and need "
+            "no judgement. These tiers are a judgement call about whether the "
+            "word is a genuine rare headword or a form the suffix machinery "
+            "merely permits. Grading only ever lowers a score, never raises one. "
+            "Applies to puzzles from 2026-08-19. Regenerate with "
+            "scripts/classify-unattested.py; override individual calls by editing "
+            "this file (the generator preserves nothing, so record manual edits "
+            "in the repo history)."
         ),
         "assignedBy": ASSIGNED_BY,
         "assignedOn": ASSIGNED_ON,
