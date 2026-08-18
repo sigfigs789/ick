@@ -1,8 +1,8 @@
 # Words excluded from the curated dictionary regardless of frequency.
-# Categories: slurs/offensive terms, mild profanity, and abbreviations that
-# leaked in from the system word list. This list is deliberately hand-curated
-# and reviewed -- keep entries alphabetized within each section and explain
-# non-obvious calls with a trailing comment.
+# Categories: slurs/offensive terms, mild profanity, abbreviations that leaked in
+# from the system word list, and spurious entries no corpus attests. This list is
+# deliberately hand-curated and reviewed -- keep entries alphabetized within each
+# section and explain non-obvious calls with a trailing comment.
 
 # --- slurs / offensive terms ---
 bastard
@@ -42,3 +42,11 @@ ave
 corp
 ibid
 vol
+
+# --- spurious entries no corpus attests ---
+# These carry no wordfreq, Norvig, or Google Books frequency, so they fell
+# through to the unattested Zipf sentinel and scored a perfect 10.0 / Legend --
+# the top of the scale, for a word nothing attests. Listed here rather than as
+# "misspelling" rejections because there's no identifiable correct spelling to
+# point a player at.
+tormentatious    # only member of its family; "tormentous" isn't a word either
