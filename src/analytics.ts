@@ -11,6 +11,7 @@ import type {
   StreakState,
 } from "./game/types";
 import { currentVisit, type VisitOutcome } from "./game/visits";
+import { APP_VERSION } from "./version";
 
 /**
  * Send game activity to Vercel without player-identifying information.
@@ -203,6 +204,10 @@ function visitSource(code: string | null): string {
 /** The shared dimensions carried by both visit events so they line up 1:1. */
 function visitProperties(outcome: VisitOutcome) {
   return {
+    // The build the tab is actually running, which is not necessarily the newest
+    // deploy: a tab only reloads when its baked-in version falls below the served
+    // minVersion (see useForceUpdate), so optional deploys leave older tabs alive.
+    app_version: APP_VERSION,
     visit_type: outcome.isFirstVisit ? "first" : "returning",
     source: visitSource(outcome.state.source),
     last_source: visitSource(outcome.state.lastSource ?? null),

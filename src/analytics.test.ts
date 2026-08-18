@@ -14,6 +14,7 @@ import { puzzleNumber } from "./game/share";
 import type { LiveCheck } from "./game/liveValidate";
 import type { RarityInfo } from "./game/types";
 import { recordVisit, type VisitOutcome } from "./game/visits";
+import { APP_VERSION } from "./version";
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
@@ -46,6 +47,7 @@ describe("visit events", () => {
     trackVisitEngaged(o);
 
     const expected = {
+      app_version: APP_VERSION,
       visit_type: "returning",
       source: "reddit",
       last_source: "twitter",
@@ -55,6 +57,19 @@ describe("visit events", () => {
     };
     expect(track).toHaveBeenNthCalledWith(1, "site_visit", expected);
     expect(track).toHaveBeenNthCalledWith(2, "visit_engaged", expected);
+  });
+
+  it("stamps the running build on both visit events", () => {
+    // Version distribution is read off these two events: they fire once per
+    // session, so a count by app_version is a count of sessions per build --
+    // which is what says whether an old bundle is still in circulation.
+    trackVisit(outcome());
+    trackVisitEngaged(outcome());
+
+    for (const [, payload] of track.mock.calls) {
+      expect(payload).toMatchObject({ app_version: APP_VERSION });
+    }
+    expect(typeof APP_VERSION).toBe("number");
   });
 
   it("maps share-link codes to readable source labels", () => {
