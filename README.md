@@ -50,6 +50,14 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   frequency values (exact value kept, not just the label — see
   `src/game/rank.ts`), bucketed into five friendly labels for display.
   Gameplay never makes a live frequency lookup.
+- **Unattested words** (`src/data/ai-tiers.json`): ~8.8k curated words carry no
+  frequency in any corpus, so there is nothing to score them from and they would
+  all tie at a perfect 10.00 — a genuine obscure headword (`kharzy`) alongside a
+  form the suffix machinery merely permits (`agonisingliest`). That file grades
+  them, and is the one place in the pipeline where scores are **assigned rather
+  than measured**: every word is listed by name so the calls stay auditable and
+  can be overridden by editing it. Regenerate with
+  `python3 scripts/classify-unattested.py`.
 - **Guesses** (`src/game/constants.ts`): up to `MAX_GUESSES` (6) distinct
   words per day. Only accepted words consume a guess — rejected submissions
   are free and unlimited. The puzzle auto-completes at 6, or the player can

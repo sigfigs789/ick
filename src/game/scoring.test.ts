@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { rarityFor, rarityScore, formatRarityScore, formatScore } from "./dictionary";
+import {
+  rarityFor,
+  rarityScore,
+  formatRarityScore,
+  formatScore,
+  unattestedZipf,
+} from "./dictionary";
 
 // Expected values are hardcoded (not recomputed via the functions under test)
 // so a regression in the scoring math or the legacy dataset is actually caught.
@@ -34,21 +40,33 @@ describe("date-gated scoring", () => {
     expect(rarityFor("autecism")!.rarity).toBe("Legend");
   });
 
-  it("floors unattested words to 9.90 (still Legend) from 2026-08-18", () => {
-    // An unattested word earns the perfect 10 through 2026-08-17, but from
-    // 2026-08-18 (and for undated/newest puzzles) it floors to the elite-band
-    // bottom, 9.90, reserving the perfect 10 for words with genuine deep-tail
-    // frequency data. 9.90 is exactly the Legend cutoff, so the rank is unchanged.
-    expect(rarityScore(rarityFor("autecism", WIDE)!.zipf, WIDE)).toBe(10);
-    const floored = rarityFor("autecism", SENTINEL)!;
-    expect(rarityScore(floored.zipf, SENTINEL)).toBe(9.9);
-    expect(floored.rarity).toBe("Legend");
+  it("grades unattested words rather than tying them all at 10 from 2026-08-18", () => {
+    // Every unattested word earns the perfect 10 through 2026-08-17. From
+    // 2026-08-18 (and for undated/newest puzzles) each is graded instead: a
+    // headword keeps the 10, an inflection scores off its base, and a
+    // suffix-machinery form is capped below Legend. An unattested word with no
+    // grade at all floors to 9.90 -- the elite-band bottom, still Legend.
+    for (const word of ["autecism", "cabotages", "chichier"]) {
+      expect(rarityScore(rarityFor(word, WIDE)!.zipf, WIDE)).toBe(10);
+    }
+    expect(rarityScore(rarityFor("autecism", SENTINEL)!.zipf, SENTINEL)).toBe(
+      10,
+    );
+    expect(
+      rarityScore(rarityFor("cabotages", SENTINEL)!.zipf, SENTINEL),
+    ).toBeLessThan(9.5);
+    expect(
+      rarityScore(rarityFor("chichier", SENTINEL)!.zipf, SENTINEL),
+    ).toBeLessThanOrEqual(9.5);
+    expect(rarityScore(unattestedZipf(), SENTINEL)).toBe(9.9);
+    expect(rarityFor("autecism", SENTINEL)!.rarity).toBe("Legend");
   });
 
   it("defaults to the latest system when no date is given", () => {
     const info = rarityFor("autecism")!;
     expect(info.rarity).toBe("Legend");
-    expect(rarityScore(info.zipf)).toBe(9.9); // sentinel floor, not a perfect 10
+    expect(rarityScore(info.zipf)).toBe(10); // graded a headword, so it keeps the 10
+    expect(rarityScore(unattestedZipf())).toBe(9.9); // ungraded still floors
   });
 
   it("changes the Zipf-to-score conversion between 2026-08-15 and 2026-08-16", () => {
@@ -93,7 +111,9 @@ describe("score formatting", () => {
   });
 
   it("always shows one decimal under the legacy system", () => {
-    expect(formatRarityScore(rarityFor("autecism", BEFORE)!.zipf, BEFORE)).toBe("9.4");
+    expect(formatRarityScore(rarityFor("autecism", BEFORE)!.zipf, BEFORE)).toBe(
+      "9.4",
+    );
     expect(formatScore(9.4, BEFORE)).toBe("9.4");
   });
 });

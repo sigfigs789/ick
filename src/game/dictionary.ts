@@ -1,6 +1,7 @@
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
+import aiTierData from "../data/ai-tiers.json";
 import { baseForm, boundBaseCandidates } from "./stem";
 import type { AcceptedWord, Rarity, RarityInfo } from "./types";
 
@@ -10,7 +11,9 @@ import type { AcceptedWord, Rarity, RarityInfo } from "./types";
  * hand-edited independently of frequency data.
  */
 const WORDS: readonly string[] = dictionaryWords as string[];
-const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, i]));
+const WORD_INDEX: ReadonlyMap<string, number> = new Map(
+  WORDS.map((w, i) => [w, i]),
+);
 
 /**
  * Rarity scoring has evolved across two cutovers, each date-gated so past
@@ -25,9 +28,12 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also where the
  *     bound-suffix base-form adjustment turns on.
  *   - on/after 2026-08-18 (the latest system): identical to the wide-band scale,
- *     except words no corpus attests (the sentinel Zipf) no longer earn the
- *     perfect 10 -- they floor to the elite-band bottom, 9.90 (still Legend), so
- *     the perfect 10 is reserved for words with genuine deep-tail frequency data.
+ *     except words no corpus attests (the sentinel Zipf) no longer all earn the
+ *     perfect 10. Each is graded by src/data/ai-tiers.json, which sorts the
+ *     unattested population into genuine headwords (keep the 10), inflections
+ *     and spelling variants (score off the base word), and suffix-machinery
+ *     forms (capped below Legend). A sentinel word that file does not cover
+ *     falls back to the flat 9.90 floor -- the elite-band bottom, still Legend.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -68,7 +74,9 @@ function roundToTenths(n: number): number {
  * (raw >= 9.45) is Mythic. Anything lower returns undefined, so the caller falls
  * back to the measured Zipf-band label (Extremely Rare and below).
  */
-export function topRankForScore(score: number): Extract<Rarity, "Legend" | "Mythic"> | undefined {
+export function topRankForScore(
+  score: number,
+): Extract<Rarity, "Legend" | "Mythic"> | undefined {
   if (roundToCents(score) >= LEGEND_MIN_SCORE) return "Legend";
   if (roundToTenths(score) >= MYTHIC_MIN_SCORE) return "Mythic";
   return undefined;
@@ -111,10 +119,46 @@ const LEGACY_MAX_ZIPF = maxLegacyTenths / 10;
 const LEGACY_MIN_ZIPF = 1; // wordfreq's measured lower bound
 const LEGACY_UNKNOWN_ZIPF = 1.4;
 
+// -- AI-assigned tiers for the unattested population -----------------------
+// ~8.8k curated words carry no frequency in any corpus, so scoring has nothing
+// to measure and treats them all as maximally rare. That reads correctly for an
+// obscure headword ("kharzy") and absurdly for a form the suffix machinery
+// merely permits ("agonisingliest"); untreated, they tie at a perfect 10.00.
+// src/data/ai-tiers.json is a judgement call about which is which -- assigned,
+// not measured, and listed word by word so the calls stay auditable. See
+// scripts/classify-unattested.py.
+const AI_INHERIT: ReadonlyMap<string, string> = new Map(
+  Object.entries(aiTierData.tiers.inherit.words),
+);
+const AI_DERIVED: ReadonlyMap<string, string> = new Map(
+  Object.entries(aiTierData.tiers.derived.words),
+);
+const AI_ARTIFACT: ReadonlyMap<string, string> = new Map(
+  Object.entries(aiTierData.tiers.artifact.words),
+);
+const AI_LEMMA: ReadonlySet<string> = new Set(aiTierData.tiers.lemma.words);
+
+// The Zipf a graded headword carries. It sits one hundredth below the sentinel
+// -- outside the range of any real measurement, so it can never collide with
+// data -- and clamps to the deep-tail floor, which is what earns the perfect 10.
+// It needs to be distinct from the sentinel because the sentinel still means
+// "ungraded", and those floor to 9.90 instead (see the `floorUnattested` guard).
+const LEMMA_ZIPF = Math.round((MIN_ZIPF - 0.01) * 100) / 100;
+
+// Score ceilings for the two capped tiers. A derivation must not reach the
+// perfect 10 even when its base is itself deep-tail, and an artifact must not
+// reach Legend at all.
+const DERIVED_MAX_SCORE = aiTierData.tiers.derived.maxScore;
+const ARTIFACT_MAX_SCORE = aiTierData.tiers.artifact.maxScore;
+
 /** A dated scoring system: how to read a word's Zipf, score it, and label it. */
 interface Scoring {
   zipfAt(index: number): number;
   score(zipf: number): number;
+  // The Zipf that yields a given score -- the inverse of `score`, so the tier
+  // ceilings can be written as the scores they were reasoned about and applied
+  // as the Zipf floors the pipeline works in.
+  zipfForScore(target: number): number;
   rarity(zipf: number): Rarity;
   format(score: number): string;
   // Whether the bound derivational suffixes (-ization/-isation, -ability/
@@ -122,6 +166,11 @@ interface Scoring {
   // 2026-08-16 wide-band cutover, so it's off for earlier systems to keep past
   // puzzles' scores frozen (see WIDE_BAND_START).
   boundBaseForms: boolean;
+  // Whether the AI-assigned tiers in src/data/ai-tiers.json grade the words no
+  // corpus attests, instead of flooring all of them to the same 9.90. On from
+  // the 2026-08-18 cutover; earlier systems ignore the file entirely so past
+  // puzzles' scores stay frozen.
+  aiTiers: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -144,7 +193,8 @@ function twoBandScoring(
   tailFloor: number,
   boundBaseForms: boolean,
   legend: boolean,
-  floorUnattested: boolean
+  floorUnattested: boolean,
+  aiTiers = false,
 ): Scoring {
   const score = (zipf: number): number => {
     // A word left at the sentinel (min) Zipf is unattested -- adjustedZipf
@@ -159,12 +209,26 @@ function twoBandScoring(
       return legend ? roundToCents(s) : Math.round(s * 10) / 10;
     }
     const clamped = Math.max(zipf, tailFloor);
-    const s = ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
-    return legend ? roundToCents(Math.min(s, 10)) : Math.round(Math.min(s, 10) * 100) / 100;
+    const s =
+      ceiling +
+      ((10 - ceiling) * (MEASURED_FLOOR - clamped)) /
+        (MEASURED_FLOOR - tailFloor);
+    return legend
+      ? roundToCents(Math.min(s, 10))
+      : Math.round(Math.min(s, 10) * 100) / 100;
   };
+  // The Zipf that produces `target` on this scale -- the inverse of `score`
+  // across the measured band, used to turn the tier ceilings (expressed as
+  // scores, which is how they were reasoned about) into the Zipf floors the
+  // pipeline actually works in.
+  const zipfForScore = (target: number): number =>
+    MAX_ZIPF - (target * (MAX_ZIPF - MEASURED_FLOOR)) / ceiling;
+
   return {
     zipfAt: (i) => zipfHundredths[i] / 100,
     score,
+    aiTiers,
+    zipfForScore,
     rarity: legend
       ? // Latest system: rank the top by the shown two-decimal score against the
         // fixed Legend/Mythic cutoffs; below 9.5 keeps its measured Zipf label.
@@ -176,7 +240,8 @@ function twoBandScoring(
       ? // Mythic and Legend (score >= 9.5) show two decimals; below shows one,
         // rounded with the same upward nudge so a raw 9.45 reads "9.5" -- the
         // value the Mythic cutoff keys off (see topRankForScore).
-        (s) => (s >= MYTHIC_MIN_SCORE ? s.toFixed(2) : roundToTenths(s).toFixed(1))
+        (s) =>
+          s >= MYTHIC_MIN_SCORE ? s.toFixed(2) : roundToTenths(s).toFixed(1)
       : // Only the deep-tail band (score >= ceiling) shows two decimals.
         (s) => (s >= ceiling ? s.toFixed(2) : s.toFixed(1)),
     boundBaseForms,
@@ -185,19 +250,39 @@ function twoBandScoring(
 
 // The 2026-08-15 system: measured band 0..9.5, deep tail 9.5..10 anchored at the
 // data's live minimum, single Mythic top rank, no bound-suffix folding.
-const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false, false);
+const CURRENT_SCORING: Scoring = twoBandScoring(
+  9.5,
+  MIN_ZIPF,
+  false,
+  false,
+  false,
+);
 // The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
 // fixed 0, Legend + Mythic ranks, bound-suffix folding on. Unattested words
 // still earn the perfect 10.
 const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, false);
-// The latest system (from SENTINEL_FLOOR_START): the wide-band scale, but
-// unattested words floor to 9.90 (Legend) instead of the perfect 10.
-const SENTINEL_FLOOR_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
+// The latest system (from SENTINEL_FLOOR_START): the wide-band scale, with the
+// unattested population graded word by word from src/data/ai-tiers.json. The
+// 9.90 floor stays on as the fallback for any sentinel word that file does not
+// cover -- words added to the dictionary since it was generated, and words
+// accepted live (see game/liveValidate.ts), which have no entry by definition.
+const SENTINEL_FLOOR_SCORING: Scoring = twoBandScoring(
+  9.9,
+  0,
+  true,
+  true,
+  true,
+  true,
+);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
   score: (zipf) =>
-    Math.round(((LEGACY_MAX_ZIPF - zipf) / (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) * 100) / 10,
+    Math.round(
+      ((LEGACY_MAX_ZIPF - zipf) / (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) * 100,
+    ) / 10,
+  zipfForScore: (target) =>
+    LEGACY_MAX_ZIPF - (target * (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) / 10,
   rarity: (zipf) => {
     // Missing corpus data is not evidence that a word is genuinely Mythic.
     if (zipf === LEGACY_UNKNOWN_ZIPF) return "Extremely Rare";
@@ -206,6 +291,7 @@ const LEGACY_SCORING: Scoring = {
   },
   format: (score) => score.toFixed(1),
   boundBaseForms: false,
+  aiTiers: false,
 };
 
 // The Zipf-band labels for the measured range are identical across systems.
@@ -252,10 +338,12 @@ export function unattestedZipf(): number {
  *
  * Test the post-adjustment Zipf, which is what `rarityFor` returns: a sentinel
  * word with a more-common base form is raised above MIN_ZIPF by `adjustedZipf`
- * and scores on real data, so it is not a stand-in.
+ * and scores on real data, so it is not a stand-in. A word graded a headword by
+ * src/data/ai-tiers.json carries LEMMA_ZIPF and still counts -- its perfect 10
+ * is an assigned judgement, which is exactly what this flags.
  */
 export function isUnattestedZipf(zipf: number): boolean {
-  return zipf === MIN_ZIPF;
+  return zipf === MIN_ZIPF || zipf === LEMMA_ZIPF;
 }
 
 /**
@@ -296,7 +384,7 @@ export interface BaseFormSubstitution {
  */
 export function baseFormSubstitution(
   word: string,
-  date?: string
+  date?: string,
 ): BaseFormSubstitution | undefined {
   const normalized = word.toLowerCase();
   const i = WORD_INDEX.get(normalized);
@@ -306,13 +394,19 @@ export function baseFormSubstitution(
 
   const tenseBase = tenseBaseForm(normalized, scoring);
   if (tenseBase && tenseBase !== normalized) {
-    return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
+    return {
+      word: normalized,
+      base: tenseBase,
+      ownZipf,
+      baseZipf: zipfFor(tenseBase, scoring),
+    };
   }
 
   const base = scoringBaseForm(normalized, scoring.boundBaseForms);
   if (base && base !== normalized) {
     const baseZipf = zipfFor(base, scoring);
-    if (baseZipf > ownZipf) return { word: normalized, base, ownZipf, baseZipf };
+    if (baseZipf > ownZipf)
+      return { word: normalized, base, ownZipf, baseZipf };
   }
   return undefined;
 }
@@ -323,7 +417,10 @@ export function baseFormSubstitution(
  * rarer, so this is a min-scan over the whole dictionary, same containment
  * rule as submit.ts's containsDropInOrder.
  */
-export function bestWordForDrop(drop: string, date?: string): AcceptedWord | undefined {
+export function bestWordForDrop(
+  drop: string,
+  date?: string,
+): AcceptedWord | undefined {
   const needle = drop.toLowerCase();
   let best: AcceptedWord | undefined;
   for (let i = 0; i < WORDS.length; i++) {
@@ -345,22 +442,111 @@ export function bestWordForDrop(drop: string, date?: string): AcceptedWord | und
  */
 function adjustedZipf(word: string, zipf: number, scoring: Scoring): number {
   const tenseBase = tenseBaseForm(word, scoring);
-  if (tenseBase) return zipfFor(tenseBase, scoring);
+  const base = tenseBase
+    ? undefined
+    : scoringBaseForm(word, scoring.boundBaseForms);
+  // A tense base is used exactly ("rated" scores as "rate"); other bases only
+  // cap the word from below.
+  const measured = tenseBase
+    ? zipfFor(tenseBase, scoring)
+    : base
+      ? Math.max(zipf, zipfFor(base, scoring))
+      : zipf;
 
-  const base = scoringBaseForm(word, scoring.boundBaseForms);
-  if (!base) return zipf;
-  return Math.max(zipf, zipfFor(base, scoring));
+  // The assigned tier speaks last, and only for a word still sitting at the
+  // sentinel -- every rule above works from measured frequency, so any base one
+  // of them finds outranks a judgement call. This keeps the tier file strictly
+  // additive: it can fill the gap where the spelling rules find nothing
+  // ("cabotages", whose -e singular they miss), never overrule them
+  // ("aggrandization", which already folds onto "aggrandize").
+  if (scoring.aiTiers && zipf === MIN_ZIPF) {
+    const tiered = aiTieredZipf(word, scoring, measured);
+    if (tiered !== undefined) return tiered;
+  }
+  return measured;
 }
 
-function scoringBaseForm(word: string, includeBound: boolean): string | undefined {
+/**
+ * The Zipf an unattested word takes from its assigned tier, given the `measured`
+ * Zipf the ordinary spelling rules reached (the sentinel when they found no
+ * base). Returns undefined for a word the tier file does not cover, which then
+ * falls through to the flat 9.90 floor.
+ *
+ * The two capped tiers apply their ceiling on top of whatever base was found,
+ * measured or assigned -- a ceiling is a promise about the final score, so it
+ * has to bind even when the ordinary rules already produced one ("acervately"
+ * folds onto the deep-tail "acervate" and would otherwise score 9.97).
+ *
+ * The uncapped tiers defer instead: `inherit` only supplies a base when the
+ * measured rules found none, and `lemma` only stands in when nothing was found
+ * at all. Frequency data outranks a judgement call wherever both have an answer.
+ */
+function aiTieredZipf(
+  word: string,
+  scoring: Scoring,
+  measured: number,
+  seen: ReadonlySet<string> = new Set(),
+): number | undefined {
+  // Higher Zipf means lower score, so a score ceiling is a Zipf floor.
+  const capped = (base: string, maxScore: number) =>
+    Math.max(
+      measured,
+      zipfOrSentinel(base, scoring),
+      scoring.zipfForScore(maxScore),
+    );
+
+  const artifact = AI_ARTIFACT.get(word);
+  if (artifact !== undefined) return capped(artifact, ARTIFACT_MAX_SCORE);
+
+  const derived = AI_DERIVED.get(word);
+  if (derived !== undefined) return capped(derived, DERIVED_MAX_SCORE);
+
+  if (measured !== MIN_ZIPF) return measured;
+
+  const inherit = AI_INHERIT.get(word);
+  if (inherit !== undefined && WORD_INDEX.has(inherit)) {
+    const baseZipf = zipfFor(inherit, scoring);
+    if (baseZipf !== MIN_ZIPF) return baseZipf;
+    // The base is unattested too ("deplatformed" -> "deplatform"). Follow its
+    // grade rather than the raw sentinel, guarding against a variant pair that
+    // points at each other.
+    if (!seen.has(word)) {
+      const chained = aiTieredZipf(
+        inherit,
+        scoring,
+        MIN_ZIPF,
+        new Set([...seen, word]),
+      );
+      if (chained !== undefined) return chained;
+    }
+    return baseZipf;
+  }
+
+  if (AI_LEMMA.has(word)) return LEMMA_ZIPF;
+  return undefined;
+}
+
+function zipfOrSentinel(word: string, scoring: Scoring): number {
+  return WORD_INDEX.has(word) ? zipfFor(word, scoring) : MIN_ZIPF;
+}
+
+function scoringBaseForm(
+  word: string,
+  includeBound: boolean,
+): string | undefined {
   const inflected = baseForm(word);
   if (inflected !== word && WORD_INDEX.has(inflected)) return inflected;
 
   for (const suffix of ["ness", "ly"]) {
     if (!word.endsWith(suffix) || word.length <= suffix.length + 2) continue;
     const stem = word.slice(0, -suffix.length);
-    const candidates = [stem, stem.endsWith("i") ? `${stem.slice(0, -1)}y` : ""];
-    const base = candidates.find((candidate) => candidate && WORD_INDEX.has(candidate));
+    const candidates = [
+      stem,
+      stem.endsWith("i") ? `${stem.slice(0, -1)}y` : "",
+    ];
+    const base = candidates.find(
+      (candidate) => candidate && WORD_INDEX.has(candidate),
+    );
     if (base) return base;
   }
 
@@ -368,7 +554,9 @@ function scoringBaseForm(word: string, includeBound: boolean): string | undefine
   // the wide-band era. Capped at the base like the transparent suffixes above:
   // "aggrandization" scores as "aggrandize", never rarer than it.
   if (includeBound) {
-    const bound = boundBaseCandidates(word).find((candidate) => WORD_INDEX.has(candidate));
+    const bound = boundBaseCandidates(word).find((candidate) =>
+      WORD_INDEX.has(candidate),
+    );
     if (bound) return bound;
   }
   return undefined;
@@ -482,7 +670,7 @@ export function formatRarityScore(zipf: number, date?: string): string {
 /** Sum the displayed rarity scores earned during one game session. */
 export function totalRarityScore(
   words: readonly Pick<AcceptedWord, "zipf">[],
-  date?: string
+  date?: string,
 ): number {
   const scoring = scoringFor(date);
   const total = words.reduce((sum, word) => sum + scoring.score(word.zipf), 0);
@@ -492,8 +680,11 @@ export function totalRarityScore(
 /** Highest displayed rarity score earned in the current puzzle. */
 export function topRarityScore(
   words: readonly Pick<AcceptedWord, "zipf">[],
-  date?: string
+  date?: string,
 ): number {
   const scoring = scoringFor(date);
-  return words.reduce((top, word) => Math.max(top, scoring.score(word.zipf)), 0);
+  return words.reduce(
+    (top, word) => Math.max(top, scoring.score(word.zipf)),
+    0,
+  );
 }

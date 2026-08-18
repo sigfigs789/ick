@@ -11,6 +11,7 @@ import {
   unattestedZipf,
 } from "./dictionary";
 import rarityData from "../data/rarity.json";
+import aiTierData from "../data/ai-tiers.json";
 
 const explicitlyCuratedWords = [
   "endling",
@@ -57,7 +58,11 @@ const onlineWordScores: ReadonlyArray<[string, string, number]> = [
   ["sation", "Extremely Rare", 1.37],
   ["sideration", "Extremely Rare", 1.92],
 ];
-const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
+const wiktionaryScienceWords = [
+  "biohacking",
+  "neuropsychopharmacology",
+  "scientometrics",
+];
 
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
@@ -88,7 +93,10 @@ describe("isValidWord", () => {
 
   it("accepts explicitly curated additions", () => {
     for (const word of explicitlyCuratedWords) {
-      expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
+      expect(
+        isValidWord(word),
+        `${word} should be a valid dictionary input`,
+      ).toBe(true);
     }
   });
 
@@ -98,8 +106,14 @@ describe("isValidWord", () => {
       ...suggestedWordScores,
       ...onlineWordScores,
     ]) {
-      expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
-      expect(rarityFor(word), `${word} should keep its recorded rarity/zipf`).toEqual({
+      expect(
+        isValidWord(word),
+        `${word} should be a valid dictionary input`,
+      ).toBe(true);
+      expect(
+        rarityFor(word),
+        `${word} should keep its recorded rarity/zipf`,
+      ).toEqual({
         rarity,
         zipf,
       });
@@ -132,7 +146,10 @@ describe("isValidWord", () => {
   it.each(droppedCommonWords)(
     "accepts re-added common word %s with its expected rarity",
     (word, rarity, zipf) => {
-      expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
+      expect(
+        isValidWord(word),
+        `${word} should be a valid dictionary input`,
+      ).toBe(true);
       expect(rarityFor(word)).toEqual({ rarity, zipf });
     },
   );
@@ -175,16 +192,29 @@ describe("curated additions from rejected-word analytics", () => {
     ["astroturf", "Extremely Rare", 2.46],
     ["brobdingnagian", "Extremely Rare", 1.55],
     ["stromboli", "Extremely Rare", 2.18],
-    ["carcinisation", "Legend", -1.57],
-    ["carcinization", "Legend", -1.57],
-    ["dendrimeric", "Legend", -1.57],
+    // Both are graded headwords by the 2026-08-18 cutover, so they carry the
+    // graded-headword Zipf rather than the bare sentinel. Same Legend rank and
+    // same perfect 10 as before -- only the marker they carry changed.
+    ["carcinisation", "Legend", -1.58],
+    ["carcinization", "Legend", -1.58],
+    // Re-scored by the 2026-08-18 tier cutover: "dendrimeric" is "dendrimer"
+    // (Zipf 1.49) plus -ic, so it now reads off that base instead of tying every
+    // other unattested word at the top. Its base is measured, so it leaves the
+    // sentinel entirely. See src/data/ai-tiers.json.
+    ["dendrimeric", "Extremely Rare", 1.49],
   ];
 
   it.each(analyticsAdditions)(
     "accepts %s and pins its recorded rarity and Zipf",
     (word, rarity, zipf) => {
-      expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
-      expect(rarityFor(word), `${word} should keep its recorded rarity/zipf`).toEqual({
+      expect(
+        isValidWord(word),
+        `${word} should be a valid dictionary input`,
+      ).toBe(true);
+      expect(
+        rarityFor(word),
+        `${word} should keep its recorded rarity/zipf`,
+      ).toEqual({
         rarity,
         zipf,
       });
@@ -262,20 +292,27 @@ describe("rarityFor", () => {
     // Before the cutover the derived word keeps its own (rarer) frequency, so
     // past puzzles never shift retroactively.
     const before = "2026-08-15";
-    expect(rarityFor("trivialization", before)).not.toEqual(rarityFor("trivialize", before));
+    expect(rarityFor("trivialization", before)).not.toEqual(
+      rarityFor("trivialize", before),
+    );
     // On/after the cutover -- and for undated (newest) puzzles -- it inherits the base.
-    expect(rarityFor("trivialization", "2026-08-16")).toEqual(rarityFor("trivialize", "2026-08-16"));
+    expect(rarityFor("trivialization", "2026-08-16")).toEqual(
+      rarityFor("trivialize", "2026-08-16"),
+    );
     expect(rarityFor("trivialization")).toEqual(rarityFor("trivialize"));
   });
 
-  it("floors a word no corpus attests to 9.90 and Legend", () => {
-    // "autecism" is absent from every frequency source (and its stem too), so
-    // the waterfall gives it the rarest-word sentinel. The latest system floors
-    // that sentinel to 9.90 -- the elite-band bottom, still the Legend rank --
-    // rather than the perfect 10, which is reserved for attested deep-tail words.
+  it("floors an ungraded word no corpus attests to 9.90 and Legend", () => {
+    // The bare sentinel means "unattested and ungraded" -- a word accepted live
+    // (game/liveValidate.ts) or added since ai-tiers.json was generated. It
+    // floors to 9.90, the elite-band bottom and still Legend, rather than the
+    // perfect 10. "autecism" is unattested too but graded a headword, so it
+    // keeps the 10; the two cases are checked separately below.
+    expect(rarityScore(unattestedZipf())).toBe(9.9);
+    expect(rarityForZipf(unattestedZipf())).toBe("Legend");
     const floored = rarityFor("autecism")!;
     expect(floored.rarity).toBe("Legend");
-    expect(rarityScore(floored.zipf)).toBe(9.9);
+    expect(rarityScore(floored.zipf)).toBe(10);
   });
 
   it("awards Legend for a rank of 9.9+ and Mythic for 9.5-9.89", () => {
@@ -310,7 +347,9 @@ describe("baseFormSubstitution", () => {
   });
 
   it("returns undefined before the bound-suffix cutover", () => {
-    expect(baseFormSubstitution("trivialization", "2026-08-15")).toBeUndefined();
+    expect(
+      baseFormSubstitution("trivialization", "2026-08-15"),
+    ).toBeUndefined();
   });
 });
 
@@ -323,12 +362,14 @@ describe("rarityScore", () => {
 
   it("normalizes against the dictionary's Zipf range", () => {
     // "the" is the dictionary's most common word (highest Zipf) -- it anchors
-    // the 0.0 score. An attested deep-tail word anchors the perfect 10; the
-    // rarest-word sentinel (words no corpus attests) floors to 9.90 instead.
+    // the 0.0 score. An attested deep-tail word anchors the perfect 10, as does
+    // an unattested word graded a headword ("autecism"); the bare sentinel, an
+    // unattested word with no grade at all, floors to 9.90 instead.
     const mostCommon = rarityFor("the")!;
     const floored = rarityFor("autecism")!;
+    expect(rarityScore(unattestedZipf())).toBe(9.9);
     expect(rarityScore(mostCommon.zipf)).toBe(0);
-    expect(rarityScore(floored.zipf)).toBe(9.9);
+    expect(rarityScore(floored.zipf)).toBe(10);
     expect(rarityScore(2.4)).toBeGreaterThan(rarityScore(3.3));
   });
 });
@@ -403,7 +444,7 @@ describe("isUnattestedZipf", () => {
     // sentinel, so its score is derived from data and is not a stand-in. The
     // predicate reads the post-adjustment Zipf, which is what rarityFor returns.
     const rescued = SENTINEL_WORDS.map((word) => rarityFor(word)).find(
-      (info) => info !== undefined && !isUnattestedZipf(info.zipf)
+      (info) => info !== undefined && !isUnattestedZipf(info.zipf),
     );
     expect(rescued).toBeDefined();
   });
@@ -413,5 +454,126 @@ describe("isUnattestedZipf", () => {
     expect(isUnattestedZipf(unattestedZipf())).toBe(true);
     expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(9.9);
     expect(rarityScore(unattestedZipf(), "2026-08-17")).toBe(10);
+  });
+});
+
+// The AI-assigned tiers grading the unattested population (src/data/ai-tiers.json,
+// generated by scripts/classify-unattested.py). These are judgement calls rather
+// than measured frequency, so the tests pin both the file's structural integrity
+// and the score guarantees each tier is supposed to buy.
+describe("ai-assigned tiers for unattested words", () => {
+  const tiers = aiTierData.tiers;
+  const inherit = Object.entries(tiers.inherit.words);
+  const derived = Object.entries(tiers.derived.words);
+  const artifact = Object.entries(tiers.artifact.words);
+  const lemma = tiers.lemma.words;
+  const inDictionary = new Set(dictionaryWords as unknown as string[]);
+
+  it("covers every sentinel word exactly once", () => {
+    const graded = [
+      ...inherit.map(([w]) => w),
+      ...derived.map(([w]) => w),
+      ...artifact.map(([w]) => w),
+      ...lemma,
+    ];
+    expect(new Set(graded).size).toBe(graded.length); // no word in two tiers
+    expect(new Set(graded)).toEqual(new Set(SENTINEL_WORDS));
+  });
+
+  it("only grades real dictionary words, against real dictionary bases", () => {
+    for (const [word, base] of [...inherit, ...derived, ...artifact]) {
+      expect(
+        inDictionary.has(word),
+        `${word} should be a dictionary word`,
+      ).toBe(true);
+      expect(
+        inDictionary.has(base),
+        `${base} (base of ${word}) should be a dictionary word`,
+      ).toBe(true);
+      expect(base, `${word} should not be its own base`).not.toBe(word);
+    }
+    for (const word of lemma) expect(inDictionary.has(word)).toBe(true);
+  });
+
+  it("records who assigned the tiers, so the calls stay attributable", () => {
+    expect(aiTierData.assignedBy).toBeTruthy();
+    expect(aiTierData.assignedOn).toBeTruthy();
+    expect(aiTierData.generator).toBe("scripts/classify-unattested.py");
+  });
+
+  it("keeps a standalone headword at the perfect 10 and Legend", () => {
+    // "kharzy" is unattested because it is genuinely obscure British slang, not
+    // because a suffix rule invented it -- exactly the case the perfect 10 is for.
+    const kharzy = rarityFor("kharzy")!;
+    expect(kharzy.rarity).toBe("Legend");
+    expect(rarityScore(kharzy.zipf)).toBe(10);
+    // Its 10 is an assigned judgement, not measured data -- the analytics
+    // stand-in check has to keep seeing it as such.
+    expect(isUnattestedZipf(kharzy.zipf)).toBe(true);
+  });
+
+  it("scores an inflection off its base, including the -e singular the stemmer misses", () => {
+    // baseForm() strips "es" before "s", so "cabotages" -> "cabotag" (a miss) and
+    // the word used to score a perfect 10 despite "cabotage" being measured.
+    const cabotages = rarityFor("cabotages")!;
+    const cabotage = rarityFor("cabotage")!;
+    expect(cabotages.zipf).toBe(cabotage.zipf);
+    expect(rarityScore(cabotages.zipf)).toBeLessThan(10);
+  });
+
+  it("scores a Commonwealth spelling off its American twin", () => {
+    expect(rarityFor("microminiaturise")!.zipf).toBe(
+      rarityFor("microminiaturize")!.zipf,
+    );
+  });
+
+  it("never lets a derivation reach the perfect 10", () => {
+    for (const [word] of derived) {
+      expect(
+        rarityScore(rarityFor(word)!.zipf),
+        `${word} should stay under 10`,
+      ).toBeLessThanOrEqual(tiers.derived.maxScore);
+    }
+  });
+
+  it("never lets a suffix-machinery form reach Legend", () => {
+    for (const [word] of artifact) {
+      const info = rarityFor(word)!;
+      expect(
+        rarityScore(info.zipf),
+        `${word} should stay at or under the artifact cap`,
+      ).toBeLessThanOrEqual(tiers.artifact.maxScore);
+      expect(info.rarity, `${word} should not be Legend`).not.toBe("Legend");
+    }
+  });
+
+  it("keeps the comparative of a deep-tail adjective rare, unlike one of a common noun", () => {
+    // "quagmirier" inflects "quagmiry" (Zipf -0.23), not "quagmire" (2.75) -- the
+    // two bases sit either side of the artifact line, so picking the wrong one
+    // flips the tier. "chichier" is the genuine artifact: "chichi" is common.
+    expect(rarityFor("quagmirier")!.zipf).toBe(rarityFor("quagmiry")!.zipf);
+    expect(rarityScore(rarityFor("chichier")!.zipf)).toBeLessThanOrEqual(
+      tiers.artifact.maxScore,
+    );
+  });
+
+  it("lets measured base forms outrank the assigned tier", () => {
+    // "aggrandization" already folds onto "aggrandize" through the bound-suffix
+    // rule. The tier file must not override a base the frequency data supports.
+    expect(rarityFor("aggrandization")).toEqual(rarityFor("aggrandize"));
+  });
+
+  it("leaves puzzles before the cutover untouched", () => {
+    // Every unattested word tied at a perfect 10 under the wide-band system.
+    for (const word of ["kharzy", "cabotages", "chichier", "dendrimeric"]) {
+      expect(
+        rarityScore(rarityFor(word, "2026-08-17")!.zipf, "2026-08-17"),
+      ).toBe(10);
+    }
+  });
+
+  it("falls back to the 9.90 floor for a sentinel word the file does not cover", () => {
+    // Words accepted live (game/liveValidate.ts) have no tier entry by definition.
+    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(9.9);
   });
 });
