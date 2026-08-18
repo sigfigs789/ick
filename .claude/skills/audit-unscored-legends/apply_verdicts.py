@@ -129,6 +129,14 @@ def main() -> int:
         default=str(Path(__file__).resolve().parent / "reviewed.txt"),
         help="ledger every judged word is appended to; '' disables it",
     )
+    ap.add_argument(
+        "--candidates",
+        type=Path,
+        help="file of words the audit surfaced, one per line, to reconcile the verdicts against. "
+        "Defaults to re-running audit_unscored.py for --date's drop. The sibling "
+        "demote-mythic-plus-scoring skill writes this file with its --candidates-out flag, because "
+        "it judges the drop's *attested* words in batches rather than every unscored word at once.",
+    )
     ap.add_argument("--apply", action="store_true", help="write changes (default: dry run)")
     ap.add_argument("--force", action="store_true", help="proceed despite preflight warnings")
     ap.add_argument("--table", action="store_true", help="also print the PR-body verdict table")
@@ -289,21 +297,29 @@ def main() -> int:
         if ledger and ledger.exists()
         else set()
     )
-    drops = json.loads((data / "drops.json").read_text())
-    drop = audit.drop_for_date(since, drops).upper()
-    candidates = {
-        # Same ledger filtering the audit itself applies, so a word judged on an
-        # earlier run is not reported as missing here.
-        row["word"]
-        for row in audit.build_report(root, drop, already, False)["words"]
-    }
-    unjudged = sorted(candidates - judged_now)
+    if args.candidates:
+        if not args.candidates.exists():
+            print(f"error: --candidates file {args.candidates} does not exist", file=sys.stderr)
+            return 2
+        scope = f"from {args.candidates.name}"
+        candidates = {w.strip().lower() for w in args.candidates.read_text().split() if w.strip()}
+    else:
+        drops = json.loads((data / "drops.json").read_text())
+        drop = audit.drop_for_date(since, drops).upper()
+        scope = f"unscored for `{drop}`"
+        candidates = {
+            # Same ledger filtering the audit itself applies, so a word judged on an
+            # earlier run is not reported as missing here.
+            row["word"]
+            for row in audit.build_report(root, drop, already, False)["words"]
+        }
+    unjudged = sorted(candidates - judged_now - already)
     if unjudged:
         print(
-            f"\nWARNING {len(unjudged)} of {len(candidates)} unscored words for `{drop}` have no "
+            f"\nWARNING {len(unjudged)} of {len(candidates)} candidates ({scope}) have no "
             f"verdict: {', '.join(unjudged)}"
         )
-        print("  They stay at 10.00 and will resurface on the next run.")
+        print("  They keep the score they have now and will resurface on the next run.")
 
     if blocked and not args.force:
         print("\nrefusing to proceed. Fix the errors above, or --force if deliberate.")
