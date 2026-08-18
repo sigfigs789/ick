@@ -7,6 +7,7 @@ import {
   rarityForZipf,
   rarityScore,
   topRarityScore,
+  isUnattestedZipf,
   unattestedZipf,
 } from "./dictionary";
 import rarityData from "../data/rarity.json";
@@ -373,5 +374,44 @@ describe("unattestedZipf", () => {
     expect(rarityForZipf(1.54, "2026-08-18")).toBe("Extremely Rare");
     expect(rarityScore(1.54, "2026-08-18")).toBeLessThan(9.5);
     expect(rarityForZipf(4.29, "2026-08-18")).toBe("Common");
+  });
+});
+
+// Curated words whose shipped rarity entry is the sentinel -- the population
+// that scores from a stand-in unless a base form rescues them.
+const SENTINEL_WORDS = (() => {
+  const words = dictionaryWords as unknown as string[];
+  const hundredths = rarityData.zipfHundredths;
+  const sentinel = Math.round(unattestedZipf() * 100);
+  const out: string[] = [];
+  for (let i = 0; i < hundredths.length; i++) {
+    if (hundredths[i] === sentinel) out.push(words[i]);
+  }
+  return out;
+})();
+
+describe("isUnattestedZipf", () => {
+  it("recognises the sentinel and nothing else", () => {
+    expect(isUnattestedZipf(unattestedZipf())).toBe(true);
+    expect(isUnattestedZipf(1.54)).toBe(false);
+    // Just above the sentinel is real (if barely) measured data.
+    expect(isUnattestedZipf(unattestedZipf() + 0.01)).toBe(false);
+  });
+
+  it("clears a sentinel word whose score came from a base form", () => {
+    // adjustedZipf raises a sentinel word with a more-common base above the
+    // sentinel, so its score is derived from data and is not a stand-in. The
+    // predicate reads the post-adjustment Zipf, which is what rarityFor returns.
+    const rescued = SENTINEL_WORDS.map((word) => rarityFor(word)).find(
+      (info) => info !== undefined && !isUnattestedZipf(info.zipf)
+    );
+    expect(rescued).toBeDefined();
+  });
+
+  it("holds across scoring systems, whatever stand-in they substitute", () => {
+    // 9.90 today, a perfect 10 before the floor -- both stand-ins, one bucket.
+    expect(isUnattestedZipf(unattestedZipf())).toBe(true);
+    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(9.9);
+    expect(rarityScore(unattestedZipf(), "2026-08-17")).toBe(10);
   });
 });

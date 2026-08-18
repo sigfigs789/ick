@@ -244,6 +244,21 @@ export function unattestedZipf(): number {
 }
 
 /**
+ * Whether `zipf` is the unattested sentinel -- the word carries no measured
+ * frequency at all and its score is the system's stand-in value rather than
+ * anything derived from data. Deliberately date-blind: every scoring system
+ * substitutes *some* artificial score here (9.90 from SENTINEL_FLOOR_START,
+ * the perfect 10 before it), and they all count the same for monitoring.
+ *
+ * Test the post-adjustment Zipf, which is what `rarityFor` returns: a sentinel
+ * word with a more-common base form is raised above MIN_ZIPF by `adjustedZipf`
+ * and scores on real data, so it is not a stand-in.
+ */
+export function isUnattestedZipf(zipf: number): boolean {
+  return zipf === MIN_ZIPF;
+}
+
+/**
  * Whether the bound-suffix base-form folding is active for a puzzle date. Used
  * by both rarity scoring and same-root duplicate detection so a word's base is
  * defined identically in both, and only from the 2026-08-16 wide-band cutover.
