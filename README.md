@@ -56,7 +56,10 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   would otherwise tie at a perfect 10.00 — a genuine obscure headword (`kharzy`)
   alongside a form the suffix machinery merely permits (`agonisingliest`). That
   file grades those, and only those, making it the one place in the pipeline
-  where a score is **assigned rather than measured**. Two rules keep it modest:
+  where a score is **assigned rather than measured**. Only suffixes count as
+  inflections: a prefixed word (`deplatform`) and an agent noun (`catnaper`) are
+  independent words, not versions of the base they start from, and keep their
+  score. Two further rules keep it modest:
   grading only ever lowers a score (finding a base can cost a word score, never
   earn it any), and a grade is ignored unless it moves the score by at least
   `MIN_GRADE_DROP` (0.3), so a judgement call never nudges a word by a rounding

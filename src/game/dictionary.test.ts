@@ -604,6 +604,40 @@ describe("ai-assigned tiers for unattested words", () => {
     }
   });
 
+  it("treats a prefixed word as its own word, not a version of its base", () => {
+    // A prefix builds an independent word. "deplatform" is vastly rarer than
+    // "platform" (Zipf 4.50), so reading it off that base would punish it for a
+    // relationship that says nothing about how rare it is.
+    for (const word of [
+      "deplatform",
+      "deplatformed",
+      "mispackage",
+      "misenroll",
+      "prechose",
+      "outheard",
+    ]) {
+      const graded = rarityScore(rarityFor(word, GRADED)!.zipf, GRADED);
+      expect(graded, `${word} should keep its score`).toBe(
+        rarityScore(rarityFor(word, WIDE_BAND)!.zipf, WIDE_BAND),
+      );
+    }
+  });
+
+  it("distinguishes a comparative -er from an agent-noun -er", () => {
+    // English spells both the same way. "childlier" is "child" inflected and is
+    // graded down; "catnaper" and "orbiteer" are independent nouns that merely
+    // start from one, and keep their score. The superlative twin is the tell.
+    for (const word of ["catnaper", "orbiteer", "sailplaner", "hagrider"]) {
+      expect(
+        rarityScore(rarityFor(word, GRADED)!.zipf, GRADED),
+        `${word} is an agent noun and should keep its score`,
+      ).toBe(rarityScore(rarityFor(word, WIDE_BAND)!.zipf, WIDE_BAND));
+    }
+    expect(
+      rarityScore(rarityFor("childlier", GRADED)!.zipf, GRADED),
+    ).toBeLessThanOrEqual(tiers.artifact.maxScore);
+  });
+
   it("ignores a grade that would barely move the score", () => {
     // A judgement call is only worth overruling the measured default when it
     // changes the answer materially. Every score this cutover does move, it

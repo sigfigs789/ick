@@ -29,8 +29,9 @@ Tiers:
                derived form. Carries the base so the substitution is visible.
   lemma     -- a standalone headword with nothing strippable. Keeps the perfect
                10.00: absence from all three corpora is real rarity evidence.
-  derived   -- a transparent derivation (-ist/-ic/-ical/-ly/-ness) off an
-               attested base. Capped at 9.80.
+  derived   -- a transparent *suffix* derivation (-ist/-ic/-ical/-ly) off an
+               attested base. Capped at 9.80. Prefixed words are never graded
+               here: a prefix makes an independent word, not an inflection.
   artifact  -- a form that exists because a suffix rule permits it, not because
                anyone uses it: comparatives of non-gradable bases, stacked
                -ness, multi-step chains. Capped at 9.50, below the Legend line.
@@ -76,12 +77,17 @@ DERIVATION_SUFFIXES = ["ically", "ical", "ists", "ist", "ic", "ly"]
 # Gradable/abstract suffixes. These produce an artifact only on a base common
 # enough that the suffix is doing all the rarity work -- on a deep-tail base
 # ("quagmiry", Zipf -0.23) the comparative inherits genuine obscurity instead.
+# A trailing -er counts only when it is genuinely comparative (see
+# is_comparative); agent nouns like "catnaper" are independent words.
 ARTIFACT_SUFFIXES = ["liest", "lier", "iest", "ier", "est", "er", "nesses", "ness"]
 
-# Transparent prefixes: "misenroll" is enroll with a prefix, not a headword.
-PREFIXES = ["mis", "non", "over", "under", "counter", "super", "semi", "anti",
-            "pseudo", "hyper", "inter", "multi", "micro", "un", "re", "pre",
-            "post", "sub", "out", "co", "de", "dis"]
+# NOTE: there is deliberately no prefix rule. A prefix builds an independent
+# word rather than an inflection of one -- "deplatform" is its own coinage, and
+# vastly rarer than "platform" (Zipf 4.50), so scoring it off that base would
+# punish it for a relationship that says nothing about how rare it is. Suffixes
+# are different: a plural or a comparative really is the same word inflected.
+# Prefixed words therefore fall through to the headword tier and keep their
+# score, which is also what the existing rules already gave them.
 
 # The bound derivational suffixes src/game/stem.ts already folds onto their base
 # at runtime. Mirrored here so the tier file agrees with what scoring actually
@@ -255,6 +261,26 @@ def base_form_js(word: str) -> str:
     return word
 
 
+def is_comparative(word: str, index) -> bool:
+    """Whether a trailing -er is really a comparative, not an agent noun.
+
+    English spells both the same way, and they could not be more different for
+    scoring: "childlier" is "child" inflected, while "catnaper" and "orbiteer"
+    are independent nouns that merely start from one. A comparative comes with a
+    superlative twin, so require the dictionary to hold it -- "childliest"
+    exists, "catnapest" does not.
+    """
+    if word.endswith("lier"):
+        superlative = word[:-4] + "liest"
+    elif word.endswith("ier"):
+        superlative = word[:-3] + "iest"
+    elif word.endswith("er"):
+        superlative = word[:-2] + "est"
+    else:
+        return True
+    return superlative in index
+
+
 def classify(words, hundredths, index, sentinel):
     """Walk every sentinel word once, in tier order. The first rule that finds a
     dictionary-backed base wins."""
@@ -331,6 +357,11 @@ def classify(words, hundredths, index, sentinel):
         for suffix in ARTIFACT_SUFFIXES:
             if not word.endswith(suffix) or len(word) <= len(suffix) + 2:
                 continue
+            # An agent noun is an independent word, like a prefixed one, and is
+            # left to the headword tier rather than scored off what it derives
+            # from.
+            if suffix.endswith("er") and not is_comparative(word, index):
+                continue
             for base in suffix_bases(word, suffix):
                 zipf = attested(base)
                 if zipf is not None:
@@ -361,19 +392,12 @@ def classify(words, hundredths, index, sentinel):
             if derived:
                 break
 
-        # 5. Transparent prefix on an attested word ("misenroll" -> "enroll").
-        if not derived:
-            for prefix in PREFIXES:
-                if not word.startswith(prefix) or len(word) <= len(prefix) + 3:
-                    continue
-                if attested(word[len(prefix):]) is not None:
-                    derived = word[len(prefix):]
-                    break
         if derived:
             tiers["derived"][word] = derived
             continue
 
-        # 6. Nothing strippable -- a standalone headword.
+        # 5. Nothing strippable -- a standalone headword. Prefixed words land
+        #    here by design (see PREFIXES note above).
         tiers["lemma"].append(word)
 
     return tiers, sentinel_words
@@ -393,7 +417,9 @@ def main() -> None:
             "resolve are deliberately absent: they score off real data and need "
             "no judgement. These tiers are a judgement call about whether the "
             "word is a genuine rare headword or a form the suffix machinery "
-            "merely permits. Grading only ever lowers a score, never raises one, "
+            "merely permits. Only suffixes count as inflections: prefixed words "
+            "and agent nouns are independent words and stay in the headword "
+            "tier. Grading only ever lowers a score, never raises one, "
             "and is ignored entirely unless it moves the score by at least 0.3 "
             "(MIN_GRADE_DROP in src/game/dictionary.ts) -- so a word listed here "
             "may keep the score it already had. Applies to puzzles from "
