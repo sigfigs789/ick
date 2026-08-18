@@ -1,6 +1,6 @@
 ---
 name: add-online-rare-words
-description: Find very rare words online (Datamuse) that contain an upcoming WordInk drop, keep only the ones missing from our dictionary that a frequency corpus can score, and open a PR adding them with pinned rarity/Zipf tests and a bumped dictionary-size assertion. Use whenever the ask is to find/add rare or obscure words for tomorrow's (or a given day's) drop, to grow the dictionary for an upcoming drop, or to run the "Add rare words found online" pipeline locally instead of from the Actions tab.
+description: Find very rare words online (Datamuse) that contain an upcoming WordInk drop, keep only the ones missing from our dictionary that a frequency corpus can score, judge each survivor (adding real rare words and blocklisting proper nouns, misspellings and fragments), and open a PR adding them with pinned rarity/Zipf tests and a bumped dictionary-size assertion. Use whenever the ask is to find/add rare or obscure words for tomorrow's (or a given day's) drop, to grow the dictionary for an upcoming drop, or to run the "Add rare words found online" pipeline locally instead of from the Actions tab.
 ---
 
 # Add rare words found online for an upcoming drop
@@ -83,8 +83,9 @@ stderr — capture that summary, it becomes the PR body:
 is the normal outcome for a drop that was already harvested (each drop recurs on a 1132-day
 cycle, and the Action may already have run for it; check `git log --oneline -- scripts/online-words.txt`).
 
-Show the user the surviving words with their Zipf before regenerating anything. If they
-want a subset, drop the rest from `.tmp/online-words.txt` first — pruning after the
+Show the user the surviving words with their Zipf before regenerating anything (on a
+scheduled run there is no one to ask — see "Judging the candidates yourself" below). If a
+subset is wanted, drop the rest from `.tmp/online-words.txt` first — pruning after the
 regeneration means unwinding `dictionary.json` and both index-aligned rarity arrays by hand
 (that cleanup is what the second commit of PR #125 had to do).
 
@@ -106,6 +107,43 @@ survives.
 
 Proper nouns are the usual reason: Datamuse and the frequency corpora happily attest
 surnames and famous names, which look like ordinary rare words to every filter here.
+
+## 4b. Judging the candidates yourself
+
+On an unattended run — a scheduled routine, or any time the user has asked you to decide —
+you do the assessment instead of handing a raw list over. Datamuse plus a frequency corpus
+only tells you a string is *written down somewhere*, never that it is an English word worth
+playing. Look each survivor up (Wiktionary and Merriam-Webster online are the useful
+sources; the local `scripts/wiktionary-accepted.txt` is a narrow curated subset and rejects
+most words that were legitimately accepted, so it is not a usable test), then sort it:
+
+**Add it** when it is a real English word with a definition you can point at — an obscure
+noun, a technical term, an archaic-but-attested form. Obscure is the whole point; a word
+being unfamiliar is not a reason to reject it.
+
+**Blocklist it** when it is not a word a player should be rewarded for:
+
+- **proper nouns** — surnames, place names, people, brands. The corpora attest these as
+  readily as common nouns and no other filter here catches them. This is the most common
+  rejection by a wide margin.
+- **misspellings and malformed forms** of a word already in the dictionary.
+- **foreign words** that have not naturalised into English.
+- **fragments** — stems, prefixes, or truncations that are not standalone words.
+
+Add each rejection to `scripts/blocklist.txt`, in the matching section, alphabetised, with
+the reason on **its own line** (the readers do not strip trailing comments — see
+`purge-unfun-words`). Rejecting a word without blocklisting it means the next run for that
+drop proposes it again.
+
+**Check the score before adding.** An addition that lands at Mythic or Legend becomes the
+best answer for that drop, so it had better deserve to be. `record-word` prints each score;
+if a word tops the pool, apply the `audit-drop-mythics` judgment to it — a mechanical
+inflection (plural, third-person, agent noun, comparative) outranking its own base is the
+failure mode that skill exists to catch. If a word only scores that high because nothing
+attests it, it belongs in `purge-unfun-words` territory, not here.
+
+Say what you decided and why, per word, in the PR body. A run where every candidate is
+rejected is a normal, useful outcome: the deliverable is then a blocklist-only PR.
 
 ## 5. Add each word
 
