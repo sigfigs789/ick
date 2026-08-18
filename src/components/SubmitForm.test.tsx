@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { SubmitForm } from "./SubmitForm";
@@ -43,10 +43,37 @@ describe("SubmitForm", () => {
     await userEvent.type(input, "stray");
     expect(input).toHaveValue("stray");
 
+    // A lookup that answers mid-sweep leaves the line running: it stops at the
+    // end of the pass it is in, not halfway across.
     rerender(
       <SubmitForm drop="str" disabled={false} feedback={null} checking={false} onSubmit={vi.fn()} />
     );
+    const field = container.querySelector(".submit-form__field")!;
+    expect(container.querySelector(".submit-form__row--checking")).toBeInTheDocument();
+
+    fireEvent.animationIteration(field);
     expect(container.querySelector(".submit-form__row--checking")).not.toBeInTheDocument();
+  });
+
+  it("stops the sweep on its own if no animation event ever arrives", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const { container, rerender } = render(
+        <SubmitForm drop="str" disabled={false} feedback={null} checking={true} onSubmit={vi.fn()} />
+      );
+      rerender(
+        <SubmitForm drop="str" disabled={false} feedback={null} checking={false} onSubmit={vi.fn()} />
+      );
+      expect(container.querySelector(".submit-form__row--checking")).toBeInTheDocument();
+
+      // A backgrounded tab pauses animations, so neither iteration nor end fires.
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+      });
+      expect(container.querySelector(".submit-form__row--checking")).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("disables the input and button once the puzzle is complete", () => {
