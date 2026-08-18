@@ -42,6 +42,16 @@ describe("LLM-adjudicated base forms", () => {
     expect(rarityFor("endling", AFTER)!.zipf).toBe(rarityFor("endling", BEFORE)!.zipf);
   });
 
+  it("leaves a word alone when the base's common sense is the wrong one", () => {
+    // "husbander" is built on the verb "husband" (to conserve), but that word's
+    // frequency is almost entirely the spouse noun -- capping here would score a
+    // rare word as an everyday one. Same for "outwill", where "will" is measured
+    // as the modal auxiliary, not the noun meaning resolve.
+    for (const word of ["husbander", "outwill", "misstate", "outstate"]) {
+      expect(rarityFor(word, AFTER)!.zipf).toBe(rarityFor(word, BEFORE)!.zipf);
+    }
+  });
+
   it("leaves a rejected pair alone", () => {
     // "withier" is the comparative of "withy" (a willow twig), not "with", so
     // llm-base-forms.txt records it as a `no` and the score stands.

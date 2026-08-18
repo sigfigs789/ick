@@ -26,7 +26,7 @@ That judgement is what an LLM is for, and this script is the pipeline around it:
      src/data/llm-base-forms.json, index-aligned with dictionary.json.
 
 The bias throughout is toward leaving scores alone: an unadjudicated word, a
-`no`, or any verdict the model marked low-confidence keeps its own frequency. The
+`no`, or any verdict below high confidence keeps its own frequency. The
 adjustment can only ever make a word *less* rare, never rarer, so a bad `yes`
 costs one inflated score its inflation -- it can never invent a Legend.
 
@@ -216,10 +216,14 @@ def find_candidates(lex: Lexicon, min_score: float, min_gap: float, min_base_zip
     return rows
 
 
-# A `yes` this uncertain is treated as a `no` at compile time -- the whole point
-# of the confidence column is that an unsure model must not move a score.
+# Only a high-confidence `yes` may move a score. The first version of this
+# pipeline derived confidence from the affix shape rather than from the word, so
+# "husbander" -> "husband" shipped as high confidence without anything having
+# looked at it. Confidence is per-word now, and everything below `high` is
+# treated exactly like a `no`.
+SHIPPING_CONFIDENCE = "high"
 LOW_CONFIDENCE = "low"
-CONFIDENCES = ("high", "medium", LOW_CONFIDENCE)
+CONFIDENCES = (SHIPPING_CONFIDENCE, "medium", LOW_CONFIDENCE)
 
 
 class Verdict(NamedTuple):
@@ -234,7 +238,7 @@ class Verdict(NamedTuple):
     @property
     def adjusts(self) -> bool:
         """Whether this verdict is allowed to move a score."""
-        return self.confirmed and self.confidence != LOW_CONFIDENCE
+        return self.confirmed and self.confidence == SHIPPING_CONFIDENCE
 
 
 def read_verdicts() -> dict[str, Verdict]:
@@ -292,7 +296,7 @@ untouched.
 
 Also report *why* and how sure you are:
   - "reason": for a yes, the affix class that makes it transparent (prefix-out, comparative, agent-noun, adjective-from-base, verb-from-base, abstract-noun, compound-suffix); for a no, the ground -- "coincidence" (unrelated roots), "wrong-base" (real derivation, but of a different word), "drifted" (meaning has moved), "technical" (specialist sense), or "unsure".
-  - "confidence": "high", "medium", or "low". A "low" yes is discarded, so use it whenever you would rather leave the score alone.
+  - "confidence": "high", "medium", or "low". ONLY a high-confidence yes is compiled into the shipped data -- "medium" and "low" are discarded exactly like a "no". Reserve "high" for pairs where all four rules above are plainly satisfied; if you find yourself reasoning toward a yes rather than seeing it at once, that is a "medium" at best.
 
 Reply with one JSON array, one object per pair, in the same order, no prose:
 [{"word": "...", "base": "...", "derived": true|false, "reason": "...", "confidence": "high"|"medium"|"low"}]
@@ -408,7 +412,7 @@ def compile_data(lex: Lexicon) -> None:
     total = len(verdicts)
     print(
         f"wrote {OUT_PATH.relative_to(ROOT)}: {len(words)} adjustments "
-        f"from {total} verdicts ({total - len(words)} rejected, low-confidence, or no-ops)"
+        f"from {total} verdicts ({total - len(words)} rejected, below high confidence, or no-ops)"
     )
 
 

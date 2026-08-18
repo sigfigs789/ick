@@ -183,10 +183,23 @@ python3 scripts/llm-base-forms.py --compile                            # build t
    transparent derivation, and to report *why* and how sure it is. Verdicts land
    in `scripts/llm-base-forms.txt` as reviewable
    `word<TAB>base<TAB>yes|no<TAB>reason<TAB>confidence` rows, so the judgement
-   shows up in the PR diff instead of an opaque blob.
-3. **Compile.** The confirmed rows become `src/data/llm-base-forms.json`, two
-   index arrays into `dictionary.json` (positional for the same reason
-   `rarity.json` is -- the words are already in the bundle).
+   shows up in the PR diff instead of an opaque blob. A `yes` needs all four of:
+   the affix has exactly one meaning; the base's *dominant* sense is the one the
+   derived word is built on; the meaning is exactly base + affix; and no other
+   base could have produced the word.
+
+   The second rule is the one that is easy to miss and does the most damage.
+   "husbander" is built on the verb *husband* (to conserve), but essentially
+   every real use of "husband" is the spouse noun -- capping there would score a
+   Legend as an everyday word. The same trap catches "outwill" (*will* is
+   measured as the modal auxiliary), "misstate" and "outstate" (*state* is the
+   political entity), and "felter" (*felt* is the past tense of *feel*). All four
+   are recorded as `no` with reason `sense-mismatch`.
+3. **Compile.** The high-confidence `yes` rows become
+   `src/data/llm-base-forms.json`, two index arrays into `dictionary.json`
+   (positional for the same reason `rarity.json` is -- the words are already in
+   the bundle). **Only `high` ships**: a `medium` or `low` verdict is discarded
+   exactly like a `no`.
 
 Two properties keep this from breaking the game:
 
@@ -194,9 +207,14 @@ Two properties keep this from breaking the game:
   built from, and keeps its own frequency when that is already the commoner of
   the two. A wrong entry can cost a word its inflated score; it can never invent
   a rarer one.
-- **Silence means "leave it alone."** A word with no verdict, a `no`, or a
-  low-confidence `yes` keeps its own frequency, so the failure mode of an unsure
+- **Silence means "leave it alone."** A word with no verdict, a `no`, or a `yes`
+  below high confidence keeps its own frequency, so the failure mode of an unsure
   model is the status quo. Only genuinely rare words stay rare.
+- **Confidence is judged per word, never inferred from the affix.** An earlier
+  version of this pipeline assigned confidence from the affix shape -- prefixes
+  scored "high", suffixes "medium" -- which meant "husbander" shipped as high
+  confidence without anything having looked at the word. That is why the bar
+  above is written in terms of the base's sense rather than the rule's shape.
 
 Like every other scoring change, it is date-gated (`LLM_BASE_START`,
 2026-08-19) so puzzles already played keep the scores they showed.
