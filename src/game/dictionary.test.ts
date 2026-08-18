@@ -62,7 +62,7 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_475);
+    expect(dictionaryWords).toHaveLength(225_474);
   });
 
   it("accepts a common real word", () => {
@@ -163,6 +163,12 @@ describe("isValidWord", () => {
 
   it("rejects blocklisted abbreviations", () => {
     expect(isValidWord("aka")).toBe(false);
+  });
+
+  it("rejects a blocklisted spurious entry no corpus attests", () => {
+    // Unattested, so it scored a perfect 10.0 / Legend. Blocklisted rather than
+    // flagged as a misspelling: there's no correct spelling to point a player at.
+    expect(isValidWord("tormentatious")).toBe(false);
   });
 });
 
