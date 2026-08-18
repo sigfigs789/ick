@@ -83,6 +83,23 @@ SIZE_ASSERTION_RE = re.compile(r"(expect\(dictionaryWords\)\.toHaveLength\()\d[\
 SCORE_TUPLE_RE = re.compile(r'\["([a-z]+)",\s*"([^"]+)",\s*(-?[\d.]+)\]')
 
 
+def dump_word_list(words: list[str]) -> str:
+    """Serialize the curated dictionary as one word per line.
+
+    Minified onto a single line, every regen -- and every one-word add -- showed
+    up in git as an unreviewable `dictionary.json | 2 +-` over 2.6MB. The list is
+    already in ascending sort order, so one element per line makes the diff show
+    exactly the words added and removed, in place, with nothing else moving.
+
+    Costs ~6KB gzipped on disk and nothing on the wire: the bundler parses the
+    JSON import and re-emits it, so this whitespace never reaches the client.
+    No indent -- it is a 225k-line generated file and nothing reads it by eye
+    except as a diff. Kept byte-identical to generate-data.py's copy of this
+    helper, which writes the same file on a full rebuild.
+    """
+    return "[\n" + ",\n".join(json.dumps(w) for w in words) + "\n]\n"
+
+
 def score_array_re(name: str) -> re.Pattern[str]:
     """Match a `const <name>: ReadonlyArray<[string, string, number]> = [ ... ];`."""
     return re.compile(
@@ -157,9 +174,10 @@ def insert_into_dictionary(word: str) -> None:
     inserts the matching legacy placeholder.
 
     dictionary.json is stored in the same ascending sort generate-data.py writes
-    (`sorted(...)`, i.e. Python's code-point order), and in the same compact JSON,
-    so a bisect insert preserves both the order and the on-disk format the
-    index-aligned rarity arrays depend on.
+    (`sorted(...)`, i.e. Python's code-point order), and in the same one-word-per-line
+    JSON, so a bisect insert preserves both the order and the on-disk format the
+    index-aligned rarity arrays depend on -- and shows up in git as a single added
+    line rather than a rewrite of the whole file.
     """
     dictionary = json.loads(DICTIONARY_PATH.read_text())
     # add_word() already rejects a word already present, but stay idempotent so a
@@ -167,7 +185,7 @@ def insert_into_dictionary(word: str) -> None:
     if word in dictionary:
         return
     bisect.insort(dictionary, word)
-    DICTIONARY_PATH.write_text(json.dumps(dictionary, separators=(",", ":")))
+    DICTIONARY_PATH.write_text(dump_word_list(dictionary))
     print(f"Inserted {word!r} into dictionary.json (now {len(dictionary):,} words).")
 
 

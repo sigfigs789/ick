@@ -1,0 +1,9 @@
+# The remaining large data blobs are fully generated and index-aligned with
+# dictionary.json, so their diffs carry no review value: inserting one word
+# shifts every following entry, rewriting the whole file no matter how it is
+# formatted. Marking them generated collapses them in GitHub pull requests so
+# the reviewable diff (dictionary.json, one word per line) stands out. This is
+# a display hint only -- it does not change how git itself diffs or merges.
+src/data/rarity.json linguist-generated=true
+src/data/rarity-legacy.json linguist-generated=true
+src/data/rejection-metadata.json linguist-generated=true
