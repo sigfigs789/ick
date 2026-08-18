@@ -6,6 +6,7 @@ import {
   trackResultSharedOnX,
   trackMerriamWebsterApproved,
   trackMerriamWebsterFailed,
+  trackUnattestedScore,
   trackVisit,
   trackVisitEngaged,
 } from "./analytics";
@@ -273,6 +274,53 @@ describe("merriam-webster events", () => {
     expect(track).toHaveBeenCalledWith(
       "merriam_webster_failed",
       expect.objectContaining({ reason: "unknown", detail: "none", status: 0 })
+    );
+  });
+});
+
+describe("unattested-score event", () => {
+  it("reports a curated word left at the sentinel, with the stand-in score", () => {
+    trackUnattestedScore(
+      "2026-08-18",
+      { word: "zyzzyva", zipf: unattestedZipf(), rarity: "Legend" },
+      "curated"
+    );
+
+    expect(track).toHaveBeenCalledWith("unattested_score_used", {
+      puzzle_date: "2026-08-18",
+      puzzle_number: puzzleNumber("2026-08-18"),
+      word: "zyzzyva",
+      source: "curated",
+      score: 9.9,
+      rarity: "Legend",
+    });
+  });
+
+  it("separates a live approval no frequency source attested", () => {
+    trackUnattestedScore(
+      "2026-08-18",
+      { word: "borborygmus", zipf: unattestedZipf(), rarity: "Legend" },
+      "live"
+    );
+
+    expect(track).toHaveBeenCalledWith(
+      "unattested_score_used",
+      expect.objectContaining({ source: "live", word: "borborygmus" })
+    );
+  });
+
+  it("reports the pre-floor stand-in for a puzzle predating the 9.90 floor", () => {
+    trackUnattestedScore(
+      "2026-08-17",
+      { word: "zyzzyva", zipf: unattestedZipf(), rarity: "Mythic" },
+      "curated"
+    );
+
+    // Same bucket as a floored score: the value differs by scoring system, but
+    // both are stand-ins rather than measured data.
+    expect(track).toHaveBeenCalledWith(
+      "unattested_score_used",
+      expect.objectContaining({ score: rarityScore(unattestedZipf(), "2026-08-17") })
     );
   });
 });

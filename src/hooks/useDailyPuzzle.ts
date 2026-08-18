@@ -12,7 +12,13 @@ import {
   resetProgress,
 } from "../game/storage";
 import { evaluateSubmission, REJECTION_MESSAGES } from "../game/submit";
-import { baseFormSubstitution, rarityForZipf, totalRarityScore, unattestedZipf } from "../game/dictionary";
+import {
+  baseFormSubstitution,
+  isUnattestedZipf,
+  rarityForZipf,
+  totalRarityScore,
+  unattestedZipf,
+} from "../game/dictionary";
 import {
   checkWordLive,
   eligibleForLiveCheck,
@@ -39,6 +45,7 @@ import {
   trackPuzzleCompleted,
   trackRejectedAnswer,
   trackRejectionMessage,
+  trackUnattestedScore,
   trackVisitEngaged,
 } from "../analytics";
 import { markSessionEngaged } from "../game/visits";
@@ -157,7 +164,7 @@ export function useDailyPuzzle() {
    * business, not the player's.
    */
   const acceptWord = useCallback(
-    (word: AcceptedWord): boolean => {
+    (word: AcceptedWord, source: "curated" | "live"): boolean => {
       const before = progressRef.current;
       const updated = recordAcceptedWord(before, word);
       if (updated === before) return false;
@@ -172,6 +179,7 @@ export function useDailyPuzzle() {
         totalRarityScore(updated.acceptedWords, viewedDate),
         updatedStreak.currentStreak
       );
+      if (isUnattestedZipf(word.zipf)) trackUnattestedScore(viewedDate, word, source);
       const substitution = baseFormSubstitution(word.word, viewedDate);
       if (substitution) trackBaseFormSubstitution(viewedDate, substitution);
       if (updated.completed) {
@@ -208,7 +216,7 @@ export function useDailyPuzzle() {
       if (check.outcome === "playable") {
         const info = liveRarity(check, viewedDate);
         const word: AcceptedWord = { word: check.word, ...info };
-        const applied = acceptWord(word);
+        const applied = acceptWord(word, "live");
         trackMerriamWebsterApproved(viewedDate, drop, check, info, applied);
         if (applied) return { ok: true, word };
         // Approved, but the puzzle finished while the lookup was in flight. The
@@ -244,7 +252,7 @@ export function useDailyPuzzle() {
       if (engagedVisit) trackVisitEngaged(engagedVisit);
 
       if (result.ok && result.word) {
-        acceptWord(result.word);
+        acceptWord(result.word, "curated");
         return result;
       }
 

@@ -71,6 +71,34 @@ export function trackBaseFormSubstitution(date: string, substitution: BaseFormSu
 }
 
 /**
+ * Record an accepted word that had no measured frequency at all, so its score is
+ * the system's stand-in value rather than anything derived from data (9.90 under
+ * the current system -- see isUnattestedZipf). Fires once per accepted word, from
+ * the single accept path, so its count against `answer_accepted` is the share of
+ * accepted words scored by guess. `source` separates the two ways a word arrives
+ * without a frequency: `curated` is a word in the list whose rarity.json entry is
+ * the sentinel, `live` is a Merriam-Webster approval no frequency source attested.
+ *
+ * Deliberately its own event rather than a flag on `answer_accepted`: the count is
+ * the thing being watched, and a distinct event reads directly off the dashboard
+ * without filtering on a custom property.
+ */
+export function trackUnattestedScore(
+  date: string,
+  word: AcceptedWord,
+  source: "curated" | "live"
+) {
+  track("unattested_score_used", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    word: word.word,
+    source,
+    score: rarityScore(word.zipf, date),
+    rarity: word.rarity,
+  });
+}
+
+/**
  * Record a word the live Merriam-Webster fallback approved -- a word absent from
  * the curated list that MW attests as ordinary, current and inoffensive. Carries
  * the rarity it was scored at so the additions can be reviewed for balance, and
