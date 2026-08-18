@@ -22,24 +22,24 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(
  *   - 2026-08-15 only: the frequency waterfall + two-band scale, measured words
  *     filling 0..9.5 and the deep tail 9.5..10 (anchored at the data's live
  *     minimum), with the deep tail labeled Mythic. No Legend tier.
- *   - 2026-08-16 and 2026-08-17: the two-band scale widened so measured words
+ *   - 2026-08-16 to 2026-08-18: the two-band scale widened so measured words
  *     fill 0..9.9 and the deep tail 9.9..10, with every word at/below Zipf 0
  *     clamped to a flat 10. The top of the scale is split by score into two
  *     ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also where the
  *     bound-suffix base-form adjustment turns on.
- *   - on/after 2026-08-18 (the latest system): identical to the wide-band scale,
- *     except words no corpus attests (the sentinel Zipf) no longer all earn the
- *     perfect 10. Each is graded by src/data/ai-tiers.json, which sorts the
- *     unattested population into genuine headwords (keep the 10), inflections
- *     and spelling variants (score off the base word), and suffix-machinery
- *     forms (capped below Legend). A sentinel word that file does not cover
- *     falls back to the flat 9.90 floor -- the elite-band bottom, still Legend.
+ *   - on/after 2026-08-19 (the latest system): the wide-band scale, with the
+ *     words no corpus attests graded individually rather than all clamped to the
+ *     same perfect 10. src/data/ai-tiers.json sorts them into genuine headwords
+ *     (which keep the 10), inflections and spelling variants (which score off
+ *     their base word), and suffix-machinery forms (capped below Legend). A
+ *     sentinel word that file does not cover keeps the perfect 10, exactly as
+ *     the wide-band system gave it.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
 const NEW_SCORING_START = "2026-08-15";
 const WIDE_BAND_START = "2026-08-16";
-const SENTINEL_FLOOR_START = "2026-08-18";
+const AI_TIER_START = "2026-08-19";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -138,13 +138,6 @@ const AI_ARTIFACT: ReadonlyMap<string, string> = new Map(
 );
 const AI_LEMMA: ReadonlySet<string> = new Set(aiTierData.tiers.lemma.words);
 
-// The Zipf a graded headword carries. It sits one hundredth below the sentinel
-// -- outside the range of any real measurement, so it can never collide with
-// data -- and clamps to the deep-tail floor, which is what earns the perfect 10.
-// It needs to be distinct from the sentinel because the sentinel still means
-// "ungraded", and those floor to 9.90 instead (see the `floorUnattested` guard).
-const LEMMA_ZIPF = Math.round((MIN_ZIPF - 0.01) * 100) / 100;
-
 // Score ceilings for the two capped tiers. A derivation must not reach the
 // perfect 10 even when its base is itself deep-tail, and an artifact must not
 // reach Legend at all.
@@ -184,23 +177,14 @@ interface Scoring {
 // score-based two-decimal display. Without it (the 2026-08-15 system) the deep
 // tail is a single Mythic rank, the measured band keeps one decimal, and only
 // deep-tail scores show two.
-// `floorUnattested` (the 2026-08-18 system) stops words no corpus attests from
-// earning the perfect 10: a word still sitting at the sentinel Zipf after any
-// base-form adjustment scores exactly `ceiling` (9.90, the elite-band bottom),
-// keeping the perfect 10 for words with genuine deep-tail frequency data.
 function twoBandScoring(
   ceiling: number,
   tailFloor: number,
   boundBaseForms: boolean,
   legend: boolean,
-  floorUnattested: boolean,
   aiTiers = false,
 ): Scoring {
   const score = (zipf: number): number => {
-    // A word left at the sentinel (min) Zipf is unattested -- adjustedZipf
-    // already raised anything with a more-common base form above it. It floors
-    // to the elite-band bottom rather than the perfect 10.
-    if (floorUnattested && zipf === MIN_ZIPF) return roundToCents(ceiling);
     if (zipf >= MEASURED_FLOOR) {
       const s = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
       // The Legend system carries two decimals across the whole band so its
@@ -250,30 +234,17 @@ function twoBandScoring(
 
 // The 2026-08-15 system: measured band 0..9.5, deep tail 9.5..10 anchored at the
 // data's live minimum, single Mythic top rank, no bound-suffix folding.
-const CURRENT_SCORING: Scoring = twoBandScoring(
-  9.5,
-  MIN_ZIPF,
-  false,
-  false,
-  false,
-);
+const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false);
 // The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
-// fixed 0, Legend + Mythic ranks, bound-suffix folding on. Unattested words
-// still earn the perfect 10.
-const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, false);
-// The latest system (from SENTINEL_FLOOR_START): the wide-band scale, with the
-// unattested population graded word by word from src/data/ai-tiers.json. The
-// 9.90 floor stays on as the fallback for any sentinel word that file does not
-// cover -- words added to the dictionary since it was generated, and words
-// accepted live (see game/liveValidate.ts), which have no entry by definition.
-const SENTINEL_FLOOR_SCORING: Scoring = twoBandScoring(
-  9.9,
-  0,
-  true,
-  true,
-  true,
-  true,
-);
+// fixed 0, Legend + Mythic ranks, bound-suffix folding on. Every unattested word
+// clamps to the same perfect 10.
+const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true);
+// The latest system (from AI_TIER_START): the wide-band scale, with the
+// unattested population graded word by word from src/data/ai-tiers.json. A
+// sentinel word that file does not cover -- one added to the dictionary since it
+// was generated, or accepted live (see game/liveValidate.ts) -- keeps the
+// wide-band perfect 10.
+const AI_TIER_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -305,11 +276,11 @@ function measuredRarity(zipf: number): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return SENTINEL_FLOOR_SCORING; // newest system
+  if (date === undefined) return AI_TIER_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
-  if (date < SENTINEL_FLOOR_START) return WIDE_SCORING;
-  return SENTINEL_FLOOR_SCORING;
+  if (date < AI_TIER_START) return WIDE_SCORING;
+  return AI_TIER_SCORING;
 }
 
 export function isValidWord(word: string): boolean {
@@ -322,8 +293,8 @@ export function isValidWord(word: string): boolean {
  * are absent from the curated list, so rarity.json has no entry for them: it is
  * a positional array index-aligned with dictionary.json, not a word map. A live
  * word therefore scores from whatever frequency the live lookup can find, and
- * from this sentinel when it finds none -- which under the current system floors
- * to 9.90 (Legend) rather than the perfect 10 (see SENTINEL_FLOOR_START).
+ * from this sentinel when it finds none -- the rarest-word value, which scores a
+ * perfect 10 / Legend.
  */
 export function unattestedZipf(): number {
   return MIN_ZIPF;
@@ -332,18 +303,19 @@ export function unattestedZipf(): number {
 /**
  * Whether `zipf` is the unattested sentinel -- the word carries no measured
  * frequency at all and its score is the system's stand-in value rather than
- * anything derived from data. Deliberately date-blind: every scoring system
- * substitutes *some* artificial score here (9.90 from SENTINEL_FLOOR_START,
- * the perfect 10 before it), and they all count the same for monitoring.
+ * anything derived from data -- the perfect 10 the sentinel Zipf earns is a
+ * stand-in, not a measurement. Deliberately date-blind: every scoring system
+ * substitutes some artificial score here, and they all count the same for
+ * monitoring.
  *
  * Test the post-adjustment Zipf, which is what `rarityFor` returns: a sentinel
  * word with a more-common base form is raised above MIN_ZIPF by `adjustedZipf`
  * and scores on real data, so it is not a stand-in. A word graded a headword by
- * src/data/ai-tiers.json carries LEMMA_ZIPF and still counts -- its perfect 10
+ * src/data/ai-tiers.json keeps the sentinel and still counts -- its perfect 10
  * is an assigned judgement, which is exactly what this flags.
  */
 export function isUnattestedZipf(zipf: number): boolean {
-  return zipf === MIN_ZIPF || zipf === LEMMA_ZIPF;
+  return zipf === MIN_ZIPF;
 }
 
 /**
@@ -522,7 +494,10 @@ function aiTieredZipf(
     return baseZipf;
   }
 
-  if (AI_LEMMA.has(word)) return LEMMA_ZIPF;
+  // A headword keeps the sentinel, which is exactly what the perfect 10 is: no
+  // base was found to score from, and for a real headword that absence is the
+  // rarity evidence.
+  if (AI_LEMMA.has(word)) return MIN_ZIPF;
   return undefined;
 }
 

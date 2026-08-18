@@ -192,12 +192,9 @@ describe("curated additions from rejected-word analytics", () => {
     ["astroturf", "Extremely Rare", 2.46],
     ["brobdingnagian", "Extremely Rare", 1.55],
     ["stromboli", "Extremely Rare", 2.18],
-    // Both are graded headwords by the 2026-08-18 cutover, so they carry the
-    // graded-headword Zipf rather than the bare sentinel. Same Legend rank and
-    // same perfect 10 as before -- only the marker they carry changed.
-    ["carcinisation", "Legend", -1.58],
-    ["carcinization", "Legend", -1.58],
-    // Re-scored by the 2026-08-18 tier cutover: "dendrimeric" is "dendrimer"
+    ["carcinisation", "Legend", -1.57],
+    ["carcinization", "Legend", -1.57],
+    // Re-scored by the 2026-08-19 grading cutover: "dendrimeric" is "dendrimer"
     // (Zipf 1.49) plus -ic, so it now reads off that base instead of tying every
     // other unattested word at the top. Its base is measured, so it leaves the
     // sentinel entirely. See src/data/ai-tiers.json.
@@ -302,13 +299,12 @@ describe("rarityFor", () => {
     expect(rarityFor("trivialization")).toEqual(rarityFor("trivialize"));
   });
 
-  it("floors an ungraded word no corpus attests to 9.90 and Legend", () => {
-    // The bare sentinel means "unattested and ungraded" -- a word accepted live
-    // (game/liveValidate.ts) or added since ai-tiers.json was generated. It
-    // floors to 9.90, the elite-band bottom and still Legend, rather than the
-    // perfect 10. "autecism" is unattested too but graded a headword, so it
-    // keeps the 10; the two cases are checked separately below.
-    expect(rarityScore(unattestedZipf())).toBe(9.9);
+  it("awards the 10.0 max and Legend to a word no corpus attests", () => {
+    // "autecism" is absent from every frequency source (and its stem too), so
+    // the waterfall gives it the rarest-word sentinel -- the only Zipf that
+    // earns a perfect 10, which lands in the deep-tail Legend rank. It keeps
+    // that 10 under the grading cutover, which reads it as a headword.
+    expect(rarityScore(unattestedZipf())).toBe(10);
     expect(rarityForZipf(unattestedZipf())).toBe("Legend");
     const floored = rarityFor("autecism")!;
     expect(floored.rarity).toBe("Legend");
@@ -362,12 +358,10 @@ describe("rarityScore", () => {
 
   it("normalizes against the dictionary's Zipf range", () => {
     // "the" is the dictionary's most common word (highest Zipf) -- it anchors
-    // the 0.0 score. An attested deep-tail word anchors the perfect 10, as does
-    // an unattested word graded a headword ("autecism"); the bare sentinel, an
-    // unattested word with no grade at all, floors to 9.90 instead.
+    // the 0.0 score. Only the rarest-word sentinel (words no corpus attests)
+    // anchors 10.0; an attested-but-rare word lands just below it.
     const mostCommon = rarityFor("the")!;
     const floored = rarityFor("autecism")!;
-    expect(rarityScore(unattestedZipf())).toBe(9.9);
     expect(rarityScore(mostCommon.zipf)).toBe(0);
     expect(rarityScore(floored.zipf)).toBe(10);
     expect(rarityScore(2.4)).toBeGreaterThan(rarityScore(3.3));
@@ -396,17 +390,9 @@ describe("unattestedZipf", () => {
     expect(unattestedZipf()).toBe(dataMinimum);
   });
 
-  it("floors to the elite-band bottom rather than a perfect 10 from 2026-08-18", () => {
-    // The sentinel-floor system: a word no corpus attests is Legend, but the
-    // perfect 10 stays reserved for genuine deep-tail frequency data.
-    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(9.9);
+  it("earns the perfect 10 and Legend -- the rarest value we can claim", () => {
+    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(10);
     expect(rarityForZipf(unattestedZipf(), "2026-08-18")).toBe("Legend");
-  });
-
-  it("still earns a perfect 10 under the preceding wide-band system", () => {
-    // Guards the date gate: live words played on an earlier archive puzzle must
-    // score by that puzzle's own rules, not today's.
-    expect(rarityScore(unattestedZipf(), "2026-08-17")).toBe(10);
   });
 
   it("scores a live word from its own frequency when one is found", () => {
@@ -450,10 +436,11 @@ describe("isUnattestedZipf", () => {
   });
 
   it("holds across scoring systems, whatever stand-in they substitute", () => {
-    // 9.90 today, a perfect 10 before the floor -- both stand-ins, one bucket.
+    // The predicate is on the Zipf, not the score: every system substitutes some
+    // artificial value for an unattested word, and they all belong in one bucket.
     expect(isUnattestedZipf(unattestedZipf())).toBe(true);
-    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(9.9);
-    expect(rarityScore(unattestedZipf(), "2026-08-17")).toBe(10);
+    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(10);
+    expect(rarityScore(unattestedZipf(), "2026-08-15")).toBe(10);
   });
 });
 
@@ -468,16 +455,43 @@ describe("ai-assigned tiers for unattested words", () => {
   const artifact = Object.entries(tiers.artifact.words);
   const lemma = tiers.lemma.words;
   const inDictionary = new Set(dictionaryWords as unknown as string[]);
+  // The last day before grading -- the existing rules alone -- and the first day
+  // with it, so the two can be compared word for word.
+  const WIDE_BAND = "2026-08-18";
+  const GRADED = "2026-08-19";
 
-  it("covers every sentinel word exactly once", () => {
+  it("grades only sentinel words, each once, and never twice", () => {
     const graded = [
       ...inherit.map(([w]) => w),
       ...derived.map(([w]) => w),
       ...artifact.map(([w]) => w),
       ...lemma,
     ];
-    expect(new Set(graded).size).toBe(graded.length); // no word in two tiers
-    expect(new Set(graded)).toEqual(new Set(SENTINEL_WORDS));
+    expect(new Set(graded).size).toBe(graded.length);
+    const sentinel = new Set(SENTINEL_WORDS);
+    for (const word of graded) {
+      expect(sentinel.has(word), `${word} should be an unattested word`).toBe(
+        true,
+      );
+    }
+  });
+
+  it("grades every sentinel word the existing rules cannot already place", () => {
+    // The file's whole remit: words with nothing to score from. Anything the
+    // tense/inflection/-ness/-ly/bound-suffix rules resolve is already scoring
+    // off measured frequency and must be left alone -- so every sentinel word is
+    // either resolved by those rules or graded here, and never neither.
+    const graded = new Set([
+      ...inherit.map(([w]) => w),
+      ...derived.map(([w]) => w),
+      ...artifact.map(([w]) => w),
+      ...lemma,
+    ]);
+    const orphans = SENTINEL_WORDS.filter(
+      (word) =>
+        !graded.has(word) && isUnattestedZipf(rarityFor(word, WIDE_BAND)!.zipf),
+    );
+    expect(orphans).toEqual([]);
   });
 
   it("only grades real dictionary words, against real dictionary bases", () => {
@@ -572,8 +586,27 @@ describe("ai-assigned tiers for unattested words", () => {
     }
   });
 
-  it("falls back to the 9.90 floor for a sentinel word the file does not cover", () => {
-    // Words accepted live (game/liveValidate.ts) have no tier entry by definition.
-    expect(rarityScore(unattestedZipf(), "2026-08-18")).toBe(9.9);
+  it("only ever lowers a score, never raises one", () => {
+    // Grading exists to take a word *down* to what its base supports. Finding a
+    // base can only cost a word score, never earn it any -- so across the whole
+    // dictionary the cutover must produce demotions and nothing else. Checked
+    // over every word, since a single promotion means a rule inverted somewhere.
+    const words = dictionaryWords as unknown as string[];
+    const promoted: string[] = [];
+    let demoted = 0;
+    for (const word of words) {
+      const before = rarityScore(rarityFor(word, WIDE_BAND)!.zipf, WIDE_BAND);
+      const after = rarityScore(rarityFor(word, GRADED)!.zipf, GRADED);
+      if (after > before) promoted.push(`${word} ${before} -> ${after}`);
+      else if (after < before) demoted++;
+    }
+    expect(promoted).toEqual([]);
+    expect(demoted).toBeGreaterThan(0);
+  });
+
+  it("keeps the wide-band 10 for a sentinel word the file does not cover", () => {
+    // Words accepted live (game/liveValidate.ts) have no tier entry by
+    // definition, and grading must not demote them on a guess.
+    expect(rarityScore(unattestedZipf(), "2026-08-19")).toBe(10);
   });
 });

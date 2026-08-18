@@ -96,9 +96,7 @@ def refresh_rarity() -> None:
       - The deep tail (words only Norvig/Google Books attest, plus words no
         corpus attests) is ranked by its raw log-frequency and remapped into
         [0, MEASURED_FLOOR), later mapping to the elite 9.5..10 band. Words
-        found nowhere sit at the sentinel, the rarest value in the data; the
-        newest scoring system floors that to 9.90 (an attested deep-tail word
-        keeps the perfect 10). See src/game/dictionary.ts.
+        found nowhere sit at the 0.0 floor -> a perfect 10.0.
     """
     dictionary = json.loads((OUT_DIR / "dictionary.json").read_text())
 
@@ -106,9 +104,8 @@ def refresh_rarity() -> None:
     raw = [waterfall.zipf(word) for word in dictionary]
 
     # Words no corpus attests are the rarest we can claim, so they get a
-    # sentinel just below the rarest *attested* Zipf. The newest scoring system
-    # floors that sentinel to 9.90, reserving the perfect 10 for an attested-but-
-    # vanishingly-rare word that lands just above it.
+    # sentinel just below the rarest *attested* Zipf -- reserving the perfect
+    # 10.0 for them while an attested-but-vanishingly-rare word lands just under.
     attested = [z for z in raw if z is not None]
     sentinel = round(min(attested) - 0.1, 2)
     zipfs = [z if z is not None else sentinel for z in raw]
@@ -122,7 +119,7 @@ def refresh_rarity() -> None:
     print(
         f"Bands: measured/common {len(dictionary) - deep} (score 0..9.5), "
         f"deep tail {deep} (Zipf < {MEASURED_FLOOR}, score 9.5..10); "
-        f"{unattested} unattested at the {sentinel} sentinel -> 9.90 (newest system)"
+        f"{unattested} unattested at the {sentinel} sentinel -> 10.0"
     )
 
     from collections import Counter

@@ -11,8 +11,8 @@ import {
 // so a regression in the scoring math or the legacy dataset is actually caught.
 const BEFORE = "2026-08-14"; // last day on the legacy system
 const ON = "2026-08-15"; // the only day on the original two-band system (9.5 ceiling, no Legend)
-const WIDE = "2026-08-16"; // on the widened system, before the sentinel floor (as is 2026-08-17)
-const SENTINEL = "2026-08-18"; // first day unattested words floor to 9.90 instead of a perfect 10
+const WIDE = "2026-08-16"; // first day on the widened system (9.9 ceiling + Legend)
+const TIERS = "2026-08-19"; // first day the unattested population is graded
 const AFTER = "2027-03-01";
 
 describe("date-gated scoring", () => {
@@ -31,42 +31,38 @@ describe("date-gated scoring", () => {
   });
 
   it("adds the Legend tier only from 2026-08-16", () => {
-    // "autecism" is the deep-tail top rank everywhere from the two-band cutover:
-    // Mythic on 2026-08-15, then Legend from 2026-08-16 on (and for undated
-    // puzzles) -- the sentinel floor changes its score, not its rank.
+    // Same word and same 10.0 score, but the deep-tail top rank is Mythic on
+    // 2026-08-15 and Legend from 2026-08-16 (and for undated/newest puzzles).
     expect(rarityFor("autecism", ON)!.rarity).toBe("Mythic");
     expect(rarityFor("autecism", WIDE)!.rarity).toBe("Legend");
     expect(rarityFor("autecism", AFTER)!.rarity).toBe("Legend");
     expect(rarityFor("autecism")!.rarity).toBe("Legend");
   });
 
-  it("grades unattested words rather than tying them all at 10 from 2026-08-18", () => {
-    // Every unattested word earns the perfect 10 through 2026-08-17. From
-    // 2026-08-18 (and for undated/newest puzzles) each is graded instead: a
+  it("grades unattested words rather than tying them all at 10 from 2026-08-19", () => {
+    // Every unattested word ties at a perfect 10 through 2026-08-18. From
+    // 2026-08-19 (and for undated/newest puzzles) each is graded instead: a
     // headword keeps the 10, an inflection scores off its base, and a
     // suffix-machinery form is capped below Legend. An unattested word with no
-    // grade at all floors to 9.90 -- the elite-band bottom, still Legend.
+    // grade at all keeps the wide-band perfect 10.
     for (const word of ["autecism", "cabotages", "chichier"]) {
       expect(rarityScore(rarityFor(word, WIDE)!.zipf, WIDE)).toBe(10);
     }
-    expect(rarityScore(rarityFor("autecism", SENTINEL)!.zipf, SENTINEL)).toBe(
-      10,
-    );
+    expect(rarityScore(rarityFor("autecism", TIERS)!.zipf, TIERS)).toBe(10);
     expect(
-      rarityScore(rarityFor("cabotages", SENTINEL)!.zipf, SENTINEL),
+      rarityScore(rarityFor("cabotages", TIERS)!.zipf, TIERS),
     ).toBeLessThan(9.5);
     expect(
-      rarityScore(rarityFor("chichier", SENTINEL)!.zipf, SENTINEL),
+      rarityScore(rarityFor("chichier", TIERS)!.zipf, TIERS),
     ).toBeLessThanOrEqual(9.5);
-    expect(rarityScore(unattestedZipf(), SENTINEL)).toBe(9.9);
-    expect(rarityFor("autecism", SENTINEL)!.rarity).toBe("Legend");
+    expect(rarityScore(unattestedZipf(), TIERS)).toBe(10);
+    expect(rarityFor("autecism", TIERS)!.rarity).toBe("Legend");
   });
 
   it("defaults to the latest system when no date is given", () => {
     const info = rarityFor("autecism")!;
     expect(info.rarity).toBe("Legend");
     expect(rarityScore(info.zipf)).toBe(10); // graded a headword, so it keeps the 10
-    expect(rarityScore(unattestedZipf())).toBe(9.9); // ungraded still floors
   });
 
   it("changes the Zipf-to-score conversion between 2026-08-15 and 2026-08-16", () => {
@@ -96,8 +92,8 @@ describe("two-band rarity score (current system)", () => {
   it("puts Zipf 0..1 in the 9.9..10 band and clamps everything at/below 0 to a flat 10", () => {
     expect(rarityScore(0.5)).toBe(9.95); // mid deep-tail -> between the anchors
     expect(rarityScore(0)).toBe(10); // the clamp floor
-    expect(rarityScore(-0.31)).toBe(10); // an attested deep-tail Zipf -> clamped to 10
-    expect(rarityScore(-1.57)).toBe(9.9); // the unattested sentinel floors to 9.90, not 10
+    expect(rarityScore(-0.31)).toBe(10); // below the floor -> clamped, not lower
+    expect(rarityScore(-1.57)).toBe(10); // the unattested sentinel, same 10
   });
 });
 

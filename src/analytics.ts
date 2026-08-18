@@ -73,8 +73,8 @@ export function trackBaseFormSubstitution(date: string, substitution: BaseFormSu
 
 /**
  * Record an accepted word that had no measured frequency at all, so its score is
- * the system's stand-in value rather than anything derived from data (9.90 under
- * the current system -- see isUnattestedZipf). Fires once per accepted word, from
+ * the system's stand-in value rather than anything derived from data (the perfect
+ * 10 the sentinel earns -- see isUnattestedZipf). Fires once per accepted word, from
  * the single accept path, so its count against `answer_accepted` is the share of
  * accepted words scored by guess. `source` separates the two ways a word arrives
  * without a frequency: `curated` is a word in the list whose rarity.json entry is

@@ -79,9 +79,9 @@ describe("unattested-score tracking", () => {
 
     expect(result.current.progress.acceptedWords).toHaveLength(1);
     // Whatever stand-in today's system substitutes, read off the word itself
-    // rather than assumed: a perfect 10 before the 2026-08-18 cutover, and from
-    // it either 10 (graded a headword) or 9.90 (ungraded) depending on which word
-    // curatedWord() picked. All of them are guesses, and all belong in the count.
+    // rather than assumed: a perfect 10 today, and from the 2026-08-19 grading
+    // cutover whatever tier curatedWord()'s pick was assigned. All of them are
+    // guesses, and all belong in the count.
     const standIn = rarityScore(rarityFor(word)!.zipf, todayDateString());
     expect(unattestedEvents()).toEqual([
       expect.objectContaining({ word, source: "curated", score: standIn }),

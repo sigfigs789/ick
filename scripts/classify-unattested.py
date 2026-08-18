@@ -176,6 +176,75 @@ def suffix_bases(word: str, suffix: str):
         yield strip_doubled(stem[:-1])
 
 
+def runtime_resolved(word, index, hundredths, sentinel):
+    """Whether the existing scoring rules already find this word a base.
+
+    Mirrors adjustedZipf() in src/game/dictionary.ts: the tense-base rule, then
+    baseForm()'s inflections, the -ness/-ly suffixes, and the bound derivational
+    suffixes. Those all work from measured frequency, so anything they resolve is
+    already handled and must not be graded here -- the tier file exists only for
+    the words they leave with nothing to score from.
+    """
+
+    def zipf(candidate):
+        i = index.get(candidate)
+        return None if i is None else hundredths[i] / 100
+
+    sentinel_zipf = sentinel / 100
+
+    # tenseBaseForm: -ed / -ing / -ied / -ying, preferring the most common base.
+    candidates = []
+    if len(word) > 5 and word.endswith("ied"):
+        candidates.append(word[:-3] + "y")
+    elif len(word) > 4 and word.endswith("ed"):
+        stem = word[:-2]
+        candidates += [stem + "e", stem, strip_doubled(stem)]
+    if len(word) > 4 and word.endswith("ying"):
+        candidates += [word[:-4] + "y", word[:-4] + "ie"]
+    elif len(word) > 5 and word.endswith("ing"):
+        stem = word[:-3]
+        candidates += [stem + "e", stem, strip_doubled(stem)]
+    tense = max((c for c in candidates if c in index), key=lambda c: zipf(c), default=None)
+    if tense is not None:
+        return zipf(tense) != sentinel_zipf
+
+    # scoringBaseForm: baseForm()'s inflections, then -ness / -ly, then bound.
+    inflected = base_form_js(word)
+    if inflected != word and inflected in index:
+        return zipf(inflected) > sentinel_zipf
+    for suffix in ("ness", "ly"):
+        if not word.endswith(suffix) or len(word) <= len(suffix) + 2:
+            continue
+        stem = word[: -len(suffix)]
+        for candidate in (stem, stem[:-1] + "y" if stem.endswith("i") else ""):
+            if candidate and candidate in index:
+                return zipf(candidate) > sentinel_zipf
+    for candidate in bound_bases(word):
+        if candidate in index:
+            return zipf(candidate) > sentinel_zipf
+    return False
+
+
+def base_form_js(word: str) -> str:
+    """baseForm() from src/game/stem.ts, exactly -- including the "es" test that
+    precedes the "s" test, which is what makes it miss "cabotages"."""
+    if len(word) > 5 and word.endswith("ies"):
+        return word[:-3] + "y"
+    if len(word) > 6 and word.endswith("ying"):
+        return word[:-4] + "y"
+    if len(word) > 5 and word.endswith("ing"):
+        return strip_doubled(word[:-3])
+    if len(word) > 5 and word.endswith("ied"):
+        return word[:-3] + "y"
+    if len(word) > 4 and word.endswith("ed"):
+        return strip_doubled(word[:-2])
+    if len(word) > 4 and word.endswith("es"):
+        return word[:-2]
+    if len(word) > 3 and word.endswith("s") and not word.endswith("ss"):
+        return word[:-1]
+    return word
+
+
 def classify(words, hundredths, index, sentinel):
     """Walk every sentinel word once, in tier order. The first rule that finds a
     dictionary-backed base wins."""
@@ -214,7 +283,17 @@ def classify(words, hundredths, index, sentinel):
         return None
 
     tiers = {"inherit": {}, "lemma": [], "derived": {}, "artifact": {}}
-    sentinel_words = [w for i, w in enumerate(words) if hundredths[i] == sentinel]
+    unattested = [w for i, w in enumerate(words) if hundredths[i] == sentinel]
+    # Only the words the existing rules cannot place. Everything else already
+    # scores off measured frequency and is none of this file's business.
+    sentinel_words = [
+        w for w in unattested if not runtime_resolved(w, index, hundredths, sentinel)
+    ]
+    print(
+        f"{len(unattested)} words carry no corpus frequency; "
+        f"{len(unattested) - len(sentinel_words)} are already resolved by the "
+        f"existing rules, leaving {len(sentinel_words)} to grade"
+    )
 
     for word in sentinel_words:
         # 1. Spelling variant, then 2. inflection -- both inherit outright.
@@ -333,7 +412,7 @@ def main() -> None:
     (OUT_DIR / "ai-tiers.json").write_text(json.dumps(payload, indent=1, sort_keys=False))
 
     total = len(sentinel_words)
-    print(f"{total} curated words carry no corpus frequency at all")
+    print(f"{total} words graded (the rest are handled by the existing rules)")
     for name in ("inherit", "lemma", "derived", "artifact"):
         n = len(tiers[name])
         print(f"  {name:9s} {n:5d}  ({n / total:5.1%})")
