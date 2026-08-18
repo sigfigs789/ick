@@ -306,7 +306,7 @@ describe("unattested-score event", () => {
       puzzle_number: puzzleNumber("2026-08-18"),
       word: "zyzzyva",
       source: "curated",
-      score: 9.9,
+      score: 10,
       rarity: "Legend",
     });
   });
@@ -324,18 +324,18 @@ describe("unattested-score event", () => {
     );
   });
 
-  it("reports the pre-floor stand-in for a puzzle predating the 9.90 floor", () => {
+  it("reports the stand-in an older puzzle's own scoring system substitutes", () => {
     trackUnattestedScore(
-      "2026-08-17",
+      "2026-08-15",
       { word: "zyzzyva", zipf: unattestedZipf(), rarity: "Mythic" },
       "curated"
     );
 
-    // Same bucket as a floored score: the value differs by scoring system, but
-    // both are stand-ins rather than measured data.
+    // Same bucket whatever the archive puzzle's system says: the rank differs
+    // (Mythic before the Legend tier), but the score is still a stand-in.
     expect(track).toHaveBeenCalledWith(
       "unattested_score_used",
-      expect.objectContaining({ score: rarityScore(unattestedZipf(), "2026-08-17") })
+      expect.objectContaining({ score: rarityScore(unattestedZipf(), "2026-08-15") })
     );
   });
 });

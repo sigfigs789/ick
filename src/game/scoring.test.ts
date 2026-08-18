@@ -5,8 +5,7 @@ import { rarityFor, rarityScore, formatRarityScore, formatScore } from "./dictio
 // so a regression in the scoring math or the legacy dataset is actually caught.
 const BEFORE = "2026-08-14"; // last day on the legacy system
 const ON = "2026-08-15"; // the only day on the original two-band system (9.5 ceiling, no Legend)
-const WIDE = "2026-08-16"; // on the widened system, before the sentinel floor (as is 2026-08-17)
-const SENTINEL = "2026-08-18"; // first day unattested words floor to 9.90 instead of a perfect 10
+const WIDE = "2026-08-16"; // first day on the latest widened system (9.9 ceiling + Legend)
 const AFTER = "2027-03-01";
 
 describe("date-gated scoring", () => {
@@ -25,30 +24,18 @@ describe("date-gated scoring", () => {
   });
 
   it("adds the Legend tier only from 2026-08-16", () => {
-    // "autecism" is the deep-tail top rank everywhere from the two-band cutover:
-    // Mythic on 2026-08-15, then Legend from 2026-08-16 on (and for undated
-    // puzzles) -- the sentinel floor changes its score, not its rank.
+    // Same word and same 10.0 score, but the deep-tail top rank is Mythic on
+    // 2026-08-15 and Legend from 2026-08-16 (and for undated/newest puzzles).
     expect(rarityFor("autecism", ON)!.rarity).toBe("Mythic");
     expect(rarityFor("autecism", WIDE)!.rarity).toBe("Legend");
     expect(rarityFor("autecism", AFTER)!.rarity).toBe("Legend");
     expect(rarityFor("autecism")!.rarity).toBe("Legend");
   });
 
-  it("floors unattested words to 9.90 (still Legend) from 2026-08-18", () => {
-    // An unattested word earns the perfect 10 through 2026-08-17, but from
-    // 2026-08-18 (and for undated/newest puzzles) it floors to the elite-band
-    // bottom, 9.90, reserving the perfect 10 for words with genuine deep-tail
-    // frequency data. 9.90 is exactly the Legend cutoff, so the rank is unchanged.
-    expect(rarityScore(rarityFor("autecism", WIDE)!.zipf, WIDE)).toBe(10);
-    const floored = rarityFor("autecism", SENTINEL)!;
-    expect(rarityScore(floored.zipf, SENTINEL)).toBe(9.9);
-    expect(floored.rarity).toBe("Legend");
-  });
-
   it("defaults to the latest system when no date is given", () => {
     const info = rarityFor("autecism")!;
     expect(info.rarity).toBe("Legend");
-    expect(rarityScore(info.zipf)).toBe(9.9); // sentinel floor, not a perfect 10
+    expect(rarityScore(info.zipf)).toBe(10);
   });
 
   it("changes the Zipf-to-score conversion between 2026-08-15 and 2026-08-16", () => {
@@ -78,8 +65,8 @@ describe("two-band rarity score (current system)", () => {
   it("puts Zipf 0..1 in the 9.9..10 band and clamps everything at/below 0 to a flat 10", () => {
     expect(rarityScore(0.5)).toBe(9.95); // mid deep-tail -> between the anchors
     expect(rarityScore(0)).toBe(10); // the clamp floor
-    expect(rarityScore(-0.31)).toBe(10); // an attested deep-tail Zipf -> clamped to 10
-    expect(rarityScore(-1.57)).toBe(9.9); // the unattested sentinel floors to 9.90, not 10
+    expect(rarityScore(-0.31)).toBe(10); // below the floor -> clamped, not lower
+    expect(rarityScore(-1.57)).toBe(10); // the unattested sentinel, same 10
   });
 });
 
