@@ -77,6 +77,23 @@ RARITY_CODE = {
 }
 
 
+def dump_word_list(words: list[str]) -> str:
+    """Serialize the curated dictionary as one word per line.
+
+    Minified onto a single line, every regen -- and every one-word add -- showed
+    up in git as an unreviewable `dictionary.json | 2 +-` over 2.6MB. The list is
+    already in ascending sort order, so one element per line makes the diff show
+    exactly the words added and removed, in place, with nothing else moving.
+
+    Costs ~6KB gzipped on disk and nothing on the wire: the bundler parses the
+    JSON import and re-emits it, so this whitespace never reaches the client.
+    No indent -- it is a 225k-line generated file and nothing reads it by eye
+    except as a diff. Kept byte-identical to manage-extra-word.py's copy of this
+    helper, which grows the same file in place.
+    """
+    return "[\n" + ",\n".join(json.dumps(w) for w in words) + "\n]\n"
+
+
 def rarity_for_zipf(z: float) -> str:
     if z < MEASURED_FLOOR:
         return "Mythic"  # the deep-tail library is its own top rank
@@ -425,7 +442,7 @@ def main() -> None:
     zipf_hundredths = [round(candidates[w] * 100) for w in dictionary]
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "dictionary.json").write_text(json.dumps(dictionary, separators=(",", ":")))
+    (OUT_DIR / "dictionary.json").write_text(dump_word_list(dictionary))
     (OUT_DIR / "rarity.json").write_text(
         json.dumps({"codes": codes, "zipfHundredths": zipf_hundredths}, separators=(",", ":"))
     )
