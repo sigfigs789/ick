@@ -16,10 +16,10 @@ describe("InstructionsModal", () => {
     expect(screen.getByRole("button", { name: /close instructions/i })).toHaveFocus();
   });
 
-  it("names Legend and Mythic as the highest ranks with their rarity thresholds", () => {
+  it("names Mythic and Legend as the highest ranks with their rarity thresholds", () => {
     render(<InstructionsModal open onClose={vi.fn()} />);
     expect(
-      screen.getByText(/the highest ranks are Legend and Mythic at 9\.9\+ and 9\.5\+ rarity/i),
+      screen.getByText(/the highest ranks are Mythic at 9\.5\+ and Legend at 9\.9\+/i),
     ).toBeInTheDocument();
   });
 

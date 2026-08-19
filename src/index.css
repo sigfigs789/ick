@@ -1213,9 +1213,12 @@ h2 {
   cursor: pointer;
   flex: none;
 }
+/* Muted rather than faint: this is the panel's densest paragraph, and --fg-faint
+   at this size falls under the 4.5:1 contrast AA asks for. The smaller font size
+   carries the de-emphasis on its own. */
 .modal__rarity-note {
   margin: 1rem 0 0;
-  color: var(--fg-faint);
+  color: var(--fg-muted);
   font-size: 0.82rem;
   line-height: 1.45;
 }
