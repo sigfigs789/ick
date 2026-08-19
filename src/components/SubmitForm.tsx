@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Feedback } from "../hooks/useDailyPuzzle";
 
-/** One pass of the border shimmer, matching input-checking-sweep in index.css. */
-const SWEEP_MS = 1200;
+/** One breath of the border pulse, matching input-checking-pulse in index.css. */
+const PULSE_MS = 1200;
 
 interface Props {
   drop: string;
@@ -18,40 +18,40 @@ export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmi
   const rowRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLSpanElement>(null);
-  // The shimmer outlives `checking` by up to one pass. A lookup that answers
-  // mid-sweep would otherwise cut the band out halfway along the border, which
-  // reads as a glitch -- the very thing it exists to prevent -- so the sweep
-  // always runs to the end of the pass it is in before it stops.
-  const [sweeping, setSweeping] = useState(false);
+  // The pulse outlives `checking` by up to one breath. A lookup that answers
+  // mid-pulse would otherwise drop the border wherever the lift had reached,
+  // which reads as a glitch -- the very thing it exists to prevent -- so the
+  // pulse always runs to the end of the breath it is in before it stops.
+  const [pulsing, setPulsing] = useState(false);
 
   useEffect(() => {
     if (checking) {
-      setSweeping(true);
+      setPulsing(true);
       return;
     }
-    if (!sweeping) return;
+    if (!pulsing) return;
     const el = fieldRef.current;
     if (!el) {
-      setSweeping(false);
+      setPulsing(false);
       return;
     }
-    // `animationiteration` marks the end of a pass when the sweep is looping;
-    // `animationend` covers the reduced-motion case, where the global
+    // `animationiteration` marks the end of a breath while the pulse is
+    // looping; `animationend` covers the reduced-motion case, where the global
     // prefers-reduced-motion rule pins it to a single near-instant run and no
-    // iteration ever fires. Both fire on this element even though the animation
-    // belongs to its ::after. The timer is the backstop for when neither
-    // arrives (a backgrounded tab pauses animations), so the band can never
+    // iteration ever fires. Both reach this element by bubbling up from the
+    // input the animation runs on. The timer is the backstop for when neither
+    // arrives (a backgrounded tab pauses animations), so the border can never
     // stick lit.
-    const stop = () => setSweeping(false);
+    const stop = () => setPulsing(false);
     el.addEventListener("animationiteration", stop, { once: true });
     el.addEventListener("animationend", stop, { once: true });
-    const timer = window.setTimeout(stop, SWEEP_MS + 200);
+    const timer = window.setTimeout(stop, PULSE_MS + 200);
     return () => {
       el.removeEventListener("animationiteration", stop);
       el.removeEventListener("animationend", stop);
       window.clearTimeout(timer);
     };
-  }, [checking, sweeping]);
+  }, [checking, pulsing]);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -83,11 +83,11 @@ export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmi
           : `Enter a word containing "${drop.toUpperCase()}"`}
       </label>
       <div
-        className={`submit-form__row${checking || sweeping ? " submit-form__row--checking" : ""}`}
+        className={`submit-form__row${checking || pulsing ? " submit-form__row--checking" : ""}`}
         ref={rowRef}
       >
-        {/* Wraps the input alone so the shimmering border traces the field and
-            stops short of the Submit button. */}
+        {/* Wraps the input alone, and catches the pulse's animation events as
+            they bubble up from it. */}
         <span className="submit-form__field" ref={fieldRef}>
           <input
             id="word-input"

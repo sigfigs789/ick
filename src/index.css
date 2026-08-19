@@ -23,6 +23,9 @@
   --success-fg: #14532d;
   --success-bg: #e9f9ee;
   --focus-ring: #2563eb;
+  /* Which way a colour has to move to read as lit rather than washed out: on a
+     light page that is towards black, on a dark one towards white. */
+  --lift: #000000;
 
   /* "Loot tier" rarity scale -- a familiar convention from games (common
      grey through legendary gold) that reads as a fun reveal rather than a
@@ -92,6 +95,7 @@
     --success-fg: #9fe0b6;
     --success-bg: #10301c;
     --focus-ring: #6d9bff;
+    --lift: #ffffff;
 
     --rarity-quotidian-bg: #000;
     --rarity-quotidian-fg: #fff;
@@ -692,14 +696,22 @@ h2 {
   font-size: 1.15rem;
   font-weight: 600;
   padding: 0.7rem 0.9rem;
-  border: 2px solid var(--border-strong);
+  /* The border's resting colour, behind a property so the checking pulse below
+     can name it without knowing which state the field is in, and the lit colour
+     derived from it -- so the pulse deepens whatever is already there instead of
+     introducing a colour of its own. */
+  --border-live: var(--border-strong);
+  --border-lit: color-mix(in srgb, var(--border-live) 55%, var(--lift));
+  border: 2px solid var(--border-live);
   border-radius: 0.65rem;
   background: var(--card-bg);
   color: var(--fg);
-  transition: border-color 0.15s var(--ease-standard);
+  transition:
+    border-color 0.15s var(--ease-standard),
+    outline-color 0.15s var(--ease-standard);
 }
 .submit-form input:focus-visible {
-  border-color: var(--focus-ring);
+  --border-live: var(--focus-ring);
 }
 .submit-form input::placeholder {
   color: var(--fg-faint);
@@ -707,64 +719,41 @@ h2 {
   font-family: var(--font-body);
 }
 /* A live lookup is running (see LIVE_HANDOFF_MS). An unmarked pause reads as a
-   dropped keystroke, so the input's own border carries the wait: a soft band of
-   light travels along it, around the whole field and stopping short of the
-   Submit button. The box is where the player already looks for a reaction --
-   it shakes on a rejection -- so a wait that leaves it inert is the one verdict
-   that never touches it. Nothing else changes: no colour, no layout, and typing
-   stays enabled, so this indicates rather than blocks. */
+   dropped keystroke, so the input's whole border breathes: every edge of it
+   lifts to a brighter tone together and settles back, once per 1.2s. The box is
+   where the player already looks for a reaction -- it shakes on a rejection --
+   so a wait that leaves it inert is the one verdict the box sits out.
+
+   The border and the focus outline pulse as one, because while checking the
+   field is usually focused (submitting hands focus straight back to the input)
+   and a still blue ring around a moving one would read as two states at once.
+   Both lift from whatever colour they already carry, so the pulse never
+   introduces a colour of its own: grey at rest, the focus blue when focused.
+
+   Nothing else changes: no layout, and typing stays enabled, so this indicates
+   rather than blocks. */
 .submit-form__field {
-  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
-  --shimmer: var(--fg-faint);
 }
-/* Focused, the border is already the focus blue -- and the field is focused for
-   most of a lookup, since submitting hands focus straight back to the input. A
-   grey band crossing a blue border reads as a smudge on it rather than as light
-   moving along it, and the blue wins anyway. So the band rides the same hue,
-   lifted towards white: brighter than the border it travels, on whichever of
-   the two blues the theme is using. Mirrors the border rule exactly, so the
-   colour of the band and the colour beneath it can never disagree. */
-.submit-form__field:has(input:focus-visible) {
-  --shimmer: color-mix(in srgb, var(--focus-ring) 45%, #fff);
+.submit-form__row--checking input {
+  /* Symmetric easing: a breath has no direction, and anything front-loaded
+     reads as a hitch on the loop's turn. */
+  animation: input-checking-pulse 1.2s ease-in-out infinite;
 }
-/* A ring laid exactly over the input's 2px border: the mask pair keeps the
-   padding box and cuts the content box away, leaving only the border itself
-   lit. Everywhere the travelling band is transparent, the input's real border
-   shows through unchanged. Should a browser not honour the mask, the band
-   degrades to a soft glare crossing the field rather than to anything broken. */
-.submit-form__row--checking .submit-form__field::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 0.65rem;
-  padding: 2px;
-  background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
-  background-size: 50% 100%;
-  background-repeat: no-repeat;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  animation: input-checking-sweep 1.2s linear infinite;
-  pointer-events: none;
-}
-/* Paired with the 50% band width, these ends put the band fully off one edge
-   and fully off the other, so a pass neither pops into view already lit nor
-   sits parked out of frame between passes. Linear, because an eased loop
-   hitches at the turn and a hitch is what this is here to disprove. */
-@keyframes input-checking-sweep {
-  from {
-    background-position: -100% 0;
-  }
+/* Both ends sit at the resting colour, so a pass that is cut short -- or pinned
+   to a single near-instant run under prefers-reduced-motion -- leaves the
+   border exactly as it was rather than stranded mid-lift. */
+@keyframes input-checking-pulse {
+  from,
   to {
-    background-position: 200% 0;
+    border-color: var(--border-live);
+    outline-color: var(--border-live);
+  }
+  50% {
+    border-color: var(--border-lit);
+    outline-color: var(--border-lit);
   }
 }
 .submit-form button,
