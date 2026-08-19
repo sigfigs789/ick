@@ -11,7 +11,7 @@ import {
   recordRejectedAttempt,
   resetProgress,
 } from "../game/storage";
-import { evaluateSubmission, REJECTION_MESSAGES } from "../game/submit";
+import { evaluateSubmission, REJECTION_MESSAGES, spellingNearMiss } from "../game/submit";
 import {
   baseFormSubstitution,
   isUnattestedZipf,
@@ -223,6 +223,26 @@ export function useDailyPuzzle() {
   );
 
   /**
+   * The reason to actually show once a guess has run out of places to be found.
+   * A "not found" verdict on a word sitting a letter or two from a playable
+   * answer is more often a typo than an invention, so it becomes the spelling
+   * nudge instead of the flat "not in the curated list".
+   *
+   * Only for verdicts where the search came up empty. A word a reference *did*
+   * find and the game still won't take (a proper noun, an offensive sense) is
+   * spelled exactly as the player meant it, and telling them to check would be
+   * sending them after a typo that isn't there.
+   */
+  const shownRejectionReason = useCallback(
+    (raw: string, reason: RejectionReason): RejectionReason => {
+      if (reason !== "not-a-word") return reason;
+      const nearMiss = spellingNearMiss(raw, drop, progressRef.current.acceptedWords, viewedDate);
+      return nearMiss ? "check-your-spelling" : reason;
+    },
+    [drop, viewedDate]
+  );
+
+  /**
    * Apply a live verdict: bank the word when MW approves it, otherwise fall
    * through to the rejection it earned. A failed lookup is reported as a failure
    * and draws no conclusion about the word -- the offline rejection stands.
@@ -254,11 +274,12 @@ export function useDailyPuzzle() {
       if (check.failure && shouldReportFailure(check.failure.reason)) {
         trackMerriamWebsterFailed(viewedDate, drop, check);
       }
-      const reason = rejectionReasonForLive(check);
+      const verdict = rejectionReasonForLive(check);
+      const reason = check.outcome === "rejected" ? verdict : shownRejectionReason(raw, verdict);
       rejectWord(raw, reason);
       return { ok: false, reason };
     },
-    [viewedDate, drop, acceptWord, rejectWord]
+    [viewedDate, drop, acceptWord, rejectWord, shownRejectionReason]
   );
 
   const submitWord = useCallback(
@@ -287,8 +308,9 @@ export function useDailyPuzzle() {
       const worthChecking =
         reason === "not-a-word" && eligibleForLiveCheck(word) && !inFlight.current.has(word);
       if (!worthChecking) {
-        rejectWord(raw, reason);
-        return result;
+        const shown = shownRejectionReason(raw, reason);
+        rejectWord(raw, shown);
+        return shown === reason ? result : { ...result, reason: shown };
       }
 
       inFlight.current.add(word);
@@ -313,11 +335,11 @@ export function useDailyPuzzle() {
       // Past the handoff window: stop making the player wait, but leave the
       // request running -- whatever it finds is still applied and still
       // reported, so a slow lookup costs the player nothing.
-      showFeedback("rejected", REJECTION_MESSAGES[reason]);
+      showFeedback("rejected", REJECTION_MESSAGES[shownRejectionReason(raw, reason)]);
       void lookup.then((late) => applyLiveCheck(raw, late));
       return result;
     },
-    [drop, viewedDate, acceptWord, rejectWord, applyLiveCheck, showFeedback]
+    [drop, viewedDate, acceptWord, rejectWord, applyLiveCheck, showFeedback, shownRejectionReason]
   );
 
   /** Player-initiated early finish: bank the best word(s) so far instead of using every guess. */
