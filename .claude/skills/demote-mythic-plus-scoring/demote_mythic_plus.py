@@ -181,6 +181,7 @@ def build_report(
     min_drop: float = DEFAULT_MIN_DROP,
     min_gap: float = DEFAULT_MIN_GAP,
     limit: int = 12,
+    order: str = "magnitude",
     buckets: tuple[str, ...] = BUCKETS,
     include_all: bool = False,
 ) -> dict:
@@ -354,12 +355,26 @@ def build_report(
     # sinks to the end of its bucket. `peopleless` shows a 7.7-point drop against
     # `people` and `abandoner` a 5.0-point drop against `abandon`; only the second
     # is a real overestimate, and ranking on magnitude alone puts the first on top.
-    rows.sort(key=lambda r: (BUCKETS.index(r["bucket"]), r["suspect_base"], -r["magnitude"], r["word"]))
-    # Batch in review order, capped per bucket: a run that dumped 4,800 misspelling
-    # suspects would never get to the folds.
-    batch: list[dict] = []
-    for name in buckets:
-        batch.extend([r for r in rows if r["bucket"] == name][:limit])
+    # `magnitude` is the displayed points at stake: a fold's drop, or -- for a row
+    # with no fold, i.e. a rejection candidate -- the whole current score. Those
+    # are comparable as "how wrong is this score", so ranking on it across buckets
+    # puts the real overestimates first regardless of which bucket they landed in.
+    # Two guards survive the change: a suspect base still sinks (`peopleless` shows
+    # a 7.7-point drop against `people` and is not an overestimate at all), and the
+    # bucket index only breaks ties, so review order is preserved among equals.
+    rows.sort(key=lambda r: (r["suspect_base"], -r["magnitude"], BUCKETS.index(r["bucket"]), r["word"]))
+    if order == "bucket":
+        # Per-bucket batching: review order first, capped per bucket so one huge
+        # bucket cannot crowd out the others.
+        rows.sort(key=lambda r: (BUCKETS.index(r["bucket"]), r["suspect_base"], -r["magnitude"], r["word"]))
+        batch: list[dict] = []
+        for name in buckets:
+            batch.extend([r for r in rows if r["bucket"] == name][:limit])
+    else:
+        # Worst-first batching: one global cut at the top of the ranking. The
+        # per-bucket cap is what let a 10.00 misspelling sit unreviewed while an
+        # alphabetically-earlier tie took its slot, so the cap becomes a total.
+        batch = [r for r in rows if r["bucket"] in buckets][: limit * max(1, len(buckets))]
 
     def family_of(word: str) -> list[str]:
         """The word's dictionary siblings, same output as the sibling skill's
@@ -488,7 +503,19 @@ def main() -> int:
         help=f"displayed points a fold must move to be reported (default {DEFAULT_MIN_DROP})",
     )
     ap.add_argument("--min-gap", type=float, default=DEFAULT_MIN_GAP, help="Zipf gap a base must clear")
-    ap.add_argument("--limit", type=int, default=12, help="rows per bucket (default 12)")
+    ap.add_argument(
+        "--limit",
+        type=int,
+        default=12,
+        help="rows per bucket, or per bucket-equivalent of the global cut (default 12)",
+    )
+    ap.add_argument(
+        "--order",
+        choices=("magnitude", "bucket"),
+        default="magnitude",
+        help="magnitude (default): worst overestimate first across all buckets. "
+        "bucket: review order, capped per bucket (the pre-2026-08-20 behaviour)",
+    )
     ap.add_argument(
         "--bucket",
         action="append",
@@ -544,6 +571,7 @@ def main() -> int:
         min_drop=args.min_drop,
         min_gap=args.min_gap,
         limit=args.limit,
+        order=args.order,
         buckets=buckets,
         include_all=args.all,
     )

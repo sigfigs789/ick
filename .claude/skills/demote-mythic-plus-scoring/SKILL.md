@@ -52,7 +52,8 @@ python3 .claude/skills/demote-mythic-plus-scoring/demote_mythic_plus.py
 | `--date YYYY-MM-DD` | audit that puzzle's drop instead of tomorrow's |
 | `--drop ATE` | an arbitrary drop |
 | `--bucket fold` | one bucket at a time; repeatable. The sanest way to work — one kind of decision per session |
-| `--limit N` | rows per bucket (default 12) |
+| `--limit N` | batch size: rows per bucket-equivalent of the global cut, or rows per bucket under `--order bucket` (default 12) |
+| `--order` | `magnitude` (default) takes one global cut at the worst overestimates; `bucket` restores the old per-bucket cap |
 | `--min-score` | band floor (default 9.5, i.e. Mythic) |
 | `--min-drop` | displayed points a fold must move to be reported (default **0.25**) |
 | `--candidates-out FILE` | write the batch's words for the apply step to reconcile against |
@@ -67,8 +68,20 @@ come back — **drops repeat**, so without the ledger the same kept words reappe
 every few days.
 
 Even one drop reaches more of this band than a single sitting can review, so the
-run reports a batch per bucket and the ledger carries the rest forward. Expect to
-work a drop over several runs.
+run reports a batch and the ledger carries the rest forward. Expect to work a drop
+over several runs.
+
+**The batch is one global cut at the worst overestimates, not a slice of each
+bucket.** The old per-bucket cap looked fair and was not: for a `classified` or
+`misspelling` row there is no fold, so `magnitude` is the word's *entire* score and
+everything unattested ties at 10.00 — which collapsed the tie-break to
+**alphabetical order**. On the 2026-08-20 `CON` drop that spent the misspelling
+budget on `concertise`…`gluconeogeneses` and left `photoreconnaisance` — a dropped
+`s`, a perfect 10.00 Legend — unreviewed along with 18 more rows at 9.9+. Ranking
+across buckets also demotes the plural work automatically without a rule for it:
+rejection candidates carry a magnitude near 10 while the whole `fold` bucket tops
+out around 3.6, so folds sink to the end of the queue on their own. Use
+`--order bucket` when you deliberately want a sample of every bucket.
 
 ### The buckets, in review order
 
@@ -99,6 +112,43 @@ here: 0.25 Zipf can be invisible at 9.9x and worth two whole points at Zipf 1.0.
 Ask these in order, exactly as in the sibling skill. **Reject beats demote**: folding
 a junk word onto a base leaves it playable at a lower score, so the player still
 gets a non-word accepted.
+
+### The bar: is the answer fun?
+
+**The audit exists to eliminate unfun answers, not to be right about etymology.**
+That is the whole test, and it runs on the *word*, not on the strength of the
+evidence against it. A word can be perfectly legitimate and still not deserve a
+Legend; what earns the tier is being a satisfying thing to have found.
+
+So the question for every finding is: **would a player be pleased to have found
+this?** Three verdicts follow from the answer.
+
+- **Fun stays, obscurity and labels and all.** The technical, historical, regional
+  and literary vocabulary is what the tier is made of: `machicolate`, `chawbacon`,
+  `marconigraph`, `orthiconoscope`, `conglobe`, `convertite`, `congeries`. Being
+  rare, archaic-flavoured or hard to believe is not a fault here — it is the point.
+  Keep these even when a Wiktionary label or a near-spelling heuristic fires.
+- **Weak words get demoted, not kept and not rejected.** This is the workhorse
+  verdict and the right home for anything merely limp: mechanical plurals and
+  superlatives (`continences`, `concisest`), transparent derivations (`contester`,
+  `conversional`), archaic inflections that add nothing (`continueth` → `continue`),
+  and near-misses still worth having (`reconnaisance` → `reconnaissance`,
+  `conferree` → `conferee`). The word stays playable and stops masquerading as a
+  discovery.
+- **Reject a misspelling.** A word whose only distinction is a dropped or doubled
+  letter is not a find, however exotic it looks — `photoreconnaisance` is not a
+  reward for reaching a long word, it is `photoreconnaissance` typed wrong. Rejection
+  is right whether the correct form is everyday (`controul`/`control`,
+  `contex`/`context`, `contente`/`content`) or itself obscure.
+
+Reject and demote both stay available for a near-miss, and that line is a judgement
+call rather than a threshold: `photoreconnaisance` is rejected while `reconnaisance`
+and `conferree` are demoted to their correct forms. Take the demotion when the word
+is still worth having in the game and the rejection when nothing but the typo
+distinguishes it. What the bar rules out in both directions is acting on a fault
+merely because it is *detectable* — that is what leaves 30 of a drop's 37 misspelling
+suspects alone, since `bicon` flagged against **bacon** and `conche` flagged against
+`concha` are not errors at all.
 
 ### a. Should it be playable at all?
 
@@ -174,6 +224,17 @@ and flagged `<- base is very common`, because a big drop against a Zipf-6 base
 measures the fold's crudeness rather than the word's rank. Do not let the large
 number at the top of the sort pull you into a bad demotion — that trap is why the
 ranking is built this way.
+
+**The `fold` bucket is not safe to skip or auto-apply, tempting as it looks.** It
+is the most mechanical-*looking* bucket — on the 2026-08-20 `CON` drop all 53 rows
+were plurals (45 bare `-s`/`-es`, 8 `-ives`) — and it has the worst hit rate of any
+bucket: 3 of the 13 fold rows reviewed that day, 23%, were folds onto a base the
+word is not a form of. `congeries` is a singular Latin noun, not the plural of
+`conger`; `secondi` is the Italian musical plural, not a classical plural of
+`second`; `conchies` is the plural of `conchy`, not of `conch`. All three were
+irregular plurals — `-i`, `-ies`, classical — while the bare `-s`/`-es` strips were
+sound. Read an irregular plural's row before folding it; the regular ones are
+close to mechanical.
 
 The **fold-suspect** bucket is the mirror image: the fold is usually still right
 (`evenest` really is the superlative of `even`), so check the *word*. This is where
