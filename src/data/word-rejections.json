@@ -13,11 +13,6 @@
     "reason": "misspelling",
     "since": "2026-08-19"
   },
-  "conferree": {
-    "note": "Misspelling of `conferee`.",
-    "reason": "misspelling",
-    "since": "2026-08-20"
-  },
   "conferrence": {
     "note": "Misspelling of `conference`.",
     "reason": "misspelling",
@@ -41,10 +36,6 @@
   "contex": {
     "note": "Misspelling of `context`.",
     "reason": "misspelling",
-    "since": "2026-08-20"
-  },
-  "continueth": {
-    "reason": "archaic",
     "since": "2026-08-20"
   },
   "contraversial": {
@@ -71,11 +62,6 @@
     "reason": "misspelling",
     "since": "2026-08-19"
   },
-  "photoreconnaisance": {
-    "note": "Misspelling of `photoreconnaissance`.",
-    "reason": "misspelling",
-    "since": "2026-08-20"
-  },
   "reaccomodate": {
     "note": "Misspelling of `reaccommodate`.",
     "reason": "misspelling",
@@ -95,10 +81,5 @@
     "note": "Misspelling of `reaccommodate`.",
     "reason": "misspelling",
     "since": "2026-08-19"
-  },
-  "reconnaisance": {
-    "note": "Misspelling of `reconnaissance`.",
-    "reason": "misspelling",
-    "since": "2026-08-20"
   }
 }

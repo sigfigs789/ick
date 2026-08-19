@@ -113,6 +113,39 @@ Ask these in order, exactly as in the sibling skill. **Reject beats demote**: fo
 a junk word onto a base leaves it playable at a lower score, so the player still
 gets a non-word accepted.
 
+### The bar: would a player immediately question it?
+
+**This audit exists to catch scores a player would find absurd, not to be correct
+about etymology.** The product goal is fun, so an interesting word scoring high is a
+feature even when it is technically flawed. Before recording any verdict, ask whether
+someone who just played the word would look at the score and object. If not, keep it
+— being right about the word is not a reason to act.
+
+The test that separates the two, in practice, is **how well-known the other word is**
+— the correct spelling for a misspelling, the base for a fold:
+
+- **A player questions `controul` (10.00) and `contex` (9.58)** because they know
+  `control` (Zipf 5.4) and `context` (4.63) instantly, so the entry reads as a typo
+  that slipped through. Same for `contester` against `contest` (4.53) and
+  `conversional` against `conversion` (4.24): the base is a word everybody has, so
+  the derived form obviously is not a discovery.
+- **Nobody questions `photoreconnaisance` (10.00)**, even though it is a genuine
+  dropped-`s` misspelling of `photoreconnaissance` (Zipf 1.52). The correct form is
+  itself obscure, the error is invisible, and the word is interesting to have found.
+  Let it score. Same for `conferree` (vs `conferee`, 1.59) and for a fold whose base
+  is as unfamiliar as the word — `concrescences` → `concrescence` (2.15) changes a
+  number no player has an intuition about.
+- **Archaic-flavoured words read as intentional, not broken.** `continueth` is fun;
+  the `-eth` is the point. Reject an archaic form only when it is a spelling of an
+  everyday word.
+
+As a rule of thumb the other word needs to be around **Zipf 3.4 or better** — the
+game's Uncommon/Common boundary — for the mismatch to be visible from inside the
+game. Below that, prefer keeping the word at its high score. This is a bar on the
+*obviousness of the error*, not on the strength of the evidence, and it sits on top
+of everything below: a word can be a textbook misspelling by the tests in §2a and
+still be a keep because no player would notice.
+
 ### a. Should it be playable at all?
 
 **When in doubt, keep the word playable.** Rejection removes a word from the game
