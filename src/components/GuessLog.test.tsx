@@ -27,7 +27,14 @@ describe("GuessLog", () => {
     render(<GuessLog acceptedWords={words} />);
     expect(screen.getByText("strange")).toBeInTheDocument();
     expect(screen.getByText("strut")).toBeInTheDocument();
-    expect(screen.getByText("2 of 6 used")).toBeInTheDocument();
+    expect(screen.getByText("2 of 4 used")).toBeInTheDocument();
+  });
+
+  it("counts against the six-guess limit an archive puzzle played with", () => {
+    const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
+    render(<GuessLog acceptedWords={words} date="2024-01-01" />);
+    expect(screen.getByText("1 of 6 used")).toBeInTheDocument();
+    expect(screen.getByText(/5 guesses left/i)).toBeInTheDocument();
   });
 
   it("crowns the rarest word as the best one", () => {

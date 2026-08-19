@@ -295,7 +295,7 @@ export function useDailyPuzzle() {
     [drop, viewedDate, acceptWord, rejectWord, applyLiveCheck, showFeedback]
   );
 
-  /** Player-initiated early finish: bank the best word(s) so far instead of using all 6 guesses. */
+  /** Player-initiated early finish: bank the best word(s) so far instead of using every guess. */
   const lockIn = useCallback(() => {
     const updated = lockInResult(progressRef.current);
     progressRef.current = updated;

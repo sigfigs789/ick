@@ -1,5 +1,5 @@
 import { addDays, todayDateString } from "./date";
-import { MAX_GUESSES } from "./constants";
+import { maxGuessesFor } from "./constants";
 import { rarityFor, rarityScore } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
@@ -110,7 +110,7 @@ function saveStreak(streak: StreakState): void {
 
 /**
  * The first valid word immediately advances today's streak. The player can
- * still keep guessing until `MAX_GUESSES`, or lock in early, without counting
+ * still keep guessing up to the day's guess limit, or lock in early, without counting
  * that streak win a second time.
  */
 export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord): DailyProgress {
@@ -122,7 +122,7 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
     isEliteRarity(acceptedWord.rarity)
   );
   const acceptedWords = [...progress.acceptedWords, word];
-  const justCompleted = acceptedWords.length >= MAX_GUESSES;
+  const justCompleted = acceptedWords.length >= maxGuessesFor(progress.date);
   const won = acceptedWords.some((acceptedWord) => isWinningRarity(acceptedWord.rarity));
 
   const updated: DailyProgress = {
