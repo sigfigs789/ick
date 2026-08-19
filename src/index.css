@@ -445,7 +445,7 @@ h2 {
   font-size: 0.95rem;
   font-weight: 800;
 }
-/* With only four guesses a day, the count carries real weight -- match the
+/* With only five guesses a day, the count carries real weight -- match the
    heading's size and weight and use the muted (not faint) ink so it reads as
    information rather than a footnote. */
 .guess-log__count {
