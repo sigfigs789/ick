@@ -15,7 +15,7 @@ describe("live check notes", () => {
   });
 
   it("keeps enough in-progress lines that a session rarely repeats one", () => {
-    expect(LIVE_CHECK_PENDING.length).toBeGreaterThanOrEqual(4);
+    expect(LIVE_CHECK_PENDING.length).toBeGreaterThanOrEqual(6);
   });
 
   it("keeps every in-progress line unique so the rotation never repeats itself", () => {

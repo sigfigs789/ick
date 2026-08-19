@@ -65,16 +65,22 @@ import { markSessionEngaged } from "../game/visits";
  * perfectly good and still be one no reference here carries, so nothing here
  * claims a word is or isn't real. The toast is what delivers the verdict.
  *
- * None of them names a particular reference. "Dictionaries" and "tomes" say
- * work is being done and roughly where, without naming the fallback and
- * inviting players to fish for words the curated list doesn't have.
+ * None of them names a particular reference. "Dictionaries", "tomes" and "the
+ * stacks" say work is being done and roughly where, without naming the fallback
+ * and inviting players to fish for words the curated list doesn't have. A line
+ * that skips the where ("Digging deeper…") is fine among lines that don't: the
+ * rotation as a whole is what tells the player where the game has gone.
  */
 export const LIVE_CHECK_PENDING: readonly string[] = [
   "Consulting the tomes…",
-  "Digging through dictionaries…",
+  "Digging deeper…",
   "Rifling through dictionaries…",
-  "Ransacking the dictionaries…",
   "Off to the stacks…",
+  "Blowing dust off the tomes…",
+  "Thumbing the index…",
+  "Down in the footnotes…",
+  "Ransacking the dictionaries…",
+  "Waking the librarian…",
 ];
 
 /** Once the search has turned the word up, and once it has come back empty. */
