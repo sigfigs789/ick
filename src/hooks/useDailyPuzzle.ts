@@ -224,9 +224,9 @@ export function useDailyPuzzle() {
 
   /**
    * The reason to actually show once a guess has run out of places to be found.
-   * A "not found" verdict on a word sitting a letter or two from a playable
-   * answer is far more often a typo than an invention, so it becomes the
-   * spelling nudge instead of the flat "not in the curated list".
+   * A "not found" verdict on a word sitting one letter from a playable answer is
+   * more often a typo than an invention, so it becomes the spelling nudge instead
+   * of the flat "not in the curated list".
    *
    * Only for verdicts where the search came up empty. A word a reference *did*
    * find and the game still won't take (a proper noun, an offensive sense) is

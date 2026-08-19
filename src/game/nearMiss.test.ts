@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  NEAR_MISS_MIN_LENGTH,
-  NEAR_MISS_TWO_EDIT_MIN_LENGTH,
-  nearMissEditBudget,
-  withinEditDistance,
-} from "./nearMiss";
+import { NEAR_MISS_MIN_LENGTH, nearMissEditBudget, withinEditDistance } from "./nearMiss";
 
 describe("withinEditDistance", () => {
   it("counts a substitution, an insertion, and a deletion as one edit each", () => {
@@ -34,14 +29,13 @@ describe("withinEditDistance", () => {
 });
 
 describe("nearMissEditBudget", () => {
-  it("skips words too short for a single edit to mean anything", () => {
+  it("skips words too short for one edit to mean anything", () => {
     expect(nearMissEditBudget("a".repeat(NEAR_MISS_MIN_LENGTH - 1))).toBe(0);
     expect(nearMissEditBudget("a".repeat(NEAR_MISS_MIN_LENGTH))).toBe(1);
   });
 
-  it("allows the second edit only once the word is long enough to spare it", () => {
-    expect(nearMissEditBudget("a".repeat(NEAR_MISS_TWO_EDIT_MIN_LENGTH - 1))).toBe(1);
-    expect(nearMissEditBudget("a".repeat(NEAR_MISS_TWO_EDIT_MIN_LENGTH))).toBe(2);
-    expect(nearMissEditBudget("a".repeat(12))).toBe(2);
+  it("never spends a second edit, however long the word", () => {
+    expect(nearMissEditBudget("a".repeat(12))).toBe(1);
+    expect(nearMissEditBudget("a".repeat(30))).toBe(1);
   });
 });

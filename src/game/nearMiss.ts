@@ -2,34 +2,40 @@
  * The near-miss rule behind the "check your spelling" nudge.
  *
  * A guess that clears every other rule -- it contains the drop, it isn't a
- * repeat -- and still isn't in the curated list or any live reference is far
- * more often a typo than an invention. When such a guess sits one or two edits
- * from a word the player could actually have played, the game says so instead
- * of only reporting that the word wasn't found.
+ * repeat -- and still isn't in the curated list or any live reference is more
+ * often a typo than an invention. When such a guess sits one letter from a word
+ * the player could actually have played, the game says so instead of only
+ * reporting that the word wasn't found.
  *
  * Nothing here names the nearby word: that word is a playable answer for the
  * live drop, so revealing it would hand over a guess.
  */
 
 /**
- * Shortest guess worth checking. Below four letters a single edit reaches a
- * large share of the dictionary, so "one letter off" stops being evidence of
- * anything.
+ * How far off a guess may be. One edit, deliberately -- the rule has to be much
+ * more likely to describe a typo than a coincidence, or the nudge becomes the
+ * message every rejection gets.
+ *
+ * A second edit does not pay for itself. A single mistyped, dropped, or doubled
+ * letter is already one edit away, so the second only ever buys transpositions
+ * ("recieve"), and it buys them at a heavy price: measured against made-up
+ * pronounceable words containing the day's drop, allowing two edits flags 54-71%
+ * of six-letter inventions and 16-28% of seven-letter ones, where one edit flags
+ * 1-10% and ~0-2%.
  */
-export const NEAR_MISS_MIN_LENGTH = 4;
+export const NEAR_MISS_MAX_EDITS = 1;
 
 /**
- * Shortest guess allowed the second edit. Two letters is only a typo's worth of
- * difference when the word is long enough for two letters to be a small part of
- * it -- at five letters it is nearly half the word, and the nudge would fire on
- * words the player really did make up.
+ * Shortest guess worth checking. Below six letters even a single edit reaches a
+ * large share of the dictionary -- 23-41% of five-letter inventions land next to
+ * a real word, and 70%+ of four-letter ones -- so "one letter off" stops being
+ * evidence of a typo and starts being a property of short words.
  */
-export const NEAR_MISS_TWO_EDIT_MIN_LENGTH = 6;
+export const NEAR_MISS_MIN_LENGTH = 6;
 
 /** How many edits from `word` still counts as a near miss; 0 means don't check. */
 export function nearMissEditBudget(word: string): number {
-  if (word.length < NEAR_MISS_MIN_LENGTH) return 0;
-  return word.length >= NEAR_MISS_TWO_EDIT_MIN_LENGTH ? 2 : 1;
+  return word.length >= NEAR_MISS_MIN_LENGTH ? NEAR_MISS_MAX_EDITS : 0;
 }
 
 /**

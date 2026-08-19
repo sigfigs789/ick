@@ -227,9 +227,17 @@ describe("spellingNearMiss", () => {
     expect(spellingNearMiss("abatemant", "ate", [])).toBe("abatement");
   });
 
-  it("finds a word two letters off a long guess", () => {
-    expect(isValidWord("abatemants")).toBe(false);
-    expect(spellingNearMiss("abatemants", "ate", [])).toBe("abatement");
+  it("catches a dropped letter and a doubled one, each being one edit", () => {
+    expect(spellingNearMiss("abatemnt", "ate", [])).toBe("abatement");
+    expect(spellingNearMiss("abatementt", "ate", [])).toBe("abatement");
+  });
+
+  it("says nothing about a guess two letters off, however long", () => {
+    // A transposition ("recieve") costs two edits, so it stays a plain rejection:
+    // a second edit reaches too much of the dictionary to mean anything.
+    // Both are two edits from "abatement" and one edit from nothing at all.
+    expect(spellingNearMiss("abatemanq", "ate", [])).toBeUndefined();
+    expect(spellingNearMiss("abatemetn", "ate", [])).toBeUndefined();
   });
 
   it("normalizes the guess the way a submission does", () => {
@@ -240,16 +248,12 @@ describe("spellingNearMiss", () => {
     expect(spellingNearMiss("qxzatevbnm", "ate", [])).toBeUndefined();
   });
 
-  it("holds a short guess to a single edit, where two would reach half the word", () => {
-    // "grate" is playable for "ate"; two edits from "gxxte" would reach it.
+  it("ignores a guess too short for one edit to be evidence of a typo", () => {
+    // "grate" is a letter from "grste", but at five letters most invented words
+    // are a letter from something, so nothing is claimed.
     expect(isValidWord("grate")).toBe(true);
-    expect(spellingNearMiss("grste", "ate", [])).toBe("grate");
-    expect(spellingNearMiss("gxxte", "ate", [])).toBeUndefined();
-  });
-
-  it("ignores a guess too short for one edit to mean anything", () => {
-    expect(spellingNearMiss("qate", "ate", [])).toBeDefined();
-    expect(spellingNearMiss("ate", "ate", [])).toBeUndefined();
+    expect(spellingNearMiss("grste", "ate", [])).toBeUndefined();
+    expect(spellingNearMiss("qate", "ate", [])).toBeUndefined();
   });
 
   it("never points at a word this puzzle has already taken", () => {

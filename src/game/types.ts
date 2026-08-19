@@ -35,7 +35,7 @@ export type RejectionReason =
   | "dated"
   | "already-used"
   | "same-root-as-used"
-  /** Nowhere to be found, but a letter or two from something playable. */
+  /** Nowhere to be found, but one letter from something playable. */
   | "check-your-spelling";
 
 export interface SubmissionResult {
