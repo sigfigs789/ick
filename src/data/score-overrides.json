@@ -22,92 +22,97 @@
   "concisest": {
     "base": "concise",
     "reason": "Superlative of `concise`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "concomitances": {
     "base": "concomitance",
     "reason": "Plural / third-person form of `concomitance`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "concrescences": {
     "base": "concrescence",
     "reason": "Plural / third-person form of `concrescence`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "conductances": {
     "base": "conductance",
     "reason": "Plural / third-person form of `conductance`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "conferree": {
     "base": "conferee",
     "reason": "Reviewed demotion to `conferee`.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "conservational": {
     "base": "conservation",
     "reason": "-ational adjective of `conservation`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "consummates": {
     "base": "consummate",
     "reason": "Plural / third-person form of `consummate`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "contemplatives": {
     "base": "contemplative",
     "reason": "Plural / third-person form of `contemplative`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "contester": {
     "base": "contest",
     "reason": "Comparative or agent noun of `contest`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "continences": {
     "base": "continence",
     "reason": "Plural / third-person form of `continence`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "continueth": {
     "base": "continue",
     "reason": "Reviewed demotion to `continue`.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "contralti": {
     "base": "contralto",
     "reason": "Reviewed demotion to `contralto`.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "convalescences": {
     "base": "convalescence",
     "reason": "Plural / third-person form of `convalescence`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "conventionalisation": {
     "base": "conventional",
     "reason": "-isation noun of `conventional`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "conversional": {
     "base": "conversion",
     "reason": "-al adjective of `conversion`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "convincer": {
     "base": "convince",
     "reason": "Comparative or agent noun of `convince`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "convincers": {
     "base": "convince",
     "reason": "Plural agent noun of `convince`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
+  },
+  "fluconazoles": {
+    "base": "fluconazole",
+    "reason": "Plural / third-person form of `fluconazole`; a suffix is not a discovery.",
+    "since": "2026-08-19"
   },
   "gluconeogeneses": {
     "base": "gluconeogenesis",
     "reason": "Plural / third-person form of `gluconeogenesis`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "gravitater": {
     "base": "gravitate",
@@ -122,7 +127,7 @@
   "incontinences": {
     "base": "incontinence",
     "reason": "Plural / third-person form of `incontinence`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "iratest": {
     "base": "irate",
@@ -154,6 +159,11 @@
     "reason": "Plural of `nizamate`, which is itself only the -ate form of `nizam`; folded straight to `nizam` because the cap reads a base's raw Zipf, so folding onto `nizamate` would leave this at 10.00.",
     "since": "2026-08-19"
   },
+  "nonconfidences": {
+    "base": "nonconfidence",
+    "reason": "Plural / third-person form of `nonconfidence`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
   "ornatest": {
     "base": "ornate",
     "reason": "Superlative of `ornate`; a suffix is not a discovery.",
@@ -162,11 +172,16 @@
   "overconfidences": {
     "base": "overconfidence",
     "reason": "Plural / third-person form of `overconfidence`; a suffix is not a discovery.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "penultimates": {
     "base": "penultimate",
     "reason": "Plural / third-person form of `penultimate`; a suffix is not a discovery.",
+    "since": "2026-08-19"
+  },
+  "photoreconnaissances": {
+    "base": "photoreconnaissance",
+    "reason": "Plural / third-person form of `photoreconnaissance`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
   "placation": {
@@ -177,7 +192,7 @@
   "reconnaisance": {
     "base": "reconnaissance",
     "reason": "Reviewed demotion to `reconnaissance`.",
-    "since": "2026-08-20"
+    "since": "2026-08-19"
   },
   "sororates": {
     "base": "sororate",
