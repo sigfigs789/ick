@@ -45,7 +45,7 @@ describe("InstructionsModal", () => {
     trackFeedbackSubmitted.mockClear();
     render(<InstructionsModal open onClose={vi.fn()} />);
     const box = screen.getByLabelText(/share feedback or leave a suggestion/i);
-    const send = screen.getByRole("button", { name: /send feedback/i });
+    const send = screen.getByRole("button", { name: /^send$/i });
     expect(send).toBeDisabled();
 
     await userEvent.type(box, "  more vowel drops please  ");
@@ -62,7 +62,7 @@ describe("InstructionsModal", () => {
     const box = screen.getByLabelText(/share feedback or leave a suggestion/i);
 
     await userEvent.type(box, "   ");
-    expect(screen.getByRole("button", { name: /send feedback/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^send$/i })).toBeDisabled();
     fireEvent.submit(box.closest("form")!);
 
     expect(trackFeedbackSubmitted).not.toHaveBeenCalled();

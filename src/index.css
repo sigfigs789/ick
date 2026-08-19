@@ -1278,9 +1278,13 @@ h2 {
   color: var(--success-fg);
   font-weight: 700;
 }
+.feedback-form__row {
+  align-items: flex-end;
+  margin-top: 0.6rem;
+}
 .feedback-form__input {
-  display: block;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   border: 1px solid var(--border-strong);
   border-radius: 0.5rem;
   padding: 0.55rem 0.65rem;
@@ -1289,11 +1293,6 @@ h2 {
   font: inherit;
   font-weight: 500;
   resize: vertical;
-}
-.feedback-form__actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.5rem;
 }
 
 @media (max-width: 420px) {

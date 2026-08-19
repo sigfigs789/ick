@@ -62,22 +62,22 @@ export function InstructionsModal({ open, onClose }: Props) {
           websites, social media, and more. Values are then computed using Zipf’s law. They do not reflect how complex a word is. The highest ranks are Legend and Mythic at 9.9+ and 9.5+ rarity.
         </p>
         <form className="word-suggestion feedback-form" onSubmit={submitFeedback}>
-          <textarea
-            id="game-feedback"
-            className="feedback-form__input"
-            aria-label="Share feedback or leave a suggestion"
-            value={feedback}
-            onChange={(event) => {
-              setFeedback(event.target.value);
-              setSent(false);
-            }}
-            placeholder="Share feedback or leave a suggestion or help me grow the game"
-            rows={3}
-            maxLength={300}
-          />
-          <div className="feedback-form__actions">
+          <div className="word-suggestion__row feedback-form__row">
+            <textarea
+              id="game-feedback"
+              className="feedback-form__input"
+              aria-label="Share feedback or leave a suggestion"
+              value={feedback}
+              onChange={(event) => {
+                setFeedback(event.target.value);
+                setSent(false);
+              }}
+              placeholder="Share feedback or leave a suggestion or help me grow the game"
+              rows={2}
+              maxLength={300}
+            />
             <button type="submit" disabled={!feedback.trim()}>
-              Send feedback
+              Send
             </button>
           </div>
           {sent && <p className="word-suggestion__thanks">Thanks for the feedback!</p>}
