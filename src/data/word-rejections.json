@@ -1,4 +1,9 @@
 {
+  "atest": {
+    "note": "Misspelling of `attest`.",
+    "reason": "misspelling",
+    "since": "2026-08-19"
+  },
   "boate": {
     "reason": "obsolete",
     "since": "2026-08-19"
