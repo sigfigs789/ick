@@ -189,11 +189,16 @@ curated list. It asks two tiers in order:
    name/abbreviation functional labels and an `offensive` flag, which is what
    every rejection reason a player sees is built on.
 2. **Wordnik**, but only when MW has no matching entry at all -- the case that
-   would otherwise be rejected outright. Only its AHD and WordNet definitions
-   count: Century (1889-1911) and GCIDE/Webster (1913) are archaic-heavy, and its
-   Wiktionary tier has a slur-carrying long tail with no offensive flag to catch
-   it. Wordnik's free plan is 100 lookups an hour, so keeping it off the common
-   path matters more than it does for MW's daily cap.
+   would otherwise be rejected outright. Only its **AHD and WordNet** definitions
+   can approve a word: Century (1889-1911) and GCIDE/Webster (1913) are
+   archaic-heavy, and its Wiktionary tier has a slur-carrying long tail with no
+   offensive flag to catch it. Rejection is deliberately looser than approval --
+   Wiktionary's per-sense register tags may *veto* a word, because AHD supplies a
+   register mark only sometimes (`anon` carries one, `gramercy`, `yclept` and
+   `sooth` come back with none), and approving on AHD's silence would admit
+   archaic words MW rejects today. Keeping this tier off the common path matters
+   more than it does for MW: a free Wordnik key measures 5 lookups a minute and
+   200 an hour, the burstiest allowance of the three.
 
 Keys are read from the environment and never reach the browser:
 `MW_COLLEGIATE_KEY`, `MW_MEDICAL_KEY`, `WORDNIK_KEY`. At least one MW key is

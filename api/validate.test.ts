@@ -504,6 +504,67 @@ describe("api/validate Wordnik tier", () => {
     });
   });
 
+  it("lets Wiktionary's register tags veto a word AHD lists without a label", async () => {
+    // Measured against the live API: AHD returns "gramercy" with labels: [], while
+    // Wiktionary tags every sense archaic. AHD's silence must not approve it.
+    withKeys(bothKeys);
+    const archaic = { labels: [{ text: "archaic", type: "chronological" }] };
+    stubTiers({
+      wordnik: [
+        def("gramercy", "ahd-5", { partOfSpeech: "interjection" }),
+        def("gramercy", "wiktionary", { partOfSpeech: "interjection", ...archaic }),
+        def("gramercy", "wiktionary", { partOfSpeech: "noun", ...archaic }),
+      ],
+    });
+    expect(await body(await handler(request("gramercy")))).toMatchObject({
+      outcome: "rejected",
+      reason: "archaic",
+    });
+  });
+
+  it("does not let a veto stand when Wiktionary lists a current sense too", async () => {
+    withKeys(bothKeys);
+    stubTiers({
+      wordnik: [
+        def("thalweg", "ahd-5"),
+        def("thalweg", "wiktionary", { labels: [{ text: "obsolete", type: "chronological" }] }),
+        def("thalweg", "wiktionary", { labels: [{ text: "geology", type: "field" }] }),
+      ],
+    });
+    expect(await body(await handler(request("thalweg")))).toMatchObject({
+      outcome: "playable",
+      source: "wordnik:ahd-5",
+    });
+  });
+
+  it("reads AHD's own register mark whatever label type it files it under", async () => {
+    // "anon" really comes back with {"text":"Archaic","type":"fld"}.
+    withKeys(bothKeys);
+    stubTiers({
+      wordnik: [
+        def("anon", "ahd-5", { partOfSpeech: "adverb", labels: [{ text: "Archaic", type: "fld" }] }),
+      ],
+    });
+    expect(await body(await handler(request("anon")))).toMatchObject({
+      outcome: "rejected",
+      reason: "archaic",
+    });
+  });
+
+  it("reports the mildest register when the senses disagree on how dead a word is", async () => {
+    withKeys(bothKeys);
+    stubTiers({
+      wordnik: [
+        def("wight", "ahd-5", { labels: [{ text: "Obsolete", type: "fld" }] }),
+        def("wight", "ahd-5", { labels: [{ text: "Dated", type: "fld" }] }),
+      ],
+    });
+    expect(await body(await handler(request("wight")))).toMatchObject({
+      outcome: "rejected",
+      reason: "dated",
+    });
+  });
+
   it("ignores a word only the archaic-heavy sources attest, so the rejection stands", async () => {
     withKeys(bothKeys);
     stubTiers({

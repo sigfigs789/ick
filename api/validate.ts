@@ -13,8 +13,9 @@
 //   2. Wordnik, but *only* when MW has no matching entry at all. That is exactly
 //      the case that would otherwise be rejected, so it is pure coverage: AHD
 //      and WordNet attest plenty of specialist vocabulary Collegiate omits.
-//      Running it last also keeps Wordnik's free plan (100 lookups an hour, far
-//      burstier than MW's daily cap) off the common path.
+//      Running it last also keeps Wordnik's free plan off the common path, which
+//      matters more than it does for MW: a free key measures 5 lookups a minute
+//      and 200 an hour, so it is the burstiest allowance of the three.
 //
 // The API keys stay server-side here; they are never shipped to the browser.
 // Responses are CDN-cached so a repeated lookup of the same word costs nothing
@@ -56,10 +57,27 @@ const MW_STATUS_SEVERITY: Record<string, number> = { obsolete: 3, archaic: 2 };
 // here, because Wordnik's own multi-value filter falls back to the *first*
 // dictionary with a hit rather than pooling them.
 const WORDNIK_TRUSTED_SOURCE_RE = /^(ahd(-|$)|wordnet$)/;
-// AHD marks an out-of-use sense with a label rather than a structured status, so
-// the label text is what stands in for MW's `sls`.
-const WORDNIK_OBSOLETE_RE = /\bobsolete\b/i;
-const WORDNIK_ARCHAIC_RE = /\barchaic\b/i;
+// Wiktionary can't approve a word here, but it is the only Wordnik source with
+// systematic per-sense register tags, so it is allowed to *veto* one. Measured
+// against the live API: AHD marks a register only sporadically -- "anon" carries
+// {"text":"Archaic","type":"fld"} on one sense, while "gramercy", "yclept",
+// "sooth" and "bedight" come back with no label at all -- so approving on AHD's
+// silence alone would let archaic words through that MW rejects today. Wiktionary
+// labels all three of gramercy's senses {"text":"archaic","type":"chronological"}.
+const WORDNIK_VETO_SOURCE = "wiktionary";
+// Register marks, by the same severity ranking the MW path and the offline
+// pipeline use. Matched against label text whatever the label's `type`, since
+// AHD files them under "fld" and Wiktionary under "chronological".
+const WORDNIK_STATUS_SEVERITY: Array<[RegExp, number]> = [
+  [/\bobsolete\b/i, 3],
+  [/\barchaic\b/i, 2],
+  [/\bdated\b/i, 1],
+];
+const SEVERITY_REASON: Record<number, RejectReason> = {
+  3: "obsolete",
+  2: "archaic",
+  1: "dated",
+};
 // Wordnik parts of speech that mean the entry is not an ordinary word. Proper
 // nouns are matched by prefix, since the plural and possessive variants are
 // spelled as suffixes of it.
@@ -77,7 +95,14 @@ const UPSTREAM_TIMEOUT_MS = 5000;
 type Outcome = "playable" | "rejected" | "unknown" | "error";
 
 /** Why a word MW knows about still isn't playable. Mirrors the game's reasons. */
-type RejectReason = "proper-noun" | "abbreviation" | "name-or-abbreviation" | "archaic" | "obsolete" | "offensive";
+type RejectReason =
+  | "proper-noun"
+  | "abbreviation"
+  | "name-or-abbreviation"
+  | "archaic"
+  | "obsolete"
+  | "dated"
+  | "offensive";
 
 interface LiveCheckBody {
   word: string;
@@ -118,8 +143,8 @@ interface MwEntry {
 }
 
 /**
- * Only the fields we read from a Wordnik definition. `labels` is where AHD puts
- * register marks like "archaic"; each label is an object with a `text`.
+ * Only the fields we read from a Wordnik definition. Each label in `labels` is an
+ * object with a `text` and a `type`; only the text is read.
  */
 interface WordnikDefinition {
   word?: string;
@@ -196,7 +221,8 @@ function senseSeverities(entry: MwEntry): number[] {
  * Classify an upstream failure so the client's failure event can name it.
  * MW answers an exhausted quota and a bad key with the same 403, distinguished
  * only by the body text, so the body decides between them. Wordnik reports its
- * hourly cap as a 429, which lands in the same "quota-exceeded" bucket -- and
+ * per-minute and hourly caps as a 429, which land in the same "quota-exceeded"
+ * bucket -- and
  * because a Wordnik failure only ever arrives as a `failure` alongside an
  * `unknown` verdict, never as a top-level error, it is reported without
  * switching live checks off for the session the way a spent MW quota does.
@@ -379,26 +405,42 @@ function classify(entries: MwEntry[]): Classification {
   return { outcome: "unknown", reason: null, pos: posList, firstUse };
 }
 
-/** The register mark on a Wordnik definition's labels, if it carries one. */
-function wordnikStatus(def: WordnikDefinition): "obsolete" | "archaic" | null {
+/** Out-of-use severity of a Wordnik definition's labels (0 = current). */
+function wordnikSeverity(def: WordnikDefinition): number {
+  let max = 0;
   for (const raw of def.labels ?? []) {
     const text = String((raw as { text?: unknown } | null)?.text ?? "");
-    if (WORDNIK_OBSOLETE_RE.test(text)) return "obsolete";
-    if (WORDNIK_ARCHAIC_RE.test(text)) return "archaic";
+    for (const [pattern, severity] of WORDNIK_STATUS_SEVERITY) {
+      if (severity > max && pattern.test(text)) max = severity;
+    }
   }
-  return null;
+  return max;
+}
+
+/**
+ * Reject a word every one of whose ordinary senses is out of use, reporting the
+ * mildest register among them -- the rule the MW path and the offline Wiktionary
+ * import both apply. Null when the senses don't all agree, or when there are none.
+ */
+function outOfUseReason(severities: number[]): RejectReason | null {
+  if (severities.length === 0 || !severities.every((severity) => severity > 0)) return null;
+  return SEVERITY_REASON[Math.min(...severities)];
 }
 
 /**
  * Decide whether Wordnik's definitions make this word playable, applying the
- * same rules as `classify` with the evidence Wordnik actually provides. Only
- * definitions from a trusted source dictionary count (see
- * WORDNIK_TRUSTED_SOURCE_RE); everything else is ignored, so a word attested
- * *only* by Century, GCIDE or Wiktionary comes back "unknown" and the original
- * rejection stands.
+ * same rules as `classify` with the evidence Wordnik actually provides.
  *
- * There is no offensive flag to read here, which is the other reason the trusted
- * set is narrow: AHD and WordNet have no slur tail for one to be needed on.
+ * Approval needs a trusted source dictionary (see WORDNIK_TRUSTED_SOURCE_RE);
+ * a word attested only by Century, GCIDE/Webster or Wiktionary comes back
+ * "unknown" and the original rejection stands. Rejection is looser on purpose:
+ * Wiktionary's register tags can veto a word AHD lists without a label, because
+ * AHD supplies one only sometimes and approving on its silence would admit
+ * archaic words MW rejects today.
+ *
+ * There is no offensive flag to read anywhere here, which is the other reason
+ * approval is limited to AHD and WordNet: they have no slur tail for one to be
+ * needed on.
  *
  * Returns the verdict plus the source dictionaries that produced it, for the
  * `source` field.
@@ -409,7 +451,8 @@ function classifyWordnik(
 ): { verdict: Classification; sources: string[] } {
   const pos = new Set<string>();
   const sources = new Set<string>();
-  const ordinaryStatuses: Array<"obsolete" | "archaic" | null> = [];
+  const trustedSeverities: number[] = [];
+  const vetoSeverities: number[] = [];
   let hasOrdinary = false;
   let hasName = false;
   let hasAbbr = false;
@@ -418,20 +461,30 @@ function classifyWordnik(
     // Wordnik answers about related headwords too, and returns stub entries with
     // no definition text; neither is evidence about the queried word.
     if (String(def.word ?? "").trim().toLowerCase() !== word) continue;
-    const sourceDictionary = String(def.sourceDictionary ?? "").toLowerCase();
-    if (!WORDNIK_TRUSTED_SOURCE_RE.test(sourceDictionary)) continue;
     if (!String(def.text ?? "").trim()) continue;
-    sources.add(sourceDictionary);
+    const sourceDictionary = String(def.sourceDictionary ?? "").toLowerCase();
+    const trusted = WORDNIK_TRUSTED_SOURCE_RE.test(sourceDictionary);
+    if (!trusted && sourceDictionary !== WORDNIK_VETO_SOURCE) continue;
 
     const partOfSpeech = String(def.partOfSpeech ?? "").toLowerCase();
-    if (partOfSpeech) pos.add(partOfSpeech);
+    // A name or abbreviation sense is not an ordinary sense, so it neither
+    // approves the word nor counts toward the out-of-use rule.
     if (WORDNIK_ABBR_POS.has(partOfSpeech)) {
-      hasAbbr = true;
-    } else if (partOfSpeech.startsWith(WORDNIK_NAME_POS_PREFIX)) {
-      hasName = true;
-    } else {
+      if (trusted) hasAbbr = true;
+      continue;
+    }
+    if (partOfSpeech.startsWith(WORDNIK_NAME_POS_PREFIX)) {
+      if (trusted) hasName = true;
+      continue;
+    }
+
+    if (trusted) {
+      sources.add(sourceDictionary);
+      if (partOfSpeech) pos.add(partOfSpeech);
       hasOrdinary = true;
-      ordinaryStatuses.push(wordnikStatus(def));
+      trustedSeverities.push(wordnikSeverity(def));
+    } else {
+      vetoSeverities.push(wordnikSeverity(def));
     }
   }
 
@@ -443,11 +496,9 @@ function classifyWordnik(
   });
 
   if (hasOrdinary) {
-    // Out of use only when every ordinary sense is, and the mildest register
-    // wins -- the same rule as the MW path.
-    if (ordinaryStatuses.every((status) => status !== null)) {
-      return verdict("rejected", ordinaryStatuses.includes("archaic") ? "archaic" : "obsolete");
-    }
+    // The trusted sources' own verdict first, then Wiktionary's veto.
+    const reason = outOfUseReason(trustedSeverities) ?? outOfUseReason(vetoSeverities);
+    if (reason) return verdict("rejected", reason);
     return verdict("playable", null);
   }
   if (hasName && hasAbbr) return verdict("rejected", "name-or-abbreviation");

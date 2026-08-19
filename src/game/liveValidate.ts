@@ -189,6 +189,7 @@ const MAPPED_REASONS = new Set<string>([
   "name-or-abbreviation",
   "archaic",
   "obsolete",
+  "dated",
 ]);
 
 /**
