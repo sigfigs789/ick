@@ -3,16 +3,18 @@ import { LIVE_CHECK_NOTE } from "./useDailyPuzzle";
 
 describe("live check note", () => {
   it("moves from an in-progress form to a settled one", () => {
-    // The in-progress form trails off; the finished ones are a full stop.
+    // Only the in-progress form trails off -- that ellipsis is what earns it the
+    // animated dots in FeedbackRegion, so a settled form must never carry one.
     expect(LIVE_CHECK_NOTE.pending.endsWith("…")).toBe(true);
-    expect(LIVE_CHECK_NOTE.found.endsWith(".")).toBe(true);
-    expect(LIVE_CHECK_NOTE.notFound.endsWith(".")).toBe(true);
+    expect(LIVE_CHECK_NOTE.found.endsWith("…")).toBe(false);
+    expect(LIVE_CHECK_NOTE.notFound.endsWith("…")).toBe(false);
     expect(LIVE_CHECK_NOTE.found).not.toBe(LIVE_CHECK_NOTE.notFound);
   });
 
   it("says what the search is doing, and says so plainly", () => {
-    expect(LIVE_CHECK_NOTE.pending).toBe("Scouring dictionaries…");
-    expect(LIVE_CHECK_NOTE.notFound).toBe("Not found.");
+    expect(LIVE_CHECK_NOTE.pending).toBe("Digging through dictionaries…");
+    expect(LIVE_CHECK_NOTE.found).toBe("Found it!");
+    expect(LIVE_CHECK_NOTE.notFound).toBe("Not found");
   });
 
   it("reports on the search rather than judging the word", () => {

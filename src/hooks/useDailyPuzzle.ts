@@ -72,9 +72,9 @@ export interface LiveCheckNote {
 }
 
 export const LIVE_CHECK_NOTE: LiveCheckNote = {
-  pending: "Scouring dictionaries…",
-  found: "Found it.",
-  notFound: "Not found.",
+  pending: "Digging through dictionaries…",
+  found: "Found it!",
+  notFound: "Not found",
 };
 
 export interface Feedback {
