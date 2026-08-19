@@ -36,9 +36,9 @@ describe("FeedbackRegion", () => {
 
   it("holds the live note while the lookup runs, with no verdict to outlive", () => {
     vi.useFakeTimers();
-    render(<FeedbackRegion feedback={null} note="Rummaging…" onWordRules={vi.fn()} />);
+    render(<FeedbackRegion feedback={null} note="Verifying…" onWordRules={vi.fn()} />);
 
-    const note = screen.getByText("Rummaging");
+    const note = screen.getByText("Verifying");
     expect(note).toHaveClass("live-note--shown");
 
     // Well past the toast's window: a check still in flight must not fade out.
@@ -48,37 +48,37 @@ describe("FeedbackRegion", () => {
 
   it("animates the dots of a note still in flight, and drops them once it settles", () => {
     const { rerender } = render(
-      <FeedbackRegion feedback={null} note="Rummaging…" onWordRules={vi.fn()} />
+      <FeedbackRegion feedback={null} note="Verifying…" onWordRules={vi.fn()} />
     );
 
     // The stem stays one plain text node -- it is what gets announced -- and the
     // dots are decoration hidden from the screen reader.
-    const note = screen.getByText("Rummaging");
+    const note = screen.getByText("Verifying");
     const dots = note.querySelector(".live-note__dots");
     expect(dots).toHaveAttribute("aria-hidden", "true");
     expect(note.querySelectorAll(".live-note__dot")).toHaveLength(3);
-    expect(note).toHaveTextContent("Rummaging...");
+    expect(note).toHaveTextContent("Verifying...");
 
     // A settled note is a finished sentence, not a wait: nothing to animate.
-    rerender(<FeedbackRegion feedback={null} note="Rummaged." onWordRules={vi.fn()} />);
-    expect(screen.getByText("Rummaged.").querySelector(".live-note__dots")).toBeNull();
+    rerender(<FeedbackRegion feedback={null} note="Verified." onWordRules={vi.fn()} />);
+    expect(screen.getByText("Verified.").querySelector(".live-note__dots")).toBeNull();
   });
 
   it("fades the live note out together with the verdict it accompanies", () => {
     vi.useFakeTimers();
     const { rerender } = render(
-      <FeedbackRegion feedback={null} note="Rummaging…" onWordRules={vi.fn()} />
+      <FeedbackRegion feedback={null} note="Verifying…" onWordRules={vi.fn()} />
     );
 
     // The verdict lands and the note switches to its past tense.
     rerender(
       <FeedbackRegion
         feedback={{ kind: "accepted", message: '"emesis" accepted — Rare.', key: 1 }}
-        note="Rummaged."
+        note="Verified."
         onWordRules={vi.fn()}
       />
     );
-    const note = screen.getByText("Rummaged.");
+    const note = screen.getByText("Verified.");
     const toast = screen.getByRole("status");
     expect(note).toHaveClass("live-note--shown");
     expect(toast).toHaveClass("feedback--shown");

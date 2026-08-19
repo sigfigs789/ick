@@ -5,10 +5,7 @@ import { todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { isValidWord } from "../game/dictionary";
 import { resetLiveCheckSession } from "../game/liveValidate";
-import { LIVE_CHECK_NOTES } from "./useDailyPuzzle";
-
-const PENDING_NOTES = LIVE_CHECK_NOTES.map((note) => note.pending);
-const DONE_NOTES = LIVE_CHECK_NOTES.map((note) => note.done);
+import { LIVE_CHECK_NOTE } from "./useDailyPuzzle";
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
@@ -123,35 +120,17 @@ describe("useDailyPuzzle live fallback", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
 
-    expect(PENDING_NOTES).toContain(result.current.liveNote);
+    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE.pending);
     expect(result.current.feedback).toBeNull();
 
     await act(async () => {
       await pending;
     });
 
-    // The note stays, but the verb moves into the past tense so the finished
-    // search reads as a completed action rather than a message that just stops.
+    // The note stays, but settles so the finished search reads as a completed
+    // action rather than a message that just stops.
     expect(result.current.feedback?.kind).toBe("accepted");
-    expect(DONE_NOTES).toContain(result.current.liveNote);
-    expect(PENDING_NOTES).not.toContain(result.current.liveNote);
-  });
-
-  it("moves through the rotation so two lookups never read the same", async () => {
-    stubValidate(playable(3.0));
-    const { result } = renderHook(() => useDailyPuzzle());
-
-    await act(async () => {
-      await result.current.submitWord(OFF_LIST_WORD);
-    });
-    const first = result.current.liveNote;
-
-    await act(async () => {
-      await result.current.submitWord(`${DROP.toLowerCase()}qxw`);
-    });
-
-    expect(result.current.liveNote).not.toBe(first);
-    expect(DONE_NOTES).toContain(result.current.liveNote);
+    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE.found);
   });
 
   it("carries no note for a submission that never needs a lookup", async () => {
@@ -171,7 +150,7 @@ describe("useDailyPuzzle live fallback", () => {
     await act(async () => {
       await result.current.submitWord(OFF_LIST_WORD);
     });
-    expect(DONE_NOTES).toContain(result.current.liveNote);
+    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE.found);
 
     await act(async () => {
       await result.current.submitWord("qqqqzz");
@@ -198,8 +177,8 @@ describe("useDailyPuzzle live fallback", () => {
     expect(result.current.progress.rejectedAttempts).toEqual([OFF_LIST_WORD]);
     // The specific reason MW supplied, not the generic curated-list message.
     expect(result.current.feedback?.message).toContain("archaic");
-    // A rejection is still a finished search, so the verb is past tense too.
-    expect(DONE_NOTES).toContain(result.current.liveNote);
+    // A rejection is still a finished search: it settles on the empty-handed form.
+    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE.notFound);
   });
 
   it("keeps the offline rejection when the lookup itself fails", async () => {
