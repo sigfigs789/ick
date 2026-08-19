@@ -19,6 +19,11 @@
     "reason": "Plural / third-person form of `compassionate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "fluconazoles": {
+    "base": "fluconazole",
+    "reason": "Plural / third-person form of `fluconazole`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
   "gravitater": {
     "base": "gravitate",
     "reason": "Comparative or agent noun of `gravitate`; a suffix is not a discovery.",
@@ -59,6 +64,11 @@
     "reason": "Plural of `nizamate`, which is itself only the -ate form of `nizam`; folded straight to `nizam` because the cap reads a base's raw Zipf, so folding onto `nizamate` would leave this at 10.00.",
     "since": "2026-08-19"
   },
+  "nonconfidences": {
+    "base": "nonconfidence",
+    "reason": "Plural / third-person form of `nonconfidence`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
   "ornatest": {
     "base": "ornate",
     "reason": "Superlative of `ornate`; a suffix is not a discovery.",
@@ -68,6 +78,11 @@
     "base": "penultimate",
     "reason": "Plural / third-person form of `penultimate`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "photoreconnaissances": {
+    "base": "photoreconnaissance",
+    "reason": "Plural / third-person form of `photoreconnaissance`; a suffix is not a discovery.",
+    "since": "2026-08-20"
   },
   "placation": {
     "base": "placate",
