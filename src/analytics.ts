@@ -156,6 +156,14 @@ export function trackMerriamWebsterFailed(date: string, drop: string, check: Liv
   });
 }
 
+/**
+ * Record free-text feedback left in the How to play panel. Trimmed and capped at
+ * 200 characters so a long note still lands as a single readable property value.
+ */
+export function trackFeedbackSubmitted(rawFeedback: string) {
+  track("feedback_submitted", { feedback: rawFeedback.trim().slice(0, 200) });
+}
+
 /** Record player suggestions for future curated-list reviews. */
 export function trackWordSuggestion(rawWord: string) {
   track("word_suggested", { word: rawWord.trim().toLowerCase() });
