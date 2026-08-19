@@ -1,28 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { LIVE_CHECK_NOTES } from "./useDailyPuzzle";
+import { LIVE_CHECK_NOTE } from "./useDailyPuzzle";
 
-describe("live check notes", () => {
-  it("pairs every in-progress verb with a distinct past tense", () => {
-    for (const note of LIVE_CHECK_NOTES) {
-      expect(note.pending).not.toBe(note.done);
-      // The in-progress form trails off; the finished one is a full stop.
-      expect(note.pending.endsWith("…")).toBe(true);
-      expect(note.done.endsWith(".")).toBe(true);
-    }
+describe("live check note", () => {
+  it("moves from an in-progress form to a settled one", () => {
+    // The in-progress form trails off; the finished ones are a full stop.
+    expect(LIVE_CHECK_NOTE.pending.endsWith("…")).toBe(true);
+    expect(LIVE_CHECK_NOTE.found.endsWith(".")).toBe(true);
+    expect(LIVE_CHECK_NOTE.notFound.endsWith(".")).toBe(true);
+    expect(LIVE_CHECK_NOTE.found).not.toBe(LIVE_CHECK_NOTE.notFound);
   });
 
-  it("keeps enough verbs that a session rarely repeats one", () => {
-    expect(LIVE_CHECK_NOTES.length).toBeGreaterThanOrEqual(6);
-  });
-
-  it("keeps every verb unique so the rotation never repeats itself", () => {
-    const pending = LIVE_CHECK_NOTES.map((note) => note.pending);
-    expect(new Set(pending).size).toBe(pending.length);
+  it("says the search is verifying, and says so plainly", () => {
+    expect(LIVE_CHECK_NOTE.pending).toBe("Verifying…");
+    expect(LIVE_CHECK_NOTE.notFound).toBe("Not found.");
   });
 
   it("says nothing about where the game is looking", () => {
     // Naming a dictionary would advertise the fallback; these must stay vague.
-    const words = LIVE_CHECK_NOTES.flatMap((note) => [note.pending, note.done]).join(" ");
+    const words = [
+      LIVE_CHECK_NOTE.pending,
+      LIVE_CHECK_NOTE.found,
+      LIVE_CHECK_NOTE.notFound,
+    ].join(" ");
     expect(words).not.toMatch(/dictionar|webster|list|word/i);
   });
 });
