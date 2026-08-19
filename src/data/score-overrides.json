@@ -19,6 +19,56 @@
     "reason": "Plural / third-person form of `compassionate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "concisest": {
+    "base": "concise",
+    "reason": "Superlative of `concise`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
+  "concomitances": {
+    "base": "concomitance",
+    "reason": "Plural / third-person form of `concomitance`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
+  "concrescences": {
+    "base": "concrescence",
+    "reason": "Plural / third-person form of `concrescence`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
+  "conductances": {
+    "base": "conductance",
+    "reason": "Plural / third-person form of `conductance`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
+  "consummates": {
+    "base": "consummate",
+    "reason": "Plural / third-person form of `consummate`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
+  "contemplatives": {
+    "base": "contemplative",
+    "reason": "Plural / third-person form of `contemplative`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
+  "contester": {
+    "base": "contest",
+    "reason": "Comparative or agent noun of `contest`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
+  "continences": {
+    "base": "continence",
+    "reason": "Plural / third-person form of `continence`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
+  "convalescences": {
+    "base": "convalescence",
+    "reason": "Plural / third-person form of `convalescence`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
+  "gluconeogeneses": {
+    "base": "gluconeogenesis",
+    "reason": "Plural / third-person form of `gluconeogenesis`; a suffix is not a discovery.",
+    "since": "2026-08-20"
+  },
   "gravitater": {
     "base": "gravitate",
     "reason": "Comparative or agent noun of `gravitate`; a suffix is not a discovery.",
@@ -28,6 +78,11 @@
     "base": "gravitate",
     "reason": "Plural agent noun of `gravitate`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "incontinences": {
+    "base": "incontinence",
+    "reason": "Plural / third-person form of `incontinence`; a suffix is not a discovery.",
+    "since": "2026-08-20"
   },
   "iratest": {
     "base": "irate",
@@ -63,6 +118,11 @@
     "base": "ornate",
     "reason": "Superlative of `ornate`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "overconfidences": {
+    "base": "overconfidence",
+    "reason": "Plural / third-person form of `overconfidence`; a suffix is not a discovery.",
+    "since": "2026-08-20"
   },
   "penultimates": {
     "base": "penultimate",
