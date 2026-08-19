@@ -1278,6 +1278,30 @@ h2 {
   color: var(--success-fg);
   font-weight: 700;
 }
+.feedback__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+.feedback__input {
+  display: block;
+  width: 100%;
+  margin-top: 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  background: var(--bg-inset);
+  color: var(--fg);
+  font: inherit;
+  font-weight: 500;
+  resize: vertical;
+}
+.feedback__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
 
 @media (max-width: 420px) {
   .drop-display__letter {

@@ -9,6 +9,7 @@ import {
   trackUnattestedScore,
   trackVisit,
   trackVisitEngaged,
+  trackFeedbackSubmitted,
 } from "./analytics";
 import { unattestedZipf, rarityScore } from "./game/dictionary";
 import { puzzleNumber } from "./game/share";
@@ -337,5 +338,12 @@ describe("unattested-score event", () => {
       "unattested_score_used",
       expect.objectContaining({ score: rarityScore(unattestedZipf(), "2026-08-15") })
     );
+  });
+});
+
+describe("trackFeedbackSubmitted", () => {
+  it("trims the note and caps it at 200 characters", () => {
+    trackFeedbackSubmitted(`  ${"a".repeat(250)}  `);
+    expect(track).toHaveBeenCalledWith("feedback_submitted", { feedback: "a".repeat(200) });
   });
 });

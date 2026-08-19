@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { trackFeedbackSubmitted } from "../analytics";
 
 interface Props {
   open: boolean;
@@ -7,6 +8,8 @@ interface Props {
 
 export function InstructionsModal({ open, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [feedback, setFeedback] = useState("");
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     if (open) closeRef.current?.focus();
@@ -22,6 +25,15 @@ export function InstructionsModal({ open, onClose }: Props) {
   }, [open, onClose]);
 
   if (!open) return null;
+
+  function submitFeedback(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const note = feedback.trim();
+    if (!note) return;
+    trackFeedbackSubmitted(note);
+    setFeedback("");
+    setSent(true);
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -49,6 +61,31 @@ export function InstructionsModal({ open, onClose }: Props) {
           Rarity scores reflect how often words appear across sources including books, news, movies,
           websites, social media, and more. Values are then computed using Zipf’s law. They do not reflect how complex a word is. The highest ranks are Legend and Mythic at 9.9+ and 9.5+ rarity.
         </p>
+        <form className="word-suggestion feedback" onSubmit={submitFeedback}>
+          <label htmlFor="game-feedback">Have an idea or something to report?</label>
+          <p className="feedback__hint">
+            Tell me what would make WordInk better—a feature you want, something confusing, or a bug
+            you hit. It comes through anonymously.
+          </p>
+          <textarea
+            id="game-feedback"
+            className="feedback__input"
+            value={feedback}
+            onChange={(event) => {
+              setFeedback(event.target.value);
+              setSent(false);
+            }}
+            placeholder="Share your feedback"
+            rows={3}
+            maxLength={300}
+          />
+          <div className="feedback__actions">
+            <button type="submit" disabled={!feedback.trim()}>
+              Send feedback
+            </button>
+          </div>
+          {sent && <p className="word-suggestion__thanks">Thanks for the feedback!</p>}
+        </form>
         <p className="modal__signoff">Made by one person, for fun. Thanks for playing. 🙂</p>
       </div>
     </div>

@@ -3,6 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { InstructionsModal } from "./InstructionsModal";
 
+const trackFeedbackSubmitted = vi.hoisted(() => vi.fn());
+vi.mock("../analytics", () => ({ trackFeedbackSubmitted }));
+
 describe("InstructionsModal", () => {
   it("does not render until opened, then focuses its close button", () => {
     const { rerender } = render(<InstructionsModal open={false} onClose={vi.fn()} />);
@@ -36,5 +39,20 @@ describe("InstructionsModal", () => {
 
     fireEvent.click(dialog.parentElement!);
     expect(onClose).toHaveBeenCalledTimes(3);
+  });
+
+  it("sends trimmed feedback to analytics, then clears the box and thanks the player", async () => {
+    trackFeedbackSubmitted.mockClear();
+    render(<InstructionsModal open onClose={vi.fn()} />);
+    const box = screen.getByLabelText(/have an idea or something to report/i);
+    const send = screen.getByRole("button", { name: /send feedback/i });
+    expect(send).toBeDisabled();
+
+    await userEvent.type(box, "  more vowel drops please  ");
+    await userEvent.click(send);
+
+    expect(trackFeedbackSubmitted).toHaveBeenCalledWith("more vowel drops please");
+    expect(box).toHaveValue("");
+    expect(screen.getByText(/thanks for the feedback/i)).toBeInTheDocument();
   });
 });
