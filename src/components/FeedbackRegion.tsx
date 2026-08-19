@@ -46,7 +46,7 @@ export function FeedbackRegion({ feedback, note, onWordRules }: Props) {
     return () => window.clearTimeout(timer);
   }, [note, feedback]);
 
-  // A note still in flight ends in an ellipsis; a settled one ("Verified.")
+  // A note still in flight ends in an ellipsis; a settled one ("Found it!")
   // doesn't. Only the pending form gets the animated dots, so the split is just
   // that character: the stem stays a plain text node and carries the
   // announcement, and the dots are decoration the screen reader never sees.

@@ -51,29 +51,54 @@ import {
 import { markSessionEngaged } from "../game/visits";
 
 /**
- * The note shown while a live lookup runs, and what it becomes once the lookup
+ * What the game says while a live lookup runs, and what it says once the lookup
  * has answered -- the same search moving from in-progress to done, so finishing
  * reads as a completed action rather than a message that simply stops.
  *
- * Deliberately says nothing about *where* the game is looking: naming a second
- * dictionary would advertise the fallback and invite players to fish for words
- * the curated list doesn't have. The settled forms report on the search, not on
- * the word -- the rejection toast is what explains a verdict.
+ * The in-progress line rotates; the settled ones don't. A player sees several
+ * lookups over a week and a fixed line would read as a frozen message, but the
+ * verdict is not the place for variety -- "Found it!" and "Not found" are the
+ * two things there are to say, and saying them the same way every time is what
+ * makes them legible at a glance.
+ *
+ * Every line reports on the *search*, never on the word: a word can be
+ * perfectly good and still be one no reference here carries, so nothing here
+ * claims a word is or isn't real. The toast is what delivers the verdict.
+ *
+ * None of them names a particular reference. "Dictionaries", "tomes" and "the
+ * stacks" say work is being done and roughly where, without naming the fallback
+ * and inviting players to fish for words the curated list doesn't have. A line
+ * that skips the where ("Digging deeper…") is fine among lines that don't: the
+ * rotation as a whole is what tells the player where the game has gone.
  */
-export interface LiveCheckNote {
-  /** While the lookup is in flight. */
-  pending: string;
-  /** Once it has answered and the word stands. */
-  found: string;
-  /** Once it has answered and the word was turned down. */
-  notFound: string;
-}
+export const LIVE_CHECK_PENDING: readonly string[] = [
+  "Consulting the tomes…",
+  "Digging deeper…",
+  "Rifling through dictionaries…",
+  "Off to the stacks…",
+  "Blowing dust off the tomes…",
+  "Thumbing the index…",
+  "Down in the footnotes…",
+  "Ransacking the dictionaries…",
+  "Waking the librarian…",
+];
 
-export const LIVE_CHECK_NOTE: LiveCheckNote = {
-  pending: "Verifying…",
-  found: "Verified.",
-  notFound: "Not found.",
-};
+/** Once the search has turned the word up, and once it has come back empty. */
+export const LIVE_CHECK_SETTLED = {
+  found: "Found it!",
+  notFound: "Not found",
+} as const;
+
+// Advanced rather than randomised so two lookups in a row never show the same
+// line (which would read as a frozen message) and so tests stay predictable.
+let pendingIndex = 0;
+
+/** The next in-progress line in the rotation. */
+export function nextLiveCheckPending(): string {
+  const line = LIVE_CHECK_PENDING[pendingIndex % LIVE_CHECK_PENDING.length];
+  pendingIndex += 1;
+  return line;
+}
 
 export interface Feedback {
   kind: "accepted" | "rejected";
@@ -206,7 +231,7 @@ export function useDailyPuzzle() {
     (raw: string, check: LiveCheck): SubmissionResult => {
       if (liveNotePending.current) {
         const settled =
-          check.outcome === "playable" ? LIVE_CHECK_NOTE.found : LIVE_CHECK_NOTE.notFound;
+          check.outcome === "playable" ? LIVE_CHECK_SETTLED.found : LIVE_CHECK_SETTLED.notFound;
         setLiveNote(settled);
       }
 
@@ -277,7 +302,7 @@ export function useDailyPuzzle() {
       // stated one reads as work being done, which is why the wait can afford to
       // be as long as LIVE_HANDOFF_MS.
       liveNotePending.current = true;
-      setLiveNote(LIVE_CHECK_NOTE.pending);
+      setLiveNote(nextLiveCheckPending());
       setChecking(true);
       const settled = await withHandoff(lookup);
       setChecking(false);

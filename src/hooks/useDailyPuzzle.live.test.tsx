@@ -5,7 +5,7 @@ import { todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { isValidWord } from "../game/dictionary";
 import { resetLiveCheckSession } from "../game/liveValidate";
-import { LIVE_CHECK_NOTE } from "./useDailyPuzzle";
+import { LIVE_CHECK_PENDING, LIVE_CHECK_SETTLED } from "./useDailyPuzzle";
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
@@ -120,7 +120,7 @@ describe("useDailyPuzzle live fallback", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
 
-    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE.pending);
+    expect(LIVE_CHECK_PENDING).toContain(result.current.liveNote);
     expect(result.current.feedback).toBeNull();
 
     await act(async () => {
@@ -130,7 +130,29 @@ describe("useDailyPuzzle live fallback", () => {
     // The note stays, but settles so the finished search reads as a completed
     // action rather than a message that just stops.
     expect(result.current.feedback?.kind).toBe("accepted");
-    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE.found);
+    expect(result.current.liveNote).toBe(LIVE_CHECK_SETTLED.found);
+  });
+
+  it("moves through the rotation so two waits never read the same", async () => {
+    // 800ms each, so the in-progress line is still up when it is read.
+    stubValidate(playable(3.0), 800);
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    const seen: Array<string | null> = [];
+    for (const word of [OFF_LIST_WORD, `${DROP.toLowerCase()}qxw`]) {
+      let pending: Promise<unknown> | undefined;
+      await act(async () => {
+        pending = result.current.submitWord(word);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      });
+      seen.push(result.current.liveNote);
+      await act(async () => {
+        await pending;
+      });
+    }
+
+    expect(seen[0]).not.toBe(seen[1]);
+    for (const line of seen) expect(LIVE_CHECK_PENDING).toContain(line);
   });
 
   it("carries no note for a submission that never needs a lookup", async () => {
@@ -150,7 +172,7 @@ describe("useDailyPuzzle live fallback", () => {
     await act(async () => {
       await result.current.submitWord(OFF_LIST_WORD);
     });
-    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE.found);
+    expect(result.current.liveNote).toBe(LIVE_CHECK_SETTLED.found);
 
     await act(async () => {
       await result.current.submitWord("qqqqzz");
@@ -178,7 +200,7 @@ describe("useDailyPuzzle live fallback", () => {
     // The specific reason MW supplied, not the generic curated-list message.
     expect(result.current.feedback?.message).toContain("archaic");
     // A rejection is still a finished search: it settles on the empty-handed form.
-    expect(result.current.liveNote).toBe(LIVE_CHECK_NOTE.notFound);
+    expect(result.current.liveNote).toBe(LIVE_CHECK_SETTLED.notFound);
   });
 
   it("keeps the offline rejection when the lookup itself fails", async () => {
