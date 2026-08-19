@@ -72,7 +72,7 @@ export function InstructionsModal({ open, onClose }: Props) {
                 setFeedback(event.target.value);
                 setSent(false);
               }}
-              placeholder="Share feedback or leave a suggestion or help me grow the game"
+              placeholder="Share feedback, leave a suggestion, or help me grow the game"
               rows={2}
               maxLength={300}
             />
