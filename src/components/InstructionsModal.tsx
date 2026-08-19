@@ -62,20 +62,16 @@ export function InstructionsModal({ open, onClose }: Props) {
           websites, social media, and more. Values are then computed using Zipf’s law. They do not reflect how complex a word is. The highest ranks are Legend and Mythic at 9.9+ and 9.5+ rarity.
         </p>
         <form className="word-suggestion feedback-form" onSubmit={submitFeedback}>
-          <label htmlFor="game-feedback">Have an idea or something to report?</label>
-          <p className="feedback-form__hint">
-            Tell me what would make WordInk better—a feature you want, something confusing, or a bug
-            you hit. It comes through anonymously.
-          </p>
           <textarea
             id="game-feedback"
             className="feedback-form__input"
+            aria-label="Share feedback or leave a suggestion"
             value={feedback}
             onChange={(event) => {
               setFeedback(event.target.value);
               setSent(false);
             }}
-            placeholder="Share your feedback"
+            placeholder="Share feedback or leave a suggestion or help me grow the game"
             rows={3}
             maxLength={300}
           />

@@ -44,7 +44,7 @@ describe("InstructionsModal", () => {
   it("sends trimmed feedback to analytics, then clears the box and thanks the player", async () => {
     trackFeedbackSubmitted.mockClear();
     render(<InstructionsModal open onClose={vi.fn()} />);
-    const box = screen.getByLabelText(/have an idea or something to report/i);
+    const box = screen.getByLabelText(/share feedback or leave a suggestion/i);
     const send = screen.getByRole("button", { name: /send feedback/i });
     expect(send).toBeDisabled();
 
