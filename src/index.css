@@ -23,6 +23,9 @@
   --success-fg: #14532d;
   --success-bg: #e9f9ee;
   --focus-ring: #2563eb;
+  /* Which way a colour has to move to read as lit rather than washed out: on a
+     light page that is towards black, on a dark one towards white. */
+  --lift: #000000;
 
   /* "Loot tier" rarity scale -- a familiar convention from games (common
      grey through legendary gold) that reads as a fun reveal rather than a
@@ -92,6 +95,7 @@
     --success-fg: #9fe0b6;
     --success-bg: #10301c;
     --focus-ring: #6d9bff;
+    --lift: #ffffff;
 
     --rarity-quotidian-bg: #000;
     --rarity-quotidian-fg: #fff;
@@ -692,14 +696,22 @@ h2 {
   font-size: 1.15rem;
   font-weight: 600;
   padding: 0.7rem 0.9rem;
-  border: 2px solid var(--border-strong);
+  /* The border's resting colour, behind a property so the checking pulse below
+     can name it without knowing which state the field is in, and the lit colour
+     derived from it -- so the pulse deepens whatever is already there instead of
+     introducing a colour of its own. */
+  --border-live: var(--border-strong);
+  --border-lit: color-mix(in srgb, var(--border-live) 55%, var(--lift));
+  border: 2px solid var(--border-live);
   border-radius: 0.65rem;
   background: var(--card-bg);
   color: var(--fg);
-  transition: border-color 0.15s var(--ease-standard);
+  transition:
+    border-color 0.15s var(--ease-standard),
+    outline-color 0.15s var(--ease-standard);
 }
 .submit-form input:focus-visible {
-  border-color: var(--focus-ring);
+  --border-live: var(--focus-ring);
 }
 .submit-form input::placeholder {
   color: var(--fg-faint);
@@ -707,35 +719,46 @@ h2 {
   font-family: var(--font-body);
 }
 /* A live lookup is running (see LIVE_HANDOFF_MS). An unmarked pause reads as a
-   dropped keystroke, so a thin grey line tracks across the base of the input --
-   the field only, not the Submit button beside it. Nothing else changes: no
-   colour, no layout, and typing stays enabled. */
+   dropped keystroke, so the input's whole border breathes: every edge of it
+   lifts to a brighter tone together and settles back, once per 1.2s. The box is
+   where the player already looks for a reaction -- it shakes on a rejection --
+   so a wait that leaves it inert is the one verdict the box sits out.
+
+   The border and the focus outline pulse as one, because while checking the
+   field is usually focused (submitting hands focus straight back to the input)
+   and a still blue ring around a moving one would read as two states at once.
+   Both lift from whatever colour they already carry, so the pulse never
+   introduces a colour of its own: grey at rest, the focus blue when focused.
+
+   Nothing else changes: no layout, and typing stays enabled, so this indicates
+   rather than blocks. */
 .submit-form__field {
-  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
 }
-.submit-form__row--checking .submit-form__field::after {
-  content: "";
-  position: absolute;
-  left: 2px;
-  right: 2px;
-  bottom: 2px;
-  height: 2px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, var(--fg-faint), transparent);
-  background-size: 40% 100%;
-  background-repeat: no-repeat;
-  animation: input-checking-sweep 1.2s var(--ease-standard) infinite;
-  pointer-events: none;
+.submit-form__row--checking input {
+  animation: input-checking-pulse 1.2s ease-out infinite;
 }
-@keyframes input-checking-sweep {
-  from {
-    background-position: -45% 0;
-  }
+/* Struck rather than breathed: the border reaches full brightness inside the
+   first fifth of the pass and decays across the rest. A symmetric rise put the
+   peak 600ms after the submission that caused it, which left the field looking
+   untouched for half a second at exactly the moment the player was waiting to
+   see something happen. This way the first thing a submission produces is the
+   border lighting up, and each pass after it lands like the next beat.
+
+   Both ends sit at the resting colour, so a pass that is cut short -- or pinned
+   to a single near-instant run under prefers-reduced-motion -- leaves the
+   border exactly as it was rather than stranded mid-lift. */
+@keyframes input-checking-pulse {
+  from,
   to {
-    background-position: 145% 0;
+    border-color: var(--border-live);
+    outline-color: var(--border-live);
+  }
+  18% {
+    border-color: var(--border-lit);
+    outline-color: var(--border-lit);
   }
 }
 .submit-form button,
@@ -825,6 +848,34 @@ h2 {
 }
 .live-note--shown {
   opacity: 1;
+}
+/* The dots of a pending note, cycling in one at a time. The note is where the
+   player is already looking, so this is the cue that carries the waiting; the
+   sweep under the input is support. Three separate dots on staggered delays
+   rather than a clipped "…" so nothing depends on the font's period width.
+
+   Every keyframe ends fully opaque, which is also the reduced-motion state:
+   the global rule pins each animation to one near-instant run, leaving a plain
+   static "..." -- the same thing the note said before. */
+.live-note__dot {
+  animation: live-note-dot 1.2s var(--ease-standard) infinite;
+}
+.live-note__dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.live-note__dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes live-note-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  40% {
+    opacity: 0;
+  }
 }
 .feedback__more-info {
   margin-left: 0.4rem;

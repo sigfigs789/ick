@@ -43,8 +43,8 @@ describe("SubmitForm", () => {
     await userEvent.type(input, "stray");
     expect(input).toHaveValue("stray");
 
-    // A lookup that answers mid-sweep leaves the line running: it stops at the
-    // end of the pass it is in, not halfway across.
+    // A lookup that answers mid-pulse leaves the border running: it stops at
+    // the end of the breath it is in, not stranded part-way lit.
     rerender(
       <SubmitForm drop="str" disabled={false} feedback={null} checking={false} onSubmit={vi.fn()} />
     );
@@ -55,7 +55,7 @@ describe("SubmitForm", () => {
     expect(container.querySelector(".submit-form__row--checking")).not.toBeInTheDocument();
   });
 
-  it("stops the sweep on its own if no animation event ever arrives", async () => {
+  it("stops the pulse on its own if no animation event ever arrives", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       const { container, rerender } = render(

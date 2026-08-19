@@ -46,6 +46,12 @@ export function FeedbackRegion({ feedback, note, onWordRules }: Props) {
     return () => window.clearTimeout(timer);
   }, [note, feedback]);
 
+  // A note still in flight ends in an ellipsis; a settled one ("Rummaged.")
+  // doesn't. Only the pending form gets the animated dots, so the split is just
+  // that character: the stem stays a plain text node and carries the
+  // announcement, and the dots are decoration the screen reader never sees.
+  const pendingStem = note?.endsWith("…") ? note.slice(0, -1) : null;
+
   // A trailing run of zero-width spaces, sized by `feedback.key`, makes
   // consecutive identical messages (e.g. rejecting the same word twice)
   // register as new text content so screen readers re-announce them.
@@ -57,7 +63,14 @@ export function FeedbackRegion({ feedback, note, onWordRules }: Props) {
         // Deliberately not role="status": the toast below is the page's single
         // status region, and aria-live alone still announces this when it changes.
         <p className={`live-note${noteShown ? " live-note--shown" : ""}`} aria-live="polite">
-          {note}
+          {pendingStem ?? note}
+          {pendingStem !== null && (
+            <span className="live-note__dots" aria-hidden="true">
+              <span className="live-note__dot">.</span>
+              <span className="live-note__dot">.</span>
+              <span className="live-note__dot">.</span>
+            </span>
+          )}
         </p>
       )}
       <p
