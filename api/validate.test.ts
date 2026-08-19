@@ -627,6 +627,21 @@ describe("api/validate Wordnik tier", () => {
     expect(await body(await handler(request("thalweg")))).toMatchObject({ outcome: "unknown" });
   });
 
+  it("rejects gibberish, which Wordnik answers with empty stub definitions", async () => {
+    // Measured: /definitions for "asdfgh" is not a 404 and not an empty array --
+    // it is HTTP 200 with four objects carrying no word, text or sourceDictionary
+    // at all. Anything checking only whether the list is non-empty would accept
+    // every string ever typed, so this is the shape most worth pinning down.
+    withKeys(bothKeys);
+    const stub = { citations: [], exampleUses: [], labels: [], notes: [], relatedWords: [], textProns: [] };
+    stubTiers({ wordnik: [stub, stub, stub, stub] });
+    expect(await body(await handler(request("asdfgh")))).toMatchObject({
+      outcome: "unknown",
+      source: null,
+      failure: null,
+    });
+  });
+
   it("treats Wordnik's 404 as a clean miss the CDN may cache", async () => {
     withKeys(bothKeys);
     stubTiers({ wordnikStatus: 404, wordnikBody: "not found" });
