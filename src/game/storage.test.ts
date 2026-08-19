@@ -12,7 +12,7 @@ import {
 } from "./storage";
 import { rarityScore } from "./dictionary";
 
-// Every fixture date here predates the four-guess cutover, so these tests run
+// Every fixture date here predates the five-guess cutover, so these tests run
 // against the six-guess limit those puzzles played with.
 const MAX_GUESSES = maxGuessesFor("2024-01-01");
 import type { AcceptedWord, Rarity } from "./types";
@@ -176,16 +176,16 @@ describe("recordAcceptedWord", () => {
     expect(loadStreak().totalCompleted).toBe(0);
   });
 
-  it("completes after four words on a puzzle from the four-guess era", () => {
+  it("completes after five words on a puzzle from the five-guess era", () => {
     setToday("2026-08-20");
     let p = newProgress("2026-08-20", "str");
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       p = recordAcceptedWord(p, word(`word${i}`));
     }
     expect(p.completed).toBe(false);
-    p = recordAcceptedWord(p, word("word3"));
+    p = recordAcceptedWord(p, word("word4"));
     expect(p.completed).toBe(true);
-    expect(p.acceptedWords).toHaveLength(4);
+    expect(p.acceptedWords).toHaveLength(5);
   });
 
   it("keeps the puzzle active and updates the streak immediately after any valid word", () => {
