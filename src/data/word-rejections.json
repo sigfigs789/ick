@@ -62,6 +62,11 @@
     "reason": "misspelling",
     "since": "2026-08-19"
   },
+  "photoreconnaisance": {
+    "note": "Misspelling of `photoreconnaissance`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
+  },
   "reaccomodate": {
     "note": "Misspelling of `reaccommodate`.",
     "reason": "misspelling",

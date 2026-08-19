@@ -117,37 +117,38 @@ gets a non-word accepted.
 
 **The audit exists to eliminate unfun answers, not to be right about etymology.**
 That is the whole test, and it runs on the *word*, not on the strength of the
-evidence against it. A word can be a textbook misspelling and still keep its score;
-a word can be perfectly legitimate and still not deserve a Legend.
+evidence against it. A word can be perfectly legitimate and still not deserve a
+Legend; what earns the tier is being a satisfying thing to have found.
 
-So the question for every finding is: **is this a satisfying thing to have found?**
+So the question for every finding is: **would a player be pleased to have found
+this?** Three verdicts follow from the answer.
 
-- **Fun stays, flaws and all.** `photoreconnaisance` is a genuine dropped-`s`
-  misspelling of `photoreconnaissance`, and it keeps its 10.00 — it is a long,
-  exotic, interesting word to have dug out of the drop, and the error is invisible
-  to anyone who is not diffing it against a corpus. Same for the technical and
-  historical vocabulary the tier is made of: `machicolate`, `chawbacon`,
-  `marconigraph`, `orthiconoscope`.
+- **Fun stays, obscurity and labels and all.** The technical, historical, regional
+  and literary vocabulary is what the tier is made of: `machicolate`, `chawbacon`,
+  `marconigraph`, `orthiconoscope`, `conglobe`, `convertite`, `congeries`. Being
+  rare, archaic-flavoured or hard to believe is not a fault here — it is the point.
+  Keep these even when a Wiktionary label or a near-spelling heuristic fires.
 - **Weak words get demoted, not kept and not rejected.** This is the workhorse
-  verdict and the right home for anything that is merely limp: mechanical plurals
-  and superlatives (`continences`, `concisest`), transparent derivations
-  (`contester`, `conversional`), near-misses on an ordinary word (`reconnaisance` →
-  `reconnaissance`, `conferree` → `conferee`), and archaic inflections that add
-  nothing (`continueth` → `continue`). The word stays playable; it just stops
-  masquerading as a discovery. Prefer this to rejection whenever the word is
-  harmless.
-- **Reject only the glaring typo of an everyday word.** A player who plays
-  `controul`, `contex` or `contente` and has it accepted sees the dictionary look
-  broken, because `control`, `context` and `content` are words everybody has
-  instantly. That is a much smaller set than "everything the misspelling bucket
-  flags" — on the 2026-08-20 `CON` drop it was 8 words out of 37 suspects, and the
-  correct form was Zipf 4.0 or better in every one.
+  verdict and the right home for anything merely limp: mechanical plurals and
+  superlatives (`continences`, `concisest`), transparent derivations (`contester`,
+  `conversional`), archaic inflections that add nothing (`continueth` → `continue`),
+  and near-misses still worth having (`reconnaisance` → `reconnaissance`,
+  `conferree` → `conferee`). The word stays playable and stops masquerading as a
+  discovery.
+- **Reject a misspelling.** A word whose only distinction is a dropped or doubled
+  letter is not a find, however exotic it looks — `photoreconnaisance` is not a
+  reward for reaching a long word, it is `photoreconnaissance` typed wrong. Rejection
+  is right whether the correct form is everyday (`controul`/`control`,
+  `contex`/`context`, `contente`/`content`) or itself obscure.
 
-The recurring mistake is treating a *detectable* fault as an *actionable* one. Two
-words can have identical faults and different verdicts: `photoreconnaisance` and
-`reconnaisance` are the same dropped-`s` error, but the first is a fun word to find
-and the second is a near-miss on a word everyone knows, so the first keeps 10.00 and
-the second folds to `reconnaissance`. Judge the answer, not the error.
+Reject and demote both stay available for a near-miss, and that line is a judgement
+call rather than a threshold: `photoreconnaisance` is rejected while `reconnaisance`
+and `conferree` are demoted to their correct forms. Take the demotion when the word
+is still worth having in the game and the rejection when nothing but the typo
+distinguishes it. What the bar rules out in both directions is acting on a fault
+merely because it is *detectable* — that is what leaves 30 of a drop's 37 misspelling
+suspects alone, since `bicon` flagged against **bacon** and `conche` flagged against
+`concha` are not errors at all.
 
 ### a. Should it be playable at all?
 
