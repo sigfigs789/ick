@@ -55,4 +55,17 @@ describe("InstructionsModal", () => {
     expect(box).toHaveValue("");
     expect(screen.getByText(/thanks for the feedback/i)).toBeInTheDocument();
   });
+
+  it("ignores a whitespace-only note rather than sending an empty event", async () => {
+    trackFeedbackSubmitted.mockClear();
+    render(<InstructionsModal open onClose={vi.fn()} />);
+    const box = screen.getByLabelText(/share feedback or leave a suggestion/i);
+
+    await userEvent.type(box, "   ");
+    expect(screen.getByRole("button", { name: /send feedback/i })).toBeDisabled();
+    fireEvent.submit(box.closest("form")!);
+
+    expect(trackFeedbackSubmitted).not.toHaveBeenCalled();
+    expect(screen.queryByText(/thanks for the feedback/i)).not.toBeInTheDocument();
+  });
 });
