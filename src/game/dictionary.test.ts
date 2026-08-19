@@ -552,7 +552,12 @@ describe("curated base-form score overrides", () => {
       ownZipf: zipfByWord.get(word)!,
       baseZipf: zipfByWord.get(base)!,
     });
-    expect(baseFormSubstitution(word, addDays(since, -1))).toBeUndefined();
+    // The day before, the *curated* base must not be in force yet. Asserting no
+    // substitution at all would be too strong: a word can have a natural fold of
+    // its own that the override redirects rather than creates. "convincers" folds
+    // to "convincer" (Zipf 1.09, still a Mythic) unaided, and its override sends
+    // it the rest of the way to "convince" (4.26) from `since` on.
+    expect(baseFormSubstitution(word, addDays(since, -1))?.base).not.toBe(base);
   });
 });
 

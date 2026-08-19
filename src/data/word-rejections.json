@@ -13,6 +13,55 @@
     "reason": "misspelling",
     "since": "2026-08-19"
   },
+  "conferree": {
+    "note": "Misspelling of `conferee`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
+  },
+  "conferrence": {
+    "note": "Misspelling of `conference`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
+  },
+  "conferrences": {
+    "note": "Misspelling of `conferences`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
+  },
+  "confirme": {
+    "note": "Misspelling of `confirm`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
+  },
+  "contente": {
+    "note": "Misspelling of `content`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
+  },
+  "contex": {
+    "note": "Misspelling of `context`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
+  },
+  "continueth": {
+    "reason": "archaic",
+    "since": "2026-08-20"
+  },
+  "contraversial": {
+    "note": "Misspelling of `controversial`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
+  },
+  "controler": {
+    "note": "Misspelling of `controller`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
+  },
+  "controul": {
+    "note": "Misspelling of `control`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
+  },
   "eate": {
     "reason": "obsolete",
     "since": "2026-08-19"
@@ -21,6 +70,11 @@
     "note": "Misspelling of `hateful`.",
     "reason": "misspelling",
     "since": "2026-08-19"
+  },
+  "photoreconnaisance": {
+    "note": "Misspelling of `photoreconnaissance`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
   },
   "reaccomodate": {
     "note": "Misspelling of `reaccommodate`.",
@@ -41,5 +95,10 @@
     "note": "Misspelling of `reaccommodate`.",
     "reason": "misspelling",
     "since": "2026-08-19"
+  },
+  "reconnaisance": {
+    "note": "Misspelling of `reconnaissance`.",
+    "reason": "misspelling",
+    "since": "2026-08-20"
   }
 }
