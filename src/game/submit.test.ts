@@ -232,12 +232,17 @@ describe("spellingNearMiss", () => {
     expect(spellingNearMiss("abatementt", "ate", [])).toBe("abatement");
   });
 
-  it("says nothing about a guess two letters off, however long", () => {
-    // A transposition ("recieve") costs two edits, so it stays a plain rejection:
-    // a second edit reaches too much of the dictionary to mean anything.
-    // Both are two edits from "abatement" and one edit from nothing at all.
-    expect(spellingNearMiss("abatemanq", "ate", [])).toBeUndefined();
-    expect(spellingNearMiss("abatemetn", "ate", [])).toBeUndefined();
+  it("allows two letters off once the guess is long enough to afford it", () => {
+    // Nine letters, two edits from "abatement" and one edit from nothing.
+    expect(spellingNearMiss("abatemanq", "ate", [])).toBe("abatement");
+    // Which is what catches a transposition, since it costs two edits.
+    expect(spellingNearMiss("abatemetn", "ate", [])).toBe("abatement");
+  });
+
+  it("holds a shorter guess to one letter, where two would reach a quarter of made-up words", () => {
+    // Seven letters, two edits from "actuate" and more than two from anything else.
+    expect(isValidWord("aqtqate")).toBe(false);
+    expect(spellingNearMiss("aqtqate", "ate", [])).toBeUndefined();
   });
 
   it("normalizes the guess the way a submission does", () => {

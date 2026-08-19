@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { NEAR_MISS_MIN_LENGTH, nearMissEditBudget, withinEditDistance } from "./nearMiss";
+import {
+  NEAR_MISS_MIN_LENGTH,
+  NEAR_MISS_TWO_EDIT_MIN_LENGTH,
+  nearMissEditBudget,
+  withinEditDistance,
+} from "./nearMiss";
 
 describe("withinEditDistance", () => {
   it("counts a substitution, an insertion, and a deletion as one edit each", () => {
@@ -34,8 +39,13 @@ describe("nearMissEditBudget", () => {
     expect(nearMissEditBudget("a".repeat(NEAR_MISS_MIN_LENGTH))).toBe(1);
   });
 
-  it("never spends a second edit, however long the word", () => {
-    expect(nearMissEditBudget("a".repeat(12))).toBe(1);
-    expect(nearMissEditBudget("a".repeat(30))).toBe(1);
+  it("spends the second edit only once the word is long enough to afford it", () => {
+    expect(nearMissEditBudget("a".repeat(NEAR_MISS_TWO_EDIT_MIN_LENGTH - 1))).toBe(1);
+    expect(nearMissEditBudget("a".repeat(NEAR_MISS_TWO_EDIT_MIN_LENGTH))).toBe(2);
+    expect(nearMissEditBudget("a".repeat(30))).toBe(2);
+  });
+
+  it("keeps the two floors in the order the rule needs", () => {
+    expect(NEAR_MISS_MIN_LENGTH).toBeLessThan(NEAR_MISS_TWO_EDIT_MIN_LENGTH);
   });
 });

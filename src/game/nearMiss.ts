@@ -3,8 +3,8 @@
  *
  * A guess that clears every other rule -- it contains the drop, it isn't a
  * repeat -- and still isn't in the curated list or any live reference is more
- * often a typo than an invention. When such a guess sits one letter from a word
- * the player could actually have played, the game says so instead of only
+ * often a typo than an invention. When such a guess sits a letter or two from a
+ * word the player could actually have played, the game says so instead of only
  * reporting that the word wasn't found.
  *
  * Nothing here names the nearby word: that word is a playable answer for the
@@ -12,30 +12,35 @@
  */
 
 /**
- * How far off a guess may be. One edit, deliberately -- the rule has to be much
- * more likely to describe a typo than a coincidence, or the nudge becomes the
- * message every rejection gets.
+ * How far off a guess may be, by length. The nudge is only worth having if it
+ * much more often describes a typo than a coincidence, so both thresholds are
+ * measured rather than guessed: against made-up pronounceable words containing
+ * the day's drop, this is how often each budget finds a "nearby" playable word
+ * for one (n=2000 per cell, so +/- about a point):
  *
- * A second edit does not pay for itself. A single mistyped, dropped, or doubled
- * letter is already one edit away, so the second only ever buys transpositions
- * ("recieve"), and it buys them at a heavy price: measured against made-up
- * pronounceable words containing the day's drop, allowing two edits flags 54-71%
- * of six-letter inventions and 16-28% of seven-letter ones, where one edit flags
- * 1-10% and ~0-2%.
- */
-export const NEAR_MISS_MAX_EDITS = 1;
-
-/**
- * Shortest guess worth checking. Below six letters even a single edit reaches a
- * large share of the dictionary -- 23-41% of five-letter inventions land next to
- * a real word, and 70%+ of four-letter ones -- so "one letter off" stops being
- * evidence of a typo and starts being a property of short words.
+ *      length    1 edit    2 edits
+ *        5        41.8%      93.6%
+ *        6         9.6%      67.2%
+ *        7         2.1%      26.6%
+ *        8         0.4%       5.6%
+ *        9+        0.2%       0.8%
+ *
+ * Both floors are the shortest length that keeps the false-fire rate under 10%.
+ * Below them the budget stops being evidence of a typo and starts being a
+ * property of short words: at five letters, two edits reach almost the whole
+ * dictionary, and at seven, a quarter of made-up words look like near misses.
+ *
+ * The second edit is what buys transpositions ("recieve"), since a single
+ * mistyped, dropped, or doubled letter is only one edit away to begin with. It
+ * is worth having, but only where the word is long enough to afford it.
  */
 export const NEAR_MISS_MIN_LENGTH = 6;
+export const NEAR_MISS_TWO_EDIT_MIN_LENGTH = 8;
 
 /** How many edits from `word` still counts as a near miss; 0 means don't check. */
 export function nearMissEditBudget(word: string): number {
-  return word.length >= NEAR_MISS_MIN_LENGTH ? NEAR_MISS_MAX_EDITS : 0;
+  if (word.length >= NEAR_MISS_TWO_EDIT_MIN_LENGTH) return 2;
+  return word.length >= NEAR_MISS_MIN_LENGTH ? 1 : 0;
 }
 
 /**

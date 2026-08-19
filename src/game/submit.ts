@@ -72,7 +72,7 @@ function rootKey(word: string, foldBoundSuffixes: boolean, date?: string): strin
 }
 
 /**
- * A playable answer this guess is only one letter away from, or undefined
+ * A playable answer this guess is only a letter or two away from, or undefined
  * when it isn't close to one. Callers use it to swap the "not found" rejection
  * for the "check your spelling" nudge -- so it is only ever asked about a guess
  * that has already failed every dictionary check, offline and live alike.

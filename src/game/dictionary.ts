@@ -495,7 +495,7 @@ export function bestWordForDrop(drop: string, date?: string): AcceptedWord | und
 }
 
 /**
- * A playable answer for `drop` that `word` is only one letter away from, or
+ * A playable answer for `drop` that `word` is only a letter or two away from, or
  * undefined when the guess isn't close to anything -- the signal behind the
  * "check your spelling" nudge (see game/nearMiss.ts for the rule).
  *
