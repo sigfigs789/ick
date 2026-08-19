@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Feedback } from "../hooks/useDailyPuzzle";
 
-/** One pass of the checking sweep, matching input-checking-sweep in index.css. */
+/** One pass of the border shimmer, matching input-checking-sweep in index.css. */
 const SWEEP_MS = 1200;
 
 interface Props {
@@ -18,10 +18,10 @@ export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmi
   const rowRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLSpanElement>(null);
-  // The line outlives `checking` by up to one pass. A lookup that answers
-  // mid-sweep would otherwise blink the line out halfway across, which reads as
-  // a glitch -- the very thing it exists to prevent -- so the sweep always runs
-  // to the end of the pass it is in before it stops.
+  // The shimmer outlives `checking` by up to one pass. A lookup that answers
+  // mid-sweep would otherwise cut the band out halfway along the border, which
+  // reads as a glitch -- the very thing it exists to prevent -- so the sweep
+  // always runs to the end of the pass it is in before it stops.
   const [sweeping, setSweeping] = useState(false);
 
   useEffect(() => {
@@ -38,8 +38,10 @@ export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmi
     // `animationiteration` marks the end of a pass when the sweep is looping;
     // `animationend` covers the reduced-motion case, where the global
     // prefers-reduced-motion rule pins it to a single near-instant run and no
-    // iteration ever fires. The timer is the backstop for when neither arrives
-    // (a backgrounded tab pauses animations), so the line can never stick.
+    // iteration ever fires. Both fire on this element even though the animation
+    // belongs to its ::after. The timer is the backstop for when neither
+    // arrives (a backgrounded tab pauses animations), so the band can never
+    // stick lit.
     const stop = () => setSweeping(false);
     el.addEventListener("animationiteration", stop, { once: true });
     el.addEventListener("animationend", stop, { once: true });
@@ -84,8 +86,8 @@ export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmi
         className={`submit-form__row${checking || sweeping ? " submit-form__row--checking" : ""}`}
         ref={rowRef}
       >
-        {/* Wraps the input alone so the checking bar spans the field and stops
-            short of the Submit button. */}
+        {/* Wraps the input alone so the shimmering border traces the field and
+            stops short of the Submit button. */}
         <span className="submit-form__field" ref={fieldRef}>
           <input
             id="word-input"

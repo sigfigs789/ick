@@ -707,35 +707,53 @@ h2 {
   font-family: var(--font-body);
 }
 /* A live lookup is running (see LIVE_HANDOFF_MS). An unmarked pause reads as a
-   dropped keystroke, so a thin grey line tracks across the base of the input --
-   the field only, not the Submit button beside it. Nothing else changes: no
-   colour, no layout, and typing stays enabled. */
+   dropped keystroke, so the input's own border carries the wait: a soft band of
+   light travels along it, around the whole field and stopping short of the
+   Submit button. The box is where the player already looks for a reaction --
+   it shakes on a rejection -- so a wait that leaves it inert is the one verdict
+   that never touches it. Nothing else changes: no colour, no layout, and typing
+   stays enabled, so this indicates rather than blocks. */
 .submit-form__field {
   position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
 }
+/* A ring laid exactly over the input's 2px border: the mask pair keeps the
+   padding box and cuts the content box away, leaving only the border itself
+   lit. Everywhere the travelling band is transparent, the input's real border
+   shows through unchanged. Should a browser not honour the mask, the band
+   degrades to a soft glare crossing the field rather than to anything broken. */
 .submit-form__row--checking .submit-form__field::after {
   content: "";
   position: absolute;
-  left: 2px;
-  right: 2px;
-  bottom: 2px;
-  height: 2px;
-  border-radius: 999px;
+  inset: 0;
+  border-radius: 0.65rem;
+  padding: 2px;
   background: linear-gradient(90deg, transparent, var(--fg-faint), transparent);
-  background-size: 40% 100%;
+  background-size: 50% 100%;
   background-repeat: no-repeat;
-  animation: input-checking-sweep 1.2s var(--ease-standard) infinite;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: input-checking-sweep 1.2s linear infinite;
   pointer-events: none;
 }
+/* Paired with the 50% band width, these ends put the band fully off one edge
+   and fully off the other, so a pass neither pops into view already lit nor
+   sits parked out of frame between passes. Linear, because an eased loop
+   hitches at the turn and a hitch is what this is here to disprove. */
 @keyframes input-checking-sweep {
   from {
-    background-position: -45% 0;
+    background-position: -100% 0;
   }
   to {
-    background-position: 145% 0;
+    background-position: 200% 0;
   }
 }
 .submit-form button,

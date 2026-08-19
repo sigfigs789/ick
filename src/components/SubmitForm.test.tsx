@@ -43,8 +43,8 @@ describe("SubmitForm", () => {
     await userEvent.type(input, "stray");
     expect(input).toHaveValue("stray");
 
-    // A lookup that answers mid-sweep leaves the line running: it stops at the
-    // end of the pass it is in, not halfway across.
+    // A lookup that answers mid-sweep leaves the shimmer running: it stops at
+    // the end of the pass it is in, not halfway along the border.
     rerender(
       <SubmitForm drop="str" disabled={false} feedback={null} checking={false} onSubmit={vi.fn()} />
     );
