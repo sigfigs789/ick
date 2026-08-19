@@ -34,7 +34,9 @@ export type RejectionReason =
   | "archaic"
   | "dated"
   | "already-used"
-  | "same-root-as-used";
+  | "same-root-as-used"
+  /** Nowhere to be found, but a letter or two from something playable. */
+  | "check-your-spelling";
 
 export interface SubmissionResult {
   ok: boolean;

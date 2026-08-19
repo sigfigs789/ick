@@ -1,4 +1,10 @@
-import { boundBaseFormsActive, curatedRejection, isValidWord, rarityFor } from "./dictionary";
+import {
+  boundBaseFormsActive,
+  curatedRejection,
+  isValidWord,
+  nearMissForDrop,
+  rarityFor,
+} from "./dictionary";
 import rejectionMetadata from "../data/rejection-metadata.json";
 import { baseForm, boundBaseCandidates } from "./stem";
 import type { AcceptedWord, RejectionReason, SubmissionResult } from "./types";
@@ -65,6 +71,34 @@ function rootKey(word: string, foldBoundSuffixes: boolean, date?: string): strin
   return inflected;
 }
 
+/**
+ * A playable answer this guess is only a letter or two away from, or undefined
+ * when it isn't close to one. Callers use it to swap the "not found" rejection
+ * for the "check your spelling" nudge -- so it is only ever asked about a guess
+ * that has already failed every dictionary check, offline and live alike.
+ *
+ * Words this puzzle has already taken are not near misses: pointing at one would
+ * send the player back to a word the same-root rule would refuse.
+ */
+export function spellingNearMiss(
+  rawInput: string,
+  drop: string,
+  alreadyAccepted: AcceptedWord[],
+  date?: string
+): string | undefined {
+  const word = rawInput.trim().toLowerCase();
+  if (!WORD_CHARS.test(word)) return undefined;
+  const foldBoundSuffixes = boundBaseFormsActive(date);
+  const usedRoots = new Set(
+    alreadyAccepted.map((accepted) => rootKey(accepted.word, foldBoundSuffixes, date))
+  );
+  // Passed last on purpose: rootKey is the expensive test, and this predicate
+  // only ever sees a word already confirmed to be a near miss.
+  return nearMissForDrop(word, drop, date, (candidate) =>
+    usedRoots.has(rootKey(candidate, foldBoundSuffixes, date))
+  );
+}
+
 export function evaluateSubmission(
   rawInput: string,
   drop: string,
@@ -124,4 +158,5 @@ export const REJECTION_MESSAGES: Record<string, string> = {
   "same-as-drop": "Your answer can't be the drop itself.",
   "already-used": "You've already submitted that word.",
   "same-root-as-used": "That's too close to a word you already used.",
+  "check-your-spelling": "Not found — check your spelling?",
 };

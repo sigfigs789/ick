@@ -4,6 +4,7 @@ import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import wordRejectionData from "../data/word-rejections.json";
 import { baseForm, boundBaseCandidates } from "./stem";
+import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
 import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types";
 
 /**
@@ -491,6 +492,41 @@ export function bestWordForDrop(drop: string, date?: string): AcceptedWord | und
     }
   }
   return best;
+}
+
+/**
+ * A playable answer for `drop` that `word` is only a letter or two away from, or
+ * undefined when the guess isn't close to anything -- the signal behind the
+ * "check your spelling" nudge (see game/nearMiss.ts for the rule).
+ *
+ * Candidates are held to the same bar as a real submission: they contain the
+ * drop, they aren't the drop itself, and they aren't one of the reviewed
+ * rejections. `excluded` lets the caller drop the rest -- words this puzzle has
+ * already taken -- so the nudge never points at a word that couldn't be played.
+ *
+ * The cheap tests run first so the edit-distance comparison, and then the
+ * caller's predicate, only see the few words that get that far.
+ */
+export function nearMissForDrop(
+  word: string,
+  drop: string,
+  date?: string,
+  excluded?: (candidate: string) => boolean
+): string | undefined {
+  const budget = nearMissEditBudget(word);
+  if (budget === 0) return undefined;
+  const needle = drop.toLowerCase();
+  for (let i = 0; i < WORDS.length; i++) {
+    const candidate = WORDS[i];
+    if (Math.abs(candidate.length - word.length) > budget) continue;
+    if (candidate === word || candidate === needle) continue;
+    if (!candidate.includes(needle)) continue;
+    if (!withinEditDistance(word, candidate, budget)) continue;
+    if (curatedRejection(candidate, date) !== undefined) continue;
+    if (excluded?.(candidate)) continue;
+    return candidate;
+  }
+  return undefined;
 }
 
 /**

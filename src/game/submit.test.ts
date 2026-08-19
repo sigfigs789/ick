@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import rejectionMetadata from "../data/rejection-metadata.json";
 import { isValidWord } from "./dictionary";
-import { containsDropInOrder, evaluateSubmission, REJECTION_MESSAGES } from "./submit";
+import {
+  containsDropInOrder,
+  evaluateSubmission,
+  REJECTION_MESSAGES,
+  spellingNearMiss,
+} from "./submit";
 import type { AcceptedWord } from "./types";
 
 describe("containsDropInOrder", () => {
@@ -212,5 +217,61 @@ describe("rejection metadata coverage", () => {
   it("keeps the correctly spelled words those typos shadowed", () => {
     expect(isValidWord("exhilarative")).toBe(true);
     expect(isValidWord("reexportation")).toBe(true);
+  });
+});
+
+describe("spellingNearMiss", () => {
+  it("finds the playable word a typo is one letter from", () => {
+    // "abatement" is playable for the "ate" drop; "abatemant" is not a word.
+    expect(isValidWord("abatemant")).toBe(false);
+    expect(spellingNearMiss("abatemant", "ate", [])).toBe("abatement");
+  });
+
+  it("finds a word two letters off a long guess", () => {
+    expect(isValidWord("abatemants")).toBe(false);
+    expect(spellingNearMiss("abatemants", "ate", [])).toBe("abatement");
+  });
+
+  it("normalizes the guess the way a submission does", () => {
+    expect(spellingNearMiss("  ABATEMANT  ", "ATE", [])).toBe("abatement");
+  });
+
+  it("says nothing about a guess that isn't close to anything", () => {
+    expect(spellingNearMiss("qxzatevbnm", "ate", [])).toBeUndefined();
+  });
+
+  it("holds a short guess to a single edit, where two would reach half the word", () => {
+    // "grate" is playable for "ate"; two edits from "gxxte" would reach it.
+    expect(isValidWord("grate")).toBe(true);
+    expect(spellingNearMiss("grste", "ate", [])).toBe("grate");
+    expect(spellingNearMiss("gxxte", "ate", [])).toBeUndefined();
+  });
+
+  it("ignores a guess too short for one edit to mean anything", () => {
+    expect(spellingNearMiss("qate", "ate", [])).toBeDefined();
+    expect(spellingNearMiss("ate", "ate", [])).toBeUndefined();
+  });
+
+  it("never points at a word this puzzle has already taken", () => {
+    const used: AcceptedWord[] = [{ word: "abatement", rarity: "Rare", zipf: 3 }];
+    // Only that one word is within reach of this guess, so removing it from the
+    // pool leaves nothing to nudge toward.
+    expect(spellingNearMiss("abatemant", "ate", [])).toBe("abatement");
+    expect(spellingNearMiss("abatemant", "ate", used)).toBeUndefined();
+  });
+
+  it("never points at a word the same-root rule would refuse", () => {
+    const used: AcceptedWord[] = [{ word: "abatements", rarity: "Rare", zipf: 3 }];
+    expect(spellingNearMiss("abatemant", "ate", used)).toBeUndefined();
+  });
+
+  it("ignores a guess that isn't letters at all", () => {
+    expect(spellingNearMiss("abate-mant", "ate", [])).toBeUndefined();
+  });
+
+  it("only nudges toward words that contain the drop", () => {
+    // Same guess, a drop no word within reach of it carries: nothing to suggest,
+    // because a nearby word that misses the drop wouldn't be playable either.
+    expect(spellingNearMiss("abatemant", "zzz", [])).toBeUndefined();
   });
 });
