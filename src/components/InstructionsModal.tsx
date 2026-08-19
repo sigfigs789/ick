@@ -61,15 +61,15 @@ export function InstructionsModal({ open, onClose }: Props) {
           Rarity scores reflect how often words appear across sources including books, news, movies,
           websites, social media, and more. Values are then computed using Zipf’s law. They do not reflect how complex a word is. The highest ranks are Legend and Mythic at 9.9+ and 9.5+ rarity.
         </p>
-        <form className="word-suggestion feedback" onSubmit={submitFeedback}>
+        <form className="word-suggestion feedback-form" onSubmit={submitFeedback}>
           <label htmlFor="game-feedback">Have an idea or something to report?</label>
-          <p className="feedback__hint">
+          <p className="feedback-form__hint">
             Tell me what would make WordInk better—a feature you want, something confusing, or a bug
             you hit. It comes through anonymously.
           </p>
           <textarea
             id="game-feedback"
-            className="feedback__input"
+            className="feedback-form__input"
             value={feedback}
             onChange={(event) => {
               setFeedback(event.target.value);
@@ -79,7 +79,7 @@ export function InstructionsModal({ open, onClose }: Props) {
             rows={3}
             maxLength={300}
           />
-          <div className="feedback__actions">
+          <div className="feedback-form__actions">
             <button type="submit" disabled={!feedback.trim()}>
               Send feedback
             </button>
