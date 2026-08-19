@@ -17,6 +17,12 @@
 //      matters more than it does for MW: a free key measures 5 lookups a minute
 //      and 200 an hour, so it is the burstiest allowance of the three.
 //
+// A Wordnik approval additionally requires a measured frequency, which an MW
+// approval does not. A word no corpus attests falls to the unattested floor and
+// scores a perfect 10 -- right for a genuine find MW vouches for, wrong for the
+// inflected forms and idiom senses AHD and WordNet carry. Wordnik can therefore
+// only add words that score honestly; the rest keep their rejection.
+//
 // The API keys stay server-side here; they are never shipped to the browser.
 // Responses are CDN-cached so a repeated lookup of the same word costs nothing
 // against MW's 1,000-requests-per-day non-commercial quota.
@@ -102,7 +108,12 @@ type RejectReason =
   | "archaic"
   | "obsolete"
   | "dated"
-  | "offensive";
+  | "offensive"
+  /**
+   * Wordnik attests the word but no frequency source does, so there is nothing
+   * to score it by. MW approvals are exempt -- see the handler.
+   */
+  | "unattested";
 
 interface LiveCheckBody {
   word: string;
@@ -613,6 +624,7 @@ export default async function handler(request: Request): Promise<Response> {
   // is genuinely incomplete, so it is reported and left uncached rather than
   // turned into a top-level error.
   const wordnikKey = process.env.WORDNIK_KEY;
+  let approvedByWordnik = false;
   if (classification.outcome === "unknown" && wordnikKey) {
     try {
       const { verdict, sources: wordnikSources } = classifyWordnik(
@@ -622,6 +634,7 @@ export default async function handler(request: Request): Promise<Response> {
       if (verdict.outcome !== "unknown") {
         classification = verdict;
         source = `wordnik:${wordnikSources.join("+")}`;
+        approvedByWordnik = verdict.outcome === "playable";
       }
     } catch (error) {
       if (error instanceof UpstreamError) failure ??= error;
@@ -659,13 +672,57 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   // The word is playable; try for a real frequency so it scores on a gradient
-  // rather than at the unattested floor. A frequency lookup that fails is not
-  // fatal -- the word is still playable, just unattested.
+  // rather than at the unattested floor. For an MW approval a frequency lookup
+  // that fails is not fatal -- the word is still playable, just unattested.
   let zipf: number | null = null;
+  let zipfFailure: UpstreamError | undefined;
   try {
     zipf = await fetchZipf(word);
-  } catch {
+  } catch (error) {
+    if (error instanceof UpstreamError) zipfFailure = error;
     zipf = null;
+  }
+
+  // For a Wordnik approval the frequency is part of the verdict, not a bonus.
+  if (approvedByWordnik && zipf === null) {
+    // Nothing attests a frequency: the word cannot be scored honestly, so the
+    // rejection stands. Stable enough to cache, and reported as its own reason so
+    // analytics can show how often this fires. The client has no copy for it and
+    // falls back to the generic "not in the curated list" message.
+    if (!zipfFailure) {
+      return json({
+        word,
+        outcome: "rejected",
+        reason: "unattested",
+        zipf: null,
+        pos: classification.pos,
+        firstUse: classification.firstUse,
+        source,
+        failure: partial,
+      });
+    }
+    // The frequency lookup itself broke, so whether a score exists is unknown --
+    // claiming "unattested" would assert something this lookup never established.
+    // The original rejection stands, the failure is reported, and nothing is
+    // cached so the next try can do better.
+    return json(
+      {
+        word,
+        outcome: "unknown",
+        reason: null,
+        zipf: null,
+        pos: classification.pos,
+        firstUse: classification.firstUse,
+        source: null,
+        failure: {
+          reason: zipfFailure.reason,
+          detail: zipfFailure.detail,
+          status: zipfFailure.status ?? null,
+        },
+      },
+      200,
+      false
+    );
   }
 
   return json(

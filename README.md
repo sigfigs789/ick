@@ -206,6 +206,14 @@ required -- with none the endpoint reports `unconfigured` rather than guessing.
 Each is optional beyond that: an absent `WORDNIK_KEY` simply skips the second
 tier, which is how every existing deployment behaves until one is set.
 
+A Wordnik approval additionally requires a **measured frequency**, which an MW
+approval does not. A word no corpus attests falls to the unattested floor and
+scores a perfect 10 -- right for a genuine find MW vouches for
+(`enshittification`), wrong for the inflected forms and idiom senses AHD and
+WordNet carry. So Wordnik can only ever add words that score honestly; an
+unscoreable one keeps its rejection, reported as `unattested` and shown to the
+player with the generic message.
+
 Verdicts are CDN-cached for a day so repeat lookups of the same word cost no
 quota; incomplete verdicts (a tier failed while the word went unapproved) are
 never cached, and are reported to analytics via the response's `failure` object.

@@ -464,6 +464,8 @@ describe("api/validate Wordnik tier", () => {
   }
 
   const bothKeys = { MW_COLLEGIATE_KEY: "c", WORDNIK_KEY: "w" };
+  /** A measured frequency, which every Wordnik approval now requires. */
+  const attested = (word: string) => [{ word, tags: ["f:0.01"] }];
   /** Shapes trimmed to the fields the handler reads (see WordnikDefinition). */
   const def = (
     word: string,
@@ -483,7 +485,7 @@ describe("api/validate Wordnik tier", () => {
 
   it("accepts a word only AHD attests, naming the dictionary that answered", async () => {
     withKeys(bothKeys);
-    stubTiers({ wordnik: [def("thalweg", "ahd-5")] });
+    stubTiers({ wordnik: [def("thalweg", "ahd-5")], datamuse: attested("thalweg") });
     expect(await body(await handler(request("thalweg")))).toMatchObject({
       outcome: "playable",
       source: "wordnik:ahd-5",
@@ -530,6 +532,7 @@ describe("api/validate Wordnik tier", () => {
         def("thalweg", "wiktionary", { labels: [{ text: "obsolete", type: "chronological" }] }),
         def("thalweg", "wiktionary", { labels: [{ text: "geology", type: "field" }] }),
       ],
+      datamuse: attested("thalweg"),
     });
     expect(await body(await handler(request("thalweg")))).toMatchObject({
       outcome: "playable",
@@ -600,6 +603,7 @@ describe("api/validate Wordnik tier", () => {
         def("cleave", "ahd-5", { labels: [{ text: "Obsolete" }] }),
         def("cleave", "ahd-5"),
       ],
+      datamuse: attested("cleave"),
     });
     expect(await body(await handler(request("cleave")))).toMatchObject({ outcome: "playable" });
   });
@@ -640,6 +644,52 @@ describe("api/validate Wordnik tier", () => {
       source: null,
       failure: null,
     });
+  });
+
+  it("rejects a Wordnik word no frequency source attests", async () => {
+    // Otherwise it lands on the unattested floor and scores a perfect 10 Legend,
+    // which an AHD inflected form or idiom sense has not earned.
+    withKeys(bothKeys);
+    stubTiers({ wordnik: [def("thalweg", "ahd-5")], datamuse: [] });
+    const rejected = await handler(request("thalweg"));
+    expect(await body(rejected)).toMatchObject({
+      outcome: "rejected",
+      reason: "unattested",
+      zipf: null,
+      source: "wordnik:ahd-5",
+    });
+    // A settled verdict, so the CDN may keep it.
+    expect(rejected.headers.get("cache-control")).toContain("s-maxage");
+  });
+
+  it("still accepts an MW word no frequency source attests", async () => {
+    // The rule is Wordnik's alone: a genuine find MW vouches for keeps its floor.
+    withKeys(bothKeys);
+    stubTiers({ mw: [CAT], datamuse: [] });
+    expect(await body(await handler(request("cat")))).toMatchObject({
+      outcome: "playable",
+      zipf: null,
+      source: "collegiate",
+    });
+  });
+
+  it("does not claim a Wordnik word is unattested when the frequency lookup broke", async () => {
+    withKeys(bothKeys);
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      const href = String(url);
+      if (href.includes("datamuse")) return new Response("nope", { status: 500 });
+      if (href.includes("wordnik")) {
+        return new Response(JSON.stringify([def("thalweg", "ahd-5")]), { status: 200 });
+      }
+      return new Response(JSON.stringify(["suggestion"]), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await handler(request("thalweg"));
+    expect(await body(response)).toMatchObject({
+      outcome: "unknown",
+      failure: { reason: "upstream-error", status: 500 },
+    });
+    expect(response.headers.get("cache-control")).toBe("no-store");
   });
 
   it("treats Wordnik's 404 as a clean miss the CDN may cache", async () => {

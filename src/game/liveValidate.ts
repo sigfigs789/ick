@@ -195,8 +195,10 @@ const MAPPED_REASONS = new Set<string>([
 /**
  * The player-facing rejection reason for a live verdict, so a word a dictionary
  * could explain gets the specific message instead of the generic "not in the
- * curated list". Anything the game has no wording for (notably "offensive") falls back
- * to the generic reason rather than inventing new copy.
+ * curated list". Anything the game has no wording for falls back to the generic
+ * reason rather than inventing new copy -- deliberately so for "offensive" and for
+ * "unattested" (a Wordnik word with no measurable frequency), neither of which is
+ * a player's problem to understand.
  */
 export function rejectionReasonForLive(check: LiveCheck): RejectionReason {
   if (check.outcome === "rejected" && check.reason && MAPPED_REASONS.has(check.reason)) {
