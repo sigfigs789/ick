@@ -38,12 +38,30 @@ describe("FeedbackRegion", () => {
     vi.useFakeTimers();
     render(<FeedbackRegion feedback={null} note="Rummaging…" onWordRules={vi.fn()} />);
 
-    const note = screen.getByText("Rummaging…");
+    const note = screen.getByText("Rummaging");
     expect(note).toHaveClass("live-note--shown");
 
     // Well past the toast's window: a check still in flight must not fade out.
     act(() => vi.advanceTimersByTime(12000));
     expect(note).toHaveClass("live-note--shown");
+  });
+
+  it("animates the dots of a note still in flight, and drops them once it settles", () => {
+    const { rerender } = render(
+      <FeedbackRegion feedback={null} note="Rummaging…" onWordRules={vi.fn()} />
+    );
+
+    // The stem stays one plain text node -- it is what gets announced -- and the
+    // dots are decoration hidden from the screen reader.
+    const note = screen.getByText("Rummaging");
+    const dots = note.querySelector(".live-note__dots");
+    expect(dots).toHaveAttribute("aria-hidden", "true");
+    expect(note.querySelectorAll(".live-note__dot")).toHaveLength(3);
+    expect(note).toHaveTextContent("Rummaging...");
+
+    // A settled note is a finished sentence, not a wait: nothing to animate.
+    rerender(<FeedbackRegion feedback={null} note="Rummaged." onWordRules={vi.fn()} />);
+    expect(screen.getByText("Rummaged.").querySelector(".live-note__dots")).toBeNull();
   });
 
   it("fades the live note out together with the verdict it accompanies", () => {
