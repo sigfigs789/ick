@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MAX_GUESSES } from "./constants";
+import { maxGuessesFor } from "./constants";
 import {
   loadOrCreateProgress,
   loadProgress,
@@ -11,6 +11,10 @@ import {
   resetProgress,
 } from "./storage";
 import { rarityScore } from "./dictionary";
+
+// Every fixture date here predates the four-guess cutover, so these tests run
+// against the six-guess limit those puzzles played with.
+const MAX_GUESSES = maxGuessesFor("2024-01-01");
 import type { AcceptedWord, Rarity } from "./types";
 
 function word(w: string, zipf = 5, rarity: Rarity = "Common"): AcceptedWord {
@@ -170,6 +174,18 @@ describe("recordAcceptedWord", () => {
     expect(p.acceptedWords).toHaveLength(MAX_GUESSES);
     expect(loadStreak().currentStreak).toBe(1);
     expect(loadStreak().totalCompleted).toBe(0);
+  });
+
+  it("completes after four words on a puzzle from the four-guess era", () => {
+    setToday("2026-08-20");
+    let p = newProgress("2026-08-20", "str");
+    for (let i = 0; i < 3; i++) {
+      p = recordAcceptedWord(p, word(`word${i}`));
+    }
+    expect(p.completed).toBe(false);
+    p = recordAcceptedWord(p, word("word3"));
+    expect(p.completed).toBe(true);
+    expect(p.acceptedWords).toHaveLength(4);
   });
 
   it("keeps the puzzle active and updates the streak immediately after any valid word", () => {

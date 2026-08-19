@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MAX_GUESSES } from "../game/constants";
+import { maxGuessesFor } from "../game/constants";
 import { bestWord } from "../game/rank";
 import { formatRarityScore, topRarityScore, totalRarityScore } from "../game/dictionary";
 import { copyText } from "../clipboard";
@@ -30,7 +30,8 @@ export function GuessLog({
   date,
 }: Props) {
   const best = bestWord(acceptedWords);
-  const guessesLeft = MAX_GUESSES - acceptedWords.length;
+  const maxGuesses = maxGuessesFor(date);
+  const guessesLeft = maxGuesses - acceptedWords.length;
 
   // Tap a logged word to copy it to the clipboard, flashing a brief confirmation.
   const [copiedWord, setCopiedWord] = useState<string | null>(null);
@@ -49,7 +50,7 @@ export function GuessLog({
         <div className="guess-log__header">
           <h2 className="guess-log__title">Guess log</h2>
           <span className="guess-log__count">
-            {acceptedWords.length} of {MAX_GUESSES} used
+            {acceptedWords.length} of {maxGuesses} used
           </span>
         </div>
       )}
