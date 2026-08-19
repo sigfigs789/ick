@@ -315,6 +315,56 @@ describe("useDailyPuzzle live fallback", () => {
     expect(eventPayload("merriam_webster_failed")).toBeUndefined();
   });
 
+  it("reports every lookup that reached the Wordnik tier, verdict and all", async () => {
+    // The tier's own event is the funnel's denominator, so it fires for a
+    // rejection too -- a count of approvals alone can't say what share of the
+    // tier's lookups they were.
+    stubValidate({
+      word: OFF_LIST_WORD,
+      outcome: "rejected",
+      reason: "unattested",
+      zipf: null,
+      pos: ["noun"],
+      firstUse: null,
+      source: "wordnik:ahd-5",
+      wordnik: "unattested",
+    });
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord(OFF_LIST_WORD);
+    });
+
+    expect(eventPayload("wordnik_verdict")).toMatchObject({
+      word: OFF_LIST_WORD,
+      stage: "unattested",
+      outcome: "rejected",
+      reason: "unattested",
+      source: "wordnik:ahd-5",
+      attested: false,
+    });
+    expect(eventPayload("merriam_webster_approved")).toBeUndefined();
+  });
+
+  it("fires no Wordnik event when the tier never ran", async () => {
+    stubValidate({
+      word: OFF_LIST_WORD,
+      outcome: "rejected",
+      reason: "archaic",
+      zipf: null,
+      pos: ["adverb"],
+      firstUse: null,
+      source: "collegiate",
+    });
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord(OFF_LIST_WORD);
+    });
+
+    expect(eventPayload("wordnik_verdict")).toBeUndefined();
+  });
+
   it("still reports an approval that lands after the handoff", async () => {
     stubValidate(playable(3.0), 5400);
     const { result } = renderHook(() => useDailyPuzzle());

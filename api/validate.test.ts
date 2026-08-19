@@ -692,6 +692,50 @@ describe("api/validate Wordnik tier", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
   });
 
+  it("reports what the tier did, so the funnel can be counted", async () => {
+    withKeys(bothKeys);
+    // Approved and scored.
+    stubTiers({ wordnik: [def("thalweg", "ahd-5")], datamuse: attested("thalweg") });
+    expect(await body(await handler(request("thalweg")))).toMatchObject({
+      outcome: "playable",
+      wordnik: "playable",
+    });
+
+    // Attested, but not a word the game takes.
+    stubTiers({ wordnik: [def("dixie", "ahd-5", { partOfSpeech: "proper-noun" })] });
+    expect(await body(await handler(request("dixie")))).toMatchObject({
+      outcome: "rejected",
+      wordnik: "rejected",
+    });
+
+    // No trusted source had it.
+    stubTiers({ wordnik: [def("gramercy", "century")] });
+    expect(await body(await handler(request("gramercy")))).toMatchObject({
+      outcome: "unknown",
+      wordnik: "unknown",
+    });
+
+    // Approved, but unscoreable.
+    stubTiers({ wordnik: [def("thalweg", "ahd-5")], datamuse: [] });
+    expect(await body(await handler(request("thalweg")))).toMatchObject({
+      outcome: "rejected",
+      wordnik: "unattested",
+    });
+
+    // The lookup broke.
+    stubTiers({ wordnikStatus: 429, wordnikBody: "Rate limit exceeded" });
+    expect(await body(await handler(request("thalweg")))).toMatchObject({
+      outcome: "unknown",
+      wordnik: "error",
+    });
+  });
+
+  it("says nothing about the tier when MW answered and it never ran", async () => {
+    withKeys(bothKeys);
+    stubTiers({ mw: [CAT], datamuse: attested("cat") });
+    expect(await body(await handler(request("cat")))).not.toHaveProperty("wordnik");
+  });
+
   it("treats Wordnik's 404 as a clean miss the CDN may cache", async () => {
     withKeys(bothKeys);
     stubTiers({ wordnikStatus: 404, wordnikBody: "not found" });
@@ -707,7 +751,7 @@ describe("api/validate Wordnik tier", () => {
     // Not a top-level error: MW answered, so live checks stay on for the session.
     expect(await body(response)).toMatchObject({
       outcome: "unknown",
-      failure: { reason: "quota-exceeded", status: 429 },
+      failure: { reason: "wordnik-quota-exceeded", status: 429 },
     });
     expect(response.headers.get("cache-control")).toBe("no-store");
   });

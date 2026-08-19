@@ -42,6 +42,7 @@ import {
   trackBaseFormSubstitution,
   trackMerriamWebsterApproved,
   trackMerriamWebsterFailed,
+  trackWordnikVerdict,
   trackPuzzleCompleted,
   trackRejectedAnswer,
   trackRejectionMessage,
@@ -233,6 +234,13 @@ export function useDailyPuzzle() {
         const settled =
           check.outcome === "playable" ? LIVE_CHECK_SETTLED.found : LIVE_CHECK_SETTLED.notFound;
         setLiveNote(settled);
+      }
+
+      // The Wordnik tier ran, so record what came of it -- once per lookup and
+      // whatever the verdict, since a count of approvals alone can't say what
+      // share of the tier's lookups they were.
+      if (check.wordnik) {
+        trackWordnikVerdict(viewedDate, drop, check);
       }
 
       if (check.outcome === "playable") {

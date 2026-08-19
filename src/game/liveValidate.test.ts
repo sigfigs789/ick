@@ -39,6 +39,7 @@ function check(overrides: Partial<LiveCheck> = {}): LiveCheck {
     pos: [],
     firstUse: null,
     source: null,
+    wordnik: null,
     failure: null,
     elapsedMs: 0,
     ...overrides,

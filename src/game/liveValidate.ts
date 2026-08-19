@@ -173,6 +173,12 @@ export interface LiveCheck {
    */
   source: string | null;
   /**
+   * What the Wordnik tier did -- "playable", "rejected", "unattested", "unknown"
+   * or "error" -- or null when it never ran (MW answered, or no key). This is the
+   * funnel's denominator: a non-null value means a Wordnik lookup happened.
+   */
+  wordnik: string | null;
+  /**
    * A lookup problem worth reporting even though a verdict was produced -- one MW
    * reference failed while the other answered, or the Wordnik tier failed after
    * MW came up empty. Null when the lookup was clean.
@@ -235,6 +241,7 @@ function blank(
     pos: [],
     firstUse: null,
     source: null,
+    wordnik: null,
     failure: outcome === "error" && reason ? { reason, detail, status } : null,
     elapsedMs,
   };
@@ -367,6 +374,7 @@ export async function checkWordLive(word: string): Promise<LiveCheck> {
     pos: Array.isArray(parsed.pos) ? parsed.pos.filter((p): p is string => typeof p === "string") : [],
     firstUse: typeof parsed.firstUse === "string" ? parsed.firstUse : null,
     source: typeof parsed.source === "string" ? parsed.source : null,
+    wordnik: typeof parsed.wordnik === "string" ? parsed.wordnik : null,
     // Only a total failure puts its reason at the top level; otherwise the
     // endpoint's own `failure` object is the only source.
     failure:

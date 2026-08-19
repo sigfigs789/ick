@@ -126,6 +126,7 @@ export function trackMerriamWebsterApproved(
     first_use: check.firstUse ?? "unknown",
     pos: check.pos.join(",") || "unknown",
     mw_source: check.source ?? "unknown",
+    wordnik: check.wordnik ?? "not-run",
     elapsed_ms: check.elapsedMs,
     within_handoff: check.elapsedMs <= LIVE_HANDOFF_MS,
     applied,
@@ -152,6 +153,42 @@ export function trackMerriamWebsterFailed(date: string, drop: string, check: Liv
     detail: (failure?.detail ?? check.detail ?? "").slice(0, 200) || "none",
     status: failure?.status ?? check.status ?? 0,
     partial: check.outcome !== "error",
+    elapsed_ms: check.elapsedMs,
+  });
+}
+
+/**
+ * Record every lookup that reached the Wordnik tier -- the second dictionary,
+ * consulted only when MW has no entry for the word (see api/validate.ts). One
+ * event per lookup, undeduped, so the whole funnel is countable:
+ *
+ *   - `wordnik_verdict` total            how often the tier ran at all
+ *   - stage = "playable"                 approved, scored and counted
+ *   - stage = "rejected"                 attested but out of use, a name or an
+ *                                        abbreviation
+ *   - stage = "unattested"               approved, but no frequency source could
+ *                                        score it, so the rejection stood
+ *   - stage = "unknown"                  no trusted source attested it
+ *   - stage = "error"                    the lookup broke; says nothing about the
+ *                                        word (`reason` names the problem, and is
+ *                                        prefixed "wordnik-" when the Wordnik call
+ *                                        itself was what failed)
+ *
+ * MW-only lookups fire nothing here, so the event count is the tier's true
+ * denominator -- which also keeps the volume to the small share of guesses that
+ * miss MW entirely.
+ */
+export function trackWordnikVerdict(date: string, drop: string, check: LiveCheck) {
+  track("wordnik_verdict", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    drop: drop.toLowerCase(),
+    word: check.word,
+    stage: check.wordnik ?? "not-run",
+    outcome: check.outcome,
+    reason: check.reason ?? check.failure?.reason ?? "none",
+    source: check.source ?? "none",
+    attested: check.zipf !== null,
     elapsed_ms: check.elapsedMs,
   });
 }

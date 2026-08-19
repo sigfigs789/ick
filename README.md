@@ -217,6 +217,15 @@ player with the generic message.
 Verdicts are CDN-cached for a day so repeat lookups of the same word cost no
 quota; incomplete verdicts (a tier failed while the word went unapproved) are
 never cached, and are reported to analytics via the response's `failure` object.
+Note the cache is per-POP, so a word looked up in one region is still a cold miss
+in another.
+
+Every lookup that reaches the Wordnik tier fires a `wordnik_verdict` event, one
+per lookup and undeduped, so the whole funnel is countable: the event total is
+how often the tier ran, and `stage` splits it into `playable`, `rejected`,
+`unattested`, `unknown` and `error`. MW-only lookups fire nothing there, which
+keeps that count the tier's true denominator. A Wordnik failure's reason is
+prefixed `wordnik-` so it is separable from the same problem at MW.
 
 ## Design decisions worth knowing about
 

@@ -100,6 +100,23 @@ const UPSTREAM_TIMEOUT_MS = 5000;
 
 type Outcome = "playable" | "rejected" | "unknown" | "error";
 
+/**
+ * What the Wordnik tier did, reported so the funnel is countable in analytics:
+ * how often it ran, and what came of it. Absent when it never ran -- MW answered,
+ * or no key is configured.
+ */
+type WordnikStage =
+  /** Approved, scored, and the word counted. */
+  | "playable"
+  /** Attested but not playable: out of use, a name, or an abbreviation. */
+  | "rejected"
+  /** Approved, but no frequency source could score it (see the handler). */
+  | "unattested"
+  /** No trusted source attested it, so the original rejection stands. */
+  | "unknown"
+  /** The lookup itself failed; says nothing about the word. */
+  | "error";
+
 /** Why a word MW knows about still isn't playable. Mirrors the game's reasons. */
 type RejectReason =
   | "proper-noun"
@@ -136,6 +153,12 @@ interface LiveCheckBody {
    * or both joined with "+"), or null when nothing attested the word.
    */
   source?: string | null;
+  /**
+   * What the Wordnik tier did, or absent when it never ran. Separate from
+   * `source`, which names the dictionary only when one approved the word --
+   * this stays populated for a rejection, a miss and a failure too.
+   */
+  wordnik?: WordnikStage;
   /**
    * A lookup problem that did not stop an answer being produced -- one reference
    * failed while the other still replied. The verdict stands, but the caller
@@ -625,20 +648,26 @@ export default async function handler(request: Request): Promise<Response> {
   // turned into a top-level error.
   const wordnikKey = process.env.WORDNIK_KEY;
   let approvedByWordnik = false;
+  let wordnik: WordnikStage | undefined;
   if (classification.outcome === "unknown" && wordnikKey) {
     try {
       const { verdict, sources: wordnikSources } = classifyWordnik(
         word,
         await fetchWordnik(word, wordnikKey)
       );
+      wordnik = verdict.outcome === "rejected" ? "rejected" : verdict.outcome;
       if (verdict.outcome !== "unknown") {
         classification = verdict;
         source = `wordnik:${wordnikSources.join("+")}`;
         approvedByWordnik = verdict.outcome === "playable";
       }
     } catch (error) {
-      if (error instanceof UpstreamError) failure ??= error;
-      else throw error;
+      if (!(error instanceof UpstreamError)) throw error;
+      wordnik = "error";
+      // Prefixed so a Wordnik failure is distinguishable from the same problem at
+      // MW in analytics -- and so its reason can never match the client's
+      // PERMANENT_FAILURES set, which must stay MW's to trip.
+      failure ??= new UpstreamError(`wordnik-${error.reason}`, error.detail, error.status);
     }
   }
 
@@ -664,6 +693,7 @@ export default async function handler(request: Request): Promise<Response> {
         pos: classification.pos,
         firstUse: classification.firstUse,
         source,
+        ...(wordnik ? { wordnik } : {}),
         failure: partial,
       },
       200,
@@ -698,6 +728,7 @@ export default async function handler(request: Request): Promise<Response> {
         pos: classification.pos,
         firstUse: classification.firstUse,
         source,
+        wordnik: "unattested",
         failure: partial,
       });
     }
@@ -714,6 +745,10 @@ export default async function handler(request: Request): Promise<Response> {
         pos: classification.pos,
         firstUse: classification.firstUse,
         source: null,
+        // Wordnik approved, but the frequency lookup broke, so the verdict is
+        // incomplete rather than a decision about the word: counted as an error,
+        // not as an unattested rejection.
+        wordnik: "error",
         failure: {
           reason: zipfFailure.reason,
           detail: zipfFailure.detail,
@@ -734,6 +769,7 @@ export default async function handler(request: Request): Promise<Response> {
       pos: classification.pos,
       firstUse: classification.firstUse,
       source,
+      ...(wordnik ? { wordnik } : {}),
       failure: partial,
     },
     200,
