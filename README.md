@@ -177,6 +177,34 @@ this file reviewable.
 ones with plenty of common-word matches, so no daily puzzle depends on
 obscure answers.
 
+## The live word check
+
+`api/validate.ts` is the only part of the game that queries a dictionary at
+runtime, and only for a word that cleared every offline check yet isn't in the
+curated list. It asks two tiers in order:
+
+1. **Merriam-Webster Collegiate + Medical**, queried together and pooled, so a
+   word either one lists as current is playable. MW is authoritative wherever it
+   has an entry -- it is the only source with structured per-sense status labels,
+   name/abbreviation functional labels and an `offensive` flag, which is what
+   every rejection reason a player sees is built on.
+2. **Wordnik**, but only when MW has no matching entry at all -- the case that
+   would otherwise be rejected outright. Only its AHD and WordNet definitions
+   count: Century (1889-1911) and GCIDE/Webster (1913) are archaic-heavy, and its
+   Wiktionary tier has a slur-carrying long tail with no offensive flag to catch
+   it. Wordnik's free plan is 100 lookups an hour, so keeping it off the common
+   path matters more than it does for MW's daily cap.
+
+Keys are read from the environment and never reach the browser:
+`MW_COLLEGIATE_KEY`, `MW_MEDICAL_KEY`, `WORDNIK_KEY`. At least one MW key is
+required -- with none the endpoint reports `unconfigured` rather than guessing.
+Each is optional beyond that: an absent `WORDNIK_KEY` simply skips the second
+tier, which is how every existing deployment behaves until one is set.
+
+Verdicts are CDN-cached for a day so repeat lookups of the same word cost no
+quota; incomplete verdicts (a tier failed while the word went unapproved) are
+never cached, and are reported to analytics via the response's `failure` object.
+
 ## Design decisions worth knowing about
 
 - **Plurals/conjugations are accepted** as distinct words, but two forms

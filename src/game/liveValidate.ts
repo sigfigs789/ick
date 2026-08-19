@@ -1,5 +1,7 @@
-// Client for /api/validate -- the live Merriam-Webster fallback consulted when a
+// Client for /api/validate -- the live dictionary fallback consulted when a
 // submission clears every offline check but simply isn't in the curated list.
+// The endpoint asks Merriam-Webster first and Wordnik only when MW has no entry;
+// this module doesn't care which answered beyond reporting it as `source`.
 //
 // Two rules shape this module:
 //   1. It only runs for players with a connection (`navigator.onLine`).
@@ -135,11 +137,11 @@ export function resetLiveCheckSession(): void {
 }
 
 export type LiveOutcome =
-  /** MW attests an ordinary, current, inoffensive sense -- the word counts. */
+  /** A dictionary attests an ordinary, current, inoffensive sense -- it counts. */
   | "playable"
-  /** MW knows it, but the game shouldn't take it; `reason` says which. */
+  /** A dictionary knows it, but the game shouldn't take it; `reason` says which. */
   | "rejected"
-  /** MW has no matching entry -- the original rejection stands. */
+  /** No dictionary has a matching entry -- the original rejection stands. */
   | "unknown"
   /** The lookup failed; `reason`/`detail` say why. Says nothing about the word. */
   | "error"
@@ -161,15 +163,19 @@ export interface LiveCheck {
   status: number | null;
   /** Measured Zipf when a frequency source attests one, else null. */
   zipf: number | null;
-  /** MW functional labels (parts of speech). */
+  /** Functional labels (parts of speech) from whichever dictionary answered. */
   pos: string[];
   /** MW's first-known-use date, e.g. "1961" or "12th century". */
   firstUse: string | null;
-  /** Which MW reference answered: "collegiate", "medical", "collegiate+medical", or null. */
+  /**
+   * Which reference answered: "collegiate", "medical", "collegiate+medical", a
+   * Wordnik one ("wordnik:ahd-5", "wordnik:wordnet"), or null.
+   */
   source: string | null;
   /**
    * A lookup problem worth reporting even though a verdict was produced -- one MW
-   * reference failed while the other answered. Null when the lookup was clean.
+   * reference failed while the other answered, or the Wordnik tier failed after
+   * MW came up empty. Null when the lookup was clean.
    */
   failure: { reason: string; detail: string | null; status: number | null } | null;
   /** Wall-clock time the lookup took, for latency reporting. */
@@ -186,9 +192,9 @@ const MAPPED_REASONS = new Set<string>([
 ]);
 
 /**
- * The player-facing rejection reason for a live verdict, so a word MW could
- * explain gets the specific message instead of the generic "not in the curated
- * list". Anything the game has no wording for (notably "offensive") falls back
+ * The player-facing rejection reason for a live verdict, so a word a dictionary
+ * could explain gets the specific message instead of the generic "not in the
+ * curated list". Anything the game has no wording for (notably "offensive") falls back
  * to the generic reason rather than inventing new copy.
  */
 export function rejectionReasonForLive(check: LiveCheck): RejectionReason {
@@ -233,9 +239,10 @@ function blank(
 
 /**
  * The lookup problem, if any, that the caller should report. The endpoint sends a
- * `failure` object when one MW reference broke while the other still answered
- * *and* the word wasn't approved; a total failure carries its reason at the top
- * level instead, so both shapes normalise to the same thing here.
+ * `failure` object when part of the lookup broke -- one MW reference while the
+ * other answered, or Wordnik after an MW miss -- *and* the word wasn't approved;
+ * a total failure carries its reason at the top level instead, so both shapes
+ * normalise to the same thing here.
  */
 function parsedFailure(
   parsed: { failure?: LiveCheck["failure"] },

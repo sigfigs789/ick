@@ -432,3 +432,179 @@ describe("api/validate partial failures", () => {
     });
   });
 });
+
+describe("api/validate Wordnik tier", () => {
+  /**
+   * Stub all three upstreams separately. `mw` answers both MW references (a miss
+   * answers with spelling-suggestion strings, as MW really does), `wordnik` the
+   * definitions call, `datamuse` the frequency lookup.
+   */
+  function stubTiers(options: {
+    mw?: unknown;
+    wordnik?: unknown;
+    wordnikStatus?: number;
+    wordnikBody?: string;
+    datamuse?: unknown;
+  }) {
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      const href = String(url);
+      if (href.includes("datamuse")) {
+        return new Response(JSON.stringify(options.datamuse ?? []), { status: 200 });
+      }
+      if (href.includes("wordnik")) {
+        if (options.wordnikStatus && options.wordnikStatus !== 200) {
+          return new Response(options.wordnikBody ?? "", { status: options.wordnikStatus });
+        }
+        return new Response(JSON.stringify(options.wordnik ?? []), { status: 200 });
+      }
+      return new Response(JSON.stringify(options.mw ?? ["suggestion"]), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  const bothKeys = { MW_COLLEGIATE_KEY: "c", WORDNIK_KEY: "w" };
+  /** Shapes trimmed to the fields the handler reads (see WordnikDefinition). */
+  const def = (
+    word: string,
+    sourceDictionary: string,
+    extra: Record<string, unknown> = {}
+  ) => ({ word, sourceDictionary, text: "a definition", partOfSpeech: "noun", ...extra });
+
+  it("does not spend a Wordnik lookup when MW already attests the word", async () => {
+    withKeys(bothKeys);
+    const fetchMock = stubTiers({ mw: [CAT] });
+    expect(await body(await handler(request("cat")))).toMatchObject({
+      outcome: "playable",
+      source: "collegiate",
+    });
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("wordnik"))).toBe(false);
+  });
+
+  it("accepts a word only AHD attests, naming the dictionary that answered", async () => {
+    withKeys(bothKeys);
+    stubTiers({ wordnik: [def("thalweg", "ahd-5")] });
+    expect(await body(await handler(request("thalweg")))).toMatchObject({
+      outcome: "playable",
+      source: "wordnik:ahd-5",
+      pos: ["noun"],
+    });
+  });
+
+  it("scores a Wordnik-approved word on a measured frequency", async () => {
+    withKeys(bothKeys);
+    stubTiers({
+      wordnik: [def("thalweg", "wordnet")],
+      datamuse: [{ word: "thalweg", tags: ["f:0.01"] }],
+    });
+    expect(await body(await handler(request("thalweg")))).toMatchObject({
+      outcome: "playable",
+      source: "wordnik:wordnet",
+      zipf: 1,
+    });
+  });
+
+  it("ignores a word only the archaic-heavy sources attest, so the rejection stands", async () => {
+    withKeys(bothKeys);
+    stubTiers({
+      wordnik: [
+        def("gramercy", "century"),
+        def("gramercy", "gcide"),
+        def("gramercy", "wiktionary"),
+        def("gramercy", "webster"),
+      ],
+    });
+    const response = await handler(request("gramercy"));
+    expect(response.status).toBe(200);
+    expect(await body(response)).toMatchObject({
+      outcome: "unknown",
+      source: null,
+      failure: null,
+    });
+  });
+
+  it("rejects a word AHD labels archaic in every sense", async () => {
+    withKeys(bothKeys);
+    stubTiers({ wordnik: [def("thou", "ahd-5", { labels: [{ text: "Archaic" }] })] });
+    expect(await body(await handler(request("thou")))).toMatchObject({
+      outcome: "rejected",
+      reason: "archaic",
+    });
+  });
+
+  it("stays playable when only some Wordnik senses are out of use", async () => {
+    withKeys(bothKeys);
+    stubTiers({
+      wordnik: [
+        def("cleave", "ahd-5", { labels: [{ text: "Obsolete" }] }),
+        def("cleave", "ahd-5"),
+      ],
+    });
+    expect(await body(await handler(request("cleave")))).toMatchObject({ outcome: "playable" });
+  });
+
+  it("rejects a Wordnik proper noun and abbreviation by part of speech", async () => {
+    withKeys(bothKeys);
+    stubTiers({ wordnik: [def("dixie", "ahd-5", { partOfSpeech: "proper-noun" })] });
+    expect(await body(await handler(request("dixie")))).toMatchObject({
+      outcome: "rejected",
+      reason: "proper-noun",
+    });
+
+    stubTiers({ wordnik: [def("mri", "ahd-5", { partOfSpeech: "abbreviation" })] });
+    expect(await body(await handler(request("mri")))).toMatchObject({
+      outcome: "rejected",
+      reason: "abbreviation",
+    });
+  });
+
+  it("ignores Wordnik definitions of a different headword, and empty stubs", async () => {
+    withKeys(bothKeys);
+    stubTiers({
+      wordnik: [def("thalwegs", "ahd-5"), def("thalweg", "ahd-5", { text: "  " })],
+    });
+    expect(await body(await handler(request("thalweg")))).toMatchObject({ outcome: "unknown" });
+  });
+
+  it("treats Wordnik's 404 as a clean miss the CDN may cache", async () => {
+    withKeys(bothKeys);
+    stubTiers({ wordnikStatus: 404, wordnikBody: "not found" });
+    const response = await handler(request("zzzzqx"));
+    expect(await body(response)).toMatchObject({ outcome: "unknown", failure: null });
+    expect(response.headers.get("cache-control")).toContain("s-maxage");
+  });
+
+  it("reports a Wordnik failure as an incomplete verdict rather than an error", async () => {
+    withKeys(bothKeys);
+    stubTiers({ wordnikStatus: 429, wordnikBody: "Rate limit exceeded" });
+    const response = await handler(request("thalweg"));
+    // Not a top-level error: MW answered, so live checks stay on for the session.
+    expect(await body(response)).toMatchObject({
+      outcome: "unknown",
+      failure: { reason: "quota-exceeded", status: 429 },
+    });
+    expect(response.headers.get("cache-control")).toBe("no-store");
+  });
+
+  it("never consults Wordnik when no key is configured", async () => {
+    withKeys({ MW_COLLEGIATE_KEY: "c" });
+    const fetchMock = stubTiers({ wordnik: [def("thalweg", "ahd-5")] });
+    expect(await body(await handler(request("thalweg")))).toMatchObject({ outcome: "unknown" });
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("wordnik"))).toBe(false);
+  });
+
+  it("does not let Wordnik answer for a word MW could not be reached about", async () => {
+    withKeys(bothKeys);
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      if (String(url).includes("wordnik")) {
+        return new Response(JSON.stringify([def("thalweg", "ahd-5")]), { status: 200 });
+      }
+      return new Response("You have exceeded your daily request limit.", { status: 403 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await handler(request("thalweg"));
+    expect(response.status).toBe(502);
+    expect(await body(response)).toMatchObject({ outcome: "error", reason: "quota-exceeded" });
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("wordnik"))).toBe(false);
+  });
+});

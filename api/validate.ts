@@ -4,7 +4,19 @@
 // frequency so the word can be scored on the same Zipf scale as every curated
 // word instead of falling back to the unattested floor.
 //
-// The MW API keys stay server-side here; they are never shipped to the browser.
+// Two dictionary tiers, in this order:
+//   1. MW Collegiate + Medical, queried together and pooled (see the handler).
+//      MW is authoritative wherever it has an entry, because it is the only
+//      source here with structured per-sense status labels, name/abbreviation
+//      functional labels and an `offensive` flag -- every rejection reason the
+//      game shows is built on those.
+//   2. Wordnik, but *only* when MW has no matching entry at all. That is exactly
+//      the case that would otherwise be rejected, so it is pure coverage: AHD
+//      and WordNet attest plenty of specialist vocabulary Collegiate omits.
+//      Running it last also keeps Wordnik's free plan (100 lookups an hour, far
+//      burstier than MW's daily cap) off the common path.
+//
+// The API keys stay server-side here; they are never shipped to the browser.
 // Responses are CDN-cached so a repeated lookup of the same word costs nothing
 // against MW's 1,000-requests-per-day non-commercial quota.
 //
@@ -32,6 +44,27 @@ const MW_ABBR_FLS = new Set(["abbreviation"]);
 // Out-of-use status labels, ranked so the mildest register wins when a word's
 // senses disagree (see `outOfUseVerdict`).
 const MW_STATUS_SEVERITY: Record<string, number> = { obsolete: 3, archaic: 2 };
+
+// Wordnik aggregates five dictionaries and only two of them can be trusted on
+// their own. AHD and WordNet are professionally edited and current. Century
+// (1889-1911) and GCIDE/Webster (1913) are archaic-heavy, so accepting them
+// would undo the archaic rule the rest of this file exists to enforce; and
+// Wordnik's Wiktionary tier carries a long tail including slurs, with no
+// `offensive` flag to catch them the way MW's `meta.offensive` does. A
+// definition from any other source is ignored rather than read as evidence
+// either way -- `sourceDictionaries=all` is requested and the filtering happens
+// here, because Wordnik's own multi-value filter falls back to the *first*
+// dictionary with a hit rather than pooling them.
+const WORDNIK_TRUSTED_SOURCE_RE = /^(ahd(-|$)|wordnet$)/;
+// AHD marks an out-of-use sense with a label rather than a structured status, so
+// the label text is what stands in for MW's `sls`.
+const WORDNIK_OBSOLETE_RE = /\bobsolete\b/i;
+const WORDNIK_ARCHAIC_RE = /\barchaic\b/i;
+// Wordnik parts of speech that mean the entry is not an ordinary word. Proper
+// nouns are matched by prefix, since the plural and possessive variants are
+// spelled as suffixes of it.
+const WORDNIK_ABBR_POS = new Set(["abbreviation", "initialism", "acronym"]);
+const WORDNIK_NAME_POS_PREFIX = "proper-noun";
 
 // The game's own input rule: English letters only, no upper length cap beyond
 // the input's own, so long real words ("gastroenterologist") stay eligible.
@@ -61,7 +94,11 @@ interface LiveCheckBody {
   pos: string[];
   /** MW's first-known-use date, e.g. "1961" or "12th century". */
   firstUse: string | null;
-  /** Which MW reference answered: "collegiate", "medical", "collegiate+medical", or null. */
+  /**
+   * Which reference answered: an MW one ("collegiate", "medical",
+   * "collegiate+medical"), a Wordnik one ("wordnik:ahd-5", "wordnik:wordnet",
+   * or both joined with "+"), or null when nothing attested the word.
+   */
   source?: string | null;
   /**
    * A lookup problem that did not stop an answer being produced -- one reference
@@ -78,6 +115,18 @@ interface MwEntry {
   fl?: string;
   date?: string;
   def?: unknown[];
+}
+
+/**
+ * Only the fields we read from a Wordnik definition. `labels` is where AHD puts
+ * register marks like "archaic"; each label is an object with a `text`.
+ */
+interface WordnikDefinition {
+  word?: string;
+  text?: string;
+  partOfSpeech?: string;
+  sourceDictionary?: string;
+  labels?: unknown[];
 }
 
 /** An upstream call that failed in a way worth naming in the failure event. */
@@ -146,9 +195,13 @@ function senseSeverities(entry: MwEntry): number[] {
 /**
  * Classify an upstream failure so the client's failure event can name it.
  * MW answers an exhausted quota and a bad key with the same 403, distinguished
- * only by the body text, so the body decides between them.
+ * only by the body text, so the body decides between them. Wordnik reports its
+ * hourly cap as a 429, which lands in the same "quota-exceeded" bucket -- and
+ * because a Wordnik failure only ever arrives as a `failure` alongside an
+ * `unknown` verdict, never as a top-level error, it is reported without
+ * switching live checks off for the session the way a spent MW quota does.
  */
-function classifyMwFailure(status: number, body: string): UpstreamError {
+function classifyUpstreamFailure(status: number, body: string): UpstreamError {
   const text = body.slice(0, 200);
   if (status === 403 || status === 429) {
     if (/exceed|limit|quota|too many/i.test(text)) {
@@ -180,7 +233,7 @@ async function fetchJson(url: string, source: string): Promise<unknown> {
   }
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw classifyMwFailure(response.status, body);
+    throw classifyUpstreamFailure(response.status, body);
   }
   try {
     return await response.json();
@@ -195,6 +248,28 @@ async function fetchMw(reference: string, word: string, key: string): Promise<un
     `${encodeURIComponent(word)}?key=${encodeURIComponent(key)}`;
   const data = await fetchJson(url, `mw-${reference}`);
   return Array.isArray(data) ? data : [];
+}
+
+/**
+ * Wordnik's definitions for `word`, or an empty list when it has none. A word
+ * Wordnik doesn't know answers 404, which is a miss rather than a failure, so it
+ * is the one status not reported as an upstream problem.
+ *
+ * `useCanonical=false` keeps Wordnik from silently answering about a different
+ * headword, and the returned `word` is checked anyway in classifyWordnik.
+ */
+async function fetchWordnik(word: string, key: string): Promise<WordnikDefinition[]> {
+  const url =
+    `https://api.wordnik.com/v4/word.json/${encodeURIComponent(word)}/definitions` +
+    `?limit=50&includeRelated=false&useCanonical=false&includeTags=false` +
+    `&sourceDictionaries=all&api_key=${encodeURIComponent(key)}`;
+  try {
+    const data = await fetchJson(url, "wordnik");
+    return Array.isArray(data) ? (data as WordnikDefinition[]) : [];
+  } catch (error) {
+    if (error instanceof UpstreamError && error.status === 404) return [];
+    throw error;
+  }
 }
 
 /**
@@ -304,6 +379,83 @@ function classify(entries: MwEntry[]): Classification {
   return { outcome: "unknown", reason: null, pos: posList, firstUse };
 }
 
+/** The register mark on a Wordnik definition's labels, if it carries one. */
+function wordnikStatus(def: WordnikDefinition): "obsolete" | "archaic" | null {
+  for (const raw of def.labels ?? []) {
+    const text = String((raw as { text?: unknown } | null)?.text ?? "");
+    if (WORDNIK_OBSOLETE_RE.test(text)) return "obsolete";
+    if (WORDNIK_ARCHAIC_RE.test(text)) return "archaic";
+  }
+  return null;
+}
+
+/**
+ * Decide whether Wordnik's definitions make this word playable, applying the
+ * same rules as `classify` with the evidence Wordnik actually provides. Only
+ * definitions from a trusted source dictionary count (see
+ * WORDNIK_TRUSTED_SOURCE_RE); everything else is ignored, so a word attested
+ * *only* by Century, GCIDE or Wiktionary comes back "unknown" and the original
+ * rejection stands.
+ *
+ * There is no offensive flag to read here, which is the other reason the trusted
+ * set is narrow: AHD and WordNet have no slur tail for one to be needed on.
+ *
+ * Returns the verdict plus the source dictionaries that produced it, for the
+ * `source` field.
+ */
+function classifyWordnik(
+  word: string,
+  defs: WordnikDefinition[]
+): { verdict: Classification; sources: string[] } {
+  const pos = new Set<string>();
+  const sources = new Set<string>();
+  const ordinaryStatuses: Array<"obsolete" | "archaic" | null> = [];
+  let hasOrdinary = false;
+  let hasName = false;
+  let hasAbbr = false;
+
+  for (const def of defs) {
+    // Wordnik answers about related headwords too, and returns stub entries with
+    // no definition text; neither is evidence about the queried word.
+    if (String(def.word ?? "").trim().toLowerCase() !== word) continue;
+    const sourceDictionary = String(def.sourceDictionary ?? "").toLowerCase();
+    if (!WORDNIK_TRUSTED_SOURCE_RE.test(sourceDictionary)) continue;
+    if (!String(def.text ?? "").trim()) continue;
+    sources.add(sourceDictionary);
+
+    const partOfSpeech = String(def.partOfSpeech ?? "").toLowerCase();
+    if (partOfSpeech) pos.add(partOfSpeech);
+    if (WORDNIK_ABBR_POS.has(partOfSpeech)) {
+      hasAbbr = true;
+    } else if (partOfSpeech.startsWith(WORDNIK_NAME_POS_PREFIX)) {
+      hasName = true;
+    } else {
+      hasOrdinary = true;
+      ordinaryStatuses.push(wordnikStatus(def));
+    }
+  }
+
+  const posList = [...pos].sort();
+  const sourceList = [...sources].sort();
+  const verdict = (outcome: Classification["outcome"], reason: RejectReason | null) => ({
+    verdict: { outcome, reason, pos: posList, firstUse: null },
+    sources: sourceList,
+  });
+
+  if (hasOrdinary) {
+    // Out of use only when every ordinary sense is, and the mildest register
+    // wins -- the same rule as the MW path.
+    if (ordinaryStatuses.every((status) => status !== null)) {
+      return verdict("rejected", ordinaryStatuses.includes("archaic") ? "archaic" : "obsolete");
+    }
+    return verdict("playable", null);
+  }
+  if (hasName && hasAbbr) return verdict("rejected", "name-or-abbreviation");
+  if (hasName) return verdict("rejected", "proper-noun");
+  if (hasAbbr) return verdict("rejected", "abbreviation");
+  return verdict("unknown", null);
+}
+
 function json(body: LiveCheckBody, status = 200, cacheable = true): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -397,8 +549,34 @@ export default async function handler(request: Request): Promise<Response> {
     return json(errorBody(word, failure), 502, false);
   }
 
-  const source = sources.join("+") || null;
-  const classification = classify(entries);
+  let source = sources.join("+") || null;
+  let classification = classify(entries);
+
+  // Second tier. MW has no matching entry, so the rejection is about to stand on
+  // MW's silence alone -- ask Wordnik before it does. This runs on an MW miss
+  // only, so the common case never touches it, and MW keeps the last word
+  // wherever it had one (including its offensive flag, which Wordnik has no
+  // equivalent of).
+  //
+  // A Wordnik failure here is recorded like a half-broken MW lookup: the verdict
+  // is genuinely incomplete, so it is reported and left uncached rather than
+  // turned into a top-level error.
+  const wordnikKey = process.env.WORDNIK_KEY;
+  if (classification.outcome === "unknown" && wordnikKey) {
+    try {
+      const { verdict, sources: wordnikSources } = classifyWordnik(
+        word,
+        await fetchWordnik(word, wordnikKey)
+      );
+      if (verdict.outcome !== "unknown") {
+        classification = verdict;
+        source = `wordnik:${wordnikSources.join("+")}`;
+      }
+    } catch (error) {
+      if (error instanceof UpstreamError) failure ??= error;
+      else throw error;
+    }
+  }
 
   // If a reference approved the word, that is a success, full stop -- a problem
   // reaching the *other* reference changed nothing about the answer, so it is not
