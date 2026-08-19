@@ -55,23 +55,25 @@ import { markSessionEngaged } from "../game/visits";
  * has answered -- the same search moving from in-progress to done, so finishing
  * reads as a completed action rather than a message that simply stops.
  *
- * Deliberately says nothing about *where* the game is looking: naming a second
- * dictionary would advertise the fallback and invite players to fish for words
- * the curated list doesn't have. The settled forms report on the search, not on
- * the word -- the rejection toast is what explains a verdict.
+ * Names no particular reference: "dictionaries" says work is being done and
+ * where it is being done, without naming the fallback and inviting players to
+ * fish for words the curated list doesn't have. The settled forms report on the
+ * search, not on the word: the game reports what it turned up, never a claim
+ * about whether the word is real -- a word can be perfectly good and still be
+ * one no reference here carries. The rejection toast is what explains a verdict.
  */
 export interface LiveCheckNote {
   /** While the lookup is in flight. */
   pending: string;
-  /** Once it has answered and the word stands. */
+  /** Once the search has turned the word up. */
   found: string;
-  /** Once it has answered and the word was turned down. */
+  /** Once the search has come back empty-handed. */
   notFound: string;
 }
 
 export const LIVE_CHECK_NOTE: LiveCheckNote = {
-  pending: "Verifying…",
-  found: "Verified.",
+  pending: "Scouring dictionaries…",
+  found: "Found it.",
   notFound: "Not found.",
 };
 

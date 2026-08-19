@@ -10,18 +10,27 @@ describe("live check note", () => {
     expect(LIVE_CHECK_NOTE.found).not.toBe(LIVE_CHECK_NOTE.notFound);
   });
 
-  it("says the search is verifying, and says so plainly", () => {
-    expect(LIVE_CHECK_NOTE.pending).toBe("Verifying…");
+  it("says what the search is doing, and says so plainly", () => {
+    expect(LIVE_CHECK_NOTE.pending).toBe("Scouring dictionaries…");
     expect(LIVE_CHECK_NOTE.notFound).toBe("Not found.");
   });
 
-  it("says nothing about where the game is looking", () => {
-    // Naming a dictionary would advertise the fallback; these must stay vague.
+  it("reports on the search rather than judging the word", () => {
+    // A word can be perfectly good and still be one no reference here carries,
+    // so nothing here may claim a word is or isn't real.
+    for (const form of [LIVE_CHECK_NOTE.found, LIVE_CHECK_NOTE.notFound]) {
+      expect(form).not.toMatch(/valid|real|verified|exists?\b/i);
+    }
+  });
+
+  it("names no particular reference", () => {
+    // A generic "dictionaries" is fine; naming the fallback would tell players
+    // exactly which book to fish in.
     const words = [
       LIVE_CHECK_NOTE.pending,
       LIVE_CHECK_NOTE.found,
       LIVE_CHECK_NOTE.notFound,
     ].join(" ");
-    expect(words).not.toMatch(/dictionar|webster|list|word/i);
+    expect(words).not.toMatch(/webster|merriam|collegiate|curated list/i);
   });
 });
