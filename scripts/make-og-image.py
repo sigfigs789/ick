@@ -46,18 +46,18 @@ DISPLAY = FONT_DIR / "HelveticaNeue.ttc"
 BODY = FONT_DIR / "HelveticaNeue.ttc"
 # Face indexes inside the .ttc.
 BOLD, REGULAR, MEDIUM = 1, 0, 10
-# Helvetica Neue has no U+2192, so the arrow is borrowed from a face that does.
-ARROW_FONT = FONT_DIR / "Supplemental" / "Arial.ttf"
 
 WORDMARK = "WordInk"
 LINES = [
     "Everyone gets the same few letters each day.",
     "Find the rarest real word that contains them.",
 ]
-# The example carries the whole rule, so it is spelled out rather than labelled:
-# these letters, hiding inside these words.
+# One example, the way the original card did it: the letters, then the same
+# letters found inside a word. "Letters:" rather than "Drop:" -- the shape is
+# what reads well, the label was the jargon.
+EXAMPLE_LABEL = "Letters:"
 EXAMPLE_LETTERS = "INK"
-EXAMPLE_WORDS = [("th", "INK", "er"), ("wr", "INK", "le"), ("", "INK", "ling")]
+EXAMPLE_WORD = ("th", "INK", "er")
 FOOTER = "Five guesses  ·  No timer, no login  ·  wordink.app"
 
 
@@ -95,7 +95,7 @@ def render() -> Image.Image:
     example_base = font(BODY, REGULAR, 44)
     example_hit = font(BODY, BOLD, 44)
     letters_font = font(DISPLAY, BOLD, 44)
-    arrow_font = font(ARROW_FONT, 0, 40)
+    label_font = font(DISPLAY, BOLD, 44)
     footer_font = font(BODY, MEDIUM, 26)
 
     draw_dots(draw, MARGIN, 96)
@@ -106,24 +106,21 @@ def render() -> Image.Image:
         draw.text((MARGIN, y), line, font=line_font, fill=FG_MUTED)
         y += 54
 
-    # "INK" alone, then the same three letters found inside real words.
+    # "INK" alone, then the same three letters found inside a real answer.
     y = 448
-    x = draw_runs(draw, MARGIN, y, [(EXAMPLE_LETTERS, letters_font, FG)])
-    x = draw_runs(draw, x + 28, y, [("→", arrow_font, FG_FAINT)])
-    x += 28
-    for i, (before, hit, after) in enumerate(EXAMPLE_WORDS):
-        if i:
-            x += 34
-        x = draw_runs(
-            draw,
-            x,
-            y,
-            [
-                (before, example_base, FG_MUTED),
-                (hit, example_hit, FG),
-                (after, example_base, FG_MUTED),
-            ],
-        )
+    before, hit, after = EXAMPLE_WORD
+    x = draw_runs(draw, MARGIN, y, [(EXAMPLE_LABEL, label_font, FG_FAINT)])
+    x = draw_runs(draw, x + 22, y, [(EXAMPLE_LETTERS, letters_font, FG)])
+    draw_runs(
+        draw,
+        x + 52,
+        y,
+        [
+            (before, example_base, FG_MUTED),
+            (hit, example_hit, FG),
+            (after, example_base, FG_MUTED),
+        ],
+    )
 
     draw.text((MARGIN, HEIGHT - 96), FOOTER, font=footer_font, fill=FG_FAINT)
     return image
