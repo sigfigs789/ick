@@ -17,7 +17,7 @@ const BADGES: ReadonlyArray<[rarity: Rarity, className: string, tag: RegExp]> = 
   ["Uncommon", "rarity--uncommon", /uncommon/i],
   ["Rare", "rarity--rare", /rare/i],
   ["Extremely Rare", "rarity--extremely-rare", /extremely rare/i],
-  ["Epic", "rarity--epic", /epic/i],
+  ["Arcane", "rarity--arcane", /arcane/i],
   ["Mythic", "rarity--mythic", /mythic/i],
   ["Legend", "rarity--legend", /legend/i],
 ];

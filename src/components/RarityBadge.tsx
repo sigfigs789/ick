@@ -12,7 +12,7 @@ const RARITY_META: Record<Rarity, { tag: string; className: string }> = {
   Uncommon: { tag: "UNCOMMON", className: "rarity--uncommon" },
   Rare: { tag: "RARE", className: "rarity--rare" },
   "Extremely Rare": { tag: "EXTREMELY RARE", className: "rarity--extremely-rare" },
-  Epic: { tag: "EPIC", className: "rarity--epic" },
+  Arcane: { tag: "ARCANE", className: "rarity--arcane" },
   Mythic: { tag: "MYTHIC", className: "rarity--mythic" },
   Legend: { tag: "LEGEND", className: "rarity--legend" },
 };

@@ -26,12 +26,12 @@ export const RARITY_SYMBOL: Record<Rarity, string> = {
   Uncommon: "🟩",
   Rare: "🟦",
   "Extremely Rare": "🟪",
-  Epic: "🟧",
+  Arcane: "🟧",
   Mythic: "🟥",
   Legend: "⬛",
 };
 
-// Before the tiers were retuned, Legend wore the orange that Epic wears now.
+// Before the tiers were retuned, Legend wore the orange that Arcane wears now.
 // An archived result has to share the square it was played with, so the top
 // rank is looked up through the puzzle's own date.
 const PRE_RETUNE_SYMBOL: Partial<Record<Rarity, string>> = { Legend: "🟧" };

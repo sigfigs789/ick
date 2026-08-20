@@ -28,7 +28,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     score into two ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also
  *     where the bound-suffix base-form adjustment turns on.
  *   - on/after 2026-08-21 (the latest system): the same scores, with the
- *     measured Zipf bands retuned -- Epic added between Extremely Rare and
+ *     measured Zipf bands retuned -- Arcane added between Extremely Rare and
  *     Mythic, Quotidian folded into Very Common (see measuredRarity).
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
@@ -66,10 +66,10 @@ function roundToTenths(n: number): number {
  * The score-based top ranks, each keyed off the value the player actually sees:
  * Legend at 9.9+ (Mythic and Legend show two decimals, so it keys off the
  * two-decimal score, 9.895 -> 9.90 -> Legend) and Mythic wherever the score
- * *displays* as 9.5 or higher. Epic and below show one decimal, so the
+ * *displays* as 9.5 or higher. Arcane and below show one decimal, so the
  * Mythic cutoff keys off the one-decimal value: anything that rounds to 9.5
  * (raw >= 9.45) is Mythic. Anything lower returns undefined, so the caller falls
- * back to the measured Zipf-band label (Epic and below).
+ * back to the measured Zipf-band label (Arcane and below).
  */
 export function topRankForScore(score: number): Extract<Rarity, "Legend" | "Mythic"> | undefined {
   if (roundToCents(score) >= LEGEND_MIN_SCORE) return "Legend";
@@ -288,15 +288,15 @@ const LEGACY_SCORING: Scoring = {
  * for anything that was not an everyday word rather than a find worth having.
  *
  * The retuned bands (NARROW_BANDS_START on) fix that by splitting the crowded
- * top of the measured range three ways instead of two. Scores 6.9..9.4 hold
- * roughly 45% of everything a drop can reach, and Rare/Extremely Rare/Epic now
- * split it so no single band bulges and Rare stops reaching into the high 8s.
- * Epic takes the smallest slice deliberately: at ~9% it is the scarcest band in
- * the measured range, so hitting it reads as closing in on Mythic rather than
- * as one more step up the ladder. Below them Uncommon and Common are
- * unchanged in spirit, and Very Common absorbs what used to be a separate
- * Quotidian tier at the very bottom. Scores are untouched throughout -- this
- * only changes which label a score wears.
+ * top of the measured range three ways instead of two. Scores 6.8..9.4 hold
+ * roughly 45% of everything a drop can reach, and Rare/Extremely Rare/Arcane
+ * now split it so no single band bulges and Rare stops reaching into the high
+ * 8s. Arcane takes the smallest slice deliberately -- ~13% against their ~16%
+ * each -- so hitting it reads as closing in on Mythic rather than as one more
+ * step up the ladder. Below them Uncommon and Common are unchanged in spirit,
+ * and Very Common absorbs what used to be a separate Quotidian tier at the very
+ * bottom. Scores are untouched throughout -- this only changes which label a
+ * score wears.
  *
  * Both sets stay live: a puzzle played before the cutover keeps the tiers it
  * was played with, Quotidian included.
@@ -305,7 +305,7 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
   if (narrowBands) {
     if (zipf >= 4.85) return "Very Common";
     if (zipf >= 3.9) return "Common";
-    // 3.15 for the same reason Epic's cutoff is 1.59: it puts the seam exactly
+    // 3.15 for the same reason Arcane's cutoff is 1.59: it puts the seam exactly
     // on the shown value, so everything displaying 6.8 or rarer is Rare and
     // everything displaying 6.7 or commoner is Uncommon.
     // Every cutoff here is picked that way (hence 4.85 and 2.13 rather than 4.9
@@ -317,12 +317,12 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
     if (zipf >= 2.13) return "Rare";
     // 1.59 rather than a rounder 1.6 so the seam lands exactly on the shown
     // value: every Zipf below it displays 9.1 or rarer, every Zipf at or above
-    // it displays 9.0 or commoner. Epic is 9.1..9.4 and purple 8.3..9.0, with
+    // it displays 9.0 or commoner. Arcane is 9.1..9.4 and purple 8.3..9.0, with
     // no score able to show on the wrong side of the line. (The cutoff has to
     // clear the cents rounding that happens before the tenths rounding, which
-    // is why 1.58 -- raw 9.047, shown 9.1 -- sits on the Epic side.)
+    // is why 1.58 -- raw 9.047, shown 9.1 -- sits on the Arcane side.)
     if (zipf >= 1.59) return "Extremely Rare";
-    return "Epic";
+    return "Arcane";
   }
   // The original bands, frozen for archived puzzles -- Quotidian and all.
   if (zipf >= 6.4) return "Quotidian";
@@ -759,7 +759,7 @@ function stripDoubledConsonant(stem: string): string {
 export const RARITY_ORDER: Rarity[] = [
   "Legend",
   "Mythic",
-  "Epic",
+  "Arcane",
   "Extremely Rare",
   "Rare",
   "Uncommon",
@@ -790,7 +790,7 @@ export function rarityScore(zipf: number, date?: string): number {
  * (e.g. checking that a mid-band Zipf lands in the expected rank).
  */
 /**
- * Whether `date`'s puzzle uses the retuned tiers -- the Epic rank, the retired
+ * Whether `date`'s puzzle uses the retuned tiers -- the Arcane rank, the retired
  * Quotidian, and the black-topped palette that came with them. Archived puzzles
  * keep the tiers and colors they were played with, so anything that renders a
  * rank has to ask. An omitted date means the newest system.

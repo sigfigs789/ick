@@ -313,7 +313,7 @@ def measured_rarity(zipf: float) -> str:
         return "Rare"
     if zipf >= 1.59:
         return "Extremely Rare"
-    return "Epic"
+    return "Arcane"
 
 
 def current_score(zipf: float, max_zipf: float) -> float:
