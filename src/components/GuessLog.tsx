@@ -3,7 +3,7 @@ import { maxGuessesFor } from "../game/constants";
 import { bestWord } from "../game/rank";
 import { formatRarityScore, topRarityScore, totalRarityScore } from "../game/dictionary";
 import { copyText } from "../clipboard";
-import { RARITY_SYMBOL } from "../game/share";
+import { raritySymbol } from "../game/share";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -12,7 +12,7 @@ import type { AcceptedWord, StreakState } from "../game/types";
  * Reuses the share-results palette so a pasted word matches the share text. */
 function copyTextForWord(w: AcceptedWord, date?: string): string {
   const score = w.zipf !== undefined ? ` (${formatRarityScore(w.zipf, date)})` : "";
-  return `${RARITY_SYMBOL[w.rarity]} ${w.word}${score}`;
+  return `${raritySymbol(w.rarity, date)} ${w.word}${score}`;
 }
 
 interface Props {

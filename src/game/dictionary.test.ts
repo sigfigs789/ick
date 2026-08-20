@@ -55,13 +55,13 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
 // scripts/manage-extra-word.py record-word.
 const onlineWordScores: ReadonlyArray<[string, string, number]> = [
   ["eleatic", "Mythic", 1.17],
-  ["payline", "Extremely Rare", 2.26],
-  ["pembina", "Extremely Rare", 2.2],
-  ["pomarine", "Extremely Rare", 1.45],
-  ["portation", "Extremely Rare", 2.28],
-  ["poussin", "Extremely Rare", 2.26],
-  ["reassociation", "Extremely Rare", 1.49],
-  ["sation", "Extremely Rare", 1.37],
+  ["payline", "Rare", 2.26],
+  ["pembina", "Rare", 2.2],
+  ["pomarine", "Epic", 1.45],
+  ["portation", "Rare", 2.28],
+  ["poussin", "Rare", 2.26],
+  ["reassociation", "Epic", 1.49],
+  ["sation", "Epic", 1.37],
   ["sideration", "Extremely Rare", 1.92],
 ];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
@@ -124,16 +124,16 @@ describe("isValidWord", () => {
     ["brahman", "Rare", 2.81],
     ["chateau", "Uncommon", 3.3],
     ["corinthian", "Rare", 2.85],
-    ["easter", "Uncommon", 4.12],
-    ["gorgonzola", "Extremely Rare", 2.22],
+    ["easter", "Common", 4.12],
+    ["gorgonzola", "Rare", 2.22],
     ["nan", "Uncommon", 3.49],
-    ["olympian", "Rare", 3.29],
+    ["olympian", "Uncommon", 3.29],
     ["passe", "Rare", 2.53],
     ["pentecostal", "Rare", 2.86],
     ["raja", "Uncommon", 3.31],
     ["savannah", "Uncommon", 3.62],
     ["trojan", "Uncommon", 3.41],
-    ["victorian", "Uncommon", 4.12],
+    ["victorian", "Common", 4.12],
   ];
 
   it.each(droppedCommonWords)(
@@ -185,9 +185,9 @@ describe("isValidWord", () => {
 // regen can't silently drop or re-score one without a deliberate update here.
 describe("curated additions from rejected-word analytics", () => {
   const analyticsAdditions: ReadonlyArray<[string, string, number]> = [
-    ["astroturf", "Extremely Rare", 2.46],
+    ["astroturf", "Rare", 2.46],
     ["brobdingnagian", "Extremely Rare", 1.55],
-    ["stromboli", "Extremely Rare", 2.18],
+    ["stromboli", "Rare", 2.18],
     ["carcinisation", "Legend", -1.57],
     ["carcinization", "Legend", -1.57],
     ["dendrimeric", "Legend", -1.57],
@@ -208,14 +208,17 @@ describe("curated additions from rejected-word analytics", () => {
 describe("rarityFor", () => {
   it("returns a rarity and zipf score for a known word", () => {
     const info = rarityFor("the");
-    expect(info?.rarity).toBe("Quotidian");
+    expect(info?.rarity).toBe("Very Common");
     expect(info?.zipf).toBeGreaterThan(7);
   });
 
-  it("reserves Quotidian for scores at/below 2.0", () => {
-    expect(rarityFor("about")?.rarity).toBe("Quotidian");
-    expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThanOrEqual(2);
-    expect(rarityFor("there")?.rarity).toBe("Very Common");
+  it("puts everyday words in Very Common, the bottom tier", () => {
+    // Quotidian used to sit beneath this and was folded in, so the most common
+    // words in the language now share the tier rather than having their own.
+    expect(rarityFor("about")?.rarity).toBe("Very Common");
+    expect(rarityFor("the")?.rarity).toBe("Very Common");
+    expect(rarityFor("river")?.rarity).toBe("Very Common");
+    expect(rarityScore(rarityFor("about")!.zipf)).toBeLessThanOrEqual(2.5);
   });
 
   it("returns undefined for a word not in the dictionary", () => {
