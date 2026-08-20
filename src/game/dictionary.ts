@@ -303,11 +303,25 @@ const LEGACY_SCORING: Scoring = {
  */
 function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
   if (narrowBands) {
-    if (zipf >= 4.9) return "Very Common";
+    if (zipf >= 4.85) return "Very Common";
     if (zipf >= 3.9) return "Common";
-    if (zipf >= 3.05) return "Uncommon";
-    if (zipf >= 2.0) return "Rare";
-    if (zipf >= 1.5) return "Extremely Rare";
+    // 3.15 for the same reason Epic's cutoff is 1.59: it puts the seam exactly
+    // on the shown value, so everything displaying 6.8 or rarer is Rare and
+    // everything displaying 6.7 or commoner is Uncommon.
+    // Every cutoff here is picked that way (hence 4.85 and 2.13 rather than 4.9
+    // and 2.1): a score is shown to one decimal, so a boundary landing mid-tenth
+    // would let two words show the same number in different colors, which reads
+    // as a bug even though each label is correct for its Zipf. A test pins that
+    // no displayed value straddles a band.
+    if (zipf >= 3.15) return "Uncommon";
+    if (zipf >= 2.13) return "Rare";
+    // 1.59 rather than a rounder 1.6 so the seam lands exactly on the shown
+    // value: every Zipf below it displays 9.1 or rarer, every Zipf at or above
+    // it displays 9.0 or commoner. Epic is 9.1..9.4 and purple 8.3..9.0, with
+    // no score able to show on the wrong side of the line. (The cutoff has to
+    // clear the cents rounding that happens before the tenths rounding, which
+    // is why 1.58 -- raw 9.047, shown 9.1 -- sits on the Epic side.)
+    if (zipf >= 1.59) return "Extremely Rare";
     return "Epic";
   }
   // The original bands, frozen for archived puzzles -- Quotidian and all.

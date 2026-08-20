@@ -48,7 +48,7 @@ const curatedWordScores: ReadonlyArray<[string, string, number]> = [
   ["invictus", "Rare", 2.5],
 ];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
-  ["aggrandization", "Extremely Rare", 1.52],
+  ["aggrandization", "Epic", 1.52],
 ];
 // Rare words discovered online for an upcoming drop and added via the "Add rare
 // words found online" GitHub Action (list=online). Appended automatically by
@@ -186,7 +186,7 @@ describe("isValidWord", () => {
 describe("curated additions from rejected-word analytics", () => {
   const analyticsAdditions: ReadonlyArray<[string, string, number]> = [
     ["astroturf", "Rare", 2.46],
-    ["brobdingnagian", "Extremely Rare", 1.55],
+    ["brobdingnagian", "Epic", 1.55],
     ["stromboli", "Rare", 2.18],
     ["carcinisation", "Legend", -1.57],
     ["carcinization", "Legend", -1.57],

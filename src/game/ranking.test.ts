@@ -26,7 +26,7 @@ const RANKINGS: ReadonlyArray<[word: string, rarity: Rarity, decimals: number]> 
   ["castle", "Common", 1],
   ["chateau", "Uncommon", 1],
   ["awol", "Rare", 1],
-  ["abnegate", "Extremely Rare", 1],
+  ["okapi", "Extremely Rare", 1],
   ["borborygmus", "Epic", 1],
   ["aardwolf", "Mythic", 2],
   ["autecism", "Legend", 2],
@@ -91,7 +91,7 @@ describe("rank ladder across the latest system", () => {
     [3.5, "Uncommon"],
     [2.5, "Rare"],
     [1.8, "Extremely Rare"],
-    [1.4, "Epic"],
+    [1.45, "Epic"],
   ];
 
   it.each(MEASURED_LADDER)("Zipf %s ranks as %s, below the top tiers", (zipf, rarity) => {
@@ -125,16 +125,16 @@ describe("narrow measured bands (from 2026-08-21)", () => {
   // Each band's floor and the Zipf a hair beneath it, so a cutoff that drifts
   // is caught in both directions.
   const EDGES: ReadonlyArray<[zipf: number, rarity: Rarity]> = [
-    [4.9, "Very Common"],
-    [4.89, "Common"],
+    [4.85, "Very Common"],
+    [4.84, "Common"],
     [3.9, "Common"],
     [3.89, "Uncommon"],
-    [3.05, "Uncommon"],
-    [3.04, "Rare"],
-    [2.0, "Rare"],
-    [1.99, "Extremely Rare"],
-    [1.5, "Extremely Rare"],
-    [1.49, "Epic"],
+    [3.15, "Uncommon"],
+    [3.14, "Rare"],
+    [2.13, "Rare"],
+    [2.12, "Extremely Rare"],
+    [1.59, "Extremely Rare"],
+    [1.58, "Epic"],
   ];
 
   it.each(EDGES)("Zipf %s sits in %s", (zipf, rarity) => {
@@ -177,6 +177,36 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     expect(usesRetunedTiers(ON)).toBe(true);
     expect(usesRetunedTiers("2027-03-01")).toBe(true);
     expect(usesRetunedTiers()).toBe(true);
+  });
+
+  it("splits Epic from Extremely Rare on the shown score, not between it", () => {
+    // Epic is 9.1+ and purple tops out at 9.0, so no score can display on the
+    // wrong side of the boundary.
+    expect(rarityForZipf(1.58, ON)).toBe("Epic");
+    expect(formatRarityScore(1.58, ON)).toBe("9.1");
+    expect(rarityForZipf(1.59, ON)).toBe("Extremely Rare");
+    expect(formatRarityScore(1.59, ON)).toBe("9.0");
+    // Rare's floor is cut the same way: 6.8 is Rare, 6.7 is Uncommon.
+    expect(rarityForZipf(3.14, ON)).toBe("Rare");
+    expect(formatRarityScore(3.14, ON)).toBe("6.8");
+    expect(rarityForZipf(3.15, ON)).toBe("Uncommon");
+    expect(formatRarityScore(3.15, ON)).toBe("6.7");
+  });
+
+  it("never shows one score in two different tiers", () => {
+    // Scores show to one decimal, so a band boundary landing mid-tenth would let
+    // two words read the same number in different colors. Sweep every Zipf the
+    // data can hold (hundredths) and check each displayed value maps to exactly
+    // one tier.
+    const tierFor = new Map<string, Rarity>();
+    for (let hundredths = 0; hundredths <= 800; hundredths++) {
+      const zipf = hundredths / 100;
+      const shown = formatRarityScore(zipf, ON);
+      const rarity = rarityForZipf(zipf, ON);
+      const seen = tierFor.get(shown);
+      if (seen === undefined) tierFor.set(shown, rarity);
+      else expect(rarity, `score ${shown} appears as both ${seen} and ${rarity}`).toBe(seen);
+    }
   });
 
   it("moves labels without moving a single score", () => {
