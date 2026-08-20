@@ -50,7 +50,7 @@ BOLD, REGULAR, MEDIUM = 1, 0, 10
 WORDMARK = "WordInk"
 LINES = [
     "Everyone gets the same few letters each day.",
-    "Find the rarest real word that contains them.",
+    "Find the rarest word you can that contains them.",
 ]
 # One example, the way the original card did it: the letters, then the same
 # letters found inside a word. "Letters:" rather than "Drop:" -- the shape is
