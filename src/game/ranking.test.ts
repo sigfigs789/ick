@@ -129,8 +129,8 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     [4.89, "Common"],
     [3.9, "Common"],
     [3.89, "Uncommon"],
-    [3.05, "Uncommon"],
-    [3.04, "Rare"],
+    [3.15, "Uncommon"],
+    [3.14, "Rare"],
     [2.1, "Rare"],
     [2.09, "Extremely Rare"],
     [1.59, "Extremely Rare"],
@@ -186,6 +186,11 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     expect(formatRarityScore(1.58, ON)).toBe("9.1");
     expect(rarityForZipf(1.59, ON)).toBe("Extremely Rare");
     expect(formatRarityScore(1.59, ON)).toBe("9.0");
+    // Rare's floor is cut the same way: 6.8 is Rare, 6.7 is Uncommon.
+    expect(rarityForZipf(3.14, ON)).toBe("Rare");
+    expect(formatRarityScore(3.14, ON)).toBe("6.8");
+    expect(rarityForZipf(3.15, ON)).toBe("Uncommon");
+    expect(formatRarityScore(3.15, ON)).toBe("6.7");
   });
 
   it("moves labels without moving a single score", () => {

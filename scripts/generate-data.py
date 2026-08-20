@@ -63,7 +63,7 @@ MEASURED_FLOOR = 1.0
 RARITY_BANDS = [
     (4.9, "Very Common"),
     (3.9, "Common"),
-    (3.05, "Uncommon"),
+    (3.15, "Uncommon"),
     (2.1, "Rare"),
     (1.59, "Extremely Rare"),
     (1.0, "Epic"),
