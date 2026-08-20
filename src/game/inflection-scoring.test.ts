@@ -75,24 +75,92 @@ describe("number inflections fold onto their base (from 2026-08-21)", () => {
   });
 });
 
+// The suffixes whose spelling is not decisive fold only below MEASURED_FLOOR
+// (Zipf 1.0), where a word's score is a stand-in rather than a measurement.
+describe("comparatives and Latin plurals fold, but only below the measurement floor", () => {
+  const GATED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    // "-est"/"-er": a suffix was worth a perfect 10.00 on words nobody would
+    // call a discovery.
+    ["specialest", "special", 10, 3.52],
+    ["beautifuler", "beautiful", 9.95, 3.69],
+    ["babiest", "baby", 10, 3.63],
+    ["thanker", "thank", 9.95, 3.31],
+    ["abandoner", "abandon", 9.91, 5.46],
+    // The chain keeps walking past the immediate parent to the most common word
+    // it can reach, which is the whole point of capping: "knowinger" folds
+    // through "knowing" onto "know".
+    ["knowinger", "know", 10, 2.4],
+    // The Latin neuter plural.
+    ["asyla", "asylum", 9.92, 5.5],
+    ["pepla", "peplum", 9.95, 8.12],
+    ["clitella", "clitellum", 9.98, 8.33],
+  ];
+
+  it.each(GATED)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON)).toBe(after);
+    expect(baseFormSubstitution(word, ON)?.base).toBe(base);
+  });
+
+  it.each(GATED)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE)).toBe(before);
+  });
+
+  it.each(GATED)("%s was Mythic or better before, and is not after", (word) => {
+    expect(["Mythic", "Legend"]).toContain(rank(word, BEFORE));
+    expect(["Mythic", "Legend"]).not.toContain(rank(word, ON));
+  });
+
+  it("leaves a word the corpora actually measure alone, however it ends", () => {
+    // Every one of these is a word a spelling rule would happily mangle --
+    // "tempest" -> "temp", "canter" -> "cant", "noter" -> "not", "shoulder" ->
+    // "should", "comma" -> "common", "alba" -> "album". The gate excludes them
+    // all, because each carries a real frequency (Zipf 1.07 to 4.73) and a guess
+    // from an ending must not overrule a measurement.
+    for (const word of [
+      "tempest",
+      "canter",
+      "noter",
+      "theer",
+      "shoulder",
+      "privateer",
+      "commoner",
+      "honest",
+      "forest",
+      "modest",
+      "harvest",
+      "comma",
+      "alba",
+      "dura",
+    ]) {
+      expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
+      expect(score(word, BEFORE), `${word} must not move`).toBe(score(word, ON));
+    }
+  });
+});
+
 describe("what the cutover deliberately leaves alone", () => {
   it("keeps five-letter -ing words scoring on their own frequency", () => {
-    // No spelling rule separates "awe" + "-ing" from "the" + "-ing": folding
-    // five-letter "-ing" forms would score "thing" as "the" (a flat 0.00) and
-    // "doing" as "do". Words like "iring" and "hoing" keep an unearned Mythic
-    // as the price, and belong in score-overrides.json one at a time.
+    // The gate settles this family on its own: every five-letter "-ing" word is
+    // measured above the floor, so none of them fold. That is what keeps "thing"
+    // from scoring as "the" (a flat 0.00) and "doing" from scoring as "do" --
+    // and the price is that "iring" and "hoing" keep an unearned Mythic.
     expect(score("thing", ON)).toBe(2.96);
     expect(score("doing", ON)).toBe(3.13);
     expect(baseFormSubstitution("thing", ON)).toBeUndefined();
     expect(baseFormSubstitution("doing", ON)).toBeUndefined();
+    expect(baseFormSubstitution("iring", ON)).toBeUndefined();
   });
 
-  it("keeps comparatives and superlatives scoring on their own frequency", () => {
-    // "-er"/"-est" collapse onto unrelated words a spelling rule can't tell from
-    // a real comparative: "noter" -> "not", "tempest" -> "temp", "canter" ->
-    // "cant". The reviewed superlatives in score-overrides.json handle these.
-    expect(baseFormSubstitution("tempest", ON)).toBeUndefined();
-    expect(score("tempest", BEFORE)).toBe(score("tempest", ON));
+  it("keeps the -en verbs scoring on their own frequency", () => {
+    // "-en" folds are right often enough to tempt ("harshen" -> "harsh",
+    // "plumpen" -> "plump") and wrong often enough to disqualify: measured, the
+    // same rule folds "dudeen" (a clay pipe) onto "dude", "shoneen" onto "shone"
+    // and "torten" onto "tort". 51 words, ~6 of them wrong, so the family stays
+    // with the reviewed overrides.
+    for (const word of ["harshen", "dudeen", "plumpen", "hoarsen"]) {
+      expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
+      expect(score(word, BEFORE)).toBe(score(word, ON));
+    }
   });
 
   it("routes a coincidental homograph through a reviewed override", () => {

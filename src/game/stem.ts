@@ -39,12 +39,19 @@ export function baseForm(word: string): string {
  *     or "-ix" ("matrices" -> "matrix", "vortices" -> "vortex").
  *
  * The caller confirms each candidate is a real word and picks the most common
- * one, which is what keeps the coincidences harmless: "caves" offers both "cave"
- * and "cafe", "saves" offers both "save" and "safe", and the right base wins
- * because it is the more common word. Candidates shorter than three letters are
- * dropped -- two-letter dictionary entries carry corpus frequencies collected
- * from every word that contains them, so they read as absurdly common and would
- * flatten anything that folded onto them.
+ * one. That is what keeps the coincidences harmless, though not for the reason
+ * it first looks like: "caves" offers both "cave" (4.20) and "cafe" (4.09), and
+ * "saves" offers both "save" (5.14) and "safe" (5.07). The right base does win
+ * both, but by 0.11 and 0.07 Zipf -- margins thin enough that a data refresh
+ * could flip either. The safety comes from the near-tie itself. Two candidates
+ * that close carry nearly the same frequency, so picking the wrong one moves the
+ * score by about a sixth of a point; a coincidence only does real damage when it
+ * is *far* more common than the true base, and that is the shape a reviewed
+ * override exists to catch ("theses" -> "these", 2.83 Zipf clear of "thesis").
+ *
+ * Candidates shorter than three letters are dropped -- two-letter dictionary
+ * entries carry corpus frequencies collected from every word that contains them,
+ * so they read as absurdly common and would flatten anything folding onto them.
  *
  * Tense (-ed/-ing) is not here: `tenseBaseForm` in dictionary.ts already owns it.
  */
@@ -64,6 +71,57 @@ export function inflectionalBaseCandidates(word: string): string[] {
   if (w.length > 4 && w.endsWith("ves")) add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
   if (w.length > 4 && w.endsWith("es")) add(w.slice(0, -1), w.slice(0, -2));
   if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) add(w.slice(0, -1));
+
+  return out;
+}
+
+/**
+ * Candidate bases for the suffixes whose spelling is *not* decisive -- safe to
+ * consult only for a word that no corpus really attests. The caller enforces
+ * that (see MEASURED_FLOOR in dictionary.ts); this function just supplies the
+ * spellings.
+ *
+ *   - "-er"/"-est" comparatives and agentives: "specialest" -> "special",
+ *     "knowinger" -> "knowing", "thanker" -> "thank".
+ *   - the Latin neuter plural "-a" -> "-um": "asyla" -> "asylum",
+ *     "pepla" -> "peplum", "clitella" -> "clitellum".
+ *
+ * Nothing in the spelling separates a real comparative from a word that merely
+ * ends that way: applied to every word these rules fold "noter" -> "not",
+ * "tempest" -> "temp", "canter" -> "cant", "shoulder" -> "should" and "comma" ->
+ * "common". What makes them usable anyway is *where* they are allowed to apply.
+ * Below wordfreq's measurement floor a word's score is a stand-in rather than a
+ * measurement, so a plausible base is strictly better information than the
+ * sentinel it would otherwise get; at or above the floor there is a real
+ * measurement, and a spelling guess must not be allowed to overrule it. Every
+ * word in the list above sits at or above the floor and is excluded on those
+ * grounds -- "tempest" is measured at Zipf 3.29, "canter" at 2.72, "noter" at
+ * 1.27.
+ *
+ * Two families stay out even under that gate. "-en" verbs ("harshen" -> "harsh")
+ * are right often enough to tempt but fold loanwords onto lookalikes -- "dudeen"
+ * (a clay pipe) -> "dude", "shoneen" -> "shone", "torten" -> "tort". Five-letter
+ * "-ing" is moot: every such word is measured above the floor, so the gate leaves
+ * none of them to fold, which is also what keeps "thing" from scoring as "the".
+ */
+export function unmeasuredBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (...bases: string[]) => {
+    for (const base of bases) {
+      // Four letters, not the three the number inflections allow: a three-letter
+      // base is where the wrong-word folds cluster ("the", "not", "cant").
+      if (base.length >= 4 && base !== w && !out.includes(base)) out.push(base);
+    }
+  };
+
+  for (const suffix of ["est", "er"]) {
+    if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
+    const stem = w.slice(0, -suffix.length);
+    add(stem, `${stem}e`, stripDoubledConsonant(stem));
+    if (stem.endsWith("i")) add(`${stem.slice(0, -1)}y`);
+  }
+  if (w.length > 4 && w.endsWith("a")) add(`${w.slice(0, -1)}um`);
 
   return out;
 }

@@ -83,30 +83,43 @@ score there — a fold can only ever pull a word toward common, never make it
 rarer. `src/game/dictionary.ts`'s `chainedBase` explores every base reachable by
 folding and takes the most common one it finds.
 
-Which folds are safe is a question of whether the spelling is decisive, and the
-answer is not the same for every suffix:
+Which folds are safe turns on two questions: is the spelling decisive, and — if
+it isn't — does the word have a real measurement worth protecting?
 
 | Family | Folded? | Why |
 | --- | --- | --- |
-| `-s` / `-es` / `-ies` / `-ves` / `-ices` plurals and third-person forms | yes | `inflectionalBaseCandidates` (`src/game/stem.ts`) offers every candidate spelling and the caller keeps the most common one the dictionary attests. A coincidence loses to the real base on frequency: `caves` offers both `cave` (4.20) and `cafe` (4.09), and `cave` wins. |
-| `-ed` / `-ing` tenses | yes | `tenseBaseForm`, same most-common tie-break: `played` → `play`, not the obscure `playe`. |
-| `-ness`, `-ly`, `-ization`, `-ability` | yes | Bound or transparent suffixes with one unambiguous base. |
-| `-er` / `-est` comparatives | **no** | No spelling rule tells a comparative from a word that merely ends that way: it would fold `noter` → `not`, `tempest` → `temp`, `canter` → `cant`. |
-| five-letter `-ing` | **no** | Same problem, sharper: folding these would score `thing` as `the` — a flat 0.00 — and `doing` as `do`. The price is that `iring` and `hoing` keep an unearned Mythic. |
-| `-en` participles, Latin `-a` plurals | **no** | Measured false bases include `marchen` → `march` and `comma` → `common`. |
+| `-s` / `-es` / `-ies` / `-ves` / `-ices` plurals and third-person forms | always | `inflectionalBaseCandidates` (`src/game/stem.ts`) offers every candidate spelling and the caller keeps the most common one the dictionary attests. Coincidences are near-ties, so picking wrong barely moves the score: `caves` offers `cave` (4.20) and `cafe` (4.09). |
+| `-ed` / `-ing` tenses | always | `tenseBaseForm`, same most-common tie-break: `played` → `play`, not the obscure `playe`. |
+| `-ness`, `-ly`, `-ization`, `-ability` | always | Bound or transparent suffixes with one unambiguous base. |
+| `-er` / `-est` comparatives and agentives, Latin `-a` → `-um` plurals | **only below Zipf 1.0** | `unmeasuredBaseCandidates`, gated on `MEASURED_FLOOR`. Ungated these fold `noter` → `not`, `tempest` → `temp`, `canter` → `cant`, `shoulder` → `should`, `comma` → `common`. Every one of those is *measured* (Zipf 1.07–4.73) and so excluded; `specialest`, `babiest` and `asyla` are not measured at all, and fold. |
+| five-letter `-ing` | **no** | Every such word is measured above the floor, so the gate leaves none to fold — which is what keeps `thing` from scoring as `the` (a flat 0.00). The price is that `iring` and `hoing` keep an unearned Mythic. |
+| `-en` verbs | **no** | Right often enough to tempt (`harshen` → `harsh`) and wrong often enough to disqualify: `dudeen` → `dude`, `shoneen` → `shone`, `torten` → `tort`. 51 words, ~6 of them wrong. |
+| prefixes (`un-`, `re-`, `non-`, `over-`) | **no** | Not analysed; a large family (thousands of Mythic/Legend words) and a riskier one, since `release` → `lease` and `report` → `port` are the same shape as a real prefix. |
+
+The gate is the load-bearing idea. Below `MEASURED_FLOOR` a word's score comes
+from the deep-tail band — for an unattested word, from the sentinel outright — so
+it is a stand-in rather than a measurement, and a plausible base is strictly
+better information. At or above the floor there *is* a measurement, and a guess
+from a word ending must not overrule it.
 
 Everything in the "no" rows is handled a word at a time in
 `src/data/score-overrides.json` instead, which is also where a fold that the
 rules get *wrong* gets stopped (`theses` is the plural of `thesis`, not a form of
-`these`).
+`these`), and where the gate's own known miss lives (`momser`, a Yiddish
+loanword, folds onto `mom`).
 
 Every widening is date-gated, so no past puzzle re-scores: `scoringFor` picks a
 `Scoring` profile from the puzzle date, and the four cutovers to date are
 `2026-08-15`, `2026-08-16`, `2026-08-19` (folds became caps, resolved through the
-whole chain) and `2026-08-21` (number inflections). Two invariants are asserted
-over the entire dictionary in `src/game/inflection-scoring.test.ts`: crossing a
-cutover never *raises* a word's score, and no folded word scores rarer than the
-base it folded onto.
+whole chain) and `2026-08-21` (every plausible base spelling at once, plus the
+gated families). Two invariants are asserted over the entire dictionary in
+`src/game/inflection-scoring.test.ts`: crossing a cutover never *raises* a word's
+score, and no folded word scores rarer than the base it folded onto.
+
+`scripts/manage-extra-word.py` carries a Python mirror of this whole fold path
+(`_next_bases`, `chained_base`, `adjusted_zipf`), used by the audit skills in
+`.claude/skills/` to score candidate words. **It has to change in lockstep with
+`dictionary.ts`** or the skills will report scores the app does not show.
 
 ## Regenerating the word/rarity data
 

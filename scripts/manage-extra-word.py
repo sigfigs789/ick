@@ -258,17 +258,77 @@ def _inflectional_stem(word: str) -> str:
     return w
 
 
+def _inflectional_candidates(word: str) -> list[str]:
+    """Mirror of inflectionalBaseCandidates() in src/game/stem.ts.
+
+    Every base spelling a plural or third-person form could have. Unlike
+    _inflectional_stem above, which must commit to one key, this offers the whole
+    set and lets the caller keep the most common one the dictionary attests.
+    Candidates under three letters are dropped: two-letter dictionary entries
+    carry the corpus frequency of every word containing them.
+    """
+    w = word.lower()
+    out: list[str] = []
+
+    def add(*bases: str) -> None:
+        for base in bases:
+            if len(base) >= 3 and base != w and base not in out:
+                out.append(base)
+
+    if len(w) > 5 and w.endswith("ices"):
+        add(w[:-4] + "ex", w[:-4] + "ix")
+    if len(w) > 4 and w.endswith("ies"):
+        add(w[:-3] + "y", w[:-3] + "i")
+    if len(w) > 4 and w.endswith("ves"):
+        add(w[:-3] + "f", w[:-3] + "fe")
+    if len(w) > 4 and w.endswith("es"):
+        add(w[:-1], w[:-2])
+    if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
+        add(w[:-1])
+    return out
+
+
+def _unmeasured_candidates(word: str) -> list[str]:
+    """Mirror of unmeasuredBaseCandidates() in src/game/stem.ts.
+
+    Suffixes whose spelling is not decisive -- "-er"/"-est" comparatives and
+    agentives, and the Latin neuter plural "-a" -> "-um". The caller admits these
+    only for a word below MEASURED_FLOOR, where its score is a stand-in rather
+    than a measurement.
+    """
+    w = word.lower()
+    out: list[str] = []
+
+    def add(*bases: str) -> None:
+        for base in bases:
+            if len(base) >= 4 and base != w and base not in out:
+                out.append(base)
+
+    for suffix in ("est", "er"):
+        if not w.endswith(suffix) or len(w) <= len(suffix) + 3:
+            continue
+        stem = w[: -len(suffix)]
+        add(stem, stem + "e", _strip_doubled_consonant(stem))
+        if stem.endswith("i"):
+            add(stem[:-1] + "y")
+    if len(w) > 4 and w.endswith("a"):
+        add(w[:-1] + "um")
+    return out
+
+
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     """Mirror of tenseBaseForm(): -ed/-ing pick the most common valid base.
 
     The newest system caps against this base rather than inheriting it outright,
     so it can only pull a word toward common. It also counts five-letter -ied
-    forms ("tried", "cried"), which the older systems missed.
+    forms ("tried", "cried"), which the older systems missed, and lets an -ied
+    word try the plain -ed bases too ("taxied" -> "taxi").
     """
     candidates: list[str] = []
-    if len(word) > 4 and word.endswith("ied"):
+    ied = len(word) > 4 and word.endswith("ied")
+    if ied:
         candidates.append(word[:-3] + "y")
-    elif len(word) > 4 and word.endswith("ed"):
+    if len(word) > 4 and word.endswith("ed"):
         stem = word[:-2]
         candidates += [stem + "e", stem, _strip_doubled_consonant(stem)]
     if len(word) > 4 and word.endswith("ying"):
@@ -394,32 +454,66 @@ def _override_base(word: str, index: dict[str, int]) -> str | None:
 MAX_FOLD_DEPTH = 8
 
 
-def _next_base(word: str, index: dict[str, int], zipf_at) -> str | None:
-    """Mirror of nextBaseForm(): one fold, override then tense then suffix."""
-    return (
-        _override_base(word, index)
-        or _tense_base(word, index, zipf_at)
-        or _scoring_base(word, index)
-    )
+def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
+    """Mirror of nextBaseForms(): every base `word` could fold onto in one hop.
+
+    A reviewed override replaces the spelling guesses rather than joining them.
+    Otherwise the whole candidate set is returned and chained_base() explores it,
+    because "which base is most common" and "which base leads to the most common
+    word" are different questions.
+    """
+    override = _override_base(word, index)
+    if override:
+        return [override]
+
+    out: list[str] = []
+
+    def add(candidate: str | None) -> None:
+        if not candidate or candidate == word:
+            return
+        if candidate not in index or candidate in out:
+            return
+        out.append(candidate)
+
+    add(_tense_base(word, index, zipf_at))
+    add(_inflectional_stem(word))
+    for candidate in _inflectional_candidates(word):
+        add(candidate)
+    if word in index and zipf_at(word) < MEASURED_FLOOR:
+        for candidate in _unmeasured_candidates(word):
+            add(candidate)
+    add(_scoring_base(word, index))
+    return out
 
 
-def chained_base(
-    word: str, index: dict[str, int], zipf_at, seen: frozenset[str] | None = None
-) -> tuple[str, float] | None:
+def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float] | None:
     """Mirror of chainedBase(): the most common word reachable by folding.
 
     Each link is one hop applied again to whatever it lands on, so
     "materialnesses" -> "materialness" -> "material" rather than stopping at the
-    unattested middle. Returns (base, zipf), or None when nothing folds.
+    unattested middle. Every branch is explored, not just the most common first
+    hop: committing to one hop can prune the path the chain needed ("cleanses"
+    offers both "cleanse", which folds no further, and "cleans", which carries on
+    to "clean"). Returns (base, zipf), or None when nothing folds.
     """
-    if seen is None:
-        seen = frozenset([word])
-    nxt = _next_base(word, index, zipf_at)
-    if nxt is None or nxt in seen or len(seen) >= MAX_FOLD_DEPTH:
-        return None
-    here = (nxt, zipf_at(nxt))
-    deeper = chained_base(nxt, index, zipf_at, seen | {nxt})
-    return deeper if deeper is not None and deeper[1] > here[1] else here
+    seen = {word}
+    frontier = [word]
+    best: tuple[str, float] | None = None
+    for _ in range(MAX_FOLD_DEPTH):
+        if not frontier:
+            break
+        nxt: list[str] = []
+        for current in frontier:
+            for candidate in _next_bases(current, index, zipf_at):
+                if candidate in seen:
+                    continue
+                seen.add(candidate)
+                nxt.append(candidate)
+                zipf = zipf_at(candidate)
+                if best is None or zipf > best[1]:
+                    best = (candidate, zipf)
+        frontier = nxt
+    return best
 
 
 def adjusted_zipf(word: str, index: dict[str, int], zipf_at) -> float:

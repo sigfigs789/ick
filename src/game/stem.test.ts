@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { baseForm, inflectionalBaseCandidates } from "./stem";
+import { baseForm, inflectionalBaseCandidates, unmeasuredBaseCandidates } from "./stem";
 
 describe("baseForm", () => {
   it("strips a simple plural s", () => {
@@ -110,5 +110,56 @@ describe("inflectionalBaseCandidates", () => {
 
   it("is case-insensitive", () => {
     expect(inflectionalBaseCandidates("WOLVES")).toEqual(inflectionalBaseCandidates("wolves"));
+  });
+});
+
+describe("unmeasuredBaseCandidates", () => {
+  it("offers comparative and superlative bases", () => {
+    expect(unmeasuredBaseCandidates("specialest")).toContain("special");
+    expect(unmeasuredBaseCandidates("abandoner")).toContain("abandon");
+    expect(unmeasuredBaseCandidates("assuager")).toContain("assuage");
+  });
+
+  it("restores a y that the -ier/-iest spelling swapped for an i", () => {
+    expect(unmeasuredBaseCandidates("babiest")).toContain("baby");
+    expect(unmeasuredBaseCandidates("chubbier")).toContain("chubby");
+  });
+
+  it("undoes a doubled consonant", () => {
+    expect(unmeasuredBaseCandidates("slimmest")).toContain("slim");
+    expect(unmeasuredBaseCandidates("flattest")).toContain("flat");
+  });
+
+  it("offers the Latin neuter plural base", () => {
+    expect(unmeasuredBaseCandidates("asyla")).toContain("asylum");
+    expect(unmeasuredBaseCandidates("clitella")).toContain("clitellum");
+  });
+
+  it("drops candidates under four letters", () => {
+    // Three-letter bases are where the wrong-word folds cluster: without this,
+    // "theer" would reach "the" and "noter" would reach "not".
+    expect(unmeasuredBaseCandidates("theer")).toEqual([]);
+    expect(unmeasuredBaseCandidates("noter")).toEqual([]);
+    // It costs a few real three-letter bases too ("bigger" -> "big", "hottest"
+    // -> "hot"), which is free: those comparatives are common words, so the
+    // caller's frequency gate would have excluded them anyway.
+    expect(unmeasuredBaseCandidates("bigger")).not.toContain("big");
+  });
+
+  it("still offers the bases that make the gate necessary", () => {
+    // This function does not know a word's frequency, so it happily offers a
+    // wrong base -- the caller's MEASURED_FLOOR gate is what keeps these from
+    // ever being used. Asserted so the gate can't be dropped as redundant.
+    expect(unmeasuredBaseCandidates("tempest")).toContain("temp");
+    expect(unmeasuredBaseCandidates("shoulder")).toContain("should");
+    expect(unmeasuredBaseCandidates("canter")).toContain("cant");
+    expect(unmeasuredBaseCandidates("comma")).toContain("commum");
+  });
+
+  it("is case-insensitive and never offers the word itself", () => {
+    expect(unmeasuredBaseCandidates("BABIEST")).toEqual(unmeasuredBaseCandidates("babiest"));
+    for (const word of ["specialest", "asyla", "abandoner"]) {
+      expect(unmeasuredBaseCandidates(word)).not.toContain(word);
+    }
   });
 });

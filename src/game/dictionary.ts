@@ -3,7 +3,12 @@ import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import wordRejectionData from "../data/word-rejections.json";
-import { baseForm, boundBaseCandidates, inflectionalBaseCandidates } from "./stem";
+import {
+  baseForm,
+  boundBaseCandidates,
+  inflectionalBaseCandidates,
+  unmeasuredBaseCandidates,
+} from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
 import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types";
 
@@ -29,10 +34,13 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     where the bound-suffix base-form adjustment turns on.
  *   - on/after 2026-08-19: base forms are resolved through their own bases (the
  *     fold chain) instead of one hop, and every fold caps rather than inherits.
- *   - on/after 2026-08-21 (the latest system): the fold consults every plausible
- *     *number* inflection at once rather than the one spelling `baseForm` commits
- *     to, so a plural or third-person form can no longer out-score the word it
- *     came from (see `inflectionalBaseCandidates`).
+ *   - on/after 2026-08-21 (the latest system): a fold consults every plausible
+ *     base spelling at once rather than the one `baseForm` commits to, so a
+ *     plural or third-person form can no longer out-score the word it came from
+ *     (see `inflectionalBaseCandidates`). Suffixes whose spelling is not
+ *     decisive -- comparatives, Latin plurals -- fold too, but only for a word
+ *     below MEASURED_FLOOR, where its score is a stand-in rather than a
+ *     measurement (see `unmeasuredBaseCandidates`).
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -138,7 +146,9 @@ interface ScoreOverride {
  * right score for a genuine find the corpora simply haven't caught up with
  * ("enshittification"). It is the wrong score for a mechanical derivation of an
  * ordinary word -- "iratest" is the unattested superlative of "irate" (Zipf
- * 2.78), and `scoringBaseForm` below has no -est rule, so nothing caps it.
+ * 2.78). The 2026-08-21 cutover folds superlatives like that one on its own, but
+ * only below MEASURED_FLOOR, so anything the corpora *do* measure still needs a
+ * reviewed entry here.
  *
  * The rest are measured words whose only reachable base is a coincidence:
  * "theses" is the plural of "thesis", but the spelling rules can only see
@@ -147,16 +157,25 @@ interface ScoreOverride {
  * to *stop* a wrong fold, not only to add a missing one.
  *
  * Which gaps belong here and which belong in a rule is a question of whether the
- * spelling is decisive. `inflectionalBaseCandidates` covers number inflection
- * because a wrong candidate there loses to the right one on frequency; "-est",
- * "-er" and five-letter "-ing" stay here because nothing separates "awe" + "-ing"
- * from "the" + "-ing" ("thing" is not a form of "the"). An earlier note in this
- * spot argued no widening was affordable at all, on the grounds that a blanket
- * bare-`s` strip re-scored ~10,900 words and stripped 2,189 of a perfect 10. The
- * count was right and the conclusion was not: those re-scores were the point, and
- * once every fold became a cap (CHAINED_BASE_START) a widening could only ever
- * pull a word toward common. Thirty-one of the entries below were "-es" plurals
- * the rule now handles on its own.
+ * spelling is decisive, and -- where it is not -- of whether the word has a real
+ * measurement to protect. `inflectionalBaseCandidates` covers number inflection
+ * outright, because a wrong candidate there loses to the right one on frequency.
+ * `unmeasuredBaseCandidates` covers the comparatives and Latin plurals only below
+ * MEASURED_FLOOR, where the score is a stand-in anyway. What is left for this
+ * file is everything neither rule can reach: a measured word whose ending
+ * misleads ("tempest" is not a form of "temp"), a loanword the gate lets through
+ * anyway ("momser" folds onto "mom", which it has nothing to do with), and the
+ * "-en" verbs, whose folds are right often enough to tempt and wrong often enough
+ * to disqualify ("dudeen" -> "dude").
+ *
+ * An earlier note in this spot argued no widening was affordable at all, on the
+ * grounds that a blanket bare-`s` strip re-scored ~10,900 words and stripped
+ * 2,189 of a perfect 10. The count was right and the conclusion was not: those
+ * re-scores were the point, and once every fold became a cap
+ * (CHAINED_BASE_START) a widening could only ever pull a word toward common.
+ * Thirty-one of the entries below are "-es" plurals the rules now handle on their
+ * own, and six more are "-er"/"-est" forms; they are harmless (an override just
+ * reaches the same base first) but they are no longer load-bearing.
  *
  * Every entry carries its own `since` date rather than riding one global cutover,
  * because the list grows a batch per day: a demotion applies from the puzzle it
@@ -201,11 +220,14 @@ interface Scoring {
   // Introduced with the 2026-08-19 cutover; off for earlier systems so past
   // puzzles' scores stay frozen (see CHAINED_BASE_START).
   chainedBaseForms: boolean;
-  // Whether the number inflections (plural / third-person singular) fold onto
-  // the most common base the dictionary attests rather than the single spelling
-  // `baseForm` commits to, and whether an "-ied" past tense may also try the
-  // plain "-ed" bases. Introduced with the 2026-08-21 cutover; off for earlier
-  // systems so past puzzles' scores stay frozen (see INFLECTION_BASE_START).
+  // Whether a fold considers every plausible base spelling rather than the one
+  // `baseForm` commits to: the number inflections (plural / third-person
+  // singular) unconditionally, an "-ied" past tense's plain "-ed" bases, and --
+  // only for a word below MEASURED_FLOOR, where its score is a stand-in rather
+  // than a measurement -- the comparatives and Latin plurals in
+  // `unmeasuredBaseCandidates`. Introduced with the 2026-08-21 cutover; off for
+  // earlier systems so past puzzles' scores stay frozen (see
+  // INFLECTION_BASE_START).
   inflectionBases: boolean;
 }
 
@@ -272,8 +294,8 @@ const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true);
 // The 2026-08-19 system: the same bands and ranks, with base forms resolved
 // through their own bases.
 const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
-// The latest system (from INFLECTION_BASE_START): the same again, with the number
-// inflections folding onto the most common base the dictionary attests.
+// The latest system (from INFLECTION_BASE_START): the same again, with a fold
+// weighing every plausible base spelling and keeping the most common one.
 const INFLECTION_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true, true);
 
 const LEGACY_SCORING: Scoring = {
@@ -688,28 +710,33 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   add(tenseBaseForm(word, scoring));
   add(baseForm(word));
   for (const candidate of inflectionalBaseCandidates(word)) add(candidate);
+  // Suffixes whose spelling is not decisive, admitted only where the word's own
+  // frequency is a stand-in rather than a measurement. Below MEASURED_FLOOR the
+  // score comes from the deep-tail band -- for an unattested word, from the
+  // sentinel outright -- so a plausible base is better information than what the
+  // word would otherwise get. At or above the floor there is a real measurement,
+  // and a guess from an ending must not overrule it: that line is the whole
+  // reason "specialest" can fold to "special" while "tempest" keeps its own
+  // score. See `unmeasuredBaseCandidates` for the families and the words that
+  // would break without the gate.
+  if (WORD_INDEX.has(word) && zipfFor(word, scoring) < MEASURED_FLOOR) {
+    for (const candidate of unmeasuredBaseCandidates(word)) add(candidate);
+  }
   add(scoringBaseForm(word, scoring));
   return out;
 }
 
+/**
+ * The base a suffix rule alone would pick: the inflectional stemmer first, then
+ * the transparent "-ness"/"-ly" suffixes, then the bound derivational ones.
+ *
+ * From INFLECTION_BASE_START this is only one of the candidates `nextBaseForms`
+ * collects rather than the whole answer -- `nextBaseForms` owns the wider set,
+ * so that "which spellings are plausible" lives in exactly one place.
+ */
 function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
-  if (scoring.inflectionBases) {
-    // Every plausible number inflection at once, most common wins. `baseForm`
-    // commits to the first spelling rule that matches and so cannot see the
-    // alternatives: it turns "asphyxiates" into the non-word "asphyxiat" and
-    // stops, and it reads "tries" as "tri" rather than "try". Ranking the whole
-    // set by frequency fixes both, and is the same tie-break `tenseBaseForm`
-    // has always used.
-    const inflectional = mostCommonBase(
-      [baseForm(word), ...inflectionalBaseCandidates(word)],
-      word,
-      scoring
-    );
-    if (inflectional) return inflectional;
-  } else {
-    const inflected = baseForm(word);
-    if (inflected !== word && WORD_INDEX.has(inflected)) return inflected;
-  }
+  const inflected = baseForm(word);
+  if (inflected !== word && WORD_INDEX.has(inflected)) return inflected;
 
   for (const suffix of ["ness", "ly"]) {
     if (!word.endsWith(suffix) || word.length <= suffix.length + 2) continue;
