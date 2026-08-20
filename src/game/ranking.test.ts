@@ -125,14 +125,14 @@ describe("narrow measured bands (from 2026-08-21)", () => {
   // Each band's floor and the Zipf a hair beneath it, so a cutoff that drifts
   // is caught in both directions.
   const EDGES: ReadonlyArray<[zipf: number, rarity: Rarity]> = [
-    [4.9, "Very Common"],
-    [4.89, "Common"],
+    [4.85, "Very Common"],
+    [4.84, "Common"],
     [3.9, "Common"],
     [3.89, "Uncommon"],
     [3.15, "Uncommon"],
     [3.14, "Rare"],
-    [2.1, "Rare"],
-    [2.09, "Extremely Rare"],
+    [2.13, "Rare"],
+    [2.12, "Extremely Rare"],
     [1.59, "Extremely Rare"],
     [1.58, "Epic"],
   ];
@@ -191,6 +191,22 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     expect(formatRarityScore(3.14, ON)).toBe("6.8");
     expect(rarityForZipf(3.15, ON)).toBe("Uncommon");
     expect(formatRarityScore(3.15, ON)).toBe("6.7");
+  });
+
+  it("never shows one score in two different tiers", () => {
+    // Scores show to one decimal, so a band boundary landing mid-tenth would let
+    // two words read the same number in different colors. Sweep every Zipf the
+    // data can hold (hundredths) and check each displayed value maps to exactly
+    // one tier.
+    const tierFor = new Map<string, Rarity>();
+    for (let hundredths = 0; hundredths <= 800; hundredths++) {
+      const zipf = hundredths / 100;
+      const shown = formatRarityScore(zipf, ON);
+      const rarity = rarityForZipf(zipf, ON);
+      const seen = tierFor.get(shown);
+      if (seen === undefined) tierFor.set(shown, rarity);
+      else expect(rarity, `score ${shown} appears as both ${seen} and ${rarity}`).toBe(seen);
+    }
   });
 
   it("moves labels without moving a single score", () => {

@@ -61,10 +61,10 @@ MEASURED_FLOOR = 1.0
 # The deep tail (Zipf < MEASURED_FLOOR) is its own top rank, so these bands
 # only cover the measured range.
 RARITY_BANDS = [
-    (4.9, "Very Common"),
+    (4.85, "Very Common"),
     (3.9, "Common"),
     (3.15, "Uncommon"),
-    (2.1, "Rare"),
+    (2.13, "Rare"),
     (1.59, "Extremely Rare"),
     (1.0, "Epic"),
 ]
