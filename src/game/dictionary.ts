@@ -306,8 +306,14 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
     if (zipf >= 4.9) return "Very Common";
     if (zipf >= 3.9) return "Common";
     if (zipf >= 3.05) return "Uncommon";
-    if (zipf >= 2.0) return "Rare";
-    if (zipf >= 1.5) return "Extremely Rare";
+    if (zipf >= 2.1) return "Rare";
+    // 1.59 rather than a rounder 1.6 so the seam lands exactly on the shown
+    // value: every Zipf below it displays 9.1 or rarer, every Zipf at or above
+    // it displays 9.0 or commoner. Epic is 9.1..9.4 and purple 8.3..9.0, with
+    // no score able to show on the wrong side of the line. (The cutoff has to
+    // clear the cents rounding that happens before the tenths rounding, which
+    // is why 1.58 -- raw 9.047, shown 9.1 -- sits on the Epic side.)
+    if (zipf >= 1.59) return "Extremely Rare";
     return "Epic";
   }
   // The original bands, frozen for archived puzzles -- Quotidian and all.

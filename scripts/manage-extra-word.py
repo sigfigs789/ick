@@ -309,9 +309,9 @@ def measured_rarity(zipf: float) -> str:
         return "Common"
     if zipf >= 3.05:
         return "Uncommon"
-    if zipf >= 2.0:
+    if zipf >= 2.1:
         return "Rare"
-    if zipf >= 1.5:
+    if zipf >= 1.59:
         return "Extremely Rare"
     return "Epic"
 

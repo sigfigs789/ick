@@ -26,7 +26,7 @@ const RANKINGS: ReadonlyArray<[word: string, rarity: Rarity, decimals: number]> 
   ["castle", "Common", 1],
   ["chateau", "Uncommon", 1],
   ["awol", "Rare", 1],
-  ["abnegate", "Extremely Rare", 1],
+  ["okapi", "Extremely Rare", 1],
   ["borborygmus", "Epic", 1],
   ["aardwolf", "Mythic", 2],
   ["autecism", "Legend", 2],
@@ -91,7 +91,7 @@ describe("rank ladder across the latest system", () => {
     [3.5, "Uncommon"],
     [2.5, "Rare"],
     [1.8, "Extremely Rare"],
-    [1.4, "Epic"],
+    [1.45, "Epic"],
   ];
 
   it.each(MEASURED_LADDER)("Zipf %s ranks as %s, below the top tiers", (zipf, rarity) => {
@@ -131,10 +131,10 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     [3.89, "Uncommon"],
     [3.05, "Uncommon"],
     [3.04, "Rare"],
-    [2.0, "Rare"],
-    [1.99, "Extremely Rare"],
-    [1.5, "Extremely Rare"],
-    [1.49, "Epic"],
+    [2.1, "Rare"],
+    [2.09, "Extremely Rare"],
+    [1.59, "Extremely Rare"],
+    [1.58, "Epic"],
   ];
 
   it.each(EDGES)("Zipf %s sits in %s", (zipf, rarity) => {
@@ -177,6 +177,15 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     expect(usesRetunedTiers(ON)).toBe(true);
     expect(usesRetunedTiers("2027-03-01")).toBe(true);
     expect(usesRetunedTiers()).toBe(true);
+  });
+
+  it("splits Epic from Extremely Rare on the shown score, not between it", () => {
+    // Epic is 9.1+ and purple tops out at 9.0, so no score can display on the
+    // wrong side of the boundary.
+    expect(rarityForZipf(1.58, ON)).toBe("Epic");
+    expect(formatRarityScore(1.58, ON)).toBe("9.1");
+    expect(rarityForZipf(1.59, ON)).toBe("Extremely Rare");
+    expect(formatRarityScore(1.59, ON)).toBe("9.0");
   });
 
   it("moves labels without moving a single score", () => {
