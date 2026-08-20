@@ -19,6 +19,8 @@
 //   "error"     the lookup itself failed; `reason` and `detail` say why, and the
 //               caller reports it rather than drawing any conclusion about the word.
 
+import { record, supabaseConfigured, type EdgeContext } from "./_supabase";
+
 export const config = { runtime: "edge" };
 
 // Vercel's Edge runtime exposes `process.env` for configured secrets. Declared
@@ -332,7 +334,11 @@ function errorBody(word: string, error: UpstreamError): LiveCheckBody {
   };
 }
 
-export default async function handler(request: Request): Promise<Response> {
+/**
+ * Answer a live word check. Every path out of this returns through `json()`, so
+ * the caller below sees the finished body no matter which verdict was reached.
+ */
+async function respond(request: Request): Promise<Response> {
   const word = (new URL(request.url).searchParams.get("word") ?? "").trim().toLowerCase();
   if (!WORD_RE.test(word)) {
     return json(
@@ -453,4 +459,50 @@ export default async function handler(request: Request): Promise<Response> {
     200,
     partial === null
   );
+}
+
+/**
+ * Record the verdict this lookup reached, so the words players reach for
+ * accumulate somewhere queryable and can be folded into the curated dictionary
+ * later -- retiring the live lookup for those words and sparing the quota.
+ *
+ * Only real verdicts are recorded. An "error" outcome says nothing about the
+ * word, and recording it would overwrite a good stored verdict with a lookup
+ * that never happened.
+ *
+ * The body is read back off a clone of the finished response rather than threaded
+ * out of `respond`, which leaves every one of its return paths exactly as it was:
+ * recording is strictly additive, and a change here cannot alter what a player is
+ * told about a word.
+ */
+async function recordSighting(response: Response, context?: EdgeContext): Promise<void> {
+  let body: LiveCheckBody;
+  try {
+    body = (await response.clone().json()) as LiveCheckBody;
+  } catch {
+    return;
+  }
+  if (!body.word || body.outcome === "error") return;
+  await record(
+    "rpc/record_word_sighting",
+    {
+      p_word: body.word,
+      p_outcome: body.outcome,
+      p_reason: body.reason ?? null,
+      p_zipf: body.zipf,
+      p_pos: body.pos ?? [],
+      p_first_use: body.firstUse,
+      p_source: body.source ?? null,
+    },
+    context
+  );
+}
+
+export default async function handler(request: Request, context?: EdgeContext): Promise<Response> {
+  const response = await respond(request);
+  // Skipped entirely when the deployment has no Supabase credentials, which is
+  // also what keeps the unit tests -- and any fork of this project -- from
+  // needing a database to run a word check.
+  if (supabaseConfigured()) await recordSighting(response, context);
+  return response;
 }
