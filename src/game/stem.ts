@@ -56,3 +56,137 @@ function stripDoubledConsonant(stem: string): string {
   }
   return stem;
 }
+
+/**
+ * Every plausible dictionary spelling of `word`'s *inflectional* base -- the
+ * plural/third-person, past, and participle forms of the same lemma. Scoring
+ * only; `baseForm` above still owns same-root duplicate detection.
+ *
+ * Candidates rather than one answer is the whole point. `baseForm` returns a
+ * single spelling and so gives up when that spelling isn't a word: its "-es"
+ * branch turns "asphyxiates" into "asphyxiat", never tries "asphyxiate", and the
+ * word ends up scoring 9.77 (Mythic) against its own base's 8.75. Its "-ied"
+ * branch does the same to "safaried" ("safariy", never "safari"), which is how a
+ * past tense of a Zipf-3.6 word reaches a perfect 10.00 Legend. Offering every
+ * spelling and letting the caller keep the ones that are real words closes both.
+ *
+ * Latin plurals are included ("abaci" -> "abacus", "larvae" -> "larva",
+ * "momenta" -> "momentum"): they are plurals, and no English suffix rule reaches
+ * them. Length guards match `baseForm`'s exactly -- this widens which *spellings*
+ * are considered, never which words are short enough to fold, so "shed" still
+ * doesn't collapse onto "she".
+ */
+export function inflectionBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (base: string) => {
+    if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
+  };
+
+  // Plural and third-person singular.
+  if (w.length > 4 && w.endsWith("ies")) {
+    add(w.slice(0, -3) + "y"); // cities -> city
+    add(w.slice(0, -2)); // rabbies -> rabbi
+    add(w.slice(0, -1)); // zombies -> zombie
+  }
+  if (w.length > 4 && w.endsWith("ves")) {
+    add(w.slice(0, -3) + "f"); // wolves -> wolf
+    add(w.slice(0, -3) + "fe"); // knives -> knife
+  }
+  if (w.length > 4 && w.endsWith("es")) {
+    add(w.slice(0, -2)); // boxes -> box
+    add(w.slice(0, -1)); // asphyxiates -> asphyxiate
+    add(w.slice(0, -2) + "is"); // analyses -> analysis
+  }
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) {
+    add(w.slice(0, -1)); // cats -> cat
+  }
+  // Latin plurals.
+  if (w.length > 3 && w.endsWith("i")) add(w.slice(0, -1) + "us"); // abaci -> abacus
+  if (w.length > 3 && w.endsWith("ae")) add(w.slice(0, -1)); // larvae -> larva
+  if (w.length > 3 && w.endsWith("a")) add(w.slice(0, -1) + "um"); // momenta -> momentum
+
+  // Past tense and participles. The "-ied" and "-ed" branches both contribute,
+  // which is what `baseForm`'s if/else chain can't do: "safaried" needs the
+  // plain "-ed" candidates even though it ends in "-ied".
+  if (w.length > 4 && w.endsWith("ied")) add(w.slice(0, -3) + "y"); // denied -> deny
+  if (w.length > 4 && w.endsWith("ed")) {
+    add(w.slice(0, -1)); // agreed -> agree
+    add(w.slice(0, -2)); // safaried -> safari
+    add(stripDoubledConsonant(w.slice(0, -2))); // stopped -> stop
+  }
+  if (w.length > 4 && w.endsWith("ying")) {
+    add(w.slice(0, -4) + "y"); // studying -> study
+    add(w.slice(0, -4) + "ie"); // dying -> die
+  }
+  if (w.length > 5 && w.endsWith("ing")) {
+    add(w.slice(0, -3) + "e"); // making -> make
+    add(w.slice(0, -3)); // walking -> walk
+    add(stripDoubledConsonant(w.slice(0, -3))); // running -> run
+  }
+  return out;
+}
+
+/**
+ * Candidate bases for a comparative or superlative: "godlier" -> "godly",
+ * "evenest" -> "even". Spelling only -- the caller decides which candidates are
+ * real words and applies the paired-degree guard below, which is what keeps this
+ * rule off agent nouns.
+ *
+ * `plainDegrees` selects the riskier half. The "-ier"/"-iest" candidates rewrite
+ * a "-y" adjective and are reliable, but bare "-er"/"-est" is the same spelling
+ * an agent noun takes, and no spelling rule can tell "evenest" from "digest" or
+ * "privateer". The caller turns those on only where a wrong answer can't cost
+ * anything (see dictionary.ts).
+ */
+export function degreeBaseCandidates(word: string, plainDegrees: boolean): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (base: string) => {
+    if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
+  };
+
+  if (w.length > 5 && w.endsWith("iest")) {
+    add(w.slice(0, -4) + "y"); // happiest -> happy
+  } else if (w.length > 4 && w.endsWith("ier")) {
+    add(w.slice(0, -3) + "y"); // godlier -> godly
+  } else if (plainDegrees) {
+    if (w.length > 4 && w.endsWith("est")) {
+      add(w.slice(0, -2)); // largest -> large
+      add(w.slice(0, -3)); // evenest -> even
+      add(stripDoubledConsonant(w.slice(0, -3))); // biggest -> big
+    } else if (w.length > 3 && w.endsWith("er")) {
+      add(w.slice(0, -1)); // larger -> large
+      add(w.slice(0, -2)); // evener -> even
+      add(stripDoubledConsonant(w.slice(0, -2))); // bigger -> big
+    }
+  }
+  return out;
+}
+
+/**
+ * The comparative and superlative spellings `base` would take, as two lists.
+ *
+ * A base with *both* degrees attested in the dictionary is being used as a
+ * gradable adjective, which is what separates a real comparative from an agent
+ * noun that merely ends the same way: "supply" has no "suppliest", so
+ * "supplier" is not "more supply"; "happy" has both, so "happier" is.
+ */
+export function degreeFormSpellings(base: string): {
+  comparatives: string[];
+  superlatives: string[];
+} {
+  const b = base.toLowerCase();
+  const doubled = b + b[b.length - 1];
+  if (b.endsWith("y")) {
+    const stem = b.slice(0, -1);
+    return { comparatives: [stem + "ier"], superlatives: [stem + "iest"] };
+  }
+  if (b.endsWith("e")) {
+    return { comparatives: [b + "r", doubled + "er"], superlatives: [b + "st", doubled + "est"] };
+  }
+  return {
+    comparatives: [b + "er", doubled + "er"],
+    superlatives: [b + "est", doubled + "est"],
+  };
+}

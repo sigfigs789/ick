@@ -162,15 +162,54 @@ content that must never enter the dictionary at all.
 demotions for words no corpus attests. Such a word falls to the unattested
 sentinel and scores a perfect 10.0 / Legend, which is right for a genuine find
 (`enshittification`) and wrong for a mechanical derivation of an ordinary word
-(`iratest`, the superlative of a Zipf-2.78 word, which `scoringBaseForm` has no
-`-est` rule for). Each entry pins one word to the base it should score as, and
-carries its own `since` date so a demotion applies from the puzzle it was
-reviewed for onward and no past puzzle re-scores. It is scoring only —
-same-root duplicate detection is untouched. Widening the stemmer instead is
-deliberately avoided: a blanket bare-`s` strip re-scores 10,877 words and
-strips 2,189 of a perfect 10. Entries are added a drop at a time by the
-`audit-unscored-legends` skill (`.claude/skills/`), which is also what keeps
-this file reviewable.
+(`iratest`, the superlative of a Zipf-2.78 word). Each entry pins one word to the
+base it should score as, and carries its own `since` date so a demotion applies
+from the puzzle it was reviewed for onward and no past puzzle re-scores. It is
+scoring only — same-root duplicate detection is untouched. Entries are added a
+drop at a time by the `audit-unscored-legends` skill (`.claude/skills/`), which is
+also what keeps this file reviewable.
+
+`src/data/fold-exemptions.json` is the counterweight, and the only file that can
+push a score back *up*. An override can pin a word down to a base; nothing else
+can say "score this on its own data," so when a spelling rule folds a word it
+shouldn't, this is the fix. A word listed here contributes no fold candidates —
+it neither folds onto a base nor lets a chain pass *through* it, which is what
+makes it useful, since the usual bad fold reaches a plausible base through a junk
+intermediate (`staties` → `stati` → `status`). Dated like the overrides. It is
+meant to stay short: a rule needing many entries needs a tighter guard instead.
+
+### Why a conjugation used to outscore its base
+
+Until 2026-08-21 the fold asked `baseForm` for *one* base spelling and gave up
+when that spelling wasn't a word. `baseForm`'s `-es` branch turns `asphyxiates`
+into `asphyxiat`, never tries `asphyxiate`, and so the third-person form scored
+9.77 (Mythic) against its own verb's 8.75. Its `-ied`/`-ed` if/else did the same
+to `safaried` (`safariy`, never `safari`), crowning the past tense of a Zipf-3.63
+word a perfect 10.00 Legend. The 44 entries in `score-overrides.json` are almost
+all this one gap, hand-patched a word at a time.
+
+`foldCandidates` now offers *every* plausible base spelling and `mostCommonFold`
+searches the closure for the most common word it can reach — plus the inflections
+no single-spelling rule covered at all: Latin plurals (`abaci` → `abacus`),
+comparatives and superlatives (`godlier` → `godly`). It reproduces all 44
+hand-reviewed overrides on its own, which is the evidence it demotes the right
+shapes.
+
+Two properties make it safe, and `inflection-folds.test.ts` pins both over the
+whole dictionary. Every fold is a **cap** against the most common word reached, so
+a wider candidate set can only lower a score, never raise one — no rule here can
+turn an ordinary word into a top-tier answer. And no word may outscore a base it
+folds onto. The riskier half is fenced off rather than trusted: bare `-er`/`-est`
+is the same spelling English uses for agent nouns, so that rule only applies to
+words below wordfreq's measurement floor, where the alternative isn't a measured
+score but an unearned Legend. Everything with a real frequency keeps it, which is
+why `privateer`, `shoulder`, `speaker`, `modest` and `digest` never move. The
+degree rules additionally require the base to have *both* degrees in the
+dictionary, so `supplier` isn't read as "more supply".
+
+Reverting is one line: move `INFLECTION_FOLD_START` in `src/game/dictionary.ts`
+past today's date and every puzzle scores as it did before. Nothing else in the
+change is conditional on it.
 
 `scripts/select-drops.py` evaluates a hand-picked pool of candidate
 2- and 3-letter drops against the generated dictionary and keeps only
