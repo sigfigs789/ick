@@ -58,9 +58,9 @@ async function post(path: string, body: unknown): Promise<void> {
  *
  * Resolves rather than rejecting on every failure, including an unconfigured
  * deployment. When the runtime provides `waitUntil` the write is handed to it and
- * this returns immediately, so the response is not held up; without it the write
- * is awaited, bounded by its own timeout, so environments that lack `waitUntil`
- * still record rather than dropping the write when the isolate is frozen.
+ * this returns immediately; without it the returned promise settles only when the
+ * write does, so a caller on a path a player is waiting on must not await it (see
+ * api/validate.ts). Recording is always downstream of the answer.
  */
 export async function record(path: string, body: unknown, context?: EdgeContext): Promise<void> {
   if (!supabaseConfigured()) return;

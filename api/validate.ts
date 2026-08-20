@@ -500,9 +500,15 @@ async function recordSighting(response: Response, context?: EdgeContext): Promis
 
 export default async function handler(request: Request, context?: EdgeContext): Promise<Response> {
   const response = await respond(request);
+  // Deliberately not awaited: a player is waiting on this response inside the
+  // client's handoff window, and recording must never be able to delay it. With
+  // `waitUntil` the write is kept alive after the response returns; without it
+  // the write is left to finish on its own and may be lost when the isolate
+  // freezes. A dropped row is the acceptable failure here -- a slow answer is not.
+  //
   // Skipped entirely when the deployment has no Supabase credentials, which is
   // also what keeps the unit tests -- and any fork of this project -- from
   // needing a database to run a word check.
-  if (supabaseConfigured()) await recordSighting(response, context);
+  if (supabaseConfigured()) void recordSighting(response, context).catch(() => {});
   return response;
 }

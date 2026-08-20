@@ -440,6 +440,15 @@ describe("api/validate sighting recording", () => {
     SUPABASE_SERVICE_ROLE_KEY: "service-key",
   };
 
+  /**
+   * The handler deliberately does not await the sighting write -- a player must
+   * never wait on recording -- so let the microtask queue drain before looking
+   * for it.
+   */
+  async function settled() {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
   /** The recording call, if any, out of the handler's stubbed fetch calls. */
   function sighting(fetchMock: ReturnType<typeof stubFetch>) {
     const call = fetchMock.mock.calls.find(([url]) => String(url).includes("/rest/v1/rpc/"));
@@ -457,6 +466,7 @@ describe("api/validate sighting recording", () => {
       word: "cat",
       outcome: "playable",
     });
+    await settled();
 
     const recorded = sighting(fetchMock);
     expect(recorded?.url).toBe("https://project.supabase.co/rest/v1/rpc/record_word_sighting");
@@ -476,6 +486,7 @@ describe("api/validate sighting recording", () => {
     withKeys(SUPABASE);
     const fetchMock = stubFetch({ mw: [ERST] });
     await handler(request("erst"));
+    await settled();
     expect(sighting(fetchMock)?.body).toMatchObject({
       p_word: "erst",
       p_outcome: "rejected",
@@ -488,6 +499,7 @@ describe("api/validate sighting recording", () => {
     withKeys(SUPABASE);
     const fetchMock = stubFetch({ mw: ["spelling-suggestion"] });
     await handler(request("zzzzqx"));
+    await settled();
     expect(sighting(fetchMock)?.body).toMatchObject({ p_word: "zzzzqx", p_outcome: "unknown" });
   });
 
@@ -495,6 +507,7 @@ describe("api/validate sighting recording", () => {
     withKeys(SUPABASE);
     const fetchMock = stubFetch({ mwStatus: 429, mwBody: "Too many requests" });
     expect(await body(await handler(request("cat")))).toMatchObject({ outcome: "error" });
+    await settled();
     expect(sighting(fetchMock)).toBeNull();
   });
 
@@ -509,6 +522,7 @@ describe("api/validate sighting recording", () => {
     withKeys();
     const fetchMock = stubFetch({ mw: [CAT] });
     expect(await body(await handler(request("cat")))).toMatchObject({ outcome: "playable" });
+    await settled();
     expect(sighting(fetchMock)).toBeNull();
   });
 
@@ -523,6 +537,25 @@ describe("api/validate sighting recording", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     vi.spyOn(console, "error").mockImplementation(() => {});
+
+    expect(await body(await handler(request("cat")))).toMatchObject({ outcome: "playable" });
+  });
+
+  it("answers the word without waiting for the write to finish", async () => {
+    withKeys(SUPABASE);
+    // The recording write never settles. If the handler awaited it, this test
+    // would time out rather than pass -- which is the point: a player must not
+    // be made to wait on tracking.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL | Request) => {
+        if (String(url).includes("/rest/v1/rpc/")) return new Promise<Response>(() => {});
+        if (String(url).includes("dictionaryapi")) {
+          return new Response(JSON.stringify([CAT]), { status: 200 });
+        }
+        return new Response("[]", { status: 200 });
+      })
+    );
 
     expect(await body(await handler(request("cat")))).toMatchObject({ outcome: "playable" });
   });

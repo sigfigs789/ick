@@ -200,10 +200,14 @@ lives in `supabase/migrations/`.
   validates the shape (snake_case name, at most 32 flat scalar properties) and
   inserts it.
 
-Nothing in the game reads either table. The shipped dictionary remains the only
-word list the browser consults, so the game stays offline-first and plays
-identically whether or not the database exists — with no credentials set,
-`api/validate.ts` skips the write silently and `api/events.ts` answers 503.
+Nothing in the game reads either table, and nothing waits on a write. Recording
+is strictly downstream of the answer: `api/validate.ts` never awaits its write
+(it hands it to the runtime's `waitUntil` when there is one, and would rather
+drop a row than delay a player), and the client beacons events without reading
+the response. The shipped dictionary remains the only word list the browser
+consults, so the game stays offline-first and plays identically whether or not
+the database exists — with no credentials set, `api/validate.ts` skips the write
+silently and `api/events.ts` answers 503.
 
 Setup: run the migration on a Supabase project, then set `SUPABASE_URL` and
 `SUPABASE_SERVICE_ROLE_KEY` in the Vercel project (and in `.env` for local
