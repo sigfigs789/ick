@@ -8,7 +8,7 @@ import {
   baseForm,
   boundBaseCandidates,
   degreeBaseCandidates,
-  degreeFormSpellings,
+  degreeCounterpart,
   inflectionBaseCandidates,
 } from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
@@ -722,8 +722,17 @@ function foldCandidates(word: string, scoring: Scoring, date?: string): string[]
   add(tense);
   add(suffix);
   for (const candidate of inflectionBaseCandidates(word)) add(candidate);
+  // Degree rules apply at every node, not just the submitted word. Confining them
+  // to the submitted word looks tempting -- a comparative does not pluralize, so
+  // "secreters" -> "secreter" -> "secret" reads an "-er" that only exists because
+  // a plural was stripped. But it breaks the fairness property outright: with the
+  // degree hop unavailable from an intermediate, "bustiers" caps against
+  // "bustier"'s raw frequency while "bustier" itself displays its fold onto
+  // "busty", and the plural ends up scoring rarer than its own singular. Twenty
+  // words did exactly that. A word reached by folding gets the same rules as the
+  // word submitted.
   for (const candidate of degreeBaseCandidates(word, plainDegreesAllowed(word, scoring))) {
-    if (gradableBase(candidate)) add(candidate);
+    if (gradableFold(word, candidate)) add(candidate);
   }
   return out;
 }
@@ -753,17 +762,15 @@ function plainDegreesAllowed(word: string, scoring: Scoring): boolean {
 }
 
 /**
- * Whether `base` is attested as a gradable adjective: the dictionary has both a
- * comparative and a superlative for it. This is the guard that keeps the degree
- * rules off agent nouns -- "supply" has no "suppliest", so "supplier" is not
- * "more supply" and keeps its own score; "happy" has both, so "happier" folds.
+ * Whether `word` may be read as a degree form of `base`: the dictionary also has
+ * the other degree, spelled the way `word` spells this one. This is the guard
+ * that keeps the degree rules off agent nouns -- "supply" has no "suppliest", so
+ * "supplier" is not "more supply" and keeps its own score; "happy" has both, so
+ * "happier" folds.
  */
-function gradableBase(base: string): boolean {
-  const { comparatives, superlatives } = degreeFormSpellings(base);
-  return (
-    comparatives.some((form) => WORD_INDEX.has(form)) &&
-    superlatives.some((form) => WORD_INDEX.has(form))
-  );
+function gradableFold(word: string, base: string): boolean {
+  const counterpart = degreeCounterpart(word, base);
+  return counterpart !== undefined && WORD_INDEX.has(counterpart);
 }
 
 function scoringBaseForm(word: string, includeBound: boolean): string | undefined {

@@ -5,7 +5,7 @@ import scoreOverrides from "../data/score-overrides.json";
 import { baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
 import {
   degreeBaseCandidates,
-  degreeFormSpellings,
+  degreeCounterpart,
   inflectionBaseCandidates,
 } from "./stem";
 
@@ -125,7 +125,7 @@ describe("the whole-dictionary safety properties", () => {
     const legendsBefore = WORDS.filter((w) => scoreOf(w, BEFORE) >= 9.9).length;
     const legendsOn = WORDS.filter((w) => scoreOf(w, ON) >= 9.9).length;
     expect(legendsBefore).toBe(36040);
-    expect(legendsOn).toBe(30212);
+    expect(legendsOn).toBe(30215);
     expect(legendsOn / legendsBefore).toBeGreaterThan(0.8);
   });
 });
@@ -186,6 +186,27 @@ describe("the guards that keep real words out of it", () => {
     expect(scoreOf("easiest", ON)).toBe(scoreOf("easy", ON));
   });
 
+  it("will not let a doubled degree pair vouch for a single-consonant word", () => {
+    // "funest" is Latinate (funeste, "fatal"), not the superlative of "fun". It
+    // folded because "funnest" is a headword -- but English requires the doubling,
+    // so the spelling that has to be attested is "funer", and nothing has it.
+    expect(scoreOf("funest", ON)).toBe(scoreOf("funest", BEFORE));
+    expect(baseFormSubstitution("funest", ON)).toBeUndefined();
+    // The cost of the strict pairing: "funnest" has no "funner" either, so it
+    // keeps its own score too. That errs toward not demoting, which is the safe
+    // direction.
+    expect(scoreOf("funnest", ON)).toBe(scoreOf("funnest", BEFORE));
+  });
+
+  it("applies the degree rules to a folded word, not just the submitted one", () => {
+    // Confining them to the submitted word breaks the fairness property: with no
+    // degree hop from an intermediate, a plural caps against its singular's raw
+    // frequency while the singular displays its own fold, and the plural ends up
+    // the rarer of the two.
+    expect(scoreOf("bustiers", ON)).toBe(scoreOf("bustier", ON));
+    expect(scoreOf("fanciers", ON)).toBe(scoreOf("fancier", ON));
+  });
+
   it("widens which spellings are tried, never which words are short enough", () => {
     // The length guards match `baseForm`'s exactly. Loosening them instead
     // collapses "shed" onto "she" and "ared" onto "are".
@@ -196,24 +217,44 @@ describe("the guards that keep real words out of it", () => {
 });
 
 describe("the reviewed data files", () => {
-  it("reproduces every hand-reviewed score override from the rule alone", () => {
-    // 44 overrides were added a word at a time because the engine had this gap --
-    // mostly "-es" plurals and "-est" superlatives. The rule agreeing with all of
-    // them is independent evidence it demotes the right shapes.
-    const disagreements: string[] = [];
+  it("independently reaches the base of every inflectional score override", () => {
+    // 34 of the 44 overrides were added a word at a time for this exact gap --
+    // "-es" plurals, "-est" superlatives, "-er" comparatives. Asking
+    // `baseFormSubstitution` would prove nothing, since an override is itself a
+    // fold candidate; the candidate *generators* never read the override file, so
+    // finding the reviewed base in their output is real agreement. The rest of the
+    // entries are derivational (`-ation`, `-al`) or misspellings, which no rule
+    // here claims to cover -- they keep their override.
+    const reached = Object.entries(scoreOverrides as Record<string, { base: string }>).filter(
+      ([word, override]) =>
+        inflectionBaseCandidates(word).includes(override.base) ||
+        degreeBaseCandidates(word, true).includes(override.base)
+    );
+    expect(reached.length).toBe(29);
+  });
+
+  it("keeps every score override in force regardless", () => {
+    // The rule is additive, not a replacement: an override still caps its word,
+    // including the derivational entries the rule deliberately doesn't cover.
+    const violations: string[] = [];
     for (const [word, override] of Object.entries(
       scoreOverrides as Record<string, { base: string }>
     )) {
-      const substitution = baseFormSubstitution(word, ON);
-      if (!substitution) {
-        disagreements.push(`${word}: no fold at all`);
-        continue;
-      }
       if (scoreOf(word, ON) > scoreOf(override.base, ON) + 1e-9) {
-        disagreements.push(`${word}: still rarer than ${override.base}`);
+        violations.push(`${word}: rarer than ${override.base}`);
       }
     }
-    expect(disagreements).toEqual([]);
+    expect(violations).toEqual([]);
+  });
+
+  it("honours a fold exemption for a word the degree rule got wrong", () => {
+    // "damner" is an agent noun. It satisfies the paired-degree guard only because
+    // "damnest" exists on its own account (the intensive of "damned"), which no
+    // spelling rule can distinguish from a superlative. The exemption puts it back
+    // exactly where it was, and covers "damners" through it.
+    expect(scoreOf("damner", ON)).toBe(scoreOf("damner", BEFORE));
+    expect(baseFormSubstitution("damner", ON)).toBeUndefined();
+    expect(baseFormSubstitution("damners", ON)!.base).toBe("damner");
   });
 
   it("honours a fold exemption, and only from its own date", () => {
@@ -257,13 +298,16 @@ describe("the candidate generators", () => {
     expect(degreeBaseCandidates("happiest", false)).toContain("happy");
   });
 
-  it("spells both degrees of a base for the gradable check", () => {
-    expect(degreeFormSpellings("happy")).toEqual({
-      comparatives: ["happier"],
-      superlatives: ["happiest"],
-    });
-    expect(degreeFormSpellings("large").comparatives).toContain("larger");
-    expect(degreeFormSpellings("big").comparatives).toContain("bigger");
-    expect(degreeFormSpellings("big").superlatives).toContain("biggest");
+  it("pairs a degree with its counterpart in the same spelling variant", () => {
+    expect(degreeCounterpart("happier", "happy")).toBe("happiest");
+    expect(degreeCounterpart("happiest", "happy")).toBe("happier");
+    expect(degreeCounterpart("larger", "large")).toBe("largest");
+    expect(degreeCounterpart("biggest", "big")).toBe("bigger");
+    // The doubled pair must not vouch for a single-consonant spelling: "funest"
+    // asks for "funer", which no dictionary has, not for "funner".
+    expect(degreeCounterpart("funest", "fun")).toBe("funer");
+    expect(degreeCounterpart("funnest", "fun")).toBe("funner");
+    // A word that is no degree form of the base at all.
+    expect(degreeCounterpart("privateer", "private")).toBeUndefined();
   });
 });

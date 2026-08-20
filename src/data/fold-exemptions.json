@@ -1,4 +1,8 @@
 {
+  "damner": {
+    "since": "2026-08-21",
+    "reason": "Agent noun (one who damns), not the comparative of `damn`. It passes the paired-degree guard only because `damnest` is a headword in its own right -- the intensive of `damned`, not a superlative -- and no spelling rule can see the difference. Exempting it also stops `damners`."
+  },
   "stati": {
     "since": "2026-08-21",
     "reason": "A dictionary word only as a foreign plural, and the sole link that lets `staties` (plural of the slang `statie`) reach `status` through the Latin -i/-us rule. Exempting it breaks that chain without touching any real plural."

@@ -191,9 +191,11 @@ all this one gap, hand-patched a word at a time.
 `foldCandidates` now offers *every* plausible base spelling and `mostCommonFold`
 searches the closure for the most common word it can reach — plus the inflections
 no single-spelling rule covered at all: Latin plurals (`abaci` → `abacus`),
-comparatives and superlatives (`godlier` → `godly`). It reproduces all 44
-hand-reviewed overrides on its own, which is the evidence it demotes the right
-shapes.
+comparatives and superlatives (`godlier` → `godly`). The candidate generators
+never read the override file, and they reach the reviewed base of 29 of the 44
+overrides on their own, which is the evidence the rule demotes the right shapes.
+(The rest are derivational — `-ation`, `-al` — or misspellings, which no rule here
+claims to cover. Every override stays in force either way.)
 
 Two properties make it safe, and `inflection-folds.test.ts` pins both over the
 whole dictionary. Every fold is a **cap** against the most common word reached, so
@@ -204,8 +206,24 @@ is the same spelling English uses for agent nouns, so that rule only applies to
 words below wordfreq's measurement floor, where the alternative isn't a measured
 score but an unearned Legend. Everything with a real frequency keeps it, which is
 why `privateer`, `shoulder`, `speaker`, `modest` and `digest` never move. The
-degree rules additionally require the base to have *both* degrees in the
-dictionary, so `supplier` isn't read as "more supply".
+degree rules additionally require the base's *other* degree to be attested **in
+the same spelling variant** — `funest` asks for `funer`, not `funner` — so neither
+`supplier` ("more supply"?) nor the Latinate `funest` is read as a degree form.
+
+Two limits worth knowing, both measured and both leaving the properties above
+intact:
+
+- **The `-ly` bridge.** `scoringBaseForm`'s pre-existing `-ly` strip cannot tell
+  `sparkly` (`sparkle` + `y`) from `kindly` (`kind` + `ly`), so it folds the first
+  onto `spark`. That predates this change, but the degree rules now reach it, and
+  72 comparatives and superlatives land one hop further out than they should
+  (`crackliest` caps at `crack`, not `crackly`). Every one of the 72 was an
+  unearned 9.9+ before, so the direction is right and the base is arguable. It is
+  left alone here because every possible fix *raises* scores, which would forfeit
+  the one-way property that makes this cutover safe to review.
+- **Most-common-wins picks the wrong relative occasionally.** `rives` reaches both
+  `rive` and `rife` and takes the more common one. Always an over-demotion, never
+  an inflated score.
 
 Reverting is one line: move `INFLECTION_FOLD_START` in `src/game/dictionary.ts`
 past today's date and every puzzle scores as it did before. Nothing else in the

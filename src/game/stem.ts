@@ -165,28 +165,37 @@ export function degreeBaseCandidates(word: string, plainDegrees: boolean): strin
 }
 
 /**
- * The comparative and superlative spellings `base` would take, as two lists.
- *
- * A base with *both* degrees attested in the dictionary is being used as a
- * gradable adjective, which is what separates a real comparative from an agent
- * noun that merely ends the same way: "supply" has no "suppliest", so
+ * The *other* degree of `base`, spelled the way `word` spells this one -- or
+ * undefined when `word` isn't a degree form of `base` at all. The caller requires
+ * the answer to be a dictionary word: a base attested in both degrees is being
+ * used as a gradable adjective, which is what separates a real comparative from
+ * an agent noun that merely ends the same way. "supply" has no "suppliest", so
  * "supplier" is not "more supply"; "happy" has both, so "happier" is.
+ *
+ * The spelling has to match, not merely exist somewhere in the base's paradigm.
+ * English requires consonant doubling on a CVC monosyllable -- "fun" goes to
+ * "funner"/"funnest", never "funer"/"funest" -- so accepting any spelling let the
+ * doubled pair vouch for a single-consonant word: "funest" is a Latinate
+ * adjective (funeste, "fatal"), and "funnest" being a headword was taken as
+ * evidence that it is the superlative of "fun". Pairing the variants asks for
+ * "funer" instead, which no dictionary has. The same slip licensed "digest" from
+ * "digger" and "honest" from "honer".
  */
-export function degreeFormSpellings(base: string): {
-  comparatives: string[];
-  superlatives: string[];
-} {
+export function degreeCounterpart(word: string, base: string): string | undefined {
+  const w = word.toLowerCase();
   const b = base.toLowerCase();
   const doubled = b + b[b.length - 1];
-  if (b.endsWith("y")) {
-    const stem = b.slice(0, -1);
-    return { comparatives: [stem + "ier"], superlatives: [stem + "iest"] };
+  // Each variant spells both degrees the same way, so the counterpart is fixed
+  // once we know which one `word` used.
+  const variants: [string, string][] = b.endsWith("y")
+    ? [[b.slice(0, -1) + "ier", b.slice(0, -1) + "iest"]]
+    : [
+        b.endsWith("e") ? [b + "r", b + "st"] : [b + "er", b + "est"],
+        [doubled + "er", doubled + "est"],
+      ];
+  for (const [comparative, superlative] of variants) {
+    if (w === comparative) return superlative;
+    if (w === superlative) return comparative;
   }
-  if (b.endsWith("e")) {
-    return { comparatives: [b + "r", doubled + "er"], superlatives: [b + "st", doubled + "est"] };
-  }
-  return {
-    comparatives: [b + "er", doubled + "er"],
-    superlatives: [b + "est", doubled + "est"],
-  };
+  return undefined;
 }
