@@ -88,13 +88,18 @@ it isn't — does the word have a real measurement worth protecting?
 
 | Family | Folded? | Why |
 | --- | --- | --- |
-| `-s` / `-es` / `-ies` / `-ves` / `-ices` plurals and third-person forms | always | `inflectionalBaseCandidates` (`src/game/stem.ts`) offers every candidate spelling and the caller keeps the most common one the dictionary attests. Coincidences are near-ties, so picking wrong barely moves the score: `caves` offers `cave` (4.20) and `cafe` (4.09). |
+| `-s` / `-es` / `-ies` / `-ves` / `-ices` / `-ae` / `-i` / `-men` plurals and third-person forms | always | `inflectionalBaseCandidates` (`src/game/stem.ts`) offers every candidate spelling and the caller keeps the most common one the dictionary attests. Coincidences are near-ties, so picking wrong barely moves the score: `caves` offers `cave` (4.20) and `cafe` (4.09). |
 | `-ed` / `-ing` tenses | always | `tenseBaseForm`, same most-common tie-break: `played` → `play`, not the obscure `playe`. |
 | `-ness`, `-ly`, `-ization`, `-ability` | always | Bound or transparent suffixes with one unambiguous base. |
-| `-er` / `-est` comparatives and agentives, Latin `-a` → `-um` plurals | **only below Zipf 1.0** | `unmeasuredBaseCandidates`, gated on `MEASURED_FLOOR`. Ungated these fold `noter` → `not`, `tempest` → `temp`, `canter` → `cant`, `shoulder` → `should`, `comma` → `common`. Every one of those is *measured* (Zipf 1.07–4.73) and so excluded; `specialest`, `babiest` and `asyla` are not measured at all, and fold. |
+| `-er` / `-est` comparatives and agentives, Latin `-a` → `-um` plurals, `-ize`/`-ise` verbs, `-able`/`-ible`/`-ably`/`-ibly` | **only below Zipf 1.0** | `unmeasuredBaseCandidates`, gated on `MEASURED_FLOOR`. Ungated these fold `noter` → `not`, `tempest` → `temp`, `canter` → `cant`, `shoulder` → `should`, `comma` → `common`, `capsize` → `caps`, `expertise` → `expert`, `countable` → `county`, `fallible` → `fall`. Every one of those is *measured* (Zipf 1.07–4.73) and so excluded; `specialest`, `asyla`, `containerise` and `interviewable` are not measured at all, and fold. |
 | five-letter `-ing` | **no** | Every such word is measured above the floor, so the gate leaves none to fold — which is what keeps `thing` from scoring as `the` (a flat 0.00). The price is that `iring` and `hoing` keep an unearned Mythic. |
 | `-en` verbs | **no** | Right often enough to tempt (`harshen` → `harsh`) and wrong often enough to disqualify: `dudeen` → `dude`, `shoneen` → `shone`, `torten` → `tort`. 51 words, ~6 of them wrong. |
+| Latin `-a` → `-on` plurals | **no** | The dirty sibling of `-a` → `-um`: folds `comma` → `common`, `silica` → `silicon`, `squadra` → `squadron` — about 19 wrong in 280. |
 | prefixes (`un-`, `re-`, `non-`, `over-`) | **no** | Not analysed; a large family (thousands of Mythic/Legend words) and a riskier one, since `release` → `lease` and `report` → `port` are the same shape as a real prefix. |
+
+The `-ize`/`-ise` rule also un-sticks a fold that already existed: `-ization` →
+`-ize` used to dead-end on an unattested verb, so `winterisation` folded to
+`winterise` (Zipf −0.45) and stopped, when `winter` (4.18) was one strip further.
 
 The gate is the load-bearing idea. Below `MEASURED_FLOOR` a word's score comes
 from the deep-tail band — for an unattested word, from the sentinel outright — so

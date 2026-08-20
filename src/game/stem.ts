@@ -37,6 +37,12 @@ export function baseForm(word: string): string {
  *   - the irregular plurals English spells with a stem change: "-ves" -> "-f"
  *     or "-fe" ("wolves" -> "wolf", "knives" -> "knife") and "-ices" -> "-ex"
  *     or "-ix" ("matrices" -> "matrix", "vortices" -> "vortex").
+ *   - the classical plurals borrowed whole: "-ae" -> "-a" ("scapulae" ->
+ *     "scapula", "formulae" -> "formula"), "-i" -> "-us" ("radii" -> "radius",
+ *     "abaci" -> "abacus"), and the native "-men" -> "-man" ("crewmen" ->
+ *     "crewman", "chairmen" -> "chairman"). The matching "-a" -> "-on" plural is
+ *     deliberately absent: it folds "comma" -> "common", "silica" -> "silicon"
+ *     and "squadra" -> "squadron", about 19 wrong in 280.
  *
  * The caller confirms each candidate is a real word and picks the most common
  * one. That is what keeps the coincidences harmless, though not for the reason
@@ -69,8 +75,11 @@ export function inflectionalBaseCandidates(word: string): string[] {
   if (w.length > 5 && w.endsWith("ices")) add(w.slice(0, -4) + "ex", w.slice(0, -4) + "ix");
   if (w.length > 4 && w.endsWith("ies")) add(w.slice(0, -3) + "y", w.slice(0, -3) + "i");
   if (w.length > 4 && w.endsWith("ves")) add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
+  if (w.length > 4 && w.endsWith("men")) add(w.slice(0, -3) + "man");
   if (w.length > 4 && w.endsWith("es")) add(w.slice(0, -1), w.slice(0, -2));
+  if (w.length > 3 && w.endsWith("ae")) add(w.slice(0, -1));
   if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) add(w.slice(0, -1));
+  if (w.length > 3 && w.endsWith("i")) add(w.slice(0, -1) + "us");
 
   return out;
 }
@@ -85,6 +94,13 @@ export function inflectionalBaseCandidates(word: string): string[] {
  *     "knowinger" -> "knowing", "thanker" -> "thank".
  *   - the Latin neuter plural "-a" -> "-um": "asyla" -> "asylum",
  *     "pepla" -> "peplum", "clitella" -> "clitellum".
+ *   - "-ize"/"-ise" verbs and their tenses -> the stem they were built from:
+ *     "containerise" -> "container", "ghettoise" -> "ghetto", "tautologize" ->
+ *     "tautology". This also un-sticks the "-ization" fold, which used to
+ *     dead-end on an unattested verb: "winterisation" folded to "winterise"
+ *     (Zipf -0.45) and stopped, when "winter" (4.18) was one strip further.
+ *   - "-able"/"-ible"/"-ably"/"-ibly" -> the stem: "interviewable" ->
+ *     "interview", "requirable" -> "require".
  *
  * Nothing in the spelling separates a real comparative from a word that merely
  * ends that way: applied to every word these rules fold "noter" -> "not",
@@ -96,7 +112,11 @@ export function inflectionalBaseCandidates(word: string): string[] {
  * measurement, and a spelling guess must not be allowed to overrule it. Every
  * word in the list above sits at or above the floor and is excluded on those
  * grounds -- "tempest" is measured at Zipf 3.29, "canter" at 2.72, "noter" at
- * 1.27.
+ * 1.27. The last two families make the same point louder: ungated, "-ize" folds
+ * "capsize" -> "cap", "downsize" -> "downs" and "expertise" -> "expert", and
+ * "-able" folds "likeable" -> "like", "countable" -> "county" and "fallible" ->
+ * "fall". Gated, not one of those words moves, and 2,466 words still stop
+ * holding a Mythic-or-better score for a suffix.
  *
  * Two families stay out even under that gate. "-en" verbs ("harshen" -> "harsh")
  * are right often enough to tempt but fold loanwords onto lookalikes -- "dudeen"
@@ -122,6 +142,21 @@ export function unmeasuredBaseCandidates(word: string): string[] {
     if (stem.endsWith("i")) add(`${stem.slice(0, -1)}y`);
   }
   if (w.length > 4 && w.endsWith("a")) add(`${w.slice(0, -1)}um`);
+
+  // Longest ending first, so a tensed form ("-izing") is not read as the bare
+  // verb. The endings are mutually exclusive, so at most one group ever matches.
+  // The "y" candidate is what reaches the noun a verb was built from
+  // ("tautologize" -> "tautology", "ebonize" -> "ebony").
+  for (const suffix of ["izing", "ising", "izes", "ises", "ized", "ised", "ize", "ise"]) {
+    if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
+    const stem = w.slice(0, -suffix.length);
+    add(stem, `${stem}e`, `${stem}y`);
+  }
+  for (const suffix of ["ably", "ibly", "able", "ible"]) {
+    if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
+    const stem = w.slice(0, -suffix.length);
+    add(stem, `${stem}e`, `${stem}y`);
+  }
 
   return out;
 }

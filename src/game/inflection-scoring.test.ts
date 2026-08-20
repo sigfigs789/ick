@@ -36,6 +36,11 @@ describe("number inflections fold onto their base (from 2026-08-21)", () => {
     ["meatloaves", "meatloaf", 9.94, 7.19],
     ["matrices", "matrix", 6.69, 5.38],
     ["apices", "apex", 8.68, 5.91],
+    // The classical plurals borrowed whole, and the native "-men" plural.
+    ["scapulae", "scapula", 8.91, 7.75],
+    ["radii", "radius", 7.62, 5.69],
+    ["abaci", "abacus", 9.62, 7.47],
+    ["chairmen", "chairman", 6.75, 4.31],
     // "-ied" no longer shadows the plain "-ed" bases, so a past tense whose base
     // ends in "i" finally has somewhere to land.
     ["taxied", "taxi", 8.47, 5.21],
@@ -94,6 +99,16 @@ describe("comparatives and Latin plurals fold, but only below the measurement fl
     ["asyla", "asylum", 9.92, 5.5],
     ["pepla", "peplum", 9.95, 8.12],
     ["clitella", "clitellum", 9.98, 8.33],
+    // "-ize"/"-ise" verbs fold to the stem they were built from.
+    ["containerise", "container", 9.96, 5.44],
+    ["ghettoise", "ghetto", 9.96, 5.94],
+    ["tautologize", "tautology", 10, 8.08],
+    // ... which also un-sticks the "-ization" fold, which used to dead-end on the
+    // unattested verb ("winterisation" -> "winterise", Zipf -0.45, and stop).
+    ["winterisation", "winter", 9.96, 4.18],
+    // "-able"/"-ible" likewise.
+    ["interviewable", "interview", 9.96, 4.22],
+    ["requirable", "require", 9.92, 4.34],
   ];
 
   it.each(GATED)("%s scores as %s from the cutover on", (word, base, _before, after) => {
@@ -131,6 +146,21 @@ describe("comparatives and Latin plurals fold, but only below the measurement fl
       "comma",
       "alba",
       "dura",
+      // The "-ize"/"-able" families make the same point louder: ungated they
+      // fold "capsize" -> "cap", "downsize" -> "downs", "expertise" ->
+      // "expert", "likeable" -> "like", "countable" -> "county" (!) and
+      // "fallible" -> "fall".
+      "capsize",
+      "downsize",
+      "expertise",
+      "treatise",
+      "improvise",
+      "likeable",
+      "workable",
+      "countable",
+      "fallible",
+      "sensible",
+      "probable",
     ]) {
       expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
       expect(score(word, BEFORE), `${word} must not move`).toBe(score(word, ON));

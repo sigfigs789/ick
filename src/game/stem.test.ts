@@ -82,6 +82,20 @@ describe("inflectionalBaseCandidates", () => {
     expect(inflectionalBaseCandidates("apices")).toContain("apex");
   });
 
+  it("offers the classical plurals", () => {
+    expect(inflectionalBaseCandidates("scapulae")).toContain("scapula");
+    expect(inflectionalBaseCandidates("radii")).toContain("radius");
+    expect(inflectionalBaseCandidates("abaci")).toContain("abacus");
+    expect(inflectionalBaseCandidates("chairmen")).toContain("chairman");
+  });
+
+  it("does not offer the -a -> -on plural", () => {
+    // The sibling of "-a" -> "-um", and the dirty one: it folds "comma" ->
+    // "common", "silica" -> "silicon", "squadra" -> "squadron".
+    expect(inflectionalBaseCandidates("comma")).not.toContain("common");
+    expect(inflectionalBaseCandidates("silica")).not.toContain("silicon");
+  });
+
   it("keeps the coincidences in the list rather than choosing between them", () => {
     // "caves" really does look like a "-ves" plural of "cafe". Resolving that is
     // the caller's job (most common base wins), not this function's.
@@ -135,6 +149,28 @@ describe("unmeasuredBaseCandidates", () => {
     expect(unmeasuredBaseCandidates("clitella")).toContain("clitellum");
   });
 
+  it("offers the stem an -ize/-ise verb was built from, tensed or not", () => {
+    expect(unmeasuredBaseCandidates("containerise")).toContain("container");
+    expect(unmeasuredBaseCandidates("ghettoising")).toContain("ghetto");
+    expect(unmeasuredBaseCandidates("fractionises")).toContain("fraction");
+    // The "y" candidate reaches the noun behind the verb.
+    expect(unmeasuredBaseCandidates("tautologize")).toContain("tautology");
+    expect(unmeasuredBaseCandidates("ebonized")).toContain("ebony");
+  });
+
+  it("reads a tensed -ize form by its longest ending, not as the bare verb", () => {
+    // "-izing" must not be read as "-ize" leaving a stray "in", nor "-izes" as
+    // "-ise" leaving a stray "z".
+    expect(unmeasuredBaseCandidates("ghettoising")).not.toContain("ghettoin");
+    expect(unmeasuredBaseCandidates("fractionises")).not.toContain("fractionz");
+  });
+
+  it("offers the stem of an -able/-ible/-ably/-ibly word", () => {
+    expect(unmeasuredBaseCandidates("interviewable")).toContain("interview");
+    expect(unmeasuredBaseCandidates("requirable")).toContain("require");
+    expect(unmeasuredBaseCandidates("preventably")).toContain("prevent");
+  });
+
   it("drops candidates under four letters", () => {
     // Three-letter bases are where the wrong-word folds cluster: without this,
     // "theer" would reach "the" and "noter" would reach "not".
@@ -154,6 +190,9 @@ describe("unmeasuredBaseCandidates", () => {
     expect(unmeasuredBaseCandidates("shoulder")).toContain("should");
     expect(unmeasuredBaseCandidates("canter")).toContain("cant");
     expect(unmeasuredBaseCandidates("comma")).toContain("commum");
+    expect(unmeasuredBaseCandidates("capsize")).toContain("caps");
+    expect(unmeasuredBaseCandidates("countable")).toContain("county");
+    expect(unmeasuredBaseCandidates("fallible")).toContain("fall");
   });
 
   it("is case-insensitive and never offers the word itself", () => {

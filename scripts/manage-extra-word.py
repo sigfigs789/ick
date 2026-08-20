@@ -281,10 +281,16 @@ def _inflectional_candidates(word: str) -> list[str]:
         add(w[:-3] + "y", w[:-3] + "i")
     if len(w) > 4 and w.endswith("ves"):
         add(w[:-3] + "f", w[:-3] + "fe")
+    if len(w) > 4 and w.endswith("men"):
+        add(w[:-3] + "man")
     if len(w) > 4 and w.endswith("es"):
         add(w[:-1], w[:-2])
+    if len(w) > 3 and w.endswith("ae"):
+        add(w[:-1])
     if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
         add(w[:-1])
+    if len(w) > 3 and w.endswith("i"):
+        add(w[:-1] + "us")
     return out
 
 
@@ -313,6 +319,19 @@ def _unmeasured_candidates(word: str) -> list[str]:
             add(stem[:-1] + "y")
     if len(w) > 4 and w.endswith("a"):
         add(w[:-1] + "um")
+
+    # Longest ending first, so a tensed form ("-izing") is not read as the bare
+    # verb. The "y" candidate reaches the noun a verb was built from.
+    for suffix in ("izing", "ising", "izes", "ises", "ized", "ised", "ize", "ise"):
+        if not w.endswith(suffix) or len(w) <= len(suffix) + 3:
+            continue
+        stem = w[: -len(suffix)]
+        add(stem, stem + "e", stem + "y")
+    for suffix in ("ably", "ibly", "able", "ible"):
+        if not w.endswith(suffix) or len(w) <= len(suffix) + 3:
+            continue
+        stem = w[: -len(suffix)]
+        add(stem, stem + "e", stem + "y")
     return out
 
 
