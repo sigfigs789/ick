@@ -200,6 +200,16 @@ lives in `supabase/migrations/`.
   validates the shape (snake_case name, at most 32 flat scalar properties) and
   inserts it.
 
+- **`suggested_words`** — the review queue, a view rather than a table. It pools
+  the two places a candidate arrives from: live MW approvals still marked `new`
+  in `word_sightings`, and words players typed into the How to play suggestion
+  box (`word_suggested` events). `origin` says which — `both` is the strongest
+  signal there is. Rarest first, so the perfect-10 words surface at the top.
+  Graduating a batch is `select set_word_status(array['word', ...], 'accepted')`,
+  which drops them out of the queue; a suggestion that was never played gets a
+  row of its own with outcome `suggested`, so it can be settled too, and a real
+  lookup later overwrites that placeholder while leaving the triage alone.
+
 Nothing in the game reads either table, and nothing waits on a write. Recording
 is strictly downstream of the answer: `api/validate.ts` never awaits its write
 (it hands it to the runtime's `waitUntil` when there is one, and would rather
