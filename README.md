@@ -2,11 +2,11 @@
 
 A daily word-drop puzzle inspired by Wordle and BombParty. Every player
 gets the same 2- or 3-letter drop each day (like `STR`, `OU`, or `MP`)
-and enters valid English words that contain it, in order, for up to 6
+and enters valid English words that contain it, in order, for up to 5
 distinct guesses. The goal is finding the rarest word you can — your best
 one is crowned in the log. No timer, no login, no traditional score, just
 a friendly rarity reveal (Very Common → Extremely Rare) on every accepted
-word. Stop anytime with "Lock in my result," or use all 6 guesses.
+word. Stop anytime with "Lock in my result," or use all 5 guesses.
 
 Built in React + TypeScript (Vite). Game logic in `src/game/` is plain
 TypeScript with no DOM or React dependencies.
