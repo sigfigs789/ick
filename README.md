@@ -207,12 +207,16 @@ Each is optional beyond that: an absent `WORDNIK_KEY` simply skips the second
 tier, which is how every existing deployment behaves until one is set.
 
 A Wordnik approval additionally requires a **measured frequency**, which an MW
-approval does not. A word no corpus attests falls to the unattested floor and
-scores a perfect 10 -- right for a genuine find MW vouches for
+approval does not. A word no corpus attests falls to the unattested sentinel and
+scores exactly 10.00 -- right for a genuine find MW vouches for
 (`enshittification`), wrong for the inflected forms and idiom senses AHD and
-WordNet carry. So Wordnik can only ever add words that score honestly; an
-unscoreable one keeps its rejection, reported as `unattested` and shown to the
-player with the generic message.
+WordNet carry. An unscoreable word therefore keeps its rejection, reported as
+`unattested` and shown to the player with the generic message.
+
+This keeps the sentinel out, not Legend: the tail band scores a measured Zipf of
+1.0 at 9.9 and 0.5 at 9.95, both past Legend's 9.5 cutoff. The rule guarantees a
+score was *measured*, not that it was modest, so `wordnik:*` approvals still want
+the same rank review every other word gets.
 
 Verdicts are CDN-cached for a day so repeat lookups of the same word cost no
 quota; incomplete verdicts (a tier failed while the word went unapproved) are

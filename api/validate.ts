@@ -18,10 +18,15 @@
 //      and 200 an hour, so it is the burstiest allowance of the three.
 //
 // A Wordnik approval additionally requires a measured frequency, which an MW
-// approval does not. A word no corpus attests falls to the unattested floor and
-// scores a perfect 10 -- right for a genuine find MW vouches for, wrong for the
-// inflected forms and idiom senses AHD and WordNet carry. Wordnik can therefore
-// only add words that score honestly; the rest keep their rejection.
+// approval does not. A word no corpus attests falls to the unattested sentinel
+// and scores exactly 10.00 -- right for a genuine find MW vouches for, wrong for
+// the inflected forms and idiom senses AHD and WordNet carry.
+//
+// Note what this does and does not buy: it keeps the sentinel out, not Legend.
+// The tail band scores a measured Zipf of 1.0 at 9.9 and 0.5 at 9.95, both above
+// Legend's 9.5 cutoff, so a barely-attested word still reaches the top rank. The
+// rule guarantees a score was measured, not that it was modest -- reviewing
+// wordnik:* approvals for undeserved ranks is still the audit skills' job.
 //
 // The API keys stay server-side here; they are never shipped to the browser.
 // Responses are CDN-cached so a repeated lookup of the same word costs nothing
@@ -311,9 +316,14 @@ async function fetchMw(reference: string, word: string, key: string): Promise<un
 }
 
 /**
- * Wordnik's definitions for `word`, or an empty list when it has none. A word
- * Wordnik doesn't know answers 404, which is a miss rather than a failure, so it
- * is the one status not reported as an upstream problem.
+ * Wordnik's definitions for `word`, or an empty list when it has none.
+ *
+ * A word Wordnik doesn't know does *not* answer 404: measured, "asdfgh" comes
+ * back HTTP 200 with four objects carrying no word, text or sourceDictionary at
+ * all (see the regression test), which classifyWordnik discards. The 404 branch
+ * below is belt-and-braces for endpoints or future words that do answer that
+ * way -- a 404 is a miss rather than a failure, so it is the one status not
+ * reported as an upstream problem.
  *
  * `useCanonical=false` keeps Wordnik from silently answering about a different
  * headword, and the returned `word` is checked anyway in classifyWordnik.
@@ -501,6 +511,16 @@ function classifyWordnik(
     if (!trusted && sourceDictionary !== WORDNIK_VETO_SOURCE) continue;
 
     const partOfSpeech = String(def.partOfSpeech ?? "").toLowerCase();
+    // Recorded before the branches below, so a name or abbreviation rejection
+    // still names the dictionary that answered and carries the label that
+    // explains it -- the MW path does the same with `fl` (see classify). Only a
+    // trusted source contributes either: Wiktionary may veto a word but must
+    // never appear as the source that answered for it.
+    if (trusted) {
+      sources.add(sourceDictionary);
+      if (partOfSpeech) pos.add(partOfSpeech);
+    }
+
     // A name or abbreviation sense is not an ordinary sense, so it neither
     // approves the word nor counts toward the out-of-use rule.
     if (WORDNIK_ABBR_POS.has(partOfSpeech)) {
@@ -513,8 +533,6 @@ function classifyWordnik(
     }
 
     if (trusted) {
-      sources.add(sourceDictionary);
-      if (partOfSpeech) pos.add(partOfSpeech);
       hasOrdinary = true;
       trustedSeverities.push(wordnikSeverity(def));
     } else {

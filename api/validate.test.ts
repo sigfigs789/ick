@@ -621,6 +621,14 @@ describe("api/validate Wordnik tier", () => {
       outcome: "rejected",
       reason: "abbreviation",
     });
+
+    // A rejection is evidence too: it names the dictionary that answered and the
+    // label that explains it, exactly as the MW path does.
+    stubTiers({ wordnik: [def("dixie", "ahd-5", { partOfSpeech: "proper-noun" })] });
+    expect(await body(await handler(request("dixie")))).toMatchObject({
+      source: "wordnik:ahd-5",
+      pos: ["proper-noun"],
+    });
   });
 
   it("ignores Wordnik definitions of a different headword, and empty stubs", async () => {
