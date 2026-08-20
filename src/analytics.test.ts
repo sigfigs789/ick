@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   campaignSourceFromSearch,
+  trackShareArrival,
+  trackWordSuggestion,
   trackRedditArrival,
   trackResultCopied,
   trackResultSharedOnX,
@@ -345,5 +347,88 @@ describe("trackFeedbackSubmitted", () => {
   it("trims the note and caps it at 200 characters", () => {
     trackFeedbackSubmitted(`  ${"a".repeat(250)}  `);
     expect(track).toHaveBeenCalledWith("feedback_submitted", { feedback: "a".repeat(200) });
+  });
+});
+
+describe("supabase mirror", () => {
+  /** Install a sendBeacon jsdom doesn't have, and hand back its calls. */
+  function stubBeacon(result = true) {
+    const beacon = vi.fn(() => result);
+    Object.defineProperty(navigator, "sendBeacon", { value: beacon, configurable: true });
+    return beacon;
+  }
+
+  /**
+   * The event body a beacon or fetch call carried. jsdom's Blob has no `text()`,
+   * so a Blob is read the long way round.
+   */
+  async function payload(body: unknown): Promise<Record<string, unknown>> {
+    const text =
+      body instanceof Blob
+        ? await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = () => reject(reader.error);
+            reader.readAsText(body);
+          })
+        : String(body);
+    return JSON.parse(text) as Record<string, unknown>;
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    Reflect.deleteProperty(navigator, "sendBeacon");
+  });
+
+  it("stays quiet under test, where there is no endpoint to post to", () => {
+    const beacon = stubBeacon();
+    trackWordSuggestion("Quixotic");
+    // Vercel still gets it; only the mirror is skipped.
+    expect(track).toHaveBeenCalledTimes(1);
+    expect(beacon).not.toHaveBeenCalled();
+  });
+
+  it("beacons the same event it sends to Vercel", async () => {
+    vi.stubEnv("MODE", "production");
+    const beacon = stubBeacon();
+
+    trackWordSuggestion("  Quixotic  ");
+
+    expect(track).toHaveBeenCalledWith("word_suggested", { word: "quixotic" });
+    const [url, body] = beacon.mock.calls[0] as unknown as [string, Blob];
+    expect(url).toBe("/api/events");
+    expect(body.type).toBe("application/json");
+    expect(await payload(body)).toEqual({
+      name: "word_suggested",
+      props: { word: "quixotic" },
+    });
+  });
+
+  it("falls back to a keepalive fetch where sendBeacon is missing", async () => {
+    vi.stubEnv("MODE", "production");
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    trackShareArrival();
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("/api/events");
+    expect(init.keepalive).toBe(true);
+    // An event with no properties sends none, rather than an empty object.
+    expect(await payload(init.body)).toEqual({ name: "arrived_from_share" });
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps the event flowing to Vercel when the mirror throws", () => {
+    vi.stubEnv("MODE", "production");
+    Object.defineProperty(navigator, "sendBeacon", {
+      value: () => {
+        throw new Error("blocked by the browser");
+      },
+      configurable: true,
+    });
+
+    expect(() => trackShareArrival()).not.toThrow();
+    expect(track).toHaveBeenCalledWith("arrived_from_share");
   });
 });

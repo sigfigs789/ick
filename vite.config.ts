@@ -3,11 +3,11 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { APP_VERSION, MIN_VERSION } from './src/version'
 
-// Serves api/validate.ts during `npm run dev`. In production that file is a
-// Vercel Edge Function, which `vite dev` knows nothing about -- without this the
-// live Merriam-Webster fallback 404s locally and the feature can't be exercised
-// outside a deploy. Dev only (`apply: 'serve'`); production routing comes from
-// vercel.json.
+// Serves the api/ edge functions during `npm run dev`. In production those files
+// are Vercel Edge Functions, which `vite dev` knows nothing about -- without this
+// the live Merriam-Webster fallback and the analytics mirror both 404 locally and
+// neither can be exercised outside a deploy. Dev only (`apply: 'serve'`);
+// production routing comes from vercel.json.
 //
 // The handler reads its keys off `process.env`, so .env is loaded into it here
 // (Vite otherwise only exposes VITE_-prefixed vars to the client -- these keys
@@ -19,11 +19,39 @@ declare const process: { env: Record<string, string | undefined>; cwd(): string 
 /** The bits of the Node request/response the middleware below actually touches. */
 interface DevRequest {
   url?: string
+  method?: string
+  headers: Record<string, string | string[] | undefined>
+  /** IncomingMessage is an async iterable of body chunks; see readBody. */
+  [Symbol.asyncIterator](): AsyncIterableIterator<Uint8Array>
 }
 interface DevResponse {
   statusCode: number
   setHeader(name: string, value: string): void
   end(body: string): void
+}
+
+/** The dev-served endpoints, mapped to the module that answers each. */
+const DEV_API_ROUTES: Record<string, string> = {
+  '/api/validate': '/api/validate.ts',
+  '/api/events': '/api/events.ts',
+}
+
+/** Collect a request body, which /api/events needs and /api/validate ignores. */
+async function readBody(req: DevRequest): Promise<string> {
+  const decoder = new TextDecoder()
+  let body = ''
+  for await (const chunk of req) body += decoder.decode(chunk, { stream: true })
+  return body + decoder.decode()
+}
+
+/** Node's header bag allows repeats; the Fetch Request wants single values. */
+function singleValueHeaders(req: DevRequest): Record<string, string> {
+  const headers: Record<string, string> = {}
+  for (const [name, value] of Object.entries(req.headers)) {
+    if (typeof value === 'string') headers[name] = value
+    else if (Array.isArray(value) && value.length > 0) headers[name] = value[0]
+  }
+  return headers
 }
 
 function serveApiFunctions(): Plugin {
@@ -39,20 +67,33 @@ function serveApiFunctions(): Plugin {
         const req = rawReq as DevRequest
         const res = rawRes as unknown as DevResponse
         const path = (req.url ?? '').split('?')[0]
-        if (path !== '/api/validate') return next()
+        const modulePath = DEV_API_ROUTES[path]
+        if (!modulePath) return next()
         void (async () => {
           try {
-            const module = await server.ssrLoadModule('/api/validate.ts')
+            const module = await server.ssrLoadModule(modulePath)
             const handler = module.default as (request: Request) => Promise<Response>
+            const method = (req.method ?? 'GET').toUpperCase()
+            const headers = singleValueHeaders(req)
+            // Built from the Host header rather than a fixed origin so a
+            // same-origin check inside a handler sees the port the browser
+            // actually used (see api/events.ts).
+            const host = headers.host ?? 'localhost'
+            const hasBody = method !== 'GET' && method !== 'HEAD'
             const response = await handler(
-              new Request(new URL(req.url ?? '/', 'http://localhost')),
+              new Request(new URL(req.url ?? '/', `http://${host}`), {
+                method,
+                headers,
+                ...(hasBody ? { body: await readBody(req) } : {}),
+              }),
             )
             res.statusCode = response.status
             response.headers.forEach((value, key) => res.setHeader(key, value))
             res.end(await response.text())
           } catch (error) {
-            // Surface a dev-server failure as the endpoint's own error shape so
-            // the client treats it like any other failed lookup.
+            // Surface a dev-server failure as /api/validate's own error shape so
+            // the client treats it like any other failed lookup. /api/events
+            // never reads its response, so the shape is harmless there.
             res.statusCode = 500
             res.setHeader('content-type', 'application/json')
             res.end(

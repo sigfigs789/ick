@@ -32,3 +32,7 @@ __pycache__/
 # Local secrets (Merriam-Webster API keys); see .env.example
 .env
 .env.local
+
+# Supabase CLI machine-local link state (project ref, pooler URL, remote
+# versions). Written by `supabase link`; the migrations themselves are tracked.
+supabase/.temp/

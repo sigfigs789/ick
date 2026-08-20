@@ -177,6 +177,56 @@ this file reviewable.
 ones with plenty of common-word matches, so no daily puzzle depends on
 obscure answers.
 
+## Word and event tracking (Supabase)
+
+Optional, write-only, and entirely server-side. Two tables collect the words
+players actually reach for so they can be folded into the curated dictionary
+later — at which point those words stop needing a live lookup at all, which is
+what keeps Merriam-Webster's 1,000-requests-per-day quota comfortable. Schema
+lives in `supabase/migrations/`.
+
+- **`word_sightings`** — one row per word the live fallback has judged, written
+  by `api/validate.ts` through the `record_word_sighting` function: the verdict
+  (`playable` / `rejected` / `unknown`), the reject reason, the Zipf frequency
+  Datamuse attested, MW's parts of speech and first-known-use date, and a
+  `status` column for the future triage pass. Failed lookups are never recorded
+  — an outage says nothing about a word, and must not overwrite a real verdict.
+  `lookups` counts *cache misses*, not plays: `/api/validate` is CDN-cached for
+  a day, so treat it as "seen again" rather than as popularity.
+- **`analytics_events`** — a mirror of every event already sent to Vercel
+  Analytics (`src/analytics.ts`), so they can be queried with SQL and kept past
+  the dashboard's retention window. The browser posts each event to
+  `api/events.ts` with `sendBeacon` and ignores the result; the endpoint
+  validates the shape (snake_case name, at most 32 flat scalar properties) and
+  inserts it.
+
+- **`suggested_words`** — the review queue, a view rather than a table. It pools
+  the two places a candidate arrives from: live MW approvals still marked `new`
+  in `word_sightings`, and words players typed into the How to play suggestion
+  box (`word_suggested` events). `origin` says which — `both` is the strongest
+  signal there is. Rarest first, so the perfect-10 words surface at the top.
+  Graduating a batch is `select set_word_status(array['word', ...], 'accepted')`,
+  which drops them out of the queue; a suggestion that was never played gets a
+  row of its own with outcome `suggested`, so it can be settled too, and a real
+  lookup later overwrites that placeholder while leaving the triage alone.
+
+Nothing in the game reads either table, and nothing waits on a write. Recording
+is strictly downstream of the answer: `api/validate.ts` never awaits its write
+(it hands it to the runtime's `waitUntil` when there is one, and would rather
+drop a row than delay a player), and the client beacons events without reading
+the response. The shipped dictionary remains the only word list the browser
+consults, so the game stays offline-first and plays identically whether or not
+the database exists — with no credentials set, `api/validate.ts` skips the write
+silently and `api/events.ts` answers 503.
+
+Setup: run the migration on a Supabase project, then set `SUPABASE_URL` and
+`SUPABASE_SERVICE_ROLE_KEY` in the Vercel project (and in `.env` for local
+work — `npm run dev` serves both endpoints, see `vite.config.ts`). The
+service-role key is server-side only and is never exposed to the browser, which
+is the reason `api/events.ts` exists rather than the client writing directly.
+Row-level security is enabled on both tables with no policies at all, so the
+`anon` key cannot read or write them even if it leaks.
+
 ## Design decisions worth knowing about
 
 - **Plurals/conjugations are accepted** as distinct words, but two forms

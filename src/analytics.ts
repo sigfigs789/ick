@@ -13,6 +13,57 @@ import type {
 import { currentVisit, type VisitOutcome } from "./game/visits";
 import { APP_VERSION } from "./version";
 
+/** The scalar property values both Vercel Analytics and /api/events accept. */
+type EventProps = Record<string, string | number | boolean | null>;
+
+/**
+ * Mirror one event into Supabase, alongside the copy Vercel Analytics receives.
+ *
+ * Fire-and-forget by construction: `sendBeacon` hands the request to the browser,
+ * which delivers it on its own time and even after the page goes away, and there
+ * is no response to read. Nothing about the game waits on this or changes if it
+ * fails -- the dictionary the game plays against is the shipped one, and this
+ * endpoint is write-only.
+ *
+ * Skipped under test, where there is no server to post to and a stray request
+ * would be noise. `npm run dev` does serve /api/events (see vite.config.ts), so
+ * the path is exercisable locally.
+ */
+function mirror(name: string, props?: EventProps): void {
+  if (import.meta.env.MODE === "test") return;
+  try {
+    const body = JSON.stringify(props ? { name, props } : { name });
+    if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+      navigator.sendBeacon("/api/events", new Blob([body], { type: "application/json" }));
+      return;
+    }
+    // Older Safari has no sendBeacon; `keepalive` gets the same survive-unload
+    // behaviour out of fetch.
+    void fetch("/api/events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // Recording an event must never be able to break the move that produced it.
+  }
+}
+
+/**
+ * Record one event in both places: Vercel Analytics, which every event here has
+ * always gone to, and the game's own Supabase table, which keeps it queryable
+ * past the dashboard's retention window. Vercel is called first so a problem with
+ * the mirror cannot cost the event its primary destination.
+ */
+function send(name: string, props?: EventProps): void {
+  // Called with one argument when there are no properties, exactly as before, so
+  // an event with no dimensions still reaches Vercel as a bare event name.
+  if (props) track(name, props);
+  else track(name);
+  mirror(name, props);
+}
+
 /**
  * Send game activity to Vercel without player-identifying information.
  */
@@ -23,7 +74,7 @@ export function trackAcceptedAnswer(
   totalScore: number,
   streakDays: number
 ) {
-  track("answer_accepted", {
+  send("answer_accepted", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     answer_count: answerCount,
@@ -37,7 +88,7 @@ export function trackAcceptedAnswer(
 
 /** Record rejected submissions so the word list can be reviewed over time. */
 export function trackRejectedAnswer(date: string, drop: string, rawWord: string) {
-  track("answer_rejected", {
+  send("answer_rejected", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     drop: drop.toLowerCase(),
@@ -47,7 +98,7 @@ export function trackRejectedAnswer(date: string, drop: string, rawWord: string)
 
 /** Record the specific rejection feedback shown to a player. */
 export function trackRejectionMessage(date: string, reason: RejectionReason) {
-  track("rejection_message_shown", {
+  send("rejection_message_shown", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     rejection_reason: reason,
@@ -61,7 +112,7 @@ export function trackRejectionMessage(date: string, reason: RejectionReason) {
  * base-form rules can be monitored for over- or under-scoring.
  */
 export function trackBaseFormSubstitution(date: string, substitution: BaseFormSubstitution) {
-  track("base_form_substituted", {
+  send("base_form_substituted", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     original_word: substitution.word,
@@ -89,7 +140,7 @@ export function trackUnattestedScore(
   word: AcceptedWord,
   source: "curated" | "live"
 ) {
-  track("unattested_score_used", {
+  send("unattested_score_used", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     word: word.word,
@@ -114,7 +165,7 @@ export function trackMerriamWebsterApproved(
   info: RarityInfo,
   applied: boolean
 ) {
-  track("merriam_webster_approved", {
+  send("merriam_webster_approved", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     drop: drop.toLowerCase(),
@@ -143,7 +194,7 @@ export function trackMerriamWebsterFailed(date: string, drop: string, check: Liv
   // A half-broken lookup carries its problem in `failure` while the top-level
   // fields describe the verdict, so the failure object is the source of truth.
   const failure = check.failure;
-  track("merriam_webster_failed", {
+  send("merriam_webster_failed", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
     drop: drop.toLowerCase(),
@@ -161,12 +212,12 @@ export function trackMerriamWebsterFailed(date: string, drop: string, check: Liv
  * 200 characters so a long note still lands as a single readable property value.
  */
 export function trackFeedbackSubmitted(rawFeedback: string) {
-  track("feedback_submitted", { feedback: rawFeedback.trim().slice(0, 200) });
+  send("feedback_submitted", { feedback: rawFeedback.trim().slice(0, 200) });
 }
 
 /** Record player suggestions for future curated-list reviews. */
 export function trackWordSuggestion(rawWord: string) {
-  track("word_suggested", { word: rawWord.trim().toLowerCase() });
+  send("word_suggested", { word: rawWord.trim().toLowerCase() });
 }
 
 export function trackPuzzleCompleted(
@@ -175,7 +226,7 @@ export function trackPuzzleCompleted(
   streak: StreakState
 ) {
   const best = bestWord(progress.acceptedWords);
-  track("puzzle_completed", {
+  send("puzzle_completed", {
     puzzle_date: progress.date,
     puzzle_number: puzzleNumber(progress.date),
     answer_count: progress.acceptedWords.length,
@@ -206,27 +257,27 @@ function visitDimensions() {
 
 /** Record a successful copy from the standard Share button. */
 export function trackResultCopied() {
-  track("result_copied", { method: "copy", ...visitDimensions() });
+  send("result_copied", { method: "copy", ...visitDimensions() });
 }
 
 /** Record a click on the X share button. */
 export function trackResultSharedOnX() {
-  track("result_shared_on_x", { method: "x", ...visitDimensions() });
+  send("result_shared_on_x", { method: "x", ...visitDimensions() });
 }
 
 /** Record visitors who arrive through an X share link. */
 export function trackTwitterArrival() {
-  track("arrived_from_twitter");
+  send("arrived_from_twitter");
 }
 
 /** Record visitors who arrive through a copied Share link. */
 export function trackShareArrival() {
-  track("arrived_from_share");
+  send("arrived_from_share");
 }
 
 /** Record visitors who arrive through a tagged Reddit link (`s=r`). */
 export function trackRedditArrival() {
-  track("arrived_from_reddit");
+  send("arrived_from_reddit");
 }
 
 /** Map compact arrival codes to readable analytics source labels. */
@@ -259,7 +310,7 @@ function visitProperties(outcome: VisitOutcome) {
  * visitors can be measured by count, by distinct days, and by origin.
  */
 export function trackVisit(outcome: VisitOutcome) {
-  track("site_visit", visitProperties(outcome));
+  send("site_visit", visitProperties(outcome));
 }
 
 /**
@@ -268,7 +319,7 @@ export function trackVisit(outcome: VisitOutcome) {
  * source or return count gives the share of visits that convert to play.
  */
 export function trackVisitEngaged(outcome: VisitOutcome) {
-  track("visit_engaged", visitProperties(outcome));
+  send("visit_engaged", visitProperties(outcome));
 }
 
 /** Convert compact share-link codes into analytics campaign sources. */
