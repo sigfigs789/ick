@@ -200,6 +200,20 @@ lives in `supabase/migrations/`.
   validates the shape (snake_case name, at most 32 flat scalar properties) and
   inserts it.
 
+`word_sightings` also serves as a read-through cache in front of the upstreams:
+`api/validate.ts` asks it before calling Merriam-Webster, and a fresh stored
+verdict answers the request without spending either an MW lookup or a Datamuse
+call — faster than going upstream, since an edge-region read is tens of
+milliseconds against MW's hundreds. It cannot decide an answer by failing: a
+miss, a stale row, a slow read (300ms budget) or an error all fall through to the
+upstreams exactly as before, so a wedged database costs a fraction of a second,
+never a verdict. Freshness is measured from `verdict_at`, which only an upstream
+answer moves — a cache hit bumps `lookups`/`last_seen_at` through
+`record_word_hit()` instead, so a row can never refresh its own expiry. Verdicts
+keep for 90 days; `unknown` for 14, because MW adds words and a remembered "no
+such word" is the one stale answer that costs a player a real word. The
+`x-verdict-source` response header says which side answered.
+
 - **`suggested_words`** — the review queue, a view rather than a table. It pools
   the two places a candidate arrives from: live MW approvals still marked `new`
   in `word_sightings`, and words players typed into the How to play suggestion

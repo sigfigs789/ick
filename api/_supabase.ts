@@ -32,6 +32,30 @@ export function supabaseConfigured(): boolean {
   return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
+/**
+ * Read from Supabase on a path a player is waiting on.
+ *
+ * Bounded by `timeoutMs` and never throws: any miss, timeout, or error resolves
+ * to null so the caller falls through to whatever it would have done anyway. A
+ * read is only ever an optimisation here -- it must not be able to decide an
+ * answer by failing.
+ */
+export async function read(path: string, timeoutMs: number): Promise<unknown | null> {
+  if (!supabaseConfigured()) return null;
+  const base = (process.env.SUPABASE_URL ?? "").replace(/\/+$/, "");
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  try {
+    const response = await fetch(`${base}/rest/v1/${path}`, {
+      headers: { apikey: key, authorization: `Bearer ${key}`, accept: "application/json" },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 async function post(path: string, body: unknown): Promise<void> {
   const base = (process.env.SUPABASE_URL ?? "").replace(/\/+$/, "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";

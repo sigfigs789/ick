@@ -19,7 +19,7 @@
 //   "error"     the lookup itself failed; `reason` and `detail` say why, and the
 //               caller reports it rather than drawing any conclusion about the word.
 
-import { record, supabaseConfigured, type EdgeContext } from "./_supabase";
+import { read, record, supabaseConfigured, type EdgeContext } from "./_supabase";
 
 export const config = { runtime: "edge" };
 
@@ -42,6 +42,26 @@ const USER_AGENT = "WordInk live word check (wordink.app)";
 // Upstream calls are bounded so the function can't hang; the client stops waiting
 // after LIVE_HANDOFF_MS, but a wedged request would still hold quota.
 const UPSTREAM_TIMEOUT_MS = 5000;
+
+// The read-through cache in front of the upstreams. A verdict this endpoint has
+// already reached is stored in word_sightings, so asking there first spares the
+// Merriam-Webster quota (1,000/day) and the Datamuse call, and answers faster
+// than either -- an edge-region read is tens of milliseconds against MW's
+// hundreds.
+//
+// The cache can never decide an answer by failing: a miss, a stale row, a slow
+// read, or an error all fall through to the upstreams exactly as before, and the
+// read is cut off well inside the client's handoff window.
+const CACHE_TIMEOUT_MS = 300;
+// How long a stored verdict is trusted, by what it says. A word MW attests or
+// names is a stable fact, so those keep for a quarter. "unknown" is the one that
+// goes stale in a way that costs a player: MW adds words, and a remembered "no
+// such word" would keep denying one that now exists -- so it is re-checked far
+// sooner, even though those are the repeats that would save the most quota.
+const CACHE_FRESH_MS = 90 * 24 * 60 * 60 * 1000;
+const CACHE_FRESH_UNKNOWN_MS = 14 * 24 * 60 * 60 * 1000;
+/** Names the response's provenance for debugging; not part of the JSON contract. */
+const VERDICT_SOURCE_HEADER = "x-verdict-source";
 
 type Outcome = "playable" | "rejected" | "unknown" | "error";
 
@@ -306,11 +326,14 @@ function classify(entries: MwEntry[]): Classification {
   return { outcome: "unknown", reason: null, pos: posList, firstUse };
 }
 
-function json(body: LiveCheckBody, status = 200, cacheable = true): Response {
+function json(body: LiveCheckBody, status = 200, cacheable = true, cached = false): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       "content-type": "application/json",
+      // Which side of the cache answered. Read back by the handler to decide how
+      // to record the sighting, and useful in a network panel.
+      [VERDICT_SOURCE_HEADER]: cached ? "cache" : "live",
       // A word's dictionary status is stable, so let the CDN answer repeat
       // lookups and spare the daily quota. Failures are never cached -- a
       // transient outage or an exhausted quota must not stick to a word.
@@ -334,6 +357,56 @@ function errorBody(word: string, error: UpstreamError): LiveCheckBody {
   };
 }
 
+/** A stored verdict, as word_sightings holds it. */
+interface StoredVerdict {
+  outcome?: unknown;
+  reason?: unknown;
+  zipf?: unknown;
+  pos?: unknown;
+  first_use?: unknown;
+  source?: unknown;
+  verdict_at?: unknown;
+}
+
+/**
+ * A verdict this endpoint reached before, if there is a fresh one on file.
+ *
+ * Returns null for everything else -- no row, an unreadable row, a stale one, or
+ * a `suggested` row (provenance from the suggestion box, never an upstream
+ * answer) -- and the caller goes to the upstreams as though the cache did not
+ * exist. `read` swallows its own failures, so a Supabase problem lands here as a
+ * plain miss.
+ */
+async function cachedVerdict(word: string): Promise<LiveCheckBody | null> {
+  const rows = await read(
+    `word_sightings?word=eq.${encodeURIComponent(word)}` +
+      `&select=outcome,reason,zipf,pos,first_use,source,verdict_at&limit=1`,
+    CACHE_TIMEOUT_MS
+  );
+  const row = (Array.isArray(rows) ? rows[0] : null) as StoredVerdict | null;
+  if (!row) return null;
+
+  const outcome = String(row.outcome ?? "");
+  if (outcome !== "playable" && outcome !== "rejected" && outcome !== "unknown") return null;
+
+  const verdictAt = Date.parse(String(row.verdict_at ?? ""));
+  if (!Number.isFinite(verdictAt)) return null;
+  const freshFor = outcome === "unknown" ? CACHE_FRESH_UNKNOWN_MS : CACHE_FRESH_MS;
+  if (Date.now() - verdictAt > freshFor) return null;
+
+  const zipf = row.zipf === null || row.zipf === undefined ? null : Number(row.zipf);
+  return {
+    word,
+    outcome,
+    reason: row.reason === null || row.reason === undefined ? null : String(row.reason),
+    zipf: zipf !== null && Number.isFinite(zipf) ? zipf : null,
+    pos: Array.isArray(row.pos) ? row.pos.map(String) : [],
+    firstUse: row.first_use === null || row.first_use === undefined ? null : String(row.first_use),
+    source: row.source === null || row.source === undefined ? null : String(row.source),
+    failure: null,
+  };
+}
+
 /**
  * Answer a live word check. Every path out of this returns through `json()`, so
  * the caller below sees the finished body no matter which verdict was reached.
@@ -347,6 +420,11 @@ async function respond(request: Request): Promise<Response> {
       false
     );
   }
+
+  // Ask our own record before spending an upstream call. A hit skips both MW and
+  // Datamuse entirely, and needs no MW key to answer.
+  const cached = await cachedVerdict(word);
+  if (cached) return json(cached, 200, true, true);
 
   const keys: Array<[string, string | undefined]> = [
     ["collegiate", process.env.MW_COLLEGIATE_KEY],
@@ -483,6 +561,15 @@ async function recordSighting(response: Response, context?: EdgeContext): Promis
     return;
   }
   if (!body.word || body.outcome === "error") return;
+
+  // A verdict that came out of the cache is not news: count the sighting, but
+  // leave the verdict and its age alone, or the row would refresh its own
+  // freshness and never be re-checked.
+  if (response.headers.get(VERDICT_SOURCE_HEADER) === "cache") {
+    await record("rpc/record_word_hit", { p_word: body.word }, context);
+    return;
+  }
+
   await record(
     "rpc/record_word_sighting",
     {

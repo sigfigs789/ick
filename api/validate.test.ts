@@ -560,3 +560,177 @@ describe("api/validate sighting recording", () => {
     expect(await body(await handler(request("cat")))).toMatchObject({ outcome: "playable" });
   });
 });
+
+describe("api/validate read-through cache", () => {
+  const CACHED = {
+    MW_COLLEGIATE_KEY: "test-key",
+    SUPABASE_URL: "https://project.supabase.co",
+    SUPABASE_SERVICE_ROLE_KEY: "service-key",
+  };
+
+  /**
+   * Stub the three things the handler can now talk to: the cache read, the
+   * upstreams, and the recording write. `stored` is the row the read returns
+   * (null for a miss); `readFails` makes the read reject, standing in for a
+   * Supabase outage; `readHangs` makes it never answer, so the timeout decides.
+   */
+  function stubAll(options: {
+    stored?: Record<string, unknown> | null;
+    readFails?: boolean;
+    readHangs?: boolean;
+    mw?: unknown;
+  }) {
+    const calls = { read: 0, mw: 0, datamuse: 0, rpc: [] as string[] };
+    const fetchMock = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+      const href = String(url);
+      if (href.includes("/rest/v1/rpc/")) {
+        calls.rpc.push(href.split("/rest/v1/rpc/")[1]);
+        return new Response("", { status: 200 });
+      }
+      if (href.includes("/rest/v1/word_sightings")) {
+        calls.read += 1;
+        if (options.readFails) throw new Error("supabase unreachable");
+        if (options.readHangs) {
+          // Honour the abort signal the way a real fetch does, so the handler's
+          // own timeout is what ends the wait.
+          return new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => reject(new Error("aborted")));
+          });
+        }
+        return new Response(JSON.stringify(options.stored ? [options.stored] : []), { status: 200 });
+      }
+      if (href.includes("datamuse")) {
+        calls.datamuse += 1;
+        return new Response("[]", { status: 200 });
+      }
+      calls.mw += 1;
+      // MW only counts entries whose headword matches the query, so the stubbed
+      // entry is built for whatever word was asked about.
+      const asked = new URL(href).pathname.split("/").pop() ?? "";
+      const entry = { meta: { id: asked }, fl: "noun", date: "1382", def: [{}] };
+      return new Response(JSON.stringify(options.mw ?? [entry]), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return calls;
+  }
+
+  const row = (over: Record<string, unknown> = {}) => ({
+    outcome: "playable",
+    reason: null,
+    zipf: 2.61,
+    pos: ["adjective"],
+    first_use: "1815",
+    source: "collegiate",
+    verdict_at: new Date(Date.now() - 60_000).toISOString(),
+    ...over,
+  });
+
+  /** Wait for the deferred recording write. */
+  async function settled() {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
+  it("answers from its own record without spending an upstream call", async () => {
+    withKeys(CACHED);
+    const calls = stubAll({ stored: row() });
+
+    const response = await handler(request("quixotic"));
+    expect(response.headers.get("x-verdict-source")).toBe("cache");
+    expect(await body(response)).toMatchObject({
+      word: "quixotic",
+      outcome: "playable",
+      zipf: 2.61,
+      pos: ["adjective"],
+      firstUse: "1815",
+      source: "collegiate",
+    });
+    // The whole point: neither upstream was touched.
+    expect(calls.mw).toBe(0);
+    expect(calls.datamuse).toBe(0);
+  });
+
+  it("counts a cached answer as a sighting without refreshing the verdict", async () => {
+    withKeys(CACHED);
+    const calls = stubAll({ stored: row() });
+    await handler(request("quixotic"));
+    await settled();
+    // record_word_hit moves the counters; record_word_sighting would also reset
+    // verdict_at, which would stop the row ever being re-checked.
+    expect(calls.rpc).toEqual(["record_word_hit"]);
+  });
+
+  it("serves a remembered rejection too", async () => {
+    withKeys(CACHED);
+    const calls = stubAll({ stored: row({ outcome: "rejected", reason: "archaic", zipf: null }) });
+    expect(await body(await handler(request("erst")))).toMatchObject({
+      outcome: "rejected",
+      reason: "archaic",
+      zipf: null,
+    });
+    expect(calls.mw).toBe(0);
+  });
+
+  it("answers from cache even with no Merriam-Webster key configured", async () => {
+    withKeys({ SUPABASE_URL: CACHED.SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY: "service-key" });
+    stubAll({ stored: row() });
+    const response = await handler(request("quixotic"));
+    expect(response.status).toBe(200);
+    expect(await body(response)).toMatchObject({ outcome: "playable" });
+  });
+
+  it("goes upstream when nothing is on file", async () => {
+    withKeys(CACHED);
+    const calls = stubAll({ stored: null });
+    const response = await handler(request("cat"));
+    expect(response.headers.get("x-verdict-source")).toBe("live");
+    expect(await body(response)).toMatchObject({ outcome: "playable" });
+    expect(calls.read).toBe(1);
+    expect(calls.mw).toBe(1);
+  });
+
+  it("re-checks a verdict that has gone stale", async () => {
+    withKeys(CACHED);
+    const old = new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString();
+    const calls = stubAll({ stored: row({ verdict_at: old }) });
+    expect(await body(await handler(request("quixotic")))).toMatchObject({ outcome: "playable" });
+    expect(calls.mw).toBe(1);
+  });
+
+  it("re-checks a remembered miss far sooner than a real verdict", async () => {
+    withKeys(CACHED);
+    const twentyDays = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString();
+    // Twenty days is still fresh for a verdict, but not for "MW has no such
+    // word" -- MW may have added it since.
+    const stale = stubAll({ stored: row({ outcome: "unknown", verdict_at: twentyDays }) });
+    await handler(request("skateable"));
+    expect(stale.mw).toBe(1);
+
+    const threeDays = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const fresh = stubAll({ stored: row({ outcome: "unknown", verdict_at: threeDays }) });
+    expect(await body(await handler(request("skateable")))).toMatchObject({ outcome: "unknown" });
+    expect(fresh.mw).toBe(0);
+  });
+
+  it("ignores a suggestion-box row, which carries no verdict", async () => {
+    withKeys(CACHED);
+    const calls = stubAll({ stored: row({ outcome: "suggested", zipf: null, source: null }) });
+    expect(await body(await handler(request("petrichor")))).toMatchObject({ outcome: "playable" });
+    expect(calls.mw).toBe(1);
+  });
+
+  it("falls through when the cache read errors", async () => {
+    withKeys(CACHED);
+    const calls = stubAll({ readFails: true });
+    expect(await body(await handler(request("cat")))).toMatchObject({ outcome: "playable" });
+    expect(calls.mw).toBe(1);
+  });
+
+  it("falls through when the cache read is too slow to wait for", async () => {
+    withKeys(CACHED);
+    const calls = stubAll({ readHangs: true });
+    // The read never answers; the handler's own budget ends the wait and the
+    // upstreams decide, so a wedged database cannot stall a word check.
+    expect(await body(await handler(request("cat")))).toMatchObject({ outcome: "playable" });
+    expect(calls.mw).toBe(1);
+  });
+});
