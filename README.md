@@ -72,6 +72,42 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
     (a transient `.spoiler-blur` class added/removed around the `toBlob`
     call) -- rarity badges are a sibling element and stay legible either way.
 
+## How rarity folds onto a base word
+
+A word's score comes from its measured Zipf frequency, but frequency corpora
+undercount derived forms badly: `asphyxiates` was measured at Zipf 1.09 and
+`asphyxiate` at 1.78, so the plural scored **9.77 / Mythic** while the verb it
+came from scored **8.75 / Extremely Rare**. Adding an `s` should not be a
+discovery, so the engine folds a derived form onto a base word and **caps** its
+score there — a fold can only ever pull a word toward common, never make it
+rarer. `src/game/dictionary.ts`'s `chainedBase` explores every base reachable by
+folding and takes the most common one it finds.
+
+Which folds are safe is a question of whether the spelling is decisive, and the
+answer is not the same for every suffix:
+
+| Family | Folded? | Why |
+| --- | --- | --- |
+| `-s` / `-es` / `-ies` / `-ves` / `-ices` plurals and third-person forms | yes | `inflectionalBaseCandidates` (`src/game/stem.ts`) offers every candidate spelling and the caller keeps the most common one the dictionary attests. A coincidence loses to the real base on frequency: `caves` offers both `cave` (4.20) and `cafe` (4.09), and `cave` wins. |
+| `-ed` / `-ing` tenses | yes | `tenseBaseForm`, same most-common tie-break: `played` → `play`, not the obscure `playe`. |
+| `-ness`, `-ly`, `-ization`, `-ability` | yes | Bound or transparent suffixes with one unambiguous base. |
+| `-er` / `-est` comparatives | **no** | No spelling rule tells a comparative from a word that merely ends that way: it would fold `noter` → `not`, `tempest` → `temp`, `canter` → `cant`. |
+| five-letter `-ing` | **no** | Same problem, sharper: folding these would score `thing` as `the` — a flat 0.00 — and `doing` as `do`. The price is that `iring` and `hoing` keep an unearned Mythic. |
+| `-en` participles, Latin `-a` plurals | **no** | Measured false bases include `marchen` → `march` and `comma` → `common`. |
+
+Everything in the "no" rows is handled a word at a time in
+`src/data/score-overrides.json` instead, which is also where a fold that the
+rules get *wrong* gets stopped (`theses` is the plural of `thesis`, not a form of
+`these`).
+
+Every widening is date-gated, so no past puzzle re-scores: `scoringFor` picks a
+`Scoring` profile from the puzzle date, and the four cutovers to date are
+`2026-08-15`, `2026-08-16`, `2026-08-19` (folds became caps, resolved through the
+whole chain) and `2026-08-21` (number inflections). Two invariants are asserted
+over the entire dictionary in `src/game/inflection-scoring.test.ts`: crossing a
+cutover never *raises* a word's score, and no folded word scores rarer than the
+base it folded onto.
+
 ## Regenerating the word/rarity data
 
 The dictionary, rarity, and rejection guidance data are precomputed offline,
@@ -159,18 +195,28 @@ dated like the overrides below. `scripts/blocklist.txt` remains the tool for
 content that must never enter the dictionary at all.
 
 `src/data/score-overrides.json` is the other **hand-written** data file: reviewed
-demotions for words no corpus attests. Such a word falls to the unattested
-sentinel and scores a perfect 10.0 / Legend, which is right for a genuine find
-(`enshittification`) and wrong for a mechanical derivation of an ordinary word
-(`iratest`, the superlative of a Zipf-2.78 word, which `scoringBaseForm` has no
-`-est` rule for). Each entry pins one word to the base it should score as, and
-carries its own `since` date so a demotion applies from the puzzle it was
-reviewed for onward and no past puzzle re-scores. It is scoring only —
-same-root duplicate detection is untouched. Widening the stemmer instead is
-deliberately avoided: a blanket bare-`s` strip re-scores 10,877 words and
-strips 2,189 of a perfect 10. Entries are added a drop at a time by the
-`audit-unscored-legends` skill (`.claude/skills/`), which is also what keeps
-this file reviewable.
+demotions for words a spelling rule can't cap correctly. Most are words no
+corpus attests — such a word falls to the unattested sentinel and scores a
+perfect 10.0 / Legend, which is right for a genuine find (`enshittification`)
+and wrong for a mechanical derivation of an ordinary word (`iratest`, the
+superlative of a Zipf-2.78 word, which `scoringBaseForm` has no `-est` rule
+for). The rest are measured words whose only reachable base is a coincidence
+(`theses` is the plural of `thesis`, but the rules can only see `these`); an
+override replaces the spelling rules rather than joining them, so it is also
+how a *wrong* fold gets stopped. Each entry pins one word to the base it should
+score as, and carries its own `since` date so a demotion applies from the puzzle
+it was reviewed for onward and no past puzzle re-scores. It is scoring only —
+same-root duplicate detection is untouched. Entries are added a drop at a time
+by the `audit-unscored-legends` skill (`.claude/skills/`), which is also what
+keeps this file reviewable.
+
+An earlier version of this note argued that widening the stemmer was not
+affordable, because a blanket bare-`s` strip re-scores ~10,900 words and strips
+2,189 of a perfect 10. The count was right; the conclusion was wrong. Those
+re-scores were the fix, not the cost: once every fold became a **cap** rather
+than an inheritance (the 2026-08-19 cutover), a wider rule could only ever pull
+a word toward common, never make it rarer. The 2026-08-21 cutover therefore
+widened it — see "How rarity folds onto a base word" below.
 
 `scripts/select-drops.py` evaluates a hand-picked pool of candidate
 2- and 3-letter drops against the generated dictionary and keeps only
