@@ -466,9 +466,21 @@ async function respond(request: Request): Promise<Response> {
  * accumulate somewhere queryable and can be folded into the curated dictionary
  * later -- retiring the live lookup for those words and sparing the quota.
  *
- * Only real verdicts are recorded. An "error" outcome says nothing about the
- * word, and recording it would overwrite a good stored verdict with a lookup
- * that never happened.
+ * Only complete verdicts are recorded, for the same reason `respond` refuses to
+ * cache anything else. An "error" outcome says nothing about the word. Neither
+ * does a verdict reached while a reference was unreachable (`failure` set): the
+ * classification pools both references and rejects only when every ordinary
+ * sense *found* is out of use, so a missing reference is silently read as
+ * agreement. Collegiate alone can call a word archaic that Medical lists as a
+ * current clinical term, and `record_word_sighting` overwrites the verdict
+ * columns -- so persisting that would turn one outage into a stored `rejected`,
+ * which also drops the word out of the `suggested_words` review queue for good.
+ *
+ * The response layer answers anyway, because a player is waiting and a partial
+ * verdict beats a stall; a row has no such deadline, so it waits for a clean
+ * lookup. A `playable` reached the same way is still recorded (`failure` is null
+ * on that path by design): a wrong `playable` only adds a word to a queue a human
+ * reviews, while a wrong `rejected` removes it with nobody looking.
  *
  * The body is read back off a clone of the finished response rather than threaded
  * out of `respond`, which leaves every one of its return paths exactly as it was:
@@ -482,7 +494,7 @@ async function recordSighting(response: Response, context?: EdgeContext): Promis
   } catch {
     return;
   }
-  if (!body.word || body.outcome === "error") return;
+  if (!body.word || body.outcome === "error" || body.failure) return;
   await record(
     "rpc/record_word_sighting",
     {

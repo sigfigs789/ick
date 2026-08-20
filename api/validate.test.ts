@@ -495,6 +495,39 @@ describe("api/validate sighting recording", () => {
     });
   });
 
+  it("never records a verdict reached while a reference was unreachable", async () => {
+    // Collegiate alone calls "erst" archaic, but the medical reference -- which
+    // might have listed it as a current clinical term -- never answered. The
+    // classification only rejects when every ordinary sense *found* is out of
+    // use, so the missing reference was silently read as agreement. `respond`
+    // says as much and refuses to cache the answer; the row must be skipped for
+    // the same reason, or one outage overwrites a stored `playable` and takes
+    // the word out of the suggested_words queue permanently.
+    withKeys({ ...SUPABASE, MW_MEDICAL_KEY: "m" });
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      const href = String(url);
+      if (href.includes("datamuse")) return new Response("[]", { status: 200 });
+      if (href.includes("/rest/v1/rpc/")) return new Response("", { status: 204 });
+      if (href.includes("/medical/")) {
+        return new Response("You have exceeded your daily request limit.", { status: 403 });
+      }
+      return new Response(JSON.stringify([ERST]), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await handler(request("erst"));
+    // The player is still answered, and still told the lookup was incomplete.
+    expect(await body(response)).toMatchObject({
+      outcome: "rejected",
+      reason: "archaic",
+      failure: { reason: "quota-exceeded", status: 403 },
+    });
+    expect(response.headers.get("cache-control")).toBe("no-store");
+
+    await settled();
+    expect(sighting(fetchMock)).toBeNull();
+  });
+
   it("records that MW has no such word", async () => {
     withKeys(SUPABASE);
     const fetchMock = stubFetch({ mw: ["spelling-suggestion"] });
