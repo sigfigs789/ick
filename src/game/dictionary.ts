@@ -306,7 +306,7 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
     if (zipf >= 4.9) return "Very Common";
     if (zipf >= 3.9) return "Common";
     if (zipf >= 3.05) return "Uncommon";
-    if (zipf >= 1.95) return "Rare";
+    if (zipf >= 2.0) return "Rare";
     if (zipf >= 1.5) return "Extremely Rare";
     return "Epic";
   }

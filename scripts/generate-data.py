@@ -64,7 +64,7 @@ RARITY_BANDS = [
     (4.9, "Very Common"),
     (3.9, "Common"),
     (3.05, "Uncommon"),
-    (1.95, "Rare"),
+    (2.0, "Rare"),
     (1.5, "Extremely Rare"),
     (1.0, "Epic"),
 ]

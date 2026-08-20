@@ -90,7 +90,7 @@ describe("rank ladder across the latest system", () => {
     [4.5, "Common"],
     [3.5, "Uncommon"],
     [2.5, "Rare"],
-    [1.7, "Extremely Rare"],
+    [1.8, "Extremely Rare"],
     [1.4, "Epic"],
   ];
 
@@ -131,8 +131,8 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     [3.89, "Uncommon"],
     [3.05, "Uncommon"],
     [3.04, "Rare"],
-    [1.95, "Rare"],
-    [1.94, "Extremely Rare"],
+    [2.0, "Rare"],
+    [1.99, "Extremely Rare"],
     [1.5, "Extremely Rare"],
     [1.49, "Epic"],
   ];
