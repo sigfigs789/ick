@@ -1,4 +1,4 @@
-import { formatRarityScore } from "../game/dictionary";
+import { formatRarityScore, usesRetunedTiers } from "../game/dictionary";
 import type { Rarity } from "../game/types";
 
 // Short text tags reinforce the color so rarity is never color-only
@@ -12,6 +12,7 @@ const RARITY_META: Record<Rarity, { tag: string; className: string }> = {
   Uncommon: { tag: "UNCOMMON", className: "rarity--uncommon" },
   Rare: { tag: "RARE", className: "rarity--rare" },
   "Extremely Rare": { tag: "EXTREMELY RARE", className: "rarity--extremely-rare" },
+  Epic: { tag: "EPIC", className: "rarity--epic" },
   Mythic: { tag: "MYTHIC", className: "rarity--mythic" },
   Legend: { tag: "LEGEND", className: "rarity--legend" },
 };
@@ -26,8 +27,12 @@ interface Props {
 
 export function RarityBadge({ rarity, zipf, date }: Props) {
   const meta = RARITY_META[rarity];
+  // Legend wore orange before the tiers were retuned, so an archived puzzle
+  // keeps that badge rather than the black one Legend has now.
+  const className =
+    rarity === "Legend" && !usesRetunedTiers(date) ? "rarity--legend-legacy" : meta.className;
   return (
-    <span className={`rarity-badge ${meta.className}`}>
+    <span className={`rarity-badge ${className}`}>
       <span className="rarity-badge__dot" aria-hidden="true" />
       {meta.tag}
       {zipf !== undefined && (

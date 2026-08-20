@@ -302,17 +302,18 @@ def _scoring_base(word: str, index: dict[str, int]) -> str | None:
 
 
 def measured_rarity(zipf: float) -> str:
-    if zipf >= 6.4:
-        return "Quotidian"
-    if zipf >= 5.2:
+    """Mirrors measuredRarity() in src/game/dictionary.ts (narrow bands)."""
+    if zipf >= 4.9:
         return "Very Common"
-    if zipf >= 4.2:
+    if zipf >= 3.9:
         return "Common"
-    if zipf >= 3.3:
+    if zipf >= 3.05:
         return "Uncommon"
-    if zipf >= 2.5:
+    if zipf >= 1.95:
         return "Rare"
-    return "Extremely Rare"
+    if zipf >= 1.5:
+        return "Extremely Rare"
+    return "Epic"
 
 
 def current_score(zipf: float, max_zipf: float) -> float:

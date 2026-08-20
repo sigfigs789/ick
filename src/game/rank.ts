@@ -10,11 +10,17 @@ export function isWinningRarity(rarity: Rarity): boolean {
   return (
     rarity === "Rare" ||
     rarity === "Extremely Rare" ||
+    rarity === "Epic" ||
     rarity === "Mythic" ||
     rarity === "Legend"
   );
 }
 
 export function isEliteRarity(rarity: Rarity): boolean {
-  return rarity === "Extremely Rare" || rarity === "Mythic" || rarity === "Legend";
+  return (
+    rarity === "Extremely Rare" ||
+    rarity === "Epic" ||
+    rarity === "Mythic" ||
+    rarity === "Legend"
+  );
 }

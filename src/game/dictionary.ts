@@ -22,17 +22,21 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *   - 2026-08-15 only: the frequency waterfall + two-band scale, measured words
  *     filling 0..9.5 and the deep tail 9.5..10 (anchored at the data's live
  *     minimum), with the deep tail labeled Mythic. No Legend tier.
- *   - on/after 2026-08-16 (the latest system): the two-band scale widened so
+ *   - 2026-08-16 onward: the two-band scale widened so
  *     measured words fill 0..9.9 and the deep tail 9.9..10, with every word
  *     at/below Zipf 0 clamped to a flat 10. The top of the scale is split by
  *     score into two ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also
  *     where the bound-suffix base-form adjustment turns on.
+ *   - on/after 2026-08-21 (the latest system): the same scores, with the
+ *     measured Zipf bands retuned -- Epic added between Extremely Rare and
+ *     Mythic, Quotidian folded into Very Common (see measuredRarity).
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
 const NEW_SCORING_START = "2026-08-15";
 const WIDE_BAND_START = "2026-08-16";
 const CHAINED_BASE_START = "2026-08-19";
+const NARROW_BANDS_START = "2026-08-21";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -62,10 +66,10 @@ function roundToTenths(n: number): number {
  * The score-based top ranks, each keyed off the value the player actually sees:
  * Legend at 9.9+ (Mythic and Legend show two decimals, so it keys off the
  * two-decimal score, 9.895 -> 9.90 -> Legend) and Mythic wherever the score
- * *displays* as 9.5 or higher. Extremely Rare and below show one decimal, so the
+ * *displays* as 9.5 or higher. Epic and below show one decimal, so the
  * Mythic cutoff keys off the one-decimal value: anything that rounds to 9.5
  * (raw >= 9.45) is Mythic. Anything lower returns undefined, so the caller falls
- * back to the measured Zipf-band label (Extremely Rare and below).
+ * back to the measured Zipf-band label (Epic and below).
  */
 export function topRankForScore(score: number): Extract<Rarity, "Legend" | "Mythic"> | undefined {
   if (roundToCents(score) >= LEGEND_MIN_SCORE) return "Legend";
@@ -197,7 +201,11 @@ function twoBandScoring(
   tailFloor: number,
   boundBaseForms: boolean,
   legend: boolean,
-  chainedBaseForms = false
+  chainedBaseForms = false,
+  // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
+  // only; no score moves. Off for earlier systems so archived puzzles keep the
+  // labels they were played with (see NARROW_BANDS_START).
+  narrowBands = false
 ): Scoring {
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
@@ -217,10 +225,10 @@ function twoBandScoring(
     rarity: legend
       ? // Latest system: rank the top by the shown two-decimal score against the
         // fixed Legend/Mythic cutoffs; below 9.5 keeps its measured Zipf label.
-        (zipf) => topRankForScore(score(zipf)) ?? measuredRarity(zipf)
+        (zipf) => topRankForScore(score(zipf)) ?? measuredRarity(zipf, narrowBands)
       : // 2026-08-15 system: the deep-tail library (Zipf < 1) is a single Mythic
         // top rank, with no Legend above it.
-        (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf)),
+        (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf, narrowBands)),
     format: legend
       ? // Mythic and Legend (score >= 9.5) show two decimals; below shows one,
         // rounded with the same upward nudge so a raw 9.45 reads "9.5" -- the
@@ -239,9 +247,12 @@ const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false);
 // The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
 // fixed 0, Legend + Mythic ranks, bound-suffix folding on, single-hop bases.
 const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true);
-// The latest system (from CHAINED_BASE_START): the same bands and ranks, with
-// base forms resolved through their own bases.
+// The 2026-08-19 system: the same bands and ranks, with base forms resolved
+// through their own bases.
 const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
+// The latest system (from NARROW_BANDS_START): identical scoring, with the
+// retuned measured Zipf bands (see measuredRarity).
+const NARROW_BAND_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true, true);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -262,15 +273,44 @@ const LEGACY_SCORING: Scoring = {
     // Missing corpus data is not evidence that a word is genuinely Mythic.
     if (zipf === LEGACY_UNKNOWN_ZIPF) return "Extremely Rare";
     if (LEGACY_SCORING.score(zipf) >= 9.5) return "Mythic";
-    return measuredRarity(zipf);
+    return measuredRarity(zipf, false);
   },
   format: (score) => score.toFixed(1),
   boundBaseForms: false,
   chainedBaseForms: false,
 };
 
-// The Zipf-band labels for the measured range are identical across systems.
-function measuredRarity(zipf: number): Rarity {
+/**
+ * The Zipf-band labels for the measured range. Two sets, because the original
+ * cutoffs left Extremely Rare covering everything from Zipf 2.5 down to the
+ * Mythic line -- 1.75 score points wide against Mythic's 0.39, and better than a
+ * third of the words any drop can reach, which made purple the default outcome
+ * for anything that was not an everyday word rather than a find worth having.
+ *
+ * The retuned bands (NARROW_BANDS_START on) fix that by splitting the crowded
+ * top of the measured range three ways instead of two. Scores 6.9..9.4 hold
+ * roughly 45% of everything a drop can reach, and Rare/Extremely Rare/Epic now
+ * split it so no single band bulges and Rare stops reaching into the high 8s.
+ * Epic takes the smallest slice deliberately: at ~9% it is the scarcest band in
+ * the measured range, so hitting it reads as closing in on Mythic rather than
+ * as one more step up the ladder. Below them Uncommon and Common are
+ * unchanged in spirit, and Very Common absorbs what used to be a separate
+ * Quotidian tier at the very bottom. Scores are untouched throughout -- this
+ * only changes which label a score wears.
+ *
+ * Both sets stay live: a puzzle played before the cutover keeps the tiers it
+ * was played with, Quotidian included.
+ */
+function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
+  if (narrowBands) {
+    if (zipf >= 4.9) return "Very Common";
+    if (zipf >= 3.9) return "Common";
+    if (zipf >= 3.05) return "Uncommon";
+    if (zipf >= 1.95) return "Rare";
+    if (zipf >= 1.5) return "Extremely Rare";
+    return "Epic";
+  }
+  // The original bands, frozen for archived puzzles -- Quotidian and all.
   if (zipf >= 6.4) return "Quotidian";
   if (zipf >= 5.2) return "Very Common";
   if (zipf >= 4.2) return "Common";
@@ -280,11 +320,12 @@ function measuredRarity(zipf: number): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return CHAINED_SCORING; // newest system
+  if (date === undefined) return NARROW_BAND_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
   if (date < CHAINED_BASE_START) return WIDE_SCORING;
-  return CHAINED_SCORING;
+  if (date < NARROW_BANDS_START) return CHAINED_SCORING;
+  return NARROW_BAND_SCORING;
 }
 
 // -- Curated rejections (src/data/word-rejections.json) ----------------------
@@ -704,6 +745,7 @@ function stripDoubledConsonant(stem: string): string {
 export const RARITY_ORDER: Rarity[] = [
   "Legend",
   "Mythic",
+  "Epic",
   "Extremely Rare",
   "Rare",
   "Uncommon",
@@ -733,6 +775,16 @@ export function rarityScore(zipf: number, date?: string): number {
  * mapping `rarityFor` applies internally, exposed for sweeping the scale by Zipf
  * (e.g. checking that a mid-band Zipf lands in the expected rank).
  */
+/**
+ * Whether `date`'s puzzle uses the retuned tiers -- the Epic rank, the retired
+ * Quotidian, and the black-topped palette that came with them. Archived puzzles
+ * keep the tiers and colors they were played with, so anything that renders a
+ * rank has to ask. An omitted date means the newest system.
+ */
+export function usesRetunedTiers(date?: string): boolean {
+  return date === undefined || date >= NARROW_BANDS_START;
+}
+
 export function rarityForZipf(zipf: number, date?: string): Rarity {
   return scoringFor(date).rarity(zipf);
 }
