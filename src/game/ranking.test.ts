@@ -275,8 +275,15 @@ describe("ranking colors", () => {
     }
   });
 
-  it("uses World of Warcraft's legendary orange (#ff8000) for Arcane", () => {
-    expect(css).toContain("--rarity-arcane-dot: #ff8000;");
+  it("gives Arcane a burnt amber, distinct from Mythic's red", () => {
+    expect(css).toContain("--rarity-arcane-dot: #c2410c;");
+  });
+
+  it("keeps the pre-retune Legend orange on its own frozen tokens", () => {
+    // Archived puzzles render Legend from these, so retinting Arcane must not be
+    // able to reach back and restyle a drop that was played before the cutover.
+    expect(css).toContain("--rarity-legend-legacy-dot: #ff8000;");
+    expect(css).not.toContain("--rarity-legend-legacy-dot: var(");
   });
 
   it("gives Legend the black badge at the top of the ladder", () => {
