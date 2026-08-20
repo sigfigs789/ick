@@ -27,7 +27,7 @@ const RANKINGS: ReadonlyArray<[word: string, rarity: Rarity, decimals: number]> 
   ["chateau", "Uncommon", 1],
   ["awol", "Rare", 1],
   ["okapi", "Extremely Rare", 1],
-  ["borborygmus", "Epic", 1],
+  ["borborygmus", "Arcane", 1],
   ["aardwolf", "Mythic", 2],
   ["autecism", "Legend", 2],
 ];
@@ -91,7 +91,7 @@ describe("rank ladder across the latest system", () => {
     [3.5, "Uncommon"],
     [2.5, "Rare"],
     [1.8, "Extremely Rare"],
-    [1.45, "Epic"],
+    [1.45, "Arcane"],
   ];
 
   it.each(MEASURED_LADDER)("Zipf %s ranks as %s, below the top tiers", (zipf, rarity) => {
@@ -134,7 +134,7 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     [2.13, "Rare"],
     [2.12, "Extremely Rare"],
     [1.59, "Extremely Rare"],
-    [1.58, "Epic"],
+    [1.58, "Arcane"],
   ];
 
   it.each(EDGES)("Zipf %s sits in %s", (zipf, rarity) => {
@@ -147,9 +147,9 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     // is Rare under the retuned ones -- the clearest single word for the shift.
     expect(rarityForZipf(2.22, BEFORE)).toBe("Extremely Rare");
     expect(rarityForZipf(2.22, ON)).toBe("Rare");
-    // Epic exists only under the retuned bands.
+    // Arcane exists only under the retuned bands.
     expect(rarityForZipf(1.4, BEFORE)).toBe("Extremely Rare");
-    expect(rarityForZipf(1.4, ON)).toBe("Epic");
+    expect(rarityForZipf(1.4, ON)).toBe("Arcane");
   });
 
   it("retires Quotidian without disturbing the puzzles that had it", () => {
@@ -179,10 +179,10 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     expect(usesRetunedTiers()).toBe(true);
   });
 
-  it("splits Epic from Extremely Rare on the shown score, not between it", () => {
-    // Epic is 9.1+ and purple tops out at 9.0, so no score can display on the
+  it("splits Arcane from Extremely Rare on the shown score, not between it", () => {
+    // Arcane is 9.1+ and purple tops out at 9.0, so no score can display on the
     // wrong side of the boundary.
-    expect(rarityForZipf(1.58, ON)).toBe("Epic");
+    expect(rarityForZipf(1.58, ON)).toBe("Arcane");
     expect(formatRarityScore(1.58, ON)).toBe("9.1");
     expect(rarityForZipf(1.59, ON)).toBe("Extremely Rare");
     expect(formatRarityScore(1.59, ON)).toBe("9.0");
@@ -242,7 +242,7 @@ describe("display precision by score", () => {
 
 describe("ranking colors", () => {
   // Share squares double as the per-ranking color key, so lock each one -- most
-  // notably Epic's orange square, matching World of Warcraft's legendary hue,
+  // notably Arcane's orange square, matching World of Warcraft's legendary hue,
   // and Legend's black one above it.
   it("maps every ranking to its color square", () => {
     expect(RARITY_SYMBOL).toEqual({
@@ -252,7 +252,7 @@ describe("ranking colors", () => {
       Uncommon: "🟩",
       Rare: "🟦",
       "Extremely Rare": "🟪",
-      Epic: "🟧",
+      Arcane: "🟧",
       Mythic: "🟥",
       Legend: "⬛",
     });
@@ -275,8 +275,8 @@ describe("ranking colors", () => {
     }
   });
 
-  it("uses World of Warcraft's legendary orange (#ff8000) for Epic", () => {
-    expect(css).toContain("--rarity-epic-dot: #ff8000;");
+  it("uses World of Warcraft's legendary orange (#ff8000) for Arcane", () => {
+    expect(css).toContain("--rarity-arcane-dot: #ff8000;");
   });
 
   it("gives Legend the black badge at the top of the ladder", () => {

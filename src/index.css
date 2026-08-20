@@ -55,12 +55,12 @@
   --rarity-extremely-rare-fg: #7222c2;
   --rarity-extremely-rare-dot: #9b4fe0;
 
-  /* Epic sits between Extremely Rare and Mythic, using World of Warcraft's
-     legendary quality color (#ff8000) -- a warm orange that escalates past
+  /* Arcane sits between Extremely Rare and Mythic. The orange (#ff8000) is
+     World of Warcraft's legendary quality color, a warm hue that escalates past
      purple and is backed by the orange square in shared results. */
-  --rarity-epic-bg: #fde6d0;
-  --rarity-epic-fg: #9a4300;
-  --rarity-epic-dot: #ff8000;
+  --rarity-arcane-bg: #fde6d0;
+  --rarity-arcane-fg: #9a4300;
+  --rarity-arcane-dot: #ff8000;
 
   --rarity-mythic-bg: #fdeae8;
   --rarity-mythic-fg: #b42318;
@@ -129,9 +129,9 @@
     --rarity-extremely-rare-fg: #cd9bf7;
     --rarity-extremely-rare-dot: #ab5ff0;
 
-    --rarity-epic-bg: #2e1a08;
-    --rarity-epic-fg: #fdba74;
-    --rarity-epic-dot: #ff8000;
+    --rarity-arcane-bg: #2e1a08;
+    --rarity-arcane-fg: #fdba74;
+    --rarity-arcane-dot: #ff8000;
 
     --rarity-mythic-bg: #3a1414;
     --rarity-mythic-fg: #f7a19a;
@@ -652,13 +652,13 @@ h2 {
   box-shadow: 0 0 0 3px
     color-mix(in srgb, var(--rarity-extremely-rare-dot) 25%, transparent);
 }
-.rarity--epic {
-  background: var(--rarity-epic-bg);
-  color: var(--rarity-epic-fg);
+.rarity--arcane {
+  background: var(--rarity-arcane-bg);
+  color: var(--rarity-arcane-fg);
 }
-.rarity--epic .rarity-badge__dot {
-  background: var(--rarity-epic-dot);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-epic-dot) 28%, transparent);
+.rarity--arcane .rarity-badge__dot {
+  background: var(--rarity-arcane-dot);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-arcane-dot) 28%, transparent);
 }
 .rarity--mythic {
   background: var(--rarity-mythic-bg);
@@ -669,15 +669,15 @@ h2 {
   box-shadow: 0 0 0 3px
     color-mix(in srgb, var(--rarity-mythic-dot) 28%, transparent);
 }
-/* Legend as it looked before the tiers were retuned: the orange Epic wears now.
-   Archived puzzles keep it, so a replayed drop looks like it did that day. */
+/* Legend as it looked before the tiers were retuned: the orange Arcane wears
+   now. Archived puzzles keep it, so a replayed drop looks like it did that day. */
 .rarity--legend-legacy {
-  background: var(--rarity-epic-bg);
-  color: var(--rarity-epic-fg);
+  background: var(--rarity-arcane-bg);
+  color: var(--rarity-arcane-fg);
 }
 .rarity--legend-legacy .rarity-badge__dot {
-  background: var(--rarity-epic-dot);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-epic-dot) 32%, transparent);
+  background: var(--rarity-arcane-dot);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-arcane-dot) 32%, transparent);
 }
 .rarity--legend {
   background: var(--rarity-legend-bg);
