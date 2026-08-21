@@ -41,6 +41,7 @@ DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 LEGACY_RARITY_PATH = ROOT / "src" / "data" / "rarity-legacy.json"
 SCORE_OVERRIDES_PATH = ROOT / "src" / "data" / "score-overrides.json"
+FOLD_EXEMPTIONS_PATH = ROOT / "src" / "data" / "fold-exemptions.json"
 DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
 
 # Legacy (pre-rescale) rarity placeholders for a freshly added word. The legacy
@@ -499,6 +500,20 @@ def load_score_overrides() -> dict[str, dict]:
     return json.loads(SCORE_OVERRIDES_PATH.read_text())
 
 
+@functools.cache
+def load_fold_exemptions() -> frozenset[str]:
+    """The curated fold exemptions in src/data/fold-exemptions.json.
+
+    Mirror of FOLD_EXEMPTIONS in src/game/dictionary.ts: an exempt word
+    contributes no fold candidates at all, so it scores on its own data and no
+    chain passes through it. Every entry is active here because this module only
+    scores under the newest (undated) system.
+    """
+    if not FOLD_EXEMPTIONS_PATH.exists():
+        return frozenset()
+    return frozenset(json.loads(FOLD_EXEMPTIONS_PATH.read_text()))
+
+
 def _override_base(word: str, index: dict[str, int]) -> str | None:
     """Mirror of overrideBase() for the newest system (no date gating)."""
     override = load_score_overrides().get(word)
@@ -515,11 +530,15 @@ MAX_FOLD_DEPTH = 8
 def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
     """Mirror of nextBaseForms(): every base `word` could fold onto in one hop.
 
-    A reviewed override replaces the spelling guesses rather than joining them.
-    Otherwise the whole candidate set is returned and chained_base() explores it,
-    because "which base is most common" and "which base leads to the most common
-    word" are different questions.
+    A reviewed exemption silences every rule, the override included; a reviewed
+    override replaces the spelling guesses rather than joining them. Otherwise
+    the whole candidate set is returned and chained_base() explores it, because
+    "which base is most common" and "which base leads to the most common word"
+    are different questions.
     """
+    if word in load_fold_exemptions():
+        return []
+
     override = _override_base(word, index)
     if override:
         return [override]

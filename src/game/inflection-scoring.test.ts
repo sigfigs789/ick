@@ -4,6 +4,8 @@ import { baseForm, inflectionalBaseCandidates } from "./stem";
 import { evaluateSubmission } from "./submit";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
+import scoreOverrideData from "../data/score-overrides.json";
+import foldExemptionData from "../data/fold-exemptions.json";
 import type { AcceptedWord } from "./types";
 
 // The 2026-08-21 cutover: a plural or third-person form no longer out-scores the
@@ -259,6 +261,60 @@ describe("what the cutover deliberately leaves alone", () => {
     expect(baseFormSubstitution("theses", ON)?.base).toBe("thesis");
     expect(score("theses", ON)).toBe(score("thesis", ON));
     expect(score("theses", ON)).not.toBe(score("these", ON));
+    // Same shape, three more entries: a plural whose true singular the rules
+    // cannot see folds to it by review instead.
+    expect(baseFormSubstitution("whatsises", ON)?.base).toBe("whatsis");
+    expect(baseFormSubstitution("abatises", ON)?.base).toBe("abatis");
+    // "complices" is pinned to "complice", which is *rarer* -- the cap keeps
+    // the word's own measurement rather than promoting it.
+    expect(score("complices", ON)).toBe(score("complices", BEFORE));
+  });
+});
+
+// src/data/fold-exemptions.json says the one thing an override cannot: score
+// this word on its own data. An exempt word contributes no fold candidates, so
+// it neither folds nor lets a chain pass through it.
+describe("reviewed fold exemptions", () => {
+  it("keeps a loanword the spelling rules misread on its own score", () => {
+    // "momser" is Yiddish (from mamzer), not "more mom"; "limen" is the
+    // psychophysics threshold, not the plural of "liman"; "germen" is the
+    // botanical rudiment, not the plural of "german".
+    for (const word of ["momser", "limen", "germen"]) {
+      expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
+      expect(score(word, ON)).toBe(score(word, BEFORE));
+    }
+  });
+
+  it("blocks the chain from passing through an exempt word", () => {
+    // "momsers" can only reach "mom" through "momser"; with the exemption in
+    // the way it caps at "momser" itself and stays where the loanword stays.
+    expect(baseFormSubstitution("momsers", ON)?.base).toBe("momser");
+    expect(score("momsers", ON)).toBe(score("momser", ON));
+  });
+
+  it("carries a verb's whole paradigm with one entry", () => {
+    // The tenses of "rightsize" fold through their verb (see izeVerbSpellings),
+    // so exempting the verb keeps every form on the paradigm's own data.
+    expect(score("rightsize", ON)).toBe(score("rightsize", BEFORE));
+    expect(baseFormSubstitution("rightsizes", ON)?.base).toBe("rightsize");
+    expect(baseFormSubstitution("laterized", ON)?.base).toBeUndefined();
+  });
+
+  it("shares no word with the override file", () => {
+    // An exemption silences every rule including the override, so a word in
+    // both files would have a dead override -- a review error, not a tie.
+    const overrides = new Set(Object.keys(scoreOverrideData));
+    for (const word of Object.keys(foldExemptionData)) {
+      expect(overrides.has(word), `${word} is in both curated files`).toBe(false);
+    }
+  });
+
+  it("names only dictionary words, and dates every entry", () => {
+    const words = new Set(dictionaryWords as string[]);
+    for (const [word, entry] of Object.entries(foldExemptionData)) {
+      expect(words.has(word), `${word} is not a dictionary word`).toBe(true);
+      expect((entry as { since: string }).since >= "2026-08-21").toBe(true);
+    }
   });
 });
 

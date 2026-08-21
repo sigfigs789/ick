@@ -368,5 +368,20 @@
     "base": "woodlore",
     "reason": "Plural / third-person form of `woodlore`; a suffix is not a discovery.",
     "since": "2026-08-21"
+  },
+  "whatsises": {
+    "base": "whatsis",
+    "reason": "Plural of `whatsis`. The gated -ise strip read the ending as a verb tense and chained through `whats` to `what`, an eight-point over-demotion.",
+    "since": "2026-08-21"
+  },
+  "abatises": {
+    "base": "abatis",
+    "reason": "Plural of `abatis` (the obstacle of felled trees), where -ises is really -is + -es. The spelling rules can only see the verb reading and land on `abate`.",
+    "since": "2026-08-21"
+  },
+  "complices": {
+    "base": "complice",
+    "reason": "Plural of the archaic `complice` (an accomplice). The -ices rule reads it as a stem-change plural and lands on `complex`, 2.8 Zipf clear of the truth.",
+    "since": "2026-08-21"
   }
 }

@@ -1,0 +1,22 @@
+{
+  "momser": {
+    "since": "2026-08-21",
+    "reason": "Yiddish loanword (from mamzer), nothing to do with `mom`. Below the floor, the bare -er strip read it as \"more mom\" and demoted it six points. Exempting it also covers `momsers`, which can only fold through it."
+  },
+  "limen": {
+    "since": "2026-08-21",
+    "reason": "The psychophysics term for a sensory threshold, not the plural of `liman` (a lagoon). The -men rule is right for 300-odd words and wrong here; a measured word deserves its own number."
+  },
+  "germen": {
+    "since": "2026-08-21",
+    "reason": "The botanical rudiment (Latin, sprout), not the plural of `german`. Same -men misreading as `limen`, with a 3.7-Zipf coincidence waiting under it."
+  },
+  "rightsize": {
+    "since": "2026-08-21",
+    "reason": "A verb built on the compound right-size, not \"more right\". The gated -ize strip landed it on `right` at 2.60; its tenses fold through it, so exempting the verb keeps the whole paradigm on its own data."
+  },
+  "laterize": {
+    "since": "2026-08-21",
+    "reason": "To form laterite (the soil), not a degree of `later`. Same shape as `rightsize`: exempting the verb carries its tenses with it."
+  }
+}

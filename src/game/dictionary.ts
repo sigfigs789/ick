@@ -2,6 +2,7 @@ import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
+import foldExemptionData from "../data/fold-exemptions.json";
 import wordRejectionData from "../data/word-rejections.json";
 import {
   baseForm,
@@ -214,6 +215,42 @@ function overrideBase(word: string, date?: string): string | undefined {
   if (!override) return undefined;
   if (date !== undefined && date < override.since) return undefined;
   return WORD_INDEX.has(override.base) ? override.base : undefined;
+}
+
+// -- Curated fold exemptions (src/data/fold-exemptions.json) -----------------
+/** A hand-reviewed exemption: `word` does not fold at all from `since` on. */
+interface FoldExemption {
+  since: string;
+  /** Review notes only -- nothing here reads it. */
+  reason?: string;
+}
+
+/**
+ * The one thing an override cannot say. `score-overrides.json` replaces the
+ * spelling guesses with a reviewed base, so it can redirect a fold -- but every
+ * entry still pins the word to *some* base, and a few words have none: `momser`
+ * is a Yiddish loanword the bare -er strip reads as "more mom", and no entry in
+ * the override file can mean "score this word on its own data". A word listed
+ * here contributes no fold candidates, which both stops it folding and stops a
+ * chain passing *through* it -- the second half matters, because a bad fold
+ * usually reaches a plausible word via a junk intermediate, and because it lets
+ * one entry cover a paradigm (`rightsize` carries `rightsized`, `rightsizes`
+ * and `rightsizing`, which can only reach the gated strips through their verb).
+ *
+ * Dated like the overrides, so an exemption applies from the puzzle it was
+ * reviewed for onward. Deliberately short: a rule that needs many entries here
+ * needs a tighter guard instead. A word must not appear in both files -- the
+ * exemption would win, silently -- and a test pins that.
+ */
+const FOLD_EXEMPTIONS: ReadonlyMap<string, FoldExemption> = new Map(
+  Object.entries(foldExemptionData as Record<string, FoldExemption>)
+);
+
+/** Whether `word`'s score is exempt from folding under `date`'s puzzle. */
+function foldExempt(word: string, date?: string): boolean {
+  const exemption = FOLD_EXEMPTIONS.get(word);
+  if (!exemption) return false;
+  return date === undefined || date >= exemption.since;
 }
 
 /** A dated scoring system: how to read a word's Zipf, score it, and label it. */
@@ -767,6 +804,10 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
  * over it, so widening it can never make a word score rarer than it used to.
  */
 function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] {
+  // A reviewed exemption silences every rule below, the override included --
+  // the two files must never share a word (pinned by a test).
+  if (scoring.inflectionBases && foldExempt(word, date)) return [];
+
   const override = overrideBase(word, date);
   if (override) return [override];
 
