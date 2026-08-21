@@ -1,7 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDailyPuzzle } from "./useDailyPuzzle";
-import { todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import {
   isUnattestedZipf,
@@ -17,7 +16,12 @@ import rarityData from "../data/rarity.json";
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
 
-const DROP = dropForDate(todayDateString()).toLowerCase();
+// This suite needs a curated word whose stored score is the unattested
+// stand-in. The latest inflection fold can legitimately rescue every such word
+// in a particular day's drop, so use a pre-fold puzzle date rather than making
+// the analytics assertions depend on today's rotation.
+const PUZZLE_DATE = "2026-08-20";
+const DROP = dropForDate(PUZZLE_DATE).toLowerCase();
 const OFF_LIST_WORD = `${DROP}qxz`;
 
 /** Every `unattested_score_used` payload fired so far. */
@@ -34,7 +38,7 @@ function curatedWord(wantStandIn: boolean): string {
   for (let i = 0; i < hundredths.length; i++) {
     const word = words[i];
     if (!word.includes(DROP) || word === DROP) continue;
-    const info = rarityFor(word);
+    const info = rarityFor(word, PUZZLE_DATE);
     if (info && isUnattestedZipf(info.zipf) === wantStandIn) return word;
   }
   throw new Error(`no curated ${wantStandIn ? "stand-in" : "measured"} word for "${DROP}"`);
@@ -61,10 +65,16 @@ function stubValidate(zipf: number | null) {
 }
 
 beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(`${PUZZLE_DATE}T12:00:00`));
   localStorage.clear();
   sessionStorage.clear();
   resetLiveCheckSession();
   track.mockClear();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("unattested-score tracking", () => {
@@ -79,7 +89,7 @@ describe("unattested-score tracking", () => {
     expect(result.current.progress.acceptedWords).toHaveLength(1);
     // Whatever stand-in today's system substitutes for an unmeasured word -- a
     // perfect 10 under the current system. A guess, and it belongs in the count.
-    const standIn = rarityScore(unattestedZipf(), todayDateString());
+    const standIn = rarityScore(unattestedZipf(), PUZZLE_DATE);
     expect(unattestedEvents()).toEqual([
       expect.objectContaining({ word, source: "curated", score: standIn }),
     ]);
