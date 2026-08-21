@@ -41,6 +41,7 @@ DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 LEGACY_RARITY_PATH = ROOT / "src" / "data" / "rarity-legacy.json"
 SCORE_OVERRIDES_PATH = ROOT / "src" / "data" / "score-overrides.json"
+FOLD_EXEMPTIONS_PATH = ROOT / "src" / "data" / "fold-exemptions.json"
 DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
 
 # Legacy (pre-rescale) rarity placeholders for a freshly added word. The legacy
@@ -258,7 +259,7 @@ def _inflectional_stem(word: str) -> str:
     return w
 
 
-def _inflectional_candidates(word: str) -> list[str]:
+def _inflectional_candidates(word: str, latin_plurals: bool) -> list[str]:
     """Mirror of inflectionalBaseCandidates() in src/game/stem.ts.
 
     Every base spelling a plural or third-person form could have. Unlike
@@ -284,14 +285,37 @@ def _inflectional_candidates(word: str) -> list[str]:
     if len(w) > 4 and w.endswith("men"):
         add(w[:-3] + "man")
     if len(w) > 4 and w.endswith("es"):
-        add(w[:-1], w[:-2])
-    if len(w) > 3 and w.endswith("ae"):
-        add(w[:-1])
+        add(w[:-1], w[:-2], w[:-2] + "is")
     if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
         add(w[:-1])
-    if len(w) > 3 and w.endswith("i"):
-        add(w[:-1] + "us")
+    # Latin plurals, only where the caller's guard says the spelling can be
+    # read that way (see latinPluralsAllowed in dictionary.ts).
+    if latin_plurals:
+        if len(w) > 3 and w.endswith("ae"):
+            add(w[:-1])
+        if len(w) > 3 and w.endswith("i"):
+            add(w[:-1] + "us")
+        if len(w) > 4 and w.endswith("a"):
+            add(w[:-1] + "um")
     return out
+
+
+def _degree_candidates(word: str) -> list[tuple[str, str]]:
+    """Mirror of degreeBaseCandidates() in src/game/stem.ts.
+
+    The "-y" adjective an "-ier"/"-iest" word would be a degree of, paired with
+    the other degree of the same base. The caller requires both to be dictionary
+    words: "happy" has "happiest" so "happier" folds, while "copy" has no
+    "copiest" so the agent noun "copier" keeps its own measured score.
+    """
+    w = word.lower()
+    if len(w) > 5 and w.endswith("iest"):
+        stem = w[:-4]
+        return [(stem + "y", stem + "ier")]
+    if len(w) > 4 and w.endswith("ier"):
+        stem = w[:-3]
+        return [(stem + "y", stem + "iest")]
+    return []
 
 
 def _unmeasured_candidates(word: str) -> list[str]:
@@ -314,15 +338,18 @@ def _unmeasured_candidates(word: str) -> list[str]:
         if not w.endswith(suffix) or len(w) <= len(suffix) + 3:
             continue
         stem = w[: -len(suffix)]
-        add(stem, stem + "e", _strip_doubled_consonant(stem))
+        # For "-ier"/"-iest" the "-y" rewrite is the only candidate; the other
+        # i-stem candidates let junk chain somewhere real ("campi" -> "campus").
+        # See unmeasuredBaseCandidates in stem.ts.
         if stem.endswith("i"):
             add(stem[:-1] + "y")
-    if len(w) > 4 and w.endswith("a"):
-        add(w[:-1] + "um")
+            continue
+        add(stem, stem + "e", _strip_doubled_consonant(stem))
 
-    # Longest ending first, so a tensed form ("-izing") is not read as the bare
-    # verb. The "y" candidate reaches the noun a verb was built from.
-    for suffix in ("izing", "ising", "izes", "ises", "ized", "ised", "ize", "ise"):
+    # Bare "-ize"/"-ise" only: a tensed form folds through its own verb (see
+    # _ize_verb_spellings). The "y" candidate reaches the noun a verb was
+    # built from.
+    for suffix in ("ize", "ise"):
         if not w.endswith(suffix) or len(w) <= len(suffix) + 3:
             continue
         stem = w[: -len(suffix)]
@@ -461,6 +488,20 @@ def load_score_overrides() -> dict[str, dict]:
     return json.loads(SCORE_OVERRIDES_PATH.read_text())
 
 
+@functools.cache
+def load_fold_exemptions() -> frozenset[str]:
+    """The curated fold exemptions in src/data/fold-exemptions.json.
+
+    Mirror of FOLD_EXEMPTIONS in src/game/dictionary.ts: an exempt word
+    contributes no fold candidates at all, so it scores on its own data and no
+    chain passes through it. Every entry is active here because this module only
+    scores under the newest (undated) system.
+    """
+    if not FOLD_EXEMPTIONS_PATH.exists():
+        return frozenset()
+    return frozenset(json.loads(FOLD_EXEMPTIONS_PATH.read_text()))
+
+
 def _override_base(word: str, index: dict[str, int]) -> str | None:
     """Mirror of overrideBase() for the newest system (no date gating)."""
     override = load_score_overrides().get(word)
@@ -477,11 +518,15 @@ MAX_FOLD_DEPTH = 8
 def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
     """Mirror of nextBaseForms(): every base `word` could fold onto in one hop.
 
-    A reviewed override replaces the spelling guesses rather than joining them.
-    Otherwise the whole candidate set is returned and chained_base() explores it,
-    because "which base is most common" and "which base leads to the most common
-    word" are different questions.
+    A reviewed exemption silences every rule, the override included; a reviewed
+    override replaces the spelling guesses rather than joining them. Otherwise
+    the whole candidate set is returned and chained_base() explores it, because
+    "which base is most common" and "which base leads to the most common word"
+    are different questions.
     """
+    if word in load_fold_exemptions():
+        return []
+
     override = _override_base(word, index)
     if override:
         return [override]
@@ -497,9 +542,16 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
 
     add(_tense_base(word, index, zipf_at))
     add(_inflectional_stem(word))
-    for candidate in _inflectional_candidates(word):
+    for candidate in _inflectional_candidates(word, (word + "s") not in index):
         add(candidate)
+    # "-ier"/"-iest" comparatives, ungated -- the paired-degree check stands in
+    # for the frequency gate (see degreeBaseCandidates in stem.ts).
+    for base, counterpart in _degree_candidates(word):
+        if counterpart in index:
+            add(base)
     if word in index and zipf_at(word) < MEASURED_FLOOR:
+        # Tensed "-ize"/"-ise" forms are deliberately absent from the gated
+        # set: they fold through their own verb (see nextBaseForms).
         for candidate in _unmeasured_candidates(word):
             add(candidate)
     add(_scoring_base(word, index))

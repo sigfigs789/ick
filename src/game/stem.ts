@@ -37,6 +37,14 @@ export function baseForm(word: string): string {
  *   - the irregular plurals English spells with a stem change: "-ves" -> "-f"
  *     or "-fe" ("wolves" -> "wolf", "knives" -> "knife") and "-ices" -> "-ex"
  *     or "-ix" ("matrices" -> "matrix", "vortices" -> "vortex").
+ *   - "-es" -> "-is" for the Greek and Latin plurals spelled with a vowel
+ *     change ("analyses" -> "analysis", "crises" -> "crisis", "oases" ->
+ *     "oasis"). The one coincidence far more common than the true base is
+ *     "theses" -> "these", and the reviewed override pinning "theses" to
+ *     "thesis" replaces the spelling guesses outright, so it wins. The other
+ *     known misfires ("neurites" -> "neuritis", "metropoles" -> "metropolis")
+ *     land on a near-frequency sibling, the small-magnitude shape an override
+ *     can catch if it ever matters.
  *   - the classical plurals borrowed whole: "-ae" -> "-a" ("scapulae" ->
  *     "scapula", "formulae" -> "formula"), "-i" -> "-us" ("radii" -> "radius",
  *     "abaci" -> "abacus"), and the native "-men" -> "-man" ("crewmen" ->
@@ -61,7 +69,7 @@ export function baseForm(word: string): string {
  *
  * Tense (-ed/-ing) is not here: `tenseBaseForm` in dictionary.ts already owns it.
  */
-export function inflectionalBaseCandidates(word: string): string[] {
+export function inflectionalBaseCandidates(word: string, latinPlurals: boolean): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
   const add = (...bases: string[]) => {
@@ -76,12 +84,55 @@ export function inflectionalBaseCandidates(word: string): string[] {
   if (w.length > 4 && w.endsWith("ies")) add(w.slice(0, -3) + "y", w.slice(0, -3) + "i");
   if (w.length > 4 && w.endsWith("ves")) add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
   if (w.length > 4 && w.endsWith("men")) add(w.slice(0, -3) + "man");
-  if (w.length > 4 && w.endsWith("es")) add(w.slice(0, -1), w.slice(0, -2));
-  if (w.length > 3 && w.endsWith("ae")) add(w.slice(0, -1));
+  if (w.length > 4 && w.endsWith("es")) {
+    add(w.slice(0, -1), w.slice(0, -2), w.slice(0, -2) + "is");
+  }
   if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) add(w.slice(0, -1));
-  if (w.length > 3 && w.endsWith("i")) add(w.slice(0, -1) + "us");
+  // The Latin plurals, only where the caller says the spelling can be read
+  // that way: "-a"/"-i"/"-ae" is how Latin pluralises and also how English
+  // spells a great many ordinary singulars, and nothing in the letters
+  // separates "podia" from "alba" or "taxi" from "abaci". The caller's guard
+  // is the word taking an English plural of its own (see latinPluralsAllowed
+  // in dictionary.ts), which is also what lets "-a" -> "-um" fold above the
+  // measurement floor: "aquaria", "addenda" and "maxima" are all measured, and
+  // all scored rarer than their own singulars behind a frequency gate.
+  if (latinPlurals) {
+    if (w.length > 3 && w.endsWith("ae")) add(w.slice(0, -1));
+    if (w.length > 3 && w.endsWith("i")) add(w.slice(0, -1) + "us");
+    if (w.length > 4 && w.endsWith("a")) add(w.slice(0, -1) + "um");
+  }
 
   return out;
+}
+
+/**
+ * The comparative/superlative reading of an "-ier"/"-iest" word: the "-y"
+ * adjective it would be a degree of, paired with the *other* degree of the same
+ * base. Spelling only -- the caller requires both `base` and `counterpart` to be
+ * dictionary words before trusting the reading.
+ *
+ * The counterpart is the guard, and it is what lets this family fold *above*
+ * MEASURED_FLOOR when the bare "-er"/"-est" rules below must not. "-ier"/"-iest"
+ * rewrites a "-y", so the reading is checkable: a base attested in both degrees
+ * is being used as a gradable adjective ("happy" has "happiest", so "happier"
+ * folds), while an agent noun that merely ends the same way fails the check
+ * ("copy" has no "copiest", so "copier" keeps its own measured score; same for
+ * "carrier", "collier", "crier"). Without the rule, every measured comparative
+ * scored rarer than its own adjective -- "angrier" 7.33 against "angry" 4.52,
+ * "earliest" 5.35 against "early" 3.38 -- because the gated rules never reach a
+ * measured word.
+ */
+export function degreeBaseCandidates(word: string): { base: string; counterpart: string }[] {
+  const w = word.toLowerCase();
+  if (w.length > 5 && w.endsWith("iest")) {
+    const stem = w.slice(0, -4);
+    return [{ base: stem + "y", counterpart: stem + "ier" }];
+  }
+  if (w.length > 4 && w.endsWith("ier")) {
+    const stem = w.slice(0, -3);
+    return [{ base: stem + "y", counterpart: stem + "iest" }];
+  }
+  return [];
 }
 
 /**
@@ -109,17 +160,7 @@ export function inflectionalBaseCandidates(word: string): string[] {
  * Below wordfreq's measurement floor a word's score is a stand-in rather than a
  * measurement, so a plausible base is strictly better information than the
  * sentinel it would otherwise get; at or above the floor there is a real
- * measurement, and a spelling guess must not be allowed to overrule it.
- *
- * That gate is applied per *hop*, not per word -- `nextBaseForms` asks it about
- * the node it is expanding, so a measured word still reaches a gated base when
- * the chain runs through an unmeasured one ("stylised", measured at 2.51, is
- * gated on its own "-ised" ending but reaches "style" through the unattested
- * "stylise"). Intended, and the reason the "-ise" family earns its place. The
- * catch is that a family admitted here is *not* confined to the deep tail: it
- * will reach well-attested words through an unmeasured intermediate, so "wrong
- * below the floor" is not a survivable error rate. See the README section for
- * the measured count. Every
+ * measurement, and a spelling guess must not be allowed to overrule it. Every
  * word in the list above sits at or above the floor and is excluded on those
  * grounds -- "tempest" is measured at Zipf 3.29, "canter" at 2.72, "noter" at
  * 1.27. The last two families make the same point louder: ungated, "-ize" folds
@@ -148,16 +189,28 @@ export function unmeasuredBaseCandidates(word: string): string[] {
   for (const suffix of ["est", "er"]) {
     if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
     const stem = w.slice(0, -suffix.length);
+    // For "-ier"/"-iest", the "-y" rewrite is the only candidate: below the
+    // floor "hurrier" really is one who hurries, and "abandoner"-style agent
+    // nouns are exactly what this rule is for. The *other* i-stem candidates
+    // are what let a junk stem chain somewhere real -- "campier" reached
+    // "campus" through the non-word-shaped "campi" and out-voted its actual
+    // base "campy" -- so they stay out. Above the floor the spelling belongs
+    // to degreeBaseCandidates, whose paired-degree check earns it the fold.
+    if (stem.endsWith("i")) {
+      add(`${stem.slice(0, -1)}y`);
+      continue;
+    }
     add(stem, `${stem}e`, stripDoubledConsonant(stem));
-    if (stem.endsWith("i")) add(`${stem.slice(0, -1)}y`);
   }
-  if (w.length > 4 && w.endsWith("a")) add(`${w.slice(0, -1)}um`);
-
-  // Longest ending first, so a tensed form ("-izing") is not read as the bare
-  // verb. The endings are mutually exclusive, so at most one group ever matches.
+  // Bare "-ize"/"-ise" only. A *tensed* form reaches this family through its
+  // attested verb or not at all: the tense and number rules already offer the
+  // verb as a candidate, so the caller's gate is applied at the verb, once per
+  // paradigm. Stripping the tensed endings here read the -is noun plurals as
+  // verb tenses ("appendicitises", "whatsises" -> "what") and let "womanizes"
+  // through a strip its own measured verb was barred from.
   // The "y" candidate is what reaches the noun a verb was built from
   // ("tautologize" -> "tautology", "ebonize" -> "ebony").
-  for (const suffix of ["izing", "ising", "izes", "ises", "ized", "ised", "ize", "ise"]) {
+  for (const suffix of ["ize", "ise"]) {
     if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
     const stem = w.slice(0, -suffix.length);
     add(stem, `${stem}e`, `${stem}y`);

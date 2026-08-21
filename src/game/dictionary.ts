@@ -2,10 +2,12 @@ import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
+import foldExemptionData from "../data/fold-exemptions.json";
 import wordRejectionData from "../data/word-rejections.json";
 import {
   baseForm,
   boundBaseCandidates,
+  degreeBaseCandidates,
   inflectionalBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
@@ -174,10 +176,12 @@ interface ScoreOverride {
  * `unmeasuredBaseCandidates` covers the comparatives and Latin plurals only below
  * MEASURED_FLOOR, where the score is a stand-in anyway. What is left for this
  * file is everything neither rule can reach: a measured word whose ending
- * misleads ("tempest" is not a form of "temp"), a loanword the gate lets through
- * anyway ("momser" folds onto "mom", which it has nothing to do with), and the
+ * misleads ("tempest" is not a form of "temp"), the plurals whose true singular
+ * no rule can see ("whatsises" -> "whatsis", "abatises" -> "abatis"), and the
  * "-en" verbs, whose folds are right often enough to tempt and wrong often enough
- * to disqualify ("dudeen" -> "dude").
+ * to disqualify ("dudeen" -> "dude"). A word the rules misread that has no base
+ * at all ("momser" is not a form of "mom") goes in fold-exemptions.json instead
+ * -- see FOLD_EXEMPTIONS below.
  *
  * An earlier note in this spot argued no widening was affordable at all, on the
  * grounds that a blanket bare-`s` strip re-scored ~10,900 words and stripped
@@ -212,6 +216,63 @@ function overrideBase(word: string, date?: string): string | undefined {
   if (!override) return undefined;
   if (date !== undefined && date < override.since) return undefined;
   return WORD_INDEX.has(override.base) ? override.base : undefined;
+}
+
+// -- Curated fold exemptions (src/data/fold-exemptions.json) -----------------
+/** A hand-reviewed exemption: `word` does not fold at all from `since` on. */
+interface FoldExemption {
+  since: string;
+  /** Review notes only -- nothing here reads it. */
+  reason?: string;
+}
+
+/**
+ * The one thing an override cannot say. `score-overrides.json` replaces the
+ * spelling guesses with a reviewed base, so it can redirect a fold -- but every
+ * entry still pins the word to *some* base, and a few words have none: `momser`
+ * is a Yiddish loanword the bare -er strip reads as "more mom", and no entry in
+ * the override file can mean "score this word on its own data". A word listed
+ * here contributes no fold candidates, which both stops it folding and stops a
+ * chain passing *through* it -- the second half matters, because a bad fold
+ * usually reaches a plausible word via a junk intermediate, and because it lets
+ * one entry cover a paradigm (`rightsize` carries `rightsized`, `rightsizes`
+ * and `rightsizing`, which can only reach the gated strips through their verb).
+ *
+ * Dated like the overrides, so an exemption applies from the puzzle it was
+ * reviewed for onward. Deliberately short: a rule that needs many entries here
+ * needs a tighter guard instead. A word must not appear in both files -- the
+ * exemption would win, silently -- and a test pins that.
+ */
+const FOLD_EXEMPTIONS: ReadonlyMap<string, FoldExemption> = new Map(
+  Object.entries(foldExemptionData as Record<string, FoldExemption>)
+);
+
+/**
+ * Whether `word` may be read as a Latin plural at all.
+ *
+ * The "-a"/"-i"/"-ae" endings are ambiguous the way bare "-er" is: they are how
+ * Latin pluralises, and also how English spells a pile of ordinary singulars.
+ * The frequency gate is no help here -- "alba" (Zipf 3.33) is *more* common than
+ * "curricula" and "formulae", so any threshold dropping the bad folds would drop
+ * the good ones with them. What separates them is whether the word takes an
+ * English plural of its own: a Latin plural has no "-s" form (no "podias", no
+ * "memorandas"), so a word that has one is being used as an English singular
+ * whatever its ending. "alba"/"albas" (the white garment) stays; "taxi"/"taxis"
+ * stays; the metal-oxide family goes in one stroke, since materials science
+ * pluralises them freely ("aluminas", "magnesias", "titanias"). The words this
+ * deliberately gives up are the ones that genuinely are English singulars as
+ * well as Latin plurals -- "stadia" (the surveying instrument, hence "stadias")
+ * -- which keep their own scores rather than folding.
+ */
+function latinPluralsAllowed(word: string): boolean {
+  return !WORD_INDEX.has(word + "s");
+}
+
+/** Whether `word`'s score is exempt from folding under `date`'s puzzle. */
+function foldExempt(word: string, date?: string): boolean {
+  const exemption = FOLD_EXEMPTIONS.get(word);
+  if (!exemption) return false;
+  return date === undefined || date >= exemption.since;
 }
 
 /** A dated scoring system: how to read a word's Zipf, score it, and label it. */
@@ -765,6 +826,10 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
  * over it, so widening it can never make a word score rarer than it used to.
  */
 function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] {
+  // A reviewed exemption silences every rule below, the override included --
+  // the two files must never share a word (pinned by a test).
+  if (scoring.inflectionBases && foldExempt(word, date)) return [];
+
   const override = overrideBase(word, date);
   if (override) return [override];
 
@@ -781,7 +846,19 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   };
   add(tenseBaseForm(word, scoring));
   add(baseForm(word));
-  for (const candidate of inflectionalBaseCandidates(word)) add(candidate);
+  for (const candidate of inflectionalBaseCandidates(word, latinPluralsAllowed(word))) {
+    add(candidate);
+  }
+  // "-ier"/"-iest" comparatives, ungated: unlike bare "-er"/"-est" below, the
+  // "-y" rewrite is checkable, and the check is the base's *other* degree.
+  // "happy" has "happiest", so "happier" folds onto it even though both carry
+  // real measurements; "copy" has no "copiest", so "copier" -- an agent noun --
+  // keeps its own score. Running above the floor is the point: every measured
+  // comparative ("angrier", "earliest", "prettiest") scored rarer than its own
+  // adjective while the only degree rules lived behind the gate.
+  for (const { base, counterpart } of degreeBaseCandidates(word)) {
+    if (WORD_INDEX.has(counterpart)) add(base);
+  }
   // Suffixes whose spelling is not decisive, admitted only where the word's own
   // frequency is a stand-in rather than a measurement. Below MEASURED_FLOOR the
   // score comes from the deep-tail band -- for an unattested word, from the
@@ -791,13 +868,15 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   // reason "specialest" can fold to "special" while "tempest" keeps its own
   // score. See `unmeasuredBaseCandidates` for the families and the words that
   // would break without the gate.
-  //
-  // Note the test is on `word` -- the node being expanded -- and not on whatever
-  // word this chain started from. A measured word therefore still reaches a gated
-  // base through an unmeasured hop ("stylised" -> "stylise" -> "style"), which is
-  // intended and is what the "-ise"/"-isation" families rely on. It also means a
-  // family added here is never confined to the deep tail; see the README.
   if (WORD_INDEX.has(word) && zipfFor(word, scoring) < MEASURED_FLOOR) {
+    // A tensed "-ize"/"-ise" form is deliberately absent from this set: it
+    // folds through its own verb -- already a candidate via the tense and
+    // number rules above -- so the gate is applied *at the verb*, once per
+    // paradigm. That is what keeps "womanizes" from reaching "woman" through
+    // a strip its own measured verb is barred from (it displayed 6 points
+    // more common than the word it conjugates), and what stops the -is noun
+    // plurals being read as verb tenses ("whatsises" reached "what";
+    // "appendicitises" now folds to "appendicitis" like any other plural).
     for (const candidate of unmeasuredBaseCandidates(word)) add(candidate);
   }
   add(scoringBaseForm(word, scoring));

@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
+import { baseForm, inflectionalBaseCandidates } from "./stem";
 import { evaluateSubmission } from "./submit";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
+import scoreOverrideData from "../data/score-overrides.json";
+import foldExemptionData from "../data/fold-exemptions.json";
 import type { AcceptedWord } from "./types";
 
 // The 2026-08-21 cutover: a plural or third-person form no longer out-scores the
@@ -37,6 +40,11 @@ describe("number inflections fold onto their base (from 2026-08-21)", () => {
     ["meatloaves", "meatloaf", 9.94, 7.19],
     ["matrices", "matrix", 6.69, 5.38],
     ["apices", "apex", 8.68, 5.91],
+    // "-es" -> "-is": the Greek and Latin plurals spelled with a vowel change.
+    ["analyses", "analysis", 5.8, 4.15],
+    ["crises", "crisis", 6.12, 4.57],
+    ["emphases", "emphasis", 8.12, 5.21],
+    ["oases", "oasis", 7.9, 6.13],
     // The classical plurals borrowed whole, and the native "-men" plural.
     ["scapulae", "scapula", 8.91, 7.75],
     ["radii", "radius", 7.62, 5.69],
@@ -78,6 +86,86 @@ describe("number inflections fold onto their base (from 2026-08-21)", () => {
     // is the right base in both.
     expect(baseFormSubstitution("caves", ON)?.base).toBe("cave");
     expect(baseFormSubstitution("saves", ON)?.base).toBe("save");
+  });
+});
+
+// "-ier"/"-iest" rewrites a "-y", so the reading is checkable against the
+// dictionary -- the base's other degree must be attested in the same spelling.
+// That check is what earns this one family a fold *above* the measurement
+// floor, where the gated rules below must not reach.
+describe("-ier/-iest comparatives fold onto their -y adjective, above the floor too", () => {
+  const DEGREES: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    // Measured comparatives that scored rarer than their own adjective.
+    ["happier", "happy", 5.4, 3.5],
+    ["angrier", "angry", 7.33, 4.52],
+    ["earliest", "early", 5.35, 3.38],
+    ["prettiest", "pretty", 6.53, 3.46],
+    ["busiest", "busy", 6.34, 4.38],
+    // Unmeasured ones, where the gate used to be the only path.
+    ["babiest", "baby", 10, 3.63],
+    ["campier", "campy", 9.97, 7.68],
+    ["boniest", "bony", 9.91, 6.59],
+  ];
+
+  it.each(DEGREES)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON)).toBe(after);
+    expect(score(word, ON)).toBe(score(base, ON));
+  });
+
+  it.each(DEGREES)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE)).toBe(before);
+  });
+
+  it("refuses an agent noun, whose base lacks the other degree", () => {
+    // "copier" is not "more copy": "copiest" is not a word, so the reading
+    // fails and the word keeps its own measured score. The same check is what
+    // keeps "carrier", "supplier" and "crier" exactly where they were.
+    for (const word of ["copier", "carrier", "supplier", "crier", "collier"]) {
+      expect(score(word, ON)).toBe(score(word, BEFORE));
+      expect(baseFormSubstitution(word, ON)).toBeUndefined();
+    }
+  });
+
+  it("keeps the -ier/-iest spelling out of the gated bare -er/-est strips", () => {
+    // Guessing at that spelling in the gated rule let a junk stem chain
+    // somewhere real: "campier" reached "campus" through the non-word-shaped
+    // "campi" and out-voted its actual base "campy".
+    expect(baseFormSubstitution("campier", ON)?.base).toBe("campy");
+    expect(baseFormSubstitution("boniest", ON)?.base).not.toBe("bonus");
+  });
+
+  it("keeps its own score when the adjective is rarer", () => {
+    // The fold is a cap, never a promotion: "mopy" is rarer than "mopier", so
+    // the comparative keeps its own measurement.
+    expect(score("mopier", ON)).toBe(score("mopier", BEFORE));
+  });
+});
+
+// The Latin "-a"/"-i"/"-ae" plurals fold wherever the word has no English
+// plural of its own -- above the measurement floor too, since "alba" (3.33) is
+// more common than "curricula" and no frequency line separates them.
+describe("Latin plurals fold when the word has no English plural of its own", () => {
+  const LATIN: ReadonlyArray<[word: string, base: string]> = [
+    ["aquaria", "aquarium"],
+    ["addenda", "addendum"],
+    ["maxima", "maximum"],
+    ["curricula", "curriculum"],
+    ["momenta", "momentum"],
+  ];
+
+  it.each(LATIN)("%s scores as %s from the cutover on", (word, base) => {
+    expect(score(word, ON)).toBe(score(base, ON));
+    expect(baseFormSubstitution(word, ON)?.base).toBe(base);
+  });
+
+  it("refuses a word that takes an English plural of its own", () => {
+    // "albas", "taxis", "braes" and "aluminas" are all dictionary words, so
+    // "alba", "taxi", "brae" and "alumina" are English singulars whatever
+    // their endings suggest -- an oxide is a substance, not a plural.
+    for (const word of ["alba", "taxi", "brae", "alumina", "magnesia", "tantra"]) {
+      expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
+      expect(score(word, ON)).toBe(score(word, BEFORE));
+    }
   });
 });
 
@@ -167,67 +255,6 @@ describe("comparatives and Latin plurals fold, but only below the measurement fl
       expect(score(word, BEFORE), `${word} must not move`).toBe(score(word, ON));
     }
   });
-
-  it("still folds a measured word whose chain runs through an unmeasured one", () => {
-    // The gate is asked about the node being expanded, not about the word the
-    // chain started from -- so "measured" protects a word from *its own* ending
-    // and not from a gated rule further down the chain. "stylised" is measured at
-    // Zipf 2.51, so its own "-ised" ending is gated off; "stylise" is unattested,
-    // the gate opens there, and "style" caps "stylised" anyway.
-    //
-    // This is intended, and it is most of what the "-ise"/"-isation" families are
-    // for: the tensed and nominalised forms are the ones corpora measure, while
-    // the bare verb in the middle is the one they miss. Pinned here because the
-    // reading is counter-intuitive enough that someone could "fix" it and quietly
-    // delete these folds.
-    for (const [word, base] of [
-      ["stylised", "style"],
-      ["hospitalisation", "hospital"],
-      ["urbanised", "urban"],
-      ["novelization", "novel"],
-    ] as const) {
-      const substitution = baseFormSubstitution(word, ON);
-      expect(substitution?.base, `${word} should reach ${base}`).toBe(base);
-      // Above the floor on its own measurement, which is what makes the point:
-      // the fold cannot have come from this word's own ending.
-      expect(substitution!.ownZipf).toBeGreaterThanOrEqual(1);
-    }
-  });
-
-  it("bounds what a new gated family may re-score", () => {
-    // Two tripwires, because the hop-by-hop gate fails in two different ways and
-    // neither number sees the other's failure.
-    //
-    // The blast radius: how many words this cutover demotes at all. A family
-    // added to `unmeasuredBaseCandidates` lands almost entirely here, in the deep
-    // tail the gate is meant to fence it into -- measured, adding the `un-`/`re-`
-    // /`non-`/`over-` prefixes moves this from 19,685 to 23,019.
-    //
-    // The leak: how many *well-attested* words (own Zipf >= 2.5) it demotes. The
-    // gate is asked about each hop, so a family reaches a measured word whenever
-    // an unmeasured form sits between it and the base -- 441 through the "-ise"
-    // family, whose bare verb corpora miss, and 87 more where an ungated plural
-    // strip hands off to the gated "-er" rule ("abhorrers" -> "abhorrer" ->
-    // "abhor"). How much that happens is a property of the family, not of the
-    // gate: the same prefix experiment moves this count by 3, because prefixed
-    // words rarely have an unmeasured middle. So a family can be wildly wrong in
-    // the deep tail and still not trip this bound.
-    //
-    // Bounds rather than exact counts, so a frequency-data refresh does not fail
-    // the suite. If either trips, sweep the newly demoted words before raising it.
-    const zipfHundredths = rarityData.zipfHundredths;
-    let demoted = 0;
-    let wellAttested = 0;
-    for (const [i, word] of (dictionaryWords as string[]).entries()) {
-      if (score(word, ON) >= score(word, BEFORE) - 1e-9) continue;
-      demoted++;
-      if (zipfHundredths[i] / 100 >= 2.5) wellAttested++;
-    }
-    expect(demoted).toBeGreaterThan(15000);
-    expect(demoted).toBeLessThan(21000);
-    expect(wellAttested).toBeGreaterThan(1000);
-    expect(wellAttested).toBeLessThan(1750);
-  });
 });
 
 describe("what the cutover deliberately leaves alone", () => {
@@ -262,6 +289,149 @@ describe("what the cutover deliberately leaves alone", () => {
     expect(baseFormSubstitution("theses", ON)?.base).toBe("thesis");
     expect(score("theses", ON)).toBe(score("thesis", ON));
     expect(score("theses", ON)).not.toBe(score("these", ON));
+  });
+
+  it.each([
+    ["bares", "bar"],
+    ["fares", "far"],
+    ["fores", "for"],
+    ["mares", "mar"],
+    ["resites", "resit"],
+    ["sires", "sir"],
+    ["stares", "star"],
+    ["tares", "tar"],
+    ["wares", "war"],
+  ])("keeps %s on its own data rather than folding to coincidental %s", (word, coincidence) => {
+    // A terminal-e base makes both the intended "-s" strip and an unrelated
+    // "-es" strip plausible. The max-over-candidates fold would otherwise
+    // select the more common coincidence (for example, fores -> for).
+    expect(baseFormSubstitution(word, ON)).toBeUndefined();
+    const index = (dictionaryWords as unknown as string[]).indexOf(word);
+    expect(rarityFor(word, ON)!.zipf).toBe(rarityData.zipfHundredths[index] / 100);
+    expect(score(word, ON)).not.toBe(score(coincidence, ON));
+  });
+});
+
+// src/data/fold-exemptions.json says the one thing an override cannot: score
+// this word on its own data. An exempt word contributes no fold candidates, so
+// it neither folds nor lets a chain pass through it.
+describe("reviewed fold exemptions", () => {
+  it("keeps a loanword the spelling rules misread on its own score", () => {
+    // "momser" is Yiddish (from mamzer), not "more mom"; "limen" is the
+    // psychophysics threshold, not the plural of "liman"; "germen" is the
+    // botanical rudiment, not the plural of "german".
+    // ... and "complices" is the plural of the archaic "complice", not a
+    // stem-change plural of "complex". Its true base is *rarer* than it, so no
+    // override can express the redirect -- the cap ignores a rarer base -- and
+    // its own measurement is the right score.
+    for (const word of ["momser", "limen", "germen", "complices"]) {
+      expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
+      expect(score(word, ON)).toBe(score(word, BEFORE));
+    }
+  });
+
+  it("blocks the chain from passing through an exempt word", () => {
+    // "momsers" can only reach "mom" through "momser"; with the exemption in
+    // the way it caps at "momser" itself and stays where the loanword stays.
+    expect(baseFormSubstitution("momsers", ON)?.base).toBe("momser");
+    expect(score("momsers", ON)).toBe(score("momser", ON));
+  });
+
+  it("carries a verb's whole paradigm with one entry", () => {
+    // The tenses of "rightsize" fold through their verb (see izeVerbSpellings),
+    // so exempting the verb keeps every form on the paradigm's own data.
+    expect(score("rightsize", ON)).toBe(score("rightsize", BEFORE));
+    expect(baseFormSubstitution("rightsizes", ON)?.base).toBe("rightsize");
+    expect(baseFormSubstitution("laterized", ON)?.base).toBeUndefined();
+  });
+
+  it("shares no word with the override file", () => {
+    // An exemption silences every rule including the override, so a word in
+    // both files would have a dead override -- a review error, not a tie.
+    const overrides = new Set(Object.keys(scoreOverrideData));
+    for (const word of Object.keys(foldExemptionData)) {
+      expect(overrides.has(word), `${word} is in both curated files`).toBe(false);
+    }
+  });
+
+  it("names only dictionary words, and dates every entry", () => {
+    const words = new Set(dictionaryWords as string[]);
+    for (const [word, entry] of Object.entries(foldExemptionData)) {
+      expect(words.has(word), `${word} is not a dictionary word`).toBe(true);
+      expect((entry as { since: string }).since >= "2026-08-21").toBe(true);
+    }
+  });
+});
+
+describe("a conjugation displays what its verb displays", () => {
+  // Stripping "-izes" in one bite reached the stem directly ("womanizes" ->
+  // "woman") while the verb itself, measured just above the floor, was gated
+  // out of the very same strip -- so the conjugation scored 6 points more
+  // common than the word it conjugates, the mirror image of the bug the fold
+  // exists to prevent. A tensed form now folds through its verb, never past
+  // it, so the whole paradigm displays one number.
+  const PARADIGMS: ReadonlyArray<[verb: string, forms: string[]]> = [
+    ["womanize", ["womanizes", "womanized"]],
+    ["internationalise", ["internationalises"]],
+    ["militarise", ["militarises"]],
+  ];
+
+  it.each(PARADIGMS)("%s and its tenses display one score", (verb, forms) => {
+    for (const form of forms) {
+      expect(score(form, ON)).toBe(score(verb, ON));
+    }
+  });
+
+  it("keeps the -ization un-sticking working", () => {
+    // "winterisation" folds through the dictionary word "winterise" (bound
+    // suffix), and the gate at that unmeasured verb is open, so the chain
+    // still carries on to "winter".
+    expect(score("winterisation", ON)).toBe(score("winter", ON));
+  });
+
+  it("keeps a verbless -ises plural from being read as a verb tense", () => {
+    // "whatsises" has no verb "whatsise" behind it -- it is the plural of
+    // "whatsis", and the -es rules fold it there. The old tensed strip read
+    // the ending as a conjugation and carried it to "what", eight points down.
+    expect(baseFormSubstitution("whatsises", ON)?.base).toBe("whatsis");
+    expect(baseFormSubstitution("appendicitises", ON)?.base).toBe("appendicitis");
+    expect(baseFormSubstitution("abatises", ON)?.base).toBe("abatis");
+  });
+
+  it("never lets a tensed -ize/-ise form leapfrog its own verb", () => {
+    // The whole-dictionary shape of the paradigm rule: wherever the bare verb
+    // is a dictionary word, a tensed form's display comes from its own
+    // measurement or from a word one attested inflectional hop away -- its
+    // verb above all, but also a real word the tense or number rules land on
+    // ("emphasised" strips to the noun "emphasis"). What it must never do is
+    // out-run every one of those through a derivational strip its own verb is
+    // barred from, which is how "womanizes" once displayed 4 points more
+    // common than "womanize".
+    const words = dictionaryWords as string[];
+    const index = new Map(words.map((w, i) => [w, i]));
+    const ownZipf = (w: string) => rarityData.zipfHundredths[index.get(w)!] / 100;
+    const verbOf = (w: string): string | undefined => {
+      for (const suffix of ["izes", "ises", "ized", "ised"]) {
+        if (w.endsWith(suffix) && w.length > suffix.length + 3) return w.slice(0, -1);
+      }
+      for (const suffix of ["izing", "ising"]) {
+        if (w.endsWith(suffix) && w.length > suffix.length + 3) return w.slice(0, -3) + "e";
+      }
+      return undefined;
+    };
+    const leapfrogs: string[] = [];
+    for (const word of words) {
+      const verb = verbOf(word);
+      if (!verb || !index.has(verb)) continue;
+      let ceiling = ownZipf(word);
+      const latin = !index.has(word + "s");
+      for (const hop of [verb, baseForm(word), ...inflectionalBaseCandidates(word, latin)]) {
+        if (index.has(hop)) ceiling = Math.max(ceiling, rarityFor(hop, ON)!.zipf);
+      }
+      const used = rarityFor(word, ON)!.zipf;
+      if (used > ceiling + 1e-9) leapfrogs.push(`${word} ${used} > ${ceiling}`);
+    }
+    expect(leapfrogs).toEqual([]);
   });
 });
 
@@ -315,18 +485,30 @@ describe("invariants across the whole dictionary", () => {
     }
   });
 
-  it("never raises a word's score", () => {
+  it("raises scores only for reviewed lexical-correctness exemptions", () => {
     // Every fold is a cap, and the latest system's candidate set is a superset of
     // the older one's, so the maximum it takes can only rise -- which can only
     // push a score down. A word scoring *higher* than it did means a fold pruned
-    // a branch the older system reached, which is the bug this asserts against.
+    // a branch the older system reached. The reviewed exemptions deliberately
+    // do so when that branch is an unrelated real word (for example, fores ->
+    // for): lexical correctness wins over preserving that accidental score.
     const raised: string[] = [];
     for (const word of words) {
       const before = rarityScore(rarityFor(word, BEFORE)!.zipf, BEFORE);
       const after = rarityScore(rarityFor(word, ON)!.zipf, ON);
-      if (after > before + 1e-9) raised.push(`${word} ${before} -> ${after}`);
+      if (after > before + 1e-9) raised.push(word);
     }
-    expect(raised).toEqual([]);
+    expect(raised).toEqual([
+      "bares",
+      "fares",
+      "fores",
+      "mares",
+      "resites",
+      "sires",
+      "stares",
+      "tares",
+      "wares",
+    ]);
   });
 
   it("moves thousands of words down, so the cases above are not a rounding story", () => {
