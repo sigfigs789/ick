@@ -75,6 +75,20 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loadProgress("2024-01-01")?.acceptedWords[0].rarity).toBe("Legend");
   });
 
+  it("leaves Elusive alone on a puzzle that uses it as a live tier", () => {
+    // Elusive is the rank between Extremely Rare and Mythic from the retuned
+    // tiers on, so promoting it there would hand out a Legend nobody earned.
+    localStorage.setItem(
+      "ick:progress:2026-08-21",
+      JSON.stringify({
+        ...newProgress("2026-08-21", "res"),
+        acceptedWords: [{ word: "reseat", rarity: "Elusive", zipf: 1.5 }],
+      })
+    );
+
+    expect(loadProgress("2026-08-21")?.acceptedWords[0].rarity).toBe("Elusive");
+  });
+
   it("promotes a deep-tail Mythic save to Legend on a Legend-era puzzle", () => {
     // 2026-08-16+ renamed the deep-tail top rank Mythic -> Legend.
     localStorage.setItem(

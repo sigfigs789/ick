@@ -48,7 +48,7 @@ const curatedWordScores: ReadonlyArray<[string, string, number]> = [
   ["invictus", "Rare", 2.5],
 ];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
-  ["aggrandization", "Arcane", 1.52],
+  ["aggrandization", "Elusive", 1.52],
 ];
 // Rare words discovered online for an upcoming drop and added via the "Add rare
 // words found online" GitHub Action (list=online). Appended automatically by
@@ -57,11 +57,11 @@ const onlineWordScores: ReadonlyArray<[string, string, number]> = [
   ["eleatic", "Mythic", 1.17],
   ["payline", "Rare", 2.26],
   ["pembina", "Rare", 2.2],
-  ["pomarine", "Arcane", 1.45],
+  ["pomarine", "Elusive", 1.45],
   ["portation", "Rare", 2.28],
   ["poussin", "Rare", 2.26],
-  ["reassociation", "Arcane", 1.49],
-  ["sation", "Arcane", 1.37],
+  ["reassociation", "Elusive", 1.49],
+  ["sation", "Elusive", 1.37],
   ["sideration", "Extremely Rare", 1.92],
 ];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
@@ -186,7 +186,7 @@ describe("isValidWord", () => {
 describe("curated additions from rejected-word analytics", () => {
   const analyticsAdditions: ReadonlyArray<[string, string, number]> = [
     ["astroturf", "Rare", 2.46],
-    ["brobdingnagian", "Arcane", 1.55],
+    ["brobdingnagian", "Elusive", 1.55],
     ["stromboli", "Rare", 2.18],
     ["carcinisation", "Legend", -1.57],
     ["carcinization", "Legend", -1.57],

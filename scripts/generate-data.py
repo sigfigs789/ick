@@ -55,7 +55,7 @@ MEASURED_FLOOR = 1.0
 # Retuned once (see NARROW_BANDS_START in src/game/dictionary.ts): Extremely
 # Rare used to start at 2.5 and covered better than a third of the words any
 # drop could reach, which made it the default rather than a find. Rare /
-# Extremely Rare / Arcane now take an even third each of that crowded top range,
+# Extremely Rare / Elusive now take an even third each of that crowded top range,
 # and Quotidian was folded into Very Common. Keep these in lockstep with
 # measuredRarity() there and measured_rarity() in manage-extra-word.py.
 # The deep tail (Zipf < MEASURED_FLOOR) is its own top rank, so these bands
@@ -66,7 +66,7 @@ RARITY_BANDS = [
     (3.15, "Uncommon"),
     (2.13, "Rare"),
     (1.59, "Extremely Rare"),
-    (1.0, "Arcane"),
+    (1.0, "Elusive"),
 ]
 
 WORD_RE = re.compile(r"^[a-z]+$")
@@ -78,7 +78,7 @@ RARITY_CODE = {
     "Uncommon": "U",
     "Rare": "R",
     "Extremely Rare": "X",
-    "Arcane": "E",
+    "Elusive": "E",
     "Mythic": "M",
 }
 

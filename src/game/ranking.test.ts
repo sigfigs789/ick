@@ -27,7 +27,7 @@ const RANKINGS: ReadonlyArray<[word: string, rarity: Rarity, decimals: number]> 
   ["chateau", "Uncommon", 1],
   ["awol", "Rare", 1],
   ["okapi", "Extremely Rare", 1],
-  ["borborygmus", "Arcane", 1],
+  ["borborygmus", "Elusive", 1],
   ["aardwolf", "Mythic", 2],
   ["autecism", "Legend", 2],
 ];
@@ -91,7 +91,7 @@ describe("rank ladder across the latest system", () => {
     [3.5, "Uncommon"],
     [2.5, "Rare"],
     [1.8, "Extremely Rare"],
-    [1.45, "Arcane"],
+    [1.45, "Elusive"],
   ];
 
   it.each(MEASURED_LADDER)("Zipf %s ranks as %s, below the top tiers", (zipf, rarity) => {
@@ -134,7 +134,7 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     [2.13, "Rare"],
     [2.12, "Extremely Rare"],
     [1.59, "Extremely Rare"],
-    [1.58, "Arcane"],
+    [1.58, "Elusive"],
   ];
 
   it.each(EDGES)("Zipf %s sits in %s", (zipf, rarity) => {
@@ -147,9 +147,9 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     // is Rare under the retuned ones -- the clearest single word for the shift.
     expect(rarityForZipf(2.22, BEFORE)).toBe("Extremely Rare");
     expect(rarityForZipf(2.22, ON)).toBe("Rare");
-    // Arcane exists only under the retuned bands.
+    // Elusive exists only under the retuned bands.
     expect(rarityForZipf(1.4, BEFORE)).toBe("Extremely Rare");
-    expect(rarityForZipf(1.4, ON)).toBe("Arcane");
+    expect(rarityForZipf(1.4, ON)).toBe("Elusive");
   });
 
   it("retires Quotidian without disturbing the puzzles that had it", () => {
@@ -179,10 +179,10 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     expect(usesRetunedTiers()).toBe(true);
   });
 
-  it("splits Arcane from Extremely Rare on the shown score, not between it", () => {
-    // Arcane is 9.1+ and purple tops out at 9.0, so no score can display on the
+  it("splits Elusive from Extremely Rare on the shown score, not between it", () => {
+    // Elusive is 9.1+ and purple tops out at 9.0, so no score can display on the
     // wrong side of the boundary.
-    expect(rarityForZipf(1.58, ON)).toBe("Arcane");
+    expect(rarityForZipf(1.58, ON)).toBe("Elusive");
     expect(formatRarityScore(1.58, ON)).toBe("9.1");
     expect(rarityForZipf(1.59, ON)).toBe("Extremely Rare");
     expect(formatRarityScore(1.59, ON)).toBe("9.0");
@@ -242,7 +242,7 @@ describe("display precision by score", () => {
 
 describe("ranking colors", () => {
   // Share squares double as the per-ranking color key, so lock each one -- most
-  // notably Arcane's orange square, matching World of Warcraft's legendary hue,
+  // notably Elusive's orange square, matching World of Warcraft's legendary hue,
   // and Legend's black one above it.
   it("maps every ranking to its color square", () => {
     expect(RARITY_SYMBOL).toEqual({
@@ -252,7 +252,7 @@ describe("ranking colors", () => {
       Uncommon: "🟩",
       Rare: "🟦",
       "Extremely Rare": "🟪",
-      Arcane: "🟧",
+      Elusive: "🟧",
       Mythic: "🟥",
       Legend: "⬛",
     });
@@ -275,12 +275,12 @@ describe("ranking colors", () => {
     }
   });
 
-  it("gives Arcane a burnt amber, distinct from Mythic's red", () => {
-    expect(css).toContain("--rarity-arcane-dot: #c2410c;");
+  it("gives Elusive a burnt amber, distinct from Mythic's red", () => {
+    expect(css).toContain("--rarity-elusive-dot: #c2410c;");
   });
 
   it("keeps the pre-retune Legend orange on its own frozen tokens", () => {
-    // Archived puzzles render Legend from these, so retinting Arcane must not be
+    // Archived puzzles render Legend from these, so retinting Elusive must not be
     // able to reach back and restyle a drop that was played before the cutover.
     expect(css).toContain("--rarity-legend-legacy-dot: #ff8000;");
     expect(css).not.toContain("--rarity-legend-legacy-dot: var(");
