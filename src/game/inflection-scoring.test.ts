@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
 import { evaluateSubmission } from "./submit";
 import dictionaryWords from "../data/dictionary.json";
+import rarityData from "../data/rarity.json";
 import type { AcceptedWord } from "./types";
 
 // The 2026-08-21 cutover: a plural or third-person form no longer out-scores the
@@ -205,6 +206,53 @@ describe("what the cutover deliberately leaves alone", () => {
 
 describe("invariants across the whole dictionary", () => {
   const words = dictionaryWords as string[];
+
+  // A fold may only ever demote. Stated on the Zipf rather than the score so it
+  // is independent of the band tuning: a word's own measured Zipf is the
+  // evidence, and no spelling rule may claim a word is rarer than that.
+  //
+  // This is the contract `adjustedZipf`'s `Math.max` implements, and it is worth
+  // asserting separately from the cutover cases above because the *older* shape
+  // is still in the file: the pre-2026-08-19 branch of `adjustedZipf` returns a
+  // tense base's frequency outright (`return zipfFor(tenseBase, scoring)`)
+  // instead of capping against it. That one line promoted 7,114 words -- it is
+  // why "beloved" (measured 4.17) scored 9.75 Mythic as "belove" (1.10). A new
+  // rule copied from that branch would reintroduce it silently, and no
+  // date-pinned test would notice.
+  const CHAINED_ERA = ["2026-08-19", "2026-08-20", "2026-08-21", "2027-06-01", undefined];
+
+  it.each(CHAINED_ERA)("no fold makes a word rarer than its own measurement (%s)", (date) => {
+    const promoted: string[] = [];
+    for (const [i, word] of words.entries()) {
+      const own = rarityData.zipfHundredths[i] / 100;
+      const used = rarityFor(word, date)!.zipf;
+      if (used < own - 1e-9) promoted.push(`${word} ${own} -> ${used}`);
+    }
+    expect(promoted).toEqual([]);
+  });
+
+  it("did not hold before 2026-08-19, and the boundary is deliberate", () => {
+    // Pinned so the boundary cannot move by accident. Archived puzzles keep the
+    // scores they were played with, promotions included -- that is the whole
+    // point of the date gate, not an oversight to be tidied up later.
+    expect(rarityFor("beloved", "2026-08-18")!.zipf).toBe(1.1); // "belove", inherited
+    expect(rarityScore(rarityFor("beloved", "2026-08-18")!.zipf, "2026-08-18")).toBe(9.75);
+    expect(rarityFor("beloved", "2026-08-18")!.rarity).toBe("Mythic");
+    // From the chained system on, it scores on its own measurement.
+    expect(rarityFor("beloved", "2026-08-19")!.zipf).toBe(4.17);
+    expect(rarityFor("beloved", ON)!.zipf).toBe(4.17);
+  });
+
+  it("never reports a promotion as a base-form substitution", () => {
+    // Analytics reads this. A substitution is only reported where the chain beat
+    // the word's own frequency, so it can never describe a fold that raised a
+    // score even if one somehow existed.
+    for (const [i, word] of words.entries()) {
+      const substitution = baseFormSubstitution(word, ON);
+      if (!substitution) continue;
+      expect(substitution.baseZipf).toBeGreaterThan(rarityData.zipfHundredths[i] / 100 - 1e-9);
+    }
+  });
 
   it("never raises a word's score", () => {
     // Every fold is a cap, and the latest system's candidate set is a superset of

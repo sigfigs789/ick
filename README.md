@@ -127,9 +127,36 @@ widening (`INFLECTION_BASE_START`, `nextBaseForms`) changes only **the score**
 and touches no band cutoff. The two constants are the same date on purpose;
 either could move to its own date later without disturbing the other.
 
-Two invariants are asserted over the entire dictionary in
-`src/game/inflection-scoring.test.ts`: crossing a cutover never *raises* a word's
-score, and no folded word scores rarer than the base it folded onto.
+### Folds only ever demote
+
+A fold may lower a score and never raise one. `adjustedZipf` implements it as
+`Math.max(ownZipf, baseZipf)` — higher Zipf means commoner, so taking the maximum
+can only push a score down. Every path goes through it, including a reviewed
+override, so no entry in `score-overrides.json` can promote a word either.
+
+That rule is **not** the same as "scores never rise". A global rescaling may
+legitimately raise every score at once — `2026-08-16` widened the measured band
+from `0..9.5` to `0..9.9` and did exactly that — because it preserves ordering and
+no word overtakes another. A *fold* raising a score is different: it would be
+inventing rarity out of a spelling rule, which is backwards from the correction
+folds exist to make.
+
+The guarantee starts at `2026-08-19`, and did not hold before it. The older
+`adjustedZipf` branch returned a tense base's frequency *outright* rather than
+capping against it, which promoted 7,114 words: `beloved`, measured at Zipf 4.17,
+scored **9.75 / Mythic** as `belove` (1.10). Archived puzzles keep those scores on
+purpose. That branch is still in the file for them, which makes it a live
+copy-paste hazard for the next fold rule — hence the invariants below are stated
+date-agnostically rather than pinned to one cutover.
+
+Asserted over the entire dictionary in `src/game/inflection-scoring.test.ts`:
+
+- no fold makes a word rarer than its own measured Zipf, on every date from
+  `2026-08-19` on (and undated);
+- `beloved`'s pre-cutover Mythic is pinned, so the boundary cannot drift;
+- crossing the `2026-08-21` cutover never raises a word's score;
+- no folded word scores rarer than the base it folded onto;
+- `baseFormSubstitution` never reports a promotion, so analytics cannot either.
 
 `scripts/manage-extra-word.py` carries a Python mirror of this whole fold path
 (`_next_bases`, `chained_base`, `adjusted_zipf`) *and* of `measuredRarity`, used
