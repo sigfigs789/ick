@@ -105,13 +105,61 @@ The gate is the load-bearing idea. Below `MEASURED_FLOOR` a word's score comes
 from the deep-tail band — for an unattested word, from the sentinel outright — so
 it is a stand-in rather than a measurement, and a plausible base is strictly
 better information. At or above the floor there *is* a measurement, and a guess
-from a word ending must not overrule it.
+from that word's own ending must not overrule it.
+
+**The gate is per hop, not per word**, and that distinction is easy to misread.
+`nextBaseForms` consults `unmeasuredBaseCandidates` for the node it is currently
+expanding, so a *measured* word still reaches a gated base whenever the chain
+passes through an unmeasured one. `stylised` is measured at Zipf 2.51 and its own
+`-ised` ending is therefore gated off — but `stylise` is unattested, the gate
+opens there, and `style` (5.11) caps `stylised` all the same. That is the
+intended behaviour and it is what makes the `-ise` family worth having:
+`hospitalisation` → `hospital`, `urbanised` → `urban`, `novelization` → `novel`
+all arrive the same way, and every one of them is a real derivation. 531 words
+sit above the floor and are scored by a gated family through a hop like this.
+
+The 531 arrive by two routes. 441 are the `-ise`/`-ize` family, which leaks
+freely because corpora measure `-ised` and `-isation` but miss the bare verb, so
+the unmeasured middle is almost always there. The other 87 are agentive plurals,
+where an *ungated* rule hands off to a gated one: `abhorrers` → `abhorrer` is a
+plain plural strip, `abhorrer` is unattested, and the `-er` rule then reaches
+`abhor`. Ungated and gated rules compose, which is the sharpest reason the gate
+cannot be read as a floor on the word being scored.
+
+How much a family leaks is a property of that family, not of the gate. Prefixes
+barely leak at all: adding `un-`/`re-`/`non-`/`over-` to
+`unmeasuredBaseCandidates` demotes 3,334 more words but only 3 more well-attested
+ones, because a prefixed word rarely has an unmeasured form between it and its
+stem.
+
+So the gate does confine most families to the deep tail — but it confines them
+because of how their morphology happens to interact with corpus coverage, not
+because the code enforces a floor on the word being scored. A new family needs
+its error rate measured *inside* the deep tail on its own merits; "the gate will
+contain it" is a prediction about that family's morphology, not a guarantee the
+gate provides. `src/game/inflection-scoring.test.ts` bounds both quantities so a
+future family has to argue for whichever one it moves.
 
 Everything in the "no" rows is handled a word at a time in
 `src/data/score-overrides.json` instead, which is also where a fold that the
 rules get *wrong* gets stopped (`theses` is the plural of `thesis`, not a form of
 `these`), and where the gate's own known miss lives (`momser`, a Yiddish
 loanword, folds onto `mom`).
+
+The spelling rules' remaining misses are recorded rather than fixed, because each
+is a lone coincidence with no shared structure to generalise over. The base
+spelling is right and its *sense* is wrong: `germen` (a biology term) folds onto
+the nationality `german` via `-men` → `-man`, `complices` (plural of `complice`,
+an accomplice) onto `complex` via `-ices` → `-ex`, `brae` onto `bra` and `spae`
+onto `spa` via `-ae` → `-a`, `reeves` onto `reef` via `-ves` → `-f`. A related
+group folds onto the *correct* spelling but inherits a commoner homograph's
+frequency — `stoles` onto `stole` (the past tense of *steal*), `viae` onto the
+preposition `via`, `marae` and `laurae` onto the names `mara` and `laura`. No
+stemmer change reaches that second group: the rule is right and the corpus
+cannot tell the senses apart. `mores` is the largest single miss (it scores as
+`more`, having already folded onto `mor` before this cutover); it is left alone
+because pinning it anywhere commoner would be a promotion, which
+`score-overrides.json` forbids by design.
 
 Every widening is date-gated, so no past puzzle re-scores: `scoringFor` picks a
 `Scoring` profile from the puzzle date, and the four cutovers to date are

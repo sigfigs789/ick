@@ -167,6 +167,67 @@ describe("comparatives and Latin plurals fold, but only below the measurement fl
       expect(score(word, BEFORE), `${word} must not move`).toBe(score(word, ON));
     }
   });
+
+  it("still folds a measured word whose chain runs through an unmeasured one", () => {
+    // The gate is asked about the node being expanded, not about the word the
+    // chain started from -- so "measured" protects a word from *its own* ending
+    // and not from a gated rule further down the chain. "stylised" is measured at
+    // Zipf 2.51, so its own "-ised" ending is gated off; "stylise" is unattested,
+    // the gate opens there, and "style" caps "stylised" anyway.
+    //
+    // This is intended, and it is most of what the "-ise"/"-isation" families are
+    // for: the tensed and nominalised forms are the ones corpora measure, while
+    // the bare verb in the middle is the one they miss. Pinned here because the
+    // reading is counter-intuitive enough that someone could "fix" it and quietly
+    // delete these folds.
+    for (const [word, base] of [
+      ["stylised", "style"],
+      ["hospitalisation", "hospital"],
+      ["urbanised", "urban"],
+      ["novelization", "novel"],
+    ] as const) {
+      const substitution = baseFormSubstitution(word, ON);
+      expect(substitution?.base, `${word} should reach ${base}`).toBe(base);
+      // Above the floor on its own measurement, which is what makes the point:
+      // the fold cannot have come from this word's own ending.
+      expect(substitution!.ownZipf).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it("bounds what a new gated family may re-score", () => {
+    // Two tripwires, because the hop-by-hop gate fails in two different ways and
+    // neither number sees the other's failure.
+    //
+    // The blast radius: how many words this cutover demotes at all. A family
+    // added to `unmeasuredBaseCandidates` lands almost entirely here, in the deep
+    // tail the gate is meant to fence it into -- measured, adding the `un-`/`re-`
+    // /`non-`/`over-` prefixes moves this from 19,685 to 23,019.
+    //
+    // The leak: how many *well-attested* words (own Zipf >= 2.5) it demotes. The
+    // gate is asked about each hop, so a family reaches a measured word whenever
+    // an unmeasured form sits between it and the base -- 441 through the "-ise"
+    // family, whose bare verb corpora miss, and 87 more where an ungated plural
+    // strip hands off to the gated "-er" rule ("abhorrers" -> "abhorrer" ->
+    // "abhor"). How much that happens is a property of the family, not of the
+    // gate: the same prefix experiment moves this count by 3, because prefixed
+    // words rarely have an unmeasured middle. So a family can be wildly wrong in
+    // the deep tail and still not trip this bound.
+    //
+    // Bounds rather than exact counts, so a frequency-data refresh does not fail
+    // the suite. If either trips, sweep the newly demoted words before raising it.
+    const zipfHundredths = rarityData.zipfHundredths;
+    let demoted = 0;
+    let wellAttested = 0;
+    for (const [i, word] of (dictionaryWords as string[]).entries()) {
+      if (score(word, ON) >= score(word, BEFORE) - 1e-9) continue;
+      demoted++;
+      if (zipfHundredths[i] / 100 >= 2.5) wellAttested++;
+    }
+    expect(demoted).toBeGreaterThan(15000);
+    expect(demoted).toBeLessThan(21000);
+    expect(wellAttested).toBeGreaterThan(1000);
+    expect(wellAttested).toBeLessThan(1750);
+  });
 });
 
 describe("what the cutover deliberately leaves alone", () => {

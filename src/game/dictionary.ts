@@ -791,6 +791,12 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   // reason "specialest" can fold to "special" while "tempest" keeps its own
   // score. See `unmeasuredBaseCandidates` for the families and the words that
   // would break without the gate.
+  //
+  // Note the test is on `word` -- the node being expanded -- and not on whatever
+  // word this chain started from. A measured word therefore still reaches a gated
+  // base through an unmeasured hop ("stylised" -> "stylise" -> "style"), which is
+  // intended and is what the "-ise"/"-isation" families rely on. It also means a
+  // family added here is never confined to the deep tail; see the README.
   if (WORD_INDEX.has(word) && zipfFor(word, scoring) < MEASURED_FLOOR) {
     for (const candidate of unmeasuredBaseCandidates(word)) add(candidate);
   }

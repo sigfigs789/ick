@@ -109,7 +109,17 @@ export function inflectionalBaseCandidates(word: string): string[] {
  * Below wordfreq's measurement floor a word's score is a stand-in rather than a
  * measurement, so a plausible base is strictly better information than the
  * sentinel it would otherwise get; at or above the floor there is a real
- * measurement, and a spelling guess must not be allowed to overrule it. Every
+ * measurement, and a spelling guess must not be allowed to overrule it.
+ *
+ * That gate is applied per *hop*, not per word -- `nextBaseForms` asks it about
+ * the node it is expanding, so a measured word still reaches a gated base when
+ * the chain runs through an unmeasured one ("stylised", measured at 2.51, is
+ * gated on its own "-ised" ending but reaches "style" through the unattested
+ * "stylise"). Intended, and the reason the "-ise" family earns its place. The
+ * catch is that a family admitted here is *not* confined to the deep tail: it
+ * will reach well-attested words through an unmeasured intermediate, so "wrong
+ * below the floor" is not a survivable error rate. See the README section for
+ * the measured count. Every
  * word in the list above sits at or above the floor and is excluded on those
  * grounds -- "tempest" is measured at Zipf 3.29, "canter" at 2.72, "noter" at
  * 1.27. The last two families make the same point louder: ungated, "-ize" folds
