@@ -45,6 +45,7 @@ TION_WEIGHT = 6.0
 DRIFT = 2e-5          # tie-breaker toward a drop's original position
 STEPS = 400_000
 T_START, T_END = 0.02, 0.0005
+RESTARTS = 4          # annealing runs; the lowest-cost result wins
 
 
 def main() -> None:
@@ -126,19 +127,31 @@ def main() -> None:
             affected.update(q for q in range(p, p + TION_WINDOW + 1) if q < n)
         return sum(local_cost(seq, i) for i in affected)
 
-    rng = random.Random(int(from_date.strftime("%Y%m%d")))
     slots_by_len = {2: [i for i, d in enumerate(tail) if len(d) == 2],
                     3: [i for i, d in enumerate(tail) if len(d) == 3]}
-    seq = list(tail)
-    for step in range(STEPS):
-        temp = T_START * (T_END / T_START) ** (step / STEPS)
-        slots = slots_by_len[2 if rng.random() < 0.4 else 3]
-        i, j = rng.sample(slots, 2)
-        before = cost_around(seq, (i, j))
-        seq[i], seq[j] = seq[j], seq[i]
-        delta = cost_around(seq, (i, j)) - before
-        if delta > 0 and rng.random() >= math.exp(-delta / temp):
+
+    def anneal(seed: int) -> list[str]:
+        rng = random.Random(seed)
+        seq = list(tail)
+        for step in range(STEPS):
+            temp = T_START * (T_END / T_START) ** (step / STEPS)
+            slots = slots_by_len[2 if rng.random() < 0.4 else 3]
+            i, j = rng.sample(slots, 2)
+            before = cost_around(seq, (i, j))
             seq[i], seq[j] = seq[j], seq[i]
+            delta = cost_around(seq, (i, j)) - before
+            if delta > 0 and rng.random() >= math.exp(-delta / temp):
+                seq[i], seq[j] = seq[j], seq[i]
+        return seq
+
+    base_seed = int(from_date.strftime("%Y%m%d")) * 10
+    candidates = []
+    for k in range(RESTARTS):
+        seq = anneal(base_seed + k)
+        cost = sum(local_cost(seq, i) for i in range(n))
+        print(f"restart {k}: cost {cost:.3f}")
+        candidates.append((cost, seq))
+    seq = min(candidates)[1]
 
     assert sorted(seq) == sorted(tail)
 
