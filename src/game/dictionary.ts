@@ -6,6 +6,7 @@ import wordRejectionData from "../data/word-rejections.json";
 import {
   baseForm,
   boundBaseCandidates,
+  degreeBaseCandidates,
   inflectionalBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
@@ -782,6 +783,16 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   add(tenseBaseForm(word, scoring));
   add(baseForm(word));
   for (const candidate of inflectionalBaseCandidates(word)) add(candidate);
+  // "-ier"/"-iest" comparatives, ungated: unlike bare "-er"/"-est" below, the
+  // "-y" rewrite is checkable, and the check is the base's *other* degree.
+  // "happy" has "happiest", so "happier" folds onto it even though both carry
+  // real measurements; "copy" has no "copiest", so "copier" -- an agent noun --
+  // keeps its own score. Running above the floor is the point: every measured
+  // comparative ("angrier", "earliest", "prettiest") scored rarer than its own
+  // adjective while the only degree rules lived behind the gate.
+  for (const { base, counterpart } of degreeBaseCandidates(word)) {
+    if (WORD_INDEX.has(counterpart)) add(base);
+  }
   // Suffixes whose spelling is not decisive, admitted only where the word's own
   // frequency is a stand-in rather than a measurement. Below MEASURED_FLOOR the
   // score comes from the deep-tail band -- for an unattested word, from the

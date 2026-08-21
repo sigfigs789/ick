@@ -86,6 +86,58 @@ describe("number inflections fold onto their base (from 2026-08-21)", () => {
   });
 });
 
+// "-ier"/"-iest" rewrites a "-y", so the reading is checkable against the
+// dictionary -- the base's other degree must be attested in the same spelling.
+// That check is what earns this one family a fold *above* the measurement
+// floor, where the gated rules below must not reach.
+describe("-ier/-iest comparatives fold onto their -y adjective, above the floor too", () => {
+  const DEGREES: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    // Measured comparatives that scored rarer than their own adjective.
+    ["happier", "happy", 5.4, 3.5],
+    ["angrier", "angry", 7.33, 4.52],
+    ["earliest", "early", 5.35, 3.38],
+    ["prettiest", "pretty", 6.53, 3.46],
+    ["busiest", "busy", 6.34, 4.38],
+    // Unmeasured ones, where the gate used to be the only path.
+    ["babiest", "baby", 10, 3.63],
+    ["campier", "campy", 9.97, 7.68],
+    ["boniest", "bony", 9.91, 6.59],
+  ];
+
+  it.each(DEGREES)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON)).toBe(after);
+    expect(score(word, ON)).toBe(score(base, ON));
+  });
+
+  it.each(DEGREES)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE)).toBe(before);
+  });
+
+  it("refuses an agent noun, whose base lacks the other degree", () => {
+    // "copier" is not "more copy": "copiest" is not a word, so the reading
+    // fails and the word keeps its own measured score. The same check is what
+    // keeps "carrier", "supplier" and "crier" exactly where they were.
+    for (const word of ["copier", "carrier", "supplier", "crier", "collier"]) {
+      expect(score(word, ON)).toBe(score(word, BEFORE));
+      expect(baseFormSubstitution(word, ON)).toBeUndefined();
+    }
+  });
+
+  it("keeps the -ier/-iest spelling out of the gated bare -er/-est strips", () => {
+    // Guessing at that spelling in the gated rule let a junk stem chain
+    // somewhere real: "campier" reached "campus" through the non-word-shaped
+    // "campi" and out-voted its actual base "campy".
+    expect(baseFormSubstitution("campier", ON)?.base).toBe("campy");
+    expect(baseFormSubstitution("boniest", ON)?.base).not.toBe("bonus");
+  });
+
+  it("keeps its own score when the adjective is rarer", () => {
+    // The fold is a cap, never a promotion: "mopy" is rarer than "mopier", so
+    // the comparative keeps its own measurement.
+    expect(score("mopier", ON)).toBe(score("mopier", BEFORE));
+  });
+});
+
 // The suffixes whose spelling is not decisive fold only below MEASURED_FLOOR
 // (Zipf 1.0), where a word's score is a stand-in rather than a measurement.
 describe("comparatives and Latin plurals fold, but only below the measurement floor", () => {

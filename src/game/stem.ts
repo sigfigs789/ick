@@ -95,6 +95,36 @@ export function inflectionalBaseCandidates(word: string): string[] {
 }
 
 /**
+ * The comparative/superlative reading of an "-ier"/"-iest" word: the "-y"
+ * adjective it would be a degree of, paired with the *other* degree of the same
+ * base. Spelling only -- the caller requires both `base` and `counterpart` to be
+ * dictionary words before trusting the reading.
+ *
+ * The counterpart is the guard, and it is what lets this family fold *above*
+ * MEASURED_FLOOR when the bare "-er"/"-est" rules below must not. "-ier"/"-iest"
+ * rewrites a "-y", so the reading is checkable: a base attested in both degrees
+ * is being used as a gradable adjective ("happy" has "happiest", so "happier"
+ * folds), while an agent noun that merely ends the same way fails the check
+ * ("copy" has no "copiest", so "copier" keeps its own measured score; same for
+ * "carrier", "collier", "crier"). Without the rule, every measured comparative
+ * scored rarer than its own adjective -- "angrier" 7.33 against "angry" 4.52,
+ * "earliest" 5.35 against "early" 3.38 -- because the gated rules never reach a
+ * measured word.
+ */
+export function degreeBaseCandidates(word: string): { base: string; counterpart: string }[] {
+  const w = word.toLowerCase();
+  if (w.length > 5 && w.endsWith("iest")) {
+    const stem = w.slice(0, -4);
+    return [{ base: stem + "y", counterpart: stem + "ier" }];
+  }
+  if (w.length > 4 && w.endsWith("ier")) {
+    const stem = w.slice(0, -3);
+    return [{ base: stem + "y", counterpart: stem + "iest" }];
+  }
+  return [];
+}
+
+/**
  * Candidate bases for the suffixes whose spelling is *not* decisive -- safe to
  * consult only for a word that no corpus really attests. The caller enforces
  * that (see MEASURED_FLOOR in dictionary.ts); this function just supplies the
@@ -148,8 +178,12 @@ export function unmeasuredBaseCandidates(word: string): string[] {
   for (const suffix of ["est", "er"]) {
     if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
     const stem = w.slice(0, -suffix.length);
+    // "-ier"/"-iest" belongs to degreeBaseCandidates, whose paired-degree
+    // check earns it a fold above the gate. Guessing at the same spelling here
+    // let a junk stem chain somewhere real: "campier" reached "campus" through
+    // the non-word-shaped "campi" and out-voted its actual base "campy".
+    if (stem.endsWith("i")) continue;
     add(stem, `${stem}e`, stripDoubledConsonant(stem));
-    if (stem.endsWith("i")) add(`${stem.slice(0, -1)}y`);
   }
   if (w.length > 4 && w.endsWith("a")) add(`${w.slice(0, -1)}um`);
 

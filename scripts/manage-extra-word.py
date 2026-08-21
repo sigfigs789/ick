@@ -294,6 +294,24 @@ def _inflectional_candidates(word: str) -> list[str]:
     return out
 
 
+def _degree_candidates(word: str) -> list[tuple[str, str]]:
+    """Mirror of degreeBaseCandidates() in src/game/stem.ts.
+
+    The "-y" adjective an "-ier"/"-iest" word would be a degree of, paired with
+    the other degree of the same base. The caller requires both to be dictionary
+    words: "happy" has "happiest" so "happier" folds, while "copy" has no
+    "copiest" so the agent noun "copier" keeps its own measured score.
+    """
+    w = word.lower()
+    if len(w) > 5 and w.endswith("iest"):
+        stem = w[:-4]
+        return [(stem + "y", stem + "ier")]
+    if len(w) > 4 and w.endswith("ier"):
+        stem = w[:-3]
+        return [(stem + "y", stem + "iest")]
+    return []
+
+
 def _unmeasured_candidates(word: str) -> list[str]:
     """Mirror of unmeasuredBaseCandidates() in src/game/stem.ts.
 
@@ -314,9 +332,11 @@ def _unmeasured_candidates(word: str) -> list[str]:
         if not w.endswith(suffix) or len(w) <= len(suffix) + 3:
             continue
         stem = w[: -len(suffix)]
-        add(stem, stem + "e", _strip_doubled_consonant(stem))
+        # "-ier"/"-iest" belongs to _degree_candidates, whose paired-degree
+        # check earns it a fold above the gate.
         if stem.endswith("i"):
-            add(stem[:-1] + "y")
+            continue
+        add(stem, stem + "e", _strip_doubled_consonant(stem))
     if len(w) > 4 and w.endswith("a"):
         add(w[:-1] + "um")
 
@@ -499,6 +519,11 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
     add(_inflectional_stem(word))
     for candidate in _inflectional_candidates(word):
         add(candidate)
+    # "-ier"/"-iest" comparatives, ungated -- the paired-degree check stands in
+    # for the frequency gate (see degreeBaseCandidates in stem.ts).
+    for base, counterpart in _degree_candidates(word):
+        if counterpart in index:
+            add(base)
     if word in index and zipf_at(word) < MEASURED_FLOOR:
         for candidate in _unmeasured_candidates(word):
             add(candidate)

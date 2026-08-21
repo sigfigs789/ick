@@ -142,9 +142,12 @@ describe("unmeasuredBaseCandidates", () => {
     expect(unmeasuredBaseCandidates("assuager")).toContain("assuage");
   });
 
-  it("restores a y that the -ier/-iest spelling swapped for an i", () => {
-    expect(unmeasuredBaseCandidates("babiest")).toContain("baby");
-    expect(unmeasuredBaseCandidates("chubbier")).toContain("chubby");
+  it("leaves -ier/-iest to the paired-degree rule", () => {
+    // Guessing at that spelling here let a junk stem chain somewhere real:
+    // "campier" reached "campus" through "campi" and out-voted "campy".
+    expect(unmeasuredBaseCandidates("babiest")).toEqual([]);
+    expect(unmeasuredBaseCandidates("chubbier")).toEqual([]);
+    expect(unmeasuredBaseCandidates("campier")).toEqual([]);
   });
 
   it("undoes a doubled consonant", () => {
