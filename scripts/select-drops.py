@@ -15,7 +15,7 @@ DATA_DIR = ROOT / "src" / "data"
 
 MIN_TOTAL_MATCHES = 25
 MIN_FAMILIAR_MATCHES = 8  # Very Common + Common
-MIN_FAMILIAR_ZIPF_TENTHS = 42  # Common, Very Common, or Quotidian
+MIN_FAMILIAR_ZIPF_TENTHS = 42  # an absolute familiarity floor, not a band edge
 
 # Hand-picked candidate pool: digraphs/trigraphs that are common English
 # letter clusters (blends, common syllables) rather than an exhaustive

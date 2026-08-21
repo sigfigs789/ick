@@ -2,11 +2,11 @@
 
 A daily word-drop puzzle inspired by Wordle and BombParty. Every player
 gets the same 2- or 3-letter drop each day (like `STR`, `OU`, or `MP`)
-and enters valid English words that contain it, in order, for up to 6
+and enters valid English words that contain it, in order, for up to 5
 distinct guesses. The goal is finding the rarest word you can — your best
 one is crowned in the log. No timer, no login, no traditional score, just
 a friendly rarity reveal (Very Common → Extremely Rare) on every accepted
-word. Stop anytime with "Lock in my result," or use all 6 guesses.
+word. Stop anytime with "Lock in my result," or use all 5 guesses.
 
 Built in React + TypeScript (Vite). Game logic in `src/game/` is plain
 TypeScript with no DOM or React dependencies.
@@ -117,14 +117,25 @@ Every widening is date-gated, so no past puzzle re-scores: `scoringFor` picks a
 `Scoring` profile from the puzzle date, and the four cutovers to date are
 `2026-08-15`, `2026-08-16`, `2026-08-19` (folds became caps, resolved through the
 whole chain) and `2026-08-21` (every plausible base spelling at once, plus the
-gated families). Two invariants are asserted over the entire dictionary in
+gated families).
+
+`2026-08-21` carries two independent changes that happened to ship the same day,
+and it is worth keeping them apart when reading the code. The retuned Zipf bands
+(`NARROW_BANDS_START`, `measuredRarity`) change only **which label a score
+wears** — Elusive added, Quotidian retired — and move no score. The base-form
+widening (`INFLECTION_BASE_START`, `nextBaseForms`) changes only **the score**
+and touches no band cutoff. The two constants are the same date on purpose;
+either could move to its own date later without disturbing the other.
+
+Two invariants are asserted over the entire dictionary in
 `src/game/inflection-scoring.test.ts`: crossing a cutover never *raises* a word's
 score, and no folded word scores rarer than the base it folded onto.
 
 `scripts/manage-extra-word.py` carries a Python mirror of this whole fold path
-(`_next_bases`, `chained_base`, `adjusted_zipf`), used by the audit skills in
-`.claude/skills/` to score candidate words. **It has to change in lockstep with
-`dictionary.ts`** or the skills will report scores the app does not show.
+(`_next_bases`, `chained_base`, `adjusted_zipf`) *and* of `measuredRarity`, used
+by the audit skills in `.claude/skills/` to score candidate words. **It has to
+change in lockstep with `dictionary.ts`** or the skills will report scores and
+tiers the app does not show.
 
 ## Regenerating the word/rarity data
 

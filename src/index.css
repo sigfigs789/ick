@@ -30,6 +30,7 @@
   /* "Loot tier" rarity scale -- a familiar convention from games (common
      grey through legendary gold) that reads as a fun reveal rather than a
      value judgment on the player's word choice. */
+  /* Quotidian is reachable only on puzzles predating the retuned tiers. */
   --rarity-quotidian-bg: #000;
   --rarity-quotidian-fg: #fff;
   --rarity-quotidian-dot: #fff;
@@ -54,16 +55,32 @@
   --rarity-extremely-rare-fg: #7222c2;
   --rarity-extremely-rare-dot: #9b4fe0;
 
+  /* Elusive sits between Extremely Rare and Mythic. The share-square palette has
+     only three cool hues (green, blue, purple) and they are all spoken for below
+     it, so this rank has to be warm -- but a burnt amber rather than the bright
+     #ff8000 it started on, which read as traffic cone and sat too close to
+     Mythic's red. Backed by the orange square in shared results. */
+  --rarity-elusive-bg: #fbe6da;
+  --rarity-elusive-fg: #7c2d12;
+  --rarity-elusive-dot: #c2410c;
+
+  /* Frozen copy of the bright orange Legend wore before the tiers were retuned.
+     Archived puzzles render from these, so retinting Elusive above cannot reach
+     back and restyle a drop that was played that day. */
+  --rarity-legend-legacy-bg: #fde6d0;
+  --rarity-legend-legacy-fg: #9a4300;
+  --rarity-legend-legacy-dot: #ff8000;
+
   --rarity-mythic-bg: #fdeae8;
   --rarity-mythic-fg: #b42318;
   --rarity-mythic-dot: #e5484d;
 
-  /* Legend is the top rank -- it uses World of Warcraft's legendary quality
-     color (#ff8000), a warm orange that escalates past Mythic's red and is
-     backed by the orange square in shared results. */
-  --rarity-legend-bg: #fde6d0;
-  --rarity-legend-fg: #9a4300;
-  --rarity-legend-dot: #ff8000;
+  /* Legend is the top rank, and the only one that is not a hue: black reads as
+     absence next to a ladder of colors, which is what makes it land. The dot's
+     halo (below) is what keeps it legible on a dark page. */
+  --rarity-legend-bg: #1b1b1f;
+  --rarity-legend-fg: #f7f7f9;
+  --rarity-legend-dot: #f7f7f9;
 
   /* The crowned best-word highlight uses a yellow accent, independent of the
      rarity palette (so retinting a tier never recolors the crown) and kept off
@@ -121,13 +138,24 @@
     --rarity-extremely-rare-fg: #cd9bf7;
     --rarity-extremely-rare-dot: #ab5ff0;
 
+    --rarity-elusive-bg: #2b1409;
+    --rarity-elusive-fg: #f4a97c;
+    /* Lifted off the light theme's #c2410c so the dot still reads on a dark bg. */
+    --rarity-elusive-dot: #ea580c;
+
+    --rarity-legend-legacy-bg: #2e1a08;
+    --rarity-legend-legacy-fg: #fdba74;
+    --rarity-legend-legacy-dot: #ff8000;
+
     --rarity-mythic-bg: #3a1414;
     --rarity-mythic-fg: #f7a19a;
     --rarity-mythic-dot: #e5484d;
 
-    --rarity-legend-bg: #2e1a08;
-    --rarity-legend-fg: #fdba74;
-    --rarity-legend-dot: #ff8000;
+    /* Pure black against the #121213 page, so the badge reads as a void and the
+       dot's white halo does the separating. */
+    --rarity-legend-bg: #000;
+    --rarity-legend-fg: #f7f7f9;
+    --rarity-legend-dot: #ffffff;
 
     --best-word-accent: #facc15;
     --best-word-bg: #2e2607;
@@ -638,6 +666,14 @@ h2 {
   box-shadow: 0 0 0 3px
     color-mix(in srgb, var(--rarity-extremely-rare-dot) 25%, transparent);
 }
+.rarity--elusive {
+  background: var(--rarity-elusive-bg);
+  color: var(--rarity-elusive-fg);
+}
+.rarity--elusive .rarity-badge__dot {
+  background: var(--rarity-elusive-dot);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-elusive-dot) 28%, transparent);
+}
 .rarity--mythic {
   background: var(--rarity-mythic-bg);
   color: var(--rarity-mythic-fg);
@@ -646,6 +682,17 @@ h2 {
   background: var(--rarity-mythic-dot);
   box-shadow: 0 0 0 3px
     color-mix(in srgb, var(--rarity-mythic-dot) 28%, transparent);
+}
+/* Legend as it looked before the tiers were retuned. Archived puzzles keep it,
+   so a replayed drop looks like it did that day -- on its own frozen tokens
+   rather than Elusive's, which have since moved. */
+.rarity--legend-legacy {
+  background: var(--rarity-legend-legacy-bg);
+  color: var(--rarity-legend-legacy-fg);
+}
+.rarity--legend-legacy .rarity-badge__dot {
+  background: var(--rarity-legend-legacy-dot);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-legend-legacy-dot) 32%, transparent);
 }
 .rarity--legend {
   background: var(--rarity-legend-bg);

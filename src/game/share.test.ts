@@ -16,7 +16,7 @@ describe("puzzleNumber", () => {
 
 describe("buildShareText", () => {
   const words: AcceptedWord[] = [
-    { word: "the", rarity: "Quotidian", zipf: 7.7 },
+    { word: "the", rarity: "Very Common", zipf: 7.7 },
     { word: "strange", rarity: "Common", zipf: 4.6 },
     { word: "aardvark", rarity: "Extremely Rare", zipf: 2.4 },
   ];
@@ -36,7 +36,7 @@ describe("buildShareText", () => {
     const text = buildShareText("2024-01-05", "str", words);
     const resultLines = text.split("\n").slice(2, 2 + words.length);
     expect(resultLines).toEqual(
-      ["🥚", "🟫", "🟪"].map(
+      ["⬜", "🟫", "🟪"].map(
         (symbol, i) =>
           `${symbol} ${rarityScore(words[i].zipf, "2024-01-05").toFixed(1)}`,
       ),
@@ -45,7 +45,7 @@ describe("buildShareText", () => {
 
   it("separates the heading from the shared guesses", () => {
     const text = buildShareText("2024-01-05", "str", words);
-    expect(text).toContain("Drop: STR\n\n🥚 0.0");
+    expect(text).toContain("Drop: STR\n\n⬜ 0.0");
   });
 
   it("omits the best-word summary", () => {
@@ -121,7 +121,7 @@ describe("buildShareText", () => {
     expect(resultLines).toContain(
       `🟪 aardvark (${rarityScore(2.4, "2024-01-05").toFixed(1)})`,
     );
-    expect(resultLines).toContain("🥚 the (0.0)");
+    expect(resultLines).toContain("⬜ the (0.0)");
     expect(resultLines).toHaveLength(words.length);
   });
 

@@ -27,27 +27,38 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *   - 2026-08-15 only: the frequency waterfall + two-band scale, measured words
  *     filling 0..9.5 and the deep tail 9.5..10 (anchored at the data's live
  *     minimum), with the deep tail labeled Mythic. No Legend tier.
- *   - on/after 2026-08-16 (the latest system): the two-band scale widened so
+ *   - 2026-08-16 onward: the two-band scale widened so
  *     measured words fill 0..9.9 and the deep tail 9.9..10, with every word
  *     at/below Zipf 0 clamped to a flat 10. The top of the scale is split by
  *     score into two ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also
  *     where the bound-suffix base-form adjustment turns on.
+
  *   - on/after 2026-08-19: base forms are resolved through their own bases (the
  *     fold chain) instead of one hop, and every fold caps rather than inherits.
- *   - on/after 2026-08-21 (the latest system): a fold consults every plausible
- *     base spelling at once rather than the one `baseForm` commits to, so a
- *     plural or third-person form can no longer out-score the word it came from
- *     (see `inflectionalBaseCandidates`). Suffixes whose spelling is not
- *     decisive -- comparatives, Latin plurals -- fold too, but only for a word
- *     below MEASURED_FLOOR, where its score is a stand-in rather than a
- *     measurement (see `unmeasuredBaseCandidates`).
+ *   - on/after 2026-08-21 (the latest system): two independent changes that
+ *     happened to ship the same day.
+ *       * Labels: the measured Zipf bands retuned -- Elusive added between
+ *         Extremely Rare and Mythic, Quotidian folded into Very Common (see
+ *         measuredRarity). No score moves.
+ *       * Scores: a fold consults every plausible base spelling at once rather
+ *         than the one `baseForm` commits to, so a plural or third-person form
+ *         can no longer out-score the word it came from (see
+ *         `inflectionalBaseCandidates`). Suffixes whose spelling is not decisive
+ *         -- comparatives, Latin plurals, -ize/-able -- fold too, but only for a
+ *         word below MEASURED_FLOOR, where its score is a stand-in rather than a
+ *         measurement (see `unmeasuredBaseCandidates`). No label mapping moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
 const NEW_SCORING_START = "2026-08-15";
 const WIDE_BAND_START = "2026-08-16";
 const CHAINED_BASE_START = "2026-08-19";
-const INFLECTION_BASE_START = "2026-08-21";
+const NARROW_BANDS_START = "2026-08-21";
+// The base-form widening shipped on the same day as the retuned bands. Named
+// separately, and derived rather than repeated, because they are separate
+// concerns -- one changes which label a score wears, the other changes the score
+// -- and either could move to its own date later without disturbing the other.
+const INFLECTION_BASE_START = NARROW_BANDS_START;
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -77,10 +88,10 @@ function roundToTenths(n: number): number {
  * The score-based top ranks, each keyed off the value the player actually sees:
  * Legend at 9.9+ (Mythic and Legend show two decimals, so it keys off the
  * two-decimal score, 9.895 -> 9.90 -> Legend) and Mythic wherever the score
- * *displays* as 9.5 or higher. Extremely Rare and below show one decimal, so the
+ * *displays* as 9.5 or higher. Elusive and below show one decimal, so the
  * Mythic cutoff keys off the one-decimal value: anything that rounds to 9.5
  * (raw >= 9.45) is Mythic. Anything lower returns undefined, so the caller falls
- * back to the measured Zipf-band label (Extremely Rare and below).
+ * back to the measured Zipf-band label (Elusive and below).
  */
 export function topRankForScore(score: number): Extract<Rarity, "Legend" | "Mythic"> | undefined {
   if (roundToCents(score) >= LEGEND_MIN_SCORE) return "Legend";
@@ -248,7 +259,11 @@ function twoBandScoring(
   boundBaseForms: boolean,
   legend: boolean,
   chainedBaseForms = false,
-  inflectionBases = false
+  inflectionBases = false,
+  // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
+  // only; no score moves. Off for earlier systems so archived puzzles keep the
+  // labels they were played with (see NARROW_BANDS_START).
+  narrowBands = false
 ): Scoring {
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
@@ -268,10 +283,10 @@ function twoBandScoring(
     rarity: legend
       ? // Latest system: rank the top by the shown two-decimal score against the
         // fixed Legend/Mythic cutoffs; below 9.5 keeps its measured Zipf label.
-        (zipf) => topRankForScore(score(zipf)) ?? measuredRarity(zipf)
+        (zipf) => topRankForScore(score(zipf)) ?? measuredRarity(zipf, narrowBands)
       : // 2026-08-15 system: the deep-tail library (Zipf < 1) is a single Mythic
         // top rank, with no Legend above it.
-        (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf)),
+        (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf, narrowBands)),
     format: legend
       ? // Mythic and Legend (score >= 9.5) show two decimals; below shows one,
         // rounded with the same upward nudge so a raw 9.45 reads "9.5" -- the
@@ -294,9 +309,20 @@ const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true);
 // The 2026-08-19 system: the same bands and ranks, with base forms resolved
 // through their own bases.
 const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
-// The latest system (from INFLECTION_BASE_START): the same again, with a fold
-// weighing every plausible base spelling and keeping the most common one.
-const INFLECTION_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true, true);
+// The latest system (2026-08-21). Carries both of that day's changes: the
+// retuned measured Zipf bands (labels), and a fold that weighs every plausible
+// base spelling and keeps the most common one (scores). The flags are commented
+// because seven positional arguments, three of them trailing booleans, are
+// otherwise unreadable.
+const RETUNED_SCORING: Scoring = twoBandScoring(
+  9.9,
+  0,
+  /* boundBaseForms */ true,
+  /* legend */ true,
+  /* chainedBaseForms */ true,
+  /* inflectionBases */ true,
+  /* narrowBands */ true
+);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -317,7 +343,7 @@ const LEGACY_SCORING: Scoring = {
     // Missing corpus data is not evidence that a word is genuinely Mythic.
     if (zipf === LEGACY_UNKNOWN_ZIPF) return "Extremely Rare";
     if (LEGACY_SCORING.score(zipf) >= 9.5) return "Mythic";
-    return measuredRarity(zipf);
+    return measuredRarity(zipf, false);
   },
   format: (score) => score.toFixed(1),
   boundBaseForms: false,
@@ -325,8 +351,51 @@ const LEGACY_SCORING: Scoring = {
   inflectionBases: false,
 };
 
-// The Zipf-band labels for the measured range are identical across systems.
-function measuredRarity(zipf: number): Rarity {
+/**
+ * The Zipf-band labels for the measured range. Two sets, because the original
+ * cutoffs left Extremely Rare covering everything from Zipf 2.5 down to the
+ * Mythic line -- 1.75 score points wide against Mythic's 0.39, and better than a
+ * third of the words any drop can reach, which made purple the default outcome
+ * for anything that was not an everyday word rather than a find worth having.
+ *
+ * The retuned bands (NARROW_BANDS_START on) fix that by splitting the crowded
+ * top of the measured range three ways instead of two. Scores 6.8..9.4 hold
+ * roughly 45% of everything a drop can reach, and Rare/Extremely Rare/Elusive
+ * now split it so no single band bulges and Rare stops reaching into the high
+ * 8s. Elusive takes the smallest slice deliberately -- ~13% against their ~16%
+ * each -- so hitting it reads as closing in on Mythic rather than as one more
+ * step up the ladder. Below them Uncommon and Common are unchanged in spirit,
+ * and Very Common absorbs what used to be a separate Quotidian tier at the very
+ * bottom. Scores are untouched throughout -- this only changes which label a
+ * score wears.
+ *
+ * Both sets stay live: a puzzle played before the cutover keeps the tiers it
+ * was played with, Quotidian included.
+ */
+function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
+  if (narrowBands) {
+    if (zipf >= 4.85) return "Very Common";
+    if (zipf >= 3.9) return "Common";
+    // 3.15 for the same reason Elusive's cutoff is 1.59: it puts the seam exactly
+    // on the shown value, so everything displaying 6.8 or rarer is Rare and
+    // everything displaying 6.7 or commoner is Uncommon.
+    // Every cutoff here is picked that way (hence 4.85 and 2.13 rather than 4.9
+    // and 2.1): a score is shown to one decimal, so a boundary landing mid-tenth
+    // would let two words show the same number in different colors, which reads
+    // as a bug even though each label is correct for its Zipf. A test pins that
+    // no displayed value straddles a band.
+    if (zipf >= 3.15) return "Uncommon";
+    if (zipf >= 2.13) return "Rare";
+    // 1.59 rather than a rounder 1.6 so the seam lands exactly on the shown
+    // value: every Zipf below it displays 9.1 or rarer, every Zipf at or above
+    // it displays 9.0 or commoner. Elusive is 9.1..9.4 and purple 8.3..9.0, with
+    // no score able to show on the wrong side of the line. (The cutoff has to
+    // clear the cents rounding that happens before the tenths rounding, which
+    // is why 1.58 -- raw 9.047, shown 9.1 -- sits on the Elusive side.)
+    if (zipf >= 1.59) return "Extremely Rare";
+    return "Elusive";
+  }
+  // The original bands, frozen for archived puzzles -- Quotidian and all.
   if (zipf >= 6.4) return "Quotidian";
   if (zipf >= 5.2) return "Very Common";
   if (zipf >= 4.2) return "Common";
@@ -336,12 +405,15 @@ function measuredRarity(zipf: number): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return INFLECTION_SCORING; // newest system
+  if (date === undefined) return RETUNED_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
   if (date < CHAINED_BASE_START) return WIDE_SCORING;
+  // The two names below it are the same date. This rung picks a *scoring*
+  // profile, so it reads the scoring one; `usesRetunedTiers` asks the label
+  // question and reads NARROW_BANDS_START. The profile beyond carries both.
   if (date < INFLECTION_BASE_START) return CHAINED_SCORING;
-  return INFLECTION_SCORING;
+  return RETUNED_SCORING;
 }
 
 // -- Curated rejections (src/data/word-rejections.json) ----------------------
@@ -843,6 +915,7 @@ function stripDoubledConsonant(stem: string): string {
 export const RARITY_ORDER: Rarity[] = [
   "Legend",
   "Mythic",
+  "Elusive",
   "Extremely Rare",
   "Rare",
   "Uncommon",
@@ -872,6 +945,16 @@ export function rarityScore(zipf: number, date?: string): number {
  * mapping `rarityFor` applies internally, exposed for sweeping the scale by Zipf
  * (e.g. checking that a mid-band Zipf lands in the expected rank).
  */
+/**
+ * Whether `date`'s puzzle uses the retuned tiers -- the Elusive rank, the retired
+ * Quotidian, and the black-topped palette that came with them. Archived puzzles
+ * keep the tiers and colors they were played with, so anything that renders a
+ * rank has to ask. An omitted date means the newest system.
+ */
+export function usesRetunedTiers(date?: string): boolean {
+  return date === undefined || date >= NARROW_BANDS_START;
+}
+
 export function rarityForZipf(zipf: number, date?: string): Rarity {
   return scoringFor(date).rarity(zipf);
 }

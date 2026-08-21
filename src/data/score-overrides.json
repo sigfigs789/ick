@@ -1,13 +1,53 @@
 {
+  "acupressures": {
+    "base": "acupressure",
+    "reason": "Plural / third-person form of `acupressure`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "adipoceres": {
+    "base": "adipocere",
+    "reason": "Plural / third-person form of `adipocere`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
   "angulatenesses": {
     "base": "angulate",
     "reason": "Plural of an -ness noun of `angulate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "apicultures": {
+    "base": "apiculture",
+    "reason": "Plural / third-person form of `apiculture`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "awarest": {
+    "base": "aware",
+    "reason": "Superlative of `aware`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "barwares": {
+    "base": "barware",
+    "reason": "Plural / third-person form of `barware`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
   "bureaucrateses": {
     "base": "bureaucratese",
     "reason": "Plural / third-person form of `bureaucratese`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "canaigres": {
+    "base": "canaigre",
+    "reason": "Plural / third-person form of `canaigre`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "chemospheres": {
+    "base": "chemosphere",
+    "reason": "Plural / third-person form of `chemosphere`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "citricultures": {
+    "base": "citriculture",
+    "reason": "Plural / third-person form of `citriculture`; a suffix is not a discovery.",
+    "since": "2026-08-21"
   },
   "collegiates": {
     "base": "collegiate",
@@ -18,6 +58,11 @@
     "base": "compassionate",
     "reason": "Plural / third-person form of `compassionate`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "computereses": {
+    "base": "computerese",
+    "reason": "Plural / third-person form of `computerese`; a suffix is not a discovery.",
+    "since": "2026-08-21"
   },
   "concisest": {
     "base": "concise",
@@ -104,6 +149,16 @@
     "reason": "Plural agent noun of `convince`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "counterespionages": {
+    "base": "counterespionage",
+    "reason": "Plural / third-person form of `counterespionage`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "eldercares": {
+    "base": "eldercare",
+    "reason": "Plural / third-person form of `eldercare`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
   "fluconazoles": {
     "base": "fluconazole",
     "reason": "Plural / third-person form of `fluconazole`; a suffix is not a discovery.",
@@ -113,6 +168,11 @@
     "base": "gluconeogenesis",
     "reason": "Plural / third-person form of `gluconeogenesis`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "granitewares": {
+    "base": "graniteware",
+    "reason": "Plural / third-person form of `graniteware`; a suffix is not a discovery.",
+    "since": "2026-08-21"
   },
   "gravitater": {
     "base": "gravitate",
@@ -139,6 +199,11 @@
     "reason": "Plural / third-person form of `italianate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "lacklustres": {
+    "base": "lacklustre",
+    "reason": "Plural / third-person form of `lacklustre`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
   "lactational": {
     "base": "lactation",
     "reason": "-al adjective of `lactation`; a suffix is not a discovery.",
@@ -148,6 +213,26 @@
     "base": "laevigate",
     "reason": "Plural / third-person form of `laevigate`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "lifecares": {
+    "base": "lifecare",
+    "reason": "Plural / third-person form of `lifecare`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "maggiores": {
+    "base": "maggiore",
+    "reason": "Plural / third-person form of `maggiore`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "microelectrophoreses": {
+    "base": "microelectrophoresis",
+    "reason": "Plural / third-person form of `microelectrophoresis`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "nigrescences": {
+    "base": "nigrescence",
+    "reason": "Plural / third-person form of `nigrescence`; a suffix is not a discovery.",
+    "since": "2026-08-21"
   },
   "nizamate": {
     "base": "nizam",
@@ -164,6 +249,16 @@
     "reason": "Plural / third-person form of `nonconfidence`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "nonglares": {
+    "base": "nonglare",
+    "reason": "Plural / third-person form of `nonglare`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "nonresistances": {
+    "base": "nonresistance",
+    "reason": "Plural / third-person form of `nonresistance`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
   "ornatest": {
     "base": "ornate",
     "reason": "Superlative of `ornate`; a suffix is not a discovery.",
@@ -173,6 +268,11 @@
     "base": "overconfidence",
     "reason": "Plural / third-person form of `overconfidence`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "ozonospheres": {
+    "base": "ozonosphere",
+    "reason": "Plural / third-person form of `ozonosphere`; a suffix is not a discovery.",
+    "since": "2026-08-21"
   },
   "penultimates": {
     "base": "penultimate",
@@ -189,15 +289,45 @@
     "reason": "-ation noun of `placate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "predepartures": {
+    "base": "predeparture",
+    "reason": "Plural / third-person form of `predeparture`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "premanufactures": {
+    "base": "premanufacture",
+    "reason": "Plural / third-person form of `premanufacture`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "prestorages": {
+    "base": "prestorage",
+    "reason": "Plural / third-person form of `prestorage`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
   "reconnaisance": {
     "base": "reconnaissance",
     "reason": "Reviewed demotion to `reconnaissance`.",
     "since": "2026-08-19"
   },
+  "shellfires": {
+    "base": "shellfire",
+    "reason": "Plural / third-person form of `shellfire`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
+  "skincares": {
+    "base": "skincare",
+    "reason": "Plural / third-person form of `skincare`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
   "sororates": {
     "base": "sororate",
     "reason": "Plural / third-person form of `sororate`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "stavesacres": {
+    "base": "stavesacre",
+    "reason": "Plural / third-person form of `stavesacre`; a suffix is not a discovery.",
+    "since": "2026-08-21"
   },
   "subdiaconates": {
     "base": "subdiaconate",
@@ -207,6 +337,11 @@
   "theses": {
     "base": "thesis",
     "reason": "Plural of `thesis`. The number-inflection fold reaches only the coincidental homograph `these`, which is far more common and is not the word's base.",
+    "since": "2026-08-21"
+  },
+  "ultimogenitures": {
+    "base": "ultimogeniture",
+    "reason": "Plural / third-person form of `ultimogeniture`; a suffix is not a discovery.",
     "since": "2026-08-21"
   },
   "upstates": {
@@ -219,9 +354,19 @@
     "reason": "Plural / third-person form of `vallate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "vaporwares": {
+    "base": "vaporware",
+    "reason": "Plural / third-person form of `vaporware`; a suffix is not a discovery.",
+    "since": "2026-08-21"
+  },
   "waterbusses": {
     "base": "waterbus",
     "reason": "Plural / third-person form of `waterbus`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "woodlores": {
+    "base": "woodlore",
+    "reason": "Plural / third-person form of `woodlore`; a suffix is not a discovery.",
+    "since": "2026-08-21"
   }
 }
