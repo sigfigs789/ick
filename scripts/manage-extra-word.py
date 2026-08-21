@@ -357,23 +357,6 @@ def _unmeasured_candidates(word: str) -> list[str]:
     return out
 
 
-def _ize_verb_spellings(word: str) -> list[str]:
-    """Mirror of izeVerbSpellings() in src/game/stem.ts.
-
-    The bare-verb spelling of a tensed "-ize"/"-ise" form, so a conjugation
-    folds through its own verb rather than past it. Only when the verb spelling
-    is not a dictionary word does the caller strip the tensed form directly.
-    """
-    w = word.lower()
-    for suffix in ("izes", "ises", "ized", "ised"):
-        if w.endswith(suffix) and len(w) > len(suffix) + 3:
-            return [w[:-1]]
-    for suffix in ("izing", "ising"):
-        if w.endswith(suffix) and len(w) > len(suffix) + 3:
-            return [w[:-3] + "e"]
-    return []
-
-
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     """Mirror of tenseBaseForm(): -ed/-ing pick the most common valid base.
 
@@ -562,15 +545,10 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
         if counterpart in index:
             add(base)
     if word in index and zipf_at(word) < MEASURED_FLOOR:
+        # Tensed "-ize"/"-ise" forms are deliberately absent from the gated
+        # set: they fold through their own verb (see nextBaseForms).
         for candidate in _unmeasured_candidates(word):
             add(candidate)
-        # A tensed "-ize"/"-ise" form folds through its own verb, never past
-        # it (see nextBaseForms in dictionary.ts).
-        for verb in _ize_verb_spellings(word):
-            if verb in index:
-                continue
-            for candidate in _unmeasured_candidates(verb):
-                add(candidate)
     add(_scoring_base(word, index))
     return out
 

@@ -18,5 +18,9 @@
   "laterize": {
     "since": "2026-08-21",
     "reason": "To form laterite (the soil), not a degree of `later`. Same shape as `rightsize`: exempting the verb carries its tenses with it."
+  },
+  "complices": {
+    "since": "2026-08-21",
+    "reason": "Plural of the archaic `complice` (an accomplice), which the -ices rule misreads as a stem-change plural of `complex`, 2.8 Zipf clear of the truth. `complice` is the rarer word, so an override cannot express this -- the cap ignores a rarer base -- and the word's own measurement is the right score."
   }
 }

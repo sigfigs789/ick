@@ -261,13 +261,6 @@ describe("what the cutover deliberately leaves alone", () => {
     expect(baseFormSubstitution("theses", ON)?.base).toBe("thesis");
     expect(score("theses", ON)).toBe(score("thesis", ON));
     expect(score("theses", ON)).not.toBe(score("these", ON));
-    // Same shape, three more entries: a plural whose true singular the rules
-    // cannot see folds to it by review instead.
-    expect(baseFormSubstitution("whatsises", ON)?.base).toBe("whatsis");
-    expect(baseFormSubstitution("abatises", ON)?.base).toBe("abatis");
-    // "complices" is pinned to "complice", which is *rarer* -- the cap keeps
-    // the word's own measurement rather than promoting it.
-    expect(score("complices", ON)).toBe(score("complices", BEFORE));
   });
 });
 
@@ -279,7 +272,11 @@ describe("reviewed fold exemptions", () => {
     // "momser" is Yiddish (from mamzer), not "more mom"; "limen" is the
     // psychophysics threshold, not the plural of "liman"; "germen" is the
     // botanical rudiment, not the plural of "german".
-    for (const word of ["momser", "limen", "germen"]) {
+    // ... and "complices" is the plural of the archaic "complice", not a
+    // stem-change plural of "complex". Its true base is *rarer* than it, so no
+    // override can express the redirect -- the cap ignores a rarer base -- and
+    // its own measurement is the right score.
+    for (const word of ["momser", "limen", "germen", "complices"]) {
       expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
       expect(score(word, ON)).toBe(score(word, BEFORE));
     }
@@ -337,10 +334,20 @@ describe("a conjugation displays what its verb displays", () => {
     }
   });
 
-  it("still strips a tensed form whose verb is not a word", () => {
-    // No verb, no sibling to disagree with: the fallback strips directly from
-    // the verb spelling, so the -ization un-sticking keeps working.
+  it("keeps the -ization un-sticking working", () => {
+    // "winterisation" folds through the dictionary word "winterise" (bound
+    // suffix), and the gate at that unmeasured verb is open, so the chain
+    // still carries on to "winter".
     expect(score("winterisation", ON)).toBe(score("winter", ON));
+  });
+
+  it("keeps a verbless -ises plural from being read as a verb tense", () => {
+    // "whatsises" has no verb "whatsise" behind it -- it is the plural of
+    // "whatsis", and the -es rules fold it there. The old tensed strip read
+    // the ending as a conjugation and carried it to "what", eight points down.
+    expect(baseFormSubstitution("whatsises", ON)?.base).toBe("whatsis");
+    expect(baseFormSubstitution("appendicitises", ON)?.base).toBe("appendicitis");
+    expect(baseFormSubstitution("abatises", ON)?.base).toBe("abatis");
   });
 
   it("never lets a tensed -ize/-ise form leapfrog its own verb", () => {

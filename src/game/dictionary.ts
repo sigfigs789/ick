@@ -9,7 +9,6 @@ import {
   boundBaseCandidates,
   degreeBaseCandidates,
   inflectionalBaseCandidates,
-  izeVerbSpellings,
   unmeasuredBaseCandidates,
 } from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
@@ -177,10 +176,12 @@ interface ScoreOverride {
  * `unmeasuredBaseCandidates` covers the comparatives and Latin plurals only below
  * MEASURED_FLOOR, where the score is a stand-in anyway. What is left for this
  * file is everything neither rule can reach: a measured word whose ending
- * misleads ("tempest" is not a form of "temp"), a loanword the gate lets through
- * anyway ("momser" folds onto "mom", which it has nothing to do with), and the
+ * misleads ("tempest" is not a form of "temp"), the plurals whose true singular
+ * no rule can see ("whatsises" -> "whatsis", "abatises" -> "abatis"), and the
  * "-en" verbs, whose folds are right often enough to tempt and wrong often enough
- * to disqualify ("dudeen" -> "dude").
+ * to disqualify ("dudeen" -> "dude"). A word the rules misread that has no base
+ * at all ("momser" is not a form of "mom") goes in fold-exemptions.json instead
+ * -- see FOLD_EXEMPTIONS below.
  *
  * An earlier note in this spot argued no widening was affordable at all, on the
  * grounds that a blanket bare-`s` strip re-scored ~10,900 words and stripped
@@ -845,19 +846,15 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   // score. See `unmeasuredBaseCandidates` for the families and the words that
   // would break without the gate.
   if (WORD_INDEX.has(word) && zipfFor(word, scoring) < MEASURED_FLOOR) {
+    // A tensed "-ize"/"-ise" form is deliberately absent from this set: it
+    // folds through its own verb -- already a candidate via the tense and
+    // number rules above -- so the gate is applied *at the verb*, once per
+    // paradigm. That is what keeps "womanizes" from reaching "woman" through
+    // a strip its own measured verb is barred from (it displayed 6 points
+    // more common than the word it conjugates), and what stops the -is noun
+    // plurals being read as verb tenses ("whatsises" reached "what";
+    // "appendicitises" now folds to "appendicitis" like any other plural).
     for (const candidate of unmeasuredBaseCandidates(word)) add(candidate);
-    // A tensed "-ize"/"-ise" form folds through its own verb, never past it.
-    // The verb is already a candidate via the tense and number rules above, so
-    // when the dictionary has it, the chain applies this gate *at the verb* --
-    // which is what keeps "womanizes" from reaching "woman" through a strip
-    // its own measured verb is barred from, and so from scoring 6 points more
-    // common than the word it conjugates. Only when the verb spelling isn't a
-    // word at all is the tensed form stripped directly: there is no sibling
-    // left to disagree with.
-    for (const verb of izeVerbSpellings(word)) {
-      if (WORD_INDEX.has(verb)) continue;
-      for (const candidate of unmeasuredBaseCandidates(verb)) add(candidate);
-    }
   }
   add(scoringBaseForm(word, scoring));
   return out;

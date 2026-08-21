@@ -160,20 +160,23 @@ describe("unmeasuredBaseCandidates", () => {
     expect(unmeasuredBaseCandidates("clitella")).toContain("clitellum");
   });
 
-  it("offers the stem an -ize/-ise verb was built from, tensed or not", () => {
+  it("offers the stem a bare -ize/-ise verb was built from", () => {
     expect(unmeasuredBaseCandidates("containerise")).toContain("container");
-    expect(unmeasuredBaseCandidates("ghettoising")).toContain("ghetto");
-    expect(unmeasuredBaseCandidates("fractionises")).toContain("fraction");
+    expect(unmeasuredBaseCandidates("ghettoise")).toContain("ghetto");
     // The "y" candidate reaches the noun behind the verb.
     expect(unmeasuredBaseCandidates("tautologize")).toContain("tautology");
-    expect(unmeasuredBaseCandidates("ebonized")).toContain("ebony");
   });
 
-  it("reads a tensed -ize form by its longest ending, not as the bare verb", () => {
-    // "-izing" must not be read as "-ize" leaving a stray "in", nor "-izes" as
-    // "-ise" leaving a stray "z".
-    expect(unmeasuredBaseCandidates("ghettoising")).not.toContain("ghettoin");
-    expect(unmeasuredBaseCandidates("fractionises")).not.toContain("fractionz");
+  it("leaves a tensed -ize/-ise form to fold through its own verb", () => {
+    // Stripping the tensed endings here read the -is noun plurals as verb
+    // tenses ("whatsises" reached "what") and let a conjugation through a
+    // strip its own measured verb was barred from ("womanizes" -> "woman").
+    // The tense and number rules already offer the bare verb, so the caller's
+    // gate is applied at the verb, once per paradigm.
+    expect(unmeasuredBaseCandidates("ghettoising")).toEqual([]);
+    expect(unmeasuredBaseCandidates("fractionises")).toEqual([]);
+    expect(unmeasuredBaseCandidates("ebonized")).toEqual([]);
+    expect(unmeasuredBaseCandidates("whatsises")).toEqual([]);
   });
 
   it("offers the stem of an -able/-ible/-ably/-ibly word", () => {
