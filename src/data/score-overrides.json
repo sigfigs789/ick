@@ -334,6 +334,11 @@
     "reason": "Plural / third-person form of `subdiaconate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "theses": {
+    "base": "thesis",
+    "reason": "Plural of `thesis`. The number-inflection fold reaches only the coincidental homograph `these`, which is far more common and is not the word's base.",
+    "since": "2026-08-21"
+  },
   "ultimogenitures": {
     "base": "ultimogeniture",
     "reason": "Plural / third-person form of `ultimogeniture`; a suffix is not a discovery.",
