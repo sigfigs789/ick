@@ -284,7 +284,7 @@ def _inflectional_candidates(word: str) -> list[str]:
     if len(w) > 4 and w.endswith("men"):
         add(w[:-3] + "man")
     if len(w) > 4 and w.endswith("es"):
-        add(w[:-1], w[:-2])
+        add(w[:-1], w[:-2], w[:-2] + "is")
     if len(w) > 3 and w.endswith("ae"):
         add(w[:-1])
     if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):

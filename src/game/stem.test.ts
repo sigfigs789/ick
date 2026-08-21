@@ -65,6 +65,14 @@ describe("inflectionalBaseCandidates", () => {
     );
   });
 
+  it("offers the -is base for the Greek and Latin vowel-change plurals", () => {
+    expect(inflectionalBaseCandidates("analyses")).toContain("analysis");
+    expect(inflectionalBaseCandidates("crises")).toContain("crisis");
+    // Offered on any "-es" word; the caller keeps only dictionary words, and
+    // the reviewed override on "theses" outranks every spelling guess.
+    expect(inflectionalBaseCandidates("taxes")).toContain("taxis");
+  });
+
   it("reaches -ies bases at five letters, where baseForm needs six", () => {
     expect(baseForm("cries")).toBe("cri"); // the -ies rule needs length > 5
     expect(inflectionalBaseCandidates("cries")).toContain("cry");

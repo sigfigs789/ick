@@ -37,6 +37,11 @@ describe("number inflections fold onto their base (from 2026-08-21)", () => {
     ["meatloaves", "meatloaf", 9.94, 7.19],
     ["matrices", "matrix", 6.69, 5.38],
     ["apices", "apex", 8.68, 5.91],
+    // "-es" -> "-is": the Greek and Latin plurals spelled with a vowel change.
+    ["analyses", "analysis", 5.8, 4.15],
+    ["crises", "crisis", 6.12, 4.57],
+    ["emphases", "emphasis", 8.12, 5.21],
+    ["oases", "oasis", 7.9, 6.13],
     // The classical plurals borrowed whole, and the native "-men" plural.
     ["scapulae", "scapula", 8.91, 7.75],
     ["radii", "radius", 7.62, 5.69],

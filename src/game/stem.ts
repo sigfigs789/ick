@@ -37,6 +37,14 @@ export function baseForm(word: string): string {
  *   - the irregular plurals English spells with a stem change: "-ves" -> "-f"
  *     or "-fe" ("wolves" -> "wolf", "knives" -> "knife") and "-ices" -> "-ex"
  *     or "-ix" ("matrices" -> "matrix", "vortices" -> "vortex").
+ *   - "-es" -> "-is" for the Greek and Latin plurals spelled with a vowel
+ *     change ("analyses" -> "analysis", "crises" -> "crisis", "oases" ->
+ *     "oasis"). The one coincidence far more common than the true base is
+ *     "theses" -> "these", and the reviewed override pinning "theses" to
+ *     "thesis" replaces the spelling guesses outright, so it wins. The other
+ *     known misfires ("neurites" -> "neuritis", "metropoles" -> "metropolis")
+ *     land on a near-frequency sibling, the small-magnitude shape an override
+ *     can catch if it ever matters.
  *   - the classical plurals borrowed whole: "-ae" -> "-a" ("scapulae" ->
  *     "scapula", "formulae" -> "formula"), "-i" -> "-us" ("radii" -> "radius",
  *     "abaci" -> "abacus"), and the native "-men" -> "-man" ("crewmen" ->
@@ -76,7 +84,9 @@ export function inflectionalBaseCandidates(word: string): string[] {
   if (w.length > 4 && w.endsWith("ies")) add(w.slice(0, -3) + "y", w.slice(0, -3) + "i");
   if (w.length > 4 && w.endsWith("ves")) add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
   if (w.length > 4 && w.endsWith("men")) add(w.slice(0, -3) + "man");
-  if (w.length > 4 && w.endsWith("es")) add(w.slice(0, -1), w.slice(0, -2));
+  if (w.length > 4 && w.endsWith("es")) {
+    add(w.slice(0, -1), w.slice(0, -2), w.slice(0, -2) + "is");
+  }
   if (w.length > 3 && w.endsWith("ae")) add(w.slice(0, -1));
   if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) add(w.slice(0, -1));
   if (w.length > 3 && w.endsWith("i")) add(w.slice(0, -1) + "us");
