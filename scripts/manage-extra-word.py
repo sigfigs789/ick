@@ -259,7 +259,7 @@ def _inflectional_stem(word: str) -> str:
     return w
 
 
-def _inflectional_candidates(word: str) -> list[str]:
+def _inflectional_candidates(word: str, latin_plurals: bool) -> list[str]:
     """Mirror of inflectionalBaseCandidates() in src/game/stem.ts.
 
     Every base spelling a plural or third-person form could have. Unlike
@@ -286,12 +286,17 @@ def _inflectional_candidates(word: str) -> list[str]:
         add(w[:-3] + "man")
     if len(w) > 4 and w.endswith("es"):
         add(w[:-1], w[:-2], w[:-2] + "is")
-    if len(w) > 3 and w.endswith("ae"):
-        add(w[:-1])
     if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
         add(w[:-1])
-    if len(w) > 3 and w.endswith("i"):
-        add(w[:-1] + "us")
+    # Latin plurals, only where the caller's guard says the spelling can be
+    # read that way (see latinPluralsAllowed in dictionary.ts).
+    if latin_plurals:
+        if len(w) > 3 and w.endswith("ae"):
+            add(w[:-1])
+        if len(w) > 3 and w.endswith("i"):
+            add(w[:-1] + "us")
+        if len(w) > 4 and w.endswith("a"):
+            add(w[:-1] + "um")
     return out
 
 
@@ -333,13 +338,13 @@ def _unmeasured_candidates(word: str) -> list[str]:
         if not w.endswith(suffix) or len(w) <= len(suffix) + 3:
             continue
         stem = w[: -len(suffix)]
-        # "-ier"/"-iest" belongs to _degree_candidates, whose paired-degree
-        # check earns it a fold above the gate.
+        # For "-ier"/"-iest" the "-y" rewrite is the only candidate; the other
+        # i-stem candidates let junk chain somewhere real ("campi" -> "campus").
+        # See unmeasuredBaseCandidates in stem.ts.
         if stem.endswith("i"):
+            add(stem[:-1] + "y")
             continue
         add(stem, stem + "e", _strip_doubled_consonant(stem))
-    if len(w) > 4 and w.endswith("a"):
-        add(w[:-1] + "um")
 
     # Bare "-ize"/"-ise" only: a tensed form folds through its own verb (see
     # _ize_verb_spellings). The "y" candidate reaches the noun a verb was
@@ -537,7 +542,7 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
 
     add(_tense_base(word, index, zipf_at))
     add(_inflectional_stem(word))
-    for candidate in _inflectional_candidates(word):
+    for candidate in _inflectional_candidates(word, (word + "s") not in index):
         add(candidate)
     # "-ier"/"-iest" comparatives, ungated -- the paired-degree check stands in
     # for the frequency gate (see degreeBaseCandidates in stem.ts).

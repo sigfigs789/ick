@@ -247,6 +247,27 @@ const FOLD_EXEMPTIONS: ReadonlyMap<string, FoldExemption> = new Map(
   Object.entries(foldExemptionData as Record<string, FoldExemption>)
 );
 
+/**
+ * Whether `word` may be read as a Latin plural at all.
+ *
+ * The "-a"/"-i"/"-ae" endings are ambiguous the way bare "-er" is: they are how
+ * Latin pluralises, and also how English spells a pile of ordinary singulars.
+ * The frequency gate is no help here -- "alba" (Zipf 3.33) is *more* common than
+ * "curricula" and "formulae", so any threshold dropping the bad folds would drop
+ * the good ones with them. What separates them is whether the word takes an
+ * English plural of its own: a Latin plural has no "-s" form (no "podias", no
+ * "memorandas"), so a word that has one is being used as an English singular
+ * whatever its ending. "alba"/"albas" (the white garment) stays; "taxi"/"taxis"
+ * stays; the metal-oxide family goes in one stroke, since materials science
+ * pluralises them freely ("aluminas", "magnesias", "titanias"). The words this
+ * deliberately gives up are the ones that genuinely are English singulars as
+ * well as Latin plurals -- "stadia" (the surveying instrument, hence "stadias")
+ * -- which keep their own scores rather than folding.
+ */
+function latinPluralsAllowed(word: string): boolean {
+  return !WORD_INDEX.has(word + "s");
+}
+
 /** Whether `word`'s score is exempt from folding under `date`'s puzzle. */
 function foldExempt(word: string, date?: string): boolean {
   const exemption = FOLD_EXEMPTIONS.get(word);
@@ -825,7 +846,9 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   };
   add(tenseBaseForm(word, scoring));
   add(baseForm(word));
-  for (const candidate of inflectionalBaseCandidates(word)) add(candidate);
+  for (const candidate of inflectionalBaseCandidates(word, latinPluralsAllowed(word))) {
+    add(candidate);
+  }
   // "-ier"/"-iest" comparatives, ungated: unlike bare "-er"/"-est" below, the
   // "-y" rewrite is checkable, and the check is the base's *other* degree.
   // "happy" has "happiest", so "happier" folds onto it even though both carry

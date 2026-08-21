@@ -69,7 +69,7 @@ export function baseForm(word: string): string {
  *
  * Tense (-ed/-ing) is not here: `tenseBaseForm` in dictionary.ts already owns it.
  */
-export function inflectionalBaseCandidates(word: string): string[] {
+export function inflectionalBaseCandidates(word: string, latinPlurals: boolean): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
   const add = (...bases: string[]) => {
@@ -87,9 +87,20 @@ export function inflectionalBaseCandidates(word: string): string[] {
   if (w.length > 4 && w.endsWith("es")) {
     add(w.slice(0, -1), w.slice(0, -2), w.slice(0, -2) + "is");
   }
-  if (w.length > 3 && w.endsWith("ae")) add(w.slice(0, -1));
   if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) add(w.slice(0, -1));
-  if (w.length > 3 && w.endsWith("i")) add(w.slice(0, -1) + "us");
+  // The Latin plurals, only where the caller says the spelling can be read
+  // that way: "-a"/"-i"/"-ae" is how Latin pluralises and also how English
+  // spells a great many ordinary singulars, and nothing in the letters
+  // separates "podia" from "alba" or "taxi" from "abaci". The caller's guard
+  // is the word taking an English plural of its own (see latinPluralsAllowed
+  // in dictionary.ts), which is also what lets "-a" -> "-um" fold above the
+  // measurement floor: "aquaria", "addenda" and "maxima" are all measured, and
+  // all scored rarer than their own singulars behind a frequency gate.
+  if (latinPlurals) {
+    if (w.length > 3 && w.endsWith("ae")) add(w.slice(0, -1));
+    if (w.length > 3 && w.endsWith("i")) add(w.slice(0, -1) + "us");
+    if (w.length > 4 && w.endsWith("a")) add(w.slice(0, -1) + "um");
+  }
 
   return out;
 }
@@ -178,15 +189,19 @@ export function unmeasuredBaseCandidates(word: string): string[] {
   for (const suffix of ["est", "er"]) {
     if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
     const stem = w.slice(0, -suffix.length);
-    // "-ier"/"-iest" belongs to degreeBaseCandidates, whose paired-degree
-    // check earns it a fold above the gate. Guessing at the same spelling here
-    // let a junk stem chain somewhere real: "campier" reached "campus" through
-    // the non-word-shaped "campi" and out-voted its actual base "campy".
-    if (stem.endsWith("i")) continue;
+    // For "-ier"/"-iest", the "-y" rewrite is the only candidate: below the
+    // floor "hurrier" really is one who hurries, and "abandoner"-style agent
+    // nouns are exactly what this rule is for. The *other* i-stem candidates
+    // are what let a junk stem chain somewhere real -- "campier" reached
+    // "campus" through the non-word-shaped "campi" and out-voted its actual
+    // base "campy" -- so they stay out. Above the floor the spelling belongs
+    // to degreeBaseCandidates, whose paired-degree check earns it the fold.
+    if (stem.endsWith("i")) {
+      add(`${stem.slice(0, -1)}y`);
+      continue;
+    }
     add(stem, `${stem}e`, stripDoubledConsonant(stem));
   }
-  if (w.length > 4 && w.endsWith("a")) add(`${w.slice(0, -1)}um`);
-
   // Bare "-ize"/"-ise" only. A *tensed* form reaches this family through its
   // attested verb or not at all: the tense and number rules already offer the
   // verb as a candidate, so the caller's gate is applied at the verb, once per

@@ -141,6 +141,34 @@ describe("-ier/-iest comparatives fold onto their -y adjective, above the floor 
   });
 });
 
+// The Latin "-a"/"-i"/"-ae" plurals fold wherever the word has no English
+// plural of its own -- above the measurement floor too, since "alba" (3.33) is
+// more common than "curricula" and no frequency line separates them.
+describe("Latin plurals fold when the word has no English plural of its own", () => {
+  const LATIN: ReadonlyArray<[word: string, base: string]> = [
+    ["aquaria", "aquarium"],
+    ["addenda", "addendum"],
+    ["maxima", "maximum"],
+    ["curricula", "curriculum"],
+    ["momenta", "momentum"],
+  ];
+
+  it.each(LATIN)("%s scores as %s from the cutover on", (word, base) => {
+    expect(score(word, ON)).toBe(score(base, ON));
+    expect(baseFormSubstitution(word, ON)?.base).toBe(base);
+  });
+
+  it("refuses a word that takes an English plural of its own", () => {
+    // "albas", "taxis", "braes" and "aluminas" are all dictionary words, so
+    // "alba", "taxi", "brae" and "alumina" are English singulars whatever
+    // their endings suggest -- an oxide is a substance, not a plural.
+    for (const word of ["alba", "taxi", "brae", "alumina", "magnesia", "tantra"]) {
+      expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
+      expect(score(word, ON)).toBe(score(word, BEFORE));
+    }
+  });
+});
+
 // The suffixes whose spelling is not decisive fold only below MEASURED_FLOOR
 // (Zipf 1.0), where a word's score is a stand-in rather than a measurement.
 describe("comparatives and Latin plurals fold, but only below the measurement floor", () => {
@@ -376,7 +404,8 @@ describe("a conjugation displays what its verb displays", () => {
       const verb = verbOf(word);
       if (!verb || !index.has(verb)) continue;
       let ceiling = ownZipf(word);
-      for (const hop of [verb, baseForm(word), ...inflectionalBaseCandidates(word)]) {
+      const latin = !index.has(word + "s");
+      for (const hop of [verb, baseForm(word), ...inflectionalBaseCandidates(word, latin)]) {
         if (index.has(hop)) ceiling = Math.max(ceiling, rarityFor(hop, ON)!.zipf);
       }
       const used = rarityFor(word, ON)!.zipf;
