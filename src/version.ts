@@ -16,4 +16,4 @@
 // vercel.json pins this with no-store on "/" and "/index.html" — keep it that
 // way if you ever touch the caching headers.
 export const APP_VERSION = 8;
-export const MIN_VERSION = 8;
+export const MIN_VERSION = 9;
