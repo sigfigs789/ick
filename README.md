@@ -72,6 +72,146 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
     (a transient `.spoiler-blur` class added/removed around the `toBlob`
     call) -- rarity badges are a sibling element and stay legible either way.
 
+## How rarity folds onto a base word
+
+A word's score comes from its measured Zipf frequency, but frequency corpora
+undercount derived forms badly: `asphyxiates` was measured at Zipf 1.09 and
+`asphyxiate` at 1.78, so the plural scored **9.77 / Mythic** while the verb it
+came from scored **8.75 / Extremely Rare**. Adding an `s` should not be a
+discovery, so the engine folds a derived form onto a base word and **caps** its
+score there — a fold can only ever pull a word toward common, never make it
+rarer. `src/game/dictionary.ts`'s `chainedBase` explores every base reachable by
+folding and takes the most common one it finds.
+
+Which folds are safe turns on two questions: is the spelling decisive, and — if
+it isn't — does the word have a real measurement worth protecting?
+
+| Family | Folded? | Why |
+| --- | --- | --- |
+| `-s` / `-es` / `-ies` / `-ves` / `-ices` / `-ae` / `-i` / `-men` plurals and third-person forms | always | `inflectionalBaseCandidates` (`src/game/stem.ts`) offers every candidate spelling and the caller keeps the most common one the dictionary attests. Coincidences are near-ties, so picking wrong barely moves the score: `caves` offers `cave` (4.20) and `cafe` (4.09). |
+| `-ed` / `-ing` tenses | always | `tenseBaseForm`, same most-common tie-break: `played` → `play`, not the obscure `playe`. |
+| `-ness`, `-ly`, `-ization`, `-ability` | always | Bound or transparent suffixes with one unambiguous base. |
+| `-er` / `-est` comparatives and agentives, Latin `-a` → `-um` plurals, `-ize`/`-ise` verbs, `-able`/`-ible`/`-ably`/`-ibly` | **only below Zipf 1.0** | `unmeasuredBaseCandidates`, gated on `MEASURED_FLOOR`. Ungated these fold `noter` → `not`, `tempest` → `temp`, `canter` → `cant`, `shoulder` → `should`, `comma` → `common`, `capsize` → `caps`, `expertise` → `expert`, `countable` → `county`, `fallible` → `fall`. Every one of those is *measured* (Zipf 1.07–4.73) and so excluded; `specialest`, `asyla`, `containerise` and `interviewable` are not measured at all, and fold. |
+| five-letter `-ing` | **no** | Every such word is measured above the floor, so the gate leaves none to fold — which is what keeps `thing` from scoring as `the` (a flat 0.00). The price is that `iring` and `hoing` keep an unearned Mythic. |
+| `-en` verbs | **no** | Right often enough to tempt (`harshen` → `harsh`) and wrong often enough to disqualify: `dudeen` → `dude`, `shoneen` → `shone`, `torten` → `tort`. 51 words, ~6 of them wrong. |
+| Latin `-a` → `-on` plurals | **no** | The dirty sibling of `-a` → `-um`: folds `comma` → `common`, `silica` → `silicon`, `squadra` → `squadron` — about 19 wrong in 280. |
+| prefixes (`un-`, `re-`, `non-`, `over-`) | **no** | Not analysed; a large family (thousands of Mythic/Legend words) and a riskier one, since `release` → `lease` and `report` → `port` are the same shape as a real prefix. |
+
+The `-ize`/`-ise` rule also un-sticks a fold that already existed: `-ization` →
+`-ize` used to dead-end on an unattested verb, so `winterisation` folded to
+`winterise` (Zipf −0.45) and stopped, when `winter` (4.18) was one strip further.
+
+The gate is the load-bearing idea. Below `MEASURED_FLOOR` a word's score comes
+from the deep-tail band — for an unattested word, from the sentinel outright — so
+it is a stand-in rather than a measurement, and a plausible base is strictly
+better information. At or above the floor there *is* a measurement, and a guess
+from that word's own ending must not overrule it.
+
+**The gate is per hop, not per word**, and that distinction is easy to misread.
+`nextBaseForms` consults `unmeasuredBaseCandidates` for the node it is currently
+expanding, so a *measured* word still reaches a gated base whenever the chain
+passes through an unmeasured one. `stylised` is measured at Zipf 2.51 and its own
+`-ised` ending is therefore gated off — but `stylise` is unattested, the gate
+opens there, and `style` (5.11) caps `stylised` all the same. That is the
+intended behaviour and it is what makes the `-ise` family worth having:
+`hospitalisation` → `hospital`, `urbanised` → `urban`, `novelization` → `novel`
+all arrive the same way, and every one of them is a real derivation. 531 words
+sit above the floor and are scored by a gated family through a hop like this.
+
+The 531 arrive by two routes. 441 are the `-ise`/`-ize` family, which leaks
+freely because corpora measure `-ised` and `-isation` but miss the bare verb, so
+the unmeasured middle is almost always there. The other 87 are agentive plurals,
+where an *ungated* rule hands off to a gated one: `abhorrers` → `abhorrer` is a
+plain plural strip, `abhorrer` is unattested, and the `-er` rule then reaches
+`abhor`. Ungated and gated rules compose, which is the sharpest reason the gate
+cannot be read as a floor on the word being scored.
+
+How much a family leaks is a property of that family, not of the gate. Prefixes
+barely leak at all: adding `un-`/`re-`/`non-`/`over-` to
+`unmeasuredBaseCandidates` demotes 3,334 more words but only 3 more well-attested
+ones, because a prefixed word rarely has an unmeasured form between it and its
+stem.
+
+So the gate does confine most families to the deep tail — but it confines them
+because of how their morphology happens to interact with corpus coverage, not
+because the code enforces a floor on the word being scored. A new family needs
+its error rate measured *inside* the deep tail on its own merits; "the gate will
+contain it" is a prediction about that family's morphology, not a guarantee the
+gate provides. `src/game/inflection-scoring.test.ts` bounds both quantities so a
+future family has to argue for whichever one it moves.
+
+Everything in the "no" rows is handled a word at a time in
+`src/data/score-overrides.json` instead, which is also where a fold that the
+rules get *wrong* gets stopped (`theses` is the plural of `thesis`, not a form of
+`these`), and where the gate's own known miss lives (`momser`, a Yiddish
+loanword, folds onto `mom`).
+
+The spelling rules' remaining misses are recorded rather than fixed, because each
+is a lone coincidence with no shared structure to generalise over. The base
+spelling is right and its *sense* is wrong: `germen` (a biology term) folds onto
+the nationality `german` via `-men` → `-man`, `complices` (plural of `complice`,
+an accomplice) onto `complex` via `-ices` → `-ex`, `brae` onto `bra` and `spae`
+onto `spa` via `-ae` → `-a`, `reeves` onto `reef` via `-ves` → `-f`. A related
+group folds onto the *correct* spelling but inherits a commoner homograph's
+frequency — `stoles` onto `stole` (the past tense of *steal*), `viae` onto the
+preposition `via`, `marae` and `laurae` onto the names `mara` and `laura`. No
+stemmer change reaches that second group: the rule is right and the corpus
+cannot tell the senses apart. `mores` is the largest single miss (it scores as
+`more`, having already folded onto `mor` before this cutover); it is left alone
+because pinning it anywhere commoner would be a promotion, which
+`score-overrides.json` forbids by design.
+
+Every widening is date-gated, so no past puzzle re-scores: `scoringFor` picks a
+`Scoring` profile from the puzzle date, and the four cutovers to date are
+`2026-08-15`, `2026-08-16`, `2026-08-19` (folds became caps, resolved through the
+whole chain) and `2026-08-21` (every plausible base spelling at once, plus the
+gated families).
+
+`2026-08-21` carries two independent changes that happened to ship the same day,
+and it is worth keeping them apart when reading the code. The retuned Zipf bands
+(`NARROW_BANDS_START`, `measuredRarity`) change only **which label a score
+wears** — Elusive added, Quotidian retired — and move no score. The base-form
+widening (`INFLECTION_BASE_START`, `nextBaseForms`) changes only **the score**
+and touches no band cutoff. The two constants are the same date on purpose;
+either could move to its own date later without disturbing the other.
+
+### Folds only ever demote
+
+A fold may lower a score and never raise one. `adjustedZipf` implements it as
+`Math.max(ownZipf, baseZipf)` — higher Zipf means commoner, so taking the maximum
+can only push a score down. Every path goes through it, including a reviewed
+override, so no entry in `score-overrides.json` can promote a word either.
+
+That rule is **not** the same as "scores never rise". A global rescaling may
+legitimately raise every score at once — `2026-08-16` widened the measured band
+from `0..9.5` to `0..9.9` and did exactly that — because it preserves ordering and
+no word overtakes another. A *fold* raising a score is different: it would be
+inventing rarity out of a spelling rule, which is backwards from the correction
+folds exist to make.
+
+The guarantee starts at `2026-08-19`, and did not hold before it. The older
+`adjustedZipf` branch returned a tense base's frequency *outright* rather than
+capping against it, which promoted 7,114 words: `beloved`, measured at Zipf 4.17,
+scored **9.75 / Mythic** as `belove` (1.10). Archived puzzles keep those scores on
+purpose. That branch is still in the file for them, which makes it a live
+copy-paste hazard for the next fold rule — hence the invariants below are stated
+date-agnostically rather than pinned to one cutover.
+
+Asserted over the entire dictionary in `src/game/inflection-scoring.test.ts`:
+
+- no fold makes a word rarer than its own measured Zipf, on every date from
+  `2026-08-19` on (and undated);
+- `beloved`'s pre-cutover Mythic is pinned, so the boundary cannot drift;
+- crossing the `2026-08-21` cutover never raises a word's score;
+- no folded word scores rarer than the base it folded onto;
+- `baseFormSubstitution` never reports a promotion, so analytics cannot either.
+
+`scripts/manage-extra-word.py` carries a Python mirror of this whole fold path
+(`_next_bases`, `chained_base`, `adjusted_zipf`) *and* of `measuredRarity`, used
+by the audit skills in `.claude/skills/` to score candidate words. **It has to
+change in lockstep with `dictionary.ts`** or the skills will report scores and
+tiers the app does not show.
+
 ## Regenerating the word/rarity data
 
 The dictionary, rarity, and rejection guidance data are precomputed offline,
@@ -159,18 +299,28 @@ dated like the overrides below. `scripts/blocklist.txt` remains the tool for
 content that must never enter the dictionary at all.
 
 `src/data/score-overrides.json` is the other **hand-written** data file: reviewed
-demotions for words no corpus attests. Such a word falls to the unattested
-sentinel and scores a perfect 10.0 / Legend, which is right for a genuine find
-(`enshittification`) and wrong for a mechanical derivation of an ordinary word
-(`iratest`, the superlative of a Zipf-2.78 word, which `scoringBaseForm` has no
-`-est` rule for). Each entry pins one word to the base it should score as, and
-carries its own `since` date so a demotion applies from the puzzle it was
-reviewed for onward and no past puzzle re-scores. It is scoring only —
-same-root duplicate detection is untouched. Widening the stemmer instead is
-deliberately avoided: a blanket bare-`s` strip re-scores 10,877 words and
-strips 2,189 of a perfect 10. Entries are added a drop at a time by the
-`audit-unscored-legends` skill (`.claude/skills/`), which is also what keeps
-this file reviewable.
+demotions for words a spelling rule can't cap correctly. Most are words no
+corpus attests — such a word falls to the unattested sentinel and scores a
+perfect 10.0 / Legend, which is right for a genuine find (`enshittification`)
+and wrong for a mechanical derivation of an ordinary word (`iratest`, the
+superlative of a Zipf-2.78 word, which `scoringBaseForm` has no `-est` rule
+for). The rest are measured words whose only reachable base is a coincidence
+(`theses` is the plural of `thesis`, but the rules can only see `these`); an
+override replaces the spelling rules rather than joining them, so it is also
+how a *wrong* fold gets stopped. Each entry pins one word to the base it should
+score as, and carries its own `since` date so a demotion applies from the puzzle
+it was reviewed for onward and no past puzzle re-scores. It is scoring only —
+same-root duplicate detection is untouched. Entries are added a drop at a time
+by the `audit-unscored-legends` skill (`.claude/skills/`), which is also what
+keeps this file reviewable.
+
+An earlier version of this note argued that widening the stemmer was not
+affordable, because a blanket bare-`s` strip re-scores ~10,900 words and strips
+2,189 of a perfect 10. The count was right; the conclusion was wrong. Those
+re-scores were the fix, not the cost: once every fold became a **cap** rather
+than an inheritance (the 2026-08-19 cutover), a wider rule could only ever pull
+a word toward common, never make it rarer. The 2026-08-21 cutover therefore
+widened it — see "How rarity folds onto a base word" below.
 
 `scripts/select-drops.py` evaluates a hand-picked pool of candidate
 2- and 3-letter drops against the generated dictionary and keeps only

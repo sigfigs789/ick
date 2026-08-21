@@ -3,7 +3,12 @@ import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import wordRejectionData from "../data/word-rejections.json";
-import { baseForm, boundBaseCandidates } from "./stem";
+import {
+  baseForm,
+  boundBaseCandidates,
+  inflectionalBaseCandidates,
+  unmeasuredBaseCandidates,
+} from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
 import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types";
 
@@ -27,9 +32,21 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     at/below Zipf 0 clamped to a flat 10. The top of the scale is split by
  *     score into two ranks: Legend (>= 9.9) and Mythic (9.5..9.89). This is also
  *     where the bound-suffix base-form adjustment turns on.
- *   - on/after 2026-08-21 (the latest system): the same scores, with the
- *     measured Zipf bands retuned -- Elusive added between Extremely Rare and
- *     Mythic, Quotidian folded into Very Common (see measuredRarity).
+
+ *   - on/after 2026-08-19: base forms are resolved through their own bases (the
+ *     fold chain) instead of one hop, and every fold caps rather than inherits.
+ *   - on/after 2026-08-21 (the latest system): two independent changes that
+ *     happened to ship the same day.
+ *       * Labels: the measured Zipf bands retuned -- Elusive added between
+ *         Extremely Rare and Mythic, Quotidian folded into Very Common (see
+ *         measuredRarity). No score moves.
+ *       * Scores: a fold consults every plausible base spelling at once rather
+ *         than the one `baseForm` commits to, so a plural or third-person form
+ *         can no longer out-score the word it came from (see
+ *         `inflectionalBaseCandidates`). Suffixes whose spelling is not decisive
+ *         -- comparatives, Latin plurals, -ize/-able -- fold too, but only for a
+ *         word below MEASURED_FLOOR, where its score is a stand-in rather than a
+ *         measurement (see `unmeasuredBaseCandidates`). No label mapping moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -37,6 +54,11 @@ const NEW_SCORING_START = "2026-08-15";
 const WIDE_BAND_START = "2026-08-16";
 const CHAINED_BASE_START = "2026-08-19";
 const NARROW_BANDS_START = "2026-08-21";
+// The base-form widening shipped on the same day as the retuned bands. Named
+// separately, and derived rather than repeated, because they are separate
+// concerns -- one changes which label a score wears, the other changes the score
+// -- and either could move to its own date later without disturbing the other.
+const INFLECTION_BASE_START = NARROW_BANDS_START;
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -127,18 +149,44 @@ interface ScoreOverride {
 }
 
 /**
- * Words that carry no measured frequency at all and were reviewed as *not*
- * deserving the perfect 10.00 / Legend the unattested sentinel hands out.
+ * Words a spelling rule cannot cap correctly, reviewed one at a time and pinned
+ * to the base they should score as.
  *
- * The sentinel is the right score for a genuine find the corpora simply haven't
- * caught up with ("enshittification"). It is the wrong score for a mechanical
- * derivation of an ordinary word -- "iratest" is the unattested superlative of
- * "irate" (Zipf 2.78), and `scoringBaseForm` below has no -est rule, so nothing
- * caps it. Widening the stemmer instead is not an option at this scale: a blanket
- * bare-`s` strip re-scores ~10,900 words and strips 2,189 of a perfect 10, which
- * destroys far more good answers than it fixes. So each unattested word is
- * reviewed one at a time (see .claude/skills/audit-unscored-legends) and pinned
- * here to the base it should have scored as.
+ * Most entries are words that carry no measured frequency at all, where the
+ * unattested sentinel hands out a perfect 10.00 / Legend. The sentinel is the
+ * right score for a genuine find the corpora simply haven't caught up with
+ * ("enshittification"). It is the wrong score for a mechanical derivation of an
+ * ordinary word -- "iratest" is the unattested superlative of "irate" (Zipf
+ * 2.78). The 2026-08-21 cutover folds superlatives like that one on its own, but
+ * only below MEASURED_FLOOR, so anything the corpora *do* measure still needs a
+ * reviewed entry here.
+ *
+ * The rest are measured words whose only reachable base is a coincidence:
+ * "theses" is the plural of "thesis", but the spelling rules can only see
+ * "these" (Zipf 6.04), which would score it as a function word. An override
+ * replaces the guesses outright rather than joining them, so it is also the way
+ * to *stop* a wrong fold, not only to add a missing one.
+ *
+ * Which gaps belong here and which belong in a rule is a question of whether the
+ * spelling is decisive, and -- where it is not -- of whether the word has a real
+ * measurement to protect. `inflectionalBaseCandidates` covers number inflection
+ * outright, because a wrong candidate there loses to the right one on frequency.
+ * `unmeasuredBaseCandidates` covers the comparatives and Latin plurals only below
+ * MEASURED_FLOOR, where the score is a stand-in anyway. What is left for this
+ * file is everything neither rule can reach: a measured word whose ending
+ * misleads ("tempest" is not a form of "temp"), a loanword the gate lets through
+ * anyway ("momser" folds onto "mom", which it has nothing to do with), and the
+ * "-en" verbs, whose folds are right often enough to tempt and wrong often enough
+ * to disqualify ("dudeen" -> "dude").
+ *
+ * An earlier note in this spot argued no widening was affordable at all, on the
+ * grounds that a blanket bare-`s` strip re-scored ~10,900 words and stripped
+ * 2,189 of a perfect 10. The count was right and the conclusion was not: those
+ * re-scores were the point, and once every fold became a cap
+ * (CHAINED_BASE_START) a widening could only ever pull a word toward common.
+ * Thirty-one of the entries below are "-es" plurals the rules now handle on their
+ * own, and six more are "-er"/"-est" forms; they are harmless (an override just
+ * reaches the same base first) but they are no longer load-bearing.
  *
  * Every entry carries its own `since` date rather than riding one global cutover,
  * because the list grows a batch per day: a demotion applies from the puzzle it
@@ -183,6 +231,15 @@ interface Scoring {
   // Introduced with the 2026-08-19 cutover; off for earlier systems so past
   // puzzles' scores stay frozen (see CHAINED_BASE_START).
   chainedBaseForms: boolean;
+  // Whether a fold considers every plausible base spelling rather than the one
+  // `baseForm` commits to: the number inflections (plural / third-person
+  // singular) unconditionally, an "-ied" past tense's plain "-ed" bases, and --
+  // only for a word below MEASURED_FLOOR, where its score is a stand-in rather
+  // than a measurement -- the comparatives and Latin plurals in
+  // `unmeasuredBaseCandidates`. Introduced with the 2026-08-21 cutover; off for
+  // earlier systems so past puzzles' scores stay frozen (see
+  // INFLECTION_BASE_START).
+  inflectionBases: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -202,6 +259,7 @@ function twoBandScoring(
   boundBaseForms: boolean,
   legend: boolean,
   chainedBaseForms = false,
+  inflectionBases = false,
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
@@ -238,6 +296,7 @@ function twoBandScoring(
         (s) => (s >= ceiling ? s.toFixed(2) : s.toFixed(1)),
     boundBaseForms,
     chainedBaseForms,
+    inflectionBases,
   };
 }
 
@@ -250,9 +309,20 @@ const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true);
 // The 2026-08-19 system: the same bands and ranks, with base forms resolved
 // through their own bases.
 const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
-// The latest system (from NARROW_BANDS_START): identical scoring, with the
-// retuned measured Zipf bands (see measuredRarity).
-const NARROW_BAND_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true, true);
+// The latest system (2026-08-21). Carries both of that day's changes: the
+// retuned measured Zipf bands (labels), and a fold that weighs every plausible
+// base spelling and keeps the most common one (scores). The flags are commented
+// because seven positional arguments, three of them trailing booleans, are
+// otherwise unreadable.
+const RETUNED_SCORING: Scoring = twoBandScoring(
+  9.9,
+  0,
+  /* boundBaseForms */ true,
+  /* legend */ true,
+  /* chainedBaseForms */ true,
+  /* inflectionBases */ true,
+  /* narrowBands */ true
+);
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -278,6 +348,7 @@ const LEGACY_SCORING: Scoring = {
   format: (score) => score.toFixed(1),
   boundBaseForms: false,
   chainedBaseForms: false,
+  inflectionBases: false,
 };
 
 /**
@@ -334,12 +405,15 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return NARROW_BAND_SCORING; // newest system
+  if (date === undefined) return RETUNED_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
   if (date < CHAINED_BASE_START) return WIDE_SCORING;
-  if (date < NARROW_BANDS_START) return CHAINED_SCORING;
-  return NARROW_BAND_SCORING;
+  // The two names below it are the same date. This rung picks a *scoring*
+  // profile, so it reads the scoring one; `usesRetunedTiers` asks the label
+  // question and reads NARROW_BANDS_START. The profile beyond carries both.
+  if (date < INFLECTION_BASE_START) return CHAINED_SCORING;
+  return RETUNED_SCORING;
 }
 
 // -- Curated rejections (src/data/word-rejections.json) ----------------------
@@ -516,7 +590,7 @@ export function baseFormSubstitution(
     return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
   }
 
-  const base = scoringBaseForm(normalized, scoring.boundBaseForms);
+  const base = scoringBaseForm(normalized, scoring);
   if (base && base !== normalized) {
     const baseZipf = zipfFor(base, scoring);
     if (baseZipf > ownZipf) return { word: normalized, base, ownZipf, baseZipf };
@@ -610,7 +684,7 @@ function adjustedZipf(word: string, zipf: number, scoring: Scoring, date?: strin
   const tenseBase = tenseBaseForm(word, scoring);
   if (tenseBase) return zipfFor(tenseBase, scoring);
 
-  const base = scoringBaseForm(word, scoring.boundBaseForms);
+  const base = scoringBaseForm(word, scoring);
   if (!base) return zipf;
   return Math.max(zipf, zipfFor(base, scoring));
 }
@@ -628,51 +702,117 @@ const MAX_FOLD_DEPTH = 8;
 
 /**
  * The most common word reachable from `word` by folding, or undefined if nothing
- * folds. Each link is the single hop `nextBaseForm` would take, applied again to
- * whatever it lands on: "materialnesses" -> "materialness" -> "material".
+ * folds. Each link is a hop `nextBaseForms` offers, applied again to whatever it
+ * lands on: "materialnesses" -> "materialness" -> "material".
  *
  * Reading the *raw* Zipf of one hop is what left "materialnesses" at Legend --
  * "materialness" is itself an unattested word the engine had already re-scored as
  * "material" (4.95), so folding onto its raw 0.65 inherited a number the engine
  * had discarded. Walking the chain uses the score the base actually displays.
  *
- * The winner is the most common link, not the deepest: the caller caps against
- * it, so a chain can only ever make a word more common. That monotonicity is
- * what keeps a hop like "abashed" -> "abash" (whose base is rarer) from dragging
- * a derived form *down* into the top ranks.
+ * The winner is the most common word reached, not the deepest: the caller caps
+ * against it, so a chain can only ever make a word more common. That monotonicity
+ * is what keeps a hop like "abashed" -> "abash" (whose base is rarer) from
+ * dragging a derived form *down* into the top ranks.
+ *
+ * Every branch is explored, not just the most common first hop. Committing to one
+ * hop can prune the path the chain actually needed: "cleanses" offers both
+ * "cleanse" (the more common hop, which folds no further) and "cleans" (which
+ * carries on to "clean", more common than either). Taking the most common hop
+ * would have stopped at "cleanse" and scored "cleanses" *rarer* than the older
+ * system did -- a fold that raises a score, which the cap exists to prevent.
  *
  * `seen` breaks cycles: two words can fold onto each other ("axes" -> "axis" ->
- * "axes"), and a chain must not revisit a word already on its own path.
+ * "axes"), and no word is visited twice. Revisiting could not raise the maximum
+ * anyway, so one shared set across the whole walk is enough.
  */
-function chainedBase(
-  word: string,
-  scoring: Scoring,
-  date?: string,
-  seen: ReadonlySet<string> = new Set([word])
-): ChainedBase | undefined {
-  const next = nextBaseForm(word, scoring, date);
-  if (!next || seen.has(next) || seen.size >= MAX_FOLD_DEPTH) return undefined;
+function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase | undefined {
+  const seen = new Set([word]);
+  let frontier = [word];
+  let best: ChainedBase | undefined;
 
-  const here: ChainedBase = { base: next, zipf: zipfFor(next, scoring) };
-  const deeper = chainedBase(next, scoring, date, new Set(seen).add(next));
-  return deeper && deeper.zipf > here.zipf ? deeper : here;
+  for (let depth = 0; depth < MAX_FOLD_DEPTH && frontier.length > 0; depth++) {
+    const next: string[] = [];
+    for (const current of frontier) {
+      for (const candidate of nextBaseForms(current, scoring, date)) {
+        if (seen.has(candidate)) continue;
+        seen.add(candidate);
+        next.push(candidate);
+        const zipf = zipfFor(candidate, scoring);
+        if (!best || zipf > best.zipf) best = { base: candidate, zipf };
+      }
+    }
+    frontier = next;
+  }
+  return best;
 }
 
 /**
- * One fold: the base `word` would score against, in the same precedence the
+ * Every base `word` could fold onto in one hop, in the same precedence the
  * single-hop path uses -- a reviewed override first, then a tense inflection,
- * then a transparent or bound suffix. Under the chained system every one of
- * these is a cap rather than an inheritance, so the caller can treat them alike.
+ * then a transparent or bound suffix. Under the chained system every one of these
+ * is a cap rather than an inheritance, so the caller can treat them alike.
+ *
+ * A reviewed override replaces the guesses rather than joining them: it is a
+ * decision about this exact word, so the spelling rules are not consulted at all.
+ *
+ * Before INFLECTION_BASE_START this returned one base -- the first rule that
+ * matched, each rule having already narrowed to its own most common candidate.
+ * The latest system returns the whole set instead and lets `chainedBase` explore
+ * it, because "which base is most common" and "which base leads to the most
+ * common word" are different questions (see `chainedBase`). The set is a superset
+ * of the older systems' single pick, and the caller only ever takes a maximum
+ * over it, so widening it can never make a word score rarer than it used to.
  */
-function nextBaseForm(word: string, scoring: Scoring, date?: string): string | undefined {
-  return (
-    overrideBase(word, date) ??
-    tenseBaseForm(word, scoring) ??
-    scoringBaseForm(word, scoring.boundBaseForms)
-  );
+function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] {
+  const override = overrideBase(word, date);
+  if (override) return [override];
+
+  if (!scoring.inflectionBases) {
+    const single = tenseBaseForm(word, scoring) ?? scoringBaseForm(word, scoring);
+    return single ? [single] : [];
+  }
+
+  const out: string[] = [];
+  const add = (candidate: string | undefined) => {
+    if (!candidate || candidate === word) return;
+    if (!WORD_INDEX.has(candidate) || out.includes(candidate)) return;
+    out.push(candidate);
+  };
+  add(tenseBaseForm(word, scoring));
+  add(baseForm(word));
+  for (const candidate of inflectionalBaseCandidates(word)) add(candidate);
+  // Suffixes whose spelling is not decisive, admitted only where the word's own
+  // frequency is a stand-in rather than a measurement. Below MEASURED_FLOOR the
+  // score comes from the deep-tail band -- for an unattested word, from the
+  // sentinel outright -- so a plausible base is better information than what the
+  // word would otherwise get. At or above the floor there is a real measurement,
+  // and a guess from an ending must not overrule it: that line is the whole
+  // reason "specialest" can fold to "special" while "tempest" keeps its own
+  // score. See `unmeasuredBaseCandidates` for the families and the words that
+  // would break without the gate.
+  //
+  // Note the test is on `word` -- the node being expanded -- and not on whatever
+  // word this chain started from. A measured word therefore still reaches a gated
+  // base through an unmeasured hop ("stylised" -> "stylise" -> "style"), which is
+  // intended and is what the "-ise"/"-isation" families rely on. It also means a
+  // family added here is never confined to the deep tail; see the README.
+  if (WORD_INDEX.has(word) && zipfFor(word, scoring) < MEASURED_FLOOR) {
+    for (const candidate of unmeasuredBaseCandidates(word)) add(candidate);
+  }
+  add(scoringBaseForm(word, scoring));
+  return out;
 }
 
-function scoringBaseForm(word: string, includeBound: boolean): string | undefined {
+/**
+ * The base a suffix rule alone would pick: the inflectional stemmer first, then
+ * the transparent "-ness"/"-ly" suffixes, then the bound derivational ones.
+ *
+ * From INFLECTION_BASE_START this is only one of the candidates `nextBaseForms`
+ * collects rather than the whole answer -- `nextBaseForms` owns the wider set,
+ * so that "which spellings are plausible" lives in exactly one place.
+ */
+function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
   const inflected = baseForm(word);
   if (inflected !== word && WORD_INDEX.has(inflected)) return inflected;
 
@@ -687,11 +827,40 @@ function scoringBaseForm(word: string, includeBound: boolean): string | undefine
   // Bound derivational suffixes (-ization/-isation, -ability/-ibility), gated to
   // the wide-band era. Capped at the base like the transparent suffixes above:
   // "aggrandization" scores as "aggrandize", never rarer than it.
-  if (includeBound) {
+  if (scoring.boundBaseForms) {
     const bound = boundBaseCandidates(word).find((candidate) => WORD_INDEX.has(candidate));
     if (bound) return bound;
   }
   return undefined;
+}
+
+/**
+ * The most common dictionary word among `candidates`, skipping `word` itself and
+ * any candidate the dictionary doesn't attest. Undefined when none qualifies.
+ *
+ * Preferring the most common base is what keeps a rare homograph of a candidate
+ * spelling from hijacking the fold: "played" scores as "play" (5.6), not the
+ * obscure "playe"; "rated" still scores as "rate" (5.1), not "rat"; and "caves"
+ * picks "cave" (4.20) over the coincidental "cafe" (4.09). It is also the safe
+ * direction under the chained system, where every fold is a cap -- a more common
+ * base can only pull a word further toward common, never make it rarer.
+ */
+function mostCommonBase(
+  candidates: readonly string[],
+  word: string,
+  scoring: Scoring
+): string | undefined {
+  let base: string | undefined;
+  let baseZipf = -Infinity;
+  for (const candidate of candidates) {
+    if (candidate === word || !WORD_INDEX.has(candidate)) continue;
+    const zipf = zipfFor(candidate, scoring);
+    if (zipf > baseZipf) {
+      base = candidate;
+      baseZipf = zipf;
+    }
+  }
+  return base;
 }
 
 /**
@@ -711,9 +880,15 @@ function tenseBaseForm(word: string, scoring: Scoring): string | undefined {
   // systems required six, which dropped them into the generic -ed branch below
   // and scored "tried" as "tri"; the chained system counts them properly.
   const iedMin = scoring.chainedBaseForms ? 4 : 5;
-  if (word.length > iedMin && word.endsWith("ied")) {
-    candidates.push(`${word.slice(0, -3)}y`);
-  } else if (word.length > 4 && word.endsWith("ed")) {
+  const ied = word.length > iedMin && word.endsWith("ied");
+  if (ied) candidates.push(`${word.slice(0, -3)}y`);
+  // Before INFLECTION_BASE_START the "-ied" rule *replaced* the "-ed" one, so an
+  // "-ied" word whose base ends in "i" had nowhere to land: "taxied" tried only
+  // the non-word "taxy" and never reached "taxi", leaving it to score on its own
+  // frequency (8.47, against "taxi"'s 5.21). Same for "bikinied", "safaried" and
+  // "shanghaied". Adding the "-ed" bases instead of substituting for them costs
+  // nothing where the "-y" spelling is right -- the most common base still wins.
+  if ((!ied || scoring.inflectionBases) && word.length > 4 && word.endsWith("ed")) {
     const stem = word.slice(0, -2);
     candidates.push(`${stem}e`, stem, stripDoubledConsonant(stem));
   }
@@ -725,20 +900,7 @@ function tenseBaseForm(word: string, scoring: Scoring): string | undefined {
     candidates.push(`${stem}e`, stem, stripDoubledConsonant(stem));
   }
 
-  // Prefer the most common valid base so that a rare homograph of a candidate
-  // spelling can't hijack the form: "played" scores as "play" (5.6), not the
-  // obscure "playe"; "rated" still scores as "rate" (5.1), not "rat".
-  let base: string | undefined;
-  let baseZipf = -Infinity;
-  for (const candidate of candidates) {
-    if (!WORD_INDEX.has(candidate)) continue;
-    const zipf = zipfFor(candidate, scoring);
-    if (zipf > baseZipf) {
-      base = candidate;
-      baseZipf = zipf;
-    }
-  }
-  return base;
+  return mostCommonBase(candidates, word, scoring);
 }
 
 function zipfFor(word: string, scoring: Scoring): number {

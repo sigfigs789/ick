@@ -20,6 +20,158 @@ export function baseForm(word: string): string {
 }
 
 /**
+ * Every base spelling `word` could plausibly be a *number* inflection of -- the
+ * plural of a noun or the third-person singular of a verb. Scoring only, and
+ * deliberately separate from `baseForm` above: that one has to return exactly
+ * one key for duplicate detection, so it commits to the first rule that matches
+ * and cannot look at the dictionary. Committing is what leaves the gaps this
+ * covers.
+ *
+ *   - "-es" strips only the `s` when the base keeps its `e` ("asphyxiates" ->
+ *     "asphyxiate"). `baseForm` only ever strips both letters, which yields the
+ *     non-word "asphyxiat" and leaves the word scoring on its own frequency --
+ *     the single biggest hole, ~6,900 words wide.
+ *   - "-ies" -> "y" at any length ("cries" -> "cry"); `baseForm` requires six
+ *     letters and so misses the five-letter forms.
+ *   - "-ies" -> "i" for bases that end in one ("taxies" -> "taxi").
+ *   - the irregular plurals English spells with a stem change: "-ves" -> "-f"
+ *     or "-fe" ("wolves" -> "wolf", "knives" -> "knife") and "-ices" -> "-ex"
+ *     or "-ix" ("matrices" -> "matrix", "vortices" -> "vortex").
+ *   - the classical plurals borrowed whole: "-ae" -> "-a" ("scapulae" ->
+ *     "scapula", "formulae" -> "formula"), "-i" -> "-us" ("radii" -> "radius",
+ *     "abaci" -> "abacus"), and the native "-men" -> "-man" ("crewmen" ->
+ *     "crewman", "chairmen" -> "chairman"). The matching "-a" -> "-on" plural is
+ *     deliberately absent: it folds "comma" -> "common", "silica" -> "silicon"
+ *     and "squadra" -> "squadron", about 19 wrong in 280.
+ *
+ * The caller confirms each candidate is a real word and picks the most common
+ * one. That is what keeps the coincidences harmless, though not for the reason
+ * it first looks like: "caves" offers both "cave" (4.20) and "cafe" (4.09), and
+ * "saves" offers both "save" (5.14) and "safe" (5.07). The right base does win
+ * both, but by 0.11 and 0.07 Zipf -- margins thin enough that a data refresh
+ * could flip either. The safety comes from the near-tie itself. Two candidates
+ * that close carry nearly the same frequency, so picking the wrong one moves the
+ * score by about a sixth of a point; a coincidence only does real damage when it
+ * is *far* more common than the true base, and that is the shape a reviewed
+ * override exists to catch ("theses" -> "these", 2.83 Zipf clear of "thesis").
+ *
+ * Candidates shorter than three letters are dropped -- two-letter dictionary
+ * entries carry corpus frequencies collected from every word that contains them,
+ * so they read as absurdly common and would flatten anything folding onto them.
+ *
+ * Tense (-ed/-ing) is not here: `tenseBaseForm` in dictionary.ts already owns it.
+ */
+export function inflectionalBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (...bases: string[]) => {
+    for (const base of bases) {
+      if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
+    }
+  };
+
+  // Most specific first only for readability -- the caller ranks by frequency,
+  // not by the order these are added.
+  if (w.length > 5 && w.endsWith("ices")) add(w.slice(0, -4) + "ex", w.slice(0, -4) + "ix");
+  if (w.length > 4 && w.endsWith("ies")) add(w.slice(0, -3) + "y", w.slice(0, -3) + "i");
+  if (w.length > 4 && w.endsWith("ves")) add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
+  if (w.length > 4 && w.endsWith("men")) add(w.slice(0, -3) + "man");
+  if (w.length > 4 && w.endsWith("es")) add(w.slice(0, -1), w.slice(0, -2));
+  if (w.length > 3 && w.endsWith("ae")) add(w.slice(0, -1));
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) add(w.slice(0, -1));
+  if (w.length > 3 && w.endsWith("i")) add(w.slice(0, -1) + "us");
+
+  return out;
+}
+
+/**
+ * Candidate bases for the suffixes whose spelling is *not* decisive -- safe to
+ * consult only for a word that no corpus really attests. The caller enforces
+ * that (see MEASURED_FLOOR in dictionary.ts); this function just supplies the
+ * spellings.
+ *
+ *   - "-er"/"-est" comparatives and agentives: "specialest" -> "special",
+ *     "knowinger" -> "knowing", "thanker" -> "thank".
+ *   - the Latin neuter plural "-a" -> "-um": "asyla" -> "asylum",
+ *     "pepla" -> "peplum", "clitella" -> "clitellum".
+ *   - "-ize"/"-ise" verbs and their tenses -> the stem they were built from:
+ *     "containerise" -> "container", "ghettoise" -> "ghetto", "tautologize" ->
+ *     "tautology". This also un-sticks the "-ization" fold, which used to
+ *     dead-end on an unattested verb: "winterisation" folded to "winterise"
+ *     (Zipf -0.45) and stopped, when "winter" (4.18) was one strip further.
+ *   - "-able"/"-ible"/"-ably"/"-ibly" -> the stem: "interviewable" ->
+ *     "interview", "requirable" -> "require".
+ *
+ * Nothing in the spelling separates a real comparative from a word that merely
+ * ends that way: applied to every word these rules fold "noter" -> "not",
+ * "tempest" -> "temp", "canter" -> "cant", "shoulder" -> "should" and "comma" ->
+ * "common". What makes them usable anyway is *where* they are allowed to apply.
+ * Below wordfreq's measurement floor a word's score is a stand-in rather than a
+ * measurement, so a plausible base is strictly better information than the
+ * sentinel it would otherwise get; at or above the floor there is a real
+ * measurement, and a spelling guess must not be allowed to overrule it.
+ *
+ * That gate is applied per *hop*, not per word -- `nextBaseForms` asks it about
+ * the node it is expanding, so a measured word still reaches a gated base when
+ * the chain runs through an unmeasured one ("stylised", measured at 2.51, is
+ * gated on its own "-ised" ending but reaches "style" through the unattested
+ * "stylise"). Intended, and the reason the "-ise" family earns its place. The
+ * catch is that a family admitted here is *not* confined to the deep tail: it
+ * will reach well-attested words through an unmeasured intermediate, so "wrong
+ * below the floor" is not a survivable error rate. See the README section for
+ * the measured count. Every
+ * word in the list above sits at or above the floor and is excluded on those
+ * grounds -- "tempest" is measured at Zipf 3.29, "canter" at 2.72, "noter" at
+ * 1.27. The last two families make the same point louder: ungated, "-ize" folds
+ * "capsize" -> "cap", "downsize" -> "downs" and "expertise" -> "expert", and
+ * "-able" folds "likeable" -> "like", "countable" -> "county" and "fallible" ->
+ * "fall". Gated, not one of those words moves, and 2,466 words still stop
+ * holding a Mythic-or-better score for a suffix.
+ *
+ * Two families stay out even under that gate. "-en" verbs ("harshen" -> "harsh")
+ * are right often enough to tempt but fold loanwords onto lookalikes -- "dudeen"
+ * (a clay pipe) -> "dude", "shoneen" -> "shone", "torten" -> "tort". Five-letter
+ * "-ing" is moot: every such word is measured above the floor, so the gate leaves
+ * none of them to fold, which is also what keeps "thing" from scoring as "the".
+ */
+export function unmeasuredBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (...bases: string[]) => {
+    for (const base of bases) {
+      // Four letters, not the three the number inflections allow: a three-letter
+      // base is where the wrong-word folds cluster ("the", "not", "cant").
+      if (base.length >= 4 && base !== w && !out.includes(base)) out.push(base);
+    }
+  };
+
+  for (const suffix of ["est", "er"]) {
+    if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
+    const stem = w.slice(0, -suffix.length);
+    add(stem, `${stem}e`, stripDoubledConsonant(stem));
+    if (stem.endsWith("i")) add(`${stem.slice(0, -1)}y`);
+  }
+  if (w.length > 4 && w.endsWith("a")) add(`${w.slice(0, -1)}um`);
+
+  // Longest ending first, so a tensed form ("-izing") is not read as the bare
+  // verb. The endings are mutually exclusive, so at most one group ever matches.
+  // The "y" candidate is what reaches the noun a verb was built from
+  // ("tautologize" -> "tautology", "ebonize" -> "ebony").
+  for (const suffix of ["izing", "ising", "izes", "ises", "ized", "ised", "ize", "ise"]) {
+    if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
+    const stem = w.slice(0, -suffix.length);
+    add(stem, `${stem}e`, `${stem}y`);
+  }
+  for (const suffix of ["ably", "ibly", "able", "ible"]) {
+    if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
+    const stem = w.slice(0, -suffix.length);
+    add(stem, `${stem}e`, `${stem}y`);
+  }
+
+  return out;
+}
+
+/**
  * Candidate base spellings for the two *bound* derivational suffixes whose base
  * is unambiguous: an "-ization"/"-isation" word is the noun of an "-ize"/"-ise"
  * verb ("organization" -> "organize"), and an "-ability"/"-ibility" word is the
