@@ -290,6 +290,26 @@ describe("what the cutover deliberately leaves alone", () => {
     expect(score("theses", ON)).toBe(score("thesis", ON));
     expect(score("theses", ON)).not.toBe(score("these", ON));
   });
+
+  it.each([
+    ["bares", "bar"],
+    ["fares", "far"],
+    ["fores", "for"],
+    ["mares", "mar"],
+    ["resites", "resit"],
+    ["sires", "sir"],
+    ["stares", "star"],
+    ["tares", "tar"],
+    ["wares", "war"],
+  ])("keeps %s on its own data rather than folding to coincidental %s", (word, coincidence) => {
+    // A terminal-e base makes both the intended "-s" strip and an unrelated
+    // "-es" strip plausible. The max-over-candidates fold would otherwise
+    // select the more common coincidence (for example, fores -> for).
+    expect(baseFormSubstitution(word, ON)).toBeUndefined();
+    const index = (dictionaryWords as unknown as string[]).indexOf(word);
+    expect(rarityFor(word, ON)!.zipf).toBe(rarityData.zipfHundredths[index] / 100);
+    expect(score(word, ON)).not.toBe(score(coincidence, ON));
+  });
 });
 
 // src/data/fold-exemptions.json says the one thing an override cannot: score
@@ -465,18 +485,30 @@ describe("invariants across the whole dictionary", () => {
     }
   });
 
-  it("never raises a word's score", () => {
+  it("raises scores only for reviewed lexical-correctness exemptions", () => {
     // Every fold is a cap, and the latest system's candidate set is a superset of
     // the older one's, so the maximum it takes can only rise -- which can only
     // push a score down. A word scoring *higher* than it did means a fold pruned
-    // a branch the older system reached, which is the bug this asserts against.
+    // a branch the older system reached. The reviewed exemptions deliberately
+    // do so when that branch is an unrelated real word (for example, fores ->
+    // for): lexical correctness wins over preserving that accidental score.
     const raised: string[] = [];
     for (const word of words) {
       const before = rarityScore(rarityFor(word, BEFORE)!.zipf, BEFORE);
       const after = rarityScore(rarityFor(word, ON)!.zipf, ON);
-      if (after > before + 1e-9) raised.push(`${word} ${before} -> ${after}`);
+      if (after > before + 1e-9) raised.push(word);
     }
-    expect(raised).toEqual([]);
+    expect(raised).toEqual([
+      "bares",
+      "fares",
+      "fores",
+      "mares",
+      "resites",
+      "sires",
+      "stares",
+      "tares",
+      "wares",
+    ]);
   });
 
   it("moves thousands of words down, so the cases above are not a rounding story", () => {

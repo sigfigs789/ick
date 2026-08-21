@@ -19,6 +19,42 @@
     "since": "2026-08-21",
     "reason": "To form laterite (the soil), not a degree of `later`. Same shape as `rightsize`: exempting the verb carries its tenses with it."
   },
+  "bares": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `bare`, not `bar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "fares": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `fare`, not `far`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "fores": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `fore`, not `for`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "mares": {
+    "since": "2026-08-21",
+    "reason": "The plural of `mare`, not `mar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "resites": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `resite`, not `resit`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "sires": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `sire`, not `sir`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "stares": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `stare`, not `star`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "tares": {
+    "since": "2026-08-21",
+    "reason": "The plural of `tare`, not `tar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "wares": {
+    "since": "2026-08-21",
+    "reason": "The plural of `ware`, not `war`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
   "complices": {
     "since": "2026-08-21",
     "reason": "Plural of the archaic `complice` (an accomplice), which the -ices rule misreads as a stem-change plural of `complex`, 2.8 Zipf clear of the truth. `complice` is the rarer word, so an override cannot express this -- the cap ignores a rarer base -- and the word's own measurement is the right score."
