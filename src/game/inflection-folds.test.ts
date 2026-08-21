@@ -125,7 +125,7 @@ describe("the whole-dictionary safety properties", () => {
     const legendsBefore = WORDS.filter((w) => scoreOf(w, BEFORE) >= 9.9).length;
     const legendsOn = WORDS.filter((w) => scoreOf(w, ON) >= 9.9).length;
     expect(legendsBefore).toBe(36040);
-    expect(legendsOn).toBe(30215);
+    expect(legendsOn).toBe(30219);
     expect(legendsOn / legendsBefore).toBeGreaterThan(0.8);
   });
 });
@@ -207,6 +207,67 @@ describe("the guards that keep real words out of it", () => {
     expect(scoreOf("fanciers", ON)).toBe(scoreOf("fancier", ON));
   });
 
+  it("keeps the Latin rules off English singulars that merely end that way", () => {
+    // "-a"/"-i"/"-ae" is as ambiguous as bare "-er", and the measurement floor is
+    // no help: "alba" (Zipf 3.33) is more common than "curricula" or "foci", so
+    // no threshold separates the bad folds from the good. Taking an English
+    // plural of its own does: there is no "podias", but there is an "albas".
+    for (const word of [
+      "alba", // a white garment, not the plural of "album"
+      "brae", // a Scots hillside, not the plural of "bra"
+      "tantra", // not the plural of "tantrum"
+      "vari",
+      "tabi",
+      "raki",
+      "xenia",
+      "actinia",
+      "vaccinia",
+      "hypochondria",
+      "platina",
+    ]) {
+      expect(scoreOf(word, ON)).toBe(scoreOf(word, BEFORE));
+      expect(baseFormSubstitution(word, ON)).toBeUndefined();
+    }
+  });
+
+  it("catches the whole metal-oxide family, which the floor could not", () => {
+    // Materials science names an oxide after its metal ("-ia" off "-ium") and
+    // pluralises it freely, so every one of these has an "-s" form and none is a
+    // Latin plural. They are also all measured, which is why the degree rules'
+    // gate would have let them through.
+    for (const oxide of [
+      "alumina",
+      "magnesia",
+      "lithia",
+      "urania",
+      "titania",
+      "thoria",
+      "strontia",
+      "terbia",
+      "yttria",
+      "ytterbia",
+      "scandia",
+      "ceria",
+    ]) {
+      expect(baseFormSubstitution(oxide, ON)).toBeUndefined();
+      expect(scoreOf(oxide, ON)).toBe(scoreOf(oxide, BEFORE));
+    }
+  });
+
+  it("still folds a genuine Latin plural", () => {
+    // The guard costs only the words that really are English singulars too --
+    // "stadia" (the surveying sense, hence "stadias") and "loci" keep their own
+    // scores. Everything else still folds.
+    expect(scoreOf("abaci", ON)).toBe(scoreOf("abacus", ON));
+    expect(scoreOf("momenta", ON)).toBe(scoreOf("momentum", ON));
+    expect(scoreOf("podia", ON)).toBe(scoreOf("podium", ON));
+    expect(scoreOf("quanta", ON)).toBe(scoreOf("quantum", ON));
+    expect(scoreOf("fungi", ON)).toBe(scoreOf("fungus", ON));
+    expect(scoreOf("nebulae", ON)).toBe(scoreOf("nebula", ON));
+    expect(baseFormSubstitution("stadia", ON)).toBeUndefined();
+    expect(baseFormSubstitution("loci", ON)).toBeUndefined();
+  });
+
   it("widens which spellings are tried, never which words are short enough", () => {
     // The length guards match `baseForm`'s exactly. Loosening them instead
     // collapses "shed" onto "she" and "ared" onto "are".
@@ -231,7 +292,7 @@ describe("the reviewed data files", () => {
     const overrides = Object.entries(scoreOverrides as Record<string, { base: string }>);
     const reached = overrides.filter(
       ([word, override]) =>
-        inflectionBaseCandidates(word).includes(override.base) ||
+        inflectionBaseCandidates(word, true).includes(override.base) ||
         degreeBaseCandidates(word, true).includes(override.base)
     );
     expect(reached.length).toBeGreaterThanOrEqual(58);
@@ -240,7 +301,7 @@ describe("the reviewed data files", () => {
       if (!overrides.some(([entry]) => entry === word)) continue;
       const base = Object.fromEntries(overrides)[word].base;
       expect(
-        inflectionBaseCandidates(word).includes(base) ||
+        inflectionBaseCandidates(word, true).includes(base) ||
           degreeBaseCandidates(word, true).includes(base)
       ).toBe(true);
     }
@@ -292,19 +353,19 @@ describe("the reviewed data files", () => {
 
 describe("the candidate generators", () => {
   it("offers every plausible inflectional spelling, not just the first", () => {
-    expect(inflectionBaseCandidates("asphyxiates")).toContain("asphyxiate");
-    expect(inflectionBaseCandidates("boxes")).toContain("box");
-    expect(inflectionBaseCandidates("safaried")).toContain("safari");
-    expect(inflectionBaseCandidates("denied")).toContain("deny");
-    expect(inflectionBaseCandidates("analyses")).toContain("analysis");
-    expect(inflectionBaseCandidates("knives")).toContain("knife");
-    expect(inflectionBaseCandidates("abaci")).toContain("abacus");
-    expect(inflectionBaseCandidates("running")).toContain("run");
+    expect(inflectionBaseCandidates("asphyxiates", true)).toContain("asphyxiate");
+    expect(inflectionBaseCandidates("boxes", true)).toContain("box");
+    expect(inflectionBaseCandidates("safaried", true)).toContain("safari");
+    expect(inflectionBaseCandidates("denied", true)).toContain("deny");
+    expect(inflectionBaseCandidates("analyses", true)).toContain("analysis");
+    expect(inflectionBaseCandidates("knives", true)).toContain("knife");
+    expect(inflectionBaseCandidates("abaci", true)).toContain("abacus");
+    expect(inflectionBaseCandidates("running", true)).toContain("run");
   });
 
   it("keeps the same length guards as baseForm", () => {
-    expect(inflectionBaseCandidates("shed")).not.toContain("she");
-    expect(inflectionBaseCandidates("aging")).not.toContain("age");
+    expect(inflectionBaseCandidates("shed", true)).not.toContain("she");
+    expect(inflectionBaseCandidates("aging", true)).not.toContain("age");
   });
 
   it("offers bare -er/-est candidates only when asked", () => {

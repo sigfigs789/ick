@@ -784,7 +784,8 @@ function foldCandidates(word: string, scoring: Scoring, date?: string): string[]
   add(override);
   add(tense);
   add(suffix);
-  for (const candidate of inflectionBaseCandidates(word)) add(candidate);
+  for (const candidate of inflectionBaseCandidates(word, latinPluralsAllowed(word)))
+    add(candidate);
   // Degree rules apply at every node, not just the submitted word. Confining them
   // to the submitted word looks tempting -- a comparative does not pluralize, so
   // "secreters" -> "secreter" -> "secret" reads an "-er" that only exists because
@@ -822,6 +823,33 @@ function plainDegreesAllowed(word: string, scoring: Scoring): boolean {
   // positional frequency entry, so there is nothing to call unmeasurable.
   if (index === undefined) return false;
   return scoring.zipfAt(index) < MEASURED_FLOOR;
+}
+
+/**
+ * Whether `word` may be read as a Latin plural at all.
+ *
+ * The "-a"/"-i"/"-ae" endings are as ambiguous as bare "-er": they are how Latin
+ * pluralises, and also how English spells a pile of ordinary singulars. Nothing
+ * in the letters separates "podia" from "alba", and the frequency gate above is no
+ * help here -- "alba" (Zipf 3.33) is *more* common than "curricula", "formulae"
+ * and "foci", so any threshold that dropped the bad folds would drop the good ones
+ * with them.
+ *
+ * What does separate them is whether the word takes an English plural of its own.
+ * A Latin plural has no "-s" form -- there is no "podias", no "quantas", no
+ * "memorandas" -- so a word that does have one is being used as an English
+ * singular, whatever its ending. That is what tells "alba"/"albas" (a white
+ * garment, not the plural of "album") from "podia", and it catches the whole
+ * metal-oxide family in one go, since materials science names them freely in the
+ * plural: "aluminas", "magnesias", "titanias", "uranias", "lithias".
+ *
+ * Spelling and dictionary membership only, like every other guard here. The words
+ * it deliberately gives up are the ones that genuinely are English singulars as
+ * well as Latin plurals -- "stadia" (the surveying sense, hence "stadias") and
+ * "loci" -- which keep their own scores rather than folding.
+ */
+function latinPluralsAllowed(word: string): boolean {
+  return !WORD_INDEX.has(word + "s");
 }
 
 /**

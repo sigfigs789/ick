@@ -211,6 +211,21 @@ degree rules additionally require the base's *other* degree to be attested **in
 the same spelling variant** — `funest` asks for `funer`, not `funner` — so neither
 `supplier` ("more supply"?) nor the Latinate `funest` is read as a degree form.
 
+The Latin rules are fenced too, and needed a *different* fence. `-a`/`-i`/`-ae` is
+just as ambiguous as bare `-er` — it is how Latin pluralises and also how English
+spells a great many ordinary singulars — but the measurement floor is no help
+here: `alba` (Zipf 3.33) is **more** common than `curricula`, `formulae` and
+`foci`, so no frequency threshold separates the bad folds from the good. What does
+separate them is whether the word takes an English plural of its own. A Latin
+plural has no `-s` form — there is no `podias`, no `quantas` — so a word that has
+one is being used as an English singular whatever its ending. That is what keeps
+`alba` (a white garment, not the plural of `album`), `brae`, `tantra`, `tabi` and
+`raki` on their own scores, and it catches the whole metal-oxide family in one go,
+since materials science pluralises those freely: `aluminas`, `magnesias`,
+`titanias`, `uranias`, `lithias`. It costs only the words that genuinely are
+English singulars as well as Latin plurals — `stadia` (the surveying sense) and
+`loci` — which keep their own scores rather than folding.
+
 Two limits worth knowing, both measured and both leaving the properties above
 intact:
 

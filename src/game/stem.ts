@@ -72,11 +72,18 @@ function stripDoubledConsonant(stem: string): string {
  *
  * Latin plurals are included ("abaci" -> "abacus", "larvae" -> "larva",
  * "momenta" -> "momentum"): they are plurals, and no English suffix rule reaches
- * them. Length guards match `baseForm`'s exactly -- this widens which *spellings*
- * are considered, never which words are short enough to fold, so "shed" still
- * doesn't collapse onto "she".
+ * them. They are gated on `latinPlurals` because, like bare "-er"/"-est", the
+ * spelling is ambiguous -- "-a" is also how English spells a great many ordinary
+ * singulars, and nothing in the letters separates "podia" from "alba". The caller
+ * decides (see dictionary.ts).
+ *
+ * Length guards are the tense rules' own -- this widens which *spellings* are
+ * considered, never which words are short enough to fold, so "shed" still doesn't
+ * collapse onto "she". They are not quite `baseForm`'s: "-ies", "-ied" and
+ * "-ying" are one letter looser here, which is what lets "dries" reach "dry"
+ * instead of `baseForm`'s "dri".
  */
-export function inflectionBaseCandidates(word: string): string[] {
+export function inflectionBaseCandidates(word: string, latinPlurals: boolean): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
   const add = (base: string) => {
@@ -101,10 +108,12 @@ export function inflectionBaseCandidates(word: string): string[] {
   if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) {
     add(w.slice(0, -1)); // cats -> cat
   }
-  // Latin plurals.
-  if (w.length > 3 && w.endsWith("i")) add(w.slice(0, -1) + "us"); // abaci -> abacus
-  if (w.length > 3 && w.endsWith("ae")) add(w.slice(0, -1)); // larvae -> larva
-  if (w.length > 3 && w.endsWith("a")) add(w.slice(0, -1) + "um"); // momenta -> momentum
+  // Latin plurals, only where the caller says the spelling can be read that way.
+  if (latinPlurals) {
+    if (w.length > 3 && w.endsWith("i")) add(w.slice(0, -1) + "us"); // abaci -> abacus
+    if (w.length > 3 && w.endsWith("ae")) add(w.slice(0, -1)); // larvae -> larva
+    if (w.length > 3 && w.endsWith("a")) add(w.slice(0, -1) + "um"); // momenta -> momentum
+  }
 
   // Past tense and participles. The "-ied" and "-ed" branches both contribute,
   // which is what `baseForm`'s if/else chain can't do: "safaried" needs the

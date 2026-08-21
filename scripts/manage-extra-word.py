@@ -287,12 +287,16 @@ def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     return base
 
 
-def _inflection_base_candidates(word: str) -> list[str]:
+def _inflection_base_candidates(word: str, latin_plurals: bool) -> list[str]:
     """Mirror of inflectionBaseCandidates(): every plausible inflectional base.
 
     Candidates rather than one answer is the point -- _inflectional_stem() returns
     a single spelling and so gives up when it is not a word ("asphyxiates" ->
-    "asphyxiat", never "asphyxiate"). Length guards match it exactly.
+    "asphyxiat", never "asphyxiate").
+
+    The Latin rules are gated on `latin_plurals`, which the caller decides: the
+    "-a"/"-i"/"-ae" endings are as ambiguous as bare "-er", and no frequency
+    threshold separates them (see _latin_plurals_allowed).
     """
     w = word.lower()
     out: list[str] = []
@@ -314,12 +318,13 @@ def _inflection_base_candidates(word: str) -> list[str]:
         add(w[:-2] + "is")
     if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
         add(w[:-1])
-    if len(w) > 3 and w.endswith("i"):
-        add(w[:-1] + "us")
-    if len(w) > 3 and w.endswith("ae"):
-        add(w[:-1])
-    if len(w) > 3 and w.endswith("a"):
-        add(w[:-1] + "um")
+    if latin_plurals:
+        if len(w) > 3 and w.endswith("i"):
+            add(w[:-1] + "us")
+        if len(w) > 3 and w.endswith("ae"):
+            add(w[:-1])
+        if len(w) > 3 and w.endswith("a"):
+            add(w[:-1] + "um")
     if len(w) > 4 and w.endswith("ied"):
         add(w[:-3] + "y")
     if len(w) > 4 and w.endswith("ed"):
@@ -522,6 +527,19 @@ def _override_base(word: str, index: dict[str, int]) -> str | None:
 MAX_FOLD_NODES = 64
 
 
+def _latin_plurals_allowed(word: str, index: dict[str, int]) -> bool:
+    """Mirror of latinPluralsAllowed(): may `word` be read as a Latin plural?
+
+    The "-a"/"-i"/"-ae" endings are as ambiguous as bare "-er", and the
+    measurement floor cannot help -- "alba" (Zipf 3.33) is more common than
+    "curricula" or "foci". Taking an English plural of its own is what separates
+    them: a Latin plural has no "-s" form, so "albas" existing means "alba" is an
+    English singular. Catches the metal-oxide family ("aluminas", "magnesias")
+    that the floor would have let through.
+    """
+    return word + "s" not in index
+
+
 def _fold_candidates(word: str, index: dict[str, int], zipf_at) -> list[str]:
     """Mirror of foldCandidates(): every base `word` could fold onto.
 
@@ -545,7 +563,7 @@ def _fold_candidates(word: str, index: dict[str, int], zipf_at) -> list[str]:
     add(_override_base(word, index))
     add(_tense_base(word, index, zipf_at))
     add(_scoring_base(word, index))
-    for candidate in _inflection_base_candidates(word):
+    for candidate in _inflection_base_candidates(word, _latin_plurals_allowed(word, index)):
         add(candidate)
     plain_degrees = word in index and zipf_at(word) < MEASURED_FLOOR
     for candidate in _degree_base_candidates(word, plain_degrees):
