@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
+import { baseForm, inflectionalBaseCandidates } from "./stem";
 import { evaluateSubmission } from "./submit";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
@@ -258,6 +259,67 @@ describe("what the cutover deliberately leaves alone", () => {
     expect(baseFormSubstitution("theses", ON)?.base).toBe("thesis");
     expect(score("theses", ON)).toBe(score("thesis", ON));
     expect(score("theses", ON)).not.toBe(score("these", ON));
+  });
+});
+
+describe("a conjugation displays what its verb displays", () => {
+  // Stripping "-izes" in one bite reached the stem directly ("womanizes" ->
+  // "woman") while the verb itself, measured just above the floor, was gated
+  // out of the very same strip -- so the conjugation scored 6 points more
+  // common than the word it conjugates, the mirror image of the bug the fold
+  // exists to prevent. A tensed form now folds through its verb, never past
+  // it, so the whole paradigm displays one number.
+  const PARADIGMS: ReadonlyArray<[verb: string, forms: string[]]> = [
+    ["womanize", ["womanizes", "womanized"]],
+    ["internationalise", ["internationalises"]],
+    ["militarise", ["militarises"]],
+  ];
+
+  it.each(PARADIGMS)("%s and its tenses display one score", (verb, forms) => {
+    for (const form of forms) {
+      expect(score(form, ON)).toBe(score(verb, ON));
+    }
+  });
+
+  it("still strips a tensed form whose verb is not a word", () => {
+    // No verb, no sibling to disagree with: the fallback strips directly from
+    // the verb spelling, so the -ization un-sticking keeps working.
+    expect(score("winterisation", ON)).toBe(score("winter", ON));
+  });
+
+  it("never lets a tensed -ize/-ise form leapfrog its own verb", () => {
+    // The whole-dictionary shape of the paradigm rule: wherever the bare verb
+    // is a dictionary word, a tensed form's display comes from its own
+    // measurement or from a word one attested inflectional hop away -- its
+    // verb above all, but also a real word the tense or number rules land on
+    // ("emphasised" strips to the noun "emphasis"). What it must never do is
+    // out-run every one of those through a derivational strip its own verb is
+    // barred from, which is how "womanizes" once displayed 4 points more
+    // common than "womanize".
+    const words = dictionaryWords as string[];
+    const index = new Map(words.map((w, i) => [w, i]));
+    const ownZipf = (w: string) => rarityData.zipfHundredths[index.get(w)!] / 100;
+    const verbOf = (w: string): string | undefined => {
+      for (const suffix of ["izes", "ises", "ized", "ised"]) {
+        if (w.endsWith(suffix) && w.length > suffix.length + 3) return w.slice(0, -1);
+      }
+      for (const suffix of ["izing", "ising"]) {
+        if (w.endsWith(suffix) && w.length > suffix.length + 3) return w.slice(0, -3) + "e";
+      }
+      return undefined;
+    };
+    const leapfrogs: string[] = [];
+    for (const word of words) {
+      const verb = verbOf(word);
+      if (!verb || !index.has(verb)) continue;
+      let ceiling = ownZipf(word);
+      for (const hop of [verb, baseForm(word), ...inflectionalBaseCandidates(word)]) {
+        if (index.has(hop)) ceiling = Math.max(ceiling, rarityFor(hop, ON)!.zipf);
+      }
+      const used = rarityFor(word, ON)!.zipf;
+      if (used > ceiling + 1e-9) leapfrogs.push(`${word} ${used} > ${ceiling}`);
+    }
+    expect(leapfrogs).toEqual([]);
   });
 });
 

@@ -187,11 +187,11 @@ export function unmeasuredBaseCandidates(word: string): string[] {
   }
   if (w.length > 4 && w.endsWith("a")) add(`${w.slice(0, -1)}um`);
 
-  // Longest ending first, so a tensed form ("-izing") is not read as the bare
-  // verb. The endings are mutually exclusive, so at most one group ever matches.
+  // Bare "-ize"/"-ise" only: a *tensed* form folds through its own verb
+  // instead (see izeVerbSpellings below and nextBaseForms in dictionary.ts).
   // The "y" candidate is what reaches the noun a verb was built from
   // ("tautologize" -> "tautology", "ebonize" -> "ebony").
-  for (const suffix of ["izing", "ising", "izes", "ises", "ized", "ised", "ize", "ise"]) {
+  for (const suffix of ["ize", "ise"]) {
     if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
     const stem = w.slice(0, -suffix.length);
     add(stem, `${stem}e`, `${stem}y`);
@@ -203,6 +203,32 @@ export function unmeasuredBaseCandidates(word: string): string[] {
   }
 
   return out;
+}
+
+/**
+ * The bare-verb spelling of a tensed "-ize"/"-ise" form ("womanizes" ->
+ * "womanize", "ghettoising" -> "ghettoise"), or nothing when the word isn't
+ * one. Spelling only; the caller checks the dictionary.
+ *
+ * This exists so a conjugation folds *through* its own verb rather than past
+ * it. Stripping "-izes" in one bite reached the stem directly ("womanizes" ->
+ * "woman") while the verb itself -- measured at Zipf 1.03 -- was gated out of
+ * the very same strip, so the conjugation scored 3.50 against its own verb's
+ * 9.86: the mirror image of the bug the fold exists to prevent, 214 words
+ * wide. Routing through the verb makes every tense of a verb display exactly
+ * what the verb displays. Only when the verb spelling isn't a dictionary word
+ * does the caller fall back to stripping from the spelling directly -- there is
+ * no sibling to disagree with.
+ */
+export function izeVerbSpellings(word: string): string[] {
+  const w = word.toLowerCase();
+  for (const suffix of ["izes", "ises", "ized", "ised"]) {
+    if (w.endsWith(suffix) && w.length > suffix.length + 3) return [w.slice(0, -1)];
+  }
+  for (const suffix of ["izing", "ising"]) {
+    if (w.endsWith(suffix) && w.length > suffix.length + 3) return [w.slice(0, -3) + "e"];
+  }
+  return [];
 }
 
 /**

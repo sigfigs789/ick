@@ -340,9 +340,10 @@ def _unmeasured_candidates(word: str) -> list[str]:
     if len(w) > 4 and w.endswith("a"):
         add(w[:-1] + "um")
 
-    # Longest ending first, so a tensed form ("-izing") is not read as the bare
-    # verb. The "y" candidate reaches the noun a verb was built from.
-    for suffix in ("izing", "ising", "izes", "ises", "ized", "ised", "ize", "ise"):
+    # Bare "-ize"/"-ise" only: a tensed form folds through its own verb (see
+    # _ize_verb_spellings). The "y" candidate reaches the noun a verb was
+    # built from.
+    for suffix in ("ize", "ise"):
         if not w.endswith(suffix) or len(w) <= len(suffix) + 3:
             continue
         stem = w[: -len(suffix)]
@@ -353,6 +354,23 @@ def _unmeasured_candidates(word: str) -> list[str]:
         stem = w[: -len(suffix)]
         add(stem, stem + "e", stem + "y")
     return out
+
+
+def _ize_verb_spellings(word: str) -> list[str]:
+    """Mirror of izeVerbSpellings() in src/game/stem.ts.
+
+    The bare-verb spelling of a tensed "-ize"/"-ise" form, so a conjugation
+    folds through its own verb rather than past it. Only when the verb spelling
+    is not a dictionary word does the caller strip the tensed form directly.
+    """
+    w = word.lower()
+    for suffix in ("izes", "ises", "ized", "ised"):
+        if w.endswith(suffix) and len(w) > len(suffix) + 3:
+            return [w[:-1]]
+    for suffix in ("izing", "ising"):
+        if w.endswith(suffix) and len(w) > len(suffix) + 3:
+            return [w[:-3] + "e"]
+    return []
 
 
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
@@ -527,6 +545,13 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
     if word in index and zipf_at(word) < MEASURED_FLOOR:
         for candidate in _unmeasured_candidates(word):
             add(candidate)
+        # A tensed "-ize"/"-ise" form folds through its own verb, never past
+        # it (see nextBaseForms in dictionary.ts).
+        for verb in _ize_verb_spellings(word):
+            if verb in index:
+                continue
+            for candidate in _unmeasured_candidates(verb):
+                add(candidate)
     add(_scoring_base(word, index))
     return out
 

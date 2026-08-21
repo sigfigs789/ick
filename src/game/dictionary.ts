@@ -8,6 +8,7 @@ import {
   boundBaseCandidates,
   degreeBaseCandidates,
   inflectionalBaseCandidates,
+  izeVerbSpellings,
   unmeasuredBaseCandidates,
 } from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
@@ -804,6 +805,18 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   // would break without the gate.
   if (WORD_INDEX.has(word) && zipfFor(word, scoring) < MEASURED_FLOOR) {
     for (const candidate of unmeasuredBaseCandidates(word)) add(candidate);
+    // A tensed "-ize"/"-ise" form folds through its own verb, never past it.
+    // The verb is already a candidate via the tense and number rules above, so
+    // when the dictionary has it, the chain applies this gate *at the verb* --
+    // which is what keeps "womanizes" from reaching "woman" through a strip
+    // its own measured verb is barred from, and so from scoring 6 points more
+    // common than the word it conjugates. Only when the verb spelling isn't a
+    // word at all is the tensed form stripped directly: there is no sibling
+    // left to disagree with.
+    for (const verb of izeVerbSpellings(word)) {
+      if (WORD_INDEX.has(verb)) continue;
+      for (const candidate of unmeasuredBaseCandidates(verb)) add(candidate);
+    }
   }
   add(scoringBaseForm(word, scoring));
   return out;
