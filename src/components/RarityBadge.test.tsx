@@ -12,22 +12,22 @@ const LEGACY_DATE = "2026-08-14";
 // the badge shows the correct color (via the class) and a color-independent
 // label for every tier.
 const BADGES: ReadonlyArray<[rarity: Rarity, className: string, tag: RegExp]> = [
-  ["Quotidian", "rarity--quotidian", /quotidian/i],
   ["Very Common", "rarity--very-common", /very common/i],
   ["Common", "rarity--common", /common/i],
   ["Uncommon", "rarity--uncommon", /uncommon/i],
   ["Rare", "rarity--rare", /rare/i],
   ["Extremely Rare", "rarity--extremely-rare", /extremely rare/i],
+  ["Elusive", "rarity--elusive", /elusive/i],
   ["Mythic", "rarity--mythic", /mythic/i],
   ["Legend", "rarity--legend", /legend/i],
 ];
 
 describe("RarityBadge", () => {
-  it("renders Quotidian as the distinct black badge tier", () => {
-    render(<RarityBadge rarity="Quotidian" zipf={7.7} />);
+  it("renders Legend as the distinct black badge tier", () => {
+    render(<RarityBadge rarity="Legend" zipf={0.4} />);
 
-    const badge = screen.getByText(/quotidian/i);
-    expect(badge).toHaveClass("rarity--quotidian");
+    const badge = screen.getByText(/legend/i);
+    expect(badge).toHaveClass("rarity--legend");
   });
 
   it.each(BADGES)("renders %s with its own color class and label", (rarity, className, tag) => {

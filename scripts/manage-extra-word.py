@@ -28,6 +28,7 @@ import json
 import math
 import re
 import sys
+from collections import deque
 from pathlib import Path
 
 from frequency import FrequencyWaterfall, bound_base_candidates
@@ -41,6 +42,7 @@ DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 LEGACY_RARITY_PATH = ROOT / "src" / "data" / "rarity-legacy.json"
 SCORE_OVERRIDES_PATH = ROOT / "src" / "data" / "score-overrides.json"
+FOLD_EXEMPTIONS_PATH = ROOT / "src" / "data" / "fold-exemptions.json"
 DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
 
 # Legacy (pre-rescale) rarity placeholders for a freshly added word. The legacy
@@ -204,9 +206,11 @@ def update_size_test() -> None:
 # -- Base-form adjustment, mirroring src/game/{dictionary,stem}.ts --------------
 # A recorded word must be pinned with the exact rarity/Zipf rarityFor() returns,
 # so word_rarity() applies the same adjustment the game does for the newest
-# (undated) system -- the 2026-08-16 wide band, where the bound suffixes are on.
-# Tense forms inherit their base's Zipf exactly; transparent (-ness/-ly) and
-# bound (-ization/-ability) suffixes are capped at their base.
+# (undated) system: the 2026-08-16 wide band with the bound suffixes on, and the
+# 2026-08-21 fold, which searches every plausible spelling of a base rather than
+# the one the stemmer produces. Every fold is a *cap* -- a word scores no rarer
+# than the most common word it can reach -- so nothing here can make a word rarer
+# than its own measurement.
 MEASURED_FLOOR = 1.0
 BAND_CEILING = 9.9
 TAIL_FLOOR = 0.0
@@ -283,6 +287,114 @@ def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     return base
 
 
+def _inflection_base_candidates(word: str) -> list[str]:
+    """Mirror of inflectionBaseCandidates(): every plausible inflectional base.
+
+    Candidates rather than one answer is the point -- _inflectional_stem() returns
+    a single spelling and so gives up when it is not a word ("asphyxiates" ->
+    "asphyxiat", never "asphyxiate"). Length guards match it exactly.
+    """
+    w = word.lower()
+    out: list[str] = []
+
+    def add(base: str) -> None:
+        if len(base) >= 3 and base != w and base not in out:
+            out.append(base)
+
+    if len(w) > 4 and w.endswith("ies"):
+        add(w[:-3] + "y")
+        add(w[:-2])
+        add(w[:-1])
+    if len(w) > 4 and w.endswith("ves"):
+        add(w[:-3] + "f")
+        add(w[:-3] + "fe")
+    if len(w) > 4 and w.endswith("es"):
+        add(w[:-2])
+        add(w[:-1])
+        add(w[:-2] + "is")
+    if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
+        add(w[:-1])
+    if len(w) > 3 and w.endswith("i"):
+        add(w[:-1] + "us")
+    if len(w) > 3 and w.endswith("ae"):
+        add(w[:-1])
+    if len(w) > 3 and w.endswith("a"):
+        add(w[:-1] + "um")
+    if len(w) > 4 and w.endswith("ied"):
+        add(w[:-3] + "y")
+    if len(w) > 4 and w.endswith("ed"):
+        add(w[:-1])
+        add(w[:-2])
+        add(_strip_doubled_consonant(w[:-2]))
+    if len(w) > 4 and w.endswith("ying"):
+        add(w[:-4] + "y")
+        add(w[:-4] + "ie")
+    if len(w) > 5 and w.endswith("ing"):
+        add(w[:-3] + "e")
+        add(w[:-3])
+        add(_strip_doubled_consonant(w[:-3]))
+    return out
+
+
+def _degree_base_candidates(word: str, plain_degrees: bool) -> list[str]:
+    """Mirror of degreeBaseCandidates(): comparative/superlative bases.
+
+    `plain_degrees` selects the riskier half -- bare -er/-est is also how English
+    builds agent nouns, so the caller only turns it on below MEASURED_FLOOR.
+    """
+    w = word.lower()
+    out: list[str] = []
+
+    def add(base: str) -> None:
+        if len(base) >= 3 and base != w and base not in out:
+            out.append(base)
+
+    if len(w) > 5 and w.endswith("iest"):
+        add(w[:-4] + "y")
+    elif len(w) > 4 and w.endswith("ier"):
+        add(w[:-3] + "y")
+    elif plain_degrees:
+        if len(w) > 4 and w.endswith("est"):
+            add(w[:-2])
+            add(w[:-3])
+            add(_strip_doubled_consonant(w[:-3]))
+        elif len(w) > 3 and w.endswith("er"):
+            add(w[:-1])
+            add(w[:-2])
+            add(_strip_doubled_consonant(w[:-2]))
+    return out
+
+
+def _degree_counterpart(word: str, base: str) -> str | None:
+    """Mirror of degreeCounterpart(): the other degree, in `word`'s own spelling.
+
+    The spelling has to match rather than merely exist in the paradigm: English
+    doubles a CVC monosyllable, so "fun" takes "funner"/"funnest" and never
+    "funer"/"funest". Accepting either variant let "funnest" vouch for the
+    Latinate "funest".
+    """
+    w = word.lower()
+    b = base.lower()
+    doubled = b + b[-1]
+    if b.endswith("y"):
+        variants = [(b[:-1] + "ier", b[:-1] + "iest")]
+    else:
+        first = (b + "r", b + "st") if b.endswith("e") else (b + "er", b + "est")
+        variants = [first, (doubled + "er", doubled + "est")]
+    for comparative, superlative in variants:
+        if w == comparative:
+            return superlative
+        if w == superlative:
+            return comparative
+    return None
+
+
+def _gradable_fold(word: str, base: str, index: dict[str, int]) -> bool:
+    """Mirror of gradableFold(): `base` is attested in both degrees."""
+    counterpart = _degree_counterpart(word, base)
+    return counterpart is not None and counterpart in index
+
+
 def _scoring_base(word: str, index: dict[str, int]) -> str | None:
     """Mirror of scoringBaseForm() with the bound suffixes on (wide-band era)."""
     inflected = _inflectional_stem(word)
@@ -302,17 +414,18 @@ def _scoring_base(word: str, index: dict[str, int]) -> str | None:
 
 
 def measured_rarity(zipf: float) -> str:
-    if zipf >= 6.4:
-        return "Quotidian"
-    if zipf >= 5.2:
+    """Mirrors measuredRarity() in src/game/dictionary.ts (narrow bands)."""
+    if zipf >= 4.85:
         return "Very Common"
-    if zipf >= 4.2:
+    if zipf >= 3.9:
         return "Common"
-    if zipf >= 3.3:
+    if zipf >= 3.15:
         return "Uncommon"
-    if zipf >= 2.5:
+    if zipf >= 2.13:
         return "Rare"
-    return "Extremely Rare"
+    if zipf >= 1.59:
+        return "Extremely Rare"
+    return "Elusive"
 
 
 def current_score(zipf: float, max_zipf: float) -> float:
@@ -381,6 +494,19 @@ def load_score_overrides() -> dict[str, dict]:
     return json.loads(SCORE_OVERRIDES_PATH.read_text())
 
 
+@functools.cache
+def load_fold_exemptions() -> dict[str, dict]:
+    """The curated fold exemptions in src/data/fold-exemptions.json.
+
+    Mirror of FOLD_EXEMPTIONS in src/game/dictionary.ts. Active unconditionally
+    here for the same reason the overrides are: this module only scores under the
+    newest (undated) system.
+    """
+    if not FOLD_EXEMPTIONS_PATH.exists():
+        return {}
+    return json.loads(FOLD_EXEMPTIONS_PATH.read_text())
+
+
 def _override_base(word: str, index: dict[str, int]) -> str | None:
     """Mirror of overrideBase() for the newest system (no date gating)."""
     override = load_score_overrides().get(word)
@@ -390,43 +516,77 @@ def _override_base(word: str, index: dict[str, int]) -> str | None:
     return base if base in index else None
 
 
-# Mirror of MAX_FOLD_DEPTH in src/game/dictionary.ts.
-MAX_FOLD_DEPTH = 8
+# Mirror of MAX_FOLD_NODES in src/game/dictionary.ts. The newest system fans out
+# over every plausible spelling instead of walking one chain, so the budget counts
+# words visited rather than chain length.
+MAX_FOLD_NODES = 64
 
 
-def _next_base(word: str, index: dict[str, int], zipf_at) -> str | None:
-    """Mirror of nextBaseForm(): one fold, override then tense then suffix."""
-    return (
-        _override_base(word, index)
-        or _tense_base(word, index, zipf_at)
-        or _scoring_base(word, index)
-    )
+def _fold_candidates(word: str, index: dict[str, int], zipf_at) -> list[str]:
+    """Mirror of foldCandidates(): every base `word` could fold onto.
 
+    The union of the reviewed override, the tense rule, the suffix rules, and
+    every plausible inflectional or degree spelling. Taking the union rather than
+    the first rule to match is strictly safer -- a cap against the best of several
+    bases is never rarer than a cap against any one of them.
 
-def chained_base(
-    word: str, index: dict[str, int], zipf_at, seen: frozenset[str] | None = None
-) -> tuple[str, float] | None:
-    """Mirror of chainedBase(): the most common word reachable by folding.
-
-    Each link is one hop applied again to whatever it lands on, so
-    "materialnesses" -> "materialness" -> "material" rather than stopping at the
-    unattested middle. Returns (base, zipf), or None when nothing folds.
+    An exempt word contributes nothing, which stops it folding and stops a chain
+    passing through it.
     """
-    if seen is None:
-        seen = frozenset([word])
-    nxt = _next_base(word, index, zipf_at)
-    if nxt is None or nxt in seen or len(seen) >= MAX_FOLD_DEPTH:
-        return None
-    here = (nxt, zipf_at(nxt))
-    deeper = chained_base(nxt, index, zipf_at, seen | {nxt})
-    return deeper if deeper is not None and deeper[1] > here[1] else here
+    if word in load_fold_exemptions():
+        return []
+
+    out: list[str] = []
+
+    def add(base: str | None) -> None:
+        if base is not None and base != word and base not in out and base in index:
+            out.append(base)
+
+    add(_override_base(word, index))
+    add(_tense_base(word, index, zipf_at))
+    add(_scoring_base(word, index))
+    for candidate in _inflection_base_candidates(word):
+        add(candidate)
+    plain_degrees = word in index and zipf_at(word) < MEASURED_FLOOR
+    for candidate in _degree_base_candidates(word, plain_degrees):
+        if _gradable_fold(word, candidate, index):
+            add(candidate)
+    return out
+
+
+def most_common_fold(word: str, index: dict[str, int], zipf_at) -> tuple[str, float] | None:
+    """Mirror of mostCommonFold(): the most common word reachable by folding.
+
+    A breadth-first search over the fold graph rather than a single chain, so
+    "materialnesses" -> "materialness" -> "material" rather than stopping at the
+    unattested middle, and "asphyxiates" reaches "asphyxiate" even though the
+    stemmer's own spelling ("asphyxiat") is not a word. The winner is the most
+    common word reached, so folding can only ever make a word more common.
+    Returns (base, zipf), or None when nothing folds.
+    """
+    visited = {word}
+    queue = deque([word])
+    best: tuple[str, float] | None = None
+    while queue:
+        if len(visited) >= MAX_FOLD_NODES:
+            break
+        current = queue.popleft()
+        for candidate in _fold_candidates(current, index, zipf_at):
+            if candidate in visited:
+                continue
+            visited.add(candidate)
+            zipf = zipf_at(candidate)
+            if best is None or zipf > best[1]:
+                best = (candidate, zipf)
+            queue.append(candidate)
+    return best
 
 
 def adjusted_zipf(word: str, index: dict[str, int], zipf_at) -> float:
     """Mirror of adjustedZipf() in src/game/dictionary.ts (newest system)."""
     own = zipf_at(word)
-    chained = chained_base(word, index, zipf_at)
-    return max(own, chained[1]) if chained is not None else own
+    folded = most_common_fold(word, index, zipf_at)
+    return max(own, folded[1]) if folded is not None else own
 
 
 def word_rarity(word: str) -> tuple[float, str, float]:

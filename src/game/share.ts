@@ -4,14 +4,17 @@ import {
   formatScore,
   topRarityScore,
   totalRarityScore,
+  usesRetunedTiers,
 } from "./dictionary";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
-// Mirrors the in-app "loot tier" rarity palette (grey -> brown -> green ->
-// blue -> purple -> red -> orange, see index.css) so the shared result matches
-// what showed up in-game. Legend, the top rank, is orange -- one step warmer
-// than Mythic's red. Quotidian's egg is an intentional Easter egg.
+// Mirrors the in-app "loot tier" rarity palette (white -> brown -> green ->
+// blue -> purple -> orange -> red -> black, see index.css) so the shared result
+// matches what showed up in-game. Legend, the top rank, is black -- the one
+// square that reads as absence rather than a hue, which is what makes it land.
+// Quotidian is reachable only on puzzles predating the retuned tiers; its egg
+// is an intentional Easter egg.
 // Squares only vary by color, which is fine here because this text is for
 // sharing outside the app -- inside the app, rarity is always shown as a
 // plain-text label too (see RarityBadge), which is what keeps things
@@ -23,9 +26,21 @@ export const RARITY_SYMBOL: Record<Rarity, string> = {
   Uncommon: "🟩",
   Rare: "🟦",
   "Extremely Rare": "🟪",
+  Elusive: "🟧",
   Mythic: "🟥",
-  Legend: "🟧",
+  Legend: "⬛",
 };
+
+// Before the tiers were retuned, Legend wore the orange that Elusive wears now.
+// An archived result has to share the square it was played with, so the top
+// rank is looked up through the puzzle's own date.
+const PRE_RETUNE_SYMBOL: Partial<Record<Rarity, string>> = { Legend: "🟧" };
+
+/** The share square for `rarity` on `date`'s puzzle. */
+export function raritySymbol(rarity: Rarity, date?: string): string {
+  if (!usesRetunedTiers(date)) return PRE_RETUNE_SYMBOL[rarity] ?? RARITY_SYMBOL[rarity];
+  return RARITY_SYMBOL[rarity];
+}
 
 export type ShareSource = "share" | "twitter";
 
@@ -127,8 +142,8 @@ export function buildShareText(
       const named = reveal === "all" || (reveal === "top" && w === best);
       const score = formatRarityScore(w.zipf, dateStr);
       return named
-        ? `${RARITY_SYMBOL[w.rarity]} ${w.word} (${score})`
-        : `${RARITY_SYMBOL[w.rarity]} ${score}`;
+        ? `${raritySymbol(w.rarity, dateStr)} ${w.word} (${score})`
+        : `${raritySymbol(w.rarity, dateStr)} ${score}`;
     })
     .join("\n");
 

@@ -217,20 +217,37 @@ describe("the guards that keep real words out of it", () => {
 });
 
 describe("the reviewed data files", () => {
-  it("independently reaches the base of every inflectional score override", () => {
-    // 34 of the 44 overrides were added a word at a time for this exact gap --
-    // "-es" plurals, "-est" superlatives, "-er" comparatives. Asking
+  it("independently reaches the base of the inflectional score overrides", () => {
+    // Most overrides were added a word at a time for this exact gap -- "-es"
+    // plurals, "-est" superlatives, "-er" comparatives. Asking
     // `baseFormSubstitution` would prove nothing, since an override is itself a
     // fold candidate; the candidate *generators* never read the override file, so
-    // finding the reviewed base in their output is real agreement. The rest of the
-    // entries are derivational (`-ation`, `-al`) or misspellings, which no rule
-    // here claims to cover -- they keep their override.
-    const reached = Object.entries(scoreOverrides as Record<string, { base: string }>).filter(
+    // finding the reviewed base in their output is real agreement.
+    //
+    // A floor rather than an exact count: the audit skills add entries daily and
+    // an inflectional one only ever pushes this up. What it must not do is
+    // regress -- that would mean the generators stopped reaching a shape a human
+    // had already ruled on. At the time of writing it is 58 of 73.
+    const overrides = Object.entries(scoreOverrides as Record<string, { base: string }>);
+    const reached = overrides.filter(
       ([word, override]) =>
         inflectionBaseCandidates(word).includes(override.base) ||
         degreeBaseCandidates(word, true).includes(override.base)
     );
-    expect(reached.length).toBe(29);
+    expect(reached.length).toBeGreaterThanOrEqual(58);
+    // The shapes, named, so a regression says which kind broke.
+    for (const word of ["collegiates", "compassionates", "concisest", "iratest", "abaci"]) {
+      if (!overrides.some(([entry]) => entry === word)) continue;
+      const base = Object.fromEntries(overrides)[word].base;
+      expect(
+        inflectionBaseCandidates(word).includes(base) ||
+          degreeBaseCandidates(word, true).includes(base)
+      ).toBe(true);
+    }
+    // The rest are derivational (`-ation`, `-al`), misspellings, or plurals of a
+    // "-ss" word, which no rule here claims to cover. They keep their override.
+    const missed = overrides.length - reached.length;
+    expect(missed).toBeLessThan(overrides.length / 3);
   });
 
   it("keeps every score override in force regardless", () => {

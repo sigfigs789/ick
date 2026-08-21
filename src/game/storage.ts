@@ -1,6 +1,6 @@
 import { addDays, todayDateString } from "./date";
 import { maxGuessesFor } from "./constants";
-import { rarityFor, rarityScore } from "./dictionary";
+import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 
@@ -30,8 +30,9 @@ export function loadProgress(date: string): DailyProgress | null {
 
   // Keep progress saved under a former top-tier name playable across renames.
   // The deep-tail top rank has been "Elusive", then "Mythic", and is now
-  // "Legend". Also refresh words saved with the former unknown-frequency
-  // fallbacks now that the dictionary uses 1.4.
+  // "Legend" -- with "Elusive" since revived for a mid-ladder tier, so its
+  // migration is date-gated below. Also refresh words saved with the former
+  // unknown-frequency fallbacks now that the dictionary uses 1.4.
   let migrated = false;
   const acceptedWords = progress.acceptedWords.map((word) => {
     if (word.zipf === 0.1 || word.zipf === 0.3 || word.zipf === 0.5) {
@@ -41,7 +42,13 @@ export function loadProgress(date: string): DailyProgress | null {
         return { word: word.word, ...current };
       }
     }
-    if ((word.rarity as string) === "Elusive") {
+    // "Elusive" named the deep-tail top rank long before Mythic and then Legend
+    // did -- and it is a live tier name again from NARROW_BANDS_START, this time
+    // for the band between Extremely Rare and Mythic. So only a save from a
+    // puzzle predating that cutover can mean the retired top rank; on a puzzle
+    // that uses the retuned tiers, Elusive is exactly what the player earned and
+    // promoting it would hand out a Legend nobody found.
+    if ((word.rarity as string) === "Elusive" && !usesRetunedTiers(date)) {
       migrated = true;
       return { ...word, rarity: "Legend" as const };
     }

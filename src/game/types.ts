@@ -1,10 +1,12 @@
 export type Rarity =
+  /** Retired at NARROW_BANDS_START -- reachable only on archived puzzles. */
   | "Quotidian"
   | "Very Common"
   | "Common"
   | "Uncommon"
   | "Rare"
   | "Extremely Rare"
+  | "Elusive"
   | "Mythic"
   | "Legend";
 

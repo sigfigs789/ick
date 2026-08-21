@@ -2,11 +2,11 @@
 
 A daily word-drop puzzle inspired by Wordle and BombParty. Every player
 gets the same 2- or 3-letter drop each day (like `STR`, `OU`, or `MP`)
-and enters valid English words that contain it, in order, for up to 6
+and enters valid English words that contain it, in order, for up to 5
 distinct guesses. The goal is finding the rarest word you can — your best
 one is crowned in the log. No timer, no login, no traditional score, just
 a friendly rarity reveal (Very Common → Extremely Rare) on every accepted
-word. Stop anytime with "Lock in my result," or use all 6 guesses.
+word. Stop anytime with "Lock in my result," or use all 5 guesses.
 
 Built in React + TypeScript (Vite). Game logic in `src/game/` is plain
 TypeScript with no DOM or React dependencies.
@@ -185,17 +185,18 @@ when that spelling wasn't a word. `baseForm`'s `-es` branch turns `asphyxiates`
 into `asphyxiat`, never tries `asphyxiate`, and so the third-person form scored
 9.77 (Mythic) against its own verb's 8.75. Its `-ied`/`-ed` if/else did the same
 to `safaried` (`safariy`, never `safari`), crowning the past tense of a Zipf-3.63
-word a perfect 10.00 Legend. The 44 entries in `score-overrides.json` are almost
-all this one gap, hand-patched a word at a time.
+word a perfect 10.00 Legend. Most of `score-overrides.json` is this one gap,
+hand-patched a word at a time.
 
 `foldCandidates` now offers *every* plausible base spelling and `mostCommonFold`
 searches the closure for the most common word it can reach — plus the inflections
 no single-spelling rule covered at all: Latin plurals (`abaci` → `abacus`),
 comparatives and superlatives (`godlier` → `godly`). The candidate generators
-never read the override file, and they reach the reviewed base of 29 of the 44
+never read the override file, and they reach the reviewed base of 58 of the 73
 overrides on their own, which is the evidence the rule demotes the right shapes.
-(The rest are derivational — `-ation`, `-al` — or misspellings, which no rule here
-claims to cover. Every override stays in force either way.)
+(The rest are derivational — `-ation`, `-al` — misspellings, or the plural of a
+`-ss` word, none of which any rule here claims to cover. Every override stays in
+force either way.)
 
 Two properties make it safe, and `inflection-folds.test.ts` pins both over the
 whole dictionary. Every fold is a **cap** against the most common word reached, so
@@ -227,7 +228,10 @@ intact:
 
 Reverting is one line: move `INFLECTION_FOLD_START` in `src/game/dictionary.ts`
 past today's date and every puzzle scores as it did before. Nothing else in the
-change is conditional on it.
+change is conditional on it. The tier retune landed on the same date but is gated
+separately on `NARROW_BANDS_START`, so rolling back either one leaves the other
+in place — the retune moves labels and no scores, this moves scores and adds no
+labels.
 
 `scripts/select-drops.py` evaluates a hand-picked pool of candidate
 2- and 3-letter drops against the generated dictionary and keeps only
