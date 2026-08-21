@@ -88,10 +88,11 @@ it isn't — does the word have a real measurement worth protecting?
 
 | Family | Folded? | Why |
 | --- | --- | --- |
-| `-s` / `-es` / `-ies` / `-ves` / `-ices` / `-ae` / `-i` / `-men` plurals and third-person forms | always | `inflectionalBaseCandidates` (`src/game/stem.ts`) offers every candidate spelling and the caller keeps the most common one the dictionary attests. Coincidences are near-ties, so picking wrong barely moves the score: `caves` offers `cave` (4.20) and `cafe` (4.09). |
+| `-s` / `-es` / `-ies` / `-ves` / `-ices` / `-ae` / `-i` / `-men` plurals and third-person forms, and `-es` → `-is` (`analyses` → `analysis`, `crises` → `crisis`) | always | `inflectionalBaseCandidates` (`src/game/stem.ts`) offers every candidate spelling and the caller keeps the most common one the dictionary attests. Coincidences are near-ties, so picking wrong barely moves the score: `caves` offers `cave` (4.20) and `cafe` (4.09). The far-from-tie coincidences are pinned by review instead (`theses` → `thesis`, not `these`). |
 | `-ed` / `-ing` tenses | always | `tenseBaseForm`, same most-common tie-break: `played` → `play`, not the obscure `playe`. |
+| `-ier` / `-iest` comparatives | always | `degreeBaseCandidates`: the spelling rewrites a `-y`, so the reading is checkable — the base's *other degree* must be attested. `happy` has `happiest`, so `happier` folds (it was scoring 5.40 against `happy`'s 3.50); `copy` has no `copiest`, so the agent noun `copier` keeps its own measured score, as do `carrier`, `supplier` and `crier`. The check stands in for the frequency gate, which is why this is the one degree spelling that folds above the floor. |
 | `-ness`, `-ly`, `-ization`, `-ability` | always | Bound or transparent suffixes with one unambiguous base. |
-| `-er` / `-est` comparatives and agentives, Latin `-a` → `-um` plurals, `-ize`/`-ise` verbs, `-able`/`-ible`/`-ably`/`-ibly` | **only below Zipf 1.0** | `unmeasuredBaseCandidates`, gated on `MEASURED_FLOOR`. Ungated these fold `noter` → `not`, `tempest` → `temp`, `canter` → `cant`, `shoulder` → `should`, `comma` → `common`, `capsize` → `caps`, `expertise` → `expert`, `countable` → `county`, `fallible` → `fall`. Every one of those is *measured* (Zipf 1.07–4.73) and so excluded; `specialest`, `asyla`, `containerise` and `interviewable` are not measured at all, and fold. |
+| bare `-er` / `-est` comparatives and agentives, Latin `-a` → `-um` plurals, `-ize`/`-ise` verbs, `-able`/`-ible`/`-ably`/`-ibly` | **only below Zipf 1.0** | `unmeasuredBaseCandidates`, gated on `MEASURED_FLOOR`. Ungated these fold `noter` → `not`, `tempest` → `temp`, `canter` → `cant`, `shoulder` → `should`, `comma` → `common`, `capsize` → `caps`, `expertise` → `expert`, `countable` → `county`, `fallible` → `fall`. Every one of those is *measured* (Zipf 1.07–4.73) and so excluded; `specialest`, `asyla`, `containerise` and `interviewable` are not measured at all, and fold. |
 | five-letter `-ing` | **no** | Every such word is measured above the floor, so the gate leaves none to fold — which is what keeps `thing` from scoring as `the` (a flat 0.00). The price is that `iring` and `hoing` keep an unearned Mythic. |
 | `-en` verbs | **no** | Right often enough to tempt (`harshen` → `harsh`) and wrong often enough to disqualify: `dudeen` → `dude`, `shoneen` → `shone`, `torten` → `tort`. 51 words, ~6 of them wrong. |
 | Latin `-a` → `-on` plurals | **no** | The dirty sibling of `-a` → `-um`: folds `comma` → `common`, `silica` → `silicon`, `squadra` → `squadron` — about 19 wrong in 280. |
@@ -101,6 +102,18 @@ The `-ize`/`-ise` rule also un-sticks a fold that already existed: `-ization` �
 `-ize` used to dead-end on an unattested verb, so `winterisation` folded to
 `winterise` (Zipf −0.45) and stopped, when `winter` (4.18) was one strip further.
 
+A *tensed* `-ize`/`-ise` form folds through its own verb, never past it
+(`izeVerbSpellings`). Stripping `-izes` in one bite reached the stem directly
+while the verb itself — measured just above the floor — was gated out of the
+very same strip, so `womanizes` displayed 3.50 against `womanize`'s 9.86: a
+conjugation scoring six points *more common* than the word it conjugates, the
+mirror image of the bug the fold exists to prevent, and the same split ran
+through 214 paradigms. Routing through the verb applies the gate once per
+paradigm, so every tense of a verb displays what the verb displays. Only when
+the verb spelling isn't a dictionary word is the tensed form stripped directly —
+there is no sibling left to disagree with, and it is what keeps `winterisation`
+working.
+
 The gate is the load-bearing idea. Below `MEASURED_FLOOR` a word's score comes
 from the deep-tail band — for an unattested word, from the sentinel outright — so
 it is a stand-in rather than a measurement, and a plausible base is strictly
@@ -108,10 +121,20 @@ better information. At or above the floor there *is* a measurement, and a guess
 from a word ending must not overrule it.
 
 Everything in the "no" rows is handled a word at a time in
-`src/data/score-overrides.json` instead, which is also where a fold that the
-rules get *wrong* gets stopped (`theses` is the plural of `thesis`, not a form of
-`these`), and where the gate's own known miss lives (`momser`, a Yiddish
-loanword, folds onto `mom`).
+`src/data/score-overrides.json` instead. That file is also how a fold the rules
+get *wrong* is redirected: an override replaces the spelling guesses outright,
+so `theses` scores as `thesis`, not `these`, and `whatsises`, `abatises` and
+`complices` are pinned to the singulars the rules cannot see. What an override
+cannot say is "score this word on its own data" — every entry pins the word to
+*some* base. `src/data/fold-exemptions.json` says exactly that: an exempt word
+contributes no fold candidates, so it neither folds nor lets a chain pass
+through it. The entries are the words the strips genuinely misread — `momser`
+(Yiddish, from *mamzer*, not "more mom"), `limen` and `germen` (not plurals of
+`liman` and `german`), `rightsize` and `laterize` (verbs, not degrees of `right`
+and `later`) — and because a chain cannot pass through an exempt word, one entry
+carries a whole paradigm: `rightsized`, `rightsizes` and `rightsizing` fold
+through their verb and stay with it. Both files are dated, and a word must never
+appear in both (the exemption would silently win; a test pins the disjointness).
 
 Every widening is date-gated, so no past puzzle re-scores: `scoringFor` picks a
 `Scoring` profile from the puzzle date, and the four cutovers to date are
