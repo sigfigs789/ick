@@ -57,7 +57,7 @@ const RARITY_RANK: Record<Rarity, number> = {
   Uncommon: 3,
   Rare: 4,
   "Extremely Rare": 5,
-  Arcane: 6,
+  Elusive: 6,
   Mythic: 7,
   Legend: 8,
 };

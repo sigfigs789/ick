@@ -10,7 +10,7 @@ export function isWinningRarity(rarity: Rarity): boolean {
   return (
     rarity === "Rare" ||
     rarity === "Extremely Rare" ||
-    rarity === "Arcane" ||
+    rarity === "Elusive" ||
     rarity === "Mythic" ||
     rarity === "Legend"
   );
@@ -19,7 +19,7 @@ export function isWinningRarity(rarity: Rarity): boolean {
 export function isEliteRarity(rarity: Rarity): boolean {
   return (
     rarity === "Extremely Rare" ||
-    rarity === "Arcane" ||
+    rarity === "Elusive" ||
     rarity === "Mythic" ||
     rarity === "Legend"
   );

@@ -6,7 +6,7 @@ export type Rarity =
   | "Uncommon"
   | "Rare"
   | "Extremely Rare"
-  | "Arcane"
+  | "Elusive"
   | "Mythic"
   | "Legend";
 
