@@ -44,6 +44,12 @@ interface SessionTimeState {
   resumedAt: number | null;
   /** Visible time at the moment of the first guess, or null before one. */
   firstGuessVisibleMs: number | null;
+  /** Visible time at the most recent guess; moves with every submission. */
+  lastGuessVisibleMs: number | null;
+  /** Submissions made this session, accepted or not. */
+  guesses: number;
+  /** Visible time at the first share of the session, or null if none. */
+  shareVisibleMs: number | null;
   /** Visible time already reported, so each report's segment is the new part. */
   reportedVisibleMs: number;
   /** How many reports this session has already sent. */
@@ -63,6 +69,13 @@ export interface SessionTimeReport {
   timeToFirstGuessMs: number | null;
   /** Visible time from the first guess to now, or null if there was no guess. */
   fromFirstGuessMs: number | null;
+  /** Visible time before the most recent guess, or null if the player never guessed. */
+  timeToLastGuessMs: number | null;
+  /** Submissions made this session, accepted or not. */
+  guessCount: number;
+  /** Visible time before the first share, or null if the player never shared. */
+  timeToShareMs: number | null;
+  shared: boolean;
   guessed: boolean;
   /** 1 for the first report of a session, 2 for the next, and so on. */
   reportNumber: number;
@@ -137,6 +150,9 @@ export function beginSession(now: number = Date.now()): void {
     visibleMs: 0,
     resumedAt: now,
     firstGuessVisibleMs: null,
+    lastGuessVisibleMs: null,
+    guesses: 0,
+    shareVisibleMs: null,
     reportedVisibleMs: 0,
     reports: 0,
   });
@@ -150,14 +166,33 @@ export function resumeSession(now: number = Date.now()): void {
 }
 
 /**
- * Record the player's first guess of the session, at the visible time it
- * happened. Later guesses change nothing: the point of the mark is to split the
- * session into "deciding whether to play" and "playing".
+ * Record a guess at the visible time it happened. The first one is sticky and
+ * splits the session into "deciding whether to play" and "playing"; every one
+ * after it moves the last-guess mark, which is where play effectively ends --
+ * the gap between that and the end of the session is the tail spent reading
+ * results, sharing, or simply leaving the tab open.
  */
-export function markFirstGuess(now: number = Date.now()): void {
+export function markGuess(now: number = Date.now()): void {
   const state = loadState();
-  if (!state || state.firstGuessVisibleMs !== null) return;
-  saveState({ ...state, firstGuessVisibleMs: visibleAt(state, now) });
+  if (!state) return;
+  const visibleMs = visibleAt(state, now);
+  saveState({
+    ...state,
+    firstGuessVisibleMs: state.firstGuessVisibleMs ?? visibleMs,
+    lastGuessVisibleMs: visibleMs,
+    guesses: (state.guesses ?? 0) + 1,
+  });
+}
+
+/**
+ * Record the player's first share of the session. Only the first: a player who
+ * copies the result and then posts it to X has shared once, at the moment they
+ * decided to, and that decision is what the timing is measuring.
+ */
+export function markShare(now: number = Date.now()): void {
+  const state = loadState();
+  if (!state || state.shareVisibleMs !== null) return;
+  saveState({ ...state, shareVisibleMs: visibleAt(state, now) });
 }
 
 /**
@@ -183,6 +218,8 @@ export function endSessionSegment(now: number = Date.now()): SessionTimeReport |
   saveState({ ...paused, reportedVisibleMs: visibleMs, reports: state.reports + 1 });
 
   const firstGuess = state.firstGuessVisibleMs;
+  const lastGuess = state.lastGuessVisibleMs;
+  const share = state.shareVisibleMs;
   return {
     sessionId: state.id,
     visibleMs: Math.round(visibleMs),
@@ -190,6 +227,10 @@ export function endSessionSegment(now: number = Date.now()): SessionTimeReport |
     segmentMs: Math.round(segmentMs),
     timeToFirstGuessMs: firstGuess === null ? null : Math.round(firstGuess),
     fromFirstGuessMs: firstGuess === null ? null : Math.round(Math.max(visibleMs - firstGuess, 0)),
+    timeToLastGuessMs: lastGuess === null ? null : Math.round(lastGuess),
+    guessCount: state.guesses ?? 0,
+    timeToShareMs: share === null ? null : Math.round(share),
+    shared: share !== null,
     guessed: firstGuess !== null,
     reportNumber: state.reports + 1,
   };

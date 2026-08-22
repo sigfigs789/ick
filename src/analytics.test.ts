@@ -176,6 +176,10 @@ describe("session_time", () => {
       segmentMs: 60_000,
       timeToFirstGuessMs: 12_000,
       fromFirstGuessMs: 78_000,
+      timeToLastGuessMs: 70_000,
+      guessCount: 4,
+      timeToShareMs: 80_000,
+      shared: true,
       guessed: true,
       reportNumber: 2,
     });
@@ -187,6 +191,10 @@ describe("session_time", () => {
       segment_ms: 60_000,
       time_to_first_guess_ms: 12_000,
       from_first_guess_ms: 78_000,
+      time_to_last_guess_ms: 70_000,
+      guess_count: 4,
+      time_to_share_ms: 80_000,
+      shared: true,
       guessed: true,
       report_number: 2,
       source: "reddit",
@@ -206,6 +214,10 @@ describe("session_time", () => {
       segmentMs: 8_000,
       timeToFirstGuessMs: null,
       fromFirstGuessMs: null,
+      timeToLastGuessMs: null,
+      guessCount: 0,
+      timeToShareMs: null,
+      shared: false,
       guessed: false,
       reportNumber: 1,
     });
@@ -216,6 +228,10 @@ describe("session_time", () => {
         guessed: false,
         time_to_first_guess_ms: null,
         from_first_guess_ms: null,
+        time_to_last_guess_ms: null,
+        guess_count: 0,
+        time_to_share_ms: null,
+        shared: false,
       })
     );
   });

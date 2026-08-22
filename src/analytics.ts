@@ -11,7 +11,7 @@ import type {
   StreakState,
 } from "./game/types";
 import { currentVisit, type VisitOutcome } from "./game/visits";
-import type { SessionTimeReport } from "./game/sessionTime";
+import { markShare, type SessionTimeReport } from "./game/sessionTime";
 import { APP_VERSION } from "./version";
 
 /** The scalar property values both Vercel Analytics and /api/events accept. */
@@ -258,11 +258,13 @@ function visitDimensions() {
 
 /** Record a successful copy from the standard Share button. */
 export function trackResultCopied() {
+  markShare();
   send("result_copied", { method: "copy", ...visitDimensions() });
 }
 
 /** Record a click on the X share button. */
 export function trackResultSharedOnX() {
+  markShare();
   send("result_shared_on_x", { method: "x", ...visitDimensions() });
 }
 
@@ -324,8 +326,10 @@ export function trackVisitEngaged(outcome: VisitOutcome) {
 }
 
 /**
- * Record how long this session lasted, and how that time split around the first
- * guess. Fires when the page hides or unloads rather than on a close event no
+ * Record how long this session lasted, and where its landmarks fell: the first
+ * guess, the last one, and the share. Every time is visible time from the start
+ * of the session, so `time_to_last_guess_ms` against `visible_ms` is the tail
+ * spent after play stopped. Fires when the page hides or unloads rather than on a close event no
  * browser reliably provides, so a long session that is backgrounded and picked
  * up again sends more than one report -- `session_id` groups them, `visible_ms`
  * is the running total, and `segment_ms` is only the new time, so neither
@@ -342,6 +346,10 @@ export function trackSessionTime(report: SessionTimeReport) {
     segment_ms: report.segmentMs,
     time_to_first_guess_ms: report.timeToFirstGuessMs,
     from_first_guess_ms: report.fromFirstGuessMs,
+    time_to_last_guess_ms: report.timeToLastGuessMs,
+    guess_count: report.guessCount,
+    time_to_share_ms: report.timeToShareMs,
+    shared: report.shared,
     guessed: report.guessed,
     report_number: report.reportNumber,
     ...visitDimensions(),

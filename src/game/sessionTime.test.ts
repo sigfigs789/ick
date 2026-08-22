@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   beginSession,
   endSessionSegment,
-  markFirstGuess,
+  markGuess,
+  markShare,
   resumeSession,
 } from "./sessionTime";
 
@@ -31,18 +32,48 @@ describe("session timing", () => {
 
   it("splits the session around the first guess", () => {
     beginSession();
-    markFirstGuess(START + 10_000);
+    markGuess(START + 10_000);
     const report = endSessionSegment(START + 70_000);
     expect(report?.timeToFirstGuessMs).toBe(10_000);
     expect(report?.fromFirstGuessMs).toBe(60_000);
     expect(report?.guessed).toBe(true);
   });
 
-  it("keeps the first guess time when the player guesses again", () => {
+  it("keeps the first guess time and follows the last one", () => {
     beginSession();
-    markFirstGuess(START + 5_000);
-    markFirstGuess(START + 20_000);
-    expect(endSessionSegment(START + 30_000)?.timeToFirstGuessMs).toBe(5_000);
+    markGuess(START + 5_000);
+    markGuess(START + 20_000);
+    markGuess(START + 26_000);
+
+    const report = endSessionSegment(START + 30_000);
+    expect(report?.timeToFirstGuessMs).toBe(5_000);
+    expect(report?.timeToLastGuessMs).toBe(26_000);
+    expect(report?.guessCount).toBe(3);
+  });
+
+  it("times the first share and ignores a second one", () => {
+    beginSession();
+    markGuess(START + 5_000);
+    markShare(START + 40_000);
+    markShare(START + 55_000);
+
+    const report = endSessionSegment(START + 60_000);
+    expect(report?.timeToShareMs).toBe(40_000);
+    expect(report?.shared).toBe(true);
+  });
+
+  it("counts guess and share times in visible time only", () => {
+    beginSession();
+    // Twenty visible seconds, ten hidden minutes, then the guess and the share.
+    endSessionSegment(START + 20_000);
+    resumeSession(START + 620_000);
+    markGuess(START + 630_000);
+    markShare(START + 650_000);
+
+    const report = endSessionSegment(START + 660_000);
+    expect(report?.timeToFirstGuessMs).toBe(30_000);
+    expect(report?.timeToLastGuessMs).toBe(30_000);
+    expect(report?.timeToShareMs).toBe(50_000);
   });
 
   it("reports no first-guess split for a session that never guessed", () => {
@@ -51,6 +82,10 @@ describe("session timing", () => {
     expect(report?.guessed).toBe(false);
     expect(report?.timeToFirstGuessMs).toBeNull();
     expect(report?.fromFirstGuessMs).toBeNull();
+    expect(report?.timeToLastGuessMs).toBeNull();
+    expect(report?.guessCount).toBe(0);
+    expect(report?.shared).toBe(false);
+    expect(report?.timeToShareMs).toBeNull();
   });
 
   it("excludes hidden time and does not double-count across reports", () => {
@@ -97,8 +132,9 @@ describe("session timing", () => {
     expect(endSessionSegment(START + 4 * 60 * 60 * 1000)?.visibleMs).toBe(30 * 60 * 1000);
   });
 
-  it("ignores a guess or a hide before the session started", () => {
-    markFirstGuess();
+  it("ignores a guess, a share, or a hide before the session started", () => {
+    markGuess();
+    markShare();
     expect(endSessionSegment(START + 10_000)).toBeNull();
   });
 });
