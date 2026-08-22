@@ -7,6 +7,10 @@ tweak the copy, re-run, commit the result.
 
     python3 scripts/make-og-image.py
 
+After regenerating, bump the ?v= on the og:image and twitter:image URLs in
+index.html. Scrapers (iMessage, Slack, Facebook, X) cache previews by URL for
+weeks, so redeploying the same path leaves everyone sharing the old card.
+
 Copy rule: the card is the first thing someone sees, usually in a group chat
 they did not ask to be recruited into, so it explains the game without any of
 our vocabulary. No "drop", no "infix" -- just the letters and what to do with
