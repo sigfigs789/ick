@@ -309,6 +309,11 @@
     "reason": "Reviewed demotion to `reconnaissance`.",
     "since": "2026-08-19"
   },
+  "reoxygenate": {
+    "base": "oxygenate",
+    "reason": "`re-` prefixed form of `oxygenate`; a prefix is not a discovery.",
+    "since": "2026-08-22"
+  },
   "shellfires": {
     "base": "shellfire",
     "reason": "Plural / third-person form of `shellfire`; a suffix is not a discovery.",

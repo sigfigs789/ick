@@ -504,8 +504,13 @@ export const CURATED_REJECTION_REASONS = [
 export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
 
 /**
- * Words that stay in the dictionary but are no longer playable, each with the
- * reason a player sees when they try it.
+ * Reviewed rejections, each with the reason a player sees when they try the word.
+ * Two kinds, told apart by whether the word is on the curated list: a word that
+ * stays in the dictionary but is no longer playable from `since` on, and a word
+ * that never made the list at all -- a misspelling, a brand name, a coinage a
+ * player reached for -- where the entry changes no verdict but names the fault
+ * instead of falling back to the generic "not in the curated list" message, and
+ * spares the live Merriam-Webster lookup a word that has already been judged.
  *
  * Rejecting by *removal* was the older approach and it lost information. The five
  * index-aligned structures (`dictionary[]`, `zipfHundredths[]`, `codes`,

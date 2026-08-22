@@ -4,3 +4,8 @@
 # Managed by the "Add a word" GitHub Action (list=suggested); see
 # scripts/manage-extra-word.py.
 aggrandization
+caprylate
+conization
+inosinate
+uridylate
+reoxygenate

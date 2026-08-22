@@ -1,0 +1,46 @@
+{
+  "comment": [
+    "Watermarks for the Supabase word-review pass: every candidate the game recorded",
+    "up to `reviewed_through` has been judged, so the next pass only has to look at",
+    "rows newer than the latest entry here.",
+    "",
+    "`reviewed_through` is the newest `analytics_events.created_at` that existed when",
+    "the pass ran -- the queue query's own horizon -- and is the value to filter on:",
+    "  select * from suggested_words where last_at > '<reviewed_through>';",
+    "  select props->>'word', count(*) from analytics_events",
+    "    where name = 'answer_rejected' and created_at > '<reviewed_through>'",
+    "    group by 1 order by 2 desc;",
+    "The per-word record of each verdict lives in two places: `word_sightings.status`",
+    "in Supabase (`select set_word_status(array['word', ...], 'accepted')`), and, in",
+    "this repo, src/data/word-rejections.json for a rejection and the provenance",
+    "lists in scripts/ for an acceptance."
+  ],
+  "passes": [
+    {
+      "reviewed_at": "2026-08-22T22:30:00Z",
+      "reviewed_through": "2026-08-22T22:25:36.554891+00:00",
+      "sources": [
+        "suggested_words (the live-lookup + player-suggestion queue)",
+        "word_sightings (every live Merriam-Webster verdict)",
+        "analytics_events.answer_rejected (658 submissions, 590 distinct, 554 not on the curated list)"
+      ],
+      "accepted": [
+        "caprylate",
+        "conization",
+        "inosinate",
+        "reoxygenate",
+        "uridylate"
+      ],
+      "rejections_recorded": 88,
+      "notes": [
+        "Accepted words went to scripts/suggested-words.txt and dictionary.json;",
+        "`reoxygenate` also got a score override onto `oxygenate`, since re- + a",
+        "common verb is a prefix, not a discovery.",
+        "Rejections went to src/data/word-rejections.json with the fault named",
+        "(misspelling, proper noun, abbreviation, obsolete, or judged non-word).",
+        "Nonsense strings nobody repeated were left to the generic message rather",
+        "than filling the file with one-off typos."
+      ]
+    }
+  ]
+}
