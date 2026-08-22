@@ -12,6 +12,7 @@ import {
   trackVisit,
   trackVisitEngaged,
   trackFeedbackSubmitted,
+  trackSessionTime,
 } from "./analytics";
 import { unattestedZipf, rarityScore } from "./game/dictionary";
 import { puzzleNumber } from "./game/share";
@@ -159,6 +160,64 @@ describe("share attribution", () => {
       times_returned: 0,
       days_returned: 0,
     });
+  });
+});
+
+describe("session_time", () => {
+  it("reports both halves of the session, tagged with the player's cohort", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    recordVisit("?s=r");
+
+    trackSessionTime({
+      sessionId: "abc",
+      visibleMs: 90_000,
+      totalMs: 300_000,
+      segmentMs: 60_000,
+      timeToFirstGuessMs: 12_000,
+      fromFirstGuessMs: 78_000,
+      guessed: true,
+      reportNumber: 2,
+    });
+
+    expect(track).toHaveBeenCalledWith("session_time", {
+      session_id: "abc",
+      visible_ms: 90_000,
+      total_ms: 300_000,
+      segment_ms: 60_000,
+      time_to_first_guess_ms: 12_000,
+      from_first_guess_ms: 78_000,
+      guessed: true,
+      report_number: 2,
+      source: "reddit",
+      last_source: "reddit",
+      visit_type: "first",
+      times_returned: 0,
+      days_returned: 0,
+    });
+  });
+
+  it("sends nulls, not zeros, for a session with no guess", () => {
+    localStorage.clear();
+    trackSessionTime({
+      sessionId: "abc",
+      visibleMs: 8_000,
+      totalMs: 8_000,
+      segmentMs: 8_000,
+      timeToFirstGuessMs: null,
+      fromFirstGuessMs: null,
+      guessed: false,
+      reportNumber: 1,
+    });
+
+    expect(track).toHaveBeenCalledWith(
+      "session_time",
+      expect.objectContaining({
+        guessed: false,
+        time_to_first_guess_ms: null,
+        from_first_guess_ms: null,
+      })
+    );
   });
 });
 

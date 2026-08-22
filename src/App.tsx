@@ -23,9 +23,11 @@ import {
   trackRedditArrival,
   trackShareArrival,
   trackTwitterArrival,
+  trackSessionTime,
   trackVisit,
 } from "./analytics";
 import { recordVisit } from "./game/visits";
+import { beginSession, endSessionSegment, resumeSession } from "./game/sessionTime";
 
 export default function App() {
   useForceUpdate();
@@ -64,6 +66,32 @@ export default function App() {
     // recording whether the player is new or returning and where they came from.
     const visit = recordVisit(window.location.search);
     if (visit) trackVisit(visit);
+  }, []);
+
+  // Measure how long this session lasts, and how much of it comes after the
+  // first guess. There is no reliable "tab closed" event, so every hide is
+  // treated as a possible end and reported; coming back resumes the same
+  // session rather than starting a new one (see game/sessionTime).
+  useEffect(() => {
+    beginSession();
+
+    const report = () => {
+      const ended = endSessionSegment();
+      if (ended) trackSessionTime(ended);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") report();
+      else resumeSession();
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    // pagehide covers the desktop close and back/forward-cache cases, where
+    // visibilitychange is not guaranteed to arrive first.
+    window.addEventListener("pagehide", report);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", report);
+    };
   }, []);
 
   // Play a chime/buzz on every submission, pitched by rarity when accepted.
