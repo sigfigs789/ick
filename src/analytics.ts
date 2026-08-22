@@ -11,6 +11,7 @@ import type {
   StreakState,
 } from "./game/types";
 import { currentVisit, type VisitOutcome } from "./game/visits";
+import { markShare, type SessionTimeReport } from "./game/sessionTime";
 import { APP_VERSION } from "./version";
 
 /** The scalar property values both Vercel Analytics and /api/events accept. */
@@ -257,11 +258,13 @@ function visitDimensions() {
 
 /** Record a successful copy from the standard Share button. */
 export function trackResultCopied() {
+  markShare();
   send("result_copied", { method: "copy", ...visitDimensions() });
 }
 
 /** Record a click on the X share button. */
 export function trackResultSharedOnX() {
+  markShare();
   send("result_shared_on_x", { method: "x", ...visitDimensions() });
 }
 
@@ -320,6 +323,37 @@ export function trackVisit(outcome: VisitOutcome) {
  */
 export function trackVisitEngaged(outcome: VisitOutcome) {
   send("visit_engaged", visitProperties(outcome));
+}
+
+/**
+ * Record how long this session lasted, and where its landmarks fell: the first
+ * guess, the last one, and the share. Every time is visible time from the start
+ * of the session, so `time_to_last_guess_ms` against `visible_ms` is the tail
+ * spent after play stopped. Fires when the page hides or unloads rather than on a close event no
+ * browser reliably provides, so a long session that is backgrounded and picked
+ * up again sends more than one report -- `session_id` groups them, `visible_ms`
+ * is the running total, and `segment_ms` is only the new time, so neither
+ * `max(visible_ms)` nor `sum(segment_ms)` double-counts (see game/sessionTime).
+ *
+ * Carries the same origin and cohort dimensions as a share, so time on site can
+ * be sliced by where the player arrived from and whether they are returning.
+ */
+export function trackSessionTime(report: SessionTimeReport) {
+  send("session_time", {
+    session_id: report.sessionId,
+    visible_ms: report.visibleMs,
+    total_ms: report.totalMs,
+    segment_ms: report.segmentMs,
+    time_to_first_guess_ms: report.timeToFirstGuessMs,
+    from_first_guess_ms: report.fromFirstGuessMs,
+    time_to_last_guess_ms: report.timeToLastGuessMs,
+    guess_count: report.guessCount,
+    time_to_share_ms: report.timeToShareMs,
+    shared: report.shared,
+    guessed: report.guessed,
+    report_number: report.reportNumber,
+    ...visitDimensions(),
+  });
 }
 
 /** Convert compact share-link codes into analytics campaign sources. */

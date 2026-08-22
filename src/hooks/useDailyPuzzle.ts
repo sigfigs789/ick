@@ -49,6 +49,7 @@ import {
   trackVisitEngaged,
 } from "../analytics";
 import { markSessionEngaged } from "../game/visits";
+import { markGuess } from "../game/sessionTime";
 
 /**
  * What the game says while a live lookup runs, and what it says once the lookup
@@ -293,6 +294,9 @@ export function useDailyPuzzle() {
       // rather than an open-and-close, correlatable against site_visit volume.
       const engagedVisit = markSessionEngaged();
       if (engagedVisit) trackVisitEngaged(engagedVisit);
+      // Marks the session clock: the first guess splits deciding from playing,
+      // and each one after it moves the point where play last happened.
+      markGuess();
 
       if (result.ok && result.word) {
         acceptWord(result.word, "curated");
