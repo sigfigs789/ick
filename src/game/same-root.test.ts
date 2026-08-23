@@ -109,6 +109,24 @@ describe("the two tiers, and what each one protects", () => {
     }
   });
 
+  it("never reads an -ees plural as an -es form of a verb", () => {
+    // English adds "-s", not "-es", to a word ending in "e", so the two-letter
+    // strip is not a reading of "-ees" at all -- and frequency preferred it,
+    // because the verb is the commoner word. Left in, it refused "devotees" to a
+    // player who had found "devote".
+    for (const [plural, noun, verb] of [
+      ["devotees", "devotee", "devote"],
+      ["advisees", "advisee", "advise"],
+      ["bargees", "bargee", "barge"],
+    ]) {
+      expect(sameRootKey(plural, AFTER), plural).toBe(noun);
+      expect(allowed(verb, plural, verb.slice(0, 3), AFTER), plural).toBe(true);
+    }
+    // The "-ee" verbs are unaffected: their base ends in "-ee" either way.
+    expect(sameRootKey("agrees", AFTER)).toBe("agree");
+    expect(sameRootKey("guarantees", AFTER)).toBe("guarantee");
+  });
+
   it("keys a paradigm on its fragment when the dictionary has no base for it", () => {
     // The curated list has no "bitch", so the fragment is the only thing these
     // three share -- and before the cutover it was how they met. A fragment stays

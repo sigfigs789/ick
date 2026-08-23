@@ -14,6 +14,7 @@ import {
   baseForm,
   boundBaseCandidates,
   decisiveNumberCandidates,
+  impossibleNumberBase,
   restoredTenseCandidates,
   stemChangingNumberCandidates,
 } from "./stem";
@@ -141,6 +142,9 @@ function rootFoldsFor(date?: string): RootFolds {
  * The bound derivational suffixes still fold on top, so a puzzle can't take both
  * "organize" and "organization" (only when that base is itself a dictionary
  * word).
+ *
+ * See same-root-cases.md for the families this deliberately does not read, the
+ * leaks it accepts, and what to check after a frequency-data refresh.
  */
 function rootKey(word: string, folds: RootFolds, date?: string): string {
   if (!folds.inflections) return foldOnce(word, folds, date);
@@ -201,12 +205,13 @@ function foldOnce(word: string, folds: RootFolds, date?: string): string {
     // Reaching here with `base === word` means no rule matched at all, which is
     // the only way an "-men" plural gets a look: nothing strips it, so its own
     // spelling stands unless the "-man" reading is admitted below.
+    const tier1 = [
+      base,
+      ...decisiveNumberCandidates(word),
+      ...restoredTenseCandidates(word),
+    ].filter((candidate) => !impossibleNumberBase(word, candidate));
     base =
-      mostCommonSameRootBase(
-        word,
-        [base, ...decisiveNumberCandidates(word), ...restoredTenseCandidates(word)],
-        date
-      ) ??
+      mostCommonSameRootBase(word, tier1, date) ??
       stemChangingNumberCandidates(word).find(isDictionaryWord) ??
       base;
   }

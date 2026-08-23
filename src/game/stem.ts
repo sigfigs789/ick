@@ -89,6 +89,23 @@ export function inflectionalBaseCandidates(word: string, latinPlurals: boolean):
 }
 
 /**
+ * A base spelling the ending could not have been added to, so no caller should
+ * rank it: English adds "-s", never "-es", to a word that already ends in "e".
+ * For a word ending in "-ees" that makes the two-letter strip not a reading at
+ * all -- "advisees" is the plural of "advisee", never an "-es" form of "advise".
+ *
+ * `baseForm` offers it anyway, since its "-es" rule strips two letters
+ * unconditionally, and frequency then prefers it because the verb is the
+ * commoner word: "advisees" keyed on "advise" (2.88 Zipf clear of "advisee"),
+ * "devotees" on "devote", "bargees" on "barge". Each of those refused a
+ * legitimate second answer to a player who had found the verb, which is the one
+ * outcome duplicate detection must not produce.
+ */
+export function impossibleNumberBase(word: string, base: string): boolean {
+  return word.endsWith("ees") && base === word.slice(0, -2);
+}
+
+/**
  * The number inflections whose spelling is *decisive*: strip the ending and the
  * base is spelled the way it always was, so a candidate that turns out to be a
  * dictionary word is the base rather than a guess about one.
