@@ -642,7 +642,9 @@ def _most_common(candidates: list[str], word: str, index: dict[str, int], zipf_a
     return base
 
 
-def _inflected_form_folds(word: str, index: dict[str, int], zipf_at) -> list[str]:
+def _inflected_form_folds(
+    word: str, index: dict[str, int], zipf_at, floor: float = float("-inf")
+) -> list[str]:
     """Mirror of inflectedFormFolds(): the inflections `word` is capped at.
 
     The fold's second direction, added 2026-08-24. A candidate counts only if
@@ -656,6 +658,11 @@ def _inflected_form_folds(word: str, index: dict[str, int], zipf_at) -> list[str
     out: list[str] = []
     for form in _inflected_form_candidates(word):
         if form not in index:
+            continue
+        # The frequency test before the round trip: a cap only pulls toward
+        # common, so a form no commoner than what the caller has cannot change
+        # the answer, and confirming the link is the expensive half.
+        if zipf_at(form) <= floor:
             continue
         if _most_common(_next_bases(form, index, zipf_at), form, index, zipf_at) != word:
             continue
@@ -678,6 +685,7 @@ def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float]
     seen = {word}
     frontier = [word]
     best: tuple[str, float] | None = None
+    own = zipf_at(word) if word in index else float("-inf")
     for _ in range(MAX_FOLD_DEPTH):
         if not frontier:
             break
@@ -693,7 +701,8 @@ def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float]
                     best = (candidate, zipf)
             # The other direction, capped against but never walked on from --
             # see inflectedFormFolds in dictionary.ts for why it is terminal.
-            for form in _inflected_form_folds(current, index, zipf_at):
+            floor = max(own, best[1] if best is not None else float("-inf"))
+            for form in _inflected_form_folds(current, index, zipf_at, floor):
                 zipf = zipf_at(form)
                 if best is None or zipf > best[1]:
                     best = (form, zipf)

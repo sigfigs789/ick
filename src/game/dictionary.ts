@@ -865,6 +865,9 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
   const seen = new Set([word]);
   let frontier = [word];
   let best: ChainedBase | undefined;
+  // The word's own frequency, so the reverse fold can skip a form that could not
+  // beat it -- see the `floor` argument to `inflectedFormFolds`.
+  const own = WORD_INDEX.has(word) ? zipfFor(word, scoring) : -Infinity;
 
   for (let depth = 0; depth < MAX_FOLD_DEPTH && frontier.length > 0; depth++) {
     const next: string[] = [];
@@ -883,7 +886,12 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
       // the walk started from, so a form reaches its paradigm's cap through its
       // own base: "infatuates" folds to "infatuate", which caps at
       // "infatuated", and all three end up scoring alike.
-      for (const form of inflectedFormFolds(current, scoring, date)) {
+      for (const form of inflectedFormFolds(
+        current,
+        scoring,
+        date,
+        Math.max(own, best ? best.zipf : -Infinity)
+      )) {
         const zipf = zipfFor(form, scoring);
         if (!best || zipf > best.zipf) best = { base: form, zipf };
       }
@@ -1034,13 +1042,26 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
  * forward rules: it is a decision about this exact word, and the spelling rules
  * -- in either direction -- do not get to add to it.
  */
-function inflectedFormFolds(word: string, scoring: Scoring, date?: string): string[] {
+function inflectedFormFolds(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+  floor = -Infinity
+): string[] {
   if (!scoring.inflectionForms) return [];
   if (foldExempt(word, date) || overrideBase(word, date)) return [];
 
   const out: string[] = [];
   for (const form of inflectedFormCandidates(word)) {
-    if (!WORD_INDEX.has(form)) continue;
+    const index = WORD_INDEX.get(form);
+    if (index === undefined) continue;
+    // The frequency test before the round trip, not after. A cap can only pull
+    // toward common, so a form no commoner than what the caller already has
+    // cannot change the answer -- and confirming the link is the expensive half
+    // (a full candidate generation for every spelling offered). Skipping those
+    // is what keeps this off the drop-scan hot path: `bestWordForDrop` walks the
+    // whole dictionary, and most words' inflections are rarer than the word.
+    if (scoring.zipfAt(index) <= floor) continue;
     if (mostCommonBase(nextBaseForms(form, scoring, date), form, scoring) !== word) continue;
     out.push(form);
   }
