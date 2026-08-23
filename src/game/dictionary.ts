@@ -9,6 +9,7 @@ import {
   baseForm,
   boundBaseCandidates,
   degreeBaseCandidates,
+  derivedBaseCandidates,
   inflectionalBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
@@ -50,6 +51,15 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         -- comparatives, Latin plurals, -ize/-able -- fold too, but only for a
  *         word below MEASURED_FLOOR, where its score is a stand-in rather than a
  *         measurement (see `unmeasuredBaseCandidates`). No label mapping moves.
+ *   - on/after 2026-08-24 (the latest system): the derivational families whose
+ *     ending is *bound* fold as well -- "-ically" -> "-ic", "-ably"/"-ibly" ->
+ *     "-able"/"-ible", "-ologist" -> "-ology", "-cked"/"-cking" -> "-c",
+ *     "-eaux" -> "-eau" (see `derivedBaseCandidates`). Ungated by
+ *     MEASURED_FLOOR, like the bound suffixes of 2026-08-16: nothing accidental
+ *     ends that way, so there is no coincidence for a gate to catch. 2,003
+ *     words score lower and none score higher; 1,024 of them were holding a
+ *     Mythic-or-better score for an ending, 692 a Legend. No label mapping
+ *     moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -62,6 +72,11 @@ const NARROW_BANDS_START = "2026-08-21";
 // concerns -- one changes which label a score wears, the other changes the score
 // -- and either could move to its own date later without disturbing the other.
 const INFLECTION_BASE_START = NARROW_BANDS_START;
+// The bound derivational families (-ically, -ably/-ibly, -ologist, the c -> ck
+// orthography, -eaux) fold from this date. Its own cutover rather than a reuse
+// of INFLECTION_BASE_START: those rules are already live in archived puzzles,
+// and every score these move must stay frozen where it was played.
+const DERIVED_BASE_START = "2026-08-24";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -302,6 +317,14 @@ interface Scoring {
   // earlier systems so past puzzles' scores stay frozen (see
   // INFLECTION_BASE_START).
   inflectionBases: boolean;
+  // Whether the bound derivational families in `derivedBaseCandidates` fold --
+  // "-ically" -> "-ic", "-ably"/"-ibly" -> "-able"/"-ible", "-ologist" ->
+  // "-ology", "-cked"/"-cking" -> "-c", "-eaux" -> "-eau". Ungated by
+  // MEASURED_FLOOR, like the bound suffixes in `boundBaseCandidates`: the
+  // ending is what makes them safe, not the frequency. Introduced with the
+  // 2026-08-24 cutover; off for earlier systems so past puzzles' scores stay
+  // frozen (see DERIVED_BASE_START).
+  derivedBases: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -325,7 +348,8 @@ function twoBandScoring(
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
-  narrowBands = false
+  narrowBands = false,
+  derivedBases = false
 ): Scoring {
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
@@ -360,6 +384,7 @@ function twoBandScoring(
     boundBaseForms,
     chainedBaseForms,
     inflectionBases,
+    derivedBases,
   };
 }
 
@@ -385,6 +410,18 @@ const RETUNED_SCORING: Scoring = twoBandScoring(
   /* chainedBaseForms */ true,
   /* inflectionBases */ true,
   /* narrowBands */ true
+);
+// The latest system (2026-08-24): the same bands, ranks and inflection folds,
+// plus the bound derivational families in `derivedBaseCandidates`.
+const DERIVED_SCORING: Scoring = twoBandScoring(
+  9.9,
+  0,
+  /* boundBaseForms */ true,
+  /* legend */ true,
+  /* chainedBaseForms */ true,
+  /* inflectionBases */ true,
+  /* narrowBands */ true,
+  /* derivedBases */ true
 );
 
 const LEGACY_SCORING: Scoring = {
@@ -412,6 +449,7 @@ const LEGACY_SCORING: Scoring = {
   boundBaseForms: false,
   chainedBaseForms: false,
   inflectionBases: false,
+  derivedBases: false,
 };
 
 /**
@@ -468,7 +506,7 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return RETUNED_SCORING; // newest system
+  if (date === undefined) return DERIVED_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
   if (date < CHAINED_BASE_START) return WIDE_SCORING;
@@ -476,7 +514,8 @@ function scoringFor(date?: string): Scoring {
   // profile, so it reads the scoring one; `usesRetunedTiers` asks the label
   // question and reads NARROW_BANDS_START. The profile beyond carries both.
   if (date < INFLECTION_BASE_START) return CHAINED_SCORING;
-  return RETUNED_SCORING;
+  if (date < DERIVED_BASE_START) return RETUNED_SCORING;
+  return DERIVED_SCORING;
 }
 
 // -- Curated rejections (src/data/word-rejections.json) ----------------------
@@ -985,6 +1024,14 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
     // plurals being read as verb tenses ("whatsises" reached "what";
     // "appendicitises" now folds to "appendicitis" like any other plural).
     for (const candidate of unmeasuredBaseCandidates(word)) add(candidate);
+  }
+  // The bound derivational families: an ending English only ever produces by
+  // attaching that suffix, so -- like the "-ization"/"-ability" pair in
+  // `scoringBaseForm` -- there is nothing accidental for the rule to catch and
+  // no frequency gate is needed. "catholically" folds onto "catholic" though
+  // both are measured, the same way "happier" folds onto "happy".
+  if (scoring.derivedBases) {
+    for (const candidate of derivedBaseCandidates(word)) add(candidate);
   }
   add(scoringBaseForm(word, scoring));
   return out;
