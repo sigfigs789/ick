@@ -95,12 +95,24 @@ describe("evaluateSubmission", () => {
     });
   });
 
-  it("keeps recognizable archaic words playable (no retroactive removals)", () => {
-    // Classic archaic words like "betwixt" remain in the dictionary; the new
-    // tags only ever add a message to a word that was already excluded.
-    const result = evaluateSubmission("betwixt", "wix", []);
-    expect(result.ok).toBe(true);
-    expect(result.word?.word).toBe("betwixt");
+  it("rejects a curated word that carries an out-of-use reason, and says which", () => {
+    // These stay in the dictionary so archived puzzles keep scoring them (see the
+    // derived rejections in dictionary.test.ts); they just can't be submitted.
+    expect(evaluateSubmission("betwixt", "wix", [])).toEqual({ ok: false, reason: "archaic" });
+    expect(evaluateSubmission("ranck", "anc", [])).toEqual({ ok: false, reason: "obsolete" });
+  });
+
+  it("keeps old-sounding words a corpus still measures playable", () => {
+    // "thy" (Zipf 4.11) is tagged archaic and "fortnight" (3.41) dated, but both
+    // are in live use, and the frequency gate is what keeps them in play.
+    for (const [word, drop] of [
+      ["thy", "th"],
+      ["fortnight", "tni"],
+    ]) {
+      const result = evaluateSubmission(word, drop, []);
+      expect(result.ok, `${word} should be playable`).toBe(true);
+      expect(result.word?.word).toBe(word);
+    }
   });
 
   it("accepts a valid word containing the drop without matching it exactly", () => {

@@ -16,6 +16,8 @@ import {
 import rarityData from "../data/rarity.json";
 import scoreOverrides from "../data/score-overrides.json";
 import wordRejections from "../data/word-rejections.json";
+import derivedRejections from "../data/derived-rejections.json";
+import exemptionsFile from "../../scripts/playable-exemptions.txt?raw";
 import { addDays } from "./date";
 import { REJECTION_MESSAGES, evaluateSubmission } from "./submit";
 
@@ -76,11 +78,16 @@ const onlineWordScores: ReadonlyArray<[string, string, number]> = [
   ["eleatic", "Mythic", 1.17],
   ["payline", "Rare", 2.26],
   ["pembina", "Rare", 2.2],
-  ["pomarine", "Elusive", 1.45],
   ["portation", "Rare", 2.28],
   ["poussin", "Rare", 2.26],
   ["reassociation", "Elusive", 1.49],
   ["sation", "Elusive", 1.37],
+];
+// Added by the same action, then caught by the derived rejections that came later:
+// Wiktionary marks every sense of these out of use. They keep their slots and
+// their scores -- puzzles that accepted them still add up -- but can't be played.
+const onlineWordScoresRejected: ReadonlyArray<[string, string, number]> = [
+  ["pomarine", "Elusive", 1.45],
   ["sideration", "Extremely Rare", 1.92],
 ];
 const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scientometrics"];
@@ -125,6 +132,16 @@ describe("isValidWord", () => {
       ...onlineWordScores,
     ]) {
       expect(isValidWord(word), `${word} should be a valid dictionary input`).toBe(true);
+      expect(rarityFor(word), `${word} should keep its recorded rarity/zipf`).toEqual({
+        rarity,
+        zipf,
+      });
+    }
+  });
+
+  it("keeps scoring an added word the obsolete rule later rejected", () => {
+    for (const [word, rarity, zipf] of onlineWordScoresRejected) {
+      expect(isValidWord(word), `${word} is obsolete and unplayable`).toBe(false);
       expect(rarityFor(word), `${word} should keep its recorded rarity/zipf`).toEqual({
         rarity,
         zipf,
@@ -533,9 +550,12 @@ describe("curated base-form score overrides", () => {
     expect(overrides.length).toBeGreaterThan(0);
   });
 
-  it.each(overrides)("%s -> %s is a well-formed, playable pair", (word, { base }) => {
-    expect(isValidWord(word), `${word} must be a dictionary word`).toBe(true);
-    expect(isValidWord(base), `${base} must be a dictionary word`).toBe(true);
+  it.each(overrides)("%s -> %s is a well-formed, scoreable pair", (word, { base }) => {
+    // Membership, not playability: an override is scoring only, and a base can be
+    // a word the derived rejections keep out of play ("computerese" is dated,
+    // "continueth" archaic) while still being the frequency the word scores at.
+    expect(rarityFor(word), `${word} must be a dictionary word`).toBeDefined();
+    expect(rarityFor(base), `${base} must be a dictionary word`).toBeDefined();
     expect(word).not.toBe(base);
   });
 
@@ -674,5 +694,171 @@ describe("curated word rejections", () => {
     expect(isValidWord("placate")).toBe(true);
     // And a word that was never in the dictionary is still simply invalid.
     expect(isValidWord("zzzzqx")).toBe(false);
+  });
+});
+
+// The derived rejections (src/data/derived-rejections.json, written by
+// generate-data.py). Same shape of verdict as the hand-reviewed ones above -- the
+// word keeps its dictionary slot and its rarity entry, and stops being playable
+// from its dated batch on -- but read off Wiktionary's sense labels in bulk,
+// because the family is thousands wide. Before this, a word could carry a reason
+// and still be played, and an obsolete spelling scored on its own vanishing
+// frequency: "ranck" came out 9.58 Mythic where "rank" scores 4.80.
+const derivedBatches = Object.entries(derivedRejections as Record<string, Record<string, string[]>>);
+const derivedEntries = derivedBatches.flatMap(([since, byReason]) =>
+  Object.entries(byReason).flatMap(([reason, words]) => words.map((word) => ({ word, reason, since })))
+);
+const derivedByWord = new Map(derivedEntries.map((entry) => [entry.word, entry]));
+
+describe("derived word rejections", () => {
+  const batches = derivedBatches;
+  // The wide-band cutover in dictionary.ts, same bound the reviewed rejections use.
+  const WIDE_BAND_START = "2026-08-16";
+  const entries = derivedEntries;
+  const curatedWords = new Set(dictionaryWords);
+  const zipfOf = new Map(dictionaryWords.map((word, i) => [word, rarityData.zipfHundredths[i]]));
+  // Above this a corpus still measures the word in live use, which outranks an
+  // out-of-use label -- see write_derived_rejections in scripts/generate-data.py.
+  const OUT_OF_USE_REASONS = new Set(["obsolete", "archaic", "dated"]);
+  const ZIPF_CEILING_HUNDREDTHS = 250;
+
+  it("rejects an obsolete spelling that used to out-score the word it spells", () => {
+    expect(curatedRejection("ranck")).toBe("obsolete");
+    expect(isValidWord("ranck")).toBe(false);
+    expect(evaluateSubmission("ranck", "anc", [])).toEqual({ ok: false, reason: "obsolete" });
+    // The word it is an obsolete form of is untouched.
+    expect(isValidWord("rank")).toBe(true);
+  });
+
+  it("tells the player which reason it was", () => {
+    // One live example per reason the file carries, so the reason travels all the
+    // way to a message rather than collapsing into "not a word".
+    expect(evaluateSubmission("betwixt", "wix", [])).toEqual({ ok: false, reason: "archaic" });
+    expect(evaluateSubmission("alienist", "ien", [])).toEqual({ ok: false, reason: "dated" });
+    expect(evaluateSubmission("prof", "rof", [])).toEqual({ ok: false, reason: "abbreviation" });
+    expect(evaluateSubmission("mammon", "amm", [])).toEqual({ ok: false, reason: "proper-noun" });
+  });
+
+  it("keeps its reason vocabulary renderable by the submit flow", () => {
+    for (const { reason, word } of entries) {
+      expect(REJECTION_MESSAGES[reason], `${word} (${reason}) needs a message`).toBeTruthy();
+    }
+  });
+
+  it("stays out of the way of puzzles played before its batch date", () => {
+    for (const [since, byReason] of batches) {
+      for (const [reason, words] of Object.entries(byReason)) {
+        expect(curatedRejection(words[0], since)).toBe(reason);
+        expect(curatedRejection(words[0], addDays(since, -1))).toBeUndefined();
+        expect(isValidWord(words[0], addDays(since, -1))).toBe(true);
+      }
+    }
+  });
+
+  it("still scores a rejected word, so an archived puzzle keeps its result", () => {
+    expect(rarityFor("ranck")).toBeDefined();
+  });
+
+  it("only lists dictionary words, and only measured ones for an out-of-use label", () => {
+    for (const { word, reason } of entries) {
+      expect(curatedWords.has(word), `${word} must stay in the dictionary`).toBe(true);
+      if (OUT_OF_USE_REASONS.has(reason)) {
+        expect(zipfOf.get(word), `${word} is common enough to outrank ${reason}`).toBeLessThan(
+          ZIPF_CEILING_HUNDREDTHS
+        );
+      }
+    }
+  });
+
+  it("judges each word once", () => {
+    const words = entries.map(({ word }) => word);
+    expect(new Set(words).size).toBe(words.length);
+  });
+
+  it("leaves current words carrying one out-of-use sense playable", () => {
+    // Wiktionary tags every sense it records for these out of use -- "halt" (the
+    // adjective meaning lame) obsolete, "thy" archaic, "fortnight" dated -- which
+    // is exactly why the frequency gate exists.
+    for (const word of ["halt", "fraught", "guerilla", "thy", "unto", "fortnight", "yea"]) {
+      expect(curatedRejection(word), `${word} must stay playable`).toBeUndefined();
+      expect(isValidWord(word)).toBe(true);
+    }
+  });
+
+  it("never offers a rejected word as a drop's best possible answer", () => {
+    // Sampled rather than exhaustive: bestWordForDrop scans the whole dictionary,
+    // so one call per word would be thousands of full scans.
+    for (const { word } of entries.slice(0, 25)) {
+      expect(bestWordForDrop(word.slice(1, 4))?.word).not.toBe(word);
+    }
+  });
+
+  it("takes effect on a date in the current era, never on a live puzzle", () => {
+    for (const [since] of batches) {
+      expect(since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      // A batch dated into a puzzle already played would rewrite what that puzzle
+      // accepted; one dated on the day it ships would change the word pool under a
+      // player mid-game. Both are why generate-data.py dates a batch from tomorrow.
+      expect(since >= WIDE_BAND_START).toBe(true);
+    }
+  });
+
+  it("yields to a hand-reviewed verdict about the same word", () => {
+    // The two files overlap: a word can be labelled obsolete in bulk and also
+    // judged by hand, where the hand entry names the more specific fault ("atest"
+    // is a misspelling of "attest", not merely archaic). The hand reason wins
+    // wherever it is in force, and its earlier date is what the player sees first.
+    const handJudged = Object.entries(
+      wordRejections as Record<string, { reason: string; since: string }>
+    ).filter(([word]) => derivedByWord.has(word));
+    expect(handJudged.length).toBeGreaterThan(0);
+    for (const [word, { reason, since }] of handJudged) {
+      expect(curatedRejection(word), `${word} under the newest system`).toBe(reason);
+      expect(curatedRejection(word, since), `${word} on its review date`).toBe(reason);
+      const derivedSince = derivedByWord.get(word)!.since;
+      if (since < derivedSince) {
+        // In the window between the two dates only the hand verdict is in force.
+        expect(curatedRejection(word, addDays(derivedSince, -1))).toBe(reason);
+      }
+    }
+  });
+});
+
+// The keep-list (scripts/playable-exemptions.txt). It is load-bearing in two
+// places -- it takes a word back out of the derived rejections, and it spares that
+// word the ALWAYS_EXCLUDED_REASONS filter that would *delete* it on a full rebuild
+// -- and both live in Python that this suite never runs. So the invariant is
+// asserted against the shipped data instead: whatever the file lists must be
+// playable, and must be absent from the generated rejections.
+describe("playable exemptions", () => {
+  // A plain text list rather than a module, so it comes in through Vite's ?raw
+  // import -- the same file scripts/generate-data.py reads, not a copy of it.
+  const exempt: string[] = exemptionsFile
+    .split("\n")
+    .map((line: string) => line.trim())
+    .filter((line: string) => line !== "" && !line.startsWith("#"));
+
+  it("lists words, so the cases below are not vacuous", () => {
+    expect(exempt.length).toBeGreaterThan(0);
+  });
+
+  it.each(exempt)("%s is playable", (word) => {
+    expect(curatedRejection(word)).toBeUndefined();
+    expect(isValidWord(word), `${word} must be a dictionary word to be exempt`).toBe(true);
+  });
+
+  it("keeps every exempt word out of the generated rejections", () => {
+    for (const word of exempt) {
+      expect(derivedByWord.has(word), `${word} is exempt but still rejected`).toBe(false);
+    }
+  });
+
+  it("does not exempt a word a hand review rejected", () => {
+    // The keep-list answers a bad *label*; it must not quietly overturn a verdict
+    // someone reached deliberately, which it cannot do anyway -- curatedRejection
+    // reads word-rejections.json first -- so an entry like that is a mistake.
+    for (const word of exempt) {
+      expect(word in wordRejections, `${word} is both exempt and hand-rejected`).toBe(false);
+    }
   });
 });

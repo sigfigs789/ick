@@ -4,6 +4,8 @@ import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
 import wordRejectionData from "../data/word-rejections.json";
+import sameRootPinData from "../data/same-root-pins.json";
+import derivedRejectionData from "../data/derived-rejections.json";
 import {
   baseForm,
   boundBaseCandidates,
@@ -383,7 +385,8 @@ function twoBandScoring(
       return legend ? roundToCents(s) : Math.round(s * 10) / 10;
     }
     const clamped = Math.max(zipf, tailFloor);
-    const s = ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
+    const s =
+      ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
     return legend ? roundToCents(Math.min(s, 10)) : Math.round(Math.min(s, 10) * 100) / 100;
   };
   return {
@@ -603,22 +606,76 @@ const WORD_REJECTIONS: ReadonlyMap<string, WordRejection> = new Map(
 );
 
 /**
- * The reviewed reason `word` is unplayable under `date`'s puzzle, or undefined
- * when no rejection applies. An omitted date means the newest system, where every
+ * Every curated word that carries a rejection reason, grouped by the date its
+ * rejection takes effect and then by reason (src/data/derived-rejections.json,
+ * written by generate-data.py). The rule is simply that a word with a reason is
+ * unplayable and the player is told which -- see WordRulesModal, which has always
+ * said so. The filter it came from only ever kept a classified word from
+ * *entering* the list, so the ones already on it stayed playable, and an obsolete
+ * spelling scored on its own vanishing frequency: "ranck" (an obsolete form of
+ * "rank") came out a 9.58 Mythic where "rank" scores 4.80.
+ *
+ * The reasons are Wiktionary's, and they divide in two. The out-of-use trio
+ * (obsolete / archaic / dated) means every ordinary sense of the word has fallen
+ * out of use, and only qualifies below Zipf 2.5. That frequency gate is the guard
+ * the trio needs, because its false positives are precisely the common words:
+ * "halt" (3.93), "fraught" (3.12) and "guerilla" (2.90) are each tagged obsolete
+ * off one dead sense, "thy" and "unto" archaic, "yea" and "fortnight" dated.
+ * Nothing corpora still measure in live use is out of use, whatever a sense label
+ * says. Below the gate the tag is reliable -- a 24-word random sample checked
+ * against Wiktionary came back 24 for 24, the "voyce"/"performe"/"sherriff"
+ * family the rule is aimed at. The structural reasons (abbreviation, proper noun,
+ * misspelling) take no gate: Wiktionary gives those to a headword with no ordinary
+ * sense at all, and "cd" being common says nothing about whether it is an
+ * abbreviation.
+ *
+ * Grouped by date rather than carrying one date for the file so a later data
+ * refresh can reject newly-classified words from *its* date without retroactively
+ * invalidating the words an archived puzzle accepted. A word that should stay
+ * playable despite its label goes in scripts/playable-exemptions.txt, which keeps
+ * it out of this file for good.
+ */
+const DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: string }> =
+  new Map(
+    Object.entries(derivedRejectionData as Record<string, Record<string, readonly string[]>>)
+      .flatMap(([since, byReason]) =>
+        Object.entries(byReason).flatMap(([reason, words]) =>
+          words.map(
+            (word): [string, { reason: RejectionReason; since: string }] => [
+              word,
+              { reason: reason as RejectionReason, since },
+            ]
+          )
+        )
+      )
+  );
+
+/**
+ * The reason `word` is unplayable under `date`'s puzzle, or undefined when no
+ * rejection applies. An omitted date means the newest system, where every
  * rejection is in force.
+ *
+ * A hand-reviewed rejection wins over the derived ones: it is a decision about
+ * this exact word, and it can name a more specific fault (a misspelling of a
+ * particular word) than a sense label can.
  */
 export function curatedRejection(word: string, date?: string): RejectionReason | undefined {
-  const rejection = WORD_REJECTIONS.get(word.toLowerCase());
-  if (!rejection) return undefined;
-  if (date !== undefined && date < rejection.since) return undefined;
-  return rejection.reason;
+  const normalized = word.toLowerCase();
+  const rejection = WORD_REJECTIONS.get(normalized);
+  if (rejection && (date === undefined || date >= rejection.since)) return rejection.reason;
+  // Falls through when the reviewed rejection isn't in force yet: the derived list
+  // can carry an earlier date than the hand entry, and the earlier verdict is
+  // still a verdict.
+  const derived = DERIVED_REJECTIONS.get(normalized);
+  if (derived && (date === undefined || date >= derived.since)) return derived.reason;
+  return undefined;
 }
 
 /**
  * Whether a submission is allowed. Membership in the curated dictionary, minus
- * the reviewed rejections above -- a rejected word is still in `dictionary.json`
- * (and still carries its rarity entry, so past puzzles keep scoring), but it is
- * not playable from its rejection date on.
+ * the rejections above -- reviewed and obsolete alike. A rejected word is still in
+ * `dictionary.json` (and still carries its rarity entry, so past puzzles keep
+ * scoring), but it is not playable from its rejection date on.
  */
 export function isValidWord(word: string, date?: string): boolean {
   const normalized = word.toLowerCase();
@@ -661,6 +718,91 @@ export function isUnattestedZipf(zipf: number): boolean {
  */
 export function boundBaseFormsActive(date?: string): boolean {
   return scoringFor(date).boundBaseForms;
+}
+
+// -- Same-root duplicate detection ------------------------------------------
+// The date the same-root rule started reading the number and tense inflections
+// `baseForm` cannot reach, so a puzzle can no longer take "indicate",
+// "indicates", "indicated" and "indicating" as four separate finds. Gated on the
+// *puzzle* date, not the release date: `viewedDate` reaches `evaluateSubmission`
+// for archive play, so an old drop played today keeps the rules it was played
+// with when it was current, and the score somebody posted for it stays
+// reachable. Only forward puzzles get the tighter rule.
+const SAME_ROOT_INFLECTION_START = "2026-08-24";
+
+/**
+ * Whether the curated dictionary has `word` at all, playable or not. Duplicate
+ * detection keys on this rather than on `isValidWord`: a reviewed rejection makes
+ * a word unsubmittable, not unreal, and it is still the right bucket label for
+ * its own paradigm. Keying on playability instead broke exactly the paradigms
+ * whose lemma is rejected -- "bitched", "bitches" and "bitching" each kept their
+ * own key, so a puzzle could take all three.
+ */
+export function isDictionaryWord(word: string): boolean {
+  return WORD_INDEX.has(word);
+}
+
+/**
+ * The most common dictionary word among `candidates`, for duplicate detection.
+ * Thin wrapper on the same `mostCommonBase` scoring folds through, so "which
+ * spelling is the base" is answered the same way in both.
+ */
+export function mostCommonSameRootBase(
+  word: string,
+  candidates: readonly string[],
+  date?: string
+): string | undefined {
+  return mostCommonBase(candidates, word, scoringFor(date));
+}
+
+/** Whether the widened same-root inflections apply to `date`'s puzzle. */
+export function sameRootInflectionsActive(date?: string): boolean {
+  return date === undefined || date >= SAME_ROOT_INFLECTION_START;
+}
+
+/**
+ * A hand-reviewed identity: `word` shares a root with `root` and with nothing
+ * else, from `since` on. A pin to the word itself means "this word has no root
+ * but its own".
+ */
+interface SameRootPin {
+  root: string;
+  since: string;
+  /** Review notes only -- nothing here reads it. */
+  reason?: string;
+}
+
+/**
+ * The words no spelling rule can key correctly, reviewed one at a time.
+ *
+ * Three shapes, and nothing else belongs here -- a rule needing many entries is a
+ * rule that does not belong in duplicate detection at all:
+ *
+ *   - a decisive strip landing on an unrelated word, where frequency picks it
+ *     too and so nothing but a review can settle it ("theses" -> "these").
+ *   - a word that merely ends in "-men", which the one stem-changing family in
+ *     play reads as a plural ("germen" -> "german", "dolmen" -> "dolman").
+ *   - an irregular plural whose "-ve"/"-ce" variant spelling is itself curated,
+ *     so tier 1 settles on the variant and the stem-changing reading is never
+ *     reached ("wolves" -> "wolve", never "wolf"; "indices" -> "indice", never
+ *     "index"). Only the plurals a player actually meets are pinned; the
+ *     technical tail ("dialyses", "fibroses") is left to leak.
+ *
+ * Separate from `score-overrides.json` on purpose, and the two can disagree
+ * about the same word: an override caps what "theses" is *worth* (at "these", to
+ * deny it an unearned Legend), while identity has to keep the two words apart so
+ * a player who found one may still play the other. Reading the overrides as
+ * identities would turn every reviewed demotion into a refusal.
+ */
+const SAME_ROOT_PINS: ReadonlyMap<string, SameRootPin> = new Map(
+  Object.entries(sameRootPinData as Record<string, SameRootPin>)
+);
+
+/** The reviewed root for `word` under `date`'s puzzle, if one is pinned. */
+export function pinnedSameRoot(word: string, date?: string): string | undefined {
+  const pin = SAME_ROOT_PINS.get(word);
+  if (!pin) return undefined;
+  return date === undefined || date >= pin.since ? pin.root : undefined;
 }
 
 export function rarityFor(word: string, date?: string): RarityInfo | undefined {
@@ -710,19 +852,34 @@ export function baseFormSubstitution(
   if (scoring.chainedBaseForms) {
     const chained = chainedBase(normalized, scoring, date);
     if (chained && chained.zipf > ownZipf) {
-      return { word: normalized, base: chained.base, ownZipf, baseZipf: chained.zipf };
+      return {
+        word: normalized,
+        base: chained.base,
+        ownZipf,
+        baseZipf: chained.zipf,
+      };
     }
     return undefined;
   }
 
   const override = overrideBase(normalized, date);
   if (override) {
-    return { word: normalized, base: override, ownZipf, baseZipf: zipfFor(override, scoring) };
+    return {
+      word: normalized,
+      base: override,
+      ownZipf,
+      baseZipf: zipfFor(override, scoring),
+    };
   }
 
   const tenseBase = tenseBaseForm(normalized, scoring);
   if (tenseBase && tenseBase !== normalized) {
-    return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
+    return {
+      word: normalized,
+      base: tenseBase,
+      ownZipf,
+      baseZipf: zipfFor(tenseBase, scoring),
+    };
   }
 
   const base = scoringBaseForm(normalized, scoring);

@@ -1,0 +1,117 @@
+{
+  "analyses": {
+    "root": "analysis",
+    "reason": "Same as `crises`. `analyse` is a real verb, so this picks the pair a player means and lets `analyse`/`analyses` through. The technical siblings (`dialyses`, `hydrolyses`, `fibroses` ...) are left alone: nobody meets them in a drop, and a leak costs nothing.",
+    "since": "2026-08-24"
+  },
+  "apices": {
+    "root": "apex",
+    "reason": "Same as `indices`, shadowed by `apic`.",
+    "since": "2026-08-24"
+  },
+  "appendices": {
+    "root": "appendix",
+    "reason": "Same as `indices`, shadowed by `appendice`.",
+    "since": "2026-08-24"
+  },
+  "calves": {
+    "root": "calf",
+    "reason": "Same as `thieves`: `calve` is a real verb, `calf`/`calves` is the pair.",
+    "since": "2026-08-24"
+  },
+  "crises": {
+    "root": "crisis",
+    "reason": "The \"-es\" -> \"-is\" plural, shadowed by `cris` (a dagger; the sibilant stem reads as the two-letter strip and lands on it).",
+    "since": "2026-08-24"
+  },
+  "dolmen": {
+    "root": "dolmen",
+    "reason": "A dolmen is a megalithic tomb; a dolman is a hussar's jacket. The \"-men\" -> \"-man\" plural rule reads one as the plural of the other, which would refuse a legitimate second answer.",
+    "since": "2026-08-24"
+  },
+  "elves": {
+    "root": "elf",
+    "reason": "Same as `selves`: the curated `elve` shadows `elf`.",
+    "since": "2026-08-24"
+  },
+  "germen": {
+    "root": "germen",
+    "reason": "A germen is a rudimentary ovary, unrelated to anything German. The \"-men\" -> \"-man\" plural rule reads it as a plural of `german`, which would refuse one of the pair; pinned to itself so it keys only onto its own plural `germens`.",
+    "since": "2026-08-24"
+  },
+  "halves": {
+    "root": "half",
+    "reason": "Same as `thieves`: `halve` is a real verb, `half`/`halves` is the pair.",
+    "since": "2026-08-24"
+  },
+  "indices": {
+    "root": "index",
+    "reason": "The \"-ices\" -> \"-ex\" plural, shadowed by the curated `indice`.",
+    "since": "2026-08-24"
+  },
+  "knives": {
+    "root": "knife",
+    "reason": "Same as `selves`: the curated `knive` shadows `knife`.",
+    "since": "2026-08-24"
+  },
+  "limen": {
+    "root": "limen",
+    "reason": "A limen is a sensory threshold; a liman is a coastal lagoon. Same \"-men\" misfire as `dolmen`.",
+    "since": "2026-08-24"
+  },
+  "matrices": {
+    "root": "matrix",
+    "reason": "Same as `indices`, shadowed by `matrice`.",
+    "since": "2026-08-24"
+  },
+  "nemeses": {
+    "root": "nemesis",
+    "reason": "Same as `crises`, shadowed by `nemes`.",
+    "since": "2026-08-24"
+  },
+  "nomen": {
+    "root": "nomen",
+    "reason": "A Roman clan name, not a plural of `noman`. Same \"-men\" misfire as `germen`.",
+    "since": "2026-08-24"
+  },
+  "selves": {
+    "root": "self",
+    "reason": "`selve` is a curated word and the one-letter strip reaches it first, so the plural of `self` never got to `self`.",
+    "since": "2026-08-24"
+  },
+  "shelves": {
+    "root": "shelf",
+    "reason": "Same as `thieves`: `shelve` is a real verb, `shelf`/`shelves` is the pair.",
+    "since": "2026-08-24"
+  },
+  "somen": {
+    "root": "somen",
+    "reason": "Somen are wheat noodles; soman is a nerve agent. Same \"-men\" misfire as `dolmen`.",
+    "since": "2026-08-24"
+  },
+  "theses": {
+    "root": "thesis",
+    "reason": "The plural of `thesis`, but the decisive \"-s\" strip lands on the unrelated `these` -- so both frequency and spelling pick the wrong root, and only a review can settle it. Pinned to `thesis`, which is also what src/data/score-overrides.json had to do for the score. Note the two files disagree on purpose: scoring caps `theses` at `these` to deny it a Legend, identity must keep them apart.",
+    "since": "2026-08-24"
+  },
+  "thieves": {
+    "root": "thief",
+    "reason": "Same as `selves`. `thieve` is a real verb, so this picks the pair a player means -- `thief`/`thieves` -- and lets `thieve`/`thieves` through.",
+    "since": "2026-08-24"
+  },
+  "vertices": {
+    "root": "vertex",
+    "reason": "Same as `indices`, shadowed by `vertic`.",
+    "since": "2026-08-24"
+  },
+  "wharves": {
+    "root": "wharf",
+    "reason": "Same as `selves`: the curated `wharve` shadows `wharf`.",
+    "since": "2026-08-24"
+  },
+  "wolves": {
+    "root": "wolf",
+    "reason": "Same as `selves`: the curated `wolve` shadows `wolf`.",
+    "since": "2026-08-24"
+  }
+}

@@ -31,6 +31,7 @@ DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 REJECTION_METADATA_PATH = ROOT / "src" / "data" / "rejection-metadata.json"
 WORD_REJECTIONS_PATH = ROOT / "src" / "data" / "word-rejections.json"
+DERIVED_REJECTIONS_PATH = ROOT / "src" / "data" / "derived-rejections.json"
 BLOCKLIST_PATH = SCRIPTS / "blocklist.txt"
 
 # Same input gate as manage-extra-word.py's add: English letters, no length cap
@@ -125,6 +126,41 @@ def check(raw_word: str) -> tuple[bool, str]:
             + (f"{entry['note'].rstrip('.')}. " if entry.get("note") else "")
             + "It stays in the curated list so earlier puzzles still score it, but it "
             "can no longer be submitted.",
+        ]
+        return False, "\n".join(lines)
+
+    # The derived rejections (src/data/derived-rejections.json) are the same kind of
+    # verdict, read off Wiktionary's sense labels in bulk: the word keeps its
+    # dictionary slot so past puzzles still score it, but it can't be submitted from
+    # its recorded date on.
+    derived = (
+        json.loads(DERIVED_REJECTIONS_PATH.read_text())
+        if DERIVED_REJECTIONS_PATH.exists()
+        else {}
+    )
+    derived_entry = next(
+        (
+            (since, reason)
+            for since, by_reason in sorted(derived.items())
+            for reason, words in sorted(by_reason.items())
+            if word in set(words)
+        ),
+        None,
+    )
+    if derived_entry is not None:
+        since, reason = derived_entry
+        lines += [
+            "**❌ Not valid** — this word carries a rejection reason.",
+            "",
+            f"**Reason:** {REJECTION_MESSAGES.get(reason, reason)}",
+            "",
+            (
+                "Wiktionary marks every ordinary sense of it that way"
+                if reason in ("obsolete", "archaic", "dated")
+                else "Wiktionary records no ordinary sense for it"
+            )
+            + f", so it is unplayable for puzzles from **{since}** onward. It stays "
+            "in the curated list so earlier puzzles still score it.",
         ]
         return False, "\n".join(lines)
 

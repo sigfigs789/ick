@@ -155,6 +155,25 @@ BUCKET_BLURB = {
 }
 
 
+def load_derived_rejections(data) -> set:
+    """Words the derived rejections (src/data/derived-rejections.json) put out of play.
+
+    Same kind of settled verdict as word-rejections.json, read off Wiktionary's
+    sense labels in bulk: the word keeps its dictionary entry and its rarity, so
+    without this it would surface in every future run of this audit even though no
+    player can submit it.
+    """
+    path = data / "derived-rejections.json"
+    if not path.exists():
+        return set()
+    return {
+        word
+        for batch in json.loads(path.read_text()).values()
+        for words in batch.values()
+        for word in words
+    }
+
+
 def load_module(path: Path, name: str):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
@@ -198,6 +217,7 @@ def build_report(
     # Settled verdicts. Rejected words keep their dictionary entry and their
     # rarity, so without this they would surface in every future run.
     rejected = set(json.loads((data / "word-rejections.json").read_text()))
+    rejected |= load_derived_rejections(data)
     overrides = json.loads((data / "score-overrides.json").read_text())
     index = {w: i for i, w in enumerate(dictionary)}
     sentinel = min(hundredths) / 100
