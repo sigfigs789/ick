@@ -1248,8 +1248,8 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
  * participle-dominant verb is genuinely rare in text ("belove" at Zipf 1.10,
  * "infatuate" at 1.30) while the participle everyone actually writes is
  * ordinary ("beloved" 4.17, "infatuated" 2.90), so the engine sold the rarest
- * inflection of a familiar word as a deep-tail find: 1,958 words displayed
- * Mythic or better and were capped by their own "-ed"/"-ing" form once this ran --
+ * inflection of a familiar word as a deep-tail find: 2,087 words displayed
+ * Mythic or better and are capped by their own "-ed"/"-ing" form once this runs --
  * "disgruntle" 9.91, "outstand" 9.65, "unbridle" 9.83, "overjoy" 9.87. The
  * `tenseBaseForm` note below records the same pairing from the other side: once
  * folds became caps, "beloved" -> "belove" went inert, because a cap cannot pull
