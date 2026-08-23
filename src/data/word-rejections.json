@@ -138,6 +138,11 @@
     "reason": "misspelling",
     "since": "2026-08-19"
   },
+  "combobulate": {
+    "note": "Jocular back-formation from `discombobulate`, which has no positive base; Merriam-Webster has no entry for it (live-lookup verdict `unknown`).",
+    "reason": "not-a-word",
+    "since": "2026-08-23"
+  },
   "comicon": {
     "note": "Proper noun: the Comic-Con convention.",
     "reason": "proper-noun",

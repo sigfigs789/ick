@@ -16,7 +16,8 @@ rebuilds the whole list from the ESDB/SCOWL source, whose unpinned upstream made
 every run silently re-size and re-score the entire dictionary. A full rebuild
 (generate-data.py --word-list) still re-merges all three lists from scratch.
 An added word is gated on the frequency waterfall
-(wordfreq -> Norvig -> Google Books): by default a word no corpus attests is
+(wordfreq -> Norvig -> Google Books -> recorded Datamuse values): by default a
+word no source attests is
 rejected, because its rarity would be a guess rather than a measurement.
 `--forced` overrides that and adds the word anyway; the data pipeline then gives
 an otherwise-unscored word the rarest-word floor, a perfect 10.0 / Legend.
@@ -136,7 +137,8 @@ def add_word(raw_word: str, list_name: str, forced: bool) -> None:
             )
 
     # "Has a rarity score" means any corpus in the waterfall attests it:
-    # wordfreq, else Norvig, else Google Books -- or, for a bound derivational
+    # wordfreq, else Norvig, else Google Books, else a recorded Datamuse Zipf
+    # (scripts/datamuse-zipf.txt) -- or, for a bound derivational
     # form no corpus attests directly, its base ("aggrandization" -> "aggrandize").
     # Only a word none of these attest is unscored; without --forced that is a
     # hard rejection.

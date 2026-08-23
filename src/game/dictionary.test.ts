@@ -49,11 +49,11 @@ const curatedWordScores: ReadonlyArray<[string, string, number]> = [
 ];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
   ["aggrandization", "Elusive", 1.52],
-  ["caprylate", "Legend", -1.57],
-  ["conization", "Legend", -1.57],
-  ["inosinate", "Legend", -1.57],
+  ["caprylate", "Mythic", 1.1],
+  ["conization", "Extremely Rare", 1.8],
+  ["inosinate", "Legend", 0.79],
   ["reoxygenate", "Extremely Rare", 1.88],
-  ["uridylate", "Legend", -1.57],
+  ["uridylate", "Legend", 0.68],
 ];
 // Rare words discovered online for an upcoming drop and added via the "Add rare
 // words found online" GitHub Action (list=online). Appended automatically by

@@ -356,6 +356,16 @@ every submission the game has ever refused. The verdicts themselves stay in the
 data files (`word-rejections.json` for a rejection, the provenance lists in
 `scripts/` for an acceptance); the log only says how far the reading got.
 
+Graduating a word must not cost it its score. `api/validate.ts` scores a live
+approval from the frequency Datamuse reports, and the bulk corpora behind
+`rarity.json` (wordfreq, Norvig, Google Books) often attest nothing at all for
+exactly this kind of word — so adding one to the curated dictionary used to trade
+a measured Zipf for the unattested sentinel and a flat 10.00 Legend.
+`scripts/datamuse-zipf.txt` is the fix: a hand-recorded `word<TAB>zipf` list,
+consulted as the waterfall's last tier, so it can only fill a gap and never
+override a measurement. `conization` keeps its 8.7 Extremely Rare instead of
+being promoted to a Legend it never earned.
+
 Nothing in the game reads either table, and nothing waits on a write. Recording
 is strictly downstream of the answer: `api/validate.ts` never awaits its write
 (it hands it to the runtime's `waitUntil` when there is one, and would rather

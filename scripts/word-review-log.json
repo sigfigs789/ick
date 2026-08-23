@@ -36,10 +36,30 @@
         "Accepted words went to scripts/suggested-words.txt and dictionary.json;",
         "`reoxygenate` also got a score override onto `oxygenate`, since re- + a",
         "common verb is a prefix, not a discovery.",
+        "The other four keep the Zipf Datamuse measured for them, recorded in",
+        "scripts/datamuse-zipf.txt: caprylate 1.10 (9.75 Mythic), conization 1.80",
+        "(8.7 Extremely Rare), inosinate 0.79 (9.92 Legend), uridylate 0.68 (9.93",
+        "Legend). Without that tier all four would have fallen to the unattested",
+        "sentinel and a flat 10.00 Legend the moment they left the live path.",
         "Rejections went to src/data/word-rejections.json with the fault named",
         "(misspelling, proper noun, abbreviation, obsolete, or judged non-word).",
         "Nonsense strings nobody repeated were left to the generic message rather",
         "than filling the file with one-off typos."
+      ]
+    },
+    {
+      "reviewed_at": "2026-08-23T03:19:00Z",
+      "reviewed_through": "2026-08-23T03:05:29.399717+00:00",
+      "sources": [
+        "suggested_words (one player suggestion that arrived after the first pass)"
+      ],
+      "accepted": [],
+      "rejections_recorded": 1,
+      "notes": [
+        "`combobulate`, tried three times on puzzle 50 (drop `ate`) and then sent",
+        "through the suggestion box. Merriam-Webster has no entry for it in either",
+        "reference: it is a jocular back-formation from `discombobulate`, which is",
+        "itself a fanciful coinage with no positive base. Recorded as not-a-word."
       ]
     }
   ]
