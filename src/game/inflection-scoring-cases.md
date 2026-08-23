@@ -260,10 +260,25 @@ two points or more the same way.
 | `counterorders` | 9.89 | 3.30 | order |
 | `underbakes` | 9.96 | 5.62 | bake |
 
-6,546 words move, every one of them down; no word is promoted. 322 of them are
+4,253 words move, every one of them down; no word is promoted. 255 of them are
 measured, all in the Zipf 1.0–1.5 band, reached the way `materialnesses` reaches
 `material` — through an unmeasured intermediate that the gate does admit. That is
 not new: the §7 suffix family already moves 528 measured words the same way.
+
+**The base must be a word people use** (`PREFIX_BASE_MIN_ZIPF`, Zipf 3.0). This
+is the one guard the suffix families do not need. Stripping a prefix routinely
+lands on a *bound combining form* that a 225k-word dictionary lists as an entry
+but nothing was ever built from: `neolith` → `lith`, `monocrat` → `crat`,
+`autophyte` → `phyte`, `protopathy` → `pathy`, `prelect` → `lect`, `subduce` →
+`duce`, `monopode` → `pode`. They cluster in the deep tail, which is what
+separates them from real bases — a transparent prefix attaches to an ordinary
+word. The floor removes some forty wrong folds and costs a handful of real ones
+whose bases are themselves rare (`overgild` → `gild`, `overemote` → `emote`,
+`misallot` → `allot`), each worth under three points of demotion.
+
+One case clears the floor anyway: `microdont` (micro- + -odont, tooth) folds to
+`dont`, which is in the dictionary as the apostrophe-less "don't" and carries
+that word's Zipf 4.74. It has a reviewed fold exemption.
 
 **Why the gate is enough here.** Ungated the rule folds `preface` → `face`,
 `present` → `sent`, `mistake` → `take`, `outrage` → `rage` and `understand` →

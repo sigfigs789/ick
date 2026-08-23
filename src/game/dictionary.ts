@@ -65,6 +65,13 @@ const INFLECTION_BASE_START = NARROW_BANDS_START;
 // The transparent prefixes join the gated families (see prefixBaseCandidates).
 // Its own date, so every archived puzzle keeps the scores it was played with.
 const PREFIX_BASE_START = "2026-08-23";
+// How common a word must be to serve as a prefix base. Set at the top of the
+// deep tail rather than at MEASURED_FLOOR: the bound combining forms this keeps
+// out ("lith", "crat", "pathy", "phyte") are all measured, just barely, and sit
+// between Zipf 1.0 and 3.0 along with the handful of real bases the cutoff
+// costs ("gild", "emote", "ripen", "allot" -- each worth under 3 points of
+// demotion, against some forty wrong folds removed).
+const PREFIX_BASE_MIN_ZIPF = 3;
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -910,7 +917,25 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
     // further ("people"). See `prefixBaseCandidates` for why the gate is
     // load-bearing.
     if (scoring.prefixBases) {
-      for (const candidate of prefixBaseCandidates(word)) add(candidate);
+      // A prefix base must be a word people actually use. Unlike the suffix
+      // families, stripping a prefix routinely lands on a *bound combining
+      // form* that a 225k-word dictionary happens to list as an entry --
+      // "neolith" -> "lith", "monocrat" -> "crat", "autophyte" -> "phyte",
+      // "protopathy" -> "pathy", "prelect" -> "lect", "subduce" -> "duce".
+      // Every one is a real dictionary word and none is a base anything was
+      // built on. They cluster in the deep tail, which is what separates them:
+      // a transparent prefix attaches to an ordinary word, so a residue nobody
+      // uses is far likelier to be a fragment than a base. Declining them costs
+      // almost nothing either way -- the point of the fold is to replace an
+      // unmeasured stand-in with a real measurement, and a base this rare
+      // barely supplies one. Same argument as the three-letter minimum in
+      // `inflectionalBaseCandidates`, one level up: some dictionary entries are
+      // not words a fold should ever land on.
+      for (const candidate of prefixBaseCandidates(word)) {
+        if (WORD_INDEX.has(candidate) && zipfFor(candidate, scoring) >= PREFIX_BASE_MIN_ZIPF) {
+          add(candidate);
+        }
+      }
     }
   }
   add(scoringBaseForm(word, scoring));

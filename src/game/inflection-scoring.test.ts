@@ -606,6 +606,33 @@ describe("transparent prefixes fold, but only below the measurement floor", () =
     }
   });
 
+  it("will not fold onto a bound combining form the dictionary happens to list", () => {
+    // Stripping a prefix routinely lands on a fragment that is a real
+    // dictionary entry and no word's base. They are all in the deep tail, so a
+    // minimum frequency on the base keeps them out -- see PREFIX_BASE_MIN_ZIPF.
+    for (const word of [
+      "neolith", // -> "lith"
+      "monocrat", // -> "crat"
+      "autophyte", // -> "phyte"
+      "protopathy", // -> "pathy"
+      "prelect", // -> "lect"
+      "subduce", // -> "duce"
+      "monopode", // -> "pode"
+      "polyzoic", // -> "zoic"
+    ]) {
+      expect(score(word, BEFORE_PREFIX), `${word} must not move`).toBe(score(word, ON_PREFIX));
+    }
+  });
+
+  it("exempts the one bound form the frequency floor cannot catch", () => {
+    // "microdont" is micro- + -odont (tooth). Its residue "dont" is in the
+    // dictionary as the apostrophe-less "don't" and carries that word's
+    // frequency (Zipf 4.74), so it clears the base floor the others fail. A
+    // reviewed fold exemption is the cheaper fix -- see fold-exemptions.json.
+    expect(score("microdont", BEFORE_PREFIX)).toBe(score("microdont", ON_PREFIX));
+    expect(baseFormSubstitution("microdont", ON_PREFIX)).toBeUndefined();
+  });
+
   it("leaves a word the corpora actually measure alone, however it starts", () => {
     // Ungated the rule folds every one of these onto an unrelated word:
     // "preface" -> "face", "present" -> "sent", "mistake" -> "take",

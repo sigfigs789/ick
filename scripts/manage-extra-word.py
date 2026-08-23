@@ -209,6 +209,8 @@ def update_size_test() -> None:
 # Tense forms inherit their base's Zipf exactly; transparent (-ness/-ly) and
 # bound (-ization/-ability) suffixes are capped at their base.
 MEASURED_FLOOR = 1.0
+# Mirror of PREFIX_BASE_MIN_ZIPF in src/game/dictionary.ts.
+PREFIX_BASE_MIN_ZIPF = 3.0
 BAND_CEILING = 9.9
 TAIL_FLOOR = 0.0
 # Score cutoffs for the wide band's two top ranks, keyed off the *displayed*
@@ -585,9 +587,12 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
         # set: they fold through their own verb (see nextBaseForms).
         for candidate in _unmeasured_candidates(word):
             add(candidate)
-        # Prefixes, under the same gate (see prefixBaseCandidates in stem.ts).
+        # Prefixes, under the same gate, and only onto a base common enough to
+        # be a real word rather than a bound combining form ("neolith" ->
+        # "lith"). See the call site in src/game/dictionary.ts.
         for candidate in _prefix_candidates(word):
-            add(candidate)
+            if candidate in index and zipf_at(candidate) >= PREFIX_BASE_MIN_ZIPF:
+                add(candidate)
     add(_scoring_base(word, index))
     return out
 
