@@ -4,12 +4,14 @@ import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
 import wordRejectionData from "../data/word-rejections.json";
+import sameRootPinData from "../data/same-root-pins.json";
 import derivedRejectionData from "../data/derived-rejections.json";
 import {
   baseForm,
   boundBaseCandidates,
   degreeBaseCandidates,
   derivedBaseCandidates,
+  inflectedFormCandidates,
   inflectionalBaseCandidates,
   prefixBaseCandidates,
   unmeasuredBaseCandidates,
@@ -52,14 +54,24 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         -- comparatives, Latin plurals, -ize/-able -- fold too, but only for a
  *         word below MEASURED_FLOOR, where its score is a stand-in rather than a
  *         measurement (see `unmeasuredBaseCandidates`). No label mapping moves.
- *   - on/after 2026-08-24 (the latest system): the derivational families whose
- *     ending is *bound* fold as well -- "-ically" -> "-ic", "-ably"/"-ibly" ->
- *     "-able"/"-ible", "-ologist" -> "-ology", "-cked"/"-cking" -> "-c",
- *     "-eaux" -> "-eau" (see `derivedBaseCandidates`). Ungated by
- *     MEASURED_FLOOR, like the bound suffixes of 2026-08-16: nothing accidental
- *     ends that way, so there is no coincidence for a gate to catch. 2,003
- *     words score lower and none score higher; 1,024 of them were holding a
- *     Mythic-or-better score for an ending, 692 a Legend. No label mapping
+ *   - on/after 2026-08-24 (the latest system): two independent changes, like
+ *     2026-08-21 before it.
+ *       * The derivational families whose ending is *bound* fold as well --
+ *         "-ically" -> "-ic", "-ably"/"-ibly" -> "-able"/"-ible", "-ologist" ->
+ *         "-ology", "-cked"/"-cking" -> "-c", "-eaux" -> "-eau" (see
+ *         `derivedBaseCandidates`). Ungated by MEASURED_FLOOR, like the bound
+ *         suffixes of 2026-08-16: nothing accidental ends that way, so there is
+ *         no coincidence for a gate to catch. 2,003 words score lower and none
+ *         score higher; 1,024 of them were holding a Mythic-or-better score for
+ *         an ending, 692 a Legend.
+ *       * The fold runs in both directions. Until now it only ever asked "what
+ *         is this word a form of", so a word was capped by its base and never by
+ *         the forms built on it -- which left the lemma of a participle-dominant
+ *         verb scoring as a deep-tail find because nobody writes it in the bare
+ *         form ("belove" 9.75 against "beloved" 5.24, "infatuate" 9.46 against
+ *         "infatuated" 7.11). A word is now also capped at its own regular
+ *         inflections (see `inflectedFormFolds`).
+ *     No label mapping
  *     moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
@@ -353,6 +365,13 @@ interface Scoring {
   // 2026-08-24 cutover; off for earlier systems so past puzzles' scores stay
   // frozen (see PREFIX_BASE_START).
   prefixBases: boolean;
+  // Whether a word is also capped at the regular inflections built *on* it --
+  // the fold's reverse direction, so the bare lemma of a verb only ever written
+  // as a participle stops scoring as a deep-tail find (see
+  // `inflectedFormFolds`). Shipped with the same 2026-08-24 cutover as
+  // `derivedBases`; off for earlier systems so past puzzles' scores stay frozen
+  // (see DERIVED_BASE_START).
+  inflectionForms: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -366,20 +385,40 @@ interface Scoring {
 // score-based two-decimal display. Without it (the 2026-08-15 system) the deep
 // tail is a single Mythic rank, the measured band keeps one decimal, and only
 // deep-tail scores show two.
-function twoBandScoring(
-  ceiling: number,
-  tailFloor: number,
-  boundBaseForms: boolean,
-  legend: boolean,
-  chainedBaseForms = false,
-  inflectionBases = false,
-  derivedBases = false,
-  prefixBases = false,
+/**
+ * Flags selecting which dated behaviours a scoring profile carries. A named
+ * object rather than trailing booleans: this list reached eight positional
+ * parameters ending in five interchangeable `boolean`s, and three separate
+ * changes adding a flag to it collided in a row -- each time producing code that
+ * type-checked while feeding the wrong argument into the wrong slot, because
+ * every value and every parameter had the same type. Adding a field here cannot
+ * silently shift another.
+ */
+interface ScoringFlags {
+  boundBaseForms: boolean;
+  legend: boolean;
+  chainedBaseForms?: boolean;
+  inflectionBases?: boolean;
+  derivedBases?: boolean;
+  prefixBases?: boolean;
+  inflectionForms?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
-  narrowBands = false
-): Scoring {
+  narrowBands?: boolean;
+}
+
+function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags): Scoring {
+  const {
+    boundBaseForms,
+    legend,
+    chainedBaseForms = false,
+    inflectionBases = false,
+    derivedBases = false,
+    prefixBases = false,
+    inflectionForms = false,
+    narrowBands = false,
+  } = flags;
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
       const s = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
@@ -389,7 +428,8 @@ function twoBandScoring(
       return legend ? roundToCents(s) : Math.round(s * 10) / 10;
     }
     const clamped = Math.max(zipf, tailFloor);
-    const s = ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
+    const s =
+      ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
     return legend ? roundToCents(Math.min(s, 10)) : Math.round(Math.min(s, 10) * 100) / 100;
   };
   return {
@@ -414,70 +454,65 @@ function twoBandScoring(
     inflectionBases,
     derivedBases,
     prefixBases,
+    inflectionForms,
   };
 }
 
 // The 2026-08-15 system: measured band 0..9.5, deep tail 9.5..10 anchored at the
 // data's live minimum, single Mythic top rank, no bound-suffix folding.
-const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false);
+const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, {
+  boundBaseForms: false,
+  legend: false,
+});
 // The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
 // fixed 0, Legend + Mythic ranks, bound-suffix folding on, single-hop bases.
-const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true);
+const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, { boundBaseForms: true, legend: true });
 // The 2026-08-19 system: the same bands and ranks, with base forms resolved
 // through their own bases.
-const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
-// The latest system (2026-08-21). Carries both of that day's changes: the
-// retuned measured Zipf bands (labels), and a fold that weighs every plausible
-// base spelling and keeps the most common one (scores). The flags are commented
+const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+});
+// The 2026-08-21 system. Carries both of that day's changes: the retuned
+// measured Zipf bands (labels), and a fold that weighs every plausible base
+// spelling and keeps the most common one (scores). The flags are commented
 // because seven positional arguments, three of them trailing booleans, are
 // otherwise unreadable.
-const RETUNED_SCORING: Scoring = twoBandScoring(
-  9.9,
-  0,
-  /* boundBaseForms */ true,
-  /* legend */ true,
-  /* chainedBaseForms */ true,
-  /* inflectionBases */ true,
-  /* derivedBases */ false,
-  /* prefixBases */ false,
-  /* narrowBands */ true
-);
-// The 2026-08-24 system with only the bound derivational families on. Reached
-// only if PREFIX_BASE_START is ever moved later than DERIVED_BASE_START; while
-// the two dates are equal, scoringFor steps straight past it to LATEST_SCORING.
-// Kept so the two cutovers stay genuinely independent rather than equal by
-// accident.
-const DERIVED_SCORING: Scoring = twoBandScoring(
-  9.9,
-  0,
-  /* boundBaseForms */ true,
-  /* legend */ true,
-  /* chainedBaseForms */ true,
-  /* inflectionBases */ true,
-  /* derivedBases */ true,
-  /* prefixBases */ false,
-  /* narrowBands */ true
-);
-// The latest system (2026-08-24): both of that day's changes -- the bound
-// derivational families in `derivedBaseCandidates`, and the transparent
-// prefixes in `prefixBaseCandidates`.
-//
-// Every argument is named, and that is not decoration. These are eight
-// positional parameters ending in four booleans, and merging the two changes
-// that added the last two silently slid `narrowBands` into the `prefixBases`
-// slot -- type-correct, comment-contradicting, and invisible to tsc. If a third
-// flag is ever needed, take the options-object refactor instead.
-const LATEST_SCORING: Scoring = twoBandScoring(
-  9.9,
-  0,
-  /* boundBaseForms */ true,
-  /* legend */ true,
-  /* chainedBaseForms */ true,
-  /* inflectionBases */ true,
-  /* derivedBases */ true,
-  /* prefixBases */ true,
-  /* narrowBands */ true
-);
+const RETUNED_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  narrowBands: true,
+});
+// The 2026-08-24 system with the bound derivational families and the fold's
+// second direction on, but not the prefixes. Reached only if PREFIX_BASE_START
+// is ever moved later than DERIVED_BASE_START; while the two dates are equal,
+// scoringFor steps straight past it to LATEST_SCORING.
+const DERIVED_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  narrowBands: true,
+});
+// The latest system (2026-08-24): all three of that day's changes -- the bound
+// derivational families in `derivedBaseCandidates`, the fold's second direction
+// toward the inflections built on a word, and the transparent prefixes in
+// `prefixBaseCandidates`.
+const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  prefixBases: true,
+  narrowBands: true,
+});
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -506,6 +541,7 @@ const LEGACY_SCORING: Scoring = {
   inflectionBases: false,
   derivedBases: false,
   prefixBases: false,
+  inflectionForms: false,
 };
 
 /**
@@ -572,7 +608,8 @@ function scoringFor(date?: string): Scoring {
   if (date < INFLECTION_BASE_START) return CHAINED_SCORING;
   // Two cutovers on the same day, laddered separately so either can move later
   // without the other following. While the dates are equal the middle rung is
-  // simply stepped over.
+  // stepped over. The profile beyond carries all three of that day's changes:
+  // the derivational families, the fold's second direction, and the prefixes.
   if (date < DERIVED_BASE_START) return RETUNED_SCORING;
   if (date < PREFIX_BASE_START) return DERIVED_SCORING;
   return LATEST_SCORING;
@@ -749,6 +786,91 @@ export function boundBaseFormsActive(date?: string): boolean {
   return scoringFor(date).boundBaseForms;
 }
 
+// -- Same-root duplicate detection ------------------------------------------
+// The date the same-root rule started reading the number and tense inflections
+// `baseForm` cannot reach, so a puzzle can no longer take "indicate",
+// "indicates", "indicated" and "indicating" as four separate finds. Gated on the
+// *puzzle* date, not the release date: `viewedDate` reaches `evaluateSubmission`
+// for archive play, so an old drop played today keeps the rules it was played
+// with when it was current, and the score somebody posted for it stays
+// reachable. Only forward puzzles get the tighter rule.
+const SAME_ROOT_INFLECTION_START = "2026-08-24";
+
+/**
+ * Whether the curated dictionary has `word` at all, playable or not. Duplicate
+ * detection keys on this rather than on `isValidWord`: a reviewed rejection makes
+ * a word unsubmittable, not unreal, and it is still the right bucket label for
+ * its own paradigm. Keying on playability instead broke exactly the paradigms
+ * whose lemma is rejected -- "bitched", "bitches" and "bitching" each kept their
+ * own key, so a puzzle could take all three.
+ */
+export function isDictionaryWord(word: string): boolean {
+  return WORD_INDEX.has(word);
+}
+
+/**
+ * The most common dictionary word among `candidates`, for duplicate detection.
+ * Thin wrapper on the same `mostCommonBase` scoring folds through, so "which
+ * spelling is the base" is answered the same way in both.
+ */
+export function mostCommonSameRootBase(
+  word: string,
+  candidates: readonly string[],
+  date?: string
+): string | undefined {
+  return mostCommonBase(candidates, word, scoringFor(date));
+}
+
+/** Whether the widened same-root inflections apply to `date`'s puzzle. */
+export function sameRootInflectionsActive(date?: string): boolean {
+  return date === undefined || date >= SAME_ROOT_INFLECTION_START;
+}
+
+/**
+ * A hand-reviewed identity: `word` shares a root with `root` and with nothing
+ * else, from `since` on. A pin to the word itself means "this word has no root
+ * but its own".
+ */
+interface SameRootPin {
+  root: string;
+  since: string;
+  /** Review notes only -- nothing here reads it. */
+  reason?: string;
+}
+
+/**
+ * The words no spelling rule can key correctly, reviewed one at a time.
+ *
+ * Three shapes, and nothing else belongs here -- a rule needing many entries is a
+ * rule that does not belong in duplicate detection at all:
+ *
+ *   - a decisive strip landing on an unrelated word, where frequency picks it
+ *     too and so nothing but a review can settle it ("theses" -> "these").
+ *   - a word that merely ends in "-men", which the one stem-changing family in
+ *     play reads as a plural ("germen" -> "german", "dolmen" -> "dolman").
+ *   - an irregular plural whose "-ve"/"-ce" variant spelling is itself curated,
+ *     so tier 1 settles on the variant and the stem-changing reading is never
+ *     reached ("wolves" -> "wolve", never "wolf"; "indices" -> "indice", never
+ *     "index"). Only the plurals a player actually meets are pinned; the
+ *     technical tail ("dialyses", "fibroses") is left to leak.
+ *
+ * Separate from `score-overrides.json` on purpose, and the two can disagree
+ * about the same word: an override caps what "theses" is *worth* (at "these", to
+ * deny it an unearned Legend), while identity has to keep the two words apart so
+ * a player who found one may still play the other. Reading the overrides as
+ * identities would turn every reviewed demotion into a refusal.
+ */
+const SAME_ROOT_PINS: ReadonlyMap<string, SameRootPin> = new Map(
+  Object.entries(sameRootPinData as Record<string, SameRootPin>)
+);
+
+/** The reviewed root for `word` under `date`'s puzzle, if one is pinned. */
+export function pinnedSameRoot(word: string, date?: string): string | undefined {
+  const pin = SAME_ROOT_PINS.get(word);
+  if (!pin) return undefined;
+  return date === undefined || date >= pin.since ? pin.root : undefined;
+}
+
 export function rarityFor(word: string, date?: string): RarityInfo | undefined {
   const normalized = word.toLowerCase();
   const i = WORD_INDEX.get(normalized);
@@ -796,19 +918,34 @@ export function baseFormSubstitution(
   if (scoring.chainedBaseForms) {
     const chained = chainedBase(normalized, scoring, date);
     if (chained && chained.zipf > ownZipf) {
-      return { word: normalized, base: chained.base, ownZipf, baseZipf: chained.zipf };
+      return {
+        word: normalized,
+        base: chained.base,
+        ownZipf,
+        baseZipf: chained.zipf,
+      };
     }
     return undefined;
   }
 
   const override = overrideBase(normalized, date);
   if (override) {
-    return { word: normalized, base: override, ownZipf, baseZipf: zipfFor(override, scoring) };
+    return {
+      word: normalized,
+      base: override,
+      ownZipf,
+      baseZipf: zipfFor(override, scoring),
+    };
   }
 
   const tenseBase = tenseBaseForm(normalized, scoring);
   if (tenseBase && tenseBase !== normalized) {
-    return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
+    return {
+      word: normalized,
+      base: tenseBase,
+      ownZipf,
+      baseZipf: zipfFor(tenseBase, scoring),
+    };
   }
 
   const base = scoringBaseForm(normalized, scoring);
@@ -951,6 +1088,9 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
   const seen = new Set([word]);
   let frontier = [word];
   let best: ChainedBase | undefined;
+  // The word's own frequency, so the reverse fold can skip a form that could not
+  // beat it -- see the `floor` argument to `inflectedFormFolds`.
+  const own = WORD_INDEX.has(word) ? zipfFor(word, scoring) : -Infinity;
 
   for (let depth = 0; depth < MAX_FOLD_DEPTH && frontier.length > 0; depth++) {
     const next: string[] = [];
@@ -961,6 +1101,22 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
         next.push(candidate);
         const zipf = zipfFor(candidate, scoring);
         if (!best || zipf > best.zipf) best = { base: candidate, zipf };
+      }
+      // The other direction, and the reason it is applied here rather than as
+      // another entry in `nextBaseForms`: a word is capped at the inflections
+      // built on it, but the walk does not continue *through* them (see
+      // `inflectedFormFolds`). Every node gets the treatment, not just the word
+      // the walk started from, so a form reaches its paradigm's cap through its
+      // own base: "infatuates" folds to "infatuate", which caps at
+      // "infatuated", and all three end up scoring alike.
+      for (const form of inflectedFormFolds(
+        current,
+        scoring,
+        date,
+        Math.max(own, best ? best.zipf : -Infinity)
+      )) {
+        const zipf = zipfFor(form, scoring);
+        if (!best || zipf > best.zipf) best = { base: form, zipf };
       }
     }
     frontier = next;
@@ -974,6 +1130,11 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
  * then a transparent or bound suffix. Under the chained system every one of these
  * is a cap rather than an inheritance, so the caller can treat them alike.
  *
+ * One direction only: these are the words `word` could be a *form of*. The
+ * inflections built *on* it are `inflectedFormFolds`, which `chainedBase`
+ * consults separately because they must not be walked onward -- see the note
+ * there on terminal hops.
+ *
  * A reviewed override replaces the guesses rather than joining them: it is a
  * decision about this exact word, so the spelling rules are not consulted at all.
  *
@@ -982,8 +1143,7 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
  * The latest system returns the whole set instead and lets `chainedBase` explore
  * it, because "which base is most common" and "which base leads to the most
  * common word" are different questions (see `chainedBase`). The set is a superset
- * of the older systems' single pick, and the caller only ever takes a maximum
- * over it, so widening it can never make a word score rarer than it used to.
+ * of the older systems' single pick.
  */
 function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] {
   // A reviewed exemption silences every rule below, the override included --
@@ -1074,6 +1234,86 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
     for (const candidate of derivedBaseCandidates(word)) add(candidate);
   }
   add(scoringBaseForm(word, scoring));
+  return out;
+}
+
+/**
+ * The regular inflections of `word` that the engine's own forward rules read as
+ * forms of it -- the fold's second direction.
+ *
+ * Every other rule in this file asks "what is this word a form of", which caps a
+ * form at its base and stops a plural out-scoring its singular. Nothing asked
+ * the reverse, so a base was never capped at its own forms -- and English has a
+ * large class of verbs where that is the wrong way round. The bare lemma of a
+ * participle-dominant verb is genuinely rare in text ("belove" at Zipf 1.10,
+ * "infatuate" at 1.30) while the participle everyone actually writes is
+ * ordinary ("beloved" 4.17, "infatuated" 2.90), so the engine sold the rarest
+ * inflection of a familiar word as a deep-tail find: 1,958 words displayed
+ * Mythic or better and were capped by their own "-ed"/"-ing" form once this ran --
+ * "disgruntle" 9.91, "outstand" 9.65, "unbridle" 9.83, "overjoy" 9.87. The
+ * `tenseBaseForm` note below records the same pairing from the other side: once
+ * folds became caps, "beloved" -> "belove" went inert, because a cap cannot pull
+ * a word toward *rare*. This direction is what the inert half left undone.
+ *
+ * The first guard is a round trip. `inflectedFormCandidates` over-generates
+ * spellings, and a candidate counts only if it is a dictionary word whose own
+ * forward fold comes back to `word` -- not merely offering it among its
+ * candidates, but *choosing* it, by the same most-common-base rule the forward
+ * direction uses. That reuses the reviewed forward rules, overrides and
+ * exemptions included, as the definition of the relation, rather than asserting a
+ * second inverse set of spelling rules that could disagree with them.
+ *
+ * Requiring the chosen base rather than a candidate is what makes the difference
+ * on the coincidences, because the forward rules propose every plausible
+ * spelling and then narrow. "wives" proposes "wife", "wif", "wiv" and "wive", so
+ * a candidate check would have scored the archaic verb "wive" as the plural of
+ * "wife"; "wife" wins the pick, so the pair never links and "wive" keeps its own
+ * score. Same for "singe", which reaches "singes" and "singing" by spelling but
+ * loses both picks to the far commoner "sing".
+ *
+ * The second guard is that these hops are *terminal* -- `chainedBase` caps
+ * against a form but never walks on from it. Without that, one reverse hop and
+ * one forward hop compose into a link between two words in different paradigms,
+ * because a form can be shared: "singe" reaches its own "singes" (a legitimate
+ * reverse hop, since "-es" strips to either "singe" or "sing"), and walking on
+ * from "singes" would then have landed on "sing" and scored a rare verb as an
+ * everyday one. The same composition dragged "thee" onto "the". A cap needs only
+ * the form's own frequency, so refusing to expand costs nothing the rule was for.
+ *
+ * Deliberately *not* gated to below MEASURED_FLOOR, unlike the other rules whose
+ * spelling is not decisive. The gate rescues a family when its false positives
+ * land on common words, and here they would be the common words: the whole point
+ * is to cap a *measured* lemma ("infatuate" at 1.30 is above the floor) at a
+ * more common form. A gate would leave every word that prompted the change
+ * exactly where it was. The round trip is the guard instead.
+ *
+ * A reviewed override on `word` suppresses this the way it suppresses the
+ * forward rules: it is a decision about this exact word, and the spelling rules
+ * -- in either direction -- do not get to add to it.
+ */
+function inflectedFormFolds(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+  floor = -Infinity
+): string[] {
+  if (!scoring.inflectionForms) return [];
+  if (foldExempt(word, date) || overrideBase(word, date)) return [];
+
+  const out: string[] = [];
+  for (const form of inflectedFormCandidates(word)) {
+    const index = WORD_INDEX.get(form);
+    if (index === undefined) continue;
+    // The frequency test before the round trip, not after. A cap can only pull
+    // toward common, so a form no commoner than what the caller already has
+    // cannot change the answer -- and confirming the link is the expensive half
+    // (a full candidate generation for every spelling offered). Skipping those
+    // is what keeps this off the drop-scan hot path: `bestWordForDrop` walks the
+    // whole dictionary, and most words' inflections are rarer than the word.
+    if (scoring.zipfAt(index) <= floor) continue;
+    if (mostCommonBase(nextBaseForms(form, scoring, date), form, scoring) !== word) continue;
+    out.push(form);
+  }
   return out;
 }
 

@@ -59,6 +59,42 @@
     "since": "2026-08-21",
     "reason": "Plural of the archaic `complice` (an accomplice), which the -ices rule misreads as a stem-change plural of `complex`, 2.8 Zipf clear of the truth. `complice` is the rarer word, so an override cannot express this -- the cap ignores a rarer base -- and the word's own measurement is the right score."
   },
+  "doe": {
+    "since": "2026-08-24",
+    "reason": "The female deer. `does` is its spelling-legal plural and also the third person of `do`, which is where all of that form's frequency comes from -- and `do` itself is two letters, so the number rules drop it and leave `doe` as the only candidate `does` can pick. Capping the deer at the auxiliary verb halved its score (5.72 -> 2.93)."
+  },
+  "morn": {
+    "since": "2026-08-24",
+    "reason": "The poetic morning. `morning` is not its progressive -- it is the noun `morn` was displaced by -- but the -ing strip picks `morn` over the non-word `morne`, so the reverse fold read the commoner noun as this word's own form (6.88 -> 3.53)."
+  },
+  "blee": {
+    "since": "2026-08-24",
+    "reason": "Archaic for colour or complexion. `bleed` is a strong verb, not `blee` + `-ed`; the -ed strip has nowhere else to land, so the reverse fold made the two one paradigm (8.88 -> 5.90)."
+  },
+  "specie": {
+    "since": "2026-08-24",
+    "reason": "Coin money, from `in specie`. Not the singular of `species`, which is its own Latin word with no separate singular -- but the -es rules can only read `species` as `specie` + `s`, so the reverse fold scored hard currency as the biology term (7.78 -> 4.24)."
+  },
+  "genu": {
+    "since": "2026-08-24",
+    "reason": "The anatomical bend (Latin, knee); its plural is `genua`. `genus` is an unrelated Latin noun the bare -s strip reads as this word's plural (8.87 -> 5.88)."
+  },
+  "politic": {
+    "since": "2026-08-24",
+    "reason": "The adjective (\"a politic decision\"). `politics` is a discipline noun rather than its plural, and carries frequency the adjective never earned (7.27 -> 4.21)."
+  },
+  "physic": {
+    "since": "2026-08-24",
+    "reason": "Archaic for medicine or a purgative. `physics` is a discipline noun, not its plural -- the same shape as `politic`/`politics` (7.69 -> 4.91)."
+  },
+  "tetri": {
+    "since": "2026-08-24",
+    "reason": "The Georgian currency subunit. The bare -s strip reads the video game `tetris` as its plural (9.94 -> 7.06)."
+  },
+  "sacre": {
+    "since": "2026-08-24",
+    "reason": "Not an English inflection of anything: `sacred` is a borrowed past participle, not `sacre` + `-d`. The -ed strip picks this word because the alternatives are non-words (7.90 -> 5.13)."
+  },
   "microdont": {
     "since": "2026-08-24",
     "reason": "Greek micro- + -odont (tooth), a small-toothed animal -- not a form of `dont`. The prefix rule's base floor keeps out the other bound combining forms it lands on (`lith`, `crat`, `phyte`), but `dont` slips through it at Zipf 4.74: it is in the dictionary as the apostrophe-less spelling of \"don't\" and carries that word's frequency. Exempting the word is cheaper than special-casing the base."

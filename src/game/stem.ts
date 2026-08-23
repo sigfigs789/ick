@@ -23,34 +23,17 @@ export function baseForm(word: string): string {
  * Every base spelling `word` could plausibly be a *number* inflection of -- the
  * plural of a noun or the third-person singular of a verb. Scoring only, and
  * deliberately separate from `baseForm` above: that one has to return exactly
- * one key for duplicate detection, so it commits to the first rule that matches
- * and cannot look at the dictionary. Committing is what leaves the gaps this
- * covers.
+ * one key, so it commits to the first rule that matches and cannot look at the
+ * dictionary. Committing is what leaves the gaps this covers -- the widest by
+ * far being the "-es" that strips only the `s` because the base keeps its `e`
+ * ("asphyxiates" -> "asphyxiate", ~6,900 words).
  *
- *   - "-es" strips only the `s` when the base keeps its `e` ("asphyxiates" ->
- *     "asphyxiate"). `baseForm` only ever strips both letters, which yields the
- *     non-word "asphyxiat" and leaves the word scoring on its own frequency --
- *     the single biggest hole, ~6,900 words wide.
- *   - "-ies" -> "y" at any length ("cries" -> "cry"); `baseForm` requires six
- *     letters and so misses the five-letter forms.
- *   - "-ies" -> "i" for bases that end in one ("taxies" -> "taxi").
- *   - the irregular plurals English spells with a stem change: "-ves" -> "-f"
- *     or "-fe" ("wolves" -> "wolf", "knives" -> "knife") and "-ices" -> "-ex"
- *     or "-ix" ("matrices" -> "matrix", "vortices" -> "vortex").
- *   - "-es" -> "-is" for the Greek and Latin plurals spelled with a vowel
- *     change ("analyses" -> "analysis", "crises" -> "crisis", "oases" ->
- *     "oasis"). The one coincidence far more common than the true base is
- *     "theses" -> "these", and the reviewed override pinning "theses" to
- *     "thesis" replaces the spelling guesses outright, so it wins. The other
- *     known misfires ("neurites" -> "neuritis", "metropoles" -> "metropolis")
- *     land on a near-frequency sibling, the small-magnitude shape an override
- *     can catch if it ever matters.
- *   - the classical plurals borrowed whole: "-ae" -> "-a" ("scapulae" ->
- *     "scapula", "formulae" -> "formula"), "-i" -> "-us" ("radii" -> "radius",
- *     "abaci" -> "abacus"), and the native "-men" -> "-man" ("crewmen" ->
- *     "crewman", "chairmen" -> "chairman"). The matching "-a" -> "-on" plural is
- *     deliberately absent: it folds "comma" -> "common", "silica" -> "silicon"
- *     and "squadra" -> "squadron", about 19 wrong in 280.
+ * The families live in `decisiveNumberCandidates` and
+ * `stemChangingNumberCandidates` below, which say what each one is for; this
+ * function is the union of both plus the classical plurals the caller opts into
+ * ("-ae" -> "-a", "-i" -> "-us"). The matching "-a" -> "-on" plural is
+ * deliberately absent: it folds "comma" -> "common", "silica" -> "silicon" and
+ * "squadra" -> "squadron", about 19 wrong in 280.
  *
  * The caller confirms each candidate is a real word and picks the most common
  * one. That is what keeps the coincidences harmless, though not for the reason
@@ -62,6 +45,9 @@ export function baseForm(word: string): string {
  * score by about a sixth of a point; a coincidence only does real damage when it
  * is *far* more common than the true base, and that is the shape a reviewed
  * override exists to catch ("theses" -> "these", 2.83 Zipf clear of "thesis").
+ * Duplicate detection has no such cushion -- an identity key is right or it
+ * refuses a legitimate word -- which is why it consumes the two halves
+ * separately rather than calling this.
  *
  * Candidates shorter than three letters are dropped -- two-letter dictionary
  * entries carry corpus frequencies collected from every word that contains them,
@@ -78,16 +64,13 @@ export function inflectionalBaseCandidates(word: string, latinPlurals: boolean):
     }
   };
 
-  // Most specific first only for readability -- the caller ranks by frequency,
-  // not by the order these are added.
-  if (w.length > 5 && w.endsWith("ices")) add(w.slice(0, -4) + "ex", w.slice(0, -4) + "ix");
-  if (w.length > 4 && w.endsWith("ies")) add(w.slice(0, -3) + "y", w.slice(0, -3) + "i");
-  if (w.length > 4 && w.endsWith("ves")) add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
-  if (w.length > 4 && w.endsWith("men")) add(w.slice(0, -3) + "man");
-  if (w.length > 4 && w.endsWith("es")) {
-    add(w.slice(0, -1), w.slice(0, -2), w.slice(0, -2) + "is");
-  }
-  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) add(w.slice(0, -1));
+  // The two halves are kept as their own functions because duplicate detection
+  // needs them apart: it takes the decisive strips outright and the
+  // stem-changing ones only behind a narrower guard (see `sameRootBase` in
+  // submit.ts). Scoring wants both at once and takes a maximum over the whole
+  // set, so the order they are added in cannot matter here.
+  add(...decisiveNumberCandidates(w));
+  add(...stemChangingNumberCandidates(w));
   // The Latin plurals, only where the caller says the spelling can be read
   // that way: "-a"/"-i"/"-ae" is how Latin pluralises and also how English
   // spells a great many ordinary singulars, and nothing in the letters
@@ -102,6 +85,131 @@ export function inflectionalBaseCandidates(word: string, latinPlurals: boolean):
     if (w.length > 4 && w.endsWith("a")) add(w.slice(0, -1) + "um");
   }
 
+  return out;
+}
+
+/**
+ * A base spelling the ending could not have been added to, so no caller should
+ * rank it: English adds "-s", never "-es", to a word that already ends in "e".
+ * For a word ending in "-ees" that makes the two-letter strip not a reading at
+ * all -- "advisees" is the plural of "advisee", never an "-es" form of "advise".
+ *
+ * `baseForm` offers it anyway, since its "-es" rule strips two letters
+ * unconditionally, and frequency then prefers it because the verb is the
+ * commoner word: "advisees" keyed on "advise" (2.88 Zipf clear of "advisee"),
+ * "devotees" on "devote", "bargees" on "barge". Each of those refused a
+ * legitimate second answer to a player who had found the verb, which is the one
+ * outcome duplicate detection must not produce.
+ */
+export function impossibleNumberBase(word: string, base: string): boolean {
+  return word.endsWith("ees") && base === word.slice(0, -2);
+}
+
+/**
+ * The number inflections whose spelling is *decisive*: strip the ending and the
+ * base is spelled the way it always was, so a candidate that turns out to be a
+ * dictionary word is the base rather than a guess about one.
+ *
+ *   - "-es" strips either one letter or two, because the base either keeps its
+ *     silent "e" or ends in a consonant ("asphyxiates" -> "asphyxiate",
+ *     "glasses" -> "glass"). Both are offered; both callers rank them.
+ *   - "-ies" -> "y" at any length ("cries" -> "cry"); `baseForm` requires six
+ *     letters and so misses the five-letter forms.
+ *   - "-s" -> the bare stem.
+ *
+ * Both callers check each candidate against the dictionary. Nothing here
+ * rewrites a letter of the stem, which is what makes the family safe enough for
+ * duplicate detection to rank *together* with `baseForm`'s own answer: every
+ * candidate is a reading of the same ending, so the one frequency rejects is a
+ * lookalike of the one it keeps.
+ */
+export function decisiveNumberCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (...bases: string[]) => {
+    for (const base of bases) {
+      if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
+    }
+  };
+  if (w.length > 4 && w.endsWith("ies")) add(w.slice(0, -3) + "y");
+  if (w.length > 4 && w.endsWith("es")) add(w.slice(0, -1), w.slice(0, -2));
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) add(w.slice(0, -1));
+  return out;
+}
+
+/**
+ * The number inflections English spells with a *stem change*, where the base is
+ * a guess about which change was made rather than a strip:
+ *
+ *   - "-ves" -> "-f" or "-fe" ("wolves" -> "wolf", "knives" -> "knife").
+ *   - "-ices" -> "-ex" or "-ix" ("matrices" -> "matrix", "vortices" ->
+ *     "vortex").
+ *   - "-es" -> "-is" for the Greek and Latin plurals spelled with a vowel change
+ *     ("analyses" -> "analysis", "crises" -> "crisis", "oases" -> "oasis"). The
+ *     one coincidence far more common than the true base is "theses" ->
+ *     "these", and the reviewed override pinning "theses" to "thesis" replaces
+ *     the spelling guesses outright, so it wins. The other known misfires
+ *     ("neurites" -> "neuritis", "metropoles" -> "metropolis") land on a
+ *     near-frequency sibling, the small-magnitude shape an override can catch if
+ *     it ever matters.
+ *   - "-ies" -> "-i" for bases that end in one ("taxies" -> "taxi").
+ *   - the native "-men" -> "-man" ("crewmen" -> "crewman", "chairmen" ->
+ *     "chairman").
+ *
+ * A wrong guess here is harmless to scoring, which keeps the most common
+ * candidate and so scores a coincidence within a fraction of a point of the
+ * truth. It is *not* harmless to duplicate detection, where landing on an
+ * unrelated word refuses a legitimate answer outright -- so that caller admits
+ * this family only where the decisive strips found nothing (see `sameRootBase`).
+ */
+export function stemChangingNumberCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (...bases: string[]) => {
+    for (const base of bases) {
+      if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
+    }
+  };
+  if (w.length > 5 && w.endsWith("ices")) add(w.slice(0, -4) + "ex", w.slice(0, -4) + "ix");
+  if (w.length > 4 && w.endsWith("ies")) add(w.slice(0, -3) + "i");
+  if (w.length > 4 && w.endsWith("ves")) add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
+  if (w.length > 4 && w.endsWith("men")) add(w.slice(0, -3) + "man");
+  if (w.length > 4 && w.endsWith("es")) add(w.slice(0, -2) + "is");
+  return out;
+}
+
+/**
+ * The tense bases `baseForm` cannot reach because it strips the ending without
+ * putting back the silent "e" the ending swallowed: "indicated" -> "indicat" but
+ * the verb is "indicate", "confusing" -> "confus" but the verb is "confuse".
+ * Plus the five-letter "-ied" forms, which `baseForm`'s six-letter guard drops
+ * into its generic "-ed" branch ("tried" -> "tri", not "try").
+ *
+ * Duplicate detection only -- scoring reaches all of these through
+ * `tenseBaseForm`, whose candidate set is wider because it may also read a tense
+ * ending as something else entirely.
+ *
+ * The bare stem follows the "e" one, for the words `baseForm`'s "-ied" rule
+ * preempts: it rewrites the stem to "-y" and never tries the plain "-ed" strip,
+ * so "taxied" reached neither "taxie" nor "taxi".
+ *
+ * The stem is taken *before* `baseForm`'s doubled-consonant trim, so a doubled
+ * stem offers non-words ("hopped" -> "hoppe", "hopp") rather than a wrong word
+ * ("hopped" -> "hope"). Words like that already have a working base -- "hop" --
+ * and the caller never asks for these candidates when it has one.
+ */
+export function restoredTenseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (...bases: string[]) => {
+    for (const base of bases) {
+      if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
+    }
+  };
+  if (w.length > 4 && w.endsWith("ied")) add(w.slice(0, -3) + "y");
+  if (w.length > 4 && w.endsWith("ed")) add(w.slice(0, -2) + "e", w.slice(0, -2));
+  if (w.length > 4 && w.endsWith("ying")) add(w.slice(0, -4) + "ie");
+  else if (w.length > 5 && w.endsWith("ing")) add(w.slice(0, -3) + "e", w.slice(0, -3));
   return out;
 }
 
@@ -432,6 +540,55 @@ export function derivedBaseCandidates(word: string): string[] {
     }
   }
   if (w.length > 4 && w.endsWith("eaux")) add(w.slice(0, -1));
+
+  return out;
+}
+
+/**
+ * Every spelling `word`'s own regular inflections could take: the plural /
+ * third-person "-s", the past "-ed" and the progressive "-ing", with the
+ * orthography English applies when it attaches them.
+ *
+ * This is the only generator here that runs *forward*, from a base toward the
+ * forms built on it, because it serves the only fold that runs that way. Every
+ * other family answers "what could this word be a form of"; this one answers
+ * "what forms could be built on this word", so that a lemma nobody writes can be
+ * capped at the inflection everybody does write -- "belove" at "beloved",
+ * "infatuate" at "infatuated" (see `inflectedFormFolds` in dictionary.ts).
+ *
+ * Deliberately over-generates. Nothing in the letters says whether "-e" is
+ * dropped ("infatuate" -> "infatuating") or kept ("agreeing"), or whether a
+ * final consonant doubles ("untap" -> "untapped") or not ("develop" ->
+ * "developed"), so all the spellings are offered and the caller decides. The
+ * caller's guard is not a frequency comparison but a *round trip*: a candidate
+ * counts only if the engine's own forward rules, run on the candidate, resolve
+ * back to this word. That is what makes over-generating safe -- "singe" offers
+ * "singing", a real word, but "singing" folds to "sing" (far more common than
+ * "singe"), so the pair never links and "singe" keeps its own score.
+ */
+export function inflectedFormCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (...forms: string[]) => {
+    for (const form of forms) {
+      if (form !== w && !out.includes(form)) out.push(form);
+    }
+  };
+
+  add(`${w}s`, `${w}es`, `${w}ed`, `${w}ing`);
+  // A final "e" is dropped before a vowel-initial ending ("infatuate" ->
+  // "infatuated"/"infatuating") -- and kept in "-es", already offered above.
+  if (w.endsWith("e")) add(`${w}d`, `${w.slice(0, -1)}ing`);
+  // "-y" -> "-ies"/"-ied" ("carry" -> "carries"/"carried"), and "-ie" -> "-ying"
+  // ("die" -> "dying"), the mirror of the "-ying" strip in `baseForm`.
+  if (w.endsWith("y") && w.length > 2) add(`${w.slice(0, -1)}ies`, `${w.slice(0, -1)}ied`);
+  if (w.endsWith("ie") && w.length > 2) add(`${w.slice(0, -2)}ying`);
+  // A doubled final consonant before "-ed"/"-ing" ("untap" -> "untapped",
+  // "unwrap" -> "unwrapping").
+  const last = w[w.length - 1];
+  if (w.length > 2 && /[bcdfghjklmnpqrstvwxz]/.test(last)) {
+    add(`${w}${last}ed`, `${w}${last}ing`);
+  }
 
   return out;
 }
