@@ -8,6 +8,12 @@ would out-score its own base. To stop that, the engine tries to recognise a form
 as a mechanical variant of a base word and **caps its score at the base's**
 ("no rarer than the word it came from").
 
+From 2026-08-24 the same cap also runs the **other way**: a word is capped at the
+regular inflections built *on* it, because for a whole class of English verbs the
+lemma is the rare form and the participle is the one anyone writes (§0). Both
+directions are caps, never inheritances, so they compose without fighting — the
+engine takes the most common word it can reach in either direction.
+
 Each case below is a family of spelling rules. A rule proposes candidate base
 spellings; the engine keeps only the candidates that are real dictionary words,
 and (under the chained system) folds onto the **most common word reachable**,
@@ -32,6 +38,67 @@ Two global guards apply throughout:
 
 ---
 
+## 0. The other direction — a word capped at its own inflections
+
+`inflectedFormFolds` in [`dictionary.ts`](dictionary.ts), spellings from
+`inflectedFormCandidates` in [`stem.ts`](stem.ts). Runs everywhere (not gated).
+Every other family on this page reads a word as a form of something else; this
+one reads the forms built on a word and caps the word at the most common of them.
+
+The reason it exists: English has a large class of verbs whose bare lemma nobody
+writes. "Belove" is measured at Zipf 1.10 and "beloved" at 4.17; "infatuate" at
+1.30 and "infatuated" at 2.90. The measurement is not wrong — the finite verb
+really is that rare — but scoring the *word* off it sold the rarest inflection of
+a familiar word as a deep-tail find. 2,087 words displayed Mythic or better and
+are capped by their own `-ed`/`-ing` form once this runs, which is what players
+reported about "infatuate" (Mythic 9.46) against "infatuated" (Rare 7.11).
+
+| Shape | Examples (score before → after) |
+|-------|--------------------------------|
+| Participle-dominant verbs | disgruntle 9.91 → 6.80, belove 9.75 → 5.24, unbridle 9.83 → 7.16, overjoy 9.87 → 7.00, enamor 9.78 → 7.28, antiquate 9.72 → 6.87, untap 9.65 → 7.05 |
+| Gerund-dominant verbs | outstand 9.65 → 4.75, excruciate 9.75 → 6.87, matchmake 9.64 → 6.47, infight 9.92 → 7.11 |
+| Nouns used in the plural | measle 9.78 → 6.47, shenanigan 9.12 → 6.65, battlement 8.77 → 7.63, whereabout 9.22 → 6.16, outskirt 9.00 → 6.13, sweatpant 9.80 → 7.22 |
+| Back-formed singulars in the word list | perhap 9.61 → 3.88, thi 6.72 → 1.34, alway 7.56 → 2.90, nowaday 9.27 → 5.33, metropoli 9.78 → 6.12 (junk entries the cap flattens for free, where the round trip below does not reject them first) |
+
+**Two guards, and neither of them is frequency.** The measured-floor gate is no
+help here: the false positives *are* the common words, and capping a measured
+lemma at a commoner form is the whole point, so a gate would leave every word
+that prompted the change exactly where it was.
+
+1. **Round trip.** `inflectedFormCandidates` over-generates spellings ("-e"
+   dropped or kept, consonant doubled or not), and a candidate counts only if the
+   forward rules run on *it* **choose** this word back — not merely offer it
+   among their candidates. That is the difference on the coincidences, because
+   the forward rules propose everything plausible and then narrow: "wives"
+   proposes "wife", "wif", "wiv" and "wive", and "wife" wins, so the archaic verb
+   "wive" never links. "singe" reaches both "singes" and "singing" by spelling
+   and loses both picks to "sing".
+2. **Terminal hops.** The chain caps against a form but never walks on from it.
+   Left free to continue, one reverse hop plus one forward hop composes into a
+   link between two paradigms: "singe" legitimately reaches its own "singes"
+   (the `-es` strip reads either "singe" or "sing"), and carrying on from there
+   lands on "sing" — a rare verb scored as an everyday one. "thee" reached "the"
+   the same way. A cap only ever needed the form's own frequency, so refusing to
+   expand costs nothing.
+
+**False positives that survive both guards** are words whose "inflection" is a
+different word that merely spells the part, and every one of them is a *forward*
+misread that was already in the rules and simply inert while folds ran one way.
+Nine were reviewed for the cutover and exempted: `doe` ("does" is the auxiliary —
+and `do` is two letters, which the number rules drop, leaving "doe" as the only
+candidate), `morn`/morning, `blee`/bleed, `specie`/species, `genu`/genus,
+`politic`/politics, `physic`/physics, `tetri`/tetris, `sacre`/sacred.
+
+**What it deliberately does not do:** derivations. "-ion" is a different word,
+not an inflection ("infatuation", "valuation"), so it stays in §E — which leaves
+`-ion`-dominant lemmas in the top band: dissertate 9.92 and imaginate 9.66 do not
+move at all, and fragmentate only goes 9.98 → 9.92 (on its own `-ed`/`-ing`
+forms), against dissertation 5.93, imagination 5.16 and fragmentation 6.62. That
+is the same family the `-ation` row of §E refuses in the other direction, and for
+the same reason: the spelling is not decisive.
+
+---
+
 ## 1. Past / progressive tense — `-ed`, `-ing`
 
 `tenseBaseForm` in [`dictionary.ts`](dictionary.ts). Runs everywhere (not gated).
@@ -48,7 +115,9 @@ Two global guards apply throughout:
 - "rated" could strip to "rat"; "rate" (far more common) wins.
 - "-ed" that isn't a tense: "beloved" would fold onto "belove". Under the old
   *inherit* system this made it a Mythic; the chained system only ever **caps**,
-  so a rarer base can never drag a word down — the fold is inert here.
+  so a rarer base can never drag a word down — the fold is inert here. Inert in
+  this direction, that is: the pair is real and it is "belove" that needed
+  capping, which is what §0 does.
 
 ---
 
@@ -417,6 +486,9 @@ A flat index of the gaps above, for reference. Nothing in this list folds today;
 each is scored on its own frequency (or fixed one word at a time via an override).
 
 **Inflection**
+- Reverse folds beyond the regular inflections — an irregular form cannot cap its
+  own lemma either (no "sing" ← "sang", no "belove"-shaped fix for a suppletive
+  paradigm), since §0 reuses the same spelling rules listed here
 - Irregular plurals — geese, feet, mice, teeth, women, oxen, children
 - Ablaut / irregular past tense — sang, ran, smote, wrought, shorn
 - Irregular past participles — broken, cloven, hewn, sawn

@@ -302,6 +302,35 @@ def _inflectional_candidates(word: str, latin_plurals: bool) -> list[str]:
     return out
 
 
+def _inflected_form_candidates(word: str) -> list[str]:
+    """Mirror of inflectedFormCandidates() in src/game/stem.ts.
+
+    Every spelling `word`'s own regular inflections could take -- the one
+    generator that runs forward, from a base toward the forms built on it,
+    because it serves the one fold that runs that way. Deliberately
+    over-generates; the caller's round trip decides (see _inflected_form_folds).
+    """
+    w = word.lower()
+    out: list[str] = []
+
+    def add(*forms: str) -> None:
+        for form in forms:
+            if form != w and form not in out:
+                out.append(form)
+
+    add(w + "s", w + "es", w + "ed", w + "ing")
+    if w.endswith("e"):
+        add(w + "d", w[:-1] + "ing")
+    if w.endswith("y") and len(w) > 2:
+        add(w[:-1] + "ies", w[:-1] + "ied")
+    if w.endswith("ie") and len(w) > 2:
+        add(w[:-2] + "ying")
+    last = w[-1] if w else ""
+    if len(w) > 2 and last in "bcdfghjklmnpqrstvwxz":
+        add(w + last + "ed", w + last + "ing")
+    return out
+
+
 def _degree_candidates(word: str) -> list[tuple[str, str]]:
     """Mirror of degreeBaseCandidates() in src/game/stem.ts.
 
@@ -601,6 +630,46 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
     return out
 
 
+def _most_common(candidates: list[str], word: str, index: dict[str, int], zipf_at) -> str | None:
+    """Mirror of mostCommonBase(): the most common candidate the dictionary has."""
+    base, base_zipf = None, float("-inf")
+    for candidate in candidates:
+        if candidate == word or candidate not in index:
+            continue
+        zipf = zipf_at(candidate)
+        if zipf > base_zipf:
+            base, base_zipf = candidate, zipf
+    return base
+
+
+def _inflected_form_folds(
+    word: str, index: dict[str, int], zipf_at, floor: float = float("-inf")
+) -> list[str]:
+    """Mirror of inflectedFormFolds(): the inflections `word` is capped at.
+
+    The fold's second direction, added 2026-08-24. A candidate counts only if
+    the forward rules run on it *choose* `word` back -- the same round trip the
+    TypeScript uses, which is what keeps "singe" off "singing" and "wive" off
+    "wives". A reviewed exemption or override on `word` silences it, and
+    chained_base() never walks on from what it finds here.
+    """
+    if word in load_fold_exemptions() or _override_base(word, index):
+        return []
+    out: list[str] = []
+    for form in _inflected_form_candidates(word):
+        if form not in index:
+            continue
+        # The frequency test before the round trip: a cap only pulls toward
+        # common, so a form no commoner than what the caller has cannot change
+        # the answer, and confirming the link is the expensive half.
+        if zipf_at(form) <= floor:
+            continue
+        if _most_common(_next_bases(form, index, zipf_at), form, index, zipf_at) != word:
+            continue
+        out.append(form)
+    return out
+
+
 def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float] | None:
     """Mirror of chainedBase(): the most common word reachable by folding.
 
@@ -609,11 +678,14 @@ def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float]
     unattested middle. Every branch is explored, not just the most common first
     hop: committing to one hop can prune the path the chain needed ("cleanses"
     offers both "cleanse", which folds no further, and "cleans", which carries on
-    to "clean"). Returns (base, zipf), or None when nothing folds.
+    to "clean"). From 2026-08-24 it also caps against the inflections built *on*
+    each word it visits (_inflected_form_folds), without walking on from them.
+    Returns (base, zipf), or None when nothing folds.
     """
     seen = {word}
     frontier = [word]
     best: tuple[str, float] | None = None
+    own = zipf_at(word) if word in index else float("-inf")
     for _ in range(MAX_FOLD_DEPTH):
         if not frontier:
             break
@@ -627,6 +699,13 @@ def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float]
                 zipf = zipf_at(candidate)
                 if best is None or zipf > best[1]:
                     best = (candidate, zipf)
+            # The other direction, capped against but never walked on from --
+            # see inflectedFormFolds in dictionary.ts for why it is terminal.
+            floor = max(own, best[1] if best is not None else float("-inf"))
+            for form in _inflected_form_folds(current, index, zipf_at, floor):
+                zipf = zipf_at(form)
+                if best is None or zipf > best[1]:
+                    best = (form, zipf)
         frontier = nxt
     return best
 

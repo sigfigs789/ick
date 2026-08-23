@@ -442,3 +442,52 @@ export function derivedBaseCandidates(word: string): string[] {
 
   return out;
 }
+
+/**
+ * Every spelling `word`'s own regular inflections could take: the plural /
+ * third-person "-s", the past "-ed" and the progressive "-ing", with the
+ * orthography English applies when it attaches them.
+ *
+ * This is the only generator here that runs *forward*, from a base toward the
+ * forms built on it, because it serves the only fold that runs that way. Every
+ * other family answers "what could this word be a form of"; this one answers
+ * "what forms could be built on this word", so that a lemma nobody writes can be
+ * capped at the inflection everybody does write -- "belove" at "beloved",
+ * "infatuate" at "infatuated" (see `inflectedFormFolds` in dictionary.ts).
+ *
+ * Deliberately over-generates. Nothing in the letters says whether "-e" is
+ * dropped ("infatuate" -> "infatuating") or kept ("agreeing"), or whether a
+ * final consonant doubles ("untap" -> "untapped") or not ("develop" ->
+ * "developed"), so all the spellings are offered and the caller decides. The
+ * caller's guard is not a frequency comparison but a *round trip*: a candidate
+ * counts only if the engine's own forward rules, run on the candidate, resolve
+ * back to this word. That is what makes over-generating safe -- "singe" offers
+ * "singing", a real word, but "singing" folds to "sing" (far more common than
+ * "singe"), so the pair never links and "singe" keeps its own score.
+ */
+export function inflectedFormCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (...forms: string[]) => {
+    for (const form of forms) {
+      if (form !== w && !out.includes(form)) out.push(form);
+    }
+  };
+
+  add(`${w}s`, `${w}es`, `${w}ed`, `${w}ing`);
+  // A final "e" is dropped before a vowel-initial ending ("infatuate" ->
+  // "infatuated"/"infatuating") -- and kept in "-es", already offered above.
+  if (w.endsWith("e")) add(`${w}d`, `${w.slice(0, -1)}ing`);
+  // "-y" -> "-ies"/"-ied" ("carry" -> "carries"/"carried"), and "-ie" -> "-ying"
+  // ("die" -> "dying"), the mirror of the "-ying" strip in `baseForm`.
+  if (w.endsWith("y") && w.length > 2) add(`${w.slice(0, -1)}ies`, `${w.slice(0, -1)}ied`);
+  if (w.endsWith("ie") && w.length > 2) add(`${w.slice(0, -2)}ying`);
+  // A doubled final consonant before "-ed"/"-ing" ("untap" -> "untapped",
+  // "unwrap" -> "unwrapping").
+  const last = w[w.length - 1];
+  if (w.length > 2 && /[bcdfghjklmnpqrstvwxz]/.test(last)) {
+    add(`${w}${last}ed`, `${w}${last}ing`);
+  }
+
+  return out;
+}

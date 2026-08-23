@@ -14,6 +14,10 @@ import type { AcceptedWord } from "./types";
 // rules or the frequency data is actually caught.
 const BEFORE = "2026-08-20"; // last day on the chained-base-only system
 const ON = "2026-08-21"; // first day the number inflections fold
+// The 2026-08-24 cutover: the fold also runs from a word toward its own
+// inflections, so a lemma nobody writes stops out-scoring the form everybody does.
+const BEFORE_FORMS = "2026-08-23"; // last day the fold ran one way only
+const ON_FORMS = "2026-08-24"; // first day a word caps at its own inflections
 
 const score = (word: string, date: string) => rarityScore(rarityFor(word, date)!.zipf, date);
 const rank = (word: string, date?: string) => rarityFor(word, date)!.rarity;
@@ -435,6 +439,120 @@ describe("a conjugation displays what its verb displays", () => {
   });
 });
 
+describe("a word folds onto its own inflections too (from 2026-08-24)", () => {
+  // The fold ran one way for its whole life: it asked what a word could be a
+  // form *of*, capped it there, and so stopped a plural out-scoring its
+  // singular. Nothing asked the reverse, and English has a large class of verbs
+  // where the reverse is what matters -- the bare lemma is genuinely rare in
+  // text while the participle everyone writes is ordinary. The engine sold the
+  // rarest inflection of a familiar word as a deep-tail find, which is exactly
+  // what players reported about "infatuate" (Mythic) against "infatuated"
+  // (Rare). 2,087 words displayed Mythic or better and are capped by their own
+  // "-ed"/"-ing" form once this runs (5,352 by an inflection of any kind);
+  // 24,842 words move in all and none move up, 4,928 of them out of
+  // Mythic-or-better. Measured against this branch's base, so the figures are
+  // this change alone rather than the whole 2026-08-24 cutover.
+  //
+  // word, the inflection it caps at, score before the cutover, score on/after.
+  const FOLDS: ReadonlyArray<[word: string, form: string, before: number, after: number]> = [
+    // The word that prompted the change, and the one the invariant tests below
+    // have cited as the old system's worst promotion all along.
+    ["infatuate", "infatuated", 9.46, 7.11],
+    ["belove", "beloved", 9.75, 5.24],
+    // Participle-dominant verbs: the "-ed" form is the adjective everyone knows.
+    ["disgruntle", "disgruntled", 9.91, 6.8],
+    ["unbridle", "unbridled", 9.83, 7.16],
+    ["overjoy", "overjoyed", 9.87, 7],
+    ["aggrieve", "aggrieved", 9.77, 7.11],
+    ["antiquate", "antiquated", 9.72, 6.87],
+    ["enamor", "enamored", 9.78, 7.28],
+    ["untap", "untapped", 9.65, 7.05],
+    // Gerund-dominant verbs, the same shape one suffix over.
+    ["outstand", "outstanding", 9.65, 4.75],
+    ["excruciate", "excruciating", 9.75, 6.87],
+    // Nouns whose plural is the form in use -- pluralia tantum and near-misses.
+    ["measle", "measles", 9.78, 6.47],
+    ["shenanigan", "shenanigans", 9.12, 6.65],
+    ["battlement", "battlements", 8.77, 7.63],
+  ];
+
+  it.each(FOLDS)("%s scores as %s from the cutover on", (word, form, _before, after) => {
+    expect(score(word, ON_FORMS)).toBe(after);
+    expect(score(word, ON_FORMS)).toBe(score(form, ON_FORMS));
+    expect(baseFormSubstitution(word, ON_FORMS)?.base).toBe(form);
+  });
+
+  it.each(FOLDS)("%s kept its own (rarer) score the day before", (word, _form, before) => {
+    expect(score(word, BEFORE_FORMS)).toBe(before);
+  });
+
+  it("carries the whole paradigm to one score", () => {
+    // A form reaches the cap through its own base -- "infatuates" folds to
+    // "infatuate", which caps at "infatuated" -- so every member of the
+    // paradigm displays the same number, which is the point of a fold.
+    const displayed = ["infatuate", "infatuates", "infatuating", "infatuated"].map((w) =>
+      score(w, ON_FORMS)
+    );
+    expect(displayed).toEqual([7.11, 7.11, 7.11, 7.11]);
+    // Before the cutover the bare verb and its third person were two ranks
+    // above the participle.
+    expect(["infatuate", "infatuates", "infatuating", "infatuated"].map((w) => rank(w, BEFORE_FORMS)))
+      .toEqual(["Mythic", "Mythic", "Elusive", "Rare"]);
+  });
+});
+
+describe("what the second direction refuses to fold", () => {
+  it("requires the form to *choose* this word, not merely offer it", () => {
+    // The forward rules propose every plausible spelling and then narrow to the
+    // most common. A candidate check would have been enough to link a word to
+    // any form that could be read its way; the reverse fold demands the form
+    // actually pick it.
+    //
+    // "wives" proposes "wife", "wif", "wiv" and "wive"; "wife" wins, so the
+    // archaic verb "wive" is not the singular of anything here. "singes" and
+    // "singing" both lose their picks to "sing", which "singe" is not.
+    for (const word of ["wive", "singe"]) {
+      expect(baseFormSubstitution(word, ON_FORMS), `${word} must not fold`).toBeUndefined();
+      expect(score(word, ON_FORMS)).toBe(score(word, BEFORE_FORMS));
+    }
+  });
+
+  it("never walks on from an inflection it capped against", () => {
+    // A cap needs only the form's own frequency, so the walk stops there. Left
+    // free to continue, one reverse hop and one forward hop compose into a link
+    // between different paradigms: "singe" legitimately reaches its own
+    // "singes" (the "-es" strip reads either "singe" or "sing"), and carrying on
+    // would have landed on "sing" and scored a rare verb as an everyday one.
+    // "thee" reached "the" the same way, through "thees".
+    expect(score("singe", ON_FORMS)).toBe(7.8);
+    expect(score("singe", ON_FORMS)).not.toBe(score("sing", ON_FORMS));
+    expect(score("thee", ON_FORMS)).toBe(5.43);
+    expect(score("thee", ON_FORMS)).not.toBe(score("the", ON_FORMS));
+  });
+
+  it("keeps the reviewed homographs on their own score", () => {
+    // Words whose "inflection" is a different word that merely spells the part.
+    // Each is a forward misread that was inert while folds only ran one way --
+    // a cap cannot pull a word toward rare -- and each bites in this direction,
+    // so each got an exemption reviewed for this cutover: "does" is the
+    // auxiliary, not the plural of a deer; "morning" is not "morn" progressive;
+    // "species" has no singular; "politics" and "physics" are discipline nouns.
+    for (const word of ["doe", "morn", "blee", "specie", "genu", "politic", "physic", "tetri", "sacre"]) {
+      expect(baseFormSubstitution(word, ON_FORMS), `${word} must not fold`).toBeUndefined();
+      expect(score(word, ON_FORMS)).toBe(score(word, BEFORE_FORMS));
+    }
+  });
+
+  it("leaves a word that is nobody's base alone", () => {
+    // The rule caps a word at *its own* forms. A word with no attested
+    // inflection keeps its measurement, however rare -- the genuine finds the
+    // deep tail exists for are untouched.
+    for (const word of ["enshittification", "endling", "fenestron"]) {
+      expect(score(word, ON_FORMS)).toBe(score(word, BEFORE_FORMS));
+    }
+  });
+});
+
 describe("invariants across the whole dictionary", () => {
   const words = dictionaryWords as string[];
 
@@ -450,7 +568,14 @@ describe("invariants across the whole dictionary", () => {
   // why "beloved" (measured 4.17) scored 9.75 Mythic as "belove" (1.10). A new
   // rule copied from that branch would reintroduce it silently, and no
   // date-pinned test would notice.
-  const CHAINED_ERA = ["2026-08-19", "2026-08-20", "2026-08-21", "2027-06-01", undefined];
+  const CHAINED_ERA = [
+    "2026-08-19",
+    "2026-08-20",
+    "2026-08-21",
+    "2026-08-24",
+    "2027-06-01",
+    undefined,
+  ];
 
   it.each(CHAINED_ERA)("no fold makes a word rarer than its own measurement (%s)", (date) => {
     const promoted: string[] = [];
