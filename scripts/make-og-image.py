@@ -30,21 +30,24 @@ FG = (244, 244, 245)
 FG_MUTED = (167, 170, 176)
 FG_FAINT = (117, 120, 126)
 
-# The rarity-tier dots from src/index.css (dark theme), in tier order. They read
-# as "this game has a loot scale" before a single word is read. All eight live
-# tiers are here: showing a partial scale made the game look like it had fewer
-# ranks than it does. Quotidian is left out -- it was retired at
-# NARROW_BANDS_START and is only reachable on archived puzzles.
+# The rarity-tier dots, in tier order, as a white-to-black ramp: the scale reads
+# as a ramp at a glance, which a row of eight hues did not. Brown (Common) and
+# orange (Elusive) are left off because they muddied the middle, and Quotidian
+# is gone entirely -- it was retired at NARROW_BANDS_START and only survives on
+# archived puzzles. Colors track the dark-theme --rarity-*-dot values in
+# src/index.css, with the two ends pushed to pure white and pure black.
 DOTS = [
-    (138, 141, 147),  # very common
-    (169, 120, 75),  # common
+    (255, 255, 255),  # very common
     (59, 191, 108),  # uncommon
     (74, 143, 242),  # rare
     (171, 95, 240),  # extremely rare
-    (234, 88, 12),  # elusive
     (229, 72, 77),  # mythic
-    (255, 255, 255),  # legend
+    (0, 0, 0),  # legend
 ]
+# Legend is pure black on a near-black card, the same void the in-game badge is.
+# A hairline ring does the separating, the way the badge's dot halo does.
+DOT_OUTLINE = (86, 88, 94)
+DOT_OUTLINE_MIN_LUMA = 40
 DOT_SIZE = 34
 DOT_GAP = 14
 DOT_RADIUS = 9
@@ -78,8 +81,14 @@ def font(path: Path, index: int, size: int) -> ImageFont.FreeTypeFont:
 def draw_dots(draw: ImageDraw.ImageDraw, x: int, y: int) -> None:
     for i, color in enumerate(DOTS):
         left = x + i * (DOT_SIZE + DOT_GAP)
+        # Ring only the dots too dark to find their own edge against the card.
+        dark = sum(color) / 3 < DOT_OUTLINE_MIN_LUMA
         draw.rounded_rectangle(
-            (left, y, left + DOT_SIZE, y + DOT_SIZE), DOT_RADIUS, fill=color
+            (left, y, left + DOT_SIZE, y + DOT_SIZE),
+            DOT_RADIUS,
+            fill=color,
+            outline=DOT_OUTLINE if dark else None,
+            width=2 if dark else 0,
         )
 
 
