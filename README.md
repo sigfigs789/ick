@@ -319,9 +319,17 @@ python3 scripts/generate-data.py --refresh-rejections
 
 That only ever *adds* words, under the run's date, so a refresh can't retroactively
 invalidate a word an archived puzzle accepted. `scripts/playable-exemptions.txt` is
-the pressure valve: a word listed there is held playable despite its label and
-stays out of the generated file for good — use it when the label is right but the
-word is still a good find.
+the pressure valve: a word listed there is held playable despite its label, is
+taken back out of the generated file, and is also spared the
+`ALWAYS_EXCLUDED_REASONS` filter on a full rebuild — the only way to answer a
+label that is simply wrong, since that filter *deletes* rather than rejects.
+
+It is already earning its keep on the abbreviation class: Wiktionary files
+"Ellipsis of X" and "Clipping of X" under the same tag as a true initialism, so
+`condo`, `thymus`, `ascot`, `corgi`, `seltzer`, `romaine` and a dozen more read as
+abbreviations to the pipeline. They are on the keep-list; `ppl`, `idk` and `tbh`
+are not. The durable fix is for `import-wiktionary-words.py` to tell an ellipsis
+from an initialism, which needs a fresh Wiktextract run.
 
 `src/data/score-overrides.json` is the other **hand-written** data file: reviewed
 demotions for words a spelling rule can't cap correctly. Most are words no

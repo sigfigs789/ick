@@ -385,6 +385,17 @@ def write_derived_rejections(
         word for batch in existing.values() for words in batch.values() for word in words
     }
     exempt = load_playable_exemptions()
+    # An exemption also *undoes* a rejection already recorded: the keep-list is the
+    # one thing that can take a word back out of this file, which is what makes it
+    # a usable answer to a bad label rather than advice to hand-edit generated data.
+    for batch in existing.values():
+        for reason, words in list(batch.items()):
+            batch[reason] = [word for word in words if word not in exempt]
+            if not batch[reason]:
+                del batch[reason]
+    for date_key in [key for key, batch in existing.items() if not batch]:
+        del existing[date_key]
+    judged -= exempt
     zipf_of = dict(zip(dictionary, zipf_hundredths))
     added: dict[str, list[str]] = {}
     for word, reason in classification.items():
@@ -490,6 +501,13 @@ def main() -> None:
     # exclusion reason back into the dictionary via wiktionary_words below.
     classification = merge_reasons(esdb_classification(args.esdb_db), load_wiktionary_reasons())
     excluded = {word for word, reason in classification.items() if reason in ALWAYS_EXCLUDED_REASONS}
+    # The keep-list wins here too, not just over the derived rejections. Wiktionary
+    # files "Ellipsis of X" and "Clipping of X" under the same tag as a true
+    # initialism, so this filter would otherwise *delete* ordinary nouns like
+    # "condo", "thymus" and "seltzer" on the next full rebuild -- and deleting is
+    # worse than rejecting, because the word loses its rarity entry and the puzzles
+    # that accepted it stop adding up.
+    excluded -= load_playable_exemptions()
 
     extra_words = load_extra_words()
     suggested_words = load_suggested_words()
