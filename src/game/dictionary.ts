@@ -4,6 +4,7 @@ import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
 import wordRejectionData from "../data/word-rejections.json";
+import sameRootPinData from "../data/same-root-pins.json";
 import {
   baseForm,
   boundBaseCandidates,
@@ -594,6 +595,60 @@ export function boundBaseFormsActive(date?: string): boolean {
   return scoringFor(date).boundBaseForms;
 }
 
+// -- Same-root duplicate detection ------------------------------------------
+// The date the same-root rule started reading the number and tense inflections
+// `baseForm` cannot reach, so a puzzle can no longer take "indicate",
+// "indicates", "indicated" and "indicating" as four separate finds. Gated on the
+// *puzzle* date, not the release date: `viewedDate` reaches `evaluateSubmission`
+// for archive play, so an old drop played today keeps the rules it was played
+// with when it was current, and the score somebody posted for it stays
+// reachable. Only forward puzzles get the tighter rule.
+const SAME_ROOT_INFLECTION_START = "2026-08-24";
+
+/** Whether the widened same-root inflections apply to `date`'s puzzle. */
+export function sameRootInflectionsActive(date?: string): boolean {
+  return date === undefined || date >= SAME_ROOT_INFLECTION_START;
+}
+
+/**
+ * A hand-reviewed identity: `word` shares a root with `root` and with nothing
+ * else, from `since` on. A pin to the word itself means "this word has no root
+ * but its own".
+ */
+interface SameRootPin {
+  root: string;
+  since: string;
+  /** Review notes only -- nothing here reads it. */
+  reason?: string;
+}
+
+/**
+ * The words no spelling rule can key correctly, reviewed one at a time.
+ *
+ * Deliberately tiny, and expected to stay that way: the rules duplicate
+ * detection is allowed to use are the decisive ones, so the only entries needed
+ * are the handful where a decisive strip lands on an unrelated word ("theses" ->
+ * "these") or where the one stem-changing family in play misreads a word that
+ * merely ends that way ("germen" -> "german"). A rule needing many entries here
+ * is a rule that does not belong in duplicate detection at all.
+ *
+ * Separate from `score-overrides.json` on purpose, and the two can disagree
+ * about the same word: an override caps what "theses" is *worth* (at "these", to
+ * deny it an unearned Legend), while identity has to keep the two words apart so
+ * a player who found one may still play the other. Reading the overrides as
+ * identities would turn every reviewed demotion into a refusal.
+ */
+const SAME_ROOT_PINS: ReadonlyMap<string, SameRootPin> = new Map(
+  Object.entries(sameRootPinData as Record<string, SameRootPin>)
+);
+
+/** The reviewed root for `word` under `date`'s puzzle, if one is pinned. */
+export function pinnedSameRoot(word: string, date?: string): string | undefined {
+  const pin = SAME_ROOT_PINS.get(word);
+  if (!pin) return undefined;
+  return date === undefined || date >= pin.since ? pin.root : undefined;
+}
+
 export function rarityFor(word: string, date?: string): RarityInfo | undefined {
   const normalized = word.toLowerCase();
   const i = WORD_INDEX.get(normalized);
@@ -641,19 +696,34 @@ export function baseFormSubstitution(
   if (scoring.chainedBaseForms) {
     const chained = chainedBase(normalized, scoring, date);
     if (chained && chained.zipf > ownZipf) {
-      return { word: normalized, base: chained.base, ownZipf, baseZipf: chained.zipf };
+      return {
+        word: normalized,
+        base: chained.base,
+        ownZipf,
+        baseZipf: chained.zipf,
+      };
     }
     return undefined;
   }
 
   const override = overrideBase(normalized, date);
   if (override) {
-    return { word: normalized, base: override, ownZipf, baseZipf: zipfFor(override, scoring) };
+    return {
+      word: normalized,
+      base: override,
+      ownZipf,
+      baseZipf: zipfFor(override, scoring),
+    };
   }
 
   const tenseBase = tenseBaseForm(normalized, scoring);
   if (tenseBase && tenseBase !== normalized) {
-    return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
+    return {
+      word: normalized,
+      base: tenseBase,
+      ownZipf,
+      baseZipf: zipfFor(tenseBase, scoring),
+    };
   }
 
   const base = scoringBaseForm(normalized, scoring);

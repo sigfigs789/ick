@@ -545,8 +545,10 @@ describe("the cutover changes scoring only", () => {
     // happens to land on a word. "asphyxiates" does not collapse onto
     // "asphyxiate", because that same strip lands on "asphyxiat" -- the very gap
     // this cutover closes for *scoring*. Widening the shared stemmer would change
-    // which words a player may submit, not just what they are worth, so it is a
-    // separate decision and deliberately not made here.
+    // which words a player may submit, not just what they are worth, so it was
+    // left as a separate decision; it was taken separately at the 2026-08-24
+    // same-root cutover (see src/game/same-root.test.ts), which is why both dates
+    // here are before it.
     const cases: ReadonlyArray<[first: string, second: string, drop: string, sameRoot: boolean]> = [
       ["glass", "glasses", "AS", true],
       ["asphyxiate", "asphyxiates", "PHY", false],

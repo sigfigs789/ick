@@ -1,0 +1,32 @@
+{
+  "dolmen": {
+    "root": "dolmen",
+    "reason": "A dolmen is a megalithic tomb; a dolman is a hussar's jacket. The \"-men\" -> \"-man\" plural rule reads one as the plural of the other, which would refuse a legitimate second answer.",
+    "since": "2026-08-24"
+  },
+  "germen": {
+    "root": "germen",
+    "reason": "A germen is a rudimentary ovary, unrelated to anything German. The \"-men\" -> \"-man\" plural rule reads it as a plural of `german`, which would refuse one of the pair; pinned to itself so it keys only onto its own plural `germens`.",
+    "since": "2026-08-24"
+  },
+  "limen": {
+    "root": "limen",
+    "reason": "A limen is a sensory threshold; a liman is a coastal lagoon. Same \"-men\" misfire as `dolmen`.",
+    "since": "2026-08-24"
+  },
+  "nomen": {
+    "root": "nomen",
+    "reason": "A Roman clan name, not a plural of `noman`. Same \"-men\" misfire as `germen`.",
+    "since": "2026-08-24"
+  },
+  "somen": {
+    "root": "somen",
+    "reason": "Somen are wheat noodles; soman is a nerve agent. Same \"-men\" misfire as `dolmen`.",
+    "since": "2026-08-24"
+  },
+  "theses": {
+    "root": "thesis",
+    "reason": "The plural of `thesis`, but the decisive \"-s\" strip lands on the unrelated `these` -- so both frequency and spelling pick the wrong root, and only a review can settle it. Pinned to `thesis`, which is also what src/data/score-overrides.json had to do for the score. Note the two files disagree on purpose: scoring caps `theses` at `these` to deny it a Legend, identity must keep them apart.",
+    "since": "2026-08-24"
+  }
+}
