@@ -4,6 +4,7 @@ import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
 import wordRejectionData from "../data/word-rejections.json";
+import derivedRejectionData from "../data/derived-rejections.json";
 import {
   baseForm,
   boundBaseCandidates,
@@ -634,22 +635,76 @@ const WORD_REJECTIONS: ReadonlyMap<string, WordRejection> = new Map(
 );
 
 /**
- * The reviewed reason `word` is unplayable under `date`'s puzzle, or undefined
- * when no rejection applies. An omitted date means the newest system, where every
+ * Every curated word that carries a rejection reason, grouped by the date its
+ * rejection takes effect and then by reason (src/data/derived-rejections.json,
+ * written by generate-data.py). The rule is simply that a word with a reason is
+ * unplayable and the player is told which -- see WordRulesModal, which has always
+ * said so. The filter it came from only ever kept a classified word from
+ * *entering* the list, so the ones already on it stayed playable, and an obsolete
+ * spelling scored on its own vanishing frequency: "ranck" (an obsolete form of
+ * "rank") came out a 9.58 Mythic where "rank" scores 4.80.
+ *
+ * The reasons are Wiktionary's, and they divide in two. The out-of-use trio
+ * (obsolete / archaic / dated) means every ordinary sense of the word has fallen
+ * out of use, and only qualifies below Zipf 2.5. That frequency gate is the guard
+ * the trio needs, because its false positives are precisely the common words:
+ * "halt" (3.93), "fraught" (3.12) and "guerilla" (2.90) are each tagged obsolete
+ * off one dead sense, "thy" and "unto" archaic, "yea" and "fortnight" dated.
+ * Nothing corpora still measure in live use is out of use, whatever a sense label
+ * says. Below the gate the tag is reliable -- a 24-word random sample checked
+ * against Wiktionary came back 24 for 24, the "voyce"/"performe"/"sherriff"
+ * family the rule is aimed at. The structural reasons (abbreviation, proper noun,
+ * misspelling) take no gate: Wiktionary gives those to a headword with no ordinary
+ * sense at all, and "cd" being common says nothing about whether it is an
+ * abbreviation.
+ *
+ * Grouped by date rather than carrying one date for the file so a later data
+ * refresh can reject newly-classified words from *its* date without retroactively
+ * invalidating the words an archived puzzle accepted. A word that should stay
+ * playable despite its label goes in scripts/playable-exemptions.txt, which keeps
+ * it out of this file for good.
+ */
+const DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: string }> =
+  new Map(
+    Object.entries(derivedRejectionData as Record<string, Record<string, readonly string[]>>)
+      .flatMap(([since, byReason]) =>
+        Object.entries(byReason).flatMap(([reason, words]) =>
+          words.map(
+            (word): [string, { reason: RejectionReason; since: string }] => [
+              word,
+              { reason: reason as RejectionReason, since },
+            ]
+          )
+        )
+      )
+  );
+
+/**
+ * The reason `word` is unplayable under `date`'s puzzle, or undefined when no
+ * rejection applies. An omitted date means the newest system, where every
  * rejection is in force.
+ *
+ * A hand-reviewed rejection wins over the derived ones: it is a decision about
+ * this exact word, and it can name a more specific fault (a misspelling of a
+ * particular word) than a sense label can.
  */
 export function curatedRejection(word: string, date?: string): RejectionReason | undefined {
-  const rejection = WORD_REJECTIONS.get(word.toLowerCase());
-  if (!rejection) return undefined;
-  if (date !== undefined && date < rejection.since) return undefined;
-  return rejection.reason;
+  const normalized = word.toLowerCase();
+  const rejection = WORD_REJECTIONS.get(normalized);
+  if (rejection && (date === undefined || date >= rejection.since)) return rejection.reason;
+  // Falls through when the reviewed rejection isn't in force yet: the derived list
+  // can carry an earlier date than the hand entry, and the earlier verdict is
+  // still a verdict.
+  const derived = DERIVED_REJECTIONS.get(normalized);
+  if (derived && (date === undefined || date >= derived.since)) return derived.reason;
+  return undefined;
 }
 
 /**
  * Whether a submission is allowed. Membership in the curated dictionary, minus
- * the reviewed rejections above -- a rejected word is still in `dictionary.json`
- * (and still carries its rarity entry, so past puzzles keep scoring), but it is
- * not playable from its rejection date on.
+ * the rejections above -- reviewed and obsolete alike. A rejected word is still in
+ * `dictionary.json` (and still carries its rarity entry, so past puzzles keep
+ * scoring), but it is not playable from its rejection date on.
  */
 export function isValidWord(word: string, date?: string): boolean {
   const normalized = word.toLowerCase();

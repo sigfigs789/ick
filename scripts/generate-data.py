@@ -6,6 +6,9 @@ Produces two SEPARATE artifacts, per design:
   - src/data/dictionary.json  -> the curated list of words a submission is checked against
   - src/data/rarity.json      -> precomputed frequency-derived rarity label for each word
   - src/data/rejection-metadata.json -> concise explanations for excluded ESDB entries
+  - src/data/derived-rejections.json -> dictionary words that carry a rejection reason
+    (obsolete/archaic/dated/abbreviation/proper noun), dated from when they stop being
+    playable (the list keeps them, so old puzzles still score)
 
 Frequency (via the `wordfreq` package) determines rarity. The curated
 dictionary determines whether a submission is allowed at all. They are kept
@@ -21,6 +24,7 @@ import argparse
 import json
 import re
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 from frequency import FrequencyWaterfall
@@ -34,8 +38,18 @@ SUGGESTED_WORDS_PATH = ROOT / "scripts" / "suggested-words.txt"
 ONLINE_WORDS_PATH = ROOT / "scripts" / "online-words.txt"
 WIKTIONARY_ACCEPTED_PATH = ROOT / "scripts" / "wiktionary-accepted.txt"
 WIKTIONARY_REASONS_PATH = ROOT / "scripts" / "wiktionary-reasons.json"
+DERIVED_REJECTIONS_PATH = OUT_DIR / "derived-rejections.json"
+PLAYABLE_EXEMPTIONS_PATH = ROOT / "scripts" / "playable-exemptions.txt"
 
 MIN_LEN = 1
+
+# The reasons that say a word has fallen out of use, rather than that it was never
+# an ordinary word. Only these are gated by frequency -- see write_derived_rejections.
+OUT_OF_USE_REASONS = {"obsolete", "archaic", "dated"}
+
+# The Zipf at or above which an out-of-use classification is ignored. Kept in
+# lockstep with the DERIVED_REJECTIONS comment in src/game/dictionary.ts.
+OUT_OF_USE_ZIPF_CEILING = 2.5
 
 # Words absent from every source (wordfreq, Norvig, Google Books, Datamuse) are the
 # rarest we can attest -- floored to 0.0 so they earn the top displayed score.
@@ -319,6 +333,88 @@ def rejection_metadata(classification: dict[str, str], dictionary: set[str]) -> 
     return {word: reason for word, reason in classification.items() if word not in dictionary}
 
 
+def load_playable_exemptions() -> set[str]:
+    """Words held playable despite a rejection reason (scripts/playable-exemptions.txt).
+
+    The pressure valve for the derived rejections below: a word Wiktionary marks
+    out of use that the game wants anyway, listed one per line. Deliberately a
+    keep-list rather than hand-edits to the generated file, which a refresh would
+    simply re-add.
+    """
+    return load_word_file(PLAYABLE_EXEMPTIONS_PATH)
+
+
+def write_derived_rejections(
+    classification: dict[str, str],
+    dictionary: list[str],
+    zipf_hundredths: list[int],
+    today: str,
+) -> tuple[int, int]:
+    """Record every curated word that carries a rejection reason, dated and grouped.
+
+    ALWAYS_EXCLUDED_REASONS only keeps a classified word from *entering* the list,
+    and the out-of-use reasons never did even that, so words already on the list
+    stayed playable whatever Wiktionary said about them -- and an obsolete spelling
+    scored on its own vanishing frequency: "ranck" (an obsolete form of "rank")
+    came out a 9.58 Mythic where "rank" scores 4.80. The rule is now simply that a
+    word with a reason is unplayable, and the player is told the reason.
+
+    This file is what makes that retroactive without removing anything: the word
+    keeps its dictionary slot and its rarity entry, so archived puzzles still score
+    it, and src/game/dictionary.ts refuses it from its recorded date on.
+
+    The out-of-use reasons are gated at OUT_OF_USE_ZIPF_CEILING, and that gate is
+    the guard the family needs: their false positives are precisely the common
+    words -- "halt" (Zipf 3.93), "fraught" (3.12) and "guerilla" (2.90) are each
+    tagged obsolete off one dead sense, "thy" and "unto" archaic, "fortnight" and
+    "yea" dated -- while below the gate the tag is reliable. A word corpora still
+    measure in live use is not out of use, whatever a sense label says. The
+    structural reasons (abbreviation, proper noun, misspelling) take no gate:
+    Wiktionary gives those to a headword with no ordinary sense at all, and "cd"
+    being common says nothing about whether it is an abbreviation.
+
+    Entries already in the file keep their original date and are never dropped: a
+    rejection is a verdict, so it survives a data refresh, and dating each batch
+    separately keeps a refresh from retroactively invalidating an archived puzzle.
+    Returns (newly added, total).
+    """
+    existing: dict[str, dict[str, list[str]]] = (
+        json.loads(DERIVED_REJECTIONS_PATH.read_text()) if DERIVED_REJECTIONS_PATH.exists() else {}
+    )
+    judged = {
+        word for batch in existing.values() for words in batch.values() for word in words
+    }
+    exempt = load_playable_exemptions()
+    # An exemption also *undoes* a rejection already recorded: the keep-list is the
+    # one thing that can take a word back out of this file, which is what makes it
+    # a usable answer to a bad label rather than advice to hand-edit generated data.
+    for batch in existing.values():
+        for reason, words in list(batch.items()):
+            batch[reason] = [word for word in words if word not in exempt]
+            if not batch[reason]:
+                del batch[reason]
+    for date_key in [key for key, batch in existing.items() if not batch]:
+        del existing[date_key]
+    judged -= exempt
+    zipf_of = dict(zip(dictionary, zipf_hundredths))
+    added: dict[str, list[str]] = {}
+    for word, reason in classification.items():
+        if word not in zipf_of or word in judged or word in exempt:
+            continue
+        if reason in OUT_OF_USE_REASONS and zipf_of[word] >= OUT_OF_USE_ZIPF_CEILING * 100:
+            continue
+        added.setdefault(reason, []).append(word)
+    if added:
+        batch = existing.setdefault(today, {})
+        for reason, words in added.items():
+            batch[reason] = sorted(set(batch.get(reason, [])) | set(words))
+    DERIVED_REJECTIONS_PATH.write_text(
+        json.dumps(existing, separators=(",", ":"), sort_keys=True)
+    )
+    count = sum(len(words) for words in added.values())
+    return count, len(judged) + count
+
+
 def write_rejection_metadata(metadata: dict[str, str]) -> None:
     """Store each reason's sorted words once, instead of repeating reason strings."""
     grouped: dict[str, list[str]] = {}
@@ -353,7 +449,28 @@ def main() -> None:
         action="store_true",
         help="refresh rejection metadata from --esdb-db without regenerating dictionary data",
     )
+    parser.add_argument(
+        "--refresh-rejections",
+        action="store_true",
+        help="re-date the derived rejections (src/data/derived-rejections.json) from "
+        "Wiktionary's reasons and the existing dictionary, without regenerating "
+        "anything else. Needs no ESDB database.",
+    )
+    parser.add_argument(
+        "--since",
+        default=(date.today() + timedelta(days=1)).isoformat(),
+        help="the date newly recorded rejections take effect (default: tomorrow, so a "
+        "puzzle already in play never loses a word mid-game)",
+    )
     args = parser.parse_args()
+    if args.refresh_rejections:
+        dictionary = json.loads((OUT_DIR / "dictionary.json").read_text())
+        zipf_hundredths = json.loads((OUT_DIR / "rarity.json").read_text())["zipfHundredths"]
+        added, total = write_derived_rejections(
+            load_wiktionary_reasons(), dictionary, zipf_hundredths, args.since
+        )
+        print(f"Wrote {DERIVED_REJECTIONS_PATH} (+{added} from {args.since}, {total} total)")
+        return
     if args.refresh_rarity:
         refresh_rarity()
         return
@@ -385,6 +502,13 @@ def main() -> None:
     # exclusion reason back into the dictionary via wiktionary_words below.
     classification = merge_reasons(esdb_classification(args.esdb_db), load_wiktionary_reasons())
     excluded = {word for word, reason in classification.items() if reason in ALWAYS_EXCLUDED_REASONS}
+    # The keep-list wins here too, not just over the derived rejections. Wiktionary
+    # files "Ellipsis of X" and "Clipping of X" under the same tag as a true
+    # initialism, so this filter would otherwise *delete* ordinary nouns like
+    # "condo", "thymus" and "seltzer" on the next full rebuild -- and deleting is
+    # worse than rejecting, because the word loses its rarity entry and the puzzles
+    # that accepted it stop adding up.
+    excluded -= load_playable_exemptions()
 
     extra_words = load_extra_words()
     suggested_words = load_suggested_words()
@@ -460,9 +584,18 @@ def main() -> None:
     combined_reasons = merge_reasons(classification, load_wiktionary_reasons())
     metadata = rejection_metadata(combined_reasons, set(dictionary))
     write_rejection_metadata(metadata)
+    # Classified words that survived into the dictionary are recorded rather than
+    # removed, so they stay scoreable for the puzzles that already accepted them.
+    derived_added, derived_total = write_derived_rejections(
+        combined_reasons, dictionary, zipf_hundredths, args.since
+    )
     print(f"Wrote {OUT_DIR / 'dictionary.json'} ({len(dictionary)} words)")
     print(f"Wrote {OUT_DIR / 'rarity.json'} ({len(dictionary)} entries, index-aligned)")
     print(f"Wrote {OUT_DIR / 'rejection-metadata.json'} ({len(metadata)} explanations)")
+    print(
+        f"Wrote {DERIVED_REJECTIONS_PATH} (+{derived_added} from {args.since}, "
+        f"{derived_total} derived rejections)"
+    )
 
 
 if __name__ == "__main__":

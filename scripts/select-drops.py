@@ -99,7 +99,12 @@ def main() -> None:
     existing = json.loads(drops_path.read_text())
     locked_drops = existing.get("lockedDrops", [])
     seeded_drops = existing.get("seededDrops", [])
-    locked_set = set(locked_drops + seeded_drops)
+    # Held out of the rotation, not retired: these are parked for a possible
+    # challenge mode, so they must never be re-seeded into the daily list.
+    challenging_drops = existing.get("challengingDrops", [])
+    # Half the "hard" tier, parked to halve how often a hard day comes up.
+    hard_drops = existing.get("hardDrops", [])
+    locked_set = set(locked_drops + seeded_drops + challenging_drops + hard_drops)
     two_letter = [
         result for result in results
         if len(result["drop"]) == 2 and result["drop"] not in locked_set
@@ -126,6 +131,8 @@ def main() -> None:
         "epoch": existing["epoch"],
         "lockedDrops": locked_drops,
         "seededDrops": seeded_drops,
+        "challengingDrops": challenging_drops,
+        "hardDrops": hard_drops,
         "drops": ordered_drops,
     }, indent=2) + "\n")
     print(f"Wrote {drops_path}")
