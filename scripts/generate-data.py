@@ -24,7 +24,7 @@ import argparse
 import json
 import re
 import sys
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from frequency import FrequencyWaterfall
@@ -458,8 +458,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--since",
-        default=date.today().isoformat(),
-        help="the date newly recorded obsolete rejections take effect (default: today)",
+        default=(date.today() + timedelta(days=1)).isoformat(),
+        help="the date newly recorded rejections take effect (default: tomorrow, so a "
+        "puzzle already in play never loses a word mid-game)",
     )
     args = parser.parse_args()
     if args.refresh_rejections:
