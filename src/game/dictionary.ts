@@ -6,13 +6,19 @@ import foldExemptionData from "../data/fold-exemptions.json";
 import wordRejectionData from "../data/word-rejections.json";
 import {
   baseForm,
+  derivedBaseCandidates,
   boundBaseCandidates,
   degreeBaseCandidates,
   inflectionalBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
-import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types";
+import type {
+  AcceptedWord,
+  Rarity,
+  RarityInfo,
+  RejectionReason,
+} from "./types";
 
 /**
  * The curated dictionary decides whether a submission is allowed at all.
@@ -20,7 +26,9 @@ import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types"
  * hand-edited independently of frequency data.
  */
 const WORDS: readonly string[] = dictionaryWords as string[];
-const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, i]));
+const WORD_INDEX: ReadonlyMap<string, number> = new Map(
+  WORDS.map((w, i) => [w, i]),
+);
 
 /**
  * Rarity scoring has evolved across two cutovers, each date-gated so past
@@ -49,6 +57,14 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         -- comparatives, Latin plurals, -ize/-able -- fold too, but only for a
  *         word below MEASURED_FLOOR, where its score is a stand-in rather than a
  *         measurement (see `unmeasuredBaseCandidates`). No label mapping moves.
+ *   - on/after 2026-08-24 (the latest system): the derivational families whose
+ *     ending is *bound* fold as well -- "-ically" -> "-ic", "-ably"/"-ibly" ->
+ *     "-able"/"-ible", "-ologist" -> "-ology", "-cked"/"-cking" -> "-c",
+ *     "-eaux" -> "-eau" (see `derivedBaseCandidates`). Ungated by
+ *     MEASURED_FLOOR, like the bound suffixes of 2026-08-16: nothing accidental
+ *     ends that way, so there is no coincidence for a gate to catch. ~1,760
+ *     words score lower, ~900 of which were holding a Mythic-or-better score
+ *     for an ending. No label mapping moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -61,6 +77,11 @@ const NARROW_BANDS_START = "2026-08-21";
 // concerns -- one changes which label a score wears, the other changes the score
 // -- and either could move to its own date later without disturbing the other.
 const INFLECTION_BASE_START = NARROW_BANDS_START;
+// The bound derivational families (-ically, -ably/-ibly, -ologist, the c -> ck
+// orthography, -eaux) fold from this date. Its own cutover rather than a reuse
+// of INFLECTION_BASE_START: those rules are already live in archived puzzles,
+// and every score these move must stay frozen where it was played.
+const DERIVED_BASE_START = "2026-08-24";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -95,7 +116,9 @@ function roundToTenths(n: number): number {
  * (raw >= 9.45) is Mythic. Anything lower returns undefined, so the caller falls
  * back to the measured Zipf-band label (Elusive and below).
  */
-export function topRankForScore(score: number): Extract<Rarity, "Legend" | "Mythic"> | undefined {
+export function topRankForScore(
+  score: number,
+): Extract<Rarity, "Legend" | "Mythic"> | undefined {
   if (roundToCents(score) >= LEGEND_MIN_SCORE) return "Legend";
   if (roundToTenths(score) >= MYTHIC_MIN_SCORE) return "Mythic";
   return undefined;
@@ -202,7 +225,7 @@ interface ScoreOverride {
  * them.
  */
 const SCORE_OVERRIDES: ReadonlyMap<string, ScoreOverride> = new Map(
-  Object.entries(scoreOverrideData as Record<string, ScoreOverride>)
+  Object.entries(scoreOverrideData as Record<string, ScoreOverride>),
 );
 
 /**
@@ -244,7 +267,7 @@ interface FoldExemption {
  * exemption would win, silently -- and a test pins that.
  */
 const FOLD_EXEMPTIONS: ReadonlyMap<string, FoldExemption> = new Map(
-  Object.entries(foldExemptionData as Record<string, FoldExemption>)
+  Object.entries(foldExemptionData as Record<string, FoldExemption>),
 );
 
 /**
@@ -301,6 +324,14 @@ interface Scoring {
   // earlier systems so past puzzles' scores stay frozen (see
   // INFLECTION_BASE_START).
   inflectionBases: boolean;
+  // Whether the bound derivational families in `derivedBaseCandidates` fold --
+  // "-ically" -> "-ic", "-ably"/"-ibly" -> "-able"/"-ible", "-ologist" ->
+  // "-ology", "-cked"/"-cking" -> "-c", "-eaux" -> "-eau". Ungated by
+  // MEASURED_FLOOR, like the bound suffixes in `boundBaseCandidates`: the
+  // ending is what makes them safe, not the frequency. Introduced with the
+  // 2026-08-24 cutover; off for earlier systems so past puzzles' scores stay
+  // frozen (see DERIVED_BASE_START).
+  derivedBases: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -324,7 +355,8 @@ function twoBandScoring(
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
-  narrowBands = false
+  narrowBands = false,
+  derivedBases = false,
 ): Scoring {
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
@@ -335,8 +367,13 @@ function twoBandScoring(
       return legend ? roundToCents(s) : Math.round(s * 10) / 10;
     }
     const clamped = Math.max(zipf, tailFloor);
-    const s = ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
-    return legend ? roundToCents(Math.min(s, 10)) : Math.round(Math.min(s, 10) * 100) / 100;
+    const s =
+      ceiling +
+      ((10 - ceiling) * (MEASURED_FLOOR - clamped)) /
+        (MEASURED_FLOOR - tailFloor);
+    return legend
+      ? roundToCents(Math.min(s, 10))
+      : Math.round(Math.min(s, 10) * 100) / 100;
   };
   return {
     zipfAt: (i) => zipfHundredths[i] / 100,
@@ -344,20 +381,24 @@ function twoBandScoring(
     rarity: legend
       ? // Latest system: rank the top by the shown two-decimal score against the
         // fixed Legend/Mythic cutoffs; below 9.5 keeps its measured Zipf label.
-        (zipf) => topRankForScore(score(zipf)) ?? measuredRarity(zipf, narrowBands)
+        (zipf) =>
+          topRankForScore(score(zipf)) ?? measuredRarity(zipf, narrowBands)
       : // 2026-08-15 system: the deep-tail library (Zipf < 1) is a single Mythic
         // top rank, with no Legend above it.
-        (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf, narrowBands)),
+        (zipf) =>
+          zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf, narrowBands),
     format: legend
       ? // Mythic and Legend (score >= 9.5) show two decimals; below shows one,
         // rounded with the same upward nudge so a raw 9.45 reads "9.5" -- the
         // value the Mythic cutoff keys off (see topRankForScore).
-        (s) => (s >= MYTHIC_MIN_SCORE ? s.toFixed(2) : roundToTenths(s).toFixed(1))
+        (s) =>
+          s >= MYTHIC_MIN_SCORE ? s.toFixed(2) : roundToTenths(s).toFixed(1)
       : // Only the deep-tail band (score >= ceiling) shows two decimals.
         (s) => (s >= ceiling ? s.toFixed(2) : s.toFixed(1)),
     boundBaseForms,
     chainedBaseForms,
     inflectionBases,
+    derivedBases,
   };
 }
 
@@ -382,7 +423,19 @@ const RETUNED_SCORING: Scoring = twoBandScoring(
   /* legend */ true,
   /* chainedBaseForms */ true,
   /* inflectionBases */ true,
-  /* narrowBands */ true
+  /* narrowBands */ true,
+);
+// The latest system (2026-08-24): the same bands, ranks and inflection folds,
+// plus the bound derivational families in `derivedBaseCandidates`.
+const DERIVED_SCORING: Scoring = twoBandScoring(
+  9.9,
+  0,
+  /* boundBaseForms */ true,
+  /* legend */ true,
+  /* chainedBaseForms */ true,
+  /* inflectionBases */ true,
+  /* narrowBands */ true,
+  /* derivedBases */ true,
 );
 
 const LEGACY_SCORING: Scoring = {
@@ -397,8 +450,9 @@ const LEGACY_SCORING: Scoring = {
   // minimum is exactly 1.0), so no archived puzzle's scores move.
   score: (zipf) =>
     Math.round(
-      ((LEGACY_MAX_ZIPF - Math.max(zipf, LEGACY_MIN_ZIPF)) / (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) *
-        100
+      ((LEGACY_MAX_ZIPF - Math.max(zipf, LEGACY_MIN_ZIPF)) /
+        (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) *
+        100,
     ) / 10,
   rarity: (zipf) => {
     // Missing corpus data is not evidence that a word is genuinely Mythic.
@@ -410,6 +464,7 @@ const LEGACY_SCORING: Scoring = {
   boundBaseForms: false,
   chainedBaseForms: false,
   inflectionBases: false,
+  derivedBases: false,
 };
 
 /**
@@ -466,7 +521,7 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return RETUNED_SCORING; // newest system
+  if (date === undefined) return DERIVED_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
   if (date < CHAINED_BASE_START) return WIDE_SCORING;
@@ -474,7 +529,8 @@ function scoringFor(date?: string): Scoring {
   // profile, so it reads the scoring one; `usesRetunedTiers` asks the label
   // question and reads NARROW_BANDS_START. The profile beyond carries both.
   if (date < INFLECTION_BASE_START) return CHAINED_SCORING;
-  return RETUNED_SCORING;
+  if (date < DERIVED_BASE_START) return RETUNED_SCORING;
+  return DERIVED_SCORING;
 }
 
 // -- Curated rejections (src/data/word-rejections.json) ----------------------
@@ -530,7 +586,7 @@ export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
  * validated on the day it was played.
  */
 const WORD_REJECTIONS: ReadonlyMap<string, WordRejection> = new Map(
-  Object.entries(wordRejectionData as Record<string, WordRejection>)
+  Object.entries(wordRejectionData as Record<string, WordRejection>),
 );
 
 /**
@@ -538,7 +594,10 @@ const WORD_REJECTIONS: ReadonlyMap<string, WordRejection> = new Map(
  * when no rejection applies. An omitted date means the newest system, where every
  * rejection is in force.
  */
-export function curatedRejection(word: string, date?: string): RejectionReason | undefined {
+export function curatedRejection(
+  word: string,
+  date?: string,
+): RejectionReason | undefined {
   const rejection = WORD_REJECTIONS.get(word.toLowerCase());
   if (!rejection) return undefined;
   if (date !== undefined && date < rejection.since) return undefined;
@@ -553,7 +612,10 @@ export function curatedRejection(word: string, date?: string): RejectionReason |
  */
 export function isValidWord(word: string, date?: string): boolean {
   const normalized = word.toLowerCase();
-  return WORD_INDEX.has(normalized) && curatedRejection(normalized, date) === undefined;
+  return (
+    WORD_INDEX.has(normalized) &&
+    curatedRejection(normalized, date) === undefined
+  );
 }
 
 /**
@@ -626,7 +688,7 @@ export interface BaseFormSubstitution {
  */
 export function baseFormSubstitution(
   word: string,
-  date?: string
+  date?: string,
 ): BaseFormSubstitution | undefined {
   const normalized = word.toLowerCase();
   const i = WORD_INDEX.get(normalized);
@@ -641,25 +703,41 @@ export function baseFormSubstitution(
   if (scoring.chainedBaseForms) {
     const chained = chainedBase(normalized, scoring, date);
     if (chained && chained.zipf > ownZipf) {
-      return { word: normalized, base: chained.base, ownZipf, baseZipf: chained.zipf };
+      return {
+        word: normalized,
+        base: chained.base,
+        ownZipf,
+        baseZipf: chained.zipf,
+      };
     }
     return undefined;
   }
 
   const override = overrideBase(normalized, date);
   if (override) {
-    return { word: normalized, base: override, ownZipf, baseZipf: zipfFor(override, scoring) };
+    return {
+      word: normalized,
+      base: override,
+      ownZipf,
+      baseZipf: zipfFor(override, scoring),
+    };
   }
 
   const tenseBase = tenseBaseForm(normalized, scoring);
   if (tenseBase && tenseBase !== normalized) {
-    return { word: normalized, base: tenseBase, ownZipf, baseZipf: zipfFor(tenseBase, scoring) };
+    return {
+      word: normalized,
+      base: tenseBase,
+      ownZipf,
+      baseZipf: zipfFor(tenseBase, scoring),
+    };
   }
 
   const base = scoringBaseForm(normalized, scoring);
   if (base && base !== normalized) {
     const baseZipf = zipfFor(base, scoring);
-    if (baseZipf > ownZipf) return { word: normalized, base, ownZipf, baseZipf };
+    if (baseZipf > ownZipf)
+      return { word: normalized, base, ownZipf, baseZipf };
   }
   return undefined;
 }
@@ -675,7 +753,10 @@ export function baseFormSubstitution(
  * submitted. A rejected word is still in WORDS, which is exactly why the check
  * is needed here and not just in submit.
  */
-export function bestWordForDrop(drop: string, date?: string): AcceptedWord | undefined {
+export function bestWordForDrop(
+  drop: string,
+  date?: string,
+): AcceptedWord | undefined {
   const needle = drop.toLowerCase();
   let best: AcceptedWord | undefined;
   for (let i = 0; i < WORDS.length; i++) {
@@ -706,7 +787,7 @@ export function nearMissForDrop(
   word: string,
   drop: string,
   date?: string,
-  excluded?: (candidate: string) => boolean
+  excluded?: (candidate: string) => boolean,
 ): string | undefined {
   const budget = nearMissEditBudget(word);
   if (budget === 0) return undefined;
@@ -731,7 +812,12 @@ export function nearMissForDrop(
  * the base frequency so they cannot turn an everyday word into a top-tier
  * answer.
  */
-function adjustedZipf(word: string, zipf: number, scoring: Scoring, date?: string): number {
+function adjustedZipf(
+  word: string,
+  zipf: number,
+  scoring: Scoring,
+  date?: string,
+): number {
   // The latest system resolves the whole fold chain and caps against every link,
   // so no rule can leave a word rarer than its own measurement.
   if (scoring.chainedBaseForms) {
@@ -792,7 +878,11 @@ const MAX_FOLD_DEPTH = 8;
  * "axes"), and no word is visited twice. Revisiting could not raise the maximum
  * anyway, so one shared set across the whole walk is enough.
  */
-function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase | undefined {
+function chainedBase(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+): ChainedBase | undefined {
   const seen = new Set([word]);
   let frontier = [word];
   let best: ChainedBase | undefined;
@@ -830,7 +920,11 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
  * of the older systems' single pick, and the caller only ever takes a maximum
  * over it, so widening it can never make a word score rarer than it used to.
  */
-function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] {
+function nextBaseForms(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+): string[] {
   // A reviewed exemption silences every rule below, the override included --
   // the two files must never share a word (pinned by a test).
   if (scoring.inflectionBases && foldExempt(word, date)) return [];
@@ -839,7 +933,8 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   if (override) return [override];
 
   if (!scoring.inflectionBases) {
-    const single = tenseBaseForm(word, scoring) ?? scoringBaseForm(word, scoring);
+    const single =
+      tenseBaseForm(word, scoring) ?? scoringBaseForm(word, scoring);
     return single ? [single] : [];
   }
 
@@ -851,7 +946,10 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   };
   add(tenseBaseForm(word, scoring));
   add(baseForm(word));
-  for (const candidate of inflectionalBaseCandidates(word, latinPluralsAllowed(word))) {
+  for (const candidate of inflectionalBaseCandidates(
+    word,
+    latinPluralsAllowed(word),
+  )) {
     add(candidate);
   }
   // "-ier"/"-iest" comparatives, ungated: unlike bare "-er"/"-est" below, the
@@ -884,6 +982,14 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
     // "appendicitises" now folds to "appendicitis" like any other plural).
     for (const candidate of unmeasuredBaseCandidates(word)) add(candidate);
   }
+  // The bound derivational families: an ending English only ever produces by
+  // attaching that suffix, so -- like the "-ization"/"-ability" pair in
+  // `scoringBaseForm` -- there is nothing accidental for the rule to catch and
+  // no frequency gate is needed. "catholically" folds onto "catholic" though
+  // both are measured, the same way "happier" folds onto "happy".
+  if (scoring.derivedBases) {
+    for (const candidate of derivedBaseCandidates(word)) add(candidate);
+  }
   add(scoringBaseForm(word, scoring));
   return out;
 }
@@ -903,8 +1009,13 @@ function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
   for (const suffix of ["ness", "ly"]) {
     if (!word.endsWith(suffix) || word.length <= suffix.length + 2) continue;
     const stem = word.slice(0, -suffix.length);
-    const candidates = [stem, stem.endsWith("i") ? `${stem.slice(0, -1)}y` : ""];
-    const base = candidates.find((candidate) => candidate && WORD_INDEX.has(candidate));
+    const candidates = [
+      stem,
+      stem.endsWith("i") ? `${stem.slice(0, -1)}y` : "",
+    ];
+    const base = candidates.find(
+      (candidate) => candidate && WORD_INDEX.has(candidate),
+    );
     if (base) return base;
   }
 
@@ -912,7 +1023,9 @@ function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
   // the wide-band era. Capped at the base like the transparent suffixes above:
   // "aggrandization" scores as "aggrandize", never rarer than it.
   if (scoring.boundBaseForms) {
-    const bound = boundBaseCandidates(word).find((candidate) => WORD_INDEX.has(candidate));
+    const bound = boundBaseCandidates(word).find((candidate) =>
+      WORD_INDEX.has(candidate),
+    );
     if (bound) return bound;
   }
   return undefined;
@@ -932,7 +1045,7 @@ function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
 function mostCommonBase(
   candidates: readonly string[],
   word: string,
-  scoring: Scoring
+  scoring: Scoring,
 ): string | undefined {
   let base: string | undefined;
   let baseZipf = -Infinity;
@@ -972,7 +1085,11 @@ function tenseBaseForm(word: string, scoring: Scoring): string | undefined {
   // frequency (8.47, against "taxi"'s 5.21). Same for "bikinied", "safaried" and
   // "shanghaied". Adding the "-ed" bases instead of substituting for them costs
   // nothing where the "-y" spelling is right -- the most common base still wins.
-  if ((!ied || scoring.inflectionBases) && word.length > 4 && word.endsWith("ed")) {
+  if (
+    (!ied || scoring.inflectionBases) &&
+    word.length > 4 &&
+    word.endsWith("ed")
+  ) {
     const stem = word.slice(0, -2);
     candidates.push(`${stem}e`, stem, stripDoubledConsonant(stem));
   }
@@ -1068,7 +1185,7 @@ export function formatRarityScore(zipf: number, date?: string): string {
 /** Sum the displayed rarity scores earned during one game session. */
 export function totalRarityScore(
   words: readonly Pick<AcceptedWord, "zipf">[],
-  date?: string
+  date?: string,
 ): number {
   const scoring = scoringFor(date);
   const total = words.reduce((sum, word) => sum + scoring.score(word.zipf), 0);
@@ -1078,8 +1195,11 @@ export function totalRarityScore(
 /** Highest displayed rarity score earned in the current puzzle. */
 export function topRarityScore(
   words: readonly Pick<AcceptedWord, "zipf">[],
-  date?: string
+  date?: string,
 ): number {
   const scoring = scoringFor(date);
-  return words.reduce((top, word) => Math.max(top, scoring.score(word.zipf)), 0);
+  return words.reduce(
+    (top, word) => Math.max(top, scoring.score(word.zipf)),
+    0,
+  );
 }

@@ -364,6 +364,38 @@ def _unmeasured_candidates(word: str) -> list[str]:
     return out
 
 
+def _derived_candidates(word: str) -> list[str]:
+    """Mirror of derivedBaseCandidates() in src/game/stem.ts.
+
+    The bound derivational families: an ending English only ever produces by
+    attaching that suffix, so no frequency gate is needed -- the ending is what
+    makes them safe. "-ically" -> "-ic", "-ably"/"-ibly" -> "-able"/"-ible",
+    "-ologist" -> "-ology", the c -> ck orthography, and the French "-eaux".
+    """
+    w = word.lower()
+    out: list[str] = []
+
+    def add(base: str) -> None:
+        if len(base) >= 3 and base != w and base not in out:
+            out.append(base)
+
+    if len(w) > 8 and w.endswith("ically"):
+        add(w[:-4])
+    if len(w) > 6 and w.endswith("ably"):
+        add(w[:-4] + "able")
+    if len(w) > 6 and w.endswith("ibly"):
+        add(w[:-4] + "ible")
+    if len(w) > 8 and w.endswith("ologist"):
+        add(w[:-3] + "y")
+    for suffix in ("cked", "cking"):
+        # "-cker" is deliberately absent: it folds "blockers" -> "bloc".
+        if w.endswith(suffix) and len(w) > len(suffix) + 2:
+            add(w[: -len(suffix)] + "c")
+    if len(w) > 5 and w.endswith("eaux"):
+        add(w[:-1])
+    return out
+
+
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     """Mirror of tenseBaseForm(): -ed/-ing pick the most common valid base.
 
@@ -556,6 +588,10 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
         # set: they fold through their own verb (see nextBaseForms).
         for candidate in _unmeasured_candidates(word):
             add(candidate)
+    # The bound derivational families, ungated like the "-ization" pair below:
+    # nothing accidental ends "-ically" or "-ibly" (see derivedBaseCandidates).
+    for candidate in _derived_candidates(word):
+        add(candidate)
     add(_scoring_base(word, index))
     return out
 

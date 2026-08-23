@@ -10,11 +10,14 @@ export function baseForm(word: string): string {
 
   if (w.length > 5 && w.endsWith("ies")) return w.slice(0, -3) + "y";
   if (w.length > 6 && w.endsWith("ying")) return w.slice(0, -4) + "y";
-  if (w.length > 5 && w.endsWith("ing")) return stripDoubledConsonant(w.slice(0, -3));
+  if (w.length > 5 && w.endsWith("ing"))
+    return stripDoubledConsonant(w.slice(0, -3));
   if (w.length > 5 && w.endsWith("ied")) return w.slice(0, -3) + "y";
-  if (w.length > 4 && w.endsWith("ed")) return stripDoubledConsonant(w.slice(0, -2));
+  if (w.length > 4 && w.endsWith("ed"))
+    return stripDoubledConsonant(w.slice(0, -2));
   if (w.length > 4 && w.endsWith("es")) return w.slice(0, -2);
-  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss"))
+    return w.slice(0, -1);
 
   return w;
 }
@@ -69,7 +72,10 @@ export function baseForm(word: string): string {
  *
  * Tense (-ed/-ing) is not here: `tenseBaseForm` in dictionary.ts already owns it.
  */
-export function inflectionalBaseCandidates(word: string, latinPlurals: boolean): string[] {
+export function inflectionalBaseCandidates(
+  word: string,
+  latinPlurals: boolean,
+): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
   const add = (...bases: string[]) => {
@@ -80,9 +86,12 @@ export function inflectionalBaseCandidates(word: string, latinPlurals: boolean):
 
   // Most specific first only for readability -- the caller ranks by frequency,
   // not by the order these are added.
-  if (w.length > 5 && w.endsWith("ices")) add(w.slice(0, -4) + "ex", w.slice(0, -4) + "ix");
-  if (w.length > 4 && w.endsWith("ies")) add(w.slice(0, -3) + "y", w.slice(0, -3) + "i");
-  if (w.length > 4 && w.endsWith("ves")) add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
+  if (w.length > 5 && w.endsWith("ices"))
+    add(w.slice(0, -4) + "ex", w.slice(0, -4) + "ix");
+  if (w.length > 4 && w.endsWith("ies"))
+    add(w.slice(0, -3) + "y", w.slice(0, -3) + "i");
+  if (w.length > 4 && w.endsWith("ves"))
+    add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
   if (w.length > 4 && w.endsWith("men")) add(w.slice(0, -3) + "man");
   if (w.length > 4 && w.endsWith("es")) {
     add(w.slice(0, -1), w.slice(0, -2), w.slice(0, -2) + "is");
@@ -122,7 +131,9 @@ export function inflectionalBaseCandidates(word: string, latinPlurals: boolean):
  * "earliest" 5.35 against "early" 3.38 -- because the gated rules never reach a
  * measured word.
  */
-export function degreeBaseCandidates(word: string): { base: string; counterpart: string }[] {
+export function degreeBaseCandidates(
+  word: string,
+): { base: string; counterpart: string }[] {
   const w = word.toLowerCase();
   if (w.length > 5 && w.endsWith("iest")) {
     const stem = w.slice(0, -4);
@@ -260,4 +271,65 @@ function stripDoubledConsonant(stem: string): string {
     return stem.slice(0, -1);
   }
   return stem;
+}
+
+/**
+ * Candidate bases for the derivational families whose ending is *bound* -- a
+ * string English only ever produces by attaching that suffix, so nothing
+ * accidental ends that way. That is the same property that earns
+ * `boundBaseCandidates` its ungated fold, and it is what separates these from
+ * the `-al`/`-ic`/`-ity` families still left alone: an ending that doubles as
+ * ordinary word-final material folds "metal" -> "met" and "unity" -> "unit",
+ * and no gate can tell those from the genuine derivations.
+ *
+ *   - "-ically" -> "-ic": "catholically" -> "catholic", "arctically" ->
+ *     "arctic". These are the adverbs the "-ly" rule in `scoringBaseForm`
+ *     cannot reach, because the "-ical" adjective it would strip back to is
+ *     usually not a word ("basical", "toxical"). The largest single family
+ *     left unfolded -- 1,005 words, 557 of them holding a Mythic-or-better
+ *     score for an ending.
+ *   - "-ably"/"-ibly" -> "-able"/"-ible": "availably" -> "available",
+ *     "susceptibly" -> "susceptible". `unmeasuredBaseCandidates` strips these
+ *     endings to the bare *stem*, and only below the floor; the adjective one
+ *     step up is the base a measured adverb needs, and it is checkable in a way
+ *     the bare stem is not.
+ *   - "-ologist" -> "-ology": "mythologist" -> "mythology". Every "-ologist" is
+ *     the agent noun of an "-ology".
+ *   - "-cked"/"-cking" -> "-c": "panicked" -> "panic", "trafficking" ->
+ *     "traffic". The k English inserts to keep a final c hard; `baseForm`
+ *     strips the ending and lands on the non-word "panick", because "ck" is not
+ *     a doubled consonant and `stripDoubledConsonant` leaves it. The matching
+ *     "-cker" is deliberately absent: an agent noun is at least as likely to be
+ *     built on a "-ck" verb, and the rule folds "blockers" -> "bloc",
+ *     "crockers" -> "croc" and "specker" -> "spec".
+ *   - "-eaux" -> "-eau": "bureaux" -> "bureau", "tableaux" -> "tableau". The
+ *     French plural, and the smallest family here -- 20 words, no other word in
+ *     the dictionary ends "-eaux".
+ *
+ * Every one of these runs above MEASURED_FLOOR, like the bound suffixes and the
+ * paired-degree comparatives: the gate is not what makes them safe, the ending
+ * is. The caller confirms each candidate is a real word, and the fold caps
+ * rather than inherits, so a candidate rarer than the word itself is inert --
+ * which is why "physically" keeps its own score rather than taking the much
+ * rarer "physic", and "critically" keeps its own rather than "critic".
+ */
+export function derivedBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (base: string) => {
+    if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
+  };
+
+  if (w.length > 8 && w.endsWith("ically")) add(w.slice(0, -4));
+  if (w.length > 6 && w.endsWith("ably")) add(`${w.slice(0, -4)}able`);
+  if (w.length > 6 && w.endsWith("ibly")) add(`${w.slice(0, -4)}ible`);
+  if (w.length > 8 && w.endsWith("ologist")) add(`${w.slice(0, -3)}y`);
+  for (const suffix of ["cked", "cking"]) {
+    if (w.endsWith(suffix) && w.length > suffix.length + 2) {
+      add(`${w.slice(0, -suffix.length)}c`);
+    }
+  }
+  if (w.length > 5 && w.endsWith("eaux")) add(w.slice(0, -1));
+
+  return out;
 }
