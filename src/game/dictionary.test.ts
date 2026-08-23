@@ -17,6 +17,7 @@ import rarityData from "../data/rarity.json";
 import scoreOverrides from "../data/score-overrides.json";
 import wordRejections from "../data/word-rejections.json";
 import derivedRejections from "../data/derived-rejections.json";
+import exemptionsFile from "../../scripts/playable-exemptions.txt?raw";
 import { addDays } from "./date";
 import { REJECTION_MESSAGES, evaluateSubmission } from "./submit";
 
@@ -686,13 +687,17 @@ describe("curated word rejections", () => {
 // because the family is thousands wide. Before this, a word could carry a reason
 // and still be played, and an obsolete spelling scored on its own vanishing
 // frequency: "ranck" came out 9.58 Mythic where "rank" scores 4.80.
+const derivedBatches = Object.entries(derivedRejections as Record<string, Record<string, string[]>>);
+const derivedEntries = derivedBatches.flatMap(([since, byReason]) =>
+  Object.entries(byReason).flatMap(([reason, words]) => words.map((word) => ({ word, reason, since })))
+);
+const derivedByWord = new Map(derivedEntries.map((entry) => [entry.word, entry]));
+
 describe("derived word rejections", () => {
-  const batches = Object.entries(derivedRejections as Record<string, Record<string, string[]>>);
-  const entries = batches.flatMap(([since, byReason]) =>
-    Object.entries(byReason).flatMap(([reason, words]) =>
-      words.map((word) => ({ word, reason, since }))
-    )
-  );
+  const batches = derivedBatches;
+  // The wide-band cutover in dictionary.ts, same bound the reviewed rejections use.
+  const WIDE_BAND_START = "2026-08-16";
+  const entries = derivedEntries;
   const curatedWords = new Set(dictionaryWords);
   const zipfOf = new Map(dictionaryWords.map((word, i) => [word, rarityData.zipfHundredths[i]]));
   // Above this a corpus still measures the word in live use, which outranks an
@@ -768,6 +773,75 @@ describe("derived word rejections", () => {
     // so one call per word would be thousands of full scans.
     for (const { word } of entries.slice(0, 25)) {
       expect(bestWordForDrop(word.slice(1, 4))?.word).not.toBe(word);
+    }
+  });
+
+  it("takes effect on a date in the current era, never on a live puzzle", () => {
+    for (const [since] of batches) {
+      expect(since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      // A batch dated into a puzzle already played would rewrite what that puzzle
+      // accepted; one dated on the day it ships would change the word pool under a
+      // player mid-game. Both are why generate-data.py dates a batch from tomorrow.
+      expect(since >= WIDE_BAND_START).toBe(true);
+    }
+  });
+
+  it("yields to a hand-reviewed verdict about the same word", () => {
+    // The two files overlap: a word can be labelled obsolete in bulk and also
+    // judged by hand, where the hand entry names the more specific fault ("atest"
+    // is a misspelling of "attest", not merely archaic). The hand reason wins
+    // wherever it is in force, and its earlier date is what the player sees first.
+    const handJudged = Object.entries(
+      wordRejections as Record<string, { reason: string; since: string }>
+    ).filter(([word]) => derivedByWord.has(word));
+    expect(handJudged.length).toBeGreaterThan(0);
+    for (const [word, { reason, since }] of handJudged) {
+      expect(curatedRejection(word), `${word} under the newest system`).toBe(reason);
+      expect(curatedRejection(word, since), `${word} on its review date`).toBe(reason);
+      const derivedSince = derivedByWord.get(word)!.since;
+      if (since < derivedSince) {
+        // In the window between the two dates only the hand verdict is in force.
+        expect(curatedRejection(word, addDays(derivedSince, -1))).toBe(reason);
+      }
+    }
+  });
+});
+
+// The keep-list (scripts/playable-exemptions.txt). It is load-bearing in two
+// places -- it takes a word back out of the derived rejections, and it spares that
+// word the ALWAYS_EXCLUDED_REASONS filter that would *delete* it on a full rebuild
+// -- and both live in Python that this suite never runs. So the invariant is
+// asserted against the shipped data instead: whatever the file lists must be
+// playable, and must be absent from the generated rejections.
+describe("playable exemptions", () => {
+  // A plain text list rather than a module, so it comes in through Vite's ?raw
+  // import -- the same file scripts/generate-data.py reads, not a copy of it.
+  const exempt: string[] = exemptionsFile
+    .split("\n")
+    .map((line: string) => line.trim())
+    .filter((line: string) => line !== "" && !line.startsWith("#"));
+
+  it("lists words, so the cases below are not vacuous", () => {
+    expect(exempt.length).toBeGreaterThan(0);
+  });
+
+  it.each(exempt)("%s is playable", (word) => {
+    expect(curatedRejection(word)).toBeUndefined();
+    expect(isValidWord(word), `${word} must be a dictionary word to be exempt`).toBe(true);
+  });
+
+  it("keeps every exempt word out of the generated rejections", () => {
+    for (const word of exempt) {
+      expect(derivedByWord.has(word), `${word} is exempt but still rejected`).toBe(false);
+    }
+  });
+
+  it("does not exempt a word a hand review rejected", () => {
+    // The keep-list answers a bad *label*; it must not quietly overturn a verdict
+    // someone reached deliberately, which it cannot do anyway -- curatedRejection
+    // reads word-rejections.json first -- so an entry like that is a mistake.
+    for (const word of exempt) {
+      expect(word in wordRejections, `${word} is both exempt and hand-rejected`).toBe(false);
     }
   });
 });
