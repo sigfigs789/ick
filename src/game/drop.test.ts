@@ -45,3 +45,25 @@ describe("dropForDate", () => {
     expect(dropForDate(date.toISOString().slice(0, 10))).toBe("STR");
   });
 });
+
+// The parked tiers are held out of the rotation, not retired -- they exist so a
+// challenge mode can pick them up later. Nothing enforces that at the type
+// level, and both scripts/select-drops.py and a hand-edit can rewrite drops.json,
+// so the invariant that makes the tiers mean anything is pinned here: a parked
+// drop is never dealt, and never sits in both tiers at once.
+describe("parked drop tiers", () => {
+  const parked = [...dropData.challengingDrops, ...dropData.hardDrops];
+
+  it("never deals a parked drop", () => {
+    const rotation = new Set(dropData.drops);
+    expect(parked.filter((drop) => rotation.has(drop))).toEqual([]);
+  });
+
+  it("keeps the tiers disjoint, with no drop listed twice", () => {
+    expect(new Set(parked).size).toBe(parked.length);
+  });
+
+  it("leaves every published day dealable", () => {
+    expect(parked.filter((drop) => dropData.lockedDrops.includes(drop))).toEqual([]);
+  });
+});
