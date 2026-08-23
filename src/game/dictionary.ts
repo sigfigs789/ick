@@ -64,6 +64,16 @@ const NARROW_BANDS_START = "2026-08-21";
 const INFLECTION_BASE_START = NARROW_BANDS_START;
 // The transparent prefixes join the gated families (see prefixBaseCandidates).
 // Its own date, so every archived puzzle keeps the scores it was played with.
+//
+// Nothing enforces that a cutover date is still in the future when it ships, and
+// none of the five above are pinned by a test -- every test here hardcodes its
+// own dates, so a stale constant leaves the suite green. That matters because a
+// cutover reached in the past re-scores the puzzle in play: words already banked
+// keep the scores stored with them (see storage.ts, which persists zipf/rarity at
+// submit time), while anything submitted after the deploy is scored under the new
+// system, so one session on one puzzle shows a prefixed word at 10.00 and its
+// neighbour at 1.88. Set the date to the day after the change is expected to
+// land, and if it slips past that date, move it before merging.
 const PREFIX_BASE_START = "2026-08-24";
 // How common a word must be to serve as a prefix base. Set at the top of the
 // deep tail rather than at MEASURED_FLOOR: the bound combining forms this keeps

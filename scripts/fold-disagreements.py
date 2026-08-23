@@ -14,21 +14,26 @@ knows nothing about frequency, playability, or the measurement floor, so it can
 never replace the rules. What it can do is disagree with them, and each kind of
 disagreement points at a different thing to fix:
 
-  MISSING   MorphyNet folds, we don't.  A gap -- usually a prefix, which no
-            rule strips, or a derivational suffix the rules decline to guess at.
-            The largest bucket and the noisiest, since MorphyNet will derive
-            words the WordInk rules reject outright.
+  MISSING   MorphyNet folds, we don't.  Usually a derivational suffix the rules
+            decline to guess at. Since the 2026-08-24 cutover a prefix row means
+            something narrower than "no rule strips prefixes": either a
+            fossilised prefix deliberately excluded (de-/re-/co-/dis-) or a base
+            below PREFIX_BASE_MIN_ZIPF. The largest bucket and the noisiest,
+            since MorphyNet will derive words the WordInk rules reject outright.
   SUSPECT   We fold, MorphyNet doesn't.  A spelling coincidence the dictionary
             check let through; candidate for fold-exemptions.json. Empty over
             the Mythic band on the first run, and low-precision over the full
             dictionary (most rows are correct folds like "allness" -> "all"
             that Wiktionary simply does not record), so read it for the odd
             real catch -- "daylily" -> "day" -- not as a list of defects.
-  DIVERGENT Both fold, to different words.  The highest-signal bucket: the
-            rules strip a suffix and dead-end on an unattested prefixed stem
-            ("codriver" -> "codrive") where MorphyNet carries on to the
-            attested root ("driver").  Candidate for score-overrides.json, or
-            for the prefix rule that would fix the whole class at once.
+  DIVERGENT Both fold, to different words.  Historically the highest-signal
+            bucket: it is what showed that nothing stripped prefixes, so a word
+            dead-ended on an unattested prefixed stem while its root sat one
+            strip further. That rule shipped on 2026-08-24, and what is left is
+            mostly the suffix families -- "-ally" is the largest -- plus the
+            fossilised prefixes the rule declines on purpose. "codriver" ->
+            "codrive" still appears here for exactly that reason, and is not a
+            bug. Candidate for score-overrides.json, or for the next rule.
 
 Both sides answer the same question -- "the most common dictionary word
 reachable by folding" -- so the comparison is like-for-like: chained_base()
