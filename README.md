@@ -329,7 +329,9 @@ It is already earning its keep on the abbreviation class: Wiktionary files
 `condo`, `thymus`, `ascot`, `corgi`, `seltzer`, `romaine` and a dozen more read as
 abbreviations to the pipeline. They are on the keep-list; `ppl`, `idk` and `tbh`
 are not. The durable fix is for `import-wiktionary-words.py` to tell an ellipsis
-from an initialism, which needs a fresh Wiktextract run.
+from an initialism, which needs a fresh Wiktextract run — that and the rest of the
+open word-data findings are tracked in
+[`docs/word-data-followups.md`](docs/word-data-followups.md).
 
 `src/data/score-overrides.json` is the other **hand-written** data file: reviewed
 demotions for words a spelling rule can't cap correctly. Most are words no
