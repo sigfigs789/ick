@@ -31,13 +31,19 @@ FG_MUTED = (167, 170, 176)
 FG_FAINT = (117, 120, 126)
 
 # The rarity-tier dots from src/index.css (dark theme), in tier order. They read
-# as "this game has a loot scale" before a single word is read.
+# as "this game has a loot scale" before a single word is read. All eight live
+# tiers are here: showing a partial scale made the game look like it had fewer
+# ranks than it does. Quotidian is left out -- it was retired at
+# NARROW_BANDS_START and is only reachable on archived puzzles.
 DOTS = [
-    (255, 255, 255),  # quotidian
+    (138, 141, 147),  # very common
+    (169, 120, 75),  # common
     (59, 191, 108),  # uncommon
     (74, 143, 242),  # rare
     (171, 95, 240),  # extremely rare
-    (255, 128, 0),  # legend
+    (234, 88, 12),  # elusive
+    (229, 72, 77),  # mythic
+    (255, 255, 255),  # legend
 ]
 DOT_SIZE = 34
 DOT_GAP = 14
