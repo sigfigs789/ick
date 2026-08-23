@@ -393,6 +393,43 @@ def _unmeasured_candidates(word: str) -> list[str]:
     return out
 
 
+def _derived_candidates(word: str) -> list[str]:
+    """Mirror of derivedBaseCandidates() in src/game/stem.ts.
+
+    The bound derivational families: an ending English only ever produces by
+    attaching that suffix, so no frequency gate is needed -- the ending is what
+    makes them safe. "-ically" -> "-ic", "-ably"/"-ibly" -> "-able"/"-ible",
+    "-ologist" -> "-ology", the c -> ck orthography, and the French "-eaux".
+    """
+    w = word.lower()
+    out: list[str] = []
+
+    def add(base: str) -> None:
+        if len(base) >= 3 and base != w and base not in out:
+            out.append(base)
+
+    # Each bound is the shortest word the family actually has ("epically",
+    # "stably", "oologist", "beaux"), not a round number.
+    if len(w) > 7 and w.endswith("ically"):
+        add(w[:-4])
+    if len(w) > 5 and w.endswith("ably"):
+        add(w[:-4] + "able")
+    if len(w) > 5 and w.endswith("ibly"):
+        add(w[:-4] + "ible")
+    if len(w) > 6 and w.endswith("ologist"):
+        add(w[:-3] + "y")
+    for suffix in ("cked", "cking"):
+        # Both spellings: "chocked" is a tense of "chock", not of "choc", and
+        # the caller's most-common check is what tells them apart. "-cker" is
+        # deliberately absent either way: it folds "blockers" -> "bloc".
+        if w.endswith(suffix) and len(w) > len(suffix) + 2:
+            add(w[: -len(suffix)] + "c")
+            add(w[: -len(suffix)] + "ck")
+    if len(w) > 4 and w.endswith("eaux"):
+        add(w[:-1])
+    return out
+
+
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     """Mirror of tenseBaseForm(): -ed/-ing pick the most common valid base.
 
@@ -585,6 +622,10 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
         # set: they fold through their own verb (see nextBaseForms).
         for candidate in _unmeasured_candidates(word):
             add(candidate)
+    # The bound derivational families, ungated like the "-ization" pair below:
+    # nothing accidental ends "-ically" or "-ibly" (see derivedBaseCandidates).
+    for candidate in _derived_candidates(word):
+        add(candidate)
     add(_scoring_base(word, index))
     return out
 
