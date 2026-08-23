@@ -48,11 +48,14 @@ const curatedWordScores: ReadonlyArray<[string, string, number]> = [
   ["invictus", "Rare", 2.5],
 ];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
+  ["absconce", "Legend", -1.57],
   ["aggrandization", "Elusive", 1.52],
   ["caprylate", "Mythic", 1.1],
+  ["combobulate", "Legend", -1.57],
   ["conization", "Extremely Rare", 1.8],
   ["inosinate", "Legend", 0.79],
   ["reoxygenate", "Extremely Rare", 1.88],
+  ["skateable", "Uncommon", 3.74],
   ["uridylate", "Legend", 0.68],
 ];
 // Rare words discovered online for an upcoming drop and added via the "Add rare
@@ -74,7 +77,7 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_479);
+    expect(dictionaryWords).toHaveLength(225_482);
   });
 
   it("accepts a common real word", () => {

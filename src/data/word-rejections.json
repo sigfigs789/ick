@@ -1,9 +1,4 @@
 {
-  "absconce": {
-    "note": "An obsolete word for a monastic lantern.",
-    "reason": "obsolete",
-    "since": "2026-08-22"
-  },
   "ajudication": {
     "note": "Misspelling of `adjudication`.",
     "reason": "misspelling",
@@ -137,11 +132,6 @@
     "note": "Misspelling of `cockatiel`.",
     "reason": "misspelling",
     "since": "2026-08-19"
-  },
-  "combobulate": {
-    "note": "Jocular back-formation from `discombobulate`, which has no positive base; Merriam-Webster has no entry for it (live-lookup verdict `unknown`).",
-    "reason": "not-a-word",
-    "since": "2026-08-23"
   },
   "comicon": {
     "note": "Proper noun: the Comic-Con convention.",
@@ -480,11 +470,6 @@
   "sadistical": {
     "note": "Misspelling of `sadistic`.",
     "reason": "misspelling",
-    "since": "2026-08-22"
-  },
-  "skateable": {
-    "note": "Merriam-Webster has no entry for it (live-lookup verdict `unknown`).",
-    "reason": "not-a-word",
     "since": "2026-08-22"
   },
   "sporatic": {
