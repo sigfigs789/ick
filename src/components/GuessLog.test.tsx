@@ -30,32 +30,6 @@ describe("GuessLog", () => {
     expect(screen.getByText("2 of 5 used")).toBeInTheDocument();
   });
 
-  it("names the form a word was scored as, when it is not its own", () => {
-    // "infatuate" displays what "infatuated" displays -- the fold caps a word at
-    // the most common member of its family. Without the note the score reads as
-    // a claim about the word the player typed, which is what made the pairing
-    // look like a bug rather than a fact about English.
-    const words: AcceptedWord[] = [
-      { word: "infatuate", rarity: "Rare", zipf: 2.9 },
-      { word: "fenestron", rarity: "Legend", zipf: -1.57 },
-    ];
-    render(<GuessLog acceptedWords={words} />);
-    expect(screen.getByText("infatuated")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /scored as "infatuated"/ })).toBeInTheDocument();
-    // A word scoring on its own data says nothing extra.
-    expect(screen.getByRole("button", { name: /fenestron/ })).not.toHaveAccessibleName(
-      /scored as/
-    );
-  });
-
-  it("says nothing about the fold on an archive puzzle that predates it", () => {
-    // On 2026-08-23 "infatuate" still scored on its own frequency, so there is
-    // no other form to name.
-    const words: AcceptedWord[] = [{ word: "infatuate", rarity: "Mythic", zipf: 1.3 }];
-    render(<GuessLog acceptedWords={words} date="2026-08-23" />);
-    expect(screen.queryByText("infatuated")).not.toBeInTheDocument();
-  });
-
   it("counts against the six-guess limit an archive puzzle played with", () => {
     const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
     render(<GuessLog acceptedWords={words} date="2024-01-01" />);

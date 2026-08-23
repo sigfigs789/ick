@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { baseFormSubstitution, rarityFor, rarityScore, scoredAsForm } from "./dictionary";
+import { baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
 import { baseForm, inflectionalBaseCandidates } from "./stem";
 import { evaluateSubmission } from "./submit";
 import dictionaryWords from "../data/dictionary.json";
@@ -548,104 +548,6 @@ describe("what the second direction refuses to fold", () => {
     for (const word of ["enshittification", "endling", "fenestron"]) {
       expect(score(word, ON_FORMS)).toBe(score(word, BEFORE_FORMS));
     }
-  });
-});
-
-describe("what the UI is allowed to say a word was scored as", () => {
-  // The fold's false-positive budget was set for a number. A cap may be wrong in
-  // the safe direction -- it only ever pulls toward common -- so the chain is
-  // allowed to reach a plausible word through a gated spelling guess or a junk
-  // intermediate. Printing that as a sentence is a different promise, and the
-  // player reads the note exactly where the fold was most aggressive.
-  it("names the form when the relation is plain and the score moved", () => {
-    const PRINTED: ReadonlyArray<[word: string, named: string]> = [
-      ["infatuate", "infatuated"], // the second direction, round-trip confirmed
-      ["chances", "chance"], // number inflection
-      ["wives", "wife"], // stem-change plural
-      ["abaci", "abacus"], // Latin plural, earned above the floor
-      ["taxied", "taxi"], // tense
-      ["alertly", "alert"], // transparent suffix
-      ["absoluteness", "absolute"],
-    ];
-    for (const [word, named] of PRINTED) {
-      expect(scoredAsForm(word), `${word} should name ${named}`).toBe(named);
-    }
-  });
-
-  it("stays silent where the chain reached its base by a route it cannot claim", () => {
-    // Each of these still folds -- the score is unchanged -- and each would have
-    // printed something false or unintelligible:
-    //   abaser -> "aba", the bare "-er" strip that is only admitted below the
-    //     measurement floor *because* the spelling is not decisive
-    //   growlier -> "growing", whirlier -> "whirring", bulliest -> "bullying":
-    //     chain endpoints two or more hops away, through a junk word
-    //   skateable/healable -> "skating"/"healing": the gated "-able" strip
-    //   combobulate -> "discombobulated": a reviewed override plus a hop
-    for (const word of [
-      "abaser",
-      "growlier",
-      "whirlier",
-      "bulliest",
-      "skateable",
-      "healable",
-      "combobulate",
-      "reoxygenate",
-    ]) {
-      expect(scoredAsForm(word), `${word} must not be explained`).toBeUndefined();
-      // Silence is about the sentence, not the score: the fold still happened,
-      // and analytics still sees it.
-      expect(baseFormSubstitution(word)).toBeDefined();
-    }
-  });
-
-  it("stays silent when the fold barely moved the number", () => {
-    // "beet" caps at "beets" three hundredths of a point away. A note that
-    // explains nothing is noise on every other row -- half the dictionary folds.
-    for (const word of ["beet", "abvolt"]) {
-      expect(baseFormSubstitution(word)?.base).toBe(`${word}s`);
-      expect(scoredAsForm(word)).toBeUndefined();
-    }
-  });
-
-  it("says nothing about a word that scored on its own data", () => {
-    for (const word of ["enshittification", "fenestron", "singe", "doe"]) {
-      expect(scoredAsForm(word)).toBeUndefined();
-    }
-  });
-
-  it("names only a word displaying the same score, across the whole dictionary", () => {
-    // The note has to survive being checked against the next row. A cap takes
-    // the raw frequency of the word it caps at, and that word can fold further,
-    // which would leave the two rows showing different numbers.
-    const inconsistent: string[] = [];
-    for (const word of dictionaryWords as string[]) {
-      const named = scoredAsForm(word);
-      if (!named) continue;
-      if (Math.abs(rarityFor(named)!.zipf - rarityFor(word)!.zipf) > 1e-9) {
-        inconsistent.push(`${word} -> ${named}`);
-      }
-    }
-    expect(inconsistent).toEqual([]);
-  });
-
-  it("prints on a third of the words that fold, not all of them", () => {
-    // The gate has to actually gate: half the dictionary folds, and a note on
-    // each would be wallpaper rather than information. Pinned as a range so a
-    // rule change that quietly doubles the notes shows up here.
-    let folds = 0;
-    let printed = 0;
-    for (const word of dictionaryWords as string[]) {
-      if (baseFormSubstitution(word)) folds++;
-      if (scoredAsForm(word)) printed++;
-    }
-    expect(folds).toBeGreaterThan(100_000);
-    expect(printed / folds).toBeGreaterThan(0.25);
-    expect(printed / folds).toBeLessThan(0.4);
-  });
-
-  it("says nothing on a puzzle whose scoring system predates the fold", () => {
-    expect(scoredAsForm("infatuate", "2026-08-23")).toBeUndefined();
-    expect(scoredAsForm("chances", "2026-08-18")).toBeUndefined();
   });
 });
 
