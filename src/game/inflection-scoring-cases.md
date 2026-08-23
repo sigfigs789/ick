@@ -335,6 +335,13 @@ countless rare non-derived words too.
 
 ### F. Prefixes — entirely unaddressed (reason 3)
 
+> **Superseded by [`prefix-scoring-cases.md`](prefix-scoring-cases.md)** (2026-08-22).
+> Prefixes are still unhandled, but the reasoning below does not hold: the
+> examples it treats as false positives are killed by the ≥4-letter and real-word
+> checks, or are inert because the fold only caps. The false positives that
+> survive are all measured at Zipf ≥ 2.9, which is precisely where the
+> MEASURED_FLOOR gate does work. See that document for the audit and the design.
+
 No prefix is stripped anywhere. Stripping would fix a prefixed form that scores
 rarer than its base (reconsider → consider, disconnect → connect, overcook →
 cook, misspell → spell), but the false positives are severe because most words
@@ -384,6 +391,8 @@ each is scored on its own frequency (or fixed one word at a time via an override
 
 **Prefixes (none handled)**
 - `un-`, `re-`, `dis-`, `mis-`, `non-`, `over-`, `under-`, `out-`, `pre-`
+  *(audited and designed in [`prefix-scoring-cases.md`](prefix-scoring-cases.md);
+  `over-`, `out-`, `mis-`, `non-`, `dis-`, `counter-`, `under-` are the clean tier)*
 
 **Lowest-risk candidates to actually add:** `c`→`ck` orthography, bare `-er`/`-est`
 above the floor, `-eaux`→`-eau`, `-hood`, `-ically`, `-ologist`. Everything else
