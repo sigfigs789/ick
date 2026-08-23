@@ -62,9 +62,10 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(
  *     "-able"/"-ible", "-ologist" -> "-ology", "-cked"/"-cking" -> "-c",
  *     "-eaux" -> "-eau" (see `derivedBaseCandidates`). Ungated by
  *     MEASURED_FLOOR, like the bound suffixes of 2026-08-16: nothing accidental
- *     ends that way, so there is no coincidence for a gate to catch. ~1,760
- *     words score lower, ~900 of which were holding a Mythic-or-better score
- *     for an ending. No label mapping moves.
+ *     ends that way, so there is no coincidence for a gate to catch. 1,996
+ *     words score lower and none score higher; 1,019 of them were holding a
+ *     Mythic-or-better score for an ending, 690 a Legend. No label mapping
+ *     moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
