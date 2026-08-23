@@ -8,7 +8,7 @@ Answers three questions for one word, read-only:
   3. If it is not valid, why? -> blocklisted, one of the four rejection-metadata
      categories (proper noun / abbreviation / misspelling / archaic-or-obsolete), or simply not
      on the curated list. For a not-on-list word we also consult the frequency
-     waterfall (wordfreq -> Norvig -> Google Books) to say whether any corpus
+     waterfall (wordfreq -> Norvig -> Google Books -> Datamuse) to say whether any source
      attests it -- i.e. whether "Add a word" could score it without --forced.
 
 This never writes files and opens no pull request; it only reports. It reuses the
@@ -175,7 +175,7 @@ def check(raw_word: str) -> tuple[bool, str]:
     zipf = scoring.FrequencyWaterfall().zipf(word, include_bound=True)
     if zipf is None:
         lines.append(
-            "No frequency corpus (wordfreq → Norvig → Google Books) attests this "
+            "No frequency source (wordfreq → Norvig → Google Books → Datamuse) attests this "
             "word, so it has no measured rarity. The **Add a word** action would "
             "reject it unless run with `forced=true` (which scores it the maximum "
             "10.0 / Legend)."

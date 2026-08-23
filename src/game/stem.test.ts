@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   baseForm,
+  derivedBaseCandidates,
   inflectionalBaseCandidates,
   prefixBaseCandidates,
   unmeasuredBaseCandidates,
@@ -241,6 +242,67 @@ describe("unmeasuredBaseCandidates", () => {
   });
 });
 
+describe("derivedBaseCandidates", () => {
+  it.each([
+    ["catholically", "catholic"],
+    ["sedimentologically", "sedimentologic"],
+    ["availably", "available"],
+    ["susceptibly", "susceptible"],
+    ["mythologist", "mythology"],
+    ["panicked", "panic"],
+    ["trafficking", "traffic"],
+    ["bureaux", "bureau"],
+  ])("offers %s -> %s", (word, base) => {
+    expect(derivedBaseCandidates(word)).toContain(base);
+  });
+
+  it("does not read an agent noun as a c -> ck rewrite", () => {
+    // "-cker" is left out: the base is at least as likely to be the "-ck" verb,
+    // and the rule would fold "blockers" onto "bloc" (see the doc comment).
+    expect(derivedBaseCandidates("blockers")).toEqual([]);
+    expect(derivedBaseCandidates("panicker")).toEqual([]);
+  });
+
+  it("leaves the unbound endings to no rule at all", () => {
+    // Every family here has a bound ending. The look-alike endings that are
+    // ordinary word-final material get no candidate, so nothing downstream has
+    // to gate them: "metal", "topic", "unity", "forward", "spaceship".
+    for (const word of ["metal", "topic", "unity", "forward", "spaceship", "listless"]) {
+      expect(derivedBaseCandidates(word), `${word} must offer nothing`).toEqual([]);
+    }
+  });
+
+  it("is case-insensitive and never offers the word itself", () => {
+    expect(derivedBaseCandidates("TOXICALLY")).toEqual(derivedBaseCandidates("toxically"));
+    for (const word of ["toxically", "availably", "mythologist", "bureaux"]) {
+      expect(derivedBaseCandidates(word)).not.toContain(word);
+    }
+  });
+});
+
+describe("derivedBaseCandidates length bounds", () => {
+  it.each([
+    ["epically", "epic"],
+    ["stably", "stable"],
+    ["viably", "viable"],
+    ["oologist", "oology"],
+    ["ologist", "ology"],
+    ["beaux", "beau"],
+  ])("reaches the shortest member of its family: %s -> %s", (word, base) => {
+    // Each bound is the shortest word the family actually has. Set one letter
+    // higher -- the round numbers this started with -- and every word here is
+    // silently dropped.
+    expect(derivedBaseCandidates(word)).toContain(base);
+  });
+
+  it("offers both spellings for a c -> ck rewrite", () => {
+    // "chocked" is a tense of "chock", not of "choc". Offering only the "-c"
+    // form hands it "choc"; offering both lets the caller's most-common check
+    // pick the real base.
+    expect(derivedBaseCandidates("chocked")).toEqual(["choc", "chock"]);
+    expect(derivedBaseCandidates("panicked")).toEqual(["panic", "panick"]);
+  });
+});
 describe("prefixBaseCandidates", () => {
   it("offers the base a transparent prefix was attached to", () => {
     expect(prefixBaseCandidates("nonplaying")).toContain("playing");

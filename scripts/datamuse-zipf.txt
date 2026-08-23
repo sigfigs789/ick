@@ -1,0 +1,22 @@
+# Zipf frequencies Datamuse attested for words the bulk corpora miss entirely.
+#
+# The last tier of the frequency waterfall (see frequency.py). Datamuse is a
+# one-word-at-a-time API, so it cannot be bulk-loaded like Norvig or Google
+# Books -- but it is the source api/validate.ts already scores a live-approved
+# word from, and its `f:` frequency-per-million becomes a Zipf the same way
+# (log10(perMillion) + 3). A word graduating from the live queue into the
+# curated dictionary would otherwise drop from that measured score to the
+# unattested sentinel and a flat 10.00 Legend, which is exactly the fidelity
+# this file exists to keep.
+#
+# `word<TAB>zipf`, one per line, entered only for a word the waterfall's bulk
+# corpora do not attest at all -- an entry here can never override a measured
+# one. Blank lines and #-comments are ignored. Add a word with the Zipf the live
+# endpoint reported for it (`/api/validate?word=<word>` -> `zipf`), and record
+# the date in scripts/word-review-log.json so the value's provenance is dated.
+#
+# 2026-08-22, graduated from the Supabase review queue:
+caprylate	1.1037011195895143
+conization	1.8046845149069404
+inosinate	0.7921114090871684
+uridylate	0.6805168093812548

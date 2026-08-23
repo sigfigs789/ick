@@ -54,6 +54,11 @@
     "reason": "Plural / third-person form of `collegiate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "combobulate": {
+    "base": "discombobulate",
+    "reason": "Back-formation from `discombobulate`; dropping `dis-` is not a discovery.",
+    "since": "2026-08-23"
+  },
   "compassionates": {
     "base": "compassionate",
     "reason": "Plural / third-person form of `compassionate`; a suffix is not a discovery.",
@@ -308,6 +313,11 @@
     "base": "reconnaissance",
     "reason": "Reviewed demotion to `reconnaissance`.",
     "since": "2026-08-19"
+  },
+  "reoxygenate": {
+    "base": "oxygenate",
+    "reason": "`re-` prefixed form of `oxygenate`; a prefix is not a discovery.",
+    "since": "2026-08-22"
   },
   "shellfires": {
     "base": "shellfire",

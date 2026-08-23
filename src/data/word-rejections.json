@@ -1,17 +1,182 @@
 {
+  "absconce": {
+    "note": "A real noun (a dark lantern used in church) with a Wiktionary entry, but nothing attests its use: no corpus in the waterfall, no Datamuse frequency, no Merriam-Webster entry, no citations, and not in ESDB/SCOWL 80. Its Google Books signal (1.7e-10, flat since 1800) is the OCR noise floor, not evidence -- so it is below the curated list's bar rather than obsolete.",
+    "reason": "not-a-word",
+    "since": "2026-08-23"
+  },
+  "ajudication": {
+    "note": "Misspelling of `adjudication`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "aligorical": {
+    "note": "Misspelling of `allegorical`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "anticedence": {
+    "note": "Misspelling of `antecedence`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "anticedent": {
+    "note": "Misspelling of `antecedent`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "anticlimatical": {
+    "note": "Misspelling of `anticlimactic`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "apprendice": {
+    "note": "Misspelling of `apprentice`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "apredice": {
+    "note": "Misspelling of `apprentice`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "archtypical": {
+    "note": "Misspelling of `archetypal`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "aspedistra": {
+    "note": "Misspelling of `aspidistra`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
   "atest": {
     "note": "Misspelling of `attest`.",
     "reason": "misspelling",
     "since": "2026-08-19"
   },
+  "baconator": {
+    "note": "Proper noun: a Wendy's menu item.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "bicenntenial": {
+    "note": "Misspelling of `bicentennial`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "bicentenial": {
+    "note": "Misspelling of `bicentennial`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
   "boate": {
     "reason": "obsolete",
     "since": "2026-08-19"
+  },
+  "botticellian": {
+    "note": "Proper noun: the painter Botticelli.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "calibur": {
+    "note": "Proper noun: the sword Excalibur.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "californication": {
+    "note": "Proper noun: a Red Hot Chili Peppers song and TV series.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "caligrapher": {
+    "note": "Misspelling of `calligrapher`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "calistenics": {
+    "note": "Misspelling of `calisthenics`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "callibration": {
+    "note": "Misspelling of `calibration`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "caltrain": {
+    "note": "Proper noun: the Caltrain rail service.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "cannonical": {
+    "note": "Misspelling of `canonical`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "cannonically": {
+    "note": "Misspelling of `canonically`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "centrifical": {
+    "note": "Misspelling of `centrifugal`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "challice": {
+    "note": "Misspelling of `chalice`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "cno": {
+    "note": "Abbreviation: an acronym.",
+    "reason": "abbreviation",
+    "since": "2026-08-22"
   },
   "cockateel": {
     "note": "Misspelling of `cockatiel`.",
     "reason": "misspelling",
     "since": "2026-08-19"
+  },
+  "comicon": {
+    "note": "Proper noun: the Comic-Con convention.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "comjugal": {
+    "note": "Misspelling of `conjugal`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "comjuncture": {
+    "note": "Misspelling of `conjuncture`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "conagra": {
+    "note": "Proper noun: the food company ConAgra.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "conair": {
+    "note": "Proper noun: the airline/film name Con Air.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "conciousness": {
+    "note": "Misspelling of `consciousness`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "condecension": {
+    "note": "Misspelling of `condescension`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "condusive": {
+    "note": "Misspelling of `conducive`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
   },
   "conferrence": {
     "note": "Misspelling of `conference`.",
@@ -28,6 +193,36 @@
     "reason": "misspelling",
     "since": "2026-08-19"
   },
+  "conflag": {
+    "note": "Abbreviation: a clipping of `conflagration`.",
+    "reason": "abbreviation",
+    "since": "2026-08-22"
+  },
+  "conniseur": {
+    "note": "Misspelling of `connoisseur`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "connoiseur": {
+    "note": "Misspelling of `connoisseur`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "consciouness": {
+    "note": "Misspelling of `consciousness`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "constituancy": {
+    "note": "Misspelling of `constituency`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "constituition": {
+    "note": "Misspelling of `constitution`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
   "contente": {
     "note": "Misspelling of `content`.",
     "reason": "misspelling",
@@ -37,6 +232,11 @@
     "note": "Misspelling of `context`.",
     "reason": "misspelling",
     "since": "2026-08-19"
+  },
+  "contituent": {
+    "note": "Misspelling of `constituent`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
   },
   "contraversial": {
     "note": "Misspelling of `controversial`.",
@@ -53,19 +253,174 @@
     "reason": "misspelling",
     "since": "2026-08-19"
   },
+  "conveluted": {
+    "note": "Misspelling of `convoluted`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "convuluted": {
+    "note": "Misspelling of `convoluted`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "decepticon": {
+    "note": "Proper noun: the Transformers faction.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "deconstucted": {
+    "note": "Misspelling of `deconstructed`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "discalculia": {
+    "note": "Misspelling of `dyscalculia`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
   "eate": {
     "reason": "obsolete",
     "since": "2026-08-19"
+  },
+  "epistomological": {
+    "note": "Misspelling of `epistemological`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "eurydicean": {
+    "note": "Proper noun: Eurydice.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "evicerate": {
+    "note": "Misspelling of `eviscerate`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "falconeer": {
+    "note": "Misspelling of `falconer`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "glicerol": {
+    "note": "Misspelling of `glycerol`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "gluconobacter": {
+    "note": "Proper noun: the bacterial genus Gluconobacter.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
   },
   "hatefull": {
     "note": "Misspelling of `hateful`.",
     "reason": "misspelling",
     "since": "2026-08-19"
   },
+  "icalendar": {
+    "note": "Proper noun: the iCalendar data format.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "icecapades": {
+    "note": "Proper noun: the Ice Capades show.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "imbelical": {
+    "note": "Misspelling of `umbilical`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "ingrataiated": {
+    "note": "Misspelling of `ingratiated`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "joycon": {
+    "note": "Proper noun: Nintendo's Joy-Con controller.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "leprechon": {
+    "note": "Misspelling of `leprechaun`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "leprecon": {
+    "note": "Misspelling of `leprechaun`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "licencous": {
+    "note": "Misspelling of `licentious`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "licentuous": {
+    "note": "Misspelling of `licentious`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "licquorice": {
+    "note": "Misspelling of `liquorice`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "miceller": {
+    "note": "Misspelling of `micellar`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "necronomicon": {
+    "note": "Proper noun: a fictional book title.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "noc": {
+    "note": "Abbreviation: an acronym.",
+    "reason": "abbreviation",
+    "since": "2026-08-22"
+  },
+  "ocn": {
+    "note": "Abbreviation: an acronym.",
+    "reason": "abbreviation",
+    "since": "2026-08-22"
+  },
+  "parenthethical": {
+    "note": "Misspelling of `parenthetical`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "percipitation": {
+    "note": "Misspelling of `precipitation`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
   "photoreconnaisance": {
     "note": "Misspelling of `photoreconnaissance`.",
     "reason": "misspelling",
     "since": "2026-08-19"
+  },
+  "prescipitation": {
+    "note": "Misspelling of `precipitation`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "princetown": {
+    "note": "Proper noun: Princetown, a place name.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "prismaticism": {
+    "note": "Merriam-Webster has no entry for it (live-lookup verdict `unknown`).",
+    "reason": "not-a-word",
+    "since": "2026-08-22"
+  },
+  "quates": {
+    "note": "Merriam-Webster has no entry for it (live-lookup verdict `unknown`).",
+    "reason": "not-a-word",
+    "since": "2026-08-22"
   },
   "reaccomodate": {
     "note": "Misspelling of `reaccommodate`.",
@@ -86,5 +441,85 @@
     "note": "Misspelling of `reaccommodate`.",
     "reason": "misspelling",
     "since": "2026-08-19"
+  },
+  "recconaisance": {
+    "note": "Misspelling of `reconnaissance`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "recconnaissance": {
+    "note": "Misspelling of `reconnaissance`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "reconissance": {
+    "note": "Misspelling of `reconnaissance`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "reconnasence": {
+    "note": "Misspelling of `reconnaissance`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "reconnoiting": {
+    "note": "Misspelling of `reconnoitring`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "ricearoni": {
+    "note": "Proper noun: the Rice-A-Roni brand.",
+    "reason": "proper-noun",
+    "since": "2026-08-22"
+  },
+  "sadistical": {
+    "note": "Misspelling of `sadistic`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "sporatic": {
+    "note": "Misspelling of `sporadic`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "subconsciouslly": {
+    "note": "Misspelling of `subconsciously`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "testical": {
+    "note": "Misspelling of `testicle`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "trisymmetrical": {
+    "note": "Merriam-Webster has no entry for it (live-lookup verdict `unknown`).",
+    "reason": "not-a-word",
+    "since": "2026-08-22"
+  },
+  "umbelical": {
+    "note": "Misspelling of `umbilical`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "umbelically": {
+    "note": "Misspelling of `umbilically`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "ventricel": {
+    "note": "Misspelling of `ventricle`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "ventricelur": {
+    "note": "Misspelling of `ventricular`.",
+    "reason": "misspelling",
+    "since": "2026-08-22"
+  },
+  "weatherical": {
+    "note": "Merriam-Webster has no entry for it (live-lookup verdict `unknown`).",
+    "reason": "not-a-word",
+    "since": "2026-08-22"
   }
 }

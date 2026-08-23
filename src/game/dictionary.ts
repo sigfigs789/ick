@@ -8,6 +8,7 @@ import {
   baseForm,
   boundBaseCandidates,
   degreeBaseCandidates,
+  derivedBaseCandidates,
   inflectionalBaseCandidates,
   prefixBaseCandidates,
   unmeasuredBaseCandidates,
@@ -50,6 +51,15 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         -- comparatives, Latin plurals, -ize/-able -- fold too, but only for a
  *         word below MEASURED_FLOOR, where its score is a stand-in rather than a
  *         measurement (see `unmeasuredBaseCandidates`). No label mapping moves.
+ *   - on/after 2026-08-24 (the latest system): the derivational families whose
+ *     ending is *bound* fold as well -- "-ically" -> "-ic", "-ably"/"-ibly" ->
+ *     "-able"/"-ible", "-ologist" -> "-ology", "-cked"/"-cking" -> "-c",
+ *     "-eaux" -> "-eau" (see `derivedBaseCandidates`). Ungated by
+ *     MEASURED_FLOOR, like the bound suffixes of 2026-08-16: nothing accidental
+ *     ends that way, so there is no coincidence for a gate to catch. 2,003
+ *     words score lower and none score higher; 1,024 of them were holding a
+ *     Mythic-or-better score for an ending, 692 a Legend. No label mapping
+ *     moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -62,11 +72,18 @@ const NARROW_BANDS_START = "2026-08-21";
 // concerns -- one changes which label a score wears, the other changes the score
 // -- and either could move to its own date later without disturbing the other.
 const INFLECTION_BASE_START = NARROW_BANDS_START;
+// The bound derivational families (-ically, -ably/-ibly, -ologist, the c -> ck
+// orthography, -eaux) fold from this date. Its own cutover rather than a reuse
+// of INFLECTION_BASE_START: those rules are already live in archived puzzles,
+// and every score these move must stay frozen where it was played.
+const DERIVED_BASE_START = "2026-08-24";
 // The transparent prefixes join the gated families (see prefixBaseCandidates).
-// Its own date, so every archived puzzle keeps the scores it was played with.
+// Shares 2026-08-24 with DERIVED_BASE_START -- one cutover carrying two
+// independent changes -- but kept as its own name so either can move later
+// without dragging the other.
 //
 // Nothing enforces that a cutover date is still in the future when it ships, and
-// none of the five above are pinned by a test -- every test here hardcodes its
+// none of the six above are pinned by a test -- every test here hardcodes its
 // own dates, so a stale constant leaves the suite green. That matters because a
 // cutover reached in the past re-scores the puzzle in play: words already banked
 // keep the scores stored with them (see storage.ts, which persists zipf/rarity at
@@ -322,6 +339,14 @@ interface Scoring {
   // earlier systems so past puzzles' scores stay frozen (see
   // INFLECTION_BASE_START).
   inflectionBases: boolean;
+  // Whether the bound derivational families in `derivedBaseCandidates` fold --
+  // "-ically" -> "-ic", "-ably"/"-ibly" -> "-able"/"-ible", "-ologist" ->
+  // "-ology", "-cked"/"-cking" -> "-c", "-eaux" -> "-eau". Ungated by
+  // MEASURED_FLOOR, like the bound suffixes in `boundBaseCandidates`: the
+  // ending is what makes them safe, not the frequency. Introduced with the
+  // 2026-08-24 cutover; off for earlier systems so past puzzles' scores stay
+  // frozen (see DERIVED_BASE_START).
+  derivedBases: boolean;
   // Whether a below-floor word may be stripped of a transparent prefix to reach
   // the word it was built on ("outwill" -> "will"). Introduced with the
   // 2026-08-24 cutover; off for earlier systems so past puzzles' scores stay
@@ -347,6 +372,7 @@ function twoBandScoring(
   legend: boolean,
   chainedBaseForms = false,
   inflectionBases = false,
+  derivedBases = false,
   prefixBases = false,
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
@@ -385,6 +411,7 @@ function twoBandScoring(
     boundBaseForms,
     chainedBaseForms,
     inflectionBases,
+    derivedBases,
     prefixBases,
   };
 }
@@ -410,18 +437,43 @@ const RETUNED_SCORING: Scoring = twoBandScoring(
   /* legend */ true,
   /* chainedBaseForms */ true,
   /* inflectionBases */ true,
+  /* derivedBases */ false,
   /* prefixBases */ false,
   /* narrowBands */ true
 );
-// The latest system (2026-08-24): RETUNED_SCORING plus the transparent prefixes
-// in the gated family (see prefixBaseCandidates in stem.ts).
-const PREFIX_SCORING: Scoring = twoBandScoring(
+// The 2026-08-24 system with only the bound derivational families on. Reached
+// only if PREFIX_BASE_START is ever moved later than DERIVED_BASE_START; while
+// the two dates are equal, scoringFor steps straight past it to LATEST_SCORING.
+// Kept so the two cutovers stay genuinely independent rather than equal by
+// accident.
+const DERIVED_SCORING: Scoring = twoBandScoring(
   9.9,
   0,
   /* boundBaseForms */ true,
   /* legend */ true,
   /* chainedBaseForms */ true,
   /* inflectionBases */ true,
+  /* derivedBases */ true,
+  /* prefixBases */ false,
+  /* narrowBands */ true
+);
+// The latest system (2026-08-24): both of that day's changes -- the bound
+// derivational families in `derivedBaseCandidates`, and the transparent
+// prefixes in `prefixBaseCandidates`.
+//
+// Every argument is named, and that is not decoration. These are eight
+// positional parameters ending in four booleans, and merging the two changes
+// that added the last two silently slid `narrowBands` into the `prefixBases`
+// slot -- type-correct, comment-contradicting, and invisible to tsc. If a third
+// flag is ever needed, take the options-object refactor instead.
+const LATEST_SCORING: Scoring = twoBandScoring(
+  9.9,
+  0,
+  /* boundBaseForms */ true,
+  /* legend */ true,
+  /* chainedBaseForms */ true,
+  /* inflectionBases */ true,
+  /* derivedBases */ true,
   /* prefixBases */ true,
   /* narrowBands */ true
 );
@@ -451,6 +503,7 @@ const LEGACY_SCORING: Scoring = {
   boundBaseForms: false,
   chainedBaseForms: false,
   inflectionBases: false,
+  derivedBases: false,
   prefixBases: false,
 };
 
@@ -508,7 +561,7 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return PREFIX_SCORING; // newest system
+  if (date === undefined) return LATEST_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
   if (date < CHAINED_BASE_START) return WIDE_SCORING;
@@ -516,8 +569,12 @@ function scoringFor(date?: string): Scoring {
   // profile, so it reads the scoring one; `usesRetunedTiers` asks the label
   // question and reads NARROW_BANDS_START. The profile beyond carries both.
   if (date < INFLECTION_BASE_START) return CHAINED_SCORING;
-  if (date < PREFIX_BASE_START) return RETUNED_SCORING;
-  return PREFIX_SCORING;
+  // Two cutovers on the same day, laddered separately so either can move later
+  // without the other following. While the dates are equal the middle rung is
+  // simply stepped over.
+  if (date < DERIVED_BASE_START) return RETUNED_SCORING;
+  if (date < PREFIX_BASE_START) return DERIVED_SCORING;
+  return LATEST_SCORING;
 }
 
 // -- Curated rejections (src/data/word-rejections.json) ----------------------
@@ -547,8 +604,13 @@ export const CURATED_REJECTION_REASONS = [
 export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
 
 /**
- * Words that stay in the dictionary but are no longer playable, each with the
- * reason a player sees when they try it.
+ * Reviewed rejections, each with the reason a player sees when they try the word.
+ * Two kinds, told apart by whether the word is on the curated list: a word that
+ * stays in the dictionary but is no longer playable from `since` on, and a word
+ * that never made the list at all -- a misspelling, a brand name, a coinage a
+ * player reached for -- where the entry changes no verdict but names the fault
+ * instead of falling back to the generic "not in the curated list" message, and
+ * spares the live Merriam-Webster lookup a word that has already been judged.
  *
  * Rejecting by *removal* was the older approach and it lost information. The five
  * index-aligned structures (`dictionary[]`, `zipfHundredths[]`, `codes`,
@@ -947,6 +1009,14 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
         }
       }
     }
+  }
+  // The bound derivational families: an ending English only ever produces by
+  // attaching that suffix, so -- like the "-ization"/"-ability" pair in
+  // `scoringBaseForm` -- there is nothing accidental for the rule to catch and
+  // no frequency gate is needed. "catholically" folds onto "catholic" though
+  // both are measured, the same way "happier" folds onto "happy".
+  if (scoring.derivedBases) {
+    for (const candidate of derivedBaseCandidates(word)) add(candidate);
   }
   add(scoringBaseForm(word, scoring));
   return out;

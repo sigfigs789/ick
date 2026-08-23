@@ -200,6 +200,60 @@ Extra guards inside this family:
 
 ---
 
+## 8. Bound derivational suffixes, second set — `-ically`, `-ably`/`-ibly`, `-ologist`, `-eaux`
+
+`derivedBaseCandidates` in [`stem.ts`](stem.ts). Runs **everywhere** (not gated),
+for the same reason §6 does: the ending is *bound* — a string English only
+produces by attaching that suffix — so there is nothing accidental for the rule
+to catch. The `c` → `ck` orthography rides along in the same function.
+
+| Rule | Converts |
+|------|----------|
+| `-ically` → `-ic` | catholically → catholic, arctically → arctic, musically → music |
+| `-ably` → `-able`, `-ibly` → `-ible` | availably → available, susceptibly → susceptible |
+| `-ologist` → `-ology` | mythologist → mythology, technologist → technology |
+| `-cked` / `-cking` → `-c` | panicked → panic, trafficking → traffic |
+| `-eaux` → `-eau` | bureaux → bureau, chateaux → chateau |
+
+`-ically` is the family §5's `-ly` rule cannot reach: the `-ical` adjective it
+strips back to usually isn't a word ("basical", "toxical"). `-ably`/`-ibly`
+reaches the *adjective*, one step up from the bare stem §7 offers below the
+floor, which is what a measured adverb needs.
+
+**False positives:** none found. The look-alike cases are neutralised by the cap,
+not by a gate — `physically` proposes the real word `physic`, and `critically`
+proposes `critic`, but both bases are *rarer* than the adverb, so the fold is
+inert and the adverb keeps its measured score. A wrong candidate only bites when
+it is more common than the word, and no such coincidence exists in these
+endings.
+
+The `c` → `ck` rule offers **both** spellings, because a `-cked` word is as
+likely built on a `-ck` verb as on a `-c` one: "chocked" is a tense of "chock",
+"cricked" of "crick", "crocked" of "crock". Offering only the `-c` form would
+hand those to "choc", "cric" and "croc"; offering both lets the most-common
+check pick the real base.
+
+The one case where the coincidence is commoner than the truth is
+"specked"/"specking": "spec" (3.59) beats the real base "speck" (3.02), so those
+two words score 0.84 low. Left alone deliberately. An override can't fix it —
+`specked` already folds to `speck` through the plain `-ed` rule, so an entry
+pinning it there moves no score and the override file's own invariant (every
+entry must lower a score) rejects it. At 0.57 Zipf apart this is the harmless
+near-tie shape §2 describes for "caves"/"cafe", not the "theses" → "these" shape
+an override exists to catch.
+
+**Deliberately excluded:** `-cker`. An agent noun is at least as likely built on
+a `-ck` verb, and the same most-common check does *not* rescue it — "bloc"
+(4.61) beats "block", so "blockers" folds to "bloc" whatever spellings are
+offered. The price is that "panicker" keeps an unearned Elusive.
+
+Each length bound is the shortest word its family actually has — "epically" and
+"laically" at eight letters, "stably" and "viably" at six, "oologist" at eight,
+"beaux" at five. A bound set one letter higher (the round numbers this started
+with) silently drops those words from their own rule.
+
+---
+
 ## Odd spellings at the inflection boundary
 
 Yes — English rarely just glues a suffix on; it mutates the spelling where the
@@ -223,23 +277,16 @@ Because the doubled-consonant strip runs on both spellings, the British `-ll-`
 doubling ("travelled", "cancelled", "labelled") folds to the single-`l` base for
 free — a nice side effect, not a special case.
 
-### The odd spelling we *don't* handle: `c` → `ck`
+### The odd spelling that used to be missing: `c` → `ck`
 
-The one common orthographic rule missing is the `k`-insertion after a final `c`,
-which English adds so the `c` stays hard before `-ed`/`-ing`/`-er`:
+English inserts a `k` after a final `c` so it stays hard before `-ed`/`-ing`, and
+`stripDoubledConsonant` leaves `ck` alone (it isn't a doubled consonant), so
+"panicked" used to strip to the non-word "panick" and never fold. §8's
+`-cked`/`-cking` → `-c` rule closes it: panicked → panic, trafficking →
+traffic, mimicked → mimic. The `-cker` half (picnicker, mimicker) stays out —
+see §8.
 
-| Would fix | What happens today |
-|-----------|--------------------|
-| panicked → panic, panicking → panic | strips to the non-word "panick" (the `ck` isn't a doubled consonant, so `stripDoubledConsonant` leaves it) and never folds |
-| mimicked → mimic, trafficking → traffic, picnicker → picnic | same — lands on "mimick" / "traffick" / "picnick", none of them words |
-
-**Would fix:** these currently score on their own (rarer) frequency instead of
-their base. **False positives if added:** essentially none — a `-cked`/`-cking`
-→ `-c` rewrite only matches `c`-final verbs, and the real-word check on the base
-covers the rest. This is the closest orthographic sibling to the tractable
-`-er`/`-est` gap in §B, and the safest of the unaddressed cases.
-
-## 8. Transparent prefixes — `un-`, `non-`, `over-`, `out-`, `mis-`, … (2026-08-24 on)
+## 9. Transparent prefixes — `un-`, `non-`, `over-`, `out-`, `mis-`, … (2026-08-24 on)
 
 Below `MEASURED_FLOOR` only, like §7. A word may be stripped of one transparent
 prefix to reach the word it was built on, and the chain carries on from there:
@@ -319,6 +366,12 @@ reasons:
    the derived word has drifted in meaning, so a spelling strip lands on an
    unrelated word.
 
+A false positive is only a *live* one when the wrong base is **more common** than
+the word, because the fold caps and never inherits (see `chainedBase`). Many of
+the misfires listed below are therefore inert — the rule proposes them and the
+cap discards them — and the tables say which. A family is refused on the ones
+that actually fire.
+
 ### A. Irregular inflections — no spelling rule possible (reason 1)
 
 None of these can be reached by stripping letters; the rewrite is suppletive or
@@ -342,27 +395,27 @@ belong in **overrides**, not rules.
 
 | Family | Would fix | False positives |
 |--------|-----------|-----------------|
-| Bare `-er`/`-est` **above** the floor | bigger → big, hotter → hot, cleverer → clever, narrower → narrow (measured comparatives that currently keep their own rarer score) | agent nouns with no counterpart degree — but the same paired-degree trick §4 uses for `-ier`/`-iest` ("has a `-est`?") could gate it: "baker" has no "bakest" → safe; "faster" has "fastest" → folds to "fast" (correct). This is the most tractable gap. |
+| Bare `-er`/`-est` **above** the floor | bigger → big, hotter → hot, cleverer → clever, narrower → narrow (measured comparatives that currently keep their own rarer score) | 542 words move, but §4's paired-degree trick does **not** transfer. It assumes an agent noun has no counterpart ("baker" has no "bakest"); this dictionary carries the archaic second-person verb forms — `thinkest`, `knowest`, `hearest`, `speakest` — so the check passes for verbs and folds "thinker" → "think" (6.38 → 2.43) and "knower" → "know". Plus "posttest" → "post", "recenter" → "recent", "tensest" → "tens". Tractable, but it needs a guard of its own, not §4's. |
 | Greek neuter `-a` → `-on` | criteria → criterion, phenomena → phenomenon, automata → automaton | comma → common, silica → silicon, squadra → squadron (~19 wrong in 280 — the reason §3 omits it) |
-| Stem-change `-ora`/`-era` → `-us` | corpora → corpus, genera → genus | camera → "camus", opera → "opus" (distinct word), era → — |
-| French `-eaux` → `-eau` | bureaux → bureau, tableaux → tableau, chateaux → chateau | very few words end `-eaux`; low risk — a genuine near-miss addition |
+| Stem-change `-ora`/`-era` → `-us` | corpora → corpus, genera → genus | moot: the rule changes **zero** words. "corpus" and "genus" are both more common than nothing the rule reaches, and every other match folds onto a rarer base, so the cap makes it inert. |
 
 ### C. Productive transparent derivational suffixes — moderate false positives (reason 3)
 
-These are the closest cousins of the handled `-ness`/`-ly`. A real-word + gate
-guard would rescue some; the false-positive base being *common* is what breaks
-the rest.
+These are the closest cousins of the handled `-ness`/`-ly`. Their endings are
+*not* bound — an ordinary word can end that way without being a derivation — so
+unlike §8 they need a guard. What saves most of them anyway is the cap: a
+coincidental base only bites when it is **more common** than the word, which is
+rarer than the spelling suggests. The counts below are words whose score would
+actually move, with the misfires that actually fire.
 
 | Suffix | Would fix | False positives (folds onto unrelated real word) |
 |--------|-----------|--------------------------------------------------|
-| `-ful` / `-iful`→`-y` | beautiful → beauty, careful → care, powerful → power, merciful → mercy | grateful → grate, awful → (aw) |
-| `-less` | helpless → help, hopeless → hope, worthless → worth | ruthless → ruth, listless → list, reckless → reck |
-| `-hood` | childhood → child, brotherhood → brother, falsehood → false | low risk — a strong candidate to add |
-| `-ship` | friendship → friend, ownership → owner, leadership → leader | hardship → hard, worship → (wor, safe) |
-| `-dom` | kingdom → king, boredom → bore, stardom → star | random → rand, seldom → (seld) |
-| `-ally` / `-ically` → `-ic` | basically → basic, dramatically → dramatic (cases `-ly` misses because "basical" isn't a word) | low risk — most `-ically` words are `-ic` + ally |
-| `-ologist` → `-ology` | biologist → biology, geologist → geology | narrow and near-safe — every `-ologist` is an `-ology` agent |
-| `-ward(s)` | homeward → home, westward → west (the `-s` is already handled → `-ward`) | coward → cow, toward → (tow), steward → (stew) |
+| `-ful` / `-iful`→`-y` (297 words) | beautiful → beauty, careful → care, powerful → power, merciful → mercy | grateful → grate and awful → (aw) are both **inert** (base rarer, or too short). The measure nouns fold correctly (cupful → cup). Needs the bare stem only: adding a `stem + "e"` variant is what produces carful → care. A near-miss addition. |
+| `-less` (746 words, 317 of them 9.5+) | helpless → help, hopeless → hope, worthless → worth | reckless → reck and regardless → regard are **inert**. Only listless → list is plainly wrong; restless → rest and priceless → price are morphologically real and semantically drifted. One exemption away from viable. |
+| `-hood` (59 words) | childhood → child, brotherhood → brother, falsehood → false | monkshood → monks and underhood → under; likelihood/livelihood are inert (no stem). Two exemptions away from viable. |
+| `-ship` (273 words) | friendship → friend, ownership → owner, leadership → leader | the literal-ship compounds fire: starship → star, warship → war, airship → air, flagship → flag, spaceship → space. worship is inert. A whole FP *class*, not a handful. |
+| `-dom` (66 words) | kingdom → king, boredom → bore, stardom → star | condom → con fires; random → rand and seldom → (seld) are inert. Small family, so the one misfire is most of the risk. |
+| `-ward(s)` (51 words) | homeward → home, westward → west (the `-s` is already handled → `-ward`) | greensward → greens, forward → for, wayward → way, froward → fro, hayward → hay, steward → stew all fire. coward and toward are inert (stem too short). ~7 wrong in 51. |
 
 A note on picking from this table: `scripts/fold-disagreements.py` will tell you
 how many words each row is actually worth before you write the rule. It compares
@@ -378,10 +431,10 @@ string, so most matches are not derivations.
 
 | Suffix | Occasional fix | False positives (the majority) |
 |--------|----------------|-------------------------------|
-| `-let` | booklet → book, piglet → pig, leaflet → leaf | hamlet → ham, wallet → wall, bullet → bull, toilet → (toi), tablet, mallet, goblet, cutlet |
+| `-let` (126 words) | booklet → book, piglet → pig, leaflet → leaf | hamlet → ham, wallet → wall, bullet → bull, mallet → mal, cutlet → cut all fire; tablet and goblet are inert |
 | `-ette` | kitchenette → kitchen, statuette → statue | palette → pal, roulette, baguette → bagu, gazette → gaz, rosette → ros, vignette |
-| `-ish` | reddish → red, childish → child, foolish → fool | finish → fin, vanish → van, banish → ban, polish → pol, parish → par, radish → rad, punish → pun, British/Spanish/Turkish |
-| `-y` adjectival | cloudy → cloud, rainy → rain, salty → salt | city → cit, very → ver, army → arm, body → bod, party → part, study → stud, money → mon (catastrophic — the false positives are the commonest words in English) |
+| `-ish` (353 words) | reddish → red, childish → child, foolish → fool | vanish → van, banish → ban, parish → par, radish → rad, danish → dan fire; finish, polish and punish are inert. Fewer than the ending suggests, but a real class |
+| `-y` adjectival (2,855 words) | cloudy → cloud, rainy → rain, salty → salt | party → part fires; city, very, army, body, study and money are all inert (stem not a word, or rarer). The volume is the problem rather than any one misfire — 2,855 words moving on the least decisive ending in English, with centry → centre and interrogatory → interrogator in the mix |
 
 ### E. Nominalizations & big adjective-forming suffixes — the general case of §6 (reason 2+3)
 
@@ -392,12 +445,12 @@ countless rare non-derived words too.
 
 | Suffix | Would fix | False positives |
 |--------|-----------|-----------------|
-| `-ation`/`-tion`/`-ion` | creation → create, education → educate, admiration → admire | nation → nate, station → state, ration → rate, portion, fiction, region, opinion |
+| `-ation`/`-tion`/`-ion` (174 words for `-ation`→`-ate`) | creation → create, education → educate, admiration → admire | station → state and ration → rate fire; nation is inert. Also planation → plane, phonation → phone, machination → machine |
 | `-ance`/`-ence` | performance → perform, difference → differ, existence → exist | distance → dist, science → sci, finance → fin, sentence, silence, essence |
-| `-ity`/`-ty` | activity → active, rarity → rare, purity → pure, cruelty → cruel | city → cit, unity → unit, pity, deity, vanity, gravity |
-| `-ous` | dangerous → danger, poisonous → poison, mountainous → mountain | obvious, various, serious, curious, jealous → jeal, porous |
-| `-al` | national → nation, coastal → coast, cultural → culture | final → fin, total → tot, metal → met, legal → leg, signal → sign, rival → riv (catastrophic) |
-| `-ic` | heroic → hero, metallic → metal, atomic → atom | music → mus, public → publ, panic → pan, basic → bas, topic, logic, magic, comic, critic |
+| `-ity`/`-ty` (829 words) | activity → active, rarity → rare, purity → pure, cruelty → cruel | unity → unit and pity → pit fire; city, deity, vanity and gravity are inert (no stem) |
+| `-ous` (370 words) | dangerous → danger, poisonous → poison, mountainous → mountain | every one of obvious, various, serious, curious, jealous and porous is **inert** — the nearest family to viable in this table, held back only by the lack of a decisive ending |
+| `-al` (1,622 words) | national → nation, coastal → coast, cultural → culture | metal → met and signal → sign fire, plus missal → miss, pagal → page, pongal → pong; final, total, legal and rival are inert. ~3 in 18 sampled were wrong |
+| `-ic` (784 words) | heroic → hero, metallic → metal, atomic → atom | panic → pan, topic → top and logic → log fire; music, public, basic, magic, comic and critic are inert |
 | `-ify` | simplify → simple, purify → pure, glorify → glory | notify → not, modify → mod, verify → ver, ratify → rat, unify → uni |
 | `-ment` / `-ism` | (excluded, see §6) | battlement → battle, arrivism → arrive |
 
@@ -414,9 +467,9 @@ leave near-identical ones alone — an inconsistency a player can see, and worse
 than folding neither. It would need a completeness pass per suffix family rather
 than a bulk import. Unbuilt, deliberately.
 
-### F. Prefixes — mostly handled from 2026-08-24 (§8), `de-`/`re-`/`co-`/`dis-` still open
+### F. Prefixes — mostly handled from 2026-08-24 (§9), `de-`/`re-`/`co-`/`dis-` still open
 
-Superseded in part: see §8. The analysis below was right that the false
+Superseded in part: see §9. The analysis below was right that the false
 positives are severe, and wrong about which lever contains them. It argued the
 `MEASURED_FLOOR` gate could not help because false-positive bases like "cle",
 "sile" and "der" are themselves rare. But the gate reads the frequency of the
@@ -434,14 +487,27 @@ the gate has to exclude:
 
 | Prefix | Would fix | False positives |
 |--------|-----------|-----------------|
-| `un-` | unlock → lock, unhelpful → helpful | uncle → cle, unit → it, union → ion, unique, universe |
-| `re-` | rebuild → build, reconsider → consider | record → cord, report → port, release → lease, reason, region, research |
-| `dis-` | disconnect → connect, disagree → agree | discover → cover, distance, district, display, dispute |
-| `mis-` | misspell → spell, misread → read | missile → sile, mister, misery, mistake → take |
-| `over-` / `under-` / `out-` | overcook → cook, outrun → run | overt → ert, output → put, outer → er, under → der |
+| `un-` (3,541 words) | unlock → lock, unhelpful → helpful | unit → it fires; uncle, union, unique and universe are inert |
+| `re-` (4,102 words) | rebuild → build, reconsider → consider | resort → sort, remain → main, remark → mark, resource → source fire; record, report, release, reason, region and research are inert |
+| `dis-` (1,146 words) | disconnect → connect, disagree → agree | discover → cover, display → play, dismiss → miss, discount → count, dish → h all fire |
+| `mis-` (894 words) | misspell → spell, misread → read | mistake → take fires; missile, mister, misery and mission are inert |
+| `over-` / `out-` (1,726 / 975 words) | overcook → cook, outrun → run | overt → t, overall → all, overcome → come, oversee → see, output → put, outcome → come, outline → line, outside → side all fire |
 
-Every word in the false-positive column is measured well above the floor, which
-is what makes the family tractable after all — see §8.
+Prefixes are the clearest example of reason 3. The cap disqualifies fewer of
+them than it does the suffixes — a prefixed spelling that coincides with a real
+word tends to coincide with a *common* one ("come", "take", "cover", "main") —
+so `over-`, `out-` and `dis-` misfire on the most ordinary words in the
+language.
+
+That last property is what makes the family tractable after all, and §9 acts on
+it. The claim that the gate "can't help, because the surviving false-positive
+bases are rare" reads it backwards: the gate tests the frequency of the *word
+being folded*, not of the base, and "come", "take", "cover" and "main" are
+reached from `overcome`, `mistake`, `discover` and `remain` — all ordinary
+measured words the gate excludes before a base is considered. Checked against
+the table above: not one of its false positives moves under §9. What the gate
+genuinely cannot contain is the opposite case, a rare word folding onto a rare
+lookalike, which is why `de-`, `re-`, `co-` and `dis-` stay out.
 
 ---
 
@@ -455,16 +521,15 @@ each is scored on its own frequency (or fixed one word at a time via an override
 - Ablaut / irregular past tense — sang, ran, smote, wrought, shorn
 - Irregular past participles — broken, cloven, hewn, sawn
 - Irregular comparatives/superlatives — better/best, worse/worst, more/most, less/least
-- Bare `-er`/`-est` comparatives **above** the floor — bigger, hotter, cleverer, narrower *(most tractable — the §4 paired-degree check would transfer)*
+- Bare `-er`/`-est` comparatives **above** the floor — bigger, hotter, cleverer, narrower *(542 words; §4's paired-degree check does **not** transfer — the archaic `thinkest`/`knowest` forms defeat it)*
 - Greek `-a` → `-on` plurals — criteria, phenomena, automata
-- Stem-change `-ora`/`-era` → `-us` plurals — corpora, genera
-- French `-eaux` → `-eau` plurals — bureaux, tableaux *(low risk)*
+- Stem-change `-ora`/`-era` → `-us` plurals — corpora, genera *(inert: changes zero words)*
 
 **Orthography**
-- `c` → `ck` before `-ed`/`-ing`/`-er` — panicked, mimicking, trafficking, picnicker *(low risk — safest single fix)*
+- `-cker` after the c → ck rewrite — picnicker, mimicker, panicker *(the `-cked`/`-cking` half is handled in §8)*
 
 **Transparent derivational suffixes**
-- `-ful` (grateful risk), `-less` (ruthless risk), `-hood` *(low risk)*, `-ship`, `-dom` (random risk), `-ally`/`-ically` *(low risk)*, `-ologist` *(low risk)*, `-ward(s)`
+- `-less` *(746 words; one exemption away — listless)*, `-hood` *(59; two exemptions — monkshood, underhood)*, `-ful` *(297; bare stem only)*, `-ship` (the literal-ship compounds), `-dom` (condom), `-ward(s)`
 
 **Diminutives & lexicalized suffixes (false positives dominate)**
 - `-let`, `-ette`, `-ish`, adjectival `-y`
@@ -472,23 +537,31 @@ each is scored on its own frequency (or fixed one word at a time via an override
 **Nominalizations & big adjective-formers (false positives dominate)**
 - `-ation`/`-tion`/`-ion`, `-ance`/`-ence`, `-ity`/`-ty`, `-ous`, `-al`, `-ic`, `-ify`, `-ment`, `-ism`
 
-**Prefixes (transparent ones handled from 2026-08-24 — see §8)**
+**Prefixes (transparent ones handled from 2026-08-24 — see §9)**
 - Still open: `de-`, `re-`, `co-`, `dis-` — the four English fossilised onto
   Latin stems, where the word is as rare as the false base and the gate cannot
   separate them. Needs a vetted table (`scripts/fold-disagreements.py`).
 
-**Lowest-risk candidates to actually add:** `c`→`ck` orthography, bare `-er`/`-est`
-above the floor, `-eaux`→`-eau`, `-hood`, `-ically`, `-ologist`. Everything else
-either needs a curated map (the irregulars) or has false positives the
-MEASURED_FLOOR gate can't contain (the big derivational families, and the four
-fossilised prefixes).
+**Next candidates to add**, in order: `-less` (746 words, 317 of them wearing a
+Mythic-or-better score, one exemption), `-hood` (two exemptions), `-ful` (bare
+stem only), then bare `-er`/`-est` above the floor once it has a guard of its
+own. Everything else either needs a curated map (the irregulars) or has false
+positives that actually fire on common words — which no gate contains, because
+the MEASURED_FLOOR gate only helps when a rule's misfires land *above* the floor.
 
-**Sizing any of them:** `scripts/fold-disagreements.py` reports what each family
-is worth in words and score movement before the rule is written. Its blind spot
-is the one §8 walked into — it says nothing about what a *new* rule would break,
+The six families §8 and the `c` → `ck` rule closed on 2026-08-24 were the
+previous entry on this list. What they had in common was a **bound** ending:
+nothing accidental ends `-ically`, `-ibly`, `-ologist` or `-eaux`, which is the
+same property that earns §6 its ungated fold. That, rather than the
+MEASURED_FLOOR gate, is the test to apply to the next candidate. §9 is the other
+route in: not a bound ending, but misfires that all land above the floor.
+
+**Sizing any of them:** `scripts/fold-disagreements.py` reports what a family is
+worth in words and score movement before the rule is written. Its blind spot is
+the one §9 walked into — it says nothing about what a *new* rule would break,
 only about what the current ones miss. Pair it with a straight before/after diff
-over the dictionary, which is what actually caught the prefix rule folding onto
-bound combining forms.
+over the dictionary, which is what caught §9's rule folding onto bound combining
+forms.
 
 ---
 

@@ -16,7 +16,8 @@ rebuilds the whole list from the ESDB/SCOWL source, whose unpinned upstream made
 every run silently re-size and re-score the entire dictionary. A full rebuild
 (generate-data.py --word-list) still re-merges all three lists from scratch.
 An added word is gated on the frequency waterfall
-(wordfreq -> Norvig -> Google Books): by default a word no corpus attests is
+(wordfreq -> Norvig -> Google Books -> recorded Datamuse values): by default a
+word no source attests is
 rejected, because its rarity would be a guess rather than a measurement.
 `--forced` overrides that and adds the word anyway; the data pipeline then gives
 an otherwise-unscored word the rarest-word floor, a perfect 10.0 / Legend.
@@ -136,7 +137,8 @@ def add_word(raw_word: str, list_name: str, forced: bool) -> None:
             )
 
     # "Has a rarity score" means any corpus in the waterfall attests it:
-    # wordfreq, else Norvig, else Google Books -- or, for a bound derivational
+    # wordfreq, else Norvig, else Google Books, else a recorded Datamuse Zipf
+    # (scripts/datamuse-zipf.txt) -- or, for a bound derivational
     # form no corpus attests directly, its base ("aggrandization" -> "aggrandize").
     # Only a word none of these attest is unscored; without --forced that is a
     # hard rejection.
@@ -399,6 +401,43 @@ def _prefix_candidates(word: str) -> list[str]:
     return out
 
 
+def _derived_candidates(word: str) -> list[str]:
+    """Mirror of derivedBaseCandidates() in src/game/stem.ts.
+
+    The bound derivational families: an ending English only ever produces by
+    attaching that suffix, so no frequency gate is needed -- the ending is what
+    makes them safe. "-ically" -> "-ic", "-ably"/"-ibly" -> "-able"/"-ible",
+    "-ologist" -> "-ology", the c -> ck orthography, and the French "-eaux".
+    """
+    w = word.lower()
+    out: list[str] = []
+
+    def add(base: str) -> None:
+        if len(base) >= 3 and base != w and base not in out:
+            out.append(base)
+
+    # Each bound is the shortest word the family actually has ("epically",
+    # "stably", "oologist", "beaux"), not a round number.
+    if len(w) > 7 and w.endswith("ically"):
+        add(w[:-4])
+    if len(w) > 5 and w.endswith("ably"):
+        add(w[:-4] + "able")
+    if len(w) > 5 and w.endswith("ibly"):
+        add(w[:-4] + "ible")
+    if len(w) > 6 and w.endswith("ologist"):
+        add(w[:-3] + "y")
+    for suffix in ("cked", "cking"):
+        # Both spellings: "chocked" is a tense of "chock", not of "choc", and
+        # the caller's most-common check is what tells them apart. "-cker" is
+        # deliberately absent either way: it folds "blockers" -> "bloc".
+        if w.endswith(suffix) and len(w) > len(suffix) + 2:
+            add(w[: -len(suffix)] + "c")
+            add(w[: -len(suffix)] + "ck")
+    if len(w) > 4 and w.endswith("eaux"):
+        add(w[:-1])
+    return out
+
+
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     """Mirror of tenseBaseForm(): -ed/-ing pick the most common valid base.
 
@@ -597,6 +636,10 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
         for candidate in _prefix_candidates(word):
             if candidate in index and zipf_at(candidate) >= PREFIX_BASE_MIN_ZIPF:
                 add(candidate)
+    # The bound derivational families, ungated like the "-ization" pair below:
+    # nothing accidental ends "-ically" or "-ibly" (see derivedBaseCandidates).
+    for candidate in _derived_candidates(word):
+        add(candidate)
     add(_scoring_base(word, index))
     return out
 

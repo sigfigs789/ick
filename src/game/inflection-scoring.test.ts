@@ -571,6 +571,127 @@ describe("the cutover changes scoring only", () => {
   });
 });
 
+// The 2026-08-24 cutover: the derivational families whose ending is *bound* --
+// a string English only produces by attaching that suffix -- fold onto their
+// base, ungated by MEASURED_FLOOR like the "-ization"/"-ability" pair before
+// them. See derivedBaseCandidates in stem.ts.
+const BEFORE_DERIVED = "2026-08-23"; // last day before the bound derivations fold
+const ON_DERIVED = "2026-08-24"; // first day they fold
+
+describe("bound derivational suffixes fold onto their base (from 2026-08-24)", () => {
+  const FOLDS: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    // "-ically" -> "-ic": the adverbs the "-ly" rule cannot reach, because the
+    // "-ical" adjective it strips back to is usually not a word. The largest
+    // family the engine was leaving unfolded, and the one holding the most
+    // undeserved top-rank scores.
+    ["catholically", "catholic", 9.94, 4.68],
+    ["arctically", "arctic", 9.99, 5.44],
+    ["toxically", "toxic", 9.72, 5.13],
+    ["musically", "music", 4.74, 3.25],
+    // "-ably"/"-ibly" -> "-able"/"-ible". unmeasuredBaseCandidates strips these
+    // to the bare stem and only below the floor, so a measured adverb never
+    // reached the adjective one step up.
+    ["availably", "available", 9.36, 3.6],
+    ["susceptibly", "susceptible", 9.92, 5.97],
+    ["valuably", "valuable", 9.52, 4.74],
+    ["negligibly", "negligible", 8.84, 6.38],
+    // "-ologist" -> "-ology": every one is the agent noun of an "-ology".
+    ["mythologist", "mythology", 9.53, 6.02],
+    ["technologist", "technology", 7.27, 3.88],
+    ["apologist", "apology", 7.3, 5.41],
+    // "-cked"/"-cking" -> "-c": the k English inserts to keep a final c hard.
+    // baseForm lands on the non-word "panick", because "ck" is not a doubled
+    // consonant and stripDoubledConsonant leaves it alone.
+    ["panicked", "panic", 6.37, 5.1],
+    ["trafficking", "traffic", 5.63, 4.24],
+    ["picnicked", "picnic", 9.31, 5.78],
+    ["talcking", "talc", 10, 7.66],
+    // "-eaux" -> "-eau": the French plural. No other word ends this way.
+    ["bureaux", "bureau", 8.18, 4.88],
+    ["chateaux", "chateau", 8.24, 6.52],
+  ];
+
+  it.each(FOLDS)("scores %s as %s from the cutover", (word, base, before, after) => {
+    expect(score(word, BEFORE_DERIVED)).toBe(before);
+    expect(score(word, ON_DERIVED)).toBe(after);
+    expect(score(word, ON_DERIVED)).toBe(score(base, ON_DERIVED));
+    expect(baseFormSubstitution(word, BEFORE_DERIVED)?.base).not.toBe(base);
+    expect(baseFormSubstitution(word, ON_DERIVED)?.base).toBe(base);
+  });
+
+  it("retires the top ranks these words were wearing for an ending", () => {
+    expect(rank("catholically", BEFORE_DERIVED)).toBe("Legend");
+    expect(rank("catholically", ON_DERIVED)).toBe("Common");
+    expect(rank("susceptibly", BEFORE_DERIVED)).toBe("Legend");
+    expect(rank("susceptibly", ON_DERIVED)).toBe("Uncommon");
+    expect(rank("mythologist", BEFORE_DERIVED)).toBe("Mythic");
+    expect(rank("mythologist", ON_DERIVED)).toBe("Uncommon");
+  });
+
+  it("picks the -ck base over the -c one where that is the real verb", () => {
+    // "chocked" is a tense of "chock" (to wedge), not of "choc". Both spellings
+    // are offered and the most-common check settles it.
+    expect(baseFormSubstitution("chocked", ON_DERIVED)?.base).toBe("chock");
+    expect(baseFormSubstitution("crocked", ON_DERIVED)?.base).toBe("crock");
+    expect(baseFormSubstitution("cricked", ON_DERIVED)?.base).toBe("crick");
+    // The one exception, pinned so it can't drift unnoticed: "spec" (3.59) is
+    // commoner than the real base "speck" (3.02), so "specked" takes it and
+    // scores 0.84 low. A 0.57-Zipf gap is the harmless near-tie shape, and an
+    // override can't fix it -- the word already folds to "speck" through the
+    // plain "-ed" rule, so the entry would move no score.
+    expect(baseFormSubstitution("specked", ON_DERIVED)?.base).toBe("spec");
+  });
+
+  it("reaches the shortest member of each family", () => {
+    // A length bound one letter too high silently drops a member: "epically",
+    // "stably", "oologist" and "beaux" are the shortest words their rules have.
+    for (const [word, base] of [
+      ["epically", "epic"],
+      ["stably", "stable"],
+      ["viably", "viable"],
+      ["oologist", "oology"],
+      ["beaux", "beau"],
+    ] as const) {
+      expect(baseFormSubstitution(word, ON_DERIVED)?.base, word).toBe(base);
+      expect(score(word, ON_DERIVED)).toBe(score(base, ON_DERIVED));
+    }
+  });
+
+  it("leaves a candidate rarer than the word itself inert", () => {
+    // The fold caps rather than inherits, so a base that is *rarer* than the
+    // word can never fire. "physic" and "critic" are both real words and both
+    // proposed; both are rarer than the adverbs that reach them, so the adverbs
+    // keep their own measured scores. This is what makes the family safe
+    // without a frequency gate.
+    for (const word of ["physically", "critically", "politically", "historically"]) {
+      expect(score(word, BEFORE_DERIVED), `${word} must not move`).toBe(score(word, ON_DERIVED));
+    }
+  });
+});
+
+describe("what the 2026-08-24 cutover deliberately leaves alone", () => {
+  it("keeps -cker agent nouns on their own frequency", () => {
+    // The c -> ck rewrite covers "-cked"/"-cking" only. An agent noun is at
+    // least as likely to be built on a "-ck" verb as on a "-c" one, and the
+    // rule folds "blockers" -> "bloc", "crockers" -> "croc" and "specker" ->
+    // "spec". The price is that "panicker" keeps an unearned Elusive.
+    for (const word of ["blockers", "crockers", "specker", "panicker"]) {
+      expect(score(word, BEFORE_DERIVED), `${word} must not move`).toBe(score(word, ON_DERIVED));
+    }
+  });
+
+  it("leaves the unbound derivational endings alone", () => {
+    // "-al", "-ic", "-ity", "-ish", "-let", "-ship" and "-ward" are ordinary
+    // word-final material, not bound suffixes: the same strip that fixes a
+    // genuine derivation folds "metal" -> "met", "topic" -> "top", "unity" ->
+    // "unit", "listless" -> "list", "spaceship" -> "space" and "forward" ->
+    // "for". No gate separates those from the real ones, so they stay out.
+    for (const word of ["metal", "topic", "unity", "listless", "spaceship", "forward"]) {
+      expect(score(word, BEFORE_DERIVED), `${word} must not move`).toBe(score(word, ON_DERIVED));
+    }
+  });
+});
+
 describe("transparent prefixes fold, but only below the measurement floor", () => {
   // The 2026-08-24 cutover. Before it, suffix rules alone left a prefixed word
   // dead-ended on an unattested prefixed stem holding a near-perfect score.

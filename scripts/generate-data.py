@@ -37,7 +37,7 @@ WIKTIONARY_REASONS_PATH = ROOT / "scripts" / "wiktionary-reasons.json"
 
 MIN_LEN = 1
 
-# Words absent from every corpus (wordfreq, Norvig, and Google Books) are the
+# Words absent from every source (wordfreq, Norvig, Google Books, Datamuse) are the
 # rarest we can attest -- floored to 0.0 so they earn the top displayed score.
 UNKNOWN_ZIPF = 0.0
 
@@ -137,7 +137,8 @@ def refresh_rarity() -> None:
     unattested = sum(1 for z in raw if z is None)
     print(
         f"Frequency sources: Norvig {len(waterfall.norvig)}, "
-        f"Google Books {len(waterfall.google)} (offset {round(waterfall.google_offset, 4)})"
+        f"Google Books {len(waterfall.google)} (offset {round(waterfall.google_offset, 4)}), "
+        f"Datamuse {len(waterfall.datamuse)}"
     )
     print(
         f"Bands: measured/common {len(dictionary) - deep} (score 0..9.5), "
