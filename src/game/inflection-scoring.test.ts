@@ -447,9 +447,11 @@ describe("a word folds onto its own inflections too (from 2026-08-24)", () => {
   // text while the participle everyone writes is ordinary. The engine sold the
   // rarest inflection of a familiar word as a deep-tail find, which is exactly
   // what players reported about "infatuate" (Mythic) against "infatuated"
-  // (Rare). 1,958 words displayed Mythic or better and are capped by their own
-  // "-ed"/"-ing" form once this runs; 24,908 words move in all, 4,944 of them
-  // out of Mythic-or-better.
+  // (Rare). 2,087 words displayed Mythic or better and are capped by their own
+  // "-ed"/"-ing" form once this runs (5,352 by an inflection of any kind);
+  // 24,842 words move in all and none move up, 4,928 of them out of
+  // Mythic-or-better. Measured against this branch's base, so the figures are
+  // this change alone rather than the whole 2026-08-24 cutover.
   //
   // word, the inflection it caps at, score before the cutover, score on/after.
   const FOLDS: ReadonlyArray<[word: string, form: string, before: number, after: number]> = [

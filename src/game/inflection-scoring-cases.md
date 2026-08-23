@@ -49,7 +49,7 @@ The reason it exists: English has a large class of verbs whose bare lemma nobody
 writes. "Belove" is measured at Zipf 1.10 and "beloved" at 4.17; "infatuate" at
 1.30 and "infatuated" at 2.90. The measurement is not wrong — the finite verb
 really is that rare — but scoring the *word* off it sold the rarest inflection of
-a familiar word as a deep-tail find. 1,958 words displayed Mythic or better and
+a familiar word as a deep-tail find. 2,087 words displayed Mythic or better and
 are capped by their own `-ed`/`-ing` form once this runs, which is what players
 reported about "infatuate" (Mythic 9.46) against "infatuated" (Rare 7.11).
 
@@ -91,11 +91,11 @@ candidate), `morn`/morning, `blee`/bleed, `specie`/species, `genu`/genus,
 
 **What it deliberately does not do:** derivations. "-ion" is a different word,
 not an inflection ("infatuation", "valuation"), so it stays in §E — which leaves
-`-ion`-dominant lemmas in the top band: dissertate 9.92, imaginate 9.66 and
-fragmentate 9.92 still score off a lemma nobody writes, against dissertation
-5.93, imagination 5.16 and fragmentation 6.62. That is the same family the
-`-ation` row of §E refuses in the other direction, and for the same reason: the
-spelling is not decisive.
+`-ion`-dominant lemmas in the top band: dissertate 9.92 and imaginate 9.66 do not
+move at all, and fragmentate only goes 9.98 → 9.92 (on its own `-ed`/`-ing`
+forms), against dissertation 5.93, imagination 5.16 and fragmentation 6.62. That
+is the same family the `-ation` row of §E refuses in the other direction, and for
+the same reason: the spelling is not decisive.
 
 ---
 
