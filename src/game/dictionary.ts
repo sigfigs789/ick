@@ -13,6 +13,7 @@ import {
   derivedBaseCandidates,
   inflectedFormCandidates,
   inflectionalBaseCandidates,
+  prefixBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
@@ -88,11 +89,28 @@ const INFLECTION_BASE_START = NARROW_BANDS_START;
 // of INFLECTION_BASE_START: those rules are already live in archived puzzles,
 // and every score these move must stay frozen where it was played.
 const DERIVED_BASE_START = "2026-08-24";
-// The fold's second direction shipped on the same date. It has no constant of
-// its own because it needs no rung in `scoringFor`: unlike the label/score split
-// of 2026-08-21, both of this day's changes are score changes carried by the one
-// profile beyond DERIVED_BASE_START. Splitting them later means splitting the
-// profile too.
+// The transparent prefixes join the gated families (see prefixBaseCandidates).
+// Shares 2026-08-24 with DERIVED_BASE_START -- one cutover carrying two
+// independent changes -- but kept as its own name so either can move later
+// without dragging the other.
+//
+// Nothing enforces that a cutover date is still in the future when it ships, and
+// none of the six above are pinned by a test -- every test here hardcodes its
+// own dates, so a stale constant leaves the suite green. That matters because a
+// cutover reached in the past re-scores the puzzle in play: words already banked
+// keep the scores stored with them (see storage.ts, which persists zipf/rarity at
+// submit time), while anything submitted after the deploy is scored under the new
+// system, so one session on one puzzle shows a prefixed word at 10.00 and its
+// neighbour at 1.88. Set the date to the day after the change is expected to
+// land, and if it slips past that date, move it before merging.
+const PREFIX_BASE_START = "2026-08-24";
+// How common a word must be to serve as a prefix base. Set at the top of the
+// deep tail rather than at MEASURED_FLOOR: the bound combining forms this keeps
+// out ("lith", "crat", "pathy", "phyte") are all measured, just barely, and sit
+// between Zipf 1.0 and 3.0 along with the handful of real bases the cutoff
+// costs ("gild", "emote", "ripen", "allot" -- each worth under 3 points of
+// demotion, against some forty wrong folds removed).
+const PREFIX_BASE_MIN_ZIPF = 3;
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -341,6 +359,11 @@ interface Scoring {
   // 2026-08-24 cutover; off for earlier systems so past puzzles' scores stay
   // frozen (see DERIVED_BASE_START).
   derivedBases: boolean;
+  // Whether a below-floor word may be stripped of a transparent prefix to reach
+  // the word it was built on ("outwill" -> "will"). Introduced with the
+  // 2026-08-24 cutover; off for earlier systems so past puzzles' scores stay
+  // frozen (see PREFIX_BASE_START).
+  prefixBases: boolean;
   // Whether a word is also capped at the regular inflections built *on* it --
   // the fold's reverse direction, so the bare lemma of a verb only ever written
   // as a participle stops scoring as a deep-tail find (see
@@ -361,20 +384,40 @@ interface Scoring {
 // score-based two-decimal display. Without it (the 2026-08-15 system) the deep
 // tail is a single Mythic rank, the measured band keeps one decimal, and only
 // deep-tail scores show two.
-function twoBandScoring(
-  ceiling: number,
-  tailFloor: number,
-  boundBaseForms: boolean,
-  legend: boolean,
-  chainedBaseForms = false,
-  inflectionBases = false,
+/**
+ * Flags selecting which dated behaviours a scoring profile carries. A named
+ * object rather than trailing booleans: this list reached eight positional
+ * parameters ending in five interchangeable `boolean`s, and three separate
+ * changes adding a flag to it collided in a row -- each time producing code that
+ * type-checked while feeding the wrong argument into the wrong slot, because
+ * every value and every parameter had the same type. Adding a field here cannot
+ * silently shift another.
+ */
+interface ScoringFlags {
+  boundBaseForms: boolean;
+  legend: boolean;
+  chainedBaseForms?: boolean;
+  inflectionBases?: boolean;
+  derivedBases?: boolean;
+  prefixBases?: boolean;
+  inflectionForms?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
-  narrowBands = false,
-  derivedBases = false,
-  inflectionForms = false
-): Scoring {
+  narrowBands?: boolean;
+}
+
+function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags): Scoring {
+  const {
+    boundBaseForms,
+    legend,
+    chainedBaseForms = false,
+    inflectionBases = false,
+    derivedBases = false,
+    prefixBases = false,
+    inflectionForms = false,
+    narrowBands = false,
+  } = flags;
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
       const s = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
@@ -409,47 +452,66 @@ function twoBandScoring(
     chainedBaseForms,
     inflectionBases,
     derivedBases,
+    prefixBases,
     inflectionForms,
   };
 }
 
 // The 2026-08-15 system: measured band 0..9.5, deep tail 9.5..10 anchored at the
 // data's live minimum, single Mythic top rank, no bound-suffix folding.
-const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, false, false);
+const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, {
+  boundBaseForms: false,
+  legend: false,
+});
 // The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
 // fixed 0, Legend + Mythic ranks, bound-suffix folding on, single-hop bases.
-const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, true, true);
+const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, { boundBaseForms: true, legend: true });
 // The 2026-08-19 system: the same bands and ranks, with base forms resolved
 // through their own bases.
-const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, true, true, true);
+const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+});
 // The 2026-08-21 system. Carries both of that day's changes: the retuned
 // measured Zipf bands (labels), and a fold that weighs every plausible base
 // spelling and keeps the most common one (scores). The flags are commented
 // because seven positional arguments, three of them trailing booleans, are
 // otherwise unreadable.
-const RETUNED_SCORING: Scoring = twoBandScoring(
-  9.9,
-  0,
-  /* boundBaseForms */ true,
-  /* legend */ true,
-  /* chainedBaseForms */ true,
-  /* inflectionBases */ true,
-  /* narrowBands */ true
-);
-// The latest system (2026-08-24). Carries both of that day's changes: the bound
-// derivational families in `derivedBaseCandidates`, and the fold's second
-// direction, from a word toward the inflections built on it.
-const DERIVED_SCORING: Scoring = twoBandScoring(
-  9.9,
-  0,
-  /* boundBaseForms */ true,
-  /* legend */ true,
-  /* chainedBaseForms */ true,
-  /* inflectionBases */ true,
-  /* narrowBands */ true,
-  /* derivedBases */ true,
-  /* inflectionForms */ true
-);
+const RETUNED_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  narrowBands: true,
+});
+// The 2026-08-24 system with the bound derivational families and the fold's
+// second direction on, but not the prefixes. Reached only if PREFIX_BASE_START
+// is ever moved later than DERIVED_BASE_START; while the two dates are equal,
+// scoringFor steps straight past it to LATEST_SCORING.
+const DERIVED_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  narrowBands: true,
+});
+// The latest system (2026-08-24): all three of that day's changes -- the bound
+// derivational families in `derivedBaseCandidates`, the fold's second direction
+// toward the inflections built on a word, and the transparent prefixes in
+// `prefixBaseCandidates`.
+const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  prefixBases: true,
+  narrowBands: true,
+});
 
 const LEGACY_SCORING: Scoring = {
   zipfAt: (i) => legacyZipfTenths[i] / 10,
@@ -477,6 +539,7 @@ const LEGACY_SCORING: Scoring = {
   chainedBaseForms: false,
   inflectionBases: false,
   derivedBases: false,
+  prefixBases: false,
   inflectionForms: false,
 };
 
@@ -534,7 +597,7 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return DERIVED_SCORING; // newest system
+  if (date === undefined) return LATEST_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
   if (date < CHAINED_BASE_START) return WIDE_SCORING;
@@ -542,11 +605,15 @@ function scoringFor(date?: string): Scoring {
   // profile, so it reads the scoring one; `usesRetunedTiers` asks the label
   // question and reads NARROW_BANDS_START. The profile beyond carries both.
   if (date < INFLECTION_BASE_START) return CHAINED_SCORING;
-  // One rung for the whole of 2026-08-24: the profile beyond it carries both
-  // that day's changes, the derivational families and the fold's second
-  // direction, which is why the second has no date constant of its own.
+  // Two rungs for 2026-08-24, because the prefixes kept a date constant of
+  // their own while the fold's second direction did not. Laddered so either can
+  // move later without the other following; while the dates are equal the
+  // middle rung is stepped over. The profile beyond carries all three of that
+  // day's changes: the derivational families, the fold's second direction, and
+  // the prefixes.
   if (date < DERIVED_BASE_START) return RETUNED_SCORING;
-  return DERIVED_SCORING;
+  if (date < PREFIX_BASE_START) return DERIVED_SCORING;
+  return LATEST_SCORING;
 }
 
 // -- Curated rejections (src/data/word-rejections.json) ----------------------
@@ -1132,6 +1199,32 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
     // plurals being read as verb tenses ("whatsises" reached "what";
     // "appendicitises" now folds to "appendicitis" like any other plural).
     for (const candidate of unmeasuredBaseCandidates(word)) add(candidate);
+    // Prefixes, under the same gate and for the same reason. Suffix rules alone
+    // leave a prefixed word dead-ended on an unattested prefixed stem
+    // ("overpeopling" -> "overpeople") when its attested root was one strip
+    // further ("people"). See `prefixBaseCandidates` for why the gate is
+    // load-bearing.
+    if (scoring.prefixBases) {
+      // A prefix base must be a word people actually use. Unlike the suffix
+      // families, stripping a prefix routinely lands on a *bound combining
+      // form* that a 225k-word dictionary happens to list as an entry --
+      // "neolith" -> "lith", "monocrat" -> "crat", "autophyte" -> "phyte",
+      // "protopathy" -> "pathy", "prelect" -> "lect", "subduce" -> "duce".
+      // Every one is a real dictionary word and none is a base anything was
+      // built on. They cluster in the deep tail, which is what separates them:
+      // a transparent prefix attaches to an ordinary word, so a residue nobody
+      // uses is far likelier to be a fragment than a base. Declining them costs
+      // almost nothing either way -- the point of the fold is to replace an
+      // unmeasured stand-in with a real measurement, and a base this rare
+      // barely supplies one. Same argument as the three-letter minimum in
+      // `inflectionalBaseCandidates`, one level up: some dictionary entries are
+      // not words a fold should ever land on.
+      for (const candidate of prefixBaseCandidates(word)) {
+        if (WORD_INDEX.has(candidate) && zipfFor(candidate, scoring) >= PREFIX_BASE_MIN_ZIPF) {
+          add(candidate);
+        }
+      }
+    }
   }
   // The bound derivational families: an ending English only ever produces by
   // attaching that suffix, so -- like the "-ization"/"-ability" pair in

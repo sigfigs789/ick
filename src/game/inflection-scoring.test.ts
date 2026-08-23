@@ -818,3 +818,111 @@ describe("what the 2026-08-24 cutover deliberately leaves alone", () => {
     }
   });
 });
+
+describe("transparent prefixes fold, but only below the measurement floor", () => {
+  // The 2026-08-24 cutover. Before it, suffix rules alone left a prefixed word
+  // dead-ended on an unattested prefixed stem holding a near-perfect score.
+  const BEFORE_PREFIX = "2026-08-23";
+  const ON_PREFIX = "2026-08-24";
+
+  const PREFIXED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    ["outwill", "will", 10, 1.88],
+    ["overpeople", "people", 10, 2.18],
+    ["misthink", "think", 9.96, 2.43],
+    // Lands on "baked" rather than "bake" since the 2026-08-24 reverse fold caps
+    // a word at the inflections built on it -- the prefix strip still does its
+    // half of the work.
+    ["underbakes", "baked", 9.96, 5.6],
+    ["counterorders", "order", 9.89, 3.3],
+    // The chain keeps walking past the immediate parent: "nonplaying" strips
+    // its prefix to "playing" and carries on to "play".
+    ["nonplaying", "play", 9.69, 3.12],
+  ];
+
+  it.each(PREFIXED)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON_PREFIX)).toBe(after);
+    expect(baseFormSubstitution(word, ON_PREFIX)?.base).toBe(base);
+  });
+
+  it.each(PREFIXED)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_PREFIX)).toBe(before);
+  });
+
+  it("gives up the fossilised prefixes, right readings and all", () => {
+    // "de-", "re-", "co-" and "dis-" are excluded because English fossilised
+    // them onto Latin stems -- see prefixBaseCandidates. These are the words
+    // that costs us: every one is a real derivation the rule declines to make.
+    //
+    // Asserted on the base rather than on the score staying put: the reverse
+    // fold shipped on this same date, so "depeople" does move -- onto its own
+    // "depeopled". What matters here is that the prefix was never stripped.
+    for (const [word, residue] of [
+      ["codriver", "driver"],
+      ["reexplain", "explain"],
+      ["depeople", "people"],
+      ["disaffectedness", "affectedness"],
+    ] as const) {
+      expect(
+        baseFormSubstitution(word, ON_PREFIX)?.base,
+        `${word} must not reach ${residue}`
+      ).not.toBe(residue);
+    }
+  });
+
+  it("will not fold onto a bound combining form the dictionary happens to list", () => {
+    // Stripping a prefix routinely lands on a fragment that is a real
+    // dictionary entry and no word's base. They are all in the deep tail, so a
+    // minimum frequency on the base keeps them out -- see PREFIX_BASE_MIN_ZIPF.
+    //
+    // On the base, not the score: several of these do move on this date, but
+    // via the reverse fold onto their own plural ("neolith" -> "neoliths").
+    // The point is that the combining form is never reached.
+    for (const [word, fragment] of [
+      ["neolith", "lith"],
+      ["monocrat", "crat"],
+      ["autophyte", "phyte"],
+      ["protopathy", "pathy"],
+      ["prelect", "lect"],
+      ["subduce", "duce"],
+      ["monopode", "pode"],
+      ["polyzoic", "zoic"],
+    ] as const) {
+      expect(
+        baseFormSubstitution(word, ON_PREFIX)?.base,
+        `${word} must not reach ${fragment}`
+      ).not.toBe(fragment);
+    }
+  });
+
+  it("exempts the one bound form the frequency floor cannot catch", () => {
+    // "microdont" is micro- + -odont (tooth). Its residue "dont" is in the
+    // dictionary as the apostrophe-less "don't" and carries that word's
+    // frequency (Zipf 4.74), so it clears the base floor the others fail. A
+    // reviewed fold exemption is the cheaper fix -- see fold-exemptions.json.
+    expect(score("microdont", BEFORE_PREFIX)).toBe(score("microdont", ON_PREFIX));
+    expect(baseFormSubstitution("microdont", ON_PREFIX)).toBeUndefined();
+  });
+
+  it("leaves a word the corpora actually measure alone, however it starts", () => {
+    // Ungated the rule folds every one of these onto an unrelated word:
+    // "preface" -> "face", "present" -> "sent", "mistake" -> "take",
+    // "outrage" -> "rage", "understand" -> "stand". Each carries a real
+    // measurement, so the gate excludes it.
+    for (const word of [
+      "preface",
+      "present",
+      "mistake",
+      "outrage",
+      "understand",
+      "subject",
+      "overture",
+      "nonsense",
+      "united",
+      "postage",
+      "interest",
+      "supermarket",
+    ]) {
+      expect(score(word, BEFORE_PREFIX), `${word} must not move`).toBe(score(word, ON_PREFIX));
+    }
+  });
+});

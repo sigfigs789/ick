@@ -94,5 +94,9 @@
   "sacre": {
     "since": "2026-08-24",
     "reason": "Not an English inflection of anything: `sacred` is a borrowed past participle, not `sacre` + `-d`. The -ed strip picks this word because the alternatives are non-words (7.90 -> 5.13)."
+  },
+  "microdont": {
+    "since": "2026-08-24",
+    "reason": "Greek micro- + -odont (tooth), a small-toothed animal -- not a form of `dont`. The prefix rule's base floor keeps out the other bound combining forms it lands on (`lith`, `crat`, `phyte`), but `dont` slips through it at Zipf 4.74: it is in the dictionary as the apostrophe-less spelling of \"don't\" and carries that word's frequency. Exempting the word is cheaper than special-casing the base."
   }
 }

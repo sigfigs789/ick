@@ -3,6 +3,7 @@ import {
   baseForm,
   derivedBaseCandidates,
   inflectionalBaseCandidates,
+  prefixBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
 
@@ -300,5 +301,65 @@ describe("derivedBaseCandidates length bounds", () => {
     // pick the real base.
     expect(derivedBaseCandidates("chocked")).toEqual(["choc", "chock"]);
     expect(derivedBaseCandidates("panicked")).toEqual(["panic", "panick"]);
+  });
+});
+describe("prefixBaseCandidates", () => {
+  it("offers the base a transparent prefix was attached to", () => {
+    expect(prefixBaseCandidates("nonplaying")).toContain("playing");
+    expect(prefixBaseCandidates("overplanned")).toContain("planned");
+    expect(prefixBaseCandidates("misthink")).toContain("think");
+    expect(prefixBaseCandidates("outswear")).toContain("swear");
+    expect(prefixBaseCandidates("unhoused")).toContain("housed");
+  });
+
+  it("prefers the longest prefix that matches", () => {
+    // "under-" against "un-" is the only overlapping pair in the list, so it is
+    // the only case that can pin the ordering: both match "underbakes", and the
+    // longer one is the intended reading. Asserting on a word where a single
+    // prefix matches would pass whatever order the list is in.
+    expect(prefixBaseCandidates("underbakes")).toEqual(["bakes", "derbakes"]);
+    expect(prefixBaseCandidates("undercooked")[0]).toBe("cooked");
+  });
+
+  it("leaves out the prefixes English fossilised onto Latin stems", () => {
+    // "de-", "re-", "co-" and "dis-" are the most productive prefixes there
+    // are, and excluded anyway: nothing in the spelling separates a real
+    // derivation from a borrowing that merely opens the same way, and the
+    // frequency gate cannot help because the fossilised words are rare.
+    expect(prefixBaseCandidates("delates")).toEqual([]);
+    expect(prefixBaseCandidates("refelled")).toEqual([]);
+    expect(prefixBaseCandidates("coshes")).toEqual([]);
+    expect(prefixBaseCandidates("disparts")).toEqual([]);
+    // The cost is real -- these are correct readings the rule gives up on.
+    expect(prefixBaseCandidates("codriver")).toEqual([]);
+    expect(prefixBaseCandidates("reexplain")).toEqual([]);
+  });
+
+  it("drops residues under four letters", () => {
+    // Where the wrong-word folds cluster: "unit" -> "it", "union" -> "ion",
+    // "overt" -> "t", "outer" -> "er".
+    expect(prefixBaseCandidates("unit")).toEqual([]);
+    expect(prefixBaseCandidates("union")).toEqual([]);
+    expect(prefixBaseCandidates("overt")).toEqual([]);
+    expect(prefixBaseCandidates("outer")).toEqual([]);
+  });
+
+  it("still offers the bases that make the gate necessary", () => {
+    // Like unmeasuredBaseCandidates, this function cannot see a frequency, so
+    // it offers plainly wrong bases for ordinary words. Every one of these is
+    // measured far above MEASURED_FLOOR, and the caller's gate is the only
+    // thing keeping them out. Asserted so the gate can't be dropped.
+    expect(prefixBaseCandidates("preface")).toContain("face");
+    expect(prefixBaseCandidates("present")).toContain("sent");
+    expect(prefixBaseCandidates("mistake")).toContain("take");
+    expect(prefixBaseCandidates("outrage")).toContain("rage");
+    expect(prefixBaseCandidates("understand")).toContain("stand");
+  });
+
+  it("is case-insensitive and never offers the word itself", () => {
+    expect(prefixBaseCandidates("NONPLAYING")).toEqual(prefixBaseCandidates("nonplaying"));
+    for (const word of ["nonplaying", "overplanned", "misthink"]) {
+      expect(prefixBaseCandidates(word)).not.toContain(word);
+    }
   });
 });
