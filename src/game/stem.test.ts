@@ -251,10 +251,12 @@ describe("prefixBaseCandidates", () => {
   });
 
   it("prefers the longest prefix that matches", () => {
-    // "counter-" before "co-", "under-" before "un-": both spellings match, and
-    // the longer one is the intended reading.
-    expect(prefixBaseCandidates("counterorders")[0]).toBe("orders");
-    expect(prefixBaseCandidates("underbakes")[0]).toBe("bakes");
+    // "under-" against "un-" is the only overlapping pair in the list, so it is
+    // the only case that can pin the ordering: both match "underbakes", and the
+    // longer one is the intended reading. Asserting on a word where a single
+    // prefix matches would pass whatever order the list is in.
+    expect(prefixBaseCandidates("underbakes")).toEqual(["bakes", "derbakes"]);
+    expect(prefixBaseCandidates("undercooked")[0]).toBe("cooked");
   });
 
   it("leaves out the prefixes English fossilised onto Latin stems", () => {

@@ -230,7 +230,11 @@ export function unmeasuredBaseCandidates(word: string): string[] {
  * prefixed word means its base plus a modifier, so the base is the right thing
  * to score it as ("codriver" is a driver, "overplanned" is planned).
  *
- * Longest first, so "counter-" wins over "co-" and "under-" over "un-".
+ * Ordered by descending length, so where two entries both match the intended
+ * reading comes out first. "under-" against "un-" is the only such overlap in
+ * the list today -- "underbakes" offers "bakes" ahead of the junk "derbakes" --
+ * but the ordering is what keeps that true as prefixes are added, so keep the
+ * list sorted long-to-short.
  */
 const TRANSPARENT_PREFIXES = [
   "counter",

@@ -57,8 +57,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
-SCORE_OVERRIDES_PATH = ROOT / "src" / "data" / "score-overrides.json"
-FOLD_EXEMPTIONS_PATH = ROOT / "src" / "data" / "fold-exemptions.json"
 
 # Reuse the fold mirror rather than re-implementing it: manage-extra-word.py is
 # already kept in lockstep with src/game/stem.ts, so a disagreement this script
@@ -260,11 +258,16 @@ def main() -> None:
 
         if ours is None and theirs is None:
             continue
-        if ours is not None and theirs is not None and ours[0] == theirs[0]:
-            agreed += 1
-            continue
+        # Reviewed first, so `agreed` and `skipped_reviewed` describe the same
+        # population. Checking agreement first counted a reviewed word whose
+        # override happens to match MorphyNet as agreement while excluding its
+        # disagreeing neighbours, quietly inflating the header figure the two
+        # runs are compared on.
         if word in reviewed:
             skipped_reviewed += 1
+            continue
+        if ours is not None and theirs is not None and ours[0] == theirs[0]:
+            agreed += 1
             continue
 
         if ours is None and theirs is not None:
@@ -336,37 +339,52 @@ def main() -> None:
         "Wiktionary's. Every row needs a human verdict.\n"
     )
 
+    # (title, blurb, rows, left-column header, right-column header). The columns
+    # are named per bucket because they do not mean the same thing in each: for
+    # MISSING and DIVERGENT the left column is what the game displays today and
+    # the right is hypothetical, but a SUSPECT word already folds, so the right
+    # column is the live score and the left is what removing the fold restores.
+    # A single "our score | would be" header read exactly backwards there.
     sections = [
         (
             "MISSING — MorphyNet folds, we don't",
             "A base the rules never offered. The derivational rows are the point of "
             "the exercise: suffixes stem.ts declines to guess at, which a table can "
-            "settle. `to` is the score the word would get if the fold were adopted.",
+            "settle. The right column is the score the word would get if the fold "
+            "were adopted.",
             missing,
+            "scores today",
+            "would score",
         ),
         (
             "SUSPECT — we fold, MorphyNet doesn't",
             "A spelling coincidence the dictionary check let through, or a real "
-            "derivation Wiktionary happens not to record. `from` is the word's own "
-            "score, `to` what the fold currently gives it — so a large delta is a "
-            "large unearned demotion. Candidates for fold-exemptions.json.",
+            "derivation Wiktionary happens not to record. Note the columns are the "
+            "other way round here: the word already folds, so the right column is "
+            "what players see today and the left is what dropping the fold would "
+            "restore. A large delta is a large unearned demotion. Candidates for "
+            "fold-exemptions.json.",
             suspect,
+            "without the fold",
+            "scores today",
         ),
         (
             "DIVERGENT — both fold, different base",
             "Usually the frequency ranking preferring a lookalike to the real base. "
-            "`from` is our base's score, `to` MorphyNet's. Candidates for "
-            "score-overrides.json.",
+            "The left column is our base's score, the right MorphyNet's. "
+            "Candidates for score-overrides.json.",
             divergent,
+            "scores today",
+            "would score",
         ),
     ]
-    for title, blurb, rows in sections:
+    for title, blurb, rows, left, right in sections:
         w(f"\n## {title} ({len(rows):,})\n")
         w(f"{blurb}\n")
         if not rows:
             w("_None._\n")
             continue
-        w("| word | our score | would be | Δ | base | affix |")
+        w(f"| word | {left} | {right} | Δ | base | affix |")
         w("| --- | --- | --- | --- | --- | --- |")
         for row in rows[: args.top]:
             w(

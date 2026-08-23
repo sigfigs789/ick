@@ -373,15 +373,19 @@ TRANSPARENT_PREFIXES = (
 )
 # Left out: "de", "re", "co", "dis" -- productive, but the four English
 # fossilised onto Latin stems ("delate" -> "late", "refel" -> "fell", "cosh" ->
-# "she", "copious" -> "pious"). See FOSSILISED_PREFIXES in src/game/stem.ts.
+# "she", "copious" -> "pious"). The full reasoning is the block comment above
+# TRANSPARENT_PREFIXES in src/game/stem.ts.
 
 
 def _prefix_candidates(word: str) -> list[str]:
     """Mirror of prefixBaseCandidates() in src/game/stem.ts.
 
-    The base a prefixed word was built on ("codriver" -> "driver"). Admitted
-    only below MEASURED_FLOOR: ungated these fold "depart" -> "part" and
-    "coward" -> "ward", every one of which is measured far above the floor.
+    The base a prefixed word was built on ("nonplaying" -> "playing"). Admitted
+    only below MEASURED_FLOOR: ungated these fold "preface" -> "face",
+    "mistake" -> "take" and "understand" -> "stand", every one of which is
+    measured far above the floor. (Examples have to come from the prefixes
+    actually listed -- "depart" and "coward" cannot reach this function at all,
+    since "de" and "co" are not in TRANSPARENT_PREFIXES.)
     """
     w = word.lower()
     out: list[str] = []

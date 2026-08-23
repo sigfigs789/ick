@@ -572,10 +572,10 @@ describe("the cutover changes scoring only", () => {
 });
 
 describe("transparent prefixes fold, but only below the measurement floor", () => {
-  // The 2026-08-23 cutover. Before it, suffix rules alone left a prefixed word
+  // The 2026-08-24 cutover. Before it, suffix rules alone left a prefixed word
   // dead-ended on an unattested prefixed stem holding a near-perfect score.
-  const BEFORE_PREFIX = "2026-08-22";
-  const ON_PREFIX = "2026-08-23";
+  const BEFORE_PREFIX = "2026-08-23";
+  const ON_PREFIX = "2026-08-24";
 
   const PREFIXED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
     ["outwill", "will", 10, 1.88],

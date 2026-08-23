@@ -239,7 +239,7 @@ their base. **False positives if added:** essentially none — a `-cked`/`-cking
 covers the rest. This is the closest orthographic sibling to the tractable
 `-er`/`-est` gap in §B, and the safest of the unaddressed cases.
 
-## 8. Transparent prefixes — `un-`, `non-`, `over-`, `out-`, `mis-`, … (2026-08-23 on)
+## 8. Transparent prefixes — `un-`, `non-`, `over-`, `out-`, `mis-`, … (2026-08-24 on)
 
 Below `MEASURED_FLOOR` only, like §7. A word may be stripped of one transparent
 prefix to reach the word it was built on, and the chain carries on from there:
@@ -414,7 +414,7 @@ leave near-identical ones alone — an inconsistency a player can see, and worse
 than folding neither. It would need a completeness pass per suffix family rather
 than a bulk import. Unbuilt, deliberately.
 
-### F. Prefixes — mostly handled from 2026-08-23 (§8), `de-`/`re-`/`co-`/`dis-` still open
+### F. Prefixes — mostly handled from 2026-08-24 (§8), `de-`/`re-`/`co-`/`dis-` still open
 
 Superseded in part: see §8. The analysis below was right that the false
 positives are severe, and wrong about which lever contains them. It argued the
@@ -472,7 +472,7 @@ each is scored on its own frequency (or fixed one word at a time via an override
 **Nominalizations & big adjective-formers (false positives dominate)**
 - `-ation`/`-tion`/`-ion`, `-ance`/`-ence`, `-ity`/`-ty`, `-ous`, `-al`, `-ic`, `-ify`, `-ment`, `-ism`
 
-**Prefixes (transparent ones handled from 2026-08-23 — see §8)**
+**Prefixes (transparent ones handled from 2026-08-24 — see §8)**
 - Still open: `de-`, `re-`, `co-`, `dis-` — the four English fossilised onto
   Latin stems, where the word is as rare as the false base and the gate cannot
   separate them. Needs a vetted table (`scripts/fold-disagreements.py`).

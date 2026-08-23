@@ -64,7 +64,7 @@ const NARROW_BANDS_START = "2026-08-21";
 const INFLECTION_BASE_START = NARROW_BANDS_START;
 // The transparent prefixes join the gated families (see prefixBaseCandidates).
 // Its own date, so every archived puzzle keeps the scores it was played with.
-const PREFIX_BASE_START = "2026-08-23";
+const PREFIX_BASE_START = "2026-08-24";
 // How common a word must be to serve as a prefix base. Set at the top of the
 // deep tail rather than at MEASURED_FLOOR: the bound combining forms this keeps
 // out ("lith", "crat", "pathy", "phyte") are all measured, just barely, and sit
@@ -314,7 +314,7 @@ interface Scoring {
   inflectionBases: boolean;
   // Whether a below-floor word may be stripped of a transparent prefix to reach
   // the word it was built on ("outwill" -> "will"). Introduced with the
-  // 2026-08-23 cutover; off for earlier systems so past puzzles' scores stay
+  // 2026-08-24 cutover; off for earlier systems so past puzzles' scores stay
   // frozen (see PREFIX_BASE_START).
   prefixBases: boolean;
 }
@@ -403,7 +403,7 @@ const RETUNED_SCORING: Scoring = twoBandScoring(
   /* prefixBases */ false,
   /* narrowBands */ true
 );
-// The latest system (2026-08-23): RETUNED_SCORING plus the transparent prefixes
+// The latest system (2026-08-24): RETUNED_SCORING plus the transparent prefixes
 // in the gated family (see prefixBaseCandidates in stem.ts).
 const PREFIX_SCORING: Scoring = twoBandScoring(
   9.9,

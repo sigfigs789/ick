@@ -60,7 +60,7 @@
     "reason": "Plural of the archaic `complice` (an accomplice), which the -ices rule misreads as a stem-change plural of `complex`, 2.8 Zipf clear of the truth. `complice` is the rarer word, so an override cannot express this -- the cap ignores a rarer base -- and the word's own measurement is the right score."
   },
   "microdont": {
-    "since": "2026-08-23",
+    "since": "2026-08-24",
     "reason": "Greek micro- + -odont (tooth), a small-toothed animal -- not a form of `dont`. The prefix rule's base floor keeps out the other bound combining forms it lands on (`lith`, `crat`, `phyte`), but `dont` slips through it at Zipf 4.74: it is in the dictionary as the apostrophe-less spelling of \"don't\" and carries that word's frequency. Exempting the word is cheaper than special-casing the base."
   }
 }
