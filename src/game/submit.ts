@@ -2,6 +2,8 @@ import {
   boundBaseFormsActive,
   curatedRejection,
   isValidWord,
+  isDictionaryWord,
+  mostCommonSameRootBase,
   nearMissForDrop,
   pinnedSameRoot,
   rarityFor,
@@ -85,55 +87,56 @@ function rootFoldsFor(date?: string): RootFolds {
  * The key two submissions must share to count as the same root.
  *
  * `baseForm` alone commits to the first rule that matches and cannot check its
- * answer against the dictionary, so it keys thousands of words onto a non-word
- * that matches nothing: "indicated" -> "indicat", "scores" -> "scor",
- * "asphyxiates" -> "asphyxiat". Every one of those was a puzzle that could take
- * a word and its own plural or tense as two separate finds -- 39,466 pairs of
- * them, "indicate"/"indicates"/"indicated"/"indicating" being four finds off one
- * verb.
+ * answer against the dictionary, so it keys thousands of words onto a fragment
+ * that matches nothing: "indicated" -> "indicat", "advocates" -> "advocat",
+ * "asphyxiates" -> "asphyxiat". Every one of those was a puzzle that could take a
+ * word and its own plural or tense as two separate finds -- 40,621 pairs of them,
+ * with "advocate"/"advocates"/"advocated"/"advocating" four finds off one verb.
  *
- * From the 2026-08-24 cutover the missing inflections fill those holes, and the
- * order below is the whole safety argument:
+ * From the 2026-08-24 cutover the missing inflections fill those holes, in two
+ * tiers, and the tiers are the safety argument:
  *
- *   1. Whatever `baseForm` returns, if that is itself a playable word, is the
- *      key -- exactly as before, so the widening only ever *fills a hole* and
- *      never overrules a key that already worked. It is also what keeps "played"
- *      keyed on "play" rather than the obscure "playe" a bare e-restoration
- *      would offer.
- *   2. Otherwise the decisive candidates: the strips that leave the stem's
- *      letters alone, plus the silent "e" an "-ed"/"-ing" strip swallowed. A
- *      wrong guess here is almost always a non-word, and a non-word is never
- *      accepted as a key at all -- the word keeps its own spelling instead.
- *   3. Only then the one stem-changing family, where the base is a guess about
- *      which letters changed ("knives" -> "knife"). Ranking it last is what
- *      retires the coincidences scoring has to live with: "caves" reaches "cave"
- *      by a decisive strip and so never offers "cafe" at all.
+ *   1. Every *decisive* reading at once -- `baseForm`'s own answer, both "-es"
+ *      strips, the "-ies" rewrite, and the silent "e" an "-ed"/"-ing" strip
+ *      swallowed -- ranked by frequency, most common wins. These all point at
+ *      "the base of this word", so the loser is a lookalike of the winner rather
+ *      than a different word: "saves" chooses between "save" and the curated
+ *      fragment "sav", "played" between "play" and the obscure-but-real "playe",
+ *      "bathing" between "bath" and "bathe".
+ *   2. Only if tier 1 finds nothing at all, the stem-changing plurals, where the
+ *      base is a guess about which letters changed ("aardwolves" -> "aardwolf").
+ *      Keeping this tier out of the ranking is what retires the coincidences
+ *      scoring has to live with: "caves" settles inside tier 1 and so never
+ *      offers "cafe", and "saves" never offers "safe" -- the two folds scoring
+ *      wins by 0.11 and 0.07 Zipf, margins a data refresh could flip.
  *
- * Frequency deliberately plays no part. Scoring breaks its ties by picking the
- * most common candidate, which is safe there because a near-tie costs a fraction
- * of a point; here a wrong pick refuses a legitimate word outright, and a key
- * that moved when the frequency data was refreshed would change which words a
- * player may submit. Ordered preference keeps the key a function of spelling
- * alone. The handful of words no ordering can settle are pinned by review
- * (see `pinnedSameRoot`).
+ * Ranking tier 1 by frequency rather than by rule order is a reversal, and the
+ * measurement is why. Frequency is the only thing that separates "play"/"playe"
+ * from "bath"/"bathe" -- nothing in the spelling does -- so every ordering tried
+ * instead leaked in the thousands, and on common words: preferring `baseForm`'s
+ * strip left "have"/"haves", "value"/"values" and "phone"/"phones" playable
+ * together, 1,295 pairs of them, while preferring the other strip split
+ * "bathes"/"bathing" and 3,000 more. What frequency costs is a near-tie flipping
+ * when the data is refreshed, and inside a tier of lookalikes that only moves a
+ * pair between merged and playable -- never onto an unrelated word. The two
+ * places it does land on an unrelated word are reviewed instead: "theses" ->
+ * "these" and the words that merely end in "-men" (see `pinnedSameRoot`).
  *
- * It runs the other way too: 382 pairs that collapse today stop collapsing,
- * because `baseForm` keys thousands of words onto a *fragment* and a fragment is
- * a key two unrelated words can share. "grapes" and "graps" both land on "grap"
- * today and so refuse each other; so do "argued"/"argus", "cited"/"cits" and
- * "holed"/"hols". The doubled-consonant trim adds a whole family --
- * "chafed"/"chaffed", "razed"/"razzed", "piled"/"pilled", "moused"/"moussed",
- * "roles"/"rolled" -- pairs of different verbs a puzzle may now take both of.
- * The rest are same-root pairs with no dictionary word between them, which used
- * to meet on their shared fragment and now key on themselves
- * ("sclerosed"/"sclerosing", "hooved"/"hooves"). Those are leaks, and a leak is
- * the safe direction: it lets a word through where a wrong key refuses one.
+ * It runs the other way too: 2,501 pairs that collapse today stop collapsing.
+ * A fragment is a key two unrelated words can share -- "grapes" and "graps" both
+ * land on "grap" today and so refuse each other, as do "argued"/"argus",
+ * "cited"/"cits", "rates"/"rats", and the whole family the doubled-consonant trim
+ * creates ("chafed"/"chaffed", "razed"/"razzed", "piled"/"pilled",
+ * "moused"/"moussed"). Now each side reaches its own base and a puzzle may take
+ * both. The rest are pairs where a truncated variant is itself curated, so the
+ * variant keeps its own key while the paradigm moves to the full spelling
+ * ("ach"/"ached", "advocat"/"advocated"). Those are leaks, and a leak is the safe
+ * direction: it lets a word through where a wrong key refuses one.
  *
- * Leaks are also what is left where the dictionary attests the fragment. "wolve"
- * and "knive" are curated words, so "wolves" keys on "wolve" and never reaches
- * "wolf" -- rule 1 does not overrule a playable base, and that is the same rule
- * protecting "play"/"played". A puzzle can still take "wolf" and "wolves" both;
- * 390 stem-changing plurals are shadowed this way.
+ * A fragment is still the fallback when tier 1 and tier 2 both come up empty,
+ * because then it is the only thing the paradigm shares: the dictionary has no
+ * "bitch", so "bitched" and "bitching" meet there or not at all. What changed is
+ * that a fragment no longer captures words that *do* have a base.
  *
  * The bound derivational suffixes still fold on top, so a puzzle can't take both
  * "organize" and "organization" (only when that base is itself a dictionary
@@ -199,13 +202,13 @@ function foldOnce(word: string, folds: RootFolds, date?: string): string {
     // the only way an "-men" plural gets a look: nothing strips it, so its own
     // spelling stands unless the "-man" reading is admitted below.
     base =
-      base !== word && isValidWord(base, date)
-        ? base
-        : ([
-            ...decisiveNumberCandidates(word),
-            ...restoredTenseCandidates(word),
-            ...stemChangingNumberCandidates(word),
-          ].find((candidate) => isValidWord(candidate, date)) ?? word);
+      mostCommonSameRootBase(
+        word,
+        [base, ...decisiveNumberCandidates(word), ...restoredTenseCandidates(word)],
+        date
+      ) ??
+      stemChangingNumberCandidates(word).find(isDictionaryWord) ??
+      base;
   }
   if (folds.bound) {
     // Wrapped rather than passed by reference: find() supplies (value, index),

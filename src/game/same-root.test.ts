@@ -84,17 +84,40 @@ describe("the same-root rule reads the inflections baseForm misses", () => {
   });
 });
 
-describe("ordering, not frequency, decides the key", () => {
-  it("never offers a stem-changing guess when a plain strip lands on a word", () => {
-    // The coincidences scoring has to live with -- "caves" offering "cafe"
-    // (4.09) a hair under "cave" (4.20), "saves" offering "safe" -- cannot
-    // arise here: a decisive strip is consulted first and ends the search, and
-    // the stem-changing family is not where either coincidence lives anyway.
+describe("the two tiers, and what each one protects", () => {
+  it("never reaches a stem-changing guess when tier 1 finds anything", () => {
+    // The two coincidences scoring has to live with -- "caves" offering "cafe"
+    // (4.09) a hair under "cave" (4.20), "saves" offering "safe" (5.07) under
+    // "save" (5.14) -- cannot arise here at all. Both words settle in tier 1, so
+    // the "-ves" reading that produces "cafe" and "safe" is never consulted, and
+    // no data refresh can flip a margin that thin into a refusal.
+    expect(sameRootKey("caves", AFTER)).toBe("cave");
+    expect(sameRootKey("saves", AFTER)).toBe("save");
     expect(allowed("cafe", "caves", "CA", AFTER)).toBe(true);
     expect(allowed("safe", "saves", "SA", AFTER)).toBe(true);
-    // "cav" is itself a curated word, so it keeps the key it has today and
-    // "cave"/"caves" stay playable together -- a leak, not a refusal.
-    expect(sameRootKey("caves", AFTER)).toBe("cav");
+  });
+
+  it("ranks the whole tier, so a plural and its own tenses agree", () => {
+    // Nothing in the spelling says whether "bathing" came from "bath" or
+    // "bathe". What matters is that every form of the paradigm answers the same
+    // way, which ranking the tier as a whole guarantees and rule-ordering did
+    // not: ordering sent "-es" forms to the e-spelling and "-ing" forms to the
+    // bare stem, splitting 3,000 pairs.
+    expect(sameRootKey("bathes", AFTER)).toBe(sameRootKey("bathing", AFTER));
+    for (const form of ["advocates", "advocated", "advocating"]) {
+      expect(sameRootKey(form, AFTER), form).toBe("advocate");
+    }
+  });
+
+  it("keys a paradigm on its fragment when the dictionary has no base for it", () => {
+    // The curated list has no "bitch", so the fragment is the only thing these
+    // three share -- and before the cutover it was how they met. A fragment stays
+    // the fallback for exactly that reason; what it no longer does is capture
+    // words that have a real base ("grapes" leaves "graps" behind on "grap").
+    expect(isValidWord("bitch", AFTER)).toBe(false);
+    expect(sameRootKey("bitched", AFTER)).toBe(sameRootKey("bitching", AFTER));
+    expect(sameRootKey("grapes", AFTER)).toBe("grape");
+    expect(sameRootKey("graps", AFTER)).toBe("grap");
   });
 
   it("keeps a key that already worked, rather than restoring an e over it", () => {
@@ -151,27 +174,37 @@ describe("reviewed pins settle what no ordering can", () => {
 const WORDS = dictionaryWords as string[];
 
 describe("invariants across the whole dictionary", () => {
-  it("only ever fills a hole: a key that was already playable stays on the chain", () => {
-    // The widening may take a key *further* ("womens" -> "women" -> "woman"),
-    // never sideways. So wherever the old key was itself a playable word, the
-    // new key is what that old key folds to -- which is what guarantees no
-    // legitimate pair that collapses today comes apart tomorrow.
-    for (const word of WORDS) {
-      const before = sameRootKey(word, BEFORE);
-      if (!isValidWord(before, AFTER)) continue;
-      expect(sameRootKey(before, AFTER), word).toBe(sameRootKey(word, AFTER));
-    }
-  });
-
-  it("keys every word onto a playable word or onto itself, never onto a fragment", () => {
-    // A fragment is a key two unrelated words can share ("grapes" and "graps"
-    // both land on "grap" today). Refusing to key onto one is what dissolves
-    // those false pairs, and it is the property the whole rule rests on.
-    for (const word of WORDS) {
-      const key = sameRootKey(word, AFTER);
-      if (key === word) continue;
-      expect(isValidWord(key, AFTER), `${word} -> ${key}`).toBe(true);
-    }
+  it("merges far more than it splits, and both counts hold still", () => {
+    // The tripwire for the whole change. Measured at the cutover: 40,621 pairs
+    // that a puzzle could take as two finds now collapse, and 2,501 that
+    // collapse today come apart -- unrelated words that shared a fragment
+    // ("rates"/"rats"), plus curated truncations that keep their own key while
+    // their paradigm moves to the full spelling ("ach"/"ached"). Thresholds
+    // rather than exact numbers, since the dictionary is data and may grow.
+    const before = new Map(WORDS.map((word) => [word, sameRootKey(word, BEFORE)]));
+    const after = new Map(WORDS.map((word) => [word, sameRootKey(word, AFTER)]));
+    const group = (keys: Map<string, string>) => {
+      const groups = new Map<string, string[]>();
+      for (const word of WORDS) {
+        const key = keys.get(word)!;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key)!.push(word);
+      }
+      return [...groups.values()].filter((words) => words.length > 1);
+    };
+    const countPairs = (groups: string[][], same: (a: string, b: string) => boolean) => {
+      let pairs = 0;
+      for (const words of groups) {
+        for (let i = 0; i < words.length; i++) {
+          for (let j = i + 1; j < words.length; j++) if (!same(words[i], words[j])) pairs++;
+        }
+      }
+      return pairs;
+    };
+    const merged = countPairs(group(after), (a, b) => before.get(a) === before.get(b));
+    const split = countPairs(group(before), (a, b) => after.get(a) === after.get(b));
+    expect(merged).toBeGreaterThan(40_000);
+    expect(split).toBeLessThan(2_600);
   });
 
   it("splits the two halves of the scoring stemmer without changing it", () => {

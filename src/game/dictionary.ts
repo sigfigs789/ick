@@ -336,7 +336,8 @@ function twoBandScoring(
       return legend ? roundToCents(s) : Math.round(s * 10) / 10;
     }
     const clamped = Math.max(zipf, tailFloor);
-    const s = ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
+    const s =
+      ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
     return legend ? roundToCents(Math.min(s, 10)) : Math.round(Math.min(s, 10) * 100) / 100;
   };
   return {
@@ -605,6 +606,31 @@ export function boundBaseFormsActive(date?: string): boolean {
 // reachable. Only forward puzzles get the tighter rule.
 const SAME_ROOT_INFLECTION_START = "2026-08-24";
 
+/**
+ * Whether the curated dictionary has `word` at all, playable or not. Duplicate
+ * detection keys on this rather than on `isValidWord`: a reviewed rejection makes
+ * a word unsubmittable, not unreal, and it is still the right bucket label for
+ * its own paradigm. Keying on playability instead broke exactly the paradigms
+ * whose lemma is rejected -- "bitched", "bitches" and "bitching" each kept their
+ * own key, so a puzzle could take all three.
+ */
+export function isDictionaryWord(word: string): boolean {
+  return WORD_INDEX.has(word);
+}
+
+/**
+ * The most common dictionary word among `candidates`, for duplicate detection.
+ * Thin wrapper on the same `mostCommonBase` scoring folds through, so "which
+ * spelling is the base" is answered the same way in both.
+ */
+export function mostCommonSameRootBase(
+  word: string,
+  candidates: readonly string[],
+  date?: string
+): string | undefined {
+  return mostCommonBase(candidates, word, scoringFor(date));
+}
+
 /** Whether the widened same-root inflections apply to `date`'s puzzle. */
 export function sameRootInflectionsActive(date?: string): boolean {
   return date === undefined || date >= SAME_ROOT_INFLECTION_START;
@@ -625,12 +651,18 @@ interface SameRootPin {
 /**
  * The words no spelling rule can key correctly, reviewed one at a time.
  *
- * Deliberately tiny, and expected to stay that way: the rules duplicate
- * detection is allowed to use are the decisive ones, so the only entries needed
- * are the handful where a decisive strip lands on an unrelated word ("theses" ->
- * "these") or where the one stem-changing family in play misreads a word that
- * merely ends that way ("germen" -> "german"). A rule needing many entries here
- * is a rule that does not belong in duplicate detection at all.
+ * Three shapes, and nothing else belongs here -- a rule needing many entries is a
+ * rule that does not belong in duplicate detection at all:
+ *
+ *   - a decisive strip landing on an unrelated word, where frequency picks it
+ *     too and so nothing but a review can settle it ("theses" -> "these").
+ *   - a word that merely ends in "-men", which the one stem-changing family in
+ *     play reads as a plural ("germen" -> "german", "dolmen" -> "dolman").
+ *   - an irregular plural whose "-ve"/"-ce" variant spelling is itself curated,
+ *     so tier 1 settles on the variant and the stem-changing reading is never
+ *     reached ("wolves" -> "wolve", never "wolf"; "indices" -> "indice", never
+ *     "index"). Only the plurals a player actually meets are pinned; the
+ *     technical tail ("dialyses", "fibroses") is left to leak.
  *
  * Separate from `score-overrides.json` on purpose, and the two can disagree
  * about the same word: an override caps what "theses" is *worth* (at "these", to

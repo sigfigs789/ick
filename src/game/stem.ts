@@ -93,17 +93,18 @@ export function inflectionalBaseCandidates(word: string, latinPlurals: boolean):
  * base is spelled the way it always was, so a candidate that turns out to be a
  * dictionary word is the base rather than a guess about one.
  *
- *   - "-es" strips either one letter or two, because English drops the base's
- *     silent "e" or keeps it and nothing in the spelling says which
- *     ("asphyxiates" -> "asphyxiate", "glasses" -> "glass").
+ *   - "-es" strips either one letter or two, because the base either keeps its
+ *     silent "e" or ends in a consonant ("asphyxiates" -> "asphyxiate",
+ *     "glasses" -> "glass"). Both are offered; both callers rank them.
  *   - "-ies" -> "y" at any length ("cries" -> "cry"); `baseForm` requires six
  *     letters and so misses the five-letter forms.
  *   - "-s" -> the bare stem.
  *
  * Both callers check each candidate against the dictionary. Nothing here
  * rewrites a letter of the stem, which is what makes the family safe enough for
- * duplicate detection to take unconditionally -- the worst it can do is offer a
- * non-word, and a non-word never matches anything.
+ * duplicate detection to rank *together* with `baseForm`'s own answer: every
+ * candidate is a reading of the same ending, so the one frequency rejects is a
+ * lookalike of the one it keeps.
  */
 export function decisiveNumberCandidates(word: string): string[] {
   const w = word.toLowerCase();
@@ -167,10 +168,9 @@ export function stemChangingNumberCandidates(word: string): string[] {
  * Plus the five-letter "-ied" forms, which `baseForm`'s six-letter guard drops
  * into its generic "-ed" branch ("tried" -> "tri", not "try").
  *
- * Duplicate detection only. Scoring reaches all of these through
- * `tenseBaseForm`, which ranks a wider candidate set by frequency; this one is
- * ordered rather than ranked, because an identity key must not move when the
- * frequency data is refreshed.
+ * Duplicate detection only -- scoring reaches all of these through
+ * `tenseBaseForm`, whose candidate set is wider because it may also read a tense
+ * ending as something else entirely.
  *
  * The bare stem follows the "e" one, for the words `baseForm`'s "-ied" rule
  * preempts: it rewrites the stem to "-y" and never tries the plain "-ed" strip,
