@@ -71,8 +71,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         form ("belove" 9.75 against "beloved" 5.24, "infatuate" 9.46 against
  *         "infatuated" 7.11). A word is now also capped at its own regular
  *         inflections (see `inflectedFormFolds`).
- *     No label mapping
- *     moves.
+ *     Neither moves a label mapping.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -606,10 +605,12 @@ function scoringFor(date?: string): Scoring {
   // profile, so it reads the scoring one; `usesRetunedTiers` asks the label
   // question and reads NARROW_BANDS_START. The profile beyond carries both.
   if (date < INFLECTION_BASE_START) return CHAINED_SCORING;
-  // Two cutovers on the same day, laddered separately so either can move later
-  // without the other following. While the dates are equal the middle rung is
-  // stepped over. The profile beyond carries all three of that day's changes:
-  // the derivational families, the fold's second direction, and the prefixes.
+  // Two rungs for 2026-08-24, because the prefixes kept a date constant of
+  // their own while the fold's second direction did not. Laddered so either can
+  // move later without the other following; while the dates are equal the
+  // middle rung is stepped over. The profile beyond carries all three of that
+  // day's changes: the derivational families, the fold's second direction, and
+  // the prefixes.
   if (date < DERIVED_BASE_START) return RETUNED_SCORING;
   if (date < PREFIX_BASE_START) return DERIVED_SCORING;
   return LATEST_SCORING;
