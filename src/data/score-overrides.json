@@ -54,6 +54,11 @@
     "reason": "Plural / third-person form of `collegiate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "combobulate": {
+    "base": "discombobulate",
+    "reason": "Back-formation from `discombobulate`; dropping `dis-` is not a discovery.",
+    "since": "2026-08-23"
+  },
   "compassionates": {
     "base": "compassionate",
     "reason": "Plural / third-person form of `compassionate`; a suffix is not a discovery.",

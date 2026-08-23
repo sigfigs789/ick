@@ -51,7 +51,7 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
   ["absconce", "Legend", -1.57],
   ["aggrandization", "Elusive", 1.52],
   ["caprylate", "Mythic", 1.1],
-  ["combobulate", "Legend", -1.57],
+  ["combobulate", "Mythic", 1.25],
   ["conization", "Extremely Rare", 1.8],
   ["inosinate", "Legend", 0.79],
   ["reoxygenate", "Extremely Rare", 1.88],
