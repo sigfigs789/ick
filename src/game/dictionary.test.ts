@@ -48,13 +48,25 @@ const curatedWordScores: ReadonlyArray<[string, string, number]> = [
   ["invictus", "Rare", 2.5],
 ];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
-  ["aggrandization", "Elusive", 1.52],
+  // Recorded as Elusive 1.52 (the score of its base "aggrandize"). From the
+  // 2026-08-24 cutover the fold also runs toward a word's own inflections, and
+  // the paradigm's most common member is "aggrandizing" (2.05), which the whole
+  // family now caps at -- so the recorded row moves with it.
+  ["aggrandization", "Extremely Rare", 2.05],
   ["caprylate", "Mythic", 1.1],
-  ["combobulate", "Mythic", 1.25],
+  // Recorded as Mythic 1.25, the score of the base its override pins it to
+  // ("discombobulate"). From 2026-08-24 that base is itself capped at its own
+  // most common inflection, "discombobulated" (2.07), and the override's word
+  // follows it down the chain.
+  ["combobulate", "Extremely Rare", 2.07],
   ["conization", "Extremely Rare", 1.8],
   ["inosinate", "Legend", 0.79],
-  ["reoxygenate", "Extremely Rare", 1.88],
-  ["skateable", "Uncommon", 3.74],
+  // Recorded as Extremely Rare 1.88; capped at "reoxygenated" (2.55) from
+  // 2026-08-24, the same second-direction fold as the two rows above.
+  ["reoxygenate", "Rare", 2.55],
+  // Recorded at its base "skate" (3.74); "skating" (3.84) is the paradigm's most
+  // common member from 2026-08-24. Same tier, a tenth of a Zipf apart.
+  ["skateable", "Uncommon", 3.84],
   ["uridylate", "Legend", 0.68],
 ];
 // Rare words discovered online for an upcoming drop and added via the "Add rare
@@ -277,8 +289,13 @@ describe("rarityFor", () => {
     // "battlement" is not "battle" + ment, nor "arrivism" a form of "arrive";
     // a spelling-only rule can't tell these from real derivations, so they stay.
     expect(rarityFor("battlement")).not.toEqual(rarityFor("battle"));
-    expect(rarityFor("battlement")!.zipf).toBeCloseTo(1.77, 5);
     expect(rarityFor("arrivism")).not.toEqual(rarityFor("arrive"));
+    // Its own frequency is 1.77. What it displays from the 2026-08-24 cutover is
+    // its *plural's* (2.54): "battlements" is the form anyone writes, and the
+    // fold now runs that way too. Still nowhere near "battle" (4.94), which is
+    // what this test is about -- the -ment suffix is not stripped.
+    expect(rarityFor("battlement")!.zipf).toBeCloseTo(2.54, 5);
+    expect(rarityFor("battlement", "2026-08-23")!.zipf).toBeCloseTo(1.77, 5);
   });
 
   it("applies the bound base-form only from the 2026-08-16 wide-band cutover", () => {

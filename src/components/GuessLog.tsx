@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { maxGuessesFor } from "../game/constants";
 import { bestWord } from "../game/rank";
-import { formatRarityScore, topRarityScore, totalRarityScore } from "../game/dictionary";
+import {
+  baseFormSubstitution,
+  formatRarityScore,
+  topRarityScore,
+  totalRarityScore,
+} from "../game/dictionary";
 import { copyText } from "../clipboard";
 import { raritySymbol } from "../game/share";
 import { RarityBadge } from "./RarityBadge";
@@ -13,6 +18,23 @@ import type { AcceptedWord, StreakState } from "../game/types";
 function copyTextForWord(w: AcceptedWord, date?: string): string {
   const score = w.zipf !== undefined ? ` (${formatRarityScore(w.zipf, date)})` : "";
   return `${raritySymbol(w.rarity, date)} ${w.word}${score}`;
+}
+
+/**
+ * The other word in `w`'s paradigm that its score actually came from, or
+ * undefined when it scored on its own frequency.
+ *
+ * The score a rare-looking word displays is often not its own: the engine caps
+ * every word at the most common member of its family, so "placation" shows
+ * "placate" and -- since the fold gained its second direction -- "infatuate"
+ * shows "infatuated". Players read the number as a claim about the word they
+ * typed, so a word scoring well below where they expected looks like the game
+ * being wrong rather than the game being careful. Naming the form it was scored
+ * as turns that into the thing it should have been all along: something learned
+ * about the word.
+ */
+function scoredAs(w: AcceptedWord, date?: string): string | undefined {
+  return baseFormSubstitution(w.word, date)?.base;
 }
 
 interface Props {
@@ -64,6 +86,7 @@ export function GuessLog({
           {acceptedWords.map((w, i) => {
             const isBest = best !== undefined && w.word === best.word;
             const isCopied = copiedWord === w.word;
+            const scored = scoredAs(w, date);
             return (
               <li key={w.word} className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}>
                 <button
@@ -73,7 +96,9 @@ export function GuessLog({
                   aria-label={
                     isCopied
                       ? `Copied "${w.word}"`
-                      : `Copy "${w.word}" (${w.rarity}, guess ${i + 1})`
+                      : `Copy "${w.word}" (${w.rarity}, guess ${i + 1}${
+                          scored ? `, scored as "${scored}"` : ""
+                        })`
                   }
                 >
                   <span className="guess-log__entry-main">
@@ -82,7 +107,14 @@ export function GuessLog({
                         👑
                       </span>
                     )}
-                    <span className="guess-log__word">{w.word}</span>
+                    <span className="guess-log__entry-text">
+                      <span className="guess-log__word">{w.word}</span>
+                      {scored && (
+                        <span className="guess-log__scored-as">
+                          scored as <b>{scored}</b>
+                        </span>
+                      )}
+                    </span>
                     {isCopied ? (
                       <span className="guess-log__copied" role="status">
                         Copied!

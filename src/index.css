@@ -549,6 +549,24 @@ h2 {
   align-items: center;
   gap: 0.5rem;
 }
+/* The word and, under it, the form its score came from. A column of its own so
+ * the note stacks under the word without pushing the copy affordance around. */
+.guess-log__entry-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+/* Which word in the family the score came from -- "infatuate" is scored as
+ * "infatuated". */
+.guess-log__scored-as {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: var(--fg-muted);
+}
+.guess-log__scored-as b {
+  font-weight: 700;
+}
 .guess-log__entry-button:hover .guess-log__copy-hint,
 .guess-log__entry-button:focus-visible .guess-log__copy-hint {
   opacity: 1;
