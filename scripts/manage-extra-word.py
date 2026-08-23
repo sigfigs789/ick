@@ -362,6 +362,37 @@ def _unmeasured_candidates(word: str) -> list[str]:
     return out
 
 
+# Mirror of TRANSPARENT_PREFIXES in src/game/stem.ts.
+TRANSPARENT_PREFIXES = (
+    "counter", "pseudo", "quasi", "proto", "trans", "under", "inter", "super",
+    "hyper", "multi", "micro", "macro", "ultra", "photo", "semi", "anti",
+    "auto", "post", "over", "tele", "mono", "poly", "neo", "non", "mis",
+    "pre", "sub", "out", "un",
+)
+# Left out: "de", "re", "co", "dis" -- productive, but the four English
+# fossilised onto Latin stems ("delate" -> "late", "refel" -> "fell", "cosh" ->
+# "she", "copious" -> "pious"). See FOSSILISED_PREFIXES in src/game/stem.ts.
+
+
+def _prefix_candidates(word: str) -> list[str]:
+    """Mirror of prefixBaseCandidates() in src/game/stem.ts.
+
+    The base a prefixed word was built on ("codriver" -> "driver"). Admitted
+    only below MEASURED_FLOOR: ungated these fold "depart" -> "part" and
+    "coward" -> "ward", every one of which is measured far above the floor.
+    """
+    w = word.lower()
+    out: list[str] = []
+    for prefix in TRANSPARENT_PREFIXES:
+        if not w.startswith(prefix):
+            continue
+        stem = w[len(prefix):]
+        if len(stem) < 4 or stem == w or stem in out:
+            continue
+        out.append(stem)
+    return out
+
+
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     """Mirror of tenseBaseForm(): -ed/-ing pick the most common valid base.
 
@@ -553,6 +584,9 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
         # Tensed "-ize"/"-ise" forms are deliberately absent from the gated
         # set: they fold through their own verb (see nextBaseForms).
         for candidate in _unmeasured_candidates(word):
+            add(candidate)
+        # Prefixes, under the same gate (see prefixBaseCandidates in stem.ts).
+        for candidate in _prefix_candidates(word):
             add(candidate)
     add(_scoring_base(word, index))
     return out

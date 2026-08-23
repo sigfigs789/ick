@@ -9,6 +9,7 @@ import {
   boundBaseCandidates,
   degreeBaseCandidates,
   inflectionalBaseCandidates,
+  prefixBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
@@ -61,6 +62,9 @@ const NARROW_BANDS_START = "2026-08-21";
 // concerns -- one changes which label a score wears, the other changes the score
 // -- and either could move to its own date later without disturbing the other.
 const INFLECTION_BASE_START = NARROW_BANDS_START;
+// The transparent prefixes join the gated families (see prefixBaseCandidates).
+// Its own date, so every archived puzzle keeps the scores it was played with.
+const PREFIX_BASE_START = "2026-08-23";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -301,6 +305,11 @@ interface Scoring {
   // earlier systems so past puzzles' scores stay frozen (see
   // INFLECTION_BASE_START).
   inflectionBases: boolean;
+  // Whether a below-floor word may be stripped of a transparent prefix to reach
+  // the word it was built on ("outwill" -> "will"). Introduced with the
+  // 2026-08-23 cutover; off for earlier systems so past puzzles' scores stay
+  // frozen (see PREFIX_BASE_START).
+  prefixBases: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -321,6 +330,7 @@ function twoBandScoring(
   legend: boolean,
   chainedBaseForms = false,
   inflectionBases = false,
+  prefixBases = false,
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
@@ -358,6 +368,7 @@ function twoBandScoring(
     boundBaseForms,
     chainedBaseForms,
     inflectionBases,
+    prefixBases,
   };
 }
 
@@ -382,6 +393,19 @@ const RETUNED_SCORING: Scoring = twoBandScoring(
   /* legend */ true,
   /* chainedBaseForms */ true,
   /* inflectionBases */ true,
+  /* prefixBases */ false,
+  /* narrowBands */ true
+);
+// The latest system (2026-08-23): RETUNED_SCORING plus the transparent prefixes
+// in the gated family (see prefixBaseCandidates in stem.ts).
+const PREFIX_SCORING: Scoring = twoBandScoring(
+  9.9,
+  0,
+  /* boundBaseForms */ true,
+  /* legend */ true,
+  /* chainedBaseForms */ true,
+  /* inflectionBases */ true,
+  /* prefixBases */ true,
   /* narrowBands */ true
 );
 
@@ -410,6 +434,7 @@ const LEGACY_SCORING: Scoring = {
   boundBaseForms: false,
   chainedBaseForms: false,
   inflectionBases: false,
+  prefixBases: false,
 };
 
 /**
@@ -466,7 +491,7 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
 }
 
 function scoringFor(date?: string): Scoring {
-  if (date === undefined) return RETUNED_SCORING; // newest system
+  if (date === undefined) return PREFIX_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
   if (date < CHAINED_BASE_START) return WIDE_SCORING;
@@ -474,7 +499,8 @@ function scoringFor(date?: string): Scoring {
   // profile, so it reads the scoring one; `usesRetunedTiers` asks the label
   // question and reads NARROW_BANDS_START. The profile beyond carries both.
   if (date < INFLECTION_BASE_START) return CHAINED_SCORING;
-  return RETUNED_SCORING;
+  if (date < PREFIX_BASE_START) return RETUNED_SCORING;
+  return PREFIX_SCORING;
 }
 
 // -- Curated rejections (src/data/word-rejections.json) ----------------------
@@ -878,6 +904,14 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
     // plurals being read as verb tenses ("whatsises" reached "what";
     // "appendicitises" now folds to "appendicitis" like any other plural).
     for (const candidate of unmeasuredBaseCandidates(word)) add(candidate);
+    // Prefixes, under the same gate and for the same reason. Suffix rules alone
+    // leave a prefixed word dead-ended on an unattested prefixed stem
+    // ("overpeopling" -> "overpeople") when its attested root was one strip
+    // further ("people"). See `prefixBaseCandidates` for why the gate is
+    // load-bearing.
+    if (scoring.prefixBases) {
+      for (const candidate of prefixBaseCandidates(word)) add(candidate);
+    }
   }
   add(scoringBaseForm(word, scoring));
   return out;

@@ -225,6 +225,103 @@ export function unmeasuredBaseCandidates(word: string): string[] {
 }
 
 /**
+ * The prefixes a below-floor word may be stripped of to reach the word it was
+ * built on. Restricted to the productive, semantically transparent ones: a
+ * prefixed word means its base plus a modifier, so the base is the right thing
+ * to score it as ("codriver" is a driver, "overplanned" is planned).
+ *
+ * Longest first, so "counter-" wins over "co-" and "under-" over "un-".
+ */
+const TRANSPARENT_PREFIXES = [
+  "counter",
+  "pseudo",
+  "quasi",
+  "proto",
+  "trans",
+  "under",
+  "inter",
+  "super",
+  "hyper",
+  "multi",
+  "micro",
+  "macro",
+  "ultra",
+  "photo",
+  "semi",
+  "anti",
+  "auto",
+  "post",
+  "over",
+  "tele",
+  "mono",
+  "poly",
+  "neo",
+  "non",
+  "mis",
+  "pre",
+  "sub",
+  "out",
+  "un",
+];
+
+/*
+ * The prefixes left out, and why. "de-", "re-", "co-" and "dis-" are the most
+ * productive prefixes in the language and would have been the biggest part of
+ * this rule's reach -- "codriver", "reexplain", "depeople" all want them. They
+ * are also the four English fossilised onto Latin stems that were never English
+ * words, and below the floor is exactly where those live: "delate" (to inform
+ * against) folds to "late", "refel" (to refute) to "fell", "cosh" (a bludgeon)
+ * to "she", "copious" to "pious" and "delineable" to "line". Nothing in the
+ * spelling separates those from the real ones, and unlike the suffix families
+ * the frequency gate cannot help -- the fossilised words are rare, so the gate
+ * lets them through rather than keeping them out.
+ *
+ * This is the "-en" verbs decision again ("dudeen" -> "dude", "shoneen" ->
+ * "shone"): a family right often enough to tempt, wrong in a way no rule can
+ * see. Admitting it needs a vetted table of which words really carry the
+ * prefix, which is what scripts/fold-disagreements.py exists to build.
+ */
+
+/**
+ * The base a prefixed word was built on: "codriver" -> "driver", "nonplaying"
+ * -> "playing", "overplanned" -> "planned". Spelling only -- the caller
+ * confirms the residue is a real word, and admits these only below
+ * MEASURED_FLOOR alongside the other non-decisive families.
+ *
+ * Nothing here strips a prefix from a *measured* word, and that gate is doing
+ * all the work. English is full of words that merely open with these letters:
+ * ungated the list folds "preface" -> "face", "present" -> "sent", "mistake" ->
+ * "take", "outrage" -> "rage" and "understand" -> "stand". Every one of those
+ * is an ordinary word sitting far above the floor, so the gate excludes them
+ * outright -- the same argument that lets "-er"/"-est" and "-able" run below
+ * the floor and nowhere else.
+ *
+ * The residue must be at least four letters, matching the floor
+ * `unmeasuredBaseCandidates` puts on its own candidates: the wrong-word folds
+ * cluster in the short residues ("unit" -> "it", "union" -> "ion", "overt" ->
+ * "t"), and a three-letter base carries corpus frequency collected from every
+ * word containing it.
+ *
+ * This is the gap the MorphyNet audit (scripts/fold-disagreements.py) was built
+ * to find and the largest one it reported: with only suffix rules, a prefixed
+ * word strips its suffix, lands on an unattested prefixed stem and stops there
+ * holding a near-perfect score -- "outwill" dead-ended at 10.00 with "will"
+ * (Zipf 4.98) one strip further, and 186 words in the Mythic band were
+ * mis-scored by two points or more the same way.
+ */
+export function prefixBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  for (const prefix of TRANSPARENT_PREFIXES) {
+    if (!w.startsWith(prefix)) continue;
+    const stem = w.slice(prefix.length);
+    if (stem.length < 4 || stem === w || out.includes(stem)) continue;
+    out.push(stem);
+  }
+  return out;
+}
+
+/**
  * Candidate base spellings for the two *bound* derivational suffixes whose base
  * is unambiguous: an "-ization"/"-isation" word is the noun of an "-ize"/"-ise"
  * verb ("organization" -> "organize"), and an "-ability"/"-ibility" word is the

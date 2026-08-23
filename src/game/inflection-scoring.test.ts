@@ -570,3 +570,62 @@ describe("the cutover changes scoring only", () => {
     }
   });
 });
+
+describe("transparent prefixes fold, but only below the measurement floor", () => {
+  // The 2026-08-23 cutover. Before it, suffix rules alone left a prefixed word
+  // dead-ended on an unattested prefixed stem holding a near-perfect score.
+  const BEFORE_PREFIX = "2026-08-22";
+  const ON_PREFIX = "2026-08-23";
+
+  const PREFIXED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    ["outwill", "will", 10, 1.88],
+    ["overpeople", "people", 10, 2.18],
+    ["misthink", "think", 9.96, 2.43],
+    ["underbakes", "bake", 9.96, 5.62],
+    ["counterorders", "order", 9.89, 3.3],
+    // The chain keeps walking past the immediate parent: "nonplaying" strips
+    // its prefix to "playing" and carries on to "play".
+    ["nonplaying", "play", 9.69, 3.12],
+  ];
+
+  it.each(PREFIXED)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON_PREFIX)).toBe(after);
+    expect(baseFormSubstitution(word, ON_PREFIX)?.base).toBe(base);
+  });
+
+  it.each(PREFIXED)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_PREFIX)).toBe(before);
+  });
+
+  it("gives up the fossilised prefixes, right readings and all", () => {
+    // "de-", "re-", "co-" and "dis-" are excluded because English fossilised
+    // them onto Latin stems -- see prefixBaseCandidates. These are the words
+    // that costs us: every one is a real derivation the rule declines to make.
+    for (const word of ["codriver", "reexplain", "depeople", "disaffectedness"]) {
+      expect(score(word, BEFORE_PREFIX), `${word} must not move`).toBe(score(word, ON_PREFIX));
+    }
+  });
+
+  it("leaves a word the corpora actually measure alone, however it starts", () => {
+    // Ungated the rule folds every one of these onto an unrelated word:
+    // "preface" -> "face", "present" -> "sent", "mistake" -> "take",
+    // "outrage" -> "rage", "understand" -> "stand". Each carries a real
+    // measurement, so the gate excludes it.
+    for (const word of [
+      "preface",
+      "present",
+      "mistake",
+      "outrage",
+      "understand",
+      "subject",
+      "overture",
+      "nonsense",
+      "united",
+      "postage",
+      "interest",
+      "supermarket",
+    ]) {
+      expect(score(word, BEFORE_PREFIX), `${word} must not move`).toBe(score(word, ON_PREFIX));
+    }
+  });
+});

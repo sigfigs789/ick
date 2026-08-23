@@ -239,6 +239,52 @@ their base. **False positives if added:** essentially none — a `-cked`/`-cking
 covers the rest. This is the closest orthographic sibling to the tractable
 `-er`/`-est` gap in §B, and the safest of the unaddressed cases.
 
+## 8. Transparent prefixes — `un-`, `non-`, `over-`, `out-`, `mis-`, … (2026-08-23 on)
+
+Below `MEASURED_FLOOR` only, like §7. A word may be stripped of one transparent
+prefix to reach the word it was built on, and the chain carries on from there:
+`nonplaying` → `playing` → `play`.
+
+Found by `scripts/fold-disagreements.py`, which compares every fold against
+MorphyNet. This was the largest gap it reported: with only suffix rules a
+prefixed word strips its suffix, lands on an *unattested prefixed stem* and
+stops there holding a near-perfect score. `outwill` sat at 10.00 with `will`
+(Zipf 4.98) one strip further; 186 words in the Mythic band were mis-scored by
+two points or more the same way.
+
+| Word | Was | Now | Base |
+|------|-----|-----|------|
+| `outwill` | 10.00 | 1.88 | will |
+| `overpeople` | 10.00 | 2.18 | people |
+| `misthink` | 9.96 | 2.43 | think |
+| `counterorders` | 9.89 | 3.30 | order |
+| `underbakes` | 9.96 | 5.62 | bake |
+
+6,546 words move, every one of them down; no word is promoted. 322 of them are
+measured, all in the Zipf 1.0–1.5 band, reached the way `materialnesses` reaches
+`material` — through an unmeasured intermediate that the gate does admit. That is
+not new: the §7 suffix family already moves 528 measured words the same way.
+
+**Why the gate is enough here.** Ungated the rule folds `preface` → `face`,
+`present` → `sent`, `mistake` → `take`, `outrage` → `rage` and `understand` →
+`stand`. Every one is an ordinary measured word, so the gate never reaches them
+— the same argument that lets `-er`/`-est` and `-able` run below the floor and
+nowhere else. A four-letter minimum on the residue handles the short-base folds
+(`unit` → `it`, `union` → `ion`, `overt` → `t`).
+
+**What is excluded and why.** `de-`, `re-`, `co-` and `dis-` are the most
+productive prefixes in the language, and they are left out. They are also the
+four English fossilised onto Latin stems that were never English words, and
+below the floor is exactly where those live: `delate` → `late`, `refel` →
+`fell`, `cosh` → `she`, `copious` → `pious`, `delineable` → `line`. Here the gate
+cannot help, because the fossilised word is itself rare. It costs real readings
+(`codriver` → `driver`, `reexplain` → `explain`, `depeople` → `people`), which is
+the `-en` verbs decision again: a family right often enough to tempt, wrong in a
+way no spelling rule can see. Admitting it needs a vetted table of which words
+really carry the prefix.
+
+---
+
 ## Cases not yet addressed
 
 The families above are the ones the engine handles. It handles a family only when
@@ -333,12 +379,23 @@ countless rare non-derived words too.
 | `-ify` | simplify → simple, purify → pure, glorify → glory | notify → not, modify → mod, verify → ver, ratify → rat, unify → uni |
 | `-ment` / `-ism` | (excluded, see §6) | battlement → battle, arrivism → arrive |
 
-### F. Prefixes — entirely unaddressed (reason 3)
+### F. Prefixes — mostly handled from 2026-08-23 (§8), `de-`/`re-`/`co-`/`dis-` still open
 
-No prefix is stripped anywhere. Stripping would fix a prefixed form that scores
-rarer than its base (reconsider → consider, disconnect → connect, overcook →
-cook, misspell → spell), but the false positives are severe because most words
-that *start* with these strings aren't prefixed:
+Superseded in part: see §8. The analysis below was right that the false
+positives are severe, and wrong about which lever contains them. It argued the
+`MEASURED_FLOOR` gate could not help because false-positive bases like "cle",
+"sile" and "der" are themselves rare. But the gate reads the frequency of the
+*word being folded*, not of the base — and "uncle", "missile" and "under" are
+all ordinary measured words, so the gate excludes them before a base is ever
+considered. A four-letter minimum on the residue takes care of the rest.
+
+What the gate genuinely cannot contain is the opposite case, where the *word* is
+rare too: the Latin fossils under `de-`, `re-`, `co-` and `dis-` ("delate" →
+"late", "refel" → "fell", "cosh" → "she", "copious" → "pious"). Those four are
+excluded and remain open.
+
+The original table, kept because the false positives are still exactly the words
+the gate has to exclude:
 
 | Prefix | Would fix | False positives |
 |--------|-----------|-----------------|
@@ -348,10 +405,8 @@ that *start* with these strings aren't prefixed:
 | `mis-` | misspell → spell, misread → read | missile → sile, mister, misery, mistake → take |
 | `over-` / `under-` / `out-` | overcook → cook, outrun → run | overt → ert, output → put, outer → er, under → der |
 
-Prefixes are the clearest example of reason 3: the string is common word-initial
-material, and the MEASURED_FLOOR gate can't help because many false-positive
-bases ("cle", "sile", "der") are *rare*, so they slip under the floor with the
-words that should genuinely fold.
+Every word in the false-positive column is measured well above the floor, which
+is what makes the family tractable after all — see §8.
 
 ---
 
@@ -382,13 +437,16 @@ each is scored on its own frequency (or fixed one word at a time via an override
 **Nominalizations & big adjective-formers (false positives dominate)**
 - `-ation`/`-tion`/`-ion`, `-ance`/`-ence`, `-ity`/`-ty`, `-ous`, `-al`, `-ic`, `-ify`, `-ment`, `-ism`
 
-**Prefixes (none handled)**
-- `un-`, `re-`, `dis-`, `mis-`, `non-`, `over-`, `under-`, `out-`, `pre-`
+**Prefixes (transparent ones handled from 2026-08-23 — see §8)**
+- Still open: `de-`, `re-`, `co-`, `dis-` — the four English fossilised onto
+  Latin stems, where the word is as rare as the false base and the gate cannot
+  separate them. Needs a vetted table (`scripts/fold-disagreements.py`).
 
 **Lowest-risk candidates to actually add:** `c`→`ck` orthography, bare `-er`/`-est`
 above the floor, `-eaux`→`-eau`, `-hood`, `-ically`, `-ologist`. Everything else
 either needs a curated map (the irregulars) or has false positives the
-MEASURED_FLOOR gate can't contain (the big derivational families and prefixes).
+MEASURED_FLOOR gate can't contain (the big derivational families, and the four
+fossilised prefixes).
 
 ---
 
