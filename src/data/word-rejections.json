@@ -1,4 +1,9 @@
 {
+  "absconce": {
+    "note": "A real noun (a dark lantern used in church) with a Wiktionary entry, but nothing attests its use: no corpus in the waterfall, no Datamuse frequency, no Merriam-Webster entry, no citations, and not in ESDB/SCOWL 80. Its Google Books signal (1.7e-10, flat since 1800) is the OCR noise floor, not evidence -- so it is below the curated list's bar rather than obsolete.",
+    "reason": "not-a-word",
+    "since": "2026-08-23"
+  },
   "ajudication": {
     "note": "Misspelling of `adjudication`.",
     "reason": "misspelling",

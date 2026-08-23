@@ -54,11 +54,10 @@
         "suggested_words (one player suggestion that arrived after the first pass)"
       ],
       "accepted": [
-        "absconce",
         "combobulate",
         "skateable"
       ],
-      "rejections_recorded": 0,
+      "rejections_recorded": 1,
       "notes": [
         "`combobulate`, tried three times on puzzle 50 (drop `ate`) and then sent",
         "through the suggestion box. Merriam-Webster has no entry for it, and it was",
@@ -67,13 +66,15 @@
         "the game's other word source. Accepted, then capped onto `discombobulate`",
         "(9.53 Mythic): dropping `dis-` is not a discovery.",
         "Re-checking the whole pass against Wiktionary caught two more of the same",
-        "mistake: `skateable` (adjective, untagged) and `absconce` (noun, untagged --",
-        "labelled obsolete here from memory, which Wiktionary does not support).",
-        "`skateable` folds onto `skate` unaided (5.9 Uncommon). `absconce` keeps the",
-        "10.00 Legend: no corpus, no Datamuse frequency and no MW entry attest it, and",
-        "it has no base to fold onto, so the sentinel is the honest score. Its",
-        "Wiktionary entry carries no citations either, so the alternative was rejecting",
-        "it as dictionary-only -- not a middle score, which there is no measurement for.",
+        "mistake -- `skateable` and `absconce`, both untagged entries rejected on MW's",
+        "silence alone. `skateable` is accepted and folds onto `skate` unaided (5.9",
+        "Uncommon). `absconce` was accepted, then withdrawn: it is a real noun, but",
+        "nothing attests its *use* -- no corpus, no Datamuse frequency, no MW entry, no",
+        "citations on the Wiktionary entry, and not in ESDB/SCOWL 80. Its Google Books",
+        "signal is 1.7e-10 and flat since 1800, a thousandth of `sconce` and of `boate`",
+        "(which this repo does call obsolete): that is the OCR noise floor, not usage.",
+        "So it is below the list's evidence bar rather than obsolete, and it carries the",
+        "generic not-a-word message, which claims nothing about the word itself.",
         "MW-unknown alone is not grounds for a rejection. The three that stayed",
         "rejected -- `prismaticism`, `quates`, `weatherical` -- have no Wiktionary",
         "entry either. Misspelling calls Wiktionary confirms outright: `centrifical`,",
@@ -87,7 +88,8 @@
         "most of them mechanical forms the engine has no fold for (`unspiced`,",
         "`unmasticated`, `riceballs`, `microcalorie`, `skateless`). Prefix folds (un-,",
         "non-, anti-, de-, re-) and a -less fold come first, or the top of the scale",
-        "floods."
+        "floods. `absconce` also suggests the bar for that sweep: an entry alone is not",
+        "enough, a citation or a measurable frequency is."
       ]
     }
   ]

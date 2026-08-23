@@ -48,7 +48,6 @@ const curatedWordScores: ReadonlyArray<[string, string, number]> = [
   ["invictus", "Rare", 2.5],
 ];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
-  ["absconce", "Legend", -1.57],
   ["aggrandization", "Elusive", 1.52],
   ["caprylate", "Mythic", 1.1],
   ["combobulate", "Mythic", 1.25],
@@ -77,7 +76,7 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_482);
+    expect(dictionaryWords).toHaveLength(225_481);
   });
 
   it("accepts a common real word", () => {
