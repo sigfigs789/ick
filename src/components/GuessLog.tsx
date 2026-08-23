@@ -2,8 +2,8 @@ import { useState } from "react";
 import { maxGuessesFor } from "../game/constants";
 import { bestWord } from "../game/rank";
 import {
-  baseFormSubstitution,
   formatRarityScore,
+  scoredAsForm,
   topRarityScore,
   totalRarityScore,
 } from "../game/dictionary";
@@ -21,12 +21,12 @@ function copyTextForWord(w: AcceptedWord, date?: string): string {
 }
 
 /**
- * The other word in `w`'s paradigm that its score actually came from, or
- * undefined when it scored on its own frequency.
+ * The other word in `w`'s paradigm that its score came from, when the game can
+ * say so plainly -- see `scoredAsForm`, which decides what is safe to print.
  *
  * The score a rare-looking word displays is often not its own: the engine caps
- * every word at the most common member of its family, so "placation" shows
- * "placate" and -- since the fold gained its second direction -- "infatuate"
+ * every word at the most common member of its family, so "chances" shows
+ * "chance" and -- since the fold gained its second direction -- "infatuate"
  * shows "infatuated". Players read the number as a claim about the word they
  * typed, so a word scoring well below where they expected looks like the game
  * being wrong rather than the game being careful. Naming the form it was scored
@@ -34,7 +34,7 @@ function copyTextForWord(w: AcceptedWord, date?: string): string {
  * about the word.
  */
 function scoredAs(w: AcceptedWord, date?: string): string | undefined {
-  return baseFormSubstitution(w.word, date)?.base;
+  return scoredAsForm(w.word, date);
 }
 
 interface Props {
