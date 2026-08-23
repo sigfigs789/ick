@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
 import sameRootPins from "../data/same-root-pins.json";
 import { evaluateSubmission, sameRootKey } from "./submit";
-import { isValidWord } from "./dictionary";
+import { isDictionaryWord, isValidWord } from "./dictionary";
 import {
   decisiveNumberCandidates,
   inflectionalBaseCandidates,
@@ -139,9 +139,12 @@ describe("the two tiers, and what each one protects", () => {
   });
 
   it("keeps a key that already worked, rather than restoring an e over it", () => {
-    // "playe" is in the dictionary, so a bare e-restoration would key "played"
-    // onto it and let a puzzle take "play" and "played" both.
-    expect(isValidWord("playe", AFTER)).toBe(true);
+    // "playe" is in the dictionary -- unplayable, but real -- so it is a
+    // candidate here, and a rule that preferred the restored "e" would key
+    // "played" onto it and let a puzzle take "play" and "played" both. Only
+    // frequency separates the two (5.63 against 0.30).
+    expect(isDictionaryWord("playe")).toBe(true);
+    expect(isValidWord("playe", AFTER)).toBe(false);
     expect(sameRootKey("played", AFTER)).toBe("play");
     expect(allowed("play", "played", "LA", AFTER)).toBe(false);
   });

@@ -47,7 +47,11 @@ bound derivational suffixes fold on top (`organization` → `organize`).
 
 Candidates are checked against **dictionary membership, not playability**. A
 reviewed rejection makes a word unsubmittable, not unreal, and it is still the
-right bucket for its own paradigm.
+right bucket for its own paradigm. This matters more since #199 rejected every
+curated word carrying a rejection reason: `bitch` is not in the dictionary at all,
+so `bitched`/`bitching` need the fragment fallback, while `playe` _is_ in the
+dictionary but unplayable, and it still has to compete for `played`'s key -- if it
+did not, the restored `e` would win and `play`/`played` would come apart.
 
 ---
 
