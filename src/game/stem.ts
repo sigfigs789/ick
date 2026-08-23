@@ -10,14 +10,11 @@ export function baseForm(word: string): string {
 
   if (w.length > 5 && w.endsWith("ies")) return w.slice(0, -3) + "y";
   if (w.length > 6 && w.endsWith("ying")) return w.slice(0, -4) + "y";
-  if (w.length > 5 && w.endsWith("ing"))
-    return stripDoubledConsonant(w.slice(0, -3));
+  if (w.length > 5 && w.endsWith("ing")) return stripDoubledConsonant(w.slice(0, -3));
   if (w.length > 5 && w.endsWith("ied")) return w.slice(0, -3) + "y";
-  if (w.length > 4 && w.endsWith("ed"))
-    return stripDoubledConsonant(w.slice(0, -2));
+  if (w.length > 4 && w.endsWith("ed")) return stripDoubledConsonant(w.slice(0, -2));
   if (w.length > 4 && w.endsWith("es")) return w.slice(0, -2);
-  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss"))
-    return w.slice(0, -1);
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
 
   return w;
 }
@@ -72,10 +69,7 @@ export function baseForm(word: string): string {
  *
  * Tense (-ed/-ing) is not here: `tenseBaseForm` in dictionary.ts already owns it.
  */
-export function inflectionalBaseCandidates(
-  word: string,
-  latinPlurals: boolean,
-): string[] {
+export function inflectionalBaseCandidates(word: string, latinPlurals: boolean): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
   const add = (...bases: string[]) => {
@@ -86,12 +80,9 @@ export function inflectionalBaseCandidates(
 
   // Most specific first only for readability -- the caller ranks by frequency,
   // not by the order these are added.
-  if (w.length > 5 && w.endsWith("ices"))
-    add(w.slice(0, -4) + "ex", w.slice(0, -4) + "ix");
-  if (w.length > 4 && w.endsWith("ies"))
-    add(w.slice(0, -3) + "y", w.slice(0, -3) + "i");
-  if (w.length > 4 && w.endsWith("ves"))
-    add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
+  if (w.length > 5 && w.endsWith("ices")) add(w.slice(0, -4) + "ex", w.slice(0, -4) + "ix");
+  if (w.length > 4 && w.endsWith("ies")) add(w.slice(0, -3) + "y", w.slice(0, -3) + "i");
+  if (w.length > 4 && w.endsWith("ves")) add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
   if (w.length > 4 && w.endsWith("men")) add(w.slice(0, -3) + "man");
   if (w.length > 4 && w.endsWith("es")) {
     add(w.slice(0, -1), w.slice(0, -2), w.slice(0, -2) + "is");
@@ -131,9 +122,7 @@ export function inflectionalBaseCandidates(
  * "earliest" 5.35 against "early" 3.38 -- because the gated rules never reach a
  * measured word.
  */
-export function degreeBaseCandidates(
-  word: string,
-): { base: string; counterpart: string }[] {
+export function degreeBaseCandidates(word: string): { base: string; counterpart: string }[] {
   const w = word.toLowerCase();
   if (w.length > 5 && w.endsWith("iest")) {
     const stem = w.slice(0, -4);
@@ -320,16 +309,28 @@ export function derivedBaseCandidates(word: string): string[] {
     if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
   };
 
-  if (w.length > 8 && w.endsWith("ically")) add(w.slice(0, -4));
-  if (w.length > 6 && w.endsWith("ably")) add(`${w.slice(0, -4)}able`);
-  if (w.length > 6 && w.endsWith("ibly")) add(`${w.slice(0, -4)}ible`);
-  if (w.length > 8 && w.endsWith("ologist")) add(`${w.slice(0, -3)}y`);
+  // Each length bound is the shortest word the family actually has, not a
+  // round number: "epically" and "laically" are eight letters, "stably" and
+  // "viably" six, "oologist" eight. A bound set one letter too high silently
+  // drops a member of the family (see the tests).
+  if (w.length > 7 && w.endsWith("ically")) add(w.slice(0, -4));
+  if (w.length > 5 && w.endsWith("ably")) add(`${w.slice(0, -4)}able`);
+  if (w.length > 5 && w.endsWith("ibly")) add(`${w.slice(0, -4)}ible`);
+  if (w.length > 6 && w.endsWith("ologist")) add(`${w.slice(0, -3)}y`);
   for (const suffix of ["cked", "cking"]) {
     if (w.endsWith(suffix) && w.length > suffix.length + 2) {
+      // Both spellings, because a "-cked" word is as likely built on a "-ck"
+      // verb as on a "-c" one, and the caller's most-common check is what tells
+      // them apart: "chocked" reaches both "choc" and the commoner "chock" (its
+      // real base) and lands on "chock". Offering only the "-c" form would have
+      // handed it "choc". The plain "-ed"/"-ing" rule already supplies the "-ck"
+      // spelling for tensed forms, so this is belt-and-braces there and load
+      // bearing for anything those rules do not reach.
       add(`${w.slice(0, -suffix.length)}c`);
+      add(`${w.slice(0, -suffix.length)}ck`);
     }
   }
-  if (w.length > 5 && w.endsWith("eaux")) add(w.slice(0, -1));
+  if (w.length > 4 && w.endsWith("eaux")) add(w.slice(0, -1));
 
   return out;
 }

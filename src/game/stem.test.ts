@@ -61,14 +61,12 @@ describe("inflectionalBaseCandidates", () => {
     // baseForm commits to stripping both letters of "-es" and lands on the
     // non-word "asphyxiat"; the base is one letter back.
     expect(baseForm("asphyxiates")).toBe("asphyxiat");
-    expect(inflectionalBaseCandidates("asphyxiates", true)).toContain(
-      "asphyxiate",
-    );
+    expect(inflectionalBaseCandidates("asphyxiates", true)).toContain("asphyxiate");
   });
 
   it("offers both -es strips, so the caller can pick whichever is a word", () => {
     expect(inflectionalBaseCandidates("glasses", true)).toEqual(
-      expect.arrayContaining(["glasse", "glass"]),
+      expect.arrayContaining(["glasse", "glass"])
     );
   });
 
@@ -127,7 +125,7 @@ describe("inflectionalBaseCandidates", () => {
     // "caves" really does look like a "-ves" plural of "cafe". Resolving that is
     // the caller's job (most common base wins), not this function's.
     expect(inflectionalBaseCandidates("caves", true)).toEqual(
-      expect.arrayContaining(["cafe", "cave"]),
+      expect.arrayContaining(["cafe", "cave"])
     );
   });
 
@@ -139,13 +137,7 @@ describe("inflectionalBaseCandidates", () => {
   });
 
   it("never offers the word itself", () => {
-    for (const word of [
-      "asphyxiates",
-      "cries",
-      "wolves",
-      "glasses",
-      "matrices",
-    ]) {
+    for (const word of ["asphyxiates", "cries", "wolves", "glasses", "matrices"]) {
       expect(inflectionalBaseCandidates(word, true)).not.toContain(word);
     }
   });
@@ -157,7 +149,7 @@ describe("inflectionalBaseCandidates", () => {
 
   it("is case-insensitive", () => {
     expect(inflectionalBaseCandidates("WOLVES", true)).toEqual(
-      inflectionalBaseCandidates("wolves", true),
+      inflectionalBaseCandidates("wolves", true)
     );
   });
 });
@@ -242,9 +234,7 @@ describe("unmeasuredBaseCandidates", () => {
   });
 
   it("is case-insensitive and never offers the word itself", () => {
-    expect(unmeasuredBaseCandidates("BABIEST")).toEqual(
-      unmeasuredBaseCandidates("babiest"),
-    );
+    expect(unmeasuredBaseCandidates("BABIEST")).toEqual(unmeasuredBaseCandidates("babiest"));
     for (const word of ["specialest", "asyla", "abandoner"]) {
       expect(unmeasuredBaseCandidates(word)).not.toContain(word);
     }
@@ -276,26 +266,39 @@ describe("derivedBaseCandidates", () => {
     // Every family here has a bound ending. The look-alike endings that are
     // ordinary word-final material get no candidate, so nothing downstream has
     // to gate them: "metal", "topic", "unity", "forward", "spaceship".
-    for (const word of [
-      "metal",
-      "topic",
-      "unity",
-      "forward",
-      "spaceship",
-      "listless",
-    ]) {
-      expect(derivedBaseCandidates(word), `${word} must offer nothing`).toEqual(
-        [],
-      );
+    for (const word of ["metal", "topic", "unity", "forward", "spaceship", "listless"]) {
+      expect(derivedBaseCandidates(word), `${word} must offer nothing`).toEqual([]);
     }
   });
 
   it("is case-insensitive and never offers the word itself", () => {
-    expect(derivedBaseCandidates("TOXICALLY")).toEqual(
-      derivedBaseCandidates("toxically"),
-    );
+    expect(derivedBaseCandidates("TOXICALLY")).toEqual(derivedBaseCandidates("toxically"));
     for (const word of ["toxically", "availably", "mythologist", "bureaux"]) {
       expect(derivedBaseCandidates(word)).not.toContain(word);
     }
+  });
+});
+
+describe("derivedBaseCandidates length bounds", () => {
+  it.each([
+    ["epically", "epic"],
+    ["stably", "stable"],
+    ["viably", "viable"],
+    ["oologist", "oology"],
+    ["ologist", "ology"],
+    ["beaux", "beau"],
+  ])("reaches the shortest member of its family: %s -> %s", (word, base) => {
+    // Each bound is the shortest word the family actually has. Set one letter
+    // higher -- the round numbers this started with -- and every word here is
+    // silently dropped.
+    expect(derivedBaseCandidates(word)).toContain(base);
+  });
+
+  it("offers both spellings for a c -> ck rewrite", () => {
+    // "chocked" is a tense of "chock", not of "choc". Offering only the "-c"
+    // form hands it "choc"; offering both lets the caller's most-common check
+    // pick the real base.
+    expect(derivedBaseCandidates("chocked")).toEqual(["choc", "chock"]);
+    expect(derivedBaseCandidates("panicked")).toEqual(["panic", "panick"]);
   });
 });

@@ -15,15 +15,12 @@ import type { AcceptedWord } from "./types";
 const BEFORE = "2026-08-20"; // last day on the chained-base-only system
 const ON = "2026-08-21"; // first day the number inflections fold
 
-const score = (word: string, date: string) =>
-  rarityScore(rarityFor(word, date)!.zipf, date);
+const score = (word: string, date: string) => rarityScore(rarityFor(word, date)!.zipf, date);
 const rank = (word: string, date?: string) => rarityFor(word, date)!.rarity;
 
 describe("number inflections fold onto their base (from 2026-08-21)", () => {
   // word, base, score before the cutover, score on/after, and the rule at work.
-  const FOLDS: ReadonlyArray<
-    [word: string, base: string, before: number, after: number]
-  > = [
+  const FOLDS: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
     // "-es" where the base keeps its "e" -- the gap that motivated the change.
     // baseForm strips both letters and lands on the non-word "asphyxiat", so
     // nothing capped the word and a bare "-s" out-scored its own verb by a rank.
@@ -58,34 +55,25 @@ describe("number inflections fold onto their base (from 2026-08-21)", () => {
     ["taxied", "taxi", 8.47, 5.21],
   ];
 
-  it.each(FOLDS)(
-    "%s scores as %s from the cutover on",
-    (word, base, _before, after) => {
-      expect(score(word, ON)).toBe(after);
-      expect(score(word, ON)).toBe(score(base, ON));
-    },
-  );
+  it.each(FOLDS)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON)).toBe(after);
+    expect(score(word, ON)).toBe(score(base, ON));
+  });
 
-  it.each(FOLDS)(
-    "%s kept its own, rarer score the day before",
-    (word, _base, before) => {
-      expect(score(word, BEFORE)).toBe(before);
-    },
-  );
+  it.each(FOLDS)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE)).toBe(before);
+  });
 
   it.each(FOLDS)("%s reports the substitution for analytics", (word, base) => {
     expect(baseFormSubstitution(word, ON)?.base).toBe(base);
   });
 
-  it.each(FOLDS)(
-    "%s leaves its base untouched",
-    (_word, base, _before, after) => {
-      // The fold is a cap on the derived form only. A base that folds nowhere must
-      // score identically on both sides of the cutover.
-      expect(score(base, BEFORE)).toBe(after);
-      expect(score(base, ON)).toBe(after);
-    },
-  );
+  it.each(FOLDS)("%s leaves its base untouched", (_word, base, _before, after) => {
+    // The fold is a cap on the derived form only. A base that folds nowhere must
+    // score identically on both sides of the cutover.
+    expect(score(base, BEFORE)).toBe(after);
+    expect(score(base, ON)).toBe(after);
+  });
 
   it("defaults to the newest system when no date is given", () => {
     expect(rarityFor("asphyxiates")!.zipf).toBe(rarityFor("asphyxiate")!.zipf);
@@ -106,9 +94,7 @@ describe("number inflections fold onto their base (from 2026-08-21)", () => {
 // That check is what earns this one family a fold *above* the measurement
 // floor, where the gated rules below must not reach.
 describe("-ier/-iest comparatives fold onto their -y adjective, above the floor too", () => {
-  const DEGREES: ReadonlyArray<
-    [word: string, base: string, before: number, after: number]
-  > = [
+  const DEGREES: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
     // Measured comparatives that scored rarer than their own adjective.
     ["happier", "happy", 5.4, 3.5],
     ["angrier", "angry", 7.33, 4.52],
@@ -121,20 +107,14 @@ describe("-ier/-iest comparatives fold onto their -y adjective, above the floor 
     ["boniest", "bony", 9.91, 6.59],
   ];
 
-  it.each(DEGREES)(
-    "%s scores as %s from the cutover on",
-    (word, base, _before, after) => {
-      expect(score(word, ON)).toBe(after);
-      expect(score(word, ON)).toBe(score(base, ON));
-    },
-  );
+  it.each(DEGREES)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON)).toBe(after);
+    expect(score(word, ON)).toBe(score(base, ON));
+  });
 
-  it.each(DEGREES)(
-    "%s kept its own, rarer score the day before",
-    (word, _base, before) => {
-      expect(score(word, BEFORE)).toBe(before);
-    },
-  );
+  it.each(DEGREES)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE)).toBe(before);
+  });
 
   it("refuses an agent noun, whose base lacks the other degree", () => {
     // "copier" is not "more copy": "copiest" is not a word, so the reading
@@ -182,18 +162,8 @@ describe("Latin plurals fold when the word has no English plural of its own", ()
     // "albas", "taxis", "braes" and "aluminas" are all dictionary words, so
     // "alba", "taxi", "brae" and "alumina" are English singulars whatever
     // their endings suggest -- an oxide is a substance, not a plural.
-    for (const word of [
-      "alba",
-      "taxi",
-      "brae",
-      "alumina",
-      "magnesia",
-      "tantra",
-    ]) {
-      expect(
-        baseFormSubstitution(word, ON),
-        `${word} must not fold`,
-      ).toBeUndefined();
+    for (const word of ["alba", "taxi", "brae", "alumina", "magnesia", "tantra"]) {
+      expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
       expect(score(word, ON)).toBe(score(word, BEFORE));
     }
   });
@@ -202,9 +172,7 @@ describe("Latin plurals fold when the word has no English plural of its own", ()
 // The suffixes whose spelling is not decisive fold only below MEASURED_FLOOR
 // (Zipf 1.0), where a word's score is a stand-in rather than a measurement.
 describe("comparatives and Latin plurals fold, but only below the measurement floor", () => {
-  const GATED: ReadonlyArray<
-    [word: string, base: string, before: number, after: number]
-  > = [
+  const GATED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
     // "-est"/"-er": a suffix was worth a perfect 10.00 on words nobody would
     // call a discovery.
     ["specialest", "special", 10, 3.52],
@@ -232,20 +200,14 @@ describe("comparatives and Latin plurals fold, but only below the measurement fl
     ["requirable", "require", 9.92, 4.34],
   ];
 
-  it.each(GATED)(
-    "%s scores as %s from the cutover on",
-    (word, base, _before, after) => {
-      expect(score(word, ON)).toBe(after);
-      expect(baseFormSubstitution(word, ON)?.base).toBe(base);
-    },
-  );
+  it.each(GATED)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON)).toBe(after);
+    expect(baseFormSubstitution(word, ON)?.base).toBe(base);
+  });
 
-  it.each(GATED)(
-    "%s kept its own, rarer score the day before",
-    (word, _base, before) => {
-      expect(score(word, BEFORE)).toBe(before);
-    },
-  );
+  it.each(GATED)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE)).toBe(before);
+  });
 
   it.each(GATED)("%s was Mythic or better before, and is not after", (word) => {
     expect(["Mythic", "Legend"]).toContain(rank(word, BEFORE));
@@ -289,13 +251,8 @@ describe("comparatives and Latin plurals fold, but only below the measurement fl
       "sensible",
       "probable",
     ]) {
-      expect(
-        baseFormSubstitution(word, ON),
-        `${word} must not fold`,
-      ).toBeUndefined();
-      expect(score(word, BEFORE), `${word} must not move`).toBe(
-        score(word, ON),
-      );
+      expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
+      expect(score(word, BEFORE), `${word} must not move`).toBe(score(word, ON));
     }
   });
 });
@@ -320,10 +277,7 @@ describe("what the cutover deliberately leaves alone", () => {
     // and "torten" onto "tort". 51 words, ~6 of them wrong, so the family stays
     // with the reviewed overrides.
     for (const word of ["harshen", "dudeen", "plumpen", "hoarsen"]) {
-      expect(
-        baseFormSubstitution(word, ON),
-        `${word} must not fold`,
-      ).toBeUndefined();
+      expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
       expect(score(word, BEFORE)).toBe(score(word, ON));
     }
   });
@@ -347,20 +301,15 @@ describe("what the cutover deliberately leaves alone", () => {
     ["stares", "star"],
     ["tares", "tar"],
     ["wares", "war"],
-  ])(
-    "keeps %s on its own data rather than folding to coincidental %s",
-    (word, coincidence) => {
-      // A terminal-e base makes both the intended "-s" strip and an unrelated
-      // "-es" strip plausible. The max-over-candidates fold would otherwise
-      // select the more common coincidence (for example, fores -> for).
-      expect(baseFormSubstitution(word, ON)).toBeUndefined();
-      const index = (dictionaryWords as unknown as string[]).indexOf(word);
-      expect(rarityFor(word, ON)!.zipf).toBe(
-        rarityData.zipfHundredths[index] / 100,
-      );
-      expect(score(word, ON)).not.toBe(score(coincidence, ON));
-    },
-  );
+  ])("keeps %s on its own data rather than folding to coincidental %s", (word, coincidence) => {
+    // A terminal-e base makes both the intended "-s" strip and an unrelated
+    // "-es" strip plausible. The max-over-candidates fold would otherwise
+    // select the more common coincidence (for example, fores -> for).
+    expect(baseFormSubstitution(word, ON)).toBeUndefined();
+    const index = (dictionaryWords as unknown as string[]).indexOf(word);
+    expect(rarityFor(word, ON)!.zipf).toBe(rarityData.zipfHundredths[index] / 100);
+    expect(score(word, ON)).not.toBe(score(coincidence, ON));
+  });
 });
 
 // src/data/fold-exemptions.json says the one thing an override cannot: score
@@ -376,10 +325,7 @@ describe("reviewed fold exemptions", () => {
     // override can express the redirect -- the cap ignores a rarer base -- and
     // its own measurement is the right score.
     for (const word of ["momser", "limen", "germen", "complices"]) {
-      expect(
-        baseFormSubstitution(word, ON),
-        `${word} must not fold`,
-      ).toBeUndefined();
+      expect(baseFormSubstitution(word, ON), `${word} must not fold`).toBeUndefined();
       expect(score(word, ON)).toBe(score(word, BEFORE));
     }
   });
@@ -404,9 +350,7 @@ describe("reviewed fold exemptions", () => {
     // both files would have a dead override -- a review error, not a tie.
     const overrides = new Set(Object.keys(scoreOverrideData));
     for (const word of Object.keys(foldExemptionData)) {
-      expect(overrides.has(word), `${word} is in both curated files`).toBe(
-        false,
-      );
+      expect(overrides.has(word), `${word} is in both curated files`).toBe(false);
     }
   });
 
@@ -450,9 +394,7 @@ describe("a conjugation displays what its verb displays", () => {
     // "whatsis", and the -es rules fold it there. The old tensed strip read
     // the ending as a conjugation and carried it to "what", eight points down.
     expect(baseFormSubstitution("whatsises", ON)?.base).toBe("whatsis");
-    expect(baseFormSubstitution("appendicitises", ON)?.base).toBe(
-      "appendicitis",
-    );
+    expect(baseFormSubstitution("appendicitises", ON)?.base).toBe("appendicitis");
     expect(baseFormSubstitution("abatises", ON)?.base).toBe("abatis");
   });
 
@@ -467,16 +409,13 @@ describe("a conjugation displays what its verb displays", () => {
     // common than "womanize".
     const words = dictionaryWords as string[];
     const index = new Map(words.map((w, i) => [w, i]));
-    const ownZipf = (w: string) =>
-      rarityData.zipfHundredths[index.get(w)!] / 100;
+    const ownZipf = (w: string) => rarityData.zipfHundredths[index.get(w)!] / 100;
     const verbOf = (w: string): string | undefined => {
       for (const suffix of ["izes", "ises", "ized", "ised"]) {
-        if (w.endsWith(suffix) && w.length > suffix.length + 3)
-          return w.slice(0, -1);
+        if (w.endsWith(suffix) && w.length > suffix.length + 3) return w.slice(0, -1);
       }
       for (const suffix of ["izing", "ising"]) {
-        if (w.endsWith(suffix) && w.length > suffix.length + 3)
-          return w.slice(0, -3) + "e";
+        if (w.endsWith(suffix) && w.length > suffix.length + 3) return w.slice(0, -3) + "e";
       }
       return undefined;
     };
@@ -486,13 +425,8 @@ describe("a conjugation displays what its verb displays", () => {
       if (!verb || !index.has(verb)) continue;
       let ceiling = ownZipf(word);
       const latin = !index.has(word + "s");
-      for (const hop of [
-        verb,
-        baseForm(word),
-        ...inflectionalBaseCandidates(word, latin),
-      ]) {
-        if (index.has(hop))
-          ceiling = Math.max(ceiling, rarityFor(hop, ON)!.zipf);
+      for (const hop of [verb, baseForm(word), ...inflectionalBaseCandidates(word, latin)]) {
+        if (index.has(hop)) ceiling = Math.max(ceiling, rarityFor(hop, ON)!.zipf);
       }
       const used = rarityFor(word, ON)!.zipf;
       if (used > ceiling + 1e-9) leapfrogs.push(`${word} ${used} > ${ceiling}`);
@@ -516,35 +450,24 @@ describe("invariants across the whole dictionary", () => {
   // why "beloved" (measured 4.17) scored 9.75 Mythic as "belove" (1.10). A new
   // rule copied from that branch would reintroduce it silently, and no
   // date-pinned test would notice.
-  const CHAINED_ERA = [
-    "2026-08-19",
-    "2026-08-20",
-    "2026-08-21",
-    "2027-06-01",
-    undefined,
-  ];
+  const CHAINED_ERA = ["2026-08-19", "2026-08-20", "2026-08-21", "2027-06-01", undefined];
 
-  it.each(CHAINED_ERA)(
-    "no fold makes a word rarer than its own measurement (%s)",
-    (date) => {
-      const promoted: string[] = [];
-      for (const [i, word] of words.entries()) {
-        const own = rarityData.zipfHundredths[i] / 100;
-        const used = rarityFor(word, date)!.zipf;
-        if (used < own - 1e-9) promoted.push(`${word} ${own} -> ${used}`);
-      }
-      expect(promoted).toEqual([]);
-    },
-  );
+  it.each(CHAINED_ERA)("no fold makes a word rarer than its own measurement (%s)", (date) => {
+    const promoted: string[] = [];
+    for (const [i, word] of words.entries()) {
+      const own = rarityData.zipfHundredths[i] / 100;
+      const used = rarityFor(word, date)!.zipf;
+      if (used < own - 1e-9) promoted.push(`${word} ${own} -> ${used}`);
+    }
+    expect(promoted).toEqual([]);
+  });
 
   it("did not hold before 2026-08-19, and the boundary is deliberate", () => {
     // Pinned so the boundary cannot move by accident. Archived puzzles keep the
     // scores they were played with, promotions included -- that is the whole
     // point of the date gate, not an oversight to be tidied up later.
     expect(rarityFor("beloved", "2026-08-18")!.zipf).toBe(1.1); // "belove", inherited
-    expect(
-      rarityScore(rarityFor("beloved", "2026-08-18")!.zipf, "2026-08-18"),
-    ).toBe(9.75);
+    expect(rarityScore(rarityFor("beloved", "2026-08-18")!.zipf, "2026-08-18")).toBe(9.75);
     expect(rarityFor("beloved", "2026-08-18")!.rarity).toBe("Mythic");
     // From the chained system on, it scores on its own measurement.
     expect(rarityFor("beloved", "2026-08-19")!.zipf).toBe(4.17);
@@ -558,9 +481,7 @@ describe("invariants across the whole dictionary", () => {
     for (const [i, word] of words.entries()) {
       const substitution = baseFormSubstitution(word, ON);
       if (!substitution) continue;
-      expect(substitution.baseZipf).toBeGreaterThan(
-        rarityData.zipfHundredths[i] / 100 - 1e-9,
-      );
+      expect(substitution.baseZipf).toBeGreaterThan(rarityData.zipfHundredths[i] / 100 - 1e-9);
     }
   });
 
@@ -607,7 +528,7 @@ describe("invariants across the whole dictionary", () => {
       if (!substitution) continue;
       expect(
         score(word, ON),
-        `${word} must not out-score ${substitution.base}`,
+        `${word} must not out-score ${substitution.base}`
       ).toBeLessThanOrEqual(score(substitution.base, ON));
     }
   });
@@ -626,21 +547,15 @@ describe("the cutover changes scoring only", () => {
     // this cutover closes for *scoring*. Widening the shared stemmer would change
     // which words a player may submit, not just what they are worth, so it is a
     // separate decision and deliberately not made here.
-    const cases: ReadonlyArray<
-      [first: string, second: string, drop: string, sameRoot: boolean]
-    > = [
+    const cases: ReadonlyArray<[first: string, second: string, drop: string, sameRoot: boolean]> = [
       ["glass", "glasses", "AS", true],
       ["asphyxiate", "asphyxiates", "PHY", false],
     ];
     for (const [first, second, drop, sameRoot] of cases) {
-      const accepted: AcceptedWord[] = [
-        { word: first, ...rarityFor(first, ON)! },
-      ];
+      const accepted: AcceptedWord[] = [{ word: first, ...rarityFor(first, ON)! }];
       for (const date of [BEFORE, ON]) {
         const result = evaluateSubmission(second, drop, accepted, date);
-        expect(result.ok, `${second} after ${first} on ${date}`).toBe(
-          !sameRoot,
-        );
+        expect(result.ok, `${second} after ${first} on ${date}`).toBe(!sameRoot);
         if (!result.ok) expect(result.reason).toBe("same-root-as-used");
       }
     }
@@ -664,9 +579,7 @@ const BEFORE_DERIVED = "2026-08-23"; // last day before the bound derivations fo
 const ON_DERIVED = "2026-08-24"; // first day they fold
 
 describe("bound derivational suffixes fold onto their base (from 2026-08-24)", () => {
-  const FOLDS: ReadonlyArray<
-    [word: string, base: string, before: number, after: number]
-  > = [
+  const FOLDS: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
     // "-ically" -> "-ic": the adverbs the "-ly" rule cannot reach, because the
     // "-ical" adjective it strips back to is usually not a word. The largest
     // family the engine was leaving unfolded, and the one holding the most
@@ -698,16 +611,13 @@ describe("bound derivational suffixes fold onto their base (from 2026-08-24)", (
     ["chateaux", "chateau", 8.24, 6.52],
   ];
 
-  it.each(FOLDS)(
-    "scores %s as %s from the cutover",
-    (word, base, before, after) => {
-      expect(score(word, BEFORE_DERIVED)).toBe(before);
-      expect(score(word, ON_DERIVED)).toBe(after);
-      expect(score(word, ON_DERIVED)).toBe(score(base, ON_DERIVED));
-      expect(baseFormSubstitution(word, BEFORE_DERIVED)?.base).not.toBe(base);
-      expect(baseFormSubstitution(word, ON_DERIVED)?.base).toBe(base);
-    },
-  );
+  it.each(FOLDS)("scores %s as %s from the cutover", (word, base, before, after) => {
+    expect(score(word, BEFORE_DERIVED)).toBe(before);
+    expect(score(word, ON_DERIVED)).toBe(after);
+    expect(score(word, ON_DERIVED)).toBe(score(base, ON_DERIVED));
+    expect(baseFormSubstitution(word, BEFORE_DERIVED)?.base).not.toBe(base);
+    expect(baseFormSubstitution(word, ON_DERIVED)?.base).toBe(base);
+  });
 
   it("retires the top ranks these words were wearing for an ending", () => {
     expect(rank("catholically", BEFORE_DERIVED)).toBe("Legend");
@@ -718,21 +628,43 @@ describe("bound derivational suffixes fold onto their base (from 2026-08-24)", (
     expect(rank("mythologist", ON_DERIVED)).toBe("Uncommon");
   });
 
+  it("picks the -ck base over the -c one where that is the real verb", () => {
+    // "chocked" is a tense of "chock" (to wedge), not of "choc". Both spellings
+    // are offered and the most-common check settles it.
+    expect(baseFormSubstitution("chocked", ON_DERIVED)?.base).toBe("chock");
+    expect(baseFormSubstitution("crocked", ON_DERIVED)?.base).toBe("crock");
+    expect(baseFormSubstitution("cricked", ON_DERIVED)?.base).toBe("crick");
+    // The one exception, pinned so it can't drift unnoticed: "spec" (3.59) is
+    // commoner than the real base "speck" (3.02), so "specked" takes it and
+    // scores 0.84 low. A 0.57-Zipf gap is the harmless near-tie shape, and an
+    // override can't fix it -- the word already folds to "speck" through the
+    // plain "-ed" rule, so the entry would move no score.
+    expect(baseFormSubstitution("specked", ON_DERIVED)?.base).toBe("spec");
+  });
+
+  it("reaches the shortest member of each family", () => {
+    // A length bound one letter too high silently drops a member: "epically",
+    // "stably", "oologist" and "beaux" are the shortest words their rules have.
+    for (const [word, base] of [
+      ["epically", "epic"],
+      ["stably", "stable"],
+      ["viably", "viable"],
+      ["oologist", "oology"],
+      ["beaux", "beau"],
+    ] as const) {
+      expect(baseFormSubstitution(word, ON_DERIVED)?.base, word).toBe(base);
+      expect(score(word, ON_DERIVED)).toBe(score(base, ON_DERIVED));
+    }
+  });
+
   it("leaves a candidate rarer than the word itself inert", () => {
     // The fold caps rather than inherits, so a base that is *rarer* than the
     // word can never fire. "physic" and "critic" are both real words and both
     // proposed; both are rarer than the adverbs that reach them, so the adverbs
     // keep their own measured scores. This is what makes the family safe
     // without a frequency gate.
-    for (const word of [
-      "physically",
-      "critically",
-      "politically",
-      "historically",
-    ]) {
-      expect(score(word, BEFORE_DERIVED), `${word} must not move`).toBe(
-        score(word, ON_DERIVED),
-      );
+    for (const word of ["physically", "critically", "politically", "historically"]) {
+      expect(score(word, BEFORE_DERIVED), `${word} must not move`).toBe(score(word, ON_DERIVED));
     }
   });
 });
@@ -744,9 +676,7 @@ describe("what the 2026-08-24 cutover deliberately leaves alone", () => {
     // rule folds "blockers" -> "bloc", "crockers" -> "croc" and "specker" ->
     // "spec". The price is that "panicker" keeps an unearned Elusive.
     for (const word of ["blockers", "crockers", "specker", "panicker"]) {
-      expect(score(word, BEFORE_DERIVED), `${word} must not move`).toBe(
-        score(word, ON_DERIVED),
-      );
+      expect(score(word, BEFORE_DERIVED), `${word} must not move`).toBe(score(word, ON_DERIVED));
     }
   });
 
@@ -756,17 +686,8 @@ describe("what the 2026-08-24 cutover deliberately leaves alone", () => {
     // genuine derivation folds "metal" -> "met", "topic" -> "top", "unity" ->
     // "unit", "listless" -> "list", "spaceship" -> "space" and "forward" ->
     // "for". No gate separates those from the real ones, so they stay out.
-    for (const word of [
-      "metal",
-      "topic",
-      "unity",
-      "listless",
-      "spaceship",
-      "forward",
-    ]) {
-      expect(score(word, BEFORE_DERIVED), `${word} must not move`).toBe(
-        score(word, ON_DERIVED),
-      );
+    for (const word of ["metal", "topic", "unity", "listless", "spaceship", "forward"]) {
+      expect(score(word, BEFORE_DERIVED), `${word} must not move`).toBe(score(word, ON_DERIVED));
     }
   });
 });

@@ -379,19 +379,24 @@ def _derived_candidates(word: str) -> list[str]:
         if len(base) >= 3 and base != w and base not in out:
             out.append(base)
 
-    if len(w) > 8 and w.endswith("ically"):
+    # Each bound is the shortest word the family actually has ("epically",
+    # "stably", "oologist", "beaux"), not a round number.
+    if len(w) > 7 and w.endswith("ically"):
         add(w[:-4])
-    if len(w) > 6 and w.endswith("ably"):
+    if len(w) > 5 and w.endswith("ably"):
         add(w[:-4] + "able")
-    if len(w) > 6 and w.endswith("ibly"):
+    if len(w) > 5 and w.endswith("ibly"):
         add(w[:-4] + "ible")
-    if len(w) > 8 and w.endswith("ologist"):
+    if len(w) > 6 and w.endswith("ologist"):
         add(w[:-3] + "y")
     for suffix in ("cked", "cking"):
-        # "-cker" is deliberately absent: it folds "blockers" -> "bloc".
+        # Both spellings: "chocked" is a tense of "chock", not of "choc", and
+        # the caller's most-common check is what tells them apart. "-cker" is
+        # deliberately absent either way: it folds "blockers" -> "bloc".
         if w.endswith(suffix) and len(w) > len(suffix) + 2:
             add(w[: -len(suffix)] + "c")
-    if len(w) > 5 and w.endswith("eaux"):
+            add(w[: -len(suffix)] + "ck")
+    if len(w) > 4 and w.endswith("eaux"):
         add(w[:-1])
     return out
 
