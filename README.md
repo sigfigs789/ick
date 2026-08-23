@@ -274,6 +274,18 @@ this file is never regenerated — cannot be undone by a data refresh. Entries a
 dated like the overrides below. `scripts/blocklist.txt` remains the tool for
 content that must never enter the dictionary at all.
 
+The same file also holds reviewed **non-words**: a word that never made the
+curated list, judged once and recorded with its fault — a misspelling
+(`conniseur`), a brand or a title (`californication`), a clipping (`conflag`).
+Nothing about play changes for those; the entry replaces the generic "not in
+WordInk's curated list" message with the specific one, and — because only a
+`not-a-word` rejection is handed to the live Merriam-Webster fallback — spares
+the quota a word that has already been answered. The tests tell the two kinds
+apart by dictionary membership: a retired word must still be scoreable and must
+have been playable the day before its `since` date, a reviewed non-word must be
+unplayable on every date. Nonsense nobody repeats is better left to the generic
+message than recorded here, one typo at a time.
+
 `src/data/score-overrides.json` is the other **hand-written** data file: reviewed
 demotions for words a spelling rule can't cap correctly. Most are words no
 corpus attests — such a word falls to the unattested sentinel and scores a
@@ -335,6 +347,24 @@ lives in `supabase/migrations/`.
   which drops them out of the queue; a suggestion that was never played gets a
   row of its own with outcome `suggested`, so it can be settled too, and a real
   lookup later overwrites that placeholder while leaving the triage alone.
+
+A review pass also reads `answer_rejected` events, which have no `status` to
+settle — a rejected guess is an event, not a row. `scripts/word-review-log.json`
+is the watermark for those: each pass records the newest `created_at` it saw, so
+the next one filters on `created_at > <reviewed_through>` instead of re-reading
+every submission the game has ever refused. The verdicts themselves stay in the
+data files (`word-rejections.json` for a rejection, the provenance lists in
+`scripts/` for an acceptance); the log only says how far the reading got.
+
+Graduating a word must not cost it its score. `api/validate.ts` scores a live
+approval from the frequency Datamuse reports, and the bulk corpora behind
+`rarity.json` (wordfreq, Norvig, Google Books) often attest nothing at all for
+exactly this kind of word — so adding one to the curated dictionary used to trade
+a measured Zipf for the unattested sentinel and a flat 10.00 Legend.
+`scripts/datamuse-zipf.txt` is the fix: a hand-recorded `word<TAB>zipf` list,
+consulted as the waterfall's last tier, so it can only fill a gap and never
+override a measurement. `conization` keeps its 8.7 Extremely Rare instead of
+being promoted to a Legend it never earned.
 
 Nothing in the game reads either table, and nothing waits on a write. Recording
 is strictly downstream of the answer: `api/validate.ts` never awaits its write

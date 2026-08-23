@@ -49,6 +49,13 @@ const curatedWordScores: ReadonlyArray<[string, string, number]> = [
 ];
 const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
   ["aggrandization", "Elusive", 1.52],
+  ["caprylate", "Mythic", 1.1],
+  ["combobulate", "Mythic", 1.25],
+  ["conization", "Extremely Rare", 1.8],
+  ["inosinate", "Legend", 0.79],
+  ["reoxygenate", "Extremely Rare", 1.88],
+  ["skateable", "Uncommon", 3.74],
+  ["uridylate", "Legend", 0.68],
 ];
 // Rare words discovered online for an upcoming drop and added via the "Add rare
 // words found online" GitHub Action (list=online). Appended automatically by
@@ -69,7 +76,7 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_474);
+    expect(dictionaryWords).toHaveLength(225_481);
   });
 
   it("accepts a common real word", () => {
@@ -564,14 +571,24 @@ describe("curated base-form score overrides", () => {
   });
 });
 
-// Reviewed rejections (src/data/word-rejections.json). A rejected word stays in
-// dictionary.json -- so rarity.json stays index-aligned and past puzzles keep
-// scoring it -- but stops being playable from its `since` date. Like the overrides
-// above, these cases iterate whatever the file holds rather than pinning a list.
+// Reviewed rejections (src/data/word-rejections.json). Two kinds share the file,
+// told apart by whether the word is on the curated list:
+//   - a *retired* word stays in dictionary.json -- so rarity.json stays
+//     index-aligned and past puzzles keep scoring it -- but stops being playable
+//     from its `since` date;
+//   - a *reviewed non-word* was never on the curated list, so nothing about play
+//     changes; the entry records the verdict and names the fault, which is what
+//     turns the generic "not in the curated list" message into "looks like a
+//     misspelling" and spares the live Merriam-Webster lookup a word already judged.
+// Like the overrides above, these cases iterate whatever the file holds rather
+// than pinning a list.
 describe("curated word rejections", () => {
   const rejections = Object.entries(
     wordRejections as Record<string, { reason: string; since: string; note?: string }>
   );
+  const curatedWords = new Set(dictionaryWords);
+  const retired = rejections.filter(([word]) => curatedWords.has(word));
+  const reviewedNonWords = rejections.filter(([word]) => !curatedWords.has(word));
   const WIDE_BAND_START = "2026-08-16";
 
   it("keeps its reason vocabulary renderable by the submit flow", () => {
@@ -586,7 +603,7 @@ describe("curated word rejections", () => {
     expect(CURATED_REJECTION_REASONS).toContain(reason);
   });
 
-  it.each(rejections)("%s is still in the dictionary, just unplayable", (word, { since }) => {
+  it.each(retired)("%s is still in the dictionary, just unplayable", (word, { since }) => {
     // The whole point of rejecting rather than removing: the word list and the
     // index-aligned rarity arrays never move.
     expect(dictionaryWords).toContain(word);
@@ -594,12 +611,22 @@ describe("curated word rejections", () => {
     expect(isValidWord(word, since)).toBe(false);
   });
 
+  it("keeps reviewed non-words off the curated list, on every date", () => {
+    // A word that never made the list has no `since` boundary to respect: there is
+    // no archived puzzle that accepted it, so it is unplayable before and after.
+    for (const [word, { since }] of reviewedNonWords) {
+      expect(rarityFor(word, since)).toBeUndefined();
+      expect(isValidWord(word, since)).toBe(false);
+      expect(isValidWord(word, addDays(since, -1))).toBe(false);
+    }
+  });
+
   it.each(rejections)("%s takes effect on a date in the current era", (_word, { since }) => {
     expect(since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(since >= WIDE_BAND_START).toBe(true);
   });
 
-  it.each(rejections)("%s was playable the day before", (word, { since }) => {
+  it.each(retired)("%s was playable the day before", (word, { since }) => {
     // An archived puzzle has to keep validating the words it validated when it was
     // played, exactly like the dated score overrides.
     expect(isValidWord(word, addDays(since, -1))).toBe(true);

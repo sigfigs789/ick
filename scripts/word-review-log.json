@@ -1,0 +1,96 @@
+{
+  "comment": [
+    "Watermarks for the Supabase word-review pass: every candidate the game recorded",
+    "up to `reviewed_through` has been judged, so the next pass only has to look at",
+    "rows newer than the latest entry here.",
+    "",
+    "`reviewed_through` is the newest `analytics_events.created_at` that existed when",
+    "the pass ran -- the queue query's own horizon -- and is the value to filter on:",
+    "  select * from suggested_words where last_at > '<reviewed_through>';",
+    "  select props->>'word', count(*) from analytics_events",
+    "    where name = 'answer_rejected' and created_at > '<reviewed_through>'",
+    "    group by 1 order by 2 desc;",
+    "The per-word record of each verdict lives in two places: `word_sightings.status`",
+    "in Supabase (`select set_word_status(array['word', ...], 'accepted')`), and, in",
+    "this repo, src/data/word-rejections.json for a rejection and the provenance",
+    "lists in scripts/ for an acceptance."
+  ],
+  "passes": [
+    {
+      "reviewed_at": "2026-08-22T22:30:00Z",
+      "reviewed_through": "2026-08-22T22:25:36.554891+00:00",
+      "sources": [
+        "suggested_words (the live-lookup + player-suggestion queue)",
+        "word_sightings (every live Merriam-Webster verdict)",
+        "analytics_events.answer_rejected (658 submissions, 590 distinct, 554 not on the curated list)"
+      ],
+      "accepted": [
+        "caprylate",
+        "conization",
+        "inosinate",
+        "reoxygenate",
+        "uridylate"
+      ],
+      "rejections_recorded": 88,
+      "notes": [
+        "Accepted words went to scripts/suggested-words.txt and dictionary.json;",
+        "`reoxygenate` also got a score override onto `oxygenate`, since re- + a",
+        "common verb is a prefix, not a discovery.",
+        "The other four keep the Zipf Datamuse measured for them, recorded in",
+        "scripts/datamuse-zipf.txt: caprylate 1.10 (9.75 Mythic), conization 1.80",
+        "(8.7 Extremely Rare), inosinate 0.79 (9.92 Legend), uridylate 0.68 (9.93",
+        "Legend). Without that tier all four would have fallen to the unattested",
+        "sentinel and a flat 10.00 Legend the moment they left the live path.",
+        "Rejections went to src/data/word-rejections.json with the fault named",
+        "(misspelling, proper noun, abbreviation, obsolete, or judged non-word).",
+        "Nonsense strings nobody repeated were left to the generic message rather",
+        "than filling the file with one-off typos."
+      ]
+    },
+    {
+      "reviewed_at": "2026-08-23T03:19:00Z",
+      "reviewed_through": "2026-08-23T03:05:29.399717+00:00",
+      "sources": [
+        "suggested_words (one player suggestion that arrived after the first pass)"
+      ],
+      "accepted": [
+        "combobulate",
+        "skateable"
+      ],
+      "rejections_recorded": 1,
+      "notes": [
+        "`combobulate`, tried three times on puzzle 50 (drop `ate`) and then sent",
+        "through the suggestion box. Merriam-Webster has no entry for it, and it was",
+        "first recorded as not-a-word on that basis -- wrongly: Wiktionary has it as a",
+        "verb labelled `humorous`, with citations from 1915 to 2012, and Wiktionary is",
+        "the game's other word source. Accepted, then capped onto `discombobulate`",
+        "(9.53 Mythic): dropping `dis-` is not a discovery.",
+        "Re-checking the whole pass against Wiktionary caught two more of the same",
+        "mistake -- `skateable` and `absconce`, both untagged entries rejected on MW's",
+        "silence alone. `skateable` is accepted and folds onto `skate` unaided (5.9",
+        "Uncommon). `absconce` was accepted, then withdrawn: it is a real noun, but",
+        "nothing attests its *use* -- no corpus, no Datamuse frequency, no MW entry, no",
+        "citations on the Wiktionary entry, and not in ESDB/SCOWL 80. Its Google Books",
+        "signal is 1.7e-10 and flat since 1800, a thousandth of `sconce` and of `boate`",
+        "(which this repo does call obsolete): that is the OCR noise floor, not usage.",
+        "So it is below the list's evidence bar rather than obsolete, and it carries the",
+        "generic not-a-word message, which claims nothing about the word itself.",
+        "MW-unknown alone is not grounds for a rejection. The three that stayed",
+        "rejected -- `prismaticism`, `quates`, `weatherical` -- have no Wiktionary",
+        "entry either. Misspelling calls Wiktionary confirms outright: `centrifical`,",
+        "`condusive`, `testical` (misspelling of), `licentuous` (misconstruction of),",
+        "`caligrapher` (alternative form of `calligrapher` -- kept out as a spelling of",
+        "another word).",
+        "A Wiktionary sweep of all 554 rejected submissions found 54 more words with an",
+        "untagged ordinary entry and no game-side explanation: the import in",
+        "import-wiktionary-words.py keeps only headwords wordfreq can score, and these",
+        "score 0.0. Not accepted here -- 43 of the 54 would land a flat 10.00 Legend,",
+        "most of them mechanical forms the engine has no fold for (`unspiced`,",
+        "`unmasticated`, `riceballs`, `microcalorie`, `skateless`). Prefix folds (un-,",
+        "non-, anti-, de-, re-) and a -less fold come first, or the top of the scale",
+        "floods. `absconce` also suggests the bar for that sweep: an entry alone is not",
+        "enough, a citation or a measurable frequency is."
+      ]
+    }
+  ]
+}
