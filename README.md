@@ -286,6 +286,43 @@ have been playable the day before its `since` date, a reviewed non-word must be
 unplayable on every date. Nonsense nobody repeats is better left to the generic
 message than recorded here, one typo at a time.
 
+`src/data/derived-rejections.json` applies the same kind of rejection in bulk, and
+is **generated** rather than hand-written. The rule is that a curated word which
+carries a rejection reason is unplayable and the player is told which reason —
+what the word rules have always promised. The filter it came from only ever kept a
+classified word from *entering* the list, so words already on it stayed playable
+whatever Wiktionary said, and an obsolete spelling scored on its own vanishing
+frequency: `ranck` (an obsolete form of `rank`) came out a 9.58 Mythic where `rank`
+scores 4.80. Rejecting rather than deleting keeps `rarity.json` index-aligned and
+leaves archived puzzles scoring what they scored.
+
+The reasons are Wiktionary's, grouped by the date the rejection takes effect, and
+they divide in two:
+
+- **Out of use** (`obsolete`, `archaic`, `dated`) — every ordinary sense of the
+  word has fallen out of use. Only counted below **Zipf 2.5**. The gate is the
+  guard this family needs, because its false positives are precisely the common
+  words: `halt` (3.93), `fraught` (3.12) and `guerilla` (2.90) are each tagged
+  obsolete off one dead sense, `thy` and `unto` archaic, `yea` and `fortnight`
+  dated. Below the gate the tag is reliable — a 24-word random sample checked
+  against Wiktionary came back 24 for 24 (`voyce`, `performe`, `sherriff`,
+  `chaunt`).
+- **Structural** (`abbreviation`, `proper-noun`, `misspelling`) — Wiktionary
+  records no ordinary sense for the headword at all. No gate: `cd` being common
+  says nothing about whether it is an abbreviation.
+
+Rebuild it without an ESDB checkout with:
+
+```bash
+python3 scripts/generate-data.py --refresh-rejections
+```
+
+That only ever *adds* words, under the run's date, so a refresh can't retroactively
+invalidate a word an archived puzzle accepted. `scripts/playable-exemptions.txt` is
+the pressure valve: a word listed there is held playable despite its label and
+stays out of the generated file for good — use it when the label is right but the
+word is still a good find.
+
 `src/data/score-overrides.json` is the other **hand-written** data file: reviewed
 demotions for words a spelling rule can't cap correctly. Most are words no
 corpus attests — such a word falls to the unattested sentinel and scores a

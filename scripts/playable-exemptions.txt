@@ -1,0 +1,9 @@
+# Words held playable despite carrying a rejection reason, one per line.
+#
+# The derived rejections (src/data/derived-rejections.json) come from Wiktionary's
+# own sense labels, applied in bulk: a word every ordinary sense of which is
+# obsolete, archaic or dated -- or that has no ordinary sense at all, because it is
+# an abbreviation or a proper noun -- is not playable, and the player is told which.
+# A word listed here is kept out of that file and stays playable, and a refresh
+# will not put it back. Use it when the label is right but the word is still a good
+# find; use scripts/blocklist.txt for the opposite case.

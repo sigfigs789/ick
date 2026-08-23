@@ -64,6 +64,11 @@ def main() -> None:
     dictionary = json.loads((DATA / "dictionary.json").read_text())
     zipf = json.loads((DATA / "rarity.json").read_text())["zipfHundredths"]
     rejections = set(json.loads((DATA / "word-rejections.json").read_text()))
+    # The derived rejections count too -- an unplayable word must not make a drop
+    # look richer than it is.
+    for batch in json.loads((DATA / "derived-rejections.json").read_text()).values():
+        for words in batch.values():
+            rejections.update(words)
 
     # ngram -> bitmask over the familiar playable words
     tion_mask = 0
