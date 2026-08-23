@@ -364,6 +364,13 @@ the rest.
 | `-ologist` → `-ology` | biologist → biology, geologist → geology | narrow and near-safe — every `-ologist` is an `-ology` agent |
 | `-ward(s)` | homeward → home, westward → west (the `-s` is already handled → `-ward`) | coward → cow, toward → (tow), steward → (stew) |
 
+A note on picking from this table: `scripts/fold-disagreements.py` will tell you
+how many words each row is actually worth before you write the rule. It compares
+every fold against MorphyNet and reports what we do not fold but MorphyNet does,
+bucketed by affix — `-less` is 646 words, `-ally` 512, `-ic` 1,027. That is a
+size estimate and a word list to spot-check, not a verdict: MorphyNet is
+descriptive, so it derives plenty the word rules reject outright.
+
 ### D. Diminutives & `-ish` — false positives dominate (reason 3)
 
 Documented mainly to record *why* they're refused: the ending is a common word-final
@@ -393,6 +400,19 @@ countless rare non-derived words too.
 | `-ic` | heroic → hero, metallic → metal, atomic → atom | music → mus, public → publ, panic → pan, basic → bas, topic, logic, magic, comic, critic |
 | `-ify` | simplify → simple, purify → pure, glorify → glory | notify → not, modify → mod, verify → ver, ratify → rat, unify → uni |
 | `-ment` / `-ism` | (excluded, see §6) | battlement → battle, arrivism → arrive |
+
+The `-ment`/`-ism` row is the one place a data table would genuinely beat a
+rule: no spelling test separates `government` (from `govern`) from `battlement`
+(not from `battle`), but Wiktionary records the difference, and
+`scripts/fold-disagreements.py` already loads it. A vetted table restricted to
+this repo's dictionary would be shippable data on the order of
+`score-overrides.json`.
+
+Worth knowing the objection before starting. MorphyNet inherits Wiktionary's
+coverage, which is uneven, so a table built from it would fold some words and
+leave near-identical ones alone — an inconsistency a player can see, and worse
+than folding neither. It would need a completeness pass per suffix family rather
+than a bulk import. Unbuilt, deliberately.
 
 ### F. Prefixes — mostly handled from 2026-08-23 (§8), `de-`/`re-`/`co-`/`dis-` still open
 
@@ -462,6 +482,13 @@ above the floor, `-eaux`→`-eau`, `-hood`, `-ically`, `-ologist`. Everything el
 either needs a curated map (the irregulars) or has false positives the
 MEASURED_FLOOR gate can't contain (the big derivational families, and the four
 fossilised prefixes).
+
+**Sizing any of them:** `scripts/fold-disagreements.py` reports what each family
+is worth in words and score movement before the rule is written. Its blind spot
+is the one §8 walked into — it says nothing about what a *new* rule would break,
+only about what the current ones miss. Pair it with a straight before/after diff
+over the dictionary, which is what actually caught the prefix rule folding onto
+bound combining forms.
 
 ---
 
