@@ -52,7 +52,11 @@ describe("dropForDate", () => {
 // so the invariant that makes the tiers mean anything is pinned here: a parked
 // drop is never dealt, and never sits in both tiers at once.
 describe("parked drop tiers", () => {
-  const parked = [...dropData.challengingDrops, ...dropData.hardDrops];
+  const parked = [
+    ...dropData.challengingDrops,
+    ...dropData.hardDrops,
+    ...dropData.retiredDrops,
+  ];
 
   it("never deals a parked drop", () => {
     const rotation = new Set(dropData.drops);
