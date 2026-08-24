@@ -104,7 +104,12 @@ def main() -> None:
     challenging_drops = existing.get("challengingDrops", [])
     # Half the "hard" tier, parked to halve how often a hard day comes up.
     hard_drops = existing.get("hardDrops", [])
-    locked_set = set(locked_drops + seeded_drops + challenging_drops + hard_drops)
+    # Pulled from the calendar by hand, for reasons the thresholds here cannot
+    # see; kept listed so a regeneration never re-seeds them.
+    retired_drops = existing.get("retiredDrops", [])
+    locked_set = set(
+        locked_drops + seeded_drops + challenging_drops + hard_drops + retired_drops
+    )
     two_letter = [
         result for result in results
         if len(result["drop"]) == 2 and result["drop"] not in locked_set
@@ -133,6 +138,7 @@ def main() -> None:
         "seededDrops": seeded_drops,
         "challengingDrops": challenging_drops,
         "hardDrops": hard_drops,
+        "retiredDrops": retired_drops,
         "drops": ordered_drops,
     }, indent=2) + "\n")
     print(f"Wrote {drops_path}")

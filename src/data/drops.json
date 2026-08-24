@@ -128,6 +128,9 @@
     "NCR",
     "WIS"
   ],
+  "retiredDrops": [
+    "DED"
+  ],
   "drops": [
     "AT",
     "FL",
@@ -183,7 +186,6 @@
     "ICE",
     "CAL",
     "ANC",
-    "DED",
     "TIN",
     "TED",
     "LY",
