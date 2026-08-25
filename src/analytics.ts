@@ -356,6 +356,22 @@ export function trackSessionTime(report: SessionTimeReport) {
   });
 }
 
+/**
+ * Leaderboard interest, in two events: opening it, and from where, since the
+ * header button and the post-game link are two different moments; and joining,
+ * which is the one of the two that is a commitment. No score or name is sent --
+ * those live in the leaderboard's own table, and duplicating them here would put
+ * a display name in the analytics stream for no reason. Nothing records which
+ * board was looked at, because both are on screen at once.
+ */
+export function trackLeaderboardOpened(from: "header" | "results") {
+  send("leaderboard_opened", { from });
+}
+
+export function trackLeaderboardJoined(isRename: boolean) {
+  send("leaderboard_joined", { rename: isRename });
+}
+
 /** Convert compact share-link codes into analytics campaign sources. */
 export function campaignSourceFromSearch(search: string): "share" | "twitter" | "reddit" | null {
   const code = new URLSearchParams(search).get("s");

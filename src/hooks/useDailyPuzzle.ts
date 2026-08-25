@@ -48,6 +48,7 @@ import {
   trackUnattestedScore,
   trackVisitEngaged,
 } from "../analytics";
+import { submitScore } from "../game/leaderboard";
 import { markSessionEngaged } from "../game/visits";
 import { markGuess } from "../game/sessionTime";
 
@@ -198,6 +199,18 @@ export function useDailyPuzzle() {
         totalRarityScore(updated.acceptedWords, viewedDate),
         updatedStreak.currentStreak
       );
+      // Push the day's running score to the leaderboard, if this browser has a
+      // name on it. Deliberately after the word is saved, rendered and tracked:
+      // it is a fire-and-forget POST that nothing here waits on or checks, and a
+      // submission that never lands costs the player a board position, never a
+      // word. Sent per word rather than at the end so a player who wanders off
+      // mid-puzzle still counts; the write keeps the higher score, so the
+      // repeats are harmless.
+      submitScore({
+        date: viewedDate,
+        isToday: viewedDate === today,
+        words: updated.acceptedWords,
+      });
       if (isUnattestedZipf(word.zipf)) trackUnattestedScore(viewedDate, word, source);
       const substitution = baseFormSubstitution(word.word, viewedDate);
       if (substitution) trackBaseFormSubstitution(viewedDate, substitution);
@@ -207,7 +220,7 @@ export function useDailyPuzzle() {
       showFeedback("accepted", `"${word.word}" accepted — ${word.rarity}.`, word.rarity);
       return true;
     },
-    [viewedDate, showFeedback]
+    [viewedDate, today, showFeedback]
   );
 
   /** Record and report a rejection, and show its message. */

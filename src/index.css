@@ -258,6 +258,16 @@ h2 {
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
 }
+/* The trophy and the "?" share the right end of the header. Two buttons rather
+   than one because they answer different questions and both want to be one tap
+   away; the gap is tight so the pair still reads as a single cluster balancing
+   the sound toggle on the left. */
+.app__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: none;
+}
 .app__icon-button {
   width: 2.35rem;
   height: 2.35rem;
@@ -1268,6 +1278,12 @@ h2 {
     transform: translateY(0) scale(1);
   }
 }
+/* The leaderboard is the one modal that holds two columns, so it gets its own
+   width. Still `width: 100%` from .modal, so on a phone this is exactly the
+   same full-bleed panel every other modal is. */
+.modal--wide {
+  max-width: 44rem;
+}
 .modal__header {
   display: flex;
   align-items: center;
@@ -1376,6 +1392,213 @@ h2 {
   font: inherit;
   font-weight: 500;
   resize: vertical;
+}
+
+/* Leaderboard */
+/* Both boards at once: two columns where there is room, one where there isn't.
+   The grid is the whole of the responsive behaviour -- side by side on a laptop,
+   stacked weekly-then-all-time on a phone -- so there is no tab state and no
+   board the player has to go looking for. */
+.leaderboard__boards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.2rem;
+}
+/* 40rem is where two boards each still have room for a name, a score and the
+   meta line under them. Below it they stack rather than squeeze. */
+@media (min-width: 40rem) {
+  .leaderboard__boards {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.6rem;
+  }
+}
+.leaderboard__board {
+  min-width: 0;
+}
+/* Stacked, the second board needs a line between them; side by side it doesn't,
+   because the columns already read as separate. */
+.leaderboard__board + .leaderboard__board {
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+@media (min-width: 40rem) {
+  .leaderboard__board + .leaderboard__board {
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+.leaderboard__board-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.leaderboard__caption {
+  margin: 0.2rem 0 0.5rem;
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+}
+.leaderboard__status {
+  margin: 1.4rem 0;
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: 0.88rem;
+}
+.leaderboard__retry {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.leaderboard__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* Each board scrolls inside itself, so a long week never pushes the other
+     board or the join form out of reach. */
+  max-height: 17rem;
+  overflow-y: auto;
+  /* A thin scrollbar so it doesn't sit on top of the score column. */
+  scrollbar-width: thin;
+  /* Fade the bottom edge so a clipped row reads as "there is more list" rather
+     than as a rendering fault. The padding is the same height as the fade, which
+     is what keeps this honest at both ends: scrolled to the bottom, the faded
+     strip covers the padding and the last row stays crisp, and a board short
+     enough not to scroll has nothing under the fade at all. */
+  padding-bottom: 1.3rem;
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 1.3rem), transparent);
+}
+/* Rank and score are fixed columns; the name takes what is left and the meta
+   line tucks under it, so a long name truncates instead of shoving the score
+   off the row. */
+.leaderboard__row {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "rank name score"
+    ".    meta meta";
+  align-items: baseline;
+  column-gap: 0.5rem;
+  padding: 0.45rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+.leaderboard__row:last-child {
+  border-bottom: 0;
+}
+.leaderboard__row--you {
+  background: var(--bg-inset);
+  border-radius: 0.45rem;
+}
+.leaderboard__rank {
+  grid-area: rank;
+  color: var(--fg-faint);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.leaderboard__name {
+  grid-area: name;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.leaderboard__you {
+  color: var(--fg-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.leaderboard__meta {
+  grid-area: meta;
+  color: var(--fg-faint);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+.leaderboard__score {
+  grid-area: score;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.leaderboard__join {
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.leaderboard__join label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.leaderboard__join-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.leaderboard__join-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.65rem;
+  background: var(--bg-inset);
+  color: var(--fg);
+  font: inherit;
+  font-weight: 500;
+}
+.leaderboard__join-button {
+  flex: none;
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-family: var(--font-display);
+  font-weight: 700;
+  cursor: pointer;
+}
+.leaderboard__join-button:hover {
+  background: var(--accent-hover);
+}
+.leaderboard__note {
+  margin: 0.55rem 0 0;
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+.leaderboard__note--error {
+  color: var(--danger-fg);
+}
+.leaderboard__note--playing {
+  margin-top: 1.1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.results-panel__leaderboard {
+  display: block;
+  width: 100%;
+  margin-top: 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  padding: 0.6rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.results-panel__leaderboard:hover {
+  background: var(--bg-inset);
 }
 
 @media (max-width: 420px) {

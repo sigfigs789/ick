@@ -364,7 +364,8 @@ obscure answers.
 
 ## Word and event tracking (Supabase)
 
-Optional, write-only, and entirely server-side. Two tables collect the words
+Optional and entirely server-side, and — apart from the leaderboard below —
+write-only. Two tables collect the words
 players actually reach for so they can be folded into the curated dictionary
 later — at which point those words stop needing a live lookup at all, which is
 what keeps Merriam-Webster's 1,000-requests-per-day quota comfortable. Schema
@@ -413,7 +414,8 @@ consulted as the waterfall's last tier, so it can only fill a gap and never
 override a measurement. `conization` keeps its 8.7 Extremely Rare instead of
 being promoted to a Legend it never earned.
 
-Nothing in the game reads either table, and nothing waits on a write. Recording
+Nothing in the game reads either of these two tables, and nothing waits on a
+write. Recording
 is strictly downstream of the answer: `api/validate.ts` never awaits its write
 (it hands it to the runtime's `waitUntil` when there is one, and would rather
 drop a row than delay a player), and the client beacons events without reading
@@ -427,8 +429,50 @@ Setup: run the migration on a Supabase project, then set `SUPABASE_URL` and
 work — `npm run dev` serves both endpoints, see `vite.config.ts`). The
 service-role key is server-side only and is never exposed to the browser, which
 is the reason `api/events.ts` exists rather than the client writing directly.
-Row-level security is enabled on both tables with no policies at all, so the
+Row-level security is enabled on every table with no policies at all, so the
 `anon` key cannot read or write them even if it leaks.
+
+## Leaderboard
+
+Two boards, both fed by one table and shown together: **this week**, which
+counts puzzles from the current Monday onward, and **all time**, which counts
+every puzzle a player has scored on. Each is a sum of daily scores rather than
+a best-ever, which rewards showing up daily instead of peaking once.
+
+The weekly reset is a window, not a job. Nothing is deleted or archived on
+Monday morning: `leaderboard_board(p_since => <monday>)` simply stops counting
+the rows that fell out of range, and the all-time board is the same function
+with no window. There is no scheduled task that can fail to run. The Monday is
+computed on the client (`src/game/week.ts`) for the same reason the puzzle date
+is: it should land at the player's midnight, not at UTC's.
+
+Identity is opt-in and account-free. A player who wants on the board types a
+name; the browser mints a UUID to go with it and keeps both in localStorage
+(`src/game/player.ts`). Nothing is sent for a player who never joins. The honest
+limits: clearing site data makes you a new player, a second browser is a second
+player, and names aren't reserved.
+
+- **`leaderboard_scores`** — one row per player per puzzle date, written by
+  `api/leaderboard.ts` through `submit_leaderboard_score`. The upsert keeps the
+  *higher* of the stored and submitted score, so the client can submit after
+  every accepted word in any order the network delivers them. Only today's
+  puzzle is ever submitted: archive play stays off the board for the same reason
+  it stays off the streak.
+
+This is the one thing in the project the game reads from a database, because
+other people's scores can't be shipped in the bundle. The read is contained:
+`GET /api/leaderboard` is CDN-cached for a minute, only the leaderboard modal
+ever calls it, and a failure renders as "couldn't load" with a retry. Submitting
+is fire-and-forget from a `keepalive` POST that nothing awaits. A puzzle plays
+exactly the same with the endpoint down, unconfigured, or absent.
+
+There are no accounts, so a submission **cannot be authenticated** — anyone who
+reads `api/leaderboard.ts` can post a score under a name of their choosing. What
+the endpoint does enforce is that a score be one a real game could have produced:
+a puzzle date the game has reached, a total within the day's ceiling, a top word
+no rarer than the total it belongs to. That is enough for ordinary noise and is
+not a defence against a determined forgery. Worth knowing before this board is
+used for anything that matters.
 
 ## Design decisions worth knowing about
 

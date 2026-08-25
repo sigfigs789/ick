@@ -8,6 +8,7 @@ import { StreakDisplay } from "./components/StreakDisplay";
 import { ResultsPanel } from "./components/ResultsPanel";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { WordRulesModal } from "./components/WordRulesModal";
+import { LeaderboardModal } from "./components/LeaderboardModal";
 import { SoundToggle } from "./components/SoundToggle";
 import { PuzzleNav } from "./components/PuzzleNav";
 import { ConfettiBurst } from "./components/ConfettiBurst";
@@ -23,10 +24,13 @@ import {
   trackRedditArrival,
   trackShareArrival,
   trackTwitterArrival,
+  trackLeaderboardOpened,
   trackSessionTime,
   trackVisit,
 } from "./analytics";
 import { recordVisit } from "./game/visits";
+import { submitScore } from "./game/leaderboard";
+import type { Player } from "./game/player";
 import { beginSession, endSessionSegment, resumeSession } from "./game/sessionTime";
 
 export default function App() {
@@ -51,6 +55,7 @@ export default function App() {
   } = useDailyPuzzle();
   const [showInstructions, setShowInstructions] = useState(false);
   const [showWordRules, setShowWordRules] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
 
@@ -107,6 +112,17 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
+  // Joining mid-puzzle should put the player on the board with the words they
+  // have already found, rather than making them wait for their next one.
+  function onJoinLeaderboard(player: Player) {
+    submitScore({ date, isToday, words: progress.acceptedWords, player });
+  }
+
+  function openLeaderboard(from: "header" | "results") {
+    trackLeaderboardOpened(from);
+    setShowLeaderboard(true);
+  }
+
   const hasWinningWord = progress.acceptedWords.some((word) => isWinningRarity(word.rarity));
   // Celebrate the first qualifying word only, never a puzzle restored
   // from storage that already contains one.
@@ -139,14 +155,25 @@ export default function App() {
             onNext={goToNext}
           />
         </div>
-        <button
-          type="button"
-          className="app__icon-button"
-          onClick={() => setShowInstructions(true)}
-          aria-label="How to play"
-        >
-          ?
-        </button>
+        <div className="app__header-actions">
+          <button
+            type="button"
+            className="app__icon-button"
+            onClick={() => openLeaderboard("header")}
+            aria-label="Leaderboard"
+            title="Leaderboard"
+          >
+            <span aria-hidden="true">🏆</span>
+          </button>
+          <button
+            type="button"
+            className="app__icon-button"
+            onClick={() => setShowInstructions(true)}
+            aria-label="How to play"
+          >
+            ?
+          </button>
+        </div>
       </header>
 
       <Analytics />
@@ -206,12 +233,18 @@ export default function App() {
             drop={drop}
             words={progress.acceptedWords}
             streak={streak}
+            onLeaderboard={() => openLeaderboard("results")}
           />
         )}
       </main>
 
       <InstructionsModal open={showInstructions} onClose={() => setShowInstructions(false)} />
       <WordRulesModal open={showWordRules} onClose={() => setShowWordRules(false)} />
+      <LeaderboardModal
+        open={showLeaderboard}
+        onClose={() => setShowLeaderboard(false)}
+        onJoin={onJoinLeaderboard}
+      />
     </div>
   );
 }
