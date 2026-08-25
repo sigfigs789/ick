@@ -170,59 +170,65 @@ function scoreToday(word: AcceptedWord): number {
   return rarityScore(rarityFor(word.word)?.zipf ?? word.zipf);
 }
 
-/** What the board calls a player, and what that word is worth today. */
-export interface BoardIdentity {
-  /** The rarest word this browser can prove was played on its own day. */
-  name: string;
-  /** That word's score under today's criteria -- shown as the player's "best". */
+/** A word the player could be known by, and what it is worth today. */
+export interface NameCandidate {
+  word: string;
   score: number;
 }
 
 /**
- * The player's name on the board: the best word they have ever found, and what
- * it is worth today.
- *
- * Nobody types a name here. A word game's leaderboard is more interesting when
- * the names are the finds -- it says what each player is on the board *for*, and
- * it updates itself the moment somebody does better. It also means there is no
- * free-text field to police: nothing to impersonate, nothing to sanitise, and no
- * name to reserve.
- *
- * Drawn from the same days that get submitted (see storage.playedOnItsDay, which
- * includes today), so a word farmed out of the archive cannot become somebody's
- * name any more than it can become their score.
- *
- * Used by the page to show a player how they will appear before they join, and
- * to confirm it after. It is *not* what gets submitted: each day's own rarest
- * word goes up with that day's score, and the board derives the name from those
- * rows -- so nothing a client sends can assert what it should be called, and the
- * name can never drift out of step with the scores beside it.
- *
- * Returns null when this browser has no eligible word yet, which is what stops a
- * player joining with nothing to be called.
+ * How many finds a player gets to choose a name from. Ten is enough that the
+ * choice is a real one and few enough to read without scrolling; beyond that the
+ * words are not good enough to want anyway.
  */
-export function boardIdentity(history?: readonly DailyProgress[]): BoardIdentity | null {
-  return bestOf((history ?? playedOnItsDay()).map((progress) => progress.acceptedWords));
+export const NAME_CHOICES = 10;
+
+/**
+ * The words this player may be called by: the rarest word of each day they
+ * played, best first.
+ *
+ * One word per day rather than every word ever, because that is what the server
+ * stores and therefore what it will authorise -- offering a word it would refuse
+ * would be offering a choice that doesn't work. It also picks the right ten: a
+ * player's best days are exactly the finds worth being known for.
+ *
+ * Priced at today's rates, like everything else the board shows.
+ */
+export function nameCandidates(history?: readonly DailyProgress[]): NameCandidate[] {
+  const best = new Map<string, number>();
+  for (const progress of history ?? playedOnItsDay()) {
+    if (progress.acceptedWords.length === 0) continue;
+    const word = rarest(progress.acceptedWords);
+    const name = word.word.toLowerCase();
+    const score = scoreToday(word);
+    // A word played on more than one day appears once, at its best showing.
+    if (score > (best.get(name) ?? -1)) best.set(name, score);
+  }
+  return [...best.entries()]
+    .map(([word, score]) => ({ word, score: Math.round(score * 100) / 100 }))
+    .sort((a, b) => b.score - a.score || a.word.localeCompare(b.word))
+    .slice(0, NAME_CHOICES);
 }
 
-/** The rarest word across several days' worth, by today's reckoning. */
-function bestOf(wordLists: Iterable<readonly AcceptedWord[]>): BoardIdentity | null {
-  let best: AcceptedWord | undefined;
-  let bestScore = -1;
-  for (const words of wordLists) {
-    for (const word of words) {
-      const score = scoreToday(word);
-      // Strictly greater, so the earliest of equally good words wins and a name
-      // doesn't churn between ties on every submission.
-      if (score > bestScore) {
-        bestScore = score;
-        best = word;
-      }
-    }
+/**
+ * Ask the board to call this player by one of their own words.
+ *
+ * Awaited, unlike a score: the player is watching, and a rename that quietly
+ * didn't happen is worse than a slow one. Resolves false when the request failed
+ * or the server refused the word, which the page reports rather than pretending.
+ */
+export async function chooseName(playerId: string, word: string): Promise<boolean> {
+  try {
+    const response = await fetch("/api/leaderboard", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ playerId, name: word }),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    return response.ok;
+  } catch {
+    return false;
   }
-  // Rounded to the two decimals the top of the scale displays at, so the number
-  // stored is exactly the number shown.
-  return best ? { name: best.word.toLowerCase(), score: Math.round(bestScore * 100) / 100 } : null;
 }
 
 /** One puzzle's score, in the shape the endpoint takes. */

@@ -47,6 +47,7 @@ function stubFetch(body: unknown = OPEN) {
   const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) => {
     // Score submissions are POSTs and answered blandly; only the GET matters.
     if (init?.method === "POST") return new Response(null, { status: 202 });
+    if (init?.method === "PUT") return new Response(JSON.stringify({ ok: true }), { status: 200 });
     if (body === null) return new Response("nope", { status: 502 });
     return new Response(JSON.stringify(body), {
       status: 200,
@@ -114,17 +115,41 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
   });
 
-  it("names this week's find on the weekly row, beside the player's own name", async () => {
+  it("leads the weekly row with this week's find and keeps the standing name under it", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    // The name is the identity a rival recognises; the detail is what they did
-    // this week. Both, so the row describes the week without costing the player
-    // the name someone might be chasing.
-    await waitFor(() => expect(boardRows("This week")[0]).toHaveTextContent("asphyxiate"));
-    // quixotic is worth 7.9 today, and the detail is exactly that -- this
-    // week's find, not the all-time name's score.
-    expect(rowMeta("This week", 0)).toBe("5 puzzles · quixotic 7.9");
+    // The week's find is what the weekly board is about, so it leads; the
+    // standing name rides underneath so a rival is still recognisable.
+    await waitFor(() => expect(boardRows("This week")[0]).toHaveTextContent("quixotic"));
+    expect(rowMeta("This week", 0)).toBe("5 puzzles · known as asphyxiate");
+  });
+
+  it("shows the standing name without needing a hover", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // Most of this game is played on phones, where there is no hover -- so the
+    // identity is in the row's own text, and the tooltip is only a convenience.
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(rowMeta("This week", 0)).toContain("asphyxiate");
+    expect(boardRows("This week")[0].querySelector(".leaderboard__name")).toHaveAttribute(
+      "title",
+      "known as asphyxiate"
+    );
+  });
+
+  it("says it once when this week's find is also the standing name", async () => {
+    stubFetch({
+      ...OPEN,
+      weekly: [{ ...WEEKLY[0], windowWord: "asphyxiate", windowZipf: 2.09 }],
+    });
+    render(<LeaderboardPage />);
+
+    // No second word to report, so the detail falls back to what it is worth
+    // rather than saying "known as asphyxiate" under the word `asphyxiate`.
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(1));
+    expect(rowMeta("This week", 0)).toBe("5 puzzles · best 8.3");
   });
 
   it("keeps the same name on both boards, so a rival stays recognisable", async () => {
@@ -132,10 +157,9 @@ describe("the leaderboard page", () => {
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    const weeklyNames = boardRows("This week").map((row) => row.textContent);
     // Whoever beat you this week is findable on the all-time board under the
-    // same name -- which is the whole reason the name is not weekly.
-    expect(weeklyNames[0]).toContain("asphyxiate");
+    // same standing name -- which is the whole reason the name is not weekly.
+    expect(rowMeta("This week", 0)).toContain("asphyxiate");
     expect(boardRows("All time")[1]).toHaveTextContent("asphyxiate");
   });
 
@@ -320,10 +344,7 @@ describe("joining the board", () => {
     render(<LeaderboardPage />);
 
     await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
-    const note = await screen.findByText(/You're on the board as/);
-    expect(note).toHaveTextContent("inkling");
-    // The promise that makes the name worth having.
-    expect(note).toHaveTextContent(/Beat it and this changes/);
+    expect(await screen.findByText(/You're on the board as/)).toHaveTextContent("inkling");
   });
 
   it("keeps one identity if the join is somehow pressed twice", async () => {
@@ -352,5 +373,96 @@ describe("leaving the page", () => {
     window.history.pushState(null, "", "/leaderboard");
     await userEvent.click(screen.getByRole("button", { name: "Back to today's puzzle" }));
     expect(window.location.pathname).toBe("/");
+  });
+});
+
+describe("choosing which of your finds names you", () => {
+  /** A browser with three days behind it, of differing rarity. */
+  function history() {
+    playedToday("2026-08-19", "cat", 4.78);
+    playedToday("2026-08-20", "inkling", 2.9);
+    playedToday("2026-08-21", "asphyxiate", 2.09);
+  }
+
+  it("defaults to the rarest word, and offers the rest", async () => {
+    history();
+    joinBoard();
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    expect(await screen.findByText(/You're on the board as/)).toHaveTextContent("asphyxiate");
+    await userEvent.click(screen.getByRole("button", { name: "Choose a different word" }));
+
+    // Every day's best find, priced at today's rates, best first.
+    const options = screen.getAllByRole("button", { pressed: false });
+    const words = options.map((o) => o.textContent);
+    expect(words.some((w) => w?.includes("inkling"))).toBe(true);
+    expect(words.some((w) => w?.includes("cat"))).toBe(true);
+  });
+
+  it("marks the word in use rather than greying it out", async () => {
+    history();
+    joinBoard();
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Choose a different word" }));
+    // The current name is the answer, not a control that failed.
+    const current = screen.getByRole("button", { pressed: true });
+    expect(current).toHaveTextContent("asphyxiate");
+  });
+
+  it("changes the name to a word the player chose", async () => {
+    history();
+    joinBoard();
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Choose a different word" }));
+    await userEvent.click(screen.getByRole("button", { name: /inkling/ }));
+
+    const renames = fetchMock.mock.calls.filter(
+      ([, init]) => (init as RequestInit | undefined)?.method === "PUT"
+    );
+    expect(renames).toHaveLength(1);
+    expect(JSON.parse(String((renames[0][1] as RequestInit).body))).toMatchObject({
+      name: "inkling",
+    });
+    expect(await screen.findByText(/You're on the board as/)).toHaveTextContent("inkling");
+  });
+
+  it("says so when the rename didn't take, rather than showing a name that isn't set", async () => {
+    history();
+    joinBoard();
+    const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      if (init?.method === "PUT") {
+        return new Response(JSON.stringify({ ok: false, reason: "not-your-word" }), { status: 409 });
+      }
+      if (init?.method === "POST") return new Response(null, { status: 202 });
+      return new Response(JSON.stringify(OPEN), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<LeaderboardPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Choose a different word" }));
+    await userEvent.click(screen.getByRole("button", { name: /inkling/ }));
+
+    expect(await screen.findByText(/Couldn't change your name/)).toBeInTheDocument();
+    // Still the old name: the page never claims a change the server refused.
+    expect(screen.getByText(/You're on the board as/)).toHaveTextContent("asphyxiate");
+  });
+
+  it("offers no choice to a player with only one find", async () => {
+    playedToday("2026-08-20", "inkling", 2.9);
+    joinBoard();
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await screen.findByText(/You're on the board as/);
+    // Nothing to choose between, so no control that leads nowhere.
+    expect(screen.queryByRole("button", { name: "Choose a different word" })).toBeNull();
   });
 });

@@ -494,24 +494,50 @@ only when they beat it. A word game's board is more interesting when the names
 *are* the finds: it says what each player is on the board for, and it needs no
 maintenance.
 
+**You pick which of your finds names you.** The board offers your ten best days'
+words with what each is worth today, and you choose. A closed list rather than a
+text field, and the constraint is the feature: a name you cannot type is a name
+you had to earn, so there is nothing to police and nothing to impersonate.
+
+Choosing also *stabilises* the name, which is the real reason it exists. Left
+alone, the default is your rarest word ever — good for a new player, and it moves
+every time they beat it. A name that moves is a player their rivals stop
+recognising, so a hot streak quietly costs you the thing a weekly board runs on.
+Picking pins it.
+
 **The same name appears on both boards, deliberately.** A weekly name would be
 livelier, and it was considered and rejected: rivalry needs a stable handle. If
 names churned every Sunday, the person who beat you last week would reappear as a
 different word and you could not recognise them — and being beaten by someone you
 recognise is most of why a weekly board is worth coming back to. Novelty fades in
-a week; a rival lasts months.
+a week; a rival lasts months. Carrying a "formerly known as" trail alongside would
+only half-repair it: you would have to remember last week's name and scan for it,
+every week, and by the fourth week the chain back to the name you remember is
+broken.
 
-What the weekly board gets instead is a **windowed detail**: each row names the
-rarest word that player found *this week*, next to the name they are known by.
+The week's find is not separately choosable, and the reason is structural rather
+than taste: the week's boundary is computed on the client from the player's own
+calendar (see `src/game/week.ts`), so a stored per-week choice would need a week
+key the server does not own. The rarest word of the week is picked automatically,
+which is the one most players would pick anyway.
 
-| | Name (identity) | Row detail |
+What the weekly board gets instead is a **change of emphasis**. Each board leads
+with its own subject and carries the other fact underneath:
+
+| | Row leads with | Underneath |
 | --- | --- | --- |
-| **This week** | rarest word ever | rarest word **this week** — `quixotic 7.9` |
-| **All time** | rarest word ever | that word's own worth — `best 8.3` |
+| **This week** | that week's find — `quixotic 7.9` | `known as asphyxiate` |
+| **All time** | the standing name — `asphyxiate` | `best 8.3` |
 
-So a weekly row describes the week without costing the player the identity
-someone might be chasing. On the all-time board the window is everything, so the
-two coincide and the detail is simply the naming word's score.
+So the weekly board reads as a highlight reel of what people found this week,
+while a rival stays recognisable. When a player's week *is* their best ever the
+two words are the same, and the row says it once.
+
+**Both are always drawn; the standing name is never hover-only.** Revealing it on
+hover would be tidier and would not work — this game is played mostly on phones,
+where there is no hover, so the identity a player needs in order to recognise a
+rival would be missing exactly where most of them are. The `title` tooltip is a
+convenience for pointer users, never the only channel.
 
 **Judged on today's criteria, not the day the word was played.** A puzzle's
 *score* is frozen at the scoring system in effect that day, because a past game
@@ -533,9 +559,19 @@ This also removed a problem rather than adding one. A typed name on a public,
 unauthenticated endpoint is a sanitising job: invisible characters, bidi
 overrides, imitations of the page's own copy. A name that is always a word is
 validated as one — `^[a-z]{2,30}$` in the endpoint *and* as a check constraint on
-the column — and nothing else is expressible. Nothing a client sends asserts what
-it should be called, either: each day carries its own rarest word, and the board
-derives the name from those rows.
+every column that holds one — and nothing else is expressible.
+
+Nor can a client claim a name it did not earn. Scores carry each day's own rarest
+word and nothing else, and `choose_leaderboard_name` writes a chosen name only
+when that word already appears among *that player's* submitted days, taking its
+frequency from that row rather than from the request. The whole authorisation
+rule is one `where exists`, which is why an unauthenticated rename endpoint costs
+nothing: the worst a forged request can do is rename a player, whose id it must
+already know, to a word that player found themselves.
+
+The picker offers one word per day — the day's rarest — because that is what the
+server stores and therefore what it will authorise. Offering a word it would
+refuse would be offering a choice that doesn't work.
 
 ### Identity, and the history that comes with it
 
@@ -583,6 +619,9 @@ puzzle could be played fresh and still count. Accepted deliberately — the play
 it lets in are real and numerous, and the ones it lets cheat have to be awake at
 3am to gain a single day's score.
 
+- **`leaderboard_names`** — one row per player who has chosen a name, holding
+  the word and the frequency it earned. Absent means "call me by my rarest",
+  which is the default and covers every new player.
 - **`leaderboard_scores`** — one row per player per puzzle date, written by
   `api/leaderboard.ts` through `submit_leaderboard_scores`. Takes an array
   because it has two callers of the same shape: the game submitting today after

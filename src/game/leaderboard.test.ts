@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { backfillHistory, boardIdentity, fetchBoards, submitScore } from "./leaderboard";
+import {
+  backfillHistory,
+  chooseName,
+  fetchBoards,
+  nameCandidates,
+  submitScore,
+} from "./leaderboard";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
 import type { AcceptedWord, DailyProgress } from "./types";
@@ -109,7 +115,7 @@ function stored(date: string, firstWordAt = `${date}T20:00:00.000Z`): DailyProgr
   };
 }
 
-describe("the name the board calls you", () => {
+describe("the words a player can be known by", () => {
   /** A day's worth of words, played on its own date so it counts. */
   function day(date: string, words: AcceptedWord[]): DailyProgress {
     return {
@@ -123,67 +129,81 @@ describe("the name the board calls you", () => {
     };
   }
 
-  it("is the rarest word the player has ever found", () => {
-    // asphyxiate (8.30) beats inkling (7.11) beats cat (4.34) today.
+  it("offers each day's rarest word, best first", () => {
     expect(
-      boardIdentity([
+      nameCandidates([
         day("2026-08-19", [{ word: "cat", rarity: "Common", zipf: 4.78 }]),
         day("2026-08-20", [
           { word: "inkling", rarity: "Rare", zipf: 2.9 },
           { word: "asphyxiate", rarity: "Extremely Rare", zipf: 2.09 },
         ]),
       ])
-      // The score comes back with the name, and it is that word's score today.
-    ).toEqual({ name: "asphyxiate", score: 8.3 });
+    ).toEqual([
+      // asphyxiate won its day, so inkling is not on offer -- one word per day,
+      // which is exactly what the server stores and will authorise.
+      { word: "asphyxiate", score: 8.3 },
+      { word: "cat", score: 4.34 },
+    ]);
   });
 
-  it("judges words on today's criteria, not the score they were saved with", () => {
-    // A record saved under an older scoring system, or before the word's
-    // frequency was corrected: `cat` is stored as though it were vanishingly
-    // rare, and `inkling` as though it were everyday.
-    const identity = boardIdentity([
-      day("2026-08-19", [{ word: "cat", rarity: "Legend", zipf: 0.1 }]),
-      day("2026-08-20", [{ word: "inkling", rarity: "Very Common", zipf: 7.5 }]),
+  it("prices candidates on today's criteria, not the day they were played", () => {
+    // A record saved under an older system, or before the word's frequency was
+    // corrected: `cat` stored as though vanishingly rare, `inkling` as everyday.
+    expect(
+      nameCandidates([
+        day("2026-08-19", [{ word: "cat", rarity: "Legend", zipf: 0.1 }]),
+        day("2026-08-20", [{ word: "inkling", rarity: "Very Common", zipf: 7.5 }]),
+      ])
+    ).toEqual([
+      { word: "inkling", score: 7.11 },
+      { word: "cat", score: 4.34 },
+    ]);
+  });
+
+  it("lists a repeated word once, at its best showing", () => {
+    const candidates = nameCandidates([
+      day("2026-08-19", [{ word: "inkling", rarity: "Rare", zipf: 2.9 }]),
+      day("2026-08-20", [{ word: "inkling", rarity: "Rare", zipf: 2.9 }]),
     ]);
 
-    // The stored numbers would have crowned `cat`. Today's dictionary says
-    // otherwise, and today's dictionary is what every player is judged by --
-    // including for the score shown beside the name.
-    expect(identity).toEqual({ name: "inkling", score: 7.11 });
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].word).toBe("inkling");
+  });
+
+  it("offers at most ten, and they are the best ten", () => {
+    const words = ["asphyxiate", "quixotic", "gastroenterologist", "inkling", "wrinkle", "cat"];
+    const history = Array.from({ length: 14 }, (_, i) =>
+      day(`2026-08-${String(i + 1).padStart(2, "0")}`, [
+        { word: words[i % words.length], rarity: "Rare", zipf: 2 + i * 0.2 },
+      ])
+    );
+    const candidates = nameCandidates(history);
+
+    expect(candidates.length).toBeLessThanOrEqual(10);
+    // Sorted best first, so a truncation keeps the finds worth being known for.
+    const scores = candidates.map((c) => c.score);
+    expect([...scores].sort((a, b) => b - a)).toEqual(scores);
   });
 
   it("falls back to the stored frequency for a word today's dictionary lacks", () => {
-    // A live Merriam-Webster approval: not in the shipped dictionary, so its
-    // own recorded rarity is the only thing there is to go on.
+    // A live Merriam-Webster approval: not in the shipped dictionary, so its own
+    // recorded rarity is the only thing there is to go on.
     expect(
-      boardIdentity([
-        day("2026-08-20", [
-          { word: "inkling", rarity: "Rare", zipf: 2.9 },
-          { word: "enshittification", rarity: "Legend", zipf: 0.5 },
-        ]),
-      ])?.name
+      nameCandidates([
+        day("2026-08-20", [{ word: "enshittification", rarity: "Legend", zipf: 0.5 }]),
+      ])[0].word
     ).toBe("enshittification");
   });
 
-  it("keeps the earlier word when two are equally rare", () => {
-    const words = [
-      { word: "inkling", rarity: "Rare" as const, zipf: 2.9 },
-      { word: "inkling", rarity: "Rare" as const, zipf: 2.9 },
-    ];
-    // A name that churned between ties would rewrite the player's whole history
-    // on every submission for no reason.
-    expect(boardIdentity([day("2026-08-20", words)])?.name).toBe("inkling");
-  });
-
-  it("lowercases the name, whatever the record holds", () => {
+  it("lowercases candidates, whatever the record holds", () => {
     expect(
-      boardIdentity([day("2026-08-20", [{ word: "Inkling", rarity: "Rare", zipf: 2.9 }])])?.name
+      nameCandidates([day("2026-08-20", [{ word: "Inkling", rarity: "Rare", zipf: 2.9 }])])[0].word
     ).toBe("inkling");
   });
 
-  it("has no name for a browser with nothing eligible", () => {
-    expect(boardIdentity([])).toBeNull();
-    expect(boardIdentity([day("2026-08-20", [])])).toBeNull();
+  it("has nothing to offer a browser with nothing eligible", () => {
+    expect(nameCandidates([])).toEqual([]);
+    expect(nameCandidates([day("2026-08-20", [])])).toEqual([]);
   });
 
   it("ignores words from days that don't count", () => {
@@ -192,7 +212,7 @@ describe("the name the board calls you", () => {
       JSON.stringify(day("2026-08-20", [{ word: "inkling", rarity: "Rare", zipf: 2.9 }]))
     );
     // A rarer word, but pulled out of the archive weeks later -- so it cannot
-    // become the player's name any more than it can become their score.
+    // name the player any more than it can score for them.
     localStorage.setItem(
       "ick:progress:2026-07-04",
       JSON.stringify({
@@ -202,7 +222,33 @@ describe("the name the board calls you", () => {
       })
     );
 
-    expect(boardIdentity()?.name).toBe("inkling");
+    expect(nameCandidates().map((c) => c.word)).toEqual(["inkling"]);
+  });
+});
+
+describe("choosing a name", () => {
+  it("asks the server to use the word, and reports that it worked", async () => {
+    const fetchMock = stubFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+
+    await expect(chooseName("player-1", "inkling")).resolves.toBe(true);
+    const [url, init] = (fetchMock.mock.calls[0] ?? []) as [string?, RequestInit?];
+    expect(url).toBe("/api/leaderboard");
+    expect(init?.method).toBe("PUT");
+    expect(JSON.parse(String(init?.body))).toEqual({ playerId: "player-1", name: "inkling" });
+  });
+
+  it("reports a refusal rather than pretending the name changed", async () => {
+    stubFetch(new Response(JSON.stringify({ ok: false, reason: "not-your-word" }), { status: 409 }));
+    await expect(chooseName("player-1", "asphyxiate")).resolves.toBe(false);
+  });
+
+  it("reports a failed request rather than throwing", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new Error("offline");
+    }));
+    // The player is watching this one, so it resolves false and the page says so
+    // -- but it still must not throw into the render.
+    await expect(chooseName("player-1", "inkling")).resolves.toBe(false);
   });
 });
 

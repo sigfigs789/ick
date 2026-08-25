@@ -385,14 +385,85 @@ describe("api/leaderboard reads", () => {
   });
 });
 
+describe("api/leaderboard name changes", () => {
+  function put(body: unknown, init: RequestInit = {}): Request {
+    return new Request("https://wordink.app/api/leaderboard", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+      ...init,
+    });
+  }
+
+  it("asks the database to authorise the word against the player's own days", async () => {
+    withEnv();
+    const fetchMock = stubFetch([true]);
+    const response = await handler(put({ playerId: PLAYER, name: "inkling" }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true, name: "inkling" });
+    expect(rpcCall(fetchMock)?.url).toBe(
+      "https://project.supabase.co/rest/v1/rpc/choose_leaderboard_name"
+    );
+    expect(rpcCall(fetchMock)?.args).toEqual({ p_player_id: PLAYER, p_name: "inkling" });
+  });
+
+  it("refuses a word the player has never played", async () => {
+    withEnv();
+    stubFetch([false]);
+    const response = await handler(put({ playerId: PLAYER, name: "asphyxiate" }));
+
+    // 409 rather than 400: the request is well formed, it just names a word this
+    // player did not earn -- which is the one thing this endpoint authorises.
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ ok: false, reason: "not-your-word" });
+  });
+
+  it.each([
+    ["a player id that isn't a uuid", { playerId: "mo", name: "inkling" }, "bad-player-id"],
+    ["a name that isn't a word", { playerId: PLAYER, name: "Ink Ling" }, "bad-word"],
+    ["a name with an invisible character", { playerId: PLAYER, name: "ink\u200bling" }, "bad-word"],
+    ["a missing name", { playerId: PLAYER }, "bad-word"],
+  ])("refuses %s", async (_label, body, reason) => {
+    withEnv();
+    const fetchMock = stubFetch([true]);
+    const response = await handler(put(body));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ ok: false, reason });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a cross-origin rename", async () => {
+    withEnv();
+    const fetchMock = stubFetch([true]);
+    const response = await handler(
+      put(
+        { playerId: PLAYER, name: "inkling" },
+        { headers: { "content-type": "application/json", origin: "https://evil.test" } }
+      )
+    );
+
+    expect(response.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("says so when the deployment has no credentials", async () => {
+    withEnv({});
+    const response = await handler(put({ playerId: PLAYER, name: "inkling" }));
+
+    expect(response.status).toBe(503);
+  });
+});
+
 describe("api/leaderboard method handling", () => {
-  it("turns away anything but GET and POST", async () => {
+  it("turns away anything but GET, POST and PUT", async () => {
     withEnv();
     const response = await handler(
       new Request("https://wordink.app/api/leaderboard", { method: "DELETE" })
     );
 
     expect(response.status).toBe(405);
-    expect(response.headers.get("allow")).toBe("GET, POST");
+    expect(response.headers.get("allow")).toBe("GET, POST, PUT");
   });
 });

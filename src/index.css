@@ -1601,6 +1601,15 @@ h2 {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+/* The week's find leads the weekly row, so its score rides with it rather than
+   sitting in the detail line -- the word and what it is worth are one fact. */
+.leaderboard__lead-score {
+  color: var(--fg-faint);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .leaderboard__you {
   color: var(--fg-faint);
   font-size: 0.72rem;
@@ -1615,12 +1624,6 @@ h2 {
   font-variant-numeric: tabular-nums;
   min-width: 0;
   overflow-wrap: anywhere;
-}
-/* This week's find, named next to the player's own name. Weighted a little so
-   the word reads as a word and not as part of the count beside it, but kept
-   faint -- the name above it is the identity, this is the news. */
-.leaderboard__window-word {
-  font-weight: 700;
 }
 .leaderboard__score {
   grid-area: score;
@@ -1674,10 +1677,82 @@ h2 {
 .leaderboard__note--error {
   color: var(--danger-fg);
 }
-.leaderboard__note--playing {
-  margin-top: 1.1rem;
-  padding-top: 1rem;
+/* Picking a name from a closed list of your own finds. Rendered as a list of
+   buttons rather than a select, so each option can show the word at reading size
+   with its score alongside -- the score is most of what makes the choice. */
+.leaderboard__you-are {
+  margin-top: 1.8rem;
+  padding-top: 1.2rem;
   border-top: 1px solid var(--border);
+}
+.leaderboard__picker {
+  margin-top: 0.8rem;
+}
+.leaderboard__picker-heading {
+  margin: 0 0 0.5rem;
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.leaderboard__picker-list {
+  list-style: none;
+  margin: 0 0 0.7rem;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  /* Two up where there is room; one on a phone, where a 30-letter word needs
+     the whole width. */
+  grid-template-columns: 1fr;
+}
+@media (min-width: 34rem) {
+  .leaderboard__picker-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.leaderboard__picker-option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+.leaderboard__picker-option:hover:not(:disabled) {
+  background: var(--bg-inset);
+}
+/* The one in use is not a disabled control that failed, it is the current
+   answer -- so it reads as selected rather than greyed out. */
+.leaderboard__picker-option--current {
+  border-color: var(--accent);
+  background: var(--bg-inset);
+  cursor: default;
+}
+.leaderboard__picker-option:disabled:not(.leaderboard__picker-option--current) {
+  opacity: 0.5;
+  cursor: default;
+}
+.leaderboard__picker-word {
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.leaderboard__picker-score {
+  flex: none;
+  color: var(--fg-faint);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.leaderboard__note--playing {
+  margin: 0;
 }
 .results-panel__leaderboard {
   display: block;

@@ -14,6 +14,12 @@
 //   SQL, so below the threshold no row leaves the database at all -- there is no
 //   partial board sitting in a response waiting to be read out of a network tab.
 //
+// PUT /api/leaderboard   { playerId, name }
+//   -> 200 { ok: true }, 409 the word is not one of that player's own finds
+//   Choose which of your own words the board calls you by. The word is checked
+//   against that player's submitted days in SQL, so there is no name anybody can
+//   claim they did not earn under their own id.
+//
 // POST /api/leaderboard  { playerId, scores: [{ date, word, zipf, total, top, words }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
 //   One score per player per puzzle. An array because it has two callers of the
@@ -323,22 +329,83 @@ async function handleGet(request: Request): Promise<Response> {
   }
 }
 
-async function handlePost(request: Request, context?: EdgeContext): Promise<Response> {
-  // Same-origin only when the caller declares an origin, which every browser
-  // does on a POST. Cheap, and it takes the endpoint off the list of things any
-  // page on the web can post to. See api/events.ts, which does the same.
+/**
+ * Same-origin only when the caller declares an origin, which every browser does
+ * on a write. Cheap, and it takes the endpoint off the list of things any page on
+ * the web can post to. See api/events.ts, which does the same. Returns a refusal
+ * to send back, or null when the request may proceed.
+ */
+function crossOriginRefusal(request: Request): Response | null {
   const origin = request.headers.get("origin");
-  if (origin) {
-    let originHost: string;
-    try {
-      originHost = new URL(origin).host;
-    } catch {
-      return reply(403, { ok: false, reason: "bad-origin" });
-    }
-    if (originHost !== new URL(request.url).host) {
-      return reply(403, { ok: false, reason: "cross-origin" });
-    }
+  if (!origin) return null;
+  let originHost: string;
+  try {
+    originHost = new URL(origin).host;
+  } catch {
+    return reply(403, { ok: false, reason: "bad-origin" });
   }
+  if (originHost !== new URL(request.url).host) {
+    return reply(403, { ok: false, reason: "cross-origin" });
+  }
+  return null;
+}
+
+/**
+ * Choose which of your own words the board calls you by.
+ *
+ * Awaited rather than fired and forgotten, unlike a score: the player is looking
+ * at the answer, and a rename that silently didn't happen is worse than a slow
+ * one. The word is authorised in SQL against that player's own submitted days,
+ * so this endpoint being unauthenticated costs nothing -- the worst a forged
+ * request can do is rename a player, whose id it must already know, to a word
+ * that player found themselves.
+ */
+async function handlePut(request: Request): Promise<Response> {
+  const refusal = crossOriginRefusal(request);
+  if (refusal) return refusal;
+
+  const text = await request.text().catch(() => "");
+  if (text.length > MAX_BODY_BYTES) return reply(413, { ok: false, reason: "too-large" });
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return reply(400, { ok: false, reason: "malformed-json" });
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return reply(400, { ok: false, reason: "malformed-body" });
+  }
+
+  const { playerId, name } = parsed as Record<string, unknown>;
+  if (typeof playerId !== "string" || !UUID_RE.test(playerId)) {
+    return reply(400, { ok: false, reason: "bad-player-id" });
+  }
+  if (typeof name !== "string" || !WORD_RE.test(name)) {
+    return reply(400, { ok: false, reason: "bad-word" });
+  }
+
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    const chosen = await rpc<boolean>("choose_leaderboard_name", {
+      p_player_id: playerId,
+      p_name: name,
+    });
+    // 409 rather than 400: the request is well formed, it just names a word this
+    // player has not played -- which the page turns into "you haven't found that
+    // one" rather than a validation error.
+    if (!chosen) return reply(409, { ok: false, reason: "not-your-word" });
+    return reply(200, { ok: true, name });
+  } catch (error) {
+    console.error("[leaderboard] name change failed:", error instanceof Error ? error.message : error);
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
+async function handlePost(request: Request, context?: EdgeContext): Promise<Response> {
+  const refusal = crossOriginRefusal(request);
+  if (refusal) return refusal;
 
   const text = await request.text().catch(() => "");
   if (text.length > MAX_BODY_BYTES) return reply(413, { ok: false, reason: "too-large" });
@@ -376,8 +443,9 @@ async function handlePost(request: Request, context?: EdgeContext): Promise<Resp
 export default async function handler(request: Request, context?: EdgeContext): Promise<Response> {
   if (request.method === "GET") return handleGet(request);
   if (request.method === "POST") return handlePost(request, context);
+  if (request.method === "PUT") return handlePut(request);
   return new Response(null, {
     status: 405,
-    headers: { allow: "GET, POST", "cache-control": "no-store" },
+    headers: { allow: "GET, POST, PUT", "cache-control": "no-store" },
   });
 }
