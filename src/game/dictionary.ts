@@ -17,7 +17,12 @@ import {
   unmeasuredBaseCandidates,
 } from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
-import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types";
+import type {
+  AcceptedWord,
+  Rarity,
+  RarityInfo,
+  RejectionReason,
+} from "./types";
 
 /**
  * The curated dictionary decides whether a submission is allowed at all.
@@ -25,7 +30,9 @@ import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types"
  * hand-edited independently of frequency data.
  */
 const WORDS: readonly string[] = dictionaryWords as string[];
-const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, i]));
+const WORD_INDEX: ReadonlyMap<string, number> = new Map(
+  WORDS.map((w, i) => [w, i]),
+);
 
 /**
  * Rarity scoring has evolved across two cutovers, each date-gated so past
@@ -104,13 +111,60 @@ const DERIVED_BASE_START = "2026-08-24";
 // neighbour at 1.88. Set the date to the day after the change is expected to
 // land, and if it slips past that date, move it before merging.
 const PREFIX_BASE_START = "2026-08-24";
-// How common a word must be to serve as a prefix base. Set at the top of the
-// deep tail rather than at MEASURED_FLOOR: the bound combining forms this keeps
-// out ("lith", "crat", "pathy", "phyte") are all measured, just barely, and sit
-// between Zipf 1.0 and 3.0 along with the handful of real bases the cutoff
-// costs ("gild", "emote", "ripen", "allot" -- each worth under 3 points of
-// demotion, against some forty wrong folds removed).
+// The day the prefix rule stops holding a long residue to a short one's floor.
+// See LONG_PREFIX_BASE_MIN_ZIPF.
+const LONG_PREFIX_BASE_START = "2026-08-26";
+
+/*
+ * What a prefix base has to clear, and why it is two numbers rather than one.
+ *
+ * The test a prefix base has to pass is not "is this common enough" but "would a
+ * player accept this as the base word", because since #207 the fold is *shown*:
+ * a word demoted a rank reads "Scored as its base word, 'material'" in the guess
+ * log. That reframes the whole gate. "Scored as its base word, 'opinionated'"
+ * explains itself; "Scored as its base word, 'lith'" reads as a bug, and it is
+ * worse than leaving the word alone -- a wrong fold is visible in a way an
+ * over-generous score is not.
+ *
+ * Frequency is a poor proxy for that and length is a decent one, because the
+ * thing being screened out has a shape: stripping a prefix routinely lands on a
+ * *bound combining form* that a 225k-word dictionary happens to list as an entry
+ * -- "neolith" -> "lith", "monocrat" -> "crat", "autophyte" -> "phyte",
+ * "protopathy" -> "pathy", "prelect" -> "lect", "subduce" -> "duce". Every one
+ * is a real dictionary word, none is a base anything was built on, and every one
+ * is four or five letters, because that is what a combining form is: a fragment
+ * of a root, not a word carrying derivational morphology.
+ *
+ * So: short residues keep a high bar, long residues get a low one.
+ */
+
+// Short residues -- five letters or fewer, where the fragments live. Unchanged
+// at the top of the deep tail. The bar stays high here on purpose: this is where
+// a wrong base is most embarrassing to show, and where the residues that would
+// be admitted by lowering it are mostly inflected forms ("bakes", "wove",
+// "knits", "roars") that read oddly as "its base word" even when correct.
 const PREFIX_BASE_MIN_ZIPF = 3;
+
+// Where a residue stops being short enough to be a fragment.
+const LONG_PREFIX_BASE_LEN = 6;
+
+// Long residues. Frequency still has a job, just a much smaller one: a handful
+// of combining forms do clear six letters ("graphy" 1.48, "currence" 1.39,
+// "merous" 1.12, "plasty" 1.32, "metrist" 1.34), and they sit below this floor
+// while the real bases sit above it. Set at the Extremely Rare band's lower edge
+// (see measuredRarity), which is the substantive claim: a base with a named tier
+// of its own is a word a player will recognise.
+//
+// The flat Zipf-3 cutoff this replaces was mis-calibrated in one direction. It
+// was documented as costing "a handful of real bases" to remove "some forty
+// wrong folds"; the forty was right, the handful was 1,576. The band between
+// 1.59 and 3.0 is where long derived words live -- "opinionated" 2.88,
+// "fastidious" 2.64, "didactic" 2.74, "retentive" 2.22, "divestiture" 2.27 --
+// rare not because they are fragments but because they are long. A flat cutoff
+// asks an eleven-letter word to be as common as a five-letter one, which no
+// ordinary derived word is: "overopinionated" held a perfect 10.00 Legend
+// against a base of its own scoring 7.13.
+const LONG_PREFIX_BASE_MIN_ZIPF = 1.59;
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -145,7 +199,9 @@ function roundToTenths(n: number): number {
  * (raw >= 9.45) is Mythic. Anything lower returns undefined, so the caller falls
  * back to the measured Zipf-band label (Elusive and below).
  */
-export function topRankForScore(score: number): Extract<Rarity, "Legend" | "Mythic"> | undefined {
+export function topRankForScore(
+  score: number,
+): Extract<Rarity, "Legend" | "Mythic"> | undefined {
   if (roundToCents(score) >= LEGEND_MIN_SCORE) return "Legend";
   if (roundToTenths(score) >= MYTHIC_MIN_SCORE) return "Mythic";
   return undefined;
@@ -252,7 +308,7 @@ interface ScoreOverride {
  * them.
  */
 const SCORE_OVERRIDES: ReadonlyMap<string, ScoreOverride> = new Map(
-  Object.entries(scoreOverrideData as Record<string, ScoreOverride>)
+  Object.entries(scoreOverrideData as Record<string, ScoreOverride>),
 );
 
 /**
@@ -294,7 +350,7 @@ interface FoldExemption {
  * exemption would win, silently -- and a test pins that.
  */
 const FOLD_EXEMPTIONS: ReadonlyMap<string, FoldExemption> = new Map(
-  Object.entries(foldExemptionData as Record<string, FoldExemption>)
+  Object.entries(foldExemptionData as Record<string, FoldExemption>),
 );
 
 /**
@@ -364,6 +420,12 @@ interface Scoring {
   // 2026-08-24 cutover; off for earlier systems so past puzzles' scores stay
   // frozen (see PREFIX_BASE_START).
   prefixBases: boolean;
+  // Whether a prefix base six letters or longer is admitted on the Extremely
+  // Rare floor rather than the flat Zipf-3 cutoff that short residues keep --
+  // "overopinionated" -> "opinionated". Introduced with the 2026-08-26 cutover;
+  // off for earlier systems so past puzzles' scores stay frozen (see
+  // LONG_PREFIX_BASE_START).
+  longPrefixBases: boolean;
   // Whether a word is also capped at the regular inflections built *on* it --
   // the fold's reverse direction, so the bare lemma of a verb only ever written
   // as a participle stops scoring as a deep-tail find (see
@@ -400,6 +462,7 @@ interface ScoringFlags {
   inflectionBases?: boolean;
   derivedBases?: boolean;
   prefixBases?: boolean;
+  longPrefixBases?: boolean;
   inflectionForms?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
@@ -407,7 +470,11 @@ interface ScoringFlags {
   narrowBands?: boolean;
 }
 
-function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags): Scoring {
+function twoBandScoring(
+  ceiling: number,
+  tailFloor: number,
+  flags: ScoringFlags,
+): Scoring {
   const {
     boundBaseForms,
     legend,
@@ -415,6 +482,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     inflectionBases = false,
     derivedBases = false,
     prefixBases = false,
+    longPrefixBases = false,
     inflectionForms = false,
     narrowBands = false,
   } = flags;
@@ -428,8 +496,12 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     }
     const clamped = Math.max(zipf, tailFloor);
     const s =
-      ceiling + ((10 - ceiling) * (MEASURED_FLOOR - clamped)) / (MEASURED_FLOOR - tailFloor);
-    return legend ? roundToCents(Math.min(s, 10)) : Math.round(Math.min(s, 10) * 100) / 100;
+      ceiling +
+      ((10 - ceiling) * (MEASURED_FLOOR - clamped)) /
+        (MEASURED_FLOOR - tailFloor);
+    return legend
+      ? roundToCents(Math.min(s, 10))
+      : Math.round(Math.min(s, 10) * 100) / 100;
   };
   return {
     zipfAt: (i) => zipfHundredths[i] / 100,
@@ -437,15 +509,18 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     rarity: legend
       ? // Latest system: rank the top by the shown two-decimal score against the
         // fixed Legend/Mythic cutoffs; below 9.5 keeps its measured Zipf label.
-        (zipf) => topRankForScore(score(zipf)) ?? measuredRarity(zipf, narrowBands)
+        (zipf) =>
+          topRankForScore(score(zipf)) ?? measuredRarity(zipf, narrowBands)
       : // 2026-08-15 system: the deep-tail library (Zipf < 1) is a single Mythic
         // top rank, with no Legend above it.
-        (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf, narrowBands)),
+        (zipf) =>
+          zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf, narrowBands),
     format: legend
       ? // Mythic and Legend (score >= 9.5) show two decimals; below shows one,
         // rounded with the same upward nudge so a raw 9.45 reads "9.5" -- the
         // value the Mythic cutoff keys off (see topRankForScore).
-        (s) => (s >= MYTHIC_MIN_SCORE ? s.toFixed(2) : roundToTenths(s).toFixed(1))
+        (s) =>
+          s >= MYTHIC_MIN_SCORE ? s.toFixed(2) : roundToTenths(s).toFixed(1)
       : // Only the deep-tail band (score >= ceiling) shows two decimals.
         (s) => (s >= ceiling ? s.toFixed(2) : s.toFixed(1)),
     boundBaseForms,
@@ -453,6 +528,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     inflectionBases,
     derivedBases,
     prefixBases,
+    longPrefixBases,
     inflectionForms,
   };
 }
@@ -465,7 +541,10 @@ const CURRENT_SCORING: Scoring = twoBandScoring(9.5, MIN_ZIPF, {
 });
 // The 2026-08-16 system: measured band 0..9.9, deep tail 9.9..10 clamped at a
 // fixed 0, Legend + Mythic ranks, bound-suffix folding on, single-hop bases.
-const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, { boundBaseForms: true, legend: true });
+const WIDE_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+});
 // The 2026-08-19 system: the same bands and ranks, with base forms resolved
 // through their own bases.
 const CHAINED_SCORING: Scoring = twoBandScoring(9.9, 0, {
@@ -498,10 +577,24 @@ const DERIVED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   inflectionForms: true,
   narrowBands: true,
 });
-// The latest system (2026-08-24): all three of that day's changes -- the bound
+// The 2026-08-24 system: all three of that day's changes -- the bound
 // derivational families in `derivedBaseCandidates`, the fold's second direction
 // toward the inflections built on a word, and the transparent prefixes in
-// `prefixBaseCandidates`.
+// `prefixBaseCandidates` -- with every prefix base held to the flat Zipf-3
+// cutoff.
+const PREFIX_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  prefixBases: true,
+  narrowBands: true,
+});
+// The latest system (2026-08-26): a prefix base of six letters or more is
+// admitted on the Extremely Rare floor instead, so a long derived word stops
+// being mistaken for a bound combining form on frequency alone.
 const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
@@ -510,6 +603,7 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   derivedBases: true,
   inflectionForms: true,
   prefixBases: true,
+  longPrefixBases: true,
   narrowBands: true,
 });
 
@@ -525,8 +619,9 @@ const LEGACY_SCORING: Scoring = {
   // minimum is exactly 1.0), so no archived puzzle's scores move.
   score: (zipf) =>
     Math.round(
-      ((LEGACY_MAX_ZIPF - Math.max(zipf, LEGACY_MIN_ZIPF)) / (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) *
-        100
+      ((LEGACY_MAX_ZIPF - Math.max(zipf, LEGACY_MIN_ZIPF)) /
+        (LEGACY_MAX_ZIPF - LEGACY_MIN_ZIPF)) *
+        100,
     ) / 10,
   rarity: (zipf) => {
     // Missing corpus data is not evidence that a word is genuinely Mythic.
@@ -613,6 +708,7 @@ function scoringFor(date?: string): Scoring {
   // the prefixes.
   if (date < DERIVED_BASE_START) return RETUNED_SCORING;
   if (date < PREFIX_BASE_START) return DERIVED_SCORING;
+  if (date < LONG_PREFIX_BASE_START) return PREFIX_SCORING;
   return LATEST_SCORING;
 }
 
@@ -669,7 +765,7 @@ export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
  * validated on the day it was played.
  */
 const WORD_REJECTIONS: ReadonlyMap<string, WordRejection> = new Map(
-  Object.entries(wordRejectionData as Record<string, WordRejection>)
+  Object.entries(wordRejectionData as Record<string, WordRejection>),
 );
 
 /**
@@ -702,20 +798,23 @@ const WORD_REJECTIONS: ReadonlyMap<string, WordRejection> = new Map(
  * playable despite its label goes in scripts/playable-exemptions.txt, which keeps
  * it out of this file for good.
  */
-const DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: string }> =
-  new Map(
-    Object.entries(derivedRejectionData as Record<string, Record<string, readonly string[]>>)
-      .flatMap(([since, byReason]) =>
-        Object.entries(byReason).flatMap(([reason, words]) =>
-          words.map(
-            (word): [string, { reason: RejectionReason; since: string }] => [
-              word,
-              { reason: reason as RejectionReason, since },
-            ]
-          )
-        )
-      )
-  );
+const DERIVED_REJECTIONS: ReadonlyMap<
+  string,
+  { reason: RejectionReason; since: string }
+> = new Map(
+  Object.entries(
+    derivedRejectionData as Record<string, Record<string, readonly string[]>>,
+  ).flatMap(([since, byReason]) =>
+    Object.entries(byReason).flatMap(([reason, words]) =>
+      words.map(
+        (word): [string, { reason: RejectionReason; since: string }] => [
+          word,
+          { reason: reason as RejectionReason, since },
+        ],
+      ),
+    ),
+  ),
+);
 
 /**
  * The reason `word` is unplayable under `date`'s puzzle, or undefined when no
@@ -726,15 +825,20 @@ const DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: 
  * this exact word, and it can name a more specific fault (a misspelling of a
  * particular word) than a sense label can.
  */
-export function curatedRejection(word: string, date?: string): RejectionReason | undefined {
+export function curatedRejection(
+  word: string,
+  date?: string,
+): RejectionReason | undefined {
   const normalized = word.toLowerCase();
   const rejection = WORD_REJECTIONS.get(normalized);
-  if (rejection && (date === undefined || date >= rejection.since)) return rejection.reason;
+  if (rejection && (date === undefined || date >= rejection.since))
+    return rejection.reason;
   // Falls through when the reviewed rejection isn't in force yet: the derived list
   // can carry an earlier date than the hand entry, and the earlier verdict is
   // still a verdict.
   const derived = DERIVED_REJECTIONS.get(normalized);
-  if (derived && (date === undefined || date >= derived.since)) return derived.reason;
+  if (derived && (date === undefined || date >= derived.since))
+    return derived.reason;
   return undefined;
 }
 
@@ -746,7 +850,10 @@ export function curatedRejection(word: string, date?: string): RejectionReason |
  */
 export function isValidWord(word: string, date?: string): boolean {
   const normalized = word.toLowerCase();
-  return WORD_INDEX.has(normalized) && curatedRejection(normalized, date) === undefined;
+  return (
+    WORD_INDEX.has(normalized) &&
+    curatedRejection(normalized, date) === undefined
+  );
 }
 
 /**
@@ -817,7 +924,7 @@ export function isDictionaryWord(word: string): boolean {
 export function mostCommonSameRootBase(
   word: string,
   candidates: readonly string[],
-  date?: string
+  date?: string,
 ): string | undefined {
   return mostCommonBase(candidates, word, scoringFor(date));
 }
@@ -862,11 +969,14 @@ interface SameRootPin {
  * identities would turn every reviewed demotion into a refusal.
  */
 const SAME_ROOT_PINS: ReadonlyMap<string, SameRootPin> = new Map(
-  Object.entries(sameRootPinData as Record<string, SameRootPin>)
+  Object.entries(sameRootPinData as Record<string, SameRootPin>),
 );
 
 /** The reviewed root for `word` under `date`'s puzzle, if one is pinned. */
-export function pinnedSameRoot(word: string, date?: string): string | undefined {
+export function pinnedSameRoot(
+  word: string,
+  date?: string,
+): string | undefined {
   const pin = SAME_ROOT_PINS.get(word);
   if (!pin) return undefined;
   return date === undefined || date >= pin.since ? pin.root : undefined;
@@ -904,7 +1014,7 @@ export interface BaseFormSubstitution {
  */
 export function baseFormSubstitution(
   word: string,
-  date?: string
+  date?: string,
 ): BaseFormSubstitution | undefined {
   const normalized = word.toLowerCase();
   const i = WORD_INDEX.get(normalized);
@@ -952,7 +1062,8 @@ export function baseFormSubstitution(
   const base = scoringBaseForm(normalized, scoring);
   if (base && base !== normalized) {
     const baseZipf = zipfFor(base, scoring);
-    if (baseZipf > ownZipf) return { word: normalized, base, ownZipf, baseZipf };
+    if (baseZipf > ownZipf)
+      return { word: normalized, base, ownZipf, baseZipf };
   }
   return undefined;
 }
@@ -991,7 +1102,7 @@ export const BASE_FORM_NOTICE_DROP = 0.3;
  */
 export function baseFormRankDrop(
   word: string,
-  date?: string
+  date?: string,
 ): BaseFormSubstitution | undefined {
   const substitution = baseFormSubstitution(word, date);
   if (!substitution) return undefined;
@@ -1003,7 +1114,9 @@ export function baseFormRankDrop(
   if (base <= own) return undefined;
 
   const shown = (zipf: number) => Number(scoring.format(scoring.score(zipf)));
-  const drop = roundToCents(shown(substitution.ownZipf) - shown(substitution.baseZipf));
+  const drop = roundToCents(
+    shown(substitution.ownZipf) - shown(substitution.baseZipf),
+  );
   return drop >= BASE_FORM_NOTICE_DROP ? substitution : undefined;
 }
 
@@ -1018,7 +1131,10 @@ export function baseFormRankDrop(
  * submitted. A rejected word is still in WORDS, which is exactly why the check
  * is needed here and not just in submit.
  */
-export function bestWordForDrop(drop: string, date?: string): AcceptedWord | undefined {
+export function bestWordForDrop(
+  drop: string,
+  date?: string,
+): AcceptedWord | undefined {
   const needle = drop.toLowerCase();
   let best: AcceptedWord | undefined;
   for (let i = 0; i < WORDS.length; i++) {
@@ -1049,7 +1165,7 @@ export function nearMissForDrop(
   word: string,
   drop: string,
   date?: string,
-  excluded?: (candidate: string) => boolean
+  excluded?: (candidate: string) => boolean,
 ): string | undefined {
   const budget = nearMissEditBudget(word);
   if (budget === 0) return undefined;
@@ -1074,7 +1190,12 @@ export function nearMissForDrop(
  * the base frequency so they cannot turn an everyday word into a top-tier
  * answer.
  */
-function adjustedZipf(word: string, zipf: number, scoring: Scoring, date?: string): number {
+function adjustedZipf(
+  word: string,
+  zipf: number,
+  scoring: Scoring,
+  date?: string,
+): number {
   // The latest system resolves the whole fold chain and caps against every link,
   // so no rule can leave a word rarer than its own measurement.
   if (scoring.chainedBaseForms) {
@@ -1135,7 +1256,11 @@ const MAX_FOLD_DEPTH = 8;
  * "axes"), and no word is visited twice. Revisiting could not raise the maximum
  * anyway, so one shared set across the whole walk is enough.
  */
-function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase | undefined {
+function chainedBase(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+): ChainedBase | undefined {
   const seen = new Set([word]);
   let frontier = [word];
   let best: ChainedBase | undefined;
@@ -1164,7 +1289,7 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
         current,
         scoring,
         date,
-        Math.max(own, best ? best.zipf : -Infinity)
+        Math.max(own, best ? best.zipf : -Infinity),
       )) {
         const zipf = zipfFor(form, scoring);
         if (!best || zipf > best.zipf) best = { base: form, zipf };
@@ -1196,7 +1321,11 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
  * common word" are different questions (see `chainedBase`). The set is a superset
  * of the older systems' single pick.
  */
-function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] {
+function nextBaseForms(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+): string[] {
   // A reviewed exemption silences every rule below, the override included --
   // the two files must never share a word (pinned by a test).
   if (scoring.inflectionBases && foldExempt(word, date)) return [];
@@ -1205,7 +1334,8 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   if (override) return [override];
 
   if (!scoring.inflectionBases) {
-    const single = tenseBaseForm(word, scoring) ?? scoringBaseForm(word, scoring);
+    const single =
+      tenseBaseForm(word, scoring) ?? scoringBaseForm(word, scoring);
     return single ? [single] : [];
   }
 
@@ -1217,7 +1347,10 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   };
   add(tenseBaseForm(word, scoring));
   add(baseForm(word));
-  for (const candidate of inflectionalBaseCandidates(word, latinPluralsAllowed(word))) {
+  for (const candidate of inflectionalBaseCandidates(
+    word,
+    latinPluralsAllowed(word),
+  )) {
     add(candidate);
   }
   // "-ier"/"-iest" comparatives, ungated: unlike bare "-er"/"-est" below, the
@@ -1255,24 +1388,20 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
     // further ("people"). See `prefixBaseCandidates` for why the gate is
     // load-bearing.
     if (scoring.prefixBases) {
-      // A prefix base must be a word people actually use. Unlike the suffix
-      // families, stripping a prefix routinely lands on a *bound combining
-      // form* that a 225k-word dictionary happens to list as an entry --
-      // "neolith" -> "lith", "monocrat" -> "crat", "autophyte" -> "phyte",
-      // "protopathy" -> "pathy", "prelect" -> "lect", "subduce" -> "duce".
-      // Every one is a real dictionary word and none is a base anything was
-      // built on. They cluster in the deep tail, which is what separates them:
-      // a transparent prefix attaches to an ordinary word, so a residue nobody
-      // uses is far likelier to be a fragment than a base. Declining them costs
-      // almost nothing either way -- the point of the fold is to replace an
-      // unmeasured stand-in with a real measurement, and a base this rare
-      // barely supplies one. Same argument as the three-letter minimum in
+      // A prefix base must be a word, not a fragment -- and one worth showing,
+      // since the fold is named in the guess log. Length carries most of that
+      // judgement and frequency the rest: see PREFIX_BASE_MIN_ZIPF and
+      // LONG_PREFIX_BASE_MIN_ZIPF for which residues each number is screening
+      // and why they differ. Same argument as the three-letter minimum in
       // `inflectionalBaseCandidates`, one level up: some dictionary entries are
       // not words a fold should ever land on.
       for (const candidate of prefixBaseCandidates(word)) {
-        if (WORD_INDEX.has(candidate) && zipfFor(candidate, scoring) >= PREFIX_BASE_MIN_ZIPF) {
-          add(candidate);
-        }
+        if (!WORD_INDEX.has(candidate)) continue;
+        const floor =
+          scoring.longPrefixBases && candidate.length >= LONG_PREFIX_BASE_LEN
+            ? LONG_PREFIX_BASE_MIN_ZIPF
+            : PREFIX_BASE_MIN_ZIPF;
+        if (zipfFor(candidate, scoring) >= floor) add(candidate);
       }
     }
   }
@@ -1346,7 +1475,7 @@ function inflectedFormFolds(
   word: string,
   scoring: Scoring,
   date?: string,
-  floor = -Infinity
+  floor = -Infinity,
 ): string[] {
   if (!scoring.inflectionForms) return [];
   if (foldExempt(word, date) || overrideBase(word, date)) return [];
@@ -1362,7 +1491,10 @@ function inflectedFormFolds(
     // is what keeps this off the drop-scan hot path: `bestWordForDrop` walks the
     // whole dictionary, and most words' inflections are rarer than the word.
     if (scoring.zipfAt(index) <= floor) continue;
-    if (mostCommonBase(nextBaseForms(form, scoring, date), form, scoring) !== word) continue;
+    if (
+      mostCommonBase(nextBaseForms(form, scoring, date), form, scoring) !== word
+    )
+      continue;
     out.push(form);
   }
   return out;
@@ -1383,8 +1515,13 @@ function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
   for (const suffix of ["ness", "ly"]) {
     if (!word.endsWith(suffix) || word.length <= suffix.length + 2) continue;
     const stem = word.slice(0, -suffix.length);
-    const candidates = [stem, stem.endsWith("i") ? `${stem.slice(0, -1)}y` : ""];
-    const base = candidates.find((candidate) => candidate && WORD_INDEX.has(candidate));
+    const candidates = [
+      stem,
+      stem.endsWith("i") ? `${stem.slice(0, -1)}y` : "",
+    ];
+    const base = candidates.find(
+      (candidate) => candidate && WORD_INDEX.has(candidate),
+    );
     if (base) return base;
   }
 
@@ -1392,7 +1529,9 @@ function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
   // the wide-band era. Capped at the base like the transparent suffixes above:
   // "aggrandization" scores as "aggrandize", never rarer than it.
   if (scoring.boundBaseForms) {
-    const bound = boundBaseCandidates(word).find((candidate) => WORD_INDEX.has(candidate));
+    const bound = boundBaseCandidates(word).find((candidate) =>
+      WORD_INDEX.has(candidate),
+    );
     if (bound) return bound;
   }
   return undefined;
@@ -1412,7 +1551,7 @@ function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
 function mostCommonBase(
   candidates: readonly string[],
   word: string,
-  scoring: Scoring
+  scoring: Scoring,
 ): string | undefined {
   let base: string | undefined;
   let baseZipf = -Infinity;
@@ -1452,7 +1591,11 @@ function tenseBaseForm(word: string, scoring: Scoring): string | undefined {
   // frequency (8.47, against "taxi"'s 5.21). Same for "bikinied", "safaried" and
   // "shanghaied". Adding the "-ed" bases instead of substituting for them costs
   // nothing where the "-y" spelling is right -- the most common base still wins.
-  if ((!ied || scoring.inflectionBases) && word.length > 4 && word.endsWith("ed")) {
+  if (
+    (!ied || scoring.inflectionBases) &&
+    word.length > 4 &&
+    word.endsWith("ed")
+  ) {
     const stem = word.slice(0, -2);
     candidates.push(`${stem}e`, stem, stripDoubledConsonant(stem));
   }
@@ -1548,7 +1691,7 @@ export function formatRarityScore(zipf: number, date?: string): string {
 /** Sum the displayed rarity scores earned during one game session. */
 export function totalRarityScore(
   words: readonly Pick<AcceptedWord, "zipf">[],
-  date?: string
+  date?: string,
 ): number {
   const scoring = scoringFor(date);
   const total = words.reduce((sum, word) => sum + scoring.score(word.zipf), 0);
@@ -1558,8 +1701,11 @@ export function totalRarityScore(
 /** Highest displayed rarity score earned in the current puzzle. */
 export function topRarityScore(
   words: readonly Pick<AcceptedWord, "zipf">[],
-  date?: string
+  date?: string,
 ): number {
   const scoring = scoringFor(date);
-  return words.reduce((top, word) => Math.max(top, scoring.score(word.zipf)), 0);
+  return words.reduce(
+    (top, word) => Math.max(top, scoring.score(word.zipf)),
+    0,
+  );
 }
