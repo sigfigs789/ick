@@ -453,8 +453,12 @@ describe("live-validated words", () => {
 });
 
 describe("history for the leaderboard's import", () => {
-  /** A stored day, completed at the given instant. */
-  function store(date: string, completedAt?: string, words = [word("inkling", 2.6, "Rare")]) {
+  /** A stored day, with whichever timestamps the test wants on it. */
+  function store(
+    date: string,
+    stamps: { firstWordAt?: string; completedAt?: string },
+    words = [word("inkling", 2.6, "Rare")]
+  ) {
     localStorage.setItem(
       `ick:progress:${date}`,
       JSON.stringify({
@@ -462,16 +466,16 @@ describe("history for the leaderboard's import", () => {
         drop: "ink",
         acceptedWords: words,
         rejectedAttempts: [],
-        completed: Boolean(completedAt),
-        ...(completedAt ? { completedAt } : {}),
+        completed: Boolean(stamps.completedAt),
+        ...stamps,
       })
     );
   }
 
-  it("returns the days finished on their own date, oldest first", () => {
-    store("2026-08-21", "2026-08-21T18:00:00");
-    store("2026-08-19", "2026-08-19T09:30:00");
-    store("2026-08-20", "2026-08-20T23:59:00");
+  it("returns the days played on their own date, oldest first", () => {
+    store("2026-08-21", { firstWordAt: "2026-08-21T18:00:00" });
+    store("2026-08-19", { firstWordAt: "2026-08-19T09:30:00" });
+    store("2026-08-20", { firstWordAt: "2026-08-20T23:59:00" });
 
     expect(playedOnItsDay().map((p) => p.date)).toEqual([
       "2026-08-19",
@@ -480,23 +484,61 @@ describe("history for the leaderboard's import", () => {
     ]);
   });
 
+  it("counts a day that was played but never finished", () => {
+    // The reason firstWordAt exists: this day has no completedAt at all, and it
+    // is still a day the player showed up for.
+    store("2026-08-20", { firstWordAt: "2026-08-20T08:00:00" });
+
+    expect(playedOnItsDay().map((p) => p.date)).toEqual(["2026-08-20"]);
+  });
+
+  it("counts a day started on its date and finished after midnight", () => {
+    // Started at 23:50 and finished in the small hours. The completion stamp
+    // lands on the following day; the first word is what says when it was
+    // played, and it is the one that decides.
+    store("2026-08-20", {
+      firstWordAt: "2026-08-20T23:50:00",
+      completedAt: "2026-08-21T00:07:00",
+    });
+
+    expect(playedOnItsDay().map((p) => p.date)).toEqual(["2026-08-20"]);
+  });
+
   it("leaves out a puzzle played later out of the archive", () => {
-    // Finished three days after it dropped, so it is archive play -- off the
-    // board for the same reason it is off the streak.
-    store("2026-08-18", "2026-08-21T18:00:00");
+    // First touched three days after it dropped, so it is archive play -- off
+    // the board for the same reason it is off the streak.
+    store("2026-08-18", {
+      firstWordAt: "2026-08-21T18:00:00",
+      completedAt: "2026-08-21T18:04:00",
+    });
 
     expect(playedOnItsDay()).toEqual([]);
   });
 
-  it("leaves out a day that was never finished", () => {
-    // No completedAt, so there is no evidence of when it was played.
-    store("2026-08-20");
+  it("falls back to the completion stamp on a record saved before firstWordAt", () => {
+    store("2026-08-20", { completedAt: "2026-08-20T18:00:00" });
+    store("2026-08-14", { completedAt: "2026-08-21T18:00:00" });
+
+    // The older record can still prove the first of these and not the second.
+    expect(playedOnItsDay().map((p) => p.date)).toEqual(["2026-08-20"]);
+  });
+
+  it("leaves out a day with no timestamp at all", () => {
+    // Not that it didn't happen -- the record cannot say when, and guessing in
+    // the player's favour is how the archive gets in.
+    store("2026-08-20", {});
+
+    expect(playedOnItsDay()).toEqual([]);
+  });
+
+  it("leaves out a day whose timestamp is unreadable", () => {
+    store("2026-08-20", { firstWordAt: "sometime on Thursday" });
 
     expect(playedOnItsDay()).toEqual([]);
   });
 
   it("leaves out a day with no accepted words", () => {
-    store("2026-08-20", "2026-08-20T18:00:00", []);
+    store("2026-08-20", { firstWordAt: "2026-08-20T18:00:00" }, []);
 
     expect(playedOnItsDay()).toEqual([]);
   });
@@ -504,12 +546,39 @@ describe("history for the leaderboard's import", () => {
   it("ignores unrelated keys in storage", () => {
     localStorage.setItem("ick:streak", JSON.stringify({ currentStreak: 4 }));
     localStorage.setItem("ick:player", JSON.stringify({ id: "abc", name: "Mo" }));
-    store("2026-08-20", "2026-08-20T18:00:00");
+    store("2026-08-20", { firstWordAt: "2026-08-20T18:00:00" });
 
     expect(playedOnItsDay().map((p) => p.date)).toEqual(["2026-08-20"]);
   });
 
   it("has nothing to import for a browser that has never played", () => {
     expect(playedOnItsDay()).toEqual([]);
+  });
+});
+
+describe("stamping when a puzzle was played", () => {
+  it("records the first accepted word, and never moves it", () => {
+    setToday("2026-08-20");
+    let progress = newProgress("2026-08-20", "ink");
+    progress = recordAcceptedWord(progress, word("inkling", 2.6, "Rare"));
+    const stamped = progress.firstWordAt;
+    expect(stamped).toBeTruthy();
+    // No completion yet: this is the case completedAt cannot cover.
+    expect(progress.completedAt).toBeUndefined();
+
+    vi.setSystemTime(new Date("2026-08-20T23:00:00"));
+    progress = recordAcceptedWord(progress, word("wrinkle", 3.6));
+    // The stamp says when the puzzle was played, so only the first word sets it.
+    expect(progress.firstWordAt).toBe(stamped);
+  });
+
+  it("survives a round trip through storage", () => {
+    setToday("2026-08-20");
+    const progress = recordAcceptedWord(
+      newProgress("2026-08-20", "ink"),
+      word("inkling", 2.6, "Rare")
+    );
+
+    expect(loadProgress("2026-08-20")?.firstWordAt).toBe(progress.firstWordAt);
   });
 });

@@ -442,7 +442,7 @@ results. Routing is `src/routes.ts`, about forty lines of `pathname` and
 `index.html`.
 
 Two boards, both fed by one table and shown together: **this week**, counting
-puzzles from the current Monday onward, and **all time**, counting every puzzle a
+puzzles from the current Sunday onward, and **all time**, counting every puzzle a
 player has scored on. Both are **ranked by total score** — a sum of daily scores,
 which rewards showing up daily instead of peaking once. Ties break on the best
 single word, then on who got there first. The rank is computed in SQL and
@@ -454,11 +454,23 @@ both at once is the point of having two: the interesting thing about a weekly
 board is how it differs from the all-time one.
 
 **The weekly reset is a window, not a job.** Nothing is deleted or archived on
-Monday morning: `leaderboard_board(p_since => <monday>)` simply stops counting
+Sunday morning: `leaderboard_board(p_since => <sunday>)` simply stops counting
 the rows that fell out of range, and the all-time board is the same function with
-no window. There is no scheduled task that can fail to run. The Monday is
+no window. There is no scheduled task that can fail to run. The window start is
 computed on the client (`src/game/week.ts`) for the same reason the puzzle date
-is: it should land at the player's midnight, not at UTC's.
+is: the reset should land at the player's midnight, not at UTC's.
+
+**Weeks run Sunday to Saturday**, not the ISO Monday to Sunday, and the reason is
+onboarding rather than convention. A weekly board is only worth playing while you
+can still win it, so what matters is the deficit a new arrival faces on the days
+people actually arrive — for a casual daily game, the weekend. A Sunday reset
+splits the weekend across the boundary: Saturday ends one week and Sunday begins
+the next, so a good share of weekend arrivals land on a board hours old and wide
+open. A Monday reset puts both weekend days at the far end of the week, five and
+six days down, and a newcomer's first impression is a board they cannot catch.
+Because the window start is computed client-side and passed to the query, moving
+the first day of the week is a one-file change and never a migration — no SQL
+knows which day it is.
 
 ### Collected from the start, shown from ten players
 
@@ -486,13 +498,31 @@ is visited (`src/game/whatsNew.ts`).
 **Joining imports the player's own history.** Somebody who joins today has often
 been playing for weeks, and that record is already in localStorage — so
 `storage.playedOnItsDay()` collects every stored puzzle and
-`leaderboard.backfillHistory()` sends them as one batch. Only days **completed on
-their own calendar date** are eligible: `completedAt` is a real timestamp, so a
-puzzle finished the day it dropped is distinguishable from the same puzzle played
-out of the archive last night, and archive play is off the board for the same
-reason it is off the streak. The cost, stated plainly: a day left half-played
-never got a `completedAt`, so there is no evidence of when it was played and it
-cannot be counted.
+`leaderboard.backfillHistory()` sends them as one batch.
+
+### Only puzzles played on their own day count, backwards and forwards
+
+The live path submits only today's puzzle, and the import counts only days it can
+show were played when they dropped. Both follow from the same fact: an archive
+puzzle can be solved with unlimited time and a dictionary open in the next tab,
+so counting it would make the all-time board a measure of how much archive
+somebody ground rather than how well they play. The streak already draws this
+line; the board draws it in the same place.
+
+Which past days qualify comes down to what the stored record can prove, and there
+are two timestamps that can prove it:
+
+- **`firstWordAt`** — stamped when the first word of a puzzle is accepted, and
+  never moved. This is exactly the question being asked, and it counts a day the
+  player never finished.
+- **`completedAt`** — the fallback for every puzzle saved before `firstWordAt`
+  existed. Weaker in one specific way: someone who started at 23:50 and finished
+  after midnight has a completion stamped on the following day, and that day is
+  dropped. Nothing in an old record can recover it.
+
+A day with neither timestamp is skipped. Not because it didn't happen, but
+because the record cannot say *when* it happened — and guessing in the player's
+favour is exactly how the archive would get in.
 
 - **`leaderboard_scores`** — one row per player per puzzle date, written by
   `api/leaderboard.ts` through `submit_leaderboard_scores`. Takes an array

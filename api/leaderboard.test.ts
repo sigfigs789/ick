@@ -7,8 +7,8 @@ const CONFIGURED = {
 };
 
 const PLAYER = "3f1a2b4c-5d6e-4f70-8901-23456789abcd";
-// A Monday, and the only date these tests use as a window start.
-const MONDAY = "2026-08-24";
+// A Sunday, and the only date these tests use as a window start.
+const SUNDAY = "2026-08-23";
 
 function withEnv(env: Record<string, string | undefined> = CONFIGURED) {
   vi.stubGlobal("process", { env });
@@ -19,7 +19,7 @@ function score(overrides: Record<string, unknown> = {}) {
   const { playerId, name, ...day } = {
     playerId: PLAYER,
     name: "Mo",
-    date: MONDAY,
+    date: SUNDAY,
     total: 24.6,
     top: 9.4,
     words: 5,
@@ -82,7 +82,7 @@ describe("api/leaderboard submissions", () => {
     expect(call?.args).toEqual({
       p_player_id: PLAYER,
       p_display_name: "Mo",
-      p_scores: [{ date: MONDAY, total: 24.6, top: 9.4, words: 5 }],
+      p_scores: [{ date: SUNDAY, total: 24.6, top: 9.4, words: 5 }],
     });
   });
 
@@ -113,7 +113,7 @@ describe("api/leaderboard submissions", () => {
         playerId: PLAYER,
         name: "Mo",
         scores: [
-          { date: MONDAY, total: 12, top: 6, words: 3 },
+          { date: SUNDAY, total: 12, top: 6, words: 3 },
           { date: "2020-01-01", total: 12, top: 6, words: 3 },
         ],
       })
@@ -144,7 +144,7 @@ describe("api/leaderboard submissions", () => {
     withEnv();
     const fetchMock = stubFetch([[]]);
     const scores = Array.from({ length: 801 }, () => ({
-      date: MONDAY,
+      date: SUNDAY,
       total: 1,
       top: 1,
       words: 1,
@@ -231,13 +231,13 @@ describe("api/leaderboard reads", () => {
   it("returns both boards, with the ranks the database assigned", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    const response = await handler(get(`?since=${MONDAY}&limit=10`));
+    const response = await handler(get(`?since=${SUNDAY}&limit=10`));
 
     expect(response.status).toBe(200);
     // Cached briefly rather than not at all: a burst of opens costs one query.
     expect(response.headers.get("cache-control")).toContain("s-maxage=60");
     expect(await response.json()).toEqual({
-      weekStart: MONDAY,
+      weekStart: SUNDAY,
       ready: true,
       players: 14,
       minPlayers: 10,
@@ -255,7 +255,7 @@ describe("api/leaderboard reads", () => {
       "https://project.supabase.co/rest/v1/rpc/leaderboard_boards"
     );
     expect(rpcCall(fetchMock)?.args).toEqual({
-      p_since: MONDAY,
+      p_since: SUNDAY,
       p_limit: 10,
       p_min_players: 10,
     });
@@ -264,13 +264,13 @@ describe("api/leaderboard reads", () => {
   it("passes the ten-player threshold down to the query", async () => {
     withEnv();
     const fetchMock = stubFetch([{ ready: false, players: 3, minPlayers: 10, weekly: [], allTime: [] }]);
-    const response = await handler(get(`?since=${MONDAY}`));
+    const response = await handler(get(`?since=${SUNDAY}`));
 
     expect(rpcCall(fetchMock)?.args.p_min_players).toBe(10);
     // Below the threshold the count is the whole answer, and there are no rows
     // in the response for anyone to read out of a network tab.
     expect(await response.json()).toEqual({
-      weekStart: MONDAY,
+      weekStart: SUNDAY,
       ready: false,
       players: 3,
       minPlayers: 10,
@@ -282,16 +282,16 @@ describe("api/leaderboard reads", () => {
   it("caps the row count a caller can ask for", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    await handler(get(`?since=${MONDAY}&limit=100000`));
+    await handler(get(`?since=${SUNDAY}&limit=100000`));
 
     expect(rpcCall(fetchMock)?.args.p_limit).toBe(200);
   });
 
-  it("accepts the Monday that brackets the game's first puzzle", async () => {
+  it("accepts the Sunday that brackets the game's first puzzle", async () => {
     withEnv();
     stubFetch([OPEN]);
     // The epoch fell on a Wednesday, so the week containing it starts before it.
-    const response = await handler(get("?since=2026-06-29"));
+    const response = await handler(get("?since=2026-06-28"));
 
     expect(response.status).toBe(200);
   });
@@ -299,7 +299,7 @@ describe("api/leaderboard reads", () => {
   it("refuses a window start it can't make sense of", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    const response = await handler(get("?since=last-monday"));
+    const response = await handler(get("?since=last-sunday"));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ ok: false, reason: "bad-since" });
@@ -310,7 +310,7 @@ describe("api/leaderboard reads", () => {
     withEnv();
     vi.spyOn(console, "error").mockImplementation(() => {});
     stubFetch([500]);
-    const response = await handler(get(`?since=${MONDAY}`));
+    const response = await handler(get(`?since=${SUNDAY}`));
 
     // A 502 and no rows, so the client can say "couldn't load" -- an empty 200
     // would read to the player as "nobody has played".

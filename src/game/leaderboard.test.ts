@@ -86,8 +86,8 @@ describe("submitting a score", () => {
   });
 });
 
-/** A stored day, completed at the given time (default: on its own date). */
-function stored(date: string, completedAt = `${date}T20:00:00.000Z`): DailyProgress {
+/** A stored day, first played at the given time (default: on its own date). */
+function stored(date: string, firstWordAt = `${date}T20:00:00.000Z`): DailyProgress {
   return {
     date,
     drop: "ink",
@@ -95,7 +95,8 @@ function stored(date: string, completedAt = `${date}T20:00:00.000Z`): DailyProgr
     rejectedAttempts: [],
     completed: true,
     won: true,
-    completedAt,
+    firstWordAt,
+    completedAt: firstWordAt,
   };
 }
 
@@ -168,7 +169,7 @@ describe("reading the boards", () => {
     stubFetch(
       new Response(
         JSON.stringify({
-          weekStart: "2026-08-24",
+          weekStart: "2026-08-23",
           ready: true,
           players: 12,
           minPlayers: 10,
@@ -183,7 +184,7 @@ describe("reading the boards", () => {
     );
 
     const boards = await fetchBoards("2026-08-27");
-    expect(boards.weekStart).toBe("2026-08-24");
+    expect(boards.weekStart).toBe("2026-08-23");
     expect(boards.ready).toBe(true);
     expect(boards.players).toBe(12);
     // The ranks come from the database, which did the sorting; nothing is
@@ -250,8 +251,8 @@ describe("reading the boards", () => {
         headers: { "content-type": "application/json" },
       })
     );
-    // 2026-08-27 is a Thursday; its week began on the 24th.
-    expect((await fetchBoards("2026-08-27")).weekStart).toBe("2026-08-24");
+    // 2026-08-27 is a Thursday; its week began on Sunday the 23rd.
+    expect((await fetchBoards("2026-08-27")).weekStart).toBe("2026-08-23");
   });
 
   it("rejects on a failed read, so the caller can say so", async () => {

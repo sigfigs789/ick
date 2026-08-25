@@ -14,7 +14,7 @@ const ALL_TIME = [
 ];
 
 const OPEN = {
-  weekStart: "2026-08-24",
+  weekStart: "2026-08-23",
   ready: true,
   players: 14,
   minPlayers: 10,
@@ -106,15 +106,15 @@ describe("the leaderboard page", () => {
     expect(boardRows("This week")[0]).not.toHaveTextContent("you");
   });
 
-  it("asks for the week's board from its Monday", async () => {
+  it("asks for the week's board from its Sunday", async () => {
     const fetchMock = stubFetch();
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     const url = String(fetchMock.mock.calls[0][0]);
     const since = new URL(url, "https://wordink.app").searchParams.get("since") ?? "";
-    // A Monday, whatever day the test runs on.
-    expect(new Date(`${since}T00:00:00Z`).getUTCDay()).toBe(1);
+    // A Sunday, whatever day the test runs on.
+    expect(new Date(`${since}T00:00:00Z`).getUTCDay()).toBe(0);
   });
 
   it("offers a retry when the boards can't be loaded", async () => {
@@ -129,7 +129,7 @@ describe("the leaderboard page", () => {
 
 describe("before the boards open", () => {
   it("shows the player count instead of a board", async () => {
-    stubFetch({ weekStart: "2026-08-24", ready: false, players: 6, minPlayers: 10, weekly: [], allTime: [] });
+    stubFetch({ weekStart: "2026-08-23", ready: false, players: 6, minPlayers: 10, weekly: [], allTime: [] });
     render(<LeaderboardPage />);
 
     const status = await screen.findByRole("region", { name: "Leaderboard status" });
@@ -142,7 +142,7 @@ describe("before the boards open", () => {
   });
 
   it("says scores are already counting, so joining early isn't wasted", async () => {
-    stubFetch({ weekStart: "2026-08-24", ready: false, players: 1, minPlayers: 10, weekly: [], allTime: [] });
+    stubFetch({ weekStart: "2026-08-23", ready: false, players: 1, minPlayers: 10, weekly: [], allTime: [] });
     render(<LeaderboardPage />);
 
     expect(await screen.findByText(/scores are already being counted/)).toBeInTheDocument();
@@ -151,7 +151,7 @@ describe("before the boards open", () => {
   });
 
   it("withholds the boards even if rows arrive alongside a false flag", async () => {
-    stubFetch({ weekStart: "2026-08-24", ready: false, players: 3, minPlayers: 10, weekly: WEEKLY, allTime: ALL_TIME });
+    stubFetch({ weekStart: "2026-08-23", ready: false, players: 3, minPlayers: 10, weekly: WEEKLY, allTime: ALL_TIME });
     render(<LeaderboardPage />);
 
     await screen.findByRole("region", { name: "Leaderboard status" });
@@ -161,8 +161,8 @@ describe("before the boards open", () => {
 
 describe("joining the board", () => {
   it("brings the browser's own history along", async () => {
-    // Two remembered days, one finished on its own date and one played out of
-    // the archive weeks later.
+    // Three remembered days: one played on its own date, one half-played on its
+    // own date, and one pulled out of the archive weeks later.
     localStorage.setItem(
       "ick:progress:2026-08-20",
       JSON.stringify({
@@ -171,7 +171,19 @@ describe("joining the board", () => {
         acceptedWords: [{ word: "inkling", rarity: "Rare", zipf: 2.6 }],
         rejectedAttempts: [],
         completed: true,
-        completedAt: "2026-08-20T19:00:00.000Z",
+        firstWordAt: "2026-08-20T19:00:00.000Z",
+        completedAt: "2026-08-20T19:04:00.000Z",
+      })
+    );
+    localStorage.setItem(
+      "ick:progress:2026-08-21",
+      JSON.stringify({
+        date: "2026-08-21",
+        drop: "ink",
+        acceptedWords: [{ word: "wrinkle", rarity: "Uncommon", zipf: 3.6 }],
+        rejectedAttempts: [],
+        completed: false,
+        firstWordAt: "2026-08-21T08:00:00.000Z",
       })
     );
     localStorage.setItem(
@@ -182,7 +194,8 @@ describe("joining the board", () => {
         acceptedWords: [{ word: "strange", rarity: "Common", zipf: 4.6 }],
         rejectedAttempts: [],
         completed: true,
-        completedAt: "2026-08-24T19:00:00.000Z",
+        firstWordAt: "2026-08-24T19:00:00.000Z",
+        completedAt: "2026-08-24T19:04:00.000Z",
       })
     );
     const fetchMock = stubFetch();
@@ -193,10 +206,14 @@ describe("joining the board", () => {
 
     const posts = submissions(fetchMock);
     expect(posts).toHaveLength(1);
-    // Only the day it can prove was played on its day. Archive play stays off
-    // the board here for the same reason it does on the live path.
-    expect((posts[0].scores as { date: string }[]).map((s) => s.date)).toEqual(["2026-08-20"]);
-    expect(await screen.findByText(/Brought 1 past puzzle with you/)).toBeInTheDocument();
+    // Both days it can prove were played on their own date, including the one
+    // never finished. Archive play stays off the board here for the same reason
+    // it does on the live path.
+    expect((posts[0].scores as { date: string }[]).map((s) => s.date)).toEqual([
+      "2026-08-20",
+      "2026-08-21",
+    ]);
+    expect(await screen.findByText(/Brought 2 past puzzles with you/)).toBeInTheDocument();
   });
 
   it("says so plainly when there is no history to bring", async () => {

@@ -131,6 +131,11 @@ revoke all on function public.submit_leaderboard_scores(uuid, text, jsonb)
  * keeps the all-time board a straight sum of the same rows and makes the weekly
  * reset unlosable: there is no scheduled job that can fail to run.
  *
+ * Nothing here knows which day the week starts on. The caller computes the
+ * window's first day from the player's own calendar (src/game/week.ts, currently
+ * Sunday) and passes it in, so moving the boundary is a one-file change and
+ * never a migration.
+ *
  * Ranked by summed total score, which rewards playing every day rather than
  * peaking once -- the intended shape for a daily game. Ties break on the best
  * single word, then on who got there first, so a rank is always determinate.

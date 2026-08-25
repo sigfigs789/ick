@@ -41,8 +41,8 @@ export const config = { runtime: "edge" };
 
 /** The first puzzle. Nothing can be scored before the game existed. */
 const EPOCH = "2026-07-01";
-/** The earliest Monday a weekly window can start on: the one bracketing EPOCH. */
-const WINDOW_FLOOR = "2026-06-25";
+/** The earliest Sunday a weekly window can start on: the one bracketing EPOCH. */
+const WINDOW_FLOOR = "2026-06-28";
 /**
  * The most a single puzzle can be worth: six guesses (the pre-2026-08-20 limit,
  * and the highest the game has ever allowed) at a perfect 10. Bounding on the
@@ -162,9 +162,9 @@ function validPuzzleDate(date: string): boolean {
 }
 
 /**
- * A weekly window's start. Floored a week below the epoch rather than at it:
- * the game's first puzzle fell mid-week, so the Monday that brackets it
- * predates the epoch and is a perfectly legitimate window start.
+ * A weekly window's start. Floored below the epoch rather than at it: the game's
+ * first puzzle fell on a Wednesday, so the Sunday that brackets it predates the
+ * epoch and is a perfectly legitimate window start.
  */
 function validWindowStart(date: string): boolean {
   return validDate(date, WINDOW_FLOOR);

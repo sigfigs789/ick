@@ -56,6 +56,20 @@ export interface DailyProgress {
   /** Whether this completed puzzle met the Rare-or-better win condition. */
   won?: boolean;
   completedAt?: string; // ISO timestamp
+  /**
+   * When the first word was accepted, as an ISO timestamp.
+   *
+   * The only record of when a puzzle was actually *played*, as opposed to
+   * finished: `completedAt` is set on the last guess or the lock-in, and a day
+   * left half-played never gets one at all. The leaderboard's history import
+   * needs to know a puzzle was played on its own day rather than pulled out of
+   * the archive later, and this is the evidence for it.
+   *
+   * Absent on every puzzle saved before this field existed, and on a day with no
+   * accepted words. Readers fall back to `completedAt` (see
+   * storage.playedOnItsDay).
+   */
+  firstWordAt?: string; // ISO timestamp
 }
 
 export interface StreakState {

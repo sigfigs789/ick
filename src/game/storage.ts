@@ -73,19 +73,27 @@ export function loadProgress(date: string): DailyProgress | null {
 }
 
 /**
- * Every puzzle this browser still remembers being played on its own day.
+ * Every puzzle this browser can show was played on its own day.
  *
  * For the leaderboard's history import: a player who joins the board has often
  * been playing for weeks, and starting them at zero throws away a record that is
  * sitting in localStorage already.
  *
- * Only days that were *completed on their own calendar date* count, which is the
- * one thing the stored record can actually prove. `completedAt` is a real
- * timestamp, so a puzzle finished the day it dropped is distinguishable from the
- * same puzzle played out of the archive last night -- and archive play is off the
- * board for the same reason it is off the streak. The cost is that a day left
- * half-played never got a `completedAt` and so cannot be counted; there is no
- * evidence in the record for when it was played.
+ * What makes a day eligible is evidence that it was played when it dropped,
+ * rather than pulled out of the archive later -- archive play is off the board
+ * for the same reason it is off the streak. There are two timestamps that can
+ * provide it, in order of preference:
+ *
+ *   - `firstWordAt`, stamped when the first word was accepted. This is the exact
+ *     question being asked, and it counts a day the player never finished.
+ *   - `completedAt`, the fallback for every puzzle saved before `firstWordAt`
+ *     existed. Weaker in one specific way: a player who started at 23:50 and
+ *     finished after midnight has a completion stamped on the following day, and
+ *     that day is dropped. Nothing in an old record can recover it.
+ *
+ * A day with neither is skipped. It is not that such a day didn't happen -- it is
+ * that the record cannot say when it happened, and guessing in the player's
+ * favour is how the archive gets in.
  *
  * Read through `loadProgress`, so historical words come back with today's rarity
  * migrations applied rather than whatever tier name they were saved under.
@@ -104,8 +112,11 @@ export function playedOnItsDay(): DailyProgress[] {
   for (const key of keys) {
     const progress = loadProgress(key.slice(PROGRESS_PREFIX.length));
     if (!progress || progress.acceptedWords.length === 0) continue;
-    if (!progress.completedAt) continue;
-    if (toDateString(new Date(progress.completedAt)) !== progress.date) continue;
+    const playedAt = progress.firstWordAt ?? progress.completedAt;
+    if (!playedAt) continue;
+    const stamped = new Date(playedAt);
+    if (Number.isNaN(stamped.getTime())) continue;
+    if (toDateString(stamped) !== progress.date) continue;
     played.push(progress);
   }
   return played.sort((a, b) => a.date.localeCompare(b.date));
@@ -171,12 +182,19 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
   const justCompleted = acceptedWords.length >= maxGuessesFor(progress.date);
   const won = acceptedWords.some((acceptedWord) => isWinningRarity(acceptedWord.rarity));
 
+  const now = new Date().toISOString();
   const updated: DailyProgress = {
     ...progress,
     acceptedWords,
     completed: justCompleted,
     won: justCompleted ? won : progress.won,
-    completedAt: justCompleted ? new Date().toISOString() : progress.completedAt,
+    // Stamped on the first word only, and never overwritten: this records when
+    // the puzzle was *played*, which is the thing the leaderboard's history
+    // import has to be able to tell (see playedOnItsDay). `completedAt` cannot
+    // answer that -- it is set on the last guess, and a day left half-played
+    // never gets one.
+    firstWordAt: progress.firstWordAt ?? now,
+    completedAt: justCompleted ? now : progress.completedAt,
   };
   saveProgress(updated);
 

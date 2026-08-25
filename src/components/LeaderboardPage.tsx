@@ -67,8 +67,8 @@ export function LeaderboardPage() {
     setEditingName(false);
     setNameError(false);
     trackLeaderboardJoined(isRename);
-    // Joining brings your history with you: every puzzle this browser remembers
-    // finishing on its own day goes up in one request, so a player who has been
+    // Joining brings your history with you: every puzzle this browser can show
+    // was played on its own day goes up in one request, so a player who has been
     // at this for weeks doesn't start from zero. A rename is not a join, and has
     // nothing to import -- the history is already under the same player id.
     if (!isRename) setImported(backfillHistory(saved));
@@ -120,7 +120,7 @@ export function LeaderboardPage() {
           <div className="leaderboard__boards">
             <Board
               heading="This week"
-              caption={`From Monday on. ${resetLabel()}.`}
+              caption={`From Sunday on. ${resetLabel()}.`}
               entries={boards.weekly}
               emptyMessage="Nobody's scored yet this week. Be first."
               player={player}
@@ -164,7 +164,7 @@ export function LeaderboardPage() {
             ) : (
               <p className="leaderboard__note">
                 No account, no email. The name lives in this browser, and joining brings
-                every puzzle you finished on its own day with it.
+                every puzzle you played on its own day with it.
               </p>
             )}
           </form>
