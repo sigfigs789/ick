@@ -14,7 +14,7 @@
 //   SQL, so below the threshold no row leaves the database at all -- there is no
 //   partial board sitting in a response waiting to be read out of a network tab.
 //
-// POST /api/leaderboard  { playerId, name, scores: [{ date, total, top, words }] }
+// POST /api/leaderboard  { playerId, name, nameScore, scores: [{ date, total, top, words }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
 //   One score per player per puzzle. An array because it has two callers of the
 //   same shape: the game submitting today after each accepted word, and a player
@@ -22,9 +22,11 @@
 //   write keeps the higher of the stored and submitted score, so repeats and
 //   out-of-order arrivals are both harmless (see the migration).
 //
-//   `name` is the player's best word, not typed text -- the client recomputes it
-//   on every submission and the write keeps the newest, so finding a better word
-//   renames the player across their whole history. Validated as a word here.
+//   `name` is the player's best word, not typed text, and `nameScore` is what
+//   that word is worth under today's scoring. The client recomputes both on every
+//   submission and the write keeps the newest pair, so finding a better word
+//   renames the player across their whole history. The two travel together so the
+//   board can never show a number that belongs to a different word.
 //
 // There are no accounts in this game, so a submission cannot be authenticated:
 // anyone who reads this file can post a score under a name of their choosing.
@@ -230,16 +232,19 @@ function readScore(raw: unknown): ScoreEntry | string {
 
 /** A whole submission, or a string saying what was wrong with it. */
 function readSubmission(parsed: unknown):
-  | { playerId: string; name: string; scores: ScoreEntry[] }
+  | { playerId: string; name: string; nameScore: number; scores: ScoreEntry[] }
   | string {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "malformed-body";
-  const { playerId, name, scores } = parsed as Record<string, unknown>;
+  const { playerId, name, nameScore, scores } = parsed as Record<string, unknown>;
 
   if (typeof playerId !== "string" || !UUID_RE.test(playerId)) return "bad-player-id";
   // A word, not a name (see NAME_RE). Rejected rather than trimmed into shape:
   // anything that isn't already a word means the client and this endpoint
   // disagree about what a name is, and truncating it would invent one.
   if (typeof name !== "string" || !NAME_RE.test(name)) return "bad-name";
+  // The name's own score, on the same 0..10 scale a single word can reach.
+  if (typeof nameScore !== "number" || !Number.isFinite(nameScore)) return "bad-name-score";
+  if (nameScore < 0 || nameScore > MAX_TOP) return "bad-name-score";
 
   if (!Array.isArray(scores)) return "bad-scores";
   if (scores.length === 0) return "no-scores";
@@ -253,7 +258,7 @@ function readSubmission(parsed: unknown):
     if (typeof score === "string") return score;
     checked.push(score);
   }
-  return { playerId, name, scores: checked };
+  return { playerId, name, nameScore: Math.round(nameScore * 100) / 100, scores: checked };
 }
 
 async function handleGet(request: Request): Promise<Response> {
@@ -340,6 +345,7 @@ async function handlePost(request: Request, context?: EdgeContext): Promise<Resp
     {
       p_player_id: submission.playerId,
       p_display_name: submission.name,
+      p_display_score: submission.nameScore,
       p_scores: submission.scores,
     },
     context

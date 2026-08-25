@@ -505,6 +505,17 @@ Every player's name is therefore decided on the same terms on the same day.
 Names come from the same days that get submitted, so a word farmed out of the
 archive can no more name a player than it can score for them.
 
+**The "best" on each row is that word's score, and travels with it.** It is sent
+as `nameScore` and stored in `display_score` beside `display_name`, newest pair
+wins, so the two can never disagree. The obvious alternative — showing
+`max(top_score)`, the largest per-day best — looks equivalent and quietly isn't:
+`top_score` is frozen at the scoring system in effect the day it was played, so
+the largest of them can belong to a *different* word than the name, or be a
+number that word no longer scores. `asphyxiate` was worth 8.40 under the
+2026-08-14 system, 8.00 under 2026-08-15's, and is worth 8.30 today; a row
+reading "asphyxiate · best 8.40" is a small lie and an avoidable one. `top_score`
+is still stored as the per-day record it is — it just isn't what "best" means.
+
 This also removed a problem rather than adding one. A typed name on a public,
 unauthenticated endpoint is a sanitising job: invisible characters, bidi
 overrides, imitations of the page's own copy. A name that is always a word is

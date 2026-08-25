@@ -16,16 +16,17 @@ function withEnv(env: Record<string, string | undefined> = CONFIGURED) {
 
 /** A valid one-day submission, with any score field overridable per test. */
 function score(overrides: Record<string, unknown> = {}) {
-  const { playerId, name, ...day } = {
+  const { playerId, name, nameScore, ...day } = {
     playerId: PLAYER,
     name: "inkling",
+    nameScore: 7.11,
     date: SUNDAY,
     total: 24.6,
     top: 9.4,
     words: 5,
     ...overrides,
   } as Record<string, unknown>;
-  return { playerId, name, scores: [day] };
+  return { playerId, name, nameScore, scores: [day] };
 }
 
 function post(body: unknown, init: RequestInit = {}): Request {
@@ -82,6 +83,7 @@ describe("api/leaderboard submissions", () => {
     expect(call?.args).toEqual({
       p_player_id: PLAYER,
       p_display_name: "inkling",
+      p_display_score: 7.11,
       p_scores: [{ date: SUNDAY, total: 24.6, top: 9.4, words: 5 }],
     });
   });
@@ -95,7 +97,7 @@ describe("api/leaderboard submissions", () => {
       top: 6.1,
       words: 3,
     }));
-    const response = await handler(post({ playerId: PLAYER, name: "inkling", scores }));
+    const response = await handler(post({ playerId: PLAYER, name: "inkling", nameScore: 7.11, scores }));
 
     expect(response.status).toBe(202);
     expect(await response.json()).toEqual({ ok: true, days: 300 });
@@ -112,6 +114,7 @@ describe("api/leaderboard submissions", () => {
       post({
         playerId: PLAYER,
         name: "inkling",
+        nameScore: 7.11,
         scores: [
           { date: SUNDAY, total: 12, top: 6, words: 3 },
           { date: "2020-01-01", total: 12, top: 6, words: 3 },
@@ -133,7 +136,7 @@ describe("api/leaderboard submissions", () => {
   ])("refuses %s", async (_label, scores, reason) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
-    const response = await handler(post({ playerId: PLAYER, name: "inkling", scores }));
+    const response = await handler(post({ playerId: PLAYER, name: "inkling", nameScore: 7.11, scores }));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ ok: false, reason });
@@ -149,7 +152,7 @@ describe("api/leaderboard submissions", () => {
       top: 1,
       words: 1,
     }));
-    const response = await handler(post({ playerId: PLAYER, name: "inkling", scores }));
+    const response = await handler(post({ playerId: PLAYER, name: "inkling", nameScore: 7.11, scores }));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ ok: false, reason: "too-many-scores" });
@@ -162,6 +165,32 @@ describe("api/leaderboard submissions", () => {
     await handler(post(score({ name: "gastroenterologist" })));
 
     expect(rpcCall(fetchMock)?.args.p_display_name).toBe("gastroenterologist");
+  });
+
+  it("keeps the name's score beside the name", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    // The name's own worth today, which is a different question from what its
+    // puzzle scored that day -- both go up, and neither stands in for the other.
+    await handler(post(score({ name: "asphyxiate", nameScore: 8.3, top: 9.4 })));
+
+    expect(rpcCall(fetchMock)?.args.p_display_score).toBe(8.3);
+    expect((rpcCall(fetchMock)?.args.p_scores as Record<string, number>[])[0].top).toBe(9.4);
+  });
+
+  it.each([
+    ["a name score above what one word can reach", 10.5],
+    ["a negative name score", -1],
+    ["a name score that isn't a number", "lots"],
+    ["a missing name score", undefined],
+  ])("refuses %s", async (_label, nameScore) => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(post(score({ nameScore })));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ ok: false, reason: "bad-name-score" });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it.each([

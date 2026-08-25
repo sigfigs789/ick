@@ -136,8 +136,17 @@ function scoreToday(word: AcceptedWord): number {
   return rarityScore(rarityFor(word.word)?.zipf ?? word.zipf);
 }
 
+/** What the board calls a player, and what that word is worth today. */
+export interface BoardIdentity {
+  /** The rarest word this browser can prove was played on its own day. */
+  name: string;
+  /** That word's score under today's criteria -- shown as the player's "best". */
+  score: number;
+}
+
 /**
- * The player's name on the board: the best word they have ever found.
+ * The player's name on the board: the best word they have ever found, and what
+ * it is worth today.
  *
  * Nobody types a name here. A word game's leaderboard is more interesting when
  * the names are the finds -- it says what each player is on the board *for*, and
@@ -149,15 +158,19 @@ function scoreToday(word: AcceptedWord): number {
  * includes today), so a word farmed out of the archive cannot become somebody's
  * name any more than it can become their score.
  *
+ * The score travels with the name so the two can never disagree on the board --
+ * see the migration for why the obvious alternative (the largest per-day top
+ * score) quietly does.
+ *
  * Returns null when this browser has no eligible word yet, which is what stops a
  * player joining with nothing to be called.
  */
-export function boardName(history?: readonly DailyProgress[]): string | null {
-  return bestNameOf((history ?? playedOnItsDay()).map((progress) => progress.acceptedWords));
+export function boardIdentity(history?: readonly DailyProgress[]): BoardIdentity | null {
+  return bestOf((history ?? playedOnItsDay()).map((progress) => progress.acceptedWords));
 }
 
 /** The rarest word across several days' worth, by today's reckoning. */
-function bestNameOf(wordLists: Iterable<readonly AcceptedWord[]>): string | null {
+function bestOf(wordLists: Iterable<readonly AcceptedWord[]>): BoardIdentity | null {
   let best: AcceptedWord | undefined;
   let bestScore = -1;
   for (const words of wordLists) {
@@ -171,7 +184,9 @@ function bestNameOf(wordLists: Iterable<readonly AcceptedWord[]>): string | null
       }
     }
   }
-  return best ? best.word.toLowerCase() : null;
+  // Rounded to the two decimals the top of the scale displays at, so the number
+  // stored is exactly the number shown.
+  return best ? { name: best.word.toLowerCase(), score: Math.round(bestScore * 100) / 100 } : null;
 }
 
 /** One puzzle's score, in the shape the endpoint takes. */
@@ -206,12 +221,21 @@ function scoreFor(date: string, words: readonly AcceptedWord[]): ScorePayload {
  * something to interrupt a game over. Returns whether a request was actually
  * started, which is what the tests assert on.
  */
-function post(playerId: string, name: string | null, scores: ScorePayload[]): boolean {
+function post(
+  playerId: string,
+  identity: BoardIdentity | null,
+  scores: ScorePayload[]
+): boolean {
   // No word means no name, and a row with no name is not worth writing. Barely
   // reachable -- every caller has words in hand -- but the board should not be
   // able to grow a blank entry.
-  if (scores.length === 0 || !name) return false;
-  const body = JSON.stringify({ playerId, name, scores });
+  if (scores.length === 0 || !identity) return false;
+  const body = JSON.stringify({
+    playerId,
+    name: identity.name,
+    nameScore: identity.score,
+    scores,
+  });
   try {
     void fetch("/api/leaderboard", {
       method: "POST",
@@ -248,8 +272,8 @@ export function submitScore(options: {
   // comes from the whole stored history -- which already includes the words
   // being submitted, since they were saved before this was called. The fallback
   // covers a record too old to carry the timestamp that makes a day eligible.
-  const name = boardName() ?? bestNameOf([words]);
-  return post(playerId, name, [scoreFor(date, words)]);
+  const identity = boardIdentity() ?? bestOf([words]);
+  return post(playerId, identity, [scoreFor(date, words)]);
 }
 
 /**
@@ -272,5 +296,5 @@ export function backfillHistory(playerId: string, history?: readonly DailyProgre
     .map((progress) => scoreFor(progress.date, progress.acceptedWords));
   // Named from exactly the days being submitted, so the name and the scores in
   // one request always describe the same history.
-  return post(playerId, boardName(played), scores) ? scores.length : 0;
+  return post(playerId, boardIdentity(played), scores) ? scores.length : 0;
 }

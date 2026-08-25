@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { backfillHistory, boardName, fetchBoards, submitScore } from "./leaderboard";
+import { backfillHistory, boardIdentity, fetchBoards, submitScore } from "./leaderboard";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
 import type { AcceptedWord, DailyProgress } from "./types";
@@ -42,6 +42,7 @@ describe("submitting a score", () => {
     expect(body).toEqual({
       playerId,
       name: "inkling",
+      nameScore: 7.11,
       // A one-day batch, the same shape a history import uses.
       scores: [{ date: today, total: expect.any(Number), top: expect.any(Number), words: 2 }],
     });
@@ -117,40 +118,42 @@ describe("the name the board calls you", () => {
   it("is the rarest word the player has ever found", () => {
     // asphyxiate (8.30) beats inkling (7.11) beats cat (4.34) today.
     expect(
-      boardName([
+      boardIdentity([
         day("2026-08-19", [{ word: "cat", rarity: "Common", zipf: 4.78 }]),
         day("2026-08-20", [
           { word: "inkling", rarity: "Rare", zipf: 2.9 },
           { word: "asphyxiate", rarity: "Extremely Rare", zipf: 2.09 },
         ]),
       ])
-    ).toBe("asphyxiate");
+      // The score comes back with the name, and it is that word's score today.
+    ).toEqual({ name: "asphyxiate", score: 8.3 });
   });
 
   it("judges words on today's criteria, not the score they were saved with", () => {
     // A record saved under an older scoring system, or before the word's
     // frequency was corrected: `cat` is stored as though it were vanishingly
     // rare, and `inkling` as though it were everyday.
-    const name = boardName([
+    const identity = boardIdentity([
       day("2026-08-19", [{ word: "cat", rarity: "Legend", zipf: 0.1 }]),
       day("2026-08-20", [{ word: "inkling", rarity: "Very Common", zipf: 7.5 }]),
     ]);
 
     // The stored numbers would have crowned `cat`. Today's dictionary says
-    // otherwise, and today's dictionary is what every player is judged by.
-    expect(name).toBe("inkling");
+    // otherwise, and today's dictionary is what every player is judged by --
+    // including for the score shown beside the name.
+    expect(identity).toEqual({ name: "inkling", score: 7.11 });
   });
 
   it("falls back to the stored frequency for a word today's dictionary lacks", () => {
     // A live Merriam-Webster approval: not in the shipped dictionary, so its
     // own recorded rarity is the only thing there is to go on.
     expect(
-      boardName([
+      boardIdentity([
         day("2026-08-20", [
           { word: "inkling", rarity: "Rare", zipf: 2.9 },
           { word: "enshittification", rarity: "Legend", zipf: 0.5 },
         ]),
-      ])
+      ])?.name
     ).toBe("enshittification");
   });
 
@@ -161,18 +164,18 @@ describe("the name the board calls you", () => {
     ];
     // A name that churned between ties would rewrite the player's whole history
     // on every submission for no reason.
-    expect(boardName([day("2026-08-20", words)])).toBe("inkling");
+    expect(boardIdentity([day("2026-08-20", words)])?.name).toBe("inkling");
   });
 
   it("lowercases the name, whatever the record holds", () => {
-    expect(boardName([day("2026-08-20", [{ word: "Inkling", rarity: "Rare", zipf: 2.9 }])])).toBe(
-      "inkling"
-    );
+    expect(
+      boardIdentity([day("2026-08-20", [{ word: "Inkling", rarity: "Rare", zipf: 2.9 }])])?.name
+    ).toBe("inkling");
   });
 
   it("has no name for a browser with nothing eligible", () => {
-    expect(boardName([])).toBeNull();
-    expect(boardName([day("2026-08-20", [])])).toBeNull();
+    expect(boardIdentity([])).toBeNull();
+    expect(boardIdentity([day("2026-08-20", [])])).toBeNull();
   });
 
   it("ignores words from days that don't count", () => {
@@ -191,7 +194,7 @@ describe("the name the board calls you", () => {
       })
     );
 
-    expect(boardName()).toBe("inkling");
+    expect(boardIdentity()?.name).toBe("inkling");
   });
 });
 
@@ -212,6 +215,25 @@ describe("importing a joining player's history", () => {
       "2026-08-21",
       "2026-08-22",
     ]);
+  });
+
+  it("names the batch by today's scoring, not the day's", () => {
+    const playerId = joinBoard();
+    const fetchMock = stubFetch();
+    // asphyxiate was worth 8.40 the day it was played (2026-08-14's system) and
+    // is worth 8.30 today. The day's score stays frozen; the *name's* score is
+    // today's, so the number the board shows always describes the word beside it.
+    const history = [
+      { ...stored("2026-08-14"), acceptedWords: [{ word: "asphyxiate", rarity: "Extremely Rare" as const, zipf: 2.09 }] },
+    ];
+    backfillHistory(playerId!, history);
+
+    const body = posted(fetchMock);
+    expect(body.name).toBe("asphyxiate");
+    expect(body.nameScore).toBe(8.3);
+    // The day's own record keeps what that day was worth -- the two are
+    // different numbers for the same word, and both are correct.
+    expect((body.scores as Record<string, number>[])[0].top).toBe(8.4);
   });
 
   it("scores each past day on the system that was in effect that day", () => {

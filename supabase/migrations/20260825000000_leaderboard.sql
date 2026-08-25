@@ -40,11 +40,26 @@ create table if not exists public.leaderboard_scores (
   -- imitation of the page's own text. 30 is the longest word the game accepts.
   display_name text not null check (display_name ~ '^[a-z]{2,30}$'),
 
+  -- What that word is worth under *today's* scoring, sent by the client with the
+  -- name and kept beside it. Stored rather than derived because the database has
+  -- no dictionary: it holds scores, not words, and cannot look one up.
+  --
+  -- It travels with the name so the two can never disagree. The alternative --
+  -- showing max(top_score) as the player's best -- looked equivalent and is not:
+  -- top_score is frozen at the scoring system in effect the day it was played,
+  -- so the largest of them can belong to a different word than the name, or be a
+  -- number that word no longer scores. A row reading "asphyxiate - best 8.40"
+  -- when asphyxiate is worth 8.30 today is a small lie, and an avoidable one.
+  display_score numeric not null check (display_score >= 0 and display_score <= 10),
+
   -- The two numbers the game already shows the player: the summed rarity score
   -- of every accepted word, and the best single word. Bounds are the most a
   -- day's puzzle can physically produce (six guesses at a perfect 10), checked
   -- here as well as in the endpoint so a bad row cannot be written at all.
   total_score numeric not null check (total_score >= 0 and total_score <= 60),
+  -- The best single word *of that day*, scored the way that day scored -- kept as
+  -- the per-day record it is. Not what the board displays as a player's best:
+  -- that is display_score above, which is about the player rather than the day.
   top_score numeric not null check (top_score >= 0 and top_score <= 10),
   words smallint not null check (words >= 0 and words <= 6),
 
@@ -82,15 +97,17 @@ revoke all on public.leaderboard_scores from anon, authenticated;
  * a no-op, and a second browser on the same player id cannot lower a day, only
  * raise it.
  *
- * The display name is *not* max'd -- the newest one always wins. It is the
- * player's best word, recomputed by the client on every submission, so beating
- * it renames them across their whole history on the next word they play.
+ * The display name and its score are *not* max'd -- the newest pair always wins,
+ * and always together. They are the player's best word and what it is worth
+ * today, recomputed by the client on every submission, so beating it renames
+ * them across their whole history on the next word they play.
  *
  * Returns how many days were written, which the endpoint reports back.
  */
 create or replace function public.submit_leaderboard_scores(
   p_player_id uuid,
   p_display_name text,
+  p_display_score numeric,
   p_scores jsonb
 ) returns integer
 language sql
@@ -114,11 +131,13 @@ as $$
   ),
   written as (
     insert into public.leaderboard_scores
-      (player_id, puzzle_date, display_name, total_score, top_score, words)
-    select p_player_id, d.puzzle_date, p_display_name, d.total_score, d.top_score, d.words
+      (player_id, puzzle_date, display_name, display_score, total_score, top_score, words)
+    select p_player_id, d.puzzle_date, p_display_name, p_display_score,
+           d.total_score, d.top_score, d.words
     from deduped d
     on conflict (player_id, puzzle_date) do update set
       display_name = excluded.display_name,
+      display_score = excluded.display_score,
       total_score = greatest(public.leaderboard_scores.total_score, excluded.total_score),
       top_score = greatest(public.leaderboard_scores.top_score, excluded.top_score),
       words = greatest(public.leaderboard_scores.words, excluded.words),
@@ -128,7 +147,7 @@ as $$
   select count(*)::integer from written;
 $$;
 
-revoke all on function public.submit_leaderboard_scores(uuid, text, jsonb)
+revoke all on function public.submit_leaderboard_scores(uuid, text, numeric, jsonb)
   from public, anon, authenticated;
 
 /*
@@ -170,11 +189,13 @@ as $$
   with totals as (
     select
       s.player_id,
-      -- The name from the player's most recent submission, so a rename shows up
-      -- across their whole history rather than only on the days they renamed.
+      -- Name and score both read off the player's most recent row, so a better
+      -- word shows up across their whole history rather than only on the day
+      -- they found it -- and so the number always describes the word beside it.
+      -- Aggregated identically on purpose: same ordering, same row.
       (array_agg(s.display_name order by s.puzzle_date desc))[1] as display_name,
+      (array_agg(s.display_score order by s.puzzle_date desc))[1] as best_score,
       round(sum(s.total_score), 1) as total_score,
-      max(s.top_score) as best_score,
       count(*)::integer as puzzles,
       min(s.created_at) as joined_at
     from public.leaderboard_scores s

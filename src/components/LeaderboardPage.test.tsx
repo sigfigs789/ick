@@ -6,12 +6,12 @@ import { hasJoined, joinBoard, loadPlayerId } from "../game/player";
 
 // Names on the board are words the players found, not handles they picked.
 const WEEKLY = [
-  { rank: 1, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", score: 41.2, best: 9.9, puzzles: 5 },
-  { rank: 2, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", score: 24.6, best: 9.4, puzzles: 3 },
+  { rank: 1, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", score: 41.2, best: 8.3, puzzles: 5 },
+  { rank: 2, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", score: 24.6, best: 7.11, puzzles: 3 },
 ];
 const ALL_TIME = [
-  { rank: 1, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", score: 310.5, best: 10, puzzles: 40 },
-  { rank: 2, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", score: 180, best: 9.9, puzzles: 22 },
+  { rank: 1, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", score: 310.5, best: 7.11, puzzles: 40 },
+  { rank: 2, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", score: 180, best: 8.3, puzzles: 22 },
 ];
 
 /** Put a played-on-its-day puzzle in storage, so this browser has a name. */
@@ -98,6 +98,16 @@ describe("the leaderboard page", () => {
 
     expect(screen.getByText("Ranked by total score")).toBeInTheDocument();
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+  });
+
+  it("shows each player's best as the worth of the word naming them", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // asphyxiate is worth 8.30 today, and that is the number on its row -- not
+    // whatever its puzzle happened to score the day it was played.
+    await waitFor(() => expect(boardRows("This week")[0]).toHaveTextContent("asphyxiate"));
+    expect(boardRows("This week")[0]).toHaveTextContent("best 8.3");
   });
 
   it("counts the puzzles behind each score", async () => {
@@ -246,6 +256,9 @@ describe("joining the board", () => {
     // And named by the best of *those* days -- asphyxiate is rarer, but it was
     // archive play, so it cannot name the player either.
     expect(posts[0].name).toBe("inkling");
+    // And by what that word is worth today, so the board's "best" always
+    // describes the name beside it.
+    expect(posts[0].nameScore).toBe(7.11);
     expect(await screen.findByText(/Counted 2 puzzles you'd already played/)).toBeInTheDocument();
   });
 

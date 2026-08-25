@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { formatScore } from "../game/dictionary";
 import {
   backfillHistory,
-  boardName,
+  boardIdentity,
   fetchBoards,
   type BoardEntry,
   type Boards,
@@ -37,7 +37,7 @@ export function LeaderboardPage() {
   const [imported, setImported] = useState<number | null>(null);
   // The name this browser would appear under: the best word it can prove was
   // played on its own day. Null until the player has one.
-  const name = boardName();
+  const name = boardIdentity()?.name ?? null;
 
   const load = useCallback(() => {
     setState("loading");
