@@ -600,12 +600,16 @@ h2 {
   font-size: 1rem;
   line-height: 1;
 }
-/* The crown marks the guess, not the word, so it centers on the entry as a
- * whole -- unlike the copy icon and badge, which stay on the word's line.
+/* The crown and the rarity badge belong to the guess as a whole, so on a
+ * two-line entry they center against the block; only the copy icon stays on the
+ * word's line, because the word is what it copies.
+ *
  * Spanning is gated on the note existing rather than written as `1 / -1`: with
  * no explicit rows declared, -1 resolves to the end of the *explicit* grid and
- * silently collapses back to row one. */
-.guess-log__entry-button--noted .guess-log__crown {
+ * silently collapses back to row one. An ungated `span 2` would instead open a
+ * phantom second row on every entry that has no note. */
+.guess-log__entry-button--noted .guess-log__crown,
+.guess-log__entry-button--noted .guess-log__entry-meta {
   grid-row: 1 / span 2;
   align-self: center;
 }
@@ -620,8 +624,10 @@ h2 {
 /* Quiet enough to read as a footnote to the word rather than a warning: the
  * score is correct, this only says which word it was measured from. */
 .guess-log__base-note {
-  /* Row two, starting under the word rather than under the crown. */
-  grid-column: 2 / -1;
+  /* Row two, starting under the word rather than under the crown, and stopping
+   * short of the badge column -- the badge spans both rows, so a note running
+   * to -1 would be laid out underneath it. */
+  grid-column: 2 / 5;
   font-size: 0.72rem;
   line-height: 1.2;
   color: var(--fg-muted);
