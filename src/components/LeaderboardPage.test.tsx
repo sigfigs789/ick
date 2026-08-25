@@ -3,18 +3,21 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard, loadPlayerId } from "../game/player";
+import { handleFor } from "../game/handle";
 
-// Names on the board are words the players found, not handles they picked.
-// A player's name is their rarest word ever and is the same on both boards --
-// that is what lets you recognise the same rival week after week. The weekly
-// board additionally carries what they found *this* week.
+// No names come from the server: the client derives a handle from each player
+// id, so the same player is recognisable on both boards without anything being
+// stored. `windowWord` is what they found inside that board's window.
+const ALICE = "11111111-1111-4111-8111-111111111111";
+const BOB = "22222222-2222-4222-8222-222222222222";
+
 const WEEKLY = [
-  { rank: 1, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", nameZipf: 2.09, windowWord: "quixotic", windowZipf: 2.33, score: 41.2, puzzles: 5 },
-  { rank: 2, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", nameZipf: 2.9, windowWord: "wrinkle", windowZipf: 3.31, score: 24.6, puzzles: 3 },
+  { rank: 1, playerId: ALICE, windowWord: "quixotic", windowZipf: 2.33, score: 41.2, puzzles: 5 },
+  { rank: 2, playerId: BOB, windowWord: "wrinkle", windowZipf: 3.31, score: 24.6, puzzles: 3 },
 ];
 const ALL_TIME = [
-  { rank: 1, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", nameZipf: 2.9, windowWord: "inkling", windowZipf: 2.9, score: 310.5, puzzles: 40 },
-  { rank: 2, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", nameZipf: 2.09, windowWord: "asphyxiate", windowZipf: 2.09, score: 180, puzzles: 22 },
+  { rank: 1, playerId: BOB, windowWord: "inkling", windowZipf: 2.9, score: 310.5, puzzles: 40 },
+  { rank: 2, playerId: ALICE, windowWord: "asphyxiate", windowZipf: 2.09, score: 180, puzzles: 22 },
 ];
 
 /** Put a played-on-its-day puzzle in storage, so this browser has a name. */
@@ -103,12 +106,12 @@ describe("the leaderboard page", () => {
     // Both on screen together -- there is no tab to click and no board hidden
     // behind one. This is the whole layout decision, so it is asserted directly.
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    expect(boardRows("This week")[0]).toHaveTextContent("asphyxiate");
+    expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE));
     expect(boardRows("This week")[0]).toHaveTextContent("41.2");
 
     const allTime = boardRows("All time");
     // A different order from the weekly board, which is the point of both.
-    expect(allTime[0]).toHaveTextContent("inkling");
+    expect(allTime[0]).toHaveTextContent(handleFor(BOB));
     expect(allTime[0]).toHaveTextContent("310.5");
   });
 
@@ -120,62 +123,36 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
   });
 
-  it("leads the weekly row with this week's find and keeps the standing name under it", async () => {
+  it("names the player, and puts their find in the detail", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    // The week's find is what the weekly board is about, so it leads; the
-    // standing name rides underneath so a rival is still recognisable.
-    await waitFor(() => expect(boardRows("This week")[0]).toHaveTextContent("quixotic"));
-    expect(rowMeta("This week", 0)).toBe("5 puzzles · known as asphyxiate");
+    // A handle is unmistakably a person, which is the entire reason it exists:
+    // naming players after their rarest word left a leaderboard row looking
+    // exactly like an entry in the list of found words below it.
+    await waitFor(() => expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE)));
+    expect(rowMeta("This week", 0)).toBe("5 puzzles · quixotic 7.9");
   });
 
-  it("shows the standing name without needing a hover", async () => {
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    // Most of this game is played on phones, where there is no hover -- so the
-    // identity is in the row's own text, and the tooltip is only a convenience.
-    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    expect(rowMeta("This week", 0)).toContain("asphyxiate");
-    expect(boardRows("This week")[0].querySelector(".leaderboard__name")).toHaveAttribute(
-      "title",
-      "known as asphyxiate"
-    );
-  });
-
-  it("says it once when this week's find is also the standing name", async () => {
-    stubFetch({
-      ...OPEN,
-      weekly: [{ ...WEEKLY[0], windowWord: "asphyxiate", windowZipf: 2.09 }],
-    });
-    render(<LeaderboardPage />);
-
-    // No second word to report, so the detail falls back to what it is worth
-    // rather than saying "known as asphyxiate" under the word `asphyxiate`.
-    await waitFor(() => expect(boardRows("This week")).toHaveLength(1));
-    expect(rowMeta("This week", 0)).toBe("5 puzzles · best 8.3");
-  });
-
-  it("keeps the same name on both boards, so a rival stays recognisable", async () => {
+  it("gives the same player the same name on both boards", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     // Whoever beat you this week is findable on the all-time board under the
-    // same standing name -- which is the whole reason the name is not weekly.
-    expect(rowMeta("This week", 0)).toContain("asphyxiate");
-    expect(boardRows("All time")[1]).toHaveTextContent("asphyxiate");
+    // same name -- derived from their id, so it cannot drift between the two.
+    expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE));
+    expect(boardRows("All time")[1]).toHaveTextContent(handleFor(ALICE));
   });
 
-  it("shows the naming word's own worth on the all-time row", async () => {
+  it("shows each player's best ever in the all-time detail", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    // No second word to name here: the window is everything, so the rarest word
-    // in it *is* the name. inkling is worth 7.11 today.
-    await waitFor(() => expect(boardRows("All time")[0]).toHaveTextContent("inkling"));
-    expect(rowMeta("All time", 0)).toBe("40 puzzles · best 7.1");
+    // The all-time window is everything, so the find in its detail is their
+    // rarest ever. inkling is worth 7.1 today.
+    await waitFor(() => expect(boardRows("All time")[0]).toHaveTextContent(handleFor(BOB)));
+    expect(rowMeta("All time", 0)).toBe("40 puzzles · inkling 7.1");
   });
 
   it("counts the puzzles behind each score", async () => {
@@ -259,24 +236,11 @@ describe("before the boards open", () => {
     render(<LeaderboardPage />);
 
     await screen.findByRole("region", { name: "Leaderboard status" });
-    expect(screen.queryByText("quixotic")).toBeNull();
+    expect(screen.queryByText(handleFor(ALICE))).toBeNull();
   });
 });
 
 describe("joining the board", () => {
-  it("offers to join under the player's own rarest word", async () => {
-    playedToday("2026-08-20", "inkling", 2.9);
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    // Nothing to type: the name is the find. asphyxiate scores 8.30 today and
-    // inkling 7.11, so the rarer of the two is the offer.
-    playedToday("2026-08-21", "asphyxiate", 2.09);
-    render(<LeaderboardPage />);
-    expect(screen.getAllByText("asphyxiate")[0]).toBeInTheDocument();
-    expect(screen.queryByRole("textbox")).toBeNull();
-  });
-
   it("joins in one tap and brings the browser's own history along", async () => {
     // Three remembered days: one played on its own date, one half-played on its
     // own date, and one pulled out of the archive weeks later.
@@ -330,39 +294,30 @@ describe("joining the board", () => {
       "2026-08-20",
       "2026-08-21",
     ]);
-    // And named by the best of *those* days -- asphyxiate is rarer, but it was
-    // archive play, so it cannot name the player either.
-    // Each day carries its own rarest word; nothing here asserts a name. The
-    // board derives that from these rows, so the archive day cannot supply one
-    // any more than it can supply a score.
-    expect((posts[0].scores as { word: string }[]).map((s) => s.word)).toEqual([
-      "inkling",
-      "wrinkle",
-    ]);
     expect(await screen.findByText(/Counted 2 puzzles you'd already played/)).toBeInTheDocument();
   });
 
-  it("tells a player with no words yet to play one first", async () => {
+  it("can be joined with no history at all", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    expect(screen.getByText(/Play a word and you can join/)).toBeInTheDocument();
-    // Nothing to join with, so nothing to press.
-    expect(screen.queryByRole("button", { name: "Put me on the board" })).toBeNull();
-    expect(loadPlayerId()).toBeNull();
+    // A handle comes from the id, not from a word, so there is nothing to earn
+    // before joining -- the old version made you play one first.
+    await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
+    expect(loadPlayerId()).not.toBeNull();
+    expect(await screen.findByText(/Nothing to count yet/)).toBeInTheDocument();
   });
 
-  it("says which word the player is on the board as", async () => {
-    playedToday("2026-08-20", "inkling", 2.9);
+  it("says which name the player is on the board as", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
     await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
-    expect(await screen.findByText(/You're on the board as/)).toHaveTextContent("inkling");
+    const id = loadPlayerId() ?? "";
+    expect(await screen.findByText(/You're on the board as/)).toHaveTextContent(handleFor(id));
   });
 
   it("keeps one identity if the join is somehow pressed twice", async () => {
-    playedToday("2026-08-20", "inkling", 2.9);
     stubFetch();
     const { unmount } = render(<LeaderboardPage />);
 
@@ -370,7 +325,8 @@ describe("joining the board", () => {
     const first = loadPlayerId();
     unmount();
     render(<LeaderboardPage />);
-    // Already joined, so there is no button to press again -- and the id stands.
+    // Already joined, so there is no button to press again -- and the id stands,
+    // which is what keeps the handle stable.
     expect(screen.queryByRole("button", { name: "Put me on the board" })).toBeNull();
     expect(loadPlayerId()).toBe(first);
   });
@@ -390,106 +346,13 @@ describe("leaving the page", () => {
   });
 });
 
-describe("choosing which of your finds names you", () => {
-  /** A browser with three days behind it, of differing rarity. */
-  function history() {
-    playedToday("2026-08-19", "cat", 4.78);
-    playedToday("2026-08-20", "inkling", 2.9);
-    playedToday("2026-08-21", "asphyxiate", 2.09);
-  }
-
-  it("defaults to the rarest word, and offers the rest", async () => {
-    history();
-    joinBoard();
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    expect(await screen.findByText(/You're on the board as/)).toHaveTextContent("asphyxiate");
-    await userEvent.click(screen.getByRole("button", { name: "Choose a different word" }));
-
-    // Every day's best find, priced at today's rates, best first.
-    const options = screen.getAllByRole("button", { pressed: false });
-    const words = options.map((o) => o.textContent);
-    expect(words.some((w) => w?.includes("inkling"))).toBe(true);
-    expect(words.some((w) => w?.includes("cat"))).toBe(true);
-  });
-
-  it("marks the word in use rather than greying it out", async () => {
-    history();
-    joinBoard();
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    await userEvent.click(await screen.findByRole("button", { name: "Choose a different word" }));
-    // The current name is the answer, not a control that failed.
-    const current = screen.getByRole("button", { pressed: true });
-    expect(current).toHaveTextContent("asphyxiate");
-  });
-
-  it("changes the name to a word the player chose", async () => {
-    history();
-    joinBoard();
-    const fetchMock = stubFetch();
-    render(<LeaderboardPage />);
-
-    await userEvent.click(await screen.findByRole("button", { name: "Choose a different word" }));
-    await userEvent.click(screen.getByRole("button", { name: /inkling/ }));
-
-    const renames = fetchMock.mock.calls.filter(
-      ([, init]) => (init as RequestInit | undefined)?.method === "PUT"
-    );
-    expect(renames).toHaveLength(1);
-    expect(JSON.parse(String((renames[0][1] as RequestInit).body))).toMatchObject({
-      name: "inkling",
-    });
-    expect(await screen.findByText(/You're on the board as/)).toHaveTextContent("inkling");
-  });
-
-  it("says so when the rename didn't take, rather than showing a name that isn't set", async () => {
-    history();
-    joinBoard();
-    const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) => {
-      if (init?.method === "PUT") {
-        return new Response(JSON.stringify({ ok: false, reason: "not-your-word" }), { status: 409 });
-      }
-      if (init?.method === "POST") return new Response(null, { status: 202 });
-      return new Response(JSON.stringify(OPEN), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    });
-    vi.stubGlobal("fetch", fetchMock);
-    render(<LeaderboardPage />);
-
-    await userEvent.click(await screen.findByRole("button", { name: "Choose a different word" }));
-    await userEvent.click(screen.getByRole("button", { name: /inkling/ }));
-
-    expect(await screen.findByText(/Couldn't change your name/)).toBeInTheDocument();
-    // Still the old name: the page never claims a change the server refused.
-    expect(screen.getByText(/You're on the board as/)).toHaveTextContent("asphyxiate");
-  });
-
-  it("offers no choice to a player with only one find", async () => {
-    playedToday("2026-08-20", "inkling", 2.9);
-    joinBoard();
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    await screen.findByText(/You're on the board as/);
-    // Nothing to choose between, so no control that leads nowhere.
-    expect(screen.queryByRole("button", { name: "Choose a different word" })).toBeNull();
-  });
-});
-
 describe("recent finds", () => {
   /** The words feed's list items. */
   function finds() {
-    return within(screen.getByRole("region", { name: "Words found recently" })).getAllByRole(
-      "listitem"
-    );
+    return within(screen.getByRole("region", { name: "Today's finds" })).getAllByRole("listitem");
   }
 
-  it("lists the words other players found, rarest first", async () => {
+  it("lists the words other players found today", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
@@ -519,13 +382,14 @@ describe("recent finds", () => {
     expect(finds()[1]).not.toHaveTextContent("player");
   });
 
-  it("says what the list is", async () => {
+  it("names the drop the finds had to contain", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    expect(
-      await screen.findByText("The best word each player found, newest first.")
-    ).toBeInTheDocument();
+    // Without it the list is a pile of unrelated words.
+    const section = await screen.findByRole("region", { name: "Today's finds" });
+    expect(section.querySelector(".found-words__drop")?.textContent).toBeTruthy();
+    expect(screen.getByText("The best word each player has found today.")).toBeInTheDocument();
   });
 
   it("shows the feed even while the boards are still shut", async () => {
@@ -553,7 +417,7 @@ describe("recent finds", () => {
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     // An empty section with a heading would be worse than no section.
-    expect(screen.queryByRole("region", { name: "Words found recently" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Today's finds" })).toBeNull();
   });
 });
 
@@ -567,9 +431,7 @@ describe("finds arriving", () => {
 
   /** The feed's items, in order. */
   function finds() {
-    return within(screen.getByRole("region", { name: "Words found recently" })).getAllByRole(
-      "listitem"
-    );
+    return within(screen.getByRole("region", { name: "Today's finds" })).getAllByRole("listitem");
   }
 
   it("marks a word that turned up since the last look, and puts it on top", async () => {
@@ -603,30 +465,6 @@ describe("finds arriving", () => {
     expect(finds()[0].className).toContain("arrived");
     // The word that was already there is not re-announced.
     expect(finds()[1].className).not.toContain("arrived");
-  });
-
-  it("marks a word returning on a new day, not just a word never seen", async () => {
-    // The feed carries one row per word at its most recent sighting, so a word
-    // found last week and found again today moves groups rather than repeating.
-    // Keyed by word alone that re-arrival is invisible.
-    let words = [{ word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-20" }];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        new Response(JSON.stringify({ ...OPEN, words }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        })
-      )
-    );
-    render(<LeaderboardPage />);
-    await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
-
-    words = [{ word: "inkling", zipf: 2.9, finders: 2, foundOn: "2026-08-25" }];
-    await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
-
-    expect(finds()).toHaveLength(1);
-    expect(finds()[0].className).toContain("arrived");
   });
 
   it("stops marking it once the arrival has played", async () => {

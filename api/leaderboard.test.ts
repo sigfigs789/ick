@@ -252,11 +252,11 @@ describe("api/leaderboard reads", () => {
   const OPEN = {
     ready: true,
     weekly: [
-      { rank: 1, player_id: PLAYER, name: "asphyxiate", name_zipf: "2.09", window_word: "inkling", window_zipf: "2.9", total_score: "24.6", puzzles: 1 },
+      { rank: 1, player_id: PLAYER, window_word: "inkling", window_zipf: "2.9", total_score: "24.6", puzzles: 1 },
     ],
     allTime: [
-      { rank: 1, player_id: PLAYER, name: "asphyxiate", name_zipf: "2.09", window_word: "asphyxiate", window_zipf: "2.09", total_score: "180.2", puzzles: 9 },
-      { rank: 2, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", name: "quixotic", name_zipf: "2.33", window_word: "quixotic", window_zipf: "2.33", total_score: "90.0", puzzles: 5 },
+      { rank: 1, player_id: PLAYER, window_word: "asphyxiate", window_zipf: "2.09", total_score: "180.2", puzzles: 9 },
+      { rank: 2, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", window_word: "quixotic", window_zipf: "2.33", total_score: "90.0", puzzles: 5 },
     ],
     words: [
       { word: "asphyxiate", zipf: "2.09", finders: 3, found_on: "2026-08-25" },
@@ -276,37 +276,17 @@ describe("api/leaderboard reads", () => {
       weekStart: SUNDAY,
       ready: true,
       opensOn: "2026-08-30",
-      // The name is the player's rarest word ever; window_word is the rarest
-      // inside this board's window, which on the weekly board is this week's
-      // find. Scores are absent on purpose -- the client prices words itself.
+      // No name: the client derives a handle from the player id. window_word is
+      // the rarest word inside this board's window -- this week's find on the
+      // weekly board. Scores are absent on purpose; the client prices words.
       weekly: [
-        {
-          rank: 1,
-          playerId: PLAYER,
-          name: "asphyxiate",
-          nameZipf: 2.09,
-          windowWord: "inkling",
-          windowZipf: 2.9,
-          score: 24.6,
-          puzzles: 1,
-        },
+        { rank: 1, playerId: PLAYER, windowWord: "inkling", windowZipf: 2.9, score: 24.6, puzzles: 1 },
       ],
       allTime: [
-        {
-          rank: 1,
-          playerId: PLAYER,
-          name: "asphyxiate",
-          nameZipf: 2.09,
-          windowWord: "asphyxiate",
-          windowZipf: 2.09,
-          score: 180.2,
-          puzzles: 9,
-        },
+        { rank: 1, playerId: PLAYER, windowWord: "asphyxiate", windowZipf: 2.09, score: 180.2, puzzles: 9 },
         {
           rank: 2,
           playerId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          name: "quixotic",
-          nameZipf: 2.33,
           windowWord: "quixotic",
           windowZipf: 2.33,
           score: 90,
@@ -431,86 +411,15 @@ describe("api/leaderboard reads", () => {
   });
 });
 
-describe("api/leaderboard name changes", () => {
-  function put(body: unknown, init: RequestInit = {}): Request {
-    return new Request("https://wordink.app/api/leaderboard", {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-      ...init,
-    });
-  }
-
-  it("asks the database to authorise the word against the player's own days", async () => {
-    withEnv();
-    const fetchMock = stubFetch([true]);
-    const response = await handler(put({ playerId: PLAYER, name: "inkling" }));
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ ok: true, name: "inkling" });
-    expect(rpcCall(fetchMock)?.url).toBe(
-      "https://project.supabase.co/rest/v1/rpc/choose_leaderboard_name"
-    );
-    expect(rpcCall(fetchMock)?.args).toEqual({ p_player_id: PLAYER, p_name: "inkling" });
-  });
-
-  it("refuses a word the player has never played", async () => {
-    withEnv();
-    stubFetch([false]);
-    const response = await handler(put({ playerId: PLAYER, name: "asphyxiate" }));
-
-    // 409 rather than 400: the request is well formed, it just names a word this
-    // player did not earn -- which is the one thing this endpoint authorises.
-    expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({ ok: false, reason: "not-your-word" });
-  });
-
-  it.each([
-    ["a player id that isn't a uuid", { playerId: "mo", name: "inkling" }, "bad-player-id"],
-    ["a name that isn't a word", { playerId: PLAYER, name: "Ink Ling" }, "bad-word"],
-    ["a name with an invisible character", { playerId: PLAYER, name: "ink\u200bling" }, "bad-word"],
-    ["a missing name", { playerId: PLAYER }, "bad-word"],
-  ])("refuses %s", async (_label, body, reason) => {
-    withEnv();
-    const fetchMock = stubFetch([true]);
-    const response = await handler(put(body));
-
-    expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ ok: false, reason });
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("refuses a cross-origin rename", async () => {
-    withEnv();
-    const fetchMock = stubFetch([true]);
-    const response = await handler(
-      put(
-        { playerId: PLAYER, name: "inkling" },
-        { headers: { "content-type": "application/json", origin: "https://evil.test" } }
-      )
-    );
-
-    expect(response.status).toBe(403);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("says so when the deployment has no credentials", async () => {
-    withEnv({});
-    const response = await handler(put({ playerId: PLAYER, name: "inkling" }));
-
-    expect(response.status).toBe(503);
-  });
-});
-
 describe("api/leaderboard method handling", () => {
-  it("turns away anything but GET, POST and PUT", async () => {
+  it("turns away anything but GET and POST", async () => {
     withEnv();
     const response = await handler(
       new Request("https://wordink.app/api/leaderboard", { method: "DELETE" })
     );
 
     expect(response.status).toBe(405);
-    expect(response.headers.get("allow")).toBe("GET, POST, PUT");
+    expect(response.headers.get("allow")).toBe("GET, POST");
   });
 });
 
@@ -524,7 +433,7 @@ describe("api/leaderboard recent finds", () => {
     return new Date(Date.parse(`${date}T00:00:00Z`) - days * 86400000).toISOString().slice(0, 10);
   }
 
-  it("includes today's finds", async () => {
+  it("asks for today's finds and nothing else", async () => {
     withEnv();
     const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
     const today = utcToday();
@@ -533,8 +442,9 @@ describe("api/leaderboard recent finds", () => {
     // Strictly-before the day *after* today, so today itself is in. This
     // publishes answers to the live puzzle, which is a deliberate call -- see
     // `wordsCutoff`. The client only lists today's finds that clear Rare.
+    // Exactly today: strictly before tomorrow, from today onward.
     expect(rpcCall(fetchMock)?.args.p_words_before).toBe(daysBefore(today, -1));
-    expect(rpcCall(fetchMock)?.args.p_words_since).toBe(daysBefore(today, 6));
+    expect(rpcCall(fetchMock)?.args.p_words_since).toBe(today);
   });
 
   it("includes today for a client whose calendar is ahead of UTC", async () => {

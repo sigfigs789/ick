@@ -5,10 +5,12 @@
     "only in a dev build -- every use of this file sits behind import.meta.env.DEV,",
     "so Vite drops both the toggle and this import from the production bundle.",
     "",
+    "No names here: the board derives a handle from each playerId on the client",
+    "(src/game/handle.ts), so these ids are what produce TranquilBison72.",
+    "",
     "Words are real dictionary entries with their real Zipf frequencies, so the",
-    "rarity badges and scores render exactly as they would with live data.",
-    "Dates are placeholders: the client only compares foundOn against today to",
-    "decide which finds are live, so nothing here is ever mistaken for today's."
+    "rarity badges and scores render exactly as they would with live data. Every",
+    "find shares one date, moved to today at load, since the feed shows today only."
   ],
   "weekStart": "2026-08-23",
   "ready": true,
@@ -17,8 +19,6 @@
     {
       "rank": 1,
       "playerId": "dev-1",
-      "name": "stonyheartedly",
-      "nameZipf": -1.57,
       "windowWord": "asphyxiate",
       "windowZipf": 2.09,
       "score": 58.4,
@@ -27,8 +27,6 @@
     {
       "rank": 2,
       "playerId": "dev-2",
-      "name": "abaci",
-      "nameZipf": 2.65,
       "windowWord": "quixotic",
       "windowZipf": 2.33,
       "score": 51.9,
@@ -37,8 +35,6 @@
     {
       "rank": 3,
       "playerId": "dev-3",
-      "name": "gastroenterologist",
-      "nameZipf": 2.63,
       "windowWord": "gastroenterologist",
       "windowZipf": 2.63,
       "score": 44.2,
@@ -47,8 +43,6 @@
     {
       "rank": 4,
       "playerId": "dev-4",
-      "name": "enshittification",
-      "nameZipf": -1.57,
       "windowWord": "inkling",
       "windowZipf": 2.9,
       "score": 37.0,
@@ -57,8 +51,6 @@
     {
       "rank": 5,
       "playerId": "dev-5",
-      "name": "quixotic",
-      "nameZipf": 2.33,
       "windowWord": "wrinkle",
       "windowZipf": 3.31,
       "score": 29.6,
@@ -67,8 +59,6 @@
     {
       "rank": 6,
       "playerId": "dev-6",
-      "name": "inkling",
-      "nameZipf": 2.9,
       "windowWord": "placate",
       "windowZipf": 3.4,
       "score": 24.1,
@@ -77,8 +67,6 @@
     {
       "rank": 7,
       "playerId": "dev-7",
-      "name": "lactation",
-      "nameZipf": 3.2,
       "windowWord": "lactation",
       "windowZipf": 3.2,
       "score": 18.8,
@@ -87,8 +75,6 @@
     {
       "rank": 8,
       "playerId": "dev-8",
-      "name": "wrinkle",
-      "nameZipf": 3.31,
       "windowWord": "attested",
       "windowZipf": 4.1,
       "score": 12.5,
@@ -97,8 +83,6 @@
     {
       "rank": 9,
       "playerId": "dev-9",
-      "name": "placate",
-      "nameZipf": 3.4,
       "windowWord": "cat",
       "windowZipf": 4.78,
       "score": 7.3,
@@ -109,8 +93,6 @@
     {
       "rank": 1,
       "playerId": "dev-2",
-      "name": "abaci",
-      "nameZipf": 2.65,
       "windowWord": "asphyxiate",
       "windowZipf": 2.09,
       "score": 612.8,
@@ -119,8 +101,6 @@
     {
       "rank": 2,
       "playerId": "dev-1",
-      "name": "stonyheartedly",
-      "nameZipf": -1.57,
       "windowWord": "stonyheartedly",
       "windowZipf": -1.57,
       "score": 588.1,
@@ -129,8 +109,6 @@
     {
       "rank": 3,
       "playerId": "dev-4",
-      "name": "enshittification",
-      "nameZipf": -1.57,
       "windowWord": "enshittification",
       "windowZipf": -1.57,
       "score": 470.5,
@@ -139,8 +117,6 @@
     {
       "rank": 4,
       "playerId": "dev-5",
-      "name": "quixotic",
-      "nameZipf": 2.33,
       "windowWord": "quixotic",
       "windowZipf": 2.33,
       "score": 402.0,
@@ -149,8 +125,6 @@
     {
       "rank": 5,
       "playerId": "dev-3",
-      "name": "gastroenterologist",
-      "nameZipf": 2.63,
       "windowWord": "gastroenterologist",
       "windowZipf": 2.63,
       "score": 351.7,
@@ -159,8 +133,6 @@
     {
       "rank": 6,
       "playerId": "dev-6",
-      "name": "inkling",
-      "nameZipf": 2.9,
       "windowWord": "inkling",
       "windowZipf": 2.9,
       "score": 288.3,
@@ -169,8 +141,6 @@
     {
       "rank": 7,
       "playerId": "dev-7",
-      "name": "lactation",
-      "nameZipf": 3.2,
       "windowWord": "lactation",
       "windowZipf": 3.2,
       "score": 214.6,
@@ -179,8 +149,6 @@
     {
       "rank": 8,
       "playerId": "dev-8",
-      "name": "wrinkle",
-      "nameZipf": 3.31,
       "windowWord": "wrinkle",
       "windowZipf": 3.31,
       "score": 176.2,
@@ -189,8 +157,6 @@
     {
       "rank": 9,
       "playerId": "dev-9",
-      "name": "placate",
-      "nameZipf": 3.4,
       "windowWord": "placate",
       "windowZipf": 3.4,
       "score": 121.9,
@@ -199,8 +165,6 @@
     {
       "rank": 10,
       "playerId": "dev-10",
-      "name": "attested",
-      "nameZipf": 4.1,
       "windowWord": "attested",
       "windowZipf": 4.1,
       "score": 64.4,
@@ -236,49 +200,49 @@
       "word": "enshittification",
       "zipf": -1.57,
       "finders": 2,
-      "foundOn": "2026-08-23"
+      "foundOn": "2026-08-24"
     },
     {
       "word": "abaci",
       "zipf": 2.65,
       "finders": 2,
-      "foundOn": "2026-08-23"
+      "foundOn": "2026-08-24"
     },
     {
       "word": "wrinkle",
       "zipf": 3.31,
       "finders": 6,
-      "foundOn": "2026-08-23"
+      "foundOn": "2026-08-24"
     },
     {
       "word": "gastroenterologist",
       "zipf": 2.63,
       "finders": 1,
-      "foundOn": "2026-08-22"
+      "foundOn": "2026-08-24"
     },
     {
       "word": "placate",
       "zipf": 3.4,
       "finders": 4,
-      "foundOn": "2026-08-22"
+      "foundOn": "2026-08-24"
     },
     {
       "word": "lactation",
       "zipf": 3.2,
       "finders": 2,
-      "foundOn": "2026-08-21"
+      "foundOn": "2026-08-24"
     },
     {
       "word": "attested",
       "zipf": 4.1,
       "finders": 7,
-      "foundOn": "2026-08-20"
+      "foundOn": "2026-08-24"
     },
     {
       "word": "cat",
       "zipf": 4.78,
       "finders": 11,
-      "foundOn": "2026-08-20"
+      "foundOn": "2026-08-24"
     }
   ]
 }

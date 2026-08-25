@@ -18,6 +18,7 @@ import {
   totalRarityScore,
 } from "./dictionary";
 import { todayDateString } from "./date";
+import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { playedOnItsDay } from "./storage";
 import { sampleBoardsResponse, usingSampleData } from "../dev/sampleData";
@@ -29,19 +30,17 @@ export interface BoardEntry {
   rank: number;
   playerId: string;
   /**
-   * The player's rarest word ever -- their name, and the same on both boards.
+   * What the board calls this player, like `StormyFox47`.
    *
-   * Stable on purpose. A name that changed every week would make a rival
-   * unrecognisable week to week, and being beaten by someone you recognise is
-   * most of why a weekly board is worth coming back to.
+   * Derived from the id here rather than sent by the server: the same player
+   * gets the same handle on every device, nothing is stored, and it is
+   * unmistakably a name -- which naming people after their rarest find was not,
+   * on a page that also lists found words.
    */
   name: string;
-  /** What that word scores today. Priced here, not by the server. */
-  nameScore: number;
   /**
    * The rarest word inside this board's window -- on the weekly board, what they
-   * found *this* week. Equal to `name` on the all-time board, whose window is
-   * everything.
+   * found *this* week; on the all-time board, their best ever.
    */
   windowWord: string;
   windowScore: number;
@@ -119,8 +118,6 @@ const FETCH_TIMEOUT_MS = 6000;
 interface RawEntry {
   rank?: unknown;
   playerId?: unknown;
-  name?: unknown;
-  nameZipf?: unknown;
   windowWord?: unknown;
   windowZipf?: unknown;
   score?: unknown;
@@ -139,20 +136,18 @@ function parseBoard(raw: unknown): BoardEntry[] {
   const entries: BoardEntry[] = [];
   for (const item of raw as RawEntry[]) {
     if (!item || typeof item !== "object") continue;
-    const { rank, playerId, name, nameZipf, windowWord, windowZipf, score, puzzles } = item;
-    if (typeof playerId !== "string" || typeof name !== "string") continue;
+    const { rank, playerId, windowWord, windowZipf, score, puzzles } = item;
+    if (typeof playerId !== "string" || typeof windowWord !== "string") continue;
     if (typeof score !== "number" || !Number.isFinite(score)) continue;
-    // Every word on the board is priced here, at today's rates, from the word
-    // itself -- so two players holding the same word always show the same
-    // number, however long ago either of them found it.
+    // The find is priced here, at today's rates, from the word itself -- so two
+    // players holding the same word always show the same number, however long
+    // ago either of them found it.
     entries.push({
       rank: typeof rank === "number" && Number.isFinite(rank) ? rank : entries.length + 1,
       playerId,
-      name,
-      nameScore: scoreOf(name, nameZipf),
-      windowWord: typeof windowWord === "string" ? windowWord : name,
-      windowScore:
-        typeof windowWord === "string" ? scoreOf(windowWord, windowZipf) : scoreOf(name, nameZipf),
+      name: handleFor(playerId),
+      windowWord,
+      windowScore: scoreOf(windowWord, windowZipf),
       score,
       puzzles: typeof puzzles === "number" && Number.isFinite(puzzles) ? puzzles : 0,
     });
@@ -267,67 +262,6 @@ function readBoards(body: Record<string, unknown>, since: string, date: string):
  */
 function scoreToday(word: AcceptedWord): number {
   return rarityScore(rarityFor(word.word)?.zipf ?? word.zipf);
-}
-
-/** A word the player could be known by, and what it is worth today. */
-export interface NameCandidate {
-  word: string;
-  score: number;
-}
-
-/**
- * How many finds a player gets to choose a name from. Ten is enough that the
- * choice is a real one and few enough to read without scrolling; beyond that the
- * words are not good enough to want anyway.
- */
-export const NAME_CHOICES = 10;
-
-/**
- * The words this player may be called by: the rarest word of each day they
- * played, best first.
- *
- * One word per day rather than every word ever, because that is what the server
- * stores and therefore what it will authorise -- offering a word it would refuse
- * would be offering a choice that doesn't work. It also picks the right ten: a
- * player's best days are exactly the finds worth being known for.
- *
- * Priced at today's rates, like everything else the board shows.
- */
-export function nameCandidates(history?: readonly DailyProgress[]): NameCandidate[] {
-  const best = new Map<string, number>();
-  for (const progress of history ?? playedOnItsDay()) {
-    if (progress.acceptedWords.length === 0) continue;
-    const word = rarest(progress.acceptedWords);
-    const name = word.word.toLowerCase();
-    const score = scoreToday(word);
-    // A word played on more than one day appears once, at its best showing.
-    if (score > (best.get(name) ?? -1)) best.set(name, score);
-  }
-  return [...best.entries()]
-    .map(([word, score]) => ({ word, score: Math.round(score * 100) / 100 }))
-    .sort((a, b) => b.score - a.score || a.word.localeCompare(b.word))
-    .slice(0, NAME_CHOICES);
-}
-
-/**
- * Ask the board to call this player by one of their own words.
- *
- * Awaited, unlike a score: the player is watching, and a rename that quietly
- * didn't happen is worse than a slow one. Resolves false when the request failed
- * or the server refused the word, which the page reports rather than pretending.
- */
-export async function chooseName(playerId: string, word: string): Promise<boolean> {
-  try {
-    const response = await fetch("/api/leaderboard", {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ playerId, name: word }),
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    });
-    return response.ok;
-  } catch {
-    return false;
-  }
 }
 
 /** One puzzle's score, in the shape the endpoint takes. */

@@ -14,16 +14,10 @@
 //   in SQL, so before the date no board row leaves the database at all -- there is
 //   no early board sitting in a response waiting to be read out of a network tab.
 //
-//   `words` is the recent finds feed -- the best word each player found on each
-//   of the last few days, today included -- and is *not* behind that gate,
-//   because a short list of good words is interesting at any size. See
-//   `wordsCutoff` for what today's inclusion costs and why it was accepted.
-//
-// PUT /api/leaderboard   { playerId, name }
-//   -> 200 { ok: true }, 409 the word is not one of that player's own finds
-//   Choose which of your own words the board calls you by. The word is checked
-//   against that player's submitted days in SQL, so there is no name anybody can
-//   claim they did not earn under their own id.
+//   `words` is today's finds -- the best word each player has found on today's
+//   puzzle so far -- and is *not* behind that gate, because a short list of good
+//   words is interesting at any size. See `wordsCutoff` for what publishing them
+//   live costs and why it was accepted.
 //
 // POST /api/leaderboard  { playerId, scores: [{ date, word, zipf, total, top, words }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
@@ -33,10 +27,9 @@
 //   write keeps the higher of the stored and submitted score, so repeats and
 //   out-of-order arrivals are both harmless (see the migration).
 //
-//   No name is sent. Each day carries its own rarest word, and the board derives
-//   both the things it shows from those rows: a player's name is the rarest word
-//   across all of them, and the weekly board's detail is the rarest inside the
-//   window. Nothing to keep in step, and nothing a client can assert about itself.
+//   No name is sent, and none is stored: what the board calls a player is
+//   derived from their id on the client (src/game/handle.ts). Each day carries
+//   its own rarest word, which is what the weekly board's detail is drawn from.
 //
 // There are no accounts in this game, so a submission cannot be authenticated:
 // anyone who reads this file can post a score under a name of their choosing.
@@ -93,8 +86,7 @@ const MAX_ZIPF = 10;
  * built from, so a stale client cannot keep them shut either.
  */
 const BOARDS_OPEN_FROM = "2026-08-30";
-/** How many days of finds the words feed reaches back over. */
-const WORDS_WINDOW_DAYS = 7;
+
 /**
  * A batch is a browser's whole playing history, so it has to hold a couple of
  * years of daily puzzles. The body cap below is the real limit; this one stops a
@@ -112,8 +104,6 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 interface BoardRow {
   rank: number;
   player_id: string;
-  name: string;
-  name_zipf: number | string | null;
   window_word: string;
   window_zipf: number | string | null;
   total_score: number | string;
@@ -130,9 +120,6 @@ interface BoardRow {
 interface BoardEntry {
   rank: number;
   playerId: string;
-  /** The player's rarest word ever: their name, and stable across weeks. */
-  name: string;
-  nameZipf: number;
   /** The rarest word inside this board's window -- this week's find, weekly. */
   windowWord: string;
   windowZipf: number;
@@ -198,8 +185,6 @@ function toEntries(rows: BoardRow[] | null): BoardEntry[] {
     // arrived without one, and keeps the column non-null for the client.
     rank: Number(row.rank) || index + 1,
     playerId: String(row.player_id),
-    name: String(row.name),
-    nameZipf: toNumber(row.name_zipf),
     windowWord: String(row.window_word),
     windowZipf: toNumber(row.window_zipf),
     score: toNumber(row.total_score),
@@ -368,8 +353,10 @@ async function handleGet(request: Request): Promise<Response> {
   const limit = Number.isFinite(requested)
     ? Math.min(Math.max(requested, 1), MAX_LIMIT)
     : DEFAULT_LIMIT;
+  // Today's finds and nothing else: the feed is about the puzzle everyone is on
+  // right now, and a week of history behind it made it read as an archive.
   const wordsBefore = wordsCutoff(params.get("today"));
-  const wordsSince = daysBefore(wordsBefore, WORDS_WINDOW_DAYS);
+  const wordsSince = daysBefore(wordsBefore, 1);
   // Open for whoever has actually reached the date. Local calendars run ahead of
   // and behind UTC by up to a day, so the later of the two is the one that says
   // "it is Sunday somewhere the player is" -- a player is never made to wait past
@@ -434,59 +421,6 @@ function crossOriginRefusal(request: Request): Response | null {
   return null;
 }
 
-/**
- * Choose which of your own words the board calls you by.
- *
- * Awaited rather than fired and forgotten, unlike a score: the player is looking
- * at the answer, and a rename that silently didn't happen is worse than a slow
- * one. The word is authorised in SQL against that player's own submitted days,
- * so this endpoint being unauthenticated costs nothing -- the worst a forged
- * request can do is rename a player, whose id it must already know, to a word
- * that player found themselves.
- */
-async function handlePut(request: Request): Promise<Response> {
-  const refusal = crossOriginRefusal(request);
-  if (refusal) return refusal;
-
-  const text = await request.text().catch(() => "");
-  if (text.length > MAX_BODY_BYTES) return reply(413, { ok: false, reason: "too-large" });
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    return reply(400, { ok: false, reason: "malformed-json" });
-  }
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return reply(400, { ok: false, reason: "malformed-body" });
-  }
-
-  const { playerId, name } = parsed as Record<string, unknown>;
-  if (typeof playerId !== "string" || !UUID_RE.test(playerId)) {
-    return reply(400, { ok: false, reason: "bad-player-id" });
-  }
-  if (typeof name !== "string" || !WORD_RE.test(name)) {
-    return reply(400, { ok: false, reason: "bad-word" });
-  }
-
-  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
-
-  try {
-    const chosen = await rpc<boolean>("choose_leaderboard_name", {
-      p_player_id: playerId,
-      p_name: name,
-    });
-    // 409 rather than 400: the request is well formed, it just names a word this
-    // player has not played -- which the page turns into "you haven't found that
-    // one" rather than a validation error.
-    if (!chosen) return reply(409, { ok: false, reason: "not-your-word" });
-    return reply(200, { ok: true, name });
-  } catch (error) {
-    console.error("[leaderboard] name change failed:", error instanceof Error ? error.message : error);
-    return reply(502, { ok: false, reason: "unavailable" });
-  }
-}
-
 async function handlePost(request: Request, context?: EdgeContext): Promise<Response> {
   const refusal = crossOriginRefusal(request);
   if (refusal) return refusal;
@@ -527,9 +461,8 @@ async function handlePost(request: Request, context?: EdgeContext): Promise<Resp
 export default async function handler(request: Request, context?: EdgeContext): Promise<Response> {
   if (request.method === "GET") return handleGet(request);
   if (request.method === "POST") return handlePost(request, context);
-  if (request.method === "PUT") return handlePut(request);
   return new Response(null, {
     status: 405,
-    headers: { allow: "GET, POST, PUT", "cache-control": "no-store" },
+    headers: { allow: "GET, POST", "cache-control": "no-store" },
   });
 }

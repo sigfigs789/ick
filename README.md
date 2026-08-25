@@ -507,46 +507,36 @@ Because the window start is computed client-side and passed to the query, moving
 the first day of the week is a one-file change and never a migration — no SQL
 knows which day it is.
 
-### Recent finds
+### Today's finds
 
-The words other players actually turned up, **newest first**, grouped by the
-puzzle they came from and headed by that day's drop — a find only means something
-beside the drop it had to contain, since `asphyxiate` is just a word until you
-know the day asked for PHY. Each carries the same rarity badge the game shows on
-an accepted word. Every entry is somebody's best word of a day, which is exactly
-what `leaderboard_scores.top_word` already holds, so the feed is a query over
-data the boards were already storing.
+The words other players have turned up on today's puzzle, newest first, headed by
+the drop they had to contain — a find only means something beside its drop, since
+`asphyxiate` is just a word until you know the day asked for PHY. Each carries the
+same rarity badge the game shows on an accepted word.
 
-Ordered by when a word turned up rather than by how rare it is. Rarest-first made
-this a second leaderboard: the same words sat at the top every day and a new find
-only surfaced if it beat them. Newest-first makes it a feed — something that
-changes while you watch, which is the only reason to keep it live. The order is
-by puzzle date first and arrival second, never `created_at` alone: a player
-joining backfills their whole history in one write, which would date a word from
-months ago to the moment they signed up.
+Today only. It began as a week of history and read as an archive; the point is
+the puzzle everyone is on right now. New finds slide in at the top while the page
+is open, and the page re-checks every 60 seconds — the CDN's own cache window, so
+polling faster would return the same bytes. Nothing runs while the tab is hidden,
+coming back refreshes at once, and a refresh never flashes the loading state or
+throws away good data over one bad minute.
 
-Arguably the point of the page. A leaderboard tells you where you came; this
-tells you what you missed, and "I didn't know that was a word" is the thing
-players enjoy.
+**Publishing today's finds is a deliberate trade.** Everybody gets the same drop,
+so a word somebody found today is an *answer to today's puzzle* — showing it hands
+that answer to anyone still playing. It was withheld at first for exactly that
+reason. Accepted anyway: the feed is only worth keeping live if it changes while
+you watch, and someone who wanted to be spoiled could always have read the
+endpoint directly. Reverting is one line in `wordsCutoff`, and the middle position
+— live only for players who have already locked in — is written down there.
 
-**Today's finds are shown live, and that is a deliberate trade.** Everyone gets
-the same drop, so a word somebody found today is an *answer to today's puzzle* —
-showing it hands that answer to anyone still playing. It was withheld at first
-for exactly that reason. Accepted anyway: the feed is only worth keeping live if
-it changes while you watch, and someone who wants to be spoiled could always have
-read the endpoint directly. Reverting is one line in `wordsCutoff`, and the
-middle position — live only for players who have already locked in — is written
-down there.
+**No rarity bar.** Every entry is already the best word its finder managed today,
+which is the only filter the feed needs. Cutting the ordinary ones would quietly
+turn it into a list of good players rather than a list of what happened.
 
-**No rarity bar.** Every entry is already the best word its finder managed that
-day, which is the only filter the feed needs. Cutting the ordinary ones would
-quietly turn it into a list of good players rather than a list of what happened.
-
-**Not behind the ten-player gate**, unlike the boards. The gate exists so nobody
-meets a three-name leaderboard and concludes the game is empty; a short list of
-good words carries no such implication. It is the best thing to show a player
-while the boards are still filling up, which is why it sits above them on the
-page.
+Every entry is somebody's best word of a day, which is exactly what
+`leaderboard_scores.top_word` already holds — so the feed is a query over data the
+boards were already storing, and it is not behind the boards' opening date,
+because a short list of good words is interesting at any size.
 
 ### Collected from the start, published on a date
 
@@ -572,97 +562,43 @@ finds to read, so the answer is cached between visits and refreshed in the
 background. A failed check leaves the last answer alone — a flaky moment should
 not make the trophy vanish for someone using it.
 
-### The name is your rarest word, and it does not change weekly
+### Names are handles, derived from the player id
 
-Nobody types a name. What the board shows beside a score is the player's own
-rarest word ever — `asphyxiate`, `gastroenterologist`, `quixotic` — and it changes
-only when they beat it. A word game's board is more interesting when the names
-*are* the finds: it says what each player is on the board for, and it needs no
-maintenance.
+The board calls players things like `TranquilBison72` — an adjective, a noun and
+a number, computed from their id by `src/game/handle.ts`.
 
-**You pick which of your finds names you.** The board offers your ten best days'
-words with what each is worth today, and you choose. A closed list rather than a
-text field, and the constraint is the feature: a name you cannot type is a name
-you had to earn, so there is nothing to police and nothing to impersonate.
+This replaced naming players after their rarest find, which was charming and
+unreadable. On a page that also lists found words, a leaderboard row reading
+`asphyxiate` gave no clue whether it was a person or a word, and separating the
+sections helped without fixing it: any scheme where names *are* words has that
+problem. A capitalised two-word handle is unmistakably a name, which is the whole
+job.
 
-Choosing also *stabilises* the name, which is the real reason it exists. Left
-alone, the default is your rarest word ever — good for a new player, and it moves
-every time they beat it. A name that moves is a player their rivals stop
-recognising, so a hot streak quietly costs you the thing a weekly board runs on.
-Picking pins it.
+**Derived, not stored.** `handleFor(playerId)` is a pure function, so every
+browser computes the same name for the same player without asking, the server
+holds no display name at all, and a handle is stable forever — it cannot drift
+between the two boards, or between devices, or across releases. That deleted a
+table, a Postgres function, an endpoint method, and the whole name-picking UI.
 
-**The same name appears on both boards, deliberately.** A weekly name would be
-livelier, and it was considered and rejected: rivalry needs a stable handle. If
-names churned every Sunday, the person who beat you last week would reappear as a
-different word and you could not recognise them — and being beaten by someone you
-recognise is most of why a weekly board is worth coming back to. Novelty fades in
-a week; a rival lasts months. Carrying a "formerly known as" trail alongside would
-only half-repair it: you would have to remember last week's name and scan for it,
-every week, and by the fourth week the chain back to the name you remember is
-broken.
+There is no free-text field anywhere in the feature, so there is nothing to
+sanitise and nothing to impersonate.
 
-The week's find is not separately choosable, and the reason is structural rather
-than taste: the week's boundary is computed on the client from the player's own
-calendar (see `src/game/week.ts`), so a stored per-week choice would need a week
-key the server does not own. The rarest word of the week is picked automatically,
-which is the one most players would pick anyway.
+The lists are hand-written rather than drawn from the game's dictionary: a
+dictionary pairing would eventually produce something unkind or absurd, and
+nobody gets to choose their handle, so the floor matters more than the ceiling.
+128 × 128 × 100 gives 1.6M handles — the number is what makes duplicates
+unlikely rather than merely uncommon, since two words alone would start colliding
+on the same board at a few hundred players.
 
-What the weekly board gets instead is a **change of emphasis**. Each board leads
-with its own subject and carries the other fact underneath:
-
-| | Row leads with | Underneath |
-| --- | --- | --- |
-| **This week** | that week's find — `quixotic 7.9` | `known as asphyxiate` |
-| **All time** | the standing name — `asphyxiate` | `best 8.3` |
-
-So the weekly board reads as a highlight reel of what people found this week,
-while a rival stays recognisable. When a player's week *is* their best ever the
-two words are the same, and the row says it once.
-
-**Both are always drawn; the standing name is never hover-only.** Revealing it on
-hover would be tidier and would not work — this game is played mostly on phones,
-where there is no hover, so the identity a player needs in order to recognise a
-rival would be missing exactly where most of them are. The `title` tooltip is a
-convenience for pointer users, never the only channel.
-
-**Judged on today's criteria, not the day the word was played.** A puzzle's
-*score* is frozen at the scoring system in effect that day, because a past game
-should keep the result it was played for. A word's rarity is not a result — it is
-a current fact — so the client prices every word on the board with today's
-dictionary. Two players holding the same word always show the same number,
-however long ago either of them found it.
-
-That split is why the server stores **words and frequencies, not scores**, for
-these two fields. It also means the database needs no dictionary: it picks a
-rarest word by smallest Zipf, which is correct under *any* of the game's scoring
-systems, because all of them map Zipf to score monotonically downward (asserted
-in `week`/dictionary tests). The client turns the word back into a score.
-
-Names come from the same days that get submitted, so a word farmed out of the
-archive can no more name a player than it can score for them.
-
-This also removed a problem rather than adding one. A typed name on a public,
-unauthenticated endpoint is a sanitising job: invisible characters, bidi
-overrides, imitations of the page's own copy. A name that is always a word is
-validated as one — `^[a-z]{2,30}$` in the endpoint *and* as a check constraint on
-every column that holds one — and nothing else is expressible.
-
-Nor can a client claim a name it did not earn. Scores carry each day's own rarest
-word and nothing else, and `choose_leaderboard_name` writes a chosen name only
-when that word already appears among *that player's* submitted days, taking its
-frequency from that row rather than from the request. The whole authorisation
-rule is one `where exists`, which is why an unauthenticated rename endpoint costs
-nothing: the worst a forged request can do is rename a player, whose id it must
-already know, to a word that player found themselves.
-
-The picker offers one word per day — the day's rarest — because that is what the
-server stores and therefore what it will authorise. Offering a word it would
-refuse would be offering a choice that doesn't work.
+**Each row names the player, then their find**, on both boards: `TranquilBison72`
+/ `6 puzzles · asphyxiate 8.3`. The weekly board briefly led with the week's find
+instead, which only made sense while a "name" was itself a word.
 
 ### Identity, and the history that comes with it
 
 Opt-in and account-free, and there is nothing to fill in. A player taps once; the
-browser mints a UUID and stores that id and nothing else (`src/game/player.ts`).
+browser mints a UUID and stores that id and nothing else (`src/game/player.ts`) —
+which is also everything the handle is computed from.
 Nothing is sent for a player who never joins. The trophy carries a one-time "new"
 badge, retired the first time the page is visited (`src/game/whatsNew.ts`).
 

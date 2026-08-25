@@ -3,14 +3,12 @@ import { formatScore } from "../game/dictionary";
 import { RarityBadge } from "./RarityBadge";
 import {
   backfillHistory,
-  chooseName,
   fetchBoards,
-  nameCandidates,
   type BoardEntry,
   type Boards,
   type FoundWord,
-  type NameCandidate,
 } from "../game/leaderboard";
+import { handleFor } from "../game/handle";
 import { joinBoard, loadPlayerId } from "../game/player";
 import { formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
@@ -20,11 +18,6 @@ import { trackLeaderboardJoined } from "../analytics";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
 
 type LoadState = "loading" | "ready" | "error";
-
-/** Identifies a find in the feed: a word on a given day (see `arrived`). */
-function foundKey(found: Pick<FoundWord, "word" | "foundOn">): string {
-  return `${found.word}@${found.foundOn}`;
-}
 
 /** How often an open page re-checks for new finds. Matches the CDN's own cache. */
 const REFRESH_MS = 60_000;
@@ -50,13 +43,9 @@ export function LeaderboardPage() {
   const [playerId, setPlayerId] = useState<string | null>(() => loadPlayerId());
   /** Days imported from this browser's history on joining, for one message. */
   const [imported, setImported] = useState<number | null>(null);
-  // The words this browser could be known by, best first. The first is also the
-  // default: left alone, the board calls a player by their rarest.
-  const candidates = nameCandidates();
-  const [chosen, setChosen] = useState<string | null>(null);
-  const [choosing, setChoosing] = useState(false);
-  const [chooseFailed, setChooseFailed] = useState(false);
-  const name = chosen ?? candidates[0]?.word ?? null;
+  // What the board calls this browser, computed from the id -- so it exists the
+  // moment they join, is the same on every device, and never drifts.
+  const name = playerId ? handleFor(playerId) : null;
 
   /**
    * Fetch the boards and the finds.
@@ -134,18 +123,13 @@ export function LeaderboardPage() {
    * when none of them did. After that, each refresh diffs against what was
    * already on screen and only the genuinely new ones move.
    *
-   * Keyed by word *and* day, not word alone. The feed carries one row per word,
-   * at its most recent sighting, so a word somebody found last week and somebody
-   * else finds again today is not a duplicate -- it leaves its old group and
-   * arrives in today's. By word alone that re-arrival is invisible, which is
-   * exactly the case a live feed exists to show.
    */
   const seenWords = useRef<Set<string> | null>(null);
   const [arrived, setArrived] = useState<readonly string[]>([]);
 
   useEffect(() => {
     if (!boards) return;
-    const words = boards.words.map(foundKey);
+    const words = boards.words.map((found) => found.word);
     if (seenWords.current === null) {
       seenWords.current = new Set(words);
       return;
@@ -208,10 +192,6 @@ export function LeaderboardPage() {
               entries={boards.weekly}
               emptyMessage="Nobody's scored yet this week. Be first."
               playerId={playerId}
-              // The weekly row leads with this week's find and carries the
-              // player's standing name underneath, so it describes the week
-              // without costing them the identity a rival recognises them by.
-              weekly
             />
             <Board
               heading="All time"
@@ -228,68 +208,30 @@ export function LeaderboardPage() {
         )}
 
         {playerId ? (
-          <div className="leaderboard__you-are">
-            <p className="leaderboard__note leaderboard__note--playing">
-              {name ? (
-                <>
-                  You're on the board as <strong>{name}</strong>.
-                </>
-              ) : (
-                <>You're on the board. Your rarest word will name you once you've played one.</>
-              )}
-              {imported !== null && (
-                <>
-                  {" "}
-                  <span className="leaderboard__imported" aria-live="polite">
-                    {/* Not "past" puzzles: today counts too when it has been
-                        played, and it usually has by the time anyone joins. */}
-                    {imported > 0
-                      ? `Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`
-                      : "Nothing to count yet — your first scored puzzle starts you off."}
-                  </span>
-                </>
-              )}
-            </p>
-            {candidates.length > 1 && (
-              <NamePicker
-                candidates={candidates}
-                current={name}
-                busy={choosing}
-                failed={chooseFailed}
-                onChoose={async (word) => {
-                  setChoosing(true);
-                  setChooseFailed(false);
-                  const ok = await chooseName(playerId, word);
-                  setChoosing(false);
-                  if (!ok) {
-                    setChooseFailed(true);
-                    return;
-                  }
-                  setChosen(word);
-                  load();
-                }}
-              />
+          <p className="leaderboard__note leaderboard__note--playing">
+            You're on the board as <strong>{name}</strong>.
+            {imported !== null && (
+              <>
+                {" "}
+                <span className="leaderboard__imported" aria-live="polite">
+                  {/* Not "past" puzzles: today counts too when it has been
+                      played, and it usually has by the time anyone joins. */}
+                  {imported > 0
+                    ? `Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`
+                    : "Nothing to count yet — your first scored puzzle starts you off."}
+                </span>
+              </>
             )}
-          </div>
+          </p>
         ) : (
           <div className="leaderboard__join">
-            {name ? (
-              <>
-                <p className="leaderboard__join-pitch">
-                  Join as <strong>{name}</strong>
-                </p>
-                <button type="button" className="leaderboard__join-button" onClick={join}>
-                  Put me on the board
-                </button>
-                <p className="leaderboard__note">
-                  No account, no email, no name to invent — the board calls you by one of
-                  your own finds, and you can pick which once you're on. Joining brings
-                  every puzzle you played on its own day with it.
-                </p>
-              </>
-            ) : (
-              <p className="leaderboard__note">Play a word and you can join the board.</p>
-            )}
+            <button type="button" className="leaderboard__join-button" onClick={join}>
+              Put me on the board
+            </button>
+            <p className="leaderboard__note">
+              No account, no email, no name to invent — you get one when you join. Joining
+              brings every puzzle you played on its own day with it.
+            </p>
           </div>
         )}
 
@@ -319,7 +261,11 @@ export function LeaderboardPage() {
 }
 
 /**
- * The best words other players found recently, newest first.
+ * What people have found on today's puzzle, newest first.
+ *
+ * Today only. A week of history behind it read as an archive, and the drop in
+ * the heading is what makes the list mean anything: `asphyxiate` is just a word
+ * until you know the day asked for PHY.
  *
  * Its own section below the boards, rather than sharing the top of the page with
  * them. Both are lists of words, and a leaderboard row is a *player* while a
@@ -327,14 +273,7 @@ export function LeaderboardPage() {
  * work out, so the two get separate headings and separate ground.
  *
  * A leaderboard tells you where you came; this tells you what you missed, and
- * "I did not know that was a word" is the thing players actually enjoy. Every
- * entry is somebody's best find of a day.
- *
- * Never today's, and that is not a detail -- the same drop goes to everyone, so a
- * word found today is an answer to today's puzzle. The server draws that line
- * (see api/leaderboard.ts); this component only has to say which days it is
- * showing, so nobody reads it as a live feed and wonders why their own word is
- * missing.
+ * "I did not know that was a word" is the thing players actually enjoy.
  */
 function FoundWords({
   words,
@@ -345,45 +284,29 @@ function FoundWords({
   today: string;
   arrived: readonly string[];
 }) {
-  // Grouped by the puzzle they came from, newest first. A find only means
-  // something next to the drop it had to contain -- `asphyxiate` is just a word
-  // until you know the day asked for PHY -- and the words arrive already in date
-  // order, so grouping is a walk rather than a sort.
-  const days: { date: string; words: FoundWord[] }[] = [];
-  for (const found of words) {
-    const last = days[days.length - 1];
-    if (last && last.date === found.foundOn) last.words.push(found);
-    else days.push({ date: found.foundOn, words: [found] });
-  }
-
   return (
-    <section className="found-words" aria-label="Words found recently">
-      <h2 className="leaderboard__board-heading">Recent finds</h2>
-      <p className="leaderboard__caption">The best word each player found, newest first.</p>
-      {days.map((day) => (
-        <div key={day.date} className="found-words__day">
-          <h3 className="found-words__day-heading">
-            <span>{day.date === today ? "Today" : formatDateLabel(day.date)}</span>
-            {day.date && <span className="found-words__drop">{dropForDate(day.date)}</span>}
-          </h3>
-          <ul className="found-words__list">
-            {day.words.map((found) => (
-              <li
-                key={foundKey(found)}
-                className={`found-words__item${
-                  arrived.includes(foundKey(found)) ? " found-words__item--arrived" : ""
-                }`}
-              >
-                <span className="found-words__word">{found.word}</span>
-                <RarityBadge rarity={found.rarity} zipf={found.zipf} />
-                {found.finders > 1 && (
-                  <span className="found-words__finders">{found.finders} players</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+    <section className="found-words" aria-label="Today's finds">
+      <h2 className="leaderboard__board-heading">
+        Today's finds
+        <span className="found-words__drop">{dropForDate(today)}</span>
+      </h2>
+      <p className="leaderboard__caption">The best word each player has found today.</p>
+      <ul className="found-words__list">
+        {words.map((found) => (
+          <li
+            key={found.word}
+            className={`found-words__item${
+              arrived.includes(found.word) ? " found-words__item--arrived" : ""
+            }`}
+          >
+            <span className="found-words__word">{found.word}</span>
+            <RarityBadge rarity={found.rarity} zipf={found.zipf} />
+            {found.finders > 1 && (
+              <span className="found-words__finders">{found.finders} players</span>
+            )}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
@@ -416,98 +339,16 @@ function NotYet({ opensOn }: { opensOn: string }) {
   );
 }
 
-interface NamePickerProps {
-  candidates: NameCandidate[];
-  current: string | null;
-  busy: boolean;
-  failed: boolean;
-  onChoose: (word: string) => void;
-}
-
-/**
- * Pick which of your own finds names you.
- *
- * A closed list rather than a text field, and the constraint is the feature: a
- * name you cannot type is a name you had to earn, so there is nothing to police
- * and nothing to impersonate. Ten is enough for the choice to be real.
- *
- * Worth having at all because the default moves: left alone the board calls a
- * player by their rarest word, which changes every time they beat it -- and a
- * name that changes is a player their rivals stop recognising. Choosing is how
- * you stop it.
- */
-function NamePicker({ candidates, current, busy, failed, onChoose }: NamePickerProps) {
-  const [open, setOpen] = useState(false);
-
-  if (!open) {
-    return (
-      <button type="button" className="leaderboard__retry" onClick={() => setOpen(true)}>
-        Choose a different word
-      </button>
-    );
-  }
-
-  return (
-    <div className="leaderboard__picker">
-      <p className="leaderboard__picker-heading" id="name-picker-heading">
-        Your best finds — pick the one you want to be known by
-      </p>
-      <ul className="leaderboard__picker-list" aria-labelledby="name-picker-heading">
-        {candidates.map((candidate) => {
-          const isCurrent = candidate.word === current;
-          return (
-            <li key={candidate.word}>
-              <button
-                type="button"
-                className={`leaderboard__picker-option${
-                  isCurrent ? " leaderboard__picker-option--current" : ""
-                }`}
-                aria-pressed={isCurrent}
-                disabled={busy || isCurrent}
-                onClick={() => onChoose(candidate.word)}
-              >
-                <span className="leaderboard__picker-word">{candidate.word}</span>
-                <span className="leaderboard__picker-score">{formatScore(candidate.score)}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      {failed && (
-        <p className="leaderboard__note leaderboard__note--error" aria-live="polite">
-          Couldn't change your name just now. Try again in a moment.
-        </p>
-      )}
-      <button type="button" className="leaderboard__retry" onClick={() => setOpen(false)}>
-        Done
-      </button>
-    </div>
-  );
-}
-
 interface BoardProps {
   heading: string;
   caption: string;
   entries: BoardEntry[];
   emptyMessage: string;
   playerId: string | null;
-  /**
-   * Lead each row with the window's rarest word rather than the player's name --
-   * on for the weekly board, where that is this week's find. Off for all-time,
-   * whose window is everything, so the two would be the same word.
-   */
-  weekly?: boolean;
 }
 
 /** One board, ranked by total score exactly as the database ordered it. */
-function Board({
-  heading,
-  caption,
-  entries,
-  emptyMessage,
-  playerId,
-  weekly = false,
-}: BoardProps) {
+function Board({ heading, caption, entries, emptyMessage, playerId }: BoardProps) {
   return (
     <section className="leaderboard__board" aria-label={heading}>
       <h2 className="leaderboard__board-heading">{heading}</h2>
@@ -517,7 +358,7 @@ function Board({
       ) : (
         <ol className="leaderboard__list">
           {entries.map((entry) => (
-            <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} weekly={weekly} />
+            <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} />
           ))}
         </ol>
       )}
@@ -526,41 +367,27 @@ function Board({
 }
 
 /**
- * One player's row.
+ * One player's row: who they are, then what they found.
  *
- * The weekly board leads with what they found *this* week and carries their
- * standing name underneath; the all-time board leads with the standing name and
- * carries what it is worth. Same two facts either way, with the board's own
- * subject in front.
- *
- * Both are always drawn. Revealing the standing name on hover would be tidier
- * and would not work: this game is played mostly on phones, where there is no
- * hover, so the identity a player needs in order to recognise a rival would be
- * missing exactly where most of them are. The `title` is a convenience for
- * pointer users, never the only way to see it.
+ * The name leads on both boards. The weekly one used to lead with that week's
+ * find instead, because back then a "name" was itself a word and the row needed
+ * something to say the week with. Now that a name is plainly a name, putting the
+ * person first reads better and gives both boards the same shape -- and the find
+ * still says which week it is, because it is the window's: this week's on the
+ * weekly board, their best ever on the all-time one.
  */
-function Row({ entry, isYou, weekly }: { entry: BoardEntry; isYou: boolean; weekly: boolean }) {
-  // A player whose best week is their best ever has one word, not two -- saying
-  // "known as inkling" under the word `inkling` is noise.
-  const sameWord = entry.windowWord === entry.name;
-  const lead = weekly ? entry.windowWord : entry.name;
-  const leadScore = weekly ? entry.windowScore : entry.nameScore;
-  const detail =
-    weekly && !sameWord ? `known as ${entry.name}` : `best ${formatScore(entry.nameScore)}`;
-
+function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
   return (
     <li className={`leaderboard__row${isYou ? " leaderboard__row--you" : ""}`}>
       <span className="leaderboard__rank">{entry.rank}</span>
-      <span
-        className="leaderboard__name"
-        title={weekly && !sameWord ? `known as ${entry.name}` : undefined}
-      >
-        {lead}
-        {weekly && <span className="leaderboard__lead-score"> {formatScore(leadScore)}</span>}
+      <span className="leaderboard__name">
+        {entry.name}
         {isYou && <span className="leaderboard__you"> you</span>}
       </span>
       <span className="leaderboard__meta">
-        {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"} · {detail}
+        {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"} ·{" "}
+        <span className="leaderboard__find">{entry.windowWord}</span>{" "}
+        {formatScore(entry.windowScore)}
       </span>
       <span className="leaderboard__score">{entry.score.toFixed(1)}</span>
     </li>

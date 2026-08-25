@@ -1,11 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  backfillHistory,
-  chooseName,
-  fetchBoards,
-  nameCandidates,
-  submitScore,
-} from "./leaderboard";
+import { backfillHistory, fetchBoards, submitScore } from "./leaderboard";
+import { handleFor } from "./handle";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
 import type { AcceptedWord, DailyProgress } from "./types";
@@ -114,143 +109,6 @@ function stored(date: string, firstWordAt = `${date}T20:00:00.000Z`): DailyProgr
     completedAt: firstWordAt,
   };
 }
-
-describe("the words a player can be known by", () => {
-  /** A day's worth of words, played on its own date so it counts. */
-  function day(date: string, words: AcceptedWord[]): DailyProgress {
-    return {
-      date,
-      drop: "ink",
-      acceptedWords: words,
-      rejectedAttempts: [],
-      completed: true,
-      firstWordAt: `${date}T20:00:00.000Z`,
-      completedAt: `${date}T20:04:00.000Z`,
-    };
-  }
-
-  it("offers each day's rarest word, best first", () => {
-    expect(
-      nameCandidates([
-        day("2026-08-19", [{ word: "cat", rarity: "Common", zipf: 4.78 }]),
-        day("2026-08-20", [
-          { word: "inkling", rarity: "Rare", zipf: 2.9 },
-          { word: "asphyxiate", rarity: "Extremely Rare", zipf: 2.09 },
-        ]),
-      ])
-    ).toEqual([
-      // asphyxiate won its day, so inkling is not on offer -- one word per day,
-      // which is exactly what the server stores and will authorise.
-      { word: "asphyxiate", score: 8.3 },
-      { word: "cat", score: 4.34 },
-    ]);
-  });
-
-  it("prices candidates on today's criteria, not the day they were played", () => {
-    // A record saved under an older system, or before the word's frequency was
-    // corrected: `cat` stored as though vanishingly rare, `inkling` as everyday.
-    expect(
-      nameCandidates([
-        day("2026-08-19", [{ word: "cat", rarity: "Legend", zipf: 0.1 }]),
-        day("2026-08-20", [{ word: "inkling", rarity: "Very Common", zipf: 7.5 }]),
-      ])
-    ).toEqual([
-      { word: "inkling", score: 7.11 },
-      { word: "cat", score: 4.34 },
-    ]);
-  });
-
-  it("lists a repeated word once, at its best showing", () => {
-    const candidates = nameCandidates([
-      day("2026-08-19", [{ word: "inkling", rarity: "Rare", zipf: 2.9 }]),
-      day("2026-08-20", [{ word: "inkling", rarity: "Rare", zipf: 2.9 }]),
-    ]);
-
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0].word).toBe("inkling");
-  });
-
-  it("offers at most ten, and they are the best ten", () => {
-    const words = ["asphyxiate", "quixotic", "gastroenterologist", "inkling", "wrinkle", "cat"];
-    const history = Array.from({ length: 14 }, (_, i) =>
-      day(`2026-08-${String(i + 1).padStart(2, "0")}`, [
-        { word: words[i % words.length], rarity: "Rare", zipf: 2 + i * 0.2 },
-      ])
-    );
-    const candidates = nameCandidates(history);
-
-    expect(candidates.length).toBeLessThanOrEqual(10);
-    // Sorted best first, so a truncation keeps the finds worth being known for.
-    const scores = candidates.map((c) => c.score);
-    expect([...scores].sort((a, b) => b - a)).toEqual(scores);
-  });
-
-  it("falls back to the stored frequency for a word today's dictionary lacks", () => {
-    // A live Merriam-Webster approval: not in the shipped dictionary, so its own
-    // recorded rarity is the only thing there is to go on.
-    expect(
-      nameCandidates([
-        day("2026-08-20", [{ word: "enshittification", rarity: "Legend", zipf: 0.5 }]),
-      ])[0].word
-    ).toBe("enshittification");
-  });
-
-  it("lowercases candidates, whatever the record holds", () => {
-    expect(
-      nameCandidates([day("2026-08-20", [{ word: "Inkling", rarity: "Rare", zipf: 2.9 }])])[0].word
-    ).toBe("inkling");
-  });
-
-  it("has nothing to offer a browser with nothing eligible", () => {
-    expect(nameCandidates([])).toEqual([]);
-    expect(nameCandidates([day("2026-08-20", [])])).toEqual([]);
-  });
-
-  it("ignores words from days that don't count", () => {
-    localStorage.setItem(
-      "ick:progress:2026-08-20",
-      JSON.stringify(day("2026-08-20", [{ word: "inkling", rarity: "Rare", zipf: 2.9 }]))
-    );
-    // A rarer word, but pulled out of the archive weeks later -- so it cannot
-    // name the player any more than it can score for them.
-    localStorage.setItem(
-      "ick:progress:2026-07-04",
-      JSON.stringify({
-        ...day("2026-07-04", [{ word: "asphyxiate", rarity: "Extremely Rare", zipf: 2.09 }]),
-        firstWordAt: "2026-08-24T20:00:00.000Z",
-        completedAt: "2026-08-24T20:04:00.000Z",
-      })
-    );
-
-    expect(nameCandidates().map((c) => c.word)).toEqual(["inkling"]);
-  });
-});
-
-describe("choosing a name", () => {
-  it("asks the server to use the word, and reports that it worked", async () => {
-    const fetchMock = stubFetch(new Response(JSON.stringify({ ok: true }), { status: 200 }));
-
-    await expect(chooseName("player-1", "inkling")).resolves.toBe(true);
-    const [url, init] = (fetchMock.mock.calls[0] ?? []) as [string?, RequestInit?];
-    expect(url).toBe("/api/leaderboard");
-    expect(init?.method).toBe("PUT");
-    expect(JSON.parse(String(init?.body))).toEqual({ playerId: "player-1", name: "inkling" });
-  });
-
-  it("reports a refusal rather than pretending the name changed", async () => {
-    stubFetch(new Response(JSON.stringify({ ok: false, reason: "not-your-word" }), { status: 409 }));
-    await expect(chooseName("player-1", "asphyxiate")).resolves.toBe(false);
-  });
-
-  it("reports a failed request rather than throwing", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => {
-      throw new Error("offline");
-    }));
-    // The player is watching this one, so it resolves false and the page says so
-    // -- but it still must not throw into the render.
-    await expect(chooseName("player-1", "inkling")).resolves.toBe(false);
-  });
-});
 
 describe("importing a joining player's history", () => {
   it("sends every remembered day in one request", () => {
@@ -361,10 +219,12 @@ describe("reading the boards", () => {
           weekStart: "2026-08-23",
           ready: true,
           weekly: [
-            { rank: 1, playerId: "a", name: "Ada", score: 40, best: 9.9, puzzles: 5 },
-            { rank: 2, playerId: "b", name: "Mo", score: 20, best: 9.4, puzzles: 3 },
+            { rank: 1, playerId: "a", windowWord: "quixotic", windowZipf: 2.33, score: 40, puzzles: 5 },
+            { rank: 2, playerId: "b", windowWord: "inkling", windowZipf: 2.9, score: 20, puzzles: 3 },
           ],
-          allTime: [{ rank: 1, playerId: "b", name: "Mo", score: 300, best: 10, puzzles: 40 }],
+          allTime: [
+            { rank: 1, playerId: "b", windowWord: "inkling", windowZipf: 2.9, score: 300, puzzles: 40 },
+          ],
         }),
         { status: 200, headers: { "content-type": "application/json" } }
       )
@@ -374,10 +234,11 @@ describe("reading the boards", () => {
     expect(boards.weekStart).toBe("2026-08-23");
     expect(boards.ready).toBe(true);
     // The ranks come from the database, which did the sorting; nothing is
-    // re-sorted here, so what the player sees is always what it ranked.
+    // re-sorted here, so what the player sees is always what it ranked. Names
+    // are derived from the player id rather than sent.
     expect(boards.weekly.map((e) => [e.rank, e.name])).toEqual([
-      [1, "Ada"],
-      [2, "Mo"],
+      [1, handleFor("a")],
+      [2, handleFor("b")],
     ]);
     expect(boards.allTime).toHaveLength(1);
   });
@@ -388,10 +249,10 @@ describe("reading the boards", () => {
         JSON.stringify({
           ready: true,
           weekly: [
-            { rank: 1, playerId: "a", name: "asphyxiate", nameZipf: 2.09, score: 40 },
-            { name: "noid", score: 10 },
-            { playerId: "c", name: "cypher", score: "lots" },
-            { rank: 4, playerId: "d", name: "inkling", nameZipf: 2.9, score: 5 },
+            { rank: 1, playerId: "a", windowWord: "asphyxiate", windowZipf: 2.09, score: 40 },
+            { windowWord: "noid", score: 10 },
+            { playerId: "c", windowWord: "cypher", score: "lots" },
+            { rank: 4, playerId: "d", windowWord: "inkling", windowZipf: 2.9, score: 5 },
           ],
           allTime: "not a board",
         }),
@@ -402,13 +263,11 @@ describe("reading the boards", () => {
     const boards = await fetchBoards("2026-08-27");
     // Each surviving row keeps the rank the database gave it, so a dropped row
     // shows as a gap rather than silently promoting everyone below it.
-    expect(boards.weekly.map((e) => [e.rank, e.name])).toEqual([
+    expect(boards.weekly.map((e) => [e.rank, e.windowWord])).toEqual([
       [1, "asphyxiate"],
       [4, "inkling"],
     ]);
     expect(boards.allTime).toEqual([]);
-    // A row with no window word falls back to the name rather than rendering
-    // blank, and a missing count reads as zero.
     expect(boards.weekly[0]).toMatchObject({ windowWord: "asphyxiate", puzzles: 0 });
   });
 
@@ -418,7 +277,7 @@ describe("reading the boards", () => {
         JSON.stringify({
           opensOn: "2026-08-30",
           // Rows with no `ready` flag beside them: the client shows nothing.
-          weekly: [{ rank: 1, playerId: "a", name: "asphyxiate", nameZipf: 2.09, score: 40 }],
+          weekly: [{ rank: 1, playerId: "a", windowWord: "asphyxiate", windowZipf: 2.09, score: 40 }],
           allTime: [],
         }),
         { status: 200, headers: { "content-type": "application/json" } }
@@ -547,62 +406,6 @@ describe("the recent finds feed", () => {
       "cat",
       "inkling",
     ]);
-  });
-
-  it("shows an ordinary word from an earlier day too", async () => {
-    stubFetch(
-      new Response(
-        JSON.stringify({
-          ready: true,
-          weekly: [],
-          allTime: [],
-          words: [{ word: "cat", zipf: 4.78, finders: 9, foundOn: "2026-08-26" }],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } }
-      )
-    );
-
-    expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual(["cat"]);
-  });
-
-  it("keeps a word today's dictionary doesn't carry, on the frequency it was found at", async () => {
-    stubFetch(
-      new Response(
-        JSON.stringify({
-          ready: true,
-          weekly: [],
-          allTime: [],
-          // A live Merriam-Webster approval: nowhere in the shipped dictionary,
-          // so the frequency it was found at is all there is to go on.
-          words: [{ word: "brainrot", zipf: 0.5, finders: 2 }],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } }
-      )
-    );
-
-    const { words } = await fetchBoards("2026-08-27");
-    expect(words).toHaveLength(1);
-    expect(words[0]).toMatchObject({ word: "brainrot", zipf: 0.5 });
-  });
-
-  it("drops a word it cannot price rather than showing a blank badge", async () => {
-    stubFetch(
-      new Response(
-        JSON.stringify({
-          ready: true,
-          weekly: [],
-          allTime: [],
-          words: [
-            { word: "inkling", zipf: 2.9, finders: 1 },
-            { finders: 1 },
-            { word: "notarealwordanywhere", finders: 1 },
-          ],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } }
-      )
-    );
-
-    expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual(["inkling"]);
   });
 
   it("sends the player's own date, so the server can keep today's finds back", async () => {

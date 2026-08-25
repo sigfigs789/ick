@@ -171,92 +171,6 @@ revoke all on function public.submit_leaderboard_scores(uuid, jsonb)
 grant execute on function public.submit_leaderboard_scores(uuid, jsonb) to service_role;
 
 /*
- * The name a player chose for themselves, when they have chosen one.
- *
- * A name is always one of the player's own finds -- there is no free-text field
- * anywhere in this feature -- but which find is theirs to pick. Left alone, the
- * board calls them by their rarest word ever, which is a good default and a bad
- * permanent arrangement: it moves every time they beat it, so a player on a good
- * run keeps changing names and the rivals watching for them lose track. Choosing
- * is how a player pins it.
- *
- * One row per player rather than a column on every score row: this is a fact
- * about the player, not about a day, and there is nothing to keep in step.
- *
- * The word is *not* trusted from the client. `choose_leaderboard_name` will only
- * write a word that already appears among that player's own submitted days, and
- * takes the frequency from that row rather than from the request -- so a name
- * cannot be a word somebody never played, and cannot arrive carrying a rarity it
- * did not earn.
- */
-create table if not exists public.leaderboard_names (
-  player_id uuid primary key,
-  -- Constrained to a word for the same reason top_word is: these values are
-  -- shown to other players, and nothing expressible here should be invisible,
-  -- right-to-left, or a passable imitation of the page's own text.
-  display_name text not null check (display_name ~ '^[a-z]{2,30}$'),
-  -- The chosen word's frequency, copied from the player's own row at the time it
-  -- was chosen, so the board can price it without a second lookup.
-  display_zipf numeric not null check (display_zipf >= -10 and display_zipf <= 10),
-  chosen_at timestamptz not null default now()
-);
-
-comment on table public.leaderboard_names is
-  'The word a player chose to be known by, which must be one of their own finds. Absent means "call me by my rarest".';
-
-alter table public.leaderboard_names enable row level security;
-revoke all on public.leaderboard_names from anon, authenticated;
-grant select, insert, update on public.leaderboard_names to service_role;
-
-/*
- * Choose a name, or fail.
- *
- * The whole authorisation rule is the `where exists`: the word has to be one this
- * player has actually submitted. That is what makes an unauthenticated endpoint
- * safe to expose here -- there is no name anyone can claim that they did not earn
- * under their own player id, so the worst a forged request can do is rename the
- * player whose id it already knows to a word that player themselves found.
- *
- * Returns true when the name was set, false when the word is not one of theirs --
- * which the endpoint reports rather than silently accepting.
- */
-create or replace function public.choose_leaderboard_name(
-  p_player_id uuid,
-  p_name text
-) returns boolean
-language plpgsql
-as $$
-declare
-  earned_zipf numeric;
-begin
-  -- The rarest row bearing this word, so a word played on several days is
-  -- priced at its best showing.
-  select s.top_zipf into earned_zipf
-    from public.leaderboard_scores s
-   where s.player_id = p_player_id
-     and s.top_word = p_name
-   order by s.top_zipf asc
-   limit 1;
-
-  if earned_zipf is null then
-    return false;
-  end if;
-
-  insert into public.leaderboard_names (player_id, display_name, display_zipf)
-  values (p_player_id, p_name, earned_zipf)
-  on conflict (player_id) do update set
-    display_name = excluded.display_name,
-    display_zipf = excluded.display_zipf,
-    chosen_at = now();
-  return true;
-end;
-$$;
-
-revoke all on function public.choose_leaderboard_name(uuid, text)
-  from public, anon, authenticated;
-grant execute on function public.choose_leaderboard_name(uuid, text) to service_role;
-
-/*
  * One board, aggregated over a date window.
  *
  * `p_since` null means all time; a date means "on or after", which is how the
@@ -277,24 +191,16 @@ grant execute on function public.choose_leaderboard_name(uuid, text) to service_
  * row order: it is what the page displays, so the database that decided the
  * ordering is the thing that should say it.
  *
- * Two different words come back, and the difference is the point:
+ * `window_word` / `window_zipf` is the rarest word the player found *inside* the
+ * window: on the weekly board what they turned up this week, on the all-time
+ * board their best ever. No name comes back at all -- the client derives a handle
+ * from the player id (see src/game/handle.ts), so there is nothing to store, keep
+ * in step, or authorise.
  *
- *   * `name` / `name_zipf` -- what to call the player, ignoring the window: the
- *     word they chose if they chose one, otherwise their rarest ever. This is
- *     their identity, and it has to be stable: a name that changed week to week
- *     would make a rival unrecognisable, and being beaten by someone you
- *     recognise is most of why a weekly board is worth returning to. The default
- *     is stable enough to start with and moves when they beat their best;
- *     choosing is how a player stops it moving at all.
- *   * `window_word` / `window_zipf` -- the rarest word *inside* the window, which
- *     on the weekly board is what they found this week. This is what makes a
- *     weekly row describe the week rather than quietly reporting an all-time
- *     figure. On the all-time board the window is everything, so the two agree.
- *
- * Both are picked by smallest Zipf, which needs no dictionary here: every scoring
- * system this game has used maps Zipf to score monotonically downward, so the
- * smallest Zipf is the rarest word under any of them. Scores are the client's job
- * -- it has the dictionary, and it can apply today's.
+ * The word is picked by smallest Zipf, which needs no dictionary here: every
+ * scoring system this game has used maps Zipf to score monotonically downward, so
+ * the smallest Zipf is the rarest word under any of them. Scores are the client's
+ * job -- it has the dictionary, and it can apply today's.
  */
 create or replace function public.leaderboard_board(
   p_since date default null,
@@ -302,8 +208,6 @@ create or replace function public.leaderboard_board(
 ) returns table (
   rank integer,
   player_id uuid,
-  name text,
-  name_zipf numeric,
   window_word text,
   window_zipf numeric,
   total_score numeric,
@@ -312,25 +216,8 @@ create or replace function public.leaderboard_board(
 language sql
 stable
 as $$
-  -- The identity, over every row a player has, whatever the window is. A chosen
-  -- name wins; the rarest word ever is the fallback for everyone who has not
-  -- picked one, which is most players and all new ones.
-  with rarest as (
-    select distinct on (s.player_id)
-      s.player_id, s.top_word as name, s.top_zipf as name_zipf
-    from public.leaderboard_scores s
-    order by s.player_id, s.top_zipf asc, s.puzzle_date asc
-  ),
-  identity as (
-    select
-      r.player_id,
-      coalesce(n.display_name, r.name) as name,
-      coalesce(n.display_zipf, r.name_zipf) as name_zipf
-    from rarest r
-    left join public.leaderboard_names n on n.player_id = r.player_id
-  ),
   -- The window: what they scored, and the rarest thing they found, inside it.
-  windowed as (
+  with windowed as (
     select
       s.player_id,
       round(sum(s.total_score), 1) as total_score,
@@ -349,14 +236,11 @@ as $$
       order by w.total_score desc, w.window_zipf asc, w.joined_at asc
     )::integer as rank,
     w.player_id,
-    i.name,
-    i.name_zipf,
     w.window_word,
     w.window_zipf,
     w.total_score,
     w.puzzles
   from windowed w
-  join identity i on i.player_id = w.player_id
   order by rank
   limit least(greatest(coalesce(p_limit, 50), 1), 200);
 $$;
