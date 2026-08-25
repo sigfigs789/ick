@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { maxGuessesFor } from "../game/constants";
 import { bestWord } from "../game/rank";
-import { formatRarityScore, topRarityScore, totalRarityScore } from "../game/dictionary";
+import {
+  baseFormRankDrop,
+  formatRarityScore,
+  topRarityScore,
+  totalRarityScore,
+} from "../game/dictionary";
 import { copyText } from "../clipboard";
 import { raritySymbol } from "../game/share";
 import { RarityBadge } from "./RarityBadge";
@@ -64,6 +69,11 @@ export function GuessLog({
           {acceptedWords.map((w, i) => {
             const isBest = best !== undefined && w.word === best.word;
             const isCopied = copiedWord === w.word;
+            // Only surfaced when the fold cost the word a rank (see
+            // baseFormRankDrop): a badge one or more tiers below what the word
+            // itself suggests looks broken until the player is shown the base
+            // it was scored from.
+            const baseNote = baseFormRankDrop(w.word, date);
             return (
               <li key={w.word} className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}>
                 <button
@@ -73,32 +83,39 @@ export function GuessLog({
                   aria-label={
                     isCopied
                       ? `Copied "${w.word}"`
-                      : `Copy "${w.word}" (${w.rarity}, guess ${i + 1})`
+                      : `Copy "${w.word}" (${w.rarity}${
+                          baseNote ? `, scored as its base word "${baseNote.base}"` : ""
+                        }, guess ${i + 1})`
                   }
                 >
-                  <span className="guess-log__entry-main">
-                    {isBest && (
-                      <span className="guess-log__crown" aria-hidden="true" title="Your best word so far">
-                        👑
-                      </span>
-                    )}
-                    <span className="guess-log__word">{w.word}</span>
-                    {isCopied ? (
-                      <span className="guess-log__copied" role="status">
-                        Copied!
-                      </span>
-                    ) : (
-                      <span className="guess-log__copy-hint" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                          <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-                          <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" strokeWidth="2" />
-                        </svg>
-                      </span>
-                    )}
-                  </span>
+                  {isBest && (
+                    <span className="guess-log__crown" aria-hidden="true" title="Your best word so far">
+                      👑
+                    </span>
+                  )}
+                  <span className="guess-log__word">{w.word}</span>
+                  {isCopied ? (
+                    <span className="guess-log__copied" role="status">
+                      Copied!
+                    </span>
+                  ) : (
+                    <span className="guess-log__copy-hint" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" width="16" height="16">
+                        <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+                        <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" strokeWidth="2" />
+                      </svg>
+                    </span>
+                  )}
                   <span className="guess-log__entry-meta">
                     <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
                   </span>
+                  {baseNote && (
+                    // Already said in the button's aria-label, so the visible
+                    // copy is decoration for a screen reader.
+                    <span className="guess-log__base-note" aria-hidden="true">
+                      Scored as its base word, “{baseNote.base}”
+                    </span>
+                  )}
                 </button>
               </li>
             );
