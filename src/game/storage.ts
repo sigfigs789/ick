@@ -1,4 +1,4 @@
-import { addDays, todayDateString } from "./date";
+import { addDays, toDateString, todayDateString } from "./date";
 import { maxGuessesFor } from "./constants";
 import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
@@ -70,6 +70,45 @@ export function loadProgress(date: string): DailyProgress | null {
   const loaded = { ...progress, acceptedWords };
   if (migrated) saveProgress(loaded);
   return loaded;
+}
+
+/**
+ * Every puzzle this browser still remembers being played on its own day.
+ *
+ * For the leaderboard's history import: a player who joins the board has often
+ * been playing for weeks, and starting them at zero throws away a record that is
+ * sitting in localStorage already.
+ *
+ * Only days that were *completed on their own calendar date* count, which is the
+ * one thing the stored record can actually prove. `completedAt` is a real
+ * timestamp, so a puzzle finished the day it dropped is distinguishable from the
+ * same puzzle played out of the archive last night -- and archive play is off the
+ * board for the same reason it is off the streak. The cost is that a day left
+ * half-played never got a `completedAt` and so cannot be counted; there is no
+ * evidence in the record for when it was played.
+ *
+ * Read through `loadProgress`, so historical words come back with today's rarity
+ * migrations applied rather than whatever tier name they were saved under.
+ */
+export function playedOnItsDay(): DailyProgress[] {
+  let keys: string[];
+  try {
+    keys = Object.keys(localStorage).filter((key) => key.startsWith(PROGRESS_PREFIX));
+  } catch {
+    // Private browsing or disabled storage: there is no history to import, which
+    // is not an error worth raising on the path that asks.
+    return [];
+  }
+
+  const played: DailyProgress[] = [];
+  for (const key of keys) {
+    const progress = loadProgress(key.slice(PROGRESS_PREFIX.length));
+    if (!progress || progress.acceptedWords.length === 0) continue;
+    if (!progress.completedAt) continue;
+    if (toDateString(new Date(progress.completedAt)) !== progress.date) continue;
+    played.push(progress);
+  }
+  return played.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 function saveProgress(progress: DailyProgress): void {

@@ -2,17 +2,25 @@
 // boards, and takes the score submissions that fill them.
 //
 // GET /api/leaderboard?since=YYYY-MM-DD&limit=50
-//   -> { weekStart, weekly: [...], allTime: [...] }
+//   -> { weekStart, ready, players, minPlayers, weekly: [...], allTime: [...] }
 //   The weekly board counts puzzles from `since` onward; all-time counts
 //   everything. `since` comes from the client because the puzzle date it
 //   brackets is the player's own local calendar date (see src/game/week.ts), so
 //   the week has to be measured on the same clock.
 //
-// POST /api/leaderboard  { playerId, name, date, total, top, words }
-//   -> 202 accepted, 400 malformed, 503 no credentials
-//   One score per player per puzzle. The write is an upsert that keeps the
-//   higher of the stored and submitted score, so submitting after every word is
-//   safe in any order (see the migration).
+//   Boards stay unpublished until MIN_PLAYERS distinct players have scored all
+//   time: `ready` says whether they are, and until they are, both arrays come
+//   back empty and `players` is what there is to show. The gate is enforced in
+//   SQL, so below the threshold no row leaves the database at all -- there is no
+//   partial board sitting in a response waiting to be read out of a network tab.
+//
+// POST /api/leaderboard  { playerId, name, scores: [{ date, total, top, words }] }
+//   -> 202 { days }, 400 malformed, 503 no credentials
+//   One score per player per puzzle. An array because it has two callers of the
+//   same shape: the game submitting today after each accepted word, and a player
+//   joining the board submitting every past puzzle their browser remembers. The
+//   write keeps the higher of the stored and submitted score, so repeats and
+//   out-of-order arrivals are both harmless (see the migration).
 //
 // There are no accounts in this game, so a submission cannot be authenticated:
 // anyone who reads this file can post a score under a name of their choosing.
@@ -46,7 +54,16 @@ const MAX_TOTAL = 60;
 const MAX_TOP = 10;
 const MAX_WORDS = 6;
 const MAX_NAME_CHARS = 18;
-const MAX_BODY_BYTES = 2 * 1024;
+/** How many distinct all-time players before the boards are shown to anyone. */
+const MIN_PLAYERS = 10;
+/**
+ * A batch is a browser's whole playing history, so it has to hold a couple of
+ * years of daily puzzles. The body cap below is the real limit; this one stops a
+ * caller naming the same handful of days ten thousand times.
+ */
+const MAX_SCORES = 800;
+// Big enough for MAX_SCORES entries of roughly 50 bytes each, with room to spare.
+const MAX_BODY_BYTES = 64 * 1024;
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 200;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -54,6 +71,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /** One row as `leaderboard_board` returns it. */
 interface BoardRow {
+  rank: number;
   player_id: string;
   display_name: string;
   total_score: number | string;
@@ -63,11 +81,21 @@ interface BoardRow {
 
 /** One row as the client wants it: short keys, numbers already numbers. */
 interface BoardEntry {
+  rank: number;
   playerId: string;
   name: string;
   score: number;
   best: number;
   puzzles: number;
+}
+
+/** What `leaderboard_boards` answers with: the gate, and the rows if it is open. */
+interface BoardsResult {
+  ready: boolean;
+  players: number;
+  minPlayers: number;
+  weekly: BoardRow[];
+  allTime: BoardRow[];
 }
 
 function reply(status: number, body?: unknown, cacheSeconds = 0): Response {
@@ -96,7 +124,10 @@ function toNumber(value: number | string | null): number {
 
 function toEntries(rows: BoardRow[] | null): BoardEntry[] {
   if (!Array.isArray(rows)) return [];
-  return rows.map((row) => ({
+  return rows.map((row, index) => ({
+    // The database ranked these; the fallback is only for a row that somehow
+    // arrived without one, and keeps the column non-null for the client.
+    rank: Number(row.rank) || index + 1,
     playerId: String(row.player_id),
     name: String(row.display_name),
     score: toNumber(row.total_score),
@@ -139,30 +170,31 @@ function validWindowStart(date: string): boolean {
   return validDate(date, WINDOW_FLOOR);
 }
 
-/** A submitted score, or a string saying what was wrong with it. */
-function readSubmission(parsed: unknown):
-  | {
-      playerId: string;
-      name: string;
-      date: string;
-      total: number;
-      top: number;
-      words: number;
-    }
-  | string {
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "malformed-body";
-  const { playerId, name, date, total, top, words } = parsed as Record<string, unknown>;
+/** One puzzle's score, validated. */
+interface ScoreEntry {
+  date: string;
+  total: number;
+  top: number;
+  words: number;
+}
 
-  if (typeof playerId !== "string" || !UUID_RE.test(playerId)) return "bad-player-id";
-  if (typeof name !== "string") return "bad-name";
-  // The client normalises the name before it gets here (see game/player.ts);
-  // this is the same rule enforced where it can't be edited out.
-  const cleanName = name.replace(/\s+/g, " ").trim().slice(0, MAX_NAME_CHARS).trim();
-  if (cleanName.length < 2) return "bad-name";
+/**
+ * Check one puzzle's score, returning it or the reason it is not one.
+ *
+ * Strict rather than forgiving, and the reason is worth saying: there are no
+ * accounts here, so a submission cannot be authenticated -- the only thing
+ * standing between the board and a made-up score is whether the numbers are
+ * ones a real game could have produced. A total above the day's ceiling, or a
+ * single word worth more than the whole game it came from, means the client and
+ * this endpoint disagree about scoring, and storing it would be worse than
+ * refusing it.
+ */
+function readScore(raw: unknown): ScoreEntry | string {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return "malformed-score";
+  const { date, total, top, words } = raw as Record<string, unknown>;
+
   if (typeof date !== "string" || !validPuzzleDate(date)) return "bad-date";
-
-  const scores = { total, top, words };
-  for (const [key, value] of Object.entries(scores)) {
+  for (const [key, value] of Object.entries({ total, top, words })) {
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return `bad-${key}`;
   }
   const totalScore = total as number;
@@ -171,21 +203,44 @@ function readSubmission(parsed: unknown):
   if (totalScore > MAX_TOTAL) return "bad-total";
   if (topScore > MAX_TOP) return "bad-top";
   if (!Number.isInteger(wordCount) || wordCount < 1 || wordCount > MAX_WORDS) return "bad-words";
-  // A single word cannot be worth more than the whole game, and the whole game
-  // cannot be worth more than every word scoring a perfect 10. Both would mean
-  // the client and this endpoint disagree about scoring, which is worth refusing
-  // rather than storing.
   if (topScore > totalScore + 0.05) return "inconsistent-scores";
   if (totalScore > wordCount * MAX_TOP + 0.05) return "inconsistent-scores";
 
   return {
-    playerId,
-    name: cleanName,
     date,
     total: Math.round(totalScore * 100) / 100,
     top: Math.round(topScore * 100) / 100,
     words: wordCount,
   };
+}
+
+/** A whole submission, or a string saying what was wrong with it. */
+function readSubmission(parsed: unknown):
+  | { playerId: string; name: string; scores: ScoreEntry[] }
+  | string {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "malformed-body";
+  const { playerId, name, scores } = parsed as Record<string, unknown>;
+
+  if (typeof playerId !== "string" || !UUID_RE.test(playerId)) return "bad-player-id";
+  if (typeof name !== "string") return "bad-name";
+  // The client normalises the name before it gets here (see game/player.ts);
+  // this is the same rule enforced where it can't be edited out.
+  const cleanName = name.replace(/\s+/g, " ").trim().slice(0, MAX_NAME_CHARS).trim();
+  if (cleanName.length < 2) return "bad-name";
+
+  if (!Array.isArray(scores)) return "bad-scores";
+  if (scores.length === 0) return "no-scores";
+  if (scores.length > MAX_SCORES) return "too-many-scores";
+
+  const checked: ScoreEntry[] = [];
+  for (const entry of scores) {
+    const score = readScore(entry);
+    // One bad day fails the batch rather than being quietly dropped: a partial
+    // write would leave the client believing it submitted a history it didn't.
+    if (typeof score === "string") return score;
+    checked.push(score);
+  }
+  return { playerId, name: cleanName, scores: checked };
 }
 
 async function handleGet(request: Request): Promise<Response> {
@@ -202,23 +257,31 @@ async function handleGet(request: Request): Promise<Response> {
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
-    // Two queries rather than one, because they are two different windows over
-    // the same rows and Postgres is the right place to do each. Issued together
-    // so the round trips overlap.
-    const [weekly, allTime] = await Promise.all([
-      rpc<BoardRow[]>("leaderboard_board", { p_since: since, p_limit: limit }),
-      rpc<BoardRow[]>("leaderboard_board", { p_since: null, p_limit: limit }),
-    ]);
+    // One call for the gate and both boards: they answer one question -- what
+    // should this page show right now -- and asking once means the player count
+    // can never disagree with the rows beside it.
+    const result = await rpc<BoardsResult>("leaderboard_boards", {
+      p_since: since,
+      p_limit: limit,
+      p_min_players: MIN_PLAYERS,
+    });
     return reply(
       200,
-      { weekStart: since, weekly: toEntries(weekly), allTime: toEntries(allTime) },
+      {
+        weekStart: since,
+        ready: Boolean(result?.ready),
+        players: Number(result?.players) || 0,
+        minPlayers: Number(result?.minPlayers) || MIN_PLAYERS,
+        weekly: toEntries(result?.weekly ?? null),
+        allTime: toEntries(result?.allTime ?? null),
+      },
       // A minute: long enough that a burst of opens costs one query, short
       // enough that a player who just scored sees themselves move.
       60
     );
   } catch (error) {
     // Logged for an operator, and reported to the client only as "unavailable".
-    // The modal shows a retry; it never shows a stack trace or an empty board.
+    // The page shows a retry; it never shows a stack trace or an empty board.
     console.error("[leaderboard] read failed:", error instanceof Error ? error.message : error);
     return reply(502, { ok: false, reason: "unavailable" });
   }
@@ -260,21 +323,19 @@ async function handlePost(request: Request, context?: EdgeContext): Promise<Resp
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   await record(
-    "rpc/submit_leaderboard_score",
+    "rpc/submit_leaderboard_scores",
     {
       p_player_id: submission.playerId,
-      p_puzzle_date: submission.date,
       p_display_name: submission.name,
-      p_total_score: submission.total,
-      p_top_score: submission.top,
-      p_words: submission.words,
+      p_scores: submission.scores,
     },
     context
   );
   // 202 rather than 200: the write may be handed to `waitUntil` and finish after
-  // this response, so the endpoint can honestly say it accepted the score, never
-  // that the row landed.
-  return reply(202);
+  // this response, so the endpoint can honestly say it accepted the scores,
+  // never that the rows landed. `days` echoes what was accepted, which is the
+  // only thing it can honestly report.
+  return reply(202, { ok: true, days: submission.scores.length });
 }
 
 export default async function handler(request: Request, context?: EdgeContext): Promise<Response> {

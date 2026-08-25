@@ -46,6 +46,7 @@ describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    window.history.pushState(null, "", "/");
     vi.mocked(useSound).mockReturnValue({
       enabled: true,
       toggle: vi.fn(),
@@ -90,14 +91,15 @@ describe("App", () => {
     expect(lockIn).toHaveBeenCalledTimes(1);
   });
 
-  it("badges the leaderboard until it has been opened, then never again", async () => {
+  it("badges the leaderboard until it has been visited, then never again", async () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     const { unmount } = render(<App />);
 
     // The badge is part of the button's accessible name, so a screen reader
     // hears the announcement rather than only seeing it.
     await userEvent.click(screen.getByRole("button", { name: "Leaderboard (new)" }));
-    expect(screen.getByRole("dialog", { name: /leaderboard/i })).toBeInTheDocument();
+    // A real page at a real URL, not a modal over the puzzle.
+    expect(window.location.pathname).toBe("/leaderboard");
     expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
 
     // And it stays gone across a reload, which is what "once" has to mean.
@@ -133,6 +135,7 @@ describe("App", () => {
     // Either entry point counts as meeting it -- the badge says "there is
     // something here you haven't seen", and now they have.
     await userEvent.click(screen.getByRole("button", { name: "See the leaderboard" }));
+    expect(window.location.pathname).toBe("/leaderboard");
     expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
   });
 

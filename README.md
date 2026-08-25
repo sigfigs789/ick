@@ -434,51 +434,88 @@ Row-level security is enabled on every table with no policies at all, so the
 
 ## Leaderboard
 
-Two boards, both fed by one table and shown together: **this week**, which
-counts puzzles from the current Monday onward, and **all time**, which counts
-every puzzle a player has scored on. Each is a sum of daily scores rather than
-a best-ever, which rewards showing up daily instead of peaking once.
+Its own page at `/leaderboard` — a board is something you link a friend to, open
+in a second tab, and leave with the back button, none of which a modal can do.
+Two entry points from the game: a trophy in the header and a link under the
+results. Routing is `src/routes.ts`, about forty lines of `pathname` and
+`pushState`, since `vercel.json` already rewrites every non-`/api/` path to
+`index.html`.
 
-The weekly reset is a window, not a job. Nothing is deleted or archived on
+Two boards, both fed by one table and shown together: **this week**, counting
+puzzles from the current Monday onward, and **all time**, counting every puzzle a
+player has scored on. Both are **ranked by total score** — a sum of daily scores,
+which rewards showing up daily instead of peaking once. Ties break on the best
+single word, then on who got there first. The rank is computed in SQL and
+returned as a column rather than inferred from row order, so the thing that did
+the sorting is the thing that says the position.
+
+Side by side where there is room, stacked into one column below 40rem. Showing
+both at once is the point of having two: the interesting thing about a weekly
+board is how it differs from the all-time one.
+
+**The weekly reset is a window, not a job.** Nothing is deleted or archived on
 Monday morning: `leaderboard_board(p_since => <monday>)` simply stops counting
-the rows that fell out of range, and the all-time board is the same function
-with no window. There is no scheduled task that can fail to run. The Monday is
+the rows that fell out of range, and the all-time board is the same function with
+no window. There is no scheduled task that can fail to run. The Monday is
 computed on the client (`src/game/week.ts`) for the same reason the puzzle date
 is: it should land at the player's midnight, not at UTC's.
 
-The trophy in the header carries a one-time "new" badge, retired the first time
-the leaderboard is opened from either entry point (`src/game/whatsNew.ts`). One
-bit per feature under `ick:seen:<feature>`, no expiry: a badge that comes back is
-a badge nobody trusts. A browser that cannot read localStorage reports *seen*, so
-it shows no badge rather than an undismissable one on every load.
+### Collected from the start, shown from ten players
 
-Identity is opt-in and account-free. A player who wants on the board types a
-name; the browser mints a UUID to go with it and keeps both in localStorage
-(`src/game/player.ts`). Nothing is sent for a player who never joins. The honest
-limits: clearing site data makes you a new player, a second browser is a second
-player, and names aren't reserved.
+Scores accumulate from the first day this ships, but the boards stay unpublished
+until **10 distinct players** have scored all time. A leaderboard with three
+names on it is not a leaderboard — it is a list of whoever found the page first,
+and it teaches a new player that nobody plays this. Until the threshold, the page
+shows the count ("6 of 10 players"), which is both honest and a reason to come
+back.
+
+The gate is enforced inside `leaderboard_boards`, so below the threshold **no row
+leaves the database at all** — there is no partial board sitting in an API
+response waiting to be read out of a network tab. `MIN_PLAYERS` in
+`api/leaderboard.ts` is the one place to change it.
+
+### Identity, and the history that comes with it
+
+Opt-in and account-free. A player who wants on the board types a name; the
+browser mints a UUID to go with it and keeps both in localStorage
+(`src/game/player.ts`). Nothing is sent for a player who never joins. A rename
+keeps the id, so it carries their whole history rather than starting a second
+entry. The trophy carries a one-time "new" badge, retired the first time the page
+is visited (`src/game/whatsNew.ts`).
+
+**Joining imports the player's own history.** Somebody who joins today has often
+been playing for weeks, and that record is already in localStorage — so
+`storage.playedOnItsDay()` collects every stored puzzle and
+`leaderboard.backfillHistory()` sends them as one batch. Only days **completed on
+their own calendar date** are eligible: `completedAt` is a real timestamp, so a
+puzzle finished the day it dropped is distinguishable from the same puzzle played
+out of the archive last night, and archive play is off the board for the same
+reason it is off the streak. The cost, stated plainly: a day left half-played
+never got a `completedAt`, so there is no evidence of when it was played and it
+cannot be counted.
 
 - **`leaderboard_scores`** — one row per player per puzzle date, written by
-  `api/leaderboard.ts` through `submit_leaderboard_score`. The upsert keeps the
-  *higher* of the stored and submitted score, so the client can submit after
-  every accepted word in any order the network delivers them. Only today's
-  puzzle is ever submitted: archive play stays off the board for the same reason
-  it stays off the streak.
+  `api/leaderboard.ts` through `submit_leaderboard_scores`. Takes an array
+  because it has two callers of the same shape: the game submitting today after
+  each accepted word, and a joining player submitting a whole history. The upsert
+  keeps the *higher* of the stored and submitted score, so repeats, out-of-order
+  arrivals and a re-sent backfill are all harmless.
 
 This is the one thing in the project the game reads from a database, because
 other people's scores can't be shipped in the bundle. The read is contained:
-`GET /api/leaderboard` is CDN-cached for a minute, only the leaderboard modal
-ever calls it, and a failure renders as "couldn't load" with a retry. Submitting
-is fire-and-forget from a `keepalive` POST that nothing awaits. A puzzle plays
+`GET /api/leaderboard` is CDN-cached for a minute, only the leaderboard page ever
+calls it, and a failure renders as "couldn't load" with a retry. Submitting is
+fire-and-forget from a `keepalive` POST that nothing awaits. A puzzle plays
 exactly the same with the endpoint down, unconfigured, or absent.
 
 There are no accounts, so a submission **cannot be authenticated** — anyone who
 reads `api/leaderboard.ts` can post a score under a name of their choosing. What
 the endpoint does enforce is that a score be one a real game could have produced:
 a puzzle date the game has reached, a total within the day's ceiling, a top word
-no rarer than the total it belongs to. That is enough for ordinary noise and is
-not a defence against a determined forgery. Worth knowing before this board is
-used for anything that matters.
+no rarer than the total it belongs to. One bad day fails the whole batch rather
+than being quietly dropped. That is enough for ordinary noise and is not a
+defence against a determined forgery. Worth knowing before this board is used for
+anything that matters.
 
 ## Design decisions worth knowing about
 

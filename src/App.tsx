@@ -8,7 +8,6 @@ import { StreakDisplay } from "./components/StreakDisplay";
 import { ResultsPanel } from "./components/ResultsPanel";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { WordRulesModal } from "./components/WordRulesModal";
-import { LeaderboardModal } from "./components/LeaderboardModal";
 import { SoundToggle } from "./components/SoundToggle";
 import { PuzzleNav } from "./components/PuzzleNav";
 import { ConfettiBurst } from "./components/ConfettiBurst";
@@ -29,9 +28,8 @@ import {
   trackVisit,
 } from "./analytics";
 import { recordVisit } from "./game/visits";
-import { submitScore } from "./game/leaderboard";
-import type { Player } from "./game/player";
 import { hasSeen, markSeen } from "./game/whatsNew";
+import { navigate } from "./routes";
 import { beginSession, endSessionSegment, resumeSession } from "./game/sessionTime";
 
 export default function App() {
@@ -56,7 +54,6 @@ export default function App() {
   } = useDailyPuzzle();
   const [showInstructions, setShowInstructions] = useState(false);
   const [showWordRules, setShowWordRules] = useState(false);
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
   // Read once on mount rather than on every render: this flips exactly once, in
   // openLeaderboard, and reading storage during a render would be the only
   // thing here that did.
@@ -117,20 +114,15 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
-  // Joining mid-puzzle should put the player on the board with the words they
-  // have already found, rather than making them wait for their next one.
-  function onJoinLeaderboard(player: Player) {
-    submitScore({ date, isToday, words: progress.acceptedWords, player });
-  }
-
   function openLeaderboard(from: "header" | "results") {
     trackLeaderboardOpened(from);
-    // Opening it is meeting it, from either entry point -- the badge's whole job
+    // Going there is meeting it, from either entry point -- the badge's whole job
     // is to say "there is something here you haven't seen", and once the player
-    // has seen it there is nothing left to say.
+    // has seen it there is nothing left to say. Marked before navigating so the
+    // badge is already retired when the back button brings them here again.
     markSeen("leaderboard");
     setLeaderboardIsNew(false);
-    setShowLeaderboard(true);
+    navigate("leaderboard");
   }
 
   const hasWinningWord = progress.acceptedWords.some((word) => isWinningRarity(word.rarity));
@@ -257,11 +249,6 @@ export default function App() {
 
       <InstructionsModal open={showInstructions} onClose={() => setShowInstructions(false)} />
       <WordRulesModal open={showWordRules} onClose={() => setShowWordRules(false)} />
-      <LeaderboardModal
-        open={showLeaderboard}
-        onClose={() => setShowLeaderboard(false)}
-        onJoin={onJoinLeaderboard}
-      />
     </div>
   );
 }

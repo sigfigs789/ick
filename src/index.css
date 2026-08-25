@@ -1307,12 +1307,6 @@ h2 {
     transform: translateY(0) scale(1);
   }
 }
-/* The leaderboard is the one modal that holds two columns, so it gets its own
-   width. Still `width: 100%` from .modal, so on a phone this is exactly the
-   same full-bleed panel every other modal is. */
-.modal--wide {
-  max-width: 44rem;
-}
 .modal__header {
   display: flex;
   align-items: center;
@@ -1424,6 +1418,73 @@ h2 {
 }
 
 /* Leaderboard */
+/* Its own page, so it gets the room two boards want -- wider than the game's
+   30rem column, which is sized for a single puzzle. */
+.leaderboard-page {
+  max-width: 46rem;
+}
+/* Balances the back button so the title stays centred, and matches its size. */
+.leaderboard-page__header-spacer {
+  width: 2.35rem;
+  flex: none;
+}
+/* "LEADERBOARD" is nearly twice the length of "WORDINK", so at the game's title
+   size it runs under the back button on a phone. Sized to fit the narrowest
+   viewport instead, and allowed to shrink its tracking before it collides. */
+.leaderboard-page .app__header h1 {
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+}
+@media (min-width: 26rem) {
+  .leaderboard-page .app__header h1 {
+    font-size: 1.6rem;
+  }
+}
+.leaderboard-page__back {
+  display: block;
+  margin: 1.6rem auto 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  padding: 0.6rem 1.2rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.leaderboard-page__back:hover {
+  background: var(--bg-inset);
+}
+/* Before the boards open: the count is the whole message, so it gets the size
+   a score would have had. */
+.leaderboard__not-yet {
+  margin: 2.5rem 0;
+  text-align: center;
+}
+.leaderboard__not-yet-count {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-muted);
+}
+.leaderboard__not-yet-count strong {
+  font-size: 2.8rem;
+  color: var(--fg);
+}
+.leaderboard__not-yet-copy {
+  margin: 0.6rem auto 0;
+  max-width: 26rem;
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.leaderboard__imported {
+  color: var(--success-fg);
+  font-weight: 700;
+}
 /* Both boards at once: two columns where there is room, one where there isn't.
    The grid is the whole of the responsive behaviour -- side by side on a laptop,
    stacked weekly-then-all-time on a phone -- so there is no tab state and no
@@ -1558,8 +1619,8 @@ h2 {
   font-variant-numeric: tabular-nums;
 }
 .leaderboard__join {
-  margin-top: 1.1rem;
-  padding-top: 1rem;
+  margin-top: 1.8rem;
+  padding-top: 1.2rem;
   border-top: 1px solid var(--border);
 }
 .leaderboard__join label {

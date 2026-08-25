@@ -6,6 +6,7 @@ import {
   loadStreak,
   lockInResult,
   newProgress,
+  playedOnItsDay,
   recordAcceptedWord,
   recordRejectedAttempt,
   resetProgress,
@@ -448,5 +449,67 @@ describe("live-validated words", () => {
     recordAcceptedWord(newProgress("2026-08-18", "tio"), live);
 
     expect(loadProgress("2026-08-18")?.acceptedWords[0]).toEqual(live);
+  });
+});
+
+describe("history for the leaderboard's import", () => {
+  /** A stored day, completed at the given instant. */
+  function store(date: string, completedAt?: string, words = [word("inkling", 2.6, "Rare")]) {
+    localStorage.setItem(
+      `ick:progress:${date}`,
+      JSON.stringify({
+        date,
+        drop: "ink",
+        acceptedWords: words,
+        rejectedAttempts: [],
+        completed: Boolean(completedAt),
+        ...(completedAt ? { completedAt } : {}),
+      })
+    );
+  }
+
+  it("returns the days finished on their own date, oldest first", () => {
+    store("2026-08-21", "2026-08-21T18:00:00");
+    store("2026-08-19", "2026-08-19T09:30:00");
+    store("2026-08-20", "2026-08-20T23:59:00");
+
+    expect(playedOnItsDay().map((p) => p.date)).toEqual([
+      "2026-08-19",
+      "2026-08-20",
+      "2026-08-21",
+    ]);
+  });
+
+  it("leaves out a puzzle played later out of the archive", () => {
+    // Finished three days after it dropped, so it is archive play -- off the
+    // board for the same reason it is off the streak.
+    store("2026-08-18", "2026-08-21T18:00:00");
+
+    expect(playedOnItsDay()).toEqual([]);
+  });
+
+  it("leaves out a day that was never finished", () => {
+    // No completedAt, so there is no evidence of when it was played.
+    store("2026-08-20");
+
+    expect(playedOnItsDay()).toEqual([]);
+  });
+
+  it("leaves out a day with no accepted words", () => {
+    store("2026-08-20", "2026-08-20T18:00:00", []);
+
+    expect(playedOnItsDay()).toEqual([]);
+  });
+
+  it("ignores unrelated keys in storage", () => {
+    localStorage.setItem("ick:streak", JSON.stringify({ currentStreak: 4 }));
+    localStorage.setItem("ick:player", JSON.stringify({ id: "abc", name: "Mo" }));
+    store("2026-08-20", "2026-08-20T18:00:00");
+
+    expect(playedOnItsDay().map((p) => p.date)).toEqual(["2026-08-20"]);
+  });
+
+  it("has nothing to import for a browser that has never played", () => {
+    expect(playedOnItsDay()).toEqual([]);
   });
 });

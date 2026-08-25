@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchBoards, submitScore } from "./leaderboard";
+import { backfillHistory, fetchBoards, submitScore } from "./leaderboard";
 import { savePlayerName } from "./player";
 import { todayDateString } from "./date";
-import type { AcceptedWord } from "./types";
+import type { AcceptedWord, DailyProgress } from "./types";
 
 const WORDS: AcceptedWord[] = [
   { word: "inkling", rarity: "Rare", zipf: 2.6 },
@@ -42,13 +42,12 @@ describe("submitting a score", () => {
     expect(body).toEqual({
       playerId: player?.id,
       name: "Mo",
-      date: today,
-      total: expect.any(Number),
-      top: expect.any(Number),
-      words: 2,
+      // A one-day batch, the same shape a history import uses.
+      scores: [{ date: today, total: expect.any(Number), top: expect.any(Number), words: 2 }],
     });
+    const day = (body.scores as Record<string, number>[])[0];
     // The two numbers the game already shows the player, not a third scheme.
-    expect(body.top as number).toBeLessThanOrEqual(body.total as number);
+    expect(day.top).toBeLessThanOrEqual(day.total);
   });
 
   it("sends nothing when nobody has joined on this browser", () => {
@@ -87,17 +86,97 @@ describe("submitting a score", () => {
   });
 });
 
+/** A stored day, completed at the given time (default: on its own date). */
+function stored(date: string, completedAt = `${date}T20:00:00.000Z`): DailyProgress {
+  return {
+    date,
+    drop: "ink",
+    acceptedWords: WORDS,
+    rejectedAttempts: [],
+    completed: true,
+    won: true,
+    completedAt,
+  };
+}
+
+describe("importing a joining player's history", () => {
+  it("sends every remembered day in one request", () => {
+    const player = savePlayerName("Mo");
+    const fetchMock = stubFetch();
+    const history = [stored("2026-08-20"), stored("2026-08-21"), stored("2026-08-22")];
+
+    expect(backfillHistory(player!, history)).toBe(3);
+    // One request for the whole history: a year of daily puzzles must not be a
+    // year of POSTs.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = posted(fetchMock);
+    expect(body.playerId).toBe(player?.id);
+    expect((body.scores as { date: string }[]).map((s) => s.date)).toEqual([
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-22",
+    ]);
+  });
+
+  it("scores each past day on the system that was in effect that day", () => {
+    const player = savePlayerName("Mo");
+    const fetchMock = stubFetch();
+    backfillHistory(player!, [stored("2026-08-20")]);
+
+    const day = (posted(fetchMock).scores as Record<string, number>[])[0];
+    expect(day.words).toBe(2);
+    expect(day.top).toBeLessThanOrEqual(day.total);
+  });
+
+  it("sends nothing when there is no history to bring", () => {
+    const player = savePlayerName("Mo");
+    const fetchMock = stubFetch();
+
+    expect(backfillHistory(player!, [])).toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("skips a remembered day with no words in it", () => {
+    const player = savePlayerName("Mo");
+    const fetchMock = stubFetch();
+    const empty = { ...stored("2026-08-20"), acceptedWords: [] };
+
+    expect(backfillHistory(player!, [empty])).toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("reads this browser's own history when none is passed", () => {
+    const player = savePlayerName("Mo");
+    localStorage.setItem("ick:progress:2026-08-20", JSON.stringify(stored("2026-08-20")));
+    // Played out of the archive days later, so it is not evidence of playing on
+    // the day and stays off the board.
+    localStorage.setItem(
+      "ick:progress:2026-08-10",
+      JSON.stringify(stored("2026-08-10", "2026-08-24T20:00:00.000Z"))
+    );
+    const fetchMock = stubFetch();
+
+    expect(backfillHistory(player!)).toBe(1);
+    expect((posted(fetchMock).scores as { date: string }[]).map((s) => s.date)).toEqual([
+      "2026-08-20",
+    ]);
+  });
+});
+
 describe("reading the boards", () => {
   it("ranks each board in the order the server sent it", async () => {
     stubFetch(
       new Response(
         JSON.stringify({
           weekStart: "2026-08-24",
+          ready: true,
+          players: 12,
+          minPlayers: 10,
           weekly: [
-            { playerId: "a", name: "Ada", score: 40, best: 9.9, puzzles: 5 },
-            { playerId: "b", name: "Mo", score: 20, best: 9.4, puzzles: 3 },
+            { rank: 1, playerId: "a", name: "Ada", score: 40, best: 9.9, puzzles: 5 },
+            { rank: 2, playerId: "b", name: "Mo", score: 20, best: 9.4, puzzles: 3 },
           ],
-          allTime: [{ playerId: "b", name: "Mo", score: 300, best: 10, puzzles: 40 }],
+          allTime: [{ rank: 1, playerId: "b", name: "Mo", score: 300, best: 10, puzzles: 40 }],
         }),
         { status: 200, headers: { "content-type": "application/json" } }
       )
@@ -105,8 +184,10 @@ describe("reading the boards", () => {
 
     const boards = await fetchBoards("2026-08-27");
     expect(boards.weekStart).toBe("2026-08-24");
-    // Ranks are assigned from the array order, never re-sorted here, so what the
-    // player sees is always what the database ranked.
+    expect(boards.ready).toBe(true);
+    expect(boards.players).toBe(12);
+    // The ranks come from the database, which did the sorting; nothing is
+    // re-sorted here, so what the player sees is always what it ranked.
     expect(boards.weekly.map((e) => [e.rank, e.name])).toEqual([
       [1, "Ada"],
       [2, "Mo"],
@@ -118,11 +199,12 @@ describe("reading the boards", () => {
     stubFetch(
       new Response(
         JSON.stringify({
+          ready: true,
           weekly: [
-            { playerId: "a", name: "Ada", score: 40 },
+            { rank: 1, playerId: "a", name: "Ada", score: 40 },
             { name: "no id", score: 10 },
             { playerId: "c", name: "Cy", score: "lots" },
-            { playerId: "d", name: "Di", score: 5 },
+            { rank: 4, playerId: "d", name: "Di", score: 5 },
           ],
           allTime: "not a board",
         }),
@@ -131,14 +213,34 @@ describe("reading the boards", () => {
     );
 
     const boards = await fetchBoards("2026-08-27");
-    // Ranks close up over the dropped rows rather than leaving a gap.
+    // Each surviving row keeps the rank the database gave it, so a dropped row
+    // shows as a gap rather than silently promoting everyone below it.
     expect(boards.weekly.map((e) => [e.rank, e.name])).toEqual([
       [1, "Ada"],
-      [2, "Di"],
+      [4, "Di"],
     ]);
     expect(boards.allTime).toEqual([]);
     // Missing optional numbers fall back rather than rendering as undefined.
     expect(boards.weekly[0]).toMatchObject({ best: 0, puzzles: 0 });
+  });
+
+  it("holds the boards back unless the server says they are published", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          players: 4,
+          minPlayers: 10,
+          // Rows with no `ready` flag beside them: the client shows nothing.
+          weekly: [{ rank: 1, playerId: "a", name: "Ada", score: 40 }],
+          allTime: [],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    const boards = await fetchBoards("2026-08-27");
+    expect(boards.ready).toBe(false);
+    expect(boards.players).toBe(4);
   });
 
   it("falls back to the requested week when the server echoes nothing", async () => {

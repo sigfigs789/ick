@@ -60,40 +60,66 @@ alter table public.leaderboard_scores enable row level security;
 revoke all on public.leaderboard_scores from anon, authenticated;
 
 /*
- * Submit one puzzle's score.
+ * Submit a player's scores -- one puzzle, or a whole history at once.
  *
- * Monotonic on purpose: a day's score only ever goes up. The client submits
- * after every accepted word, and those arrive in whatever order the network
- * delivers them -- taking the max means a late-arriving early submission cannot
- * undo a better one. It also means a second browser on the same player id
- * cannot lower the day's score, only raise it.
+ * Takes an array because it has two callers with the same shape: the game
+ * submits a single day after each accepted word, and a player joining the board
+ * submits every past puzzle their browser still remembers playing. A batch is
+ * one round trip and one transaction, which matters when the batch is a year
+ * long.
+ *
+ * Monotonic on purpose: a day's score only ever goes up. Submissions arrive in
+ * whatever order the network delivers them, so taking the max means a
+ * late-arriving early submission cannot undo a better one, a re-sent backfill is
+ * a no-op, and a second browser on the same player id cannot lower a day, only
+ * raise it.
  *
  * The display name is *not* max'd -- the newest one always wins, so renaming
- * takes effect on the next submission.
+ * takes effect on the next submission, across the player's whole history.
+ *
+ * Returns how many days were written, which the endpoint reports back.
  */
-create or replace function public.submit_leaderboard_score(
+create or replace function public.submit_leaderboard_scores(
   p_player_id uuid,
-  p_puzzle_date date,
   p_display_name text,
-  p_total_score numeric,
-  p_top_score numeric,
-  p_words smallint
-) returns void
+  p_scores jsonb
+) returns integer
 language sql
 as $$
-  insert into public.leaderboard_scores
-    (player_id, puzzle_date, display_name, total_score, top_score, words)
-  values
-    (p_player_id, p_puzzle_date, p_display_name, p_total_score, p_top_score, p_words)
-  on conflict (player_id, puzzle_date) do update set
-    display_name = excluded.display_name,
-    total_score = greatest(public.leaderboard_scores.total_score, excluded.total_score),
-    top_score = greatest(public.leaderboard_scores.top_score, excluded.top_score),
-    words = greatest(public.leaderboard_scores.words, excluded.words),
-    updated_at = now();
+  with incoming as (
+    select
+      (s ->> 'date')::date as puzzle_date,
+      (s ->> 'total')::numeric as total_score,
+      (s ->> 'top')::numeric as top_score,
+      (s ->> 'words')::smallint as words
+    from jsonb_array_elements(p_scores) as s
+  ),
+  -- One row per date before the insert sees it: a batch could name the same day
+  -- twice, and ON CONFLICT cannot resolve a conflict against a row the same
+  -- statement is still inserting.
+  deduped as (
+    select puzzle_date, max(total_score) as total_score,
+           max(top_score) as top_score, max(words) as words
+    from incoming
+    group by puzzle_date
+  ),
+  written as (
+    insert into public.leaderboard_scores
+      (player_id, puzzle_date, display_name, total_score, top_score, words)
+    select p_player_id, d.puzzle_date, p_display_name, d.total_score, d.top_score, d.words
+    from deduped d
+    on conflict (player_id, puzzle_date) do update set
+      display_name = excluded.display_name,
+      total_score = greatest(public.leaderboard_scores.total_score, excluded.total_score),
+      top_score = greatest(public.leaderboard_scores.top_score, excluded.top_score),
+      words = greatest(public.leaderboard_scores.words, excluded.words),
+      updated_at = now()
+    returning 1
+  )
+  select count(*)::integer from written;
 $$;
 
-revoke all on function public.submit_leaderboard_score(uuid, date, text, numeric, numeric, smallint)
+revoke all on function public.submit_leaderboard_scores(uuid, text, jsonb)
   from public, anon, authenticated;
 
 /*
@@ -105,14 +131,19 @@ revoke all on function public.submit_leaderboard_score(uuid, date, text, numeric
  * keeps the all-time board a straight sum of the same rows and makes the weekly
  * reset unlosable: there is no scheduled job that can fail to run.
  *
- * Ranked by summed score, which rewards playing every day rather than peaking
- * once -- the intended shape for a daily game. Ties break on the best single
- * word, then on who got there first, so a rank is always determinate.
+ * Ranked by summed total score, which rewards playing every day rather than
+ * peaking once -- the intended shape for a daily game. Ties break on the best
+ * single word, then on who got there first, so a rank is always determinate.
+ *
+ * The rank is returned rather than left for a caller to infer from row order:
+ * it is what the page displays, so the database that decided the ordering is
+ * the thing that should say it.
  */
 create or replace function public.leaderboard_board(
   p_since date default null,
   p_limit integer default 50
 ) returns table (
+  rank integer,
   player_id uuid,
   display_name text,
   total_score numeric,
@@ -122,19 +153,86 @@ create or replace function public.leaderboard_board(
 language sql
 stable
 as $$
+  with totals as (
+    select
+      s.player_id,
+      -- The name from the player's most recent submission, so a rename shows up
+      -- across their whole history rather than only on the days they renamed.
+      (array_agg(s.display_name order by s.puzzle_date desc))[1] as display_name,
+      round(sum(s.total_score), 1) as total_score,
+      max(s.top_score) as best_score,
+      count(*)::integer as puzzles,
+      min(s.created_at) as joined_at
+    from public.leaderboard_scores s
+    where p_since is null or s.puzzle_date >= p_since
+    group by s.player_id
+  )
   select
-    s.player_id,
-    -- The name from the player's most recent submission, so a rename shows up
-    -- across their whole history rather than only on the days they renamed.
-    (array_agg(s.display_name order by s.puzzle_date desc))[1] as display_name,
-    round(sum(s.total_score), 1) as total_score,
-    max(s.top_score) as best_score,
-    count(*)::integer as puzzles
-  from public.leaderboard_scores s
-  where p_since is null or s.puzzle_date >= p_since
-  group by s.player_id
-  order by total_score desc, best_score desc, min(s.created_at) asc
+    row_number() over (
+      order by t.total_score desc, t.best_score desc, t.joined_at asc
+    )::integer as rank,
+    t.player_id,
+    t.display_name,
+    t.total_score,
+    t.best_score,
+    t.puzzles
+  from totals t
+  order by rank
   limit least(greatest(coalesce(p_limit, 50), 1), 200);
 $$;
 
 revoke all on function public.leaderboard_board(date, integer) from public, anon, authenticated;
+
+/*
+ * Both boards, and the gate in front of them.
+ *
+ * A leaderboard with three names on it is not a leaderboard, it is a list of
+ * whoever happened to find the page first -- and it teaches a new player that
+ * nobody plays this. So the boards stay collected but unpublished until
+ * `p_min_players` distinct players have scored all time, at which point they
+ * appear for everyone at once.
+ *
+ * The gate lives here rather than in the endpoint or the page on purpose: below
+ * the threshold no row leaves the database at all, so there is no partial board
+ * sitting in an API response waiting to be read out of the network tab. What a
+ * caller gets instead is the count, which is the honest thing to show -- "four
+ * of ten players so far" is a reason to come back.
+ *
+ * One function returning JSON rather than three calls: the count and both boards
+ * are one question ("what should this page show right now"), and answering it in
+ * one round trip means the count can never disagree with the rows beside it.
+ */
+create or replace function public.leaderboard_boards(
+  p_since date,
+  p_limit integer default 50,
+  p_min_players integer default 10
+) returns jsonb
+language sql
+stable
+as $$
+  with gate as (
+    select
+      count(distinct s.player_id)::integer as players,
+      greatest(coalesce(p_min_players, 10), 0) as needed
+    from public.leaderboard_scores s
+  )
+  select jsonb_build_object(
+    'ready', g.players >= g.needed,
+    'players', g.players,
+    'minPlayers', g.needed,
+    -- Aggregated in rank order, so the array a caller receives is already the
+    -- board top to bottom and nothing downstream has to re-sort it.
+    'weekly', case when g.players >= g.needed then (
+      select coalesce(jsonb_agg(to_jsonb(b) order by b.rank), '[]'::jsonb)
+      from public.leaderboard_board(p_since, p_limit) b
+    ) else '[]'::jsonb end,
+    'allTime', case when g.players >= g.needed then (
+      select coalesce(jsonb_agg(to_jsonb(b) order by b.rank), '[]'::jsonb)
+      from public.leaderboard_board(null, p_limit) b
+    ) else '[]'::jsonb end
+  )
+  from gate g;
+$$;
+
+revoke all on function public.leaderboard_boards(date, integer, integer)
+  from public, anon, authenticated;
