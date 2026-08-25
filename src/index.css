@@ -1592,12 +1592,14 @@ h2 {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+/* The name is a word now, and words get long ("gastroenterologist"). Wrapping
+   beats ellipsing: the word *is* the identity, so a truncated one is worse than
+   a two-line row. */
 .leaderboard__name {
   grid-area: name;
   font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .leaderboard__you {
   color: var(--fg-faint);
@@ -1623,36 +1625,32 @@ h2 {
   padding-top: 1.2rem;
   border-top: 1px solid var(--border);
 }
-.leaderboard__join label {
-  display: block;
-  margin-bottom: 0.4rem;
+/* The name is the player's rarest word, so it is shown at the size of a find
+   rather than the size of a form label -- it is the thing being offered. */
+.leaderboard__join-pitch {
+  margin: 0 0 0.7rem;
   color: var(--fg-muted);
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.95rem;
 }
-.leaderboard__join-row {
-  display: flex;
-  gap: 0.5rem;
-}
-.leaderboard__join-row input {
-  flex: 1;
-  min-width: 0;
-  border: 1px solid var(--border-strong);
-  border-radius: 0.5rem;
-  padding: 0.55rem 0.65rem;
-  background: var(--bg-inset);
+.leaderboard__join-pitch strong {
+  display: block;
+  margin-top: 0.15rem;
   color: var(--fg);
-  font: inherit;
-  font-weight: 500;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  /* A 30-letter word on a 320px screen has to be allowed to break. */
+  overflow-wrap: anywhere;
 }
 .leaderboard__join-button {
-  flex: none;
   border: 0;
   border-radius: 0.5rem;
-  padding: 0.55rem 1.1rem;
+  padding: 0.6rem 1.2rem;
   background: var(--accent);
   color: var(--accent-fg);
   font-family: var(--font-display);
+  font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
 }

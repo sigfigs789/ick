@@ -18,7 +18,7 @@ function withEnv(env: Record<string, string | undefined> = CONFIGURED) {
 function score(overrides: Record<string, unknown> = {}) {
   const { playerId, name, ...day } = {
     playerId: PLAYER,
-    name: "Mo",
+    name: "inkling",
     date: SUNDAY,
     total: 24.6,
     top: 9.4,
@@ -81,7 +81,7 @@ describe("api/leaderboard submissions", () => {
     expect(call?.url).toBe("https://project.supabase.co/rest/v1/rpc/submit_leaderboard_scores");
     expect(call?.args).toEqual({
       p_player_id: PLAYER,
-      p_display_name: "Mo",
+      p_display_name: "inkling",
       p_scores: [{ date: SUNDAY, total: 24.6, top: 9.4, words: 5 }],
     });
   });
@@ -95,7 +95,7 @@ describe("api/leaderboard submissions", () => {
       top: 6.1,
       words: 3,
     }));
-    const response = await handler(post({ playerId: PLAYER, name: "Mo", scores }));
+    const response = await handler(post({ playerId: PLAYER, name: "inkling", scores }));
 
     expect(response.status).toBe(202);
     expect(await response.json()).toEqual({ ok: true, days: 300 });
@@ -111,7 +111,7 @@ describe("api/leaderboard submissions", () => {
     const response = await handler(
       post({
         playerId: PLAYER,
-        name: "Mo",
+        name: "inkling",
         scores: [
           { date: SUNDAY, total: 12, top: 6, words: 3 },
           { date: "2020-01-01", total: 12, top: 6, words: 3 },
@@ -133,7 +133,7 @@ describe("api/leaderboard submissions", () => {
   ])("refuses %s", async (_label, scores, reason) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
-    const response = await handler(post({ playerId: PLAYER, name: "Mo", scores }));
+    const response = await handler(post({ playerId: PLAYER, name: "inkling", scores }));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ ok: false, reason });
@@ -149,32 +149,47 @@ describe("api/leaderboard submissions", () => {
       top: 1,
       words: 1,
     }));
-    const response = await handler(post({ playerId: PLAYER, name: "Mo", scores }));
+    const response = await handler(post({ playerId: PLAYER, name: "inkling", scores }));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ ok: false, reason: "too-many-scores" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("normalises the display name it stores", async () => {
+  it("stores the word the player was named by, unaltered", async () => {
     withEnv();
     const fetchMock = stubFetch([[]]);
-    await handler(post(score({ name: "  word   smith  " })));
+    await handler(post(score({ name: "gastroenterologist" })));
 
-    expect(rpcCall(fetchMock)?.args.p_display_name).toBe("word smith");
+    expect(rpcCall(fetchMock)?.args.p_display_name).toBe("gastroenterologist");
   });
 
-  it("truncates a name past the length the board shows", async () => {
+  it.each([
+    ["a name with a space in it", "word smith"],
+    ["a name with capitals", "Inkling"],
+    ["a name with punctuation", "ink-ling"],
+    ["a name with a digit", "ink1ing"],
+    ["a name with an invisible character", "ink\u200bling"],
+    ["a name with a bidi override", "\u202einkling"],
+    ["a single letter", "a"],
+    ["a word longer than the game accepts", "a".repeat(31)],
+    ["an empty name", ""],
+  ])("refuses %s", async (_label, name) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
-    await handler(post(score({ name: "a".repeat(50) })));
+    const response = await handler(post(score({ name })));
 
-    expect(rpcCall(fetchMock)?.args.p_display_name).toBe("a".repeat(18));
+    // The name is a word the player found, so anything that isn't one means the
+    // client and this endpoint disagree -- rejected rather than trimmed into
+    // shape, which would invent a name nobody earned.
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ ok: false, reason: "bad-name" });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it.each([
     ["a player id that isn't a uuid", { playerId: "mo" }, "bad-player-id"],
-    ["a name with nothing in it", { name: "  " }, "bad-name"],
+    ["a name that isn't a word", { name: "  " }, "bad-name"],
     ["a puzzle date before the game existed", { date: "2020-01-01" }, "bad-date"],
     ["a puzzle date that isn't a date", { date: "yesterday" }, "bad-date"],
     ["a total above the highest possible puzzle", { total: 61, words: 6 }, "bad-total"],
@@ -220,11 +235,11 @@ describe("api/leaderboard reads", () => {
     players: 14,
     minPlayers: 10,
     weekly: [
-      { rank: 1, player_id: PLAYER, display_name: "Mo", total_score: "24.6", best_score: "9.4", puzzles: 1 },
+      { rank: 1, player_id: PLAYER, display_name: "inkling", total_score: "24.6", best_score: "9.4", puzzles: 1 },
     ],
     allTime: [
-      { rank: 1, player_id: PLAYER, display_name: "Mo", total_score: "180.2", best_score: "9.9", puzzles: 9 },
-      { rank: 2, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", display_name: "Ada", total_score: "90.0", best_score: "8.1", puzzles: 5 },
+      { rank: 1, player_id: PLAYER, display_name: "inkling", total_score: "180.2", best_score: "9.9", puzzles: 9 },
+      { rank: 2, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", display_name: "asphyxiate", total_score: "90.0", best_score: "8.1", puzzles: 5 },
     ],
   };
 
@@ -241,10 +256,10 @@ describe("api/leaderboard reads", () => {
       ready: true,
       players: 14,
       minPlayers: 10,
-      weekly: [{ rank: 1, playerId: PLAYER, name: "Mo", score: 24.6, best: 9.4, puzzles: 1 }],
+      weekly: [{ rank: 1, playerId: PLAYER, name: "inkling", score: 24.6, best: 9.4, puzzles: 1 }],
       allTime: [
-        { rank: 1, playerId: PLAYER, name: "Mo", score: 180.2, best: 9.9, puzzles: 9 },
-        { rank: 2, playerId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", name: "Ada", score: 90, best: 8.1, puzzles: 5 },
+        { rank: 1, playerId: PLAYER, name: "inkling", score: 180.2, best: 9.9, puzzles: 9 },
+        { rank: 2, playerId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", name: "asphyxiate", score: 90, best: 8.1, puzzles: 5 },
       ],
     });
 

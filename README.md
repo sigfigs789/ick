@@ -486,14 +486,37 @@ leaves the database at all** — there is no partial board sitting in an API
 response waiting to be read out of a network tab. `MIN_PLAYERS` in
 `api/leaderboard.ts` is the one place to change it.
 
+### The name is your rarest word
+
+Nobody types a name. What the board shows beside a score is the player's own
+best word ever — `asphyxiate`, `gastroenterologist`, `quixotic` — and it changes
+the moment they beat it (`leaderboard.boardName`). A word game's board is more
+interesting when the names *are* the finds: it says what each player is on the
+board for, and it needs no maintenance.
+
+**Judged on today's criteria, not the day the word was played.** A puzzle's
+*score* is frozen at the scoring system in effect that day, because a past game
+should keep the result it was played for. A name is not a result — it is a
+current claim about the player — so each word is looked up fresh in today's
+dictionary (`rarityFor` with no date) and only falls back to the stored Zipf for
+a word today's dictionary doesn't carry, such as a live Merriam-Webster approval.
+Every player's name is therefore decided on the same terms on the same day.
+
+Names come from the same days that get submitted, so a word farmed out of the
+archive can no more name a player than it can score for them.
+
+This also removed a problem rather than adding one. A typed name on a public,
+unauthenticated endpoint is a sanitising job: invisible characters, bidi
+overrides, imitations of the page's own copy. A name that is always a word is
+validated as one — `^[a-z]{2,30}$` in the endpoint *and* as a check constraint on
+the column — and nothing else is expressible.
+
 ### Identity, and the history that comes with it
 
-Opt-in and account-free. A player who wants on the board types a name; the
-browser mints a UUID to go with it and keeps both in localStorage
-(`src/game/player.ts`). Nothing is sent for a player who never joins. A rename
-keeps the id, so it carries their whole history rather than starting a second
-entry. The trophy carries a one-time "new" badge, retired the first time the page
-is visited (`src/game/whatsNew.ts`).
+Opt-in and account-free, and there is nothing to fill in. A player taps once; the
+browser mints a UUID and stores that id and nothing else (`src/game/player.ts`).
+Nothing is sent for a player who never joins. The trophy carries a one-time "new"
+badge, retired the first time the page is visited (`src/game/whatsNew.ts`).
 
 **Joining imports the player's own history.** Somebody who joins today has often
 been playing for weeks, and that record is already in localStorage — so
@@ -539,7 +562,9 @@ it lets in are real and numerous, and the ones it lets cheat have to be awake at
   because it has two callers of the same shape: the game submitting today after
   each accepted word, and a joining player submitting a whole history. The upsert
   keeps the *higher* of the stored and submitted score, so repeats, out-of-order
-  arrivals and a re-sent backfill are all harmless.
+  arrivals and a re-sent backfill are all harmless. `display_name` is the one
+  column that is *not* max'd: the newest wins, which is how beating your best
+  word renames you across your whole history with nothing to migrate.
 
 This is the one thing in the project the game reads from a database, because
 other people's scores can't be shipped in the bundle. The read is contained:

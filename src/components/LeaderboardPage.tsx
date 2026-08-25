@@ -1,12 +1,13 @@
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { formatScore } from "../game/dictionary";
 import {
   backfillHistory,
+  boardName,
   fetchBoards,
   type BoardEntry,
   type Boards,
 } from "../game/leaderboard";
-import { loadPlayer, MAX_NAME_LENGTH, savePlayerName, type Player } from "../game/player";
+import { joinBoard, loadPlayerId } from "../game/player";
 import { resetLabel } from "../game/week";
 import { navigate } from "../routes";
 import { trackLeaderboardJoined } from "../analytics";
@@ -31,12 +32,12 @@ type LoadState = "loading" | "ready" | "error";
 export function LeaderboardPage() {
   const [boards, setBoards] = useState<Boards | null>(null);
   const [state, setState] = useState<LoadState>("loading");
-  const [player, setPlayer] = useState<Player | null>(() => loadPlayer());
-  const [nameDraft, setNameDraft] = useState("");
-  const [editingName, setEditingName] = useState(false);
-  const [nameError, setNameError] = useState(false);
+  const [playerId, setPlayerId] = useState<string | null>(() => loadPlayerId());
   /** Days imported from this browser's history on joining, for one message. */
   const [imported, setImported] = useState<number | null>(null);
+  // The name this browser would appear under: the best word it can prove was
+  // played on its own day. Null until the player has one.
+  const name = boardName();
 
   const load = useCallback(() => {
     setState("loading");
@@ -54,28 +55,18 @@ export function LeaderboardPage() {
     load();
   }, [load]);
 
-  function submitName(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const saved = savePlayerName(nameDraft);
-    if (!saved) {
-      setNameError(true);
-      return;
-    }
-    const isRename = player !== null;
-    setPlayer(saved);
-    setNameDraft("");
-    setEditingName(false);
-    setNameError(false);
-    trackLeaderboardJoined(isRename);
+  function join() {
+    const id = joinBoard();
+    if (!id) return;
+    setPlayerId(id);
+    trackLeaderboardJoined(false);
     // Joining brings your history with you: every puzzle this browser can show
     // was played on its own day goes up in one request, so a player who has been
-    // at this for weeks doesn't start from zero. A rename is not a join, and has
-    // nothing to import -- the history is already under the same player id.
-    if (!isRename) setImported(backfillHistory(saved));
+    // at this for weeks doesn't start from zero.
+    setImported(backfillHistory(id));
     load();
   }
 
-  const showJoinForm = !player || editingName;
   const ready = boards?.ready ?? false;
 
   return (
@@ -123,75 +114,64 @@ export function LeaderboardPage() {
               caption={`From Sunday on. ${resetLabel()}.`}
               entries={boards.weekly}
               emptyMessage="Nobody's scored yet this week. Be first."
-              player={player}
+              playerId={playerId}
             />
             <Board
               heading="All time"
               caption="Every puzzle you've scored on, added up."
               entries={boards.allTime}
               emptyMessage="No scores yet."
-              player={player}
+              playerId={playerId}
             />
           </div>
         )}
 
-        {showJoinForm ? (
-          <form className="leaderboard__join" onSubmit={submitName}>
-            <label htmlFor="leaderboard-name">
-              {player ? "Change your name" : "Put your name on the board"}
-            </label>
-            <div className="leaderboard__join-row">
-              <input
-                id="leaderboard-name"
-                type="text"
-                value={nameDraft}
-                maxLength={MAX_NAME_LENGTH}
-                placeholder={player?.name ?? "Your name"}
-                autoComplete="off"
-                onChange={(e) => {
-                  setNameDraft(e.target.value);
-                  setNameError(false);
-                }}
-              />
-              <button type="submit" className="leaderboard__join-button">
-                {player ? "Save" : "Join"}
-              </button>
-            </div>
-            {nameError ? (
-              <p className="leaderboard__note leaderboard__note--error" aria-live="polite">
-                That name's too short — two characters or more.
-              </p>
-            ) : (
-              <p className="leaderboard__note">
-                No account, no email. The name lives in this browser, and joining brings
-                every puzzle you played on its own day with it.
-              </p>
-            )}
-          </form>
-        ) : (
+        {playerId ? (
           <p className="leaderboard__note leaderboard__note--playing">
-            Playing as <strong>{player.name}</strong>.{" "}
-            <button
-              type="button"
-              className="leaderboard__retry"
-              onClick={() => {
-                setNameDraft(player.name);
-                setEditingName(true);
-              }}
-            >
-              Change name
-            </button>
+            {name ? (
+              <>
+                You're on the board as <strong>{name}</strong> — your rarest word so far.
+                Beat it and this changes.
+              </>
+            ) : (
+              <>You're on the board. Your rarest word will name you once you've played one.</>
+            )}
             {imported !== null && (
               <>
                 {" "}
                 <span className="leaderboard__imported" aria-live="polite">
+                  {/* Not "past" puzzles: today counts too when it has been
+                      played, and it usually has by the time anyone joins. */}
                   {imported > 0
-                    ? `Brought ${imported} past ${imported === 1 ? "puzzle" : "puzzles"} with you.`
-                    : "No past puzzles to bring — today's is your first on the board."}
+                    ? `Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`
+                    : "Nothing to count yet — your first scored puzzle starts you off."}
                 </span>
               </>
             )}
           </p>
+        ) : (
+          <div className="leaderboard__join">
+            {name ? (
+              <>
+                <p className="leaderboard__join-pitch">
+                  Join as <strong>{name}</strong>
+                </p>
+                <button type="button" className="leaderboard__join-button" onClick={join}>
+                  Put me on the board
+                </button>
+                <p className="leaderboard__note">
+                  No account, no email, no name to pick — the board calls you by your
+                  rarest word, and renames you when you beat it. Joining brings every
+                  puzzle you played on its own day with it.
+                </p>
+              </>
+            ) : (
+              <p className="leaderboard__note">
+                Play a word and you can join the board. It calls players by their rarest
+                find rather than a name they picked, so you need one first.
+              </p>
+            )}
+          </div>
         )}
 
         <button type="button" className="leaderboard-page__back" onClick={() => navigate("game")}>
@@ -235,11 +215,11 @@ interface BoardProps {
   caption: string;
   entries: BoardEntry[];
   emptyMessage: string;
-  player: Player | null;
+  playerId: string | null;
 }
 
 /** One board, ranked by total score exactly as the database ordered it. */
-function Board({ heading, caption, entries, emptyMessage, player }: BoardProps) {
+function Board({ heading, caption, entries, emptyMessage, playerId }: BoardProps) {
   return (
     <section className="leaderboard__board" aria-label={heading}>
       <h2 className="leaderboard__board-heading">{heading}</h2>
@@ -249,7 +229,7 @@ function Board({ heading, caption, entries, emptyMessage, player }: BoardProps) 
       ) : (
         <ol className="leaderboard__list">
           {entries.map((entry) => {
-            const isYou = player?.id === entry.playerId;
+            const isYou = playerId !== null && playerId === entry.playerId;
             return (
               <li
                 key={entry.playerId}

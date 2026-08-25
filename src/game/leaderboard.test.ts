@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { backfillHistory, fetchBoards, submitScore } from "./leaderboard";
-import { savePlayerName } from "./player";
+import { backfillHistory, boardName, fetchBoards, submitScore } from "./leaderboard";
+import { joinBoard } from "./player";
 import { todayDateString } from "./date";
 import type { AcceptedWord, DailyProgress } from "./types";
 
@@ -32,16 +32,16 @@ afterEach(() => {
 });
 
 describe("submitting a score", () => {
-  it("posts the day's running total for a joined player", () => {
-    const player = savePlayerName("Mo");
+  it("posts the day's running total, named by the player's best word", () => {
+    const playerId = joinBoard();
     const fetchMock = stubFetch();
     const today = todayDateString();
 
     expect(submitScore({ date: today, isToday: true, words: WORDS })).toBe(true);
     const body = posted(fetchMock);
     expect(body).toEqual({
-      playerId: player?.id,
-      name: "Mo",
+      playerId,
+      name: "inkling",
       // A one-day batch, the same shape a history import uses.
       scores: [{ date: today, total: expect.any(Number), top: expect.any(Number), words: 2 }],
     });
@@ -57,7 +57,7 @@ describe("submitting a score", () => {
   });
 
   it("keeps archive play off the board", () => {
-    savePlayerName("Mo");
+    joinBoard();
     const fetchMock = stubFetch();
     // Same reason it stays off the streak: the answers are lookupable.
     expect(submitScore({ date: "2026-07-04", isToday: false, words: WORDS })).toBe(false);
@@ -65,14 +65,14 @@ describe("submitting a score", () => {
   });
 
   it("sends nothing before the first word is accepted", () => {
-    savePlayerName("Mo");
+    joinBoard();
     const fetchMock = stubFetch();
     expect(submitScore({ date: todayDateString(), isToday: true, words: [] })).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("swallows a failed submission rather than surfacing it", () => {
-    savePlayerName("Mo");
+    joinBoard();
     const fetchMock = vi.fn(async () => {
       throw new Error("offline");
     });
@@ -100,18 +100,113 @@ function stored(date: string, firstWordAt = `${date}T20:00:00.000Z`): DailyProgr
   };
 }
 
+describe("the name the board calls you", () => {
+  /** A day's worth of words, played on its own date so it counts. */
+  function day(date: string, words: AcceptedWord[]): DailyProgress {
+    return {
+      date,
+      drop: "ink",
+      acceptedWords: words,
+      rejectedAttempts: [],
+      completed: true,
+      firstWordAt: `${date}T20:00:00.000Z`,
+      completedAt: `${date}T20:04:00.000Z`,
+    };
+  }
+
+  it("is the rarest word the player has ever found", () => {
+    // asphyxiate (8.30) beats inkling (7.11) beats cat (4.34) today.
+    expect(
+      boardName([
+        day("2026-08-19", [{ word: "cat", rarity: "Common", zipf: 4.78 }]),
+        day("2026-08-20", [
+          { word: "inkling", rarity: "Rare", zipf: 2.9 },
+          { word: "asphyxiate", rarity: "Extremely Rare", zipf: 2.09 },
+        ]),
+      ])
+    ).toBe("asphyxiate");
+  });
+
+  it("judges words on today's criteria, not the score they were saved with", () => {
+    // A record saved under an older scoring system, or before the word's
+    // frequency was corrected: `cat` is stored as though it were vanishingly
+    // rare, and `inkling` as though it were everyday.
+    const name = boardName([
+      day("2026-08-19", [{ word: "cat", rarity: "Legend", zipf: 0.1 }]),
+      day("2026-08-20", [{ word: "inkling", rarity: "Very Common", zipf: 7.5 }]),
+    ]);
+
+    // The stored numbers would have crowned `cat`. Today's dictionary says
+    // otherwise, and today's dictionary is what every player is judged by.
+    expect(name).toBe("inkling");
+  });
+
+  it("falls back to the stored frequency for a word today's dictionary lacks", () => {
+    // A live Merriam-Webster approval: not in the shipped dictionary, so its
+    // own recorded rarity is the only thing there is to go on.
+    expect(
+      boardName([
+        day("2026-08-20", [
+          { word: "inkling", rarity: "Rare", zipf: 2.9 },
+          { word: "enshittification", rarity: "Legend", zipf: 0.5 },
+        ]),
+      ])
+    ).toBe("enshittification");
+  });
+
+  it("keeps the earlier word when two are equally rare", () => {
+    const words = [
+      { word: "inkling", rarity: "Rare" as const, zipf: 2.9 },
+      { word: "inkling", rarity: "Rare" as const, zipf: 2.9 },
+    ];
+    // A name that churned between ties would rewrite the player's whole history
+    // on every submission for no reason.
+    expect(boardName([day("2026-08-20", words)])).toBe("inkling");
+  });
+
+  it("lowercases the name, whatever the record holds", () => {
+    expect(boardName([day("2026-08-20", [{ word: "Inkling", rarity: "Rare", zipf: 2.9 }])])).toBe(
+      "inkling"
+    );
+  });
+
+  it("has no name for a browser with nothing eligible", () => {
+    expect(boardName([])).toBeNull();
+    expect(boardName([day("2026-08-20", [])])).toBeNull();
+  });
+
+  it("ignores words from days that don't count", () => {
+    localStorage.setItem(
+      "ick:progress:2026-08-20",
+      JSON.stringify(day("2026-08-20", [{ word: "inkling", rarity: "Rare", zipf: 2.9 }]))
+    );
+    // A rarer word, but pulled out of the archive weeks later -- so it cannot
+    // become the player's name any more than it can become their score.
+    localStorage.setItem(
+      "ick:progress:2026-07-04",
+      JSON.stringify({
+        ...day("2026-07-04", [{ word: "asphyxiate", rarity: "Extremely Rare", zipf: 2.09 }]),
+        firstWordAt: "2026-08-24T20:00:00.000Z",
+        completedAt: "2026-08-24T20:04:00.000Z",
+      })
+    );
+
+    expect(boardName()).toBe("inkling");
+  });
+});
+
 describe("importing a joining player's history", () => {
   it("sends every remembered day in one request", () => {
-    const player = savePlayerName("Mo");
+    const playerId = joinBoard();
     const fetchMock = stubFetch();
     const history = [stored("2026-08-20"), stored("2026-08-21"), stored("2026-08-22")];
 
-    expect(backfillHistory(player!, history)).toBe(3);
+    expect(backfillHistory(playerId!, history)).toBe(3);
     // One request for the whole history: a year of daily puzzles must not be a
     // year of POSTs.
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const body = posted(fetchMock);
-    expect(body.playerId).toBe(player?.id);
+    expect(body.playerId).toBe(playerId);
     expect((body.scores as { date: string }[]).map((s) => s.date)).toEqual([
       "2026-08-20",
       "2026-08-21",
@@ -120,9 +215,9 @@ describe("importing a joining player's history", () => {
   });
 
   it("scores each past day on the system that was in effect that day", () => {
-    const player = savePlayerName("Mo");
+    const playerId = joinBoard();
     const fetchMock = stubFetch();
-    backfillHistory(player!, [stored("2026-08-20")]);
+    backfillHistory(playerId!, [stored("2026-08-20")]);
 
     const day = (posted(fetchMock).scores as Record<string, number>[])[0];
     expect(day.words).toBe(2);
@@ -130,24 +225,24 @@ describe("importing a joining player's history", () => {
   });
 
   it("sends nothing when there is no history to bring", () => {
-    const player = savePlayerName("Mo");
+    const playerId = joinBoard();
     const fetchMock = stubFetch();
 
-    expect(backfillHistory(player!, [])).toBe(0);
+    expect(backfillHistory(playerId!, [])).toBe(0);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("skips a remembered day with no words in it", () => {
-    const player = savePlayerName("Mo");
+    const playerId = joinBoard();
     const fetchMock = stubFetch();
     const empty = { ...stored("2026-08-20"), acceptedWords: [] };
 
-    expect(backfillHistory(player!, [empty])).toBe(0);
+    expect(backfillHistory(playerId!, [empty])).toBe(0);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("reads this browser's own history when none is passed", () => {
-    const player = savePlayerName("Mo");
+    const playerId = joinBoard();
     localStorage.setItem("ick:progress:2026-08-20", JSON.stringify(stored("2026-08-20")));
     // Played out of the archive days later, so it is not evidence of playing on
     // the day and stays off the board.
@@ -157,7 +252,7 @@ describe("importing a joining player's history", () => {
     );
     const fetchMock = stubFetch();
 
-    expect(backfillHistory(player!)).toBe(1);
+    expect(backfillHistory(playerId!)).toBe(1);
     expect((posted(fetchMock).scores as { date: string }[]).map((s) => s.date)).toEqual([
       "2026-08-20",
     ]);

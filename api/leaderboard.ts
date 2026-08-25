@@ -22,6 +22,10 @@
 //   write keeps the higher of the stored and submitted score, so repeats and
 //   out-of-order arrivals are both harmless (see the migration).
 //
+//   `name` is the player's best word, not typed text -- the client recomputes it
+//   on every submission and the write keeps the newest, so finding a better word
+//   renames the player across their whole history. Validated as a word here.
+//
 // There are no accounts in this game, so a submission cannot be authenticated:
 // anyone who reads this file can post a score under a name of their choosing.
 // What the endpoint can do, and does, is refuse anything a real game could not
@@ -53,7 +57,17 @@ const WINDOW_FLOOR = "2026-06-28";
 const MAX_TOTAL = 60;
 const MAX_TOP = 10;
 const MAX_WORDS = 6;
-const MAX_NAME_CHARS = 18;
+/**
+ * A display name is a word the player found, not free text -- so it is validated
+ * as one: lowercase English letters, the same rule the game's own input uses.
+ *
+ * This is a real narrowing rather than a formality. When names were typed there
+ * was a sanitising problem to solve on a public, unauthenticated endpoint:
+ * invisible characters, bidi overrides, impersonation of the page's own copy.
+ * A pattern this tight leaves none of it -- there is nothing expressible here
+ * but a word, and the longest word the game accepts is 30 letters.
+ */
+const NAME_RE = /^[a-z]{2,30}$/;
 /** How many distinct all-time players before the boards are shown to anyone. */
 const MIN_PLAYERS = 10;
 /**
@@ -222,11 +236,10 @@ function readSubmission(parsed: unknown):
   const { playerId, name, scores } = parsed as Record<string, unknown>;
 
   if (typeof playerId !== "string" || !UUID_RE.test(playerId)) return "bad-player-id";
-  if (typeof name !== "string") return "bad-name";
-  // The client normalises the name before it gets here (see game/player.ts);
-  // this is the same rule enforced where it can't be edited out.
-  const cleanName = name.replace(/\s+/g, " ").trim().slice(0, MAX_NAME_CHARS).trim();
-  if (cleanName.length < 2) return "bad-name";
+  // A word, not a name (see NAME_RE). Rejected rather than trimmed into shape:
+  // anything that isn't already a word means the client and this endpoint
+  // disagree about what a name is, and truncating it would invent one.
+  if (typeof name !== "string" || !NAME_RE.test(name)) return "bad-name";
 
   if (!Array.isArray(scores)) return "bad-scores";
   if (scores.length === 0) return "no-scores";
@@ -240,7 +253,7 @@ function readSubmission(parsed: unknown):
     if (typeof score === "string") return score;
     checked.push(score);
   }
-  return { playerId, name: cleanName, scores: checked };
+  return { playerId, name, scores: checked };
 }
 
 async function handleGet(request: Request): Promise<Response> {

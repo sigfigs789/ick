@@ -27,10 +27,18 @@ create table if not exists public.leaderboard_scores (
   -- stays off the board the same way it stays off the streak.
   puzzle_date date not null,
 
-  -- Denormalised onto every row rather than kept in a players table: a rename
-  -- should show up on the board immediately and without a join, and one row per
-  -- player per day is few enough rows that rewriting the name on each is free.
-  display_name text not null,
+  -- The player's best word, not a name they typed: what the board shows beside a
+  -- score is the rarest word that player has ever found (see
+  -- src/game/leaderboard.ts's boardName). It moves when they beat it, so it is
+  -- denormalised onto every row rather than kept in a players table -- a change
+  -- should show up across their whole history without a join, and one row per
+  -- player per day is few enough that rewriting it on each is free.
+  --
+  -- Constrained to a word rather than to a length. There are no accounts here, so
+  -- this column is written from an unauthenticated endpoint; a pattern this tight
+  -- means nothing expressible in it is invisible, right-to-left, or a passable
+  -- imitation of the page's own text. 30 is the longest word the game accepts.
+  display_name text not null check (display_name ~ '^[a-z]{2,30}$'),
 
   -- The two numbers the game already shows the player: the summed rarity score
   -- of every accepted word, and the best single word. Bounds are the most a
@@ -74,8 +82,9 @@ revoke all on public.leaderboard_scores from anon, authenticated;
  * a no-op, and a second browser on the same player id cannot lower a day, only
  * raise it.
  *
- * The display name is *not* max'd -- the newest one always wins, so renaming
- * takes effect on the next submission, across the player's whole history.
+ * The display name is *not* max'd -- the newest one always wins. It is the
+ * player's best word, recomputed by the client on every submission, so beating
+ * it renames them across their whole history on the next word they play.
  *
  * Returns how many days were written, which the endpoint reports back.
  */

@@ -10,9 +10,9 @@
  */
 
 import { maxGuessesFor } from "./constants";
-import { topRarityScore, totalRarityScore } from "./dictionary";
+import { rarityFor, rarityScore, topRarityScore, totalRarityScore } from "./dictionary";
 import { todayDateString } from "./date";
-import { loadPlayer, type Player } from "./player";
+import { loadPlayerId } from "./player";
 import { playedOnItsDay } from "./storage";
 import type { AcceptedWord, DailyProgress } from "./types";
 import { weekStart } from "./week";
@@ -43,7 +43,7 @@ export interface Boards {
   minPlayers: number;
   weekly: BoardEntry[];
   allTime: BoardEntry[];
-  /** The Monday the weekly board is counting from, echoed back by the server. */
+  /** The day the weekly board is counting from, echoed back by the server. */
   weekStart: string;
 }
 
@@ -117,6 +117,63 @@ export async function fetchBoards(date: string = todayDateString()): Promise<Boa
   };
 }
 
+/**
+ * What a word is worth *today*, whatever it was worth the day it was played.
+ *
+ * Two things can have moved since: the scoring curve, which has been retuned
+ * more than once, and the word's own frequency data, which the dictionary keeps
+ * being corrected. So the word is looked up fresh (`rarityFor` with no date =
+ * the current system) and only falls back to the stored Zipf for a word today's
+ * dictionary doesn't carry -- a live Merriam-Webster approval, most often.
+ *
+ * Deliberately different from how a *score* is computed: a puzzle's score is
+ * frozen at the system in effect that day, because a past game should keep the
+ * result it was played for. A name is not a result, it is a current claim about
+ * the player -- "the best word I have ever found" -- so it is judged on today's
+ * terms, and every player's is judged on the same terms.
+ */
+function scoreToday(word: AcceptedWord): number {
+  return rarityScore(rarityFor(word.word)?.zipf ?? word.zipf);
+}
+
+/**
+ * The player's name on the board: the best word they have ever found.
+ *
+ * Nobody types a name here. A word game's leaderboard is more interesting when
+ * the names are the finds -- it says what each player is on the board *for*, and
+ * it updates itself the moment somebody does better. It also means there is no
+ * free-text field to police: nothing to impersonate, nothing to sanitise, and no
+ * name to reserve.
+ *
+ * Drawn from the same days that get submitted (see storage.playedOnItsDay, which
+ * includes today), so a word farmed out of the archive cannot become somebody's
+ * name any more than it can become their score.
+ *
+ * Returns null when this browser has no eligible word yet, which is what stops a
+ * player joining with nothing to be called.
+ */
+export function boardName(history?: readonly DailyProgress[]): string | null {
+  return bestNameOf((history ?? playedOnItsDay()).map((progress) => progress.acceptedWords));
+}
+
+/** The rarest word across several days' worth, by today's reckoning. */
+function bestNameOf(wordLists: Iterable<readonly AcceptedWord[]>): string | null {
+  let best: AcceptedWord | undefined;
+  let bestScore = -1;
+  for (const words of wordLists) {
+    for (const word of words) {
+      const score = scoreToday(word);
+      // Strictly greater, so the earliest of equally good words wins and a name
+      // doesn't churn between ties on every submission.
+      if (score > bestScore) {
+        bestScore = score;
+        best = word;
+      }
+    }
+  }
+  return best ? best.word.toLowerCase() : null;
+}
+
 /** One puzzle's score, in the shape the endpoint takes. */
 interface ScorePayload {
   date: string;
@@ -140,14 +197,21 @@ function scoreFor(date: string, words: readonly AcceptedWord[]): ScorePayload {
 /**
  * Post a batch of scores. Never awaited by a caller on the play path.
  *
+ * The name goes up with every batch, recomputed each time, and the write keeps
+ * the newest -- so finding a better word renames the player across their whole
+ * history on their next submission, with nothing to migrate.
+ *
  * `keepalive` so a submission survives the tab being closed right after a word
  * lands, and every failure is swallowed: a score that didn't make it is not
  * something to interrupt a game over. Returns whether a request was actually
  * started, which is what the tests assert on.
  */
-function post(player: Player, scores: ScorePayload[]): boolean {
-  if (scores.length === 0) return false;
-  const body = JSON.stringify({ playerId: player.id, name: player.name, scores });
+function post(playerId: string, name: string | null, scores: ScorePayload[]): boolean {
+  // No word means no name, and a row with no name is not worth writing. Barely
+  // reachable -- every caller has words in hand -- but the board should not be
+  // able to grow a blank entry.
+  if (scores.length === 0 || !name) return false;
+  const body = JSON.stringify({ playerId, name, scores });
   try {
     void fetch("/api/leaderboard", {
       method: "POST",
@@ -175,12 +239,17 @@ export function submitScore(options: {
   date: string;
   isToday: boolean;
   words: readonly AcceptedWord[];
-  player?: Player | null;
+  playerId?: string | null;
 }): boolean {
   const { date, isToday, words } = options;
-  const player = options.player ?? loadPlayer();
-  if (!player || !isToday || words.length === 0) return false;
-  return post(player, [scoreFor(date, words)]);
+  const playerId = options.playerId ?? loadPlayerId();
+  if (!playerId || !isToday || words.length === 0) return false;
+  // The name is the player's best word *ever*, not this puzzle's best, so it
+  // comes from the whole stored history -- which already includes the words
+  // being submitted, since they were saved before this was called. The fallback
+  // covers a record too old to carry the timestamp that makes a day eligible.
+  const name = boardName() ?? bestNameOf([words]);
+  return post(playerId, name, [scoreFor(date, words)]);
 }
 
 /**
@@ -196,10 +265,12 @@ export function submitScore(options: {
  * re-sending it is a no-op and the later per-word submissions layer over it
  * without conflict. Returns how many days were sent, for the page to report.
  */
-export function backfillHistory(player: Player, history?: readonly DailyProgress[]): number {
+export function backfillHistory(playerId: string, history?: readonly DailyProgress[]): number {
   const played = history ?? playedOnItsDay();
   const scores = played
     .filter((progress) => progress.acceptedWords.length > 0)
     .map((progress) => scoreFor(progress.date, progress.acceptedWords));
-  return post(player, scores) ? scores.length : 0;
+  // Named from exactly the days being submitted, so the name and the scores in
+  // one request always describe the same history.
+  return post(playerId, boardName(played), scores) ? scores.length : 0;
 }

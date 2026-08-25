@@ -2,16 +2,33 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LeaderboardPage } from "./LeaderboardPage";
-import { loadPlayer, savePlayerName } from "../game/player";
+import { hasJoined, joinBoard, loadPlayerId } from "../game/player";
 
+// Names on the board are words the players found, not handles they picked.
 const WEEKLY = [
-  { rank: 1, playerId: "11111111-1111-4111-8111-111111111111", name: "Ada", score: 41.2, best: 9.9, puzzles: 5 },
-  { rank: 2, playerId: "22222222-2222-4222-8222-222222222222", name: "Mo", score: 24.6, best: 9.4, puzzles: 3 },
+  { rank: 1, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", score: 41.2, best: 9.9, puzzles: 5 },
+  { rank: 2, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", score: 24.6, best: 9.4, puzzles: 3 },
 ];
 const ALL_TIME = [
-  { rank: 1, playerId: "22222222-2222-4222-8222-222222222222", name: "Mo", score: 310.5, best: 10, puzzles: 40 },
-  { rank: 2, playerId: "11111111-1111-4111-8111-111111111111", name: "Ada", score: 180, best: 9.9, puzzles: 22 },
+  { rank: 1, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", score: 310.5, best: 10, puzzles: 40 },
+  { rank: 2, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", score: 180, best: 9.9, puzzles: 22 },
 ];
+
+/** Put a played-on-its-day puzzle in storage, so this browser has a name. */
+function playedToday(date: string, word: string, zipf: number) {
+  localStorage.setItem(
+    `ick:progress:${date}`,
+    JSON.stringify({
+      date,
+      drop: "ink",
+      acceptedWords: [{ word, rarity: "Rare", zipf }],
+      rejectedAttempts: [],
+      completed: true,
+      firstWordAt: `${date}T19:00:00.000Z`,
+      completedAt: `${date}T19:04:00.000Z`,
+    })
+  );
+}
 
 const OPEN = {
   weekStart: "2026-08-23",
@@ -66,12 +83,12 @@ describe("the leaderboard page", () => {
     // Both on screen together -- there is no tab to click and no board hidden
     // behind one. This is the whole layout decision, so it is asserted directly.
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    expect(boardRows("This week")[0]).toHaveTextContent("Ada");
+    expect(boardRows("This week")[0]).toHaveTextContent("asphyxiate");
     expect(boardRows("This week")[0]).toHaveTextContent("41.2");
 
     const allTime = boardRows("All time");
     // A different order from the weekly board, which is the point of both.
-    expect(allTime[0]).toHaveTextContent("Mo");
+    expect(allTime[0]).toHaveTextContent("inkling");
     expect(allTime[0]).toHaveTextContent("310.5");
   });
 
@@ -92,12 +109,11 @@ describe("the leaderboard page", () => {
   });
 
   it("marks the player's own row on both boards", async () => {
-    savePlayerName("Mo");
-    const me = loadPlayer();
+    const me = joinBoard();
     stubFetch({
       ...OPEN,
-      weekly: [WEEKLY[0], { ...WEEKLY[1], playerId: me?.id ?? "" }],
-      allTime: [{ ...ALL_TIME[0], playerId: me?.id ?? "" }, ALL_TIME[1]],
+      weekly: [WEEKLY[0], { ...WEEKLY[1], playerId: me ?? "" }],
+      allTime: [{ ...ALL_TIME[0], playerId: me ?? "" }, ALL_TIME[1]],
     });
     render(<LeaderboardPage />);
 
@@ -142,12 +158,13 @@ describe("before the boards open", () => {
   });
 
   it("says scores are already counting, so joining early isn't wasted", async () => {
+    playedToday("2026-08-20", "inkling", 2.9);
     stubFetch({ weekStart: "2026-08-23", ready: false, players: 1, minPlayers: 10, weekly: [], allTime: [] });
     render(<LeaderboardPage />);
 
     expect(await screen.findByText(/scores are already being counted/)).toBeInTheDocument();
-    // The join form is still there: collecting starts before displaying does.
-    expect(screen.getByLabelText("Put your name on the board")).toBeInTheDocument();
+    // Joining is still offered: collecting starts before displaying does.
+    expect(screen.getByRole("button", { name: "Put me on the board" })).toBeInTheDocument();
   });
 
   it("withholds the boards even if rows arrive alongside a false flag", async () => {
@@ -155,12 +172,25 @@ describe("before the boards open", () => {
     render(<LeaderboardPage />);
 
     await screen.findByRole("region", { name: "Leaderboard status" });
-    expect(screen.queryByText("Ada")).toBeNull();
+    expect(screen.queryByText("asphyxiate")).toBeNull();
   });
 });
 
 describe("joining the board", () => {
-  it("brings the browser's own history along", async () => {
+  it("offers to join under the player's own rarest word", async () => {
+    playedToday("2026-08-20", "inkling", 2.9);
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // Nothing to type: the name is the find. asphyxiate scores 8.30 today and
+    // inkling 7.11, so the rarer of the two is the offer.
+    playedToday("2026-08-21", "asphyxiate", 2.09);
+    render(<LeaderboardPage />);
+    expect(screen.getAllByText("asphyxiate")[0]).toBeInTheDocument();
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
+
+  it("joins in one tap and brings the browser's own history along", async () => {
     // Three remembered days: one played on its own date, one half-played on its
     // own date, and one pulled out of the archive weeks later.
     localStorage.setItem(
@@ -168,7 +198,7 @@ describe("joining the board", () => {
       JSON.stringify({
         date: "2026-08-20",
         drop: "ink",
-        acceptedWords: [{ word: "inkling", rarity: "Rare", zipf: 2.6 }],
+        acceptedWords: [{ word: "inkling", rarity: "Rare", zipf: 2.9 }],
         rejectedAttempts: [],
         completed: true,
         firstWordAt: "2026-08-20T19:00:00.000Z",
@@ -180,7 +210,7 @@ describe("joining the board", () => {
       JSON.stringify({
         date: "2026-08-21",
         drop: "ink",
-        acceptedWords: [{ word: "wrinkle", rarity: "Uncommon", zipf: 3.6 }],
+        acceptedWords: [{ word: "wrinkle", rarity: "Uncommon", zipf: 3.31 }],
         rejectedAttempts: [],
         completed: false,
         firstWordAt: "2026-08-21T08:00:00.000Z",
@@ -191,7 +221,7 @@ describe("joining the board", () => {
       JSON.stringify({
         date: "2026-07-04",
         drop: "str",
-        acceptedWords: [{ word: "strange", rarity: "Common", zipf: 4.6 }],
+        acceptedWords: [{ word: "asphyxiate", rarity: "Extremely Rare", zipf: 2.09 }],
         rejectedAttempts: [],
         completed: true,
         firstWordAt: "2026-08-24T19:00:00.000Z",
@@ -201,8 +231,8 @@ describe("joining the board", () => {
     const fetchMock = stubFetch();
     render(<LeaderboardPage />);
 
-    await userEvent.type(screen.getByLabelText("Put your name on the board"), "Wordsmith");
-    await userEvent.click(screen.getByRole("button", { name: "Join" }));
+    await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
+    expect(hasJoined()).toBe(true);
 
     const posts = submissions(fetchMock);
     expect(posts).toHaveLength(1);
@@ -213,47 +243,46 @@ describe("joining the board", () => {
       "2026-08-20",
       "2026-08-21",
     ]);
-    expect(await screen.findByText(/Brought 2 past puzzles with you/)).toBeInTheDocument();
+    // And named by the best of *those* days -- asphyxiate is rarer, but it was
+    // archive play, so it cannot name the player either.
+    expect(posts[0].name).toBe("inkling");
+    expect(await screen.findByText(/Counted 2 puzzles you'd already played/)).toBeInTheDocument();
   });
 
-  it("says so plainly when there is no history to bring", async () => {
+  it("tells a player with no words yet to play one first", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    await userEvent.type(screen.getByLabelText("Put your name on the board"), "Wordsmith");
-    await userEvent.click(screen.getByRole("button", { name: "Join" }));
-
-    expect(loadPlayer()?.name).toBe("Wordsmith");
-    expect(await screen.findByText(/No past puzzles to bring/)).toBeInTheDocument();
+    expect(screen.getByText(/Play a word and you can join/)).toBeInTheDocument();
+    // Nothing to join with, so nothing to press.
+    expect(screen.queryByRole("button", { name: "Put me on the board" })).toBeNull();
+    expect(loadPlayerId()).toBeNull();
   });
 
-  it("refuses a name too short to be one, without saving anything", async () => {
+  it("says which word the player is on the board as", async () => {
+    playedToday("2026-08-20", "inkling", 2.9);
     stubFetch();
     render(<LeaderboardPage />);
 
-    await userEvent.type(screen.getByLabelText("Put your name on the board"), "x");
-    await userEvent.click(screen.getByRole("button", { name: "Join" }));
-
-    expect(screen.getByText(/two characters or more/)).toBeInTheDocument();
-    expect(loadPlayer()).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
+    const note = await screen.findByText(/You're on the board as/);
+    expect(note).toHaveTextContent("inkling");
+    // The promise that makes the name worth having.
+    expect(note).toHaveTextContent(/Beat it and this changes/);
   });
 
-  it("keeps the same identity across a rename, and re-imports nothing", async () => {
-    savePlayerName("Mo");
-    const idBefore = loadPlayer()?.id;
-    const fetchMock = stubFetch();
+  it("keeps one identity if the join is somehow pressed twice", async () => {
+    playedToday("2026-08-20", "inkling", 2.9);
+    stubFetch();
+    const { unmount } = render(<LeaderboardPage />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
+    const first = loadPlayerId();
+    unmount();
     render(<LeaderboardPage />);
-
-    await userEvent.click(screen.getByRole("button", { name: "Change name" }));
-    const field = screen.getByLabelText("Change your name");
-    await userEvent.clear(field);
-    await userEvent.type(field, "Maureen");
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
-
-    // A rename carries the player's whole history rather than starting a second
-    // entry, so there is nothing to re-import.
-    expect(loadPlayer()).toEqual({ id: idBefore, name: "Maureen" });
-    expect(submissions(fetchMock)).toHaveLength(0);
+    // Already joined, so there is no button to press again -- and the id stands.
+    expect(screen.queryByRole("button", { name: "Put me on the board" })).toBeNull();
+    expect(loadPlayerId()).toBe(first);
   });
 });
 
