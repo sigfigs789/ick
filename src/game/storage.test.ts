@@ -504,6 +504,49 @@ describe("history for the leaderboard's import", () => {
     expect(playedOnItsDay().map((p) => p.date)).toEqual(["2026-08-20"]);
   });
 
+  it("counts a session that ran a couple of hours past midnight", () => {
+    // Everything about this day happened after midnight -- the player sat down
+    // late. A late-night session is an ordinary way to play a daily game, and
+    // the live path already treats it this way, so the record does too.
+    store("2026-08-20", {
+      firstWordAt: "2026-08-21T01:30:00",
+      completedAt: "2026-08-21T01:42:00",
+    });
+
+    expect(playedOnItsDay().map((p) => p.date)).toEqual(["2026-08-20"]);
+  });
+
+  it("counts a legacy record whose only stamp is a small-hours completion", () => {
+    // No firstWordAt, and the completion landed at 02:10 the next morning. This
+    // is exactly the case the grace window was added for.
+    store("2026-08-20", { completedAt: "2026-08-21T02:10:00" });
+
+    expect(playedOnItsDay().map((p) => p.date)).toEqual(["2026-08-20"]);
+  });
+
+  it("stops counting once the next day is properly under way", () => {
+    // 09:00 the following morning is not a late night, it is archive play.
+    store("2026-08-20", { firstWordAt: "2026-08-21T09:00:00" });
+
+    expect(playedOnItsDay()).toEqual([]);
+  });
+
+  it("draws the grace window at four hours", () => {
+    store("2026-08-20", { firstWordAt: "2026-08-21T03:59:00" });
+    store("2026-08-14", { firstWordAt: "2026-08-15T04:00:00" });
+
+    // Inside the window counts; the moment it closes does not.
+    expect(playedOnItsDay().map((p) => p.date)).toEqual(["2026-08-20"]);
+  });
+
+  it("never counts a stamp from before the puzzle dropped", () => {
+    // A clock set wrong, or a hand-edited record. Either way it is not evidence
+    // of playing the day it dropped.
+    store("2026-08-20", { firstWordAt: "2026-08-19T23:00:00" });
+
+    expect(playedOnItsDay()).toEqual([]);
+  });
+
   it("leaves out a puzzle played later out of the archive", () => {
     // First touched three days after it dropped, so it is archive play -- off
     // the board for the same reason it is off the streak.
@@ -519,7 +562,8 @@ describe("history for the leaderboard's import", () => {
     store("2026-08-20", { completedAt: "2026-08-20T18:00:00" });
     store("2026-08-14", { completedAt: "2026-08-21T18:00:00" });
 
-    // The older record can still prove the first of these and not the second.
+    // The older record can still prove the first of these; the second was
+    // finished a full day late and well past the small hours.
     expect(playedOnItsDay().map((p) => p.date)).toEqual(["2026-08-20"]);
   });
 

@@ -516,13 +516,23 @@ are two timestamps that can prove it:
   never moved. This is exactly the question being asked, and it counts a day the
   player never finished.
 - **`completedAt`** — the fallback for every puzzle saved before `firstWordAt`
-  existed. Weaker in one specific way: someone who started at 23:50 and finished
-  after midnight has a completion stamped on the following day, and that day is
-  dropped. Nothing in an old record can recover it.
+  existed. It is stamped on the last guess, which for a late-night session lands
+  after midnight; the grace window below covers that.
 
 A day with neither timestamp is skipped. Not because it didn't happen, but
 because the record cannot say *when* it happened — and guessing in the player's
-favour is exactly how the archive would get in.
+favour is exactly how the archive would get in wholesale.
+
+**A session may run past midnight.** A puzzle counts if it was played on its own
+day or within four hours after it (`LATE_FINISH_GRACE_HOURS`). Finishing at 1am
+is an ordinary way to play a daily game, and the live path has always worked this
+way — `useDailyPuzzle` reads the date once on load, so a session opened at 23:50
+keeps submitting to that puzzle all night. The import was the stricter of the two;
+now they agree. The cost, stated rather than hidden: the next puzzle drops at
+local midnight, so this leaves a four-hour window each night in which yesterday's
+puzzle could be played fresh and still count. Accepted deliberately — the players
+it lets in are real and numerous, and the ones it lets cheat have to be awake at
+3am to gain a single day's score.
 
 - **`leaderboard_scores`** — one row per player per puzzle date, written by
   `api/leaderboard.ts` through `submit_leaderboard_scores`. Takes an array
