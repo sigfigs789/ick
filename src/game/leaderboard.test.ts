@@ -3,9 +3,7 @@ import {
   backfillHistory,
   chooseName,
   fetchBoards,
-  leaderboardHasContent,
   nameCandidates,
-  refreshLeaderboardPresence,
   submitScore,
 } from "./leaderboard";
 import { joinBoard } from "./player";
@@ -470,9 +468,67 @@ describe("the recent finds feed", () => {
 
     const { words } = await fetchBoards("2026-08-27");
     expect(words).toEqual([
-      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3 },
-      { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1 },
+      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3, today: false },
+      { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1, today: false },
     ]);
+  });
+
+  it("marks a find from today, and lets it through when it clears Rare", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          ready: true,
+          weekly: [],
+          allTime: [],
+          words: [{ word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-27" }],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    const { words } = await fetchBoards("2026-08-27");
+    // Marked, because a live feed nobody can tell is live reads as history.
+    expect(words).toEqual([
+      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 1, today: true },
+    ]);
+  });
+
+  it("keeps today's ordinary finds out, so the live list stays worth reading", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          ready: true,
+          weekly: [],
+          allTime: [],
+          words: [
+            { word: "cat", zipf: 4.78, finders: 9, foundOn: "2026-08-27" },
+            { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-27" },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    // `cat` is Common; only Rare or better earns a place while the day runs.
+    expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual(["inkling"]);
+  });
+
+  it("still shows an ordinary word from an earlier day", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          ready: true,
+          weekly: [],
+          allTime: [],
+          words: [{ word: "cat", zipf: 4.78, finders: 9, foundOn: "2026-08-26" }],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    // The Rare bar is about keeping the *live* list readable, not about
+    // rewriting what the past week looked like.
+    expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual(["cat"]);
   });
 
   it("keeps a word today's dictionary doesn't carry, on the frequency it was found at", async () => {
@@ -537,65 +593,5 @@ describe("the recent finds feed", () => {
       })
     );
     expect((await fetchBoards("2026-08-27")).words).toEqual([]);
-  });
-});
-
-describe("whether the leaderboard is worth a trip", () => {
-  it("always is once the boards have opened, without asking anyone", async () => {
-    const fetchMock = stubFetch();
-    expect(leaderboardHasContent("2026-08-30")).toBe(true);
-    expect(leaderboardHasContent("2026-12-25")).toBe(true);
-
-    // A pure date check, so the header costs nothing from opening day onward.
-    refreshLeaderboardPresence("2026-08-30");
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it("is not, on a browser that has never looked", () => {
-    // Better a trophy that appears a moment late than one leading somewhere
-    // empty.
-    expect(leaderboardHasContent("2026-08-25")).toBe(false);
-  });
-
-  it("remembers finds between visits", async () => {
-    stubFetch(
-      new Response(
-        JSON.stringify({
-          ready: false,
-          weekly: [],
-          allTime: [],
-          words: [{ word: "inkling", zipf: 2.9, finders: 2 }],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } }
-      )
-    );
-
-    refreshLeaderboardPresence("2026-08-25");
-    await vi.waitFor(() => expect(leaderboardHasContent("2026-08-25")).toBe(true));
-  });
-
-  it("records an empty leaderboard as nothing to show", async () => {
-    stubFetch(
-      new Response(JSON.stringify({ ready: false, weekly: [], allTime: [], words: [] }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      })
-    );
-
-    refreshLeaderboardPresence("2026-08-25");
-    await vi.waitFor(() => expect(localStorage.getItem("ick:leaderboard-has-content")).toBe("0"));
-    expect(leaderboardHasContent("2026-08-25")).toBe(false);
-  });
-
-  it("leaves the last known answer alone when the check fails", async () => {
-    localStorage.setItem("ick:leaderboard-has-content", "1");
-    vi.stubGlobal("fetch", vi.fn(async () => {
-      throw new Error("offline");
-    }));
-
-    refreshLeaderboardPresence("2026-08-25");
-    // A flaky moment must not make the trophy vanish for someone using it.
-    await new Promise((r) => setTimeout(r, 10));
-    expect(leaderboardHasContent("2026-08-25")).toBe(true);
   });
 });

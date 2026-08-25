@@ -16,8 +16,12 @@ import { formatDateLabel } from "../game/date";
 import { resetLabel } from "../game/week";
 import { navigate } from "../routes";
 import { trackLeaderboardJoined } from "../analytics";
+import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
 
 type LoadState = "loading" | "ready" | "error";
+
+/** How often an open page re-checks for new finds. Matches the CDN's own cache. */
+const REFRESH_MS = 60_000;
 
 /**
  * The leaderboard, as its own page at /leaderboard.
@@ -48,8 +52,17 @@ export function LeaderboardPage() {
   const [chooseFailed, setChooseFailed] = useState(false);
   const name = chosen ?? candidates[0]?.word ?? null;
 
-  const load = useCallback(() => {
-    setState("loading");
+  /**
+   * Fetch the boards and the finds.
+   *
+   * `quiet` is for the refreshes: a poll that flipped the page back to "Loading
+   * the boards…" every minute would be worse than not polling at all, so a
+   * refresh leaves whatever is on screen alone until new data replaces it, and a
+   * refresh that fails leaves the last good data up rather than throwing the
+   * page away over one bad minute.
+   */
+  const load = useCallback((quiet = false) => {
+    if (!quiet) setState("loading");
     fetchBoards()
       .then((loaded) => {
         setBoards(loaded);
@@ -57,11 +70,41 @@ export function LeaderboardPage() {
       })
       // A board that won't load is a disappointment, not an error the player has
       // to act on -- so it says so plainly and offers a retry, and that is all.
-      .catch(() => setState("error"));
+      .catch(() => {
+        if (!quiet) setState("error");
+      });
   }, []);
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  /**
+   * Keep the finds feed current while the page is open.
+   *
+   * Today's finds land through the day now, so a page left open would otherwise
+   * show a snapshot from whenever it was opened -- and the one thing a live list
+   * must not be is stale without saying so.
+   *
+   * Every 60 seconds, which is not an arbitrary number: the endpoint is
+   * CDN-cached for exactly that, so polling faster would return the same bytes
+   * and polling slower would waste freshness already paid for. Nothing runs
+   * while the tab is hidden -- a backgrounded tab is not being read -- and coming
+   * back refreshes immediately rather than waiting out the rest of an interval.
+   */
+  useEffect(() => {
+    let timer = window.setInterval(() => load(true), REFRESH_MS);
+    function onVisibilityChange() {
+      window.clearInterval(timer);
+      if (document.visibilityState === "hidden") return;
+      load(true);
+      timer = window.setInterval(() => load(true), REFRESH_MS);
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [load]);
 
   function join() {
@@ -108,14 +151,10 @@ export function LeaderboardPage() {
         {state === "error" && (
           <p className="leaderboard__status" aria-live="polite">
             Couldn't load the boards.{" "}
-            <button type="button" className="leaderboard__retry" onClick={load}>
+            <button type="button" className="leaderboard__retry" onClick={() => load()}>
               Try again
             </button>
           </p>
-        )}
-
-        {state === "ready" && boards && boards.words.length > 0 && (
-          <FoundWords words={boards.words} />
         )}
 
         {state === "ready" && !ready && boards && <NotYet opensOn={boards.opensOn} />}
@@ -141,6 +180,10 @@ export function LeaderboardPage() {
               playerId={playerId}
             />
           </div>
+        )}
+
+        {state === "ready" && boards && boards.words.length > 0 && (
+          <FoundWords words={boards.words} />
         )}
 
         {playerId ? (
@@ -204,10 +247,7 @@ export function LeaderboardPage() {
                 </p>
               </>
             ) : (
-              <p className="leaderboard__note">
-                Play a word and you can join the board. It calls players by their rarest
-                find rather than a name they picked, so you need one first.
-              </p>
+              <p className="leaderboard__note">Play a word and you can join the board.</p>
             )}
           </div>
         )}
@@ -215,6 +255,23 @@ export function LeaderboardPage() {
         <button type="button" className="leaderboard-page__back" onClick={() => navigate("game")}>
           Back to today's puzzle
         </button>
+
+        {/* Development only. `import.meta.env.DEV` is a compile-time constant, so
+            this whole branch -- and the fixture it reaches -- is dropped from a
+            production build. Same trick as the "Reset answers" button. */}
+        {import.meta.env.DEV && (
+          <label className="dev-sample-toggle">
+            <input
+              type="checkbox"
+              checked={usingSampleData()}
+              onChange={(e) => {
+                setUsingSampleData(e.target.checked);
+                load();
+              }}
+            />
+            Use sample data
+          </label>
+        )}
       </main>
     </div>
   );
@@ -223,9 +280,14 @@ export function LeaderboardPage() {
 /**
  * The best words other players found recently, rarest first.
  *
- * The point of the page, arguably: a leaderboard tells you where you came, but
- * this tells you what you missed, and "I did not know that was a word" is the
- * thing players actually enjoy. Every entry is somebody's best find of a day.
+ * Its own section below the boards, rather than sharing the top of the page with
+ * them. Both are lists of words, and a leaderboard row is a *player* while a
+ * find is a *word* -- side by side that distinction is one nobody should have to
+ * work out, so the two get separate headings and separate ground.
+ *
+ * A leaderboard tells you where you came; this tells you what you missed, and
+ * "I did not know that was a word" is the thing players actually enjoy. Every
+ * entry is somebody's best find of a day.
  *
  * Never today's, and that is not a detail -- the same drop goes to everyone, so a
  * word found today is an answer to today's puzzle. The server draws that line
@@ -238,13 +300,14 @@ function FoundWords({ words }: { words: FoundWord[] }) {
     <section className="found-words" aria-label="Words found recently">
       <h2 className="leaderboard__board-heading">Recent finds</h2>
       <p className="leaderboard__caption">
-        The best word each player found, from the past week's puzzles. Today's stay hidden
-        until tomorrow.
+        The best word each player found, from the past week's puzzles. Today's appear as
+        they happen, if they're Rare or better.
       </p>
       <ul className="found-words__list">
         {words.map((found) => (
           <li key={found.word} className="found-words__item">
             <span className="found-words__word">{found.word}</span>
+            {found.today && <span className="found-words__today">today</span>}
             <RarityBadge rarity={found.rarity} zipf={found.zipf} />
             {found.finders > 1 && (
               <span className="found-words__finders">{found.finders} players</span>

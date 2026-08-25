@@ -524,35 +524,28 @@ describe("api/leaderboard recent finds", () => {
     return new Date(Date.parse(`${date}T00:00:00Z`) - days * 86400000).toISOString().slice(0, 10);
   }
 
-  it("never publishes words from the caller's own today", async () => {
+  it("includes today's finds", async () => {
     withEnv();
     const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
     const today = utcToday();
     await handler(get(`?since=${SUNDAY}&today=${today}`));
 
-    // The same drop goes to everybody, so a word found today is an answer to
-    // today's puzzle. The feed is strictly before the cutoff.
-    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(today);
-    expect(rpcCall(fetchMock)?.args.p_words_since).toBe(daysBefore(today, 7));
+    // Strictly-before the day *after* today, so today itself is in. This
+    // publishes answers to the live puzzle, which is a deliberate call -- see
+    // `wordsCutoff`. The client only lists today's finds that clear Rare.
+    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(daysBefore(today, -1));
+    expect(rpcCall(fetchMock)?.args.p_words_since).toBe(daysBefore(today, 6));
   });
 
-  it("believes a client that is behind UTC, so its own today stays hidden", async () => {
+  it("includes today for a client whose calendar is ahead of UTC", async () => {
     withEnv();
     const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
-    // Late evening in the Americas: UTC has rolled over, the player has not.
-    const behind = daysBefore(utcToday(), 1);
-    await handler(get(`?since=${SUNDAY}&today=${behind}`));
+    // Already tomorrow in Auckland while UTC is still on today.
+    const ahead = daysBefore(utcToday(), -1);
+    await handler(get(`?since=${SUNDAY}&today=${ahead}`));
 
-    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(behind);
-  });
-
-  it("caps a client claiming a date in the future", async () => {
-    withEnv();
-    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
-    // Lying about the calendar to pull today's answers out early.
-    await handler(get(`?since=${SUNDAY}&today=2099-01-01`));
-
-    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(utcToday());
+    // Their own day counts as today, so the window reaches past it.
+    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(daysBefore(ahead, -1));
   });
 
   it.each([
@@ -564,8 +557,7 @@ describe("api/leaderboard recent finds", () => {
     const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
     await handler(get(`?since=${SUNDAY}${param}`));
 
-    // The fallback is never wider than the truth.
-    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(utcToday());
+    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(daysBefore(utcToday(), -1));
   });
 
   it("returns the feed even while the boards are still shut", async () => {

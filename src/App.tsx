@@ -28,7 +28,6 @@ import {
   trackVisit,
 } from "./analytics";
 import { recordVisit } from "./game/visits";
-import { leaderboardHasContent, refreshLeaderboardPresence } from "./game/leaderboard";
 import { hasSeen, markSeen } from "./game/whatsNew";
 import { navigate } from "./routes";
 import { beginSession, endSessionSegment, resumeSession } from "./game/sessionTime";
@@ -59,17 +58,6 @@ export default function App() {
   // openLeaderboard, and reading storage during a render would be the only
   // thing here that did.
   const [leaderboardIsNew, setLeaderboardIsNew] = useState(() => !hasSeen("leaderboard"));
-  // The trophy stays hidden until the leaderboard is worth a trip -- once the
-  // boards open it always is, and before then only if there are finds to read.
-  // Answered from the last look so a returning player sees it immediately, and
-  // refreshed in the background (see game/leaderboard.ts).
-  const [showLeaderboard, setShowLeaderboard] = useState(() => leaderboardHasContent());
-  useEffect(() => {
-    refreshLeaderboardPresence();
-    // One check per load, and none at all once the opening date has passed.
-    const timer = window.setTimeout(() => setShowLeaderboard(leaderboardHasContent()), 1500);
-    return () => window.clearTimeout(timer);
-  }, []);
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
 
@@ -170,8 +158,12 @@ export default function App() {
           />
         </div>
         <div className="app__header-actions">
-          {showLeaderboard && (
-            <button
+          {/* Always shown. Hiding it until the leaderboard had something to
+              show sounded careful and deadlocked the cold start: finds only
+              appear once players join, and joining is only reachable through
+              here. The page is never a dead end anyway -- before the boards open
+              it carries the finds feed, the opening date and the join button. */}
+          <button
               type="button"
               className="app__icon-button app__icon-button--badged"
               onClick={() => openLeaderboard("header")}
@@ -186,8 +178,7 @@ export default function App() {
                   new
                 </span>
               )}
-            </button>
-          )}
+          </button>
           <button
             type="button"
             className="app__icon-button"
@@ -256,8 +247,7 @@ export default function App() {
             drop={drop}
             words={progress.acceptedWords}
             streak={streak}
-            // Same rule as the trophy: never send a player to an empty page.
-            onLeaderboard={showLeaderboard ? () => openLeaderboard("results") : undefined}
+            onLeaderboard={() => openLeaderboard("results")}
           />
         )}
       </main>

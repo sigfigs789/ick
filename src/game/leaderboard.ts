@@ -19,7 +19,9 @@ import {
 } from "./dictionary";
 import { todayDateString } from "./date";
 import { loadPlayerId } from "./player";
+import { isWinningRarity } from "./rank";
 import { playedOnItsDay } from "./storage";
+import { sampleBoardsResponse, usingSampleData } from "../dev/sampleData";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 import { weekStart } from "./week";
 
@@ -64,6 +66,8 @@ export interface FoundWord {
   zipf: number;
   /** How many players this was the best word of the day for. */
   finders: number;
+  /** Found on today's puzzle, so the feed can mark it as it happens. */
+  today: boolean;
 }
 
 export interface Boards {
@@ -107,48 +111,6 @@ export const BOARDS_OPEN_FROM = "2026-08-30";
 /** Whether the boards are published yet, on this player's own calendar. */
 export function boardsOpen(date: string = todayDateString()): boolean {
   return date >= BOARDS_OPEN_FROM;
-}
-
-/**
- * Whether the leaderboard has anything worth a trip, cached from the last look.
- *
- * The header's trophy is hidden until it does, so a player is never sent to an
- * empty page. Two things can make it worth visiting: the boards being open,
- * which is a pure date check and needs no request at all, or there being finds
- * to read, which does -- so the answer to the second is remembered between
- * visits and refreshed in the background.
- *
- * Defaults to hidden on a browser that has never looked. Better a trophy that
- * appears a moment late than one that leads somewhere empty.
- */
-const PRESENCE_KEY = "ick:leaderboard-has-content";
-
-export function leaderboardHasContent(date: string = todayDateString()): boolean {
-  if (boardsOpen(date)) return true;
-  try {
-    return localStorage.getItem(PRESENCE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Refresh that answer in the background. Fire-and-forget, never awaited, and a
- * failure leaves the last known answer alone -- a flaky moment should not make
- * the trophy vanish for a player who has been using it.
- */
-export function refreshLeaderboardPresence(date: string = todayDateString()): void {
-  if (boardsOpen(date)) return; // nothing to ask: the date already settles it
-  fetchBoards(date)
-    .then((boards) => {
-      const has = boards.words.length > 0 || boards.ready;
-      try {
-        localStorage.setItem(PRESENCE_KEY, has ? "1" : "0");
-      } catch {
-        // Storage unavailable; the trophy simply stays hidden this session.
-      }
-    })
-    .catch(() => {});
 }
 
 /** How many rows each board returns. Enough to scroll, not enough to be a wall. */
@@ -219,21 +181,29 @@ function scoreOf(word: string, storedZipf: unknown): number {
  * Each word is looked up fresh in today's dictionary and only falls back to the
  * frequency the server stored for a word today's dictionary doesn't carry.
  */
-function parseWords(raw: unknown): FoundWord[] {
+function parseWords(raw: unknown, today: string): FoundWord[] {
   if (!Array.isArray(raw)) return [];
   const words: FoundWord[] = [];
   for (const item of raw as Record<string, unknown>[]) {
     if (!item || typeof item !== "object") continue;
-    const { word, zipf, finders } = item;
+    const { word, zipf, finders, foundOn } = item;
     if (typeof word !== "string" || !word) continue;
     const stored = typeof zipf === "number" && Number.isFinite(zipf) ? zipf : undefined;
     const current = rarityFor(word)?.zipf ?? stored;
     if (current === undefined) continue;
+    const rarity = rarityForZipf(current);
+    const isToday = foundOn === today;
+    // Today's finds have to clear Rare to make the list. The bar is what makes a
+    // live feed readable rather than a running commentary: on a busy day most
+    // finds are ordinary, and the ones worth interrupting the page for are the
+    // ones you would be pleased to have been beaten by.
+    if (isToday && !isWinningRarity(rarity)) continue;
     words.push({
       word,
       zipf: current,
-      rarity: rarityForZipf(current),
+      rarity,
       finders: typeof finders === "number" && Number.isFinite(finders) ? finders : 1,
+      today: isToday,
     });
   }
   return words;
@@ -249,6 +219,13 @@ function parseWords(raw: unknown): FoundWord[] {
  */
 export async function fetchBoards(date: string = todayDateString()): Promise<Boards> {
   const since = weekStart(date);
+  // Development only, and compiled out of a production build entirely: the
+  // fixture stands in for the server so the page can be worked on without one.
+  // Parsed by exactly the same code as a real response, so a change to that
+  // parsing cannot pass here and fail in production.
+  if (import.meta.env.DEV && usingSampleData()) {
+    return readBoards(sampleBoardsResponse() as Record<string, unknown>, since, date);
+  }
   // The player's own date goes up so the server can keep today's finds out of
   // the words feed -- a word found today is an answer to today's puzzle. The
   // server takes the earlier of this and its own, so sending a later one buys
@@ -259,7 +236,11 @@ export async function fetchBoards(date: string = todayDateString()): Promise<Boa
     { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
   );
   if (!response.ok) throw new Error(`leaderboard ${response.status}`);
-  const body = (await response.json()) as Record<string, unknown>;
+  return readBoards((await response.json()) as Record<string, unknown>, since, date);
+}
+
+/** Turn one response body -- real or sample -- into the boards the page renders. */
+function readBoards(body: Record<string, unknown>, since: string, date: string): Boards {
   return {
     // Rows are shown only when the server says the boards are published, so a
     // missing or malformed flag holds them back rather than letting them out.
@@ -267,7 +248,7 @@ export async function fetchBoards(date: string = todayDateString()): Promise<Boa
     opensOn: typeof body.opensOn === "string" ? body.opensOn : BOARDS_OPEN_FROM,
     weekly: parseBoard(body.weekly),
     allTime: parseBoard(body.allTime),
-    words: parseWords(body.words),
+    words: parseWords(body.words, date),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,
   };
 }

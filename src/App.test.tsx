@@ -47,9 +47,6 @@ describe("App", () => {
     vi.clearAllMocks();
     localStorage.clear();
     window.history.pushState(null, "", "/");
-    // The trophy is hidden until the leaderboard has something to show; these
-    // tests are about the header, so say it has.
-    localStorage.setItem("ick:leaderboard-has-content", "1");
     vi.mocked(useSound).mockReturnValue({
       enabled: true,
       toggle: vi.fn(),
@@ -163,25 +160,19 @@ describe("App", () => {
 });
 
 describe("the leaderboard trophy", () => {
-  it("stays hidden while the leaderboard has nothing to show", () => {
-    localStorage.removeItem("ick:leaderboard-has-content");
-    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
-    render(<App />);
-
-    // Never send a player to an empty page.
-    expect(screen.queryByRole("button", { name: /leaderboard/i })).toBeNull();
-  });
-
-  it("appears once there is something there", () => {
-    localStorage.setItem("ick:leaderboard-has-content", "1");
+  it("is always there", () => {
+    // It was briefly hidden until the leaderboard had something to show, which
+    // deadlocked the cold start: finds only exist once players join, and joining
+    // is only reachable through this button.
+    localStorage.clear();
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     render(<App />);
 
     expect(screen.getByRole("button", { name: "Leaderboard (new)" })).toBeInTheDocument();
   });
 
-  it("hides the results link by the same rule", () => {
-    localStorage.removeItem("ick:leaderboard-has-content");
+  it("offers the results link on a finished puzzle", () => {
+    localStorage.clear();
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({
         progress: {
@@ -195,8 +186,6 @@ describe("the leaderboard trophy", () => {
     );
     render(<App />);
 
-    // The results panel still renders; only the way into an empty page is gone.
-    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "See the leaderboard" })).toBeNull();
+    expect(screen.getByRole("button", { name: "See the leaderboard" })).toBeInTheDocument();
   });
 });

@@ -426,22 +426,20 @@ silently and `api/events.ts` answers 503.
 
 ### Running the leaderboard locally
 
-`supabase start` brings up a local stack, applies the migrations, and seeds
-`supabase/seed.sql` — a week of sample players, real dictionary words with their
-real frequencies, dated relative to `current_date` so the data never falls out of
-the window. Point `.env` at it:
+No database needed. In a development build the leaderboard page carries a
+**"Use sample data"** toggle: it swaps a hardcoded fixture
+(`src/dev/sample-leaderboard.json`) in for the server, in the exact shape the
+endpoint answers with — so it is read by the same parsing a real response is, and
+a change there cannot pass against the fixture and fail in production.
 
-```
-SUPABASE_URL=http://127.0.0.1:54321
-SUPABASE_SERVICE_ROLE_KEY=<the service_role key `supabase start` prints>
-```
+The toggle and the fixture both sit behind `import.meta.env.DEV`, a compile-time
+constant, so Vite drops the branch *and* the JSON import from a production
+build. The dev-only "Reset answers" button works the same way.
 
-`seed.sql` is applied by `supabase db reset` and by nothing else, so the sample
-data is dev-only by construction rather than by remembering: a deployed project
-gets migrations and nothing more.
-
-Worth doing before touching this schema. Running it for real is what caught the
-grants bug below, which no amount of reading would have.
+To develop against a real database instead, `supabase start` brings up a local
+stack and applies the migrations; point `.env` at the URL and service-role key it
+prints. Worth doing before changing this schema — running it for real is what
+caught the grants bug below, which no amount of reading would have.
 
 **Privileges: revoke from PUBLIC, then grant back to `service_role`.** `anon` and
 `authenticated` hold no grants of their own — they inherit PUBLIC's, which is why
@@ -479,9 +477,16 @@ single word, then on who got there first. The rank is computed in SQL and
 returned as a column rather than inferred from row order, so the thing that did
 the sorting is the thing that says the position.
 
-Side by side where there is room, stacked into one column below 40rem. Showing
-both at once is the point of having two: the interesting thing about a weekly
-board is how it differs from the all-time one.
+**Stacked, not side by side.** Two boards of the same shape sitting next to each
+other read as one wide table split down the middle — you have to check the
+heading to know which ranking you are looking at. One under the other, each is
+unmistakably its own list, and the weekly one comes first because it is the one
+still winnable.
+
+**Recent finds is its own section, below them.** Both are lists of words, but a
+leaderboard row is a *player* and a find is a *word*; sharing the top of the page
+made that a distinction the reader had to work out. Separate headings, separate
+ground, and a heavier rule between them than between the two boards.
 
 **The weekly reset is a window, not a job.** Nothing is deleted or archived on
 Sunday morning: `leaderboard_board(p_since => <sunday>)` simply stops counting

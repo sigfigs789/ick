@@ -15,9 +15,9 @@
 //   no early board sitting in a response waiting to be read out of a network tab.
 //
 //   `words` is the recent finds feed -- the best word each player found on each
-//   of the last few days -- and is *not* behind that gate, because a short list
-//   of good words is interesting at any size. It is behind a different and much
-//   harder gate: see SPOILER_CUTOFF below.
+//   of the last few days, today included -- and is *not* behind that gate,
+//   because a short list of good words is interesting at any size. See
+//   `wordsCutoff` for what today's inclusion costs and why it was accepted.
 //
 // PUT /api/leaderboard   { playerId, name }
 //   -> 200 { ok: true }, 409 the word is not one of that player's own finds
@@ -328,29 +328,29 @@ function readSubmission(parsed: unknown):
 }
 
 /**
- * The date the words feed must stay strictly before.
+ * The date the words feed stays strictly before -- the day after today, so
+ * today's own finds are included.
  *
- * The spoiler problem, stated plainly: this is a daily puzzle and everybody gets
- * the same drop, so a word somebody found today is an answer to today's puzzle.
- * Publishing it hands that answer to every player who has not played yet.
+ * This was originally today, which withheld them. The reasoning was that this is
+ * a daily puzzle where everybody gets the same drop, so a word found today is an
+ * answer to today's puzzle and publishing it hands that answer to anyone still
+ * playing. That is still true, and it is a deliberate call to accept it: the
+ * feed is more fun live, the client only lists today's finds that clear Rare, and
+ * a player who wants to be spoiled could always have read the endpoint directly.
  *
- * A player's unplayed dates are their own local today and later, and local dates
- * around the world span two UTC dates at any moment -- so neither clock alone is
- * enough. The cutoff is the *earlier* of the client's claimed today and UTC's,
- * which closes both holes at once:
+ * Reverting is a one-line change -- drop the `+ 1` -- and the client would need
+ * to send whether the player has finished today for a middle position, where
+ * only those who have locked in see the live ones.
  *
- *   * a client further back than UTC (the Americas late in the UTC day) is
- *     believed, so their own today is never published to them;
- *   * a client claiming a date in the future is capped at UTC's today, so lying
- *     about the calendar cannot pull today's words out early.
- *
- * A missing or malformed `today` falls back to UTC's, which is never wider.
+ * Still bounded by the later of the client's date and UTC's, so a client cannot
+ * ask for rows dated arbitrarily far ahead.
  */
-function spoilerCutoff(claimed: string | null): string {
+function wordsCutoff(claimed: string | null): string {
   const utc = utcToday();
-  if (!claimed || !DATE_RE.test(claimed)) return utc;
-  if (Number.isNaN(Date.parse(`${claimed}T00:00:00Z`))) return utc;
-  return claimed < utc ? claimed : utc;
+  const claimedOk = claimed && DATE_RE.test(claimed) && !Number.isNaN(Date.parse(`${claimed}T00:00:00Z`));
+  const player = claimedOk ? (claimed as string) : utc;
+  const latest = player > utc ? player : utc;
+  return daysBefore(latest, -1);
 }
 
 /** `days` before `date`, as YYYY-MM-DD. */
@@ -368,7 +368,7 @@ async function handleGet(request: Request): Promise<Response> {
   const limit = Number.isFinite(requested)
     ? Math.min(Math.max(requested, 1), MAX_LIMIT)
     : DEFAULT_LIMIT;
-  const wordsBefore = spoilerCutoff(params.get("today"));
+  const wordsBefore = wordsCutoff(params.get("today"));
   const wordsSince = daysBefore(wordsBefore, WORDS_WINDOW_DAYS);
   // Open for whoever has actually reached the date. Local calendars run ahead of
   // and behind UTC by up to a day, so the later of the two is the one that says

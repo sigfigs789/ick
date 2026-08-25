@@ -1418,11 +1418,16 @@ h2 {
 }
 
 /* Recent finds -- the words other players turned up. */
+/* Below the boards and clearly apart from them: a heavier rule than the one
+   between the two boards, because this is a different kind of list, not a third
+   ranking. */
 .found-words {
-  margin-bottom: 2rem;
-  padding-bottom: 1.6rem;
-  border-bottom: 1px solid var(--border);
+  margin-top: 2.4rem;
+  padding-top: 1.8rem;
+  border-top: 2px solid var(--border);
 }
+/* One column, like the boards. Two columns of words next to two boards of words
+   was the layout that made a find hard to tell from a player. */
 .found-words__list {
   list-style: none;
   margin: 0.2rem 0 0;
@@ -1430,14 +1435,6 @@ h2 {
   display: grid;
   gap: 0.4rem;
   grid-template-columns: 1fr;
-}
-/* Two up as soon as there is room: the list is a dozen short rows, and a single
-   column of them on a wide screen is a lot of scrolling for no reason. */
-@media (min-width: 34rem) {
-  .found-words__list {
-    grid-template-columns: 1fr 1fr;
-    gap: 0.4rem 1.4rem;
-  }
 }
 .found-words__item {
   display: flex;
@@ -1452,6 +1449,31 @@ h2 {
   font-weight: 700;
   /* A 30-letter word must wrap rather than push the badge off the row. */
   overflow-wrap: anywhere;
+}
+/* Marks a find from today's puzzle, which is the whole point of showing them
+   live -- without it the feed reads as history and nobody looks twice. */
+.found-words__today {
+  flex: none;
+  padding: 0.05rem 0.3rem;
+  border-radius: 999px;
+  background: var(--rarity-elusive-dot);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* Development only; never rendered in a production build. */
+.dev-sample-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1.4rem;
+  color: var(--fg-faint);
+  font-size: 0.75rem;
+  cursor: pointer;
 }
 .found-words__finders {
   flex: none;
@@ -1532,33 +1554,21 @@ h2 {
    The grid is the whole of the responsive behaviour -- side by side on a laptop,
    stacked weekly-then-all-time on a phone -- so there is no tab state and no
    board the player has to go looking for. */
+/* Stacked, always. Side by side, two boards of the same shape read as one wide
+   table split down the middle -- you have to check the heading to know which
+   ranking you are looking at. One under the other, each is unmistakably its own
+   list, and the weekly one comes first because it is the one still winnable. */
 .leaderboard__boards {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.2rem;
-}
-/* 40rem is where two boards each still have room for a name, a score and the
-   meta line under them. Below it they stack rather than squeeze. */
-@media (min-width: 40rem) {
-  .leaderboard__boards {
-    grid-template-columns: 1fr 1fr;
-    gap: 1.6rem;
-  }
+  gap: 1.8rem;
 }
 .leaderboard__board {
   min-width: 0;
 }
-/* Stacked, the second board needs a line between them; side by side it doesn't,
-   because the columns already read as separate. */
 .leaderboard__board + .leaderboard__board {
-  padding-top: 1rem;
+  padding-top: 1.4rem;
   border-top: 1px solid var(--border);
-}
-@media (min-width: 40rem) {
-  .leaderboard__board + .leaderboard__board {
-    padding-top: 0;
-    border-top: 0;
-  }
 }
 .leaderboard__board-heading {
   margin: 0;

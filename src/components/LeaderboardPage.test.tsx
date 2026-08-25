@@ -519,11 +519,11 @@ describe("recent finds", () => {
     expect(finds()[1]).not.toHaveTextContent("player");
   });
 
-  it("says today's finds are held back, so nobody reads it as live", async () => {
+  it("says today's finds appear live, and on what terms", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    expect(await screen.findByText(/Today's stay hidden until tomorrow/)).toBeInTheDocument();
+    expect(await screen.findByText(/Today's appear as they happen/)).toBeInTheDocument();
   });
 
   it("shows the feed even while the boards are still shut", async () => {
@@ -552,5 +552,88 @@ describe("recent finds", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     // An empty section with a heading would be worse than no section.
     expect(screen.queryByRole("region", { name: "Words found recently" })).toBeNull();
+  });
+});
+
+describe("keeping the finds current", () => {
+  // Fake timers go up *before* render: the polling interval is created on mount,
+  // and one scheduled against the real clock would never fire under a fake one.
+  // advanceTimersByTimeAsync also flushes the promises each fetch settles
+  // through, so it stands in for waitFor, which cannot run on a frozen clock.
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("re-checks on an interval while the page is open", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(boardRows("This week")).toHaveLength(2);
+
+    const first = fetchMock.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(60_000);
+    // Today's finds land through the day, so a page left open must not sit on
+    // the snapshot it opened with.
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(first);
+  });
+
+  it("keeps the boards on screen through a refresh", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+
+    await vi.advanceTimersByTimeAsync(60_000);
+    // A poll that flashed "Loading the boards…" every minute would be worse
+    // than not polling.
+    expect(screen.queryByText("Loading the boards…")).toBeNull();
+    expect(boardRows("This week")).toHaveLength(2);
+  });
+
+  it("keeps the last good data when a refresh fails", async () => {
+    let fail = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        if (fail) throw new Error("offline");
+        return new Response(JSON.stringify(OPEN), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      })
+    );
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(boardRows("This week")).toHaveLength(2);
+
+    fail = true;
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    // One bad minute is not a reason to throw the page away.
+    expect(screen.queryByText(/Couldn't load the boards/)).toBeNull();
+    expect(boardRows("This week")).toHaveLength(2);
+  });
+
+  it("stops polling while the tab is hidden, and catches up on return", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+
+    const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    document.dispatchEvent(new Event("visibilitychange"));
+    const before = fetchMock.mock.calls.length;
+
+    await vi.advanceTimersByTimeAsync(180_000);
+    // A backgrounded tab is not being read, so it is not worth a request.
+    expect(fetchMock.mock.calls.length).toBe(before);
+
+    hidden.mockReturnValue("visible");
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(0);
+    // Coming back refreshes at once rather than waiting out the interval.
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(before);
   });
 });
