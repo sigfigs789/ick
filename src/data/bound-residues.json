@@ -1,0 +1,226 @@
+{
+  "cade": {
+    "since": "2026-08-26",
+    "reason": "The libfix clipped from `cavalcade` -- `autocade`, `aquacade`, `motorcade`. The dictionary's free `cade` (a juniper, or a hand-reared lamb) is a homograph none of them is built on."
+  },
+  "cades": {
+    "since": "2026-08-26",
+    "reason": "Plural of the `cade` libfix -- `autocades`."
+  },
+  "carpous": {
+    "since": "2026-08-26",
+    "reason": "Greek -karpos (fruit), only ever a final element -- `pseudocarpous`, `monocarpous`, `syncarpous`."
+  },
+  "chromy": {
+    "since": "2026-08-26",
+    "reason": "Greek -chromia, only ever a final element -- `photochromy`, `polychromy`, `heliochromy`."
+  },
+  "cide": {
+    "since": "2026-08-26",
+    "reason": "Latin -cida/-cidium (killing), only ever a final element -- `autocide`, `suicide`, `pesticide`."
+  },
+  "crat": {
+    "since": "2026-08-26",
+    "reason": "Greek -krates (ruler), only ever a final element -- `monocrat`, `technocrat`, `bureaucrat`."
+  },
+  "crats": {
+    "since": "2026-08-26",
+    "reason": "Plural of the -crat combining form -- `monocrats`."
+  },
+  "duce": {
+    "since": "2026-08-26",
+    "reason": "Latin ducere (to lead), only ever a final element -- `subduce`, `traduce`, `abduce`."
+  },
+  "duces": {
+    "since": "2026-08-26",
+    "reason": "The -duce combining form inflected -- `subduces`."
+  },
+  "genically": {
+    "since": "2026-08-26",
+    "reason": "The bound -genic plus -ally. `telegenically` is `telegenic` + -ally, and no part of it is a word on its own."
+  },
+  "genies": {
+    "since": "2026-08-26",
+    "reason": "Plural of the bound -geny, not of `genie`. `monogenies` is a theory of single origin; the lamp-dweller is a homograph and the worst base this table could hand a player."
+  },
+  "genous": {
+    "since": "2026-08-26",
+    "reason": "Greek -genes (produced by), only ever a final element -- `monogenous`, `endogenous`, `indigenous`."
+  },
+  "geny": {
+    "since": "2026-08-26",
+    "reason": "Greek -geneia (origin), only ever a final element -- `monogeny`, `ontogeny`, `phylogeny`."
+  },
+  "gol": {
+    "since": "2026-08-26",
+    "reason": "The tail of `hypergol` (a self-igniting propellant), from Greek ergon. Not a word."
+  },
+  "gols": {
+    "since": "2026-08-26",
+    "reason": "Plural of the `gol` fragment -- `hypergols`."
+  },
+  "graphy": {
+    "since": "2026-08-26",
+    "reason": "Greek -graphia (writing), only ever a final element -- `macrography`, `photography`, `biography`. Heads 197 dictionary entries and is a word in none of them."
+  },
+  "istic": {
+    "since": "2026-08-26",
+    "reason": "The -istic adjective ending, which the dictionary lists as an entry. `ultraistic` is `ultraist` + -ic; 364 words end this way and none is built on a word called `istic`."
+  },
+  "lect": {
+    "since": "2026-08-26",
+    "reason": "Latin legere (to read/gather), only ever a final element -- `prelect`, `dialect`, `intellect`."
+  },
+  "lector": {
+    "since": "2026-08-26",
+    "reason": "Agent noun on the bound -lect. `prelector` is one who prelects, not one who `lectors`."
+  },
+  "lectors": {
+    "since": "2026-08-26",
+    "reason": "Plural of the -lector agent noun -- `prelectors`."
+  },
+  "lects": {
+    "since": "2026-08-26",
+    "reason": "The -lect combining form inflected -- `prelects`."
+  },
+  "lith": {
+    "since": "2026-08-26",
+    "reason": "Greek lithos (stone), only ever a final element -- `neolith`, `monolith`, `batholith`, `otolith`. The single clearest case for this table: 27 dictionary entries end in it and none of them is built on a word called `lith`. (`lithic` is a different matter -- that one is a real adjective and folds normally.)"
+  },
+  "logies": {
+    "since": "2026-08-26",
+    "reason": "Plural of the -logy combining form -- `antilogies`."
+  },
+  "logy": {
+    "since": "2026-08-26",
+    "reason": "Greek -logia, only ever a final element -- `antilogy`, `biology`, `geology`. English does have a free `logy` (sluggish, from Dutch), but it is a homograph and not what any of the 414 words ending this way are built on."
+  },
+  "merous": {
+    "since": "2026-08-26",
+    "reason": "Greek -meres (parted), only ever a final element -- `polymerous`, `pentamerous`, `dimerous`."
+  },
+  "metrist": {
+    "since": "2026-08-26",
+    "reason": "Agent noun on the bound -metry -- `photometrist`, `optometrist`, `posologist`'s cousin. Never free."
+  },
+  "metrists": {
+    "since": "2026-08-26",
+    "reason": "Plural of the -metrist agent noun -- `photometrists`."
+  },
+  "mune": {
+    "since": "2026-08-26",
+    "reason": "Latin munire (to fortify), the tail of `premune`/`premunition`. Not a word."
+  },
+  "nomen": {
+    "since": "2026-08-26",
+    "reason": "Latin nomen (name) as a final element -- `prenomen`, `cognomen`, `agnomen`."
+  },
+  "nomina": {
+    "since": "2026-08-26",
+    "reason": "Latin plural of the bound -nomen -- `prenomina`."
+  },
+  "ologies": {
+    "since": "2026-08-26",
+    "reason": "Plural of the -ology combining form."
+  },
+  "ologist": {
+    "since": "2026-08-26",
+    "reason": "The -ologist agent ending, which the dictionary lists as an entry. 279 words end this way -- `misologist`, `biologist`, `geologist` -- and none is built on a word called `ologist`. `derivedBaseCandidates` already folds these to their -ology, which is the right base."
+  },
+  "ology": {
+    "since": "2026-08-26",
+    "reason": "Greek -logia with its connecting vowel, only ever a final element -- `misology`, `biology`, `theology`. English does have a jocular free `ology` (`all the -ologies`), but it is a back-formation from the ending and not what any compound is built on."
+  },
+  "onymous": {
+    "since": "2026-08-26",
+    "reason": "Greek -onymos (named), only ever a final element -- `polyonymous`, `anonymous`, `synonymous`."
+  },
+  "parous": {
+    "since": "2026-08-26",
+    "reason": "Latin -parus (bearing), only ever a final element -- `nonparous`, `multiparous`, `oviparous`."
+  },
+  "pathy": {
+    "since": "2026-08-26",
+    "reason": "Greek -patheia (feeling/suffering), only ever a final element -- `protopathy`, `sympathy`, `neuropathy`."
+  },
+  "ped": {
+    "since": "2026-08-26",
+    "reason": "Latin pes/pedis (foot) as a final element -- `multiped`, `biped`, `quadruped`. The dictionary's free `ped` (a pannier; a clipping of pedestrian) is a homograph none of those is built on."
+  },
+  "pede": {
+    "since": "2026-08-26",
+    "reason": "The -ped foot element with its Latin ending -- `multipede`, `centipede`, `millipede`."
+  },
+  "pedes": {
+    "since": "2026-08-26",
+    "reason": "Plural of the -pede foot element -- `multipedes`."
+  },
+  "peds": {
+    "since": "2026-08-26",
+    "reason": "Plural of the -ped foot element -- `multipeds`."
+  },
+  "phile": {
+    "since": "2026-08-26",
+    "reason": "Greek philos (loving), only ever a final element -- `neophile`, `bibliophile`, `audiophile`."
+  },
+  "philia": {
+    "since": "2026-08-26",
+    "reason": "Greek -philia (affinity), only ever a final element -- `neophilia`, `haemophilia`."
+  },
+  "phyte": {
+    "since": "2026-08-26",
+    "reason": "Greek phyton (plant), only ever a final element -- `autophyte`, `epiphyte`, `neophyte`."
+  },
+  "phytic": {
+    "since": "2026-08-26",
+    "reason": "The bound -phyte plus -ic -- `autophytic`, `microphytic`, `neophytic`. A combining form that reaches six letters by taking a suffix of its own is still a combining form. (The unrelated `phytic acid` is a homograph.)"
+  },
+  "pode": {
+    "since": "2026-08-26",
+    "reason": "Greek pous/podos (foot), only ever a final element -- `monopode`, `antipode`, `arthropod`'s cousin."
+  },
+  "pone": {
+    "since": "2026-08-26",
+    "reason": "Latin ponere (to place), only ever a final element -- `prepone`, `postpone`, `depone`. The dictionary's free `pone` (corn bread) is a homograph none of those is built on."
+  },
+  "pones": {
+    "since": "2026-08-26",
+    "reason": "The -pone combining form inflected -- `prepones`."
+  },
+  "reges": {
+    "since": "2026-08-26",
+    "reason": "Latin plural of rex, carried into `interreges`. Not an English word in any use."
+  },
+  "stich": {
+    "since": "2026-08-26",
+    "reason": "Greek stichos (a line of verse), only ever a final element -- `monostich`, `telestich`, `hemistich`."
+  },
+  "stichs": {
+    "since": "2026-08-26",
+    "reason": "Plural of the -stich combining form -- `monostichs`."
+  },
+  "stome": {
+    "since": "2026-08-26",
+    "reason": "Greek stoma (mouth), only ever a final element -- `monostome`, `cyclostome`."
+  },
+  "therian": {
+    "since": "2026-08-26",
+    "reason": "Greek therion (beast), only ever a final element -- `prototherian`, `metatherian`, `eutherian`."
+  },
+  "typy": {
+    "since": "2026-08-26",
+    "reason": "The -typy process ending -- `phototypy`, `linotypy`, `stereotypy`. The dictionary's free `typy` (of livestock, true to type) is a homograph none of those is built on."
+  },
+  "zoaria": {
+    "since": "2026-08-26",
+    "reason": "Latin plural of the bound -zoarium -- `polyzoaria`."
+  },
+  "zoarium": {
+    "since": "2026-08-26",
+    "reason": "Greek -zoarion (colony of zooids), only ever a final element -- `polyzoarium`."
+  },
+  "zoic": {
+    "since": "2026-08-26",
+    "reason": "Greek -zoikos (of animals), only ever a final element -- `polyzoic`, `protozoic`, `Palaeozoic`."
+  }
+}

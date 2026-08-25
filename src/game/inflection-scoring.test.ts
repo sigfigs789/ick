@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
-import { baseForm, inflectionalBaseCandidates } from "./stem";
+import { RARITY_ORDER, baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
+import {
+  baseForm,
+  inflectedFormCandidates,
+  inflectionalBaseCandidates,
+  prefixBaseCandidates,
+} from "./stem";
 import { evaluateSubmission } from "./submit";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
+import boundResidueData from "../data/bound-residues.json";
 import type { AcceptedWord } from "./types";
 
 // The 2026-08-21 cutover: a plural or third-person form no longer out-scores the
@@ -350,19 +356,92 @@ describe("reviewed fold exemptions", () => {
   });
 
   it("shares no word with the override file", () => {
-    // An exemption silences every rule including the override, so a word in
-    // both files would have a dead override -- a review error, not a tie.
+    // A blanket exemption silences every rule including the override, so a word
+    // in both files would have a dead override -- a review error, not a tie. A
+    // prefix-scoped one leaves the override running, so it is exempt from this.
     const overrides = new Set(Object.keys(scoreOverrideData));
-    for (const word of Object.keys(foldExemptionData)) {
+    for (const [word, entry] of Object.entries(foldExemptionData)) {
+      if ((entry as { scope?: string }).scope !== undefined) continue;
       expect(overrides.has(word), `${word} is in both curated files`).toBe(false);
     }
   });
 
-  it("names only dictionary words, and dates every entry", () => {
+  it("names only dictionary words, dates every entry, and scopes them legibly", () => {
     const words = new Set(dictionaryWords as string[]);
     for (const [word, entry] of Object.entries(foldExemptionData)) {
+      const { since, scope } = entry as { since: string; scope?: string };
       expect(words.has(word), `${word} is not a dictionary word`).toBe(true);
-      expect((entry as { since: string }).since >= "2026-08-21").toBe(true);
+      expect(since >= "2026-08-21").toBe(true);
+      // The only scope the engine knows. A typo would read as a blanket
+      // exemption and silently take a word's ordinary folds down with it.
+      if (scope !== undefined) expect(scope, `${word} has an unknown scope`).toBe("prefix");
+    }
+  });
+
+  it("scopes an entry to the prefix only where the residue is a real word", () => {
+    // The division between this file and bound-residues.json. A residue that is
+    // never a word belongs in the table, where one entry covers every compound
+    // built on it; a word whose residue *is* a word and whose split is wrong
+    // belongs here, because nothing is wrong with the residue in general.
+    const residues = new Set(Object.keys(boundResidueData));
+    for (const [word, entry] of Object.entries(foldExemptionData)) {
+      if ((entry as { scope?: string }).scope !== "prefix") continue;
+      for (const residue of prefixBaseCandidates(word)) {
+        expect(residues.has(residue), `${word} could have been a ${residue} table entry`).toBe(
+          false
+        );
+      }
+    }
+  });
+});
+
+// src/data/bound-residues.json is the prefix half of what the bound *suffix*
+// rules get from their ending: a closed list of the forms a fold may not land
+// on, because they are not words. It replaced a flat Zipf-3 floor, which asked
+// "is this residue common" when the question is "is this residue a word".
+describe("reviewed bound prefix residues", () => {
+  const entries = Object.entries(
+    boundResidueData as Record<string, { since: string; reason?: string }>
+  );
+
+  it("ships a table, so the cases above are not vacuous", () => {
+    expect(entries.length).toBeGreaterThan(20);
+  });
+
+  it.each(entries)("%s is a dictionary word the prefix rule could reach", (residue) => {
+    // An entry naming something the dictionary does not list is dead weight and
+    // usually a typo. The table exists to refuse residues the engine can
+    // actually produce.
+    expect(rarityFor(residue), `${residue} is not a dictionary word`).toBeDefined();
+  });
+
+  it.each(entries)("%s is dated into the current era", (_residue, entry) => {
+    expect(entry.since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // Adding an entry *raises* the scores of everything that folded through it,
+    // so an archived puzzle must never see one reviewed after it was played.
+    expect(entry.since >= "2026-08-26").toBe(true);
+  });
+
+  it.each(entries)("%s carries the review note that justifies it", (_residue, entry) => {
+    // Nothing reads `reason`, and that is exactly why it needs asserting: this
+    // is a table of lexical judgements, and an entry without one cannot be
+    // re-reviewed when the dictionary or the frequency data moves.
+    expect(entry.reason?.length ?? 0).toBeGreaterThan(20);
+  });
+
+  it("spans the frequency range, which is why a floor could not do this job", () => {
+    // The substantive claim behind the table. If the bound forms clustered
+    // anywhere in particular a threshold would have found them; they do not.
+    const zipfByWord = new Map(
+      (dictionaryWords as string[]).map((w, i) => [w, rarityData.zipfHundredths[i] / 100])
+    );
+    const zipfs = entries.map(([residue]) => zipfByWord.get(residue)!);
+    expect(Math.min(...zipfs)).toBeLessThan(1.5);
+    expect(Math.max(...zipfs)).toBeGreaterThan(2.5);
+    // And the real bases sit inside that same range, interleaved with them.
+    for (const base of ["gird", "allot", "snob", "emote", "swum", "bade", "aural"]) {
+      expect(zipfByWord.get(base)!).toBeGreaterThan(Math.min(...zipfs));
+      expect(zipfByWord.get(base)!).toBeLessThan(Math.max(...zipfs) + 1);
     }
   });
 });
@@ -608,6 +687,96 @@ describe("invariants across the whole dictionary", () => {
       if (!substitution) continue;
       expect(substitution.baseZipf).toBeGreaterThan(rarityData.zipfHundredths[i] / 100 - 1e-9);
     }
+  });
+
+  it("raises no score at the 2026-08-26 cutover except where review says so", () => {
+    // The invariant PR #209 lacked, and the reason it shipped 13 promotions
+    // green: every cutover before it had a demote-only test, and that one had
+    // no counterpart. The 2026-08-26 changes widen `nextBaseForms`, and a
+    // widened candidate set can only lower a score -- unless it unlinks a pair
+    // somewhere else, which is exactly the failure the round-trip repair fixes.
+    // So this is not a restatement of the cap, it is the test that the repair
+    // is complete.
+    //
+    // The named exceptions are reviewed corrections rather than side effects.
+    // `lade` and its forms scored as a *boy*: the "-es"/"-ed" strip offers both
+    // `lade` and `lad`, and `lad` is 1.53 Zipf commoner, so it won the pick and
+    // took the whole paradigm with it. Pinning the forms to their own gerund
+    // corrects that and raises them, which is the same call the entry below
+    // records for "fores" -> "for": lexical correctness wins over preserving an
+    // accidental score. (`lade` itself is not in the list -- pinned to the same
+    // gerund, it goes *down*.)
+    const REVIEWED_RAISES = ["laded", "lades", "lading", "ladings"];
+    const raised: string[] = [];
+    for (const word of words) {
+      const before = rarityScore(rarityFor(word, "2026-08-25")!.zipf, "2026-08-25");
+      const after = rarityScore(rarityFor(word, "2026-08-26")!.zipf, "2026-08-26");
+      if (after > before + 1e-9) raised.push(word);
+    }
+    expect(raised.sort()).toEqual(REVIEWED_RAISES);
+  });
+
+  it("moves thousands of words down at that cutover, so the case above is not vacuous", () => {
+    let lowered = 0;
+    for (const word of words) {
+      const before = rarityScore(rarityFor(word, "2026-08-25")!.zipf, "2026-08-25");
+      if (rarityScore(rarityFor(word, "2026-08-26")!.zipf, "2026-08-26") < before - 1e-9) lowered++;
+    }
+    expect(lowered).toBeGreaterThan(4000);
+  });
+
+  it("leaves a paradigm more coherent than it found it", () => {
+    // The measure PR #209 failed and nothing was watching: how far apart the
+    // members of one paradigm can score. Widening the fold demotes a word whose
+    // own inflection is measured on the other side of MEASURED_FLOOR and cannot
+    // follow, so a change that only adds folds pulls families apart -- #209
+    // took 341 more paradigms over a two-rank spread than it found. Asserted as
+    // a ceiling on the count rather than an exact number so the frequency data
+    // can move, and low enough that regressing to the old behaviour fails.
+    const scoreAt = (word: string, date: string) =>
+      rarityScore(rarityFor(word, date)!.zipf, date);
+    const rankIndex = new Map(RARITY_ORDER.map((r, i) => [r, i]));
+    const parent = new Map<string, string>();
+    const find = (w: string): string => {
+      let root = w;
+      while (parent.get(root) !== undefined && parent.get(root) !== root) root = parent.get(root)!;
+      return root;
+    };
+    const union = (a: string, b: string) => {
+      parent.set(a, parent.get(a) ?? a);
+      parent.set(b, parent.get(b) ?? b);
+      const [ra, rb] = [find(a), find(b)];
+      if (ra !== rb) parent.set(ra, rb);
+    };
+    const dictionary = new Set(words);
+    for (const word of words) {
+      for (const form of inflectedFormCandidates(word)) {
+        if (dictionary.has(form)) union(word, form);
+      }
+    }
+    const families = new Map<string, string[]>();
+    for (const word of parent.keys()) {
+      const root = find(word);
+      families.set(root, [...(families.get(root) ?? []), word]);
+    }
+    const spread = (family: string[], date: string) => {
+      const ranks = family.map((w) => rankIndex.get(rarityFor(w, date)!.rarity)!);
+      return Math.max(...ranks) - Math.min(...ranks);
+    };
+    let before = 0;
+    let after = 0;
+    for (const family of families.values()) {
+      if (family.length < 2) continue;
+      if (spread(family, "2026-08-25") >= 2) before++;
+      if (spread(family, "2026-08-26") >= 2) after++;
+    }
+    // 2,208 -> 1,444 as it stands, a third fewer. The ceiling leaves room for a
+    // data refresh to move families across a band without failing the suite,
+    // and is far below the 2,208 a regression would return to.
+    expect(before).toBeGreaterThan(2000);
+    expect(after).toBeLessThan(1700);
+    // Kept honest: a rule that folded nothing would also pass the line above.
+    expect(scoreAt("semiweekly", "2026-08-26")).toBe(scoreAt("semiweeklies", "2026-08-26"));
   });
 
   it("raises scores only for reviewed lexical-correctness exemptions", () => {
@@ -923,6 +1092,236 @@ describe("transparent prefixes fold, but only below the measurement floor", () =
       "supermarket",
     ]) {
       expect(score(word, BEFORE_PREFIX), `${word} must not move`).toBe(score(word, ON_PREFIX));
+    }
+  });
+});
+
+// The 2026-08-26 cutover, where the fold's three remaining frequency guesses are
+// replaced by reviewed morphology: which readings of a form are rivals, which
+// residues are words, and which half of a noun/adjective pair anyone writes.
+// See REVIEWED_FOLD_START in dictionary.ts.
+describe("reviewed morphology replaces the fold's frequency guesses (from 2026-08-26)", () => {
+  const BEFORE_REVIEWED = "2026-08-25";
+  const ON_REVIEWED = "2026-08-26";
+
+  // -- The residue table ------------------------------------------------------
+
+  const RESIDUE_FOLDS: ReadonlyArray<
+    [word: string, base: string, before: number, after: number]
+  > = [
+    // The long derived bases the flat Zipf-3 floor asked to be as common as a
+    // five-letter one.
+    ["overopinionated", "opinionated", 10, 7.13],
+    ["hyperfastidious", "fastidious", 10, 7.49],
+    ["nondidactic", "didactic", 9.91, 7.34],
+    // The short ones, which no length rule reaches and which the floor refused
+    // for being a tenth of a Zipf too rare. "snob" at 2.96 was kept out while
+    // "opinionated" at 2.88 would have been let in, had it been shorter.
+    ["antisnob", "snob", 10, 7.02],
+    ["subaural", "aural", 9.96, 7.28],
+    ["overemote", "emote", 10, 7.75],
+    ["outswum", "swum", 10, 7.8],
+    ["prebade", "bade", 10, 7.43],
+  ];
+
+  it.each(RESIDUE_FOLDS)("%s scores as %s from the cutover on", (word, base, _b, after) => {
+    expect(score(word, ON_REVIEWED)).toBe(after);
+    expect(baseFormSubstitution(word, ON_REVIEWED)?.base).toBe(base);
+  });
+
+  it.each(RESIDUE_FOLDS)("%s kept its unearned score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_REVIEWED)).toBe(before);
+  });
+
+  it("refuses a bound combining form whatever its length or frequency", () => {
+    // The table's whole job, and the reason it is a table: these sit at every
+    // length and every frequency the real bases do. "duce" (2.51) and "lect"
+    // (1.80) sit either side of "gird" (2.22), which folds correctly.
+    for (const [word, fragment] of [
+      ["neolith", "lith"],
+      ["monocrat", "crat"],
+      ["autophyte", "phyte"],
+      ["prelect", "lect"],
+      ["protopathy", "pathy"],
+      ["autocade", "cade"],
+      ["prepone", "pone"],
+      ["monopode", "pode"],
+      ["antilogy", "logy"],
+      ["polyzoic", "zoic"],
+      ["macrography", "graphy"],
+      ["polymerous", "merous"],
+      ["monogenies", "genies"],
+      ["neophilia", "philia"],
+      ["monogenous", "genous"],
+      ["nonparous", "parous"],
+      ["ultraistic", "istic"],
+      ["misologist", "ologist"],
+      ["photometrist", "metrist"],
+      ["polyonymous", "onymous"],
+    ] as const) {
+      expect(
+        baseFormSubstitution(word, ON_REVIEWED)?.base,
+        `${word} must not reach ${fragment}`
+      ).not.toBe(fragment);
+    }
+  });
+
+  it("keeps a residue that only looks bound, where the word really is one", () => {
+    // Homographs of the combining forms, and the reason the table is keyed on
+    // residues that are checked one at a time rather than on a suffix pattern:
+    // "lithic" is a real adjective though "lith" is not, and "phylum" a real
+    // noun though "phyte" is not.
+    for (const [word, base] of [
+      ["protolithic", "lithic"],
+      ["superphylum", "phylum"],
+      ["autogamic", "gamic"],
+      ["antitypic", "typic"],
+      ["pseudocelom", "celom"],
+      ["suboscine", "oscine"],
+      ["hyperploidy", "ploidy"],
+      ["monostrophe", "strophe"],
+    ] as const) {
+      expect(
+        baseFormSubstitution(word, ON_REVIEWED)?.base,
+        `${word} should still reach ${base}`
+      ).toBe(base);
+    }
+  });
+
+  it("still leaves a word the corpora measure alone", () => {
+    // MEASURED_FLOOR is untouched: the residue table decides which residues are
+    // words, not which words the prefix rule may run on. Ungated it folds every
+    // one of these onto an unrelated word.
+    for (const word of [
+      "monolith",
+      "preface",
+      "present",
+      "mistake",
+      "outrage",
+      "understand",
+      "subject",
+      "overture",
+      "nonsense",
+      "united",
+      "postage",
+      "interest",
+      "supermarket",
+    ]) {
+      expect(score(word, BEFORE_REVIEWED), `${word} must not move`).toBe(score(word, ON_REVIEWED));
+    }
+  });
+
+  // -- Wrong bracketings, and the scope that keeps them from over-reaching ----
+
+  it("refuses the wrong bracketings whose residue is a real word", () => {
+    // No residue table can see these: "phonic", "regnal", "visional" and
+    // "erose" are all words, and only the split is wrong. Reviewed entries in
+    // fold-exemptions.json, scoped to the prefix.
+    for (const word of [
+      "antiphonic",
+      "interregnal",
+      "televisional",
+      "nonagonal",
+      "ungular",
+      "previsor",
+      "intermissive",
+      "suberose",
+    ]) {
+      expect(baseFormSubstitution(word, ON_REVIEWED), `${word} must not fold`).toBeUndefined();
+    }
+  });
+
+  it("scopes those entries to the prefix, so an ordinary fold survives", () => {
+    // The half PR #209 got wrong. "transferals" strips "trans-" to "ferals" on
+    // its own, so it needs an entry of its own -- and a blanket one would stop
+    // it folding onto "transferal" too, leaving a plural scoring above its
+    // singular and a rank higher.
+    expect(baseFormSubstitution("transferals", ON_REVIEWED)?.base).toBe("transferal");
+    expect(score("transferals", ON_REVIEWED)).toBe(score("transferal", ON_REVIEWED));
+  });
+
+  // -- The round trip, and the paradigm --------------------------------------
+
+  it("holds a paradigm together when the forward rules climb past it", () => {
+    // The round trip asks its question of the form's *inflectional* readings.
+    // Asked of the whole set, "overripening" preferred "ripening" -- a rung
+    // above, not a rival -- the pair unlinked, and the lemma floated back up to
+    // a score its own forms had just left.
+    for (const family of [
+      ["overripen", "overripens", "overripened", "overripening"],
+      ["unwreathe", "unwreathes", "unwreathed", "unwreathing"],
+      ["overdye", "overdyes", "overdyed", "overdyeing"],
+      ["counterculturist", "counterculturists"],
+      ["hypersensitise", "hypersensitises", "hypersensitised", "hypersensitising"],
+    ]) {
+      const scores = family.map((w) => score(w, ON_REVIEWED));
+      expect(new Set(scores).size, `${family.join("/")} scored ${scores.join("/")}`).toBe(1);
+    }
+  });
+
+  it("carries a measurement across MEASURED_FLOOR through the paradigm", () => {
+    // A confirmed reverse hop is now walked onward through the rungs above it,
+    // so a measured lemma reaches the base its own unmeasured forms found. This
+    // is the "overbake"/"underbake" cliff -- the word with *more* evidence of
+    // use scored 3.6 points rarer -- closed without moving the floor.
+    expect(score("overbake", ON_REVIEWED)).toBe(score("underbake", ON_REVIEWED));
+    expect(score("semiweekly", ON_REVIEWED)).toBe(score("semiweeklies", ON_REVIEWED));
+    expect(score("overbake", BEFORE_REVIEWED)).not.toBe(score("underbake", BEFORE_REVIEWED));
+  });
+
+  it("never walks a rival reading of a form onward, which is what stays terminal", () => {
+    // The guard the second half could have broken. "cleanses" is both
+    // "cleanse" + "-s" and "cleans" + "-es", and following its other reading
+    // lands "cleanse" on "clean"; the same composition dragged "thee" onto
+    // "the". Only the non-inflectional rungs are followed, and those are never
+    // a rival reading.
+    for (const word of ["cleanse", "cleanses", "underlie", "singe", "wive", "thee", "wives"]) {
+      expect(score(word, BEFORE_REVIEWED), `${word} must not move`).toBe(score(word, ON_REVIEWED));
+    }
+  });
+
+  // -- The bound derivational forms built on a word --------------------------
+
+  const DERIVED_FORM_FOLDS: ReadonlyArray<
+    [word: string, base: string, before: number, after: number]
+  > = [
+    ["neolith", "neolithic", 9.9, 6.97],
+    ["claustrophobe", "claustrophobic", 9.93, 7.18],
+    ["paleolith", "paleolithic", 9.91, 7.56],
+    ["agoraphobe", "agoraphobic", 9.93, 8.4],
+    ["euphemist", "euphemistic", 9.99, 8.36],
+    ["nepotist", "nepotistic", 9.91, 8.88],
+    ["grume", "grumous", 9.92, 8.43],
+    ["monocrat", "monocratic", 9.9, 9.21],
+  ];
+
+  it.each(DERIVED_FORM_FOLDS)("%s scores as %s from the cutover on", (word, base, _b, after) => {
+    expect(score(word, ON_REVIEWED)).toBe(after);
+    expect(baseFormSubstitution(word, ON_REVIEWED)?.base).toBe(base);
+  });
+
+  it.each(DERIVED_FORM_FOLDS)("%s kept its own score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_REVIEWED)).toBe(before);
+  });
+
+  it("puts the two halves of the same family within a rank of each other", () => {
+    // The complaint that prompted the rule: "monolith" is measured and scores
+    // Rare, "neolith" is not and scored a perfect Legend, and they are the same
+    // word with a different Greek prefix.
+    expect(rank("monolith", ON_REVIEWED)).toBe("Rare");
+    expect(rank("neolith", ON_REVIEWED)).toBe("Rare");
+    expect(Math.abs(score("monolith", ON_REVIEWED) - score("neolith", ON_REVIEWED))).toBeLessThan(
+      0.5
+    );
+  });
+
+  it("leaves the accidental -ic pairs alone, because the floor excludes them", () => {
+    // "pan"/"panic", "top"/"topic", "log"/"logic", "ion"/"ionic",
+    // "organ"/"organic": nothing in the spelling separates these from
+    // "neolith"/"neolithic", and every one of them is a common word sitting far
+    // above MEASURED_FLOOR, where this rule never runs.
+    for (const word of ["pan", "top", "log", "ion", "organ", "mag", "ton", "class", "eth"]) {
+      expect(score(word, BEFORE_REVIEWED), `${word} must not move`).toBe(score(word, ON_REVIEWED));
     }
   });
 });

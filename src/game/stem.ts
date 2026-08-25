@@ -566,6 +566,48 @@ export function derivedBaseCandidates(word: string): string[] {
  * "singing", a real word, but "singing" folds to "sing" (far more common than
  * "singe"), so the pair never links and "singe" keeps its own score.
  */
+/**
+ * The bound derivational forms built *on* `word`: the "-ic"/"-ical" adjective
+ * and the "-ous" one, with the silent "e" English drops before them
+ * ("agoraphobe" -> "agoraphobic", "epimere" -> "epimeric").
+ *
+ * The reverse direction again, past the regular inflections `inflectedFormCandidates`
+ * covers, and for the same reason: a lemma nobody writes should not out-score
+ * the form everybody does. `inflectedFormFolds` had that argument only for
+ * "-ed"/"-ing", and it stops one family short of the case that motivated it.
+ * English borrows a great many Greek and Latin nouns whose *adjective* is the
+ * word in circulation and whose noun is a technical rarity: "neolith" at Zipf
+ * 0.98 against "neolithic" at 2.99, "agoraphobe" 1.02 against "agoraphobic"
+ * 2.02, "paleolith" against "paleolithic". Every one held a deep-tail score for
+ * being the unused half of a familiar pair.
+ *
+ * Deliberately not the mirror of a forward rule, because there is no forward
+ * "-ic" rule to mirror -- "-ic" doubles as ordinary word-final material, so
+ * stripping it folds "topic" -> "top" and "panic" -> "pan", which is why
+ * `derivedBaseCandidates` declines the whole family. That leaves the caller
+ * without a round trip to check the pairing with, so it uses the gate instead:
+ * the fold runs only below MEASURED_FLOOR, and every wrong pairing this could
+ * make is a *common* word. "pan" (4.71), "mag" (2.94), "top" (5.86), "log"
+ * (4.66) and "organ" (4.44) all sit far above the floor and never reach here.
+ *
+ * The five-letter minimum is the second belt, and it is what the floor alone
+ * would miss: a three- or four-letter stem plus "-ic" is where the accidental
+ * pairs live, and a Greek noun that has an "-ic" adjective is longer than that.
+ */
+export function derivedFormCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  if (w.length < 5) return [];
+  const out: string[] = [];
+  const add = (...forms: string[]) => {
+    for (const form of forms) {
+      if (form !== w && !out.includes(form)) out.push(form);
+    }
+  };
+  const stems = w.endsWith("e") ? [w, w.slice(0, -1)] : [w];
+  for (const stem of stems) add(`${stem}ic`, `${stem}ical`, `${stem}ous`);
+  return out;
+}
+
 export function inflectedFormCandidates(word: string): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];

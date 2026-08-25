@@ -658,8 +658,20 @@ describe("curated base-form score overrides", () => {
     });
   });
 
+  // An override that *corrects* a fold rather than adding one runs the other
+  // way: the word already folded, onto the wrong base, and pinning it to the
+  // right one makes it rarer than the day before. Named rather than allowed in
+  // general, because the ordinary case really is a demotion and a silent raise
+  // is how a review mistake would look. `lades` and `laded` both offered `lade`
+  // and `lad` to the "-es"/"-ed" strip and lost the pick to the commoner boy.
+  const CORRECTIVE = new Set(["lades", "laded"]);
+
   it.each(overrides)("%s keeps its own, rarer score the day before", (word, { since }) => {
     const before = addDays(since, -1);
+    if (CORRECTIVE.has(word)) {
+      expect(rarityFor(word, before)!.zipf).toBeGreaterThan(rarityFor(word, since)!.zipf);
+      return;
+    }
     expect(rarityFor(word, before)!.zipf).toBeLessThan(rarityFor(word, since)!.zipf);
   });
 

@@ -3,6 +3,7 @@ import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
+import boundResidueData from "../data/bound-residues.json";
 import wordRejectionData from "../data/word-rejections.json";
 import sameRootPinData from "../data/same-root-pins.json";
 import derivedRejectionData from "../data/derived-rejections.json";
@@ -10,6 +11,7 @@ import {
   baseForm,
   boundBaseCandidates,
   degreeBaseCandidates,
+  derivedFormCandidates,
   derivedBaseCandidates,
   inflectedFormCandidates,
   inflectionalBaseCandidates,
@@ -104,13 +106,41 @@ const DERIVED_BASE_START = "2026-08-24";
 // neighbour at 1.88. Set the date to the day after the change is expected to
 // land, and if it slips past that date, move it before merging.
 const PREFIX_BASE_START = "2026-08-24";
-// How common a word must be to serve as a prefix base. Set at the top of the
-// deep tail rather than at MEASURED_FLOOR: the bound combining forms this keeps
-// out ("lith", "crat", "pathy", "phyte") are all measured, just barely, and sit
-// between Zipf 1.0 and 3.0 along with the handful of real bases the cutoff
-// costs ("gild", "emote", "ripen", "allot" -- each worth under 3 points of
-// demotion, against some forty wrong folds removed).
+// How common a word had to be to serve as a prefix base, before the reviewed
+// residue table replaced the question (see REVIEWED_FOLD_START and
+// `boundPrefixResidue`). Frozen for the 2026-08-24 puzzles that were played on
+// it; nothing from REVIEWED_FOLD_START on reads it.
 const PREFIX_BASE_MIN_ZIPF = 3;
+
+/*
+ * 2026-08-26. Three changes, one cutover, because they ship together and no
+ * archived puzzle falls between them -- a date each would buy three rungs in
+ * `scoringFor` that nothing can reach and three profiles differing from
+ * LATEST_SCORING by a flag nothing selects. The *flags* stay separate, which is
+ * what a later split actually needs: give one its own constant then, and add its
+ * rung with it.
+ *
+ * What they have in common is what they remove. Each of the three was a place
+ * the fold reached for a frequency number to answer a question frequency cannot
+ * answer:
+ *
+ *   `paradigmFolds`     Which reading a form settles on, asked of candidates
+ *                       that were never rival readings -- so a lemma and its own
+ *                       participle stopped being one word the moment a forward
+ *                       rule learned to climb past them.
+ *   `prefixResidues`    Whether a residue is a word or a bound fragment, asked
+ *                       as "is it commoner than Zipf 3". Not the same question:
+ *                       "snob" (2.96) and "aural" (2.78) are ordinary words it
+ *                       refused, and "dont" (4.74) is a fragment it admitted.
+ *   `derivedFormFolds`  Which member of a family a score should come from, when
+ *                       the noun is a technical rarity and the adjective built
+ *                       on it is the word anyone writes ("neolith" 0.98 against
+ *                       "neolithic" 2.99).
+ *
+ * All three replace the number with a reviewed answer -- a narrower question, a
+ * vetted table, and a checkable derivation.
+ */
+const REVIEWED_FOLD_START = "2026-08-26";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -269,9 +299,24 @@ function overrideBase(word: string, date?: string): string | undefined {
 }
 
 // -- Curated fold exemptions (src/data/fold-exemptions.json) -----------------
-/** A hand-reviewed exemption: `word` does not fold at all from `since` on. */
+/** A hand-reviewed exemption: `word` does not fold from `since` on. */
 interface FoldExemption {
   since: string;
+  /**
+   * Which reading the entry refuses. Absent means all of them -- the word folds
+   * nowhere and no chain passes through it. `"prefix"` refuses only the
+   * transparent-prefix hop, for the commonest shape in this file by far: a word
+   * whose residue is a real word and whose *split* is wrong ("antiphonic" is
+   * antiphon + -ic, not anti- + `phonic`).
+   *
+   * That distinction is worth a field because a blanket entry on one of those
+   * takes the word's ordinary inflectional folds down with it, and they were
+   * never in question. `transferals` is trans- + `ferals` only by accident, but
+   * it really is the plural of `transferal`, and an entry that stopped both left
+   * it scoring 0.32 above its own singular and a rank higher -- a plural
+   * out-scoring its base, which is the one thing the fold exists to prevent.
+   */
+  scope?: "prefix";
   /** Review notes only -- nothing here reads it. */
   reason?: string;
 }
@@ -318,11 +363,73 @@ function latinPluralsAllowed(word: string): boolean {
   return !WORD_INDEX.has(word + "s");
 }
 
-/** Whether `word`'s score is exempt from folding under `date`'s puzzle. */
+/** Whether `word` is exempt from every fold under `date`'s puzzle. */
 function foldExempt(word: string, date?: string): boolean {
+  const exemption = exemptionFor(word, date);
+  return exemption !== undefined && exemption.scope === undefined;
+}
+
+/** Whether `word` is exempt from the transparent-prefix hop specifically. */
+function prefixFoldExempt(word: string, date?: string): boolean {
+  return exemptionFor(word, date) !== undefined;
+}
+
+/** The exemption in force for `word` under `date`, whatever its scope. */
+function exemptionFor(word: string, date?: string): FoldExemption | undefined {
   const exemption = FOLD_EXEMPTIONS.get(word);
-  if (!exemption) return false;
-  return date === undefined || date >= exemption.since;
+  if (!exemption) return undefined;
+  if (date !== undefined && date < exemption.since) return undefined;
+  return exemption;
+}
+
+// -- Bound prefix residues (src/data/bound-residues.json) --------------------
+/** A hand-reviewed residue: not a word a prefix fold may land on, from `since`. */
+interface BoundResidue {
+  since: string;
+  /** Review notes only -- nothing here reads it. */
+  reason?: string;
+}
+
+/**
+ * The residues a transparent prefix can be stripped down to that are not words:
+ * bound combining forms a large dictionary lists as entries because they head
+ * their own family of compounds, not because anyone writes them.
+ *
+ * This is the prefix half of what the bound *suffix* rules get for free. A
+ * suffix family is safe when its ending is one English only ever produces by
+ * attaching that suffix, and that is checkable from the string -- which is why
+ * `derivedBaseCandidates` can fold "-ically" and "-ologist" with no gate at all.
+ * A prefix has no such property, because the thing that has to be bound is not
+ * the affix but the *residue*, and the residue is drawn from the whole
+ * dictionary. So the closed list a suffix family gets from its ending, a prefix
+ * family has to get from a table.
+ *
+ * Keyed on residues rather than words, which is what makes it a rule and not a
+ * pile of exceptions: one entry for "lith" covers "neolith", "monolith",
+ * "batholith", "otolith" and anything a later dictionary adds, where
+ * fold-exemptions.json would need a line each. The two files divide cleanly --
+ * a residue that is never a word belongs here, a *word* whose residue is a real
+ * word but the wrong bracketing ("antiphonic" is antiphon + -ic, not anti- +
+ * "phonic") belongs there, because nothing about "phonic" is wrong in general.
+ *
+ * Deny rather than allow, so a dictionary addition folds by default. That is the
+ * generous direction on purpose: a missing entry costs one word a visible wrong
+ * base, which review catches, while an allow-list would silently stop folding
+ * every new word and nothing would report it.
+ *
+ * Dated like the exemptions and for the same reason: adding an entry *raises*
+ * the scores of the words that folded through it, so an archived puzzle must not
+ * see a residue reviewed after it was played.
+ */
+const BOUND_RESIDUES: ReadonlyMap<string, BoundResidue> = new Map(
+  Object.entries(boundResidueData as Record<string, BoundResidue>)
+);
+
+/** Whether `residue` is a bound form rather than a word, under `date`'s puzzle. */
+function boundPrefixResidue(residue: string, date?: string): boolean {
+  const entry = BOUND_RESIDUES.get(residue);
+  if (!entry) return false;
+  return date === undefined || date >= entry.since;
 }
 
 /** A dated scoring system: how to read a word's Zipf, score it, and label it. */
@@ -371,6 +478,24 @@ interface Scoring {
   // `derivedBases`; off for earlier systems so past puzzles' scores stay frozen
   // (see DERIVED_BASE_START).
   inflectionForms: boolean;
+  // Whether the reverse fold keeps a paradigm together. Three repairs to
+  // `inflectedFormFolds`, one flag because they are one claim -- the members of
+  // a paradigm settle on one base, and they all reach it. The round trip asks
+  // its question of the form's *inflectional* readings alone; a confirmed form
+  // is walked onward through the rungs above it rather than read at its raw
+  // Zipf; and a form below MEASURED_FLOOR is no longer skipped for being rarer
+  // than the word, since that is precisely where it can climb. 2026-08-26; see
+  // REVIEWED_FOLD_START.
+  paradigmFolds: boolean;
+  // Whether a prefix base is decided by the reviewed residue table rather than
+  // the flat Zipf-3 floor -- the difference between "is this residue common
+  // enough" and "is this residue a word" (see `boundPrefixResidue`). 2026-08-26.
+  prefixResidues: boolean;
+  // Whether a word is also capped at the bound derivational forms built on it --
+  // "neolith" at "neolithic", the reverse direction extended past the regular
+  // inflections to the adjective that is the form anyone actually writes (see
+  // `derivedFormFolds`). 2026-08-26.
+  derivedFormFolds: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -401,6 +526,9 @@ interface ScoringFlags {
   derivedBases?: boolean;
   prefixBases?: boolean;
   inflectionForms?: boolean;
+  paradigmFolds?: boolean;
+  prefixResidues?: boolean;
+  derivedFormFolds?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
@@ -416,6 +544,9 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     derivedBases = false,
     prefixBases = false,
     inflectionForms = false,
+    paradigmFolds = false,
+    prefixResidues = false,
+    derivedFormFolds = false,
     narrowBands = false,
   } = flags;
   const score = (zipf: number): number => {
@@ -454,6 +585,9 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     derivedBases,
     prefixBases,
     inflectionForms,
+    paradigmFolds,
+    prefixResidues,
+    derivedFormFolds,
   };
 }
 
@@ -498,10 +632,22 @@ const DERIVED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   inflectionForms: true,
   narrowBands: true,
 });
-// The latest system (2026-08-24): all three of that day's changes -- the bound
+// The 2026-08-24 system: all three of that day's changes -- the bound
 // derivational families in `derivedBaseCandidates`, the fold's second direction
 // toward the inflections built on a word, and the transparent prefixes in
-// `prefixBaseCandidates`.
+// `prefixBaseCandidates` -- with every prefix base gated on a flat Zipf-3 floor.
+const PREFIX_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  prefixBases: true,
+  narrowBands: true,
+});
+// The latest system (2026-08-26): the three changes that replace the fold's
+// remaining frequency guesses with reviewed morphology. See REVIEWED_FOLD_START.
 const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
@@ -510,6 +656,9 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   derivedBases: true,
   inflectionForms: true,
   prefixBases: true,
+  paradigmFolds: true,
+  prefixResidues: true,
+  derivedFormFolds: true,
   narrowBands: true,
 });
 
@@ -541,6 +690,9 @@ const LEGACY_SCORING: Scoring = {
   derivedBases: false,
   prefixBases: false,
   inflectionForms: false,
+  paradigmFolds: false,
+  prefixResidues: false,
+  derivedFormFolds: false,
 };
 
 /**
@@ -613,6 +765,7 @@ function scoringFor(date?: string): Scoring {
   // the prefixes.
   if (date < DERIVED_BASE_START) return RETUNED_SCORING;
   if (date < PREFIX_BASE_START) return DERIVED_SCORING;
+  if (date < REVIEWED_FOLD_START) return PREFIX_SCORING;
   return LATEST_SCORING;
 }
 
@@ -1160,6 +1313,15 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
       // the walk started from, so a form reaches its paradigm's cap through its
       // own base: "infatuates" folds to "infatuate", which caps at
       // "infatuated", and all three end up scoring alike.
+      // The same direction one family further out: the bound "-ic"/"-ous"
+      // adjective of a technical noun, which is the half of the pair anyone
+      // writes. Terminal like the inflections and for a stronger reason -- there
+      // is no round trip behind it, only the floor and the length (see
+      // `derivedFormCandidates`), so the cap is taken and the walk stops.
+      for (const form of derivedFormFolds(current, scoring, date)) {
+        const zipf = zipfFor(form, scoring);
+        if (!best || zipf > best.zipf) best = { base: form, zipf };
+      }
       for (const form of inflectedFormFolds(
         current,
         scoring,
@@ -1168,11 +1330,116 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
       )) {
         const zipf = zipfFor(form, scoring);
         if (!best || zipf > best.zipf) best = { base: form, zipf };
+        // Terminal for the *inflectional* hops and transparent to the rest, from
+        // REVIEWED_FOLD_START. Reading only the form's raw Zipf is the mistake
+        // `chainedBase` was built to fix, still made in this one direction: the
+        // form may itself have folded, and then the cap is a number the engine
+        // has already discarded. "semiweekly" is measured at 1.16, just above
+        // the floor, so no prefix rule may touch it -- but "semiweeklies" is
+        // below the floor, folds to "weekly" (4.42), and the lemma was capped at
+        // its raw 0.55 instead, leaving the two 6.5 points apart.
+        //
+        // Only the rungs *above* the paradigm are followed, never another
+        // reading of the form itself, which is what the terminal-hop guard was
+        // protecting: "cleanses" is both "cleanse" + "-s" and "cleans" + "-es",
+        // and walking its rival reading onward lands "cleanse" on "clean". Those
+        // rivals are exactly the inflectional hops, so dropping them keeps the
+        // guard while letting a paradigm reach the base its own members found.
+        if (scoring.paradigmFolds) {
+          for (const above of nonInflectionalBaseForms(form, scoring, date)) {
+            if (seen.has(above)) continue;
+            seen.add(above);
+            next.push(above);
+            const aboveZipf = zipfFor(above, scoring);
+            if (!best || aboveZipf > best.zipf) best = { base: above, zipf: aboveZipf };
+          }
+        }
       }
     }
     frontier = next;
   }
   return best;
+}
+
+/**
+ * The answer both candidate sets below share before any spelling rule runs: an
+ * exemption's silence, an override's single pick, or the one base the systems
+ * before INFLECTION_BASE_START allowed. `undefined` means the spelling rules
+ * decide, and the caller carries on.
+ *
+ * Factored out because `nextBaseForms` and `inflectionalBaseForms` differ only
+ * in which spelling families they consult, and must not differ at all in how a
+ * reviewed decision about the word overrides them.
+ */
+function decidedBaseForms(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+): string[] | undefined {
+  // A reviewed exemption silences every rule below, the override included --
+  // the two files must never share a word (pinned by a test).
+  if (scoring.inflectionBases && foldExempt(word, date)) return [];
+
+  const override = overrideBase(word, date);
+  if (override) return [override];
+
+  if (!scoring.inflectionBases) {
+    const single = tenseBaseForm(word, scoring) ?? scoringBaseForm(word, scoring);
+    return single ? [single] : [];
+  }
+
+  return undefined;
+}
+
+/**
+ * The *inflectional* readings of `word`: the rival analyses of one ending, where
+ * every candidate is a different guess at the same fold and at most one of them
+ * can be right. "wives" is either "wife", "wif", "wiv" or "wive"; "singes" is
+ * either "singe" or "sing". Picking between them is a question about the
+ * spelling, and `mostCommonBase` answers it.
+ *
+ * Kept apart from the derivational and prefix families `nextBaseForms` adds on
+ * top, which are not rivals at all -- they are further rungs of the same ladder.
+ * "overripening" reads as an inflection of "overripen" *and* as a prefixed
+ * "ripening", and those two are not competing analyses: "ripening" is where
+ * "overripen" would itself fold if it could. Only `inflectedFormFolds` cares
+ * about the distinction, and it is the whole difference between a paradigm
+ * holding together and coming apart -- see the round-trip note there.
+ */
+function inflectionalBaseForms(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+): string[] {
+  const decided = decidedBaseForms(word, scoring, date);
+  if (decided) return decided;
+
+  const out: string[] = [];
+  addInflectionalBaseForms(word, scoring, candidateAdder(out, word));
+  return out;
+}
+
+/** The shared body of the two sets above, so neither can drift from the other. */
+function addInflectionalBaseForms(
+  word: string,
+  scoring: Scoring,
+  add: (candidate: string | undefined) => void,
+): void {
+  add(tenseBaseForm(word, scoring));
+  add(baseForm(word));
+  for (const candidate of inflectionalBaseCandidates(word, latinPluralsAllowed(word))) {
+    add(candidate);
+  }
+  // "-ier"/"-iest" comparatives, ungated: unlike bare "-er"/"-est", the "-y"
+  // rewrite is checkable, and the check is the base's *other* degree. "happy"
+  // has "happiest", so "happier" folds onto it even though both carry real
+  // measurements; "copy" has no "copiest", so "copier" -- an agent noun -- keeps
+  // its own score. Running above the floor is the point: every measured
+  // comparative ("angrier", "earliest", "prettiest") scored rarer than its own
+  // adjective while the only degree rules lived behind the gate.
+  for (const { base, counterpart } of degreeBaseCandidates(word)) {
+    if (WORD_INDEX.has(counterpart)) add(base);
+  }
 }
 
 /**
@@ -1197,39 +1464,30 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
  * of the older systems' single pick.
  */
 function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] {
-  // A reviewed exemption silences every rule below, the override included --
-  // the two files must never share a word (pinned by a test).
-  if (scoring.inflectionBases && foldExempt(word, date)) return [];
-
-  const override = overrideBase(word, date);
-  if (override) return [override];
-
-  if (!scoring.inflectionBases) {
-    const single = tenseBaseForm(word, scoring) ?? scoringBaseForm(word, scoring);
-    return single ? [single] : [];
-  }
+  const decided = decidedBaseForms(word, scoring, date);
+  if (decided) return decided;
 
   const out: string[] = [];
-  const add = (candidate: string | undefined) => {
-    if (!candidate || candidate === word) return;
-    if (!WORD_INDEX.has(candidate) || out.includes(candidate)) return;
-    out.push(candidate);
-  };
-  add(tenseBaseForm(word, scoring));
-  add(baseForm(word));
-  for (const candidate of inflectionalBaseCandidates(word, latinPluralsAllowed(word))) {
-    add(candidate);
-  }
-  // "-ier"/"-iest" comparatives, ungated: unlike bare "-er"/"-est" below, the
-  // "-y" rewrite is checkable, and the check is the base's *other* degree.
-  // "happy" has "happiest", so "happier" folds onto it even though both carry
-  // real measurements; "copy" has no "copiest", so "copier" -- an agent noun --
-  // keeps its own score. Running above the floor is the point: every measured
-  // comparative ("angrier", "earliest", "prettiest") scored rarer than its own
-  // adjective while the only degree rules lived behind the gate.
-  for (const { base, counterpart } of degreeBaseCandidates(word)) {
-    if (WORD_INDEX.has(counterpart)) add(base);
-  }
+  const add = candidateAdder(out, word);
+  addInflectionalBaseForms(word, scoring, add);
+  addNonInflectionalBaseForms(word, scoring, date, add);
+  add(scoringBaseForm(word, scoring));
+  return out;
+}
+
+/**
+ * The half of `nextBaseForms` that is not a rival reading of an ending: the
+ * gated suffix and prefix families, and the bound derivational ones. These are
+ * rungs *above* the word rather than guesses about it, which is why the reverse
+ * fold may follow them out of a confirmed form and must not follow the others
+ * (see `chainedBase`).
+ */
+function addNonInflectionalBaseForms(
+  word: string,
+  scoring: Scoring,
+  date: string | undefined,
+  add: (candidate: string | undefined) => void
+): void {
   // Suffixes whose spelling is not decisive, admitted only where the word's own
   // frequency is a stand-in rather than a measurement. Below MEASURED_FLOOR the
   // score comes from the deep-tail band -- for an unattested word, from the
@@ -1255,22 +1513,41 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
     // further ("people"). See `prefixBaseCandidates` for why the gate is
     // load-bearing.
     if (scoring.prefixBases) {
-      // A prefix base must be a word people actually use. Unlike the suffix
-      // families, stripping a prefix routinely lands on a *bound combining
-      // form* that a 225k-word dictionary happens to list as an entry --
-      // "neolith" -> "lith", "monocrat" -> "crat", "autophyte" -> "phyte",
-      // "protopathy" -> "pathy", "prelect" -> "lect", "subduce" -> "duce".
-      // Every one is a real dictionary word and none is a base anything was
-      // built on. They cluster in the deep tail, which is what separates them:
-      // a transparent prefix attaches to an ordinary word, so a residue nobody
-      // uses is far likelier to be a fragment than a base. Declining them costs
-      // almost nothing either way -- the point of the fold is to replace an
-      // unmeasured stand-in with a real measurement, and a base this rare
-      // barely supplies one. Same argument as the three-letter minimum in
-      // `inflectionalBaseCandidates`, one level up: some dictionary entries are
-      // not words a fold should ever land on.
-      for (const candidate of prefixBaseCandidates(word)) {
-        if (WORD_INDEX.has(candidate) && zipfFor(candidate, scoring) >= PREFIX_BASE_MIN_ZIPF) {
+      // A prefix base must be a *word*, not a fragment. Unlike the suffix
+      // families, stripping a prefix routinely lands on a bound combining form
+      // that a 225k-word dictionary happens to list as an entry -- "neolith" ->
+      // "lith", "monocrat" -> "crat", "autophyte" -> "phyte", "prelect" ->
+      // "lect", "subduce" -> "duce". Every one is a real dictionary word and
+      // none is a base anything was built on. Since #207 the fold is *shown* --
+      // "Scored as its base word, 'material'" -- so this is not a question about
+      // how much frequency a base supplies but about whether a player would
+      // accept it: "Scored as its base word, 'lith'" reads as a bug, and a
+      // visible wrong fold is worse than a quietly generous score.
+      //
+      // That question is answered by `boundPrefixResidue`, a reviewed table, and
+      // for good until REVIEWED_FOLD_START it was answered by a Zipf-3 floor
+      // instead. The floor was not a proxy for it -- it is a different question
+      // with different answers in both directions. "snob" (2.96), "aural"
+      // (2.78), "ripen" (2.73), "swum" (2.43) and "emote" (2.46) are ordinary
+      // words it refused; "dont" (4.74) is a fragment it admitted, and is in
+      // fold-exemptions.json to this day because nothing else could catch it.
+      // Sixty-one such residues were being refused to keep out about twenty
+      // fragments, and the fragments were not the rare ones -- "duce" at 2.51
+      // and "lect" at 1.80 sit either side of "gird" at 2.22.
+      const spellings = prefixBaseCandidates(word);
+      // A reviewed entry scoped to the prefix refuses this hop and leaves the
+      // word's ordinary folds alone -- see FoldExemption.scope. Asked after the
+      // spellings, not before: it reads the word's inflectional base, and most
+      // words have no prefix candidate for it to refuse.
+      const refused =
+        spellings.length > 0 &&
+        scoring.prefixResidues &&
+        prefixFoldExemptParadigm(word, scoring, date);
+      for (const candidate of refused ? [] : spellings) {
+        if (!WORD_INDEX.has(candidate)) continue;
+        if (scoring.prefixResidues) {
+          if (!boundPrefixResidue(candidate, date)) add(candidate);
+        } else if (zipfFor(candidate, scoring) >= PREFIX_BASE_MIN_ZIPF) {
           add(candidate);
         }
       }
@@ -1284,8 +1561,45 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   if (scoring.derivedBases) {
     for (const candidate of derivedBaseCandidates(word)) add(candidate);
   }
-  add(scoringBaseForm(word, scoring));
+}
+
+/**
+ * The rungs above `word` on its own ladder, with none of the rival readings of
+ * its ending -- `addNonInflectionalBaseForms` as a list, plus the same reviewed
+ * short-circuits every other candidate set honours.
+ */
+function nonInflectionalBaseForms(word: string, scoring: Scoring, date?: string): string[] {
+  const decided = decidedBaseForms(word, scoring, date);
+  if (decided) return decided;
+  const out: string[] = [];
+  addNonInflectionalBaseForms(word, scoring, date, candidateAdder(out, word));
   return out;
+}
+
+/**
+ * Whether the prefix hop is refused for `word` or for the word it inflects.
+ *
+ * A blanket exemption covers a paradigm for free, because no chain may pass
+ * through the exempt word and its forms can only reach the gated strips by way
+ * of it. A prefix-scoped one has no such reach: "previsor" is pre- + `visor` by
+ * accident, but so is "previsors" by its own strip, and an entry naming only the
+ * singular left the plural folding and then dragged the singular after it
+ * through the reverse hop. Reading one step back keeps the file's promise that
+ * an entry covers the paradigm, rather than asking review to list every
+ * inflection of every wrong bracketing.
+ */
+function prefixFoldExemptParadigm(word: string, scoring: Scoring, date?: string): boolean {
+  if (prefixFoldExempt(word, date)) return true;
+  return inflectionalBaseForms(word, scoring, date).some((base) => prefixFoldExempt(base, date));
+}
+
+/** The dedupe-and-check every candidate set adds through. */
+function candidateAdder(out: string[], word: string) {
+  return (candidate: string | undefined) => {
+    if (!candidate || candidate === word) return;
+    if (!WORD_INDEX.has(candidate) || out.includes(candidate)) return;
+    out.push(candidate);
+  };
 }
 
 /**
@@ -1322,6 +1636,24 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
  * score. Same for "singe", which reaches "singes" and "singing" by spelling but
  * loses both picks to the far commoner "sing".
  *
+ * The pick runs over the form's *inflectional* readings only, from
+ * INFLECTION_ROUND_TRIP_START (see `inflectionalBaseForms`). Asking it of the
+ * whole candidate set made the guard read a ladder as a rivalry: "overripening"
+ * offers "overripen" (its lemma) and "ripening" (itself, minus the prefix), and
+ * the second is not a competing analysis but the next rung -- where "overripen"
+ * would itself fold if the prefix rule could reach a measured word. Letting it
+ * win the pick unlinked the pair, and the lemma floated back up to a score its
+ * own forms had just left: "overripen" 9.95 Legend beside "overripening" 7.36
+ * Rare, "unwreathe" 10.00 beside "unwreathed" 6.43. Every rung above the word is
+ * reached anyway, through the chain, once the pair holds.
+ *
+ * This is a guard against the *forward* rules improving, which is the shape that
+ * makes it worth naming: any widening of `nextBaseForms` moves some forms' pick
+ * one rung further up, and under the old reading that silently took paradigms
+ * apart. The narrower question -- "is `word` the inflectional reading this form
+ * settles on" -- has an answer that does not move when a rule above it learns to
+ * climb.
+ *
  * The second guard is that these hops are *terminal* -- `chainedBase` caps
  * against a form but never walks on from it. Without that, one reverse hop and
  * one forward hop compose into a link between two words in different paradigms,
@@ -1342,6 +1674,40 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
  * forward rules: it is a decision about this exact word, and the spelling rules
  * -- in either direction -- do not get to add to it.
  */
+/**
+ * The bound derivational forms built on `word` that may cap it: its "-ic",
+ * "-ical" or "-ous" adjective, where that adjective is the half of the pair the
+ * language actually uses. See `derivedFormCandidates` for the spellings and for
+ * why this family has a gate where the inflections have a round trip.
+ *
+ * Two conditions beyond the spelling. `word` must sit below MEASURED_FLOOR, the
+ * line every non-decisive rule in this file respects: below it a score is a
+ * stand-in and a relative is better information, at or above it there is a real
+ * measurement no spelling guess may overrule -- and every accidental "-ic" pair
+ * ("pan"/"panic", "top"/"topic") lives far above it. The adjective must itself
+ * be measured, because the whole point is to inherit a measurement: an
+ * unattested adjective would cap a deep-tail noun at another deep-tail number
+ * and move nothing but the explanation shown for it.
+ *
+ * A reviewed override or exemption on `word` suppresses this the way it
+ * suppresses every other rule -- it is a decision about this exact word.
+ */
+function derivedFormFolds(word: string, scoring: Scoring, date?: string): string[] {
+  if (!scoring.derivedFormFolds) return [];
+  if (foldExempt(word, date) || overrideBase(word, date)) return [];
+  const index = WORD_INDEX.get(word);
+  if (index === undefined || scoring.zipfAt(index) >= MEASURED_FLOOR) return [];
+
+  const out: string[] = [];
+  for (const form of derivedFormCandidates(word)) {
+    const formIndex = WORD_INDEX.get(form);
+    if (formIndex === undefined) continue;
+    if (scoring.zipfAt(formIndex) < MEASURED_FLOOR) continue;
+    out.push(form);
+  }
+  return out;
+}
+
 function inflectedFormFolds(
   word: string,
   scoring: Scoring,
@@ -1361,8 +1727,21 @@ function inflectedFormFolds(
     // (a full candidate generation for every spelling offered). Skipping those
     // is what keeps this off the drop-scan hot path: `bestWordForDrop` walks the
     // whole dictionary, and most words' inflections are rarer than the word.
-    if (scoring.zipfAt(index) <= floor) continue;
-    if (mostCommonBase(nextBaseForms(form, scoring, date), form, scoring) !== word) continue;
+    //
+    // From REVIEWED_FOLD_START the "cannot change the answer" half only holds
+    // above MEASURED_FLOOR. A form below the floor may be rarer than the word
+    // and still lead somewhere commoner, because that is exactly where the gated
+    // families fire: "semiweeklies" is unattested, so it looks useless beside
+    // "semiweekly" at 1.16 -- and it strips its prefix to reach "weekly" at
+    // 4.42, which the measured lemma may not do for itself. Skipping it left the
+    // pair 6.5 points apart. The floor is what keeps the extra work bounded:
+    // above it nothing has changed, and the forms below it are the deep tail.
+    const formZipf = scoring.zipfAt(index);
+    if (formZipf <= floor && !(scoring.paradigmFolds && formZipf < MEASURED_FLOOR)) continue;
+    const readings = scoring.paradigmFolds
+      ? inflectionalBaseForms(form, scoring, date)
+      : nextBaseForms(form, scoring, date);
+    if (mostCommonBase(readings, form, scoring) !== word) continue;
     out.push(form);
   }
   return out;

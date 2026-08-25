@@ -98,5 +98,59 @@
   "microdont": {
     "since": "2026-08-24",
     "reason": "Greek micro- + -odont (tooth), a small-toothed animal -- not a form of `dont`. The prefix rule's base floor keeps out the other bound combining forms it lands on (`lith`, `crat`, `phyte`), but `dont` slips through it at Zipf 4.74: it is in the dictionary as the apostrophe-less spelling of \"don't\" and carries that word's frequency. Exempting the word is cheaper than special-casing the base."
+  },
+  "antiphonic": {
+    "since": "2026-08-26",
+    "reason": "From `antiphon` (a sung response) + -ic, not anti- + `phonic`. A wrong bracketing rather than a bound residue: `phonic` is a free word, so bound-residues.json cannot catch it and only a reviewed entry can.",
+    "scope": "prefix"
+  },
+  "intermissive": {
+    "since": "2026-08-26",
+    "reason": "From `intermission`, not inter- + `missive` (a letter).",
+    "scope": "prefix"
+  },
+  "interregnal": {
+    "since": "2026-08-26",
+    "reason": "From `interregnum` + -al, not inter- + `regnal`. Same shape as `antiphonic`: `regnal` is a free word (a regnal year), so the split is orthographically clean and semantically wrong.",
+    "scope": "prefix"
+  },
+  "lading": {
+    "since": "2026-08-26",
+    "reason": "The gerund of `lade` (to load). `baseForm` strips the `-ing` to `lad`, a real word and 1.53 Zipf commoner, so frequency preferred it -- and `lades`/`laded` read the same way, so the whole paradigm scored as a boy. Blanket rather than prefix-scoped: the wrong hop here is the `-ing` strip, not a prefix, and `lading` is the commonest member so it has nowhere it needs to fold. The other three are pinned onto it in score-overrides.json."
+  },
+  "nonagonal": {
+    "since": "2026-08-26",
+    "reason": "Of a `nonagon`, not non- + `agonal`. `agonal` is a free word meaning `of the death throes`, which is as far from nine-sidedness as the table gets.",
+    "scope": "prefix"
+  },
+  "previsor": {
+    "since": "2026-08-26",
+    "reason": "From `prevision`, not pre- + `visor`. The headgear is unrelated.",
+    "scope": "prefix"
+  },
+  "suberose": {
+    "since": "2026-08-26",
+    "reason": "From `suber` (cork) + -ose, not sub- + `erose` (jagged-edged). Both are botanical terms, which is what makes the wrong one plausible enough to need an entry.",
+    "scope": "prefix"
+  },
+  "televisional": {
+    "since": "2026-08-26",
+    "reason": "`television` + -al, not tele- + `visional`. `visional` (of visions) is a free word and an unrelated one.",
+    "scope": "prefix"
+  },
+  "televisionally": {
+    "since": "2026-08-26",
+    "reason": "The adverb of `televisional`, and it needs its own entry: nothing folds an `-ally` adverb back to its `-al` adjective, so it reaches `visionally` on its own.",
+    "scope": "prefix"
+  },
+  "transferal": {
+    "since": "2026-08-26",
+    "reason": "`transfer` + -al, not trans- + `feral`. The residue is a free word and an unrelated one, so no residue table can see it. Scoped to the prefix, which is what lets `transferals` still fold onto this word rather than scoring above it -- and the entry covers the plural without naming it (see prefixFoldExemptParadigm).",
+    "scope": "prefix"
+  },
+  "ungular": {
+    "since": "2026-08-26",
+    "reason": "From `ungula` (a hoof) + -ar, not un- + `gular` (of the throat).",
+    "scope": "prefix"
   }
 }

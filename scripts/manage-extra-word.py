@@ -43,6 +43,7 @@ RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 LEGACY_RARITY_PATH = ROOT / "src" / "data" / "rarity-legacy.json"
 SCORE_OVERRIDES_PATH = ROOT / "src" / "data" / "score-overrides.json"
 FOLD_EXEMPTIONS_PATH = ROOT / "src" / "data" / "fold-exemptions.json"
+BOUND_RESIDUES_PATH = ROOT / "src" / "data" / "bound-residues.json"
 DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
 
 # Legacy (pre-rescale) rarity placeholders for a freshly added word. The legacy
@@ -211,8 +212,6 @@ def update_size_test() -> None:
 # Tense forms inherit their base's Zipf exactly; transparent (-ness/-ly) and
 # bound (-ization/-ability) suffixes are capped at their base.
 MEASURED_FLOOR = 1.0
-# Mirror of PREFIX_BASE_MIN_ZIPF in src/game/dictionary.ts.
-PREFIX_BASE_MIN_ZIPF = 3.0
 BAND_CEILING = 9.9
 TAIL_FLOOR = 0.0
 # Score cutoffs for the wide band's two top ranks, keyed off the *displayed*
@@ -607,6 +606,22 @@ def load_fold_exemptions() -> frozenset[str]:
     return frozenset(json.loads(FOLD_EXEMPTIONS_PATH.read_text()))
 
 
+
+def load_bound_residues() -> frozenset[str]:
+    """The residues a prefix fold may not land on.
+
+    Mirror of BOUND_RESIDUES in src/game/dictionary.ts: a bound combining form
+    the dictionary lists as an entry ("lith", "crat", "phyte"), which is not a
+    word a fold should ever show as a base. Replaced the flat Zipf-3 floor on
+    2026-08-26 -- "is this residue a word" and "is this residue common" are
+    different questions, and the floor answered the wrong one in both
+    directions ("snob" at 2.96 refused, "dont" at 4.74 admitted).
+    """
+    if not BOUND_RESIDUES_PATH.exists():
+        return frozenset()
+    return frozenset(json.loads(BOUND_RESIDUES_PATH.read_text()))
+
+
 def _override_base(word: str, index: dict[str, int]) -> str | None:
     """Mirror of overrideBase() for the newest system (no date gating)."""
     override = load_score_overrides().get(word)
@@ -645,6 +660,38 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
             return
         out.append(candidate)
 
+    for candidate in _inflectional_bases(word, index, zipf_at):
+        add(candidate)
+    for candidate in _non_inflectional_bases(word, index, zipf_at):
+        add(candidate)
+    return out
+
+
+def _inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
+    """Mirror of inflectionalBaseForms(): the rival readings of one ending.
+
+    Every candidate here is a different guess at the same fold and at most one
+    can be right ("wives" is "wife", "wif", "wiv" or "wive"), which is what the
+    reverse fold's round trip asks its question of. The rungs in
+    _non_inflectional_bases() are not rivals -- they are further up the same
+    ladder -- and letting them win that question took paradigms apart (see
+    inflectedFormFolds in dictionary.ts).
+    """
+    if word in load_fold_exemptions():
+        return []
+    override = _override_base(word, index)
+    if override:
+        return [override]
+
+    out: list[str] = []
+
+    def add(candidate: str | None) -> None:
+        if not candidate or candidate == word:
+            return
+        if candidate not in index or candidate in out:
+            return
+        out.append(candidate)
+
     add(_tense_base(word, index, zipf_at))
     add(_inflectional_stem(word))
     for candidate in _inflectional_candidates(word, (word + "s") not in index):
@@ -654,16 +701,37 @@ def _next_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
     for base, counterpart in _degree_candidates(word):
         if counterpart in index:
             add(base)
+    return out
+
+
+def _non_inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
+    """Mirror of nonInflectionalBaseForms(): the rungs above `word`."""
+    if word in load_fold_exemptions():
+        return []
+    override = _override_base(word, index)
+    if override:
+        return [override]
+
+    out: list[str] = []
+
+    def add(candidate: str | None) -> None:
+        if not candidate or candidate == word:
+            return
+        if candidate not in index or candidate in out:
+            return
+        out.append(candidate)
+
     if word in index and zipf_at(word) < MEASURED_FLOOR:
         # Tensed "-ize"/"-ise" forms are deliberately absent from the gated
         # set: they fold through their own verb (see nextBaseForms).
         for candidate in _unmeasured_candidates(word):
             add(candidate)
-        # Prefixes, under the same gate, and only onto a base common enough to
-        # be a real word rather than a bound combining form ("neolith" ->
-        # "lith"). See the call site in src/game/dictionary.ts.
+        # Prefixes, under the same gate, and only onto a residue that is a word
+        # rather than a bound combining form ("neolith" -> "lith"). The reviewed
+        # table answers that, not a frequency floor -- see load_bound_residues().
+        bound = load_bound_residues()
         for candidate in _prefix_candidates(word):
-            if candidate in index and zipf_at(candidate) >= PREFIX_BASE_MIN_ZIPF:
+            if candidate in index and candidate not in bound:
                 add(candidate)
     # The bound derivational families, ungated like the "-ization" pair below:
     # nothing accidental ends "-ically" or "-ibly" (see derivedBaseCandidates).
@@ -685,6 +753,41 @@ def _most_common(candidates: list[str], word: str, index: dict[str, int], zipf_a
     return base
 
 
+def _derived_form_folds(word: str, index: dict[str, int], zipf_at) -> list[str]:
+    """Mirror of derivedFormFolds(): the "-ic"/"-ical"/"-ous" adjective built on
+    `word`, where that adjective is the half of the pair anyone writes
+    ("neolith" 0.98 against "neolithic" 2.99).
+
+    Gated at MEASURED_FLOOR rather than round-tripped, because there is no
+    forward "-ic" rule to check against -- and every accidental pair the
+    spelling allows ("pan"/"panic", "top"/"topic") sits far above the floor.
+    """
+    if word in load_fold_exemptions() or _override_base(word, index):
+        return []
+    if word not in index or zipf_at(word) >= MEASURED_FLOOR:
+        return []
+    return [
+        form
+        for form in _derived_form_candidates(word)
+        if form in index and zipf_at(form) >= MEASURED_FLOOR
+    ]
+
+
+def _derived_form_candidates(word: str) -> list[str]:
+    """Mirror of derivedFormCandidates() in src/game/stem.ts."""
+    w = word.lower()
+    if len(w) < 5:
+        return []
+    out: list[str] = []
+    stems = [w, w[:-1]] if w.endswith("e") else [w]
+    for stem in stems:
+        for suffix in ("ic", "ical", "ous"):
+            form = stem + suffix
+            if form != w and form not in out:
+                out.append(form)
+    return out
+
+
 def _inflected_form_folds(
     word: str, index: dict[str, int], zipf_at, floor: float = float("-inf")
 ) -> list[str]:
@@ -704,10 +807,16 @@ def _inflected_form_folds(
             continue
         # The frequency test before the round trip: a cap only pulls toward
         # common, so a form no commoner than what the caller has cannot change
-        # the answer, and confirming the link is the expensive half.
-        if zipf_at(form) <= floor:
+        # the answer, and confirming the link is the expensive half. Only above
+        # MEASURED_FLOOR, from 2026-08-26: below it a form rarer than the word
+        # may still climb somewhere commoner ("semiweeklies" strips its prefix
+        # to "weekly"), which is the half the skip used to lose.
+        if zipf_at(form) <= floor and zipf_at(form) >= MEASURED_FLOOR:
             continue
-        if _most_common(_next_bases(form, index, zipf_at), form, index, zipf_at) != word:
+        if (
+            _most_common(_inflectional_bases(form, index, zipf_at), form, index, zipf_at)
+            != word
+        ):
             continue
         out.append(form)
     return out
@@ -742,13 +851,29 @@ def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float]
                 zipf = zipf_at(candidate)
                 if best is None or zipf > best[1]:
                     best = (candidate, zipf)
-            # The other direction, capped against but never walked on from --
-            # see inflectedFormFolds in dictionary.ts for why it is terminal.
+            # The same direction one family further out, and fully terminal.
+            for form in _derived_form_folds(current, index, zipf_at):
+                zipf = zipf_at(form)
+                if best is None or zipf > best[1]:
+                    best = (form, zipf)
+            # The other direction: terminal for the *inflectional* hops and
+            # transparent to the rest, so a paradigm reaches the base its own
+            # members found without a rival reading of a form composing across
+            # paradigms ("cleanses" -> "cleans" -> "clean"). See
+            # inflectedFormFolds in dictionary.ts.
             floor = max(own, best[1] if best is not None else float("-inf"))
             for form in _inflected_form_folds(current, index, zipf_at, floor):
                 zipf = zipf_at(form)
                 if best is None or zipf > best[1]:
                     best = (form, zipf)
+                for above in _non_inflectional_bases(form, index, zipf_at):
+                    if above in seen:
+                        continue
+                    seen.add(above)
+                    nxt.append(above)
+                    above_zipf = zipf_at(above)
+                    if best is None or above_zipf > best[1]:
+                        best = (above, above_zipf)
         frontier = nxt
     return best
 
