@@ -41,8 +41,7 @@ const WORDS = [
 const OPEN = {
   weekStart: "2026-08-23",
   ready: true,
-  players: 14,
-  minPlayers: 10,
+  opensOn: "2026-08-30",
   weekly: WEEKLY,
   allTime: ALL_TIME,
   words: WORDS,
@@ -223,35 +222,44 @@ describe("the leaderboard page", () => {
 });
 
 describe("before the boards open", () => {
-  it("shows the player count instead of a board", async () => {
-    stubFetch({ weekStart: "2026-08-23", ready: false, players: 6, minPlayers: 10, weekly: [], allTime: [] });
+  const SHUT = {
+    weekStart: "2026-08-23",
+    ready: false,
+    opensOn: "2026-08-30",
+    weekly: [],
+    allTime: [],
+    words: [],
+  };
+
+  it("names the day the boards open instead of showing one", async () => {
+    stubFetch(SHUT);
     render(<LeaderboardPage />);
 
     const status = await screen.findByRole("region", { name: "Leaderboard status" });
-    expect(status).toHaveTextContent("6 of 10 players");
-    expect(status).toHaveTextContent(/4 to go/);
-    // No board at all, not an empty one -- a three-name table teaches a new
-    // player that nobody plays this.
+    // A day a player can plan around, rather than a target that may never
+    // arrive.
+    expect(status).toHaveTextContent("Boards open Sunday");
+    expect(status).toHaveTextContent("Aug 30");
     expect(screen.queryByRole("region", { name: "This week" })).toBeNull();
     expect(screen.queryByRole("region", { name: "All time" })).toBeNull();
   });
 
-  it("says scores are already counting, so joining early isn't wasted", async () => {
+  it("says scores are already counting, so playing now isn't wasted", async () => {
     playedToday("2026-08-20", "inkling", 2.9);
-    stubFetch({ weekStart: "2026-08-23", ready: false, players: 1, minPlayers: 10, weekly: [], allTime: [] });
+    stubFetch(SHUT);
     render(<LeaderboardPage />);
 
-    expect(await screen.findByText(/scores are already being counted/)).toBeInTheDocument();
+    expect(await screen.findByText(/already being counted/)).toBeInTheDocument();
     // Joining is still offered: collecting starts before displaying does.
     expect(screen.getByRole("button", { name: "Put me on the board" })).toBeInTheDocument();
   });
 
   it("withholds the boards even if rows arrive alongside a false flag", async () => {
-    stubFetch({ weekStart: "2026-08-23", ready: false, players: 3, minPlayers: 10, weekly: WEEKLY, allTime: ALL_TIME });
+    stubFetch({ ...SHUT, weekly: WEEKLY, allTime: ALL_TIME });
     render(<LeaderboardPage />);
 
     await screen.findByRole("region", { name: "Leaderboard status" });
-    expect(screen.queryByText("asphyxiate")).toBeNull();
+    expect(screen.queryByText("quixotic")).toBeNull();
   });
 });
 
@@ -518,23 +526,22 @@ describe("recent finds", () => {
     expect(await screen.findByText(/Today's stay hidden until tomorrow/)).toBeInTheDocument();
   });
 
-  it("shows the feed even while the boards are still gated", async () => {
+  it("shows the feed even while the boards are still shut", async () => {
     stubFetch({
       weekStart: "2026-08-23",
       ready: false,
-      players: 3,
-      minPlayers: 10,
+      opensOn: "2026-08-30",
       weekly: [],
       allTime: [],
       words: WORDS,
     });
     render(<LeaderboardPage />);
 
-    // The best thing to show a player while the boards fill up: a three-name
-    // board is embarrassing, three good words are not.
+    // The feed works from day one, so the page is never empty while the boards
+    // wait for their opening date.
     await waitFor(() => expect(finds()).toHaveLength(2));
     expect(screen.getByRole("region", { name: "Leaderboard status" })).toHaveTextContent(
-      "3 of 10 players"
+      "Boards open Sunday"
     );
   });
 

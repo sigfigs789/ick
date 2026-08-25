@@ -68,15 +68,13 @@ export interface FoundWord {
 
 export interface Boards {
   /**
-   * Whether the boards are published yet. Below the player threshold the server
+   * Whether the boards are published yet. Before the opening date the server
    * sends no rows at all and this is false, so a page that shows rows only when
-   * `ready` can never accidentally render a three-name board.
+   * `ready` can never render a board ahead of time.
    */
   ready: boolean;
-  /** Distinct players who have scored all time. */
-  players: number;
-  /** How many are needed before the boards are shown. */
-  minPlayers: number;
+  /** The date the boards open, echoed back so the page can name it. */
+  opensOn: string;
   weekly: BoardEntry[];
   allTime: BoardEntry[];
   /**
@@ -90,6 +88,67 @@ export interface Boards {
   words: FoundWord[];
   /** The day the weekly board is counting from, echoed back by the server. */
   weekStart: string;
+}
+
+/**
+ * The Sunday the boards go live, whatever the data looks like by then.
+ *
+ * A date rather than a player count. The count was the cautious version of the
+ * same instinct -- don't show a three-name board -- but it makes the launch
+ * unpredictable, and a leaderboard nobody can put a date on is one nobody plans
+ * around. A Sunday because that is when a week starts here (see week.ts), so the
+ * first published week is a whole one rather than a stub.
+ *
+ * Changing this is a one-line change: the client decides from its own calendar,
+ * the endpoint checks the same date against both clocks, and no SQL knows it.
+ */
+export const BOARDS_OPEN_FROM = "2026-08-30";
+
+/** Whether the boards are published yet, on this player's own calendar. */
+export function boardsOpen(date: string = todayDateString()): boolean {
+  return date >= BOARDS_OPEN_FROM;
+}
+
+/**
+ * Whether the leaderboard has anything worth a trip, cached from the last look.
+ *
+ * The header's trophy is hidden until it does, so a player is never sent to an
+ * empty page. Two things can make it worth visiting: the boards being open,
+ * which is a pure date check and needs no request at all, or there being finds
+ * to read, which does -- so the answer to the second is remembered between
+ * visits and refreshed in the background.
+ *
+ * Defaults to hidden on a browser that has never looked. Better a trophy that
+ * appears a moment late than one that leads somewhere empty.
+ */
+const PRESENCE_KEY = "ick:leaderboard-has-content";
+
+export function leaderboardHasContent(date: string = todayDateString()): boolean {
+  if (boardsOpen(date)) return true;
+  try {
+    return localStorage.getItem(PRESENCE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Refresh that answer in the background. Fire-and-forget, never awaited, and a
+ * failure leaves the last known answer alone -- a flaky moment should not make
+ * the trophy vanish for a player who has been using it.
+ */
+export function refreshLeaderboardPresence(date: string = todayDateString()): void {
+  if (boardsOpen(date)) return; // nothing to ask: the date already settles it
+  fetchBoards(date)
+    .then((boards) => {
+      const has = boards.words.length > 0 || boards.ready;
+      try {
+        localStorage.setItem(PRESENCE_KEY, has ? "1" : "0");
+      } catch {
+        // Storage unavailable; the trophy simply stays hidden this session.
+      }
+    })
+    .catch(() => {});
 }
 
 /** How many rows each board returns. Enough to scroll, not enough to be a wall. */
@@ -205,8 +264,7 @@ export async function fetchBoards(date: string = todayDateString()): Promise<Boa
     // Rows are shown only when the server says the boards are published, so a
     // missing or malformed flag holds them back rather than letting them out.
     ready: body.ready === true,
-    players: typeof body.players === "number" ? body.players : 0,
-    minPlayers: typeof body.minPlayers === "number" ? body.minPlayers : 0,
+    opensOn: typeof body.opensOn === "string" ? body.opensOn : BOARDS_OPEN_FROM,
     weekly: parseBoard(body.weekly),
     allTime: parseBoard(body.allTime),
     words: parseWords(body.words),

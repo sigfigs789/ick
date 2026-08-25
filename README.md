@@ -424,6 +424,36 @@ consults, so the game stays offline-first and plays identically whether or not
 the database exists — with no credentials set, `api/validate.ts` skips the write
 silently and `api/events.ts` answers 503.
 
+### Running the leaderboard locally
+
+`supabase start` brings up a local stack, applies the migrations, and seeds
+`supabase/seed.sql` — a week of sample players, real dictionary words with their
+real frequencies, dated relative to `current_date` so the data never falls out of
+the window. Point `.env` at it:
+
+```
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_SERVICE_ROLE_KEY=<the service_role key `supabase start` prints>
+```
+
+`seed.sql` is applied by `supabase db reset` and by nothing else, so the sample
+data is dev-only by construction rather than by remembering: a deployed project
+gets migrations and nothing more.
+
+Worth doing before touching this schema. Running it for real is what caught the
+grants bug below, which no amount of reading would have.
+
+**Privileges: revoke from PUBLIC, then grant back to `service_role`.** `anon` and
+`authenticated` hold no grants of their own — they inherit PUBLIC's, which is why
+revoking from PUBLIC is what actually locks a function down. But `service_role`
+inherits PUBLIC's too, and that is the role PostgREST assumes when an edge
+function presents the service key. Revoke from PUBLIC alone and the endpoint gets
+`permission denied for function` on its own procedures. Newly created *tables*
+grant nothing to anybody but their owner, so they need the same treatment. RLS
+stays on with no policies, which is what keeps `anon` and `authenticated` out;
+the grants are what let `service_role` through the privilege check before it
+bypasses RLS.
+
 Setup: run the migration on a Supabase project, then set `SUPABASE_URL` and
 `SUPABASE_SERVICE_ROLE_KEY` in the Vercel project (and in `.env` for local
 work — `npm run dev` serves both endpoints, see `vite.config.ts`). The
@@ -505,19 +535,29 @@ good words carries no such implication. It is the best thing to show a player
 while the boards are still filling up, which is why it sits above them on the
 page.
 
-### Collected from the start, shown from ten players
+### Collected from the start, published on a date
 
-Scores accumulate from the first day this ships, but the boards stay unpublished
-until **10 distinct players** have scored all time. A leaderboard with three
-names on it is not a leaderboard — it is a list of whoever found the page first,
-and it teaches a new player that nobody plays this. Until the threshold, the page
-shows the count ("6 of 10 players"), which is both honest and a reason to come
-back.
+Scores accumulate from the first day this ships; the weekly and all-time boards
+go live on **Sunday 2026-08-30** (`BOARDS_OPEN_FROM`), whatever the data looks
+like by then. Until that date the page names the day instead of showing a board.
 
-The gate is enforced inside `leaderboard_boards`, so below the threshold **no row
-leaves the database at all** — there is no partial board sitting in an API
-response waiting to be read out of a network tab. `MIN_PLAYERS` in
-`api/leaderboard.ts` is the one place to change it.
+A date rather than a player threshold, which is what this was first built as. The
+threshold was the cautious version of the same instinct — don't show a three-name
+board — but it makes the launch open-ended, and "six of ten players" is only a
+reason to come back if you believe the other four are coming. A Sunday, because
+that is when a week starts here, so the first published week is a whole one.
+
+The gate is enforced in SQL, so before the date **no board row leaves the
+database at all** — there is no early board sitting in an API response waiting to
+be read out of a network tab. The recent-finds feed is deliberately outside it
+and works from day one, so the page is never empty while the boards wait.
+
+The header's trophy follows the same rule from the other side: it stays hidden
+until the leaderboard is worth a trip. Once the boards open that is a pure date
+check costing no request at all; before then it depends on whether there are
+finds to read, so the answer is cached between visits and refreshed in the
+background. A failed check leaves the last answer alone — a flaky moment should
+not make the trophy vanish for someone using it.
 
 ### The name is your rarest word, and it does not change weekly
 

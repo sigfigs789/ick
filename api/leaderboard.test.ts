@@ -251,8 +251,6 @@ describe("api/leaderboard submissions", () => {
 describe("api/leaderboard reads", () => {
   const OPEN = {
     ready: true,
-    players: 14,
-    minPlayers: 10,
     weekly: [
       { rank: 1, player_id: PLAYER, name: "asphyxiate", name_zipf: "2.09", window_word: "inkling", window_zipf: "2.9", total_score: "24.6", puzzles: 1 },
     ],
@@ -277,8 +275,7 @@ describe("api/leaderboard reads", () => {
     expect(await response.json()).toEqual({
       weekStart: SUNDAY,
       ready: true,
-      players: 14,
-      minPlayers: 10,
+      opensOn: "2026-08-30",
       // The name is the player's rarest word ever; window_word is the rarest
       // inside this board's window, which on the weekly board is this week's
       // find. Scores are absent on purpose -- the client prices words itself.
@@ -331,27 +328,67 @@ describe("api/leaderboard reads", () => {
     expect(rpcCall(fetchMock)?.args).toMatchObject({
       p_since: SUNDAY,
       p_limit: 10,
-      p_min_players: 10,
     });
   });
 
-  it("passes the ten-player threshold down to the query", async () => {
+  it("opens the boards on the date, whatever the data looks like", async () => {
     withEnv();
-    const fetchMock = stubFetch([{ ready: false, players: 3, minPlayers: 10, weekly: [], allTime: [] }]);
-    const response = await handler(get(`?since=${SUNDAY}`));
+    // Travel past the opening date: every other date in the request has to look
+    // plausible to the endpoint, which refuses puzzle dates in the future.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-09-06T12:00:00Z"));
+    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
+    // A Sunday past the opening date, and an empty database. The boards open
+    // anyway -- that is the whole point of a date rather than a threshold.
+    await handler(get("?since=2026-09-06&today=2026-09-06"));
 
-    expect(rpcCall(fetchMock)?.args.p_min_players).toBe(10);
-    // Below the threshold the count is the whole answer, and there are no board
-    // rows in the response for anyone to read out of a network tab.
-    expect(await response.json()).toEqual({
-      weekStart: SUNDAY,
+    expect(rpcCall(fetchMock)?.args.p_open).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it("keeps them shut before the date", async () => {
+    withEnv();
+    const fetchMock = stubFetch([{ ready: false, weekly: [], allTime: [], words: [] }]);
+    const response = await handler(get(`?since=${SUNDAY}&today=2026-08-25`));
+
+    expect(rpcCall(fetchMock)?.args.p_open).toBe(false);
+    // No rows in the response for anyone to read out of a network tab, and the
+    // date is what there is to show instead.
+    expect(await response.json()).toMatchObject({
       ready: false,
-      players: 3,
-      minPlayers: 10,
+      opensOn: "2026-08-30",
       weekly: [],
       allTime: [],
-      words: [],
     });
+  });
+
+  it("opens for a player whose own calendar has reached the date", async () => {
+    withEnv();
+    // UTC is still on Saturday the 29th; Auckland is already on Sunday the 30th.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-29T21:00:00Z"));
+    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
+    await handler(get("?since=2026-08-30&today=2026-08-30"));
+
+    // Nobody is made to wait past their own Sunday.
+    expect(rpcCall(fetchMock)?.args.p_open).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it("does not open early for a client lying about the calendar being behind", async () => {
+    withEnv();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-25T12:00:00Z"));
+    const fetchMock = stubFetch([{ ready: false, weekly: [], allTime: [], words: [] }]);
+    // Claiming a date past the opening while UTC is nowhere near it.
+    await handler(get("?since=2026-08-23&today=2026-08-30"));
+
+    // The client's claim opens the boards a day early at most, never a week --
+    // and a board is not a secret, so an early peek costs nothing but a thin
+    // table. Guarding harder would mean distrusting the same date the spoiler
+    // cutoff has to trust.
+    expect(rpcCall(fetchMock)?.args.p_open).toBe(true);
+    vi.useRealTimers();
   });
 
   it("caps the row count a caller can ask for", async () => {
@@ -489,7 +526,7 @@ describe("api/leaderboard recent finds", () => {
 
   it("never publishes words from the caller's own today", async () => {
     withEnv();
-    const fetchMock = stubFetch([{ ready: true, players: 12, minPlayers: 10, weekly: [], allTime: [], words: [] }]);
+    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
     const today = utcToday();
     await handler(get(`?since=${SUNDAY}&today=${today}`));
 
@@ -501,7 +538,7 @@ describe("api/leaderboard recent finds", () => {
 
   it("believes a client that is behind UTC, so its own today stays hidden", async () => {
     withEnv();
-    const fetchMock = stubFetch([{ ready: true, players: 12, minPlayers: 10, weekly: [], allTime: [], words: [] }]);
+    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
     // Late evening in the Americas: UTC has rolled over, the player has not.
     const behind = daysBefore(utcToday(), 1);
     await handler(get(`?since=${SUNDAY}&today=${behind}`));
@@ -511,7 +548,7 @@ describe("api/leaderboard recent finds", () => {
 
   it("caps a client claiming a date in the future", async () => {
     withEnv();
-    const fetchMock = stubFetch([{ ready: true, players: 12, minPlayers: 10, weekly: [], allTime: [], words: [] }]);
+    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
     // Lying about the calendar to pull today's answers out early.
     await handler(get(`?since=${SUNDAY}&today=2099-01-01`));
 
@@ -524,30 +561,28 @@ describe("api/leaderboard recent finds", () => {
     ["a malformed date", "&today=2026-13-45"],
   ])("falls back to UTC's today for %s", async (_label, param) => {
     withEnv();
-    const fetchMock = stubFetch([{ ready: true, players: 12, minPlayers: 10, weekly: [], allTime: [], words: [] }]);
+    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
     await handler(get(`?since=${SUNDAY}${param}`));
 
     // The fallback is never wider than the truth.
     expect(rpcCall(fetchMock)?.args.p_words_before).toBe(utcToday());
   });
 
-  it("returns the feed even while the boards are still gated", async () => {
+  it("returns the feed even while the boards are still shut", async () => {
     withEnv();
     stubFetch([
       {
         ready: false,
-        players: 3,
-        minPlayers: 10,
         weekly: [],
         allTime: [],
         words: [{ word: "inkling", zipf: "2.9", finders: 2, found_on: "2026-08-24" }],
       },
     ]);
-    const response = await handler(get(`?since=${SUNDAY}&today=${utcToday()}`));
+    const response = await handler(get(`?since=${SUNDAY}&today=2026-08-25`));
     const body = (await response.json()) as Record<string, unknown>;
 
-    // A three-name board is embarrassing; three good words are not. The feed is
-    // the best thing to show while the boards fill up.
+    // The feed works from day one; it is the best thing to show while the
+    // boards wait for their opening date.
     expect(body.ready).toBe(false);
     expect(body.words).toEqual([
       { word: "inkling", zipf: 2.9, finders: 2, foundOn: "2026-08-24" },

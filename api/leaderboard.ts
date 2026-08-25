@@ -2,18 +2,17 @@
 // boards, and takes the score submissions that fill them.
 //
 // GET /api/leaderboard?since=YYYY-MM-DD&today=YYYY-MM-DD&limit=50
-//   -> { weekStart, ready, players, minPlayers, weekly: [...], allTime: [...],
-//        words: [...] }
+//   -> { weekStart, ready, opensOn, weekly: [...], allTime: [...], words: [...] }
 //   The weekly board counts puzzles from `since` onward; all-time counts
 //   everything. `since` comes from the client because the puzzle date it
 //   brackets is the player's own local calendar date (see src/game/week.ts), so
 //   the week has to be measured on the same clock.
 //
-//   Boards stay unpublished until MIN_PLAYERS distinct players have scored all
-//   time: `ready` says whether they are, and until they are, both arrays come
-//   back empty and `players` is what there is to show. The gate is enforced in
-//   SQL, so below the threshold no row leaves the database at all -- there is no
-//   partial board sitting in a response waiting to be read out of a network tab.
+//   Boards stay unpublished until BOARDS_OPEN_FROM, whatever the data looks like
+//   by then: `ready` says whether they are open, and until they are, both arrays
+//   come back empty and `opensOn` is what there is to show. The gate is enforced
+//   in SQL, so before the date no board row leaves the database at all -- there is
+//   no early board sitting in a response waiting to be read out of a network tab.
 //
 //   `words` is the recent finds feed -- the best word each player found on each
 //   of the last few days -- and is *not* behind that gate, because a short list
@@ -48,9 +47,9 @@
 // forge a score. Worth knowing before this board is used for anything that
 // matters.
 //
-// Both reads are CDN-cached briefly: a leaderboard a minute out of date is
+// Reads are CDN-cached briefly: a leaderboard a minute out of date is
 // indistinguishable from a live one, and it keeps a popular day from turning
-// every open of the modal into a database query.
+// every open of the page into a database query.
 
 import { record, rpc, supabaseConfigured, type EdgeContext } from "./_supabase";
 
@@ -85,8 +84,15 @@ const WORD_RE = /^[a-z]{2,30}$/;
 /** Zipf runs roughly -2 (attested nowhere) to 8 ("the"); bounded wide. */
 const MIN_ZIPF = -10;
 const MAX_ZIPF = 10;
-/** How many distinct all-time players before the boards are shown to anyone. */
-const MIN_PLAYERS = 10;
+/**
+ * The Sunday the boards go live, whatever the data looks like by then.
+ *
+ * Kept in step with src/game/leaderboard.ts's BOARDS_OPEN_FROM, which is what
+ * the page decides from. Both are checked: the client's own calendar opens the
+ * boards for whoever has reached the date, and this is the copy the response is
+ * built from, so a stale client cannot keep them shut either.
+ */
+const BOARDS_OPEN_FROM = "2026-08-30";
 /** How many days of finds the words feed reaches back over. */
 const WORDS_WINDOW_DAYS = 7;
 /**
@@ -156,8 +162,6 @@ interface WordEntry {
 /** What `leaderboard_boards` answers with: the gate, the rows, and the feed. */
 interface BoardsResult {
   ready: boolean;
-  players: number;
-  minPlayers: number;
   weekly: BoardRow[];
   allTime: BoardRow[];
   words: WordRow[];
@@ -366,6 +370,13 @@ async function handleGet(request: Request): Promise<Response> {
     : DEFAULT_LIMIT;
   const wordsBefore = spoilerCutoff(params.get("today"));
   const wordsSince = daysBefore(wordsBefore, WORDS_WINDOW_DAYS);
+  // Open for whoever has actually reached the date. Local calendars run ahead of
+  // and behind UTC by up to a day, so the later of the two is the one that says
+  // "it is Sunday somewhere the player is" -- a player is never made to wait past
+  // their own Sunday, and a client with a slow clock is not held back either.
+  const claimed = params.get("today") ?? "";
+  const playerToday = DATE_RE.test(claimed) ? claimed : utcToday();
+  const open = (playerToday > utcToday() ? playerToday : utcToday()) >= BOARDS_OPEN_FROM;
 
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
@@ -376,7 +387,7 @@ async function handleGet(request: Request): Promise<Response> {
     const result = await rpc<BoardsResult>("leaderboard_boards", {
       p_since: since,
       p_limit: limit,
-      p_min_players: MIN_PLAYERS,
+      p_open: open,
       p_words_before: wordsBefore,
       p_words_since: wordsSince,
     });
@@ -385,8 +396,7 @@ async function handleGet(request: Request): Promise<Response> {
       {
         weekStart: since,
         ready: Boolean(result?.ready),
-        players: Number(result?.players) || 0,
-        minPlayers: Number(result?.minPlayers) || MIN_PLAYERS,
+        opensOn: BOARDS_OPEN_FROM,
         weekly: toEntries(result?.weekly ?? null),
         allTime: toEntries(result?.allTime ?? null),
         words: toWords(result?.words ?? null),

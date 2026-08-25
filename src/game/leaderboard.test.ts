@@ -3,7 +3,9 @@ import {
   backfillHistory,
   chooseName,
   fetchBoards,
+  leaderboardHasContent,
   nameCandidates,
+  refreshLeaderboardPresence,
   submitScore,
 } from "./leaderboard";
 import { joinBoard } from "./player";
@@ -360,8 +362,6 @@ describe("reading the boards", () => {
         JSON.stringify({
           weekStart: "2026-08-23",
           ready: true,
-          players: 12,
-          minPlayers: 10,
           weekly: [
             { rank: 1, playerId: "a", name: "Ada", score: 40, best: 9.9, puzzles: 5 },
             { rank: 2, playerId: "b", name: "Mo", score: 20, best: 9.4, puzzles: 3 },
@@ -375,7 +375,6 @@ describe("reading the boards", () => {
     const boards = await fetchBoards("2026-08-27");
     expect(boards.weekStart).toBe("2026-08-23");
     expect(boards.ready).toBe(true);
-    expect(boards.players).toBe(12);
     // The ranks come from the database, which did the sorting; nothing is
     // re-sorted here, so what the player sees is always what it ranked.
     expect(boards.weekly.map((e) => [e.rank, e.name])).toEqual([
@@ -419,10 +418,9 @@ describe("reading the boards", () => {
     stubFetch(
       new Response(
         JSON.stringify({
-          players: 4,
-          minPlayers: 10,
+          opensOn: "2026-08-30",
           // Rows with no `ready` flag beside them: the client shows nothing.
-          weekly: [{ rank: 1, playerId: "a", name: "Ada", score: 40 }],
+          weekly: [{ rank: 1, playerId: "a", name: "asphyxiate", nameZipf: 2.09, score: 40 }],
           allTime: [],
         }),
         { status: 200, headers: { "content-type": "application/json" } }
@@ -431,7 +429,7 @@ describe("reading the boards", () => {
 
     const boards = await fetchBoards("2026-08-27");
     expect(boards.ready).toBe(false);
-    expect(boards.players).toBe(4);
+    expect(boards.opensOn).toBe("2026-08-30");
   });
 
   it("falls back to the requested week when the server echoes nothing", async () => {
@@ -539,5 +537,65 @@ describe("the recent finds feed", () => {
       })
     );
     expect((await fetchBoards("2026-08-27")).words).toEqual([]);
+  });
+});
+
+describe("whether the leaderboard is worth a trip", () => {
+  it("always is once the boards have opened, without asking anyone", async () => {
+    const fetchMock = stubFetch();
+    expect(leaderboardHasContent("2026-08-30")).toBe(true);
+    expect(leaderboardHasContent("2026-12-25")).toBe(true);
+
+    // A pure date check, so the header costs nothing from opening day onward.
+    refreshLeaderboardPresence("2026-08-30");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("is not, on a browser that has never looked", () => {
+    // Better a trophy that appears a moment late than one leading somewhere
+    // empty.
+    expect(leaderboardHasContent("2026-08-25")).toBe(false);
+  });
+
+  it("remembers finds between visits", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          ready: false,
+          weekly: [],
+          allTime: [],
+          words: [{ word: "inkling", zipf: 2.9, finders: 2 }],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    refreshLeaderboardPresence("2026-08-25");
+    await vi.waitFor(() => expect(leaderboardHasContent("2026-08-25")).toBe(true));
+  });
+
+  it("records an empty leaderboard as nothing to show", async () => {
+    stubFetch(
+      new Response(JSON.stringify({ ready: false, weekly: [], allTime: [], words: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
+    );
+
+    refreshLeaderboardPresence("2026-08-25");
+    await vi.waitFor(() => expect(localStorage.getItem("ick:leaderboard-has-content")).toBe("0"));
+    expect(leaderboardHasContent("2026-08-25")).toBe(false);
+  });
+
+  it("leaves the last known answer alone when the check fails", async () => {
+    localStorage.setItem("ick:leaderboard-has-content", "1");
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new Error("offline");
+    }));
+
+    refreshLeaderboardPresence("2026-08-25");
+    // A flaky moment must not make the trophy vanish for someone using it.
+    await new Promise((r) => setTimeout(r, 10));
+    expect(leaderboardHasContent("2026-08-25")).toBe(true);
   });
 });

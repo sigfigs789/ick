@@ -79,6 +79,12 @@ create index if not exists leaderboard_scores_date_idx
 
 alter table public.leaderboard_scores enable row level security;
 revoke all on public.leaderboard_scores from anon, authenticated;
+-- A freshly created table grants nothing to anybody but its owner, and the edge
+-- functions reach Postgres as `service_role` -- so without this the endpoint is
+-- denied its own tables. Row-level security stays on with no policies, which is
+-- what keeps `anon` and `authenticated` out; `service_role` bypasses RLS by
+-- design, and these grants are what let it through the privilege check first.
+grant select, insert, update on public.leaderboard_scores to service_role;
 
 /*
  * Submit a player's scores -- one puzzle, or a whole history at once.
@@ -153,8 +159,16 @@ as $$
   select count(*)::integer from written;
 $$;
 
+-- Revoking from PUBLIC is what actually locks a function down -- `anon` and
+-- `authenticated` hold no grant of their own, they inherit PUBLIC's. But so does
+-- `service_role`, which is the role PostgREST assumes when the edge functions
+-- present the service key: revoke from PUBLIC alone and the endpoint gets
+-- "permission denied for function" on its own procedures. So every function the
+-- server calls is revoked from everyone and then granted back to exactly the one
+-- role that needs it.
 revoke all on function public.submit_leaderboard_scores(uuid, jsonb)
   from public, anon, authenticated;
+grant execute on function public.submit_leaderboard_scores(uuid, jsonb) to service_role;
 
 /*
  * The name a player chose for themselves, when they have chosen one.
@@ -192,6 +206,7 @@ comment on table public.leaderboard_names is
 
 alter table public.leaderboard_names enable row level security;
 revoke all on public.leaderboard_names from anon, authenticated;
+grant select, insert, update on public.leaderboard_names to service_role;
 
 /*
  * Choose a name, or fail.
@@ -239,6 +254,7 @@ $$;
 
 revoke all on function public.choose_leaderboard_name(uuid, text)
   from public, anon, authenticated;
+grant execute on function public.choose_leaderboard_name(uuid, text) to service_role;
 
 /*
  * One board, aggregated over a date window.
@@ -346,6 +362,7 @@ as $$
 $$;
 
 revoke all on function public.leaderboard_board(date, integer) from public, anon, authenticated;
+grant execute on function public.leaderboard_board(date, integer) to service_role;
 
 /*
  * The words players actually found, rarest first.
@@ -398,21 +415,19 @@ $$;
 
 revoke all on function public.leaderboard_words(date, date, integer)
   from public, anon, authenticated;
+grant execute on function public.leaderboard_words(date, date, integer) to service_role;
 
 /*
  * Both boards, and the gate in front of them.
  *
- * A leaderboard with three names on it is not a leaderboard, it is a list of
- * whoever happened to find the page first -- and it teaches a new player that
- * nobody plays this. So the boards stay collected but unpublished until
- * `p_min_players` distinct players have scored all time, at which point they
- * appear for everyone at once.
+ * Scores are collected from the first day and the boards are published on a
+ * chosen date, whatever the data looks like by then. `p_open` carries that
+ * decision, made by the endpoint from the calendar rather than from the size of
+ * the table -- a launch nobody can put a date on is one nobody plans around.
  *
- * The gate lives here rather than in the endpoint or the page on purpose: below
- * the threshold no row leaves the database at all, so there is no partial board
- * sitting in an API response waiting to be read out of the network tab. What a
- * caller gets instead is the count, which is the honest thing to show -- "four
- * of ten players so far" is a reason to come back.
+ * The gate still lives here rather than only in the page: while it is shut, no
+ * board row leaves the database at all, so there is no early board sitting in an
+ * API response waiting to be read out of the network tab.
  *
  * One function returning JSON rather than three calls: the count and both boards
  * are one question ("what should this page show right now"), and answering it in
@@ -421,45 +436,35 @@ revoke all on function public.leaderboard_words(date, date, integer)
 create or replace function public.leaderboard_boards(
   p_since date,
   p_limit integer default 50,
-  p_min_players integer default 10,
+  p_open boolean default false,
   p_words_before date default null,
   p_words_since date default null
 ) returns jsonb
 language sql
 stable
 as $$
-  with gate as (
-    select
-      count(distinct s.player_id)::integer as players,
-      greatest(coalesce(p_min_players, 10), 0) as needed
-    from public.leaderboard_scores s
-  )
   select jsonb_build_object(
-    'ready', g.players >= g.needed,
-    'players', g.players,
-    'minPlayers', g.needed,
+    'ready', coalesce(p_open, false),
     -- Aggregated in rank order, so the array a caller receives is already the
     -- board top to bottom and nothing downstream has to re-sort it.
-    'weekly', case when g.players >= g.needed then (
+    'weekly', case when coalesce(p_open, false) then (
       select coalesce(jsonb_agg(to_jsonb(b) order by b.rank), '[]'::jsonb)
       from public.leaderboard_board(p_since, p_limit) b
     ) else '[]'::jsonb end,
-    'allTime', case when g.players >= g.needed then (
+    'allTime', case when coalesce(p_open, false) then (
       select coalesce(jsonb_agg(to_jsonb(b) order by b.rank), '[]'::jsonb)
       from public.leaderboard_board(null, p_limit) b
     ) else '[]'::jsonb end,
-    -- Deliberately *outside* the gate. The gate exists so nobody meets a
-    -- three-name leaderboard and concludes the game is empty; a short list of
-    -- good words carries no such implication -- it is interesting at any size,
-    -- and it is the best thing to show a player while the boards are still
-    -- filling up.
+    -- Deliberately *outside* the gate: the finds feed works from day one, and
+    -- it is the best thing to show a player while the boards wait for their
+    -- opening date.
     'words', case when p_words_before is null then '[]'::jsonb else (
       select coalesce(jsonb_agg(to_jsonb(w)), '[]'::jsonb)
       from public.leaderboard_words(p_words_before, p_words_since, 12) w
     ) end
-  )
-  from gate g;
+  );
 $$;
 
-revoke all on function public.leaderboard_boards(date, integer, integer, date, date)
+revoke all on function public.leaderboard_boards(date, integer, boolean, date, date)
   from public, anon, authenticated;
+grant execute on function public.leaderboard_boards(date, integer, boolean, date, date) to service_role;

@@ -12,6 +12,7 @@ import {
   type NameCandidate,
 } from "../game/leaderboard";
 import { joinBoard, loadPlayerId } from "../game/player";
+import { formatDateLabel } from "../game/date";
 import { resetLabel } from "../game/week";
 import { navigate } from "../routes";
 import { trackLeaderboardJoined } from "../analytics";
@@ -117,7 +118,7 @@ export function LeaderboardPage() {
           <FoundWords words={boards.words} />
         )}
 
-        {state === "ready" && !ready && <NotYet boards={boards} />}
+        {state === "ready" && !ready && boards && <NotYet opensOn={boards.opensOn} />}
 
         {state === "ready" && ready && boards && (
           <div className="leaderboard__boards">
@@ -258,26 +259,26 @@ function FoundWords({ words }: { words: FoundWord[] }) {
 /**
  * What the page says before the boards open.
  *
- * A leaderboard with three names on it is not a leaderboard -- it is a list of
- * whoever found the page first, and it teaches a new player that nobody plays
- * this. So scores are collected from the start and shown from the threshold, and
- * until then the count is what there is to say. It is also the more honest
- * thing: "six of ten players so far" is a reason to come back and a reason to
- * tell someone, which an empty table is not.
+ * A date, not a target. The earlier version counted players toward a threshold,
+ * which was honest but open-ended -- "six of ten" is a good reason to come back
+ * only if you believe the other four are coming. A day of the week is something
+ * a player can plan around, and it arrives whether or not the game is busy.
+ *
+ * The finds feed is above this and keeps working throughout, so the page is
+ * never empty while the boards wait.
  */
-function NotYet({ boards }: { boards: Boards | null }) {
-  const players = boards?.players ?? 0;
-  const needed = boards?.minPlayers ?? 0;
-  const remaining = Math.max(needed - players, 0);
+function NotYet({ opensOn }: { opensOn: string }) {
+  const opens = new Date(`${opensOn}T00:00:00`);
+  const weekday = opens.toLocaleDateString(undefined, { weekday: "long" });
   return (
     <section className="leaderboard__not-yet" aria-label="Leaderboard status">
       <p className="leaderboard__not-yet-count">
-        <strong>{players}</strong> of {needed} players
+        Boards open <strong>{weekday}</strong>
       </p>
       <p className="leaderboard__not-yet-copy">
-        The boards open once {needed} people have scored. {remaining}{" "}
-        {remaining === 1 ? "more to go" : "to go"} — scores are already being counted, including
-        yours, so nothing you play between now and then is lost.
+        The weekly and all-time boards go live on {formatDateLabel(opensOn)}. Scores are
+        already being counted, including yours, so nothing you play between now and then is
+        lost.
       </p>
     </section>
   );
