@@ -71,8 +71,17 @@ export function GuessLog({
             const isCopied = copiedWord === w.word;
             // Only surfaced when the fold cost the word a rank (see
             // baseFormRankDrop): a badge one or more tiers below what the word
-            // itself suggests looks broken until the player is shown the base
+            // itself suggests looks broken until the player is shown the word
             // it was scored from.
+            //
+            // "common form" rather than "base word", because the fold does not
+            // only run toward bases. It takes the most common word in the
+            // family, which may be one built *on* the word ("infatuate" scores
+            // as "infatuated", "neolith" as "neolithic") or a cousin reached
+            // through the chain ("overbake" as "baking"). 5,345 of the words
+            // carrying this note name something that is not a base of theirs by
+            // any reading, and calling a plural the base word of its own
+            // singular reads as the bug it is meant to explain away.
             const baseNote = baseFormRankDrop(w.word, date);
             return (
               <li key={w.word} className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}>
@@ -84,7 +93,7 @@ export function GuessLog({
                     isCopied
                       ? `Copied "${w.word}"`
                       : `Copy "${w.word}" (${w.rarity}${
-                          baseNote ? `, scored as its base word "${baseNote.base}"` : ""
+                          baseNote ? `, scored as its common form "${baseNote.base}"` : ""
                         }, guess ${i + 1})`
                   }
                 >
@@ -113,7 +122,7 @@ export function GuessLog({
                     // Already said in the button's aria-label, so the visible
                     // copy is decoration for a screen reader.
                     <span className="guess-log__base-note" aria-hidden="true">
-                      Scored as its base word, “{baseNote.base}”
+                      Scored as its common form, “{baseNote.base}”
                     </span>
                   )}
                 </button>

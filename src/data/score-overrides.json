@@ -214,6 +214,21 @@
     "reason": "-al adjective of `lactation`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "lade": {
+    "base": "lading",
+    "reason": "Pinned to its own gerund, the commonest member of the paradigm, so the four forms score alike instead of scattering once `overlade` and its forms start reaching them. See the `lading` entry in fold-exemptions.json for the wrong fold this replaces.",
+    "since": "2026-08-26"
+  },
+  "laded": {
+    "base": "lading",
+    "reason": "Past tense of `lade`. Same two readings as `lades`, same wrong winner.",
+    "since": "2026-08-26"
+  },
+  "lades": {
+    "base": "lading",
+    "reason": "Third-person of `lade`. The `-es` strip offers `lade` and `lad`, and `lad` is the commoner, so this scored as a boy until it was pinned.",
+    "since": "2026-08-26"
+  },
   "laevigates": {
     "base": "laevigate",
     "reason": "Plural / third-person form of `laevigate`; a suffix is not a discovery.",
