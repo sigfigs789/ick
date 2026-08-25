@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { maxGuessesFor } from "../game/constants";
 import { bestWord } from "../game/rank";
-import { formatRarityScore, topRarityScore, totalRarityScore } from "../game/dictionary";
+import {
+  baseFormRankDrop,
+  formatRarityScore,
+  topRarityScore,
+  totalRarityScore,
+} from "../game/dictionary";
 import { copyText } from "../clipboard";
 import { raritySymbol } from "../game/share";
 import { RarityBadge } from "./RarityBadge";
@@ -64,6 +69,11 @@ export function GuessLog({
           {acceptedWords.map((w, i) => {
             const isBest = best !== undefined && w.word === best.word;
             const isCopied = copiedWord === w.word;
+            // Only surfaced when the fold cost the word a rank (see
+            // baseFormRankDrop): a badge one or more tiers below what the word
+            // itself suggests looks broken until the player is shown the base
+            // it was scored from.
+            const baseNote = baseFormRankDrop(w.word, date);
             return (
               <li key={w.word} className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}>
                 <button
@@ -73,7 +83,9 @@ export function GuessLog({
                   aria-label={
                     isCopied
                       ? `Copied "${w.word}"`
-                      : `Copy "${w.word}" (${w.rarity}, guess ${i + 1})`
+                      : `Copy "${w.word}" (${w.rarity}${
+                          baseNote ? `, scored as its base word "${baseNote.base}"` : ""
+                        }, guess ${i + 1})`
                   }
                 >
                   <span className="guess-log__entry-main">
@@ -82,7 +94,16 @@ export function GuessLog({
                         👑
                       </span>
                     )}
-                    <span className="guess-log__word">{w.word}</span>
+                    <span className="guess-log__entry-text">
+                      <span className="guess-log__word">{w.word}</span>
+                      {baseNote && (
+                        // Already said in the button's aria-label, so the
+                        // visible copy is decoration for a screen reader.
+                        <span className="guess-log__base-note" aria-hidden="true">
+                          Scored as its base word, “{baseNote.base}”
+                        </span>
+                      )}
+                    </span>
                     {isCopied ? (
                       <span className="guess-log__copied" role="status">
                         Copied!

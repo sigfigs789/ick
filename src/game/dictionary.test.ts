@@ -2,11 +2,15 @@ import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
 import {
   CURATED_REJECTION_REASONS,
+  RARITY_ORDER,
+  BASE_FORM_NOTICE_DROP,
+  baseFormRankDrop,
   baseFormSubstitution,
   bestWordForDrop,
   curatedRejection,
   isValidWord,
   rarityFor,
+  formatRarityScore,
   rarityForZipf,
   rarityScore,
   topRarityScore,
@@ -434,6 +438,73 @@ describe("baseFormSubstitution", () => {
 
   it("returns undefined before the bound-suffix cutover", () => {
     expect(baseFormSubstitution("trivialization", "2026-08-15")).toBeUndefined();
+  });
+});
+
+describe("baseFormRankDrop", () => {
+  it("names the base when the fold cost the word a rank", () => {
+    // "materialnesses" is unmeasured, so on its own data it would be a Legend;
+    // scoring it as "material" makes it Very Common, which is the badge that
+    // reads as a bug without an explanation.
+    const note = baseFormRankDrop("materialnesses");
+    expect(note?.base).toBe("material");
+    expect(rarityForZipf(note!.ownZipf)).toBe("Legend");
+    expect(rarityForZipf(note!.baseZipf)).toBe("Very Common");
+  });
+
+  it("holds its fire when the badge moved but the number barely did", () => {
+    // The Legend cutoff is 9.9 and Mythic runs to 9.89, so a fold across that
+    // line alone can be a one-cent move -- a note about a score the player
+    // cannot see change.
+    const shown = (zipf: number) => Number(formatRarityScore(zipf));
+    for (const word of dictionaryWords as string[]) {
+      const sub = baseFormSubstitution(word);
+      if (!sub) continue;
+      if (baseFormRankDrop(word)) continue;
+      if (rarityForZipf(sub.ownZipf) === rarityForZipf(sub.baseZipf)) continue;
+      // Everything left changed rank and was suppressed -- so it must have been
+      // the floor that did it.
+      expect(shown(sub.ownZipf) - shown(sub.baseZipf)).toBeLessThan(
+        BASE_FORM_NOTICE_DROP
+      );
+    }
+  });
+
+  it("fires in the compressed top of the scale, where a small drop is a real one", () => {
+    // "abaci" gives up only 2.15 points to "abacus", but it crosses out of
+    // Mythic -- the band a fixed point-gap either misses or fires on constantly.
+    const note = baseFormRankDrop("abaci");
+    expect(note?.base).toBe("abacus");
+    expect(rarityForZipf(note!.ownZipf)).toBe("Mythic");
+    expect(rarityForZipf(note!.baseZipf)).not.toBe("Mythic");
+  });
+
+  it("stays quiet when the fold left the word in the same rank", () => {
+    // Both fold; neither changes the badge, so there is nothing to explain.
+    expect(baseFormSubstitution("played")?.base).toBe("play");
+    expect(baseFormRankDrop("played")).toBeUndefined();
+    expect(baseFormRankDrop("trivialization")).toBeUndefined();
+  });
+
+  it("stays quiet when the word scored on its own frequency", () => {
+    expect(baseFormRankDrop("organization")).toBeUndefined();
+    expect(baseFormRankDrop("the")).toBeUndefined();
+    expect(baseFormRankDrop("notaword")).toBeUndefined();
+  });
+
+  it("follows the date's system, like the substitution it reports", () => {
+    // Before the bound-suffix cutover nothing folds, so nothing to report.
+    expect(baseFormRankDrop("trivialization", "2026-08-15")).toBeUndefined();
+  });
+
+  it("only ever reports a drop, never a word that gained a rank", () => {
+    for (const word of dictionaryWords as string[]) {
+      const note = baseFormRankDrop(word);
+      if (!note) continue;
+      expect(RARITY_ORDER.indexOf(rarityForZipf(note.baseZipf))).toBeGreaterThan(
+        RARITY_ORDER.indexOf(rarityForZipf(note.ownZipf))
+      );
+    }
   });
 });
 

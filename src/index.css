@@ -549,6 +549,14 @@ h2 {
   align-items: center;
   gap: 0.5rem;
 }
+/* The word and, when the score came from a base form, the note under it. */
+.guess-log__entry-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  min-width: 0;
+}
 .guess-log__entry-button:hover .guess-log__copy-hint,
 .guess-log__entry-button:focus-visible .guess-log__copy-hint {
   opacity: 1;
@@ -588,6 +596,13 @@ h2 {
   font-weight: 700;
   text-transform: lowercase;
   letter-spacing: 0.01em;
+}
+/* Quiet enough to read as a footnote to the word rather than a warning: the
+ * score is correct, this only says which word it was measured from. */
+.guess-log__base-note {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: var(--fg-muted);
 }
 .guess-log__remaining {
   margin: 0.7rem 0 0;

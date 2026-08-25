@@ -37,6 +37,27 @@ describe("GuessLog", () => {
     expect(screen.getByText(/5 guesses left/i)).toBeInTheDocument();
   });
 
+  it("names the base word when scoring it cost the guess real points", () => {
+    // "materialnesses" is unmeasured, so its own score would be a flat 10;
+    // it is scored as "material" instead, six points lower.
+    const words: AcceptedWord[] = [
+      { word: "materialnesses", rarity: "Common", zipf: 4.95 },
+    ];
+    render(<GuessLog acceptedWords={words} />);
+    expect(screen.getByText(/scored as its base word, “material”/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /scored as its base word "material"/i,
+      })
+    ).toBeInTheDocument();
+  });
+
+  it("leaves a word alone when its base barely changed the score", () => {
+    const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
+    render(<GuessLog acceptedWords={words} />);
+    expect(screen.queryByText(/scored as its base word/i)).not.toBeInTheDocument();
+  });
+
   it("crowns the rarest word as the best one", () => {
     const words: AcceptedWord[] = [
       { word: "strange", rarity: "Common", zipf: 4.6 },
