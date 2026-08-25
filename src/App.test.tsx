@@ -45,6 +45,7 @@ function puzzle(overrides: Record<string, unknown> = {}) {
 describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     vi.mocked(useSound).mockReturnValue({
       enabled: true,
       toggle: vi.fn(),
@@ -87,6 +88,52 @@ describe("App", () => {
     expect(screen.getByText(/playing an old puzzle/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /i'm done guessing/i }));
     expect(lockIn).toHaveBeenCalledTimes(1);
+  });
+
+  it("badges the leaderboard until it has been opened, then never again", async () => {
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
+    const { unmount } = render(<App />);
+
+    // The badge is part of the button's accessible name, so a screen reader
+    // hears the announcement rather than only seeing it.
+    await userEvent.click(screen.getByRole("button", { name: "Leaderboard (new)" }));
+    expect(screen.getByRole("dialog", { name: /leaderboard/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
+
+    // And it stays gone across a reload, which is what "once" has to mean.
+    unmount();
+    render(<App />);
+    expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
+  });
+
+  it("does not badge the leaderboard for a player who has already met it", () => {
+    localStorage.setItem("ick:seen:leaderboard", "1");
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
+    render(<App />);
+
+    expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
+    expect(screen.queryByText("new")).not.toBeInTheDocument();
+  });
+
+  it("retires the badge when the leaderboard is reached from the results instead", async () => {
+    vi.mocked(useDailyPuzzle).mockReturnValue(
+      puzzle({
+        progress: {
+          date: "2026-08-13",
+          drop: "str",
+          acceptedWords: [{ word: "strange", rarity: "Common", zipf: 4.6 }],
+          rejectedAttempts: [],
+          completed: true,
+        },
+      }) as ReturnType<typeof useDailyPuzzle>
+    );
+    render(<App />);
+
+    expect(screen.getByRole("button", { name: "Leaderboard (new)" })).toBeInTheDocument();
+    // Either entry point counts as meeting it -- the badge says "there is
+    // something here you haven't seen", and now they have.
+    await userEvent.click(screen.getByRole("button", { name: "See the leaderboard" }));
+    expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
   });
 
   it("replaces input controls with sharing results after completion", () => {

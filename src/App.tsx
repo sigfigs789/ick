@@ -31,6 +31,7 @@ import {
 import { recordVisit } from "./game/visits";
 import { submitScore } from "./game/leaderboard";
 import type { Player } from "./game/player";
+import { hasSeen, markSeen } from "./game/whatsNew";
 import { beginSession, endSessionSegment, resumeSession } from "./game/sessionTime";
 
 export default function App() {
@@ -56,6 +57,10 @@ export default function App() {
   const [showInstructions, setShowInstructions] = useState(false);
   const [showWordRules, setShowWordRules] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  // Read once on mount rather than on every render: this flips exactly once, in
+  // openLeaderboard, and reading storage during a render would be the only
+  // thing here that did.
+  const [leaderboardIsNew, setLeaderboardIsNew] = useState(() => !hasSeen("leaderboard"));
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
 
@@ -120,6 +125,11 @@ export default function App() {
 
   function openLeaderboard(from: "header" | "results") {
     trackLeaderboardOpened(from);
+    // Opening it is meeting it, from either entry point -- the badge's whole job
+    // is to say "there is something here you haven't seen", and once the player
+    // has seen it there is nothing left to say.
+    markSeen("leaderboard");
+    setLeaderboardIsNew(false);
     setShowLeaderboard(true);
   }
 
@@ -158,12 +168,19 @@ export default function App() {
         <div className="app__header-actions">
           <button
             type="button"
-            className="app__icon-button"
+            className="app__icon-button app__icon-button--badged"
             onClick={() => openLeaderboard("header")}
-            aria-label="Leaderboard"
+            aria-label={leaderboardIsNew ? "Leaderboard (new)" : "Leaderboard"}
             title="Leaderboard"
           >
             <span aria-hidden="true">🏆</span>
+            {/* aria-hidden because the button's own label already carries the
+                "(new)" -- a screen reader should hear one thing, not two. */}
+            {leaderboardIsNew && (
+              <span className="app__icon-badge" aria-hidden="true">
+                new
+              </span>
+            )}
           </button>
           <button
             type="button"

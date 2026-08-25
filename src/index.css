@@ -287,6 +287,35 @@ h2 {
 .app__icon-button:hover {
   background: var(--bg-inset);
 }
+/* A badged button positions its own badge, and stops clipping it: the button is
+   a circle, and the badge deliberately hangs off the top-right of it. */
+.app__icon-button--badged {
+  position: relative;
+  overflow: visible;
+}
+/* Small, warm, and lowercase, so it reads as a nudge rather than a
+   notification count. Only ever drawn once per player -- see game/whatsNew.ts. */
+.app__icon-badge {
+  position: absolute;
+  top: -0.3rem;
+  right: -0.35rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 999px;
+  /* Elusive's burnt amber: the one warm accent already in the palette, so this
+     borrows a colour the game uses rather than introducing a fourth one. */
+  background: var(--rarity-elusive-dot);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  text-transform: lowercase;
+  /* Against the page, not the button, so the badge stays legible wherever it
+     overlaps the button's edge. */
+  box-shadow: 0 0 0 1.5px var(--bg);
+  pointer-events: none;
+}
 .app__icon-button:active {
   transform: scale(0.94);
 }

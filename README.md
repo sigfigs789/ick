@@ -446,6 +446,12 @@ with no window. There is no scheduled task that can fail to run. The Monday is
 computed on the client (`src/game/week.ts`) for the same reason the puzzle date
 is: it should land at the player's midnight, not at UTC's.
 
+The trophy in the header carries a one-time "new" badge, retired the first time
+the leaderboard is opened from either entry point (`src/game/whatsNew.ts`). One
+bit per feature under `ick:seen:<feature>`, no expiry: a badge that comes back is
+a badge nobody trusts. A browser that cannot read localStorage reports *seen*, so
+it shows no badge rather than an undismissable one on every load.
+
 Identity is opt-in and account-free. A player who wants on the board types a
 name; the browser mints a UUID to go with it and keeps both in localStorage
 (`src/game/player.ts`). Nothing is sent for a player who never joins. The honest
