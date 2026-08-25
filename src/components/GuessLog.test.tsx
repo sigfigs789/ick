@@ -46,9 +46,7 @@ describe("GuessLog", () => {
     render(<GuessLog acceptedWords={words} />);
     expect(screen.getByText(/scored as its base word, “material”/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", {
-        name: /scored as its base word "material"/i,
-      })
+      screen.getByRole("button", { name: /scored as its base word "material"/i })
     ).toBeInTheDocument();
   });
 

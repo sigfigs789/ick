@@ -88,38 +88,34 @@ export function GuessLog({
                         }, guess ${i + 1})`
                   }
                 >
-                  <span className="guess-log__entry-main">
-                    {isBest && (
-                      <span className="guess-log__crown" aria-hidden="true" title="Your best word so far">
-                        👑
-                      </span>
-                    )}
-                    <span className="guess-log__entry-text">
-                      <span className="guess-log__word">{w.word}</span>
-                      {baseNote && (
-                        // Already said in the button's aria-label, so the
-                        // visible copy is decoration for a screen reader.
-                        <span className="guess-log__base-note" aria-hidden="true">
-                          Scored as its base word, “{baseNote.base}”
-                        </span>
-                      )}
+                  {isBest && (
+                    <span className="guess-log__crown" aria-hidden="true" title="Your best word so far">
+                      👑
                     </span>
-                    {isCopied ? (
-                      <span className="guess-log__copied" role="status">
-                        Copied!
-                      </span>
-                    ) : (
-                      <span className="guess-log__copy-hint" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                          <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-                          <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" strokeWidth="2" />
-                        </svg>
-                      </span>
-                    )}
-                  </span>
+                  )}
+                  <span className="guess-log__word">{w.word}</span>
+                  {isCopied ? (
+                    <span className="guess-log__copied" role="status">
+                      Copied!
+                    </span>
+                  ) : (
+                    <span className="guess-log__copy-hint" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" width="16" height="16">
+                        <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+                        <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" strokeWidth="2" />
+                      </svg>
+                    </span>
+                  )}
                   <span className="guess-log__entry-meta">
                     <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
                   </span>
+                  {baseNote && (
+                    // Already said in the button's aria-label, so the visible
+                    // copy is decoration for a screen reader.
+                    <span className="guess-log__base-note" aria-hidden="true">
+                      Scored as its base word, “{baseNote.base}”
+                    </span>
+                  )}
                 </button>
               </li>
             );
