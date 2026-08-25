@@ -98,5 +98,17 @@
   "microdont": {
     "since": "2026-08-24",
     "reason": "Greek micro- + -odont (tooth), a small-toothed animal -- not a form of `dont`. The prefix rule's base floor keeps out the other bound combining forms it lands on (`lith`, `crat`, `phyte`), but `dont` slips through it at Zipf 4.74: it is in the dictionary as the apostrophe-less spelling of \"don't\" and carries that word's frequency. Exempting the word is cheaper than special-casing the base."
+  },
+  "antiphonic": {
+    "since": "2026-08-26",
+    "reason": "From `antiphon` (a sung response) + -ic, not anti- + `phonic`. A wrong bracketing rather than a bound residue: `phonic` is a free word, so BOUND_PREFIX_RESIDUES cannot catch it and only a reviewed entry can."
+  },
+  "interregnal": {
+    "since": "2026-08-26",
+    "reason": "From `interregnum` + -al, not inter- + `regnal`. Same shape as `antiphonic`: `regnal` is a free word (a regnal year), so the split is orthographically clean and semantically wrong."
+  },
+  "transferals": {
+    "since": "2026-08-26",
+    "reason": "`transfer` + -al, not trans- + `feral`. The nastiest of the three, since the residue chains on to `feral` (Zipf 3.53) and would demote a deep-tail word four points onto an unrelated adjective."
   }
 }

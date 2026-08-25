@@ -1144,6 +1144,43 @@ describe("a long prefix base is held to the Extremely Rare floor, not Zipf 3", (
     }
   });
 
+  it("refuses the bound residues that reach six letters by being inflected", () => {
+    // The reviewed exceptions in BOUND_PREFIX_RESIDUES. Each is a combining
+    // form that clears the length gate only because it carries an inflection or
+    // a suffix of its own, so no threshold separates it from the real bases at
+    // the same length and frequency.
+    for (const [word, residue] of [
+      ["autophytic", "phytic"],
+      ["protolithic", "lithic"],
+      ["polyzoaria", "zoaria"],
+      ["prenomina", "nomina"],
+      ["monogenies", "genies"],
+      ["monogenous", "genous"],
+      ["neophilia", "philia"],
+      ["nonparous", "parous"],
+      ["intermitter", "mitter"],
+      ["outrances", "rances"],
+      ["subsiders", "siders"],
+    ] as const) {
+      expect(
+        baseFormSubstitution(word, ON_LONG)?.base,
+        `${word} must not reach ${residue}`,
+      ).not.toBe(residue);
+    }
+  });
+
+  it("exempts the three wrong bracketings no residue table can see", () => {
+    // "antiphonic" is antiphon + -ic, "interregnal" is interregnum + -al, and
+    // "transferals" is transfer + -al. Every residue here is a free word, so the
+    // split is orthographically clean and only a reviewed exemption catches it.
+    for (const word of ["antiphonic", "interregnal", "transferals"]) {
+      expect(
+        baseFormSubstitution(word, ON_LONG),
+        `${word} must not fold`,
+      ).toBeUndefined();
+    }
+  });
+
   it("leaves the measured words alone, exactly as the old floor did", () => {
     for (const word of [
       "monolith",

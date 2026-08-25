@@ -10,11 +10,14 @@ export function baseForm(word: string): string {
 
   if (w.length > 5 && w.endsWith("ies")) return w.slice(0, -3) + "y";
   if (w.length > 6 && w.endsWith("ying")) return w.slice(0, -4) + "y";
-  if (w.length > 5 && w.endsWith("ing")) return stripDoubledConsonant(w.slice(0, -3));
+  if (w.length > 5 && w.endsWith("ing"))
+    return stripDoubledConsonant(w.slice(0, -3));
   if (w.length > 5 && w.endsWith("ied")) return w.slice(0, -3) + "y";
-  if (w.length > 4 && w.endsWith("ed")) return stripDoubledConsonant(w.slice(0, -2));
+  if (w.length > 4 && w.endsWith("ed"))
+    return stripDoubledConsonant(w.slice(0, -2));
   if (w.length > 4 && w.endsWith("es")) return w.slice(0, -2);
-  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
+  if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss"))
+    return w.slice(0, -1);
 
   return w;
 }
@@ -55,7 +58,10 @@ export function baseForm(word: string): string {
  *
  * Tense (-ed/-ing) is not here: `tenseBaseForm` in dictionary.ts already owns it.
  */
-export function inflectionalBaseCandidates(word: string, latinPlurals: boolean): string[] {
+export function inflectionalBaseCandidates(
+  word: string,
+  latinPlurals: boolean,
+): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
   const add = (...bases: string[]) => {
@@ -170,9 +176,11 @@ export function stemChangingNumberCandidates(word: string): string[] {
       if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
     }
   };
-  if (w.length > 5 && w.endsWith("ices")) add(w.slice(0, -4) + "ex", w.slice(0, -4) + "ix");
+  if (w.length > 5 && w.endsWith("ices"))
+    add(w.slice(0, -4) + "ex", w.slice(0, -4) + "ix");
   if (w.length > 4 && w.endsWith("ies")) add(w.slice(0, -3) + "i");
-  if (w.length > 4 && w.endsWith("ves")) add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
+  if (w.length > 4 && w.endsWith("ves"))
+    add(w.slice(0, -3) + "f", w.slice(0, -3) + "fe");
   if (w.length > 4 && w.endsWith("men")) add(w.slice(0, -3) + "man");
   if (w.length > 4 && w.endsWith("es")) add(w.slice(0, -2) + "is");
   return out;
@@ -207,9 +215,11 @@ export function restoredTenseCandidates(word: string): string[] {
     }
   };
   if (w.length > 4 && w.endsWith("ied")) add(w.slice(0, -3) + "y");
-  if (w.length > 4 && w.endsWith("ed")) add(w.slice(0, -2) + "e", w.slice(0, -2));
+  if (w.length > 4 && w.endsWith("ed"))
+    add(w.slice(0, -2) + "e", w.slice(0, -2));
   if (w.length > 4 && w.endsWith("ying")) add(w.slice(0, -4) + "ie");
-  else if (w.length > 5 && w.endsWith("ing")) add(w.slice(0, -3) + "e", w.slice(0, -3));
+  else if (w.length > 5 && w.endsWith("ing"))
+    add(w.slice(0, -3) + "e", w.slice(0, -3));
   return out;
 }
 
@@ -230,7 +240,9 @@ export function restoredTenseCandidates(word: string): string[] {
  * "earliest" 5.35 against "early" 3.38 -- because the gated rules never reach a
  * measured word.
  */
-export function degreeBaseCandidates(word: string): { base: string; counterpart: string }[] {
+export function degreeBaseCandidates(
+  word: string,
+): { base: string; counterpart: string }[] {
   const w = word.toLowerCase();
   if (w.length > 5 && w.endsWith("iest")) {
     const stem = w.slice(0, -4);
@@ -421,6 +433,41 @@ const TRANSPARENT_PREFIXES = [
  * (Zipf 4.98) one strip further, and 186 words in the Mythic band were
  * mis-scored by two points or more the same way.
  */
+/**
+ * Residues that clear the length gate but are still bound forms, not words.
+ *
+ * `LONG_PREFIX_BASE_LEN` assumes a six-letter residue is a word carrying
+ * derivational morphology rather than a fragment of a root, which is true often
+ * enough to be the right default and false for these. Each one is a combining
+ * form that has itself been inflected or suffixed, so it reaches six letters
+ * without ever becoming free: "-phyte" + "-ic" ("autophytic"), "-lith" + "-ic"
+ * ("protolithic"), the "-geny"/"-zoarium"/"-nomen" plurals ("monogenies",
+ * "polyzoaria", "prenomina"), and the bound adjectival "-genous"/"-parous"/
+ * "-philia" ("monogenous", "nonparous", "neophilia"). "mitter", "rances" and
+ * "siders" are the same thing from the other side: never free, and reached only
+ * because an agent or loan spelling happens to end that way ("intermitter",
+ * "outrances", "subsiders").
+ *
+ * A vetted table rather than another threshold, because no threshold sees it --
+ * these sit at the same length and the same frequency as the real bases around
+ * them ("kinked" 1.82, "allots" 1.67, "flacks" 1.71 all fold correctly). This is
+ * the "vetted table of which words really carry the prefix" the fossilised-prefix
+ * note asks for, scoped to the residues rather than the words.
+ */
+export const BOUND_PREFIX_RESIDUES = new Set([
+  "phytic",
+  "lithic",
+  "zoaria",
+  "nomina",
+  "genies",
+  "genous",
+  "philia",
+  "parous",
+  "mitter",
+  "rances",
+  "siders",
+]);
+
 export function prefixBaseCandidates(word: string): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
@@ -581,7 +628,8 @@ export function inflectedFormCandidates(word: string): string[] {
   if (w.endsWith("e")) add(`${w}d`, `${w.slice(0, -1)}ing`);
   // "-y" -> "-ies"/"-ied" ("carry" -> "carries"/"carried"), and "-ie" -> "-ying"
   // ("die" -> "dying"), the mirror of the "-ying" strip in `baseForm`.
-  if (w.endsWith("y") && w.length > 2) add(`${w.slice(0, -1)}ies`, `${w.slice(0, -1)}ied`);
+  if (w.endsWith("y") && w.length > 2)
+    add(`${w.slice(0, -1)}ies`, `${w.slice(0, -1)}ied`);
   if (w.endsWith("ie") && w.length > 2) add(`${w.slice(0, -2)}ying`);
   // A doubled final consonant before "-ed"/"-ing" ("untap" -> "untapped",
   // "unwrap" -> "unwrapping").

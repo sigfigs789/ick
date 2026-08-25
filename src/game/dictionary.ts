@@ -7,6 +7,7 @@ import wordRejectionData from "../data/word-rejections.json";
 import sameRootPinData from "../data/same-root-pins.json";
 import derivedRejectionData from "../data/derived-rejections.json";
 import {
+  BOUND_PREFIX_RESIDUES,
   baseForm,
   boundBaseCandidates,
   degreeBaseCandidates,
@@ -1397,10 +1398,13 @@ function nextBaseForms(
       // not words a fold should ever land on.
       for (const candidate of prefixBaseCandidates(word)) {
         if (!WORD_INDEX.has(candidate)) continue;
-        const floor =
-          scoring.longPrefixBases && candidate.length >= LONG_PREFIX_BASE_LEN
-            ? LONG_PREFIX_BASE_MIN_ZIPF
-            : PREFIX_BASE_MIN_ZIPF;
+        const long =
+          scoring.longPrefixBases && candidate.length >= LONG_PREFIX_BASE_LEN;
+        // The reviewed exceptions to the length rule -- bound forms that reach
+        // six letters by being inflected or suffixed themselves, so no
+        // threshold separates them from the real bases beside them.
+        if (long && BOUND_PREFIX_RESIDUES.has(candidate)) continue;
+        const floor = long ? LONG_PREFIX_BASE_MIN_ZIPF : PREFIX_BASE_MIN_ZIPF;
         if (zipfFor(candidate, scoring) >= floor) add(candidate);
       }
     }
