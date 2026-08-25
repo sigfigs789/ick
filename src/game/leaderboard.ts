@@ -19,7 +19,6 @@ import {
 } from "./dictionary";
 import { todayDateString } from "./date";
 import { loadPlayerId } from "./player";
-import { isWinningRarity } from "./rank";
 import { playedOnItsDay } from "./storage";
 import { sampleBoardsResponse, usingSampleData } from "../dev/sampleData";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
@@ -84,12 +83,8 @@ export interface Boards {
   weekly: BoardEntry[];
   allTime: BoardEntry[];
   /**
-   * The best words other players found recently, newest first.
-   *
-   * Never includes today: the same drop goes to everybody, so a word found today
-   * is an answer to today's puzzle (the server enforces this -- see
-   * api/leaderboard.ts). Not behind the player threshold either, because a short
-   * list of good words is interesting at any size.
+   * The best words other players found recently, newest first -- today's
+   * included, as they happen.
    */
   words: FoundWord[];
   /** The day the weekly board is counting from, echoed back by the server. */
@@ -194,19 +189,18 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
     const current = rarityFor(word)?.zipf ?? stored;
     if (current === undefined) continue;
     const rarity = rarityForZipf(current);
-    const isToday = foundOn === today;
-    // Today's finds have to clear Rare to make the list. The bar is what makes a
-    // live feed readable rather than a running commentary: on a busy day most
-    // finds are ordinary, and the ones worth interrupting the page for are the
-    // ones you would be pleased to have been beaten by.
-    if (isToday && !isWinningRarity(rarity)) continue;
+    // No rarity bar. Every entry is already the best word its finder managed
+    // that day, which is the only filter the feed needs -- a Common word
+    // somebody topped their puzzle with is still that player's day, and cutting
+    // it would quietly make the feed a list of good players rather than a list
+    // of what happened.
     words.push({
       word,
       zipf: current,
       rarity,
       finders: typeof finders === "number" && Number.isFinite(finders) ? finders : 1,
       foundOn: typeof foundOn === "string" ? foundOn : "",
-      today: isToday,
+      today: foundOn === today,
     });
   }
   return words;

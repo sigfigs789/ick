@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard, loadPlayerId } from "../game/player";
@@ -519,11 +519,13 @@ describe("recent finds", () => {
     expect(finds()[1]).not.toHaveTextContent("player");
   });
 
-  it("says today's finds appear live, and on what terms", async () => {
+  it("says what the list is", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    expect(await screen.findByText(/Today's appear as they happen/)).toBeInTheDocument();
+    expect(
+      await screen.findByText("The best word each player found, newest first.")
+    ).toBeInTheDocument();
   });
 
   it("shows the feed even while the boards are still shut", async () => {
@@ -552,6 +554,102 @@ describe("recent finds", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     // An empty section with a heading would be worse than no section.
     expect(screen.queryByRole("region", { name: "Words found recently" })).toBeNull();
+  });
+});
+
+describe("finds arriving", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** The feed's items, in order. */
+  function finds() {
+    return within(screen.getByRole("region", { name: "Words found recently" })).getAllByRole(
+      "listitem"
+    );
+  }
+
+  it("marks a word that turned up since the last look, and puts it on top", async () => {
+    let words = [{ word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" }];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ ...OPEN, words }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      )
+    );
+    render(<LeaderboardPage />);
+    await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
+    expect(finds()).toHaveLength(1);
+    // Nothing animates on the first load: everything is new to a page that has
+    // just opened, and marking it all would say twelve words just arrived.
+    expect(finds()[0].className).not.toContain("arrived");
+
+    // A rarer word lands later in the day; the feed is newest-first, so it goes
+    // above the one already there and pushes it down.
+    words = [
+      { word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-25" },
+      ...words,
+    ];
+    await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
+
+    expect(finds().map((li) => li.textContent)).toHaveLength(2);
+    expect(finds()[0]).toHaveTextContent("asphyxiate");
+    expect(finds()[0].className).toContain("arrived");
+    // The word that was already there is not re-announced.
+    expect(finds()[1].className).not.toContain("arrived");
+  });
+
+  it("marks a word returning on a new day, not just a word never seen", async () => {
+    // The feed carries one row per word at its most recent sighting, so a word
+    // found last week and found again today moves groups rather than repeating.
+    // Keyed by word alone that re-arrival is invisible.
+    let words = [{ word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-20" }];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ ...OPEN, words }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      )
+    );
+    render(<LeaderboardPage />);
+    await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
+
+    words = [{ word: "inkling", zipf: 2.9, finders: 2, foundOn: "2026-08-25" }];
+    await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
+
+    expect(finds()).toHaveLength(1);
+    expect(finds()[0].className).toContain("arrived");
+  });
+
+  it("stops marking it once the arrival has played", async () => {
+    let words = [{ word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" }];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(JSON.stringify({ ...OPEN, words }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      )
+    );
+    render(<LeaderboardPage />);
+    await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
+
+    words = [{ word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-25" }, ...words];
+    await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
+    expect(finds()[0].className).toContain("arrived");
+
+    // Otherwise an unrelated re-render would replay the animation later.
+    await act(async () => void (await vi.advanceTimersByTimeAsync(1400)));
+    expect(finds()[0].className).not.toContain("arrived");
   });
 });
 

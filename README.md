@@ -529,21 +529,18 @@ Arguably the point of the page. A leaderboard tells you where you came; this
 tells you what you missed, and "I didn't know that was a word" is the thing
 players enjoy.
 
-**Today's finds are never shown, and that is load-bearing.** Everyone gets the
-same drop, so a word somebody found today is an *answer to today's puzzle* —
-publishing it hands the answer to every player who hasn't played yet. The feed
-returns only dates strictly before a cutoff, and the cutoff is the **earlier of
-the client's own date and UTC's**, which closes two holes at once:
+**Today's finds are shown live, and that is a deliberate trade.** Everyone gets
+the same drop, so a word somebody found today is an *answer to today's puzzle* —
+showing it hands that answer to anyone still playing. It was withheld at first
+for exactly that reason. Accepted anyway: the feed is only worth keeping live if
+it changes while you watch, and someone who wants to be spoiled could always have
+read the endpoint directly. Reverting is one line in `wordsCutoff`, and the
+middle position — live only for players who have already locked in — is written
+down there.
 
-- a client behind UTC (the Americas late in the UTC day) is believed, so its own
-  today is never published back to it;
-- a client claiming a date in the future is capped at UTC's today, so lying about
-  the calendar can't pull today's words out early.
-
-A missing or malformed date falls back to UTC's, which is never wider. The effect
-is that a day's finds appear the next day — a constraint that doubles as a
-feature, since there is something new to come back for and it is never something
-that spoils today.
+**No rarity bar.** Every entry is already the best word its finder managed that
+day, which is the only filter the feed needs. Cutting the ordinary ones would
+quietly turn it into a list of good players rather than a list of what happened.
 
 **Not behind the ten-player gate**, unlike the boards. The gate exists so nobody
 meets a three-name leaderboard and concludes the game is empty; a short list of

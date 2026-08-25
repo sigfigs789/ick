@@ -1436,6 +1436,43 @@ h2 {
   gap: 0.4rem;
   grid-template-columns: 1fr;
 }
+/*
+ * A word arriving in the feed.
+ *
+ * The row is inserted at the top of its day, so everything below it moves down
+ * on its own -- this animates the gap opening rather than faking the push, which
+ * is why it works on the height as well as the opacity. The tint fades out so a
+ * new find is obvious for a moment and then settles into the list.
+ *
+ * The global prefers-reduced-motion rule near the top of this file cuts every
+ * animation here to nothing, so a player who has asked for stillness gets the
+ * same list without the movement.
+ */
+@keyframes found-word-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background: var(--rarity-elusive-bg);
+  }
+  60% {
+    opacity: 1;
+    transform: none;
+    max-height: 4rem;
+    background: var(--rarity-elusive-bg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    max-height: 4rem;
+    background: transparent;
+  }
+}
+.found-words__item--arrived {
+  animation: found-word-arrive 0.9s var(--ease-standard);
+}
 .found-words__item {
   display: flex;
   align-items: baseline;

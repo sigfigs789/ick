@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatScore } from "../game/dictionary";
 import { RarityBadge } from "./RarityBadge";
 import {
@@ -20,6 +20,11 @@ import { trackLeaderboardJoined } from "../analytics";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
 
 type LoadState = "loading" | "ready" | "error";
+
+/** Identifies a find in the feed: a word on a given day (see `arrived`). */
+function foundKey(found: Pick<FoundWord, "word" | "foundOn">): string {
+  return `${found.word}@${found.foundOn}`;
+}
 
 /** How often an open page re-checks for new finds. Matches the CDN's own cache. */
 const REFRESH_MS = 60_000;
@@ -120,6 +125,41 @@ export function LeaderboardPage() {
     load();
   }
 
+  /**
+   * Which words turned up since the last look, so the feed can show them
+   * arriving rather than just quietly containing them.
+   *
+   * The first load marks nothing: everything is new to a page that has just
+   * opened, and animating the whole list would say "twelve words just arrived"
+   * when none of them did. After that, each refresh diffs against what was
+   * already on screen and only the genuinely new ones move.
+   *
+   * Keyed by word *and* day, not word alone. The feed carries one row per word,
+   * at its most recent sighting, so a word somebody found last week and somebody
+   * else finds again today is not a duplicate -- it leaves its old group and
+   * arrives in today's. By word alone that re-arrival is invisible, which is
+   * exactly the case a live feed exists to show.
+   */
+  const seenWords = useRef<Set<string> | null>(null);
+  const [arrived, setArrived] = useState<readonly string[]>([]);
+
+  useEffect(() => {
+    if (!boards) return;
+    const words = boards.words.map(foundKey);
+    if (seenWords.current === null) {
+      seenWords.current = new Set(words);
+      return;
+    }
+    const fresh = words.filter((word) => !seenWords.current?.has(word));
+    for (const word of words) seenWords.current.add(word);
+    if (fresh.length === 0) return;
+    setArrived(fresh);
+    // Cleared once the animation is done, so a later re-render for some
+    // unrelated reason does not replay it.
+    const timer = window.setTimeout(() => setArrived([]), 1400);
+    return () => window.clearTimeout(timer);
+  }, [boards]);
+
   const ready = boards?.ready ?? false;
 
   return (
@@ -184,7 +224,7 @@ export function LeaderboardPage() {
         )}
 
         {state === "ready" && boards && boards.words.length > 0 && (
-          <FoundWords words={boards.words} today={todayDateString()} />
+          <FoundWords words={boards.words} today={todayDateString()} arrived={arrived} />
         )}
 
         {playerId ? (
@@ -296,7 +336,15 @@ export function LeaderboardPage() {
  * showing, so nobody reads it as a live feed and wonders why their own word is
  * missing.
  */
-function FoundWords({ words, today }: { words: FoundWord[]; today: string }) {
+function FoundWords({
+  words,
+  today,
+  arrived,
+}: {
+  words: FoundWord[];
+  today: string;
+  arrived: readonly string[];
+}) {
   // Grouped by the puzzle they came from, newest first. A find only means
   // something next to the drop it had to contain -- `asphyxiate` is just a word
   // until you know the day asked for PHY -- and the words arrive already in date
@@ -311,10 +359,7 @@ function FoundWords({ words, today }: { words: FoundWord[]; today: string }) {
   return (
     <section className="found-words" aria-label="Words found recently">
       <h2 className="leaderboard__board-heading">Recent finds</h2>
-      <p className="leaderboard__caption">
-        The best word each player found, newest first. Today's appear as they happen, if
-        they're Rare or better.
-      </p>
+      <p className="leaderboard__caption">The best word each player found, newest first.</p>
       {days.map((day) => (
         <div key={day.date} className="found-words__day">
           <h3 className="found-words__day-heading">
@@ -323,7 +368,12 @@ function FoundWords({ words, today }: { words: FoundWord[]; today: string }) {
           </h3>
           <ul className="found-words__list">
             {day.words.map((found) => (
-              <li key={found.word} className="found-words__item">
+              <li
+                key={foundKey(found)}
+                className={`found-words__item${
+                  arrived.includes(foundKey(found)) ? " found-words__item--arrived" : ""
+                }`}
+              >
                 <span className="found-words__word">{found.word}</span>
                 <RarityBadge rarity={found.rarity} zipf={found.zipf} />
                 {found.finders > 1 && (

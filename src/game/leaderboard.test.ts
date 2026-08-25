@@ -497,7 +497,7 @@ describe("the recent finds feed", () => {
     ]);
   });
 
-  it("marks a find from today, and lets it through when it clears Rare", async () => {
+  it("marks a find from today", async () => {
     stubFetch(
       new Response(
         JSON.stringify({
@@ -524,7 +524,7 @@ describe("the recent finds feed", () => {
     ]);
   });
 
-  it("keeps today's ordinary finds out, so the live list stays worth reading", async () => {
+  it("keeps an ordinary word, because it was still somebody's best", async () => {
     stubFetch(
       new Response(
         JSON.stringify({
@@ -540,11 +540,16 @@ describe("the recent finds feed", () => {
       )
     );
 
-    // `cat` is Common; only Rare or better earns a place while the day runs.
-    expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual(["inkling"]);
+    // `cat` is Common, and it is still the best word its finder managed that
+    // day. Cutting it would make the feed a list of good players rather than a
+    // list of what happened.
+    expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual([
+      "cat",
+      "inkling",
+    ]);
   });
 
-  it("still shows an ordinary word from an earlier day", async () => {
+  it("shows an ordinary word from an earlier day too", async () => {
     stubFetch(
       new Response(
         JSON.stringify({
@@ -557,8 +562,6 @@ describe("the recent finds feed", () => {
       )
     );
 
-    // The Rare bar is about keeping the *live* list readable, not about
-    // rewriting what the past week looked like.
     expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual(["cat"]);
   });
 

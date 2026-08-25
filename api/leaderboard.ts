@@ -335,8 +335,8 @@ function readSubmission(parsed: unknown):
  * a daily puzzle where everybody gets the same drop, so a word found today is an
  * answer to today's puzzle and publishing it hands that answer to anyone still
  * playing. That is still true, and it is a deliberate call to accept it: the
- * feed is more fun live, the client only lists today's finds that clear Rare, and
- * a player who wants to be spoiled could always have read the endpoint directly.
+ * feed is more fun live, and a player who wants to be spoiled could always have
+ * read the endpoint directly.
  *
  * Reverting is a one-line change -- drop the `+ 1` -- and the client would need
  * to send whether the player has finished today for a middle position, where
