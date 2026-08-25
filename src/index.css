@@ -600,6 +600,15 @@ h2 {
   font-size: 1rem;
   line-height: 1;
 }
+/* The crown marks the guess, not the word, so it centers on the entry as a
+ * whole -- unlike the copy icon and badge, which stay on the word's line.
+ * Spanning is gated on the note existing rather than written as `1 / -1`: with
+ * no explicit rows declared, -1 resolves to the end of the *explicit* grid and
+ * silently collapses back to row one. */
+.guess-log__entry-button--noted .guess-log__crown {
+  grid-row: 1 / span 2;
+  align-self: center;
+}
 .guess-log__word {
   grid-column: 2;
   font-family: var(--font-display);
