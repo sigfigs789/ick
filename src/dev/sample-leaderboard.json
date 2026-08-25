@@ -10,7 +10,11 @@
     "",
     "Words are real dictionary entries with their real Zipf frequencies, so the",
     "rarity badges and scores render exactly as they would with live data. Every",
-    "find shares one date, moved to today at load, since the feed shows today only."
+    "find shares one date, moved to today at load, since the feed shows today only.",
+    "",
+    "Fifteen rows a board, because fifteen is what a board shows -- and a",
+    "weeklySelf / allTimeSelf row far below it, because that is the part worth",
+    "looking at: what a player outside the top fifteen sees of themselves."
   ],
   "weekStart": "2026-08-23",
   "ready": true,
@@ -87,8 +91,64 @@
       "windowZipf": 4.78,
       "score": 7.3,
       "puzzles": 1
+    },
+    {
+      "rank": 10,
+      "playerId": "dev-10",
+      "windowWord": "abaci",
+      "windowZipf": 2.65,
+      "score": 6.8,
+      "puzzles": 1
+    },
+    {
+      "rank": 11,
+      "playerId": "dev-11",
+      "windowWord": "wrinkle",
+      "windowZipf": 3.31,
+      "score": 6.4,
+      "puzzles": 1
+    },
+    {
+      "rank": 12,
+      "playerId": "dev-12",
+      "windowWord": "inkling",
+      "windowZipf": 2.9,
+      "score": 6.0,
+      "puzzles": 1
+    },
+    {
+      "rank": 13,
+      "playerId": "dev-13",
+      "windowWord": "placate",
+      "windowZipf": 3.4,
+      "score": 5.6,
+      "puzzles": 1
+    },
+    {
+      "rank": 14,
+      "playerId": "dev-14",
+      "windowWord": "lactation",
+      "windowZipf": 3.2,
+      "score": 5.2,
+      "puzzles": 1
+    },
+    {
+      "rank": 15,
+      "playerId": "dev-15",
+      "windowWord": "attested",
+      "windowZipf": 4.1,
+      "score": 4.8,
+      "puzzles": 1
     }
   ],
+  "weeklySelf": {
+    "rank": 42,
+    "playerId": "dev-you",
+    "windowWord": "abaci",
+    "windowZipf": 2.65,
+    "score": 3.4,
+    "puzzles": 1
+  },
   "allTime": [
     {
       "rank": 1,
@@ -169,8 +229,56 @@
       "windowZipf": 4.1,
       "score": 64.4,
       "puzzles": 12
+    },
+    {
+      "rank": 11,
+      "playerId": "dev-11",
+      "windowWord": "abaci",
+      "windowZipf": 2.65,
+      "score": 58.9,
+      "puzzles": 11
+    },
+    {
+      "rank": 12,
+      "playerId": "dev-12",
+      "windowWord": "wrinkle",
+      "windowZipf": 3.31,
+      "score": 54.8,
+      "puzzles": 10
+    },
+    {
+      "rank": 13,
+      "playerId": "dev-13",
+      "windowWord": "inkling",
+      "windowZipf": 2.9,
+      "score": 50.7,
+      "puzzles": 9
+    },
+    {
+      "rank": 14,
+      "playerId": "dev-14",
+      "windowWord": "placate",
+      "windowZipf": 3.4,
+      "score": 46.6,
+      "puzzles": 8
+    },
+    {
+      "rank": 15,
+      "playerId": "dev-15",
+      "windowWord": "lactation",
+      "windowZipf": 3.2,
+      "score": 42.5,
+      "puzzles": 7
     }
   ],
+  "allTimeSelf": {
+    "rank": 128,
+    "playerId": "dev-you",
+    "windowWord": "abaci",
+    "windowZipf": 2.65,
+    "score": 21.7,
+    "puzzles": 4
+  },
   "words": [
     {
       "word": "stonyheartedly",

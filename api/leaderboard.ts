@@ -1,12 +1,19 @@
 // The leaderboard: a Vercel Edge Function that reads the weekly and all-time
 // boards, and takes the score submissions that fill them.
 //
-// GET /api/leaderboard?since=YYYY-MM-DD&today=YYYY-MM-DD&limit=50
-//   -> { weekStart, ready, opensOn, weekly: [...], allTime: [...], words: [...] }
+// GET /api/leaderboard?since=YYYY-MM-DD&today=YYYY-MM-DD&limit=15&player=UUID
+//   -> { weekStart, ready, opensOn, weekly: [...], weeklySelf, allTime: [...],
+//        allTimeSelf, words: [...] }
 //   The weekly board counts puzzles from `since` onward; all-time counts
 //   everything. `since` comes from the client because the puzzle date it
 //   brackets is the player's own local calendar date (see src/game/week.ts), so
 //   the week has to be measured on the same clock.
+//
+//   Each board is a top fifteen. `player` is optional and is the player asking:
+//   when they rank below the cut, their own row comes back as `weeklySelf` /
+//   `allTimeSelf`, carrying the rank they actually hold rather than a position
+//   inside the fifteen. When they are on the board -- or did not say who they
+//   are -- those are null, because the row is already up there.
 //
 //   Boards stay unpublished until BOARDS_OPEN_FROM, whatever the data looks like
 //   by then: `ready` says whether they are open, and until they are, both arrays
@@ -42,7 +49,11 @@
 //
 // Reads are CDN-cached briefly: a leaderboard a minute out of date is
 // indistinguishable from a live one, and it keeps a popular day from turning
-// every open of the page into a database query.
+// every open of the page into a database query. `player` is part of the cache
+// key like any other parameter, so that sharing is per player rather than
+// across everybody -- the price of answering "where am I" in the same request
+// as the board, and a minute of it is still one query per player per minute
+// instead of one per page open.
 
 import { record, rpc, supabaseConfigured, type EdgeContext } from "./_supabase";
 
@@ -95,7 +106,11 @@ const BOARDS_OPEN_FROM = "2026-08-30";
 const MAX_SCORES = 800;
 // Big enough for MAX_SCORES entries of roughly 50 bytes each, with room to spare.
 const MAX_BODY_BYTES = 64 * 1024;
-const DEFAULT_LIMIT = 50;
+/**
+ * How many rows a board shows. Fifty was a list you scrolled; fifteen is a list
+ * you read, and the row below the cut is what keeps it from hiding anybody.
+ */
+const DEFAULT_LIMIT = 15;
 const MAX_LIMIT = 200;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -178,9 +193,8 @@ function toNumber(value: number | string | null): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function toEntries(rows: BoardRow[] | null): BoardEntry[] {
-  if (!Array.isArray(rows)) return [];
-  return rows.map((row, index) => ({
+function toEntry(row: BoardRow, index: number): BoardEntry {
+  return {
     // The database ranked these; the fallback is only for a row that somehow
     // arrived without one, and keeps the column non-null for the client.
     rank: Number(row.rank) || index + 1,
@@ -189,7 +203,28 @@ function toEntries(rows: BoardRow[] | null): BoardEntry[] {
     windowZipf: toNumber(row.window_zipf),
     score: toNumber(row.total_score),
     puzzles: Number(row.puzzles) || 0,
-  }));
+  };
+}
+
+/**
+ * Split one board into the rows everybody sees and the asking player's own row
+ * from below the cut.
+ *
+ * The database returns both in one array, ranked, so the split is just "past the
+ * limit" -- and it is done on the rank rather than on the array's length, so a
+ * short board (fewer players than the limit) can never mistake its last row for
+ * somebody hiding underneath it.
+ */
+function toBoard(rows: BoardRow[] | null, limit: number): { entries: BoardEntry[]; self: BoardEntry | null } {
+  if (!Array.isArray(rows)) return { entries: [], self: null };
+  const entries: BoardEntry[] = [];
+  let self: BoardEntry | null = null;
+  for (const [index, row] of rows.entries()) {
+    const entry = toEntry(row, index);
+    if (entry.rank > limit) self = entry;
+    else entries.push(entry);
+  }
+  return { entries, self };
 }
 
 function toWords(rows: WordRow[] | null): WordEntry[] {
@@ -353,6 +388,12 @@ async function handleGet(request: Request): Promise<Response> {
   const limit = Number.isFinite(requested)
     ? Math.min(Math.max(requested, 1), MAX_LIMIT)
     : DEFAULT_LIMIT;
+  // Who is asking, so the boards can hand back their own row from below the cut.
+  // A malformed id is dropped rather than refused: not knowing where somebody
+  // stands is a reason to show them the board anyway, not a reason to show them
+  // an error.
+  const claimedPlayer = params.get("player") ?? "";
+  const player = UUID_RE.test(claimedPlayer) ? claimedPlayer.toLowerCase() : null;
   // Today's finds and nothing else: the feed is about the puzzle everyone is on
   // right now, and a week of history behind it made it read as an archive.
   const wordsBefore = wordsCutoff(params.get("today"));
@@ -377,15 +418,23 @@ async function handleGet(request: Request): Promise<Response> {
       p_open: open,
       p_words_before: wordsBefore,
       p_words_since: wordsSince,
+      p_player: player,
     });
+    const weekly = toBoard(result?.weekly ?? null, limit);
+    const allTime = toBoard(result?.allTime ?? null, limit);
     return reply(
       200,
       {
         weekStart: since,
         ready: Boolean(result?.ready),
         opensOn: BOARDS_OPEN_FROM,
-        weekly: toEntries(result?.weekly ?? null),
-        allTime: toEntries(result?.allTime ?? null),
+        weekly: weekly.entries,
+        // Null whenever the asking player is on the board already, or did not
+        // say who they are. The page shows this row under the board, so "null"
+        // and "on the board" have to be the same thing to it.
+        weeklySelf: weekly.self,
+        allTime: allTime.entries,
+        allTimeSelf: allTime.self,
         words: toWords(result?.words ?? null),
       },
       // A minute: long enough that a burst of opens costs one query, short

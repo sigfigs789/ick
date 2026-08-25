@@ -10,6 +10,8 @@ import { handleFor } from "../game/handle";
 // stored. `windowWord` is what they found inside that board's window.
 const ALICE = "11111111-1111-4111-8111-111111111111";
 const BOB = "22222222-2222-4222-8222-222222222222";
+// Somebody a long way down both boards, which is where almost everybody is.
+const CAROL = "33333333-3333-4333-8333-333333333333";
 
 const WEEKLY = [
   { rank: 1, playerId: ALICE, windowWord: "quixotic", windowZipf: 2.33, score: 41.2, puzzles: 5 },
@@ -175,6 +177,35 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")[1]).toHaveTextContent("you"));
     expect(boardRows("All time")[0]).toHaveTextContent("you");
     expect(boardRows("This week")[0]).not.toHaveTextContent("you");
+  });
+
+  it("shows a player below the cut their own row, at their real rank", async () => {
+    joinBoard();
+    stubFetch({
+      ...OPEN,
+      weeklySelf: { rank: 61, playerId: CAROL, windowWord: "inkling", windowZipf: 2.9, score: 12, puzzles: 2 },
+      allTimeSelf: { rank: 214, playerId: CAROL, windowWord: "quixotic", windowZipf: 2.33, score: 88, puzzles: 19 },
+    });
+    render(<LeaderboardPage />);
+
+    // Under the board rather than in it: the top stays the top, and the player
+    // still gets an answer to "where am I".
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(3));
+    const mine = boardRows("This week")[2];
+    // The real rank, not a position inside what fits on screen.
+    expect(mine).toHaveTextContent("61");
+    expect(mine).toHaveTextContent("you");
+    expect(boardRows("All time")[2]).toHaveTextContent("214");
+  });
+
+  it("shows no extra row when the player is on the board", async () => {
+    joinBoard();
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // Nothing below the cut to show, so the board is just the board.
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(boardRows("All time")).toHaveLength(2);
   });
 
   it("asks for the week's board from its Sunday", async () => {

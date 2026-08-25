@@ -186,6 +186,7 @@ export function LeaderboardPage() {
               heading="This week"
               caption={`From Sunday on. ${resetLabel()}.`}
               entries={boards.weekly}
+              self={boards.weeklySelf}
               emptyMessage="Nobody's scored yet this week. Be first."
               playerId={playerId}
             />
@@ -193,6 +194,7 @@ export function LeaderboardPage() {
               heading="All time"
               caption="Every puzzle you've scored on, added up."
               entries={boards.allTime}
+              self={boards.allTimeSelf}
               emptyMessage="No scores yet."
               playerId={playerId}
             />
@@ -337,12 +339,24 @@ interface BoardProps {
   heading: string;
   caption: string;
   entries: BoardEntry[];
+  /** This player's own row, when they rank below the last one shown. */
+  self: BoardEntry | null;
   emptyMessage: string;
   playerId: string | null;
 }
 
-/** One board, ranked by total score exactly as the database ordered it. */
-function Board({ heading, caption, entries, emptyMessage, playerId }: BoardProps) {
+/**
+ * One board: the top fifteen, ranked by total score exactly as the database
+ * ordered it, and then you.
+ *
+ * The board is short because a leaderboard is read, not scrolled -- but a short
+ * board that stops at fifteen tells everybody below it nothing at all, and "am I
+ * anywhere" is the question a player brings to this page. So the server sends
+ * their own row back when it falls outside the fifteen, and it goes underneath,
+ * pinned outside the scrolling list where it cannot be scrolled away from. The
+ * rank on it is the real one -- 61st of everybody, not 16th of what fits.
+ */
+function Board({ heading, caption, entries, self, emptyMessage, playerId }: BoardProps) {
   return (
     <section className="leaderboard__board" aria-label={heading}>
       <h2 className="leaderboard__board-heading">{heading}</h2>
@@ -350,11 +364,29 @@ function Board({ heading, caption, entries, emptyMessage, playerId }: BoardProps
       {entries.length === 0 ? (
         <p className="leaderboard__status">{emptyMessage}</p>
       ) : (
-        <ol className="leaderboard__list">
-          {entries.map((entry) => (
-            <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} />
-          ))}
-        </ol>
+        <>
+          <ol className="leaderboard__list">
+            {entries.map((entry) => (
+              <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} />
+            ))}
+          </ol>
+          {self && (
+            <>
+              {/* The gap between the board and the row below it, said in the one
+                  way that needs no words. Decorative: the row itself is marked
+                  "you" and carries its own rank, which is what a screen reader
+                  needs from it. */}
+              <p className="leaderboard__gap" aria-hidden="true">
+                ⋯
+              </p>
+              <ol className="leaderboard__list leaderboard__list--self" start={self.rank}>
+                {/* Always "you": the server sends this row only to the player it
+                    belongs to. */}
+                <Row entry={self} isYou />
+              </ol>
+            </>
+          )}
+        </>
       )}
     </section>
   );
