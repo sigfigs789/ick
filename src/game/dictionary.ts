@@ -1519,9 +1519,9 @@ function addNonInflectionalBaseForms(
       // "lith", "monocrat" -> "crat", "autophyte" -> "phyte", "prelect" ->
       // "lect", "subduce" -> "duce". Every one is a real dictionary word and
       // none is a base anything was built on. Since #207 the fold is *shown* --
-      // "Scored as its base word, 'material'" -- so this is not a question about
+      // "Scored as its common form, 'material'" -- so this is not a question about
       // how much frequency a base supplies but about whether a player would
-      // accept it: "Scored as its base word, 'lith'" reads as a bug, and a
+      // accept it: "Scored as its common form, 'lith'" reads as a bug, and a
       // visible wrong fold is worse than a quietly generous score.
       //
       // That question is answered by `boundPrefixResidue`, a reviewed table, and
