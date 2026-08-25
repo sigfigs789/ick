@@ -78,9 +78,7 @@ export function GuessLog({
               <li key={w.word} className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}>
                 <button
                   type="button"
-                  className={`guess-log__entry-button${isCopied ? " guess-log__entry-button--copied" : ""}${
-                    baseNote ? " guess-log__entry-button--noted" : ""
-                  }`}
+                  className={`guess-log__entry-button${isCopied ? " guess-log__entry-button--copied" : ""}`}
                   onClick={() => copyWord(w)}
                   aria-label={
                     isCopied

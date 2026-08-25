@@ -50,22 +50,6 @@ describe("GuessLog", () => {
     ).toBeInTheDocument();
   });
 
-  it("marks a noted entry so the crown can center on the whole card", () => {
-    // The copy icon and badge sit on the word's line; the crown centers on the
-    // entry as a whole, which takes a row span only when there is a second row.
-    const words: AcceptedWord[] = [
-      { word: "materialnesses", rarity: "Common", zipf: 4.95 },
-    ];
-    const { container } = render(<GuessLog acceptedWords={words} />);
-    expect(container.querySelector(".guess-log__entry-button--noted")).toBeInTheDocument();
-  });
-
-  it("leaves the crown alone on an entry with no note", () => {
-    const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
-    const { container } = render(<GuessLog acceptedWords={words} />);
-    expect(container.querySelector(".guess-log__entry-button--noted")).not.toBeInTheDocument();
-  });
-
   it("leaves a word alone when its base barely changed the score", () => {
     const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
     render(<GuessLog acceptedWords={words} />);
