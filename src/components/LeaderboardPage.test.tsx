@@ -308,13 +308,18 @@ describe("joining the board", () => {
     expect(await screen.findByText(/Nothing to count yet/)).toBeInTheDocument();
   });
 
-  it("says which name the player is on the board as", async () => {
+  it("says nothing standing about who you are once you have joined", async () => {
     stubFetch();
-    render(<LeaderboardPage />);
-
+    const { unmount } = render(<LeaderboardPage />);
     await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
-    const id = loadPlayerId() ?? "";
-    expect(await screen.findByText(/You're on the board as/)).toHaveTextContent(handleFor(id));
+
+    // The confirmation is worth one showing; after that a player's own row is
+    // marked on the boards, which is where they would look for themselves.
+    unmount();
+    render(<LeaderboardPage />);
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(screen.queryByText(/You're on the board as/)).toBeNull();
+    expect(screen.queryByText(/Counted/)).toBeNull();
   });
 
   it("keeps one identity if the join is somehow pressed twice", async () => {

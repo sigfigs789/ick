@@ -8,7 +8,6 @@ import {
   type Boards,
   type FoundWord,
 } from "../game/leaderboard";
-import { handleFor } from "../game/handle";
 import { joinBoard, loadPlayerId } from "../game/player";
 import { formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
@@ -43,9 +42,6 @@ export function LeaderboardPage() {
   const [playerId, setPlayerId] = useState<string | null>(() => loadPlayerId());
   /** Days imported from this browser's history on joining, for one message. */
   const [imported, setImported] = useState<number | null>(null);
-  // What the board calls this browser, computed from the id -- so it exists the
-  // moment they join, is the same on every device, and never drifts.
-  const name = playerId ? handleFor(playerId) : null;
 
   /**
    * Fetch the boards and the finds.
@@ -208,21 +204,19 @@ export function LeaderboardPage() {
         )}
 
         {playerId ? (
-          <p className="leaderboard__note leaderboard__note--playing">
-            You're on the board as <strong>{name}</strong>.
-            {imported !== null && (
-              <>
-                {" "}
-                <span className="leaderboard__imported" aria-live="polite">
-                  {/* Not "past" puzzles: today counts too when it has been
-                      played, and it usually has by the time anyone joins. */}
-                  {imported > 0
-                    ? `Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`
-                    : "Nothing to count yet — your first scored puzzle starts you off."}
-                </span>
-              </>
-            )}
-          </p>
+          // Nothing standing to say once a player has joined: their own row is
+          // marked on the boards, which is where they would look for themselves
+          // anyway. The one message worth showing is the confirmation right
+          // after joining, and it goes away with the next load.
+          imported !== null && (
+            <p className="leaderboard__note leaderboard__note--playing" aria-live="polite">
+              {/* Not "past" puzzles: today counts too when it has been played,
+                  and it usually has by the time anyone joins. */}
+              {imported > 0
+                ? `Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`
+                : "Nothing to count yet — your first scored puzzle starts you off."}
+            </p>
+          )
         ) : (
           <div className="leaderboard__join">
             <button type="button" className="leaderboard__join-button" onClick={join}>
