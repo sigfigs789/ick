@@ -450,3 +450,94 @@ describe("reading the boards", () => {
     await expect(fetchBoards("2026-08-27")).rejects.toThrow("leaderboard 502");
   });
 });
+
+describe("the recent finds feed", () => {
+  it("prices and labels each word with today's dictionary", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          ready: true,
+          weekly: [],
+          allTime: [],
+          words: [
+            // Stored as though everyday, which it is not -- the feed is judged on
+            // today's dictionary, like everything else the board shows.
+            { word: "asphyxiate", zipf: 7.9, finders: 3 },
+            { word: "inkling", zipf: 2.9, finders: 1 },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    const { words } = await fetchBoards("2026-08-27");
+    expect(words).toEqual([
+      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3 },
+      { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1 },
+    ]);
+  });
+
+  it("keeps a word today's dictionary doesn't carry, on the frequency it was found at", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          ready: true,
+          weekly: [],
+          allTime: [],
+          // A live Merriam-Webster approval: nowhere in the shipped dictionary,
+          // so the frequency it was found at is all there is to go on.
+          words: [{ word: "brainrot", zipf: 0.5, finders: 2 }],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    const { words } = await fetchBoards("2026-08-27");
+    expect(words).toHaveLength(1);
+    expect(words[0]).toMatchObject({ word: "brainrot", zipf: 0.5 });
+  });
+
+  it("drops a word it cannot price rather than showing a blank badge", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          ready: true,
+          weekly: [],
+          allTime: [],
+          words: [
+            { word: "inkling", zipf: 2.9, finders: 1 },
+            { finders: 1 },
+            { word: "notarealwordanywhere", finders: 1 },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual(["inkling"]);
+  });
+
+  it("sends the player's own date, so the server can keep today's finds back", async () => {
+    const fetchMock = stubFetch(
+      new Response(JSON.stringify({ ready: true, weekly: [], allTime: [], words: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
+    );
+    await fetchBoards("2026-08-27");
+
+    const [requested] = (fetchMock.mock.calls[0] ?? []) as [string?];
+    const url = new URL(String(requested), "https://wordink.app");
+    expect(url.searchParams.get("today")).toBe("2026-08-27");
+  });
+
+  it("has an empty feed when the server sends none", async () => {
+    stubFetch(
+      new Response(JSON.stringify({ ready: true, weekly: [], allTime: [] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
+    );
+    expect((await fetchBoards("2026-08-27")).words).toEqual([]);
+  });
+});

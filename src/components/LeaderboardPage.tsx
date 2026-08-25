@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { formatScore } from "../game/dictionary";
+import { RarityBadge } from "./RarityBadge";
 import {
   backfillHistory,
   chooseName,
@@ -7,6 +8,7 @@ import {
   nameCandidates,
   type BoardEntry,
   type Boards,
+  type FoundWord,
   type NameCandidate,
 } from "../game/leaderboard";
 import { joinBoard, loadPlayerId } from "../game/player";
@@ -111,6 +113,10 @@ export function LeaderboardPage() {
           </p>
         )}
 
+        {state === "ready" && boards && boards.words.length > 0 && (
+          <FoundWords words={boards.words} />
+        )}
+
         {state === "ready" && !ready && <NotYet boards={boards} />}
 
         {state === "ready" && ready && boards && (
@@ -210,6 +216,42 @@ export function LeaderboardPage() {
         </button>
       </main>
     </div>
+  );
+}
+
+/**
+ * The best words other players found recently, rarest first.
+ *
+ * The point of the page, arguably: a leaderboard tells you where you came, but
+ * this tells you what you missed, and "I did not know that was a word" is the
+ * thing players actually enjoy. Every entry is somebody's best find of a day.
+ *
+ * Never today's, and that is not a detail -- the same drop goes to everyone, so a
+ * word found today is an answer to today's puzzle. The server draws that line
+ * (see api/leaderboard.ts); this component only has to say which days it is
+ * showing, so nobody reads it as a live feed and wonders why their own word is
+ * missing.
+ */
+function FoundWords({ words }: { words: FoundWord[] }) {
+  return (
+    <section className="found-words" aria-label="Words found recently">
+      <h2 className="leaderboard__board-heading">Recent finds</h2>
+      <p className="leaderboard__caption">
+        The best word each player found, from the past week's puzzles. Today's stay hidden
+        until tomorrow.
+      </p>
+      <ul className="found-words__list">
+        {words.map((found) => (
+          <li key={found.word} className="found-words__item">
+            <span className="found-words__word">{found.word}</span>
+            <RarityBadge rarity={found.rarity} zipf={found.zipf} />
+            {found.finders > 1 && (
+              <span className="found-words__finders">{found.finders} players</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

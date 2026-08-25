@@ -1,8 +1,9 @@
 // The leaderboard: a Vercel Edge Function that reads the weekly and all-time
 // boards, and takes the score submissions that fill them.
 //
-// GET /api/leaderboard?since=YYYY-MM-DD&limit=50
-//   -> { weekStart, ready, players, minPlayers, weekly: [...], allTime: [...] }
+// GET /api/leaderboard?since=YYYY-MM-DD&today=YYYY-MM-DD&limit=50
+//   -> { weekStart, ready, players, minPlayers, weekly: [...], allTime: [...],
+//        words: [...] }
 //   The weekly board counts puzzles from `since` onward; all-time counts
 //   everything. `since` comes from the client because the puzzle date it
 //   brackets is the player's own local calendar date (see src/game/week.ts), so
@@ -13,6 +14,11 @@
 //   back empty and `players` is what there is to show. The gate is enforced in
 //   SQL, so below the threshold no row leaves the database at all -- there is no
 //   partial board sitting in a response waiting to be read out of a network tab.
+//
+//   `words` is the recent finds feed -- the best word each player found on each
+//   of the last few days -- and is *not* behind that gate, because a short list
+//   of good words is interesting at any size. It is behind a different and much
+//   harder gate: see SPOILER_CUTOFF below.
 //
 // PUT /api/leaderboard   { playerId, name }
 //   -> 200 { ok: true }, 409 the word is not one of that player's own finds
@@ -81,6 +87,8 @@ const MIN_ZIPF = -10;
 const MAX_ZIPF = 10;
 /** How many distinct all-time players before the boards are shown to anyone. */
 const MIN_PLAYERS = 10;
+/** How many days of finds the words feed reaches back over. */
+const WORDS_WINDOW_DAYS = 7;
 /**
  * A batch is a browser's whole playing history, so it has to hold a couple of
  * years of daily puzzles. The body cap below is the real limit; this one stops a
@@ -126,13 +134,33 @@ interface BoardEntry {
   puzzles: number;
 }
 
-/** What `leaderboard_boards` answers with: the gate, and the rows if it is open. */
+/** One word as `leaderboard_words` returns it. */
+interface WordRow {
+  word: string;
+  zipf: number | string | null;
+  finders: number;
+  found_on: string;
+}
+
+/** One word as the client wants it. */
+interface WordEntry {
+  word: string;
+  /** Frequency, so the client can price it with today's dictionary. */
+  zipf: number;
+  /** How many players' best word of the day this was. */
+  finders: number;
+  /** The most recent puzzle date it was somebody's best find on. */
+  foundOn: string;
+}
+
+/** What `leaderboard_boards` answers with: the gate, the rows, and the feed. */
 interface BoardsResult {
   ready: boolean;
   players: number;
   minPlayers: number;
   weekly: BoardRow[];
   allTime: BoardRow[];
+  words: WordRow[];
 }
 
 function reply(status: number, body?: unknown, cacheSeconds = 0): Response {
@@ -172,6 +200,16 @@ function toEntries(rows: BoardRow[] | null): BoardEntry[] {
     windowZipf: toNumber(row.window_zipf),
     score: toNumber(row.total_score),
     puzzles: Number(row.puzzles) || 0,
+  }));
+}
+
+function toWords(rows: WordRow[] | null): WordEntry[] {
+  if (!Array.isArray(rows)) return [];
+  return rows.map((row) => ({
+    word: String(row.word),
+    zipf: toNumber(row.zipf),
+    finders: Number(row.finders) || 0,
+    foundOn: String(row.found_on),
   }));
 }
 
@@ -285,6 +323,37 @@ function readSubmission(parsed: unknown):
   return { playerId, scores: checked };
 }
 
+/**
+ * The date the words feed must stay strictly before.
+ *
+ * The spoiler problem, stated plainly: this is a daily puzzle and everybody gets
+ * the same drop, so a word somebody found today is an answer to today's puzzle.
+ * Publishing it hands that answer to every player who has not played yet.
+ *
+ * A player's unplayed dates are their own local today and later, and local dates
+ * around the world span two UTC dates at any moment -- so neither clock alone is
+ * enough. The cutoff is the *earlier* of the client's claimed today and UTC's,
+ * which closes both holes at once:
+ *
+ *   * a client further back than UTC (the Americas late in the UTC day) is
+ *     believed, so their own today is never published to them;
+ *   * a client claiming a date in the future is capped at UTC's today, so lying
+ *     about the calendar cannot pull today's words out early.
+ *
+ * A missing or malformed `today` falls back to UTC's, which is never wider.
+ */
+function spoilerCutoff(claimed: string | null): string {
+  const utc = utcToday();
+  if (!claimed || !DATE_RE.test(claimed)) return utc;
+  if (Number.isNaN(Date.parse(`${claimed}T00:00:00Z`))) return utc;
+  return claimed < utc ? claimed : utc;
+}
+
+/** `days` before `date`, as YYYY-MM-DD. */
+function daysBefore(date: string, days: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) - days * 86400000).toISOString().slice(0, 10);
+}
+
 async function handleGet(request: Request): Promise<Response> {
   const params = new URL(request.url).searchParams;
   const since = params.get("since") ?? "";
@@ -295,17 +364,21 @@ async function handleGet(request: Request): Promise<Response> {
   const limit = Number.isFinite(requested)
     ? Math.min(Math.max(requested, 1), MAX_LIMIT)
     : DEFAULT_LIMIT;
+  const wordsBefore = spoilerCutoff(params.get("today"));
+  const wordsSince = daysBefore(wordsBefore, WORDS_WINDOW_DAYS);
 
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
-    // One call for the gate and both boards: they answer one question -- what
-    // should this page show right now -- and asking once means the player count
-    // can never disagree with the rows beside it.
+    // One call for the gate, both boards and the words feed: they answer one
+    // question -- what should this page show right now -- and asking once means
+    // the player count can never disagree with the rows beside it.
     const result = await rpc<BoardsResult>("leaderboard_boards", {
       p_since: since,
       p_limit: limit,
       p_min_players: MIN_PLAYERS,
+      p_words_before: wordsBefore,
+      p_words_since: wordsSince,
     });
     return reply(
       200,
@@ -316,6 +389,7 @@ async function handleGet(request: Request): Promise<Response> {
         minPlayers: Number(result?.minPlayers) || MIN_PLAYERS,
         weekly: toEntries(result?.weekly ?? null),
         allTime: toEntries(result?.allTime ?? null),
+        words: toWords(result?.words ?? null),
       },
       // A minute: long enough that a burst of opens costs one query, short
       // enough that a player who just scored sees themselves move.

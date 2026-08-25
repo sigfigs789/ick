@@ -348,6 +348,58 @@ $$;
 revoke all on function public.leaderboard_board(date, integer) from public, anon, authenticated;
 
 /*
+ * The words players actually found, rarest first.
+ *
+ * One row per distinct word, drawn from the same score rows the boards are built
+ * from -- so every word here is the best one some player found on some day, which
+ * is the interesting half of what this table holds. A word several people found
+ * appears once, with the count.
+ *
+ * `p_before` is the spoiler gate and it is not optional. The game is a daily
+ * puzzle with the same drop for everybody, so publishing a word somebody found
+ * today hands the answer to everyone who has not played yet. Only dates strictly
+ * before `p_before` are returned, and the caller is responsible for passing a
+ * date no later than the earliest "today" any player could currently be on (see
+ * api/leaderboard.ts, which takes the earlier of the client's own date and UTC's,
+ * so neither a timezone nor a lying client can widen it).
+ *
+ * The effect is a day's finds becoming visible the day after, which is a feature
+ * as much as a constraint: there is something to come back for tomorrow, and it
+ * is never something that spoils today.
+ */
+create or replace function public.leaderboard_words(
+  p_before date,
+  p_since date,
+  p_limit integer default 12
+) returns table (
+  word text,
+  zipf numeric,
+  finders integer,
+  found_on date
+)
+language sql
+stable
+as $$
+  select
+    s.top_word as word,
+    min(s.top_zipf) as zipf,
+    count(distinct s.player_id)::integer as finders,
+    max(s.puzzle_date) as found_on
+  from public.leaderboard_scores s
+  where s.puzzle_date < p_before
+    and s.puzzle_date >= p_since
+  group by s.top_word
+  -- Rarest first: the whole point is the words worth looking at. Ties go to the
+  -- word more people found, then alphabetically so the order never wobbles
+  -- between two identical calls.
+  order by min(s.top_zipf) asc, count(distinct s.player_id) desc, s.top_word asc
+  limit least(greatest(coalesce(p_limit, 12), 1), 50);
+$$;
+
+revoke all on function public.leaderboard_words(date, date, integer)
+  from public, anon, authenticated;
+
+/*
  * Both boards, and the gate in front of them.
  *
  * A leaderboard with three names on it is not a leaderboard, it is a list of
@@ -369,7 +421,9 @@ revoke all on function public.leaderboard_board(date, integer) from public, anon
 create or replace function public.leaderboard_boards(
   p_since date,
   p_limit integer default 50,
-  p_min_players integer default 10
+  p_min_players integer default 10,
+  p_words_before date default null,
+  p_words_since date default null
 ) returns jsonb
 language sql
 stable
@@ -393,10 +447,19 @@ as $$
     'allTime', case when g.players >= g.needed then (
       select coalesce(jsonb_agg(to_jsonb(b) order by b.rank), '[]'::jsonb)
       from public.leaderboard_board(null, p_limit) b
-    ) else '[]'::jsonb end
+    ) else '[]'::jsonb end,
+    -- Deliberately *outside* the gate. The gate exists so nobody meets a
+    -- three-name leaderboard and concludes the game is empty; a short list of
+    -- good words carries no such implication -- it is interesting at any size,
+    -- and it is the best thing to show a player while the boards are still
+    -- filling up.
+    'words', case when p_words_before is null then '[]'::jsonb else (
+      select coalesce(jsonb_agg(to_jsonb(w)), '[]'::jsonb)
+      from public.leaderboard_words(p_words_before, p_words_since, 12) w
+    ) end
   )
   from gate g;
 $$;
 
-revoke all on function public.leaderboard_boards(date, integer, integer)
+revoke all on function public.leaderboard_boards(date, integer, integer, date, date)
   from public, anon, authenticated;

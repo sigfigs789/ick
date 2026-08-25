@@ -1417,6 +1417,49 @@ h2 {
   resize: vertical;
 }
 
+/* Recent finds -- the words other players turned up. */
+.found-words {
+  margin-bottom: 2rem;
+  padding-bottom: 1.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.found-words__list {
+  list-style: none;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 1fr;
+}
+/* Two up as soon as there is room: the list is a dozen short rows, and a single
+   column of them on a wide screen is a lot of scrolling for no reason. */
+@media (min-width: 34rem) {
+  .found-words__list {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem 1.4rem;
+  }
+}
+.found-words__item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.found-words__word {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  /* A 30-letter word must wrap rather than push the badge off the row. */
+  overflow-wrap: anywhere;
+}
+.found-words__finders {
+  flex: none;
+  color: var(--fg-faint);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Leaderboard */
 /* Its own page, so it gets the room two boards want -- wider than the game's
    30rem column, which is sized for a single puzzle. */

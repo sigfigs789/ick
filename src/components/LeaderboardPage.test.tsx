@@ -33,6 +33,11 @@ function playedToday(date: string, word: string, zipf: number) {
   );
 }
 
+const WORDS = [
+  { word: "asphyxiate", zipf: 2.09, finders: 3 },
+  { word: "quixotic", zipf: 2.33, finders: 1 },
+];
+
 const OPEN = {
   weekStart: "2026-08-23",
   ready: true,
@@ -40,6 +45,7 @@ const OPEN = {
   minPlayers: 10,
   weekly: WEEKLY,
   allTime: ALL_TIME,
+  words: WORDS,
 };
 
 /** Answer the board fetch; a `null` body makes the request fail instead. */
@@ -464,5 +470,80 @@ describe("choosing which of your finds names you", () => {
     await screen.findByText(/You're on the board as/);
     // Nothing to choose between, so no control that leads nowhere.
     expect(screen.queryByRole("button", { name: "Choose a different word" })).toBeNull();
+  });
+});
+
+describe("recent finds", () => {
+  /** The words feed's list items. */
+  function finds() {
+    return within(screen.getByRole("region", { name: "Words found recently" })).getAllByRole(
+      "listitem"
+    );
+  }
+
+  it("lists the words other players found, rarest first", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(finds()).toHaveLength(2));
+    expect(finds()[0]).toHaveTextContent("asphyxiate");
+    expect(finds()[1]).toHaveTextContent("quixotic");
+  });
+
+  it("badges each word at what it is worth today", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // The same badge the game shows on an accepted word, so a find reads the
+    // way finding it would have. Read off the badge's own element: the row's
+    // text runs together as "8.33 players", where a substring match would pass
+    // for a number never displayed.
+    await waitFor(() => expect(finds()[0]).toHaveTextContent("EXTREMELY RARE"));
+    expect(finds()[0].querySelector(".rarity-badge__score")?.textContent).toBe("8.3");
+  });
+
+  it("says how many players found a word, when more than one did", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(finds()[0]).toHaveTextContent("3 players"));
+    // One finder needs no count -- "1 players" is noise, and so is "1 player".
+    expect(finds()[1]).not.toHaveTextContent("player");
+  });
+
+  it("says today's finds are held back, so nobody reads it as live", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    expect(await screen.findByText(/Today's stay hidden until tomorrow/)).toBeInTheDocument();
+  });
+
+  it("shows the feed even while the boards are still gated", async () => {
+    stubFetch({
+      weekStart: "2026-08-23",
+      ready: false,
+      players: 3,
+      minPlayers: 10,
+      weekly: [],
+      allTime: [],
+      words: WORDS,
+    });
+    render(<LeaderboardPage />);
+
+    // The best thing to show a player while the boards fill up: a three-name
+    // board is embarrassing, three good words are not.
+    await waitFor(() => expect(finds()).toHaveLength(2));
+    expect(screen.getByRole("region", { name: "Leaderboard status" })).toHaveTextContent(
+      "3 of 10 players"
+    );
+  });
+
+  it("shows nothing at all when there are no finds yet", async () => {
+    stubFetch({ ...OPEN, words: [] });
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    // An empty section with a heading would be worse than no section.
+    expect(screen.queryByRole("region", { name: "Words found recently" })).toBeNull();
   });
 });

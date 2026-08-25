@@ -10,11 +10,17 @@
  */
 
 import { maxGuessesFor } from "./constants";
-import { rarityFor, rarityScore, topRarityScore, totalRarityScore } from "./dictionary";
+import {
+  rarityFor,
+  rarityForZipf,
+  rarityScore,
+  topRarityScore,
+  totalRarityScore,
+} from "./dictionary";
 import { todayDateString } from "./date";
 import { loadPlayerId } from "./player";
 import { playedOnItsDay } from "./storage";
-import type { AcceptedWord, DailyProgress } from "./types";
+import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 import { weekStart } from "./week";
 
 export interface BoardEntry {
@@ -44,6 +50,22 @@ export interface BoardEntry {
   puzzles: number;
 }
 
+/**
+ * A word somebody found, as the feed shows it.
+ *
+ * Priced and labelled by today's dictionary, like everything else on the page --
+ * so a word that has been rescored since somebody found it reads at what it is
+ * worth now, and two players seeing the same word see the same badge.
+ */
+export interface FoundWord {
+  word: string;
+  rarity: Rarity;
+  /** Frequency, kept so the badge can render the score the same way the game does. */
+  zipf: number;
+  /** How many players this was the best word of the day for. */
+  finders: number;
+}
+
 export interface Boards {
   /**
    * Whether the boards are published yet. Below the player threshold the server
@@ -57,6 +79,15 @@ export interface Boards {
   minPlayers: number;
   weekly: BoardEntry[];
   allTime: BoardEntry[];
+  /**
+   * The best words other players found recently, rarest first.
+   *
+   * Never includes today: the same drop goes to everybody, so a word found today
+   * is an answer to today's puzzle (the server enforces this -- see
+   * api/leaderboard.ts). Not behind the player threshold either, because a short
+   * list of good words is interesting at any size.
+   */
+  words: FoundWord[];
   /** The day the weekly board is counting from, echoed back by the server. */
   weekStart: string;
 }
@@ -124,6 +155,32 @@ function scoreOf(word: string, storedZipf: unknown): number {
 }
 
 /**
+ * Read the words feed, dropping anything malformed rather than throwing.
+ *
+ * Each word is looked up fresh in today's dictionary and only falls back to the
+ * frequency the server stored for a word today's dictionary doesn't carry.
+ */
+function parseWords(raw: unknown): FoundWord[] {
+  if (!Array.isArray(raw)) return [];
+  const words: FoundWord[] = [];
+  for (const item of raw as Record<string, unknown>[]) {
+    if (!item || typeof item !== "object") continue;
+    const { word, zipf, finders } = item;
+    if (typeof word !== "string" || !word) continue;
+    const stored = typeof zipf === "number" && Number.isFinite(zipf) ? zipf : undefined;
+    const current = rarityFor(word)?.zipf ?? stored;
+    if (current === undefined) continue;
+    words.push({
+      word,
+      zipf: current,
+      rarity: rarityForZipf(current),
+      finders: typeof finders === "number" && Number.isFinite(finders) ? finders : 1,
+    });
+  }
+  return words;
+}
+
+/**
  * Fetch both boards in one request.
  *
  * The week's start is sent rather than derived server-side: the puzzle date is
@@ -133,8 +190,13 @@ function scoreOf(word: string, storedZipf: unknown): number {
  */
 export async function fetchBoards(date: string = todayDateString()): Promise<Boards> {
   const since = weekStart(date);
+  // The player's own date goes up so the server can keep today's finds out of
+  // the words feed -- a word found today is an answer to today's puzzle. The
+  // server takes the earlier of this and its own, so sending a later one buys
+  // nothing (see api/leaderboard.ts).
   const response = await fetch(
-    `/api/leaderboard?since=${encodeURIComponent(since)}&limit=${BOARD_LIMIT}`,
+    `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
+      `&limit=${BOARD_LIMIT}`,
     { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
   );
   if (!response.ok) throw new Error(`leaderboard ${response.status}`);
@@ -147,6 +209,7 @@ export async function fetchBoards(date: string = todayDateString()): Promise<Boa
     minPlayers: typeof body.minPlayers === "number" ? body.minPlayers : 0,
     weekly: parseBoard(body.weekly),
     allTime: parseBoard(body.allTime),
+    words: parseWords(body.words),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,
   };
 }

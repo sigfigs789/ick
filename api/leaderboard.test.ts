@@ -260,6 +260,10 @@ describe("api/leaderboard reads", () => {
       { rank: 1, player_id: PLAYER, name: "asphyxiate", name_zipf: "2.09", window_word: "asphyxiate", window_zipf: "2.09", total_score: "180.2", puzzles: 9 },
       { rank: 2, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", name: "quixotic", name_zipf: "2.33", window_word: "quixotic", window_zipf: "2.33", total_score: "90.0", puzzles: 5 },
     ],
+    words: [
+      { word: "asphyxiate", zipf: "2.09", finders: 3, found_on: "2026-08-25" },
+      { word: "inkling", zipf: "2.9", finders: 1, found_on: "2026-08-24" },
+    ],
   };
 
   it("returns both boards, with the ranks the database assigned", async () => {
@@ -312,6 +316,10 @@ describe("api/leaderboard reads", () => {
           puzzles: 5,
         },
       ],
+      words: [
+        { word: "asphyxiate", zipf: 2.09, finders: 3, foundOn: "2026-08-25" },
+        { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-24" },
+      ],
     });
 
     // One call for the gate and both boards, so the count can never disagree
@@ -320,7 +328,7 @@ describe("api/leaderboard reads", () => {
     expect(rpcCall(fetchMock)?.url).toBe(
       "https://project.supabase.co/rest/v1/rpc/leaderboard_boards"
     );
-    expect(rpcCall(fetchMock)?.args).toEqual({
+    expect(rpcCall(fetchMock)?.args).toMatchObject({
       p_since: SUNDAY,
       p_limit: 10,
       p_min_players: 10,
@@ -333,8 +341,8 @@ describe("api/leaderboard reads", () => {
     const response = await handler(get(`?since=${SUNDAY}`));
 
     expect(rpcCall(fetchMock)?.args.p_min_players).toBe(10);
-    // Below the threshold the count is the whole answer, and there are no rows
-    // in the response for anyone to read out of a network tab.
+    // Below the threshold the count is the whole answer, and there are no board
+    // rows in the response for anyone to read out of a network tab.
     expect(await response.json()).toEqual({
       weekStart: SUNDAY,
       ready: false,
@@ -342,6 +350,7 @@ describe("api/leaderboard reads", () => {
       minPlayers: 10,
       weekly: [],
       allTime: [],
+      words: [],
     });
   });
 
@@ -465,5 +474,83 @@ describe("api/leaderboard method handling", () => {
 
     expect(response.status).toBe(405);
     expect(response.headers.get("allow")).toBe("GET, POST, PUT");
+  });
+});
+
+describe("api/leaderboard recent finds", () => {
+  /** Today in UTC, the way the handler computes it. */
+  function utcToday(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function daysBefore(date: string, days: number): string {
+    return new Date(Date.parse(`${date}T00:00:00Z`) - days * 86400000).toISOString().slice(0, 10);
+  }
+
+  it("never publishes words from the caller's own today", async () => {
+    withEnv();
+    const fetchMock = stubFetch([{ ready: true, players: 12, minPlayers: 10, weekly: [], allTime: [], words: [] }]);
+    const today = utcToday();
+    await handler(get(`?since=${SUNDAY}&today=${today}`));
+
+    // The same drop goes to everybody, so a word found today is an answer to
+    // today's puzzle. The feed is strictly before the cutoff.
+    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(today);
+    expect(rpcCall(fetchMock)?.args.p_words_since).toBe(daysBefore(today, 7));
+  });
+
+  it("believes a client that is behind UTC, so its own today stays hidden", async () => {
+    withEnv();
+    const fetchMock = stubFetch([{ ready: true, players: 12, minPlayers: 10, weekly: [], allTime: [], words: [] }]);
+    // Late evening in the Americas: UTC has rolled over, the player has not.
+    const behind = daysBefore(utcToday(), 1);
+    await handler(get(`?since=${SUNDAY}&today=${behind}`));
+
+    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(behind);
+  });
+
+  it("caps a client claiming a date in the future", async () => {
+    withEnv();
+    const fetchMock = stubFetch([{ ready: true, players: 12, minPlayers: 10, weekly: [], allTime: [], words: [] }]);
+    // Lying about the calendar to pull today's answers out early.
+    await handler(get(`?since=${SUNDAY}&today=2099-01-01`));
+
+    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(utcToday());
+  });
+
+  it.each([
+    ["a missing date", ""],
+    ["a date that isn't one", "&today=whenever"],
+    ["a malformed date", "&today=2026-13-45"],
+  ])("falls back to UTC's today for %s", async (_label, param) => {
+    withEnv();
+    const fetchMock = stubFetch([{ ready: true, players: 12, minPlayers: 10, weekly: [], allTime: [], words: [] }]);
+    await handler(get(`?since=${SUNDAY}${param}`));
+
+    // The fallback is never wider than the truth.
+    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(utcToday());
+  });
+
+  it("returns the feed even while the boards are still gated", async () => {
+    withEnv();
+    stubFetch([
+      {
+        ready: false,
+        players: 3,
+        minPlayers: 10,
+        weekly: [],
+        allTime: [],
+        words: [{ word: "inkling", zipf: "2.9", finders: 2, found_on: "2026-08-24" }],
+      },
+    ]);
+    const response = await handler(get(`?since=${SUNDAY}&today=${utcToday()}`));
+    const body = (await response.json()) as Record<string, unknown>;
+
+    // A three-name board is embarrassing; three good words are not. The feed is
+    // the best thing to show while the boards fill up.
+    expect(body.ready).toBe(false);
+    expect(body.words).toEqual([
+      { word: "inkling", zipf: 2.9, finders: 2, foundOn: "2026-08-24" },
+    ]);
   });
 });

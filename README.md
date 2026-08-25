@@ -472,6 +472,39 @@ Because the window start is computed client-side and passed to the query, moving
 the first day of the week is a one-file change and never a migration — no SQL
 knows which day it is.
 
+### Recent finds
+
+The words other players actually turned up, rarest first, each with the same
+rarity badge the game shows on an accepted word. Every entry is somebody's best
+word of a day — which is exactly what `leaderboard_scores.top_word` already
+holds, so the feed is a query over data the boards were already storing.
+
+Arguably the point of the page. A leaderboard tells you where you came; this
+tells you what you missed, and "I didn't know that was a word" is the thing
+players enjoy.
+
+**Today's finds are never shown, and that is load-bearing.** Everyone gets the
+same drop, so a word somebody found today is an *answer to today's puzzle* —
+publishing it hands the answer to every player who hasn't played yet. The feed
+returns only dates strictly before a cutoff, and the cutoff is the **earlier of
+the client's own date and UTC's**, which closes two holes at once:
+
+- a client behind UTC (the Americas late in the UTC day) is believed, so its own
+  today is never published back to it;
+- a client claiming a date in the future is capped at UTC's today, so lying about
+  the calendar can't pull today's words out early.
+
+A missing or malformed date falls back to UTC's, which is never wider. The effect
+is that a day's finds appear the next day — a constraint that doubles as a
+feature, since there is something new to come back for and it is never something
+that spoils today.
+
+**Not behind the ten-player gate**, unlike the boards. The gate exists so nobody
+meets a three-name leaderboard and concludes the game is empty; a short list of
+good words carries no such implication. It is the best thing to show a player
+while the boards are still filling up, which is why it sits above them on the
+page.
+
 ### Collected from the start, shown from ten players
 
 Scores accumulate from the first day this ships, but the boards stay unpublished
