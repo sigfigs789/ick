@@ -5,13 +5,16 @@ import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard, loadPlayerId } from "../game/player";
 
 // Names on the board are words the players found, not handles they picked.
+// A player's name is their rarest word ever and is the same on both boards --
+// that is what lets you recognise the same rival week after week. The weekly
+// board additionally carries what they found *this* week.
 const WEEKLY = [
-  { rank: 1, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", score: 41.2, best: 8.3, puzzles: 5 },
-  { rank: 2, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", score: 24.6, best: 7.11, puzzles: 3 },
+  { rank: 1, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", nameZipf: 2.09, windowWord: "quixotic", windowZipf: 2.33, score: 41.2, puzzles: 5 },
+  { rank: 2, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", nameZipf: 2.9, windowWord: "wrinkle", windowZipf: 3.31, score: 24.6, puzzles: 3 },
 ];
 const ALL_TIME = [
-  { rank: 1, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", score: 310.5, best: 7.11, puzzles: 40 },
-  { rank: 2, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", score: 180, best: 8.3, puzzles: 22 },
+  { rank: 1, playerId: "22222222-2222-4222-8222-222222222222", name: "inkling", nameZipf: 2.9, windowWord: "inkling", windowZipf: 2.9, score: 310.5, puzzles: 40 },
+  { rank: 2, playerId: "11111111-1111-4111-8111-111111111111", name: "asphyxiate", nameZipf: 2.09, windowWord: "asphyxiate", windowZipf: 2.09, score: 180, puzzles: 22 },
 ];
 
 /** Put a played-on-its-day puzzle in storage, so this browser has a name. */
@@ -59,6 +62,17 @@ function boardRows(heading: string) {
   return within(screen.getByRole("region", { name: heading })).getAllByRole("listitem");
 }
 
+/**
+ * The detail line of one row, on its own.
+ *
+ * Read from the element rather than the row's whole text content: a row
+ * concatenates to things like "quixotic 7.941.2", where the score that follows
+ * makes a substring assertion pass for a number that was never displayed.
+ */
+function rowMeta(heading: string, index: number): string {
+  return boardRows(heading)[index].querySelector(".leaderboard__meta")?.textContent ?? "";
+}
+
 /** The bodies of every score submission the page made. */
 function submissions(fetchMock: ReturnType<typeof stubFetch>) {
   return fetchMock.mock.calls
@@ -100,22 +114,47 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
   });
 
-  it("shows each player's best as the worth of the word naming them", async () => {
+  it("names this week's find on the weekly row, beside the player's own name", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    // asphyxiate is worth 8.30 today, and that is the number on its row -- not
-    // whatever its puzzle happened to score the day it was played.
+    // The name is the identity a rival recognises; the detail is what they did
+    // this week. Both, so the row describes the week without costing the player
+    // the name someone might be chasing.
     await waitFor(() => expect(boardRows("This week")[0]).toHaveTextContent("asphyxiate"));
-    expect(boardRows("This week")[0]).toHaveTextContent("best 8.3");
+    // quixotic is worth 7.9 today, and the detail is exactly that -- this
+    // week's find, not the all-time name's score.
+    expect(rowMeta("This week", 0)).toBe("5 puzzles · quixotic 7.9");
+  });
+
+  it("keeps the same name on both boards, so a rival stays recognisable", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    const weeklyNames = boardRows("This week").map((row) => row.textContent);
+    // Whoever beat you this week is findable on the all-time board under the
+    // same name -- which is the whole reason the name is not weekly.
+    expect(weeklyNames[0]).toContain("asphyxiate");
+    expect(boardRows("All time")[1]).toHaveTextContent("asphyxiate");
+  });
+
+  it("shows the naming word's own worth on the all-time row", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // No second word to name here: the window is everything, so the rarest word
+    // in it *is* the name. inkling is worth 7.11 today.
+    await waitFor(() => expect(boardRows("All time")[0]).toHaveTextContent("inkling"));
+    expect(rowMeta("All time", 0)).toBe("40 puzzles · best 7.1");
   });
 
   it("counts the puzzles behind each score", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    await waitFor(() => expect(boardRows("This week")[0]).toHaveTextContent("5 puzzles"));
-    expect(boardRows("This week")[1]).toHaveTextContent("3 puzzles");
+    await waitFor(() => expect(rowMeta("This week", 0)).toContain("5 puzzles"));
+    expect(rowMeta("This week", 1)).toContain("3 puzzles");
   });
 
   it("marks the player's own row on both boards", async () => {
@@ -255,10 +294,13 @@ describe("joining the board", () => {
     ]);
     // And named by the best of *those* days -- asphyxiate is rarer, but it was
     // archive play, so it cannot name the player either.
-    expect(posts[0].name).toBe("inkling");
-    // And by what that word is worth today, so the board's "best" always
-    // describes the name beside it.
-    expect(posts[0].nameScore).toBe(7.11);
+    // Each day carries its own rarest word; nothing here asserts a name. The
+    // board derives that from these rows, so the archive day cannot supply one
+    // any more than it can supply a score.
+    expect((posts[0].scores as { word: string }[]).map((s) => s.word)).toEqual([
+      "inkling",
+      "wrinkle",
+    ]);
     expect(await screen.findByText(/Counted 2 puzzles you'd already played/)).toBeInTheDocument();
   });
 

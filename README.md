@@ -486,41 +486,56 @@ leaves the database at all** — there is no partial board sitting in an API
 response waiting to be read out of a network tab. `MIN_PLAYERS` in
 `api/leaderboard.ts` is the one place to change it.
 
-### The name is your rarest word
+### The name is your rarest word, and it does not change weekly
 
 Nobody types a name. What the board shows beside a score is the player's own
-best word ever — `asphyxiate`, `gastroenterologist`, `quixotic` — and it changes
-the moment they beat it (`leaderboard.boardName`). A word game's board is more
-interesting when the names *are* the finds: it says what each player is on the
-board for, and it needs no maintenance.
+rarest word ever — `asphyxiate`, `gastroenterologist`, `quixotic` — and it changes
+only when they beat it. A word game's board is more interesting when the names
+*are* the finds: it says what each player is on the board for, and it needs no
+maintenance.
+
+**The same name appears on both boards, deliberately.** A weekly name would be
+livelier, and it was considered and rejected: rivalry needs a stable handle. If
+names churned every Sunday, the person who beat you last week would reappear as a
+different word and you could not recognise them — and being beaten by someone you
+recognise is most of why a weekly board is worth coming back to. Novelty fades in
+a week; a rival lasts months.
+
+What the weekly board gets instead is a **windowed detail**: each row names the
+rarest word that player found *this week*, next to the name they are known by.
+
+| | Name (identity) | Row detail |
+| --- | --- | --- |
+| **This week** | rarest word ever | rarest word **this week** — `quixotic 7.9` |
+| **All time** | rarest word ever | that word's own worth — `best 8.3` |
+
+So a weekly row describes the week without costing the player the identity
+someone might be chasing. On the all-time board the window is everything, so the
+two coincide and the detail is simply the naming word's score.
 
 **Judged on today's criteria, not the day the word was played.** A puzzle's
 *score* is frozen at the scoring system in effect that day, because a past game
-should keep the result it was played for. A name is not a result — it is a
-current claim about the player — so each word is looked up fresh in today's
-dictionary (`rarityFor` with no date) and only falls back to the stored Zipf for
-a word today's dictionary doesn't carry, such as a live Merriam-Webster approval.
-Every player's name is therefore decided on the same terms on the same day.
+should keep the result it was played for. A word's rarity is not a result — it is
+a current fact — so the client prices every word on the board with today's
+dictionary. Two players holding the same word always show the same number,
+however long ago either of them found it.
+
+That split is why the server stores **words and frequencies, not scores**, for
+these two fields. It also means the database needs no dictionary: it picks a
+rarest word by smallest Zipf, which is correct under *any* of the game's scoring
+systems, because all of them map Zipf to score monotonically downward (asserted
+in `week`/dictionary tests). The client turns the word back into a score.
 
 Names come from the same days that get submitted, so a word farmed out of the
 archive can no more name a player than it can score for them.
-
-**The "best" on each row is that word's score, and travels with it.** It is sent
-as `nameScore` and stored in `display_score` beside `display_name`, newest pair
-wins, so the two can never disagree. The obvious alternative — showing
-`max(top_score)`, the largest per-day best — looks equivalent and quietly isn't:
-`top_score` is frozen at the scoring system in effect the day it was played, so
-the largest of them can belong to a *different* word than the name, or be a
-number that word no longer scores. `asphyxiate` was worth 8.40 under the
-2026-08-14 system, 8.00 under 2026-08-15's, and is worth 8.30 today; a row
-reading "asphyxiate · best 8.40" is a small lie and an avoidable one. `top_score`
-is still stored as the per-day record it is — it just isn't what "best" means.
 
 This also removed a problem rather than adding one. A typed name on a public,
 unauthenticated endpoint is a sanitising job: invisible characters, bidi
 overrides, imitations of the page's own copy. A name that is always a word is
 validated as one — `^[a-z]{2,30}$` in the endpoint *and* as a check constraint on
-the column — and nothing else is expressible.
+the column — and nothing else is expressible. Nothing a client sends asserts what
+it should be called, either: each day carries its own rarest word, and the board
+derives the name from those rows.
 
 ### Identity, and the history that comes with it
 
@@ -573,9 +588,10 @@ it lets in are real and numerous, and the ones it lets cheat have to be awake at
   because it has two callers of the same shape: the game submitting today after
   each accepted word, and a joining player submitting a whole history. The upsert
   keeps the *higher* of the stored and submitted score, so repeats, out-of-order
-  arrivals and a re-sent backfill are all harmless. `display_name` is the one
-  column that is *not* max'd: the newest wins, which is how beating your best
-  word renames you across your whole history with nothing to migrate.
+  arrivals and a re-sent backfill are all harmless. Each row also carries that
+  day's rarest word and its frequency, which is what both boards derive their
+  words from — the name from all of a player's rows, the weekly detail from the
+  ones inside the window.
 
 This is the one thing in the project the game reads from a database, because
 other people's scores can't be shipped in the bundle. The read is contained:

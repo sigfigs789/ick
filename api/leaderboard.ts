@@ -14,7 +14,7 @@
 //   SQL, so below the threshold no row leaves the database at all -- there is no
 //   partial board sitting in a response waiting to be read out of a network tab.
 //
-// POST /api/leaderboard  { playerId, name, nameScore, scores: [{ date, total, top, words }] }
+// POST /api/leaderboard  { playerId, scores: [{ date, word, zipf, total, top, words }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
 //   One score per player per puzzle. An array because it has two callers of the
 //   same shape: the game submitting today after each accepted word, and a player
@@ -22,11 +22,10 @@
 //   write keeps the higher of the stored and submitted score, so repeats and
 //   out-of-order arrivals are both harmless (see the migration).
 //
-//   `name` is the player's best word, not typed text, and `nameScore` is what
-//   that word is worth under today's scoring. The client recomputes both on every
-//   submission and the write keeps the newest pair, so finding a better word
-//   renames the player across their whole history. The two travel together so the
-//   board can never show a number that belongs to a different word.
+//   No name is sent. Each day carries its own rarest word, and the board derives
+//   both the things it shows from those rows: a player's name is the rarest word
+//   across all of them, and the weekly board's detail is the rarest inside the
+//   window. Nothing to keep in step, and nothing a client can assert about itself.
 //
 // There are no accounts in this game, so a submission cannot be authenticated:
 // anyone who reads this file can post a score under a name of their choosing.
@@ -60,16 +59,20 @@ const MAX_TOTAL = 60;
 const MAX_TOP = 10;
 const MAX_WORDS = 6;
 /**
- * A display name is a word the player found, not free text -- so it is validated
- * as one: lowercase English letters, the same rule the game's own input uses.
+ * A day's rarest word, which is also what the board calls players. Validated as
+ * a word: lowercase English letters, the same rule the game's own input uses.
  *
- * This is a real narrowing rather than a formality. When names were typed there
- * was a sanitising problem to solve on a public, unauthenticated endpoint:
- * invisible characters, bidi overrides, impersonation of the page's own copy.
- * A pattern this tight leaves none of it -- there is nothing expressible here
- * but a word, and the longest word the game accepts is 30 letters.
+ * A real narrowing rather than a formality. A name typed by a player would be a
+ * sanitising problem on a public, unauthenticated endpoint whose values are shown
+ * to other players -- invisible characters, bidi overrides, impersonation of the
+ * page's own copy. A pattern this tight leaves none of it: there is nothing
+ * expressible here but a word, and the longest word the game accepts is 30
+ * letters.
  */
-const NAME_RE = /^[a-z]{2,30}$/;
+const WORD_RE = /^[a-z]{2,30}$/;
+/** Zipf runs roughly -2 (attested nowhere) to 8 ("the"); bounded wide. */
+const MIN_ZIPF = -10;
+const MAX_ZIPF = 10;
 /** How many distinct all-time players before the boards are shown to anyone. */
 const MIN_PLAYERS = 10;
 /**
@@ -89,19 +92,31 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 interface BoardRow {
   rank: number;
   player_id: string;
-  display_name: string;
+  name: string;
+  name_zipf: number | string | null;
+  window_word: string;
+  window_zipf: number | string | null;
   total_score: number | string;
-  best_score: number | string | null;
   puzzles: number;
 }
 
-/** One row as the client wants it: short keys, numbers already numbers. */
+/**
+ * One row as the client wants it: short keys, numbers already numbers.
+ *
+ * Words and frequencies rather than scores, because scoring is the client's job
+ * -- it ships the dictionary, so it can price a word at today's rates, and every
+ * player on the board gets priced the same way on the same day.
+ */
 interface BoardEntry {
   rank: number;
   playerId: string;
+  /** The player's rarest word ever: their name, and stable across weeks. */
   name: string;
+  nameZipf: number;
+  /** The rarest word inside this board's window -- this week's find, weekly. */
+  windowWord: string;
+  windowZipf: number;
   score: number;
-  best: number;
   puzzles: number;
 }
 
@@ -145,9 +160,11 @@ function toEntries(rows: BoardRow[] | null): BoardEntry[] {
     // arrived without one, and keeps the column non-null for the client.
     rank: Number(row.rank) || index + 1,
     playerId: String(row.player_id),
-    name: String(row.display_name),
+    name: String(row.name),
+    nameZipf: toNumber(row.name_zipf),
+    windowWord: String(row.window_word),
+    windowZipf: toNumber(row.window_zipf),
     score: toNumber(row.total_score),
-    best: toNumber(row.best_score),
     puzzles: Number(row.puzzles) || 0,
   }));
 }
@@ -189,6 +206,9 @@ function validWindowStart(date: string): boolean {
 /** One puzzle's score, validated. */
 interface ScoreEntry {
   date: string;
+  /** That day's rarest word, and the frequency it was judged on. */
+  word: string;
+  zipf: number;
   total: number;
   top: number;
   words: number;
@@ -207,9 +227,12 @@ interface ScoreEntry {
  */
 function readScore(raw: unknown): ScoreEntry | string {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return "malformed-score";
-  const { date, total, top, words } = raw as Record<string, unknown>;
+  const { date, word, zipf, total, top, words } = raw as Record<string, unknown>;
 
   if (typeof date !== "string" || !validPuzzleDate(date)) return "bad-date";
+  if (typeof word !== "string" || !WORD_RE.test(word)) return "bad-word";
+  if (typeof zipf !== "number" || !Number.isFinite(zipf)) return "bad-zipf";
+  if (zipf < MIN_ZIPF || zipf > MAX_ZIPF) return "bad-zipf";
   for (const [key, value] of Object.entries({ total, top, words })) {
     if (typeof value !== "number" || !Number.isFinite(value) || value < 0) return `bad-${key}`;
   }
@@ -224,6 +247,8 @@ function readScore(raw: unknown): ScoreEntry | string {
 
   return {
     date,
+    word,
+    zipf: Math.round(zipf * 100) / 100,
     total: Math.round(totalScore * 100) / 100,
     top: Math.round(topScore * 100) / 100,
     words: wordCount,
@@ -232,19 +257,12 @@ function readScore(raw: unknown): ScoreEntry | string {
 
 /** A whole submission, or a string saying what was wrong with it. */
 function readSubmission(parsed: unknown):
-  | { playerId: string; name: string; nameScore: number; scores: ScoreEntry[] }
+  | { playerId: string; scores: ScoreEntry[] }
   | string {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "malformed-body";
-  const { playerId, name, nameScore, scores } = parsed as Record<string, unknown>;
+  const { playerId, scores } = parsed as Record<string, unknown>;
 
   if (typeof playerId !== "string" || !UUID_RE.test(playerId)) return "bad-player-id";
-  // A word, not a name (see NAME_RE). Rejected rather than trimmed into shape:
-  // anything that isn't already a word means the client and this endpoint
-  // disagree about what a name is, and truncating it would invent one.
-  if (typeof name !== "string" || !NAME_RE.test(name)) return "bad-name";
-  // The name's own score, on the same 0..10 scale a single word can reach.
-  if (typeof nameScore !== "number" || !Number.isFinite(nameScore)) return "bad-name-score";
-  if (nameScore < 0 || nameScore > MAX_TOP) return "bad-name-score";
 
   if (!Array.isArray(scores)) return "bad-scores";
   if (scores.length === 0) return "no-scores";
@@ -258,7 +276,7 @@ function readSubmission(parsed: unknown):
     if (typeof score === "string") return score;
     checked.push(score);
   }
-  return { playerId, name, nameScore: Math.round(nameScore * 100) / 100, scores: checked };
+  return { playerId, scores: checked };
 }
 
 async function handleGet(request: Request): Promise<Response> {
@@ -344,8 +362,6 @@ async function handlePost(request: Request, context?: EdgeContext): Promise<Resp
     "rpc/submit_leaderboard_scores",
     {
       p_player_id: submission.playerId,
-      p_display_name: submission.name,
-      p_display_score: submission.nameScore,
       p_scores: submission.scores,
     },
     context

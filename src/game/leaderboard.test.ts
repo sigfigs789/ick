@@ -41,10 +41,18 @@ describe("submitting a score", () => {
     const body = posted(fetchMock);
     expect(body).toEqual({
       playerId,
-      name: "inkling",
-      nameScore: 7.11,
-      // A one-day batch, the same shape a history import uses.
-      scores: [{ date: today, total: expect.any(Number), top: expect.any(Number), words: 2 }],
+      // A one-day batch, the same shape a history import uses. No name: the
+      // board derives that from the day's own rarest word.
+      scores: [
+        {
+          date: today,
+          word: "inkling",
+          zipf: 2.9,
+          total: expect.any(Number),
+          top: expect.any(Number),
+          words: 2,
+        },
+      ],
     });
     const day = (body.scores as Record<string, number>[])[0];
     // The two numbers the game already shows the player, not a third scheme.
@@ -217,23 +225,41 @@ describe("importing a joining player's history", () => {
     ]);
   });
 
-  it("names the batch by today's scoring, not the day's", () => {
+  it("sends each day's frozen score with a current frequency for its word", () => {
     const playerId = joinBoard();
     const fetchMock = stubFetch();
     // asphyxiate was worth 8.40 the day it was played (2026-08-14's system) and
-    // is worth 8.30 today. The day's score stays frozen; the *name's* score is
-    // today's, so the number the board shows always describes the word beside it.
+    // is worth 8.30 today.
     const history = [
       { ...stored("2026-08-14"), acceptedWords: [{ word: "asphyxiate", rarity: "Extremely Rare" as const, zipf: 2.09 }] },
     ];
     backfillHistory(playerId!, history);
 
-    const body = posted(fetchMock);
-    expect(body.name).toBe("asphyxiate");
-    expect(body.nameScore).toBe(8.3);
-    // The day's own record keeps what that day was worth -- the two are
-    // different numbers for the same word, and both are correct.
-    expect((body.scores as Record<string, number>[])[0].top).toBe(8.4);
+    const day = (posted(fetchMock).scores as Record<string, unknown>[])[0];
+    // The day keeps the score it was played for...
+    expect(day.top).toBe(8.4);
+    // ...while its word travels with a current frequency, so the board can rank
+    // words found years apart against each other and price them the same.
+    expect(day.word).toBe("asphyxiate");
+    expect(day.zipf).toBe(2.09);
+  });
+
+  it("sends the rarest word of each day, not the first", () => {
+    const playerId = joinBoard();
+    const fetchMock = stubFetch();
+    const history = [
+      {
+        ...stored("2026-08-20"),
+        acceptedWords: [
+          { word: "wrinkle", rarity: "Uncommon" as const, zipf: 3.31 },
+          { word: "asphyxiate", rarity: "Extremely Rare" as const, zipf: 2.09 },
+          { word: "inkling", rarity: "Rare" as const, zipf: 2.9 },
+        ],
+      },
+    ];
+    backfillHistory(playerId!, history);
+
+    expect((posted(fetchMock).scores as Record<string, unknown>[])[0].word).toBe("asphyxiate");
   });
 
   it("scores each past day on the system that was in effect that day", () => {
@@ -319,10 +345,10 @@ describe("reading the boards", () => {
         JSON.stringify({
           ready: true,
           weekly: [
-            { rank: 1, playerId: "a", name: "Ada", score: 40 },
-            { name: "no id", score: 10 },
-            { playerId: "c", name: "Cy", score: "lots" },
-            { rank: 4, playerId: "d", name: "Di", score: 5 },
+            { rank: 1, playerId: "a", name: "asphyxiate", nameZipf: 2.09, score: 40 },
+            { name: "noid", score: 10 },
+            { playerId: "c", name: "cypher", score: "lots" },
+            { rank: 4, playerId: "d", name: "inkling", nameZipf: 2.9, score: 5 },
           ],
           allTime: "not a board",
         }),
@@ -334,12 +360,13 @@ describe("reading the boards", () => {
     // Each surviving row keeps the rank the database gave it, so a dropped row
     // shows as a gap rather than silently promoting everyone below it.
     expect(boards.weekly.map((e) => [e.rank, e.name])).toEqual([
-      [1, "Ada"],
-      [4, "Di"],
+      [1, "asphyxiate"],
+      [4, "inkling"],
     ]);
     expect(boards.allTime).toEqual([]);
-    // Missing optional numbers fall back rather than rendering as undefined.
-    expect(boards.weekly[0]).toMatchObject({ best: 0, puzzles: 0 });
+    // A row with no window word falls back to the name rather than rendering
+    // blank, and a missing count reads as zero.
+    expect(boards.weekly[0]).toMatchObject({ windowWord: "asphyxiate", puzzles: 0 });
   });
 
   it("holds the boards back unless the server says they are published", async () => {

@@ -21,11 +21,25 @@ export interface BoardEntry {
   /** Rank on this board, as the database ranked it. */
   rank: number;
   playerId: string;
+  /**
+   * The player's rarest word ever -- their name, and the same on both boards.
+   *
+   * Stable on purpose. A name that changed every week would make a rival
+   * unrecognisable week to week, and being beaten by someone you recognise is
+   * most of why a weekly board is worth coming back to.
+   */
   name: string;
+  /** What that word scores today. Priced here, not by the server. */
+  nameScore: number;
+  /**
+   * The rarest word inside this board's window -- on the weekly board, what they
+   * found *this* week. Equal to `name` on the all-time board, whose window is
+   * everything.
+   */
+  windowWord: string;
+  windowScore: number;
   /** Summed rarity score over the board's window. */
   score: number;
-  /** Best single word inside the window. */
-  best: number;
   /** How many puzzles the player scored on inside the window. */
   puzzles: number;
 }
@@ -57,8 +71,10 @@ interface RawEntry {
   rank?: unknown;
   playerId?: unknown;
   name?: unknown;
+  nameZipf?: unknown;
+  windowWord?: unknown;
+  windowZipf?: unknown;
   score?: unknown;
-  best?: unknown;
   puzzles?: unknown;
 }
 
@@ -74,19 +90,37 @@ function parseBoard(raw: unknown): BoardEntry[] {
   const entries: BoardEntry[] = [];
   for (const item of raw as RawEntry[]) {
     if (!item || typeof item !== "object") continue;
-    const { rank, playerId, name, score, best, puzzles } = item;
+    const { rank, playerId, name, nameZipf, windowWord, windowZipf, score, puzzles } = item;
     if (typeof playerId !== "string" || typeof name !== "string") continue;
     if (typeof score !== "number" || !Number.isFinite(score)) continue;
+    // Every word on the board is priced here, at today's rates, from the word
+    // itself -- so two players holding the same word always show the same
+    // number, however long ago either of them found it.
     entries.push({
       rank: typeof rank === "number" && Number.isFinite(rank) ? rank : entries.length + 1,
       playerId,
       name,
+      nameScore: scoreOf(name, nameZipf),
+      windowWord: typeof windowWord === "string" ? windowWord : name,
+      windowScore:
+        typeof windowWord === "string" ? scoreOf(windowWord, windowZipf) : scoreOf(name, nameZipf),
       score,
-      best: typeof best === "number" && Number.isFinite(best) ? best : 0,
       puzzles: typeof puzzles === "number" && Number.isFinite(puzzles) ? puzzles : 0,
     });
   }
   return entries;
+}
+
+/**
+ * Price one word at today's rates: today's dictionary first, and the frequency
+ * the server stored only for a word today's dictionary doesn't carry -- a live
+ * Merriam-Webster approval, most often.
+ */
+function scoreOf(word: string, storedZipf: unknown): number {
+  const zipf = rarityFor(word)?.zipf;
+  if (zipf !== undefined) return rarityScore(zipf);
+  if (typeof storedZipf === "number" && Number.isFinite(storedZipf)) return rarityScore(storedZipf);
+  return 0;
 }
 
 /**
@@ -158,9 +192,11 @@ export interface BoardIdentity {
  * includes today), so a word farmed out of the archive cannot become somebody's
  * name any more than it can become their score.
  *
- * The score travels with the name so the two can never disagree on the board --
- * see the migration for why the obvious alternative (the largest per-day top
- * score) quietly does.
+ * Used by the page to show a player how they will appear before they join, and
+ * to confirm it after. It is *not* what gets submitted: each day's own rarest
+ * word goes up with that day's score, and the board derives the name from those
+ * rows -- so nothing a client sends can assert what it should be called, and the
+ * name can never drift out of step with the scores beside it.
  *
  * Returns null when this browser has no eligible word yet, which is what stops a
  * player joining with nothing to be called.
@@ -192,21 +228,42 @@ function bestOf(wordLists: Iterable<readonly AcceptedWord[]>): BoardIdentity | n
 /** One puzzle's score, in the shape the endpoint takes. */
 interface ScorePayload {
   date: string;
+  /** That day's rarest word, and the frequency it is judged on. */
+  word: string;
+  zipf: number;
   total: number;
   top: number;
   words: number;
 }
 
-/** The two numbers the game already shows the player, for one puzzle. */
+/**
+ * One day's submission: the two numbers the game already shows the player, plus
+ * the rarest word of that day.
+ *
+ * The word is sent per day rather than a name per player, because the board
+ * derives both the words it shows from these rows -- a player's name is the
+ * rarest across all of them, and the weekly detail is the rarest inside the
+ * window. Nothing here asserts what the player should be called.
+ */
 function scoreFor(date: string, words: readonly AcceptedWord[]): ScorePayload {
+  const best = rarest(words);
   return {
     date,
+    word: best.word.toLowerCase(),
+    // Today's measurement where there is one, so the board ranks words on the
+    // same footing whenever they were played.
+    zipf: Math.round((rarityFor(best.word)?.zipf ?? best.zipf) * 100) / 100,
     total: totalRarityScore(words, date),
     top: topRarityScore(words, date),
     // Capped rather than trusted: the endpoint bounds this too, and sending more
     // than the day's guess limit allows would only get the batch rejected.
     words: Math.min(words.length, maxGuessesFor(date)),
   };
+}
+
+/** The rarest of one day's words, by today's reckoning. */
+function rarest(words: readonly AcceptedWord[]): AcceptedWord {
+  return words.reduce((best, word) => (scoreToday(word) > scoreToday(best) ? word : best));
 }
 
 /**
@@ -221,21 +278,9 @@ function scoreFor(date: string, words: readonly AcceptedWord[]): ScorePayload {
  * something to interrupt a game over. Returns whether a request was actually
  * started, which is what the tests assert on.
  */
-function post(
-  playerId: string,
-  identity: BoardIdentity | null,
-  scores: ScorePayload[]
-): boolean {
-  // No word means no name, and a row with no name is not worth writing. Barely
-  // reachable -- every caller has words in hand -- but the board should not be
-  // able to grow a blank entry.
-  if (scores.length === 0 || !identity) return false;
-  const body = JSON.stringify({
-    playerId,
-    name: identity.name,
-    nameScore: identity.score,
-    scores,
-  });
+function post(playerId: string, scores: ScorePayload[]): boolean {
+  if (scores.length === 0) return false;
+  const body = JSON.stringify({ playerId, scores });
   try {
     void fetch("/api/leaderboard", {
       method: "POST",
@@ -272,8 +317,7 @@ export function submitScore(options: {
   // comes from the whole stored history -- which already includes the words
   // being submitted, since they were saved before this was called. The fallback
   // covers a record too old to carry the timestamp that makes a day eligible.
-  const identity = boardIdentity() ?? bestOf([words]);
-  return post(playerId, identity, [scoreFor(date, words)]);
+  return post(playerId, [scoreFor(date, words)]);
 }
 
 /**
@@ -296,5 +340,5 @@ export function backfillHistory(playerId: string, history?: readonly DailyProgre
     .map((progress) => scoreFor(progress.date, progress.acceptedWords));
   // Named from exactly the days being submitted, so the name and the scores in
   // one request always describe the same history.
-  return post(playerId, boardIdentity(played), scores) ? scores.length : 0;
+  return post(playerId, scores) ? scores.length : 0;
 }

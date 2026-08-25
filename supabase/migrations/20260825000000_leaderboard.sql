@@ -27,39 +27,37 @@ create table if not exists public.leaderboard_scores (
   -- stays off the board the same way it stays off the streak.
   puzzle_date date not null,
 
-  -- The player's best word, not a name they typed: what the board shows beside a
-  -- score is the rarest word that player has ever found (see
-  -- src/game/leaderboard.ts's boardName). It moves when they beat it, so it is
-  -- denormalised onto every row rather than kept in a players table -- a change
-  -- should show up across their whole history without a join, and one row per
-  -- player per day is few enough that rewriting it on each is free.
+  -- The rarest word of *that day*, and its Zipf frequency.
+  --
+  -- Stored per day rather than as one denormalised "current name" per player,
+  -- because both things the board needs are derived from these rows and so can
+  -- never disagree with each other:
+  --   * a player's name is the rarest word across *all* their rows -- a stable
+  --     identity that changes only when they beat it;
+  --   * the weekly board's detail is the rarest word inside the *window*, which
+  --     is what they found this week.
+  --
+  -- Ordered by Zipf rather than by score, which is what lets the database pick a
+  -- rarest word with no dictionary of its own: every scoring system this game
+  -- has used maps Zipf to score monotonically downward, so the smallest Zipf is
+  -- the rarest word under any of them. The client turns it back into a score
+  -- with today's dictionary.
   --
   -- Constrained to a word rather than to a length. There are no accounts here, so
-  -- this column is written from an unauthenticated endpoint; a pattern this tight
-  -- means nothing expressible in it is invisible, right-to-left, or a passable
-  -- imitation of the page's own text. 30 is the longest word the game accepts.
-  display_name text not null check (display_name ~ '^[a-z]{2,30}$'),
+  -- this column is written from an unauthenticated endpoint and displayed to
+  -- other players; a pattern this tight means nothing expressible in it is
+  -- invisible, right-to-left, or a passable imitation of the page's own text. 30
+  -- is the longest word the game accepts.
+  top_word text not null check (top_word ~ '^[a-z]{2,30}$'),
+  -- Zipf runs roughly -2 (a word no corpus attests) to 8 ("the"); bounded wide.
+  top_zipf numeric not null check (top_zipf >= -10 and top_zipf <= 10),
 
-  -- What that word is worth under *today's* scoring, sent by the client with the
-  -- name and kept beside it. Stored rather than derived because the database has
-  -- no dictionary: it holds scores, not words, and cannot look one up.
-  --
-  -- It travels with the name so the two can never disagree. The alternative --
-  -- showing max(top_score) as the player's best -- looked equivalent and is not:
-  -- top_score is frozen at the scoring system in effect the day it was played,
-  -- so the largest of them can belong to a different word than the name, or be a
-  -- number that word no longer scores. A row reading "asphyxiate - best 8.40"
-  -- when asphyxiate is worth 8.30 today is a small lie, and an avoidable one.
-  display_score numeric not null check (display_score >= 0 and display_score <= 10),
-
-  -- The two numbers the game already shows the player: the summed rarity score
-  -- of every accepted word, and the best single word. Bounds are the most a
-  -- day's puzzle can physically produce (six guesses at a perfect 10), checked
-  -- here as well as in the endpoint so a bad row cannot be written at all.
+  -- The summed rarity score of every word accepted that day, and the best single
+  -- one of them -- both as that day's own scoring system scored them, because a
+  -- past game keeps the result it was played for. Bounds are the most a day can
+  -- physically produce (six guesses at a perfect 10), checked here as well as in
+  -- the endpoint so a bad row cannot be written at all.
   total_score numeric not null check (total_score >= 0 and total_score <= 60),
-  -- The best single word *of that day*, scored the way that day scored -- kept as
-  -- the per-day record it is. Not what the board displays as a player's best:
-  -- that is display_score above, which is about the player rather than the day.
   top_score numeric not null check (top_score >= 0 and top_score <= 10),
   words smallint not null check (words >= 0 and words <= 6),
 
@@ -91,23 +89,21 @@ revoke all on public.leaderboard_scores from anon, authenticated;
  * one round trip and one transaction, which matters when the batch is a year
  * long.
  *
+ * No name parameter: a player's name is derived from these rows (see the table
+ * comment), so there is nothing to pass and nothing that can drift out of step
+ * with the scores it sits beside.
+ *
  * Monotonic on purpose: a day's score only ever goes up. Submissions arrive in
  * whatever order the network delivers them, so taking the max means a
  * late-arriving early submission cannot undo a better one, a re-sent backfill is
  * a no-op, and a second browser on the same player id cannot lower a day, only
- * raise it.
- *
- * The display name and its score are *not* max'd -- the newest pair always wins,
- * and always together. They are the player's best word and what it is worth
- * today, recomputed by the client on every submission, so beating it renames
- * them across their whole history on the next word they play.
+ * raise it. The day's word moves with it -- whichever submission won on score
+ * brought the word that earned it.
  *
  * Returns how many days were written, which the endpoint reports back.
  */
 create or replace function public.submit_leaderboard_scores(
   p_player_id uuid,
-  p_display_name text,
-  p_display_score numeric,
   p_scores jsonb
 ) returns integer
 language sql
@@ -115,6 +111,8 @@ as $$
   with incoming as (
     select
       (s ->> 'date')::date as puzzle_date,
+      (s ->> 'word')::text as top_word,
+      (s ->> 'zipf')::numeric as top_zipf,
       (s ->> 'total')::numeric as total_score,
       (s ->> 'top')::numeric as top_score,
       (s ->> 'words')::smallint as words
@@ -122,32 +120,40 @@ as $$
   ),
   -- One row per date before the insert sees it: a batch could name the same day
   -- twice, and ON CONFLICT cannot resolve a conflict against a row the same
-  -- statement is still inserting.
+  -- statement is still inserting. Ranked rather than max()'d per column, so the
+  -- day's word and its numbers come from the same entry.
   deduped as (
-    select puzzle_date, max(total_score) as total_score,
-           max(top_score) as top_score, max(words) as words
+    select distinct on (puzzle_date)
+      puzzle_date, top_word, top_zipf, total_score, top_score, words
     from incoming
-    group by puzzle_date
+    order by puzzle_date, total_score desc, top_zipf asc
   ),
   written as (
     insert into public.leaderboard_scores
-      (player_id, puzzle_date, display_name, display_score, total_score, top_score, words)
-    select p_player_id, d.puzzle_date, p_display_name, p_display_score,
+      (player_id, puzzle_date, top_word, top_zipf, total_score, top_score, words)
+    select p_player_id, d.puzzle_date, d.top_word, d.top_zipf,
            d.total_score, d.top_score, d.words
     from deduped d
     on conflict (player_id, puzzle_date) do update set
-      display_name = excluded.display_name,
-      display_score = excluded.display_score,
       total_score = greatest(public.leaderboard_scores.total_score, excluded.total_score),
       top_score = greatest(public.leaderboard_scores.top_score, excluded.top_score),
       words = greatest(public.leaderboard_scores.words, excluded.words),
+      -- The word follows the score it came with: replaced only when this
+      -- submission is the one raising the day, so the word on the row is always
+      -- the word that earned the number on the row.
+      top_word = case
+        when excluded.total_score >= public.leaderboard_scores.total_score
+          then excluded.top_word else public.leaderboard_scores.top_word end,
+      top_zipf = case
+        when excluded.total_score >= public.leaderboard_scores.total_score
+          then excluded.top_zipf else public.leaderboard_scores.top_zipf end,
       updated_at = now()
     returning 1
   )
   select count(*)::integer from written;
 $$;
 
-revoke all on function public.submit_leaderboard_scores(uuid, text, numeric, jsonb)
+revoke all on function public.submit_leaderboard_scores(uuid, jsonb)
   from public, anon, authenticated;
 
 /*
@@ -165,12 +171,28 @@ revoke all on function public.submit_leaderboard_scores(uuid, text, numeric, jso
  * never a migration.
  *
  * Ranked by summed total score, which rewards playing every day rather than
- * peaking once -- the intended shape for a daily game. Ties break on the best
- * single word, then on who got there first, so a rank is always determinate.
+ * peaking once -- the intended shape for a daily game. Ties break on the rarest
+ * word found in the window, then on who got there first, so a rank is always
+ * determinate. The rank is returned rather than left for a caller to infer from
+ * row order: it is what the page displays, so the database that decided the
+ * ordering is the thing that should say it.
  *
- * The rank is returned rather than left for a caller to infer from row order:
- * it is what the page displays, so the database that decided the ordering is
- * the thing that should say it.
+ * Two different words come back, and the difference is the point:
+ *
+ *   * `name` / `name_zipf` -- the rarest word across the player's *entire*
+ *     history, ignoring the window. This is their identity, and it has to be
+ *     stable: a name that changed every week would make a rival unrecognisable
+ *     week to week, and being beaten by someone you recognise is most of why a
+ *     weekly board is worth returning to.
+ *   * `window_word` / `window_zipf` -- the rarest word *inside* the window, which
+ *     on the weekly board is what they found this week. This is what makes a
+ *     weekly row describe the week rather than quietly reporting an all-time
+ *     figure. On the all-time board the window is everything, so the two agree.
+ *
+ * Both are picked by smallest Zipf, which needs no dictionary here: every scoring
+ * system this game has used maps Zipf to score monotonically downward, so the
+ * smallest Zipf is the rarest word under any of them. Scores are the client's job
+ * -- it has the dictionary, and it can apply today's.
  */
 create or replace function public.leaderboard_board(
   p_since date default null,
@@ -178,40 +200,51 @@ create or replace function public.leaderboard_board(
 ) returns table (
   rank integer,
   player_id uuid,
-  display_name text,
+  name text,
+  name_zipf numeric,
+  window_word text,
+  window_zipf numeric,
   total_score numeric,
-  best_score numeric,
   puzzles integer
 )
 language sql
 stable
 as $$
-  with totals as (
+  -- The identity, over every row a player has, whatever the window is.
+  with identity as (
+    select distinct on (s.player_id)
+      s.player_id, s.top_word as name, s.top_zipf as name_zipf
+    from public.leaderboard_scores s
+    order by s.player_id, s.top_zipf asc, s.puzzle_date asc
+  ),
+  -- The window: what they scored, and the rarest thing they found, inside it.
+  windowed as (
     select
       s.player_id,
-      -- Name and score both read off the player's most recent row, so a better
-      -- word shows up across their whole history rather than only on the day
-      -- they found it -- and so the number always describes the word beside it.
-      -- Aggregated identically on purpose: same ordering, same row.
-      (array_agg(s.display_name order by s.puzzle_date desc))[1] as display_name,
-      (array_agg(s.display_score order by s.puzzle_date desc))[1] as best_score,
       round(sum(s.total_score), 1) as total_score,
       count(*)::integer as puzzles,
-      min(s.created_at) as joined_at
+      min(s.created_at) as joined_at,
+      -- The rarest word of the window, and its Zipf. Picked together so the word
+      -- and the number always describe each other.
+      (array_agg(s.top_word order by s.top_zipf asc, s.puzzle_date asc))[1] as window_word,
+      min(s.top_zipf) as window_zipf
     from public.leaderboard_scores s
     where p_since is null or s.puzzle_date >= p_since
     group by s.player_id
   )
   select
     row_number() over (
-      order by t.total_score desc, t.best_score desc, t.joined_at asc
+      order by w.total_score desc, w.window_zipf asc, w.joined_at asc
     )::integer as rank,
-    t.player_id,
-    t.display_name,
-    t.total_score,
-    t.best_score,
-    t.puzzles
-  from totals t
+    w.player_id,
+    i.name,
+    i.name_zipf,
+    w.window_word,
+    w.window_zipf,
+    w.total_score,
+    w.puzzles
+  from windowed w
+  join identity i on i.player_id = w.player_id
   order by rank
   limit least(greatest(coalesce(p_limit, 50), 1), 200);
 $$;

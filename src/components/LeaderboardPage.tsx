@@ -115,6 +115,10 @@ export function LeaderboardPage() {
               entries={boards.weekly}
               emptyMessage="Nobody's scored yet this week. Be first."
               playerId={playerId}
+              // The weekly row names this week's find beside the player's own
+              // name, so the row describes the week without costing them the
+              // identity a rival recognises them by.
+              showWindowWord
             />
             <Board
               heading="All time"
@@ -216,10 +220,23 @@ interface BoardProps {
   entries: BoardEntry[];
   emptyMessage: string;
   playerId: string | null;
+  /**
+   * Name the window's rarest word in each row's detail line. On for the weekly
+   * board, where it is this week's find; pointless on the all-time board, where
+   * the window is everything and it would just repeat the player's name.
+   */
+  showWindowWord?: boolean;
 }
 
 /** One board, ranked by total score exactly as the database ordered it. */
-function Board({ heading, caption, entries, emptyMessage, playerId }: BoardProps) {
+function Board({
+  heading,
+  caption,
+  entries,
+  emptyMessage,
+  playerId,
+  showWindowWord = false,
+}: BoardProps) {
   return (
     <section className="leaderboard__board" aria-label={heading}>
       <h2 className="leaderboard__board-heading">{heading}</h2>
@@ -241,8 +258,15 @@ function Board({ heading, caption, entries, emptyMessage, playerId }: BoardProps
                   {isYou && <span className="leaderboard__you"> you</span>}
                 </span>
                 <span className="leaderboard__meta">
-                  {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"} · best{" "}
-                  {formatScore(entry.best)}
+                  {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"} ·{" "}
+                  {showWindowWord ? (
+                    <>
+                      <span className="leaderboard__window-word">{entry.windowWord}</span>{" "}
+                      {formatScore(entry.windowScore)}
+                    </>
+                  ) : (
+                    <>best {formatScore(entry.nameScore)}</>
+                  )}
                 </span>
                 <span className="leaderboard__score">{entry.score.toFixed(1)}</span>
               </li>

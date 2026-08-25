@@ -1613,6 +1613,14 @@ h2 {
   color: var(--fg-faint);
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* This week's find, named next to the player's own name. Weighted a little so
+   the word reads as a word and not as part of the count beside it, but kept
+   faint -- the name above it is the identity, this is the news. */
+.leaderboard__window-word {
+  font-weight: 700;
 }
 .leaderboard__score {
   grid-area: score;

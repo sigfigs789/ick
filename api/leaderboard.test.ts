@@ -16,17 +16,17 @@ function withEnv(env: Record<string, string | undefined> = CONFIGURED) {
 
 /** A valid one-day submission, with any score field overridable per test. */
 function score(overrides: Record<string, unknown> = {}) {
-  const { playerId, name, nameScore, ...day } = {
+  const { playerId, ...day } = {
     playerId: PLAYER,
-    name: "inkling",
-    nameScore: 7.11,
     date: SUNDAY,
+    word: "inkling",
+    zipf: 2.9,
     total: 24.6,
     top: 9.4,
     words: 5,
     ...overrides,
   } as Record<string, unknown>;
-  return { playerId, name, nameScore, scores: [day] };
+  return { playerId, scores: [day] };
 }
 
 function post(body: unknown, init: RequestInit = {}): Request {
@@ -82,9 +82,8 @@ describe("api/leaderboard submissions", () => {
     expect(call?.url).toBe("https://project.supabase.co/rest/v1/rpc/submit_leaderboard_scores");
     expect(call?.args).toEqual({
       p_player_id: PLAYER,
-      p_display_name: "inkling",
-      p_display_score: 7.11,
-      p_scores: [{ date: SUNDAY, total: 24.6, top: 9.4, words: 5 }],
+      // No name: the board derives it from the day's own rarest word.
+      p_scores: [{ date: SUNDAY, word: "inkling", zipf: 2.9, total: 24.6, top: 9.4, words: 5 }],
     });
   });
 
@@ -93,11 +92,13 @@ describe("api/leaderboard submissions", () => {
     const fetchMock = stubFetch([[]]);
     const scores = Array.from({ length: 300 }, (_, i) => ({
       date: `2026-08-${String((i % 25) + 1).padStart(2, "0")}`,
+      word: "inkling",
+      zipf: 2.9,
       total: 12.5,
       top: 6.1,
       words: 3,
     }));
-    const response = await handler(post({ playerId: PLAYER, name: "inkling", nameScore: 7.11, scores }));
+    const response = await handler(post({ playerId: PLAYER, scores }));
 
     expect(response.status).toBe(202);
     expect(await response.json()).toEqual({ ok: true, days: 300 });
@@ -113,11 +114,9 @@ describe("api/leaderboard submissions", () => {
     const response = await handler(
       post({
         playerId: PLAYER,
-        name: "inkling",
-        nameScore: 7.11,
         scores: [
-          { date: SUNDAY, total: 12, top: 6, words: 3 },
-          { date: "2020-01-01", total: 12, top: 6, words: 3 },
+          { date: SUNDAY, word: "inkling", zipf: 2.9, total: 12, top: 6, words: 3 },
+          { date: "2020-01-01", word: "inkling", zipf: 2.9, total: 12, top: 6, words: 3 },
         ],
       })
     );
@@ -136,7 +135,7 @@ describe("api/leaderboard submissions", () => {
   ])("refuses %s", async (_label, scores, reason) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
-    const response = await handler(post({ playerId: PLAYER, name: "inkling", nameScore: 7.11, scores }));
+    const response = await handler(post({ playerId: PLAYER, scores }));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ ok: false, reason });
@@ -148,77 +147,68 @@ describe("api/leaderboard submissions", () => {
     const fetchMock = stubFetch([[]]);
     const scores = Array.from({ length: 801 }, () => ({
       date: SUNDAY,
+      word: "inkling",
+      zipf: 2.9,
       total: 1,
       top: 1,
       words: 1,
     }));
-    const response = await handler(post({ playerId: PLAYER, name: "inkling", nameScore: 7.11, scores }));
+    const response = await handler(post({ playerId: PLAYER, scores }));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ ok: false, reason: "too-many-scores" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("stores the word the player was named by, unaltered", async () => {
+  it("stores the day's word unaltered, however long it is", async () => {
     withEnv();
     const fetchMock = stubFetch([[]]);
-    await handler(post(score({ name: "gastroenterologist" })));
+    await handler(post(score({ word: "gastroenterologist" })));
 
-    expect(rpcCall(fetchMock)?.args.p_display_name).toBe("gastroenterologist");
-  });
-
-  it("keeps the name's score beside the name", async () => {
-    withEnv();
-    const fetchMock = stubFetch([[]]);
-    // The name's own worth today, which is a different question from what its
-    // puzzle scored that day -- both go up, and neither stands in for the other.
-    await handler(post(score({ name: "asphyxiate", nameScore: 8.3, top: 9.4 })));
-
-    expect(rpcCall(fetchMock)?.args.p_display_score).toBe(8.3);
-    expect((rpcCall(fetchMock)?.args.p_scores as Record<string, number>[])[0].top).toBe(9.4);
+    expect((rpcCall(fetchMock)?.args.p_scores as Record<string, unknown>[])[0].word).toBe(
+      "gastroenterologist"
+    );
   });
 
   it.each([
-    ["a name score above what one word can reach", 10.5],
-    ["a negative name score", -1],
-    ["a name score that isn't a number", "lots"],
-    ["a missing name score", undefined],
-  ])("refuses %s", async (_label, nameScore) => {
+    ["a word with a space in it", "word smith"],
+    ["a word with capitals", "Inkling"],
+    ["a word with punctuation", "ink-ling"],
+    ["a word with a digit", "ink1ing"],
+    ["a word with an invisible character", "ink\u200bling"],
+    ["a word with a bidi override", "\u202einkling"],
+    ["a single letter", "a"],
+    ["a word longer than the game accepts", "a".repeat(31)],
+    ["an empty word", ""],
+  ])("refuses %s", async (_label, word) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
-    const response = await handler(post(score({ nameScore })));
+    const response = await handler(post(score({ word })));
 
+    // These values are shown to other players, so anything that isn't a word is
+    // rejected rather than trimmed into shape -- truncating would invent one.
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ ok: false, reason: "bad-name-score" });
+    expect(await response.json()).toEqual({ ok: false, reason: "bad-word" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it.each([
-    ["a name with a space in it", "word smith"],
-    ["a name with capitals", "Inkling"],
-    ["a name with punctuation", "ink-ling"],
-    ["a name with a digit", "ink1ing"],
-    ["a name with an invisible character", "ink\u200bling"],
-    ["a name with a bidi override", "\u202einkling"],
-    ["a single letter", "a"],
-    ["a word longer than the game accepts", "a".repeat(31)],
-    ["an empty name", ""],
-  ])("refuses %s", async (_label, name) => {
+    ["a frequency far off the Zipf scale", 99],
+    ["a frequency far below it", -99],
+    ["a frequency that isn't a number", "rare"],
+    ["a missing frequency", undefined],
+  ])("refuses %s", async (_label, zipf) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
-    const response = await handler(post(score({ name })));
+    const response = await handler(post(score({ zipf })));
 
-    // The name is a word the player found, so anything that isn't one means the
-    // client and this endpoint disagree -- rejected rather than trimmed into
-    // shape, which would invent a name nobody earned.
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ ok: false, reason: "bad-name" });
+    expect(await response.json()).toEqual({ ok: false, reason: "bad-zipf" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it.each([
     ["a player id that isn't a uuid", { playerId: "mo" }, "bad-player-id"],
-    ["a name that isn't a word", { name: "  " }, "bad-name"],
     ["a puzzle date before the game existed", { date: "2020-01-01" }, "bad-date"],
     ["a puzzle date that isn't a date", { date: "yesterday" }, "bad-date"],
     ["a total above the highest possible puzzle", { total: 61, words: 6 }, "bad-total"],
@@ -264,11 +254,11 @@ describe("api/leaderboard reads", () => {
     players: 14,
     minPlayers: 10,
     weekly: [
-      { rank: 1, player_id: PLAYER, display_name: "inkling", total_score: "24.6", best_score: "9.4", puzzles: 1 },
+      { rank: 1, player_id: PLAYER, name: "asphyxiate", name_zipf: "2.09", window_word: "inkling", window_zipf: "2.9", total_score: "24.6", puzzles: 1 },
     ],
     allTime: [
-      { rank: 1, player_id: PLAYER, display_name: "inkling", total_score: "180.2", best_score: "9.9", puzzles: 9 },
-      { rank: 2, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", display_name: "asphyxiate", total_score: "90.0", best_score: "8.1", puzzles: 5 },
+      { rank: 1, player_id: PLAYER, name: "asphyxiate", name_zipf: "2.09", window_word: "asphyxiate", window_zipf: "2.09", total_score: "180.2", puzzles: 9 },
+      { rank: 2, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", name: "quixotic", name_zipf: "2.33", window_word: "quixotic", window_zipf: "2.33", total_score: "90.0", puzzles: 5 },
     ],
   };
 
@@ -285,10 +275,42 @@ describe("api/leaderboard reads", () => {
       ready: true,
       players: 14,
       minPlayers: 10,
-      weekly: [{ rank: 1, playerId: PLAYER, name: "inkling", score: 24.6, best: 9.4, puzzles: 1 }],
+      // The name is the player's rarest word ever; window_word is the rarest
+      // inside this board's window, which on the weekly board is this week's
+      // find. Scores are absent on purpose -- the client prices words itself.
+      weekly: [
+        {
+          rank: 1,
+          playerId: PLAYER,
+          name: "asphyxiate",
+          nameZipf: 2.09,
+          windowWord: "inkling",
+          windowZipf: 2.9,
+          score: 24.6,
+          puzzles: 1,
+        },
+      ],
       allTime: [
-        { rank: 1, playerId: PLAYER, name: "inkling", score: 180.2, best: 9.9, puzzles: 9 },
-        { rank: 2, playerId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", name: "asphyxiate", score: 90, best: 8.1, puzzles: 5 },
+        {
+          rank: 1,
+          playerId: PLAYER,
+          name: "asphyxiate",
+          nameZipf: 2.09,
+          windowWord: "asphyxiate",
+          windowZipf: 2.09,
+          score: 180.2,
+          puzzles: 9,
+        },
+        {
+          rank: 2,
+          playerId: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          name: "quixotic",
+          nameZipf: 2.33,
+          windowWord: "quixotic",
+          windowZipf: 2.33,
+          score: 90,
+          puzzles: 5,
+        },
       ],
     });
 
