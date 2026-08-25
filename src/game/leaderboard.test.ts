@@ -448,6 +448,30 @@ describe("reading the boards", () => {
 });
 
 describe("the recent finds feed", () => {
+  it("keeps the order the server sent, which is newest first", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          ready: true,
+          weekly: [],
+          allTime: [],
+          // A rarer word from an older day comes second, because the feed is a
+          // feed -- ordered by when a word turned up, not by how good it is.
+          words: [
+            { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-26" },
+            { word: "stonyheartedly", zipf: -1.57, finders: 1, foundOn: "2026-08-25" },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual([
+      "inkling",
+      "stonyheartedly",
+    ]);
+  });
+
   it("prices and labels each word with today's dictionary", async () => {
     stubFetch(
       new Response(
@@ -468,8 +492,8 @@ describe("the recent finds feed", () => {
 
     const { words } = await fetchBoards("2026-08-27");
     expect(words).toEqual([
-      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3, today: false },
-      { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1, today: false },
+      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3, foundOn: "", today: false },
+      { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1, foundOn: "", today: false },
     ]);
   });
 
@@ -489,7 +513,14 @@ describe("the recent finds feed", () => {
     const { words } = await fetchBoards("2026-08-27");
     // Marked, because a live feed nobody can tell is live reads as history.
     expect(words).toEqual([
-      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 1, today: true },
+      {
+        word: "asphyxiate",
+        zipf: 2.09,
+        rarity: "Extremely Rare",
+        finders: 1,
+        foundOn: "2026-08-27",
+        today: true,
+      },
     ]);
   });
 

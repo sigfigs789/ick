@@ -14,40 +14,271 @@
   "ready": true,
   "opensOn": "2026-08-30",
   "weekly": [
-    { "rank": 1, "playerId": "dev-1", "name": "stonyheartedly", "nameZipf": -1.57, "windowWord": "asphyxiate", "windowZipf": 2.09, "score": 58.4, "puzzles": 6 },
-    { "rank": 2, "playerId": "dev-2", "name": "abaci", "nameZipf": 2.65, "windowWord": "quixotic", "windowZipf": 2.33, "score": 51.9, "puzzles": 6 },
-    { "rank": 3, "playerId": "dev-3", "name": "gastroenterologist", "nameZipf": 2.63, "windowWord": "gastroenterologist", "windowZipf": 2.63, "score": 44.2, "puzzles": 5 },
-    { "rank": 4, "playerId": "dev-4", "name": "enshittification", "nameZipf": -1.57, "windowWord": "inkling", "windowZipf": 2.9, "score": 37.0, "puzzles": 5 },
-    { "rank": 5, "playerId": "dev-5", "name": "quixotic", "nameZipf": 2.33, "windowWord": "wrinkle", "windowZipf": 3.31, "score": 29.6, "puzzles": 4 },
-    { "rank": 6, "playerId": "dev-6", "name": "inkling", "nameZipf": 2.9, "windowWord": "placate", "windowZipf": 3.4, "score": 24.1, "puzzles": 4 },
-    { "rank": 7, "playerId": "dev-7", "name": "lactation", "nameZipf": 3.2, "windowWord": "lactation", "windowZipf": 3.2, "score": 18.8, "puzzles": 3 },
-    { "rank": 8, "playerId": "dev-8", "name": "wrinkle", "nameZipf": 3.31, "windowWord": "attested", "windowZipf": 4.1, "score": 12.5, "puzzles": 2 },
-    { "rank": 9, "playerId": "dev-9", "name": "placate", "nameZipf": 3.4, "windowWord": "cat", "windowZipf": 4.78, "score": 7.3, "puzzles": 1 }
+    {
+      "rank": 1,
+      "playerId": "dev-1",
+      "name": "stonyheartedly",
+      "nameZipf": -1.57,
+      "windowWord": "asphyxiate",
+      "windowZipf": 2.09,
+      "score": 58.4,
+      "puzzles": 6
+    },
+    {
+      "rank": 2,
+      "playerId": "dev-2",
+      "name": "abaci",
+      "nameZipf": 2.65,
+      "windowWord": "quixotic",
+      "windowZipf": 2.33,
+      "score": 51.9,
+      "puzzles": 6
+    },
+    {
+      "rank": 3,
+      "playerId": "dev-3",
+      "name": "gastroenterologist",
+      "nameZipf": 2.63,
+      "windowWord": "gastroenterologist",
+      "windowZipf": 2.63,
+      "score": 44.2,
+      "puzzles": 5
+    },
+    {
+      "rank": 4,
+      "playerId": "dev-4",
+      "name": "enshittification",
+      "nameZipf": -1.57,
+      "windowWord": "inkling",
+      "windowZipf": 2.9,
+      "score": 37.0,
+      "puzzles": 5
+    },
+    {
+      "rank": 5,
+      "playerId": "dev-5",
+      "name": "quixotic",
+      "nameZipf": 2.33,
+      "windowWord": "wrinkle",
+      "windowZipf": 3.31,
+      "score": 29.6,
+      "puzzles": 4
+    },
+    {
+      "rank": 6,
+      "playerId": "dev-6",
+      "name": "inkling",
+      "nameZipf": 2.9,
+      "windowWord": "placate",
+      "windowZipf": 3.4,
+      "score": 24.1,
+      "puzzles": 4
+    },
+    {
+      "rank": 7,
+      "playerId": "dev-7",
+      "name": "lactation",
+      "nameZipf": 3.2,
+      "windowWord": "lactation",
+      "windowZipf": 3.2,
+      "score": 18.8,
+      "puzzles": 3
+    },
+    {
+      "rank": 8,
+      "playerId": "dev-8",
+      "name": "wrinkle",
+      "nameZipf": 3.31,
+      "windowWord": "attested",
+      "windowZipf": 4.1,
+      "score": 12.5,
+      "puzzles": 2
+    },
+    {
+      "rank": 9,
+      "playerId": "dev-9",
+      "name": "placate",
+      "nameZipf": 3.4,
+      "windowWord": "cat",
+      "windowZipf": 4.78,
+      "score": 7.3,
+      "puzzles": 1
+    }
   ],
   "allTime": [
-    { "rank": 1, "playerId": "dev-2", "name": "abaci", "nameZipf": 2.65, "windowWord": "asphyxiate", "windowZipf": 2.09, "score": 612.8, "puzzles": 71 },
-    { "rank": 2, "playerId": "dev-1", "name": "stonyheartedly", "nameZipf": -1.57, "windowWord": "stonyheartedly", "windowZipf": -1.57, "score": 588.1, "puzzles": 66 },
-    { "rank": 3, "playerId": "dev-4", "name": "enshittification", "nameZipf": -1.57, "windowWord": "enshittification", "windowZipf": -1.57, "score": 470.5, "puzzles": 58 },
-    { "rank": 4, "playerId": "dev-5", "name": "quixotic", "nameZipf": 2.33, "windowWord": "quixotic", "windowZipf": 2.33, "score": 402.0, "puzzles": 52 },
-    { "rank": 5, "playerId": "dev-3", "name": "gastroenterologist", "nameZipf": 2.63, "windowWord": "gastroenterologist", "windowZipf": 2.63, "score": 351.7, "puzzles": 44 },
-    { "rank": 6, "playerId": "dev-6", "name": "inkling", "nameZipf": 2.9, "windowWord": "inkling", "windowZipf": 2.9, "score": 288.3, "puzzles": 39 },
-    { "rank": 7, "playerId": "dev-7", "name": "lactation", "nameZipf": 3.2, "windowWord": "lactation", "windowZipf": 3.2, "score": 214.6, "puzzles": 31 },
-    { "rank": 8, "playerId": "dev-8", "name": "wrinkle", "nameZipf": 3.31, "windowWord": "wrinkle", "windowZipf": 3.31, "score": 176.2, "puzzles": 27 },
-    { "rank": 9, "playerId": "dev-9", "name": "placate", "nameZipf": 3.4, "windowWord": "placate", "windowZipf": 3.4, "score": 121.9, "puzzles": 20 },
-    { "rank": 10, "playerId": "dev-10", "name": "attested", "nameZipf": 4.1, "windowWord": "attested", "windowZipf": 4.1, "score": 64.4, "puzzles": 12 }
+    {
+      "rank": 1,
+      "playerId": "dev-2",
+      "name": "abaci",
+      "nameZipf": 2.65,
+      "windowWord": "asphyxiate",
+      "windowZipf": 2.09,
+      "score": 612.8,
+      "puzzles": 71
+    },
+    {
+      "rank": 2,
+      "playerId": "dev-1",
+      "name": "stonyheartedly",
+      "nameZipf": -1.57,
+      "windowWord": "stonyheartedly",
+      "windowZipf": -1.57,
+      "score": 588.1,
+      "puzzles": 66
+    },
+    {
+      "rank": 3,
+      "playerId": "dev-4",
+      "name": "enshittification",
+      "nameZipf": -1.57,
+      "windowWord": "enshittification",
+      "windowZipf": -1.57,
+      "score": 470.5,
+      "puzzles": 58
+    },
+    {
+      "rank": 4,
+      "playerId": "dev-5",
+      "name": "quixotic",
+      "nameZipf": 2.33,
+      "windowWord": "quixotic",
+      "windowZipf": 2.33,
+      "score": 402.0,
+      "puzzles": 52
+    },
+    {
+      "rank": 5,
+      "playerId": "dev-3",
+      "name": "gastroenterologist",
+      "nameZipf": 2.63,
+      "windowWord": "gastroenterologist",
+      "windowZipf": 2.63,
+      "score": 351.7,
+      "puzzles": 44
+    },
+    {
+      "rank": 6,
+      "playerId": "dev-6",
+      "name": "inkling",
+      "nameZipf": 2.9,
+      "windowWord": "inkling",
+      "windowZipf": 2.9,
+      "score": 288.3,
+      "puzzles": 39
+    },
+    {
+      "rank": 7,
+      "playerId": "dev-7",
+      "name": "lactation",
+      "nameZipf": 3.2,
+      "windowWord": "lactation",
+      "windowZipf": 3.2,
+      "score": 214.6,
+      "puzzles": 31
+    },
+    {
+      "rank": 8,
+      "playerId": "dev-8",
+      "name": "wrinkle",
+      "nameZipf": 3.31,
+      "windowWord": "wrinkle",
+      "windowZipf": 3.31,
+      "score": 176.2,
+      "puzzles": 27
+    },
+    {
+      "rank": 9,
+      "playerId": "dev-9",
+      "name": "placate",
+      "nameZipf": 3.4,
+      "windowWord": "placate",
+      "windowZipf": 3.4,
+      "score": 121.9,
+      "puzzles": 20
+    },
+    {
+      "rank": 10,
+      "playerId": "dev-10",
+      "name": "attested",
+      "nameZipf": 4.1,
+      "windowWord": "attested",
+      "windowZipf": 4.1,
+      "score": 64.4,
+      "puzzles": 12
+    }
   ],
   "words": [
-    { "word": "stonyheartedly", "zipf": -1.57, "finders": 1, "foundOn": "2026-08-24" },
-    { "word": "enshittification", "zipf": -1.57, "finders": 2, "foundOn": "2026-08-23" },
-    { "word": "asphyxiate", "zipf": 2.09, "finders": 3, "foundOn": "2026-08-24" },
-    { "word": "quixotic", "zipf": 2.33, "finders": 5, "foundOn": "2026-08-24" },
-    { "word": "gastroenterologist", "zipf": 2.63, "finders": 1, "foundOn": "2026-08-22" },
-    { "word": "abaci", "zipf": 2.65, "finders": 2, "foundOn": "2026-08-23" },
-    { "word": "inkling", "zipf": 2.9, "finders": 8, "foundOn": "2026-08-24" },
-    { "word": "lactation", "zipf": 3.2, "finders": 2, "foundOn": "2026-08-21" },
-    { "word": "wrinkle", "zipf": 3.31, "finders": 6, "foundOn": "2026-08-23" },
-    { "word": "placate", "zipf": 3.4, "finders": 4, "foundOn": "2026-08-22" },
-    { "word": "attested", "zipf": 4.1, "finders": 7, "foundOn": "2026-08-20" },
-    { "word": "cat", "zipf": 4.78, "finders": 11, "foundOn": "2026-08-20" }
+    {
+      "word": "stonyheartedly",
+      "zipf": -1.57,
+      "finders": 1,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "asphyxiate",
+      "zipf": 2.09,
+      "finders": 3,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "quixotic",
+      "zipf": 2.33,
+      "finders": 5,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "inkling",
+      "zipf": 2.9,
+      "finders": 8,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "enshittification",
+      "zipf": -1.57,
+      "finders": 2,
+      "foundOn": "2026-08-23"
+    },
+    {
+      "word": "abaci",
+      "zipf": 2.65,
+      "finders": 2,
+      "foundOn": "2026-08-23"
+    },
+    {
+      "word": "wrinkle",
+      "zipf": 3.31,
+      "finders": 6,
+      "foundOn": "2026-08-23"
+    },
+    {
+      "word": "gastroenterologist",
+      "zipf": 2.63,
+      "finders": 1,
+      "foundOn": "2026-08-22"
+    },
+    {
+      "word": "placate",
+      "zipf": 3.4,
+      "finders": 4,
+      "foundOn": "2026-08-22"
+    },
+    {
+      "word": "lactation",
+      "zipf": 3.2,
+      "finders": 2,
+      "foundOn": "2026-08-21"
+    },
+    {
+      "word": "attested",
+      "zipf": 4.1,
+      "finders": 7,
+      "foundOn": "2026-08-20"
+    },
+    {
+      "word": "cat",
+      "zipf": 4.78,
+      "finders": 11,
+      "foundOn": "2026-08-20"
+    }
   ]
 }

@@ -12,7 +12,8 @@ import {
   type NameCandidate,
 } from "../game/leaderboard";
 import { joinBoard, loadPlayerId } from "../game/player";
-import { formatDateLabel } from "../game/date";
+import { formatDateLabel, todayDateString } from "../game/date";
+import { dropForDate } from "../game/drop";
 import { resetLabel } from "../game/week";
 import { navigate } from "../routes";
 import { trackLeaderboardJoined } from "../analytics";
@@ -183,7 +184,7 @@ export function LeaderboardPage() {
         )}
 
         {state === "ready" && boards && boards.words.length > 0 && (
-          <FoundWords words={boards.words} />
+          <FoundWords words={boards.words} today={todayDateString()} />
         )}
 
         {playerId ? (
@@ -278,7 +279,7 @@ export function LeaderboardPage() {
 }
 
 /**
- * The best words other players found recently, rarest first.
+ * The best words other players found recently, newest first.
  *
  * Its own section below the boards, rather than sharing the top of the page with
  * them. Both are lists of words, and a leaderboard row is a *player* while a
@@ -295,26 +296,44 @@ export function LeaderboardPage() {
  * showing, so nobody reads it as a live feed and wonders why their own word is
  * missing.
  */
-function FoundWords({ words }: { words: FoundWord[] }) {
+function FoundWords({ words, today }: { words: FoundWord[]; today: string }) {
+  // Grouped by the puzzle they came from, newest first. A find only means
+  // something next to the drop it had to contain -- `asphyxiate` is just a word
+  // until you know the day asked for PHY -- and the words arrive already in date
+  // order, so grouping is a walk rather than a sort.
+  const days: { date: string; words: FoundWord[] }[] = [];
+  for (const found of words) {
+    const last = days[days.length - 1];
+    if (last && last.date === found.foundOn) last.words.push(found);
+    else days.push({ date: found.foundOn, words: [found] });
+  }
+
   return (
     <section className="found-words" aria-label="Words found recently">
       <h2 className="leaderboard__board-heading">Recent finds</h2>
       <p className="leaderboard__caption">
-        The best word each player found, from the past week's puzzles. Today's appear as
-        they happen, if they're Rare or better.
+        The best word each player found, newest first. Today's appear as they happen, if
+        they're Rare or better.
       </p>
-      <ul className="found-words__list">
-        {words.map((found) => (
-          <li key={found.word} className="found-words__item">
-            <span className="found-words__word">{found.word}</span>
-            {found.today && <span className="found-words__today">today</span>}
-            <RarityBadge rarity={found.rarity} zipf={found.zipf} />
-            {found.finders > 1 && (
-              <span className="found-words__finders">{found.finders} players</span>
-            )}
-          </li>
-        ))}
-      </ul>
+      {days.map((day) => (
+        <div key={day.date} className="found-words__day">
+          <h3 className="found-words__day-heading">
+            <span>{day.date === today ? "Today" : formatDateLabel(day.date)}</span>
+            {day.date && <span className="found-words__drop">{dropForDate(day.date)}</span>}
+          </h3>
+          <ul className="found-words__list">
+            {day.words.map((found) => (
+              <li key={found.word} className="found-words__item">
+                <span className="found-words__word">{found.word}</span>
+                <RarityBadge rarity={found.rarity} zipf={found.zipf} />
+                {found.finders > 1 && (
+                  <span className="found-words__finders">{found.finders} players</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </section>
   );
 }

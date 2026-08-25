@@ -66,6 +66,8 @@ export interface FoundWord {
   zipf: number;
   /** How many players this was the best word of the day for. */
   finders: number;
+  /** The puzzle date it was found on, so the feed can group by day. */
+  foundOn: string;
   /** Found on today's puzzle, so the feed can mark it as it happens. */
   today: boolean;
 }
@@ -82,7 +84,7 @@ export interface Boards {
   weekly: BoardEntry[];
   allTime: BoardEntry[];
   /**
-   * The best words other players found recently, rarest first.
+   * The best words other players found recently, newest first.
    *
    * Never includes today: the same drop goes to everybody, so a word found today
    * is an answer to today's puzzle (the server enforces this -- see
@@ -203,6 +205,7 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
       zipf: current,
       rarity,
       finders: typeof finders === "number" && Number.isFinite(finders) ? finders : 1,
+      foundOn: typeof foundOn === "string" ? foundOn : "",
       today: isToday,
     });
   }

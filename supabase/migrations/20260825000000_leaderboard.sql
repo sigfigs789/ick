@@ -365,12 +365,21 @@ revoke all on function public.leaderboard_board(date, integer) from public, anon
 grant execute on function public.leaderboard_board(date, integer) to service_role;
 
 /*
- * The words players actually found, rarest first.
+ * The words players actually found, newest first.
  *
  * One row per distinct word, drawn from the same score rows the boards are built
  * from -- so every word here is the best one some player found on some day, which
  * is the interesting half of what this table holds. A word several people found
- * appears once, with the count.
+ * appears once, with the count, at its most recent sighting.
+ *
+ * Ordered by when it turned up rather than by how rare it is. Rarest-first made
+ * this a second leaderboard: the same words sat at the top every day and a new
+ * find only surfaced if it beat them. Newest-first makes it a feed -- something
+ * that changes while you watch, which is the only reason to keep it live.
+ *
+ * By puzzle date first and arrival time second. `created_at` alone would be
+ * wrong: a player joining backfills their whole history in one write, which
+ * would date a word from months ago to the moment they signed up.
  *
  * `p_before` is the spoiler gate and it is not optional. The game is a daily
  * puzzle with the same drop for everybody, so publishing a word somebody found
@@ -406,10 +415,9 @@ as $$
   where s.puzzle_date < p_before
     and s.puzzle_date >= p_since
   group by s.top_word
-  -- Rarest first: the whole point is the words worth looking at. Ties go to the
-  -- word more people found, then alphabetically so the order never wobbles
-  -- between two identical calls.
-  order by min(s.top_zipf) asc, count(distinct s.player_id) desc, s.top_word asc
+  -- Newest first; alphabetical last so the order never wobbles between two
+  -- identical calls.
+  order by max(s.puzzle_date) desc, max(s.created_at) desc, s.top_word asc
   limit least(greatest(coalesce(p_limit, 12), 1), 50);
 $$;
 

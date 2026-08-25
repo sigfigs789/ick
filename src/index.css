@@ -1450,19 +1450,31 @@ h2 {
   /* A 30-letter word must wrap rather than push the badge off the row. */
   overflow-wrap: anywhere;
 }
-/* Marks a find from today's puzzle, which is the whole point of showing them
-   live -- without it the feed reads as history and nobody looks twice. */
-.found-words__today {
-  flex: none;
-  padding: 0.05rem 0.3rem;
-  border-radius: 999px;
-  background: var(--rarity-elusive-dot);
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: 0.55rem;
+.found-words__day + .found-words__day {
+  margin-top: 1.1rem;
+}
+/* The day, and the drop that day asked for. A find only means something beside
+   its drop -- `asphyxiate` is just a word until you know the day wanted PHY. */
+.found-words__day-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin: 0 0 0.2rem;
+  color: var(--fg-faint);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+.found-words__drop {
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.3rem;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-weight: 900;
+  letter-spacing: 0.08em;
 }
 /* Development only; never rendered in a production build. */
 .dev-sample-toggle {

@@ -509,10 +509,21 @@ knows which day it is.
 
 ### Recent finds
 
-The words other players actually turned up, rarest first, each with the same
-rarity badge the game shows on an accepted word. Every entry is somebody's best
-word of a day — which is exactly what `leaderboard_scores.top_word` already
-holds, so the feed is a query over data the boards were already storing.
+The words other players actually turned up, **newest first**, grouped by the
+puzzle they came from and headed by that day's drop — a find only means something
+beside the drop it had to contain, since `asphyxiate` is just a word until you
+know the day asked for PHY. Each carries the same rarity badge the game shows on
+an accepted word. Every entry is somebody's best word of a day, which is exactly
+what `leaderboard_scores.top_word` already holds, so the feed is a query over
+data the boards were already storing.
+
+Ordered by when a word turned up rather than by how rare it is. Rarest-first made
+this a second leaderboard: the same words sat at the top every day and a new find
+only surfaced if it beat them. Newest-first makes it a feed — something that
+changes while you watch, which is the only reason to keep it live. The order is
+by puzzle date first and arrival second, never `created_at` alone: a player
+joining backfills their whole history in one write, which would date a word from
+months ago to the moment they signed up.
 
 Arguably the point of the page. A leaderboard tells you where you came; this
 tells you what you missed, and "I didn't know that was a word" is the thing

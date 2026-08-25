@@ -13,6 +13,7 @@
  */
 
 import sample from "./sample-leaderboard.json";
+import { addDays, daysSinceEpoch, todayDateString } from "../game/date";
 
 const SAMPLE_KEY = "ick:dev-sample-leaderboard";
 
@@ -41,7 +42,18 @@ export function setUsingSampleData(on: boolean): void {
  * The fixture, in the exact shape /api/leaderboard answers with -- so it is
  * parsed by the same code that parses a real response, and a change to that
  * parsing cannot pass here and fail in production.
+ *
+ * The finds are dated forward so the newest lands on today, which is the whole
+ * point of sample data: a fixture frozen at the dates it was written would show
+ * a week of history and never the live "Today" group, so the one behaviour most
+ * worth looking at would be the one it could not demonstrate.
  */
 export function sampleBoardsResponse(): unknown {
-  return sample;
+  const words = sample.words as { foundOn: string }[];
+  const newest = words.reduce((latest, w) => (w.foundOn > latest ? w.foundOn : latest), "");
+  const shift = newest ? daysSinceEpoch(todayDateString(), newest) : 0;
+  return {
+    ...sample,
+    words: words.map((word) => ({ ...word, foundOn: addDays(word.foundOn, shift) })),
+  };
 }
