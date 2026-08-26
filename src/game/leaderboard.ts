@@ -3,7 +3,8 @@
  *
  * Both directions are strictly optional to the game. Submitting is
  * fire-and-forget -- it happens after a word has already been accepted, saved
- * and rendered, and a failure is never surfaced. Fetching is only ever done by
+ * and rendered, or on opening the app for a player already on the board, and a
+ * failure is never surfaced either way. Fetching is only ever done by
  * the leaderboard page, so a player who never visits it never makes the request,
  * and that page's own error state is the whole of the failure handling. Nothing
  * here can keep anyone from playing a puzzle.
@@ -582,4 +583,32 @@ export function backfillHistory(
   // Named from exactly the days being submitted, so the name and the scores in
   // one request always describe the same history.
   return post(playerId, scores) ? scores.length : 0;
+}
+
+/**
+ * Re-send what this browser knows, for a player who is already on the board.
+ *
+ * Opening the app is the trigger, not opening the leaderboard. A player's rows
+ * are written on the play path (`submitScore`, after every accepted word) and
+ * that path is the only one that ever ran again after joining -- so a day played
+ * with the network down, a submission that failed in flight, or a tab closed
+ * before `keepalive` got the last word out left a gap that nothing on the game
+ * page would ever close. The board would go on being wrong about somebody who
+ * kept playing every day.
+ *
+ * The write is monotonic per day, so this is a repair rather than a rewrite:
+ * a day already recorded is a no-op, and only the missing ones land. Which is
+ * what makes it safe to do unconditionally on open.
+ *
+ * Deliberately does not join. Minting an id is the one thing that puts a player
+ * on the board at all, and that stays where the player asked for it -- on the
+ * leaderboard page. Somebody who has never opened it still sends nothing.
+ *
+ * Fire-and-forget like every other write here (see `post`); returns how many
+ * days were sent, for the tests.
+ */
+export function syncHistory(today: string = todayDateString()): number {
+  const playerId = loadPlayerId();
+  if (!playerId) return 0;
+  return backfillHistory(playerId, undefined, today);
 }
