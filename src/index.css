@@ -1423,14 +1423,17 @@ h2 {
    ranking. */
 .found-words {
   margin-top: 2.4rem;
-  padding-top: 1.8rem;
-  border-top: 2px solid var(--border);
+  padding-top: 1.9rem;
+  /* The same rule the boards are separated by, since this is the same kind of
+     boundary: one section of the page ending and another starting. */
+  border-top: 2px solid var(--border-strong);
 }
 /* One column, like the boards. Two columns of words next to two boards of words
    was the layout that made a find hard to tell from a player. */
 .found-words__list {
   list-style: none;
-  margin: 0.2rem 0 0;
+  /* Clear of the heading, which has nothing under it now. */
+  margin: 0.7rem 0 0;
   padding: 0;
   display: grid;
   gap: 0.4rem;
@@ -1604,9 +1607,32 @@ h2 {
 .leaderboard__board {
   min-width: 0;
 }
+/* The line between one board and the next has to outrank the lines between the
+   rows inside them, or the page reads as one long list with headings loose in
+   it. Two pixels of the stronger border against the rows' one of the plain one,
+   and more room around it: weight and space saying the same thing. */
 .leaderboard__board + .leaderboard__board {
-  padding-top: 1.4rem;
-  border-top: 1px solid var(--border);
+  padding-top: 1.9rem;
+  border-top: 2px solid var(--border-strong);
+}
+/* Side by side once there is room for it, which is the whole reason this page is
+   wider than the game's column. The interesting thing about a weekly board is
+   how it differs from the season one -- who is new, who is always there -- and a
+   reader who has to scroll between them has to hold the first in their head to
+   see it. Only worth doing now that a board is five rows tall: at fifteen, the
+   pair was two screens and the comparison was theoretical.
+   The rule between them turns on its side and stays the heavier one. */
+@media (min-width: 48rem) {
+  .leaderboard__boards {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1.7rem;
+  }
+  .leaderboard__board + .leaderboard__board {
+    padding-top: 0;
+    border-top: 0;
+    padding-left: 1.7rem;
+    border-left: 2px solid var(--border-strong);
+  }
 }
 .leaderboard__board-heading {
   margin: 0;
@@ -1630,16 +1656,20 @@ h2 {
   text-transform: none;
   white-space: nowrap;
 }
-.leaderboard__caption {
-  margin: 0.2rem 0 0.5rem;
-  color: var(--fg-muted);
-  font-size: 0.78rem;
-}
 .leaderboard__status {
   margin: 1.4rem 0;
   text-align: center;
   color: var(--fg-muted);
   font-size: 0.88rem;
+}
+/* The boards' own share of the page, held while they load or after they fail:
+   a heading, a column header and five rows. An estimate, since it is a
+   minimum -- what it has to be right about is the order of magnitude, so the
+   finds below do not start a screen too high and then move. */
+.leaderboard__boards-slot {
+  display: grid;
+  place-items: center;
+  min-height: calc(var(--row-height) * 5 + 3.4rem);
 }
 .leaderboard__retry {
   border: 0;
@@ -1662,10 +1692,58 @@ h2 {
  * moves the board instead of the page, and the reader has to find the margin to
  * get past it.
  */
+/* The one column header the board has, sitting over the score. Right-aligned on
+   the same 0.4rem the rows are padded by, so it lands exactly over the numbers
+   under it, and quiet enough that it reads as a label rather than as a row. */
+.leaderboard__columns {
+  margin: 0.35rem 0 0;
+  padding: 0 0.4rem 0.35rem;
+  text-align: right;
+  color: var(--fg-faint);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+/* The footnote under both boards: the one rule that governs them. A list rather
+   than a sentence because it is a rule, and because there may well be a second
+   one -- a bullet is the shape that takes another without being rewritten. */
+.leaderboard__rules {
+  /* Tucked under the header's own rule and sat against the first board, so it
+     reads as the terms the boards below are kept on rather than as a line
+     floating between two things. */
+  margin: -0.85rem 0 1rem;
+  padding-left: 1.05rem;
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+/* Neither board carries a caption now -- what each one counts is said beside its
+   heading -- so the column header would otherwise sit hard under it. */
+.leaderboard__board-heading + .leaderboard__columns {
+  margin-top: 0.6rem;
+}
 .leaderboard__list {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+/* One row, measured: two lines of text inside 0.45rem of padding, plus its
+   rule. Five of them is what a board is allowed to take -- and what the loading
+   state holds open, so it is declared for the page rather than the board. */
+.leaderboard-page {
+  --row-height: 3.03rem;
+}
+/* Five rows and the top of the sixth. The sliver is the affordance: a list cut
+   cleanly at five looks like a list of five, and overlay scrollbars only appear
+   once you are already scrolling -- so the half-row is what says there is more.
+   `contain` keeps a flick inside the board from carrying on into the page. */
+.leaderboard__list:not(.leaderboard__list--self) {
+  max-height: calc(var(--row-height) * 5 + 0.95rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 /* Rank and score are fixed columns; the name takes what is left and the meta
    line tucks under it, so a long name truncates instead of shoving the score

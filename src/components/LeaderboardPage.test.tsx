@@ -131,8 +131,36 @@ describe("the leaderboard page", () => {
     // sum.
     const board = screen.getByRole("region", { name: SEASON_BOARD });
     expect(board).toHaveTextContent("Season 1");
-    expect(board).toHaveTextContent("Aug 10 – Dec 31 2026");
-    expect(board).toHaveTextContent("Must be completed the day of the puzzle.");
+    expect(board).toHaveTextContent("Aug 1 – Dec 31 2026");
+  });
+
+  it("makes each board's list reachable by keyboard, since it scrolls", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // Five rows of the fifteen are on screen and the rest are scrolled to, so
+    // the list is a scrolling region -- and a region that only a thumb can
+    // reach is one a keyboard cannot read.
+    await waitFor(() => expect(screen.getByRole("list", { name: /This week/ })).toHaveAttribute("tabindex", "0"));
+    expect(screen.getByRole("list", { name: new RegExp(SEASON_BOARD) })).toHaveAttribute(
+      "tabindex",
+      "0"
+    );
+  });
+
+  it("puts the rule that governs both boards above both of them", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // It used to be a caption on the season, where it read as something
+    // peculiar to that board. It is not: the weekly board only counts a puzzle
+    // played on its own day either, so it belongs to the pair -- and on the way
+    // in, since it is the condition a score has to meet to be on either list.
+    await waitFor(() =>
+      expect(screen.getByText("Only puzzles played on the day they drop count")).toBeInTheDocument()
+    );
+    const season = screen.getByRole("region", { name: SEASON_BOARD });
+    expect(season).not.toHaveTextContent("Only puzzles played on the day they drop count");
   });
 
   it("says when the weekly board turns over, and no more than that", async () => {
@@ -141,7 +169,9 @@ describe("the leaderboard page", () => {
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     const board = screen.getByRole("region", { name: "This week" });
-    expect(board).toHaveTextContent("Resets on Sundays.");
+    // Beside the heading, where the season's dates sit, so the two boards start
+    // level when they are side by side.
+    expect(board).toHaveTextContent("Resets on Sundays");
     // No dates and no countdown: a week is the window you are already in, and
     // "this week" says which days it counts. The season carries dates because it
     // is long enough that where you are inside it is a real question.
@@ -201,6 +231,16 @@ describe("the leaderboard page", () => {
 
     await waitFor(() => expect(rowMeta("This week", 0)).toContain("5 puzzles"));
     expect(rowMeta("This week", 1)).toContain("3 puzzles");
+  });
+
+  it("says what the number on the right of every row is", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // One header per board, over the column it labels. Every other figure on a
+    // row says what it is in words; the score, which is what the board is
+    // ranked by, had been left to be inferred.
+    await waitFor(() => expect(screen.getAllByText("Total score")).toHaveLength(2));
   });
 
   it("marks the player's own row on both boards", async () => {
@@ -518,7 +558,8 @@ describe("recent finds", () => {
     // Without it the list is a pile of unrelated words.
     const section = await screen.findByRole("region", { name: "Today's finds" });
     expect(section.querySelector(".found-words__drop")?.textContent).toBeTruthy();
-    expect(screen.getByText("Every word found on today's puzzle.")).toBeInTheDocument();
+    // And nothing under the heading restating it.
+    expect(screen.queryByText("Every word found on today's puzzle.")).toBeNull();
   });
 
   it("shows the feed even while the boards are still shut", async () => {
@@ -699,6 +740,49 @@ describe("keeping the finds current", () => {
     // One bad minute is not a reason to throw the page away.
     expect(screen.queryByText(/Couldn't load the boards/)).toBeNull();
     expect(boardRows("This week")).toHaveLength(2);
+  });
+
+  it("re-reads the boards when the tab comes back after a real absence", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    const boardCalls = () =>
+      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1")).length;
+    const opened = boardCalls();
+
+    const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(30 * 60_000);
+    hidden.mockReturnValue("visible");
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(0);
+
+    // A page open since this morning shows this morning's standings, and coming
+    // back to the tab is exactly when somebody reads them.
+    expect(boardCalls()).toBe(opened + 1);
+    // Read in place: no spinner over boards the reader can already see.
+    expect(screen.queryByText("Loading the boards…")).toBeNull();
+    expect(boardRows("This week")).toHaveLength(2);
+  });
+
+  it("does not re-read them for a glance at another tab", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    const boardCalls = () =>
+      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1")).length;
+    const opened = boardCalls();
+
+    const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(30_000);
+    hidden.mockReturnValue("visible");
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Half a minute away is not new information, and the boards are this
+    // player's own uncached query -- not something to put on a hair trigger.
+    expect(boardCalls()).toBe(opened);
   });
 
   it("stops polling while the tab is hidden, and catches up on return", async () => {

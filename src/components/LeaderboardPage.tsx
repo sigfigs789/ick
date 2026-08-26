@@ -21,6 +21,17 @@ type LoadState = "loading" | "ready" | "error";
 
 /** How often an open page re-checks for new finds. Matches the CDN's own cache. */
 const REFRESH_MS = 60_000;
+/**
+ * How old the boards have to be before returning to the tab re-reads them.
+ *
+ * They are not polled: the boards request carries this player's id, so it is
+ * private and uncached, and a rank is not something that moves under a reader
+ * minute by minute. But a tab left open all day and come back to is stale in a
+ * way a minute-old one is not, and a return is exactly when somebody looks. Five
+ * minutes is long enough that flicking between tabs costs nothing and short
+ * enough that a real absence is caught.
+ */
+const BOARDS_STALE_MS = 5 * 60_000;
 
 /**
  * The leaderboard, as its own page at /leaderboard.
@@ -61,6 +72,11 @@ export function LeaderboardPage() {
   const [playerId, setPlayerId] = useState<string | null>(() => loadPlayerId());
   /** Days imported from this browser's history on joining, for one message. */
   const [imported, setImported] = useState<number | null>(null);
+  /**
+   * When the boards on screen were last read, so a return to the tab can tell a
+   * page that has been sitting there for an hour from one glanced away from.
+   */
+  const boardsReadAt = useRef(0);
 
   /**
    * Re-read the finds, leaving everything else alone.
@@ -91,6 +107,7 @@ export function LeaderboardPage() {
     fetchBoards(today)
       .then((loaded) => {
         setBoards(loaded);
+        boardsReadAt.current = Date.now();
         setState("ready");
       })
       // A board that won't load is a disappointment, not an error the player has
@@ -98,6 +115,24 @@ export function LeaderboardPage() {
       .catch(() => setState("error"));
     refreshWords();
   }, [refreshWords, today]);
+
+
+  /**
+   * Re-read the boards without disturbing the page.
+   *
+   * No loading state and no error state: the boards already on screen are the
+   * last true answer, and replacing them with a spinner -- or with "couldn't
+   * load" -- to fetch something the reader can already see would be a worse
+   * page than a slightly old one. It swaps them or it leaves them.
+   */
+  const refreshBoards = useCallback(() => {
+    fetchBoards(today)
+      .then((loaded) => {
+        setBoards(loaded);
+        boardsReadAt.current = Date.now();
+      })
+      .catch(() => {});
+  }, [today]);
 
 
   /**
@@ -157,6 +192,12 @@ export function LeaderboardPage() {
       window.clearInterval(timer);
       if (document.visibilityState === "hidden") return;
       refreshWords();
+      // The boards too, but only after a real absence. Coming back to a page
+      // that has been open since this morning and finding last night's
+      // standings is the one way they go properly stale -- while a glance at
+      // another tab and back is not new information, and re-asking on every
+      // return would put this player's own uncached query on a hair trigger.
+      if (Date.now() - boardsReadAt.current > BOARDS_STALE_MS) refreshBoards();
       timer = window.setInterval(refreshWords, REFRESH_MS);
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -164,7 +205,7 @@ export function LeaderboardPage() {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [refreshWords]);
+  }, [refreshBoards, refreshWords]);
 
   /**
    * Which words turned up since the last look, so the feed can show them
@@ -222,51 +263,73 @@ export function LeaderboardPage() {
       </header>
 
       <main>
+        {/* Both of these hold the room the boards will take -- a heading and
+            five rows -- so the finds below stay where they are when the boards
+            land. The alternative is the whole page jumping down a screen a
+            second after it opened, under a reader who had started reading. */}
         {state === "loading" && (
-          <p className="leaderboard__status" aria-live="polite">
-            Loading the boards…
-          </p>
+          <div className="leaderboard__boards-slot">
+            <p className="leaderboard__status" aria-live="polite">
+              Loading the boards…
+            </p>
+          </div>
         )}
 
         {state === "error" && (
-          <p className="leaderboard__status" aria-live="polite">
-            Couldn't load the boards.{" "}
-            <button type="button" className="leaderboard__retry" onClick={() => load()}>
-              Try again
-            </button>
-          </p>
+          <div className="leaderboard__boards-slot">
+            <p className="leaderboard__status" aria-live="polite">
+              Couldn't load the boards.{" "}
+              <button type="button" className="leaderboard__retry" onClick={() => load()}>
+                Try again
+              </button>
+            </p>
+          </div>
         )}
 
         {state === "ready" && !ready && boards && <NotYet opensOn={boards.opensOn} />}
 
         {state === "ready" && ready && boards && (
-          <div className="leaderboard__boards">
-            <Board
-              heading="This week"
-              // No dates on this one. A week is the window you are already in --
-              // "this week" is the whole of what a player needs to know about
-              // which days it counts, and spelling them out was answering a
-              // question nobody had. The season gets dates because it is long
-              // enough to be worth knowing where you are inside it.
-              caption="Resets on Sundays."
-              entries={boards.weekly}
-              self={boards.weeklySelf}
-              emptyMessage="Nobody's scored yet this week. Be first."
-              playerId={playerId}
-            />
-            <Board
-              heading={seasonName()}
-              // Beside the name rather than under it: the range is what
-              // "Season 1" means, and a season with no dates on it is a word
-              // rather than a window.
-              headingDetail={seasonRange()}
-              caption="Must be completed the day of the puzzle."
-              entries={boards.allTime}
-              self={boards.allTimeSelf}
-              emptyMessage="No scores yet."
-              playerId={playerId}
-            />
-          </div>
+          <>
+            {/* The one rule both boards run on, stated before them rather than
+                after: it is the condition a score has to meet to be on either
+                list, so a reader wants it on the way in. Underneath the pair it
+                had nothing to sit against -- a bullet adrift between the last
+                row and the next section. Outside the grid below, so it sits
+                against the first board rather than a column gap away from it. */}
+            <ul className="leaderboard__rules">
+              <li>Only puzzles played on the day they drop count</li>
+            </ul>
+            <div className="leaderboard__boards">
+              <Board
+                heading="This week"
+                // Beside the heading, where the season's dates are: the two
+                // boards sit shoulder to shoulder now, and a line under one of
+                // them and not the other pushed its rows half a line down --
+                // two lists side by side that do not start level read as a
+                // mistake. No dates on this one either way. A week is the
+                // window you are already in, and spelling its days out was
+                // answering a question nobody had; the season carries dates
+                // because it is long enough to be worth knowing where you are
+                // inside it.
+                headingDetail="Resets on Sundays"
+                entries={boards.weekly}
+                self={boards.weeklySelf}
+                emptyMessage="Nobody's scored yet this week. Be first."
+                playerId={playerId}
+              />
+              <Board
+                heading={seasonName()}
+                // Beside the name rather than under it: the range is what
+                // "Season 1" means, and a season with no dates on it is a word
+                // rather than a window.
+                headingDetail={seasonRange()}
+                entries={boards.allTime}
+                self={boards.allTimeSelf}
+                emptyMessage="No scores yet."
+                playerId={playerId}
+              />
+            </div>
+          </>
         )}
 
         {/* Not gated on the boards' state. The feed is its own request, answering
@@ -353,11 +416,14 @@ function FoundWords({
 }) {
   return (
     <section className="found-words" aria-label="Today's finds">
+      {/* No line under it. "Every word found on today's puzzle" restated the
+          heading with the drop already beside it, and the boards above carry
+          nothing under their headings either -- one of the three sections
+          explaining itself was the odd one out. */}
       <h2 className="leaderboard__board-heading">
         Today's finds
         <span className="found-words__drop">{dropForDate(today)}</span>
       </h2>
-      <p className="leaderboard__caption">Every word found on today's puzzle.</p>
       <ul className="found-words__list">
         {words.map((found) => (
           <li
@@ -410,7 +476,6 @@ interface BoardProps {
   heading: string;
   /** A note beside the heading, set smaller -- the season's dates. */
   headingDetail?: string;
-  caption: string;
   entries: BoardEntry[];
   /** This player's own row, when they rank below the last one shown. */
   self: BoardEntry | null;
@@ -432,7 +497,6 @@ interface BoardProps {
 function Board({
   heading,
   headingDetail,
-  caption,
   entries,
   self,
   emptyMessage,
@@ -444,12 +508,30 @@ function Board({
         {heading}
         {headingDetail && <span className="leaderboard__board-dates">{headingDetail}</span>}
       </h2>
-      <p className="leaderboard__caption">{caption}</p>
       {entries.length === 0 ? (
         <p className="leaderboard__status">{emptyMessage}</p>
       ) : (
         <>
-          <ol className="leaderboard__list">
+          {/* What the big number on the right is. Every other figure on the row
+              says what it is in words -- "1 puzzle" -- and the score, the one
+              the board is actually ranked by, said nothing at all: a reader had
+              to infer 221.3 from context. One label over the column it belongs
+              to, above the rule, is the whole fix. */}
+          <p className="leaderboard__columns">Total score</p>
+          {/* Five rows of the fifteen, and the rest scrolled to.
+              A board that runs its full length pushes the next section off the
+              screen entirely, so the page reads as one column of names with
+              headings in it -- the boards were what made the sections hard to
+              tell apart. Five rows is a top five, which is the part anybody
+              reads first, and the whole fifteen is one flick away.
+              Focusable, because a region that scrolls has to be reachable by
+              keyboard as well as by thumb; labelled so it is announced as the
+              board it belongs to rather than as a bare scroll box. */}
+          <ol
+            className="leaderboard__list"
+            tabIndex={0}
+            aria-label={`${heading}, top ${entries.length}`}
+          >
             {entries.map((entry) => (
               <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} />
             ))}

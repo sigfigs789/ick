@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { backfillHistory, fetchBoards, fetchFoundWords, submitScore } from "./leaderboard";
+import {
+  backfillHistory,
+  fetchBoards,
+  fetchFoundWords,
+  previewRequested,
+  submitScore,
+} from "./leaderboard";
 import { handleFor } from "./handle";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
@@ -26,6 +32,10 @@ function posted(fetchMock: ReturnType<typeof stubFetch>) {
 
 beforeEach(() => {
   localStorage.clear();
+  // The preview switch is remembered for the tab (see previewRequested), so it
+  // has to be forgotten between tests like everything else stored.
+  sessionStorage.clear();
+  window.history.replaceState(null, "", "/");
 });
 
 afterEach(() => {
@@ -270,6 +280,35 @@ describe("reading the boards", () => {
     // still knows where everybody stands.
     expect(url).toContain("limit=15");
     expect(url).toContain(`player=${playerId}`);
+  });
+
+  it("asks the server to open the boards early when the URL says preview", async () => {
+    window.history.replaceState(null, "", "/leaderboard?preview=1");
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27");
+    // The gate is the server's, so previewing is something this request asks
+    // for rather than something the page does with the answer.
+    expect(requestedUrl(fetchMock)).toContain("preview=1");
+  });
+
+  it("asks for no preview on an ordinary open", async () => {
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27");
+    expect(requestedUrl(fetchMock)).not.toContain("preview=");
+  });
+
+  it("keeps previewing after a navigation that drops the query string", async () => {
+    window.history.replaceState(null, "", "/?preview=1");
+    expect(previewRequested()).toBe(true);
+    // What `navigate` leaves in the address bar: a bare path. The preview has to
+    // survive it, or tapping through from the game would end it.
+    window.history.replaceState(null, "", "/leaderboard");
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27");
+    expect(requestedUrl(fetchMock)).toContain("preview=1");
   });
 
   it("asks anonymously when nobody has joined on this browser", async () => {
