@@ -17,7 +17,8 @@
      passing underneath it. Both edges, because it can dock to either, and
      tight: it has to say "this is floating above the list" without reading as
      a card. */
-  --dock-shadow: 0 -6px 12px -4px rgb(0 0 0 / 0.22), 0 6px 12px -4px rgb(0 0 0 / 0.22);
+  --dock-shadow:
+    0 -6px 12px -4px rgb(0 0 0 / 0.22), 0 6px 12px -4px rgb(0 0 0 / 0.22);
 
   --accent: #1a1a1b;
   --accent-fg: #ffffff;
@@ -107,7 +108,8 @@
     --border-strong: #4d4f52;
     --card-bg: #19191b;
     --card-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 28px rgb(0 0 0 / 0.35);
-    --dock-shadow: 0 -6px 14px -4px rgb(0 0 0 / 0.75), 0 6px 14px -4px rgb(0 0 0 / 0.75);
+    --dock-shadow:
+      0 -6px 14px -4px rgb(0 0 0 / 0.75), 0 6px 14px -4px rgb(0 0 0 / 0.75);
 
     --accent: #f4f4f5;
     --accent-fg: #121213;
@@ -746,7 +748,8 @@ h2 {
 }
 .rarity--elusive .rarity-badge__dot {
   background: var(--rarity-elusive-dot);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-elusive-dot) 28%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--rarity-elusive-dot) 28%, transparent);
 }
 .rarity--mythic {
   background: var(--rarity-mythic-bg);
@@ -766,7 +769,8 @@ h2 {
 }
 .rarity--legend-legacy .rarity-badge__dot {
   background: var(--rarity-legend-legacy-dot);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-legend-legacy-dot) 32%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--rarity-legend-legacy-dot) 32%, transparent);
 }
 .rarity--legend {
   background: var(--rarity-legend-bg);
@@ -1748,7 +1752,7 @@ h2 {
    cleanly at five looks like a list of five, and overlay scrollbars only appear
    once you are already scrolling -- so the half-row is what says there is more.
    `contain` keeps a flick inside the board from carrying on into the page. */
-.leaderboard__list:not(.leaderboard__list--self) {
+.leaderboard__list {
   max-height: calc(var(--row-height) * 5 + 0.95rem);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1793,10 +1797,11 @@ h2 {
  * the fold, in the flow when it scrolls into view, and docked to the top if the
  * reader scrolls on past it. The top of the board stays the top either way.
  *
- * Only inside the scrolling list: the row below the cut is its own list and
- * already sits outside the scroll box, where nothing can scroll it away.
+ * This covers the row below the cut too, which is last in the same list after
+ * the gap: one rule, so the answer to "where am I" is the same shape at rank 6
+ * and at rank 61.
  */
-.leaderboard__list:not(.leaderboard__list--self) .leaderboard__row--you {
+.leaderboard__list .leaderboard__row--you {
   position: sticky;
   top: 0;
   bottom: 0;
@@ -1812,8 +1817,10 @@ h2 {
     0 0 0 1px var(--border-strong),
     var(--dock-shadow);
 }
-/* The break between the top fifteen and the player's own row below it. Three
-   dots and nothing else: the gap is the message. */
+/* The break between the top fifteen and the player's own row after it. Three
+   dots and nothing else: the gap is the message. It scrolls with the list, so
+   it passes under the docked row and reappears above it at the very bottom --
+   which is where the jump in rank actually needs explaining. */
 .leaderboard__gap {
   /* Clear of the last row above it, and of the row below. */
   margin: 0.35rem 0 0.3rem;
@@ -1823,9 +1830,6 @@ h2 {
   letter-spacing: 0.1em;
   text-align: center;
 }
-/* The row below the cut is its own list so it can carry its own start number --
-   the real rank, which is the whole reason it was sent. Nothing to undo here any
-   more now that the board above it is a plain list. */
 .leaderboard__rank {
   grid-area: rank;
   color: var(--fg-faint);
@@ -1903,6 +1907,37 @@ h2 {
     var(--best-word-bg) 55%,
     color-mix(in srgb, var(--best-word-bg) 92%, var(--best-word-accent)) 100%
   );
+}
+/* Nobody has won it yet, so the plaque is quieter than the awarded one: the
+   same shape and the same gold, held back to the weight of an outline. It has to
+   read as a slot rather than as a result -- close enough to the awarded plaque
+   that a reader sees what will fill it, far enough that nobody reads the empty
+   line as a name that failed to load. */
+.leaderboard__champion--pending {
+  border-color: color-mix(in srgb, var(--best-word-accent) 26%, transparent);
+  background: color-mix(in srgb, var(--best-word-bg) 45%, transparent);
+}
+/* Dimmed rather than dropped: the trophy is what makes the empty plaque legible
+   as a prize at a glance, and a full-strength one over a blank line looks like
+   it is celebrating nothing. */
+.leaderboard__champion--pending .leaderboard__champion-trophy {
+  opacity: 0.5;
+}
+.leaderboard__champion--pending .leaderboard__champion-label {
+  color: color-mix(in srgb, var(--fg) 55%, var(--best-word-accent));
+}
+/* Where the name goes. Sized to the line the name would occupy so the plaque is
+   the same height whether or not it has been won -- an empty one that sits
+   shorter would make the two columns end unlevel again, which is the thing this
+   plaque is here to fix. Short of the full width on purpose: a rule running the
+   whole box reads as a divider, and one that stops reads as a blank to fill. */
+.leaderboard__champion-blank {
+  grid-area: name;
+  align-self: end;
+  width: min(9rem, 70%);
+  height: 1.35rem;
+  border-bottom: 2px solid
+    color-mix(in srgb, var(--best-word-accent) 40%, transparent);
 }
 .leaderboard__champion-trophy {
   grid-area: trophy;

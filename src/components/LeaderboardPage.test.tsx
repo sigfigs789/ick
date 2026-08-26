@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard } from "../game/player";
@@ -17,12 +24,40 @@ const MONTH_BOARD = "Monthly";
 const CAROL = "33333333-3333-4333-8333-333333333333";
 
 const WEEKLY = [
-  { rank: 1, playerId: ALICE, windowWord: "quixotic", windowZipf: 2.33, score: 41.2, puzzles: 5 },
-  { rank: 2, playerId: BOB, windowWord: "wrinkle", windowZipf: 3.31, score: 24.6, puzzles: 3 },
+  {
+    rank: 1,
+    playerId: ALICE,
+    windowWord: "quixotic",
+    windowZipf: 2.33,
+    score: 41.2,
+    puzzles: 5,
+  },
+  {
+    rank: 2,
+    playerId: BOB,
+    windowWord: "wrinkle",
+    windowZipf: 3.31,
+    score: 24.6,
+    puzzles: 3,
+  },
 ];
 const ALL_TIME = [
-  { rank: 1, playerId: BOB, windowWord: "inkling", windowZipf: 2.9, score: 310.5, puzzles: 40 },
-  { rank: 2, playerId: ALICE, windowWord: "asphyxiate", windowZipf: 2.09, score: 180, puzzles: 22 },
+  {
+    rank: 1,
+    playerId: BOB,
+    windowWord: "inkling",
+    windowZipf: 2.9,
+    score: 310.5,
+    puzzles: 40,
+  },
+  {
+    rank: 2,
+    playerId: ALICE,
+    windowWord: "asphyxiate",
+    windowZipf: 2.09,
+    score: 180,
+    puzzles: 22,
+  },
 ];
 
 /** Put a played-on-its-day puzzle in storage, so this browser has a name. */
@@ -37,7 +72,7 @@ function playedToday(date: string, word: string, zipf: number) {
       completed: true,
       firstWordAt: `${date}T19:00:00.000Z`,
       completedAt: `${date}T19:04:00.000Z`,
-    })
+    }),
   );
 }
 
@@ -58,7 +93,8 @@ function stubFetch(body: unknown = OPEN) {
   const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) => {
     // Score submissions are POSTs and answered blandly; only the GET matters.
     if (init?.method === "POST") return new Response(null, { status: 202 });
-    if (init?.method === "PUT") return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    if (init?.method === "PUT")
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
     if (body === null) return new Response("nope", { status: 502 });
     return new Response(JSON.stringify(body), {
       status: 200,
@@ -71,7 +107,9 @@ function stubFetch(body: unknown = OPEN) {
 
 /** The rows of one board, by its heading. */
 function boardRows(heading: string) {
-  return within(screen.getByRole("region", { name: heading })).getAllByRole("listitem");
+  return within(screen.getByRole("region", { name: heading })).getAllByRole(
+    "listitem",
+  );
 }
 
 /**
@@ -82,14 +120,23 @@ function boardRows(heading: string) {
  * makes a substring assertion pass for a number that was never displayed.
  */
 function rowMeta(heading: string, index: number): string {
-  return boardRows(heading)[index].querySelector(".leaderboard__meta")?.textContent ?? "";
+  return (
+    boardRows(heading)[index].querySelector(".leaderboard__meta")
+      ?.textContent ?? ""
+  );
 }
 
 /** The bodies of every score submission the page made. */
 function submissions(fetchMock: ReturnType<typeof stubFetch>) {
   return fetchMock.mock.calls
     .filter(([, init]) => (init as RequestInit | undefined)?.method === "POST")
-    .map(([, init]) => JSON.parse(String((init as RequestInit).body)) as Record<string, unknown>);
+    .map(
+      ([, init]) =>
+        JSON.parse(String((init as RequestInit).body)) as Record<
+          string,
+          unknown
+        >,
+    );
 }
 
 beforeEach(() => {
@@ -121,8 +168,22 @@ describe("the leaderboard page", () => {
   it("names last week's champion under the weekly board, and last month's under the monthly one", async () => {
     stubFetch({
       ...OPEN,
-      lastWeek: { rank: 1, playerId: BOB, windowWord: "wrinkle", windowZipf: 3.31, score: 61.2, puzzles: 7 },
-      lastMonth: { rank: 1, playerId: CAROL, windowWord: "abaci", windowZipf: 2.65, score: 214.8, puzzles: 28 },
+      lastWeek: {
+        rank: 1,
+        playerId: BOB,
+        windowWord: "wrinkle",
+        windowZipf: 3.31,
+        score: 61.2,
+        puzzles: 7,
+      },
+      lastMonth: {
+        rank: 1,
+        playerId: CAROL,
+        windowWord: "abaci",
+        windowZipf: 2.65,
+        score: 214.8,
+        puzzles: 28,
+      },
     });
     render(<LeaderboardPage />);
 
@@ -138,7 +199,9 @@ describe("the leaderboard page", () => {
     // back -- the same relation last week's champion has to the weekly board.
     const monthlyBoard = screen.getByRole("region", { name: MONTH_BOARD });
     // Named by month rather than dated: "July's champion" places instantly.
-    expect(monthlyBoard).toHaveTextContent(`${previousMonthName(todayDateString())}'s champion`);
+    expect(monthlyBoard).toHaveTextContent(
+      `${previousMonthName(todayDateString())}'s champion`,
+    );
     expect(monthlyBoard).toHaveTextContent(handleFor(CAROL));
     expect(monthlyBoard).toHaveTextContent("214.8");
   });
@@ -146,7 +209,14 @@ describe("the leaderboard page", () => {
   it("keeps a champion out of the ranked rows they are not competing in", async () => {
     stubFetch({
       ...OPEN,
-      lastWeek: { rank: 1, playerId: BOB, windowWord: "wrinkle", windowZipf: 3.31, score: 61.2, puzzles: 7 },
+      lastWeek: {
+        rank: 1,
+        playerId: BOB,
+        windowWord: "wrinkle",
+        windowZipf: 3.31,
+        score: 61.2,
+        puzzles: 7,
+      },
     });
     render(<LeaderboardPage />);
 
@@ -155,21 +225,35 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
   });
 
-  it("shows no champion line at all when nobody won the window", async () => {
+  it("holds the plaque open when nobody won the window", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    // A first week, or a month before the game existed: the line is absent
-    // rather than empty or hedged.
-    expect(screen.queryByText(/champion/i)).toBeNull();
+    // A first week, or a month before the game existed. The plaque still goes
+    // down on both boards -- named as what is coming rather than as a result,
+    // and with nothing invented in the place a winner will go. An absent one
+    // ended the two columns unlevel and read as a load failure.
+    for (const heading of ["This week", "Monthly"]) {
+      const board = screen.getByRole("region", { name: heading });
+      expect(board).toHaveTextContent("Coming up");
+      expect(board).toHaveTextContent("Champion not decided yet");
+    }
+    expect(screen.queryByText(/'s champion/)).toBeNull();
   });
 
   it("still names last week's winner on a week nobody has scored in yet", async () => {
     stubFetch({
       ...OPEN,
       weekly: [],
-      lastWeek: { rank: 1, playerId: BOB, windowWord: "wrinkle", windowZipf: 3.31, score: 61.2, puzzles: 7 },
+      lastWeek: {
+        rank: 1,
+        playerId: BOB,
+        windowWord: "wrinkle",
+        windowZipf: 3.31,
+        score: 61.2,
+        puzzles: 7,
+      },
     });
     render(<LeaderboardPage />);
 
@@ -205,11 +289,15 @@ describe("the leaderboard page", () => {
     // Five rows of the fifteen are on screen and the rest are scrolled to, so
     // the list is a scrolling region -- and a region that only a thumb can
     // reach is one a keyboard cannot read.
-    await waitFor(() => expect(screen.getByRole("list", { name: /This week/ })).toHaveAttribute("tabindex", "0"));
-    expect(screen.getByRole("list", { name: new RegExp(MONTH_BOARD) })).toHaveAttribute(
-      "tabindex",
-      "0"
+    await waitFor(() =>
+      expect(screen.getByRole("list", { name: /This week/ })).toHaveAttribute(
+        "tabindex",
+        "0",
+      ),
     );
+    expect(
+      screen.getByRole("list", { name: new RegExp(MONTH_BOARD) }),
+    ).toHaveAttribute("tabindex", "0");
   });
 
   it("puts the rule that governs both boards above both of them", async () => {
@@ -221,10 +309,14 @@ describe("the leaderboard page", () => {
     // played on its own day either, so it belongs to the pair -- and on the way
     // in, since it is the condition a score has to meet to be on either list.
     await waitFor(() =>
-      expect(screen.getByText("Only puzzles played on the day they drop count")).toBeInTheDocument()
+      expect(
+        screen.getByText("Only puzzles played on the day they drop count"),
+      ).toBeInTheDocument(),
     );
     const monthly = screen.getByRole("region", { name: MONTH_BOARD });
-    expect(monthly).not.toHaveTextContent("Only puzzles played on the day they drop count");
+    expect(monthly).not.toHaveTextContent(
+      "Only puzzles played on the day they drop count",
+    );
   });
 
   it("says when the weekly board turns over, and no more than that", async () => {
@@ -260,7 +352,9 @@ describe("the leaderboard page", () => {
     // A handle is unmistakably a person, which is the entire reason it exists:
     // naming players after their rarest word left a leaderboard row looking
     // exactly like an entry in the list of found words below it.
-    await waitFor(() => expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE)));
+    await waitFor(() =>
+      expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE)),
+    );
     expect(rowMeta("This week", 0)).toBe("5 puzzles");
   });
 
@@ -282,7 +376,9 @@ describe("the leaderboard page", () => {
     // A find is shown with what it scored, and the scoring system is still being
     // corrected -- so the words stay under Today's finds and the boards say only
     // what somebody played and what it added up to.
-    await waitFor(() => expect(boardRows(MONTH_BOARD)[0]).toHaveTextContent(handleFor(BOB)));
+    await waitFor(() =>
+      expect(boardRows(MONTH_BOARD)[0]).toHaveTextContent(handleFor(BOB)),
+    );
     expect(rowMeta(MONTH_BOARD, 0)).toBe("40 puzzles");
     expect(boardRows(MONTH_BOARD)[0]).not.toHaveTextContent("inkling");
     expect(boardRows("This week")[0]).not.toHaveTextContent("quixotic");
@@ -303,7 +399,9 @@ describe("the leaderboard page", () => {
     // One header per board, over the column it labels. Every other figure on a
     // row says what it is in words; the score, which is what the board is
     // ranked by, had been left to be inferred.
-    await waitFor(() => expect(screen.getAllByText("Total score")).toHaveLength(2));
+    await waitFor(() =>
+      expect(screen.getAllByText("Total score")).toHaveLength(2),
+    );
   });
 
   it("marks the player's own row on both boards", async () => {
@@ -315,7 +413,9 @@ describe("the leaderboard page", () => {
     });
     render(<LeaderboardPage />);
 
-    await waitFor(() => expect(boardRows("This week")[1]).toHaveTextContent("you"));
+    await waitFor(() =>
+      expect(boardRows("This week")[1]).toHaveTextContent("you"),
+    );
     expect(boardRows(MONTH_BOARD)[0]).toHaveTextContent("you");
     expect(boardRows("This week")[0]).not.toHaveTextContent("you");
   });
@@ -324,13 +424,27 @@ describe("the leaderboard page", () => {
     joinBoard();
     stubFetch({
       ...OPEN,
-      weeklySelf: { rank: 61, playerId: CAROL, windowWord: "inkling", windowZipf: 2.9, score: 12, puzzles: 2 },
-      allTimeSelf: { rank: 214, playerId: CAROL, windowWord: "quixotic", windowZipf: 2.33, score: 88, puzzles: 19 },
+      weeklySelf: {
+        rank: 61,
+        playerId: CAROL,
+        windowWord: "inkling",
+        windowZipf: 2.9,
+        score: 12,
+        puzzles: 2,
+      },
+      allTimeSelf: {
+        rank: 214,
+        playerId: CAROL,
+        windowWord: "quixotic",
+        windowZipf: 2.33,
+        score: 88,
+        puzzles: 19,
+      },
     });
     render(<LeaderboardPage />);
 
-    // Under the board rather than in it: the top stays the top, and the player
-    // still gets an answer to "where am I".
+    // Last in the board's own list, docked to the bottom of it: the top stays
+    // the top, and the player still gets an answer to "where am I".
     await waitFor(() => expect(boardRows("This week")).toHaveLength(3));
     const mine = boardRows("This week")[2];
     // The real rank, not a position inside what fits on screen.
@@ -355,7 +469,8 @@ describe("the leaderboard page", () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     const url = String(fetchMock.mock.calls[0][0]);
-    const since = new URL(url, "https://wordink.app").searchParams.get("since") ?? "";
+    const since =
+      new URL(url, "https://wordink.app").searchParams.get("since") ?? "";
     // A Sunday, whatever day the test runs on.
     expect(new Date(`${since}T00:00:00Z`).getUTCDay()).toBe(0);
   });
@@ -364,14 +479,18 @@ describe("the leaderboard page", () => {
     const fetchMock = stubFetch(null);
     render(<LeaderboardPage />);
 
-    expect(await screen.findByText(/Couldn't load the boards/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Couldn't load the boards/),
+    ).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
     // Counted by URL rather than by call: a load is two requests now, the
     // boards and the feed beside them, and it is the boards being retried.
     await waitFor(() =>
       expect(
-        fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1"))
-      ).toHaveLength(2)
+        fetchMock.mock.calls.filter(
+          ([url]) => !String(url).includes("words=1"),
+        ),
+      ).toHaveLength(2),
     );
   });
 
@@ -383,19 +502,22 @@ describe("the leaderboard page", () => {
       "fetch",
       vi.fn(async (url: unknown, init?: RequestInit) => {
         if (init?.method === "POST") return new Response(null, { status: 202 });
-        if (!String(url).includes("words=1")) return new Response("nope", { status: 502 });
+        if (!String(url).includes("words=1"))
+          return new Response("nope", { status: 502 });
         return new Response(JSON.stringify({ words: WORDS }), {
           status: 200,
           headers: { "content-type": "application/json" },
         });
-      })
+      }),
     );
     render(<LeaderboardPage />);
 
     // The boards say so, and the feed underneath is unaffected -- hiding words
     // that arrived perfectly well would be losing the half of the page that
     // still works.
-    expect(await screen.findByText(/Couldn't load the boards/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Couldn't load the boards/),
+    ).toBeInTheDocument();
     const feed = await screen.findByRole("region", { name: "Today's finds" });
     expect(within(feed).getAllByRole("listitem")).toHaveLength(WORDS.length);
   });
@@ -424,7 +546,7 @@ describe("who the page thinks you are", () => {
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     const you = boardRows("This week").filter((row) =>
-      row.classList.contains("leaderboard__row--you")
+      row.classList.contains("leaderboard__row--you"),
     );
     expect(you).toHaveLength(1);
     expect(you[0].textContent).toContain(handleFor(ALICE));
@@ -439,7 +561,9 @@ describe("who the page thinks you are", () => {
     // them -- the button, the paragraph about there being no account or email,
     // the count of imported puzzles -- reported a joining that now happens
     // before anybody gets here, silently, with nothing to announce.
-    expect(screen.queryByRole("button", { name: "Put me on the board" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Put me on the board" }),
+    ).toBeNull();
     expect(screen.queryByText(/No account, no email/)).toBeNull();
     expect(screen.queryByText(/Counted/)).toBeNull();
     expect(screen.queryByText(/Nothing to count/)).toBeNull();
@@ -451,11 +575,15 @@ describe("leaving the page", () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Back to the puzzle" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Back to the puzzle" }),
+    );
     expect(window.location.pathname).toBe("/");
 
     window.history.pushState(null, "", "/leaderboard");
-    await userEvent.click(screen.getByRole("button", { name: "Back to today's puzzle" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Back to today's puzzle" }),
+    );
     expect(window.location.pathname).toBe("/");
   });
 });
@@ -463,7 +591,9 @@ describe("leaving the page", () => {
 describe("recent finds", () => {
   /** The words feed's list items. */
   function finds() {
-    return within(screen.getByRole("region", { name: "Today's finds" })).getAllByRole("listitem");
+    return within(
+      screen.getByRole("region", { name: "Today's finds" }),
+    ).getAllByRole("listitem");
   }
 
   it("lists the words other players found today", async () => {
@@ -484,7 +614,9 @@ describe("recent finds", () => {
     // text runs together as "8.43 players", where a substring match would pass
     // for a number never displayed.
     await waitFor(() => expect(finds()[0]).toHaveTextContent("EXTREMELY RARE"));
-    expect(finds()[0].querySelector(".rarity-badge__score")?.textContent).toBe("8.4");
+    expect(finds()[0].querySelector(".rarity-badge__score")?.textContent).toBe(
+      "8.4",
+    );
   });
 
   it("says how many players found a word, when more than one did", async () => {
@@ -501,20 +633,33 @@ describe("recent finds", () => {
     render(<LeaderboardPage />);
 
     // Without it the list is a pile of unrelated words.
-    const section = await screen.findByRole("region", { name: "Today's finds" });
-    expect(section.querySelector(".found-words__drop")?.textContent).toBeTruthy();
+    const section = await screen.findByRole("region", {
+      name: "Today's finds",
+    });
+    expect(
+      section.querySelector(".found-words__drop")?.textContent,
+    ).toBeTruthy();
     // And nothing under the heading restating it.
-    expect(screen.queryByText("Every word found on today's puzzle.")).toBeNull();
+    expect(
+      screen.queryByText("Every word found on today's puzzle."),
+    ).toBeNull();
   });
 
   it("shows the feed even when nobody is on the boards yet", async () => {
-    stubFetch({ weekStart: "2026-08-23", weekly: [], allTime: [], words: WORDS });
+    stubFetch({
+      weekStart: "2026-08-23",
+      weekly: [],
+      allTime: [],
+      words: WORDS,
+    });
     render(<LeaderboardPage />);
 
     // The feed works from the first word, which is what makes an empty board
     // safe to show: the page is never empty while the boards fill up.
     await waitFor(() => expect(finds()).toHaveLength(2));
-    expect(screen.getByRole("region", { name: "This week" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "This week" }),
+    ).toBeInTheDocument();
   });
 
   it("shows nothing at all when there are no finds yet", async () => {
@@ -537,19 +682,24 @@ describe("finds arriving", () => {
 
   /** The feed's items, in order. */
   function finds() {
-    return within(screen.getByRole("region", { name: "Today's finds" })).getAllByRole("listitem");
+    return within(
+      screen.getByRole("region", { name: "Today's finds" }),
+    ).getAllByRole("listitem");
   }
 
   it("marks a word that turned up since the last look, and puts it on top", async () => {
-    let words = [{ word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" }];
+    let words = [
+      { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
+    ];
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        new Response(JSON.stringify({ ...OPEN, words }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        })
-      )
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ ...OPEN, words }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+      ),
     );
     render(<LeaderboardPage />);
     await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
@@ -574,20 +724,26 @@ describe("finds arriving", () => {
   });
 
   it("stops marking it once the arrival has played", async () => {
-    let words = [{ word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" }];
+    let words = [
+      { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
+    ];
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        new Response(JSON.stringify({ ...OPEN, words }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        })
-      )
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ ...OPEN, words }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+      ),
     );
     render(<LeaderboardPage />);
     await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
 
-    words = [{ word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-25" }, ...words];
+    words = [
+      { word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-25" },
+      ...words,
+    ];
     await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
     expect(finds()[0].className).toContain("arrived");
 
@@ -628,7 +784,8 @@ describe("keeping the finds current", () => {
     render(<LeaderboardPage />);
     await vi.advanceTimersByTimeAsync(0);
     const boardCalls = () =>
-      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1")).length;
+      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1"))
+        .length;
     const opened = boardCalls();
 
     await vi.advanceTimersByTimeAsync(180_000);
@@ -638,7 +795,8 @@ describe("keeping the finds current", () => {
     // almost certainly not moved, at the price of a private query per open page.
     expect(boardCalls()).toBe(opened);
     expect(
-      fetchMock.mock.calls.filter(([url]) => String(url).includes("words=1")).length
+      fetchMock.mock.calls.filter(([url]) => String(url).includes("words=1"))
+        .length,
     ).toBeGreaterThan(1);
   });
 
@@ -664,7 +822,7 @@ describe("keeping the finds current", () => {
           status: 200,
           headers: { "content-type": "application/json" },
         });
-      })
+      }),
     );
     render(<LeaderboardPage />);
     await vi.advanceTimersByTimeAsync(0);
@@ -683,10 +841,13 @@ describe("keeping the finds current", () => {
     render(<LeaderboardPage />);
     await vi.advanceTimersByTimeAsync(0);
     const boardCalls = () =>
-      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1")).length;
+      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1"))
+        .length;
     const opened = boardCalls();
 
-    const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    const hidden = vi
+      .spyOn(document, "visibilityState", "get")
+      .mockReturnValue("hidden");
     document.dispatchEvent(new Event("visibilitychange"));
     await vi.advanceTimersByTimeAsync(30 * 60_000);
     hidden.mockReturnValue("visible");
@@ -706,10 +867,13 @@ describe("keeping the finds current", () => {
     render(<LeaderboardPage />);
     await vi.advanceTimersByTimeAsync(0);
     const boardCalls = () =>
-      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1")).length;
+      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1"))
+        .length;
     const opened = boardCalls();
 
-    const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    const hidden = vi
+      .spyOn(document, "visibilityState", "get")
+      .mockReturnValue("hidden");
     document.dispatchEvent(new Event("visibilitychange"));
     await vi.advanceTimersByTimeAsync(30_000);
     hidden.mockReturnValue("visible");
@@ -756,7 +920,9 @@ describe("keeping the finds current", () => {
     await vi.advanceTimersByTimeAsync(30_000);
 
     // The cache is there to absorb exactly this. Only a person gets to skip it.
-    const polled = fetchMock.mock.calls.slice(opened).map(([url]) => String(url));
+    const polled = fetchMock.mock.calls
+      .slice(opened)
+      .map(([url]) => String(url));
     expect(polled.length).toBeGreaterThan(0);
     expect(polled.every((url) => !url.includes("&t="))).toBe(true);
   });
@@ -766,7 +932,9 @@ describe("keeping the finds current", () => {
     render(<LeaderboardPage />);
     await vi.advanceTimersByTimeAsync(0);
 
-    const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    const hidden = vi
+      .spyOn(document, "visibilityState", "get")
+      .mockReturnValue("hidden");
     document.dispatchEvent(new Event("visibilitychange"));
     const before = fetchMock.mock.calls.length;
 
