@@ -1651,23 +1651,21 @@ h2 {
   text-decoration: underline;
   cursor: pointer;
 }
+/*
+ * The board scrolls with the page, not inside itself.
+ *
+ * It used to be capped at 17rem with a faded bottom edge, which was the right
+ * shape when a board was fifty rows and would otherwise have buried everything
+ * under it. At fifteen it is the wrong one twice over: the cap showed about six
+ * of them, so a "top fifteen" arrived mostly hidden, and it put a scrolling
+ * region inside a scrolling page -- which on a phone means a drag over the board
+ * moves the board instead of the page, and the reader has to find the margin to
+ * get past it.
+ */
 .leaderboard__list {
   list-style: none;
   margin: 0;
   padding: 0;
-  /* Each board scrolls inside itself, so a long week never pushes the other
-     board or the join form out of reach. */
-  max-height: 17rem;
-  overflow-y: auto;
-  /* A thin scrollbar so it doesn't sit on top of the score column. */
-  scrollbar-width: thin;
-  /* Fade the bottom edge so a clipped row reads as "there is more list" rather
-     than as a rendering fault. The padding is the same height as the fade, which
-     is what keeps this honest at both ends: scrolled to the bottom, the faded
-     strip covers the padding and the last row stays crisp, and a board short
-     enough not to scroll has nothing under the fade at all. */
-  padding-bottom: 1.3rem;
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 1.3rem), transparent);
 }
 /* Rank and score are fixed columns; the name takes what is left and the meta
    line tucks under it, so a long name truncates instead of shoving the score
@@ -1695,24 +1693,17 @@ h2 {
 /* The break between the top fifteen and the player's own row below it. Three
    dots and nothing else: the gap is the message. */
 .leaderboard__gap {
-  /* Clear of the list's own bottom fade above it, and of the row below. */
-  margin: 0.1rem 0 0.3rem;
+  /* Clear of the last row above it, and of the row below. */
+  margin: 0.35rem 0 0.3rem;
   color: var(--fg-faint);
   font-size: 0.9rem;
   line-height: 1;
   letter-spacing: 0.1em;
   text-align: center;
 }
-/* The row below the cut lives outside the scrolling list on purpose -- pinned
-   under the board so it cannot be scrolled away from, which is the whole reason
-   it was sent. So it takes none of the list's scrolling, its height cap, or the
-   fade that tells the list it has more in it. */
-.leaderboard__list--self {
-  max-height: none;
-  overflow: visible;
-  padding-bottom: 0;
-  mask-image: none;
-}
+/* The row below the cut is its own list so it can carry its own start number --
+   the real rank, which is the whole reason it was sent. Nothing to undo here any
+   more now that the board above it is a plain list. */
 .leaderboard__rank {
   grid-area: rank;
   color: var(--fg-faint);

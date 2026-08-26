@@ -217,6 +217,19 @@ describe("api/leaderboard submissions", () => {
     ["no words at all", { words: 0, total: 0, top: 0 }, "bad-words"],
     ["a top score above the total", { total: 3, top: 9.4 }, "inconsistent-scores"],
     ["a total no number of words could reach", { total: 45, top: 9.9, words: 4 }, "inconsistent-scores"],
+    // The word list the finds feed is built from. Held to exactly the rules the
+    // day's rarest word is, and for a stronger reason: every one of these is
+    // shown to other players verbatim.
+    ["a word list that isn't a list", { found: "inkling" }, "bad-found"],
+    ["a find that isn't an object", { found: ["inkling"] }, "bad-found"],
+    ["more finds than a puzzle has ever allowed", {
+      found: Array.from({ length: 7 }, (_, i) => ({ word: `word${"x".repeat(i)}`, zipf: 3 })),
+    }, "too-many-found"],
+    // A right-to-left override, which is the shape of the attack this pattern
+    // exists to make unexpressible on a page anybody can post to.
+    ["a find that isn't a word", { found: [{ word: "‮inkling", zipf: 3 }] }, "bad-found-word"],
+    ["a find with no frequency", { found: [{ word: "inkling" }] }, "bad-found-zipf"],
+    ["a find with an impossible frequency", { found: [{ word: "inkling", zipf: 99 }] }, "bad-found-zipf"],
   ])("refuses %s", async (_label, overrides, reason) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -501,22 +514,34 @@ describe("api/leaderboard recent finds", () => {
     return new Date(Date.parse(`${date}T00:00:00Z`) - days * 86400000).toISOString().slice(0, 10);
   }
 
-  it("asks for today's finds and nothing else", async () => {
+  it("asks for one puzzle's finds and nothing else", async () => {
     withEnv();
     const fetchMock = stubFetch([[]]);
     const today = utcToday();
     await handler(get(`?words=1&today=${today}`));
 
-    // Strictly-before the day *after* today, so today itself is in. This
-    // publishes answers to the live puzzle, which is a deliberate call -- see
-    // `wordsCutoff`.
-    // Exactly today: strictly before tomorrow, from today onward.
+    // Exactly the one day: from it, strictly before the next. This publishes
+    // answers to the live puzzle, which is a deliberate call -- see `wordsDay`.
     expect(rpcCall(fetchMock)?.args.p_words_before).toBeUndefined();
     expect(rpcCall(fetchMock)?.url).toBe(
       "https://project.supabase.co/rest/v1/rpc/leaderboard_words"
     );
     expect(rpcCall(fetchMock)?.args.p_before).toBe(daysBefore(today, -1));
     expect(rpcCall(fetchMock)?.args.p_since).toBe(today);
+  });
+
+  it("asks for the puzzle the player is on, not the one UTC is on", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    // Every American timezone reads a day behind UTC's for the last hours of
+    // the UTC day -- an American evening, which is the busiest the game gets.
+    // The feed used to take the later of the two dates, which asked for a
+    // puzzle nobody in the Americas had reached yet and came back empty.
+    const behind = daysBefore(utcToday(), 1);
+    await handler(get(`?words=1&today=${behind}`));
+
+    expect(rpcCall(fetchMock)?.args.p_since).toBe(behind);
+    expect(rpcCall(fetchMock)?.args.p_before).toBe(utcToday());
   });
 
   it("asks for up to five hundred, which is a backstop and not a page", async () => {
@@ -550,6 +575,7 @@ describe("api/leaderboard recent finds", () => {
     await handler(get(`?words=1&today=${ahead}`));
 
     // Their own day counts as today, so the window reaches past it.
+    expect(rpcCall(fetchMock)?.args.p_since).toBe(ahead);
     expect(rpcCall(fetchMock)?.args.p_before).toBe(daysBefore(ahead, -1));
   });
 
@@ -557,11 +583,16 @@ describe("api/leaderboard recent finds", () => {
     ["a missing date", ""],
     ["a date that isn't one", "&today=whenever"],
     ["a malformed date", "&today=2026-13-45"],
+    // Past the furthest ahead any local calendar can be, so no puzzle exists
+    // for it. A caller cannot use this to read a drop the game has not reached.
+    ["a date beyond any puzzle", "&today=2099-01-01"],
+    ["a date before the first puzzle", "&today=2020-01-01"],
   ])("falls back to UTC's today for %s", async (_label, param) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
     await handler(get(`?words=1${param}`));
 
+    expect(rpcCall(fetchMock)?.args.p_since).toBe(utcToday());
     expect(rpcCall(fetchMock)?.args.p_before).toBe(daysBefore(utcToday(), -1));
   });
 

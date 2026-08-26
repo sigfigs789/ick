@@ -62,11 +62,11 @@ export interface FoundWord {
   rarity: Rarity;
   /** Frequency, kept so the badge can render the score the same way the game does. */
   zipf: number;
-  /** How many players this was the best word of the day for. */
+  /** How many players found it on this puzzle. */
   finders: number;
-  /** The puzzle date it was found on, so the feed can group by day. */
+  /** The puzzle it was found on -- the drop the feed is headed with. */
   foundOn: string;
-  /** Found on today's puzzle, so the feed can mark it as it happens. */
+  /** Found on the puzzle the player is looking at, rather than an older one. */
   today: boolean;
 }
 
@@ -252,11 +252,9 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
     const current = rarityFor(word)?.zipf ?? stored;
     if (current === undefined) continue;
     const rarity = rarityForZipf(current);
-    // No rarity bar. Every entry is already the best word its finder managed
-    // that day, which is the only filter the feed needs -- a Common word
-    // somebody topped their puzzle with is still that player's day, and cutting
-    // it would quietly make the feed a list of good players rather than a list
-    // of what happened.
+    // No rarity bar. The feed is what the day's players found, and a Common word
+    // is part of what happened -- cutting it would quietly turn a record of the
+    // puzzle into a highlight reel, which the boards above already are.
     words.push({
       word,
       zipf: current,
@@ -365,6 +363,12 @@ function scoreToday(word: AcceptedWord): number {
   return rarityScore(rarityFor(word.word)?.zipf ?? word.zipf);
 }
 
+/** One word of a day's list, in the shape the endpoint takes. */
+interface FoundPayload {
+  word: string;
+  zipf: number;
+}
+
 /** One puzzle's score, in the shape the endpoint takes. */
 interface ScorePayload {
   date: string;
@@ -374,6 +378,14 @@ interface ScorePayload {
   total: number;
   top: number;
   words: number;
+  /**
+   * Every word accepted that day, which is what the finds feed is built from.
+   *
+   * Sent only for the puzzle being played, never for a backfilled day: the feed
+   * shows one drop at a time, so past words would be rows nobody can ever see,
+   * and a browser with a year of history would not fit the request body.
+   */
+  found?: FoundPayload[];
 }
 
 /**
@@ -385,7 +397,11 @@ interface ScorePayload {
  * rarest across all of them, and the weekly detail is the rarest inside the
  * window. Nothing here asserts what the player should be called.
  */
-function scoreFor(date: string, words: readonly AcceptedWord[]): ScorePayload {
+function scoreFor(
+  date: string,
+  words: readonly AcceptedWord[],
+  options: { withFound?: boolean } = {}
+): ScorePayload {
   const best = rarest(words);
   return {
     date,
@@ -398,7 +414,22 @@ function scoreFor(date: string, words: readonly AcceptedWord[]): ScorePayload {
     // Capped rather than trusted: the endpoint bounds this too, and sending more
     // than the day's guess limit allows would only get the batch rejected.
     words: Math.min(words.length, maxGuessesFor(date)),
+    ...(options.withFound ? { found: foundFor(date, words) } : {}),
   };
+}
+
+/**
+ * A day's word list for the feed, priced the same way the day's rarest word is.
+ *
+ * Trimmed to the day's guess limit for the same reason `words` is capped: the
+ * endpoint refuses a longer list, and a batch it refuses costs the player the
+ * whole day rather than one word.
+ */
+function foundFor(date: string, words: readonly AcceptedWord[]): FoundPayload[] {
+  return words.slice(0, maxGuessesFor(date)).map((word) => ({
+    word: word.word.toLowerCase(),
+    zipf: Math.round((rarityFor(word.word)?.zipf ?? word.zipf) * 100) / 100,
+  }));
 }
 
 /** The rarest of one day's words, by today's reckoning. */
@@ -453,11 +484,16 @@ export function submitScore(options: {
   const { date, isToday, words } = options;
   const playerId = options.playerId ?? loadPlayerId();
   if (!playerId || !isToday || words.length === 0) return false;
+  // The whole running word list goes with it, which is what the finds feed is
+  // built from. Re-sent in full after every accepted word: each word is written
+  // once and the repeats are discarded, so this is idempotent rather than
+  // wasteful, and a player who joined halfway through the day still gets their
+  // earlier finds onto the feed with their next word.
   // The name is the player's best word *ever*, not this puzzle's best, so it
   // comes from the whole stored history -- which already includes the words
   // being submitted, since they were saved before this was called. The fallback
   // covers a record too old to carry the timestamp that makes a day eligible.
-  return post(playerId, [scoreFor(date, words)]);
+  return post(playerId, [scoreFor(date, words, { withFound: true })]);
 }
 
 /**
@@ -473,11 +509,22 @@ export function submitScore(options: {
  * re-sending it is a no-op and the later per-word submissions layer over it
  * without conflict. Returns how many days were sent, for the page to report.
  */
-export function backfillHistory(playerId: string, history?: readonly DailyProgress[]): number {
+export function backfillHistory(
+  playerId: string,
+  history?: readonly DailyProgress[],
+  today: string = todayDateString()
+): number {
   const played = history ?? playedOnItsDay();
   const scores = played
     .filter((progress) => progress.acceptedWords.length > 0)
-    .map((progress) => scoreFor(progress.date, progress.acceptedWords));
+    // Words with today's puzzle and no other. Somebody who joins after playing
+    // gets the finds they already made onto the feed rather than waiting for
+    // their next word -- while a browser with a year of history sends a year of
+    // scores and not a year of words, which is what keeps the batch inside the
+    // request body cap and off a feed that shows one drop at a time.
+    .map((progress) =>
+      scoreFor(progress.date, progress.acceptedWords, { withFound: progress.date === today })
+    );
   // Named from exactly the days being submitted, so the name and the scores in
   // one request always describe the same history.
   return post(playerId, scores) ? scores.length : 0;

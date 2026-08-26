@@ -26,11 +26,13 @@
 //
 // GET /api/leaderboard?words=1&today=YYYY-MM-DD
 //   -> { words: [...] }
-//   Today's finds -- the best word each player has found on today's puzzle so
-//   far -- as their own request rather than a key on the boards. Not behind the
-//   boards' opening gate: a list of good words is interesting from day one, and
-//   it is the thing worth showing while the boards wait. See `wordsCutoff` for
-//   what publishing them live costs and why it was accepted.
+//   Today's finds -- every word anybody has found on one puzzle -- as their own
+//   request rather than a key on the boards. `today` is the puzzle the asking
+//   player is looking at, and it is used as given: a find belongs to a drop, not
+//   to a moment in UTC. Not behind the boards' opening gate: a list of good words
+//   is interesting from day one, and it is the thing worth showing while the
+//   boards wait. See `wordsDay` for what publishing a live puzzle's finds costs
+//   and why it was accepted.
 //
 //   Split out because it is the one part of this page that is the same for
 //   everybody. The boards carry `player` and so are cached per player; this
@@ -38,13 +40,20 @@
 //   It is also the only part that needs to be live, so the page polls this and
 //   leaves the boards alone after the first load.
 //
-// POST /api/leaderboard  { playerId, scores: [{ date, word, zipf, total, top, words }] }
+// POST /api/leaderboard
+//   { playerId, scores: [{ date, word, zipf, total, top, words, found? }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
 //   One score per player per puzzle. An array because it has two callers of the
 //   same shape: the game submitting today after each accepted word, and a player
 //   joining the board submitting every past puzzle their browser remembers. The
 //   write keeps the higher of the stored and submitted score, so repeats and
 //   out-of-order arrivals are both harmless (see the migration).
+//
+//   `found` is that day's whole word list, which is what the finds feed is built
+//   from. Optional, and the backfill omits it for past days on purpose: a year of
+//   words would not fit the body cap, and the feed only ever shows one puzzle.
+//   Each word is written once and never updated, so its place in the feed is
+//   fixed when it lands.
 //
 //   No name is sent, and none is stored: what the board calls a player is
 //   derived from their id on the client (src/game/handle.ts). Each day carries
@@ -145,10 +154,12 @@ const MAX_BODY_BYTES = 64 * 1024;
 const DEFAULT_LIMIT = 15;
 const MAX_LIMIT = 200;
 /**
- * How many finds the feed will return. A backstop, not a limit: the rows are
- * distinct best-words-of-the-day, so reaching 500 takes 500 players finding 500
- * different best words on one drop -- well past the point this wants to be a
- * different design. It exists so a flood cannot make the response enormous.
+ * How many finds the feed will return. A backstop, not a page: the rows are
+ * distinct words on a single drop, so reaching 500 takes the day's players
+ * between them turning up 500 different words -- well past the point this wants
+ * to be a different design. It exists so a flood cannot make the response
+ * enormous, and if it is ever reached the feed wants paging rather than a bigger
+ * number.
  */
 const WORDS_LIMIT = 500;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -309,6 +320,12 @@ function validWindowStart(date: string): boolean {
   return validDate(date, WINDOW_FLOOR);
 }
 
+/** One word a player found, as the finds feed stores it. */
+interface FoundEntry {
+  word: string;
+  zipf: number;
+}
+
 /** One puzzle's score, validated. */
 interface ScoreEntry {
   date: string;
@@ -318,6 +335,15 @@ interface ScoreEntry {
   total: number;
   top: number;
   words: number;
+  /**
+   * Every word accepted that day, for the finds feed.
+   *
+   * Optional, and absent is not a degraded submission: the history backfill
+   * sends a browser's whole record at once and deliberately carries words only
+   * for the day being played, since a year of past words would not fit the body
+   * cap and the feed only ever shows one puzzle.
+   */
+  found?: FoundEntry[];
 }
 
 /**
@@ -333,7 +359,7 @@ interface ScoreEntry {
  */
 function readScore(raw: unknown): ScoreEntry | string {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return "malformed-score";
-  const { date, word, zipf, total, top, words } = raw as Record<string, unknown>;
+  const { date, word, zipf, total, top, words, found } = raw as Record<string, unknown>;
 
   if (typeof date !== "string" || !validPuzzleDate(date)) return "bad-date";
   if (typeof word !== "string" || !WORD_RE.test(word)) return "bad-word";
@@ -351,6 +377,9 @@ function readScore(raw: unknown): ScoreEntry | string {
   if (topScore > totalScore + 0.05) return "inconsistent-scores";
   if (totalScore > wordCount * MAX_TOP + 0.05) return "inconsistent-scores";
 
+  const foundWords = readFound(found);
+  if (typeof foundWords === "string") return foundWords;
+
   return {
     date,
     word,
@@ -358,7 +387,36 @@ function readScore(raw: unknown): ScoreEntry | string {
     total: Math.round(totalScore * 100) / 100,
     top: Math.round(topScore * 100) / 100,
     words: wordCount,
+    ...(foundWords.length > 0 ? { found: foundWords } : {}),
   };
+}
+
+/**
+ * Check a day's word list, returning it or the reason it is not one.
+ *
+ * Absent is valid and means "no words with this day" -- see `ScoreEntry.found`.
+ * Anything present is held to exactly the rules the day's rarest word is held
+ * to, and for the stronger reason: these are shown to other players verbatim on
+ * a page anyone can post to, so `WORD_RE` is what guarantees nothing here is
+ * invisible, right-to-left, or an imitation of the page's own copy.
+ *
+ * Bounded by the most guesses a puzzle has ever allowed, so a caller cannot use
+ * this array to write an unbounded number of rows from one accepted day.
+ */
+function readFound(raw: unknown): FoundEntry[] | string {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) return "bad-found";
+  if (raw.length > MAX_WORDS) return "too-many-found";
+  const found: FoundEntry[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return "bad-found";
+    const { word, zipf } = item as Record<string, unknown>;
+    if (typeof word !== "string" || !WORD_RE.test(word)) return "bad-found-word";
+    if (typeof zipf !== "number" || !Number.isFinite(zipf)) return "bad-found-zipf";
+    if (zipf < MIN_ZIPF || zipf > MAX_ZIPF) return "bad-found-zipf";
+    found.push({ word, zipf: Math.round(zipf * 100) / 100 });
+  }
+  return found;
 }
 
 /** A whole submission, or a string saying what was wrong with it. */
@@ -386,29 +444,36 @@ function readSubmission(parsed: unknown):
 }
 
 /**
- * The date the words feed stays strictly before -- the day after today, so
- * today's own finds are included.
+ * The puzzle the feed is about: the one the asking player is looking at.
  *
- * This was originally today, which withheld them. The reasoning was that this is
- * a daily puzzle where everybody gets the same drop, so a word found today is an
- * answer to today's puzzle and publishing it hands that answer to anyone still
- * playing. That is still true, and it is a deliberate call to accept it: the
- * feed is more fun live, and a player who wants to be spoiled could always have
- * read the endpoint directly.
+ * A find belongs to a *drop*, not to a moment in UTC. The page heads the list
+ * with the day's drop, so the rows under it have to be that day's finds or the
+ * heading is wrong -- `asphyxiate` means nothing until you know the day asked
+ * for PHY.
  *
- * Reverting is a one-line change -- drop the `+ 1` -- and the client would need
- * to send whether the player has finished today for a middle position, where
- * only those who have locked in see the live ones.
+ * So the client's own puzzle date is used as given. It used to be run through
+ * `max(clientDate, utcDate)`, which was reasoning about timezones rather than
+ * about puzzles, and it got the answer wrong for everyone west of UTC: an
+ * American evening is already tomorrow in UTC, so the feed would query a date
+ * whose puzzle nobody in the Americas had reached, and "Today's finds" went
+ * empty every night through the busiest hours of the day.
  *
- * Still bounded by the later of the client's date and UTC's, so a client cannot
- * ask for rows dated arbitrarily far ahead.
+ * `validPuzzleDate` is the whole of the bound, and it is the right one: a date a
+ * puzzle actually exists for, no earlier than the first one and no later than
+ * the furthest ahead any local calendar can be. A caller cannot ask for a day
+ * the game has not reached, and does not need to be told which day they are on.
+ *
+ * Publishing the live puzzle's finds is a deliberate call. This is a daily game
+ * where everybody gets the same drop, so a word found today is an answer to
+ * today's puzzle, and anyone who opens this page mid-play is handed some. The
+ * feed is much better live than a day behind, and that is the trade.
  */
-function wordsCutoff(claimed: string | null): string {
-  const utc = utcToday();
-  const claimedOk = claimed && DATE_RE.test(claimed) && !Number.isNaN(Date.parse(`${claimed}T00:00:00Z`));
-  const player = claimedOk ? (claimed as string) : utc;
-  const latest = player > utc ? player : utc;
-  return daysBefore(latest, -1);
+function wordsDay(claimed: string | null): string {
+  if (claimed && validPuzzleDate(claimed)) return claimed;
+  // No date, or one no puzzle exists for. UTC's own day is the only guess
+  // available and is right for most of the world's clock; a real client always
+  // sends its own.
+  return utcToday();
 }
 
 /** `days` before `date`, as YYYY-MM-DD. */
@@ -431,10 +496,10 @@ function daysBefore(date: string, days: number): string {
  * first day, and until the boards open it is the whole page.
  */
 async function handleWordsGet(params: URLSearchParams): Promise<Response> {
-  // Today's finds and nothing else: the feed is about the puzzle everyone is on
-  // right now, and a week of history behind it made it read as an archive.
-  const before = wordsCutoff(params.get("today"));
-  const since = daysBefore(before, 1);
+  // One puzzle and nothing else: the feed is about the drop the player is
+  // looking at, and a week of history behind it made it read as an archive.
+  const since = wordsDay(params.get("today"));
+  const before = daysBefore(since, -1);
 
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 

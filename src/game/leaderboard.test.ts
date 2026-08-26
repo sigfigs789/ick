@@ -52,12 +52,46 @@ describe("submitting a score", () => {
           total: expect.any(Number),
           top: expect.any(Number),
           words: 2,
+          // The whole day's list rides along, which is what the finds feed is
+          // built from -- every word, not just the one that names the row.
+          found: [
+            { word: "inkling", zipf: expect.any(Number) },
+            { word: "wrinkle", zipf: expect.any(Number) },
+          ],
         },
       ],
     });
     const day = (body.scores as Record<string, number>[])[0];
     // The two numbers the game already shows the player, not a third scheme.
     expect(day.top).toBeLessThanOrEqual(day.total);
+  });
+
+  it("sends every word found, in the order they were found", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+    const words: AcceptedWord[] = [
+      { word: "Wrinkle", rarity: "Uncommon", zipf: 3.6 },
+      { word: "inkling", rarity: "Rare", zipf: 2.6 },
+    ];
+
+    submitScore({ date: todayDateString(), isToday: true, words });
+    const [day] = posted(fetchMock).scores as { found: { word: string }[] }[];
+
+    // Lowercased on the way out, like the day's rarest word: the endpoint takes
+    // nothing else, and the feed shows these to other players verbatim.
+    expect(day.found.map((found) => found.word)).toEqual(["wrinkle", "inkling"]);
+  });
+
+  it("prices each find at today's rates, not what it was worth when found", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+    // A stale frequency, as a record saved under an older dictionary would hold.
+    const words: AcceptedWord[] = [{ word: "inkling", rarity: "Rare", zipf: 9.9 }];
+
+    submitScore({ date: todayDateString(), isToday: true, words });
+    const [day] = posted(fetchMock).scores as { found: { zipf: number }[] }[];
+
+    expect(day.found[0].zipf).toBe(2.9);
   });
 
   it("sends nothing when nobody has joined on this browser", () => {

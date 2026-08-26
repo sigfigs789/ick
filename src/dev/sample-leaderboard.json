@@ -14,7 +14,11 @@
     "",
     "Fifteen rows a board, because fifteen is what a board shows -- and a",
     "weeklySelf / allTimeSelf row far below it, because that is the part worth",
-    "looking at: what a player outside the top fifteen sees of themselves."
+    "looking at: what a player outside the top fifteen sees of themselves.",
+    "",
+    "The feed is every word found on the day rather than one per player, so most",
+    "of it is ordinary words with one or two finders. That is what it looks like",
+    "live, and a fixture of nothing but Legends would not."
   ],
   "weekStart": "2026-08-23",
   "ready": true,
@@ -280,6 +284,48 @@
     "puzzles": 4
   },
   "words": [
+    {
+      "word": "tinkered",
+      "zipf": 3.62,
+      "finders": 1,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "kinship",
+      "zipf": 3.55,
+      "finders": 2,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "inkwell",
+      "zipf": 2.71,
+      "finders": 1,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "blinking",
+      "zipf": 4.02,
+      "finders": 3,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "thinker",
+      "zipf": 3.88,
+      "finders": 1,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "sprinkle",
+      "zipf": 3.74,
+      "finders": 2,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "drinking",
+      "zipf": 4.61,
+      "finders": 5,
+      "foundOn": "2026-08-24"
+    },
     {
       "word": "stonyheartedly",
       "zipf": -1.57,

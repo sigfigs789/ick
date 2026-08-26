@@ -271,6 +271,31 @@ describe("the leaderboard page", () => {
       ).toHaveLength(2)
     );
   });
+
+  it("still shows the finds when only the boards fail", async () => {
+    // Two requests, and only one of them broken. They are separate on purpose
+    // (the boards carry a player id and the feed does not), so they fail
+    // separately too.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: unknown, init?: RequestInit) => {
+        if (init?.method === "POST") return new Response(null, { status: 202 });
+        if (!String(url).includes("words=1")) return new Response("nope", { status: 502 });
+        return new Response(JSON.stringify({ words: WORDS }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      })
+    );
+    render(<LeaderboardPage />);
+
+    // The boards say so, and the feed underneath is unaffected -- hiding words
+    // that arrived perfectly well would be losing the half of the page that
+    // still works.
+    expect(await screen.findByText(/Couldn't load the boards/)).toBeInTheDocument();
+    const feed = await screen.findByRole("region", { name: "Today's finds" });
+    expect(within(feed).getAllByRole("listitem")).toHaveLength(WORDS.length);
+  });
 });
 
 describe("before the boards open", () => {
@@ -485,7 +510,7 @@ describe("recent finds", () => {
     // Without it the list is a pile of unrelated words.
     const section = await screen.findByRole("region", { name: "Today's finds" });
     expect(section.querySelector(".found-words__drop")?.textContent).toBeTruthy();
-    expect(screen.getByText("The best word each player has found today.")).toBeInTheDocument();
+    expect(screen.getByText("Every word found on today's puzzle, newest first.")).toBeInTheDocument();
   });
 
   it("shows the feed even while the boards are still shut", async () => {

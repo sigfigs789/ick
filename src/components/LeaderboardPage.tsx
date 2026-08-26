@@ -257,7 +257,11 @@ export function LeaderboardPage() {
           </div>
         )}
 
-        {state === "ready" && words.length > 0 && (
+        {/* Not gated on the boards' state. The feed is its own request, answering
+            its own question, and it is the part of this page that works from day
+            one -- so boards that failed to load are a reason to show a retry
+            above it, never a reason to hide finds that arrived perfectly well. */}
+        {words.length > 0 && (
           <FoundWords words={words} today={todayDateString()} arrived={arrived} />
         )}
 
@@ -301,11 +305,18 @@ export function LeaderboardPage() {
 }
 
 /**
- * What people have found on today's puzzle, newest first.
+ * Every word found on today's puzzle, newest first.
  *
- * Today only. A week of history behind it read as an archive, and the drop in
- * the heading is what makes the list mean anything: `asphyxiate` is just a word
- * until you know the day asked for PHY.
+ * One puzzle only, and it is the puzzle the player in front of it is on. A week
+ * of history behind it read as an archive, and the drop in the heading is what
+ * makes the list mean anything: `asphyxiate` is just a word until you know the
+ * day asked for PHY. That is also why the feed is keyed to a puzzle date rather
+ * than to a clock -- the drop is the thing these words have in common.
+ *
+ * Every word rather than each player's best. The feed used to be built from the
+ * one word per player the boards rank on, which made it a list of personal bests
+ * and gave it a worse habit: that word is replaced when a player beats it, so a
+ * find already on screen would disappear the moment its only finder did better.
  *
  * Its own section below the boards, rather than sharing the top of the page with
  * them. Both are lists of words, and a leaderboard row is a *player* while a
@@ -330,7 +341,7 @@ function FoundWords({
         Today's finds
         <span className="found-words__drop">{dropForDate(today)}</span>
       </h2>
-      <p className="leaderboard__caption">The best word each player has found today.</p>
+      <p className="leaderboard__caption">Every word found on today's puzzle, newest first.</p>
       <ul className="found-words__list">
         {words.map((found) => (
           <li

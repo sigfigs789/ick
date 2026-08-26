@@ -543,34 +543,54 @@ knows which day it is.
 
 ### Today's finds
 
-The words other players have turned up on today's puzzle, newest first, headed by
-the drop they had to contain — a find only means something beside its drop, since
+Every word anybody has found on today's puzzle, newest first, headed by the drop
+they had to contain — a find only means something beside its drop, since
 `asphyxiate` is just a word until you know the day asked for PHY. Each carries the
-same rarity badge the game shows on an accepted word.
+same rarity badge the game shows on an accepted word, and a word several people
+found appears once with the count.
 
-Today only. It began as a week of history and read as an archive; the point is
-the puzzle everyone is on right now. New finds slide in at the top while the page
-is open, and the page re-checks every 60 seconds — the CDN's own cache window, so
-polling faster would return the same bytes. Nothing runs while the tab is hidden,
-coming back refreshes at once, and a refresh never flashes the loading state or
-throws away good data over one bad minute.
+**One puzzle, and it is the puzzle the reader is on.** The feed is keyed to a
+puzzle date the client sends, not to a clock: `today` is used as given and bounded
+only by whether a puzzle exists for it (`wordsDay`). It used to take the *later* of
+the client's date and UTC's, which was reasoning about timezones rather than about
+puzzles and got it wrong for everybody west of UTC — an American evening is already
+tomorrow in UTC, so the feed asked for a drop nobody in the Americas had reached
+and came back empty through the busiest hours of the day.
+
+It began as a week of history and read as an archive; the point is the puzzle
+everyone is on right now. New finds slide in at the top while the page is open,
+and the page re-checks every 60 seconds — the CDN's own cache window, so polling
+faster would return the same bytes. Nothing runs while the tab is hidden, coming
+back refreshes at once, and a refresh never flashes the loading state or throws
+away good data over one bad minute. The feed is its own request and its own
+failure: boards that don't load leave it on screen untouched.
 
 **Publishing today's finds is a deliberate trade.** Everybody gets the same drop,
 so a word somebody found today is an *answer to today's puzzle* — showing it hands
 that answer to anyone still playing. It was withheld at first for exactly that
 reason. Accepted anyway: the feed is only worth keeping live if it changes while
 you watch, and someone who wanted to be spoiled could always have read the
-endpoint directly. Reverting is one line in `wordsCutoff`, and the middle position
-— live only for players who have already locked in — is written down there.
+endpoint directly. Reverting is one line in `wordsDay`, and the middle position —
+live only for players who have already locked in — is written down there.
 
-**No rarity bar.** Every entry is already the best word its finder managed today,
-which is the only filter the feed needs. Cutting the ordinary ones would quietly
-turn it into a list of good players rather than a list of what happened.
+**No rarity bar.** The feed is what the day's players found, and an ordinary word
+is part of what happened. Cutting the Commons would quietly turn a record of the
+puzzle into a highlight reel, which the boards above it already are.
 
-Every entry is somebody's best word of a day, which is exactly what
-`leaderboard_scores.top_word` already holds — so the feed is a query over data the
-boards were already storing, and it is not behind the boards' opening date,
-because a short list of good words is interesting at any size.
+**Every word, not each player's best.** The feed used to be built from
+`leaderboard_scores.top_word` — one word per player per day — which made it a list
+of personal bests rather than a list of finds, and gave it a worse habit: that
+column is *overwritten* when a player beats themselves, so a find already on screen
+would vanish the moment its only finder did better. A feed that removes things is
+not a feed. So words get their own table, `leaderboard_finds`, one row per player
+per puzzle per word, inserted once and never updated — which is also what makes the
+ordering trustworthy, since `found_at` is the moment a word first arrived and
+nothing afterwards can move it. Ordered by a word's *first* sighting, so a popular
+word stays where it landed and its count goes up, rather than jumping back to the
+top each time somebody else finds it.
+
+The feed is not behind the boards' opening date: a list of good words is
+interesting at any size, and until the boards open it is the whole page.
 
 ### Collected from the start, published on a date
 
@@ -589,12 +609,11 @@ database at all** — there is no early board sitting in an API response waiting
 be read out of a network tab. The recent-finds feed is deliberately outside it
 and works from day one, so the page is never empty while the boards wait.
 
-The header's trophy follows the same rule from the other side: it stays hidden
-until the leaderboard is worth a trip. Once the boards open that is a pure date
-check costing no request at all; before then it depends on whether there are
-finds to read, so the answer is cached between visits and refreshed in the
-background. A failed check leaves the last answer alone — a flaky moment should
-not make the trophy vanish for someone using it.
+The header's trophy is always there, and badged "new" until it is first opened.
+It was briefly hidden until the leaderboard had something to show, which sounded
+careful and deadlocked the cold start: finds only appear once players join, and
+joining only happens by opening this page. The page is never a dead end anyway —
+before the boards open it carries the finds feed and the date they arrive on.
 
 ### Before the boards open: run the migrations
 
@@ -609,9 +628,10 @@ visit that mints a player's id. A player who opens the leaderboard before the
 schema lands is joined, has their history swallowed, and never sends it again —
 their id already exists, so the next visit has nothing to import.
 
-So the two migrations in `supabase/migrations/` must be applied to the project
+So every migration in `supabase/migrations/` must be applied to the project
 *before* the leaderboard reaches players, and certainly before `BOARDS_OPEN_FROM`
-(2026-08-30):
+(2026-08-30). They are ordered and each depends on the one before it, so apply
+them all rather than picking the newest:
 
 ```
 supabase link --project-ref <ref>
@@ -714,9 +734,14 @@ puzzle could be played fresh and still count. Accepted deliberately — the play
 it lets in are real and numerous, and the ones it lets cheat have to be awake at
 3am to gain a single day's score.
 
-- **`leaderboard_names`** — one row per player who has chosen a name, holding
-  the word and the frequency it earned. Absent means "call me by my rarest",
-  which is the default and covers every new player.
+- **`leaderboard_finds`** — one row per player per puzzle per word, written by the
+  same call and read only by Today's finds. Inserted once and never updated:
+  `found_at` is when a word first arrived, which is what fixes its place in the
+  feed. A player re-sends their whole running word list after every accepted word,
+  so all but the newest entry conflicts every time — that is the design, not waste,
+  and it is what gets a player who joined mid-puzzle their earlier finds. The
+  history backfill deliberately sends no words for past days: the feed shows one
+  drop at a time, and a year of words would not fit the request body.
 - **`leaderboard_scores`** — one row per player per puzzle date, written by
   `api/leaderboard.ts` through `submit_leaderboard_scores`. Takes an array
   because it has two callers of the same shape: the game submitting today after
