@@ -13,6 +13,13 @@ import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
 
+/** Whether to name the form a word was scored on ("Scored as its common form,
+ * 'material'"). Off while the fold's choice of form is being sorted out: the
+ * note is only as trustworthy as the word it names, and a wrong name is worse
+ * than no explanation. The note and its tests are kept intact behind this flag
+ * so turning it back on is a one-line change. */
+const SHOW_BASE_FORM_NOTE = false;
+
 /** The clipboard form of a logged word: "<tier square> <word> (<score>)".
  * Reuses the share-results palette so a pasted word matches the share text. */
 function copyTextForWord(w: AcceptedWord, date?: string): string {
@@ -87,7 +94,9 @@ export function GuessLog({
             // baseFormRankDrop): naming a word the player would have had to
             // build up to reads as a correction of the find rather than an
             // explanation of the badge.
-            const baseNote = baseFormRankDrop(w.word, date);
+            const baseNote = SHOW_BASE_FORM_NOTE
+              ? baseFormRankDrop(w.word, date)
+              : undefined;
             return (
               <li key={w.word} className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}>
                 <button

@@ -37,17 +37,19 @@ describe("GuessLog", () => {
     expect(screen.getByText(/5 guesses left/i)).toBeInTheDocument();
   });
 
-  it("names the common form when scoring on it cost the guess real points", () => {
-    // "materialnesses" is unmeasured, so its own score would be a flat 10;
-    // it is scored as "material" instead, six points lower.
+  it("says nothing about the common form, even when scoring on it cost real points", () => {
+    // "materialnesses" is unmeasured, so its own score would be a flat 10; it
+    // is scored as "material" instead, six points lower. The note explaining
+    // that is hidden for now (SHOW_BASE_FORM_NOTE), so neither the visible copy
+    // nor the button's label mentions it.
     const words: AcceptedWord[] = [
       { word: "materialnesses", rarity: "Common", zipf: 4.95 },
     ];
     render(<GuessLog acceptedWords={words} />);
-    expect(screen.getByText(/scored as its common form, “material”/i)).toBeInTheDocument();
+    expect(screen.queryByText(/scored as its common form/i)).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /scored as its common form "material"/i })
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: /scored as its common form/i })
+    ).not.toBeInTheDocument();
   });
 
   it("leaves a word alone when its base barely changed the score", () => {
