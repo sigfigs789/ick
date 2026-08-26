@@ -134,13 +134,14 @@ describe("the leaderboard page", () => {
     expect(board).toHaveTextContent("Aug 10 – Dec 31 2026");
   });
 
-  it("puts the rule that governs both boards under both of them", async () => {
+  it("puts the rule that governs both boards above both of them", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
     // It used to be a caption on the season, where it read as something
     // peculiar to that board. It is not: the weekly board only counts a puzzle
-    // played on its own day either, so it belongs to the pair.
+    // played on its own day either, so it belongs to the pair -- and on the way
+    // in, since it is the condition a score has to meet to be on either list.
     await waitFor(() =>
       expect(screen.getByText("Must be scored on the day of the drop")).toBeInTheDocument()
     );

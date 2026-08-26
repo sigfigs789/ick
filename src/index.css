@@ -1686,8 +1686,11 @@ h2 {
    than a sentence because it is a rule, and because there may well be a second
    one -- a bullet is the shape that takes another without being rewritten. */
 .leaderboard__rules {
-  margin: 1.1rem 0 0;
-  padding-left: 1.1rem;
+  /* Tucked under the header's own rule and sat against the first board, so it
+     reads as the terms the boards below are kept on rather than as a line
+     floating between two things. */
+  margin: -0.85rem 0 1rem;
+  padding-left: 1.05rem;
   color: var(--fg-muted);
   font-size: 0.78rem;
   line-height: 1.45;

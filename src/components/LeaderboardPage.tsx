@@ -240,40 +240,43 @@ export function LeaderboardPage() {
         {state === "ready" && !ready && boards && <NotYet opensOn={boards.opensOn} />}
 
         {state === "ready" && ready && boards && (
-          <div className="leaderboard__boards">
-            <Board
-              heading="This week"
-              // No dates on this one. A week is the window you are already in --
-              // "this week" is the whole of what a player needs to know about
-              // which days it counts, and spelling them out was answering a
-              // question nobody had. The season gets dates because it is long
-              // enough to be worth knowing where you are inside it.
-              caption="Resets on Sundays."
-              entries={boards.weekly}
-              self={boards.weeklySelf}
-              emptyMessage="Nobody's scored yet this week. Be first."
-              playerId={playerId}
-            />
-            <Board
-              heading={seasonName()}
-              // Beside the name rather than under it: the range is what
-              // "Season 1" means, and a season with no dates on it is a word
-              // rather than a window.
-              headingDetail={seasonRange()}
-              entries={boards.allTime}
-              self={boards.allTimeSelf}
-              emptyMessage="No scores yet."
-              playerId={playerId}
-            />
-            {/* The rule that governs both boards, said once underneath them
-                rather than as a caption on one. It was under Season 1, where it
-                read as something peculiar to the season -- it is not: the whole
-                leaderboard only ever counts a puzzle played on its own day, the
-                weekly board included. A footnote to the pair is what it is. */}
+          <>
+            {/* The one rule both boards run on, stated before them rather than
+                after: it is the condition a score has to meet to be on either
+                list, so a reader wants it on the way in. Underneath the pair it
+                had nothing to sit against -- a bullet adrift between the last
+                row and the next section. Outside the grid below, so it sits
+                against the first board rather than a column gap away from it. */}
             <ul className="leaderboard__rules">
               <li>Must be scored on the day of the drop</li>
             </ul>
-          </div>
+            <div className="leaderboard__boards">
+              <Board
+                heading="This week"
+                // No dates on this one. A week is the window you are already in
+                // -- "this week" is the whole of what a player needs to know
+                // about which days it counts, and spelling them out was
+                // answering a question nobody had. The season gets dates because
+                // it is long enough to be worth knowing where you are inside it.
+                caption="Resets on Sundays."
+                entries={boards.weekly}
+                self={boards.weeklySelf}
+                emptyMessage="Nobody's scored yet this week. Be first."
+                playerId={playerId}
+              />
+              <Board
+                heading={seasonName()}
+                // Beside the name rather than under it: the range is what
+                // "Season 1" means, and a season with no dates on it is a word
+                // rather than a window.
+                headingDetail={seasonRange()}
+                entries={boards.allTime}
+                self={boards.allTimeSelf}
+                emptyMessage="No scores yet."
+                playerId={playerId}
+              />
+            </div>
+          </>
         )}
 
         {/* Not gated on the boards' state. The feed is its own request, answering
