@@ -263,7 +263,13 @@ describe("the leaderboard page", () => {
 
     expect(await screen.findByText(/Couldn't load the boards/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Try again" }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    // Counted by URL rather than by call: a load is two requests now, the
+    // boards and the feed beside them, and it is the boards being retried.
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1"))
+      ).toHaveLength(2)
+    );
   });
 });
 
@@ -605,6 +611,25 @@ describe("keeping the finds current", () => {
     // Today's finds land through the day, so a page left open must not sit on
     // the snapshot it opened with.
     expect(fetchMock.mock.calls.length).toBeGreaterThan(first);
+  });
+
+  it("polls the feed and leaves the boards alone", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    const boardCalls = () =>
+      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1")).length;
+    const opened = boardCalls();
+
+    await vi.advanceTimersByTimeAsync(180_000);
+
+    // The boards are the request carrying this player's id, so they are the one
+    // the CDN cannot share. Re-asking every minute would buy a rank that had
+    // almost certainly not moved, at the price of a private query per open page.
+    expect(boardCalls()).toBe(opened);
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).includes("words=1")).length
+    ).toBeGreaterThan(1);
   });
 
   it("keeps the boards on screen through a refresh", async () => {

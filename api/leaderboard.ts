@@ -24,10 +24,19 @@
 //   in SQL, so before the date no board row leaves the database at all -- there is
 //   no early board sitting in a response waiting to be read out of a network tab.
 //
-//   `words` is today's finds -- the best word each player has found on today's
-//   puzzle so far -- and is *not* behind that gate, because a short list of good
-//   words is interesting at any size. See `wordsCutoff` for what publishing them
-//   live costs and why it was accepted.
+// GET /api/leaderboard?words=1&today=YYYY-MM-DD
+//   -> { words: [...] }
+//   Today's finds -- the best word each player has found on today's puzzle so
+//   far -- as their own request rather than a key on the boards. Not behind the
+//   boards' opening gate: a list of good words is interesting from day one, and
+//   it is the thing worth showing while the boards wait. See `wordsCutoff` for
+//   what publishing them live costs and why it was accepted.
+//
+//   Split out because it is the one part of this page that is the same for
+//   everybody. The boards carry `player` and so are cached per player; this
+//   feed carries only a date, so one query a minute serves every open page.
+//   It is also the only part that needs to be live, so the page polls this and
+//   leaves the boards alone after the first load.
 //
 // POST /api/leaderboard  { playerId, scores: [{ date, word, zipf, total, top, words }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
@@ -53,10 +62,11 @@
 // Reads are CDN-cached briefly: a leaderboard a minute out of date is
 // indistinguishable from a live one, and it keeps a popular day from turning
 // every open of the page into a database query. `player` is part of the cache
-// key like any other parameter, so that sharing is per player rather than
-// across everybody -- the price of answering "where am I" in the same request
-// as the board, and a minute of it is still one query per player per minute
-// instead of one per page open.
+// key like any other parameter, so the boards are cached per player rather than
+// across everybody -- the price of answering "where am I" in the same request as
+// the board. That price is paid once per page open and not once a minute: the
+// boards are fetched when the page loads and then left alone, and the thing that
+// polls is the finds feed, which carries no player and is shared by everyone.
 
 import { record, rpc, supabaseConfigured, type EdgeContext } from "./_supabase";
 
@@ -134,6 +144,13 @@ const MAX_BODY_BYTES = 64 * 1024;
  */
 const DEFAULT_LIMIT = 15;
 const MAX_LIMIT = 200;
+/**
+ * How many finds the feed will return. A backstop, not a limit: the rows are
+ * distinct best-words-of-the-day, so reaching 500 takes 500 players finding 500
+ * different best words on one drop -- well past the point this wants to be a
+ * different design. It exists so a flood cannot make the response enormous.
+ */
+const WORDS_LIMIT = 500;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -183,12 +200,11 @@ interface WordEntry {
   foundOn: string;
 }
 
-/** What `leaderboard_boards` answers with: the gate, the rows, and the feed. */
+/** What `leaderboard_boards` answers with: the gate and the rows. */
 interface BoardsResult {
   ready: boolean;
   weekly: BoardRow[];
   allTime: BoardRow[];
-  words: WordRow[];
 }
 
 function reply(status: number, body?: unknown, cacheSeconds = 0): Response {
@@ -400,8 +416,48 @@ function daysBefore(date: string, days: number): string {
   return new Date(Date.parse(`${date}T00:00:00Z`) - days * 86400000).toISOString().slice(0, 10);
 }
 
+/**
+ * Today's finds, cached for everybody at once.
+ *
+ * Reads `leaderboard_words` directly rather than going through
+ * `leaderboard_boards`. The two questions looked like one -- both are "what does
+ * this page show" -- but they are not cached alike: the boards need to know who
+ * is asking so they can hand back that player's own row, and the moment `player`
+ * joins the cache key the response stops being shared. The feed is identical for
+ * every player, so it is asked for on its own and the CDN answers it once a
+ * minute for all of them.
+ *
+ * Not behind the boards' opening gate, deliberately: the feed works from the
+ * first day, and until the boards open it is the whole page.
+ */
+async function handleWordsGet(params: URLSearchParams): Promise<Response> {
+  // Today's finds and nothing else: the feed is about the puzzle everyone is on
+  // right now, and a week of history behind it made it read as an archive.
+  const before = wordsCutoff(params.get("today"));
+  const since = daysBefore(before, 1);
+
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    const rows = await rpc<WordRow[]>("leaderboard_words", {
+      p_before: before,
+      p_since: since,
+      p_limit: WORDS_LIMIT,
+    });
+    return reply(200, { words: toWords(rows ?? null) }, 60);
+  } catch (error) {
+    console.error("[leaderboard] words read failed:", error instanceof Error ? error.message : error);
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
 async function handleGet(request: Request): Promise<Response> {
   const params = new URL(request.url).searchParams;
+  // The finds feed, on its own. Checked before anything else is read, because
+  // this request carries none of the rest -- no week, no limit, no player -- and
+  // that is the whole point of it: a URL identical for every player is a URL the
+  // CDN can answer once.
+  if (params.get("words") === "1") return handleWordsGet(params);
   const since = params.get("since") ?? "";
   if (!validWindowStart(since)) {
     return reply(400, { ok: false, reason: "bad-since" });
@@ -416,10 +472,6 @@ async function handleGet(request: Request): Promise<Response> {
   // an error.
   const claimedPlayer = params.get("player") ?? "";
   const player = UUID_RE.test(claimedPlayer) ? claimedPlayer.toLowerCase() : null;
-  // Today's finds and nothing else: the feed is about the puzzle everyone is on
-  // right now, and a week of history behind it made it read as an archive.
-  const wordsBefore = wordsCutoff(params.get("today"));
-  const wordsSince = daysBefore(wordsBefore, 1);
   // Open for whoever has actually reached the date. Local calendars run ahead of
   // and behind UTC by up to a day, so the later of the two is the one that says
   // "it is Sunday somewhere the player is" -- a player is never made to wait past
@@ -438,8 +490,6 @@ async function handleGet(request: Request): Promise<Response> {
       p_since: since,
       p_limit: limit,
       p_open: open,
-      p_words_before: wordsBefore,
-      p_words_since: wordsSince,
       p_player: player,
       p_season_since: SEASON_START,
       p_season_until: SEASON_END,
@@ -459,7 +509,6 @@ async function handleGet(request: Request): Promise<Response> {
         weeklySelf: weekly.self,
         allTime: allTime.entries,
         allTimeSelf: allTime.self,
-        words: toWords(result?.words ?? null),
       },
       // A minute: long enough that a burst of opens costs one query, short
       // enough that a player who just scored sees themselves move.

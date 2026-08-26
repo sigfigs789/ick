@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { backfillHistory, fetchBoards, submitScore } from "./leaderboard";
+import { backfillHistory, fetchBoards, fetchFoundWords, submitScore } from "./leaderboard";
 import { handleFor } from "./handle";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
@@ -376,14 +376,11 @@ describe("reading the boards", () => {
   });
 });
 
-describe("the recent finds feed", () => {
+describe("the finds feed, fetched on its own", () => {
   it("keeps the order the server sent, which is newest first", async () => {
     stubFetch(
       new Response(
         JSON.stringify({
-          ready: true,
-          weekly: [],
-          allTime: [],
           // A rarer word from an older day comes second, because the feed is a
           // feed -- ordered by when a word turned up, not by how good it is.
           words: [
@@ -395,7 +392,7 @@ describe("the recent finds feed", () => {
       )
     );
 
-    expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual([
+    expect((await fetchFoundWords("2026-08-27")).map((w) => w.word)).toEqual([
       "inkling",
       "stonyheartedly",
     ]);
@@ -405,9 +402,6 @@ describe("the recent finds feed", () => {
     stubFetch(
       new Response(
         JSON.stringify({
-          ready: true,
-          weekly: [],
-          allTime: [],
           words: [
             // Stored as though everyday, which it is not -- the feed is judged on
             // today's dictionary, like everything else the board shows.
@@ -419,7 +413,7 @@ describe("the recent finds feed", () => {
       )
     );
 
-    const { words } = await fetchBoards("2026-08-27");
+    const words = await fetchFoundWords("2026-08-27");
     expect(words).toEqual([
       { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3, foundOn: "", today: false },
       { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1, foundOn: "", today: false },
@@ -430,16 +424,13 @@ describe("the recent finds feed", () => {
     stubFetch(
       new Response(
         JSON.stringify({
-          ready: true,
-          weekly: [],
-          allTime: [],
           words: [{ word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-27" }],
         }),
         { status: 200, headers: { "content-type": "application/json" } }
       )
     );
 
-    const { words } = await fetchBoards("2026-08-27");
+    const words = await fetchFoundWords("2026-08-27");
     // Marked, because a live feed nobody can tell is live reads as history.
     expect(words).toEqual([
       {
@@ -457,9 +448,6 @@ describe("the recent finds feed", () => {
     stubFetch(
       new Response(
         JSON.stringify({
-          ready: true,
-          weekly: [],
-          allTime: [],
           words: [
             { word: "cat", zipf: 4.78, finders: 9, foundOn: "2026-08-27" },
             { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-27" },
@@ -472,33 +460,42 @@ describe("the recent finds feed", () => {
     // `cat` is Common, and it is still the best word its finder managed that
     // day. Cutting it would make the feed a list of good players rather than a
     // list of what happened.
-    expect((await fetchBoards("2026-08-27")).words.map((w) => w.word)).toEqual([
+    expect((await fetchFoundWords("2026-08-27")).map((w) => w.word)).toEqual([
       "cat",
       "inkling",
     ]);
   });
 
-  it("sends the player's own date, so the server can keep today's finds back", async () => {
+  it("sends the date and nothing else, so every player shares one cached answer", async () => {
     const fetchMock = stubFetch(
-      new Response(JSON.stringify({ ready: true, weekly: [], allTime: [], words: [] }), {
+      new Response(JSON.stringify({ words: [] }), {
         status: 200,
         headers: { "content-type": "application/json" },
       })
     );
-    await fetchBoards("2026-08-27");
+    await fetchFoundWords("2026-08-27");
 
     const [requested] = (fetchMock.mock.calls[0] ?? []) as [string?];
     const url = new URL(String(requested), "https://wordink.app");
     expect(url.searchParams.get("today")).toBe("2026-08-27");
+    // No player id: the moment one is on this URL the response stops being
+    // shareable, which is the whole reason the feed left the boards' request.
+    expect(url.searchParams.get("player")).toBeNull();
+    expect([...url.searchParams.keys()].sort()).toEqual(["today", "words"]);
+  });
+
+  it("rejects on a failed read, so a refresh can leave the last list up", async () => {
+    stubFetch(new Response("nope", { status: 502 }));
+    await expect(fetchFoundWords("2026-08-27")).rejects.toThrow("leaderboard words 502");
   });
 
   it("has an empty feed when the server sends none", async () => {
     stubFetch(
-      new Response(JSON.stringify({ ready: true, weekly: [], allTime: [] }), {
+      new Response(JSON.stringify({}), {
         status: 200,
         headers: { "content-type": "application/json" },
       })
     );
-    expect((await fetchBoards("2026-08-27")).words).toEqual([]);
+    expect((await fetchFoundWords("2026-08-27"))).toEqual([]);
   });
 });
