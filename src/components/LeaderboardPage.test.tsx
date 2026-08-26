@@ -5,7 +5,6 @@ import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard, loadPlayerId } from "../game/player";
 import { handleFor } from "../game/handle";
 import { seasonName } from "../game/leaderboard";
-import { resetLabel, weekRange } from "../game/week";
 
 // No names come from the server: the client derives a handle from each player
 // id, so the same player is recognisable on both boards without anything being
@@ -136,20 +135,19 @@ describe("the leaderboard page", () => {
     expect(board).toHaveTextContent("Must be completed the day of the puzzle.");
   });
 
-  it("gives the weekly board its days too, and keeps the countdown", async () => {
+  it("says when the weekly board turns over, and no more than that", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     const board = screen.getByRole("region", { name: "This week" });
-    // Both headings answer the same question in the same place now: this is the
-    // window, these are its days. "From Sunday on" named the boundary without
-    // ever saying which Sunday.
-    expect(board).toHaveTextContent(weekRange());
+    expect(board).toHaveTextContent("Resets on Sundays.");
+    // No dates and no countdown: a week is the window you are already in, and
+    // "this week" says which days it counts. The season carries dates because it
+    // is long enough that where you are inside it is a real question.
     expect(board).not.toHaveTextContent("From Sunday on");
-    // The countdown is the one thing a date range cannot say -- a season is a
-    // window, a week is a window running out.
-    expect(board).toHaveTextContent(resetLabel());
+    expect(board).not.toHaveTextContent(/Resets in \d/);
+    expect(board).not.toHaveTextContent(/Aug \d+ – \d+/);
   });
 
   it("drops the subtitle over the two boards", async () => {

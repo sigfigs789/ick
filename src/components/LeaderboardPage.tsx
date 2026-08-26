@@ -12,7 +12,6 @@ import {
 import { joinBoard, loadPlayerId } from "../game/player";
 import { formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
-import { resetLabel, weekRange } from "../game/week";
 import { navigate } from "../routes";
 import { trackLeaderboardJoined } from "../analytics";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -202,13 +201,12 @@ export function LeaderboardPage() {
           <div className="leaderboard__boards">
             <Board
               heading="This week"
-              // The week's own days, beside the heading exactly as the season's
-              // are. "From Sunday on" named the boundary without ever saying
-              // which Sunday, which was true of every week this board has shown.
-              headingDetail={weekRange()}
-              // The countdown stays, and it is the one thing the dates cannot
-              // say: a season is a window, a week is a window running out.
-              caption={`${resetLabel()}.`}
+              // No dates on this one. A week is the window you are already in --
+              // "this week" is the whole of what a player needs to know about
+              // which days it counts, and spelling them out was answering a
+              // question nobody had. The season gets dates because it is long
+              // enough to be worth knowing where you are inside it.
+              caption="Resets on Sundays."
               entries={boards.weekly}
               self={boards.weeklySelf}
               emptyMessage="Nobody's scored yet this week. Be first."
