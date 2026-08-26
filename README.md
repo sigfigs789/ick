@@ -470,8 +470,8 @@ first day, and a link under the results. Routing is
 `vercel.json` already rewrites every non-`/api/` path to `index.html`.
 
 Two boards, both fed by one table and shown together: **this week**, counting
-puzzles from the current Sunday onward, and **Season 1**, counting the season's
-own range (2026-08-10 to 2026-12-31). Both are **ranked by total score** — a sum
+puzzles from the current Sunday onward, and **Monthly**, counting puzzles from
+the first of the current month onward. Both are **ranked by total score** — a sum
 of daily scores, which rewards showing up daily instead of peaking once. Ties
 break on the best single word, then on who got there first. The rank is computed
 in SQL and returned as a column rather than inferred from row order, so the thing
@@ -489,18 +489,28 @@ scrolling, because a row you have to scroll to is one you may as well not have.
 The cost is that `player` joins the CDN cache key: the 60-second read cache is
 shared per player rather than across everybody.
 
-**A season, not all of time.** The second board used to sum every puzzle ever. A
-season ends, which is what makes it worth ranking — a player arriving in November
-has something they can still win, and the standings that stand on 31 December are
-final rather than merely current. The range is bounded at *both* ends in SQL
-(`p_season_since` / `p_season_until`), because a board named for two dates that
-quietly counts everything outside them is a name that lies: an early player
-backfilling a July history would land inside Season 1, and so would every puzzle
-after New Year. The dates live in `api/leaderboard.ts` and are named on screen
-from the pair in `src/game/leaderboard.ts` — opening Season 2 is those two lines,
-never a migration. Unlike the week, they are *not* taken from the request: a week
-turns over at the player's own midnight, but a season is the same season
-everywhere.
+**A month, not all of time and not a season.** The second board used to sum every
+puzzle ever, and then a hand-picked season (2026-08-01 to 2026-12-31). A window
+that ends is what makes it worth ranking — somebody arriving late has something
+they can still win — but a season's ends had to be picked, named on screen, and
+opened again by hand, and the board was only ever as current as whoever remembered
+to move it. A month needs none of that: the window is `monthStart(date)` in
+`src/game/month.ts`, computed from the puzzle date on every fetch, so the board
+turns over on the first with nothing to run and nothing to edit. It goes up with
+the request the same way the week does, because the puzzle date both windows
+bracket is the player's own local calendar date — so a reset lands at the player's
+own midnight on both boards. Only the near end is sent: the far end is the last
+day of that same month, worked out in `api/leaderboard.ts` rather than trusted,
+and the board is bounded at *both* ends in SQL (`p_season_since` /
+`p_season_until` — parameters that kept the old word, so a rename never has to
+drop and recreate the function mid-deploy). Bounded at both ends because a board
+named for a window that quietly counts outside it is a name that lies: a July
+history brought in by a backfill, or a score from a clock already on the first of
+next month, would count toward a month it is not in. On screen it says **Resets
+Tuesday, Sep 1** — the weekday leads because that is the half a player can act
+on; a bare date is one they still have to place in their own week. Unlike the
+week's "Resets on Sundays" the answer moves, so it is computed rather than a
+constant on the page.
 
 **The find is held back for now.** Each row used to carry the player's rarest
 word inside the window (`quixotic 7.9`) beside the puzzle count. The problem is

@@ -1,16 +1,20 @@
-// The leaderboard: a Vercel Edge Function that reads the weekly and all-time
+// The leaderboard: a Vercel Edge Function that reads the weekly and monthly
 // boards, and takes the score submissions that fill them.
 //
-// GET /api/leaderboard?since=YYYY-MM-DD&limit=15&player=UUID
+// GET /api/leaderboard?since=YYYY-MM-DD&month=YYYY-MM-01&limit=15&player=UUID
 //   -> { weekStart, weekly: [...], weeklySelf, allTime: [...], allTimeSelf,
 //        lastWeek, lastMonth }
 //   The weekly board counts puzzles from `since` onward; the second counts the
-//   season, which is a fixed range this file holds (SEASON_START / SEASON_END)
-//   rather than anything the caller can move. `since` does come from the client,
-//   because the puzzle date it brackets is the player's own local calendar date
-//   (see src/game/week.ts), so the week has to be measured on the same clock.
+//   month `month` begins. Both come from the client, because the puzzle date
+//   they bracket is the player's own local calendar date (see src/game/week.ts
+//   and src/game/month.ts), so both windows have to be measured on the same
+//   clock. Only the near end of the month is sent: the far end is the last day
+//   of that same month, which this file works out rather than trusting.
 //   The response still calls the second board `allTime`: it is the long window
-//   beside the short one, and renaming the key every season would help nobody.
+//   beside the short one, and it has been all time, then a season, then a month
+//   without the key ever being what a reader of the page sees. Renaming it is a
+//   migration to the SQL that builds it, for a word nobody outside these two
+//   files reads.
 //
 //   Each board is a top fifteen. `player` is optional and is the player asking:
 //   when they rank below the cut, their own row comes back as `weeklySelf` /
@@ -20,7 +24,10 @@
 //
 //   `lastWeek` and `lastMonth` are the players who topped the last *completed*
 //   window under each board: the seven days before `since`, and the calendar
-//   month before `today`. Both are ordinary board rows (rank 1), or null when
+//   month before `month`. Each is that board's own window one step back, taken
+//   from the same parameter that bounds the board, so a board and the plaque
+//   under it can never name two different windows. Both are ordinary board rows
+//   (rank 1), or null when
 //   nobody scored inside the window. They are what keeps a win from evaporating
 //   when the window it happened in moves on.
 //
@@ -86,6 +93,16 @@ export const config = { runtime: "edge" };
 const EPOCH = "2026-07-01";
 /** The earliest Sunday a weekly window can start on: the one bracketing EPOCH. */
 const WINDOW_FLOOR = "2026-06-28";
+/** A window start that is the first of some month, as the monthly board's is. */
+const MONTH_START_RE = /^\d{4}-\d{2}-01$/;
+/**
+ * The earliest month a board can count: the one the week's floor falls in.
+ *
+ * A month's window starts on the first, which for the floor's own month is a few
+ * days before the floor itself -- the same reason the weekly floor sits before
+ * the epoch (see `validWindowStart`), one month up.
+ */
+const MONTH_FLOOR = `${WINDOW_FLOOR.slice(0, 7)}-01`;
 /**
  * The most a single puzzle can be worth: six guesses (the pre-2026-08-20 limit,
  * and the highest the game has ever allowed) at a perfect 10. Bounding on the
@@ -112,23 +129,22 @@ const WORD_RE = /^[a-z]{2,30}$/;
 const MIN_ZIPF = -10;
 const MAX_ZIPF = 10;
 /**
- * The season the second board counts, inclusive at both ends.
+ * The month the second board counts, from the near end the caller sent.
  *
- * Held here rather than in SQL, the same way the week's first day is: opening
- * Season 2 is these two lines and the pair in src/game/leaderboard.ts that names
- * it on screen, never a migration.
+ * The last day of that month, so the board is bounded inclusively at both ends
+ * and a player whose local clock is already on the first of next month cannot
+ * put a score on the month they have left.
  *
- * Bounded at both ends because the board is named for the season. It used to be
- * "all time" and count everything, which a name with two dates on it cannot do:
- * a player backfilling a July history would land inside Season 1, and every
- * puzzle after New Year would keep landing there.
- *
- * These are fixed dates and not the player's own calendar, so they are not taken
- * from the request -- unlike the week, whose boundary is local to whoever is
- * asking. A season is the same season everywhere.
+ * The far end is derived rather than sent for the same reason the week's is not
+ * sent: one date already says which month it is, and a second parameter would
+ * only be a way for the two to disagree.
  */
-const SEASON_START = "2026-08-01";
-const SEASON_END = "2026-12-31";
+function monthEnd(start: string): string {
+  const [year, month] = start.split("-").map(Number);
+  // Day 0 of the next month is the last day of this one, with no table of month
+  // lengths and no leap-year case.
+  return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+}
 
 /**
  * A batch is a browser's whole playing history, so it has to hold a couple of
@@ -357,6 +373,11 @@ function validWindowStart(date: string): boolean {
   return validDate(date, WINDOW_FLOOR);
 }
 
+/** The monthly board's window: the first of a real month, no earlier than the floor. */
+function validMonthStart(date: string): boolean {
+  return MONTH_START_RE.test(date) && validDate(date, MONTH_FLOOR);
+}
+
 /** One word a player found, as the finds feed stores it. */
 interface FoundEntry {
   word: string;
@@ -519,23 +540,25 @@ function daysBefore(date: string, days: number): string {
 }
 
 /**
- * The calendar month before the one `date` falls in, as [first, last].
+ * The calendar month before the month `start` begins, as [first, last].
  *
- * Taken from the asking player's own date rather than from UTC, for the same
- * reason the week is: a month boundary should turn over at the reader's
- * midnight, not at somebody else's. Done on the date's own numbers rather than
- * with Date arithmetic, so December stepping back to November of the year
- * before is the ordinary case rather than a wrap to watch for.
+ * `start` is the monthly board's own window, so this is that board one step
+ * back -- which is exactly the window its champion line reports on. Taken from
+ * the player's own month rather than from UTC, for the same reason the week is:
+ * a month boundary should turn over at the reader's midnight, not at somebody
+ * else's. Done on the date's own numbers rather than with Date arithmetic, so
+ * December stepping back to November of the year before is the ordinary case
+ * rather than a wrap to watch for.
  */
-function previousMonth(date: string): { since: string; until: string } {
-  const year = Number(date.slice(0, 4));
-  const month = Number(date.slice(5, 7));
+function previousMonth(start: string): { since: string; until: string } {
+  const year = Number(start.slice(0, 4));
+  const month = Number(start.slice(5, 7));
   const prevYear = month === 1 ? year - 1 : year;
   const prevMonth = month === 1 ? 12 : month - 1;
   const first = `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`;
-  // The day before the first of *this* month, which is the last of the previous
-  // one without needing to know how long any month is.
-  const last = daysBefore(`${year}-${String(month).padStart(2, "0")}-01`, 1);
+  // The day before the first of the board's own month, which is the last of the
+  // one before it without needing to know how long any month is.
+  const last = daysBefore(start, 1);
   return { since: first, until: last };
 }
 
@@ -582,6 +605,14 @@ async function handleGet(request: Request): Promise<Response> {
   if (!validWindowStart(since)) {
     return reply(400, { ok: false, reason: "bad-since" });
   }
+  // The month the second board counts. Refused rather than guessed when it is
+  // not the first of a real month: a board bounded to a window the caller did
+  // not ask for would be wrong quietly, which is the one failure this page has
+  // no way to show.
+  const month = params.get("month") ?? "";
+  if (!validMonthStart(month)) {
+    return reply(400, { ok: false, reason: "bad-month" });
+  }
   const requested = Number.parseInt(params.get("limit") ?? "", 10);
   const limit = Number.isFinite(requested)
     ? Math.min(Math.max(requested, 1), MAX_LIMIT)
@@ -592,13 +623,14 @@ async function handleGet(request: Request): Promise<Response> {
   // an error.
   const claimedPlayer = params.get("player") ?? "";
   const player = UUID_RE.test(claimedPlayer) ? claimedPlayer.toLowerCase() : null;
-  // The month the champion line under the season board reports on: the one
-  // before the reader's own. `since` is a Sunday, so it cannot be asked which
-  // month it is in -- the Sunday bracketing the 1st belongs to the month before
-  // -- and the puzzle date the client sends can. Falling back to UTC's day is
-  // the same fallback the finds feed makes when no date arrives.
-  const claimedToday = params.get("today") ?? "";
-  const month = previousMonth(validPuzzleDate(claimedToday) ? claimedToday : utcToday());
+  // The month the champion line under the monthly board reports on: the one
+  // before the board's own window. Taken from `month` rather than from `today`,
+  // which is what it used to read, because `month` is now the one thing on the
+  // request that says which month this page is about -- so the board and the
+  // plaque under it cannot name two different months, which two sources could
+  // at a boundary. It also needs no fallback of its own: `month` is validated
+  // above, where `today` was optional.
+  const lastMonth = previousMonth(month);
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
@@ -614,10 +646,14 @@ async function handleGet(request: Request): Promise<Response> {
       // no behaviour this endpoint can see.
       p_open: true,
       p_player: player,
-      p_season_since: SEASON_START,
-      p_season_until: SEASON_END,
-      p_month_since: month.since,
-      p_month_until: month.until,
+      // The function's parameters still say "season"; the window they carry is
+      // now a month. Renaming them means dropping and recreating the function,
+      // which breaks every request in flight during a deploy for no behaviour
+      // either side can see.
+      p_season_since: month,
+      p_season_until: monthEnd(month),
+      p_month_since: lastMonth.since,
+      p_month_until: lastMonth.until,
     });
     const weekly = toBoard(result?.weekly ?? null, limit);
     const allTime = toBoard(result?.allTime ?? null, limit);

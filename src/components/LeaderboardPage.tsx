@@ -4,14 +4,13 @@ import {
   fetchBoards,
   fetchFoundWords,
   type FetchOptions,
-  seasonName,
-  seasonRange,
   type BoardEntry,
   type Boards,
   type FoundWord,
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
 import { previousMonthName, todayDateString } from "../game/date";
+import { monthResetLabel } from "../game/month";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -342,15 +341,13 @@ export function LeaderboardPage() {
             <div className="leaderboard__boards">
               <Board
                 heading="This week"
-                // Beside the heading, where the season's dates are: the two
-                // boards sit shoulder to shoulder now, and a line under one of
-                // them and not the other pushed its rows half a line down --
-                // two lists side by side that do not start level read as a
-                // mistake. No dates on this one either way. A week is the
-                // window you are already in, and spelling its days out was
-                // answering a question nobody had; the season carries dates
-                // because it is long enough to be worth knowing where you are
-                // inside it.
+                // Beside the heading rather than under it: the two boards sit
+                // shoulder to shoulder, and a line under one of them and not
+                // the other pushed its rows half a line down -- two lists side
+                // by side that do not start level read as a mistake. No dates
+                // on either board now. A window you are already in does not
+                // need its days spelled out; when it turns over is the one
+                // thing worth saying, and both boards say exactly that.
                 headingDetail="Resets on Sundays"
                 entries={boards.weekly}
                 self={boards.weeklySelf}
@@ -363,18 +360,26 @@ export function LeaderboardPage() {
                 championLabel="Last week's champion"
               />
               <Board
-                heading={seasonName()}
-                // Beside the name rather than under it: the range is what
-                // "Season 1" means, and a season with no dates on it is a word
-                // rather than a window.
-                headingDetail={seasonRange()}
-                entries={boards.allTime}
-                self={boards.allTimeSelf}
-                emptyMessage="No scores yet."
+                heading="Monthly"
+                // The weekday it turns over on and the date that is, which for
+                // a month is computed (see game/month.ts) rather than the
+                // constant the week can get away with -- and the weekday leads,
+                // because a bare "Sep 1" is a date a reader still has to place
+                // in their own week. This board used to be "Season 1" with
+                // the season's two dates under it -- a window a reader had to
+                // be told the ends of, because they were picked by hand. A
+                // month has ends everybody already knows.
+                headingDetail={monthResetLabel(today)}
+                entries={boards.monthly}
+                self={boards.monthlySelf}
+                emptyMessage="Nobody's scored yet this month. Be first."
                 playerId={playerId}
-                // The season has no completed season behind it to report on, so
-                // the month is what this board's closed window is: long enough
-                // to be an achievement, and it does finish.
+                // This board's own window, one step back -- the same relation
+                // last week's champion has to the weekly board. It used to be
+                // the nearest thing available: a season had no completed season
+                // behind it, so the month was borrowed as its closed window.
+                // Now the board is the month, and the plaque under it is simply
+                // the last one that finished.
                 champion={boards.lastMonth}
                 championLabel={`${previousMonthName(today)}'s champion`}
               />
@@ -478,7 +483,7 @@ function FoundWords({
 
 interface BoardProps {
   heading: string;
-  /** A note beside the heading, set smaller -- the season's dates. */
+  /** A note beside the heading, set smaller -- when the board resets. */
   headingDetail?: string;
   entries: BoardEntry[];
   /** This player's own row, when they rank below the last one shown. */

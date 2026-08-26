@@ -1619,7 +1619,7 @@ h2 {
 }
 /* Side by side once there is room for it, which is the whole reason this page is
    wider than the game's column. The interesting thing about a weekly board is
-   how it differs from the season one -- who is new, who is always there -- and a
+   how it differs from the monthly one -- who is new, who is always there -- and a
    reader who has to scroll between them has to hold the first in their head to
    see it. Only worth doing now that a board is five rows tall: at fifteen, the
    pair was two screens and the comparison was theoretical.
@@ -1644,10 +1644,11 @@ h2 {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-/* The season's dates, on the heading's own line and plainly subordinate to it --
-   "Season 1" is what you read, the range is what it means. Set in the body face
-   at reading case so it reads as a note beside the name rather than as more
-   heading, and kept unbreakable so the range never splits across two lines. */
+/* When the board resets, on the heading's own line and plainly subordinate to it
+   -- "Monthly" is what you read, the reset day is the one thing it needs said
+   about it. Set in the body face at reading case so it reads as a note beside
+   the name rather than as more heading, and kept unbreakable so it never splits
+   across two lines. */
 .leaderboard__board-dates {
   margin-left: 0.45rem;
   color: var(--fg-faint);

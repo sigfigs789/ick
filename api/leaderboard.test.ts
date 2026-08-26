@@ -9,6 +9,9 @@ const CONFIGURED = {
 const PLAYER = "3f1a2b4c-5d6e-4f70-8901-23456789abcd";
 // A Sunday, and the only date these tests use as a window start.
 const SUNDAY = "2026-08-23";
+// The month that Sunday falls in -- the monthly board's window, sent by the
+// client alongside the week for the same reason (see src/game/month.ts).
+const MONTH = "2026-08-01";
 
 function withEnv(env: Record<string, string | undefined> = CONFIGURED) {
   vi.stubGlobal("process", { env });
@@ -279,7 +282,7 @@ describe("api/leaderboard reads", () => {
   it("returns both boards, with the ranks the database assigned", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    const response = await handler(get(`?since=${SUNDAY}&limit=10`));
+    const response = await handler(get(`?since=${SUNDAY}&month=${MONTH}&limit=10`));
 
     expect(response.status).toBe(200);
     // Cached briefly rather than not at all: a burst of opens costs one query.
@@ -329,7 +332,7 @@ describe("api/leaderboard reads", () => {
   it("asks for the boards unconditionally, with no opening date to wait for", async () => {
     withEnv();
     const fetchMock = stubFetch([{ weekly: [], allTime: [], words: [] }]);
-    await handler(get(`?since=${SUNDAY}&today=2026-08-25`));
+    await handler(get(`?since=${SUNDAY}&month=${MONTH}&today=2026-08-25`));
 
     // The function still carries the gate parameter -- dropping it would mean
     // recreating the function mid-deploy -- so the endpoint holds it open.
@@ -339,25 +342,54 @@ describe("api/leaderboard reads", () => {
   it("caps the row count a caller can ask for", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    await handler(get(`?since=${SUNDAY}&limit=100000`));
+    await handler(get(`?since=${SUNDAY}&month=${MONTH}&limit=100000`));
 
     expect(rpcCall(fetchMock)?.args.p_limit).toBe(200);
   });
 
-  it("bounds the second board to the season, at both ends", async () => {
+  it("bounds the second board to the month the caller sent, at both ends", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    await handler(get(`?since=${SUNDAY}`));
+    await handler(get(`?since=${SUNDAY}&month=${MONTH}`));
 
-    // The board is named for a season with two dates on it, so it counts that
-    // range and nothing else -- a July puzzle brought in by a backfill is
-    // outside Season 1, and so is everything after New Year. The dates are the
-    // endpoint's, not the caller's: a season is the same season everywhere,
-    // unlike a week, whose boundary is local to whoever is asking.
+    // The month and nothing either side of it: a July puzzle brought in by a
+    // backfill is outside the window, and so is a score from the first hours of
+    // September on a clock that is already there. The far end is this file's own
+    // arithmetic -- the caller sends one date, so the two cannot disagree.
     expect(rpcCall(fetchMock)?.args).toMatchObject({
       p_season_since: "2026-08-01",
-      p_season_until: "2026-12-31",
+      p_season_until: "2026-08-31",
     });
+  });
+
+  it("ends a short month on its own last day", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    await handler(get(`?since=2026-06-28&month=2026-06-01`));
+
+    expect(rpcCall(fetchMock)?.args.p_season_until).toBe("2026-06-30");
+  });
+
+  it("refuses a month that isn't the first of a real one", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    // Guessing would bound the board to a window nobody asked for, which is the
+    // one failure this page cannot show.
+    const response = await handler(get(`?since=${SUNDAY}&month=2026-08-15`));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ reason: "bad-month" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a boards request with no month at all", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    const response = await handler(get(`?since=${SUNDAY}`));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ reason: "bad-month" });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("reports the champion of each closed window under the live boards", async () => {
@@ -383,7 +415,7 @@ describe("api/leaderboard reads", () => {
         },
       },
     ]);
-    const response = await handler(get(`?since=${SUNDAY}&today=2026-08-25`));
+    const response = await handler(get(`?since=${SUNDAY}&month=${MONTH}&today=2026-08-25`));
     const body = (await response.json()) as Record<string, unknown>;
 
     // Ordinary board rows, priced and named by the same client code every other
@@ -398,34 +430,51 @@ describe("api/leaderboard reads", () => {
     });
     expect(body.lastMonth).toMatchObject({ rank: 1, score: 214.8, puzzles: 28 });
 
-    // The month is bounded from the *player's* own date, not from `since`: the
-    // Sunday that brackets the 1st belongs to the month before, so a window
-    // derived from it would name the wrong month for the first days of every
-    // one. August 25th's previous month is the whole of July.
+    // The champion's window is the monthly board's own window, one step back:
+    // taken from `month`, not from `since` (the Sunday bracketing the 1st
+    // belongs to the month before) and no longer from `today` either, now that
+    // `month` is the one parameter that says which month the page is about.
+    // August's board reports on the whole of July.
     expect(rpcCall(fetchMock)?.args).toMatchObject({
       p_month_since: "2026-07-01",
       p_month_until: "2026-07-31",
     });
   });
 
-  it("falls back to its own clock when the caller names no usable day", async () => {
+  it("bounds the champion to the month before the board's own, whatever `today` says", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    // A date before the game existed is not a puzzle date, so it is not trusted
-    // to bound anything -- the month window comes from UTC's own day instead,
-    // which is the same fallback the finds feed makes. Never no window at all:
-    // a missing `today` is a reason to guess the month, not to drop the line.
-    await handler(get(`?since=${SUNDAY}&today=2020-01-04`));
+    // `today` used to bound this window, which let the board and the plaque
+    // under it name two different months -- a September board over "July's
+    // champion" at a boundary, or whenever `today` was missing and UTC's own
+    // day fell in another month. One parameter now decides both, so the pair
+    // cannot disagree: a date from a different month is simply not consulted.
+    await handler(get(`?since=${SUNDAY}&month=${MONTH}&today=2020-01-04`));
 
-    const args = rpcCall(fetchMock)?.args as Record<string, string>;
-    expect(args.p_month_since).toMatch(/^\d{4}-\d{2}-01$/);
-    expect(args.p_month_until > args.p_month_since).toBe(true);
+    expect(rpcCall(fetchMock)?.args).toMatchObject({
+      p_month_since: "2026-07-01",
+      p_month_until: "2026-07-31",
+    });
+  });
+
+  it("ends the champion's month on its own last day, not on a fixed 31st", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    // A July board reports on June, which has thirty days. The arithmetic knows
+    // no month lengths -- it steps back one day from the board's own first --
+    // so a short month needs no case of its own.
+    await handler(get(`?since=2026-06-28&month=2026-07-01`));
+
+    expect(rpcCall(fetchMock)?.args).toMatchObject({
+      p_month_since: "2026-06-01",
+      p_month_until: "2026-06-30",
+    });
   });
 
   it("shows fifteen rows when the caller doesn't say", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    await handler(get(`?since=${SUNDAY}`));
+    await handler(get(`?since=${SUNDAY}&month=${MONTH}`));
 
     expect(rpcCall(fetchMock)?.args.p_limit).toBe(15);
   });
@@ -449,7 +498,7 @@ describe("api/leaderboard reads", () => {
         words: [],
       },
     ]);
-    const response = await handler(get(`?since=${SUNDAY}&limit=1&player=${PLAYER}`));
+    const response = await handler(get(`?since=${SUNDAY}&month=${MONTH}&limit=1&player=${PLAYER}`));
     const body = (await response.json()) as Record<string, unknown>;
 
     expect(rpcCall(fetchMock)?.args.p_player).toBe(PLAYER);
@@ -465,7 +514,7 @@ describe("api/leaderboard reads", () => {
   it("shows the board anyway when the player id is not one", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    const response = await handler(get(`?since=${SUNDAY}&player=not-a-uuid`));
+    const response = await handler(get(`?since=${SUNDAY}&month=${MONTH}&player=not-a-uuid`));
 
     // Not knowing where somebody stands is a reason to show them the board, not
     // a reason to show them an error.
@@ -477,7 +526,7 @@ describe("api/leaderboard reads", () => {
     withEnv();
     stubFetch([OPEN]);
     // The epoch fell on a Wednesday, so the week containing it starts before it.
-    const response = await handler(get("?since=2026-06-28"));
+    const response = await handler(get("?since=2026-06-28&month=2026-06-01"));
 
     expect(response.status).toBe(200);
   });
@@ -496,7 +545,7 @@ describe("api/leaderboard reads", () => {
     withEnv();
     vi.spyOn(console, "error").mockImplementation(() => {});
     stubFetch([500]);
-    const response = await handler(get(`?since=${SUNDAY}`));
+    const response = await handler(get(`?since=${SUNDAY}&month=${MONTH}`));
 
     // A 502 and no rows, so the client can say "couldn't load" -- an empty 200
     // would read to the player as "nobody has played".
