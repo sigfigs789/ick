@@ -12,11 +12,11 @@
     "rarity badges and scores render exactly as they would with live data. Every",
     "find shares one date, moved to today at load, since the feed shows today only.",
     "",
-    "Fifteen rows a board, because fifteen is what a board shows. The player",
-    "is on one of them and not the other, because both are worth looking at:",
-    "seventh on the season board -- past the five rows on screen, so their own",
-    "row sticks to the edge of the scrolling list -- and a weeklySelf row far",
-    "below the weekly one.",
+    "Fifteen rows a board, because fifteen is what a board shows, and the",
+    "player is seventh on both -- past the five rows on screen, which is where",
+    "their own row sticks to the edge of the scrolling list rather than",
+    "scrolling out of it. That is the case worth being able to look at: a",
+    "player the board would otherwise hide for doing well.",
     "",
     "lastWeek / lastMonth are the champions of the two closed windows, shown on",
     "the plaque under each board -- different players from the ones leading now,",
@@ -79,6 +79,14 @@
     },
     {
       "rank": 7,
+      "playerId": "dev-you",
+      "windowWord": "abaci",
+      "windowZipf": 2.65,
+      "score": 21.4,
+      "puzzles": 3
+    },
+    {
+      "rank": 8,
       "playerId": "dev-7",
       "windowWord": "lactation",
       "windowZipf": 3.2,
@@ -86,7 +94,7 @@
       "puzzles": 3
     },
     {
-      "rank": 8,
+      "rank": 9,
       "playerId": "dev-8",
       "windowWord": "attested",
       "windowZipf": 4.1,
@@ -94,7 +102,7 @@
       "puzzles": 2
     },
     {
-      "rank": 9,
+      "rank": 10,
       "playerId": "dev-9",
       "windowWord": "cat",
       "windowZipf": 4.78,
@@ -102,7 +110,7 @@
       "puzzles": 1
     },
     {
-      "rank": 10,
+      "rank": 11,
       "playerId": "dev-10",
       "windowWord": "abaci",
       "windowZipf": 2.65,
@@ -110,7 +118,7 @@
       "puzzles": 1
     },
     {
-      "rank": 11,
+      "rank": 12,
       "playerId": "dev-11",
       "windowWord": "wrinkle",
       "windowZipf": 3.31,
@@ -118,7 +126,7 @@
       "puzzles": 1
     },
     {
-      "rank": 12,
+      "rank": 13,
       "playerId": "dev-12",
       "windowWord": "inkling",
       "windowZipf": 2.9,
@@ -126,7 +134,7 @@
       "puzzles": 1
     },
     {
-      "rank": 13,
+      "rank": 14,
       "playerId": "dev-13",
       "windowWord": "placate",
       "windowZipf": 3.4,
@@ -134,30 +142,15 @@
       "puzzles": 1
     },
     {
-      "rank": 14,
+      "rank": 15,
       "playerId": "dev-14",
       "windowWord": "lactation",
       "windowZipf": 3.2,
       "score": 5.2,
       "puzzles": 1
-    },
-    {
-      "rank": 15,
-      "playerId": "dev-15",
-      "windowWord": "attested",
-      "windowZipf": 4.1,
-      "score": 4.8,
-      "puzzles": 1
     }
   ],
-  "weeklySelf": {
-    "rank": 42,
-    "playerId": "dev-you",
-    "windowWord": "abaci",
-    "windowZipf": 2.65,
-    "score": 3.4,
-    "puzzles": 1
-  },
+  "weeklySelf": null,
   "allTime": [
     {
       "rank": 1,
