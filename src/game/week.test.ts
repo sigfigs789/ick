@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysUntilReset, resetLabel, weekStart } from "./week";
+import { daysUntilReset, resetLabel, weekEnd, weekRange, weekStart } from "./week";
 
 describe("weekly board window", () => {
   it("starts the week on Sunday", () => {
@@ -28,6 +28,23 @@ describe("weekly board window", () => {
     expect(daysUntilReset("2026-08-23")).toBe(7); // Sunday
     expect(daysUntilReset("2026-08-28")).toBe(2); // Friday
     expect(daysUntilReset("2026-08-29")).toBe(1); // Saturday
+  });
+
+  it("closes the week on the Saturday", () => {
+    expect(weekEnd("2026-08-23")).toBe("2026-08-29"); // Sunday
+    expect(weekEnd("2026-08-27")).toBe("2026-08-29"); // Thursday
+    expect(weekEnd("2026-08-29")).toBe("2026-08-29"); // Saturday itself
+  });
+
+  it("names the week by its days, and repeats the month only when it changes", () => {
+    // What the heading shows beside "This week". Repeating "Aug" on both sides
+    // of a range inside one month makes it read as two dates rather than one
+    // window.
+    expect(weekRange("2026-08-27")).toBe("Aug 23 – 29");
+    // A week that crosses a month has to say both.
+    expect(weekRange("2026-09-02")).toBe("Aug 30 – Sep 5");
+    // And one that crosses a year.
+    expect(weekRange("2026-12-31")).toBe("Dec 27 – Jan 2");
   });
 
   it("says when the board resets", () => {

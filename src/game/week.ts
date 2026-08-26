@@ -27,7 +27,7 @@
  * same harmless drift the daily puzzle already has.
  */
 
-import { addDays, todayDateString } from "./date";
+import { addDays, formatDateLabel, todayDateString } from "./date";
 
 /** The Sunday on or before `date`, as YYYY-MM-DD. */
 export function weekStart(date: string = todayDateString()): string {
@@ -35,6 +35,34 @@ export function weekStart(date: string = todayDateString()): string {
   // itself, with no chance of a host timezone offset shifting it a day. Sunday
   // is already 0 there, which is exactly the offset from the week's start.
   return addDays(date, -weekday(date));
+}
+
+/** The Saturday that closes the week `date` falls in. */
+export function weekEnd(date: string = todayDateString()): string {
+  return addDays(weekStart(date), 6);
+}
+
+/**
+ * `Aug 23 – 29`, to sit beside the weekly heading the way the season's range
+ * sits beside its own.
+ *
+ * The dates rather than "From Sunday on", which named the boundary without ever
+ * saying which Sunday -- true of every week the board has ever shown. Both
+ * headings now answer the same question in the same place and the same format:
+ * this is the window, these are its days.
+ *
+ * The month is repeated only when the week crosses one (`Aug 30 – Sep 5`), and
+ * the year is left off entirely -- a week is never far enough away for it to be
+ * in question, unlike a season that runs to December.
+ */
+export function weekRange(date: string = todayDateString()): string {
+  const start = weekStart(date);
+  const end = weekEnd(date);
+  const sameMonth = start.slice(0, 7) === end.slice(0, 7);
+  // Just the day number on the far side of a week inside one month: "Aug 23 –
+  // 29" is the range, and repeating "Aug" makes it look like two dates.
+  const closing = sameMonth ? String(Number(end.slice(8, 10))) : formatDateLabel(end);
+  return `${formatDateLabel(start)} – ${closing}`;
 }
 
 /** Whole days until the current week's board resets, counting today. */

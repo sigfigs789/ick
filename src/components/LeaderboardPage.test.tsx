@@ -5,6 +5,7 @@ import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard, loadPlayerId } from "../game/player";
 import { handleFor } from "../game/handle";
 import { seasonName } from "../game/leaderboard";
+import { resetLabel, weekRange } from "../game/week";
 
 // No names come from the server: the client derives a handle from each player
 // id, so the same player is recognisable on both boards without anything being
@@ -133,6 +134,22 @@ describe("the leaderboard page", () => {
     expect(board).toHaveTextContent("Season 1");
     expect(board).toHaveTextContent("Aug 10 – Dec 31 2026");
     expect(board).toHaveTextContent("Must be completed the day of the puzzle.");
+  });
+
+  it("gives the weekly board its days too, and keeps the countdown", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    const board = screen.getByRole("region", { name: "This week" });
+    // Both headings answer the same question in the same place now: this is the
+    // window, these are its days. "From Sunday on" named the boundary without
+    // ever saying which Sunday.
+    expect(board).toHaveTextContent(weekRange());
+    expect(board).not.toHaveTextContent("From Sunday on");
+    // The countdown is the one thing a date range cannot say -- a season is a
+    // window, a week is a window running out.
+    expect(board).toHaveTextContent(resetLabel());
   });
 
   it("drops the subtitle over the two boards", async () => {

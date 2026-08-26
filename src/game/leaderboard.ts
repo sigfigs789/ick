@@ -17,7 +17,7 @@ import {
   topRarityScore,
   totalRarityScore,
 } from "./dictionary";
-import { todayDateString } from "./date";
+import { formatDateLabel, todayDateString } from "./date";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { playedOnItsDay } from "./storage";
@@ -143,11 +143,9 @@ export function seasonName(): string {
  * sentence rather than as a label on the board.
  */
 export function seasonRange(): string {
-  const start = new Date(`${SEASON.start}T00:00:00`);
-  const end = new Date(`${SEASON.end}T00:00:00`);
-  const day = (date: Date) =>
-    date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  return `${day(start)} – ${day(end)} ${end.getFullYear()}`;
+  // The same short form the weekly board's range and the opening date use, so
+  // every date on this page is written the same way.
+  return `${formatDateLabel(SEASON.start)} – ${formatDateLabel(SEASON.end)} ${SEASON.end.slice(0, 4)}`;
 }
 
 /** Whether the boards are published yet, on this player's own calendar. */
