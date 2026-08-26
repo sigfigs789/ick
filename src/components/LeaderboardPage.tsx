@@ -353,7 +353,7 @@ function FoundWords({
         Today's finds
         <span className="found-words__drop">{dropForDate(today)}</span>
       </h2>
-      <p className="leaderboard__caption">Every word found on today's puzzle, newest first.</p>
+      <p className="leaderboard__caption">Every word found on today's puzzle.</p>
       <ul className="found-words__list">
         {words.map((found) => (
           <li
@@ -394,7 +394,7 @@ function NotYet({ opensOn }: { opensOn: string }) {
         Boards open <strong>{weekday}</strong>
       </p>
       <p className="leaderboard__not-yet-copy">
-        The weekly and all-time boards go live on {formatDateLabel(opensOn)}. Scores are
+        The weekly and season boards go live on {formatDateLabel(opensOn)}. Scores are
         already being counted, including yours, so nothing you play between now and then is
         lost.
       </p>
