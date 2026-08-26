@@ -356,9 +356,11 @@ export function LeaderboardPage() {
               />
               <Board
                 heading="Monthly"
-                // The day it turns over, which for a month is a date and so is
-                // computed (see game/month.ts) rather than the constant the
-                // week can get away with. This board used to be "Season 1" with
+                // The weekday it turns over on and the date that is, which for
+                // a month is computed (see game/month.ts) rather than the
+                // constant the week can get away with -- and the weekday leads,
+                // because a bare "Sep 1" is a date a reader still has to place
+                // in their own week. This board used to be "Season 1" with
                 // the season's two dates under it -- a window a reader had to
                 // be told the ends of, because they were picked by hand. A
                 // month has ends everybody already knows.

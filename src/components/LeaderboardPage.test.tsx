@@ -127,7 +127,8 @@ describe("the leaderboard page", () => {
     // the first of next month.
     const board = screen.getByRole("region", { name: MONTH_BOARD });
     expect(board).toHaveTextContent("Monthly");
-    expect(board).toHaveTextContent(/^Monthly\s*Resets \w+ 1/);
+    // The weekday first, then the date it falls on.
+    expect(board).toHaveTextContent(/^Monthly\s*Resets \w+day, \w+ 1/);
     // What it used to say: a season, with the two hand-picked dates it ran
     // between under the name.
     expect(board).not.toHaveTextContent(/Season/);

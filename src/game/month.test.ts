@@ -25,11 +25,25 @@ describe("monthly board window", () => {
     expect(nextMonthStart("2026-12-15")).toBe("2027-01-01");
   });
 
-  it("says the day it resets, and no range", () => {
-    // What the season's "Aug 1 – Dec 31 2026" was replaced with: one date, the
-    // day the board turns over, and it is the same sentence all month.
-    expect(monthResetLabel("2026-08-26")).toBe("Resets Sep 1");
-    expect(monthResetLabel("2026-08-01")).toBe("Resets Sep 1");
-    expect(monthResetLabel("2026-12-31")).toBe("Resets Jan 1");
+  it("names the weekday it resets on, then the date", () => {
+    // What the season's "Aug 1 – Dec 31 2026" was replaced with: the day the
+    // board turns over, and it is the same sentence all month. The weekday
+    // leads because it is the half a player can act on -- "Sep 1" alone is a
+    // date they have to go and place in their own week.
+    // 2026-09-01 is a Tuesday.
+    expect(monthResetLabel("2026-08-26")).toBe("Resets Tuesday, Sep 1");
+    expect(monthResetLabel("2026-08-01")).toBe("Resets Tuesday, Sep 1");
+    // 2027-01-01 is a Friday, so December's board names a day in the next year.
+    expect(monthResetLabel("2026-12-31")).toBe("Resets Friday, Jan 1");
+  });
+
+  it("names the weekday of the reset day, not of the day being played", () => {
+    // The trap this would fall into: reading the weekday off `date` rather than
+    // off the first of the next month. Every day of August has to give the same
+    // answer, and it is Tuesday all month.
+    const august = ["2026-08-01", "2026-08-14", "2026-08-26", "2026-08-31"];
+    for (const day of august) {
+      expect(monthResetLabel(day)).toBe("Resets Tuesday, Sep 1");
+    }
   });
 });

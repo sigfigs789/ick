@@ -15,7 +15,7 @@
  * job that can fail.
  */
 
-import { formatDateLabel, todayDateString } from "./date";
+import { todayDateString } from "./date";
 
 /** The first of the month `date` falls in, as YYYY-MM-DD. */
 export function monthStart(date: string = todayDateString()): string {
@@ -33,7 +33,7 @@ export function nextMonthStart(date: string = todayDateString()): string {
 }
 
 /**
- * `Resets Sep 1`, to sit beside the heading.
+ * `Resets Tuesday, Sep 1`, to sit beside the heading.
  *
  * The one thing worth saying about the window, and the same thing the weekly
  * board says beside its own heading ("Resets on Sundays"). It replaced the
@@ -41,7 +41,34 @@ export function nextMonthStart(date: string = todayDateString()): string {
  * reader could not guess, while a month is the window you are already in -- so
  * what is left to say is when it turns over, and unlike the week's answer that
  * one changes, which is why it is computed rather than a constant on the page.
+ *
+ * The weekday leads, because it is the half of the answer a player can act on.
+ * "Sep 1" is a date you have to go and place -- somebody reading this on a
+ * Thursday cannot tell from it whether they have a weekend of play left or one
+ * more evening. The weekday is the whole of what the date was for, so it goes
+ * first and the date follows as the confirmation, which is also the order the
+ * weekly board's "Resets on Sundays" already reads in.
  */
 export function monthResetLabel(date: string = todayDateString()): string {
-  return `Resets ${formatDateLabel(nextMonthStart(date))}`;
+  const reset = nextMonthStart(date);
+  // Spelled out rather than "Tue", to match the weekly board's own "Sundays" --
+  // the two notes sit side by side, and one abbreviating what the other spells
+  // reads as two different labels rather than the same one twice.
+  const weekday = new Date(`${reset}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: "long",
+  });
+  return `Resets ${weekday}, ${monthDayLabel(reset)}`;
+}
+
+/**
+ * `Sep 1`, the short form every date on this page is written in.
+ *
+ * Not `formatDateLabel`, which is the same thing built by a locale's own
+ * month/day ordering: this one shares a phrase with a weekday now, and a locale
+ * that would render the date as "1 Sep" would make the phrase read "Resets
+ * Tuesday, 1 Sep" against the "Sep 1" the rest of the page uses.
+ */
+function monthDayLabel(date: string): string {
+  const month = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { month: "short" });
+  return `${month} ${Number(date.slice(8, 10))}`;
 }
