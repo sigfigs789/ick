@@ -503,9 +503,10 @@ interface BoardProps {
  * The board is short because a leaderboard is read, not scrolled -- but a short
  * board that stops at fifteen tells everybody below it nothing at all, and "am I
  * anywhere" is the question a player brings to this page. So the server sends
- * their own row back when it falls outside the fifteen, and it goes underneath,
- * pinned outside the scrolling list where it cannot be scrolled away from. The
- * rank on it is the real one -- 61st of everybody, not 16th of what fits.
+ * their own row back when it falls outside the fifteen, and it goes last in the
+ * same list, after a gap, where the sticky rule docks it to the bottom edge of
+ * the board exactly as it docks the row of a player inside the fifteen. The rank
+ * on it is the real one -- 61st of everybody, not 16th of what fits.
  */
 function Board({
   heading,
@@ -550,23 +551,30 @@ function Board({
             {entries.map((entry) => (
               <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} />
             ))}
-          </ol>
-          {self && (
-            <>
-              {/* The gap between the board and the row below it, said in the one
-                  way that needs no words. Decorative: the row itself is marked
-                  "you" and carries its own rank, which is what a screen reader
-                  needs from it. */}
-              <p className="leaderboard__gap" aria-hidden="true">
-                ⋯
-              </p>
-              <ol className="leaderboard__list leaderboard__list--self" start={self.rank}>
-                {/* Always "you": the server sends this row only to the player it
+            {self && (
+              <>
+                {/* The gap between the top fifteen and the row below it, said in
+                    the one way that needs no words. Decorative: the row itself
+                    is marked "you" and carries its own rank, which is what a
+                    screen reader needs from it. */}
+                <li className="leaderboard__gap" aria-hidden="true">
+                  ⋯
+                </li>
+                {/* Last in the same scrolling list, not a second list under it.
+                    A player inside the fifteen already has their row docked to
+                    the bottom of the board by the sticky rule, and a player
+                    outside it had one sitting still underneath -- two different
+                    answers to the same question, and the board looked shorter in
+                    the docked case because the dock covered its last row. One
+                    place, one behaviour: the row rides the bottom edge of the
+                    box at every rank, and scrolling to the end of the list walks
+                    it back into the flow after the gap.
+                    Always "you": the server sends this row only to the player it
                     belongs to. */}
                 <Row entry={self} isYou />
-              </ol>
-            </>
-          )}
+              </>
+            )}
+          </ol>
         </>
       )}
       {/* Outside the empty check on purpose: a board with nobody on it yet is
