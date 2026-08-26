@@ -37,6 +37,14 @@ How it works:
     Overlap is the mean of |A n B| / min(|A|, |B|) over both. The familiar-only
     measure the first version used was blind to two days sharing their rare
     upside.
+  - Containment alone is not enough, though. It is normalized by pool size, so
+    a specific word shared between two 4,000-word drops disappears into the
+    ratio -- and it only looks back three days. What a player actually notices
+    is replaying the same good answer: "undergraduates" being a top Rare+ find
+    on three days inside a fortnight. So REPLAY counts shared words outright,
+    unnormalized, over a two-week window, across each drop's top
+    REPLAY_TOP_K Rare-or-better answers -- the commonest words in the band
+    that scores, which is what a player reaches for when they want points.
   - Simulated annealing (fixed seed, deterministic) swaps drops within
     (length, band) groups -- the 2-letter/3-letter cadence never changes, and
     neither does the depth ramp -- to minimize: overlap with the previous 3
@@ -60,10 +68,23 @@ FAMILIAR_ZIPF_HUNDREDTHS = 300   # words players reach for first
 SCORING_ZIPF_HUNDREDTHS = 200    # floor of the pool that decides a score
 OVERLAP_WEIGHTS = {1: 1.0, 2: 0.4, 3: 0.15}  # by day distance
 
+# Replaying a good answer is the sameness players feel most sharply, and the
+# normalized overlap above cannot see it. RARE_MAX is where Uncommon begins
+# (see measuredRarity in dictionary.ts), so everything below it is Rare or
+# better -- the band worth points. Ranked commonest-first and cut at TOP_K,
+# that is the set of high-value answers a player can realistically produce.
+RARE_MAX_HUNDREDTHS = 315
+REPLAY_TOP_K = 60
+REPLAY_WINDOW = 14
+REPLAY_WEIGHT = 0.15
+
 # Calendar band width, in days. Drops are assigned to bands by depth rank, and
 # the annealer only reshuffles inside a band. Narrower bands hold the ramp
-# tighter; wider bands give the overlap objective more room.
-BAND_DAYS = 60
+# tighter; wider bands give the variety terms more room to separate drops that
+# share answers. 60 held the ramp very tightly but left the replay count near
+# where the unbanded run had it; 120 cuts replay by a further third for about
+# a 7% give in mean depth, which is the trade we want.
+BAND_DAYS = 120
 
 # The tion terms. The first version used weight 6.0 over 30 days, which
 # rationed the deepest drops in the rotation (ION, TIO and ATI each reach
@@ -112,6 +133,7 @@ def main() -> None:
     familiar_masks: dict[str, int] = {}
     scoring_masks: dict[str, int] = {}
     depth_masks: dict[str, int] = {}
+    rare_pool: dict[str, list[tuple[int, str]]] = {}
     wid = 0
     for i, word in enumerate(dictionary):
         if word in rejections or zipf[i] < SCORING_ZIPF_HUNDREDTHS:
@@ -121,6 +143,7 @@ def main() -> None:
         familiar = zipf[i] >= FAMILIAR_ZIPF_HUNDREDTHS
         if "tion" in word:
             tion_mask |= bit
+        rare = zipf[i] < RARE_MAX_HUNDREDTHS
         grams = {word[j:j + n] for n in (2, 3) for j in range(len(word) - n + 1)}
         for g in grams:
             scoring_masks[g] = scoring_masks.get(g, 0) | bit
@@ -128,6 +151,8 @@ def main() -> None:
                 familiar_masks[g] = familiar_masks.get(g, 0) | bit
             else:
                 depth_masks[g] = depth_masks.get(g, 0) | bit
+            if rare:
+                rare_pool.setdefault(g, []).append((zipf[i], word))
 
     def masks_for(table: dict[str, int]) -> dict[str, int]:
         return {d: table.get(d.lower(), 0) for d in set(drops)}
@@ -140,6 +165,21 @@ def main() -> None:
     score_count = {d: m.bit_count() for d, m in score_of.items()}
     tion_of = {d: ((m & tion_mask).bit_count() / c if (c := score_count[d]) else 0.0)
                for d, m in score_of.items()}
+    # The high-value answers a player can actually produce: the commonest end
+    # of the Rare-or-better band.
+    replay_of = {d: frozenset(w for _, w in
+                              sorted(rare_pool.get(d.lower(), []), reverse=True)[:REPLAY_TOP_K])
+                 for d in set(drops)}
+
+    replay_cache: dict[tuple[str, str], int] = {}
+
+    def replay(a: str, b: str) -> int:
+        """How many top Rare+ answers two drops share outright."""
+        key = (a, b) if a <= b else (b, a)
+        v = replay_cache.get(key)
+        if v is None:
+            replay_cache[key] = v = len(replay_of[a] & replay_of[b])
+        return v
 
     overlap_cache: dict[tuple[str, str], float] = {}
 
@@ -158,7 +198,8 @@ def main() -> None:
     tail = drops[sort_from:]
     n = len(tail)
     assert len(set(tail)) == n, "duplicate drop in the sortable tail"
-    context = drops[sort_from - TION_WINDOW:sort_from]  # fixed, already played
+    look_back = max(TION_WINDOW, REPLAY_WINDOW)
+    context = drops[sort_from - look_back:sort_from]  # fixed, already played
 
     # Rebuild the depth ramp: within each length class, the deepest drops take
     # the earliest slots of that length. The 2/3-letter cadence is fixed by
@@ -198,6 +239,13 @@ def main() -> None:
                 p = prev_drop(seq, i - k)
                 if p is not None and tion_of[p] >= TION_FLOOR:
                     c += TION_WEIGHT * t * tion_of[p] * (TION_WINDOW - k + 1) / TION_WINDOW
+        for k in range(1, REPLAY_WINDOW + 1):
+            p = prev_drop(seq, i - k)
+            if p is not None:
+                shared = replay(p, d)
+                if shared:
+                    c += (REPLAY_WEIGHT * shared
+                          * (REPLAY_WINDOW - k + 1) / REPLAY_WINDOW)
         if depth_of[d] < LEAN_DEPTH:
             p = prev_drop(seq, i - 1)
             if p is not None and depth_of[p] < LEAN_DEPTH:
@@ -207,7 +255,7 @@ def main() -> None:
     def cost_around(seq: list[str], positions: tuple[int, int]) -> float:
         affected = set()
         for p in positions:
-            affected.update(q for q in range(p, p + TION_WINDOW + 1) if q < n)
+            affected.update(q for q in range(p, p + look_back + 1) if q < n)
         return sum(local_cost(seq, i) for i in affected)
 
     def anneal(seed: int) -> list[str]:
@@ -255,9 +303,14 @@ def main() -> None:
             lean = sum(1 for x in window if x < LEAN_DEPTH)
             back_to_back = sum(1 for a, b in zip(window, window[1:])
                                if a < LEAN_DEPTH and b < LEAN_DEPTH)
+            replays = sum(replay(full[i - k], full[i])
+                          for i in range(sort_from, sort_from + span)
+                          for k in range(1, REPLAY_WINDOW + 1)
+                          if i - k >= 0)
             print(f"  next {span:3d} days: median depth={sorted(window)[len(window) // 2]:5d} "
                   f"mean={sum(window) // len(window):5d} lean={lean:3d} "
-                  f"back-to-back lean={back_to_back:3d}")
+                  f"back-to-back lean={back_to_back:3d} "
+                  f"replayable top answers={replays:5d} ({replays / span:.1f}/day)")
 
     report(tail, "before")
     report(seq, "after")
