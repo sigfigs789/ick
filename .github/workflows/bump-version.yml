@@ -1,0 +1,73 @@
+name: Bump app version
+
+# Bumps the deploy version in src/version.ts and opens a PR with the change.
+#
+#   force_reload=false -> APP_VERSION += 1, MIN_VERSION untouched. An ordinary
+#                         deploy: open tabs stay where they are.
+#   force_reload=true  -> APP_VERSION += 1 and MIN_VERSION follows it, making the
+#                         release mandatory: every open tab below the new floor
+#                         silently reloads onto it (see src/hooks/useForceUpdate.ts).
+#
+# The build step re-checks the MIN_VERSION <= APP_VERSION invariant that
+# vite.config.ts enforces, so a bad bump fails here rather than in production.
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_reload:
+        description: Also bump MIN_VERSION, forcing every open tab to reload onto this release
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out WordInk
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Bump the version constants
+        id: bump
+        env:
+          FORCE_RELOAD: ${{ inputs.force_reload }}
+        run: python3 scripts/bump-version.py >> "$GITHUB_OUTPUT"
+
+      - name: Build (verifies the version invariant and emits version.json)
+        run: |
+          npm ci
+          npm run build
+
+      - name: Open pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automated/bump-version-${{ github.run_id }}
+          delete-branch: true
+          commit-message: "Bump app version to ${{ steps.bump.outputs.app_version }}"
+          title: "Bump app version to ${{ steps.bump.outputs.app_version }}${{ inputs.force_reload && ' (forced reload)' || '' }}"
+          body: |
+            Bumps the version constants in `src/version.ts`.
+
+            | | before | after |
+            | --- | --- | --- |
+            | `APP_VERSION` | `${{ steps.bump.outputs.previous_app_version }}` | `${{ steps.bump.outputs.app_version }}` |
+            | `MIN_VERSION` | `${{ steps.bump.outputs.previous_min_version }}` | `${{ steps.bump.outputs.min_version }}` |
+
+            ${{ inputs.force_reload && 'MIN_VERSION follows APP_VERSION, so this release is **mandatory**: every open tab below the new floor silently reloads onto it once this is deployed. localStorage (game progress, streak) survives the reload.' || 'MIN_VERSION is unchanged, so this is an **optional** deploy — open tabs stay where they are and pick the new bundle up on their next load.' }}
+
+            `npm run build` ran on the bumped constants, which re-checks the
+            `MIN_VERSION <= APP_VERSION` invariant enforced in `vite.config.ts`.
+          add-paths: |
+            src/version.ts
