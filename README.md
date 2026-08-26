@@ -609,11 +609,19 @@ database at all** — there is no early board sitting in an API response waiting
 be read out of a network tab. The recent-finds feed is deliberately outside it
 and works from day one, so the page is never empty while the boards wait.
 
-The header's trophy is always there, and badged "new" until it is first opened.
-It was briefly hidden until the leaderboard had something to show, which sounded
-careful and deadlocked the cold start: finds only appear once players join, and
-joining only happens by opening this page. The page is never a dead end anyway —
-before the boards open it carries the finds feed and the date they arrive on.
+The header's trophy is always there. It was briefly hidden until the leaderboard
+had something to show, which sounded careful and deadlocked the cold start: finds
+only appear once players join, and joining only happens by opening this page. The
+page is never a dead end anyway — before the boards open it carries the finds feed
+and the date they arrive on.
+
+**Its "new" badge waits for the opening date**, though. Until then the
+leaderboard is a page naming a day it is not yet, which is not the news a badge
+is for — and a badge is spent the first time it is followed. An early visit is
+the expected thing rather than an edge case, since that visit is what gets a
+player's history counted, so it deliberately does *not* retire the badge: mark it
+seen before the boards exist and the players who showed up early are exactly the
+ones never told the boards had opened.
 
 ### Before the boards open: run the migrations
 
@@ -682,8 +690,8 @@ Account-free, and there is nothing to fill in — not even a tap. Opening
 `/leaderboard` mints a UUID and stores that id and nothing else
 (`src/game/player.ts`), which is also everything the handle is computed from.
 Nothing is sent for a player who never opens the page. The trophy carries a
-one-time "new" badge, retired the first time the page is visited
-(`src/game/whatsNew.ts`).
+one-time "new" badge, shown only once the boards have opened and retired the
+first time the page is visited after that (`src/game/whatsNew.ts`).
 
 **The visit is the joining.** There used to be a "Put me on the board" button and
 a paragraph under it explaining that there is no account, no email and no name to

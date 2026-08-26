@@ -29,6 +29,7 @@ import {
 } from "./analytics";
 import { recordVisit } from "./game/visits";
 import { hasSeen, markSeen } from "./game/whatsNew";
+import { boardsOpen } from "./game/leaderboard";
 import { navigate } from "./routes";
 import { beginSession, endSessionSegment, resumeSession } from "./game/sessionTime";
 
@@ -57,7 +58,14 @@ export default function App() {
   // Read once on mount rather than on every render: this flips exactly once, in
   // openLeaderboard, and reading storage during a render would be the only
   // thing here that did.
-  const [leaderboardIsNew, setLeaderboardIsNew] = useState(() => !hasSeen("leaderboard"));
+  //
+  // Held back until the boards actually open. Until then the leaderboard is a
+  // page that names a date it is not yet, which is not the news a badge is for --
+  // and a badge is spent the first time it is followed, so aiming it at a waiting
+  // room would use it up before there was anything to announce.
+  const [leaderboardIsNew, setLeaderboardIsNew] = useState(
+    () => boardsOpen() && !hasSeen("leaderboard")
+  );
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
 
@@ -120,8 +128,15 @@ export default function App() {
     // is to say "there is something here you haven't seen", and once the player
     // has seen it there is nothing left to say. Marked before navigating so the
     // badge is already retired when the back button brings them here again.
-    markSeen("leaderboard");
-    setLeaderboardIsNew(false);
+    //
+    // Only once there is something to meet, though. Players are expected on this
+    // page before the boards go live -- that visit is what gets their history
+    // counted -- so retiring the badge for it would mean the people who came
+    // early are exactly the ones never told the boards had opened.
+    if (boardsOpen()) {
+      markSeen("leaderboard");
+      setLeaderboardIsNew(false);
+    }
     navigate("leaderboard");
   }
 
