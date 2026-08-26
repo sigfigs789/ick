@@ -14,6 +14,7 @@
 
 import sample from "./sample-leaderboard.json";
 import { addDays, daysSinceEpoch, todayDateString } from "../game/date";
+import { loadPlayerId } from "../game/player";
 
 const SAMPLE_KEY = "ick:dev-sample-leaderboard";
 
@@ -54,6 +55,43 @@ export function sampleBoardsResponse(): unknown {
   const shift = newest ? daysSinceEpoch(todayDateString(), newest) : 0;
   return {
     ...sample,
+    weekly: asPlayer(sample.weekly),
+    weeklySelf: asPlayer(sample.weeklySelf),
+    allTime: asPlayer(sample.allTime),
+    allTimeSelf: asPlayer(sample.allTimeSelf),
     words: words.map((word) => ({ ...word, foundOn: addDays(word.foundOn, shift) })),
   };
+}
+
+/**
+ * The id the fixture uses for "you", which is nobody until it is somebody.
+ *
+ * The page decides which row is yours by comparing ids (`playerId === entry.
+ * playerId`), so a fixture row with a made-up id is a row about a stranger --
+ * it renders with no "you" beside the name and none of the treatment that
+ * follows from it. Which made the one thing the fixture most needed to show,
+ * a player seeing themselves on a board, the one thing it could not.
+ */
+const FIXTURE_SELF = "dev-you";
+
+/**
+ * Hand the fixture's own player this browser's real id, so the boards can
+ * recognise them.
+ *
+ * The name changes with it -- handles are derived from the id (game/handle.ts),
+ * so "you" in the fixture is called whatever this browser is called rather than
+ * SunnyLily55. That is the point: it is the same row the real server would send
+ * back about you, under the name the rest of the app already uses for you.
+ *
+ * Left alone when nobody has joined on this browser, which is a state worth
+ * being able to look at too.
+ */
+function asPlayer<T>(rows: T): T {
+  const playerId = loadPlayerId();
+  if (!playerId) return rows;
+  const swap = (row: unknown): unknown =>
+    row && typeof row === "object" && (row as { playerId?: unknown }).playerId === FIXTURE_SELF
+      ? { ...(row as object), playerId }
+      : row;
+  return (Array.isArray(rows) ? rows.map(swap) : swap(rows)) as T;
 }
