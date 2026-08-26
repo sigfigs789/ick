@@ -332,6 +332,31 @@ describe("reading the boards", () => {
     expect(boards.monthlySelf).toBeNull();
   });
 
+  it("keeps the champion of each closed window", async () => {
+    stubFetch(
+      boardsResponse({
+        lastWeek: { rank: 1, playerId: "won-the-week", windowWord: "inkling", windowZipf: 2.9, score: 61.2, puzzles: 7 },
+        lastMonth: { rank: 1, playerId: "won-the-month", windowWord: "quixotic", windowZipf: 2.33, score: 214.8, puzzles: 28 },
+      })
+    );
+
+    const boards = await fetchBoards("2026-08-27");
+    // Named the same way every other row is, from the id alone -- a champion is
+    // a board row, so nothing here knows a second way to name a player.
+    expect(boards.lastWeek).toMatchObject({ name: handleFor("won-the-week"), score: 61.2 });
+    expect(boards.lastMonth).toMatchObject({ name: handleFor("won-the-month"), score: 214.8 });
+  });
+
+  it("has no champion when nobody scored in the window", async () => {
+    stubFetch(boardsResponse({ lastWeek: null }));
+
+    // A first week, or a month before the game existed. Null rather than a
+    // half-built row, so the page can simply not draw the line.
+    const boards = await fetchBoards("2026-08-27");
+    expect(boards.lastWeek).toBeNull();
+    expect(boards.lastMonth).toBeNull();
+  });
+
   it("drops a row from below the cut that arrived without a rank", async () => {
     stubFetch(
       boardsResponse({

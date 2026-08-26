@@ -2,7 +2,8 @@
 // boards, and takes the score submissions that fill them.
 //
 // GET /api/leaderboard?since=YYYY-MM-DD&month=YYYY-MM-01&limit=15&player=UUID
-//   -> { weekStart, weekly: [...], weeklySelf, allTime: [...], allTimeSelf }
+//   -> { weekStart, weekly: [...], weeklySelf, allTime: [...], allTimeSelf,
+//        lastWeek, lastMonth }
 //   The weekly board counts puzzles from `since` onward; the second counts the
 //   month `month` begins. Both come from the client, because the puzzle date
 //   they bracket is the player's own local calendar date (see src/game/week.ts
@@ -20,6 +21,15 @@
 //   `allTimeSelf`, carrying the rank they actually hold rather than a position
 //   inside the fifteen. When they are on the board -- or did not say who they
 //   are -- those are null, because the row is already up there.
+//
+//   `lastWeek` and `lastMonth` are the players who topped the last *completed*
+//   window under each board: the seven days before `since`, and the calendar
+//   month before `month`. Each is that board's own window one step back, taken
+//   from the same parameter that bounds the board, so a board and the plaque
+//   under it can never name two different windows. Both are ordinary board rows
+//   (rank 1), or null when
+//   nobody scored inside the window. They are what keeps a win from evaporating
+//   when the window it happened in moves on.
 //
 // GET /api/leaderboard?words=1&today=YYYY-MM-DD
 //   -> { words: [...] }
@@ -227,6 +237,10 @@ interface WordEntry {
 interface BoardsResult {
   weekly: BoardRow[];
   allTime: BoardRow[];
+  /** Who topped the week before this one, or null if nobody scored in it. */
+  lastWeek: BoardRow | null;
+  /** The same for the calendar month before the asking player's own. */
+  lastMonth: BoardRow | null;
 }
 
 /**
@@ -286,6 +300,12 @@ function toEntry(row: BoardRow, index: number): BoardEntry {
     score: toNumber(row.total_score),
     puzzles: Number(row.puzzles) || 0,
   };
+}
+
+/** One champion row, or null when the window had no scores in it at all. */
+function toChampion(row: BoardRow | null | undefined): BoardEntry | null {
+  if (!row || typeof row !== "object") return null;
+  return toEntry(row, 0);
 }
 
 /**
@@ -520,6 +540,29 @@ function daysBefore(date: string, days: number): string {
 }
 
 /**
+ * The calendar month before the month `start` begins, as [first, last].
+ *
+ * `start` is the monthly board's own window, so this is that board one step
+ * back -- which is exactly the window its champion line reports on. Taken from
+ * the player's own month rather than from UTC, for the same reason the week is:
+ * a month boundary should turn over at the reader's midnight, not at somebody
+ * else's. Done on the date's own numbers rather than with Date arithmetic, so
+ * December stepping back to November of the year before is the ordinary case
+ * rather than a wrap to watch for.
+ */
+function previousMonth(start: string): { since: string; until: string } {
+  const year = Number(start.slice(0, 4));
+  const month = Number(start.slice(5, 7));
+  const prevYear = month === 1 ? year - 1 : year;
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const first = `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`;
+  // The day before the first of the board's own month, which is the last of the
+  // one before it without needing to know how long any month is.
+  const last = daysBefore(start, 1);
+  return { since: first, until: last };
+}
+
+/**
  * Today's finds, cached for everybody at once.
  *
  * Reads `leaderboard_words` directly rather than going through
@@ -580,6 +623,14 @@ async function handleGet(request: Request): Promise<Response> {
   // an error.
   const claimedPlayer = params.get("player") ?? "";
   const player = UUID_RE.test(claimedPlayer) ? claimedPlayer.toLowerCase() : null;
+  // The month the champion line under the monthly board reports on: the one
+  // before the board's own window. Taken from `month` rather than from `today`,
+  // which is what it used to read, because `month` is now the one thing on the
+  // request that says which month this page is about -- so the board and the
+  // plaque under it cannot name two different months, which two sources could
+  // at a boundary. It also needs no fallback of its own: `month` is validated
+  // above, where `today` was optional.
+  const lastMonth = previousMonth(month);
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
@@ -601,6 +652,8 @@ async function handleGet(request: Request): Promise<Response> {
       // either side can see.
       p_season_since: month,
       p_season_until: monthEnd(month),
+      p_month_since: lastMonth.since,
+      p_month_until: lastMonth.until,
     });
     const weekly = toBoard(result?.weekly ?? null, limit);
     const allTime = toBoard(result?.allTime ?? null, limit);
@@ -615,6 +668,11 @@ async function handleGet(request: Request): Promise<Response> {
         weeklySelf: weekly.self,
         allTime: allTime.entries,
         allTimeSelf: allTime.self,
+        // The two closed windows, each under the live board it followed. Null
+        // when nobody scored in one -- a month before the game existed, or a
+        // first week -- which the page renders as no line at all.
+        lastWeek: toChampion(result?.lastWeek),
+        lastMonth: toChampion(result?.lastMonth),
       },
       // A minute: long enough that a burst of opens costs one query, short
       // enough that a player who just scored sees themselves move.

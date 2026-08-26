@@ -92,6 +92,27 @@ export interface Boards {
   monthly: BoardEntry[];
   /** The same, on the monthly board. */
   monthlySelf: BoardEntry | null;
+  /**
+   * Who topped the week before this one, and the month before this one --
+   * the last completed window under each board.
+   *
+   * Exactly the window each board above them counts, one step back: the board
+   * is this week and this month, and the plaque under it is the week and the
+   * month that finished. That pairing was already true of the weekly board and
+   * is now true of both, since the second board became a month.
+   *
+   * Ordinary board rows, so the page prices and names a champion with exactly
+   * the code that renders a row. Null when nobody scored in that window, which
+   * is a real state rather than a failure: a month before the game existed has
+   * no champion, and neither does a first week.
+   *
+   * Worth showing at all because both boards above them are windows that move:
+   * both reset under the reader -- one every Sunday, one on the first -- and
+   * take the standings with them, so without this a window somebody won leaves
+   * no trace anywhere.
+   */
+  lastWeek: BoardEntry | null;
+  lastMonth: BoardEntry | null;
   /** The day the weekly board is counting from, echoed back by the server. */
   weekStart: string;
 }
@@ -169,6 +190,16 @@ function parseEntry(item: RawEntry | null, fallbackRank?: number): BoardEntry | 
 /** Read the player's own row from below the cut, or null if there isn't one. */
 function parseSelf(raw: unknown): BoardEntry | null {
   return parseEntry((raw ?? null) as RawEntry | null);
+}
+
+/**
+ * Read a champion row -- the winner of a closed window -- or null.
+ *
+ * Ranked 1 by construction, so unlike a row from below the cut it has a rank
+ * worth falling back on: this row is only ever sent because it is the top one.
+ */
+function parseChampion(raw: unknown): BoardEntry | null {
+  return parseEntry((raw ?? null) as RawEntry | null, 1);
 }
 
 /**
@@ -327,6 +358,8 @@ function readBoards(body: Record<string, unknown>, since: string): Boards {
     weeklySelf: parseSelf(body.weeklySelf),
     monthly: parseBoard(body.allTime),
     monthlySelf: parseSelf(body.allTimeSelf),
+    lastWeek: parseChampion(body.lastWeek),
+    lastMonth: parseChampion(body.lastMonth),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,
   };
 }
