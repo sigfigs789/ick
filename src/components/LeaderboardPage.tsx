@@ -21,6 +21,17 @@ type LoadState = "loading" | "ready" | "error";
 
 /** How often an open page re-checks for new finds. Matches the CDN's own cache. */
 const REFRESH_MS = 60_000;
+/**
+ * How old the boards have to be before returning to the tab re-reads them.
+ *
+ * They are not polled: the boards request carries this player's id, so it is
+ * private and uncached, and a rank is not something that moves under a reader
+ * minute by minute. But a tab left open all day and come back to is stale in a
+ * way a minute-old one is not, and a return is exactly when somebody looks. Five
+ * minutes is long enough that flicking between tabs costs nothing and short
+ * enough that a real absence is caught.
+ */
+const BOARDS_STALE_MS = 5 * 60_000;
 
 /**
  * The leaderboard, as its own page at /leaderboard.
@@ -61,6 +72,11 @@ export function LeaderboardPage() {
   const [playerId, setPlayerId] = useState<string | null>(() => loadPlayerId());
   /** Days imported from this browser's history on joining, for one message. */
   const [imported, setImported] = useState<number | null>(null);
+  /**
+   * When the boards on screen were last read, so a return to the tab can tell a
+   * page that has been sitting there for an hour from one glanced away from.
+   */
+  const boardsReadAt = useRef(0);
 
   /**
    * Re-read the finds, leaving everything else alone.
@@ -91,6 +107,7 @@ export function LeaderboardPage() {
     fetchBoards(today)
       .then((loaded) => {
         setBoards(loaded);
+        boardsReadAt.current = Date.now();
         setState("ready");
       })
       // A board that won't load is a disappointment, not an error the player has
@@ -98,6 +115,24 @@ export function LeaderboardPage() {
       .catch(() => setState("error"));
     refreshWords();
   }, [refreshWords, today]);
+
+
+  /**
+   * Re-read the boards without disturbing the page.
+   *
+   * No loading state and no error state: the boards already on screen are the
+   * last true answer, and replacing them with a spinner -- or with "couldn't
+   * load" -- to fetch something the reader can already see would be a worse
+   * page than a slightly old one. It swaps them or it leaves them.
+   */
+  const refreshBoards = useCallback(() => {
+    fetchBoards(today)
+      .then((loaded) => {
+        setBoards(loaded);
+        boardsReadAt.current = Date.now();
+      })
+      .catch(() => {});
+  }, [today]);
 
 
   /**
@@ -157,6 +192,12 @@ export function LeaderboardPage() {
       window.clearInterval(timer);
       if (document.visibilityState === "hidden") return;
       refreshWords();
+      // The boards too, but only after a real absence. Coming back to a page
+      // that has been open since this morning and finding last night's
+      // standings is the one way they go properly stale -- while a glance at
+      // another tab and back is not new information, and re-asking on every
+      // return would put this player's own uncached query on a hair trigger.
+      if (Date.now() - boardsReadAt.current > BOARDS_STALE_MS) refreshBoards();
       timer = window.setInterval(refreshWords, REFRESH_MS);
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
@@ -164,7 +205,7 @@ export function LeaderboardPage() {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [refreshWords]);
+  }, [refreshBoards, refreshWords]);
 
   /**
    * Which words turned up since the last look, so the feed can show them

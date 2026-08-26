@@ -742,6 +742,49 @@ describe("keeping the finds current", () => {
     expect(boardRows("This week")).toHaveLength(2);
   });
 
+  it("re-reads the boards when the tab comes back after a real absence", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    const boardCalls = () =>
+      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1")).length;
+    const opened = boardCalls();
+
+    const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(30 * 60_000);
+    hidden.mockReturnValue("visible");
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(0);
+
+    // A page open since this morning shows this morning's standings, and coming
+    // back to the tab is exactly when somebody reads them.
+    expect(boardCalls()).toBe(opened + 1);
+    // Read in place: no spinner over boards the reader can already see.
+    expect(screen.queryByText("Loading the boards…")).toBeNull();
+    expect(boardRows("This week")).toHaveLength(2);
+  });
+
+  it("does not re-read them for a glance at another tab", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    const boardCalls = () =>
+      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1")).length;
+    const opened = boardCalls();
+
+    const hidden = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(30_000);
+    hidden.mockReturnValue("visible");
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Half a minute away is not new information, and the boards are this
+    // player's own uncached query -- not something to put on a hair trigger.
+    expect(boardCalls()).toBe(opened);
+  });
+
   it("stops polling while the tab is hidden, and catches up on return", async () => {
     const fetchMock = stubFetch();
     render(<LeaderboardPage />);
