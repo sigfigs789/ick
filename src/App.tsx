@@ -29,7 +29,6 @@ import {
 } from "./analytics";
 import { recordVisit } from "./game/visits";
 import { hasSeen, markSeen } from "./game/whatsNew";
-import { boardsOpen, previewRequested } from "./game/leaderboard";
 import { navigate } from "./routes";
 import { beginSession, endSessionSegment, resumeSession } from "./game/sessionTime";
 
@@ -58,25 +57,7 @@ export default function App() {
   // Read once on mount rather than on every render: this flips exactly once, in
   // openLeaderboard, and reading storage during a render would be the only
   // thing here that did.
-  //
-  // Whether there is a leaderboard to point at yet. Read once at mount, so it
-  // settles on a refresh and at no other time -- the same rule the puzzle's own
-  // date follows.
-  const [leaderboardOpen] = useState(boardsOpen);
-  // `?preview=1` anywhere on the site, which opens the boards early (see
-  // game/leaderboard.ts). Held apart from `leaderboardOpen` rather than folded
-  // into it so it only reveals the way in: the "new" badge below is spent the
-  // first time it is followed, and somebody checking the page early should not
-  // burn their own launch-day badge doing it.
-  const [leaderboardPreview] = useState(previewRequested);
-  //
-  // Held back with it. Until the boards open the leaderboard is a page naming a
-  // day it is not yet, which is not the news a badge is for -- and a badge is
-  // spent the first time it is followed, so aiming it at a waiting room would
-  // use it up before there was anything to announce.
-  const [leaderboardIsNew, setLeaderboardIsNew] = useState(
-    () => leaderboardOpen && !hasSeen("leaderboard")
-  );
+  const [leaderboardIsNew, setLeaderboardIsNew] = useState(() => !hasSeen("leaderboard"));
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
 
@@ -139,15 +120,8 @@ export default function App() {
     // is to say "there is something here you haven't seen", and once the player
     // has seen it there is nothing left to say. Marked before navigating so the
     // badge is already retired when the back button brings them here again.
-    //
-    // Only once there is something to meet, though. Players are expected on this
-    // page before the boards go live -- that visit is what gets their history
-    // counted -- so retiring the badge for it would mean the people who came
-    // early are exactly the ones never told the boards had opened.
-    if (leaderboardOpen) {
-      markSeen("leaderboard");
-      setLeaderboardIsNew(false);
-    }
+    markSeen("leaderboard");
+    setLeaderboardIsNew(false);
     navigate("leaderboard");
   }
 
@@ -184,33 +158,30 @@ export default function App() {
           />
         </div>
         <div className="app__header-actions">
-          {/* Not in the header until there is a board behind it. An earlier
-              version hid it until the leaderboard had *data*, which deadlocked
-              the cold start -- finds only appear once players join, and joining
-              was only reachable through here. A date does not deadlock: it
-              arrives whether or not the game is busy, and the history a player
-              brings with them when they finally do join is imported from this
-              browser either way (see backfillHistory), so nothing is lost by
-              their not having come earlier. "See the leaderboard" under a
-              finished puzzle stays available throughout for anyone curious. */}
-          {(leaderboardOpen || leaderboardPreview) && (
-            <button
-              type="button"
-              className="app__icon-button app__icon-button--badged"
-              onClick={() => openLeaderboard("header")}
-              aria-label={leaderboardIsNew ? "Leaderboard (new)" : "Leaderboard"}
-              title="Leaderboard"
-            >
-              <span aria-hidden="true">🏆</span>
-              {/* aria-hidden because the button's own label already carries the
-                  "(new)" -- a screen reader should hear one thing, not two. */}
-              {leaderboardIsNew && (
-                <span className="app__icon-badge" aria-hidden="true">
-                  new
-                </span>
-              )}
-            </button>
-          )}
+          {/* Always here. Earlier versions withheld the trophy until the
+              leaderboard had data -- which deadlocked the cold start, since
+              finds only appear once players join and joining was only reachable
+              through here -- and then until a fixed opening date, which is the
+              same waiting room on a timer. The page stands on its own from day
+              one: the finds feed is there from the first word, and the history a
+              player brings when they join is imported from this browser
+              (see backfillHistory), so arriving early costs nothing. */}
+          <button
+            type="button"
+            className="app__icon-button app__icon-button--badged"
+            onClick={() => openLeaderboard("header")}
+            aria-label={leaderboardIsNew ? "Leaderboard (new)" : "Leaderboard"}
+            title="Leaderboard"
+          >
+            <span aria-hidden="true">🏆</span>
+            {/* aria-hidden because the button's own label already carries the
+                "(new)" -- a screen reader should hear one thing, not two. */}
+            {leaderboardIsNew && (
+              <span className="app__icon-badge" aria-hidden="true">
+                new
+              </span>
+            )}
+          </button>
           <button
             type="button"
             className="app__icon-button"

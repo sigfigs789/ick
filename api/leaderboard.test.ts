@@ -263,7 +263,6 @@ describe("api/leaderboard submissions", () => {
 
 describe("api/leaderboard reads", () => {
   const OPEN = {
-    ready: true,
     weekly: [
       { rank: 1, player_id: PLAYER, window_word: "inkling", window_zipf: "2.9", total_score: "24.6", puzzles: 1 },
     ],
@@ -287,8 +286,6 @@ describe("api/leaderboard reads", () => {
     expect(response.headers.get("cache-control")).toContain("s-maxage=60");
     expect(await response.json()).toEqual({
       weekStart: SUNDAY,
-      ready: true,
-      opensOn: "2026-08-30",
       // No name: the client derives a handle from the player id. window_word is
       // the rarest word inside this board's window -- this week's find on the
       // weekly board. Scores are absent on purpose; the client prices words.
@@ -311,9 +308,9 @@ describe("api/leaderboard reads", () => {
       ],
     });
 
-    // One call for the gate and both boards, so the count can never disagree
-    // with the rows beside it. The feed is not among them -- it is its own
-    // request, so that it can be cached for every player rather than this one.
+    // One call for both boards, so the two can never disagree with each other.
+    // The feed is not among them -- it is its own request, so that it can be
+    // cached for every player rather than this one.
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(rpcCall(fetchMock)?.url).toBe(
       "https://project.supabase.co/rest/v1/rpc/leaderboard_boards"
@@ -324,82 +321,14 @@ describe("api/leaderboard reads", () => {
     });
   });
 
-  it("opens the boards on the date, whatever the data looks like", async () => {
+  it("asks for the boards unconditionally, with no opening date to wait for", async () => {
     withEnv();
-    // Travel past the opening date: every other date in the request has to look
-    // plausible to the endpoint, which refuses puzzle dates in the future.
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-09-06T12:00:00Z"));
-    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
-    // A Sunday past the opening date, and an empty database. The boards open
-    // anyway -- that is the whole point of a date rather than a threshold.
-    await handler(get("?since=2026-09-06&today=2026-09-06"));
+    const fetchMock = stubFetch([{ weekly: [], allTime: [], words: [] }]);
+    await handler(get(`?since=${SUNDAY}&today=2026-08-25`));
 
+    // The function still carries the gate parameter -- dropping it would mean
+    // recreating the function mid-deploy -- so the endpoint holds it open.
     expect(rpcCall(fetchMock)?.args.p_open).toBe(true);
-    vi.useRealTimers();
-  });
-
-  it("keeps them shut before the date", async () => {
-    withEnv();
-    const fetchMock = stubFetch([{ ready: false, weekly: [], allTime: [], words: [] }]);
-    const response = await handler(get(`?since=${SUNDAY}&today=2026-08-25`));
-
-    expect(rpcCall(fetchMock)?.args.p_open).toBe(false);
-    // No rows in the response for anyone to read out of a network tab, and the
-    // date is what there is to show instead.
-    expect(await response.json()).toMatchObject({
-      ready: false,
-      opensOn: "2026-08-30",
-      weekly: [],
-      allTime: [],
-    });
-  });
-
-  it("opens the boards early for a caller that asks to preview them", async () => {
-    withEnv();
-    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
-    // Days before the opening date, and the gate opens anyway -- which is what
-    // the switch is for: seeing the real boards before the morning they go live.
-    await handler(get(`?since=${SUNDAY}&today=2026-08-25&preview=1`));
-
-    expect(rpcCall(fetchMock)?.args.p_open).toBe(true);
-  });
-
-  it("takes only preview=1 for it, not any old value", async () => {
-    withEnv();
-    const fetchMock = stubFetch([{ ready: false, weekly: [], allTime: [], words: [] }]);
-    await handler(get(`?since=${SUNDAY}&today=2026-08-25&preview=0`));
-
-    expect(rpcCall(fetchMock)?.args.p_open).toBe(false);
-  });
-
-  it("opens for a player whose own calendar has reached the date", async () => {
-    withEnv();
-    // UTC is still on Saturday the 29th; Auckland is already on Sunday the 30th.
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-29T21:00:00Z"));
-    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
-    await handler(get("?since=2026-08-30&today=2026-08-30"));
-
-    // Nobody is made to wait past their own Sunday.
-    expect(rpcCall(fetchMock)?.args.p_open).toBe(true);
-    vi.useRealTimers();
-  });
-
-  it("does not open early for a client lying about the calendar being behind", async () => {
-    withEnv();
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-25T12:00:00Z"));
-    const fetchMock = stubFetch([{ ready: false, weekly: [], allTime: [], words: [] }]);
-    // Claiming a date past the opening while UTC is nowhere near it.
-    await handler(get("?since=2026-08-23&today=2026-08-30"));
-
-    // The client's claim opens the boards a day early at most, never a week --
-    // and a board is not a secret, so an early peek costs nothing but a thin
-    // table. Guarding harder would mean distrusting the same date the spoiler
-    // cutoff has to trust.
-    expect(rpcCall(fetchMock)?.args.p_open).toBe(true);
-    vi.useRealTimers();
   });
 
   it("caps the row count a caller can ask for", async () => {
@@ -446,7 +375,6 @@ describe("api/leaderboard reads", () => {
     };
     const fetchMock = stubFetch([
       {
-        ready: true,
         // Two rows in a board of one: the second is the asking player, from
         // wherever they actually stand.
         weekly: [{ ...below, rank: 1, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee" }, below],
@@ -614,14 +542,14 @@ describe("api/leaderboard recent finds", () => {
     expect(rpcCall(fetchMock)?.args.p_before).toBe(daysBefore(utcToday(), -1));
   });
 
-  it("returns the feed even while the boards are still shut", async () => {
+  it("returns the feed on its own, with no board query behind it", async () => {
     withEnv();
     stubFetch([[{ word: "inkling", zipf: "2.9", finders: 2, found_on: "2026-08-24" }]]);
     const response = await handler(get("?words=1&today=2026-08-25"));
     const body = (await response.json()) as Record<string, unknown>;
 
-    // The feed works from day one; it is the best thing to show while the
-    // boards wait for their opening date. Nothing here consults the gate at all.
+    // Its own request and its own function: the feed is identical for every
+    // player, which is what lets it be cached for all of them at once.
     expect(body.words).toEqual([
       { word: "inkling", zipf: 2.9, finders: 2, foundOn: "2026-08-24" },
     ]);

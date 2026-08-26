@@ -1589,31 +1589,6 @@ h2 {
 .leaderboard-page__back:hover {
   background: var(--bg-inset);
 }
-/* Before the boards open: the count is the whole message, so it gets the size
-   a score would have had. */
-.leaderboard__not-yet {
-  margin: 2.5rem 0;
-  text-align: center;
-}
-.leaderboard__not-yet-count {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  color: var(--fg-muted);
-}
-.leaderboard__not-yet-count strong {
-  font-size: 2.8rem;
-  color: var(--fg);
-}
-.leaderboard__not-yet-copy {
-  margin: 0.6rem auto 0;
-  max-width: 26rem;
-  color: var(--fg-muted);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
 .leaderboard__imported {
   color: var(--success-fg);
   font-weight: 700;

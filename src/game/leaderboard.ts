@@ -72,14 +72,6 @@ export interface FoundWord {
 }
 
 export interface Boards {
-  /**
-   * Whether the boards are published yet. Before the opening date the server
-   * sends no rows at all and this is false, so a page that shows rows only when
-   * `ready` can never render a board ahead of time.
-   */
-  ready: boolean;
-  /** The date the boards open, echoed back so the page can name it. */
-  opensOn: string;
   weekly: BoardEntry[];
   /**
    * This player's own row on the weekly board, when they rank below the last one
@@ -95,25 +87,11 @@ export interface Boards {
 }
 
 /**
- * The Sunday the boards go live, whatever the data looks like by then.
- *
- * A date rather than a player count. The count was the cautious version of the
- * same instinct -- don't show a three-name board -- but it makes the launch
- * unpredictable, and a leaderboard nobody can put a date on is one nobody plans
- * around. A Sunday because that is when a week starts here (see week.ts), so the
- * first published week is a whole one rather than a stub.
- *
- * Changing this is a one-line change: the client decides from its own calendar,
- * the endpoint checks the same date against both clocks, and no SQL knows it.
- */
-export const BOARDS_OPEN_FROM = "2026-08-30";
-
-/**
  * The season the second board counts, and what to call it.
  *
  * Kept in step with api/leaderboard.ts, which holds the same two dates and is
- * what actually bounds the query -- this pair only names it. Same arrangement as
- * BOARDS_OPEN_FROM above: the server decides, the page says.
+ * what actually bounds the query -- this pair only names it: the server decides,
+ * the page says.
  *
  * The board was "All time" and counted every puzzle ever. A season is the more
  * honest thing to rank: it ends, which means a player who arrives in November
@@ -139,63 +117,9 @@ export function seasonName(): string {
  * sentence rather than as a label on the board.
  */
 export function seasonRange(): string {
-  // The same short form the weekly board's range and the opening date use, so
-  // every date on this page is written the same way.
+  // The same short form the weekly board's range uses, so every date on this
+  // page is written the same way.
   return `${formatDateLabel(SEASON.start)} – ${formatDateLabel(SEASON.end)} ${SEASON.end.slice(0, 4)}`;
-}
-
-/** Whether the boards are published yet, on this player's own calendar. */
-export function boardsOpen(date: string = todayDateString()): boolean {
-  return date >= BOARDS_OPEN_FROM;
-}
-
-/**
- * The URL switch that opens the boards early: `/leaderboard?preview=1`.
- *
- * For looking at the real thing before its opening date -- a launch you cannot
- * see until the morning it happens is one you cannot check. It shows the live
- * data, not a fixture (that is dev-only sample data), so what it proves is that
- * the page will work on the day.
- *
- * Deliberately not a secret and deliberately harmless: the boards are built
- * from what players have already chosen to publish, so the only thing this
- * param can leak is a leaderboard a few days ahead of schedule. It changes
- * nothing about how scores are counted.
- */
-const PREVIEW_PARAM = "preview";
-
-/**
- * Remembered for the tab, because the address bar does not survive the trip.
- *
- * `navigate` pushes a bare path (see routes.ts), so a player who lands on the
- * game with the param and then taps through to the leaderboard would arrive
- * without it. Session storage rather than local: a preview is something you are
- * doing right now, and it should end when the tab does rather than quietly
- * outlive the launch on somebody's phone.
- */
-const PREVIEW_KEY = "ick:leaderboard-preview";
-
-/**
- * Whether this browser is previewing the boards ahead of their opening date.
- *
- * Sticky once seen: the param is read from wherever the player entered, and
- * then held for the rest of the session.
- */
-export function previewRequested(search: string = window.location.search): boolean {
-  let asked = false;
-  try {
-    asked = new URLSearchParams(search).get(PREVIEW_PARAM) === "1";
-  } catch {
-    // A search string URLSearchParams won't take is simply not a request.
-  }
-  try {
-    if (asked) sessionStorage.setItem(PREVIEW_KEY, "1");
-    return asked || sessionStorage.getItem(PREVIEW_KEY) === "1";
-  } catch {
-    // Storage unavailable: the param still works, it just won't survive a
-    // navigation inside the app.
-    return asked;
-  }
 }
 
 /**
@@ -368,18 +292,12 @@ export async function fetchBoards(
   if (import.meta.env.DEV && usingSampleData()) {
     return readBoards(sampleBoardsResponse() as Record<string, unknown>, since);
   }
-  // The player's own date goes up so the server can tell whether the boards have
-  // opened on the calendar this player is actually on -- local dates run a day
-  // either side of UTC, and nobody should be made to wait past their own Sunday.
-  // The gate is the server's to open, so previewing is a thing this request
-  // asks for rather than something the page does with the answer. It is part of
-  // the URL, so a preview and an ordinary open are cached apart from each other.
-  const preview = previewRequested();
+  // The player's own date goes up because the puzzle a find belongs to is the
+  // player's own local calendar date, not a moment in UTC.
   const response = await fetch(
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
       `&limit=${BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
-      (preview ? `&${PREVIEW_PARAM}=1` : "") +
       freshParam(options),
     { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
   );
@@ -426,10 +344,6 @@ export async function fetchFoundWords(
 /** Turn one response body -- real or sample -- into the boards the page renders. */
 function readBoards(body: Record<string, unknown>, since: string): Boards {
   return {
-    // Rows are shown only when the server says the boards are published, so a
-    // missing or malformed flag holds them back rather than letting them out.
-    ready: body.ready === true,
-    opensOn: typeof body.opensOn === "string" ? body.opensOn : BOARDS_OPEN_FROM,
     weekly: parseBoard(body.weekly),
     weeklySelf: parseSelf(body.weeklySelf),
     allTime: parseBoard(body.allTime),

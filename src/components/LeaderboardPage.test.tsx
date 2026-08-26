@@ -49,8 +49,6 @@ const WORDS = [
 
 const OPEN = {
   weekStart: "2026-08-23",
-  ready: true,
-  opensOn: "2026-08-30",
   weekly: WEEKLY,
   allTime: ALL_TIME,
   words: WORDS,
@@ -338,54 +336,6 @@ describe("the leaderboard page", () => {
   });
 });
 
-describe("before the boards open", () => {
-  const SHUT = {
-    weekStart: "2026-08-23",
-    ready: false,
-    opensOn: "2026-08-30",
-    weekly: [],
-    allTime: [],
-    words: [],
-  };
-
-  it("names the day the boards open instead of showing one", async () => {
-    stubFetch(SHUT);
-    render(<LeaderboardPage />);
-
-    const status = await screen.findByRole("region", { name: "Leaderboard status" });
-    // A day a player can plan around, rather than a target that may never
-    // arrive.
-    expect(status).toHaveTextContent("Boards open Sunday");
-    expect(status).toHaveTextContent("Aug 30");
-    expect(screen.queryByRole("region", { name: "This week" })).toBeNull();
-    expect(screen.queryByRole("region", { name: SEASON_BOARD })).toBeNull();
-  });
-
-  it("says scores are already counting, so playing now isn't wasted", async () => {
-    playedToday("2026-08-20", "inkling", 2.9);
-    const fetchMock = stubFetch(SHUT);
-    render(<LeaderboardPage />);
-
-    expect(await screen.findByText(/already being counted/)).toBeInTheDocument();
-    // Named the way the boards themselves are: the second one is "Season 1", so
-    // calling it all-time here described a board that is not on the page.
-    expect(screen.getByText(/weekly and season boards go live/)).toBeInTheDocument();
-    // And they are: scores are collected from the first day somebody plays,
-    // whether or not the boards are showing yet, and whether or not anybody
-    // ever opens this page (see src/Root.tsx). Collecting starts before
-    // displaying does.
-    expect(submissions(fetchMock)).toHaveLength(0);
-  });
-
-  it("withholds the boards even if rows arrive alongside a false flag", async () => {
-    stubFetch({ ...SHUT, weekly: WEEKLY, allTime: ALL_TIME });
-    render(<LeaderboardPage />);
-
-    await screen.findByRole("region", { name: "Leaderboard status" });
-    expect(screen.queryByText(handleFor(ALICE))).toBeNull();
-  });
-});
-
 describe("who the page thinks you are", () => {
   it("mints nobody: the identity is the app's, not this page's", async () => {
     playedToday("2026-08-20", "inkling", 2.9);
@@ -492,23 +442,14 @@ describe("recent finds", () => {
     expect(screen.queryByText("Every word found on today's puzzle.")).toBeNull();
   });
 
-  it("shows the feed even while the boards are still shut", async () => {
-    stubFetch({
-      weekStart: "2026-08-23",
-      ready: false,
-      opensOn: "2026-08-30",
-      weekly: [],
-      allTime: [],
-      words: WORDS,
-    });
+  it("shows the feed even when nobody is on the boards yet", async () => {
+    stubFetch({ weekStart: "2026-08-23", weekly: [], allTime: [], words: WORDS });
     render(<LeaderboardPage />);
 
-    // The feed works from day one, so the page is never empty while the boards
-    // wait for their opening date.
+    // The feed works from the first word, which is what makes an empty board
+    // safe to show: the page is never empty while the boards fill up.
     await waitFor(() => expect(finds()).toHaveLength(2));
-    expect(screen.getByRole("region", { name: "Leaderboard status" })).toHaveTextContent(
-      "Boards open Sunday"
-    );
+    expect(screen.getByRole("region", { name: "This week" })).toBeInTheDocument();
   });
 
   it("shows nothing at all when there are no finds yet", async () => {
