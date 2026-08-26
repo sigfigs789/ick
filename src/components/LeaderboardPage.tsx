@@ -46,6 +46,18 @@ export function LeaderboardPage() {
    */
   const [words, setWords] = useState<readonly FoundWord[]>([]);
   const [state, setState] = useState<LoadState>("loading");
+  /**
+   * The puzzle this page is about, fixed when the page opened.
+   *
+   * Read once rather than on every render, so it moves only on a refresh -- the
+   * same way the game fixes its own date at mount (useDailyPuzzle). Both come
+   * from the same clock, so they name the same drop, and the finds below are the
+   * finds for the drop the player was just looking at.
+   *
+   * Read on every render instead, a tab left open would cross midnight and swap
+   * the whole list to a new drop mid-poll, under a reader who never asked for it.
+   */
+  const [today] = useState(todayDateString);
   const [playerId, setPlayerId] = useState<string | null>(() => loadPlayerId());
   /** Days imported from this browser's history on joining, for one message. */
   const [imported, setImported] = useState<number | null>(null);
@@ -57,10 +69,10 @@ export function LeaderboardPage() {
    * which is a truer thing to show than an empty section over one bad minute.
    */
   const refreshWords = useCallback(() => {
-    fetchFoundWords()
+    fetchFoundWords(today)
       .then(setWords)
       .catch(() => {});
-  }, []);
+  }, [today]);
 
   /**
    * Fetch the boards, and the finds beside them.
@@ -76,7 +88,7 @@ export function LeaderboardPage() {
    */
   const load = useCallback(() => {
     setState("loading");
-    fetchBoards()
+    fetchBoards(today)
       .then((loaded) => {
         setBoards(loaded);
         setState("ready");
@@ -85,7 +97,7 @@ export function LeaderboardPage() {
       // to act on -- so it says so plainly and offers a retry, and that is all.
       .catch(() => setState("error"));
     refreshWords();
-  }, [refreshWords]);
+  }, [refreshWords, today]);
 
 
   /**
@@ -262,7 +274,7 @@ export function LeaderboardPage() {
             one -- so boards that failed to load are a reason to show a retry
             above it, never a reason to hide finds that arrived perfectly well. */}
         {words.length > 0 && (
-          <FoundWords words={words} today={todayDateString()} arrived={arrived} />
+          <FoundWords words={words} today={today} arrived={arrived} />
         )}
 
         {/* Nothing standing to say: their own row is marked on the boards, which
