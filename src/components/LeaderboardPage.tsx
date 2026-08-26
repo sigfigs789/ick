@@ -3,6 +3,8 @@ import { RarityBadge } from "./RarityBadge";
 import {
   backfillHistory,
   fetchBoards,
+  seasonName,
+  seasonRange,
   type BoardEntry,
   type Boards,
   type FoundWord,
@@ -169,9 +171,10 @@ export function LeaderboardPage() {
         >
           <span aria-hidden="true">‹</span>
         </button>
+        {/* No subtitle. "Ranked by total score" described a column the boards
+            already show, above two headings that say what each one counts. */}
         <div className="app__header-titles">
           <h1>Leaderboard</h1>
-          <p className="app__puzzle-number">Ranked by total score</p>
         </div>
         {/* A spacer, so the title stays centred against the back button. */}
         <div className="leaderboard-page__header-spacer" aria-hidden="true" />
@@ -206,8 +209,12 @@ export function LeaderboardPage() {
               playerId={playerId}
             />
             <Board
-              heading="All time"
-              caption="Every puzzle you've scored on, added up."
+              heading={seasonName()}
+              // The range is part of the heading rather than the caption: it is
+              // what "Season 1" means, and a season with no dates on it is a
+              // word rather than a window.
+              headingDetail={seasonRange()}
+              caption="Must be completed the day of the puzzle."
               entries={boards.allTime}
               self={boards.allTimeSelf}
               emptyMessage="No scores yet."
@@ -340,6 +347,8 @@ function NotYet({ opensOn }: { opensOn: string }) {
 
 interface BoardProps {
   heading: string;
+  /** A second line inside the heading, set smaller -- the season's dates. */
+  headingDetail?: string;
   caption: string;
   entries: BoardEntry[];
   /** This player's own row, when they rank below the last one shown. */
@@ -359,10 +368,21 @@ interface BoardProps {
  * pinned outside the scrolling list where it cannot be scrolled away from. The
  * rank on it is the real one -- 61st of everybody, not 16th of what fits.
  */
-function Board({ heading, caption, entries, self, emptyMessage, playerId }: BoardProps) {
+function Board({
+  heading,
+  headingDetail,
+  caption,
+  entries,
+  self,
+  emptyMessage,
+  playerId,
+}: BoardProps) {
   return (
     <section className="leaderboard__board" aria-label={heading}>
-      <h2 className="leaderboard__board-heading">{heading}</h2>
+      <h2 className="leaderboard__board-heading">
+        {heading}
+        {headingDetail && <span className="leaderboard__board-dates">{headingDetail}</span>}
+      </h2>
       <p className="leaderboard__caption">{caption}</p>
       {entries.length === 0 ? (
         <p className="leaderboard__status">{emptyMessage}</p>

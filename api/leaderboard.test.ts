@@ -382,6 +382,22 @@ describe("api/leaderboard reads", () => {
     expect(rpcCall(fetchMock)?.args.p_limit).toBe(200);
   });
 
+  it("bounds the second board to the season, at both ends", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    await handler(get(`?since=${SUNDAY}`));
+
+    // The board is named for a season with two dates on it, so it counts that
+    // range and nothing else -- a July puzzle brought in by a backfill is
+    // outside Season 1, and so is everything after New Year. The dates are the
+    // endpoint's, not the caller's: a season is the same season everywhere,
+    // unlike a week, whose boundary is local to whoever is asking.
+    expect(rpcCall(fetchMock)?.args).toMatchObject({
+      p_season_since: "2026-08-10",
+      p_season_until: "2026-12-31",
+    });
+  });
+
   it("shows fifteen rows when the caller doesn't say", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);

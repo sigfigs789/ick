@@ -4,10 +4,13 @@
 // GET /api/leaderboard?since=YYYY-MM-DD&today=YYYY-MM-DD&limit=15&player=UUID
 //   -> { weekStart, ready, opensOn, weekly: [...], weeklySelf, allTime: [...],
 //        allTimeSelf, words: [...] }
-//   The weekly board counts puzzles from `since` onward; all-time counts
-//   everything. `since` comes from the client because the puzzle date it
-//   brackets is the player's own local calendar date (see src/game/week.ts), so
-//   the week has to be measured on the same clock.
+//   The weekly board counts puzzles from `since` onward; the second counts the
+//   season, which is a fixed range this file holds (SEASON_START / SEASON_END)
+//   rather than anything the caller can move. `since` does come from the client,
+//   because the puzzle date it brackets is the player's own local calendar date
+//   (see src/game/week.ts), so the week has to be measured on the same clock.
+//   The response still calls the second board `allTime`: it is the long window
+//   beside the short one, and renaming the key every season would help nobody.
 //
 //   Each board is a top fifteen. `player` is optional and is the player asking:
 //   when they rank below the cut, their own row comes back as `weeklySelf` /
@@ -97,6 +100,25 @@ const MAX_ZIPF = 10;
  * built from, so a stale client cannot keep them shut either.
  */
 const BOARDS_OPEN_FROM = "2026-08-30";
+
+/**
+ * The season the second board counts, inclusive at both ends.
+ *
+ * Held here rather than in SQL, the same way the week's first day is: opening
+ * Season 2 is these two lines and the pair in src/game/leaderboard.ts that names
+ * it on screen, never a migration.
+ *
+ * Bounded at both ends because the board is named for the season. It used to be
+ * "all time" and count everything, which a name with two dates on it cannot do:
+ * a player backfilling a July history would land inside Season 1, and every
+ * puzzle after New Year would keep landing there.
+ *
+ * These are fixed dates and not the player's own calendar, so they are not taken
+ * from the request -- unlike the week, whose boundary is local to whoever is
+ * asking. A season is the same season everywhere.
+ */
+const SEASON_START = "2026-08-10";
+const SEASON_END = "2026-12-31";
 
 /**
  * A batch is a browser's whole playing history, so it has to hold a couple of
@@ -419,6 +441,8 @@ async function handleGet(request: Request): Promise<Response> {
       p_words_before: wordsBefore,
       p_words_since: wordsSince,
       p_player: player,
+      p_season_since: SEASON_START,
+      p_season_until: SEASON_END,
     });
     const weekly = toBoard(result?.weekly ?? null, limit);
     const allTime = toBoard(result?.allTime ?? null, limit);

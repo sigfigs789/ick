@@ -1,4 +1,5 @@
--- A board is a top fifteen, plus your own row when you are not in it.
+-- A board is a top fifteen, plus your own row when you are not in it -- and the
+-- second board is a season rather than all of time.
 --
 -- Fifty rows was a list you scrolled; fifteen is a list you read. But a cut-off
 -- board is only worth having if it can still answer "where am I", which for
@@ -11,6 +12,12 @@
 -- window function either way, and asking twice invites the two answers to
 -- disagree across a write landing between them.
 --
+-- The window also closes at the top now. The second board is named for a season
+-- with two dates on it, so it has to be bounded at both ends or the name is a
+-- lie -- an early player's July puzzles would land inside "Season 1", and every
+-- puzzle after New Year would keep landing there too. `p_until` is the other
+-- half of `p_since`, and the caller supplies both.
+--
 -- Both functions are dropped and recreated rather than replaced: each gains a
 -- parameter, and a differing argument list makes a new overload rather than
 -- replacing the old one, which would leave PostgREST two candidates to choose
@@ -22,11 +29,14 @@ drop function if exists public.leaderboard_board(date, integer);
 /*
  * One board, aggregated over a date window.
  *
- * `p_since` null means all time; a date means "on or after", which is how the
- * weekly board gets its reset -- nothing is deleted or archived when a week
- * turns over, the window simply moves and last week's rows fall out of it. That
- * keeps the all-time board a straight sum of the same rows and makes the weekly
- * reset unlosable: there is no scheduled job that can fail to run.
+ * `p_since` / `p_until` bound the window; either one null means unbounded that
+ * way. A date means "on or after" / "on or before", which is how the weekly
+ * board gets its reset -- nothing is deleted or archived when a week turns over,
+ * the window simply moves and last week's rows fall out of it. That keeps the
+ * season board a straight sum of the same rows and makes the weekly reset
+ * unlosable: there is no scheduled job that can fail to run. It is also how a
+ * season ends: the window stops moving, and the board it leaves behind is the
+ * final one.
  *
  * Nothing here knows which day the week starts on. The caller computes the
  * window's first day from the player's own calendar (src/game/week.ts, currently
@@ -48,10 +58,13 @@ drop function if exists public.leaderboard_board(date, integer);
  * result on the limit without re-sorting anything.
  *
  * `window_word` / `window_zipf` is the rarest word the player found *inside* the
- * window: on the weekly board what they turned up this week, on the all-time
- * board their best ever. No name comes back at all -- the client derives a handle
- * from the player id (see src/game/handle.ts), so there is nothing to store, keep
- * in step, or authorise.
+ * window: on the weekly board what they turned up this week, on the season board
+ * their best of the season. The page does not show it at present -- the scoring
+ * system is still being corrected and a find is displayed with what it scored --
+ * but it stays in the answer, because holding a column back from a screen is a
+ * component's decision and not a query's. No name comes back at all -- the client
+ * derives a handle from the player id (see src/game/handle.ts), so there is
+ * nothing to store, keep in step, or authorise.
  *
  * The word is picked by smallest Zipf, which needs no dictionary here: every
  * scoring system this game has used maps Zipf to score monotonically downward, so
@@ -61,7 +74,8 @@ drop function if exists public.leaderboard_board(date, integer);
 create or replace function public.leaderboard_board(
   p_since date default null,
   p_limit integer default 15,
-  p_player uuid default null
+  p_player uuid default null,
+  p_until date default null
 ) returns table (
   rank integer,
   player_id uuid,
@@ -85,7 +99,8 @@ as $$
       (array_agg(s.top_word order by s.top_zipf asc, s.puzzle_date asc))[1] as window_word,
       min(s.top_zipf) as window_zipf
     from public.leaderboard_scores s
-    where p_since is null or s.puzzle_date >= p_since
+    where (p_since is null or s.puzzle_date >= p_since)
+      and (p_until is null or s.puzzle_date <= p_until)
     group by s.player_id
   ),
   -- Ranked over everybody before anything is cut, which is what makes the row
@@ -111,9 +126,9 @@ as $$
   order by r.rank;
 $$;
 
-revoke all on function public.leaderboard_board(date, integer, uuid)
+revoke all on function public.leaderboard_board(date, integer, uuid, date)
   from public, anon, authenticated;
-grant execute on function public.leaderboard_board(date, integer, uuid) to service_role;
+grant execute on function public.leaderboard_board(date, integer, uuid, date) to service_role;
 
 /*
  * Both boards, and the gate in front of them.
@@ -136,6 +151,12 @@ grant execute on function public.leaderboard_board(date, integer, uuid) to servi
  * `p_player` is the player asking, or null for a caller who is nobody in
  * particular -- a board with no row below the cut is exactly what that should
  * return, so the parameter is optional in the plainest way.
+ *
+ * `p_season_since` / `p_season_until` bound the second board. Nothing here knows
+ * when a season runs, the same way nothing here knows which day a week starts
+ * on: the endpoint holds the dates and passes them, so opening Season 2 is a
+ * two-line change and never a migration. Both null is the old behaviour -- every
+ * puzzle ever, added up.
  */
 create or replace function public.leaderboard_boards(
   p_since date,
@@ -143,7 +164,9 @@ create or replace function public.leaderboard_boards(
   p_open boolean default false,
   p_words_before date default null,
   p_words_since date default null,
-  p_player uuid default null
+  p_player uuid default null,
+  p_season_since date default null,
+  p_season_until date default null
 ) returns jsonb
 language sql
 stable
@@ -155,11 +178,14 @@ as $$
     -- last. Nothing downstream has to re-sort it.
     'weekly', case when coalesce(p_open, false) then (
       select coalesce(jsonb_agg(to_jsonb(b) order by b.rank), '[]'::jsonb)
-      from public.leaderboard_board(p_since, p_limit, p_player) b
+      from public.leaderboard_board(p_since, p_limit, p_player, null) b
     ) else '[]'::jsonb end,
+    -- Still called `allTime` in the response: the key is what the two boards are
+    -- to a caller -- the short window and the long one -- and renaming it would
+    -- have every future season rename it again.
     'allTime', case when coalesce(p_open, false) then (
       select coalesce(jsonb_agg(to_jsonb(b) order by b.rank), '[]'::jsonb)
-      from public.leaderboard_board(null, p_limit, p_player) b
+      from public.leaderboard_board(p_season_since, p_limit, p_player, p_season_until) b
     ) else '[]'::jsonb end,
     -- Deliberately *outside* the gate: the finds feed works from day one, and
     -- it is the best thing to show a player while the boards wait for their
@@ -171,7 +197,7 @@ as $$
   );
 $$;
 
-revoke all on function public.leaderboard_boards(date, integer, boolean, date, date, uuid)
+revoke all on function public.leaderboard_boards(date, integer, boolean, date, date, uuid, date, date)
   from public, anon, authenticated;
-grant execute on function public.leaderboard_boards(date, integer, boolean, date, date, uuid)
+grant execute on function public.leaderboard_boards(date, integer, boolean, date, date, uuid, date, date)
   to service_role;

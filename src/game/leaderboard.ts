@@ -112,6 +112,38 @@ export interface Boards {
  */
 export const BOARDS_OPEN_FROM = "2026-08-30";
 
+/**
+ * The season the second board counts, and what to call it.
+ *
+ * Kept in step with api/leaderboard.ts, which holds the same two dates and is
+ * what actually bounds the query -- this pair only names it. Same arrangement as
+ * BOARDS_OPEN_FROM above: the server decides, the page says.
+ *
+ * The board was "All time" and counted every puzzle ever. A season is the more
+ * honest thing to rank: it ends, which means a player who arrives in November
+ * has something they can still win, and the standings that stand at the end are
+ * final rather than merely current.
+ */
+export const SEASON = {
+  number: 1,
+  start: "2026-08-10",
+  end: "2026-12-31",
+} as const;
+
+/** `Season 1`, and the range under it. */
+export function seasonName(): string {
+  return `Season ${SEASON.number}`;
+}
+
+/** `August 10 – December 31 2026`, for the line under the heading. */
+export function seasonRange(): string {
+  const start = new Date(`${SEASON.start}T00:00:00`);
+  const end = new Date(`${SEASON.end}T00:00:00`);
+  const day = (date: Date) =>
+    date.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+  return `${day(start)} – ${day(end)} ${end.getFullYear()}`;
+}
+
 /** Whether the boards are published yet, on this player's own calendar. */
 export function boardsOpen(date: string = todayDateString()): boolean {
   return date >= BOARDS_OPEN_FROM;

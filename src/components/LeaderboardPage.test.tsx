@@ -4,12 +4,16 @@ import userEvent from "@testing-library/user-event";
 import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard, loadPlayerId } from "../game/player";
 import { handleFor } from "../game/handle";
+import { seasonName } from "../game/leaderboard";
 
 // No names come from the server: the client derives a handle from each player
 // id, so the same player is recognisable on both boards without anything being
 // stored. `windowWord` is what they found inside that board's window.
 const ALICE = "11111111-1111-4111-8111-111111111111";
 const BOB = "22222222-2222-4222-8222-222222222222";
+// The second board is named for the season it counts, so the test asks for it
+// by the same name the page builds -- one place to change when Season 2 opens.
+const SEASON_BOARD = seasonName();
 // Somebody a long way down both boards, which is where almost everybody is.
 const CAROL = "33333333-3333-4333-8333-333333333333";
 
@@ -111,18 +115,34 @@ describe("the leaderboard page", () => {
     expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE));
     expect(boardRows("This week")[0]).toHaveTextContent("41.2");
 
-    const allTime = boardRows("All time");
+    const allTime = boardRows(SEASON_BOARD);
     // A different order from the weekly board, which is the point of both.
     expect(allTime[0]).toHaveTextContent(handleFor(BOB));
     expect(allTime[0]).toHaveTextContent("310.5");
   });
 
-  it("says it ranks by total score", async () => {
+  it("names the season and the dates it runs between", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    expect(screen.getByText("Ranked by total score")).toBeInTheDocument();
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    // A season is a window, so it says which one. The board is bounded to the
+    // same dates server-side -- the heading is not decoration over an all-time
+    // sum.
+    const board = screen.getByRole("region", { name: SEASON_BOARD });
+    expect(board).toHaveTextContent("Season 1");
+    expect(board).toHaveTextContent("August 10 – December 31 2026");
+    expect(board).toHaveTextContent("Must be completed the day of the puzzle.");
+  });
+
+  it("drops the subtitle over the two boards", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // "Ranked by total score" described a column both boards already show,
+    // above two headings that each say what they count.
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(screen.queryByText("Ranked by total score")).toBeNull();
   });
 
   it("names the player, and says how much they played", async () => {
@@ -144,7 +164,7 @@ describe("the leaderboard page", () => {
     // Whoever beat you this week is findable on the all-time board under the
     // same name -- derived from their id, so it cannot drift between the two.
     expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE));
-    expect(boardRows("All time")[1]).toHaveTextContent(handleFor(ALICE));
+    expect(boardRows(SEASON_BOARD)[1]).toHaveTextContent(handleFor(ALICE));
   });
 
   it("keeps every player's find off both boards", async () => {
@@ -154,9 +174,9 @@ describe("the leaderboard page", () => {
     // A find is shown with what it scored, and the scoring system is still being
     // corrected -- so the words stay under Today's finds and the boards say only
     // what somebody played and what it added up to.
-    await waitFor(() => expect(boardRows("All time")[0]).toHaveTextContent(handleFor(BOB)));
-    expect(rowMeta("All time", 0)).toBe("40 puzzles");
-    expect(boardRows("All time")[0]).not.toHaveTextContent("inkling");
+    await waitFor(() => expect(boardRows(SEASON_BOARD)[0]).toHaveTextContent(handleFor(BOB)));
+    expect(rowMeta(SEASON_BOARD, 0)).toBe("40 puzzles");
+    expect(boardRows(SEASON_BOARD)[0]).not.toHaveTextContent("inkling");
     expect(boardRows("This week")[0]).not.toHaveTextContent("quixotic");
   });
 
@@ -178,7 +198,7 @@ describe("the leaderboard page", () => {
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")[1]).toHaveTextContent("you"));
-    expect(boardRows("All time")[0]).toHaveTextContent("you");
+    expect(boardRows(SEASON_BOARD)[0]).toHaveTextContent("you");
     expect(boardRows("This week")[0]).not.toHaveTextContent("you");
   });
 
@@ -198,7 +218,7 @@ describe("the leaderboard page", () => {
     // The real rank, not a position inside what fits on screen.
     expect(mine).toHaveTextContent("61");
     expect(mine).toHaveTextContent("you");
-    expect(boardRows("All time")[2]).toHaveTextContent("214");
+    expect(boardRows(SEASON_BOARD)[2]).toHaveTextContent("214");
   });
 
   it("shows no extra row when the player is on the board", async () => {
@@ -208,7 +228,7 @@ describe("the leaderboard page", () => {
 
     // Nothing below the cut to show, so the board is just the board.
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    expect(boardRows("All time")).toHaveLength(2);
+    expect(boardRows(SEASON_BOARD)).toHaveLength(2);
   });
 
   it("asks for the week's board from its Sunday", async () => {
@@ -252,7 +272,7 @@ describe("before the boards open", () => {
     expect(status).toHaveTextContent("Boards open Sunday");
     expect(status).toHaveTextContent("Aug 30");
     expect(screen.queryByRole("region", { name: "This week" })).toBeNull();
-    expect(screen.queryByRole("region", { name: "All time" })).toBeNull();
+    expect(screen.queryByRole("region", { name: SEASON_BOARD })).toBeNull();
   });
 
   it("says scores are already counting, so playing now isn't wasted", async () => {
