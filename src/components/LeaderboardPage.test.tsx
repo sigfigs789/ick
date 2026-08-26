@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LeaderboardPage } from "./LeaderboardPage";
-import { hasJoined, joinBoard, loadPlayerId } from "../game/player";
+import { hasJoined, joinBoard } from "../game/player";
 import { handleFor } from "../game/handle";
 import { seasonName } from "../game/leaderboard";
 
@@ -370,10 +370,11 @@ describe("before the boards open", () => {
     // Named the way the boards themselves are: the second one is "Season 1", so
     // calling it all-time here described a board that is not on the page.
     expect(screen.getByText(/weekly and season boards go live/)).toBeInTheDocument();
-    // And they are: a visit before the opening date still joins and still sends
-    // the history up. Collecting starts before displaying does.
-    await waitFor(() => expect(hasJoined()).toBe(true));
-    expect(submissions(fetchMock)).toHaveLength(1);
+    // And they are: scores are collected from the first day somebody plays,
+    // whether or not the boards are showing yet, and whether or not anybody
+    // ever opens this page (see src/Root.tsx). Collecting starts before
+    // displaying does.
+    expect(submissions(fetchMock)).toHaveLength(0);
   });
 
   it("withholds the boards even if rows arrive alongside a false flag", async () => {
@@ -385,77 +386,33 @@ describe("before the boards open", () => {
   });
 });
 
-describe("joining the board", () => {
-  it("joins on the first visit and brings the browser's own history along", async () => {
-    // Three remembered days: one played on its own date, one half-played on its
-    // own date, and one pulled out of the archive weeks later.
-    localStorage.setItem(
-      "ick:progress:2026-08-20",
-      JSON.stringify({
-        date: "2026-08-20",
-        drop: "ink",
-        acceptedWords: [{ word: "inkling", rarity: "Rare", zipf: 2.9 }],
-        rejectedAttempts: [],
-        completed: true,
-        firstWordAt: "2026-08-20T19:00:00.000Z",
-        completedAt: "2026-08-20T19:04:00.000Z",
-      })
-    );
-    localStorage.setItem(
-      "ick:progress:2026-08-21",
-      JSON.stringify({
-        date: "2026-08-21",
-        drop: "ink",
-        acceptedWords: [{ word: "wrinkle", rarity: "Uncommon", zipf: 3.31 }],
-        rejectedAttempts: [],
-        completed: false,
-        firstWordAt: "2026-08-21T08:00:00.000Z",
-      })
-    );
-    localStorage.setItem(
-      "ick:progress:2026-07-04",
-      JSON.stringify({
-        date: "2026-07-04",
-        drop: "str",
-        acceptedWords: [{ word: "asphyxiate", rarity: "Extremely Rare", zipf: 2.09 }],
-        rejectedAttempts: [],
-        completed: true,
-        firstWordAt: "2026-08-24T19:00:00.000Z",
-        completedAt: "2026-08-24T19:04:00.000Z",
-      })
-    );
+describe("who the page thinks you are", () => {
+  it("mints nobody: the identity is the app's, not this page's", async () => {
+    playedToday("2026-08-20", "inkling", 2.9);
     const fetchMock = stubFetch();
     render(<LeaderboardPage />);
 
-    // No tap: opening the page is the joining, and there is no button to press.
-    await waitFor(() => expect(hasJoined()).toBe(true));
-    expect(screen.queryByRole("button", { name: /board/i })).toBeNull();
-
-    const posts = submissions(fetchMock);
-    expect(posts).toHaveLength(1);
-    // Both days it can prove were played on their own date, including the one
-    // never finished. Archive play stays off the board here for the same reason
-    // it does on the live path.
-    expect((posts[0].scores as { date: string }[]).map((s) => s.date)).toEqual([
-      "2026-08-20",
-      "2026-08-21",
-    ]);
-    expect(await screen.findByText(/Counted 2 puzzles you'd already played/)).toBeInTheDocument();
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    // The id is minted on opening the app and the history goes up there (see
+    // src/Root.tsx and its tests). This page rendered on its own, with no Root
+    // above it, so a browser that arrived without an id still has none -- which
+    // is the assertion that keeps a second minting site from growing back.
+    expect(hasJoined()).toBe(false);
+    expect(submissions(fetchMock)).toHaveLength(0);
   });
 
-  it("joins with no history at all", async () => {
+  it("marks your own row from the id the app already minted", async () => {
+    // Whoever ALICE is, this browser is them.
+    localStorage.setItem("ick:player", JSON.stringify({ id: ALICE }));
     stubFetch();
     render(<LeaderboardPage />);
 
-    // A handle comes from the id, not from a word, so there is nothing to earn
-    // first -- somebody who has never played still gets a row of their own.
-    await waitFor(() => expect(loadPlayerId()).not.toBeNull());
-    // And nothing is said about it. "Nothing to count yet" announced an absence
-    // the player had not asked about; the boards are the answer to where they
-    // stand, and an empty history needs no commentary.
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    expect(screen.queryByText(/Nothing to count/)).toBeNull();
-    expect(screen.queryByText(/Counted/)).toBeNull();
+    const you = boardRows("This week").filter((row) =>
+      row.classList.contains("leaderboard__row--you")
+    );
+    expect(you).toHaveLength(1);
+    expect(you[0].textContent).toContain(handleFor(ALICE));
   });
 
   it("asks for nothing: no call to action, and no explanation under it", async () => {
@@ -463,41 +420,14 @@ describe("joining the board", () => {
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    // The page is the boards and the finds. Both things that used to sit under
-    // them -- the button, and the paragraph explaining that there is no account
-    // and no email -- said only what the page already shows.
+    // The page is the boards and the finds. Everything that used to sit under
+    // them -- the button, the paragraph about there being no account or email,
+    // the count of imported puzzles -- reported a joining that now happens
+    // before anybody gets here, silently, with nothing to announce.
     expect(screen.queryByRole("button", { name: "Put me on the board" })).toBeNull();
     expect(screen.queryByText(/No account, no email/)).toBeNull();
-  });
-
-  it("says nothing standing about who you are once you have joined", async () => {
-    stubFetch();
-    const { unmount } = render(<LeaderboardPage />);
-    await waitFor(() => expect(hasJoined()).toBe(true));
-
-    // The confirmation is worth one showing; after that a player's own row is
-    // marked on the boards, which is where they would look for themselves.
-    unmount();
-    render(<LeaderboardPage />);
-    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     expect(screen.queryByText(/Counted/)).toBeNull();
-    expect(screen.queryByText(/Nothing to count yet/)).toBeNull();
-  });
-
-  it("keeps one identity across visits", async () => {
-    playedToday("2026-08-20", "inkling", 2.9);
-    const fetchMock = stubFetch();
-    const { unmount } = render(<LeaderboardPage />);
-
-    await waitFor(() => expect(loadPlayerId()).not.toBeNull());
-    const first = loadPlayerId();
-    unmount();
-    render(<LeaderboardPage />);
-    // A second visit joins nobody: the id stands, which is what keeps the handle
-    // stable, and the history is not sent up again.
-    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(1));
-    expect(loadPlayerId()).toBe(first);
-    expect(submissions(fetchMock)).toHaveLength(1);
+    expect(screen.queryByText(/Nothing to count/)).toBeNull();
   });
 });
 
@@ -783,6 +713,46 @@ describe("keeping the finds current", () => {
     // Half a minute away is not new information, and the boards are this
     // player's own uncached query -- not something to put on a hair trigger.
     expect(boardCalls()).toBe(opened);
+  });
+
+  it("refreshes both halves past the cache when a reader taps refresh", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    const opened = fetchMock.mock.calls.length;
+
+    // fireEvent rather than userEvent: this block runs on fake timers, and
+    // userEvent waits on real ones.
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    // Both: a reader who taps this is refreshing the page, not one section.
+    const asked = fetchMock.mock.calls
+      .slice(opened)
+      .map(([url]) => String(url))
+      .filter((url) => !url.includes("method"));
+    expect(asked.some((url) => url.includes("words=1"))).toBe(true);
+    expect(asked.some((url) => !url.includes("words=1"))).toBe(true);
+    // Every one of them past the shared copy. A client cannot bust a CDN cache
+    // with a header, so a different URL is the only thing that can, and without
+    // it the button would hand back the list the reader just told us is stale.
+    expect(asked.every((url) => /&t=\d+/.test(url))).toBe(true);
+  });
+
+  it("leaves the poll on the shared copy", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    const opened = fetchMock.mock.calls.length;
+
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    // The cache is there to absorb exactly this. Only a person gets to skip it.
+    const polled = fetchMock.mock.calls.slice(opened).map(([url]) => String(url));
+    expect(polled.length).toBeGreaterThan(0);
+    expect(polled.every((url) => !url.includes("&t="))).toBe(true);
   });
 
   it("stops polling while the tab is hidden, and catches up on return", async () => {

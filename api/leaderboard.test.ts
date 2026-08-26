@@ -627,12 +627,34 @@ describe("api/leaderboard recent finds", () => {
     ]);
   });
 
-  it("is cached for a minute, and for everybody at once", async () => {
+  it("is cached briefly, and for everybody at once", async () => {
     withEnv();
     stubFetch([[]]);
     const response = await handler(get("?words=1&today=2026-08-25"));
 
-    expect(response.headers.get("cache-control")).toContain("s-maxage=60");
+    // Short, because this cache and the page's poll add up rather than overlap:
+    // a word waits out one and then the other before anybody sees it.
+    expect(response.headers.get("cache-control")).toContain("s-maxage=15");
+    // And private caches get no lifetime at all. Without this the browser falls
+    // back to heuristic freshness on a `public` 200 and can answer the page's
+    // own poll from disk -- a feed that never changes until you reload.
+    expect(response.headers.get("cache-control")).toContain("max-age=0");
+    // And the stale window in proportion to it -- a long tail here is how old
+    // an answer the first reader after expiry gets, which would undo the above.
+    expect(response.headers.get("cache-control")).toContain("stale-while-revalidate=60");
+  });
+
+  it("answers a hand-asked refresh from its own cache key", async () => {
+    withEnv();
+    stubFetch([[]]);
+    // The client sends `t` when a reader taps refresh (see game/leaderboard).
+    // It is not read here -- it exists to be part of the URL, which is the
+    // cache key -- so the response must be exactly the one without it.
+    const response = await handler(get("?words=1&today=2026-08-25&t=123456"));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ words: [] });
+    expect(response.headers.get("cache-control")).toContain("s-maxage=15");
   });
 
   it("says unavailable rather than throwing when the read fails", async () => {

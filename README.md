@@ -637,10 +637,12 @@ the page says it couldn't load the boards — which is fine, the game plays on �
 but every submission that arrives meanwhile is logged by `api/_supabase.record`
 and dropped. Nothing queues it and nothing retries it.
 
-That matters more than it looks, because the backfill only runs **once**, on the
-visit that mints a player's id. A player who opens the leaderboard before the
-schema lands is joined, has their history swallowed, and never sends it again —
-their id already exists, so the next visit has nothing to import.
+This used to be permanent: the backfill ran once, on the visit that minted a
+player's id, so a player who arrived before the schema landed had their history
+swallowed and never sent it again. It now runs on **every** open, so a swallowed
+history comes back on its own the next time that player opens the app — the gap
+is a window rather than a scar. Words played during the window are still lost,
+since nothing queues a dropped write.
 
 So every migration in `supabase/migrations/` must be applied to the project
 *before* the leaderboard reaches players, and certainly before `BOARDS_OPEN_FROM`
@@ -692,27 +694,39 @@ instead, which only made sense while a "name" was itself a word.
 
 ### Identity, and the history that comes with it
 
-Account-free, and there is nothing to fill in — not even a tap. Opening
-`/leaderboard` mints a UUID and stores that id and nothing else
-(`src/game/player.ts`), which is also everything the handle is computed from.
-Nothing is sent for a player who never opens the page. The trophy appears only
-once the boards have opened, carrying a one-time "new" badge retired by the first
-visit from that day on (`src/game/whatsNew.ts`).
+Account-free, and there is nothing to fill in — not even a tap. Opening the app
+mints a UUID and stores that id and nothing else (`src/game/player.ts`, minted by
+`src/Root.tsx`), which is also everything the handle is computed from. The trophy
+appears only once the boards have opened, carrying a one-time "new" badge retired
+by the first visit from that day on (`src/game/whatsNew.ts`).
 
-**The visit is the joining.** There used to be a "Put me on the board" button and
-a paragraph under it explaining that there is no account, no email and no name to
-invent. All still true, and none of it worth saying to somebody who has already
-opened a leaderboard — the tap only ever stood between a player and their own
-row. The trade is worth stating: somebody who opens the page to look at *other
-people's* scores is now on the board themselves. What goes up is an id the
-browser invented and the words they found, and none of it reaches back into the
-game.
+**Playing is the joining.** It has moved twice, each time toward less ceremony: a
+"Put me on the board" button, then the leaderboard visit itself, and now opening
+the app at all. Both earlier versions lost data that had already been earned — a
+player with no id submits nothing, so somebody who played every day and never
+tapped the trophy left no trace on the board or in the finds feed, and their
+whole record hung on a page they had no particular reason to open.
 
-**Joining imports the player's own history.** Somebody arriving today has often
+The trade is worth stating: every player is on the board now, including one who
+would not have chosen it. What goes up is an id the browser invented and the
+words they found — both of which the leaderboard already shows to everybody — and
+none of it reaches back into the game. Nothing is user-facing: no prompt, no
+confirmation, no count of what was imported. A browser that cannot store an id
+(private mode, storage off) simply isn't a player, and plays exactly as before.
+
+**Every open sends the player's own history.** Somebody arriving today has often
 been playing for weeks, and that record is already in localStorage — so
 `storage.playedOnItsDay()` collects every stored puzzle and
-`leaderboard.backfillHistory()` sends them as one batch. It runs once, on the
-visit that mints the id.
+`leaderboard.backfillHistory()` sends them as one batch.
+
+It runs on every open, not just the one that mints the id, because the per-day
+write is monotonic: a day already recorded is a no-op, so re-sending is a repair
+rather than a rewrite. That matters because the live path is fire-and-forget —
+one request per accepted word, no retry — so a word lost to a tunnel, a closed
+tab or a 5xx would otherwise be missing from the board forever. `Root` also
+re-sends when a backgrounded tab resurfaces (`visibilitychange`, and `pageshow`
+with `persisted`), gated on five minutes away so a tab flick costs nothing: on a
+phone, reopening the app usually isn't a page load at all.
 
 ### Only puzzles played on their own day count, backwards and forwards
 

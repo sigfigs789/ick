@@ -620,3 +620,79 @@ describe("syncing an already-joined player on open", () => {
     ]);
   });
 });
+
+describe("asking for the list by hand", () => {
+  /**
+   * The URL the client fetched. Typed structurally: the stubs here take no
+   * declared arguments, so their recorded calls are empty tuples as far as the
+   * compiler is concerned, whatever was actually passed.
+   */
+  function url(fetchMock: { mock: { calls: unknown[][] } }, call = 0): string {
+    return String(fetchMock.mock.calls[call]?.[0] ?? "");
+  }
+
+  it("leaves a poll on the shared copy", async () => {
+    const fetchMock = stubFetch(new Response(JSON.stringify({ words: [] }), { status: 200 }));
+
+    await fetchFoundWords("2026-08-25");
+
+    // No buster: two players on the same day send byte-identical URLs, which is
+    // what lets one cached answer serve all of them.
+    expect(url(fetchMock)).toBe("/api/leaderboard?words=1&today=2026-08-25");
+  });
+
+  it("keeps the feed out of this browser's own cache", async () => {
+    const fetchMock = stubFetch(new Response(JSON.stringify({ words: [] }), { status: 200 }));
+
+    await fetchFoundWords("2026-08-25");
+
+    // The shared copy is the point; a private one is how a poll goes blind.
+    const [, init] = (fetchMock.mock.calls[0] ?? []) as [unknown?, RequestInit?];
+    expect(init?.cache).toBe("no-store");
+  });
+
+  it("busts the cache for a reader who asked", async () => {
+    const fetchMock = stubFetch(new Response(JSON.stringify({ words: [] }), { status: 200 }));
+
+    await fetchFoundWords("2026-08-25", { fresh: true });
+
+    // The URL is the cache key, so a different one is the only way a client can
+    // get past a shared copy -- a reload cannot, and neither can a no-cache header.
+    expect(url(fetchMock)).toMatch(/^\/api\/leaderboard\?words=1&today=2026-08-25&t=\d+$/);
+  });
+
+  it("busts the boards too, since a refresh refreshes the page", async () => {
+    const fetchMock = stubFetch(new Response(JSON.stringify({ ready: false }), { status: 200 }));
+
+    await fetchBoards("2026-08-25", { fresh: true });
+
+    expect(url(fetchMock)).toMatch(/&t=\d+$/);
+  });
+
+  it("shares one key across a flurry of taps", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-08-25T12:00:00.000Z"));
+      // Its own stub: a Response body can only be read once, and this is the
+      // one test here that fetches more than once.
+      const fetchMock = vi.fn(
+        async () => new Response(JSON.stringify({ words: [] }), { status: 200 })
+      );
+      vi.stubGlobal("fetch", fetchMock);
+
+      await fetchFoundWords("2026-08-25", { fresh: true });
+      // Two seconds later: the same five-second bucket, so the same URL, so one
+      // origin read rather than one per tap.
+      vi.setSystemTime(new Date("2026-08-25T12:00:02.000Z"));
+      await fetchFoundWords("2026-08-25", { fresh: true });
+      expect(url(fetchMock, 1)).toBe(url(fetchMock, 0));
+
+      // Past the bucket, a tap a reader could tell apart gets its own key.
+      vi.setSystemTime(new Date("2026-08-25T12:00:07.000Z"));
+      await fetchFoundWords("2026-08-25", { fresh: true });
+      expect(url(fetchMock, 2)).not.toBe(url(fetchMock, 0));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

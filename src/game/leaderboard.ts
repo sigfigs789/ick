@@ -318,6 +318,33 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
 }
 
 /**
+ * Whether this fetch is a reader asking by hand, rather than the page asking on
+ * their behalf.
+ *
+ * A poll should be answered from the shared copy -- that is what the copy is
+ * for. A person who taps refresh is saying they have seen it and want the next
+ * one, and handing them the same bytes back is the one answer that is certainly
+ * wrong. So an asked-for fetch carries a cache-buster.
+ */
+export interface FetchOptions {
+  fresh?: boolean;
+}
+
+/**
+ * The cache-buster: a five-second bucket, not a timestamp.
+ *
+ * The URL is the cache key, so a unique one per tap means an origin read per
+ * tap -- and a refresh button is a thing people press twice. Rounding to five
+ * seconds means a flurry of taps shares one key and one query, while any two
+ * taps a reader could tell apart get different ones. It also expires by itself,
+ * so nothing accumulates in the cache beyond a few seconds' worth of keys.
+ */
+function freshParam(options: FetchOptions): string {
+  if (!options.fresh) return "";
+  return `&t=${Math.floor(Date.now() / 5000)}`;
+}
+
+/**
  * Fetch both boards in one request.
  *
  * The week's start is sent rather than derived server-side: the puzzle date is
@@ -325,7 +352,10 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
  * has to come from the same clock (see game/week.ts). Rejects on failure; the
  * caller turns that into the page's error state.
  */
-export async function fetchBoards(date: string = todayDateString()): Promise<Boards> {
+export async function fetchBoards(
+  date: string = todayDateString(),
+  options: FetchOptions = {}
+): Promise<Boards> {
   const since = weekStart(date);
   // Who is asking, so the server can send their own row back from below the cut.
   // Nobody has to have joined for the page to work: without an id the boards
@@ -349,8 +379,9 @@ export async function fetchBoards(date: string = todayDateString()): Promise<Boa
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
       `&limit=${BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
-      (preview ? `&${PREVIEW_PARAM}=1` : ""),
-    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+      (preview ? `&${PREVIEW_PARAM}=1` : "") +
+      freshParam(options),
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
   );
   if (!response.ok) throw new Error(`leaderboard ${response.status}`);
   return readBoards((await response.json()) as Record<string, unknown>, since);
@@ -368,7 +399,10 @@ export async function fetchBoards(date: string = todayDateString()): Promise<Boa
  * Rejects on failure like `fetchBoards`; the caller decides whether a failed
  * refresh is worth telling anyone about.
  */
-export async function fetchFoundWords(date: string = todayDateString()): Promise<FoundWord[]> {
+export async function fetchFoundWords(
+  date: string = todayDateString(),
+  options: FetchOptions = {}
+): Promise<FoundWord[]> {
   if (import.meta.env.DEV && usingSampleData()) {
     return parseWords((sampleBoardsResponse() as Record<string, unknown>).words, date);
   }
@@ -376,8 +410,13 @@ export async function fetchFoundWords(date: string = todayDateString()): Promise
   // day send byte-identical URLs and share one cached answer. The server bounds
   // it against its own clock either way (see api/leaderboard.ts).
   const response = await fetch(
-    `/api/leaderboard?words=1&today=${encodeURIComponent(date)}`,
-    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+    `/api/leaderboard?words=1&today=${encodeURIComponent(date)}${freshParam(options)}`,
+    // `no-store` keeps this out of *this browser's* cache, and nothing else:
+    // the request still goes out and the CDN still answers it from the copy it
+    // shares with everybody, which is the whole arrangement. Without it a poll
+    // could be served from disk, and a page that polls a list it cannot see
+    // change is worse than one that does not poll at all.
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
   );
   if (!response.ok) throw new Error(`leaderboard words ${response.status}`);
   const body = (await response.json()) as Record<string, unknown>;

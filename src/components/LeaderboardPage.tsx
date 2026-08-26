@@ -1,26 +1,38 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RarityBadge } from "./RarityBadge";
 import {
-  backfillHistory,
   fetchBoards,
   fetchFoundWords,
+  type FetchOptions,
   seasonName,
   seasonRange,
   type BoardEntry,
   type Boards,
   type FoundWord,
 } from "../game/leaderboard";
-import { joinBoard, loadPlayerId } from "../game/player";
+import { loadPlayerId } from "../game/player";
 import { formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
-import { trackLeaderboardJoined } from "../analytics";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
 
 type LoadState = "loading" | "ready" | "error";
 
-/** How often an open page re-checks for new finds. Matches the CDN's own cache. */
-const REFRESH_MS = 60_000;
+/**
+ * How often an open page re-checks for new finds.
+ *
+ * Thirty seconds. It used to be sixty, to match the CDN's own cache exactly --
+ * which read as one decision but was two, and they add up rather than overlap:
+ * a word waits out the shared cache and *then* waits out the rest of a poll, so
+ * two sixties were most of a two-minute wait to see a word already found.
+ *
+ * The cache is fifteen seconds now (see api/leaderboard.ts), so the worst case
+ * is a little under a minute and the usual case is half of that. Deliberately
+ * not lowered to fifteen as well: past a point the page is asking more often
+ * than a reader can notice, and every one of those is a request from every open
+ * tab. Halving the poll buys most of the freshness for half the chatter.
+ */
+const REFRESH_MS = 30_000;
 /**
  * How old the boards have to be before returning to the tab re-reads them.
  *
@@ -69,9 +81,14 @@ export function LeaderboardPage() {
    * the whole list to a new drop mid-poll, under a reader who never asked for it.
    */
   const [today] = useState(todayDateString);
-  const [playerId, setPlayerId] = useState<string | null>(() => loadPlayerId());
-  /** Days imported from this browser's history on joining, for one message. */
-  const [imported, setImported] = useState<number | null>(null);
+  /**
+   * Who the boards should call "you".
+   *
+   * Read once, on the way in: the id is minted before this page renders (see
+   * src/Root.tsx) and never changes afterwards, so there is nothing here to
+   * keep in state.
+   */
+  const playerId = loadPlayerId();
   /**
    * When the boards on screen were last read, so a return to the tab can tell a
    * page that has been sitting there for an hour from one glanced away from.
@@ -84,8 +101,8 @@ export function LeaderboardPage() {
    * A failure here is swallowed on purpose: the last good list stays on screen,
    * which is a truer thing to show than an empty section over one bad minute.
    */
-  const refreshWords = useCallback(() => {
-    fetchFoundWords(today)
+  const refreshWords = useCallback((options: FetchOptions = {}) => {
+    fetchFoundWords(today, options)
       .then(setWords)
       .catch(() => {});
   }, [today]);
@@ -125,8 +142,8 @@ export function LeaderboardPage() {
    * load" -- to fetch something the reader can already see would be a worse
    * page than a slightly old one. It swaps them or it leaves them.
    */
-  const refreshBoards = useCallback(() => {
-    fetchBoards(today)
+  const refreshBoards = useCallback((options: FetchOptions = {}) => {
+    fetchBoards(today, options)
       .then((loaded) => {
         setBoards(loaded);
         boardsReadAt.current = Date.now();
@@ -136,34 +153,16 @@ export function LeaderboardPage() {
 
 
   /**
-   * Opening this page is the joining.
+   * Nothing to join here any more.
    *
-   * There used to be a button and a paragraph under it explaining that there is
-   * no account, no email and no name to invent. All of that is still true, and
-   * none of it needed saying: somebody who has opened the leaderboard has said
-   * what they wanted, and asking them to say it again with a tap was a step that
-   * only ever stood between a player and their own row.
-   *
-   * So the id is minted here, on the first visit, and the browser's history goes
-   * up with it. The trade is worth stating plainly: a player who opens this page
-   * to look at other people's scores is now on the board themselves, where
-   * before they had to ask for it. What goes up is what the board shows -- an
-   * id this browser made up, and the words they found -- and nothing about it
-   * reaches back into the game, so the cost of being wrong about somebody's
-   * intent is a row with their own handle on it.
+   * The id is minted on opening the app, whichever page that is, and the
+   * browser's history goes up with it (see src/Root.tsx) -- so by the time
+   * anybody reaches this page they are already a player, and the join that used
+   * to live here could never fire. Dropped rather than kept as a fallback: a
+   * second place that mints ids is a second thing to keep true, on a path that
+   * no longer exists.
    */
   useEffect(() => {
-    if (!loadPlayerId()) {
-      const id = joinBoard();
-      if (id) {
-        setPlayerId(id);
-        trackLeaderboardJoined(false);
-        // Joining brings your history with you: every puzzle this browser can
-        // show was played on its own day goes up in one request, so a player who
-        // has been at this for weeks doesn't start from zero.
-        setImported(backfillHistory(id));
-      }
-    }
     load();
   }, [load]);
 
@@ -187,7 +186,12 @@ export function LeaderboardPage() {
    * almost certainly not moved.
    */
   useEffect(() => {
-    let timer = window.setInterval(refreshWords, REFRESH_MS);
+    // Wrapped rather than passed straight to setInterval: the timer hands its
+    // callback nothing, but a bare reference would also accept the event object
+    // that other callers pass, and the options argument is not a thing a timer
+    // should ever be able to set.
+    const tick = () => refreshWords();
+    let timer = window.setInterval(tick, REFRESH_MS);
     function onVisibilityChange() {
       window.clearInterval(timer);
       if (document.visibilityState === "hidden") return;
@@ -198,7 +202,7 @@ export function LeaderboardPage() {
       // another tab and back is not new information, and re-asking on every
       // return would put this player's own uncached query on a hair trigger.
       if (Date.now() - boardsReadAt.current > BOARDS_STALE_MS) refreshBoards();
-      timer = window.setInterval(refreshWords, REFRESH_MS);
+      timer = window.setInterval(tick, REFRESH_MS);
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
@@ -239,6 +243,33 @@ export function LeaderboardPage() {
     return () => window.clearTimeout(timer);
   }, [words]);
 
+  /**
+   * Refresh everything on the page, because a reader asked.
+   *
+   * Both halves, and with the cache-buster: a poll can be answered from the
+   * shared copy, but somebody who taps this has just told you the list they are
+   * looking at is not the one they want. Handing them the same bytes back would
+   * make the button a decoration -- which is what a browser reload already is
+   * here, since a client cannot bust a CDN's shared copy.
+   *
+   * No loading state on the sections themselves. The boards and the feed on
+   * screen are the last true answer, and blanking them to fetch something the
+   * reader can already see would be a worse page than a slightly old one -- the
+   * same reason `refreshBoards` doesn't. The button says it is working; the
+   * page stays readable underneath.
+   */
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshAll = useCallback(() => {
+    setRefreshing(true);
+    refreshWords({ fresh: true });
+    refreshBoards({ fresh: true });
+    // Long enough to read as a response to the tap, and it ends on its own
+    // rather than on the requests: neither of them rejects in a way this cares
+    // about, and a button that stayed disabled because a fetch hung would be
+    // worse than one that came back a moment early.
+    window.setTimeout(() => setRefreshing(false), 600);
+  }, [refreshBoards, refreshWords]);
+
   const ready = boards?.ready ?? false;
 
   return (
@@ -258,8 +289,21 @@ export function LeaderboardPage() {
         <div className="app__header-titles">
           <h1>Leaderboard</h1>
         </div>
-        {/* A spacer, so the title stays centred against the back button. */}
-        <div className="leaderboard-page__header-spacer" aria-hidden="true" />
+        {/* Where a spacer used to be, keeping the title centred against the
+            back button -- and now doing something, which is the better way to
+            hold a space. A refresh belongs on this page and nowhere else in the
+            app: it is the one screen whose content is other people's. */}
+        <button
+          type="button"
+          className="app__icon-button leaderboard-page__refresh"
+          onClick={refreshAll}
+          disabled={refreshing}
+          aria-label="Refresh"
+          title="Refresh"
+          data-refreshing={refreshing ? "" : undefined}
+        >
+          <span aria-hidden="true">↻</span>
+        </button>
       </header>
 
       <main>
@@ -338,24 +382,6 @@ export function LeaderboardPage() {
             above it, never a reason to hide finds that arrived perfectly well. */}
         {words.length > 0 && (
           <FoundWords words={words} today={today} arrived={arrived} />
-        )}
-
-        {/* Nothing standing to say: their own row is marked on the boards, which
-            is where they would look for themselves anyway. The one message worth
-            showing is where the history on a brand new row came from, and it
-            goes away with the next load.
-
-            Only when there was history. A player who joins with nothing used to
-            be told "nothing to count yet", which announced an absence they had
-            not asked about -- the reply to a question nobody put. Their empty
-            row is on the boards either way, and the first puzzle they score
-            fills it without anything here having promised so. */}
-        {playerId && imported !== null && imported > 0 && (
-          <p className="leaderboard__note leaderboard__note--playing" aria-live="polite">
-            {/* Not "past" puzzles: today counts too when it has been played, and
-                it usually has by the time anyone opens this page. */}
-            {`Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`}
-          </p>
         )}
 
         <button type="button" className="leaderboard-page__back" onClick={() => navigate("game")}>
