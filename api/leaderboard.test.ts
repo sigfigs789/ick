@@ -296,14 +296,11 @@ describe("api/leaderboard reads", () => {
           puzzles: 5,
         },
       ],
-      words: [
-        { word: "asphyxiate", zipf: 2.09, finders: 3, foundOn: "2026-08-25" },
-        { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-24" },
-      ],
     });
 
     // One call for the gate and both boards, so the count can never disagree
-    // with the rows beside it.
+    // with the rows beside it. The feed is not among them -- it is its own
+    // request, so that it can be cached for every player rather than this one.
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(rpcCall(fetchMock)?.url).toBe(
       "https://project.supabase.co/rest/v1/rpc/leaderboard_boards"
@@ -506,27 +503,54 @@ describe("api/leaderboard recent finds", () => {
 
   it("asks for today's finds and nothing else", async () => {
     withEnv();
-    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
+    const fetchMock = stubFetch([[]]);
     const today = utcToday();
-    await handler(get(`?since=${SUNDAY}&today=${today}`));
+    await handler(get(`?words=1&today=${today}`));
 
     // Strictly-before the day *after* today, so today itself is in. This
     // publishes answers to the live puzzle, which is a deliberate call -- see
-    // `wordsCutoff`. The client only lists today's finds that clear Rare.
+    // `wordsCutoff`.
     // Exactly today: strictly before tomorrow, from today onward.
-    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(daysBefore(today, -1));
-    expect(rpcCall(fetchMock)?.args.p_words_since).toBe(today);
+    expect(rpcCall(fetchMock)?.args.p_words_before).toBeUndefined();
+    expect(rpcCall(fetchMock)?.url).toBe(
+      "https://project.supabase.co/rest/v1/rpc/leaderboard_words"
+    );
+    expect(rpcCall(fetchMock)?.args.p_before).toBe(daysBefore(today, -1));
+    expect(rpcCall(fetchMock)?.args.p_since).toBe(today);
+  });
+
+  it("asks for up to five hundred, which is a backstop and not a page", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    await handler(get(`?words=1&today=${utcToday()}`));
+
+    expect(rpcCall(fetchMock)?.args.p_limit).toBe(500);
+  });
+
+  it("needs no week, no limit and no player, so every caller shares one answer", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    // No `since`, which the boards refuse outright -- this request is a
+    // different question and carries none of their parameters.
+    const response = await handler(get("?words=1"));
+
+    expect(response.status).toBe(200);
+    expect(Object.keys(rpcCall(fetchMock)?.args ?? {}).sort()).toEqual([
+      "p_before",
+      "p_limit",
+      "p_since",
+    ]);
   });
 
   it("includes today for a client whose calendar is ahead of UTC", async () => {
     withEnv();
-    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
+    const fetchMock = stubFetch([[]]);
     // Already tomorrow in Auckland while UTC is still on today.
     const ahead = daysBefore(utcToday(), -1);
-    await handler(get(`?since=${SUNDAY}&today=${ahead}`));
+    await handler(get(`?words=1&today=${ahead}`));
 
     // Their own day counts as today, so the window reaches past it.
-    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(daysBefore(ahead, -1));
+    expect(rpcCall(fetchMock)?.args.p_before).toBe(daysBefore(ahead, -1));
   });
 
   it.each([
@@ -535,30 +559,42 @@ describe("api/leaderboard recent finds", () => {
     ["a malformed date", "&today=2026-13-45"],
   ])("falls back to UTC's today for %s", async (_label, param) => {
     withEnv();
-    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
-    await handler(get(`?since=${SUNDAY}${param}`));
+    const fetchMock = stubFetch([[]]);
+    await handler(get(`?words=1${param}`));
 
-    expect(rpcCall(fetchMock)?.args.p_words_before).toBe(daysBefore(utcToday(), -1));
+    expect(rpcCall(fetchMock)?.args.p_before).toBe(daysBefore(utcToday(), -1));
   });
 
   it("returns the feed even while the boards are still shut", async () => {
     withEnv();
-    stubFetch([
-      {
-        ready: false,
-        weekly: [],
-        allTime: [],
-        words: [{ word: "inkling", zipf: "2.9", finders: 2, found_on: "2026-08-24" }],
-      },
-    ]);
-    const response = await handler(get(`?since=${SUNDAY}&today=2026-08-25`));
+    stubFetch([[{ word: "inkling", zipf: "2.9", finders: 2, found_on: "2026-08-24" }]]);
+    const response = await handler(get("?words=1&today=2026-08-25"));
     const body = (await response.json()) as Record<string, unknown>;
 
     // The feed works from day one; it is the best thing to show while the
-    // boards wait for their opening date.
-    expect(body.ready).toBe(false);
+    // boards wait for their opening date. Nothing here consults the gate at all.
     expect(body.words).toEqual([
       { word: "inkling", zipf: 2.9, finders: 2, foundOn: "2026-08-24" },
     ]);
+  });
+
+  it("is cached for a minute, and for everybody at once", async () => {
+    withEnv();
+    stubFetch([[]]);
+    const response = await handler(get("?words=1&today=2026-08-25"));
+
+    expect(response.headers.get("cache-control")).toContain("s-maxage=60");
+  });
+
+  it("says unavailable rather than throwing when the read fails", async () => {
+    withEnv();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("nope", { status: 500 }))
+    );
+    const response = await handler(get("?words=1&today=2026-08-25"));
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ ok: false, reason: "unavailable" });
   });
 });

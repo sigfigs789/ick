@@ -3,6 +3,7 @@ import { RarityBadge } from "./RarityBadge";
 import {
   backfillHistory,
   fetchBoards,
+  fetchFoundWords,
   seasonName,
   seasonRange,
   type BoardEntry,
@@ -38,22 +39,43 @@ const REFRESH_MS = 60_000;
  */
 export function LeaderboardPage() {
   const [boards, setBoards] = useState<Boards | null>(null);
+  /**
+   * The finds, held apart from the boards because they arrive apart from them:
+   * the boards are fetched once and the feed is polled, so one piece of state
+   * that held both would be re-set every minute with fifteen unchanged rows.
+   */
+  const [words, setWords] = useState<readonly FoundWord[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   const [playerId, setPlayerId] = useState<string | null>(() => loadPlayerId());
   /** Days imported from this browser's history on joining, for one message. */
   const [imported, setImported] = useState<number | null>(null);
 
   /**
-   * Fetch the boards and the finds.
+   * Re-read the finds, leaving everything else alone.
    *
-   * `quiet` is for the refreshes: a poll that flipped the page back to "Loading
-   * the boards…" every minute would be worse than not polling at all, so a
-   * refresh leaves whatever is on screen alone until new data replaces it, and a
-   * refresh that fails leaves the last good data up rather than throwing the
-   * page away over one bad minute.
+   * A failure here is swallowed on purpose: the last good list stays on screen,
+   * which is a truer thing to show than an empty section over one bad minute.
    */
-  const load = useCallback((quiet = false) => {
-    if (!quiet) setState("loading");
+  const refreshWords = useCallback(() => {
+    fetchFoundWords()
+      .then(setWords)
+      .catch(() => {});
+  }, []);
+
+  /**
+   * Fetch the boards, and the finds beside them.
+   *
+   * Two requests rather than one, and the split is not cosmetic: the boards
+   * carry this player's id so they can return their own row, which makes that
+   * response theirs alone, while the feed is the same for everybody and can be
+   * cached once for all of them (see api/leaderboard.ts). Asking together would
+   * have made the shared half private.
+   *
+   * The page's state follows the boards: a feed that fails is a section that
+   * isn't there, while boards that fail are the page not loading.
+   */
+  const load = useCallback(() => {
+    setState("loading");
     fetchBoards()
       .then((loaded) => {
         setBoards(loaded);
@@ -61,10 +83,10 @@ export function LeaderboardPage() {
       })
       // A board that won't load is a disappointment, not an error the player has
       // to act on -- so it says so plainly and offers a retry, and that is all.
-      .catch(() => {
-        if (!quiet) setState("error");
-      });
-  }, []);
+      .catch(() => setState("error"));
+    refreshWords();
+  }, [refreshWords]);
+
 
   /**
    * Opening this page is the joining.
@@ -110,51 +132,59 @@ export function LeaderboardPage() {
    * and polling slower would waste freshness already paid for. Nothing runs
    * while the tab is hidden -- a backgrounded tab is not being read -- and coming
    * back refreshes immediately rather than waiting out the rest of an interval.
+   *
+   * The finds and nothing else. The boards move slowly enough that a player
+   * would have to be watching for a rank to change under them, and they are the
+   * request carrying this player's id -- so polling them would mean a private,
+   * uncached query every minute per open page, to redraw fifteen rows that had
+   * almost certainly not moved.
    */
   useEffect(() => {
-    let timer = window.setInterval(() => load(true), REFRESH_MS);
+    let timer = window.setInterval(refreshWords, REFRESH_MS);
     function onVisibilityChange() {
       window.clearInterval(timer);
       if (document.visibilityState === "hidden") return;
-      load(true);
-      timer = window.setInterval(() => load(true), REFRESH_MS);
+      refreshWords();
+      timer = window.setInterval(refreshWords, REFRESH_MS);
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [load]);
+  }, [refreshWords]);
 
   /**
    * Which words turned up since the last look, so the feed can show them
    * arriving rather than just quietly containing them.
    *
    * The first load marks nothing: everything is new to a page that has just
-   * opened, and animating the whole list would say "twelve words just arrived"
-   * when none of them did. After that, each refresh diffs against what was
-   * already on screen and only the genuinely new ones move.
+   * opened, and animating the whole list would say "the whole day just arrived"
+   * when none of it did. After that, each refresh diffs against what was already
+   * on screen and only the genuinely new ones move.
    *
    */
   const seenWords = useRef<Set<string> | null>(null);
   const [arrived, setArrived] = useState<readonly string[]>([]);
 
   useEffect(() => {
-    if (!boards) return;
-    const words = boards.words.map((found) => found.word);
+    const found = words.map((entry) => entry.word);
     if (seenWords.current === null) {
-      seenWords.current = new Set(words);
+      // Nothing seen yet and nothing to see: an empty first response is not a
+      // baseline, or the real first list would animate in as if it were new.
+      if (found.length === 0) return;
+      seenWords.current = new Set(found);
       return;
     }
-    const fresh = words.filter((word) => !seenWords.current?.has(word));
-    for (const word of words) seenWords.current.add(word);
+    const fresh = found.filter((word) => !seenWords.current?.has(word));
+    for (const word of found) seenWords.current.add(word);
     if (fresh.length === 0) return;
     setArrived(fresh);
     // Cleared once the animation is done, so a later re-render for some
     // unrelated reason does not replay it.
     const timer = window.setTimeout(() => setArrived([]), 1400);
     return () => window.clearTimeout(timer);
-  }, [boards]);
+  }, [words]);
 
   const ready = boards?.ready ?? false;
 
@@ -227,8 +257,8 @@ export function LeaderboardPage() {
           </div>
         )}
 
-        {state === "ready" && boards && boards.words.length > 0 && (
-          <FoundWords words={boards.words} today={todayDateString()} arrived={arrived} />
+        {state === "ready" && words.length > 0 && (
+          <FoundWords words={words} today={todayDateString()} arrived={arrived} />
         )}
 
         {/* Nothing standing to say: their own row is marked on the boards, which
@@ -290,7 +320,7 @@ function FoundWords({
   today,
   arrived,
 }: {
-  words: FoundWord[];
+  words: readonly FoundWord[];
   today: string;
   arrived: readonly string[];
 }) {

@@ -89,11 +89,6 @@ export interface Boards {
   allTime: BoardEntry[];
   /** The same, on the all-time board. */
   allTimeSelf: BoardEntry | null;
-  /**
-   * The best words other players found recently, newest first -- today's
-   * included, as they happen.
-   */
-  words: FoundWord[];
   /** The day the weekly board is counting from, echoed back by the server. */
   weekStart: string;
 }
@@ -293,12 +288,11 @@ export async function fetchBoards(date: string = todayDateString()): Promise<Boa
   // Parsed by exactly the same code as a real response, so a change to that
   // parsing cannot pass here and fail in production.
   if (import.meta.env.DEV && usingSampleData()) {
-    return readBoards(sampleBoardsResponse() as Record<string, unknown>, since, date);
+    return readBoards(sampleBoardsResponse() as Record<string, unknown>, since);
   }
-  // The player's own date goes up so the server can keep today's finds out of
-  // the words feed -- a word found today is an answer to today's puzzle. The
-  // server takes the earlier of this and its own, so sending a later one buys
-  // nothing (see api/leaderboard.ts).
+  // The player's own date goes up so the server can tell whether the boards have
+  // opened on the calendar this player is actually on -- local dates run a day
+  // either side of UTC, and nobody should be made to wait past their own Sunday.
   const response = await fetch(
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
       `&limit=${BOARD_LIMIT}` +
@@ -306,11 +300,39 @@ export async function fetchBoards(date: string = todayDateString()): Promise<Boa
     { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
   );
   if (!response.ok) throw new Error(`leaderboard ${response.status}`);
-  return readBoards((await response.json()) as Record<string, unknown>, since, date);
+  return readBoards((await response.json()) as Record<string, unknown>, since);
+}
+
+/**
+ * Read today's finds.
+ *
+ * Its own request, and not because the page wants two: the boards have to say
+ * who is asking so they can return that player's own row, which makes their
+ * response private to them, while this list is the same for every player alive.
+ * Asking separately is what lets one of them be cached for everybody -- and it
+ * is the one that has to be live, so it is the one that gets polled.
+ *
+ * Rejects on failure like `fetchBoards`; the caller decides whether a failed
+ * refresh is worth telling anyone about.
+ */
+export async function fetchFoundWords(date: string = todayDateString()): Promise<FoundWord[]> {
+  if (import.meta.env.DEV && usingSampleData()) {
+    return parseWords((sampleBoardsResponse() as Record<string, unknown>).words, date);
+  }
+  // The date is the only thing this request carries, so two players on the same
+  // day send byte-identical URLs and share one cached answer. The server bounds
+  // it against its own clock either way (see api/leaderboard.ts).
+  const response = await fetch(
+    `/api/leaderboard?words=1&today=${encodeURIComponent(date)}`,
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+  );
+  if (!response.ok) throw new Error(`leaderboard words ${response.status}`);
+  const body = (await response.json()) as Record<string, unknown>;
+  return parseWords(body.words, date);
 }
 
 /** Turn one response body -- real or sample -- into the boards the page renders. */
-function readBoards(body: Record<string, unknown>, since: string, date: string): Boards {
+function readBoards(body: Record<string, unknown>, since: string): Boards {
   return {
     // Rows are shown only when the server says the boards are published, so a
     // missing or malformed flag holds them back rather than letting them out.
@@ -320,7 +342,6 @@ function readBoards(body: Record<string, unknown>, since: string, date: string):
     weeklySelf: parseSelf(body.weeklySelf),
     allTime: parseBoard(body.allTime),
     allTimeSelf: parseSelf(body.allTimeSelf),
-    words: parseWords(body.words, date),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,
   };
 }
