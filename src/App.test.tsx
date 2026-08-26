@@ -191,39 +191,48 @@ describe("App", () => {
 });
 
 describe("the leaderboard trophy", () => {
-  it("is always there", () => {
-    // It was briefly hidden until the leaderboard had something to show, which
-    // deadlocked the cold start: finds only exist once players join, and joining
-    // is only reachable through this button.
+  it("stays out of the header until the boards open", () => {
     beforeBoardsOpen();
     localStorage.clear();
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     render(<App />);
 
-    // Unbadged, and still here. The button is the way in; the badge is only the
-    // announcement that there is finally something behind it.
-    expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
+    // No trophy and no badge: until there is a board behind it, the header is
+    // advertising a page that only names a date.
+    expect(screen.queryByRole("button", { name: /^Leaderboard/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("new")).not.toBeInTheDocument();
+    // The help button is untouched, so this is the trophy going rather than the
+    // whole header-actions block failing to render.
+    expect(screen.getByRole("button", { name: /how to play/i })).toBeInTheDocument();
   });
 
-  it("holds the badge back until the boards open", () => {
-    beforeBoardsOpen();
+  it("appears on the day the boards open", () => {
+    afterBoardsOpen();
+    localStorage.clear();
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     render(<App />);
 
-    // Until the boards go live the leaderboard is a page naming a date it is not
-    // yet, which is not what a "new" badge is for.
-    expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
-    expect(screen.queryByText("new")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Leaderboard (new)" })).toBeInTheDocument();
   });
 
   it("saves the badge for a player who looked before the boards opened", async () => {
     beforeBoardsOpen();
-    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
+    vi.mocked(useDailyPuzzle).mockReturnValue(
+      puzzle({
+        progress: {
+          date: "2026-08-13",
+          drop: "str",
+          acceptedWords: [{ word: "strange", rarity: "Common", zipf: 4.6 }],
+          rejectedAttempts: [],
+          completed: true,
+        },
+      }) as ReturnType<typeof useDailyPuzzle>
+    );
     const early = render(<App />);
 
-    // An early visit is the expected thing, not an edge case: it is what gets a
-    // player's history counted before the boards are published.
-    await userEvent.click(screen.getByRole("button", { name: "Leaderboard" }));
+    // The results link is the way in before the trophy exists, and it is still a
+    // real visit: it mints the id and sends the history up.
+    await userEvent.click(screen.getByRole("button", { name: "See the leaderboard" }));
     expect(window.location.pathname).toBe("/leaderboard");
     early.unmount();
 

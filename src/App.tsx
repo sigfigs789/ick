@@ -59,12 +59,17 @@ export default function App() {
   // openLeaderboard, and reading storage during a render would be the only
   // thing here that did.
   //
-  // Held back until the boards actually open. Until then the leaderboard is a
-  // page that names a date it is not yet, which is not the news a badge is for --
-  // and a badge is spent the first time it is followed, so aiming it at a waiting
-  // room would use it up before there was anything to announce.
+  // Whether there is a leaderboard to point at yet. Read once at mount, so it
+  // settles on a refresh and at no other time -- the same rule the puzzle's own
+  // date follows.
+  const [leaderboardOpen] = useState(boardsOpen);
+  //
+  // Held back with it. Until the boards open the leaderboard is a page naming a
+  // day it is not yet, which is not the news a badge is for -- and a badge is
+  // spent the first time it is followed, so aiming it at a waiting room would
+  // use it up before there was anything to announce.
   const [leaderboardIsNew, setLeaderboardIsNew] = useState(
-    () => boardsOpen() && !hasSeen("leaderboard")
+    () => leaderboardOpen && !hasSeen("leaderboard")
   );
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
@@ -133,7 +138,7 @@ export default function App() {
     // page before the boards go live -- that visit is what gets their history
     // counted -- so retiring the badge for it would mean the people who came
     // early are exactly the ones never told the boards had opened.
-    if (boardsOpen()) {
+    if (leaderboardOpen) {
       markSeen("leaderboard");
       setLeaderboardIsNew(false);
     }
@@ -173,12 +178,17 @@ export default function App() {
           />
         </div>
         <div className="app__header-actions">
-          {/* Always shown. Hiding it until the leaderboard had something to
-              show sounded careful and deadlocked the cold start: finds only
-              appear once players join, and joining is only reachable through
-              here. The page is never a dead end anyway -- before the boards open
-              it carries the finds feed, the opening date and the join button. */}
-          <button
+          {/* Not in the header until there is a board behind it. An earlier
+              version hid it until the leaderboard had *data*, which deadlocked
+              the cold start -- finds only appear once players join, and joining
+              was only reachable through here. A date does not deadlock: it
+              arrives whether or not the game is busy, and the history a player
+              brings with them when they finally do join is imported from this
+              browser either way (see backfillHistory), so nothing is lost by
+              their not having come earlier. "See the leaderboard" under a
+              finished puzzle stays available throughout for anyone curious. */}
+          {leaderboardOpen && (
+            <button
               type="button"
               className="app__icon-button app__icon-button--badged"
               onClick={() => openLeaderboard("header")}
@@ -193,7 +203,8 @@ export default function App() {
                   new
                 </span>
               )}
-          </button>
+            </button>
+          )}
           <button
             type="button"
             className="app__icon-button"
