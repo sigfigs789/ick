@@ -100,11 +100,14 @@ export function LeaderboardPage() {
    * A failure here is swallowed on purpose: the last good list stays on screen,
    * which is a truer thing to show than an empty section over one bad minute.
    */
-  const refreshWords = useCallback((options: FetchOptions = {}) => {
-    fetchFoundWords(today, options)
-      .then(setWords)
-      .catch(() => {});
-  }, [today]);
+  const refreshWords = useCallback(
+    (options: FetchOptions = {}) => {
+      fetchFoundWords(today, options)
+        .then(setWords)
+        .catch(() => {});
+    },
+    [today],
+  );
 
   /**
    * Fetch the boards, and the finds beside them.
@@ -132,7 +135,6 @@ export function LeaderboardPage() {
     refreshWords();
   }, [refreshWords, today]);
 
-
   /**
    * Re-read the boards without disturbing the page.
    *
@@ -141,15 +143,17 @@ export function LeaderboardPage() {
    * load" -- to fetch something the reader can already see would be a worse
    * page than a slightly old one. It swaps them or it leaves them.
    */
-  const refreshBoards = useCallback((options: FetchOptions = {}) => {
-    fetchBoards(today, options)
-      .then((loaded) => {
-        setBoards(loaded);
-        boardsReadAt.current = Date.now();
-      })
-      .catch(() => {});
-  }, [today]);
-
+  const refreshBoards = useCallback(
+    (options: FetchOptions = {}) => {
+      fetchBoards(today, options)
+        .then((loaded) => {
+          setBoards(loaded);
+          boardsReadAt.current = Date.now();
+        })
+        .catch(() => {});
+    },
+    [today],
+  );
 
   /**
    * Nothing to join here any more.
@@ -320,7 +324,11 @@ export function LeaderboardPage() {
           <div className="leaderboard__boards-slot">
             <p className="leaderboard__status" aria-live="polite">
               Couldn't load the boards.{" "}
-              <button type="button" className="leaderboard__retry" onClick={() => load()}>
+              <button
+                type="button"
+                className="leaderboard__retry"
+                onClick={() => load()}
+              >
                 Try again
               </button>
             </p>
@@ -395,7 +403,11 @@ export function LeaderboardPage() {
           <FoundWords words={words} today={today} arrived={arrived} />
         )}
 
-        <button type="button" className="leaderboard-page__back" onClick={() => navigate("game")}>
+        <button
+          type="button"
+          className="leaderboard-page__back"
+          onClick={() => navigate("game")}
+        >
           Back to today's puzzle
         </button>
 
@@ -472,7 +484,9 @@ function FoundWords({
             <span className="found-words__word">{found.word}</span>
             <RarityBadge rarity={found.rarity} zipf={found.zipf} />
             {found.finders > 1 && (
-              <span className="found-words__finders">{found.finders} players</span>
+              <span className="found-words__finders">
+                {found.finders} players
+              </span>
             )}
           </li>
         ))}
@@ -522,7 +536,9 @@ function Board({
     <section className="leaderboard__board" aria-label={heading}>
       <h2 className="leaderboard__board-heading">
         {heading}
-        {headingDetail && <span className="leaderboard__board-dates">{headingDetail}</span>}
+        {headingDetail && (
+          <span className="leaderboard__board-dates">{headingDetail}</span>
+        )}
       </h2>
       {entries.length === 0 ? (
         <p className="leaderboard__status">{emptyMessage}</p>
@@ -549,7 +565,11 @@ function Board({
             aria-label={`${heading}, top ${entries.length}`}
           >
             {entries.map((entry) => (
-              <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} />
+              <Row
+                key={entry.playerId}
+                entry={entry}
+                isYou={playerId === entry.playerId}
+              />
             ))}
             {self && (
               <>
@@ -579,8 +599,17 @@ function Board({
       )}
       {/* Outside the empty check on purpose: a board with nobody on it yet is
           exactly when last week's winner is the only thing there is to show,
-          and the week that just ended is the reason this week's is empty. */}
-      {champion && championLabel && <Champion entry={champion} label={championLabel} />}
+          and the week that just ended is the reason this week's is empty.
+          Nobody won the closed window -- a month before the game existed, a
+          week nobody played -- and the plaque still goes down, empty: an
+          engraving line waiting for a name says "this gets won" in a way a
+          missing plaque cannot, and it keeps the two boards ending level. */}
+      {championLabel &&
+        (champion ? (
+          <Champion entry={champion} label={championLabel} />
+        ) : (
+          <ChampionPending />
+        ))}
     </section>
   );
 }
@@ -614,6 +643,37 @@ function Champion({ entry, label }: { entry: BoardEntry; label: string }) {
             the rows, not above this. */}
         <span className="sr-only"> total score</span>
       </span>
+    </p>
+  );
+}
+
+/**
+ * The same plaque with nobody on it yet: the window this board will crown next.
+ *
+ * It exists because the awarded plaque's absence read as a mistake rather than
+ * as a fact. The monthly board's closed window is the month before it, and the
+ * game is younger than that -- so the column simply stopped after its last row
+ * while the weekly one beside it ended in gold, and two boards side by side that
+ * end differently look broken rather than young.
+ *
+ * A blank engraving line instead of a name, and no score: the shape of a result
+ * that is coming, without inventing any part of it. "Coming up" rather than the
+ * window's own dates, because the board's heading two lines above already says
+ * when it turns over, and a page that gives the same date twice in one column
+ * reads as a slip.
+ */
+function ChampionPending() {
+  return (
+    <p className="leaderboard__champion leaderboard__champion--pending">
+      <span className="leaderboard__champion-trophy" aria-hidden="true">
+        🏆
+      </span>
+      <span className="leaderboard__champion-label">Coming up</span>
+      {/* The line is the whole message to anybody who can see it and says
+          nothing at all to anybody who cannot, so it is hidden from the reading
+          order and the sentence it stands for is spelled out instead. */}
+      <span className="leaderboard__champion-blank" aria-hidden="true" />
+      <span className="sr-only">Champion not decided yet</span>
     </p>
   );
 }
