@@ -203,6 +203,16 @@ describe("the leaderboard page", () => {
     expect(rowMeta("This week", 1)).toContain("3 puzzles");
   });
 
+  it("says what the number on the right of every row is", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // One header per board, over the column it labels. Every other figure on a
+    // row says what it is in words; the score, which is what the board is
+    // ranked by, had been left to be inferred.
+    await waitFor(() => expect(screen.getAllByText("Total score")).toHaveLength(2));
+  });
+
   it("marks the player's own row on both boards", async () => {
     const me = joinBoard();
     stubFetch({

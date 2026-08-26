@@ -449,6 +449,12 @@ function Board({
         <p className="leaderboard__status">{emptyMessage}</p>
       ) : (
         <>
+          {/* What the big number on the right is. Every other figure on the row
+              says what it is in words -- "1 puzzle" -- and the score, the one
+              the board is actually ranked by, said nothing at all: a reader had
+              to infer 221.3 from context. One label over the column it belongs
+              to, above the rule, is the whole fix. */}
+          <p className="leaderboard__columns">Total score</p>
           <ol className="leaderboard__list">
             {entries.map((entry) => (
               <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} />
