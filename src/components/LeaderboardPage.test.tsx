@@ -410,7 +410,12 @@ describe("joining the board", () => {
     // A handle comes from the id, not from a word, so there is nothing to earn
     // first -- somebody who has never played still gets a row of their own.
     await waitFor(() => expect(loadPlayerId()).not.toBeNull());
-    expect(await screen.findByText(/Nothing to count yet/)).toBeInTheDocument();
+    // And nothing is said about it. "Nothing to count yet" announced an absence
+    // the player had not asked about; the boards are the answer to where they
+    // stand, and an empty history needs no commentary.
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(screen.queryByText(/Nothing to count/)).toBeNull();
+    expect(screen.queryByText(/Counted/)).toBeNull();
   });
 
   it("asks for nothing: no call to action, and no explanation under it", async () => {

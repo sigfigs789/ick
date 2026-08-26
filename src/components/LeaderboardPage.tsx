@@ -280,14 +280,18 @@ export function LeaderboardPage() {
         {/* Nothing standing to say: their own row is marked on the boards, which
             is where they would look for themselves anyway. The one message worth
             showing is where the history on a brand new row came from, and it
-            goes away with the next load. */}
-        {playerId && imported !== null && (
+            goes away with the next load.
+
+            Only when there was history. A player who joins with nothing used to
+            be told "nothing to count yet", which announced an absence they had
+            not asked about -- the reply to a question nobody put. Their empty
+            row is on the boards either way, and the first puzzle they score
+            fills it without anything here having promised so. */}
+        {playerId && imported !== null && imported > 0 && (
           <p className="leaderboard__note leaderboard__note--playing" aria-live="polite">
             {/* Not "past" puzzles: today counts too when it has been played, and
                 it usually has by the time anyone opens this page. */}
-            {imported > 0
-              ? `Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`
-              : "Nothing to count yet — your first scored puzzle starts you off."}
+            {`Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`}
           </p>
         )}
 
