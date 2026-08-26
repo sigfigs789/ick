@@ -5,6 +5,7 @@ import {
   fetchFoundWords,
   previewRequested,
   submitScore,
+  syncHistory,
 } from "./leaderboard";
 import { handleFor } from "./handle";
 import { joinBoard } from "./player";
@@ -570,5 +571,52 @@ describe("the finds feed, fetched on its own", () => {
       })
     );
     expect((await fetchFoundWords("2026-08-27"))).toEqual([]);
+  });
+});
+
+describe("syncing an already-joined player on open", () => {
+  it("re-sends the days this browser remembers", () => {
+    const playerId = joinBoard();
+    // Stored rather than passed: opening the app knows nothing about a history,
+    // it reads one.
+    localStorage.setItem("ick:progress:2026-08-20", JSON.stringify(stored("2026-08-20")));
+    localStorage.setItem("ick:progress:2026-08-21", JSON.stringify(stored("2026-08-21")));
+    const fetchMock = stubFetch();
+
+    expect(syncHistory("2026-08-21")).toBe(2);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = posted(fetchMock);
+    expect(body.playerId).toBe(playerId);
+    expect((body.scores as { date: string }[]).map((s) => s.date)).toEqual([
+      "2026-08-20",
+      "2026-08-21",
+    ]);
+  });
+
+  it("sends nothing when nobody has joined on this browser", () => {
+    localStorage.setItem("ick:progress:2026-08-20", JSON.stringify(stored("2026-08-20")));
+    const fetchMock = stubFetch();
+
+    // Opening the app is not joining the board.
+    expect(syncHistory("2026-08-21")).toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("carries the current puzzle's words and no older day's", () => {
+    joinBoard();
+    localStorage.setItem("ick:progress:2026-08-20", JSON.stringify(stored("2026-08-20")));
+    localStorage.setItem("ick:progress:2026-08-21", JSON.stringify(stored("2026-08-21")));
+    const fetchMock = stubFetch();
+
+    syncHistory("2026-08-21");
+    const scores = posted(fetchMock).scores as Record<string, unknown>[];
+    // The feed shows one drop, so words for any other day would be rows nobody
+    // can see -- and a browser with a year of history would not fit the body.
+    expect(scores[0].found).toBeUndefined();
+    // Priced at today's rates, like everywhere else on the page.
+    expect(scores[1].found).toEqual([
+      { word: "inkling", zipf: 2.9 },
+      { word: "wrinkle", zipf: 3.31 },
+    ]);
   });
 });
