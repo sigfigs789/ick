@@ -134,6 +134,20 @@ describe("the leaderboard page", () => {
     expect(board).toHaveTextContent("Aug 10 – Dec 31 2026");
   });
 
+  it("makes each board's list reachable by keyboard, since it scrolls", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // Five rows of the fifteen are on screen and the rest are scrolled to, so
+    // the list is a scrolling region -- and a region that only a thumb can
+    // reach is one a keyboard cannot read.
+    await waitFor(() => expect(screen.getByRole("list", { name: /This week/ })).toHaveAttribute("tabindex", "0"));
+    expect(screen.getByRole("list", { name: new RegExp(SEASON_BOARD) })).toHaveAttribute(
+      "tabindex",
+      "0"
+    );
+  });
+
   it("puts the rule that governs both boards above both of them", async () => {
     stubFetch();
     render(<LeaderboardPage />);
@@ -155,7 +169,9 @@ describe("the leaderboard page", () => {
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     const board = screen.getByRole("region", { name: "This week" });
-    expect(board).toHaveTextContent("Resets on Sundays.");
+    // Beside the heading, where the season's dates sit, so the two boards start
+    // level when they are side by side.
+    expect(board).toHaveTextContent("Resets on Sundays");
     // No dates and no countdown: a week is the window you are already in, and
     // "this week" says which days it counts. The season carries dates because it
     // is long enough that where you are inside it is a real question.

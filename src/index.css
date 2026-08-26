@@ -1614,6 +1614,25 @@ h2 {
   padding-top: 1.9rem;
   border-top: 2px solid var(--border-strong);
 }
+/* Side by side once there is room for it, which is the whole reason this page is
+   wider than the game's column. The interesting thing about a weekly board is
+   how it differs from the season one -- who is new, who is always there -- and a
+   reader who has to scroll between them has to hold the first in their head to
+   see it. Only worth doing now that a board is five rows tall: at fifteen, the
+   pair was two screens and the comparison was theoretical.
+   The rule between them turns on its side and stays the heavier one. */
+@media (min-width: 48rem) {
+  .leaderboard__boards {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1.7rem;
+  }
+  .leaderboard__board + .leaderboard__board {
+    padding-top: 0;
+    border-top: 0;
+    padding-left: 1.7rem;
+    border-left: 2px solid var(--border-strong);
+  }
+}
 .leaderboard__board-heading {
   margin: 0;
   font-family: var(--font-display);
@@ -1695,8 +1714,8 @@ h2 {
   font-size: 0.78rem;
   line-height: 1.45;
 }
-/* A board with no caption -- the season, since its one rule moved to the
-   footnote -- would otherwise sit its column header hard under the heading. */
+/* Neither board carries a caption now -- what each one counts is said beside its
+   heading -- so the column header would otherwise sit hard under it. */
 .leaderboard__board-heading + .leaderboard__columns {
   margin-top: 0.6rem;
 }
@@ -1704,6 +1723,21 @@ h2 {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+/* One row, measured: two lines of text inside 0.45rem of padding, plus its
+   rule. Five of them is what a board is allowed to take. */
+.leaderboard__board {
+  --row-height: 3.03rem;
+}
+/* Five rows and the top of the sixth. The sliver is the affordance: a list cut
+   cleanly at five looks like a list of five, and overlay scrollbars only appear
+   once you are already scrolling -- so the half-row is what says there is more.
+   `contain` keeps a flick inside the board from carrying on into the page. */
+.leaderboard__list:not(.leaderboard__list--self) {
+  max-height: calc(var(--row-height) * 5 + 0.95rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 /* Rank and score are fixed columns; the name takes what is left and the meta
    line tucks under it, so a long name truncates instead of shoving the score

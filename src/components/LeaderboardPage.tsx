@@ -253,12 +253,16 @@ export function LeaderboardPage() {
             <div className="leaderboard__boards">
               <Board
                 heading="This week"
-                // No dates on this one. A week is the window you are already in
-                // -- "this week" is the whole of what a player needs to know
-                // about which days it counts, and spelling them out was
-                // answering a question nobody had. The season gets dates because
-                // it is long enough to be worth knowing where you are inside it.
-                caption="Resets on Sundays."
+                // Beside the heading, where the season's dates are: the two
+                // boards sit shoulder to shoulder now, and a line under one of
+                // them and not the other pushed its rows half a line down --
+                // two lists side by side that do not start level read as a
+                // mistake. No dates on this one either way. A week is the
+                // window you are already in, and spelling its days out was
+                // answering a question nobody had; the season carries dates
+                // because it is long enough to be worth knowing where you are
+                // inside it.
+                headingDetail="Resets on Sundays"
                 entries={boards.weekly}
                 self={boards.weeklySelf}
                 emptyMessage="Nobody's scored yet this week. Be first."
@@ -420,8 +424,6 @@ interface BoardProps {
   heading: string;
   /** A note beside the heading, set smaller -- the season's dates. */
   headingDetail?: string;
-  /** The line under the heading, for a board that needs one. */
-  caption?: string;
   entries: BoardEntry[];
   /** This player's own row, when they rank below the last one shown. */
   self: BoardEntry | null;
@@ -443,7 +445,6 @@ interface BoardProps {
 function Board({
   heading,
   headingDetail,
-  caption,
   entries,
   self,
   emptyMessage,
@@ -455,7 +456,6 @@ function Board({
         {heading}
         {headingDetail && <span className="leaderboard__board-dates">{headingDetail}</span>}
       </h2>
-      {caption && <p className="leaderboard__caption">{caption}</p>}
       {entries.length === 0 ? (
         <p className="leaderboard__status">{emptyMessage}</p>
       ) : (
@@ -466,7 +466,20 @@ function Board({
               to infer 221.3 from context. One label over the column it belongs
               to, above the rule, is the whole fix. */}
           <p className="leaderboard__columns">Total score</p>
-          <ol className="leaderboard__list">
+          {/* Five rows of the fifteen, and the rest scrolled to.
+              A board that runs its full length pushes the next section off the
+              screen entirely, so the page reads as one column of names with
+              headings in it -- the boards were what made the sections hard to
+              tell apart. Five rows is a top five, which is the part anybody
+              reads first, and the whole fifteen is one flick away.
+              Focusable, because a region that scrolls has to be reachable by
+              keyboard as well as by thumb; labelled so it is announced as the
+              board it belongs to rather than as a bare scroll box. */}
+          <ol
+            className="leaderboard__list"
+            tabIndex={0}
+            aria-label={`${heading}, top ${entries.length}`}
+          >
             {entries.map((entry) => (
               <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} />
             ))}
