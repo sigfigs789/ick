@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard, loadPlayerId } from "../game/player";
@@ -783,6 +783,46 @@ describe("keeping the finds current", () => {
     // Half a minute away is not new information, and the boards are this
     // player's own uncached query -- not something to put on a hair trigger.
     expect(boardCalls()).toBe(opened);
+  });
+
+  it("refreshes both halves past the cache when a reader taps refresh", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    const opened = fetchMock.mock.calls.length;
+
+    // fireEvent rather than userEvent: this block runs on fake timers, and
+    // userEvent waits on real ones.
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    // Both: a reader who taps this is refreshing the page, not one section.
+    const asked = fetchMock.mock.calls
+      .slice(opened)
+      .map(([url]) => String(url))
+      .filter((url) => !url.includes("method"));
+    expect(asked.some((url) => url.includes("words=1"))).toBe(true);
+    expect(asked.some((url) => !url.includes("words=1"))).toBe(true);
+    // Every one of them past the shared copy. A client cannot bust a CDN cache
+    // with a header, so a different URL is the only thing that can, and without
+    // it the button would hand back the list the reader just told us is stale.
+    expect(asked.every((url) => /&t=\d+/.test(url))).toBe(true);
+  });
+
+  it("leaves the poll on the shared copy", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+    await vi.advanceTimersByTimeAsync(0);
+    const opened = fetchMock.mock.calls.length;
+
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    // The cache is there to absorb exactly this. Only a person gets to skip it.
+    const polled = fetchMock.mock.calls.slice(opened).map(([url]) => String(url));
+    expect(polled.length).toBeGreaterThan(0);
+    expect(polled.every((url) => !url.includes("&t="))).toBe(true);
   });
 
   it("stops polling while the tab is hidden, and catches up on return", async () => {
