@@ -14,8 +14,9 @@
     "",
     "Fifteen rows a board, because fifteen is what a board shows. The player",
     "is on one of them and not the other, because both are worth looking at:",
-    "fifth on the season board, where their own row sticks to the edge of the",
-    "scrolling list, and a weeklySelf row far below the weekly one.",
+    "seventh on the season board -- past the five rows on screen, so their own",
+    "row sticks to the edge of the scrolling list -- and a weeklySelf row far",
+    "below the weekly one.",
     "",
     "lastWeek / lastMonth are the champions of the two closed windows, shown on",
     "the plaque under each board -- different players from the ones leading now,",
@@ -192,14 +193,6 @@
     },
     {
       "rank": 5,
-      "playerId": "dev-you",
-      "windowWord": "abaci",
-      "windowZipf": 2.65,
-      "score": 372.4,
-      "puzzles": 41
-    },
-    {
-      "rank": 6,
       "playerId": "dev-3",
       "windowWord": "gastroenterologist",
       "windowZipf": 2.63,
@@ -207,12 +200,20 @@
       "puzzles": 44
     },
     {
-      "rank": 7,
+      "rank": 6,
       "playerId": "dev-6",
       "windowWord": "inkling",
       "windowZipf": 2.9,
       "score": 288.3,
       "puzzles": 39
+    },
+    {
+      "rank": 7,
+      "playerId": "dev-you",
+      "windowWord": "abaci",
+      "windowZipf": 2.65,
+      "score": 251.9,
+      "puzzles": 29
     },
     {
       "rank": 8,
