@@ -78,12 +78,16 @@ const suggestedWordScores: ReadonlyArray<[string, string, number]> = [
 // Rare words discovered online for an upcoming drop and added via the "Add rare
 // words found online" GitHub Action (list=online). Appended automatically by
 // scripts/manage-extra-word.py record-word.
+// The Zipf 2.1..2.3 rows here read "Extremely Rare" where they were recorded
+// "Rare": from the 2026-08-27 cutover the measured labels key off the shown
+// score's whole point, and purple's floor moves down the scale to meet it (see
+// DECADE_BANDS_START). No score moved down with it -- every one of them went up.
 const onlineWordScores: ReadonlyArray<[string, string, number]> = [
   ["eleatic", "Mythic", 1.17],
-  ["payline", "Rare", 2.26],
-  ["pembina", "Rare", 2.2],
-  ["portation", "Rare", 2.28],
-  ["poussin", "Rare", 2.26],
+  ["payline", "Extremely Rare", 2.26],
+  ["pembina", "Extremely Rare", 2.2],
+  ["portation", "Extremely Rare", 2.28],
+  ["poussin", "Extremely Rare", 2.26],
   ["reassociation", "Elusive", 1.49],
   ["sation", "Elusive", 1.37],
 ];
@@ -165,7 +169,7 @@ describe("isValidWord", () => {
     ["chateau", "Uncommon", 3.3],
     ["corinthian", "Rare", 2.85],
     ["easter", "Common", 4.12],
-    ["gorgonzola", "Rare", 2.22],
+    ["gorgonzola", "Extremely Rare", 2.22],
     ["nan", "Uncommon", 3.49],
     ["olympian", "Uncommon", 3.29],
     ["passe", "Rare", 2.53],
@@ -227,7 +231,7 @@ describe("curated additions from rejected-word analytics", () => {
   const analyticsAdditions: ReadonlyArray<[string, string, number]> = [
     ["astroturf", "Rare", 2.46],
     ["brobdingnagian", "Elusive", 1.55],
-    ["stromboli", "Rare", 2.18],
+    ["stromboli", "Extremely Rare", 2.18],
     ["carcinisation", "Legend", -1.57],
     ["carcinization", "Legend", -1.57],
     ["dendrimeric", "Legend", -1.57],
@@ -511,7 +515,8 @@ describe("baseFormRankDrop", () => {
     // Both fold; neither changes the badge, so there is nothing to explain.
     expect(baseFormSubstitution("played")?.base).toBe("play");
     expect(baseFormRankDrop("played")).toBeUndefined();
-    expect(baseFormRankDrop("trivialization")).toBeUndefined();
+    // "adaptability" (2.86) folds to "adaptable" (3.12); both are Rare.
+    expect(baseFormRankDrop("adaptability")).toBeUndefined();
   });
 
   it("stays quiet when the word scored on its own frequency", () => {

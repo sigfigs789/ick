@@ -56,8 +56,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         -- comparatives, Latin plurals, -ize/-able -- fold too, but only for a
  *         word below MEASURED_FLOOR, where its score is a stand-in rather than a
  *         measurement (see `unmeasuredBaseCandidates`). No label mapping moves.
- *   - on/after 2026-08-24 (the latest system): two independent changes, like
- *     2026-08-21 before it.
+ *   - on/after 2026-08-24: two independent changes, like 2026-08-21 before it.
  *       * The derivational families whose ending is *bound* fold as well --
  *         "-ically" -> "-ic", "-ably"/"-ibly" -> "-able"/"-ible", "-ologist" ->
  *         "-ology", "-cked"/"-cking" -> "-c", "-eaux" -> "-eau" (see
@@ -74,6 +73,14 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         "infatuated" 7.11). A word is now also capped at its own regular
  *         inflections (see `inflectedFormFolds`).
  *     Neither moves a label mapping.
+ *   - on/after 2026-08-26: three changes replacing the fold's remaining
+ *     frequency guesses with reviewed morphology (see REVIEWED_FOLD_START). No
+ *     label mapping moves.
+ *   - on/after 2026-08-27 (the latest system): the measured band bends by
+ *     SCORE_GAMMA, and its labels key off the shown score's whole point instead
+ *     of off Zipf cutoffs (see DECADE_BANDS_START). The first change moves every
+ *     measured score up; the second is the only label mapping to move since
+ *     2026-08-21.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -141,6 +148,54 @@ const PREFIX_BASE_MIN_ZIPF = 3;
  * vetted table, and a checkable derivation.
  */
 const REVIEWED_FOLD_START = "2026-08-26";
+
+/*
+ * 2026-08-27. Two changes, one cutover, because neither is worth reading without
+ * the other: a curve that lifts the measured band, and band boundaries that land
+ * on whole points. Separate flags, one date -- the split rule is the one above.
+ *
+ *   `scoreCurve`    The measured band was a straight line from 0 at MAX_ZIPF to
+ *                   the ceiling at MEASURED_FLOOR, which is a fine map of the
+ *                   Zipf scale and a poor map of what anyone plays: the words
+ *                   players actually reach for cluster around Zipf 3..5, the
+ *                   flat middle of that line, so a typical find came back 7.2
+ *                   and the top three points of the scale went almost unused.
+ *                   Bending the line (score = ceiling * x^GAMMA, x the same
+ *                   normalised distance from MAX_ZIPF) lifts that middle while
+ *                   pinning both ends, so no score falls and none exceeds the
+ *                   ceiling. Measured against the 990 answers played 2026-08-21
+ *                   to 2026-08-26, the mean shown score goes 7.17 -> 7.39.
+ *   `decadeBands`   The measured labels keyed off Zipf cutoffs chosen so their
+ *                   *scores* would not straddle a shown tenth (2.13, 3.15, 1.59
+ *                   ...), which kept every seam legal and left every seam
+ *                   arbitrary: 8.9 gave no hint it was a tenth off the next rank
+ *                   up, because the rank changed at 9.1. The bands now key off
+ *                   the shown score's whole point -- Extremely Rare is 8.x, Rare
+ *                   7.x, Uncommon 6.x, Common 5.x -- so the leading digit *is*
+ *                   the rank and the distance to the next one is readable off
+ *                   the score. Elusive keeps the half band above them (9.0..9.4,
+ *                   Mythic taking 9.5), and Very Common takes everything under
+ *                   5.0. A boundary on a whole point cannot land mid-tenth, so
+ *                   the straddle that the Zipf cutoffs were shaped to avoid is
+ *                   now impossible rather than merely avoided.
+ *
+ * Together they move labels up, never down -- every band floor lands at or above
+ * where it sat before, so no word a player has already found comes back worse.
+ * A test pins that.
+ */
+const DECADE_BANDS_START = "2026-08-27";
+// How far the measured band bends. 1 is the straight line every system before
+// DECADE_BANDS_START used; below 1 lifts the middle. 0.9 rather than something
+// lower because the lift lands almost entirely on Extremely Rare, and purple
+// being the default outcome is what the 2026-08-21 retune existed to fix: it
+// goes 14% of answers to 19% here, where 0.8 would make it 24% and 0.7 31%.
+//
+// Lowering it later is a one-line change, but two tests move with it: the
+// whole-point band edges, and the window where Common demotes to Very Common.
+// That window is the thing to watch, because it is the only place this system
+// takes a rank away -- it is Zipf 4.62..4.84 at 0.9, and 0.85 halves it (4.76 up)
+// while adding 0.12 to the mean shown score. It closes entirely at 0.8.
+const SCORE_GAMMA = 0.9;
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -533,6 +588,14 @@ interface ScoringFlags {
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
   narrowBands?: boolean;
+  // Whether the measured band bends by SCORE_GAMMA rather than running straight.
+  // Scores only; no label mapping moves with it. See DECADE_BANDS_START.
+  scoreCurve?: boolean;
+  // Whether the measured labels key off the shown score's whole point rather
+  // than off Zipf cutoffs (see decadeRarity). Labels only. Supersedes
+  // `narrowBands`, which stays set on these profiles for the archived puzzles
+  // that read it. See DECADE_BANDS_START.
+  decadeBands?: boolean;
 }
 
 function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags): Scoring {
@@ -548,10 +611,22 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     prefixResidues = false,
     derivedFormFolds = false,
     narrowBands = false,
+    scoreCurve = false,
+    decadeBands = false,
   } = flags;
   const score = (zipf: number): number => {
     if (zipf >= MEASURED_FLOOR) {
-      const s = (ceiling * (MAX_ZIPF - zipf)) / (MAX_ZIPF - MEASURED_FLOOR);
+      // How far into the measured band the word sits: 0 at the commonest word in
+      // the data, 1 at the measurement floor. `scoreCurve` bends it (see
+      // SCORE_GAMMA); without it the band is the straight line it always was,
+      // which is the same expression at gamma 1.
+      const x = (MAX_ZIPF - zipf) / (MAX_ZIPF - MEASURED_FLOOR);
+      // Floored at 0 before the exponent, because a Zipf above the data's
+      // maximum makes x negative and a negative base under a fractional power is
+      // NaN. No dictionary word is up there, but a live-validated word carries
+      // whatever frequency Datamuse attests, and the straight line answered that
+      // case with a small negative score rather than a broken one.
+      const s = ceiling * (scoreCurve ? Math.pow(Math.max(x, 0), SCORE_GAMMA) : x);
       // The Legend system carries two decimals across the whole band so its
       // fixed rank cutoffs land on the shown value; the 2026-08-15 system kept
       // the measured band at one decimal.
@@ -567,8 +642,12 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     score,
     rarity: legend
       ? // Latest system: rank the top by the shown two-decimal score against the
-        // fixed Legend/Mythic cutoffs; below 9.5 keeps its measured Zipf label.
-        (zipf) => topRankForScore(score(zipf)) ?? measuredRarity(zipf, narrowBands)
+        // fixed Legend/Mythic cutoffs; below 9.5 takes a measured label -- off
+        // the shown score's whole point from DECADE_BANDS_START, off the Zipf
+        // bands before it.
+        (zipf) =>
+          topRankForScore(score(zipf)) ??
+          (decadeBands ? decadeRarity(score(zipf)) : measuredRarity(zipf, narrowBands))
       : // 2026-08-15 system: the deep-tail library (Zipf < 1) is a single Mythic
         // top rank, with no Legend above it.
         (zipf) => (zipf < MEASURED_FLOOR ? "Mythic" : measuredRarity(zipf, narrowBands)),
@@ -646,8 +725,26 @@ const PREFIX_SCORING: Scoring = twoBandScoring(9.9, 0, {
   prefixBases: true,
   narrowBands: true,
 });
-// The latest system (2026-08-26): the three changes that replace the fold's
-// remaining frequency guesses with reviewed morphology. See REVIEWED_FOLD_START.
+// The 2026-08-26 system: the three changes that replace the fold's remaining
+// frequency guesses with reviewed morphology. See REVIEWED_FOLD_START.
+const REVIEWED_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  prefixBases: true,
+  paradigmFolds: true,
+  prefixResidues: true,
+  derivedFormFolds: true,
+  narrowBands: true,
+});
+// The latest system (2026-08-27): the same folds, with the measured band bent by
+// SCORE_GAMMA and its labels read off the shown score's whole point. See
+// DECADE_BANDS_START. `narrowBands` stays on but is now unreachable here --
+// `decadeBands` answers the label question ahead of it -- and is kept so the
+// flag set still describes the profile rather than only its live edges.
 const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
@@ -660,6 +757,8 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   prefixResidues: true,
   derivedFormFolds: true,
   narrowBands: true,
+  scoreCurve: true,
+  decadeBands: true,
 });
 
 const LEGACY_SCORING: Scoring = {
@@ -714,7 +813,9 @@ const LEGACY_SCORING: Scoring = {
  * score wears.
  *
  * Both sets stay live: a puzzle played before the cutover keeps the tiers it
- * was played with, Quotidian included.
+ * was played with, Quotidian included. Neither is what a puzzle from
+ * DECADE_BANDS_START on reads -- those label off the shown score (see
+ * `decadeRarity`) and reach this only through the archived profiles.
  */
 function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
   if (narrowBands) {
@@ -748,6 +849,29 @@ function measuredRarity(zipf: number, narrowBands: boolean): Rarity {
   return "Extremely Rare";
 }
 
+/**
+ * The measured labels from DECADE_BANDS_START on, read off the score the player
+ * is shown rather than off the Zipf behind it: whatever whole point the score
+ * displays in *is* the rank. So a word showing 8.7 is Extremely Rare and three
+ * tenths off Elusive, and the player can see that without being told -- which is
+ * the whole reason the bands moved.
+ *
+ * Elusive keeps a half band (9.0..9.4, Mythic starts at 9.5) because it is meant
+ * to read as closing in on the top rather than as one more rung, and Very Common
+ * takes the whole bottom half (under 5.0) because nothing below "this is an
+ * everyday word" needs telling apart. The rounding is the display's own (see
+ * `format`), so the label can never disagree with the number beside it.
+ */
+function decadeRarity(score: number): Rarity {
+  const shown = roundToTenths(score);
+  if (shown >= 9) return "Elusive";
+  if (shown >= 8) return "Extremely Rare";
+  if (shown >= 7) return "Rare";
+  if (shown >= 6) return "Uncommon";
+  if (shown >= 5) return "Common";
+  return "Very Common";
+}
+
 function scoringFor(date?: string): Scoring {
   if (date === undefined) return LATEST_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
@@ -766,6 +890,7 @@ function scoringFor(date?: string): Scoring {
   if (date < DERIVED_BASE_START) return RETUNED_SCORING;
   if (date < PREFIX_BASE_START) return DERIVED_SCORING;
   if (date < REVIEWED_FOLD_START) return PREFIX_SCORING;
+  if (date < DECADE_BANDS_START) return REVIEWED_SCORING;
   return LATEST_SCORING;
 }
 

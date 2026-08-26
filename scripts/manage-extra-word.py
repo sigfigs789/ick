@@ -214,6 +214,9 @@ def update_size_test() -> None:
 MEASURED_FLOOR = 1.0
 BAND_CEILING = 9.9
 TAIL_FLOOR = 0.0
+# Mirrors SCORE_GAMMA in src/game/dictionary.ts: how far the measured band bends.
+# 1 is the straight line every system before DECADE_BANDS_START used.
+SCORE_GAMMA = 0.9
 # Score cutoffs for the wide band's two top ranks, keyed off the *displayed*
 # score, mirroring LEGEND_MIN_SCORE / MYTHIC_MIN_SCORE in src/game/dictionary.ts:
 # Legend at a two-decimal score >= 9.9, Mythic wherever the score displays as 9.5+.
@@ -511,8 +514,33 @@ def _scoring_base(word: str, index: dict[str, int]) -> str | None:
     return None
 
 
+def decade_rarity(score: float) -> str:
+    """Mirrors decadeRarity() in src/game/dictionary.ts (the latest labels).
+
+    The rank is whatever whole point the shown score displays in, so the leading
+    digit is the rank. Elusive keeps the half band above them (9.0..9.4) and Very
+    Common takes everything under 5.0.
+    """
+    shown = _round_to_tenths(score)
+    if shown >= 9:
+        return "Elusive"
+    if shown >= 8:
+        return "Extremely Rare"
+    if shown >= 7:
+        return "Rare"
+    if shown >= 6:
+        return "Uncommon"
+    if shown >= 5:
+        return "Common"
+    return "Very Common"
+
+
 def measured_rarity(zipf: float) -> str:
-    """Mirrors measuredRarity() in src/game/dictionary.ts (narrow bands)."""
+    """Mirrors measuredRarity() in src/game/dictionary.ts (narrow bands).
+
+    Superseded by decade_rarity() from DECADE_BANDS_START on; kept because the
+    audit skills still read archived puzzles' labels through it.
+    """
     if zipf >= 4.85:
         return "Very Common"
     if zipf >= 3.9:
@@ -535,8 +563,8 @@ def current_score(zipf: float, max_zipf: float) -> float:
     (Zipf < MEASURED_FLOOR) fills BAND_CEILING..10, clamped at TAIL_FLOOR -> 10.
     """
     if zipf >= MEASURED_FLOOR:
-        score = BAND_CEILING * (max_zipf - zipf) / (max_zipf - MEASURED_FLOOR)
-        return _round_to_cents(score)
+        x = (max_zipf - zipf) / (max_zipf - MEASURED_FLOOR)
+        return _round_to_cents(BAND_CEILING * (x**SCORE_GAMMA))
     clamped = max(zipf, TAIL_FLOOR)
     score = BAND_CEILING + (10 - BAND_CEILING) * (MEASURED_FLOOR - clamped) / (
         MEASURED_FLOOR - TAIL_FLOOR
@@ -563,9 +591,10 @@ def rarity_label(zipf: float, max_zipf: float) -> str:
 
     The deep tail is not flatly "Mythic" -- a word scoring >= 9.9 is "Legend".
     So the label is derived from the displayed score (topRankForScore), falling
-    back to the measured Zipf-band label below the Mythic cutoff.
+    back to the whole-point label below the Mythic cutoff.
     """
-    return top_rank_for_score(current_score(zipf, max_zipf)) or measured_rarity(zipf)
+    score = current_score(zipf, max_zipf)
+    return top_rank_for_score(score) or decade_rarity(score)
 
 
 def format_score(score: float) -> str:
