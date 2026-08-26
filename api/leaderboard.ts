@@ -38,9 +38,12 @@
 //
 //   Split out because it is the one part of this page that is the same for
 //   everybody. The boards carry `player` and so are cached per player; this
-//   feed carries only a date, so one query a minute serves every open page.
-//   It is also the only part that needs to be live, so the page polls this and
-//   leaves the boards alone after the first load.
+//   feed carries only a date, so one query every WORDS_CACHE_SECONDS serves
+//   every open page. It is also the only part that needs to be live, so the
+//   page polls this and leaves the boards alone after the first load.
+//   A request carrying `t` is a reader who asked for this list by hand; it is
+//   cached like any other, but under its own key, so the answer is fetched
+//   afresh rather than handed a copy the reader has already seen.
 //
 // POST /api/leaderboard
 //   { playerId, scores: [{ date, word, zipf, total, top, words, found? }] }
@@ -164,6 +167,21 @@ const MAX_LIMIT = 200;
  * number.
  */
 const WORDS_LIMIT = 500;
+/**
+ * How long the CDN may hand out one copy of the finds feed.
+ *
+ * Fifteen seconds rather than the sixty it started at. Sixty was chosen to
+ * match the page's poll, which made the two numbers look like one decision --
+ * but they answer different questions, and multiply rather than overlap: a word
+ * waits out this cache *and then* the reader's next poll, so a minute here was
+ * most of a two-minute wait to see a word somebody had already found.
+ *
+ * The cost of the shorter window is four origin reads a minute instead of one,
+ * for every open page in the world put together -- the query is one grouped
+ * scan of a single day's finds, and the whole point of the split above is that
+ * this response is shared. That is a fair price for a feed that reads as live.
+ */
+const WORDS_CACHE_SECONDS = 15;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -220,12 +238,25 @@ interface BoardsResult {
   allTime: BoardRow[];
 }
 
+/**
+ * How long past expiry a stale copy may still be served while a fresh one is
+ * fetched behind it.
+ *
+ * Kept in proportion to the freshness window above rather than left at the five
+ * minutes it was: `stale-while-revalidate` is how old an answer the reader who
+ * arrives first after expiry gets, so a five-minute tail on a fifteen-second
+ * cache would have quietly undone the shorter cache for exactly the reader it
+ * was shortened for. A minute is long enough to keep an origin blip off the
+ * page and short enough that nobody reads a stale feed twice.
+ */
+const STALE_SECONDS = 60;
+
 function reply(status: number, body?: unknown, cacheSeconds = 0): Response {
   return new Response(body === undefined ? null : JSON.stringify(body), {
     status,
     headers: {
       "cache-control": cacheSeconds
-        ? `public, s-maxage=${cacheSeconds}, stale-while-revalidate=300`
+        ? `public, s-maxage=${cacheSeconds}, stale-while-revalidate=${STALE_SECONDS}`
         : "no-store",
       ...(body === undefined ? {} : { "content-type": "application/json" }),
     },
@@ -491,8 +522,8 @@ function daysBefore(date: string, days: number): string {
  * this page show" -- but they are not cached alike: the boards need to know who
  * is asking so they can hand back that player's own row, and the moment `player`
  * joins the cache key the response stops being shared. The feed is identical for
- * every player, so it is asked for on its own and the CDN answers it once a
- * minute for all of them.
+ * every player, so it is asked for on its own and the CDN answers it once per
+ * WORDS_CACHE_SECONDS for all of them.
  *
  * Not behind the boards' opening gate, deliberately: the feed works from the
  * first day, and until the boards open it is the whole page.
@@ -511,7 +542,7 @@ async function handleWordsGet(params: URLSearchParams): Promise<Response> {
       p_since: since,
       p_limit: WORDS_LIMIT,
     });
-    return reply(200, { words: toWords(rows ?? null) }, 60);
+    return reply(200, { words: toWords(rows ?? null) }, WORDS_CACHE_SECONDS);
   } catch (error) {
     console.error("[leaderboard] words read failed:", error instanceof Error ? error.message : error);
     return reply(502, { ok: false, reason: "unavailable" });

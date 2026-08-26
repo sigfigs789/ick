@@ -4,6 +4,7 @@ import {
   backfillHistory,
   fetchBoards,
   fetchFoundWords,
+  type FetchOptions,
   seasonName,
   seasonRange,
   type BoardEntry,
@@ -19,8 +20,21 @@ import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
 
 type LoadState = "loading" | "ready" | "error";
 
-/** How often an open page re-checks for new finds. Matches the CDN's own cache. */
-const REFRESH_MS = 60_000;
+/**
+ * How often an open page re-checks for new finds.
+ *
+ * Thirty seconds. It used to be sixty, to match the CDN's own cache exactly --
+ * which read as one decision but was two, and they add up rather than overlap:
+ * a word waits out the shared cache and *then* waits out the rest of a poll, so
+ * two sixties were most of a two-minute wait to see a word already found.
+ *
+ * The cache is fifteen seconds now (see api/leaderboard.ts), so the worst case
+ * is a little under a minute and the usual case is half of that. Deliberately
+ * not lowered to fifteen as well: past a point the page is asking more often
+ * than a reader can notice, and every one of those is a request from every open
+ * tab. Halving the poll buys most of the freshness for half the chatter.
+ */
+const REFRESH_MS = 30_000;
 /**
  * How old the boards have to be before returning to the tab re-reads them.
  *
@@ -84,8 +98,8 @@ export function LeaderboardPage() {
    * A failure here is swallowed on purpose: the last good list stays on screen,
    * which is a truer thing to show than an empty section over one bad minute.
    */
-  const refreshWords = useCallback(() => {
-    fetchFoundWords(today)
+  const refreshWords = useCallback((options: FetchOptions = {}) => {
+    fetchFoundWords(today, options)
       .then(setWords)
       .catch(() => {});
   }, [today]);
@@ -125,8 +139,8 @@ export function LeaderboardPage() {
    * load" -- to fetch something the reader can already see would be a worse
    * page than a slightly old one. It swaps them or it leaves them.
    */
-  const refreshBoards = useCallback(() => {
-    fetchBoards(today)
+  const refreshBoards = useCallback((options: FetchOptions = {}) => {
+    fetchBoards(today, options)
       .then((loaded) => {
         setBoards(loaded);
         boardsReadAt.current = Date.now();
@@ -187,7 +201,12 @@ export function LeaderboardPage() {
    * almost certainly not moved.
    */
   useEffect(() => {
-    let timer = window.setInterval(refreshWords, REFRESH_MS);
+    // Wrapped rather than passed straight to setInterval: the timer hands its
+    // callback nothing, but a bare reference would also accept the event object
+    // that other callers pass, and the options argument is not a thing a timer
+    // should ever be able to set.
+    const tick = () => refreshWords();
+    let timer = window.setInterval(tick, REFRESH_MS);
     function onVisibilityChange() {
       window.clearInterval(timer);
       if (document.visibilityState === "hidden") return;
@@ -198,7 +217,7 @@ export function LeaderboardPage() {
       // another tab and back is not new information, and re-asking on every
       // return would put this player's own uncached query on a hair trigger.
       if (Date.now() - boardsReadAt.current > BOARDS_STALE_MS) refreshBoards();
-      timer = window.setInterval(refreshWords, REFRESH_MS);
+      timer = window.setInterval(tick, REFRESH_MS);
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
@@ -239,6 +258,33 @@ export function LeaderboardPage() {
     return () => window.clearTimeout(timer);
   }, [words]);
 
+  /**
+   * Refresh everything on the page, because a reader asked.
+   *
+   * Both halves, and with the cache-buster: a poll can be answered from the
+   * shared copy, but somebody who taps this has just told you the list they are
+   * looking at is not the one they want. Handing them the same bytes back would
+   * make the button a decoration -- which is what a browser reload already is
+   * here, since a client cannot bust a CDN's shared copy.
+   *
+   * No loading state on the sections themselves. The boards and the feed on
+   * screen are the last true answer, and blanking them to fetch something the
+   * reader can already see would be a worse page than a slightly old one -- the
+   * same reason `refreshBoards` doesn't. The button says it is working; the
+   * page stays readable underneath.
+   */
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshAll = useCallback(() => {
+    setRefreshing(true);
+    refreshWords({ fresh: true });
+    refreshBoards({ fresh: true });
+    // Long enough to read as a response to the tap, and it ends on its own
+    // rather than on the requests: neither of them rejects in a way this cares
+    // about, and a button that stayed disabled because a fetch hung would be
+    // worse than one that came back a moment early.
+    window.setTimeout(() => setRefreshing(false), 600);
+  }, [refreshBoards, refreshWords]);
+
   const ready = boards?.ready ?? false;
 
   return (
@@ -258,8 +304,21 @@ export function LeaderboardPage() {
         <div className="app__header-titles">
           <h1>Leaderboard</h1>
         </div>
-        {/* A spacer, so the title stays centred against the back button. */}
-        <div className="leaderboard-page__header-spacer" aria-hidden="true" />
+        {/* Where a spacer used to be, keeping the title centred against the
+            back button -- and now doing something, which is the better way to
+            hold a space. A refresh belongs on this page and nowhere else in the
+            app: it is the one screen whose content is other people's. */}
+        <button
+          type="button"
+          className="app__icon-button leaderboard-page__refresh"
+          onClick={refreshAll}
+          disabled={refreshing}
+          aria-label="Refresh"
+          title="Refresh"
+          data-refreshing={refreshing ? "" : undefined}
+        >
+          <span aria-hidden="true">↻</span>
+        </button>
       </header>
 
       <main>
