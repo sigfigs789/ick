@@ -1121,9 +1121,9 @@ export const BASE_FORM_NOTICE_DROP = 0.3;
 
 /**
  * The fold behind `word`'s score, but only when it cost the word a rank --
- * Legend down to Mythic, Mythic down to Rare, and so on -- and moved the shown
- * score by at least BASE_FORM_NOTICE_DROP. Undefined otherwise, including when
- * the word scored on its own data.
+ * Legend down to Mythic, Mythic down to Rare, and so on -- moved the shown score
+ * by at least BASE_FORM_NOTICE_DROP, and reached a form no longer than the word
+ * played. Undefined otherwise, including when the word scored on its own data.
  *
  * A rank change rather than a threshold on the number alone, because the ranks
  * are where the scale's own sense of "meaningfully rarer" already lives, and
@@ -1141,6 +1141,10 @@ export const BASE_FORM_NOTICE_DROP = 0.3;
  * Every fold is a cap (see `chainedBase`), so a rank that moved always moved
  * downward; the comparison is written as a rank *drop* anyway, so nothing here
  * quietly starts reporting a promotion if that invariant ever slips.
+ *
+ * The length condition is about the note, not the score: 8,257 folds reach a
+ * longer form, and they keep the score that form gives them -- they just stop
+ * announcing it. See the guard below for why.
  */
 export function baseFormRankDrop(
   word: string,
@@ -1148,6 +1152,14 @@ export function baseFormRankDrop(
 ): BaseFormSubstitution | undefined {
   const substitution = baseFormSubstitution(word, date);
   if (!substitution) return undefined;
+  // A common form longer than the word played is one the fold reached by
+  // building the word up rather than stripping it down -- "abaci" scored as
+  // "abacus", "infatuate" as "infatuated". Naming it reads as a correction of
+  // the word the player found, as if a shorter word were an incomplete attempt
+  // at a longer one, and the note is meant to explain a badge rather than to
+  // second-guess the find. The score is unchanged; only the explanation is
+  // withheld.
+  if (substitution.base.length > substitution.word.length) return undefined;
   const scoring = scoringFor(date);
 
   const own = RARITY_ORDER.indexOf(scoring.rarity(substitution.ownZipf));

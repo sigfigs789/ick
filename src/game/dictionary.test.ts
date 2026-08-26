@@ -462,6 +462,9 @@ describe("baseFormRankDrop", () => {
       if (!sub) continue;
       if (baseFormRankDrop(word)) continue;
       if (rarityForZipf(sub.ownZipf) === rarityForZipf(sub.baseZipf)) continue;
+      // The other suppression: a form longer than the word played, silenced
+      // whatever the drop. Its own test is below.
+      if (sub.base.length > sub.word.length) continue;
       // Everything left changed rank and was suppressed -- so it must have been
       // the floor that did it.
       expect(shown(sub.ownZipf) - shown(sub.baseZipf)).toBeLessThan(
@@ -471,12 +474,37 @@ describe("baseFormRankDrop", () => {
   });
 
   it("fires in the compressed top of the scale, where a small drop is a real one", () => {
-    // "abaci" gives up only 2.15 points to "abacus", but it crosses out of
+    // "abacuses" gives up only 2.22 points to "abacus", but it crosses out of
     // Mythic -- the band a fixed point-gap either misses or fires on constantly.
-    const note = baseFormRankDrop("abaci");
+    const note = baseFormRankDrop("abacuses");
     expect(note?.base).toBe("abacus");
     expect(rarityForZipf(note!.ownZipf)).toBe("Mythic");
     expect(rarityForZipf(note!.baseZipf)).not.toBe("Mythic");
+  });
+
+  it("says nothing when the common form is longer than the word played", () => {
+    // The mirror of the case above: "abaci" scores as "abacus" and loses Mythic
+    // for it, but naming a longer word reads as a correction of the find rather
+    // than an explanation of the badge. The score is untouched -- only the note
+    // is withheld.
+    const sub = baseFormSubstitution("abaci");
+    expect(sub?.base).toBe("abacus");
+    expect(rarityForZipf(sub!.ownZipf)).toBe("Mythic");
+    expect(rarityForZipf(sub!.baseZipf)).not.toBe("Mythic");
+    expect(baseFormRankDrop("abaci")).toBeUndefined();
+    // Same shape one rank lower, and a fold onto a word that is not a base at
+    // all: "aborn" -> "aborning".
+    expect(baseFormRankDrop("aborn")).toBeUndefined();
+  });
+
+  it("never names a form longer than the word it explains", () => {
+    for (const word of dictionaryWords as string[]) {
+      const note = baseFormRankDrop(word);
+      if (!note) continue;
+      expect(note.base.length, `${note.word} -> ${note.base}`).toBeLessThanOrEqual(
+        note.word.length
+      );
+    }
   });
 
   it("stays quiet when the fold left the word in the same rank", () => {
