@@ -13,9 +13,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "src" / "data"
 
-MIN_TOTAL_MATCHES = 25
-MIN_FAMILIAR_MATCHES = 8  # Very Common + Common
-MIN_FAMILIAR_ZIPF_TENTHS = 42  # an absolute familiarity floor, not a band edge
+# A floor on how much a drop can offer, not just a sanity check. The old
+# 25/8 pair admitted drops like DRE (352 playable words, 38 familiar) into the
+# daily calendar, where five guesses leave no rare upside to reach for. These
+# thresholds keep ~620 of the ~1050 drops that used to qualify: a shorter
+# rotation, but no dead days in it.
+MIN_TOTAL_MATCHES = 100
+MIN_FAMILIAR_MATCHES = 15  # Very Common + Common
+MIN_FAMILIAR_ZIPF_HUNDREDTHS = 420  # an absolute familiarity floor, not a band edge
 
 # Hand-picked candidate pool: digraphs/trigraphs that are common English
 # letter clusters (blends, common syllables) rather than an exhaustive
@@ -52,7 +57,7 @@ def contains_drop(word: str, drop: str) -> bool:
 def main() -> None:
     dictionary = json.loads((DATA_DIR / "dictionary.json").read_text())
     rarity = json.loads((DATA_DIR / "rarity.json").read_text())
-    zipf_tenths = rarity["zipfTenths"]
+    zipf_hundredths = rarity["zipfHundredths"]
     word_indexes = {word: i for i, word in enumerate(dictionary)}
 
     results = []
@@ -71,7 +76,8 @@ def main() -> None:
         f = drop.lower()
         match_indexes = [i for i, word in enumerate(dictionary) if f in word]
         matches = [dictionary[i] for i in match_indexes]
-        familiar = [dictionary[i] for i in match_indexes if zipf_tenths[i] >= MIN_FAMILIAR_ZIPF_TENTHS]
+        familiar = [dictionary[i] for i in match_indexes
+                    if zipf_hundredths[i] >= MIN_FAMILIAR_ZIPF_HUNDREDTHS]
         if len(matches) >= MIN_TOTAL_MATCHES and len(familiar) >= MIN_FAMILIAR_MATCHES:
             results.append({
                 "drop": drop.upper(),
@@ -79,7 +85,7 @@ def main() -> None:
                 "familiarMatches": len(familiar),
                 "sampleFamiliar": sorted(
                     familiar,
-                    key=lambda word: -zipf_tenths[word_indexes[word]],
+                    key=lambda word: -zipf_hundredths[word_indexes[word]],
                 )[:6],
             })
 
