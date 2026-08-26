@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatScore } from "../game/dictionary";
 import { RarityBadge } from "./RarityBadge";
 import {
   backfillHistory,
@@ -66,7 +65,35 @@ export function LeaderboardPage() {
       });
   }, []);
 
+  /**
+   * Opening this page is the joining.
+   *
+   * There used to be a button and a paragraph under it explaining that there is
+   * no account, no email and no name to invent. All of that is still true, and
+   * none of it needed saying: somebody who has opened the leaderboard has said
+   * what they wanted, and asking them to say it again with a tap was a step that
+   * only ever stood between a player and their own row.
+   *
+   * So the id is minted here, on the first visit, and the browser's history goes
+   * up with it. The trade is worth stating plainly: a player who opens this page
+   * to look at other people's scores is now on the board themselves, where
+   * before they had to ask for it. What goes up is what the board shows -- an
+   * id this browser made up, and the words they found -- and nothing about it
+   * reaches back into the game, so the cost of being wrong about somebody's
+   * intent is a row with their own handle on it.
+   */
   useEffect(() => {
+    if (!loadPlayerId()) {
+      const id = joinBoard();
+      if (id) {
+        setPlayerId(id);
+        trackLeaderboardJoined(false);
+        // Joining brings your history with you: every puzzle this browser can
+        // show was played on its own day goes up in one request, so a player who
+        // has been at this for weeks doesn't start from zero.
+        setImported(backfillHistory(id));
+      }
+    }
     load();
   }, [load]);
 
@@ -97,18 +124,6 @@ export function LeaderboardPage() {
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [load]);
-
-  function join() {
-    const id = joinBoard();
-    if (!id) return;
-    setPlayerId(id);
-    trackLeaderboardJoined(false);
-    // Joining brings your history with you: every puzzle this browser can show
-    // was played on its own day goes up in one request, so a player who has been
-    // at this for weeks doesn't start from zero.
-    setImported(backfillHistory(id));
-    load();
-  }
 
   /**
    * Which words turned up since the last look, so the feed can show them
@@ -205,30 +220,18 @@ export function LeaderboardPage() {
           <FoundWords words={boards.words} today={todayDateString()} arrived={arrived} />
         )}
 
-        {playerId ? (
-          // Nothing standing to say once a player has joined: their own row is
-          // marked on the boards, which is where they would look for themselves
-          // anyway. The one message worth showing is the confirmation right
-          // after joining, and it goes away with the next load.
-          imported !== null && (
-            <p className="leaderboard__note leaderboard__note--playing" aria-live="polite">
-              {/* Not "past" puzzles: today counts too when it has been played,
-                  and it usually has by the time anyone joins. */}
-              {imported > 0
-                ? `Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`
-                : "Nothing to count yet — your first scored puzzle starts you off."}
-            </p>
-          )
-        ) : (
-          <div className="leaderboard__join">
-            <button type="button" className="leaderboard__join-button" onClick={join}>
-              Put me on the board
-            </button>
-            <p className="leaderboard__note">
-              No account, no email, no name to invent — you get one when you join. Joining
-              brings every puzzle you played on its own day with it.
-            </p>
-          </div>
+        {/* Nothing standing to say: their own row is marked on the boards, which
+            is where they would look for themselves anyway. The one message worth
+            showing is where the history on a brand new row came from, and it
+            goes away with the next load. */}
+        {playerId && imported !== null && (
+          <p className="leaderboard__note leaderboard__note--playing" aria-live="polite">
+            {/* Not "past" puzzles: today counts too when it has been played, and
+                it usually has by the time anyone opens this page. */}
+            {imported > 0
+              ? `Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`
+              : "Nothing to count yet — your first scored puzzle starts you off."}
+          </p>
         )}
 
         <button type="button" className="leaderboard-page__back" onClick={() => navigate("game")}>
@@ -393,14 +396,18 @@ function Board({ heading, caption, entries, self, emptyMessage, playerId }: Boar
 }
 
 /**
- * One player's row: who they are, then what they found.
+ * One player's row: who they are, how much they played, and what it added up to.
  *
- * The name leads on both boards. The weekly one used to lead with that week's
- * find instead, because back then a "name" was itself a word and the row needed
- * something to say the week with. Now that a name is plainly a name, putting the
- * person first reads better and gives both boards the same shape -- and the find
- * still says which week it is, because it is the window's: this week's on the
- * weekly board, their best ever on the all-time one.
+ * The row used to carry the player's best find inside the board's window --
+ * `quixotic 7.9` beside the count. It is held back for now, and the reason is
+ * about the number rather than the word: a find is shown with what it scored,
+ * and the scoring system is still being corrected, so a word that reads as a 7.9
+ * today may not tomorrow. A leaderboard is the wrong place to publish a number
+ * that moves. The words themselves are still on the page, under Today's finds,
+ * where they are the day's finds rather than a claim about a player.
+ *
+ * The server still sends the find (`windowWord`), and the client still prices it
+ * -- putting it back is this component and nothing else.
  */
 function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
   return (
@@ -411,9 +418,7 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
         {isYou && <span className="leaderboard__you"> you</span>}
       </span>
       <span className="leaderboard__meta">
-        {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"} ·{" "}
-        <span className="leaderboard__find">{entry.windowWord}</span>{" "}
-        {formatScore(entry.windowScore)}
+        {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"}
       </span>
       <span className="leaderboard__score">{entry.score.toFixed(1)}</span>
     </li>

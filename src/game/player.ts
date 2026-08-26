@@ -1,14 +1,20 @@
 /**
  * Who the leaderboard thinks you are.
  *
- * There are no accounts in this game and this does not add any. A player who
- * wants on the board taps once; the browser mints a random id and keeps it in
- * localStorage. Nothing is sent anywhere until that happens, so a player who
- * never opts in never appears on the board and never has a row written for them.
+ * There are no accounts in this game and this does not add any. The browser
+ * mints a random id the first time somebody opens the leaderboard and keeps it
+ * in localStorage. Nothing is sent anywhere until that happens, so a player who
+ * never opens that page never appears on the board and never has a row written
+ * for them.
  *
- * There is no name to choose. What the board shows beside a score is the
- * player's own best word (see leaderboard.boardName), so this id is the whole of
- * the stored identity -- nothing here is typed, and nothing here is personal.
+ * That used to be a button ("Put me on the board") rather than the visit itself.
+ * The tap was doing no work: opening a leaderboard says what somebody wanted,
+ * and what goes up is an id this browser invented and the words they found --
+ * nothing to consent to that isn't already on the screen they asked for.
+ *
+ * There is no name to choose. What the board calls a player is derived from this
+ * id (see game/handle.ts), so the id is the whole of the stored identity --
+ * nothing here is typed, and nothing here is personal.
  *
  * The honest limits, since they are worth stating rather than papering over:
  * clearing site data makes you a new player, and a second browser is a second

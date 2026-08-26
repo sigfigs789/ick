@@ -125,7 +125,7 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
   });
 
-  it("names the player, and puts their find in the detail", async () => {
+  it("names the player, and says how much they played", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
@@ -133,7 +133,7 @@ describe("the leaderboard page", () => {
     // naming players after their rarest word left a leaderboard row looking
     // exactly like an entry in the list of found words below it.
     await waitFor(() => expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE)));
-    expect(rowMeta("This week", 0)).toBe("5 puzzles · quixotic 7.9");
+    expect(rowMeta("This week", 0)).toBe("5 puzzles");
   });
 
   it("gives the same player the same name on both boards", async () => {
@@ -147,14 +147,17 @@ describe("the leaderboard page", () => {
     expect(boardRows("All time")[1]).toHaveTextContent(handleFor(ALICE));
   });
 
-  it("shows each player's best ever in the all-time detail", async () => {
+  it("keeps every player's find off both boards", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    // The all-time window is everything, so the find in its detail is their
-    // rarest ever. inkling is worth 7.1 today.
+    // A find is shown with what it scored, and the scoring system is still being
+    // corrected -- so the words stay under Today's finds and the boards say only
+    // what somebody played and what it added up to.
     await waitFor(() => expect(boardRows("All time")[0]).toHaveTextContent(handleFor(BOB)));
-    expect(rowMeta("All time", 0)).toBe("40 puzzles · inkling 7.1");
+    expect(rowMeta("All time", 0)).toBe("40 puzzles");
+    expect(boardRows("All time")[0]).not.toHaveTextContent("inkling");
+    expect(boardRows("This week")[0]).not.toHaveTextContent("quixotic");
   });
 
   it("counts the puzzles behind each score", async () => {
@@ -254,12 +257,14 @@ describe("before the boards open", () => {
 
   it("says scores are already counting, so playing now isn't wasted", async () => {
     playedToday("2026-08-20", "inkling", 2.9);
-    stubFetch(SHUT);
+    const fetchMock = stubFetch(SHUT);
     render(<LeaderboardPage />);
 
     expect(await screen.findByText(/already being counted/)).toBeInTheDocument();
-    // Joining is still offered: collecting starts before displaying does.
-    expect(screen.getByRole("button", { name: "Put me on the board" })).toBeInTheDocument();
+    // And they are: a visit before the opening date still joins and still sends
+    // the history up. Collecting starts before displaying does.
+    await waitFor(() => expect(hasJoined()).toBe(true));
+    expect(submissions(fetchMock)).toHaveLength(1);
   });
 
   it("withholds the boards even if rows arrive alongside a false flag", async () => {
@@ -272,7 +277,7 @@ describe("before the boards open", () => {
 });
 
 describe("joining the board", () => {
-  it("joins in one tap and brings the browser's own history along", async () => {
+  it("joins on the first visit and brings the browser's own history along", async () => {
     // Three remembered days: one played on its own date, one half-played on its
     // own date, and one pulled out of the archive weeks later.
     localStorage.setItem(
@@ -313,8 +318,9 @@ describe("joining the board", () => {
     const fetchMock = stubFetch();
     render(<LeaderboardPage />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
-    expect(hasJoined()).toBe(true);
+    // No tap: opening the page is the joining, and there is no button to press.
+    await waitFor(() => expect(hasJoined()).toBe(true));
+    expect(screen.queryByRole("button", { name: /board/i })).toBeNull();
 
     const posts = submissions(fetchMock);
     expect(posts).toHaveLength(1);
@@ -328,43 +334,56 @@ describe("joining the board", () => {
     expect(await screen.findByText(/Counted 2 puzzles you'd already played/)).toBeInTheDocument();
   });
 
-  it("can be joined with no history at all", async () => {
+  it("joins with no history at all", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
     // A handle comes from the id, not from a word, so there is nothing to earn
-    // before joining -- the old version made you play one first.
-    await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
-    expect(loadPlayerId()).not.toBeNull();
+    // first -- somebody who has never played still gets a row of their own.
+    await waitFor(() => expect(loadPlayerId()).not.toBeNull());
     expect(await screen.findByText(/Nothing to count yet/)).toBeInTheDocument();
+  });
+
+  it("asks for nothing: no call to action, and no explanation under it", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    // The page is the boards and the finds. Both things that used to sit under
+    // them -- the button, and the paragraph explaining that there is no account
+    // and no email -- said only what the page already shows.
+    expect(screen.queryByRole("button", { name: "Put me on the board" })).toBeNull();
+    expect(screen.queryByText(/No account, no email/)).toBeNull();
   });
 
   it("says nothing standing about who you are once you have joined", async () => {
     stubFetch();
     const { unmount } = render(<LeaderboardPage />);
-    await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
+    await waitFor(() => expect(hasJoined()).toBe(true));
 
     // The confirmation is worth one showing; after that a player's own row is
     // marked on the boards, which is where they would look for themselves.
     unmount();
     render(<LeaderboardPage />);
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    expect(screen.queryByText(/You're on the board as/)).toBeNull();
     expect(screen.queryByText(/Counted/)).toBeNull();
+    expect(screen.queryByText(/Nothing to count yet/)).toBeNull();
   });
 
-  it("keeps one identity if the join is somehow pressed twice", async () => {
-    stubFetch();
+  it("keeps one identity across visits", async () => {
+    playedToday("2026-08-20", "inkling", 2.9);
+    const fetchMock = stubFetch();
     const { unmount } = render(<LeaderboardPage />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Put me on the board" }));
+    await waitFor(() => expect(loadPlayerId()).not.toBeNull());
     const first = loadPlayerId();
     unmount();
     render(<LeaderboardPage />);
-    // Already joined, so there is no button to press again -- and the id stands,
-    // which is what keeps the handle stable.
-    expect(screen.queryByRole("button", { name: "Put me on the board" })).toBeNull();
+    // A second visit joins nobody: the id stands, which is what keeps the handle
+    // stable, and the history is not sent up again.
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(1));
     expect(loadPlayerId()).toBe(first);
+    expect(submissions(fetchMock)).toHaveLength(1);
   });
 });
 
