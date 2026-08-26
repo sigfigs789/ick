@@ -327,6 +327,9 @@ describe("before the boards open", () => {
     render(<LeaderboardPage />);
 
     expect(await screen.findByText(/already being counted/)).toBeInTheDocument();
+    // Named the way the boards themselves are: the second one is "Season 1", so
+    // calling it all-time here described a board that is not on the page.
+    expect(screen.getByText(/weekly and season boards go live/)).toBeInTheDocument();
     // And they are: a visit before the opening date still joins and still sends
     // the history up. Collecting starts before displaying does.
     await waitFor(() => expect(hasJoined()).toBe(true));
@@ -510,7 +513,7 @@ describe("recent finds", () => {
     // Without it the list is a pile of unrelated words.
     const section = await screen.findByRole("region", { name: "Today's finds" });
     expect(section.querySelector(".found-words__drop")?.textContent).toBeTruthy();
-    expect(screen.getByText("Every word found on today's puzzle, newest first.")).toBeInTheDocument();
+    expect(screen.getByText("Every word found on today's puzzle.")).toBeInTheDocument();
   });
 
   it("shows the feed even while the boards are still shut", async () => {

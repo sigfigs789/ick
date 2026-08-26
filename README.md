@@ -594,7 +594,7 @@ interesting at any size, and until the boards open it is the whole page.
 
 ### Collected from the start, published on a date
 
-Scores accumulate from the first day this ships; the weekly and all-time boards
+Scores accumulate from the first day this ships; the weekly and season boards
 go live on **Sunday 2026-08-30** (`BOARDS_OPEN_FROM`), whatever the data looks
 like by then. Until that date the page names the day instead of showing a board.
 
