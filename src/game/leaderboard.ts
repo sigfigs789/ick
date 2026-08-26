@@ -17,7 +17,7 @@ import {
   topRarityScore,
   totalRarityScore,
 } from "./dictionary";
-import { todayDateString } from "./date";
+import { formatDateLabel, todayDateString } from "./date";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { playedOnItsDay } from "./storage";
@@ -80,7 +80,15 @@ export interface Boards {
   /** The date the boards open, echoed back so the page can name it. */
   opensOn: string;
   weekly: BoardEntry[];
+  /**
+   * This player's own row on the weekly board, when they rank below the last one
+   * shown -- carrying the rank they actually hold. Null when they are already on
+   * the board, or when nobody has joined on this browser.
+   */
+  weeklySelf: BoardEntry | null;
   allTime: BoardEntry[];
+  /** The same, on the all-time board. */
+  allTimeSelf: BoardEntry | null;
   /**
    * The best words other players found recently, newest first -- today's
    * included, as they happen.
@@ -104,13 +112,58 @@ export interface Boards {
  */
 export const BOARDS_OPEN_FROM = "2026-08-30";
 
+/**
+ * The season the second board counts, and what to call it.
+ *
+ * Kept in step with api/leaderboard.ts, which holds the same two dates and is
+ * what actually bounds the query -- this pair only names it. Same arrangement as
+ * BOARDS_OPEN_FROM above: the server decides, the page says.
+ *
+ * The board was "All time" and counted every puzzle ever. A season is the more
+ * honest thing to rank: it ends, which means a player who arrives in November
+ * has something they can still win, and the standings that stand at the end are
+ * final rather than merely current.
+ */
+export const SEASON = {
+  number: 1,
+  start: "2026-08-10",
+  end: "2026-12-31",
+} as const;
+
+/** `Season 1`, and the range under it. */
+export function seasonName(): string {
+  return `Season ${SEASON.number}`;
+}
+
+/**
+ * `Aug 10 – Dec 31 2026`, to sit beside the heading.
+ *
+ * Months abbreviated because the range shares a line with the name now: spelled
+ * out, "Season 1 August 10 – December 31 2026" wraps on any phone and reads as a
+ * sentence rather than as a label on the board.
+ */
+export function seasonRange(): string {
+  // The same short form the weekly board's range and the opening date use, so
+  // every date on this page is written the same way.
+  return `${formatDateLabel(SEASON.start)} – ${formatDateLabel(SEASON.end)} ${SEASON.end.slice(0, 4)}`;
+}
+
 /** Whether the boards are published yet, on this player's own calendar. */
 export function boardsOpen(date: string = todayDateString()): boolean {
   return date >= BOARDS_OPEN_FROM;
 }
 
-/** How many rows each board returns. Enough to scroll, not enough to be a wall. */
-const BOARD_LIMIT = 50;
+/**
+ * How many rows each board shows.
+ *
+ * Fifteen rather than the fifty it started at: fifty is a list you scroll,
+ * fifteen is a list you read, and a top fifteen is something a player can
+ * picture being in. What makes the shorter board safe is that it no longer hides
+ * anybody -- a player below the cut gets their own row underneath it, at their
+ * real rank (see `weeklySelf`), so the board got shorter without answering fewer
+ * questions.
+ */
+export const BOARD_LIMIT = 15;
 // A board is worth waiting a moment for, but not worth a spinner that never
 // ends -- past this the page says it couldn't load and offers a retry.
 const FETCH_TIMEOUT_MS = 6000;
@@ -135,24 +188,44 @@ function parseBoard(raw: unknown): BoardEntry[] {
   if (!Array.isArray(raw)) return [];
   const entries: BoardEntry[] = [];
   for (const item of raw as RawEntry[]) {
-    if (!item || typeof item !== "object") continue;
-    const { rank, playerId, windowWord, windowZipf, score, puzzles } = item;
-    if (typeof playerId !== "string" || typeof windowWord !== "string") continue;
-    if (typeof score !== "number" || !Number.isFinite(score)) continue;
-    // The find is priced here, at today's rates, from the word itself -- so two
-    // players holding the same word always show the same number, however long
-    // ago either of them found it.
-    entries.push({
-      rank: typeof rank === "number" && Number.isFinite(rank) ? rank : entries.length + 1,
-      playerId,
-      name: handleFor(playerId),
-      windowWord,
-      windowScore: scoreOf(windowWord, windowZipf),
-      score,
-      puzzles: typeof puzzles === "number" && Number.isFinite(puzzles) ? puzzles : 0,
-    });
+    const entry = parseEntry(item, entries.length + 1);
+    if (entry) entries.push(entry);
   }
   return entries;
+}
+
+/**
+ * Read one row, or null if it isn't one.
+ *
+ * `fallbackRank` is reached only by a row that arrived without a rank of its
+ * own. A row from below the cut is the one place an invented rank would be a
+ * lie -- its rank is the whole reason it was sent -- so `parseSelf` passes none
+ * and such a row is dropped instead.
+ */
+function parseEntry(item: RawEntry | null, fallbackRank?: number): BoardEntry | null {
+  if (!item || typeof item !== "object") return null;
+  const { rank, playerId, windowWord, windowZipf, score, puzzles } = item;
+  if (typeof playerId !== "string" || typeof windowWord !== "string") return null;
+  if (typeof score !== "number" || !Number.isFinite(score)) return null;
+  const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
+  if (ranked === undefined) return null;
+  // The find is priced here, at today's rates, from the word itself -- so two
+  // players holding the same word always show the same number, however long
+  // ago either of them found it.
+  return {
+    rank: ranked,
+    playerId,
+    name: handleFor(playerId),
+    windowWord,
+    windowScore: scoreOf(windowWord, windowZipf),
+    score,
+    puzzles: typeof puzzles === "number" && Number.isFinite(puzzles) ? puzzles : 0,
+  };
+}
+
+/** Read the player's own row from below the cut, or null if there isn't one. */
+function parseSelf(raw: unknown): BoardEntry | null {
+  return parseEntry((raw ?? null) as RawEntry | null);
 }
 
 /**
@@ -211,6 +284,10 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
  */
 export async function fetchBoards(date: string = todayDateString()): Promise<Boards> {
   const since = weekStart(date);
+  // Who is asking, so the server can send their own row back from below the cut.
+  // Nobody has to have joined for the page to work: without an id the boards
+  // come back exactly as before, minus a row that would be about nobody.
+  const playerId = loadPlayerId();
   // Development only, and compiled out of a production build entirely: the
   // fixture stands in for the server so the page can be worked on without one.
   // Parsed by exactly the same code as a real response, so a change to that
@@ -224,7 +301,8 @@ export async function fetchBoards(date: string = todayDateString()): Promise<Boa
   // nothing (see api/leaderboard.ts).
   const response = await fetch(
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
-      `&limit=${BOARD_LIMIT}`,
+      `&limit=${BOARD_LIMIT}` +
+      (playerId ? `&player=${encodeURIComponent(playerId)}` : ""),
     { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
   );
   if (!response.ok) throw new Error(`leaderboard ${response.status}`);
@@ -239,7 +317,9 @@ function readBoards(body: Record<string, unknown>, since: string, date: string):
     ready: body.ready === true,
     opensOn: typeof body.opensOn === "string" ? body.opensOn : BOARDS_OPEN_FROM,
     weekly: parseBoard(body.weekly),
+    weeklySelf: parseSelf(body.weeklySelf),
     allTime: parseBoard(body.allTime),
+    allTimeSelf: parseSelf(body.allTimeSelf),
     words: parseWords(body.words, date),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,
   };

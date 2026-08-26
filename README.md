@@ -470,12 +470,46 @@ results. Routing is `src/routes.ts`, about forty lines of `pathname` and
 `index.html`.
 
 Two boards, both fed by one table and shown together: **this week**, counting
-puzzles from the current Sunday onward, and **all time**, counting every puzzle a
-player has scored on. Both are **ranked by total score** — a sum of daily scores,
-which rewards showing up daily instead of peaking once. Ties break on the best
-single word, then on who got there first. The rank is computed in SQL and
-returned as a column rather than inferred from row order, so the thing that did
-the sorting is the thing that says the position.
+puzzles from the current Sunday onward, and **Season 1**, counting the season's
+own range (2026-08-10 to 2026-12-31). Both are **ranked by total score** — a sum
+of daily scores, which rewards showing up daily instead of peaking once. Ties
+break on the best single word, then on who got there first. The rank is computed
+in SQL and returned as a column rather than inferred from row order, so the thing
+that did the sorting is the thing that says the position.
+
+**Fifteen rows a board, and then you.** Fifty rows was a list you scrolled;
+fifteen is a list you read, and a top fifteen is something a player can picture
+being in. What makes the short board safe is that it hides nobody: the query
+takes the player asking (`p_player`) and returns their own row alongside the top
+however far down it sits, at the rank they actually hold — 61st of everybody, not
+16th of what fits. Everybody is ranked *before* the cut, in the same query, since
+a board query and a separate rank query are two answers that can disagree across
+a write landing between them. The row renders under the board and outside its
+scrolling, because a row you have to scroll to is one you may as well not have.
+The cost is that `player` joins the CDN cache key: the 60-second read cache is
+shared per player rather than across everybody.
+
+**A season, not all of time.** The second board used to sum every puzzle ever. A
+season ends, which is what makes it worth ranking — a player arriving in November
+has something they can still win, and the standings that stand on 31 December are
+final rather than merely current. The range is bounded at *both* ends in SQL
+(`p_season_since` / `p_season_until`), because a board named for two dates that
+quietly counts everything outside them is a name that lies: an early player
+backfilling a July history would land inside Season 1, and so would every puzzle
+after New Year. The dates live in `api/leaderboard.ts` and are named on screen
+from the pair in `src/game/leaderboard.ts` — opening Season 2 is those two lines,
+never a migration. Unlike the week, they are *not* taken from the request: a week
+turns over at the player's own midnight, but a season is the same season
+everywhere.
+
+**The find is held back for now.** Each row used to carry the player's rarest
+word inside the window (`quixotic 7.9`) beside the puzzle count. The problem is
+the number rather than the word — a find is displayed with what it scored, and
+the scoring system is still being corrected, so a word worth 7.9 today may not be
+tomorrow, and a leaderboard is the wrong place to publish a number that moves.
+The words are still on the page under Today's finds, where they are the day's
+finds rather than a standing claim about a player. The column is still queried
+and still sent, so restoring it is the `Row` component and nothing else.
 
 **Stacked, not side by side.** Two boards of the same shape sitting next to each
 other read as one wide table split down the middle — you have to check the
@@ -562,6 +596,34 @@ finds to read, so the answer is cached between visits and refreshed in the
 background. A failed check leaves the last answer alone — a flaky moment should
 not make the trophy vanish for someone using it.
 
+### Before the boards open: run the migrations
+
+The leaderboard is the one part of this game that does not degrade gracefully
+into working. With no schema on the project, `/api/leaderboard` answers 502 and
+the page says it couldn't load the boards — which is fine, the game plays on —
+but every submission that arrives meanwhile is logged by `api/_supabase.record`
+and dropped. Nothing queues it and nothing retries it.
+
+That matters more than it looks, because the backfill only runs **once**, on the
+visit that mints a player's id. A player who opens the leaderboard before the
+schema lands is joined, has their history swallowed, and never sends it again —
+their id already exists, so the next visit has nothing to import.
+
+So the two migrations in `supabase/migrations/` must be applied to the project
+*before* the leaderboard reaches players, and certainly before `BOARDS_OPEN_FROM`
+(2026-08-30):
+
+```
+supabase link --project-ref <ref>
+supabase db push
+```
+
+Then check the endpoint answers rather than 502s. `supabase start` +
+`supabase migration up --local` applies the same files to a local stack, which is
+worth doing first — running the SQL for real is what caught the grants bug above,
+and it is the only way to see that `service_role` can execute every function and
+`anon` can execute none.
+
 ### Names are handles, derived from the player id
 
 The board calls players things like `TranquilBison72` — an adjective, a noun and
@@ -596,16 +658,27 @@ instead, which only made sense while a "name" was itself a word.
 
 ### Identity, and the history that comes with it
 
-Opt-in and account-free, and there is nothing to fill in. A player taps once; the
-browser mints a UUID and stores that id and nothing else (`src/game/player.ts`) —
-which is also everything the handle is computed from.
-Nothing is sent for a player who never joins. The trophy carries a one-time "new"
-badge, retired the first time the page is visited (`src/game/whatsNew.ts`).
+Account-free, and there is nothing to fill in — not even a tap. Opening
+`/leaderboard` mints a UUID and stores that id and nothing else
+(`src/game/player.ts`), which is also everything the handle is computed from.
+Nothing is sent for a player who never opens the page. The trophy carries a
+one-time "new" badge, retired the first time the page is visited
+(`src/game/whatsNew.ts`).
 
-**Joining imports the player's own history.** Somebody who joins today has often
+**The visit is the joining.** There used to be a "Put me on the board" button and
+a paragraph under it explaining that there is no account, no email and no name to
+invent. All still true, and none of it worth saying to somebody who has already
+opened a leaderboard — the tap only ever stood between a player and their own
+row. The trade is worth stating: somebody who opens the page to look at *other
+people's* scores is now on the board themselves. What goes up is an id the
+browser invented and the words they found, and none of it reaches back into the
+game.
+
+**Joining imports the player's own history.** Somebody arriving today has often
 been playing for weeks, and that record is already in localStorage — so
 `storage.playedOnItsDay()` collects every stored puzzle and
-`leaderboard.backfillHistory()` sends them as one batch.
+`leaderboard.backfillHistory()` sends them as one batch. It runs once, on the
+visit that mints the id.
 
 ### Only puzzles played on their own day count, backwards and forwards
 

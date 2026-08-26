@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { formatScore } from "../game/dictionary";
 import { RarityBadge } from "./RarityBadge";
 import {
   backfillHistory,
   fetchBoards,
+  seasonName,
+  seasonRange,
   type BoardEntry,
   type Boards,
   type FoundWord,
@@ -11,7 +12,6 @@ import {
 import { joinBoard, loadPlayerId } from "../game/player";
 import { formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
-import { resetLabel } from "../game/week";
 import { navigate } from "../routes";
 import { trackLeaderboardJoined } from "../analytics";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -66,7 +66,35 @@ export function LeaderboardPage() {
       });
   }, []);
 
+  /**
+   * Opening this page is the joining.
+   *
+   * There used to be a button and a paragraph under it explaining that there is
+   * no account, no email and no name to invent. All of that is still true, and
+   * none of it needed saying: somebody who has opened the leaderboard has said
+   * what they wanted, and asking them to say it again with a tap was a step that
+   * only ever stood between a player and their own row.
+   *
+   * So the id is minted here, on the first visit, and the browser's history goes
+   * up with it. The trade is worth stating plainly: a player who opens this page
+   * to look at other people's scores is now on the board themselves, where
+   * before they had to ask for it. What goes up is what the board shows -- an
+   * id this browser made up, and the words they found -- and nothing about it
+   * reaches back into the game, so the cost of being wrong about somebody's
+   * intent is a row with their own handle on it.
+   */
   useEffect(() => {
+    if (!loadPlayerId()) {
+      const id = joinBoard();
+      if (id) {
+        setPlayerId(id);
+        trackLeaderboardJoined(false);
+        // Joining brings your history with you: every puzzle this browser can
+        // show was played on its own day goes up in one request, so a player who
+        // has been at this for weeks doesn't start from zero.
+        setImported(backfillHistory(id));
+      }
+    }
     load();
   }, [load]);
 
@@ -97,18 +125,6 @@ export function LeaderboardPage() {
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [load]);
-
-  function join() {
-    const id = joinBoard();
-    if (!id) return;
-    setPlayerId(id);
-    trackLeaderboardJoined(false);
-    // Joining brings your history with you: every puzzle this browser can show
-    // was played on its own day goes up in one request, so a player who has been
-    // at this for weeks doesn't start from zero.
-    setImported(backfillHistory(id));
-    load();
-  }
 
   /**
    * Which words turned up since the last look, so the feed can show them
@@ -154,9 +170,10 @@ export function LeaderboardPage() {
         >
           <span aria-hidden="true">‹</span>
         </button>
+        {/* No subtitle. "Ranked by total score" described a column the boards
+            already show, above two headings that say what each one counts. */}
         <div className="app__header-titles">
           <h1>Leaderboard</h1>
-          <p className="app__puzzle-number">Ranked by total score</p>
         </div>
         {/* A spacer, so the title stays centred against the back button. */}
         <div className="leaderboard-page__header-spacer" aria-hidden="true" />
@@ -184,15 +201,26 @@ export function LeaderboardPage() {
           <div className="leaderboard__boards">
             <Board
               heading="This week"
-              caption={`From Sunday on. ${resetLabel()}.`}
+              // No dates on this one. A week is the window you are already in --
+              // "this week" is the whole of what a player needs to know about
+              // which days it counts, and spelling them out was answering a
+              // question nobody had. The season gets dates because it is long
+              // enough to be worth knowing where you are inside it.
+              caption="Resets on Sundays."
               entries={boards.weekly}
+              self={boards.weeklySelf}
               emptyMessage="Nobody's scored yet this week. Be first."
               playerId={playerId}
             />
             <Board
-              heading="All time"
-              caption="Every puzzle you've scored on, added up."
+              heading={seasonName()}
+              // Beside the name rather than under it: the range is what
+              // "Season 1" means, and a season with no dates on it is a word
+              // rather than a window.
+              headingDetail={seasonRange()}
+              caption="Must be completed the day of the puzzle."
               entries={boards.allTime}
+              self={boards.allTimeSelf}
               emptyMessage="No scores yet."
               playerId={playerId}
             />
@@ -203,30 +231,18 @@ export function LeaderboardPage() {
           <FoundWords words={boards.words} today={todayDateString()} arrived={arrived} />
         )}
 
-        {playerId ? (
-          // Nothing standing to say once a player has joined: their own row is
-          // marked on the boards, which is where they would look for themselves
-          // anyway. The one message worth showing is the confirmation right
-          // after joining, and it goes away with the next load.
-          imported !== null && (
-            <p className="leaderboard__note leaderboard__note--playing" aria-live="polite">
-              {/* Not "past" puzzles: today counts too when it has been played,
-                  and it usually has by the time anyone joins. */}
-              {imported > 0
-                ? `Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`
-                : "Nothing to count yet — your first scored puzzle starts you off."}
-            </p>
-          )
-        ) : (
-          <div className="leaderboard__join">
-            <button type="button" className="leaderboard__join-button" onClick={join}>
-              Put me on the board
-            </button>
-            <p className="leaderboard__note">
-              No account, no email, no name to invent — you get one when you join. Joining
-              brings every puzzle you played on its own day with it.
-            </p>
-          </div>
+        {/* Nothing standing to say: their own row is marked on the boards, which
+            is where they would look for themselves anyway. The one message worth
+            showing is where the history on a brand new row came from, and it
+            goes away with the next load. */}
+        {playerId && imported !== null && (
+          <p className="leaderboard__note leaderboard__note--playing" aria-live="polite">
+            {/* Not "past" puzzles: today counts too when it has been played, and
+                it usually has by the time anyone opens this page. */}
+            {imported > 0
+              ? `Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`
+              : "Nothing to count yet — your first scored puzzle starts you off."}
+          </p>
         )}
 
         <button type="button" className="leaderboard-page__back" onClick={() => navigate("game")}>
@@ -335,40 +351,87 @@ function NotYet({ opensOn }: { opensOn: string }) {
 
 interface BoardProps {
   heading: string;
+  /** A note beside the heading, set smaller -- the season's dates. */
+  headingDetail?: string;
   caption: string;
   entries: BoardEntry[];
+  /** This player's own row, when they rank below the last one shown. */
+  self: BoardEntry | null;
   emptyMessage: string;
   playerId: string | null;
 }
 
-/** One board, ranked by total score exactly as the database ordered it. */
-function Board({ heading, caption, entries, emptyMessage, playerId }: BoardProps) {
+/**
+ * One board: the top fifteen, ranked by total score exactly as the database
+ * ordered it, and then you.
+ *
+ * The board is short because a leaderboard is read, not scrolled -- but a short
+ * board that stops at fifteen tells everybody below it nothing at all, and "am I
+ * anywhere" is the question a player brings to this page. So the server sends
+ * their own row back when it falls outside the fifteen, and it goes underneath,
+ * pinned outside the scrolling list where it cannot be scrolled away from. The
+ * rank on it is the real one -- 61st of everybody, not 16th of what fits.
+ */
+function Board({
+  heading,
+  headingDetail,
+  caption,
+  entries,
+  self,
+  emptyMessage,
+  playerId,
+}: BoardProps) {
   return (
     <section className="leaderboard__board" aria-label={heading}>
-      <h2 className="leaderboard__board-heading">{heading}</h2>
+      <h2 className="leaderboard__board-heading">
+        {heading}
+        {headingDetail && <span className="leaderboard__board-dates">{headingDetail}</span>}
+      </h2>
       <p className="leaderboard__caption">{caption}</p>
       {entries.length === 0 ? (
         <p className="leaderboard__status">{emptyMessage}</p>
       ) : (
-        <ol className="leaderboard__list">
-          {entries.map((entry) => (
-            <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} />
-          ))}
-        </ol>
+        <>
+          <ol className="leaderboard__list">
+            {entries.map((entry) => (
+              <Row key={entry.playerId} entry={entry} isYou={playerId === entry.playerId} />
+            ))}
+          </ol>
+          {self && (
+            <>
+              {/* The gap between the board and the row below it, said in the one
+                  way that needs no words. Decorative: the row itself is marked
+                  "you" and carries its own rank, which is what a screen reader
+                  needs from it. */}
+              <p className="leaderboard__gap" aria-hidden="true">
+                ⋯
+              </p>
+              <ol className="leaderboard__list leaderboard__list--self" start={self.rank}>
+                {/* Always "you": the server sends this row only to the player it
+                    belongs to. */}
+                <Row entry={self} isYou />
+              </ol>
+            </>
+          )}
+        </>
       )}
     </section>
   );
 }
 
 /**
- * One player's row: who they are, then what they found.
+ * One player's row: who they are, how much they played, and what it added up to.
  *
- * The name leads on both boards. The weekly one used to lead with that week's
- * find instead, because back then a "name" was itself a word and the row needed
- * something to say the week with. Now that a name is plainly a name, putting the
- * person first reads better and gives both boards the same shape -- and the find
- * still says which week it is, because it is the window's: this week's on the
- * weekly board, their best ever on the all-time one.
+ * The row used to carry the player's best find inside the board's window --
+ * `quixotic 7.9` beside the count. It is held back for now, and the reason is
+ * about the number rather than the word: a find is shown with what it scored,
+ * and the scoring system is still being corrected, so a word that reads as a 7.9
+ * today may not tomorrow. A leaderboard is the wrong place to publish a number
+ * that moves. The words themselves are still on the page, under Today's finds,
+ * where they are the day's finds rather than a claim about a player.
+ *
+ * The server still sends the find (`windowWord`), and the client still prices it
+ * -- putting it back is this component and nothing else.
  */
 function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
   return (
@@ -379,9 +442,7 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
         {isYou && <span className="leaderboard__you"> you</span>}
       </span>
       <span className="leaderboard__meta">
-        {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"} ·{" "}
-        <span className="leaderboard__find">{entry.windowWord}</span>{" "}
-        {formatScore(entry.windowScore)}
+        {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"}
       </span>
       <span className="leaderboard__score">{entry.score.toFixed(1)}</span>
     </li>

@@ -212,6 +212,76 @@ describe("importing a joining player's history", () => {
 });
 
 describe("reading the boards", () => {
+  /** The URL of the board request the client made. */
+  function requestedUrl(fetchMock: ReturnType<typeof stubFetch>): string {
+    const [url] = (fetchMock.mock.calls[0] ?? []) as [string?];
+    return String(url ?? "");
+  }
+
+  /** A board response with whatever the test cares about laid over it. */
+  function boardsResponse(body: Record<string, unknown>) {
+    return new Response(JSON.stringify({ ready: true, weekly: [], allTime: [], ...body }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  it("asks for fifteen rows, and says who is asking", async () => {
+    const playerId = joinBoard();
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27");
+    const url = requestedUrl(fetchMock);
+    // Fifteen rows and the player asking: the two halves of a short board that
+    // still knows where everybody stands.
+    expect(url).toContain("limit=15");
+    expect(url).toContain(`player=${playerId}`);
+  });
+
+  it("asks anonymously when nobody has joined on this browser", async () => {
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27");
+    // No id to send and nothing to ask about: the boards come back without a row
+    // below the cut, and the page is otherwise the same.
+    expect(requestedUrl(fetchMock)).not.toContain("player=");
+  });
+
+  it("keeps the player's own row from below the cut, at its real rank", async () => {
+    stubFetch(
+      boardsResponse({
+        weeklySelf: { rank: 61, playerId: "me", windowWord: "inkling", windowZipf: 2.9, score: 12, puzzles: 2 },
+        allTimeSelf: { rank: 214, playerId: "me", windowWord: "quixotic", windowZipf: 2.33, score: 88, puzzles: 19 },
+      })
+    );
+
+    const boards = await fetchBoards("2026-08-27");
+    // 61st of everybody, not 16th of what fits -- the number is the only reason
+    // this row was sent.
+    expect(boards.weeklySelf).toMatchObject({ rank: 61, name: handleFor("me") });
+    expect(boards.allTimeSelf?.rank).toBe(214);
+  });
+
+  it("has no row below the cut when the player is on the board", async () => {
+    stubFetch(boardsResponse({ weekly: [{ rank: 1, playerId: "me", windowWord: "inkling", windowZipf: 2.9, score: 12, puzzles: 2 }] }));
+
+    const boards = await fetchBoards("2026-08-27");
+    expect(boards.weeklySelf).toBeNull();
+    expect(boards.allTimeSelf).toBeNull();
+  });
+
+  it("drops a row from below the cut that arrived without a rank", async () => {
+    stubFetch(
+      boardsResponse({
+        weeklySelf: { playerId: "me", windowWord: "inkling", windowZipf: 2.9, score: 12, puzzles: 2 },
+      })
+    );
+
+    // A rank invented from array position would be a lie here -- this row is
+    // nowhere in the array it would be counting. Better to show no row.
+    expect((await fetchBoards("2026-08-27")).weeklySelf).toBeNull();
+  });
+
   it("ranks each board in the order the server sent it", async () => {
     stubFetch(
       new Response(

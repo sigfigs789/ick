@@ -1616,6 +1616,20 @@ h2 {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+/* The season's dates, on the heading's own line and plainly subordinate to it --
+   "Season 1" is what you read, the range is what it means. Set in the body face
+   at reading case so it reads as a note beside the name rather than as more
+   heading, and kept unbreakable so the range never splits across two lines. */
+.leaderboard__board-dates {
+  margin-left: 0.45rem;
+  color: var(--fg-faint);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  white-space: nowrap;
+}
 .leaderboard__caption {
   margin: 0.2rem 0 0.5rem;
   color: var(--fg-muted);
@@ -1660,7 +1674,9 @@ h2 {
    off the row. */
 .leaderboard__row {
   display: grid;
-  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+  /* Wide enough for three digits: the row below the cut carries a real rank, and
+     a player can be 148th. */
+  grid-template-columns: 2.1rem minmax(0, 1fr) auto;
   grid-template-areas:
     "rank name score"
     ".    meta meta";
@@ -1675,6 +1691,27 @@ h2 {
 .leaderboard__row--you {
   background: var(--bg-inset);
   border-radius: 0.45rem;
+}
+/* The break between the top fifteen and the player's own row below it. Three
+   dots and nothing else: the gap is the message. */
+.leaderboard__gap {
+  /* Clear of the list's own bottom fade above it, and of the row below. */
+  margin: 0.1rem 0 0.3rem;
+  color: var(--fg-faint);
+  font-size: 0.9rem;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+/* The row below the cut lives outside the scrolling list on purpose -- pinned
+   under the board so it cannot be scrolled away from, which is the whole reason
+   it was sent. So it takes none of the list's scrolling, its height cap, or the
+   fade that tells the list it has more in it. */
+.leaderboard__list--self {
+  max-height: none;
+  overflow: visible;
+  padding-bottom: 0;
+  mask-image: none;
 }
 .leaderboard__rank {
   grid-area: rank;
@@ -1718,43 +1755,6 @@ h2 {
   font-family: var(--font-display);
   font-weight: 900;
   font-variant-numeric: tabular-nums;
-}
-.leaderboard__join {
-  margin-top: 1.8rem;
-  padding-top: 1.2rem;
-  border-top: 1px solid var(--border);
-}
-/* The name is the player's rarest word, so it is shown at the size of a find
-   rather than the size of a form label -- it is the thing being offered. */
-.leaderboard__join-pitch {
-  margin: 0 0 0.7rem;
-  color: var(--fg-muted);
-  font-size: 0.95rem;
-}
-.leaderboard__join-pitch strong {
-  display: block;
-  margin-top: 0.15rem;
-  color: var(--fg);
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 900;
-  letter-spacing: 0.01em;
-  /* A 30-letter word on a 320px screen has to be allowed to break. */
-  overflow-wrap: anywhere;
-}
-.leaderboard__join-button {
-  border: 0;
-  border-radius: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  background: var(--accent);
-  color: var(--accent-fg);
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.leaderboard__join-button:hover {
-  background: var(--accent-hover);
 }
 .leaderboard__note {
   margin: 0.55rem 0 0;

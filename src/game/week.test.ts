@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysUntilReset, resetLabel, weekStart } from "./week";
+import { weekStart } from "./week";
 
 describe("weekly board window", () => {
   it("starts the week on Sunday", () => {
@@ -22,17 +22,6 @@ describe("weekly board window", () => {
     expect(weekStart("2026-09-01")).toBe("2026-08-30");
     // 2027-01-01 is a Friday, so its week began in December.
     expect(weekStart("2027-01-01")).toBe("2026-12-27");
-  });
-
-  it("counts the days left including today", () => {
-    expect(daysUntilReset("2026-08-23")).toBe(7); // Sunday
-    expect(daysUntilReset("2026-08-28")).toBe(2); // Friday
-    expect(daysUntilReset("2026-08-29")).toBe(1); // Saturday
-  });
-
-  it("says when the board resets", () => {
-    expect(resetLabel("2026-08-29")).toBe("Resets tonight");
-    expect(resetLabel("2026-08-24")).toBe("Resets in 6 days");
   });
 
   it("puts one weekend day on a fresh board, which Monday weeks cannot", () => {

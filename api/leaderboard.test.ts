@@ -282,6 +282,9 @@ describe("api/leaderboard reads", () => {
       weekly: [
         { rank: 1, playerId: PLAYER, windowWord: "inkling", windowZipf: 2.9, score: 24.6, puzzles: 1 },
       ],
+      // Nobody asked who they were, so there is no row from below the cut.
+      weeklySelf: null,
+      allTimeSelf: null,
       allTime: [
         { rank: 1, playerId: PLAYER, windowWord: "asphyxiate", windowZipf: 2.09, score: 180.2, puzzles: 9 },
         {
@@ -377,6 +380,74 @@ describe("api/leaderboard reads", () => {
     await handler(get(`?since=${SUNDAY}&limit=100000`));
 
     expect(rpcCall(fetchMock)?.args.p_limit).toBe(200);
+  });
+
+  it("bounds the second board to the season, at both ends", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    await handler(get(`?since=${SUNDAY}`));
+
+    // The board is named for a season with two dates on it, so it counts that
+    // range and nothing else -- a July puzzle brought in by a backfill is
+    // outside Season 1, and so is everything after New Year. The dates are the
+    // endpoint's, not the caller's: a season is the same season everywhere,
+    // unlike a week, whose boundary is local to whoever is asking.
+    expect(rpcCall(fetchMock)?.args).toMatchObject({
+      p_season_since: "2026-08-10",
+      p_season_until: "2026-12-31",
+    });
+  });
+
+  it("shows fifteen rows when the caller doesn't say", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    await handler(get(`?since=${SUNDAY}`));
+
+    expect(rpcCall(fetchMock)?.args.p_limit).toBe(15);
+  });
+
+  it("hands a player below the cut their own row, at its real rank", async () => {
+    withEnv();
+    const below = {
+      rank: 61,
+      player_id: PLAYER,
+      window_word: "inkling",
+      window_zipf: "2.9",
+      total_score: "12.0",
+      puzzles: 2,
+    };
+    const fetchMock = stubFetch([
+      {
+        ready: true,
+        // Two rows in a board of one: the second is the asking player, from
+        // wherever they actually stand.
+        weekly: [{ ...below, rank: 1, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee" }, below],
+        allTime: [],
+        words: [],
+      },
+    ]);
+    const response = await handler(get(`?since=${SUNDAY}&limit=1&player=${PLAYER}`));
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(rpcCall(fetchMock)?.args.p_player).toBe(PLAYER);
+    // Split on the rank rather than on the array's length, so the board keeps
+    // exactly what it was asked for and the extra row is the player's own.
+    expect(body.weekly).toHaveLength(1);
+    expect(body.weeklySelf).toMatchObject({ rank: 61, playerId: PLAYER });
+    // A board shorter than the cut has nobody underneath it: its last row is its
+    // last row, not somebody hiding below.
+    expect(body.allTimeSelf).toBeNull();
+  });
+
+  it("shows the board anyway when the player id is not one", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    const response = await handler(get(`?since=${SUNDAY}&player=not-a-uuid`));
+
+    // Not knowing where somebody stands is a reason to show them the board, not
+    // a reason to show them an error.
+    expect(response.status).toBe(200);
+    expect(rpcCall(fetchMock)?.args.p_player).toBeNull();
   });
 
   it("accepts the Sunday that brackets the game's first puzzle", async () => {
