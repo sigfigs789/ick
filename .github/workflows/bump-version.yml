@@ -53,6 +53,12 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # Vercel authorizes a deployment by the commit's git author, and the
+          # default (github-actions[bot]) isn't authorized on this project — the
+          # preview build simply never gets created. Author as sigfigs789, which
+          # is how every hand-made bump has landed.
+          author: sigfigs789 <82550419+sigfigs789@users.noreply.github.com>
+          committer: sigfigs789 <82550419+sigfigs789@users.noreply.github.com>
           branch: automated/bump-version-${{ github.run_id }}
           delete-branch: true
           commit-message: "Bump app version to ${{ steps.bump.outputs.app_version }}"
