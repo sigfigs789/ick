@@ -558,7 +558,8 @@ describe("recent finds", () => {
     // Without it the list is a pile of unrelated words.
     const section = await screen.findByRole("region", { name: "Today's finds" });
     expect(section.querySelector(".found-words__drop")?.textContent).toBeTruthy();
-    expect(screen.getByText("Every word found on today's puzzle.")).toBeInTheDocument();
+    // And nothing under the heading restating it.
+    expect(screen.queryByText("Every word found on today's puzzle.")).toBeNull();
   });
 
   it("shows the feed even while the boards are still shut", async () => {

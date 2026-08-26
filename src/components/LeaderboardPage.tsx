@@ -367,11 +367,14 @@ function FoundWords({
 }) {
   return (
     <section className="found-words" aria-label="Today's finds">
+      {/* No line under it. "Every word found on today's puzzle" restated the
+          heading with the drop already beside it, and the boards above carry
+          nothing under their headings either -- one of the three sections
+          explaining itself was the odd one out. */}
       <h2 className="leaderboard__board-heading">
         Today's finds
         <span className="found-words__drop">{dropForDate(today)}</span>
       </h2>
-      <p className="leaderboard__caption">Every word found on today's puzzle.</p>
       <ul className="found-words__list">
         {words.map((found) => (
           <li

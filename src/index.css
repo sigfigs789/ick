@@ -1432,7 +1432,8 @@ h2 {
    was the layout that made a find hard to tell from a player. */
 .found-words__list {
   list-style: none;
-  margin: 0.2rem 0 0;
+  /* Clear of the heading, which has nothing under it now. */
+  margin: 0.7rem 0 0;
   padding: 0;
   display: grid;
   gap: 0.4rem;
@@ -1654,11 +1655,6 @@ h2 {
   letter-spacing: 0.02em;
   text-transform: none;
   white-space: nowrap;
-}
-.leaderboard__caption {
-  margin: 0.2rem 0 0.5rem;
-  color: var(--fg-muted);
-  font-size: 0.78rem;
 }
 .leaderboard__status {
   margin: 1.4rem 0;
