@@ -1616,19 +1616,19 @@ h2 {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-/* The season's dates, inside the heading but plainly subordinate to the name --
-   "Season 1" is what you read, the range is what it means. Its own line, because
-   a four-month range beside an uppercase heading is a wrap waiting to happen on
-   a narrow column. */
+/* The season's dates, on the heading's own line and plainly subordinate to it --
+   "Season 1" is what you read, the range is what it means. Set in the body face
+   at reading case so it reads as a note beside the name rather than as more
+   heading, and kept unbreakable so the range never splits across two lines. */
 .leaderboard__board-dates {
-  display: block;
-  margin-top: 0.15rem;
+  margin-left: 0.45rem;
   color: var(--fg-faint);
   font-family: var(--font-body);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: none;
+  white-space: nowrap;
 }
 .leaderboard__caption {
   margin: 0.2rem 0 0.5rem;

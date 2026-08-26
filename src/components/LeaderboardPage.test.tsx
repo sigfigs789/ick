@@ -131,7 +131,7 @@ describe("the leaderboard page", () => {
     // sum.
     const board = screen.getByRole("region", { name: SEASON_BOARD });
     expect(board).toHaveTextContent("Season 1");
-    expect(board).toHaveTextContent("August 10 – December 31 2026");
+    expect(board).toHaveTextContent("Aug 10 – Dec 31 2026");
     expect(board).toHaveTextContent("Must be completed the day of the puzzle.");
   });
 

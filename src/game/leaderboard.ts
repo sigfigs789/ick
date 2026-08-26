@@ -135,12 +135,18 @@ export function seasonName(): string {
   return `Season ${SEASON.number}`;
 }
 
-/** `August 10 – December 31 2026`, for the line under the heading. */
+/**
+ * `Aug 10 – Dec 31 2026`, to sit beside the heading.
+ *
+ * Months abbreviated because the range shares a line with the name now: spelled
+ * out, "Season 1 August 10 – December 31 2026" wraps on any phone and reads as a
+ * sentence rather than as a label on the board.
+ */
 export function seasonRange(): string {
   const start = new Date(`${SEASON.start}T00:00:00`);
   const end = new Date(`${SEASON.end}T00:00:00`);
   const day = (date: Date) =>
-    date.toLocaleDateString(undefined, { month: "long", day: "numeric" });
+    date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   return `${day(start)} – ${day(end)} ${end.getFullYear()}`;
 }
 

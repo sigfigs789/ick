@@ -210,9 +210,9 @@ export function LeaderboardPage() {
             />
             <Board
               heading={seasonName()}
-              // The range is part of the heading rather than the caption: it is
-              // what "Season 1" means, and a season with no dates on it is a
-              // word rather than a window.
+              // Beside the name rather than under it: the range is what
+              // "Season 1" means, and a season with no dates on it is a word
+              // rather than a window.
               headingDetail={seasonRange()}
               caption="Must be completed the day of the puzzle."
               entries={boards.allTime}
@@ -347,7 +347,7 @@ function NotYet({ opensOn }: { opensOn: string }) {
 
 interface BoardProps {
   heading: string;
-  /** A second line inside the heading, set smaller -- the season's dates. */
+  /** A note beside the heading, set smaller -- the season's dates. */
   headingDetail?: string;
   caption: string;
   entries: BoardEntry[];
