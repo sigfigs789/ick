@@ -18,12 +18,13 @@ import {
   topRarityScore,
   totalRarityScore,
 } from "./dictionary";
-import { formatDateLabel, todayDateString } from "./date";
+import { todayDateString } from "./date";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { playedOnItsDay } from "./storage";
 import { sampleBoardsResponse, usingSampleData } from "../dev/sampleData";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
+import { monthStart } from "./month";
 import { weekStart } from "./week";
 
 export interface BoardEntry {
@@ -41,7 +42,7 @@ export interface BoardEntry {
   name: string;
   /**
    * The rarest word inside this board's window -- on the weekly board, what they
-   * found *this* week; on the all-time board, their best ever.
+   * found *this* week; on the monthly board, their best this month.
    */
   windowWord: string;
   windowScore: number;
@@ -79,47 +80,20 @@ export interface Boards {
    * the board, or when nobody has joined on this browser.
    */
   weeklySelf: BoardEntry | null;
-  allTime: BoardEntry[];
-  /** The same, on the all-time board. */
-  allTimeSelf: BoardEntry | null;
+  /**
+   * The monthly board.
+   *
+   * Read from a response key still called `allTime`, which is what the SQL
+   * function builds and what this board was before it was a season and then a
+   * month. Renaming it means a migration to rename a key nobody outside these
+   * two files reads, so the wire keeps the old word and everything above the
+   * parse calls the board what it is.
+   */
+  monthly: BoardEntry[];
+  /** The same, on the monthly board. */
+  monthlySelf: BoardEntry | null;
   /** The day the weekly board is counting from, echoed back by the server. */
   weekStart: string;
-}
-
-/**
- * The season the second board counts, and what to call it.
- *
- * Kept in step with api/leaderboard.ts, which holds the same two dates and is
- * what actually bounds the query -- this pair only names it: the server decides,
- * the page says.
- *
- * The board was "All time" and counted every puzzle ever. A season is the more
- * honest thing to rank: it ends, which means a player who arrives in November
- * has something they can still win, and the standings that stand at the end are
- * final rather than merely current.
- */
-export const SEASON = {
-  number: 1,
-  start: "2026-08-01",
-  end: "2026-12-31",
-} as const;
-
-/** `Season 1`, and the range under it. */
-export function seasonName(): string {
-  return `Season ${SEASON.number}`;
-}
-
-/**
- * `Aug 1 – Dec 31 2026`, to sit beside the heading.
- *
- * Months abbreviated because the range shares a line with the name now: spelled
- * out, "Season 1 August 10 – December 31 2026" wraps on any phone and reads as a
- * sentence rather than as a label on the board.
- */
-export function seasonRange(): string {
-  // The same short form the weekly board's range uses, so every date on this
-  // page is written the same way.
-  return `${formatDateLabel(SEASON.start)} – ${formatDateLabel(SEASON.end)} ${SEASON.end.slice(0, 4)}`;
 }
 
 /**
@@ -271,16 +245,20 @@ function freshParam(options: FetchOptions): string {
 /**
  * Fetch both boards in one request.
  *
- * The week's start is sent rather than derived server-side: the puzzle date is
- * already the player's own local calendar date, so the window that brackets it
- * has to come from the same clock (see game/week.ts). Rejects on failure; the
- * caller turns that into the page's error state.
+ * Both windows are sent rather than derived server-side: the puzzle date is
+ * already the player's own local calendar date, so the windows that bracket it
+ * have to come from the same clock (see game/week.ts, game/month.ts). Rejects on
+ * failure; the caller turns that into the page's error state.
  */
 export async function fetchBoards(
   date: string = todayDateString(),
   options: FetchOptions = {}
 ): Promise<Boards> {
   const since = weekStart(date);
+  // The month goes up for the same reason the week does: both windows bracket
+  // the player's own local puzzle date, so both have to be computed off the same
+  // clock. The server bounds the far end of it itself.
+  const month = monthStart(date);
   // Who is asking, so the server can send their own row back from below the cut.
   // Nobody has to have joined for the page to work: without an id the boards
   // come back exactly as before, minus a row that would be about nobody.
@@ -296,6 +274,7 @@ export async function fetchBoards(
   // player's own local calendar date, not a moment in UTC.
   const response = await fetch(
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
+      `&month=${encodeURIComponent(month)}` +
       `&limit=${BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
       freshParam(options),
@@ -346,8 +325,8 @@ function readBoards(body: Record<string, unknown>, since: string): Boards {
   return {
     weekly: parseBoard(body.weekly),
     weeklySelf: parseSelf(body.weeklySelf),
-    allTime: parseBoard(body.allTime),
-    allTimeSelf: parseSelf(body.allTimeSelf),
+    monthly: parseBoard(body.allTime),
+    monthlySelf: parseSelf(body.allTimeSelf),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,
   };
 }

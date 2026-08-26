@@ -46,8 +46,9 @@ export function weekStart(date: string = todayDateString()): string {
  * of what anybody needs to know about which days it counts. What is worth saying
  * once is when it turns over, and that is the same sentence every day of the
  * week -- "Resets on Sundays." -- so it is a constant on the page rather than
- * anything computed here. The season keeps its dates, being long enough that
- * where you are inside it is a real question.
+ * anything computed here. The monthly board says the same thing about itself,
+ * except that its answer is a date and so has to be computed (see
+ * game/month.ts).
  */
 
 /** Days from the week's Sunday to `date`: 0 on Sunday, 6 on Saturday. */

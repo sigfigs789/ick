@@ -279,6 +279,27 @@ describe("reading the boards", () => {
     expect(url).toContain(`player=${playerId}`);
   });
 
+  it("sends both windows, each measured on the player's own calendar", async () => {
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27");
+    const url = requestedUrl(fetchMock);
+    // The week that brackets the 27th, and the month it falls in. Both are
+    // computed from the puzzle date on every fetch, which is the whole of how
+    // either board resets: the window moves, and no job has to run.
+    expect(url).toContain("since=2026-08-23");
+    expect(url).toContain("month=2026-08-01");
+  });
+
+  it("moves the monthly window on the first, with nothing else changing", async () => {
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-09-01");
+    // The same code on the next day of play asks for September -- so August's
+    // scores fall out of the board by themselves.
+    expect(requestedUrl(fetchMock)).toContain("month=2026-09-01");
+  });
+
   it("asks anonymously when nobody has joined on this browser", async () => {
     const fetchMock = stubFetch(boardsResponse({}));
 
@@ -300,7 +321,7 @@ describe("reading the boards", () => {
     // 61st of everybody, not 16th of what fits -- the number is the only reason
     // this row was sent.
     expect(boards.weeklySelf).toMatchObject({ rank: 61, name: handleFor("me") });
-    expect(boards.allTimeSelf?.rank).toBe(214);
+    expect(boards.monthlySelf?.rank).toBe(214);
   });
 
   it("has no row below the cut when the player is on the board", async () => {
@@ -308,7 +329,7 @@ describe("reading the boards", () => {
 
     const boards = await fetchBoards("2026-08-27");
     expect(boards.weeklySelf).toBeNull();
-    expect(boards.allTimeSelf).toBeNull();
+    expect(boards.monthlySelf).toBeNull();
   });
 
   it("drops a row from below the cut that arrived without a rank", async () => {
@@ -349,7 +370,7 @@ describe("reading the boards", () => {
       [1, handleFor("a")],
       [2, handleFor("b")],
     ]);
-    expect(boards.allTime).toHaveLength(1);
+    expect(boards.monthly).toHaveLength(1);
   });
 
   it("drops a malformed row instead of failing the whole board", async () => {
@@ -375,7 +396,7 @@ describe("reading the boards", () => {
       [1, "asphyxiate"],
       [4, "inkling"],
     ]);
-    expect(boards.allTime).toEqual([]);
+    expect(boards.monthly).toEqual([]);
     expect(boards.weekly[0]).toMatchObject({ windowWord: "asphyxiate", puzzles: 0 });
   });
 
