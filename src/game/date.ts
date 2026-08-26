@@ -47,6 +47,22 @@ export function formatDateLabel(dateStr: string): string {
   });
 }
 
+/**
+ * The name of the calendar month before the one `dateStr` falls in, e.g.
+ * "July" for any day in August.
+ *
+ * Named rather than dated because it labels a champion: "July's champion" is a
+ * thing a reader places instantly, where "Jul 1 - Jul 31" is a range they have
+ * to read. Derived from the player's own puzzle date, which is the same date the
+ * server bounds that champion's window with, so the two always name one month.
+ */
+export function previousMonthName(dateStr: string): string {
+  const { y, m } = parseDateString(dateStr);
+  // Day 0 of this month is the last day of the one before it, so the month rolls
+  // back through January without any wrapping of its own.
+  return new Date(y, m - 1, 0).toLocaleDateString(undefined, { month: "long" });
+}
+
 function parseDateString(s: string): { y: number; m: number; d: number } {
   const [y, m, d] = s.split("-").map(Number);
   return { y, m, d };
