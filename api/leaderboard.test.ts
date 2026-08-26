@@ -635,6 +635,10 @@ describe("api/leaderboard recent finds", () => {
     // Short, because this cache and the page's poll add up rather than overlap:
     // a word waits out one and then the other before anybody sees it.
     expect(response.headers.get("cache-control")).toContain("s-maxage=15");
+    // And private caches get no lifetime at all. Without this the browser falls
+    // back to heuristic freshness on a `public` 200 and can answer the page's
+    // own poll from disk -- a feed that never changes until you reload.
+    expect(response.headers.get("cache-control")).toContain("max-age=0");
     // And the stale window in proportion to it -- a long tail here is how old
     // an answer the first reader after expiry gets, which would undo the above.
     expect(response.headers.get("cache-control")).toContain("stale-while-revalidate=60");

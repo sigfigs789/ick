@@ -256,7 +256,16 @@ function reply(status: number, body?: unknown, cacheSeconds = 0): Response {
     status,
     headers: {
       "cache-control": cacheSeconds
-        ? `public, s-maxage=${cacheSeconds}, stale-while-revalidate=${STALE_SECONDS}`
+        ? // `max-age=0` is the load-bearing part, and its absence was a bug.
+          // `s-maxage` binds shared caches only, so with no `max-age` beside it
+          // the browser had no stated lifetime for this response and fell back
+          // to heuristic freshness -- on a `public` 200, that means it may
+          // answer the page's own poll from disk. The feed would then sit
+          // unchanged however long anybody waited, and come right on a reload,
+          // which revalidates. Zero here says: never reuse this privately,
+          // always ask -- while `s-maxage` keeps the CDN sharing one copy, so
+          // asking is cheap.
+          `public, max-age=0, s-maxage=${cacheSeconds}, stale-while-revalidate=${STALE_SECONDS}`
         : "no-store",
       ...(body === undefined ? {} : { "content-type": "application/json" }),
     },

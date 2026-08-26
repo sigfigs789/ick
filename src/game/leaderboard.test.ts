@@ -641,6 +641,16 @@ describe("asking for the list by hand", () => {
     expect(url(fetchMock)).toBe("/api/leaderboard?words=1&today=2026-08-25");
   });
 
+  it("keeps the feed out of this browser's own cache", async () => {
+    const fetchMock = stubFetch(new Response(JSON.stringify({ words: [] }), { status: 200 }));
+
+    await fetchFoundWords("2026-08-25");
+
+    // The shared copy is the point; a private one is how a poll goes blind.
+    const [, init] = (fetchMock.mock.calls[0] ?? []) as [unknown?, RequestInit?];
+    expect(init?.cache).toBe("no-store");
+  });
+
   it("busts the cache for a reader who asked", async () => {
     const fetchMock = stubFetch(new Response(JSON.stringify({ words: [] }), { status: 200 }));
 

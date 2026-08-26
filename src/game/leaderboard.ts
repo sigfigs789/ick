@@ -381,7 +381,7 @@ export async function fetchBoards(
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
       (preview ? `&${PREVIEW_PARAM}=1` : "") +
       freshParam(options),
-    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
   );
   if (!response.ok) throw new Error(`leaderboard ${response.status}`);
   return readBoards((await response.json()) as Record<string, unknown>, since);
@@ -411,7 +411,12 @@ export async function fetchFoundWords(
   // it against its own clock either way (see api/leaderboard.ts).
   const response = await fetch(
     `/api/leaderboard?words=1&today=${encodeURIComponent(date)}${freshParam(options)}`,
-    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+    // `no-store` keeps this out of *this browser's* cache, and nothing else:
+    // the request still goes out and the CDN still answers it from the copy it
+    // shares with everybody, which is the whole arrangement. Without it a poll
+    // could be served from disk, and a page that polls a list it cannot see
+    // change is worse than one that does not poll at all.
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
   );
   if (!response.ok) throw new Error(`leaderboard words ${response.status}`);
   const body = (await response.json()) as Record<string, unknown>;
