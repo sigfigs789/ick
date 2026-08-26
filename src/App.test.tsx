@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
@@ -42,35 +42,7 @@ function puzzle(overrides: Record<string, unknown> = {}) {
   };
 }
 
-/**
- * Put the clock on a day the boards are open, which is the only time the badge
- * exists at all.
- *
- * Fake timers rather than a stubbed `boardsOpen`, so these stay honest: if the
- * launch date and the badge ever disagree, these tests are what notices.
- */
-function afterBoardsOpen(when = "2026-08-30T09:00:00") {
-  vi.useFakeTimers({ shouldAdvanceTime: true });
-  vi.setSystemTime(new Date(when));
-}
-
-/**
- * The day before, when the leaderboard is reachable but has no board on it yet.
- *
- * Pinned rather than left to the ambient clock: "before the launch date" stops
- * being true on its own, and a test that quietly changes meaning when the
- * calendar rolls past it is worse than no test.
- */
-function beforeBoardsOpen(when = "2026-08-29T09:00:00") {
-  vi.useFakeTimers({ shouldAdvanceTime: true });
-  vi.setSystemTime(new Date(when));
-}
-
 describe("App", () => {
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
@@ -120,7 +92,6 @@ describe("App", () => {
   });
 
   it("badges the leaderboard until it has been visited, then never again", async () => {
-    afterBoardsOpen();
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     const { unmount } = render(<App />);
 
@@ -138,7 +109,6 @@ describe("App", () => {
   });
 
   it("does not badge the leaderboard for a player who has already met it", () => {
-    afterBoardsOpen();
     localStorage.setItem("ick:seen:leaderboard", "1");
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     render(<App />);
@@ -148,7 +118,6 @@ describe("App", () => {
   });
 
   it("retires the badge when the leaderboard is reached from the results instead", async () => {
-    afterBoardsOpen();
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({
         progress: {
@@ -191,55 +160,13 @@ describe("App", () => {
 });
 
 describe("the leaderboard trophy", () => {
-  it("stays out of the header until the boards open", () => {
-    beforeBoardsOpen();
+  it("is in the header from the first day", () => {
     localStorage.clear();
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     render(<App />);
 
-    // No trophy and no badge: until there is a board behind it, the header is
-    // advertising a page that only names a date.
-    expect(screen.queryByRole("button", { name: /^Leaderboard/ })).not.toBeInTheDocument();
-    expect(screen.queryByText("new")).not.toBeInTheDocument();
-    // The help button is untouched, so this is the trophy going rather than the
-    // whole header-actions block failing to render.
-    expect(screen.getByRole("button", { name: /how to play/i })).toBeInTheDocument();
-  });
-
-  it("appears on the day the boards open", () => {
-    afterBoardsOpen();
-    localStorage.clear();
-    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
-    render(<App />);
-
-    expect(screen.getByRole("button", { name: "Leaderboard (new)" })).toBeInTheDocument();
-  });
-
-  it("saves the badge for a player who looked before the boards opened", async () => {
-    beforeBoardsOpen();
-    vi.mocked(useDailyPuzzle).mockReturnValue(
-      puzzle({
-        progress: {
-          date: "2026-08-13",
-          drop: "str",
-          acceptedWords: [{ word: "strange", rarity: "Common", zipf: 4.6 }],
-          rejectedAttempts: [],
-          completed: true,
-        },
-      }) as ReturnType<typeof useDailyPuzzle>
-    );
-    const early = render(<App />);
-
-    // The results link is the way in before the trophy exists, and it is still a
-    // real visit: it mints the id and sends the history up.
-    await userEvent.click(screen.getByRole("button", { name: "See the leaderboard" }));
-    expect(window.location.pathname).toBe("/leaderboard");
-    early.unmount();
-
-    // So it must not spend the badge. Otherwise the players who showed up early
-    // are exactly the ones never told the boards had opened.
-    afterBoardsOpen();
-    render(<App />);
+    // No date to wait for and no data to wait for: the page stands on its own
+    // whenever a player opens it, so the way in is always there.
     expect(screen.getByRole("button", { name: "Leaderboard (new)" })).toBeInTheDocument();
   });
 

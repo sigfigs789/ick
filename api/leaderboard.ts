@@ -1,9 +1,8 @@
 // The leaderboard: a Vercel Edge Function that reads the weekly and all-time
 // boards, and takes the score submissions that fill them.
 //
-// GET /api/leaderboard?since=YYYY-MM-DD&today=YYYY-MM-DD&limit=15&player=UUID
-//   -> { weekStart, ready, opensOn, weekly: [...], weeklySelf, allTime: [...],
-//        allTimeSelf, words: [...] }
+// GET /api/leaderboard?since=YYYY-MM-DD&limit=15&player=UUID
+//   -> { weekStart, weekly: [...], weeklySelf, allTime: [...], allTimeSelf }
 //   The weekly board counts puzzles from `since` onward; the second counts the
 //   season, which is a fixed range this file holds (SEASON_START / SEASON_END)
 //   rather than anything the caller can move. `since` does come from the client,
@@ -18,23 +17,13 @@
 //   inside the fifteen. When they are on the board -- or did not say who they
 //   are -- those are null, because the row is already up there.
 //
-//   Boards stay unpublished until BOARDS_OPEN_FROM, whatever the data looks like
-//   by then: `ready` says whether they are open, and until they are, both arrays
-//   come back empty and `opensOn` is what there is to show. The gate is enforced
-//   in SQL, so before the date no board row leaves the database at all -- there is
-//   no early board sitting in a response waiting to be read out of a network tab.
-//   `preview=1` opens that gate for one request, so the real boards can be looked
-//   at before their opening date.
-//
 // GET /api/leaderboard?words=1&today=YYYY-MM-DD
 //   -> { words: [...] }
 //   Today's finds -- every word anybody has found on one puzzle -- as their own
 //   request rather than a key on the boards. `today` is the puzzle the asking
 //   player is looking at, and it is used as given: a find belongs to a drop, not
-//   to a moment in UTC. Not behind the boards' opening gate: a list of good words
-//   is interesting from day one, and it is the thing worth showing while the
-//   boards wait. See `wordsDay` for what publishing a live puzzle's finds costs
-//   and why it was accepted.
+//   to a moment in UTC. See `wordsDay` for what publishing a live puzzle's finds
+//   costs and why it was accepted.
 //
 //   Split out because it is the one part of this page that is the same for
 //   everybody. The boards carry `player` and so are cached per player; this
@@ -115,16 +104,6 @@ const WORD_RE = /^[a-z]{2,30}$/;
 /** Zipf runs roughly -2 (attested nowhere) to 8 ("the"); bounded wide. */
 const MIN_ZIPF = -10;
 const MAX_ZIPF = 10;
-/**
- * The Sunday the boards go live, whatever the data looks like by then.
- *
- * Kept in step with src/game/leaderboard.ts's BOARDS_OPEN_FROM, which is what
- * the page decides from. Both are checked: the client's own calendar opens the
- * boards for whoever has reached the date, and this is the copy the response is
- * built from, so a stale client cannot keep them shut either.
- */
-const BOARDS_OPEN_FROM = "2026-08-30";
-
 /**
  * The season the second board counts, inclusive at both ends.
  *
@@ -231,9 +210,8 @@ interface WordEntry {
   foundOn: string;
 }
 
-/** What `leaderboard_boards` answers with: the gate and the rows. */
+/** What `leaderboard_boards` answers with. */
 interface BoardsResult {
-  ready: boolean;
   weekly: BoardRow[];
   allTime: BoardRow[];
 }
@@ -533,9 +511,6 @@ function daysBefore(date: string, days: number): string {
  * joins the cache key the response stops being shared. The feed is identical for
  * every player, so it is asked for on its own and the CDN answers it once per
  * WORDS_CACHE_SECONDS for all of them.
- *
- * Not behind the boards' opening gate, deliberately: the feed works from the
- * first day, and until the boards open it is the whole page.
  */
 async function handleWordsGet(params: URLSearchParams): Promise<Response> {
   // One puzzle and nothing else: the feed is about the drop the player is
@@ -579,33 +554,20 @@ async function handleGet(request: Request): Promise<Response> {
   // an error.
   const claimedPlayer = params.get("player") ?? "";
   const player = UUID_RE.test(claimedPlayer) ? claimedPlayer.toLowerCase() : null;
-  // Open for whoever has actually reached the date. Local calendars run ahead of
-  // and behind UTC by up to a day, so the later of the two is the one that says
-  // "it is Sunday somewhere the player is" -- a player is never made to wait past
-  // their own Sunday, and a client with a slow clock is not held back either.
-  const claimed = params.get("today") ?? "";
-  const playerToday = DATE_RE.test(claimed) ? claimed : utcToday();
-  // `preview=1` opens the gate early, for looking at the real boards before the
-  // day they go live -- a launch you cannot see until the morning it happens is
-  // one you cannot check. Safe to honour on request: the boards are built from
-  // scores players already published, so the most it can do is show a real
-  // leaderboard a few days early, and it changes nothing about what is counted
-  // or written. It is part of the URL, so a preview is cached apart from an
-  // ordinary open rather than poisoning it for everybody else.
-  const preview = params.get("preview") === "1";
-  const open =
-    preview || (playerToday > utcToday() ? playerToday : utcToday()) >= BOARDS_OPEN_FROM;
-
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
-    // One call for the gate, both boards and the words feed: they answer one
-    // question -- what should this page show right now -- and asking once means
-    // the player count can never disagree with the rows beside it.
+    // One call for both boards: they answer one question -- what should this page
+    // show right now -- and asking once means the two can never disagree.
     const result = await rpc<BoardsResult>("leaderboard_boards", {
       p_since: since,
       p_limit: limit,
-      p_open: open,
+      // There is no opening date any more, so the gate the function still carries
+      // is simply always open. Kept as a parameter rather than dropped from the
+      // signature: changing the argument list means dropping and recreating the
+      // function, which would break every request in flight during a deploy, for
+      // no behaviour this endpoint can see.
+      p_open: true,
       p_player: player,
       p_season_since: SEASON_START,
       p_season_until: SEASON_END,
@@ -616,8 +578,6 @@ async function handleGet(request: Request): Promise<Response> {
       200,
       {
         weekStart: since,
-        ready: Boolean(result?.ready),
-        opensOn: BOARDS_OPEN_FROM,
         weekly: weekly.entries,
         // Null whenever the asking player is on the board already, or did not
         // say who they are. The page shows this row under the board, so "null"

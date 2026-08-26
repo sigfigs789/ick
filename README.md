@@ -464,8 +464,8 @@ Row-level security is enabled on every table with no policies at all, so the
 
 Its own page at `/leaderboard` — a board is something you link a friend to, open
 in a second tab, and leave with the back button, none of which a modal can do.
-Two entry points from the game: a trophy in the header, which appears once the
-boards open, and a link under the results, which is there throughout. Routing is
+Two entry points from the game: a trophy in the header, which is there from the
+first day, and a link under the results. Routing is
 `src/routes.ts`, about forty lines of `pathname` and `pushState`, since
 `vercel.json` already rewrites every non-`/api/` path to `index.html`.
 
@@ -589,47 +589,31 @@ nothing afterwards can move it. Ordered by a word's *first* sighting, so a popul
 word stays where it landed and its count goes up, rather than jumping back to the
 top each time somebody else finds it.
 
-The feed is not behind the boards' opening date: a list of good words is
-interesting at any size, and until the boards open it is the whole page.
+A list of good words is interesting at any size, so the feed carries the page on
+a day when the boards are still thin.
 
-### Collected from the start, published on a date
+### Published from the first day
 
-Scores accumulate from the first day this ships; the weekly and season boards
-go live on **Sunday 2026-08-30** (`BOARDS_OPEN_FROM`), whatever the data looks
-like by then. Until that date the page names the day instead of showing a board.
+Scores accumulate from the first day this ships, and the boards show whatever
+there is: no opening date, no player threshold, no waiting room.
 
-A date rather than a player threshold, which is what this was first built as. The
-threshold was the cautious version of the same instinct — don't show a three-name
-board — but it makes the launch open-ended, and "six of ten players" is only a
-reason to come back if you believe the other four are coming. A Sunday, because
-that is when a week starts here, so the first published week is a whole one.
+Both were tried and both were the same instinct — don't show a three-name board.
+The threshold made the launch open-ended, since "six of ten players" is only a
+reason to come back if you believe the other four are coming. The date made it
+predictable but still made the page a notice about itself, and a leaderboard
+nobody can look at is one nobody can check. What makes a thin board safe to show
+is that the page is not only a board: the finds feed is there from the first word,
+and `backfillHistory` is retroactive, so whenever a player joins, every eligible
+day still in their browser goes up in one request.
 
-The gate is enforced in SQL, so before the date **no board row leaves the
-database at all** — there is no early board sitting in an API response waiting to
-be read out of a network tab. The recent-finds feed is deliberately outside it
-and works from day one, so the page is never empty while the boards wait.
+**The header's trophy is there from the start too**, with its "new" badge. An
+earlier version hid it until the leaderboard had *data*, which deadlocked the
+cold start: finds only appear once players join, and joining was only reachable
+through that button. "See the leaderboard" under a finished puzzle is the second
+way in, and either one spends the badge — its whole job is to say "there is
+something here you haven't seen", and both entry points lead to the same page.
 
-**The header's trophy waits for the same date**, and so does its "new" badge.
-Until then the leaderboard is a page naming a day it is not yet, which is not
-something to advertise in the header of every puzzle.
-
-An earlier version hid the trophy until the leaderboard had *data*, which
-deadlocked the cold start: finds only appear once players join, and joining was
-only reachable through that button. A date does not deadlock — it arrives whether
-or not the game is busy. Nor does waiting cost the boards anything, because
-`backfillHistory` is retroactive: whenever a player finally joins, every eligible
-day still in their browser goes up in one request, so somebody who first opens the
-page on the 30th brings their whole Season 1 history with them.
-
-"See the leaderboard" under a finished puzzle stays available throughout, so the
-page is reachable for anyone curious before it is announced.
-
-The badge is spent the first time it is followed, so an early visit through that
-link deliberately does *not* retire it — mark it seen before the boards exist and
-the players who showed up early are exactly the ones never told the boards had
-opened.
-
-### Before the boards open: run the migrations
+### Before the leaderboard ships: run the migrations
 
 The leaderboard is the one part of this game that does not degrade gracefully
 into working. With no schema on the project, `/api/leaderboard` answers 502 and
@@ -645,8 +629,7 @@ is a window rather than a scar. Words played during the window are still lost,
 since nothing queues a dropped write.
 
 So every migration in `supabase/migrations/` must be applied to the project
-*before* the leaderboard reaches players, and certainly before `BOARDS_OPEN_FROM`
-(2026-08-30). They are ordered and each depends on the one before it, so apply
+*before* the leaderboard reaches players. They are ordered and each depends on the one before it, so apply
 them all rather than picking the newest:
 
 ```

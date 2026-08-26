@@ -3,7 +3,6 @@ import {
   backfillHistory,
   fetchBoards,
   fetchFoundWords,
-  previewRequested,
   submitScore,
   syncHistory,
 } from "./leaderboard";
@@ -33,9 +32,6 @@ function posted(fetchMock: ReturnType<typeof stubFetch>) {
 
 beforeEach(() => {
   localStorage.clear();
-  // The preview switch is remembered for the tab (see previewRequested), so it
-  // has to be forgotten between tests like everything else stored.
-  sessionStorage.clear();
   window.history.replaceState(null, "", "/");
 });
 
@@ -265,7 +261,7 @@ describe("reading the boards", () => {
 
   /** A board response with whatever the test cares about laid over it. */
   function boardsResponse(body: Record<string, unknown>) {
-    return new Response(JSON.stringify({ ready: true, weekly: [], allTime: [], ...body }), {
+    return new Response(JSON.stringify({ weekly: [], allTime: [], ...body }), {
       status: 200,
       headers: { "content-type": "application/json" },
     });
@@ -281,35 +277,6 @@ describe("reading the boards", () => {
     // still knows where everybody stands.
     expect(url).toContain("limit=15");
     expect(url).toContain(`player=${playerId}`);
-  });
-
-  it("asks the server to open the boards early when the URL says preview", async () => {
-    window.history.replaceState(null, "", "/leaderboard?preview=1");
-    const fetchMock = stubFetch(boardsResponse({}));
-
-    await fetchBoards("2026-08-27");
-    // The gate is the server's, so previewing is something this request asks
-    // for rather than something the page does with the answer.
-    expect(requestedUrl(fetchMock)).toContain("preview=1");
-  });
-
-  it("asks for no preview on an ordinary open", async () => {
-    const fetchMock = stubFetch(boardsResponse({}));
-
-    await fetchBoards("2026-08-27");
-    expect(requestedUrl(fetchMock)).not.toContain("preview=");
-  });
-
-  it("keeps previewing after a navigation that drops the query string", async () => {
-    window.history.replaceState(null, "", "/?preview=1");
-    expect(previewRequested()).toBe(true);
-    // What `navigate` leaves in the address bar: a bare path. The preview has to
-    // survive it, or tapping through from the game would end it.
-    window.history.replaceState(null, "", "/leaderboard");
-    const fetchMock = stubFetch(boardsResponse({}));
-
-    await fetchBoards("2026-08-27");
-    expect(requestedUrl(fetchMock)).toContain("preview=1");
   });
 
   it("asks anonymously when nobody has joined on this browser", async () => {
@@ -361,7 +328,6 @@ describe("reading the boards", () => {
       new Response(
         JSON.stringify({
           weekStart: "2026-08-23",
-          ready: true,
           weekly: [
             { rank: 1, playerId: "a", windowWord: "quixotic", windowZipf: 2.33, score: 40, puzzles: 5 },
             { rank: 2, playerId: "b", windowWord: "inkling", windowZipf: 2.9, score: 20, puzzles: 3 },
@@ -376,7 +342,6 @@ describe("reading the boards", () => {
 
     const boards = await fetchBoards("2026-08-27");
     expect(boards.weekStart).toBe("2026-08-23");
-    expect(boards.ready).toBe(true);
     // The ranks come from the database, which did the sorting; nothing is
     // re-sorted here, so what the player sees is always what it ranked. Names
     // are derived from the player id rather than sent.
@@ -391,7 +356,6 @@ describe("reading the boards", () => {
     stubFetch(
       new Response(
         JSON.stringify({
-          ready: true,
           weekly: [
             { rank: 1, playerId: "a", windowWord: "asphyxiate", windowZipf: 2.09, score: 40 },
             { windowWord: "noid", score: 10 },
@@ -413,24 +377,6 @@ describe("reading the boards", () => {
     ]);
     expect(boards.allTime).toEqual([]);
     expect(boards.weekly[0]).toMatchObject({ windowWord: "asphyxiate", puzzles: 0 });
-  });
-
-  it("holds the boards back unless the server says they are published", async () => {
-    stubFetch(
-      new Response(
-        JSON.stringify({
-          opensOn: "2026-08-30",
-          // Rows with no `ready` flag beside them: the client shows nothing.
-          weekly: [{ rank: 1, playerId: "a", windowWord: "asphyxiate", windowZipf: 2.09, score: 40 }],
-          allTime: [],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } }
-      )
-    );
-
-    const boards = await fetchBoards("2026-08-27");
-    expect(boards.ready).toBe(false);
-    expect(boards.opensOn).toBe("2026-08-30");
   });
 
   it("falls back to the requested week when the server echoes nothing", async () => {
@@ -662,7 +608,7 @@ describe("asking for the list by hand", () => {
   });
 
   it("busts the boards too, since a refresh refreshes the page", async () => {
-    const fetchMock = stubFetch(new Response(JSON.stringify({ ready: false }), { status: 200 }));
+    const fetchMock = stubFetch(new Response(JSON.stringify({ weekly: [], allTime: [] }), { status: 200 }));
 
     await fetchBoards("2026-08-25", { fresh: true });
 

@@ -11,7 +11,7 @@ import {
   type FoundWord,
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
-import { formatDateLabel, todayDateString } from "../game/date";
+import { todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -270,8 +270,6 @@ export function LeaderboardPage() {
     window.setTimeout(() => setRefreshing(false), 600);
   }, [refreshBoards, refreshWords]);
 
-  const ready = boards?.ready ?? false;
-
   return (
     <div className="app leaderboard-page">
       <header className="app__header">
@@ -330,9 +328,7 @@ export function LeaderboardPage() {
           </div>
         )}
 
-        {state === "ready" && !ready && boards && <NotYet opensOn={boards.opensOn} />}
-
-        {state === "ready" && ready && boards && (
+        {state === "ready" && boards && (
           <>
             {/* The one rule both boards run on, stated before them rather than
                 after: it is the condition a score has to meet to be on either
@@ -466,34 +462,6 @@ function FoundWords({
           </li>
         ))}
       </ul>
-    </section>
-  );
-}
-
-/**
- * What the page says before the boards open.
- *
- * A date, not a target. The earlier version counted players toward a threshold,
- * which was honest but open-ended -- "six of ten" is a good reason to come back
- * only if you believe the other four are coming. A day of the week is something
- * a player can plan around, and it arrives whether or not the game is busy.
- *
- * The finds feed is above this and keeps working throughout, so the page is
- * never empty while the boards wait.
- */
-function NotYet({ opensOn }: { opensOn: string }) {
-  const opens = new Date(`${opensOn}T00:00:00`);
-  const weekday = opens.toLocaleDateString(undefined, { weekday: "long" });
-  return (
-    <section className="leaderboard__not-yet" aria-label="Leaderboard status">
-      <p className="leaderboard__not-yet-count">
-        Boards open <strong>{weekday}</strong>
-      </p>
-      <p className="leaderboard__not-yet-copy">
-        The weekly and season boards go live on {formatDateLabel(opensOn)}. Scores are
-        already being counted, including yours, so nothing you play between now and then is
-        lost.
-      </p>
     </section>
   );
 }
