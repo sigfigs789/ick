@@ -132,7 +132,20 @@ describe("the leaderboard page", () => {
     const board = screen.getByRole("region", { name: SEASON_BOARD });
     expect(board).toHaveTextContent("Season 1");
     expect(board).toHaveTextContent("Aug 10 – Dec 31 2026");
-    expect(board).toHaveTextContent("Must be completed the day of the puzzle.");
+  });
+
+  it("puts the rule that governs both boards under both of them", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // It used to be a caption on the season, where it read as something
+    // peculiar to that board. It is not: the weekly board only counts a puzzle
+    // played on its own day either, so it belongs to the pair.
+    await waitFor(() =>
+      expect(screen.getByText("Must be scored on the day of the drop")).toBeInTheDocument()
+    );
+    const season = screen.getByRole("region", { name: SEASON_BOARD });
+    expect(season).not.toHaveTextContent("Must be scored on the day of the drop");
   });
 
   it("says when the weekly board turns over, and no more than that", async () => {

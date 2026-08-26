@@ -1423,8 +1423,10 @@ h2 {
    ranking. */
 .found-words {
   margin-top: 2.4rem;
-  padding-top: 1.8rem;
-  border-top: 2px solid var(--border);
+  padding-top: 1.9rem;
+  /* The same rule the boards are separated by, since this is the same kind of
+     boundary: one section of the page ending and another starting. */
+  border-top: 2px solid var(--border-strong);
 }
 /* One column, like the boards. Two columns of words next to two boards of words
    was the layout that made a find hard to tell from a player. */
@@ -1604,9 +1606,13 @@ h2 {
 .leaderboard__board {
   min-width: 0;
 }
+/* The line between one board and the next has to outrank the lines between the
+   rows inside them, or the page reads as one long list with headings loose in
+   it. Two pixels of the stronger border against the rows' one of the plain one,
+   and more room around it: weight and space saying the same thing. */
 .leaderboard__board + .leaderboard__board {
-  padding-top: 1.4rem;
-  border-top: 1px solid var(--border);
+  padding-top: 1.9rem;
+  border-top: 2px solid var(--border-strong);
 }
 .leaderboard__board-heading {
   margin: 0;
@@ -1675,6 +1681,21 @@ h2 {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   border-bottom: 1px solid var(--border);
+}
+/* The footnote under both boards: the one rule that governs them. A list rather
+   than a sentence because it is a rule, and because there may well be a second
+   one -- a bullet is the shape that takes another without being rewritten. */
+.leaderboard__rules {
+  margin: 1.1rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+/* A board with no caption -- the season, since its one rule moved to the
+   footnote -- would otherwise sit its column header hard under the heading. */
+.leaderboard__board-heading + .leaderboard__columns {
+  margin-top: 0.6rem;
 }
 .leaderboard__list {
   list-style: none;

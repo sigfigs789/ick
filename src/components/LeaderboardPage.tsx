@@ -260,12 +260,19 @@ export function LeaderboardPage() {
               // "Season 1" means, and a season with no dates on it is a word
               // rather than a window.
               headingDetail={seasonRange()}
-              caption="Must be completed the day of the puzzle."
               entries={boards.allTime}
               self={boards.allTimeSelf}
               emptyMessage="No scores yet."
               playerId={playerId}
             />
+            {/* The rule that governs both boards, said once underneath them
+                rather than as a caption on one. It was under Season 1, where it
+                read as something peculiar to the season -- it is not: the whole
+                leaderboard only ever counts a puzzle played on its own day, the
+                weekly board included. A footnote to the pair is what it is. */}
+            <ul className="leaderboard__rules">
+              <li>Must be scored on the day of the drop</li>
+            </ul>
           </div>
         )}
 
@@ -410,7 +417,8 @@ interface BoardProps {
   heading: string;
   /** A note beside the heading, set smaller -- the season's dates. */
   headingDetail?: string;
-  caption: string;
+  /** The line under the heading, for a board that needs one. */
+  caption?: string;
   entries: BoardEntry[];
   /** This player's own row, when they rank below the last one shown. */
   self: BoardEntry | null;
@@ -444,7 +452,7 @@ function Board({
         {heading}
         {headingDetail && <span className="leaderboard__board-dates">{headingDetail}</span>}
       </h2>
-      <p className="leaderboard__caption">{caption}</p>
+      {caption && <p className="leaderboard__caption">{caption}</p>}
       {entries.length === 0 ? (
         <p className="leaderboard__status">{emptyMessage}</p>
       ) : (
