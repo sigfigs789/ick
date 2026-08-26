@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RarityBadge } from "./RarityBadge";
 import {
-  backfillHistory,
   fetchBoards,
   fetchFoundWords,
   type FetchOptions,
@@ -11,11 +10,10 @@ import {
   type Boards,
   type FoundWord,
 } from "../game/leaderboard";
-import { joinBoard, loadPlayerId } from "../game/player";
+import { loadPlayerId } from "../game/player";
 import { formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
-import { trackLeaderboardJoined } from "../analytics";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
 
 type LoadState = "loading" | "ready" | "error";
@@ -83,9 +81,14 @@ export function LeaderboardPage() {
    * the whole list to a new drop mid-poll, under a reader who never asked for it.
    */
   const [today] = useState(todayDateString);
-  const [playerId, setPlayerId] = useState<string | null>(() => loadPlayerId());
-  /** Days imported from this browser's history on joining, for one message. */
-  const [imported, setImported] = useState<number | null>(null);
+  /**
+   * Who the boards should call "you".
+   *
+   * Read once, on the way in: the id is minted before this page renders (see
+   * src/Root.tsx) and never changes afterwards, so there is nothing here to
+   * keep in state.
+   */
+  const playerId = loadPlayerId();
   /**
    * When the boards on screen were last read, so a return to the tab can tell a
    * page that has been sitting there for an hour from one glanced away from.
@@ -150,34 +153,16 @@ export function LeaderboardPage() {
 
 
   /**
-   * Opening this page is the joining.
+   * Nothing to join here any more.
    *
-   * There used to be a button and a paragraph under it explaining that there is
-   * no account, no email and no name to invent. All of that is still true, and
-   * none of it needed saying: somebody who has opened the leaderboard has said
-   * what they wanted, and asking them to say it again with a tap was a step that
-   * only ever stood between a player and their own row.
-   *
-   * So the id is minted here, on the first visit, and the browser's history goes
-   * up with it. The trade is worth stating plainly: a player who opens this page
-   * to look at other people's scores is now on the board themselves, where
-   * before they had to ask for it. What goes up is what the board shows -- an
-   * id this browser made up, and the words they found -- and nothing about it
-   * reaches back into the game, so the cost of being wrong about somebody's
-   * intent is a row with their own handle on it.
+   * The id is minted on opening the app, whichever page that is, and the
+   * browser's history goes up with it (see src/Root.tsx) -- so by the time
+   * anybody reaches this page they are already a player, and the join that used
+   * to live here could never fire. Dropped rather than kept as a fallback: a
+   * second place that mints ids is a second thing to keep true, on a path that
+   * no longer exists.
    */
   useEffect(() => {
-    if (!loadPlayerId()) {
-      const id = joinBoard();
-      if (id) {
-        setPlayerId(id);
-        trackLeaderboardJoined(false);
-        // Joining brings your history with you: every puzzle this browser can
-        // show was played on its own day goes up in one request, so a player who
-        // has been at this for weeks doesn't start from zero.
-        setImported(backfillHistory(id));
-      }
-    }
     load();
   }, [load]);
 
@@ -397,24 +382,6 @@ export function LeaderboardPage() {
             above it, never a reason to hide finds that arrived perfectly well. */}
         {words.length > 0 && (
           <FoundWords words={words} today={today} arrived={arrived} />
-        )}
-
-        {/* Nothing standing to say: their own row is marked on the boards, which
-            is where they would look for themselves anyway. The one message worth
-            showing is where the history on a brand new row came from, and it
-            goes away with the next load.
-
-            Only when there was history. A player who joins with nothing used to
-            be told "nothing to count yet", which announced an absence they had
-            not asked about -- the reply to a question nobody put. Their empty
-            row is on the boards either way, and the first puzzle they score
-            fills it without anything here having promised so. */}
-        {playerId && imported !== null && imported > 0 && (
-          <p className="leaderboard__note leaderboard__note--playing" aria-live="polite">
-            {/* Not "past" puzzles: today counts too when it has been played, and
-                it usually has by the time anyone opens this page. */}
-            {`Counted ${imported} ${imported === 1 ? "puzzle" : "puzzles"} you'd already played.`}
-          </p>
         )}
 
         <button type="button" className="leaderboard-page__back" onClick={() => navigate("game")}>

@@ -2,15 +2,22 @@
  * Who the leaderboard thinks you are.
  *
  * There are no accounts in this game and this does not add any. The browser
- * mints a random id the first time somebody opens the leaderboard and keeps it
- * in localStorage. Nothing is sent anywhere until that happens, so a player who
- * never opens that page never appears on the board and never has a row written
- * for them.
+ * mints a random id the first time somebody opens the app and keeps it in
+ * localStorage (see src/Root.tsx, which does the minting).
  *
- * That used to be a button ("Put me on the board") rather than the visit itself.
- * The tap was doing no work: opening a leaderboard says what somebody wanted,
- * and what goes up is an id this browser invented and the words they found --
- * nothing to consent to that isn't already on the screen they asked for.
+ * Where that happens has moved twice, each time toward less ceremony. It was a
+ * button ("Put me on the board"), then the leaderboard visit itself, and now
+ * opening the app at all. The reason for the last move is that the earlier
+ * ones lost data that had already been earned: a player with no id submits
+ * nothing, so somebody who played every day and never tapped the trophy left no
+ * trace on the board or in the finds feed, and their whole record hung on a
+ * page they had no particular reason to open.
+ *
+ * The trade is worth stating rather than papering over: every player is on the
+ * board now, including one who would not have chosen it. What is stored and
+ * sent is an id this browser invented and the words they found -- both of which
+ * the leaderboard already shows to everybody -- and none of it reaches back
+ * into the game.
  *
  * There is no name to choose. What the board calls a player is derived from this
  * id (see game/handle.ts), so the id is the whole of the stored identity --
@@ -71,7 +78,9 @@ export function hasJoined(): boolean {
 
 /**
  * Join the board, minting an id if there isn't one. Idempotent: joining twice
- * keeps the first id, so a player's whole history stays under one identity.
+ * keeps the first id, so a player's whole history stays under one identity --
+ * which is what lets the caller run it on every open rather than having to know
+ * whether this browser has been here before.
  */
 export function joinBoard(): string | null {
   const existing = loadPlayerId();

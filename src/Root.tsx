@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
 import App from "./App";
+import { trackLeaderboardJoined } from "./analytics";
 import { LeaderboardPage } from "./components/LeaderboardPage";
 import { syncHistory } from "./game/leaderboard";
-import { hasJoined } from "./game/player";
+import { hasJoined, joinBoard } from "./game/player";
 import { useRoute } from "./routes";
 
 /**
@@ -21,36 +22,59 @@ export function Root() {
   const route = useRoute();
 
   /**
-   * Bring a player who is already on the board up to date, whichever page they
-   * opened.
+   * Give this browser a board identity, on any page, before anything renders.
    *
-   * Their rows are written as they play, one request per accepted word, and any
-   * of those can fail to land -- a subway tunnel, a tab closed on the last word,
-   * a five-hundred from the endpoint. Nothing retried them: the only other path
-   * that sends a whole history ran on joining, once, so a player who joined in
-   * August and lost a day in September stayed missing that day forever.
+   * Playing is the joining. It used to be opening the leaderboard: that page
+   * minted the id, and nothing left the browser until somebody went there -- so
+   * a player could find a dozen good words and have none of them reach the
+   * board or the finds feed, because the whole record of a day's play hung on
+   * whether anyone had tapped a trophy.
    *
-   * Read before any child effect can run (a ref initialiser is render-time,
-   * child effects are not), so a player who joins by opening the leaderboard on
-   * this very load is not synced twice -- that page's own join already sends
-   * their history, and this would send the same request behind it.
+   * What the id *is* has not changed: a UUID this browser invents (see
+   * game/player.ts), kept in localStorage and sent with scores. No account, no
+   * email, nothing typed, nothing about the person -- the name on the board is
+   * computed from the id itself. The trade is worth stating plainly: a player
+   * who never opens the leaderboard is now on it, where before they were not.
+   * What goes up is exactly what that page shows, and none of it reaches back
+   * into the game.
    *
-   * Once per load, not per route change: the two pages share this mount, and
-   * repairing the same history again on a tap through to the leaderboard would
-   * be a second identical request for nothing.
+   * Minted during render rather than in the effect below, which is the one
+   * unusual thing here and is load-bearing: child effects run *before* a
+   * parent's, so a player landing straight on /leaderboard would have that page
+   * read the id, find none, and ask for boards without saying who was asking.
+   * Doing it here puts the id in place before any child renders. Safe to run
+   * twice (StrictMode does): `joinBoard` keeps the first id and returns it.
    */
-  const joinedOnOpen = useRef(hasJoined());
+  const joinedBefore = useRef(hasJoined());
+  const playerId = useRef<string | null>(null);
+  if (playerId.current === null) playerId.current = joinBoard();
+
   /**
    * When this browser last sent its history, so a return can tell a tab that
    * has been away from one that never left.
-   *
-   * Stamped on mount whether or not anything was sent, because the load itself
-   * is the reference point either way: either the sync below ran, or the
-   * leaderboard's own join did, or there was nothing on this browser to send.
    */
   const syncedAt = useRef(0);
+
+  /**
+   * Send what this browser knows, every open -- not only on the first mint.
+   *
+   * Rows are written as the player plays, one request per accepted word, and
+   * any of those can fail to land: a tunnel, a tab closed on the last word, a
+   * five-hundred from the endpoint. Nothing retried them. The per-day write is
+   * monotonic, so re-sending is a repair rather than a rewrite -- a day already
+   * recorded is a no-op, and only the gaps land.
+   *
+   * That covers all three ages of a player's record at once: the days they
+   * played before this browser had an id at all, whatever is already stored for
+   * today, and -- through `submitScore` on the play path -- each word as it is
+   * accepted from here on.
+   */
   useEffect(() => {
-    if (joinedOnOpen.current) syncHistory();
+    // Reported for the browser that just became a player, and not on the opens
+    // after it: the first one is the interesting moment, and firing on every
+    // load would turn the event into a visit count that already exists.
+    if (!joinedBefore.current && playerId.current) trackLeaderboardJoined(false);
+    syncHistory();
     syncedAt.current = Date.now();
   }, []);
 
@@ -67,14 +91,13 @@ export function Root() {
    * with `persisted`, which does not remount React either). The same pair
    * useForceUpdate watches, for the same reason: these are the moments a tab
    * that has been sitting somewhere actually resurfaces.
-   *
-   * Joining is re-read rather than remembered, so a player who joined on the
-   * leaderboard earlier in this same session is kept in step from then on --
-   * while a browser that still has not joined goes on sending nothing.
    */
   useEffect(() => {
     const sync = () => {
       if (Date.now() - syncedAt.current < SYNC_STALE_MS) return;
+      // Re-read rather than trusted from mount: a browser that could not store
+      // an id (private mode, storage off) is not a player, and never becomes
+      // one by coming back to the tab.
       if (!hasJoined()) return;
       syncHistory();
       syncedAt.current = Date.now();
