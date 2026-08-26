@@ -1748,7 +1748,7 @@ h2 {
    cleanly at five looks like a list of five, and overlay scrollbars only appear
    once you are already scrolling -- so the half-row is what says there is more.
    `contain` keeps a flick inside the board from carrying on into the page. */
-.leaderboard__list:not(.leaderboard__list--self) {
+.leaderboard__list {
   max-height: calc(var(--row-height) * 5 + 0.95rem);
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1793,10 +1793,11 @@ h2 {
  * the fold, in the flow when it scrolls into view, and docked to the top if the
  * reader scrolls on past it. The top of the board stays the top either way.
  *
- * Only inside the scrolling list: the row below the cut is its own list and
- * already sits outside the scroll box, where nothing can scroll it away.
+ * This covers the row below the cut too, which is last in the same list after
+ * the gap: one rule, so the answer to "where am I" is the same shape at rank 6
+ * and at rank 61.
  */
-.leaderboard__list:not(.leaderboard__list--self) .leaderboard__row--you {
+.leaderboard__list .leaderboard__row--you {
   position: sticky;
   top: 0;
   bottom: 0;
@@ -1812,8 +1813,10 @@ h2 {
     0 0 0 1px var(--border-strong),
     var(--dock-shadow);
 }
-/* The break between the top fifteen and the player's own row below it. Three
-   dots and nothing else: the gap is the message. */
+/* The break between the top fifteen and the player's own row after it. Three
+   dots and nothing else: the gap is the message. It scrolls with the list, so
+   it passes under the docked row and reappears above it at the very bottom --
+   which is where the jump in rank actually needs explaining. */
 .leaderboard__gap {
   /* Clear of the last row above it, and of the row below. */
   margin: 0.35rem 0 0.3rem;
@@ -1823,9 +1826,6 @@ h2 {
   letter-spacing: 0.1em;
   text-align: center;
 }
-/* The row below the cut is its own list so it can carry its own start number --
-   the real rank, which is the whole reason it was sent. Nothing to undo here any
-   more now that the board above it is a plain list. */
 .leaderboard__rank {
   grid-area: rank;
   color: var(--fg-faint);

@@ -329,8 +329,8 @@ describe("the leaderboard page", () => {
     });
     render(<LeaderboardPage />);
 
-    // Under the board rather than in it: the top stays the top, and the player
-    // still gets an answer to "where am I".
+    // Last in the board's own list, docked to the bottom of it: the top stays
+    // the top, and the player still gets an answer to "where am I".
     await waitFor(() => expect(boardRows("This week")).toHaveLength(3));
     const mine = boardRows("This week")[2];
     // The real rank, not a position inside what fits on screen.
