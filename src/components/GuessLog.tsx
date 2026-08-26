@@ -76,12 +76,17 @@ export function GuessLog({
             //
             // "common form" rather than "base word", because the fold does not
             // only run toward bases. It takes the most common word in the
-            // family, which may be one built *on* the word ("infatuate" scores
-            // as "infatuated", "neolith" as "neolithic") or a cousin reached
-            // through the chain ("overbake" as "baking"). 5,345 of the words
-            // carrying this note name something that is not a base of theirs by
-            // any reading, and calling a plural the base word of its own
-            // singular reads as the bug it is meant to explain away.
+            // family, which may be a sibling ("abandoner" scores as
+            // "abandoned") or a cousin reached through the chain ("precautioned"
+            // as "caution"). 27,220 of the words carrying this note name
+            // something that is not a base of theirs by any reading, and calling
+            // a plural the base word of its own singular reads as the bug it is
+            // meant to explain away.
+            //
+            // Words scored on a *longer* form get no note at all (see
+            // baseFormRankDrop): naming a word the player would have had to
+            // build up to reads as a correction of the find rather than an
+            // explanation of the badge.
             const baseNote = baseFormRankDrop(w.word, date);
             return (
               <li key={w.word} className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}>
