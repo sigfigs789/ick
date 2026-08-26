@@ -11,7 +11,7 @@ import {
   type FoundWord,
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
-import { todayDateString } from "../game/date";
+import { previousMonthName, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -356,6 +356,11 @@ export function LeaderboardPage() {
                 self={boards.weeklySelf}
                 emptyMessage="Nobody's scored yet this week. Be first."
                 playerId={playerId}
+                // Who took the week this one replaced. Under the board rather
+                // than in it: they are not competing in this week, and a row
+                // among the live ones would read as though they were.
+                champion={boards.lastWeek}
+                championLabel="Last week's champion"
               />
               <Board
                 heading={seasonName()}
@@ -367,6 +372,11 @@ export function LeaderboardPage() {
                 self={boards.allTimeSelf}
                 emptyMessage="No scores yet."
                 playerId={playerId}
+                // The season has no completed season behind it to report on, so
+                // the month is what this board's closed window is: long enough
+                // to be an achievement, and it does finish.
+                champion={boards.lastMonth}
+                championLabel={`${previousMonthName(today)}'s champion`}
               />
             </div>
           </>
@@ -475,6 +485,10 @@ interface BoardProps {
   self: BoardEntry | null;
   emptyMessage: string;
   playerId: string | null;
+  /** Who won this board's last completed window, when anybody did. */
+  champion?: BoardEntry | null;
+  /** What that window was: "Last week's champion", "July's champion". */
+  championLabel?: string;
 }
 
 /**
@@ -495,6 +509,8 @@ function Board({
   self,
   emptyMessage,
   playerId,
+  champion,
+  championLabel,
 }: BoardProps) {
   return (
     <section className="leaderboard__board" aria-label={heading}>
@@ -548,7 +564,44 @@ function Board({
           )}
         </>
       )}
+      {/* Outside the empty check on purpose: a board with nobody on it yet is
+          exactly when last week's winner is the only thing there is to show,
+          and the week that just ended is the reason this week's is empty. */}
+      {champion && championLabel && <Champion entry={champion} label={championLabel} />}
     </section>
+  );
+}
+
+/**
+ * The winner of the window this board just left behind.
+ *
+ * Both boards above are windows that move: "this week" resets under the reader
+ * every Sunday and the season runs to New Year, so a week somebody won used to
+ * disappear at midnight with nothing anywhere to say it happened. This is the
+ * standing record of it -- the one name, the score it took, and which window.
+ *
+ * Dressed differently from a row, and not for decoration: it is the one line on
+ * the page about a result that is *final*, where everything above it is a
+ * standing that will have moved by tomorrow. The trophy and the gold say
+ * "finished" in the shortest way available, and set it apart from the live rows
+ * it sits under so nobody reads it as sixteenth place.
+ */
+function Champion({ entry, label }: { entry: BoardEntry; label: string }) {
+  return (
+    <p className="leaderboard__champion">
+      <span className="leaderboard__champion-trophy" aria-hidden="true">
+        🏆
+      </span>
+      <span className="leaderboard__champion-label">{label}</span>
+      <span className="leaderboard__champion-name">{entry.name}</span>
+      <span className="leaderboard__champion-score">
+        {entry.score.toFixed(1)}
+        {/* The number is labelled once for a reader who cannot see the column
+            it lines up under -- the boards' own "Total score" header is above
+            the rows, not above this. */}
+        <span className="sr-only"> total score</span>
+      </span>
+    </p>
   );
 }
 

@@ -2,7 +2,8 @@
 // boards, and takes the score submissions that fill them.
 //
 // GET /api/leaderboard?since=YYYY-MM-DD&limit=15&player=UUID
-//   -> { weekStart, weekly: [...], weeklySelf, allTime: [...], allTimeSelf }
+//   -> { weekStart, weekly: [...], weeklySelf, allTime: [...], allTimeSelf,
+//        lastWeek, lastMonth }
 //   The weekly board counts puzzles from `since` onward; the second counts the
 //   season, which is a fixed range this file holds (SEASON_START / SEASON_END)
 //   rather than anything the caller can move. `since` does come from the client,
@@ -16,6 +17,12 @@
 //   `allTimeSelf`, carrying the rank they actually hold rather than a position
 //   inside the fifteen. When they are on the board -- or did not say who they
 //   are -- those are null, because the row is already up there.
+//
+//   `lastWeek` and `lastMonth` are the players who topped the last *completed*
+//   window under each board: the seven days before `since`, and the calendar
+//   month before `today`. Both are ordinary board rows (rank 1), or null when
+//   nobody scored inside the window. They are what keeps a win from evaporating
+//   when the window it happened in moves on.
 //
 // GET /api/leaderboard?words=1&today=YYYY-MM-DD
 //   -> { words: [...] }
@@ -214,6 +221,10 @@ interface WordEntry {
 interface BoardsResult {
   weekly: BoardRow[];
   allTime: BoardRow[];
+  /** Who topped the week before this one, or null if nobody scored in it. */
+  lastWeek: BoardRow | null;
+  /** The same for the calendar month before the asking player's own. */
+  lastMonth: BoardRow | null;
 }
 
 /**
@@ -273,6 +284,12 @@ function toEntry(row: BoardRow, index: number): BoardEntry {
     score: toNumber(row.total_score),
     puzzles: Number(row.puzzles) || 0,
   };
+}
+
+/** One champion row, or null when the window had no scores in it at all. */
+function toChampion(row: BoardRow | null | undefined): BoardEntry | null {
+  if (!row || typeof row !== "object") return null;
+  return toEntry(row, 0);
 }
 
 /**
@@ -502,6 +519,27 @@ function daysBefore(date: string, days: number): string {
 }
 
 /**
+ * The calendar month before the one `date` falls in, as [first, last].
+ *
+ * Taken from the asking player's own date rather than from UTC, for the same
+ * reason the week is: a month boundary should turn over at the reader's
+ * midnight, not at somebody else's. Done on the date's own numbers rather than
+ * with Date arithmetic, so December stepping back to November of the year
+ * before is the ordinary case rather than a wrap to watch for.
+ */
+function previousMonth(date: string): { since: string; until: string } {
+  const year = Number(date.slice(0, 4));
+  const month = Number(date.slice(5, 7));
+  const prevYear = month === 1 ? year - 1 : year;
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const first = `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`;
+  // The day before the first of *this* month, which is the last of the previous
+  // one without needing to know how long any month is.
+  const last = daysBefore(`${year}-${String(month).padStart(2, "0")}-01`, 1);
+  return { since: first, until: last };
+}
+
+/**
  * Today's finds, cached for everybody at once.
  *
  * Reads `leaderboard_words` directly rather than going through
@@ -554,6 +592,13 @@ async function handleGet(request: Request): Promise<Response> {
   // an error.
   const claimedPlayer = params.get("player") ?? "";
   const player = UUID_RE.test(claimedPlayer) ? claimedPlayer.toLowerCase() : null;
+  // The month the champion line under the season board reports on: the one
+  // before the reader's own. `since` is a Sunday, so it cannot be asked which
+  // month it is in -- the Sunday bracketing the 1st belongs to the month before
+  // -- and the puzzle date the client sends can. Falling back to UTC's day is
+  // the same fallback the finds feed makes when no date arrives.
+  const claimedToday = params.get("today") ?? "";
+  const month = previousMonth(validPuzzleDate(claimedToday) ? claimedToday : utcToday());
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
@@ -571,6 +616,8 @@ async function handleGet(request: Request): Promise<Response> {
       p_player: player,
       p_season_since: SEASON_START,
       p_season_until: SEASON_END,
+      p_month_since: month.since,
+      p_month_until: month.until,
     });
     const weekly = toBoard(result?.weekly ?? null, limit);
     const allTime = toBoard(result?.allTime ?? null, limit);
@@ -585,6 +632,11 @@ async function handleGet(request: Request): Promise<Response> {
         weeklySelf: weekly.self,
         allTime: allTime.entries,
         allTimeSelf: allTime.self,
+        // The two closed windows, each under the live board it followed. Null
+        // when nobody scored in one -- a month before the game existed, or a
+        // first week -- which the page renders as no line at all.
+        lastWeek: toChampion(result?.lastWeek),
+        lastMonth: toChampion(result?.lastMonth),
       },
       // A minute: long enough that a burst of opens costs one query, short
       // enough that a player who just scored sees themselves move.

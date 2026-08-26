@@ -1868,6 +1868,73 @@ h2 {
   font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
+/*
+ * The champion line under a board: who took the window that just closed.
+ *
+ * Deliberately not a row. Everything above it is a live standing that will have
+ * moved by tomorrow; this is the one line on the page about a result that is
+ * final, and it sits under a board it is not competing in. So it gets its own
+ * shape -- a plaque rather than a row -- and the gold the crowned best word
+ * already uses elsewhere in the app, which is the shortest way to say "won"
+ * without a sentence.
+ *
+ * The trophy spans both lines on the left; the window it belongs to sits over
+ * the name, and the score keeps the right edge the rows above it use, so the
+ * eye still reads down one column of numbers.
+ */
+.leaderboard__champion {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "trophy label score"
+    "trophy name  score";
+  align-items: center;
+  column-gap: 0.6rem;
+  margin: 0.7rem 0 0;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--best-word-accent) 55%, transparent);
+  border-radius: 0.6rem;
+  /* A shallow sheen across the plaque rather than a flat fill: enough to read as
+     metal at a glance, not enough to fight the text on it. */
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--best-word-bg) 92%, var(--best-word-accent)) 0%,
+    var(--best-word-bg) 55%,
+    color-mix(in srgb, var(--best-word-bg) 92%, var(--best-word-accent)) 100%
+  );
+}
+.leaderboard__champion-trophy {
+  grid-area: trophy;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+.leaderboard__champion-label {
+  grid-area: label;
+  color: color-mix(in srgb, var(--fg) 62%, var(--best-word-accent));
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+/* The name is the point of the line, so it is set at the display face and a
+   step above a board row -- a winner reads as a winner before anything else on
+   the plaque does. Wrapping for the same reason a row's name wraps: the word is
+   the identity, and a truncated one is worse than a second line. */
+.leaderboard__champion-name {
+  grid-area: name;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 900;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.leaderboard__champion-score {
+  grid-area: score;
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
 .leaderboard__note {
   margin: 0.55rem 0 0;
   color: var(--fg-muted);

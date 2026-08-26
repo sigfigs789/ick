@@ -5,6 +5,7 @@ import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard } from "../game/player";
 import { handleFor } from "../game/handle";
 import { seasonName } from "../game/leaderboard";
+import { previousMonthName, todayDateString } from "../game/date";
 
 // No names come from the server: the client derives a handle from each player
 // id, so the same player is recognisable on both boards without anything being
@@ -117,6 +118,66 @@ describe("the leaderboard page", () => {
     // A different order from the weekly board, which is the point of both.
     expect(allTime[0]).toHaveTextContent(handleFor(BOB));
     expect(allTime[0]).toHaveTextContent("310.5");
+  });
+
+  it("names last week's champion under the weekly board, and last month's under the season", async () => {
+    stubFetch({
+      ...OPEN,
+      lastWeek: { rank: 1, playerId: BOB, windowWord: "wrinkle", windowZipf: 3.31, score: 61.2, puzzles: 7 },
+      lastMonth: { rank: 1, playerId: CAROL, windowWord: "abaci", windowZipf: 2.65, score: 214.8, puzzles: 28 },
+    });
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    // Both boards above are windows that move -- this week resets on Sunday --
+    // so the closed window's winner is the only record anywhere that they won.
+    const weekly = screen.getByRole("region", { name: "This week" });
+    expect(weekly).toHaveTextContent("Last week's champion");
+    expect(weekly).toHaveTextContent(handleFor(BOB));
+    expect(weekly).toHaveTextContent("61.2");
+
+    const season = screen.getByRole("region", { name: SEASON_BOARD });
+    // Named by month rather than dated: "July's champion" places instantly.
+    expect(season).toHaveTextContent(`${previousMonthName(todayDateString())}'s champion`);
+    expect(season).toHaveTextContent(handleFor(CAROL));
+    expect(season).toHaveTextContent("214.8");
+  });
+
+  it("keeps a champion out of the ranked rows they are not competing in", async () => {
+    stubFetch({
+      ...OPEN,
+      lastWeek: { rank: 1, playerId: BOB, windowWord: "wrinkle", windowZipf: 3.31, score: 61.2, puzzles: 7 },
+    });
+    render(<LeaderboardPage />);
+
+    // Still two rows: last week's winner sits under the board, not in it, or a
+    // reader would take them for this week's third place.
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+  });
+
+  it("shows no champion line at all when nobody won the window", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    // A first week, or a month before the game existed: the line is absent
+    // rather than empty or hedged.
+    expect(screen.queryByText(/champion/i)).toBeNull();
+  });
+
+  it("still names last week's winner on a week nobody has scored in yet", async () => {
+    stubFetch({
+      ...OPEN,
+      weekly: [],
+      lastWeek: { rank: 1, playerId: BOB, windowWord: "wrinkle", windowZipf: 3.31, score: 61.2, puzzles: 7 },
+    });
+    render(<LeaderboardPage />);
+
+    // The empty board is exactly when the champion is the only thing there is
+    // to show -- and the week that just ended is why it is empty.
+    const weekly = await screen.findByRole("region", { name: "This week" });
+    expect(weekly).toHaveTextContent("Last week's champion");
+    expect(weekly).toHaveTextContent(handleFor(BOB));
   });
 
   it("names the season and the dates it runs between", async () => {
