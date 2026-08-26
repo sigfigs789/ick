@@ -13,6 +13,11 @@
   --border-strong: #b6b9bd;
   --card-bg: #ffffff;
   --card-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
+  /* What a row docked to the edge of a scrolling list casts over the rows
+     passing underneath it. Both edges, because it can dock to either, and
+     tight: it has to say "this is floating above the list" without reading as
+     a card. */
+  --dock-shadow: 0 -6px 12px -4px rgb(0 0 0 / 0.22), 0 6px 12px -4px rgb(0 0 0 / 0.22);
 
   --accent: #1a1a1b;
   --accent-fg: #ffffff;
@@ -102,6 +107,7 @@
     --border-strong: #4d4f52;
     --card-bg: #19191b;
     --card-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 28px rgb(0 0 0 / 0.35);
+    --dock-shadow: 0 -6px 14px -4px rgb(0 0 0 / 0.75), 0 6px 14px -4px rgb(0 0 0 / 0.75);
 
     --accent: #f4f4f5;
     --accent-fg: #121213;
@@ -1769,6 +1775,41 @@ h2 {
 .leaderboard__row--you {
   background: var(--bg-inset);
   border-radius: 0.45rem;
+}
+/*
+ * Your own row, kept on screen however the board is scrolled.
+ *
+ * The board shows five rows of fifteen and scrolls to the rest, and the row
+ * pinned underneath it is sent only to a player who ranks *below* the fifteen
+ * -- so the guarantee ran backwards: 16th was always visible and 6th was not,
+ * and a player who did well disappeared for doing it. "Where am I" is the
+ * question this page is opened with, and it has to be answered at every rank.
+ *
+ * Sticky to both edges rather than a second copy of the row underneath the
+ * board. A duplicate reads as a bug the moment both are on screen at once,
+ * which is exactly what happens in the top five; sticking the row itself is one
+ * row at its real position, docked to the bottom of the list while it is below
+ * the fold, in the flow when it scrolls into view, and docked to the top if the
+ * reader scrolls on past it. The top of the board stays the top either way.
+ *
+ * Only inside the scrolling list: the row below the cut is its own list and
+ * already sits outside the scroll box, where nothing can scroll it away.
+ */
+.leaderboard__list:not(.leaderboard__list--self) .leaderboard__row--you {
+  position: sticky;
+  top: 0;
+  bottom: 0;
+  /* Above the rows that pass beneath it. It can afford to be: the row is
+     already filled with `--bg-inset`, a flat colour on both themes, so nothing
+     shows through it. */
+  z-index: 1;
+  /* What says a docked row is floating over the list rather than sitting out of
+     order in it. Both edges, since it docks to either -- and a hairline under
+     the shadow, because on the dark theme a black shadow over a near-black
+     board is a shadow nobody can see. */
+  box-shadow:
+    0 0 0 1px var(--border-strong),
+    var(--dock-shadow);
 }
 /* The break between the top fifteen and the player's own row below it. Three
    dots and nothing else: the gap is the message. */
