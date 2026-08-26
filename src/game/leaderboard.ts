@@ -121,7 +121,7 @@ export const BOARDS_OPEN_FROM = "2026-08-30";
  */
 export const SEASON = {
   number: 1,
-  start: "2026-08-10",
+  start: "2026-08-01",
   end: "2026-12-31",
 } as const;
 
@@ -131,7 +131,7 @@ export function seasonName(): string {
 }
 
 /**
- * `Aug 10 – Dec 31 2026`, to sit beside the heading.
+ * `Aug 1 – Dec 31 2026`, to sit beside the heading.
  *
  * Months abbreviated because the range shares a line with the name now: spelled
  * out, "Season 1 August 10 – December 31 2026" wraps on any phone and reads as a

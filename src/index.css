@@ -1662,6 +1662,15 @@ h2 {
   color: var(--fg-muted);
   font-size: 0.88rem;
 }
+/* The boards' own share of the page, held while they load or after they fail:
+   a heading, a column header and five rows. An estimate, since it is a
+   minimum -- what it has to be right about is the order of magnitude, so the
+   finds below do not start a screen too high and then move. */
+.leaderboard__boards-slot {
+  display: grid;
+  place-items: center;
+  min-height: calc(var(--row-height) * 5 + 3.4rem);
+}
 .leaderboard__retry {
   border: 0;
   background: transparent;
@@ -1721,8 +1730,9 @@ h2 {
   padding: 0;
 }
 /* One row, measured: two lines of text inside 0.45rem of padding, plus its
-   rule. Five of them is what a board is allowed to take. */
-.leaderboard__board {
+   rule. Five of them is what a board is allowed to take -- and what the loading
+   state holds open, so it is declared for the page rather than the board. */
+.leaderboard-page {
   --row-height: 3.03rem;
 }
 /* Five rows and the top of the sixth. The sliver is the affordance: a list cut

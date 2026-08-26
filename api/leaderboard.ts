@@ -138,7 +138,7 @@ const BOARDS_OPEN_FROM = "2026-08-30";
  * from the request -- unlike the week, whose boundary is local to whoever is
  * asking. A season is the same season everywhere.
  */
-const SEASON_START = "2026-08-10";
+const SEASON_START = "2026-08-01";
 const SEASON_END = "2026-12-31";
 
 /**

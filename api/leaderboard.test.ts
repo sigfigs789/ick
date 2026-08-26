@@ -421,7 +421,7 @@ describe("api/leaderboard reads", () => {
     // endpoint's, not the caller's: a season is the same season everywhere,
     // unlike a week, whose boundary is local to whoever is asking.
     expect(rpcCall(fetchMock)?.args).toMatchObject({
-      p_season_since: "2026-08-10",
+      p_season_since: "2026-08-01",
       p_season_until: "2026-12-31",
     });
   });

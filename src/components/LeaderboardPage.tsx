@@ -222,19 +222,27 @@ export function LeaderboardPage() {
       </header>
 
       <main>
+        {/* Both of these hold the room the boards will take -- a heading and
+            five rows -- so the finds below stay where they are when the boards
+            land. The alternative is the whole page jumping down a screen a
+            second after it opened, under a reader who had started reading. */}
         {state === "loading" && (
-          <p className="leaderboard__status" aria-live="polite">
-            Loading the boards…
-          </p>
+          <div className="leaderboard__boards-slot">
+            <p className="leaderboard__status" aria-live="polite">
+              Loading the boards…
+            </p>
+          </div>
         )}
 
         {state === "error" && (
-          <p className="leaderboard__status" aria-live="polite">
-            Couldn't load the boards.{" "}
-            <button type="button" className="leaderboard__retry" onClick={() => load()}>
-              Try again
-            </button>
-          </p>
+          <div className="leaderboard__boards-slot">
+            <p className="leaderboard__status" aria-live="polite">
+              Couldn't load the boards.{" "}
+              <button type="button" className="leaderboard__retry" onClick={() => load()}>
+                Try again
+              </button>
+            </p>
+          </div>
         )}
 
         {state === "ready" && !ready && boards && <NotYet opensOn={boards.opensOn} />}
