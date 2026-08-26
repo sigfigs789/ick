@@ -96,8 +96,8 @@ describe("buildShareText", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       spoilerFree: false,
       streak: 4,
-      crushedIt: 7,
-      elite: 2,
+      weekTotal: 42.3,
+      monthTotal: 118.7,
       source: null,
       format: "x",
     });
@@ -106,8 +106,8 @@ describe("buildShareText", () => {
       `🟪 aardvark (${rarityScore(2.4, "2024-01-05").toFixed(1)})`,
     );
     expect(text).not.toContain("Streak:");
-    expect(text).not.toContain("Crushed it:");
-    expect(text).not.toContain("Elite:");
+    expect(text).not.toContain("Week:");
+    expect(text).not.toContain("Month:");
     expect(text).not.toContain("Top:");
     expect(text).toContain("Total:");
   });
@@ -181,8 +181,8 @@ describe("buildShareText", () => {
   it("puts the session total directly before the current puzzle's top rarity", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       streak: 4,
-      crushedIt: 7,
-      elite: 2,
+      weekTotal: 42.3,
+      monthTotal: 118.7,
     });
 
     const total = words.reduce(
@@ -190,7 +190,7 @@ describe("buildShareText", () => {
       0,
     );
     expect(text).toContain(
-      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nTotal: ${total.toFixed(1)} · Top: ${rarityScore(2.4, "2024-01-05").toFixed(1)}`,
+      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days · Week: 42.3 · Month: 118.7\nTotal: ${total.toFixed(1)} · Top: ${rarityScore(2.4, "2024-01-05").toFixed(1)}`,
     );
   });
 });

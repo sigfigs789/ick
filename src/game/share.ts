@@ -106,10 +106,10 @@ export interface ShareOptions {
   spoilerFree?: boolean;
   /** Current consecutive-day streak to include in the shared result. */
   streak?: number;
-  /** Total Rare-or-better results to include in the shared result. */
-  crushedIt?: number;
-  /** Total Extremely Rare-or-better results to include in the shared result. */
-  elite?: number;
+  /** Rarity score summed across the puzzle's week (see game/totals.ts). */
+  weekTotal?: number;
+  /** Rarity score summed across the puzzle's month (see game/totals.ts). */
+  monthTotal?: number;
   /** Adds attribution to a link at the moment it is shared. */
   source?: ShareSource | null;
   /** Uses the shorter X post layout while keeping the selected spoiler setting. */
@@ -152,13 +152,13 @@ export function buildShareText(
   if (
     format === "default" &&
     (options.streak !== undefined ||
-      options.crushedIt !== undefined ||
-      options.elite !== undefined)
+      options.weekTotal !== undefined ||
+      options.monthTotal !== undefined)
   ) {
     const streak = options.streak ?? 0;
     if (resultLine) lines.push("");
     lines.push(
-      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Crushed it: ${options.crushedIt ?? 0} · Elite: ${options.elite ?? 0}`,
+      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
     );
   }
   const raritySummary = [
