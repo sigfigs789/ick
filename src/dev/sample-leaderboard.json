@@ -16,6 +16,10 @@
     "weeklySelf / allTimeSelf row far below it, because that is the part worth",
     "looking at: what a player outside the top fifteen sees of themselves.",
     "",
+    "lastWeek / lastMonth are the champions of the two closed windows, shown on",
+    "the plaque under each board -- different players from the ones leading now,",
+    "since that is the interesting case.",
+    "",
     "The feed is every word found on the day rather than one per player, so most",
     "of it is ordinary words with one or two finders. That is what it looks like",
     "live, and a fixture of nothing but Legends would not."
@@ -281,6 +285,22 @@
     "windowZipf": 2.65,
     "score": 21.7,
     "puzzles": 4
+  },
+  "lastWeek": {
+    "rank": 1,
+    "playerId": "dev-3",
+    "windowWord": "obfuscate",
+    "windowZipf": 2.86,
+    "score": 61.2,
+    "puzzles": 7
+  },
+  "lastMonth": {
+    "rank": 1,
+    "playerId": "dev-2",
+    "windowWord": "quixotic",
+    "windowZipf": 2.33,
+    "score": 214.8,
+    "puzzles": 28
   },
   "words": [
     {

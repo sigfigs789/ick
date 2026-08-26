@@ -306,6 +306,11 @@ describe("api/leaderboard reads", () => {
           puzzles: 5,
         },
       ],
+      // Nobody won either closed window in this fixture, and the endpoint says
+      // so with a null rather than an absent key: the page has one shape to
+      // read, whether or not there is a champion to put under a board.
+      lastWeek: null,
+      lastMonth: null,
     });
 
     // One call for both boards, so the two can never disagree with each other.
@@ -353,6 +358,68 @@ describe("api/leaderboard reads", () => {
       p_season_since: "2026-08-01",
       p_season_until: "2026-12-31",
     });
+  });
+
+  it("reports the champion of each closed window under the live boards", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      {
+        ...OPEN,
+        lastWeek: {
+          rank: 1,
+          player_id: PLAYER,
+          window_word: "quixotic",
+          window_zipf: "2.33",
+          total_score: "61.2",
+          puzzles: 7,
+        },
+        lastMonth: {
+          rank: 1,
+          player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          window_word: "inkling",
+          window_zipf: "2.9",
+          total_score: "214.8",
+          puzzles: 28,
+        },
+      },
+    ]);
+    const response = await handler(get(`?since=${SUNDAY}&today=2026-08-25`));
+    const body = (await response.json()) as Record<string, unknown>;
+
+    // Ordinary board rows, priced and named by the same client code every other
+    // row goes through -- a champion is a board of one, not a new kind of thing.
+    expect(body.lastWeek).toEqual({
+      rank: 1,
+      playerId: PLAYER,
+      windowWord: "quixotic",
+      windowZipf: 2.33,
+      score: 61.2,
+      puzzles: 7,
+    });
+    expect(body.lastMonth).toMatchObject({ rank: 1, score: 214.8, puzzles: 28 });
+
+    // The month is bounded from the *player's* own date, not from `since`: the
+    // Sunday that brackets the 1st belongs to the month before, so a window
+    // derived from it would name the wrong month for the first days of every
+    // one. August 25th's previous month is the whole of July.
+    expect(rpcCall(fetchMock)?.args).toMatchObject({
+      p_month_since: "2026-07-01",
+      p_month_until: "2026-07-31",
+    });
+  });
+
+  it("falls back to its own clock when the caller names no usable day", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    // A date before the game existed is not a puzzle date, so it is not trusted
+    // to bound anything -- the month window comes from UTC's own day instead,
+    // which is the same fallback the finds feed makes. Never no window at all:
+    // a missing `today` is a reason to guess the month, not to drop the line.
+    await handler(get(`?since=${SUNDAY}&today=2020-01-04`));
+
+    const args = rpcCall(fetchMock)?.args as Record<string, string>;
+    expect(args.p_month_since).toMatch(/^\d{4}-\d{2}-01$/);
+    expect(args.p_month_until > args.p_month_since).toBe(true);
   });
 
   it("shows fifteen rows when the caller doesn't say", async () => {
