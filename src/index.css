@@ -1447,6 +1447,12 @@ h2 {
  * is why it works on the height as well as the opacity. The tint fades out so a
  * new find is obvious for a moment and then settles into the list.
  *
+ * Green, and from --success-bg rather than a rarity green: the flash means "this
+ * just arrived", which is not a claim about the word. Borrowing Uncommon's
+ * background would put a tier colour on a row whose badge is already stating a
+ * different tier. It was Elusive's burnt orange, which read as a warning on a
+ * list where nothing had gone wrong.
+ *
  * The global prefers-reduced-motion rule near the top of this file cuts every
  * animation here to nothing, so a player who has asked for stillness gets the
  * same list without the movement.
@@ -1458,13 +1464,13 @@ h2 {
     max-height: 0;
     padding-top: 0;
     padding-bottom: 0;
-    background: var(--rarity-elusive-bg);
+    background: var(--success-bg);
   }
   60% {
     opacity: 1;
     transform: none;
     max-height: 4rem;
-    background: var(--rarity-elusive-bg);
+    background: var(--success-bg);
   }
   to {
     opacity: 1;
