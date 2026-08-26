@@ -157,10 +157,10 @@ describe("the leaderboard page", () => {
     // played on its own day either, so it belongs to the pair -- and on the way
     // in, since it is the condition a score has to meet to be on either list.
     await waitFor(() =>
-      expect(screen.getByText("Must be scored on the day of the drop")).toBeInTheDocument()
+      expect(screen.getByText("Only puzzles played on the day they drop count")).toBeInTheDocument()
     );
     const season = screen.getByRole("region", { name: SEASON_BOARD });
-    expect(season).not.toHaveTextContent("Must be scored on the day of the drop");
+    expect(season).not.toHaveTextContent("Only puzzles played on the day they drop count");
   });
 
   it("says when the weekly board turns over, and no more than that", async () => {

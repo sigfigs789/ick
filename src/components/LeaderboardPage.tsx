@@ -256,7 +256,7 @@ export function LeaderboardPage() {
                 row and the next section. Outside the grid below, so it sits
                 against the first board rather than a column gap away from it. */}
             <ul className="leaderboard__rules">
-              <li>Must be scored on the day of the drop</li>
+              <li>Only puzzles played on the day they drop count</li>
             </ul>
             <div className="leaderboard__boards">
               <Board
