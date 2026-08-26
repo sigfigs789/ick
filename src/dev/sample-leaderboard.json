@@ -1,0 +1,402 @@
+{
+  "_comment": [
+    "Made-up leaderboard data for developing against, in the exact shape",
+    "/api/leaderboard returns. Toggled on from the leaderboard page itself, and",
+    "only in a dev build -- every use of this file sits behind import.meta.env.DEV,",
+    "so Vite drops both the toggle and this import from the production bundle.",
+    "",
+    "No names here: the board derives a handle from each playerId on the client",
+    "(src/game/handle.ts), so these ids are what produce TranquilBison72.",
+    "",
+    "Words are real dictionary entries with their real Zipf frequencies, so the",
+    "rarity badges and scores render exactly as they would with live data. Every",
+    "find shares one date, moved to today at load, since the feed shows today only.",
+    "",
+    "Fifteen rows a board, because fifteen is what a board shows -- and a",
+    "weeklySelf / allTimeSelf row far below it, because that is the part worth",
+    "looking at: what a player outside the top fifteen sees of themselves.",
+    "",
+    "The feed is every word found on the day rather than one per player, so most",
+    "of it is ordinary words with one or two finders. That is what it looks like",
+    "live, and a fixture of nothing but Legends would not."
+  ],
+  "weekStart": "2026-08-23",
+  "ready": true,
+  "opensOn": "2026-08-30",
+  "weekly": [
+    {
+      "rank": 1,
+      "playerId": "dev-1",
+      "windowWord": "asphyxiate",
+      "windowZipf": 2.09,
+      "score": 58.4,
+      "puzzles": 6
+    },
+    {
+      "rank": 2,
+      "playerId": "dev-2",
+      "windowWord": "quixotic",
+      "windowZipf": 2.33,
+      "score": 51.9,
+      "puzzles": 6
+    },
+    {
+      "rank": 3,
+      "playerId": "dev-3",
+      "windowWord": "gastroenterologist",
+      "windowZipf": 2.63,
+      "score": 44.2,
+      "puzzles": 5
+    },
+    {
+      "rank": 4,
+      "playerId": "dev-4",
+      "windowWord": "inkling",
+      "windowZipf": 2.9,
+      "score": 37.0,
+      "puzzles": 5
+    },
+    {
+      "rank": 5,
+      "playerId": "dev-5",
+      "windowWord": "wrinkle",
+      "windowZipf": 3.31,
+      "score": 29.6,
+      "puzzles": 4
+    },
+    {
+      "rank": 6,
+      "playerId": "dev-6",
+      "windowWord": "placate",
+      "windowZipf": 3.4,
+      "score": 24.1,
+      "puzzles": 4
+    },
+    {
+      "rank": 7,
+      "playerId": "dev-7",
+      "windowWord": "lactation",
+      "windowZipf": 3.2,
+      "score": 18.8,
+      "puzzles": 3
+    },
+    {
+      "rank": 8,
+      "playerId": "dev-8",
+      "windowWord": "attested",
+      "windowZipf": 4.1,
+      "score": 12.5,
+      "puzzles": 2
+    },
+    {
+      "rank": 9,
+      "playerId": "dev-9",
+      "windowWord": "cat",
+      "windowZipf": 4.78,
+      "score": 7.3,
+      "puzzles": 1
+    },
+    {
+      "rank": 10,
+      "playerId": "dev-10",
+      "windowWord": "abaci",
+      "windowZipf": 2.65,
+      "score": 6.8,
+      "puzzles": 1
+    },
+    {
+      "rank": 11,
+      "playerId": "dev-11",
+      "windowWord": "wrinkle",
+      "windowZipf": 3.31,
+      "score": 6.4,
+      "puzzles": 1
+    },
+    {
+      "rank": 12,
+      "playerId": "dev-12",
+      "windowWord": "inkling",
+      "windowZipf": 2.9,
+      "score": 6.0,
+      "puzzles": 1
+    },
+    {
+      "rank": 13,
+      "playerId": "dev-13",
+      "windowWord": "placate",
+      "windowZipf": 3.4,
+      "score": 5.6,
+      "puzzles": 1
+    },
+    {
+      "rank": 14,
+      "playerId": "dev-14",
+      "windowWord": "lactation",
+      "windowZipf": 3.2,
+      "score": 5.2,
+      "puzzles": 1
+    },
+    {
+      "rank": 15,
+      "playerId": "dev-15",
+      "windowWord": "attested",
+      "windowZipf": 4.1,
+      "score": 4.8,
+      "puzzles": 1
+    }
+  ],
+  "weeklySelf": {
+    "rank": 42,
+    "playerId": "dev-you",
+    "windowWord": "abaci",
+    "windowZipf": 2.65,
+    "score": 3.4,
+    "puzzles": 1
+  },
+  "allTime": [
+    {
+      "rank": 1,
+      "playerId": "dev-2",
+      "windowWord": "asphyxiate",
+      "windowZipf": 2.09,
+      "score": 612.8,
+      "puzzles": 71
+    },
+    {
+      "rank": 2,
+      "playerId": "dev-1",
+      "windowWord": "stonyheartedly",
+      "windowZipf": -1.57,
+      "score": 588.1,
+      "puzzles": 66
+    },
+    {
+      "rank": 3,
+      "playerId": "dev-4",
+      "windowWord": "enshittification",
+      "windowZipf": -1.57,
+      "score": 470.5,
+      "puzzles": 58
+    },
+    {
+      "rank": 4,
+      "playerId": "dev-5",
+      "windowWord": "quixotic",
+      "windowZipf": 2.33,
+      "score": 402.0,
+      "puzzles": 52
+    },
+    {
+      "rank": 5,
+      "playerId": "dev-3",
+      "windowWord": "gastroenterologist",
+      "windowZipf": 2.63,
+      "score": 351.7,
+      "puzzles": 44
+    },
+    {
+      "rank": 6,
+      "playerId": "dev-6",
+      "windowWord": "inkling",
+      "windowZipf": 2.9,
+      "score": 288.3,
+      "puzzles": 39
+    },
+    {
+      "rank": 7,
+      "playerId": "dev-7",
+      "windowWord": "lactation",
+      "windowZipf": 3.2,
+      "score": 214.6,
+      "puzzles": 31
+    },
+    {
+      "rank": 8,
+      "playerId": "dev-8",
+      "windowWord": "wrinkle",
+      "windowZipf": 3.31,
+      "score": 176.2,
+      "puzzles": 27
+    },
+    {
+      "rank": 9,
+      "playerId": "dev-9",
+      "windowWord": "placate",
+      "windowZipf": 3.4,
+      "score": 121.9,
+      "puzzles": 20
+    },
+    {
+      "rank": 10,
+      "playerId": "dev-10",
+      "windowWord": "attested",
+      "windowZipf": 4.1,
+      "score": 64.4,
+      "puzzles": 12
+    },
+    {
+      "rank": 11,
+      "playerId": "dev-11",
+      "windowWord": "abaci",
+      "windowZipf": 2.65,
+      "score": 58.9,
+      "puzzles": 11
+    },
+    {
+      "rank": 12,
+      "playerId": "dev-12",
+      "windowWord": "wrinkle",
+      "windowZipf": 3.31,
+      "score": 54.8,
+      "puzzles": 10
+    },
+    {
+      "rank": 13,
+      "playerId": "dev-13",
+      "windowWord": "inkling",
+      "windowZipf": 2.9,
+      "score": 50.7,
+      "puzzles": 9
+    },
+    {
+      "rank": 14,
+      "playerId": "dev-14",
+      "windowWord": "placate",
+      "windowZipf": 3.4,
+      "score": 46.6,
+      "puzzles": 8
+    },
+    {
+      "rank": 15,
+      "playerId": "dev-15",
+      "windowWord": "lactation",
+      "windowZipf": 3.2,
+      "score": 42.5,
+      "puzzles": 7
+    }
+  ],
+  "allTimeSelf": {
+    "rank": 128,
+    "playerId": "dev-you",
+    "windowWord": "abaci",
+    "windowZipf": 2.65,
+    "score": 21.7,
+    "puzzles": 4
+  },
+  "words": [
+    {
+      "word": "tinkered",
+      "zipf": 3.62,
+      "finders": 1,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "kinship",
+      "zipf": 3.55,
+      "finders": 2,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "inkwell",
+      "zipf": 2.71,
+      "finders": 1,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "blinking",
+      "zipf": 4.02,
+      "finders": 3,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "thinker",
+      "zipf": 3.88,
+      "finders": 1,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "sprinkle",
+      "zipf": 3.74,
+      "finders": 2,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "drinking",
+      "zipf": 4.61,
+      "finders": 5,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "stonyheartedly",
+      "zipf": -1.57,
+      "finders": 1,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "asphyxiate",
+      "zipf": 2.09,
+      "finders": 3,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "quixotic",
+      "zipf": 2.33,
+      "finders": 5,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "inkling",
+      "zipf": 2.9,
+      "finders": 8,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "enshittification",
+      "zipf": -1.57,
+      "finders": 2,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "abaci",
+      "zipf": 2.65,
+      "finders": 2,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "wrinkle",
+      "zipf": 3.31,
+      "finders": 6,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "gastroenterologist",
+      "zipf": 2.63,
+      "finders": 1,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "placate",
+      "zipf": 3.4,
+      "finders": 4,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "lactation",
+      "zipf": 3.2,
+      "finders": 2,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "attested",
+      "zipf": 4.1,
+      "finders": 7,
+      "foundOn": "2026-08-24"
+    },
+    {
+      "word": "cat",
+      "zipf": 4.78,
+      "finders": 11,
+      "foundOn": "2026-08-24"
+    }
+  ]
+}

@@ -23,10 +23,13 @@ import {
   trackRedditArrival,
   trackShareArrival,
   trackTwitterArrival,
+  trackLeaderboardOpened,
   trackSessionTime,
   trackVisit,
 } from "./analytics";
 import { recordVisit } from "./game/visits";
+import { hasSeen, markSeen } from "./game/whatsNew";
+import { navigate } from "./routes";
 import { beginSession, endSessionSegment, resumeSession } from "./game/sessionTime";
 
 export default function App() {
@@ -51,6 +54,10 @@ export default function App() {
   } = useDailyPuzzle();
   const [showInstructions, setShowInstructions] = useState(false);
   const [showWordRules, setShowWordRules] = useState(false);
+  // Read once on mount rather than on every render: this flips exactly once, in
+  // openLeaderboard, and reading storage during a render would be the only
+  // thing here that did.
+  const [leaderboardIsNew, setLeaderboardIsNew] = useState(() => !hasSeen("leaderboard"));
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
 
@@ -107,6 +114,17 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
+  function openLeaderboard(from: "header" | "results") {
+    trackLeaderboardOpened(from);
+    // Going there is meeting it, from either entry point -- the badge's whole job
+    // is to say "there is something here you haven't seen", and once the player
+    // has seen it there is nothing left to say. Marked before navigating so the
+    // badge is already retired when the back button brings them here again.
+    markSeen("leaderboard");
+    setLeaderboardIsNew(false);
+    navigate("leaderboard");
+  }
+
   const hasWinningWord = progress.acceptedWords.some((word) => isWinningRarity(word.rarity));
   // Celebrate the first qualifying word only, never a puzzle restored
   // from storage that already contains one.
@@ -139,14 +157,37 @@ export default function App() {
             onNext={goToNext}
           />
         </div>
-        <button
-          type="button"
-          className="app__icon-button"
-          onClick={() => setShowInstructions(true)}
-          aria-label="How to play"
-        >
-          ?
-        </button>
+        <div className="app__header-actions">
+          {/* Always shown. Hiding it until the leaderboard had something to
+              show sounded careful and deadlocked the cold start: finds only
+              appear once players join, and joining is only reachable through
+              here. The page is never a dead end anyway -- before the boards open
+              it carries the finds feed, the opening date and the join button. */}
+          <button
+              type="button"
+              className="app__icon-button app__icon-button--badged"
+              onClick={() => openLeaderboard("header")}
+              aria-label={leaderboardIsNew ? "Leaderboard (new)" : "Leaderboard"}
+              title="Leaderboard"
+            >
+              <span aria-hidden="true">🏆</span>
+              {/* aria-hidden because the button's own label already carries the
+                  "(new)" -- a screen reader should hear one thing, not two. */}
+              {leaderboardIsNew && (
+                <span className="app__icon-badge" aria-hidden="true">
+                  new
+                </span>
+              )}
+          </button>
+          <button
+            type="button"
+            className="app__icon-button"
+            onClick={() => setShowInstructions(true)}
+            aria-label="How to play"
+          >
+            ?
+          </button>
+        </div>
       </header>
 
       <Analytics />
@@ -206,6 +247,7 @@ export default function App() {
             drop={drop}
             words={progress.acceptedWords}
             streak={streak}
+            onLeaderboard={() => openLeaderboard("results")}
           />
         )}
       </main>

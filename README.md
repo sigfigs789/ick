@@ -364,7 +364,8 @@ obscure answers.
 
 ## Word and event tracking (Supabase)
 
-Optional, write-only, and entirely server-side. Two tables collect the words
+Optional and entirely server-side, and — apart from the leaderboard below —
+write-only. Two tables collect the words
 players actually reach for so they can be folded into the curated dictionary
 later — at which point those words stop needing a live lookup at all, which is
 what keeps Merriam-Webster's 1,000-requests-per-day quota comfortable. Schema
@@ -413,7 +414,8 @@ consulted as the waterfall's last tier, so it can only fill a gap and never
 override a measurement. `conization` keeps its 8.7 Extremely Rare instead of
 being promoted to a Legend it never earned.
 
-Nothing in the game reads either table, and nothing waits on a write. Recording
+Nothing in the game reads either of these two tables, and nothing waits on a
+write. Recording
 is strictly downstream of the answer: `api/validate.ts` never awaits its write
 (it hands it to the runtime's `waitUntil` when there is one, and would rather
 drop a row than delay a player), and the client beacons events without reading
@@ -422,13 +424,349 @@ consults, so the game stays offline-first and plays identically whether or not
 the database exists — with no credentials set, `api/validate.ts` skips the write
 silently and `api/events.ts` answers 503.
 
+### Running the leaderboard locally
+
+No database needed. In a development build the leaderboard page carries a
+**"Use sample data"** toggle: it swaps a hardcoded fixture
+(`src/dev/sample-leaderboard.json`) in for the server, in the exact shape the
+endpoint answers with — so it is read by the same parsing a real response is, and
+a change there cannot pass against the fixture and fail in production.
+
+The toggle and the fixture both sit behind `import.meta.env.DEV`, a compile-time
+constant, so Vite drops the branch *and* the JSON import from a production
+build. The dev-only "Reset answers" button works the same way.
+
+To develop against a real database instead, `supabase start` brings up a local
+stack and applies the migrations; point `.env` at the URL and service-role key it
+prints. Worth doing before changing this schema — running it for real is what
+caught the grants bug below, which no amount of reading would have.
+
+**Privileges: revoke from PUBLIC, then grant back to `service_role`.** `anon` and
+`authenticated` hold no grants of their own — they inherit PUBLIC's, which is why
+revoking from PUBLIC is what actually locks a function down. But `service_role`
+inherits PUBLIC's too, and that is the role PostgREST assumes when an edge
+function presents the service key. Revoke from PUBLIC alone and the endpoint gets
+`permission denied for function` on its own procedures. Newly created *tables*
+grant nothing to anybody but their owner, so they need the same treatment. RLS
+stays on with no policies, which is what keeps `anon` and `authenticated` out;
+the grants are what let `service_role` through the privilege check before it
+bypasses RLS.
+
 Setup: run the migration on a Supabase project, then set `SUPABASE_URL` and
 `SUPABASE_SERVICE_ROLE_KEY` in the Vercel project (and in `.env` for local
 work — `npm run dev` serves both endpoints, see `vite.config.ts`). The
 service-role key is server-side only and is never exposed to the browser, which
 is the reason `api/events.ts` exists rather than the client writing directly.
-Row-level security is enabled on both tables with no policies at all, so the
+Row-level security is enabled on every table with no policies at all, so the
 `anon` key cannot read or write them even if it leaks.
+
+## Leaderboard
+
+Its own page at `/leaderboard` — a board is something you link a friend to, open
+in a second tab, and leave with the back button, none of which a modal can do.
+Two entry points from the game: a trophy in the header and a link under the
+results. Routing is `src/routes.ts`, about forty lines of `pathname` and
+`pushState`, since `vercel.json` already rewrites every non-`/api/` path to
+`index.html`.
+
+Two boards, both fed by one table and shown together: **this week**, counting
+puzzles from the current Sunday onward, and **Season 1**, counting the season's
+own range (2026-08-10 to 2026-12-31). Both are **ranked by total score** — a sum
+of daily scores, which rewards showing up daily instead of peaking once. Ties
+break on the best single word, then on who got there first. The rank is computed
+in SQL and returned as a column rather than inferred from row order, so the thing
+that did the sorting is the thing that says the position.
+
+**Fifteen rows a board, and then you.** Fifty rows was a list you scrolled;
+fifteen is a list you read, and a top fifteen is something a player can picture
+being in. What makes the short board safe is that it hides nobody: the query
+takes the player asking (`p_player`) and returns their own row alongside the top
+however far down it sits, at the rank they actually hold — 61st of everybody, not
+16th of what fits. Everybody is ranked *before* the cut, in the same query, since
+a board query and a separate rank query are two answers that can disagree across
+a write landing between them. The row renders under the board and outside its
+scrolling, because a row you have to scroll to is one you may as well not have.
+The cost is that `player` joins the CDN cache key: the 60-second read cache is
+shared per player rather than across everybody.
+
+**A season, not all of time.** The second board used to sum every puzzle ever. A
+season ends, which is what makes it worth ranking — a player arriving in November
+has something they can still win, and the standings that stand on 31 December are
+final rather than merely current. The range is bounded at *both* ends in SQL
+(`p_season_since` / `p_season_until`), because a board named for two dates that
+quietly counts everything outside them is a name that lies: an early player
+backfilling a July history would land inside Season 1, and so would every puzzle
+after New Year. The dates live in `api/leaderboard.ts` and are named on screen
+from the pair in `src/game/leaderboard.ts` — opening Season 2 is those two lines,
+never a migration. Unlike the week, they are *not* taken from the request: a week
+turns over at the player's own midnight, but a season is the same season
+everywhere.
+
+**The find is held back for now.** Each row used to carry the player's rarest
+word inside the window (`quixotic 7.9`) beside the puzzle count. The problem is
+the number rather than the word — a find is displayed with what it scored, and
+the scoring system is still being corrected, so a word worth 7.9 today may not be
+tomorrow, and a leaderboard is the wrong place to publish a number that moves.
+The words are still on the page under Today's finds, where they are the day's
+finds rather than a standing claim about a player. The column is still queried
+and still sent, so restoring it is the `Row` component and nothing else.
+
+**Stacked, not side by side.** Two boards of the same shape sitting next to each
+other read as one wide table split down the middle — you have to check the
+heading to know which ranking you are looking at. One under the other, each is
+unmistakably its own list, and the weekly one comes first because it is the one
+still winnable.
+
+**Recent finds is its own section, below them.** Both are lists of words, but a
+leaderboard row is a *player* and a find is a *word*; sharing the top of the page
+made that a distinction the reader had to work out. Separate headings, separate
+ground, and a heavier rule between them than between the two boards.
+
+**The weekly reset is a window, not a job.** Nothing is deleted or archived on
+Sunday morning: `leaderboard_board(p_since => <sunday>)` simply stops counting
+the rows that fell out of range, and the all-time board is the same function with
+no window. There is no scheduled task that can fail to run. The window start is
+computed on the client (`src/game/week.ts`) for the same reason the puzzle date
+is: the reset should land at the player's midnight, not at UTC's.
+
+**Weeks run Sunday to Saturday**, not the ISO Monday to Sunday, and the reason is
+onboarding rather than convention. A weekly board is only worth playing while you
+can still win it, so what matters is the deficit a new arrival faces on the days
+people actually arrive — for a casual daily game, the weekend. A Sunday reset
+splits the weekend across the boundary: Saturday ends one week and Sunday begins
+the next, so a good share of weekend arrivals land on a board hours old and wide
+open. A Monday reset puts both weekend days at the far end of the week, five and
+six days down, and a newcomer's first impression is a board they cannot catch.
+Because the window start is computed client-side and passed to the query, moving
+the first day of the week is a one-file change and never a migration — no SQL
+knows which day it is.
+
+### Today's finds
+
+Every word anybody has found on today's puzzle, newest first, headed by the drop
+they had to contain — a find only means something beside its drop, since
+`asphyxiate` is just a word until you know the day asked for PHY. Each carries the
+same rarity badge the game shows on an accepted word, and a word several people
+found appears once with the count.
+
+**One puzzle, and it is the puzzle the reader is on.** The feed is keyed to a
+puzzle date the client sends, not to a clock: `today` is used as given and bounded
+only by whether a puzzle exists for it (`wordsDay`). It used to take the *later* of
+the client's date and UTC's, which was reasoning about timezones rather than about
+puzzles and got it wrong for everybody west of UTC — an American evening is already
+tomorrow in UTC, so the feed asked for a drop nobody in the Americas had reached
+and came back empty through the busiest hours of the day.
+
+It began as a week of history and read as an archive; the point is the puzzle
+everyone is on right now. New finds slide in at the top while the page is open,
+and the page re-checks every 60 seconds — the CDN's own cache window, so polling
+faster would return the same bytes. Nothing runs while the tab is hidden, coming
+back refreshes at once, and a refresh never flashes the loading state or throws
+away good data over one bad minute. The feed is its own request and its own
+failure: boards that don't load leave it on screen untouched.
+
+**Publishing today's finds is a deliberate trade.** Everybody gets the same drop,
+so a word somebody found today is an *answer to today's puzzle* — showing it hands
+that answer to anyone still playing. It was withheld at first for exactly that
+reason. Accepted anyway: the feed is only worth keeping live if it changes while
+you watch, and someone who wanted to be spoiled could always have read the
+endpoint directly. Reverting is one line in `wordsDay`, and the middle position —
+live only for players who have already locked in — is written down there.
+
+**No rarity bar.** The feed is what the day's players found, and an ordinary word
+is part of what happened. Cutting the Commons would quietly turn a record of the
+puzzle into a highlight reel, which the boards above it already are.
+
+**Every word, not each player's best.** The feed used to be built from
+`leaderboard_scores.top_word` — one word per player per day — which made it a list
+of personal bests rather than a list of finds, and gave it a worse habit: that
+column is *overwritten* when a player beats themselves, so a find already on screen
+would vanish the moment its only finder did better. A feed that removes things is
+not a feed. So words get their own table, `leaderboard_finds`, one row per player
+per puzzle per word, inserted once and never updated — which is also what makes the
+ordering trustworthy, since `found_at` is the moment a word first arrived and
+nothing afterwards can move it. Ordered by a word's *first* sighting, so a popular
+word stays where it landed and its count goes up, rather than jumping back to the
+top each time somebody else finds it.
+
+The feed is not behind the boards' opening date: a list of good words is
+interesting at any size, and until the boards open it is the whole page.
+
+### Collected from the start, published on a date
+
+Scores accumulate from the first day this ships; the weekly and all-time boards
+go live on **Sunday 2026-08-30** (`BOARDS_OPEN_FROM`), whatever the data looks
+like by then. Until that date the page names the day instead of showing a board.
+
+A date rather than a player threshold, which is what this was first built as. The
+threshold was the cautious version of the same instinct — don't show a three-name
+board — but it makes the launch open-ended, and "six of ten players" is only a
+reason to come back if you believe the other four are coming. A Sunday, because
+that is when a week starts here, so the first published week is a whole one.
+
+The gate is enforced in SQL, so before the date **no board row leaves the
+database at all** — there is no early board sitting in an API response waiting to
+be read out of a network tab. The recent-finds feed is deliberately outside it
+and works from day one, so the page is never empty while the boards wait.
+
+The header's trophy is always there, and badged "new" until it is first opened.
+It was briefly hidden until the leaderboard had something to show, which sounded
+careful and deadlocked the cold start: finds only appear once players join, and
+joining only happens by opening this page. The page is never a dead end anyway —
+before the boards open it carries the finds feed and the date they arrive on.
+
+### Before the boards open: run the migrations
+
+The leaderboard is the one part of this game that does not degrade gracefully
+into working. With no schema on the project, `/api/leaderboard` answers 502 and
+the page says it couldn't load the boards — which is fine, the game plays on —
+but every submission that arrives meanwhile is logged by `api/_supabase.record`
+and dropped. Nothing queues it and nothing retries it.
+
+That matters more than it looks, because the backfill only runs **once**, on the
+visit that mints a player's id. A player who opens the leaderboard before the
+schema lands is joined, has their history swallowed, and never sends it again —
+their id already exists, so the next visit has nothing to import.
+
+So every migration in `supabase/migrations/` must be applied to the project
+*before* the leaderboard reaches players, and certainly before `BOARDS_OPEN_FROM`
+(2026-08-30). They are ordered and each depends on the one before it, so apply
+them all rather than picking the newest:
+
+```
+supabase link --project-ref <ref>
+supabase db push
+```
+
+Then check the endpoint answers rather than 502s. `supabase start` +
+`supabase migration up --local` applies the same files to a local stack, which is
+worth doing first — running the SQL for real is what caught the grants bug above,
+and it is the only way to see that `service_role` can execute every function and
+`anon` can execute none.
+
+### Names are handles, derived from the player id
+
+The board calls players things like `TranquilBison72` — an adjective, a noun and
+a number, computed from their id by `src/game/handle.ts`.
+
+This replaced naming players after their rarest find, which was charming and
+unreadable. On a page that also lists found words, a leaderboard row reading
+`asphyxiate` gave no clue whether it was a person or a word, and separating the
+sections helped without fixing it: any scheme where names *are* words has that
+problem. A capitalised two-word handle is unmistakably a name, which is the whole
+job.
+
+**Derived, not stored.** `handleFor(playerId)` is a pure function, so every
+browser computes the same name for the same player without asking, the server
+holds no display name at all, and a handle is stable forever — it cannot drift
+between the two boards, or between devices, or across releases. That deleted a
+table, a Postgres function, an endpoint method, and the whole name-picking UI.
+
+There is no free-text field anywhere in the feature, so there is nothing to
+sanitise and nothing to impersonate.
+
+The lists are hand-written rather than drawn from the game's dictionary: a
+dictionary pairing would eventually produce something unkind or absurd, and
+nobody gets to choose their handle, so the floor matters more than the ceiling.
+128 × 128 × 100 gives 1.6M handles — the number is what makes duplicates
+unlikely rather than merely uncommon, since two words alone would start colliding
+on the same board at a few hundred players.
+
+**Each row names the player, then their find**, on both boards: `TranquilBison72`
+/ `6 puzzles · asphyxiate 8.3`. The weekly board briefly led with the week's find
+instead, which only made sense while a "name" was itself a word.
+
+### Identity, and the history that comes with it
+
+Account-free, and there is nothing to fill in — not even a tap. Opening
+`/leaderboard` mints a UUID and stores that id and nothing else
+(`src/game/player.ts`), which is also everything the handle is computed from.
+Nothing is sent for a player who never opens the page. The trophy carries a
+one-time "new" badge, retired the first time the page is visited
+(`src/game/whatsNew.ts`).
+
+**The visit is the joining.** There used to be a "Put me on the board" button and
+a paragraph under it explaining that there is no account, no email and no name to
+invent. All still true, and none of it worth saying to somebody who has already
+opened a leaderboard — the tap only ever stood between a player and their own
+row. The trade is worth stating: somebody who opens the page to look at *other
+people's* scores is now on the board themselves. What goes up is an id the
+browser invented and the words they found, and none of it reaches back into the
+game.
+
+**Joining imports the player's own history.** Somebody arriving today has often
+been playing for weeks, and that record is already in localStorage — so
+`storage.playedOnItsDay()` collects every stored puzzle and
+`leaderboard.backfillHistory()` sends them as one batch. It runs once, on the
+visit that mints the id.
+
+### Only puzzles played on their own day count, backwards and forwards
+
+The live path submits only today's puzzle, and the import counts only days it can
+show were played when they dropped. Both follow from the same fact: an archive
+puzzle can be solved with unlimited time and a dictionary open in the next tab,
+so counting it would make the all-time board a measure of how much archive
+somebody ground rather than how well they play. The streak already draws this
+line; the board draws it in the same place.
+
+Which past days qualify comes down to what the stored record can prove, and there
+are two timestamps that can prove it:
+
+- **`firstWordAt`** — stamped when the first word of a puzzle is accepted, and
+  never moved. This is exactly the question being asked, and it counts a day the
+  player never finished.
+- **`completedAt`** — the fallback for every puzzle saved before `firstWordAt`
+  existed. It is stamped on the last guess, which for a late-night session lands
+  after midnight; the grace window below covers that.
+
+A day with neither timestamp is skipped. Not because it didn't happen, but
+because the record cannot say *when* it happened — and guessing in the player's
+favour is exactly how the archive would get in wholesale.
+
+**A session may run past midnight.** A puzzle counts if it was played on its own
+day or within four hours after it (`LATE_FINISH_GRACE_HOURS`). Finishing at 1am
+is an ordinary way to play a daily game, and the live path has always worked this
+way — `useDailyPuzzle` reads the date once on load, so a session opened at 23:50
+keeps submitting to that puzzle all night. The import was the stricter of the two;
+now they agree. The cost, stated rather than hidden: the next puzzle drops at
+local midnight, so this leaves a four-hour window each night in which yesterday's
+puzzle could be played fresh and still count. Accepted deliberately — the players
+it lets in are real and numerous, and the ones it lets cheat have to be awake at
+3am to gain a single day's score.
+
+- **`leaderboard_finds`** — one row per player per puzzle per word, written by the
+  same call and read only by Today's finds. Inserted once and never updated:
+  `found_at` is when a word first arrived, which is what fixes its place in the
+  feed. A player re-sends their whole running word list after every accepted word,
+  so all but the newest entry conflicts every time — that is the design, not waste,
+  and it is what gets a player who joined mid-puzzle their earlier finds. The
+  history backfill deliberately sends no words for past days: the feed shows one
+  drop at a time, and a year of words would not fit the request body.
+- **`leaderboard_scores`** — one row per player per puzzle date, written by
+  `api/leaderboard.ts` through `submit_leaderboard_scores`. Takes an array
+  because it has two callers of the same shape: the game submitting today after
+  each accepted word, and a joining player submitting a whole history. The upsert
+  keeps the *higher* of the stored and submitted score, so repeats, out-of-order
+  arrivals and a re-sent backfill are all harmless. Each row also carries that
+  day's rarest word and its frequency, which is what both boards derive their
+  words from — the name from all of a player's rows, the weekly detail from the
+  ones inside the window.
+
+This is the one thing in the project the game reads from a database, because
+other people's scores can't be shipped in the bundle. The read is contained:
+`GET /api/leaderboard` is CDN-cached for a minute, only the leaderboard page ever
+calls it, and a failure renders as "couldn't load" with a retry. Submitting is
+fire-and-forget from a `keepalive` POST that nothing awaits. A puzzle plays
+exactly the same with the endpoint down, unconfigured, or absent.
+
+There are no accounts, so a submission **cannot be authenticated** — anyone who
+reads `api/leaderboard.ts` can post a score under a name of their choosing. What
+the endpoint does enforce is that a score be one a real game could have produced:
+a puzzle date the game has reached, a total within the day's ceiling, a top word
+no rarer than the total it belongs to. One bad day fails the whole batch rather
+than being quietly dropped. That is enough for ordinary noise and is not a
+defence against a determined forgery. Worth knowing before this board is used for
+anything that matters.
 
 ## Design decisions worth knowing about
 

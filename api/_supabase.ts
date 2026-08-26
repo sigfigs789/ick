@@ -54,6 +54,41 @@ async function post(path: string, body: unknown): Promise<void> {
 }
 
 /**
+ * Call a Postgres function and read its result.
+ *
+ * The one read path in this module, and deliberately the only one: everything
+ * else here is write-only so the game keeps working with no database at all.
+ * The leaderboard cannot be write-only -- other people's scores are the entire
+ * feature -- so it gets a reader, and it stays behind a `stable` SQL function
+ * rather than a table query, which keeps the shape of the read fixed on the
+ * server side.
+ *
+ * Unlike `record`, this rejects on failure: a caller that asked for data has to
+ * know it didn't get any, and /api/leaderboard turns that into a response the
+ * client shows as "couldn't load" rather than an empty board, which would read
+ * as "nobody has played".
+ */
+export async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+  const base = (process.env.SUPABASE_URL ?? "").replace(/\/+$/, "");
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  const response = await fetch(`${base}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      authorization: `Bearer ${key}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(args),
+    signal: AbortSignal.timeout(SUPABASE_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`supabase ${fn} ${response.status}: ${detail.slice(0, 200)}`);
+  }
+  return (await response.json()) as T;
+}
+
+/**
  * Record something in Supabase without letting it affect the caller's response.
  *
  * Resolves rather than rejecting on every failure, including an unconfigured

@@ -258,6 +258,16 @@ h2 {
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
 }
+/* The trophy and the "?" share the right end of the header. Two buttons rather
+   than one because they answer different questions and both want to be one tap
+   away; the gap is tight so the pair still reads as a single cluster balancing
+   the sound toggle on the left. */
+.app__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: none;
+}
 .app__icon-button {
   width: 2.35rem;
   height: 2.35rem;
@@ -276,6 +286,35 @@ h2 {
 }
 .app__icon-button:hover {
   background: var(--bg-inset);
+}
+/* A badged button positions its own badge, and stops clipping it: the button is
+   a circle, and the badge deliberately hangs off the top-right of it. */
+.app__icon-button--badged {
+  position: relative;
+  overflow: visible;
+}
+/* Small, warm, and lowercase, so it reads as a nudge rather than a
+   notification count. Only ever drawn once per player -- see game/whatsNew.ts. */
+.app__icon-badge {
+  position: absolute;
+  top: -0.3rem;
+  right: -0.35rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 999px;
+  /* Elusive's burnt amber: the one warm accent already in the palette, so this
+     borrows a colour the game uses rather than introducing a fourth one. */
+  background: var(--rarity-elusive-dot);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  text-transform: lowercase;
+  /* Against the page, not the button, so the badge stays legible wherever it
+     overlaps the button's edge. */
+  box-shadow: 0 0 0 1.5px var(--bg);
+  pointer-events: none;
 }
 .app__icon-button:active {
   transform: scale(0.94);
@@ -1376,6 +1415,440 @@ h2 {
   font: inherit;
   font-weight: 500;
   resize: vertical;
+}
+
+/* Recent finds -- the words other players turned up. */
+/* Below the boards and clearly apart from them: a heavier rule than the one
+   between the two boards, because this is a different kind of list, not a third
+   ranking. */
+.found-words {
+  margin-top: 2.4rem;
+  padding-top: 1.8rem;
+  border-top: 2px solid var(--border);
+}
+/* One column, like the boards. Two columns of words next to two boards of words
+   was the layout that made a find hard to tell from a player. */
+.found-words__list {
+  list-style: none;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 1fr;
+}
+/*
+ * A word arriving in the feed.
+ *
+ * The row is inserted at the top of its day, so everything below it moves down
+ * on its own -- this animates the gap opening rather than faking the push, which
+ * is why it works on the height as well as the opacity. The tint fades out so a
+ * new find is obvious for a moment and then settles into the list.
+ *
+ * The global prefers-reduced-motion rule near the top of this file cuts every
+ * animation here to nothing, so a player who has asked for stillness gets the
+ * same list without the movement.
+ */
+@keyframes found-word-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background: var(--rarity-elusive-bg);
+  }
+  60% {
+    opacity: 1;
+    transform: none;
+    max-height: 4rem;
+    background: var(--rarity-elusive-bg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    max-height: 4rem;
+    background: transparent;
+  }
+}
+.found-words__item--arrived {
+  animation: found-word-arrive 0.9s var(--ease-standard);
+}
+.found-words__item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.found-words__word {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  /* A 30-letter word must wrap rather than push the badge off the row. */
+  overflow-wrap: anywhere;
+}
+/* The drop today's finds had to contain, beside the heading. Without it the
+   list is a pile of unrelated words -- `asphyxiate` only means something once
+   you know the day asked for PHY. */
+.found-words__drop {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.3rem;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  vertical-align: 0.05rem;
+}
+/* Development only; never rendered in a production build. */
+.dev-sample-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 1.4rem;
+  color: var(--fg-faint);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.found-words__finders {
+  flex: none;
+  color: var(--fg-faint);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Leaderboard */
+/* Its own page, so it gets the room two boards want -- wider than the game's
+   30rem column, which is sized for a single puzzle. */
+.leaderboard-page {
+  max-width: 46rem;
+}
+/* Balances the back button so the title stays centred, and matches its size. */
+.leaderboard-page__header-spacer {
+  width: 2.35rem;
+  flex: none;
+}
+/* "LEADERBOARD" is nearly twice the length of "WORDINK", so at the game's title
+   size it runs under the back button on a phone. Sized to fit the narrowest
+   viewport instead, and allowed to shrink its tracking before it collides. */
+.leaderboard-page .app__header h1 {
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+}
+@media (min-width: 26rem) {
+  .leaderboard-page .app__header h1 {
+    font-size: 1.6rem;
+  }
+}
+.leaderboard-page__back {
+  display: block;
+  margin: 1.6rem auto 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  padding: 0.6rem 1.2rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.leaderboard-page__back:hover {
+  background: var(--bg-inset);
+}
+/* Before the boards open: the count is the whole message, so it gets the size
+   a score would have had. */
+.leaderboard__not-yet {
+  margin: 2.5rem 0;
+  text-align: center;
+}
+.leaderboard__not-yet-count {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-muted);
+}
+.leaderboard__not-yet-count strong {
+  font-size: 2.8rem;
+  color: var(--fg);
+}
+.leaderboard__not-yet-copy {
+  margin: 0.6rem auto 0;
+  max-width: 26rem;
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.leaderboard__imported {
+  color: var(--success-fg);
+  font-weight: 700;
+}
+/* Both boards at once: two columns where there is room, one where there isn't.
+   The grid is the whole of the responsive behaviour -- side by side on a laptop,
+   stacked weekly-then-all-time on a phone -- so there is no tab state and no
+   board the player has to go looking for. */
+/* Stacked, always. Side by side, two boards of the same shape read as one wide
+   table split down the middle -- you have to check the heading to know which
+   ranking you are looking at. One under the other, each is unmistakably its own
+   list, and the weekly one comes first because it is the one still winnable. */
+.leaderboard__boards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.8rem;
+}
+.leaderboard__board {
+  min-width: 0;
+}
+.leaderboard__board + .leaderboard__board {
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--border);
+}
+.leaderboard__board-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+/* The season's dates, on the heading's own line and plainly subordinate to it --
+   "Season 1" is what you read, the range is what it means. Set in the body face
+   at reading case so it reads as a note beside the name rather than as more
+   heading, and kept unbreakable so the range never splits across two lines. */
+.leaderboard__board-dates {
+  margin-left: 0.45rem;
+  color: var(--fg-faint);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  white-space: nowrap;
+}
+.leaderboard__caption {
+  margin: 0.2rem 0 0.5rem;
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+}
+.leaderboard__status {
+  margin: 1.4rem 0;
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: 0.88rem;
+}
+.leaderboard__retry {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+/*
+ * The board scrolls with the page, not inside itself.
+ *
+ * It used to be capped at 17rem with a faded bottom edge, which was the right
+ * shape when a board was fifty rows and would otherwise have buried everything
+ * under it. At fifteen it is the wrong one twice over: the cap showed about six
+ * of them, so a "top fifteen" arrived mostly hidden, and it put a scrolling
+ * region inside a scrolling page -- which on a phone means a drag over the board
+ * moves the board instead of the page, and the reader has to find the margin to
+ * get past it.
+ */
+.leaderboard__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* Rank and score are fixed columns; the name takes what is left and the meta
+   line tucks under it, so a long name truncates instead of shoving the score
+   off the row. */
+.leaderboard__row {
+  display: grid;
+  /* Wide enough for three digits: the row below the cut carries a real rank, and
+     a player can be 148th. */
+  grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "rank name score"
+    ".    meta meta";
+  align-items: baseline;
+  column-gap: 0.5rem;
+  padding: 0.45rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+.leaderboard__row:last-child {
+  border-bottom: 0;
+}
+.leaderboard__row--you {
+  background: var(--bg-inset);
+  border-radius: 0.45rem;
+}
+/* The break between the top fifteen and the player's own row below it. Three
+   dots and nothing else: the gap is the message. */
+.leaderboard__gap {
+  /* Clear of the last row above it, and of the row below. */
+  margin: 0.35rem 0 0.3rem;
+  color: var(--fg-faint);
+  font-size: 0.9rem;
+  line-height: 1;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+/* The row below the cut is its own list so it can carry its own start number --
+   the real rank, which is the whole reason it was sent. Nothing to undo here any
+   more now that the board above it is a plain list. */
+.leaderboard__rank {
+  grid-area: rank;
+  color: var(--fg-faint);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* The name is a word now, and words get long ("gastroenterologist"). Wrapping
+   beats ellipsing: the word *is* the identity, so a truncated one is worse than
+   a two-line row. */
+.leaderboard__name {
+  grid-area: name;
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* The find in a row's detail line: weighted a little so the word reads as a
+   word next to the count and the number, but still plainly secondary to the
+   name above it. */
+.leaderboard__find {
+  font-weight: 700;
+}
+.leaderboard__you {
+  color: var(--fg-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.leaderboard__meta {
+  grid-area: meta;
+  color: var(--fg-faint);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.leaderboard__score {
+  grid-area: score;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.leaderboard__note {
+  margin: 0.55rem 0 0;
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+.leaderboard__note--error {
+  color: var(--danger-fg);
+}
+/* Picking a name from a closed list of your own finds. Rendered as a list of
+   buttons rather than a select, so each option can show the word at reading size
+   with its score alongside -- the score is most of what makes the choice. */
+.leaderboard__you-are {
+  margin-top: 1.8rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--border);
+}
+.leaderboard__picker {
+  margin-top: 0.8rem;
+}
+.leaderboard__picker-heading {
+  margin: 0 0 0.5rem;
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.leaderboard__picker-list {
+  list-style: none;
+  margin: 0 0 0.7rem;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  /* Two up where there is room; one on a phone, where a 30-letter word needs
+     the whole width. */
+  grid-template-columns: 1fr;
+}
+@media (min-width: 34rem) {
+  .leaderboard__picker-list {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.leaderboard__picker-option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+.leaderboard__picker-option:hover:not(:disabled) {
+  background: var(--bg-inset);
+}
+/* The one in use is not a disabled control that failed, it is the current
+   answer -- so it reads as selected rather than greyed out. */
+.leaderboard__picker-option--current {
+  border-color: var(--accent);
+  background: var(--bg-inset);
+  cursor: default;
+}
+.leaderboard__picker-option:disabled:not(.leaderboard__picker-option--current) {
+  opacity: 0.5;
+  cursor: default;
+}
+.leaderboard__picker-word {
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.leaderboard__picker-score {
+  flex: none;
+  color: var(--fg-faint);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.leaderboard__note--playing {
+  margin: 0;
+}
+.results-panel__leaderboard {
+  display: block;
+  width: 100%;
+  margin-top: 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  padding: 0.6rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.results-panel__leaderboard:hover {
+  background: var(--bg-inset);
 }
 
 @media (max-width: 420px) {

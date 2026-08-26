@@ -10,6 +10,8 @@ interface Props {
   drop: string;
   words: AcceptedWord[];
   streak: StreakState;
+  /** Opens the leaderboard. Omitted in tests that only exercise sharing. */
+  onLeaderboard?: () => void;
 }
 
 // Naming answers is opt-in so shared results stay spoiler-free by default; the
@@ -20,7 +22,7 @@ const REVEAL_OPTIONS: { value: RevealMode; label: string }[] = [
   { value: "all", label: "All" },
 ];
 
-export function ResultsPanel({ date, drop, words, streak }: Props) {
+export function ResultsPanel({ date, drop, words, streak, onLeaderboard }: Props) {
   // Default to "top": name the player's rarest word as a low-stakes flex while
   // keeping the rest anonymous. "Hide" stays available for a fully spoiler-free
   // share.
@@ -72,6 +74,14 @@ export function ResultsPanel({ date, drop, words, streak }: Props) {
           onShared={trackResultSharedOnX}
         />
       </div>
+      {onLeaderboard && (
+        // The second way in, and the one that will get used: a finished puzzle
+        // is the moment a player actually wants to know where the score put
+        // them. The header trophy is for every other moment.
+        <button type="button" className="results-panel__leaderboard" onClick={onLeaderboard}>
+          See the leaderboard
+        </button>
+      )}
     </section>
   );
 }

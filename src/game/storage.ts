@@ -1,4 +1,4 @@
-import { addDays, todayDateString } from "./date";
+import { addDays, toDateString, todayDateString } from "./date";
 import { maxGuessesFor } from "./constants";
 import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
@@ -72,6 +72,95 @@ export function loadProgress(date: string): DailyProgress | null {
   return loaded;
 }
 
+/**
+ * How far past midnight a puzzle still counts as played on its own day.
+ *
+ * A late-night session is an ordinary way to play a daily game, and finishing at
+ * 1am should not cost the day. The live path already works this way and always
+ * has: `useDailyPuzzle` reads the date once when the page loads, so a session
+ * opened at 23:50 keeps submitting to that puzzle all night. This is the same
+ * grace, applied to the record after the fact.
+ *
+ * Four hours rather than two: it covers "a couple of hours" with room to spare,
+ * and 4am is a natural edge -- earlier than anyone's morning routine, so a
+ * puzzle touched then belongs to last night's session far more plausibly than to
+ * the new day.
+ *
+ * The cost, stated rather than hidden: the next day's puzzle drops at local
+ * midnight, so this leaves a four-hour window each night in which yesterday's
+ * puzzle could be played fresh and still count. That is archive play slipping
+ * through, and it is accepted deliberately -- the players it lets in are real and
+ * numerous, and the ones it lets cheat have to be awake at 3am to gain one day's
+ * score.
+ */
+const LATE_FINISH_GRACE_HOURS = 4;
+
+/**
+ * Every puzzle this browser can show was played on its own day.
+ *
+ * For the leaderboard's history import: a player who joins the board has often
+ * been playing for weeks, and starting them at zero throws away a record that is
+ * sitting in localStorage already.
+ *
+ * What makes a day eligible is evidence that it was played when it dropped,
+ * rather than pulled out of the archive later -- archive play is off the board
+ * for the same reason it is off the streak. There are two timestamps that can
+ * provide it, in order of preference:
+ *
+ *   - `firstWordAt`, stamped when the first word was accepted. This is the exact
+ *     question being asked, and it counts a day the player never finished.
+ *   - `completedAt`, the fallback for every puzzle saved before `firstWordAt`
+ *     existed. Weaker in one way that the grace window above now covers: it is
+ *     stamped on the last guess, which for a late-night session lands after
+ *     midnight.
+ *
+ * A day with neither is skipped. It is not that such a day didn't happen -- it is
+ * that the record cannot say when it happened, and guessing in the player's
+ * favour is how the archive gets in wholesale.
+ *
+ * Read through `loadProgress`, so historical words come back with today's rarity
+ * migrations applied rather than whatever tier name they were saved under.
+ */
+export function playedOnItsDay(): DailyProgress[] {
+  let keys: string[];
+  try {
+    keys = Object.keys(localStorage).filter((key) => key.startsWith(PROGRESS_PREFIX));
+  } catch {
+    // Private browsing or disabled storage: there is no history to import, which
+    // is not an error worth raising on the path that asks.
+    return [];
+  }
+
+  const played: DailyProgress[] = [];
+  for (const key of keys) {
+    const progress = loadProgress(key.slice(PROGRESS_PREFIX.length));
+    if (!progress || progress.acceptedWords.length === 0) continue;
+    const playedAt = progress.firstWordAt ?? progress.completedAt;
+    if (!playedAt) continue;
+    if (!playedOnDate(playedAt, progress.date)) continue;
+    played.push(progress);
+  }
+  return played.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Whether a timestamp counts as playing `date`'s puzzle: on the day itself, or
+ * in the small hours of the morning after (see LATE_FINISH_GRACE_HOURS).
+ *
+ * Compared as calendar dates plus an hour rather than by adding milliseconds to
+ * a midnight, so the two clock changes a year cannot shift the boundary by an
+ * hour. An unparseable stamp is no evidence at all and counts as neither.
+ */
+function playedOnDate(timestamp: string, date: string): boolean {
+  const stamped = new Date(timestamp);
+  if (Number.isNaN(stamped.getTime())) return false;
+  const stampedDate = toDateString(stamped);
+  if (stampedDate === date) return true;
+  return (
+    stampedDate === addDays(date, 1) && stamped.getHours() < LATE_FINISH_GRACE_HOURS
+  );
+}
+
 function saveProgress(progress: DailyProgress): void {
   localStorage.setItem(PROGRESS_PREFIX + progress.date, JSON.stringify(progress));
 }
@@ -132,12 +221,19 @@ export function recordAcceptedWord(progress: DailyProgress, word: AcceptedWord):
   const justCompleted = acceptedWords.length >= maxGuessesFor(progress.date);
   const won = acceptedWords.some((acceptedWord) => isWinningRarity(acceptedWord.rarity));
 
+  const now = new Date().toISOString();
   const updated: DailyProgress = {
     ...progress,
     acceptedWords,
     completed: justCompleted,
     won: justCompleted ? won : progress.won,
-    completedAt: justCompleted ? new Date().toISOString() : progress.completedAt,
+    // Stamped on the first word only, and never overwritten: this records when
+    // the puzzle was *played*, which is the thing the leaderboard's history
+    // import has to be able to tell (see playedOnItsDay). `completedAt` cannot
+    // answer that -- it is set on the last guess, and a day left half-played
+    // never gets one.
+    firstWordAt: progress.firstWordAt ?? now,
+    completedAt: justCompleted ? now : progress.completedAt,
   };
   saveProgress(updated);
 
