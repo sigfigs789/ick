@@ -355,6 +355,24 @@ describe("api/leaderboard reads", () => {
     });
   });
 
+  it("opens the boards early for a caller that asks to preview them", async () => {
+    withEnv();
+    const fetchMock = stubFetch([{ ready: true, weekly: [], allTime: [], words: [] }]);
+    // Days before the opening date, and the gate opens anyway -- which is what
+    // the switch is for: seeing the real boards before the morning they go live.
+    await handler(get(`?since=${SUNDAY}&today=2026-08-25&preview=1`));
+
+    expect(rpcCall(fetchMock)?.args.p_open).toBe(true);
+  });
+
+  it("takes only preview=1 for it, not any old value", async () => {
+    withEnv();
+    const fetchMock = stubFetch([{ ready: false, weekly: [], allTime: [], words: [] }]);
+    await handler(get(`?since=${SUNDAY}&today=2026-08-25&preview=0`));
+
+    expect(rpcCall(fetchMock)?.args.p_open).toBe(false);
+  });
+
   it("opens for a player whose own calendar has reached the date", async () => {
     withEnv();
     // UTC is still on Saturday the 29th; Auckland is already on Sunday the 30th.

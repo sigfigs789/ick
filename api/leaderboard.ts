@@ -23,6 +23,8 @@
 //   come back empty and `opensOn` is what there is to show. The gate is enforced
 //   in SQL, so before the date no board row leaves the database at all -- there is
 //   no early board sitting in a response waiting to be read out of a network tab.
+//   `preview=1` opens that gate for one request, so the real boards can be looked
+//   at before their opening date.
 //
 // GET /api/leaderboard?words=1&today=YYYY-MM-DD
 //   -> { words: [...] }
@@ -543,7 +545,16 @@ async function handleGet(request: Request): Promise<Response> {
   // their own Sunday, and a client with a slow clock is not held back either.
   const claimed = params.get("today") ?? "";
   const playerToday = DATE_RE.test(claimed) ? claimed : utcToday();
-  const open = (playerToday > utcToday() ? playerToday : utcToday()) >= BOARDS_OPEN_FROM;
+  // `preview=1` opens the gate early, for looking at the real boards before the
+  // day they go live -- a launch you cannot see until the morning it happens is
+  // one you cannot check. Safe to honour on request: the boards are built from
+  // scores players already published, so the most it can do is show a real
+  // leaderboard a few days early, and it changes nothing about what is counted
+  // or written. It is part of the URL, so a preview is cached apart from an
+  // ordinary open rather than poisoning it for everybody else.
+  const preview = params.get("preview") === "1";
+  const open =
+    preview || (playerToday > utcToday() ? playerToday : utcToday()) >= BOARDS_OPEN_FROM;
 
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
