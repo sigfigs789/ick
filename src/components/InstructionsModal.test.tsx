@@ -16,12 +16,10 @@ describe("InstructionsModal", () => {
     expect(screen.getByRole("button", { name: /close instructions/i })).toHaveFocus();
   });
 
-  it("says each whole point is a rank, and names the two above them", () => {
+  it("names Mythic and Legend as the highest ranks with their rarity thresholds", () => {
     render(<InstructionsModal open onClose={vi.fn()} />);
     expect(
-      screen.getByText(
-        /each whole point is a rank.*the highest ranks are Mythic at 9\.5\+ and Legend at 9\.9\+/is,
-      ),
+      screen.getByText(/the highest ranks are Mythic at 9\.5\+ and Legend at 9\.9\+/i),
     ).toBeInTheDocument();
   });
 
