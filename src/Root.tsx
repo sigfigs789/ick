@@ -5,6 +5,17 @@ import { syncHistory } from "./game/leaderboard";
 import { hasJoined } from "./game/player";
 import { useRoute } from "./routes";
 
+/**
+ * How long a tab has to have been away before returning to it re-syncs.
+ *
+ * The same five minutes the leaderboard uses to decide a board has gone stale,
+ * and for the same reason: flicking to another tab and back is not an absence,
+ * and without a threshold every glance away would cost a POST. Long enough that
+ * ordinary tab-switching is free, short enough that a phone put down and picked
+ * up again counts as opening the app -- which, on a phone, it is.
+ */
+const SYNC_STALE_MS = 5 * 60_000;
+
 /** Two pages, picked off the address bar. See src/routes.ts. */
 export function Root() {
   const route = useRoute();
@@ -29,8 +40,58 @@ export function Root() {
    * be a second identical request for nothing.
    */
   const joinedOnOpen = useRef(hasJoined());
+  /**
+   * When this browser last sent its history, so a return can tell a tab that
+   * has been away from one that never left.
+   *
+   * Stamped on mount whether or not anything was sent, because the load itself
+   * is the reference point either way: either the sync below ran, or the
+   * leaderboard's own join did, or there was nothing on this browser to send.
+   */
+  const syncedAt = useRef(0);
   useEffect(() => {
     if (joinedOnOpen.current) syncHistory();
+    syncedAt.current = Date.now();
+  }, []);
+
+  /**
+   * And again when the app is reopened without being reloaded.
+   *
+   * A mount is not the only way somebody opens this app, and on a phone it is
+   * not even the usual way: a tab is backgrounded rather than closed, and coming
+   * back to it runs no effect and remounts nothing. A player whose word failed
+   * to submit at lunch would sit on that hole until they happened to reload.
+   *
+   * Two events, because there are two ways a tab reappears -- foregrounded
+   * (`visibilitychange`), and restored from the back/forward cache (`pageshow`
+   * with `persisted`, which does not remount React either). The same pair
+   * useForceUpdate watches, for the same reason: these are the moments a tab
+   * that has been sitting somewhere actually resurfaces.
+   *
+   * Joining is re-read rather than remembered, so a player who joined on the
+   * leaderboard earlier in this same session is kept in step from then on --
+   * while a browser that still has not joined goes on sending nothing.
+   */
+  useEffect(() => {
+    const sync = () => {
+      if (Date.now() - syncedAt.current < SYNC_STALE_MS) return;
+      if (!hasJoined()) return;
+      syncHistory();
+      syncedAt.current = Date.now();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") sync();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) sync();
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
+    };
   }, []);
 
   return route === "leaderboard" ? <LeaderboardPage /> : <App />;
