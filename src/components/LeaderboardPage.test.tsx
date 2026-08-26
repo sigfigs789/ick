@@ -327,6 +327,9 @@ describe("before the boards open", () => {
     render(<LeaderboardPage />);
 
     expect(await screen.findByText(/already being counted/)).toBeInTheDocument();
+    // Named the way the boards themselves are: the second one is "Season 1", so
+    // calling it all-time here described a board that is not on the page.
+    expect(screen.getByText(/weekly and season boards go live/)).toBeInTheDocument();
     // And they are: a visit before the opening date still joins and still sends
     // the history up. Collecting starts before displaying does.
     await waitFor(() => expect(hasJoined()).toBe(true));
@@ -407,7 +410,12 @@ describe("joining the board", () => {
     // A handle comes from the id, not from a word, so there is nothing to earn
     // first -- somebody who has never played still gets a row of their own.
     await waitFor(() => expect(loadPlayerId()).not.toBeNull());
-    expect(await screen.findByText(/Nothing to count yet/)).toBeInTheDocument();
+    // And nothing is said about it. "Nothing to count yet" announced an absence
+    // the player had not asked about; the boards are the answer to where they
+    // stand, and an empty history needs no commentary.
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(screen.queryByText(/Nothing to count/)).toBeNull();
+    expect(screen.queryByText(/Counted/)).toBeNull();
   });
 
   it("asks for nothing: no call to action, and no explanation under it", async () => {
@@ -510,7 +518,7 @@ describe("recent finds", () => {
     // Without it the list is a pile of unrelated words.
     const section = await screen.findByRole("region", { name: "Today's finds" });
     expect(section.querySelector(".found-words__drop")?.textContent).toBeTruthy();
-    expect(screen.getByText("Every word found on today's puzzle, newest first.")).toBeInTheDocument();
+    expect(screen.getByText("Every word found on today's puzzle.")).toBeInTheDocument();
   });
 
   it("shows the feed even while the boards are still shut", async () => {

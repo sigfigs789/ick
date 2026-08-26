@@ -464,10 +464,10 @@ Row-level security is enabled on every table with no policies at all, so the
 
 Its own page at `/leaderboard` — a board is something you link a friend to, open
 in a second tab, and leave with the back button, none of which a modal can do.
-Two entry points from the game: a trophy in the header and a link under the
-results. Routing is `src/routes.ts`, about forty lines of `pathname` and
-`pushState`, since `vercel.json` already rewrites every non-`/api/` path to
-`index.html`.
+Two entry points from the game: a trophy in the header, which appears once the
+boards open, and a link under the results, which is there throughout. Routing is
+`src/routes.ts`, about forty lines of `pathname` and `pushState`, since
+`vercel.json` already rewrites every non-`/api/` path to `index.html`.
 
 Two boards, both fed by one table and shown together: **this week**, counting
 puzzles from the current Sunday onward, and **Season 1**, counting the season's
@@ -594,7 +594,7 @@ interesting at any size, and until the boards open it is the whole page.
 
 ### Collected from the start, published on a date
 
-Scores accumulate from the first day this ships; the weekly and all-time boards
+Scores accumulate from the first day this ships; the weekly and season boards
 go live on **Sunday 2026-08-30** (`BOARDS_OPEN_FROM`), whatever the data looks
 like by then. Until that date the page names the day instead of showing a board.
 
@@ -609,11 +609,25 @@ database at all** — there is no early board sitting in an API response waiting
 be read out of a network tab. The recent-finds feed is deliberately outside it
 and works from day one, so the page is never empty while the boards wait.
 
-The header's trophy is always there, and badged "new" until it is first opened.
-It was briefly hidden until the leaderboard had something to show, which sounded
-careful and deadlocked the cold start: finds only appear once players join, and
-joining only happens by opening this page. The page is never a dead end anyway —
-before the boards open it carries the finds feed and the date they arrive on.
+**The header's trophy waits for the same date**, and so does its "new" badge.
+Until then the leaderboard is a page naming a day it is not yet, which is not
+something to advertise in the header of every puzzle.
+
+An earlier version hid the trophy until the leaderboard had *data*, which
+deadlocked the cold start: finds only appear once players join, and joining was
+only reachable through that button. A date does not deadlock — it arrives whether
+or not the game is busy. Nor does waiting cost the boards anything, because
+`backfillHistory` is retroactive: whenever a player finally joins, every eligible
+day still in their browser goes up in one request, so somebody who first opens the
+page on the 30th brings their whole Season 1 history with them.
+
+"See the leaderboard" under a finished puzzle stays available throughout, so the
+page is reachable for anyone curious before it is announced.
+
+The badge is spent the first time it is followed, so an early visit through that
+link deliberately does *not* retire it — mark it seen before the boards exist and
+the players who showed up early are exactly the ones never told the boards had
+opened.
 
 ### Before the boards open: run the migrations
 
@@ -681,9 +695,9 @@ instead, which only made sense while a "name" was itself a word.
 Account-free, and there is nothing to fill in — not even a tap. Opening
 `/leaderboard` mints a UUID and stores that id and nothing else
 (`src/game/player.ts`), which is also everything the handle is computed from.
-Nothing is sent for a player who never opens the page. The trophy carries a
-one-time "new" badge, retired the first time the page is visited
-(`src/game/whatsNew.ts`).
+Nothing is sent for a player who never opens the page. The trophy appears only
+once the boards have opened, carrying a one-time "new" badge retired by the first
+visit from that day on (`src/game/whatsNew.ts`).
 
 **The visit is the joining.** There used to be a "Put me on the board" button and
 a paragraph under it explaining that there is no account, no email and no name to
