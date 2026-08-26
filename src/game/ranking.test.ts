@@ -105,9 +105,10 @@ describe("rank ladder across the latest system", () => {
     expect(topRankForScore(9.95)).toBe("Legend");
   });
 
-  it("scores a Zipf of 1.68 at 8.9 and ranks it Extremely Rare", () => {
-    expect(rarityScore(1.68)).toBe(8.9);
-    expect(rarityForZipf(1.68)).toBe("Extremely Rare");
+  it("scores a Zipf of 2.0 at 8.57 and ranks it Extremely Rare", () => {
+    expect(rarityScore(2.0)).toBe(8.57);
+    expect(formatRarityScore(2.0)).toBe("8.6");
+    expect(rarityForZipf(2.0)).toBe("Extremely Rare");
   });
 
   it("scores a Zipf of 1.18 in the Mythic band", () => {
@@ -137,9 +138,11 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     [1.58, "Elusive"],
   ];
 
+  // Dated only: from DECADE_BANDS_START the measured labels come off the shown
+  // score instead of these cutoffs, so an undated call answers the newer
+  // question. The suite below owns that one.
   it.each(EDGES)("Zipf %s sits in %s", (zipf, rarity) => {
     expect(rarityForZipf(zipf, ON)).toBe(rarity);
-    expect(rarityForZipf(zipf)).toBe(rarity); // undefined date = newest system
   });
 
   it("keeps archived puzzles on the bands they were played with", () => {
@@ -158,6 +161,12 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     expect(rarityForZipf(7.7, BEFORE)).toBe("Quotidian");
     expect(rarityForZipf(7.7, ON)).toBe("Very Common");
     expect(rarityForZipf(7.7)).toBe("Very Common");
+  });
+
+  it("keeps the retuned bands live for the puzzles between the two cutovers", () => {
+    // 2026-08-21 through 2026-08-26 are the only dates these cutoffs answer for.
+    expect(rarityForZipf(1.58, "2026-08-26")).toBe("Elusive");
+    expect(rarityForZipf(1.59, "2026-08-26")).toBe("Extremely Rare");
   });
 
   it("freezes the top rank's color at the cutover, not just its bands", () => {
@@ -222,6 +231,118 @@ describe("narrow measured bands (from 2026-08-21)", () => {
       expect(rarityForZipf(1.18, date)).toBe("Mythic");
       expect(rarityForZipf(0.4, date)).toBe("Legend");
     }
+  });
+});
+
+describe("whole-point measured bands (from 2026-08-27)", () => {
+  const BEFORE = "2026-08-26"; // last day on the Zipf-cutoff bands
+  const ON = "2026-08-27"; // first day on the whole-point bands
+
+  // Each band, top and bottom, by the Zipf that lands there. The point of the
+  // change is that these are readable off the score, so every case pins the
+  // shown number beside the label.
+  const EDGES: ReadonlyArray<[zipf: number, shown: string, rarity: Rarity]> = [
+    [1.35, "9.4", "Elusive"],
+    [1.71, "9.0", "Elusive"],
+    [1.72, "8.9", "Extremely Rare"],
+    [2.45, "8.0", "Extremely Rare"],
+    [2.46, "7.9", "Rare"],
+    [3.19, "7.0", "Rare"],
+    [3.2, "6.9", "Uncommon"],
+    [3.91, "6.0", "Uncommon"],
+    [3.92, "5.9", "Common"],
+    [4.61, "5.0", "Common"],
+    [4.62, "4.9", "Very Common"],
+  ];
+
+  it.each(EDGES)("Zipf %s shows %s and sits in %s", (zipf, shown, rarity) => {
+    expect(formatRarityScore(zipf, ON)).toBe(shown);
+    expect(rarityForZipf(zipf, ON)).toBe(rarity);
+    expect(rarityForZipf(zipf)).toBe(rarity); // undefined date = newest system
+  });
+
+  it("makes the score's whole point the rank, for every value it can show", () => {
+    // The whole reason the bands moved: a player reading 8.7 can see they are
+    // three tenths off the next rank. That only holds if the leading digit and
+    // the label never disagree -- sweep every Zipf the data can hold and check.
+    const BAND: Record<string, Rarity> = {
+      "9": "Elusive",
+      "8": "Extremely Rare",
+      "7": "Rare",
+      "6": "Uncommon",
+      "5": "Common",
+    };
+    for (let hundredths = 100; hundredths <= 800; hundredths++) {
+      const zipf = hundredths / 100;
+      const rarity = rarityForZipf(zipf, ON);
+      if (rarity === "Mythic" || rarity === "Legend") continue;
+      const shown = formatRarityScore(zipf, ON);
+      const expected = BAND[shown.split(".")[0]] ?? "Very Common";
+      expect(rarity, `${shown} should be ${expected}, not ${rarity}`).toBe(expected);
+    }
+  });
+
+  it("lifts every measured score and lowers none", () => {
+    // The curve pins both ends of the measured band and bends the middle up, so
+    // no archived score can be beaten by the same word played today.
+    // Up to the data's maximum: past it the straight line ran negative and the
+    // curve floors at 0, which is the one place the two can disagree downward.
+    for (let hundredths = 100; hundredths <= 773; hundredths++) {
+      const zipf = hundredths / 100;
+      expect(rarityScore(zipf, ON)).toBeGreaterThanOrEqual(rarityScore(zipf, BEFORE));
+    }
+    // Both ends stay exactly where they were; only the middle moves.
+    expect(rarityScore(1, ON)).toBe(rarityScore(1, BEFORE));
+    expect(rarityScore(7.73, ON)).toBe(rarityScore(7.73, BEFORE));
+    expect(rarityScore(3.5, ON)).toBeGreaterThan(rarityScore(3.5, BEFORE));
+  });
+
+  it("demotes nothing but the bottom of Common, and pins that window", () => {
+    // Labels move up with the scores, with one exception, accepted deliberately:
+    // Very Common now starts wherever the score falls under 5.0, and at this
+    // gamma that lands at Zipf 4.62 -- below the 4.85 the old cutoff used. So the
+    // everyday words in between read Very Common where they read Common the day
+    // before. It is the one band where losing a rank costs nothing (the words are
+    // "balance", "twice", "fresh"), and the price of a bottom band that starts on
+    // a whole point like every other. Everything rarer only ever moves up.
+    const demoted: number[] = [];
+    for (let hundredths = 100; hundredths <= 773; hundredths++) {
+      const zipf = hundredths / 100;
+      const before = rarityForZipf(zipf, BEFORE);
+      const after = rarityForZipf(zipf, ON);
+      // RARITY_ORDER runs rarest-first, so a rank going up means a lower index.
+      if (RARITY_ORDER.indexOf(after) > RARITY_ORDER.indexOf(before)) {
+        expect([before, after], `Zipf ${zipf} dropped an unexpected rank`).toEqual([
+          "Common",
+          "Very Common",
+        ]);
+        demoted.push(zipf);
+      }
+    }
+    expect(demoted[0]).toBeCloseTo(4.62, 5);
+    expect(demoted[demoted.length - 1]).toBeCloseTo(4.84, 5);
+  });
+
+  it("leaves the deep tail and the top ranks exactly as they were", () => {
+    // The curve touches only the measured band, and Legend/Mythic key off the
+    // score cutoffs either side of the cutover.
+    for (const zipf of [-1.57, 0.4, 0.9, 1.0]) {
+      expect(rarityScore(zipf, ON)).toBe(rarityScore(zipf, BEFORE));
+      expect(rarityForZipf(zipf, ON)).toBe(rarityForZipf(zipf, BEFORE));
+    }
+    // Mythic sits just inside the measured band, so its score does move -- but
+    // the rank it keys off does not.
+    expect(rarityForZipf(1.11, ON)).toBe("Mythic");
+    expect(rarityForZipf(1.11, BEFORE)).toBe("Mythic");
+  });
+
+  it("keeps archived puzzles on the bands they were played with", () => {
+    // Zipf 2.22 ("gorgonzola") was Rare the day before the cutover and is
+    // Extremely Rare on it -- purple's floor moving down the scale.
+    expect(rarityForZipf(2.22, BEFORE)).toBe("Rare");
+    expect(rarityForZipf(2.22, ON)).toBe("Extremely Rare");
+    expect(rarityScore(2.22, BEFORE)).toBe(8.11);
+    expect(rarityScore(2.22, ON)).toBe(8.27);
   });
 });
 

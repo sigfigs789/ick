@@ -59,8 +59,9 @@ export function InstructionsModal({ open, onClose }: Props) {
         <p className="modal__copy">WordInk gives everyone the same daily drop—say, “INK”. Find the rarest English word you can that contains it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</p>
         <p className="modal__rarity-note">
           Rarity scores reflect how often a word appears across books, news, movies, websites, and
-          social media—not how complex it is. Values are computed using Zipf’s law. The highest ranks
-          are Mythic at 9.5+ and Legend at 9.9+.
+          social media—not how complex it is. Values are computed using Zipf’s law. Each whole point is
+          a rank—7s are Rare, 8s Extremely Rare, 9s Elusive—so a 7.9 is a tenth off the next one up.
+          The highest ranks are Mythic at 9.5+ and Legend at 9.9+.
         </p>
         <form className="word-suggestion feedback-form" onSubmit={submitFeedback}>
           <div className="word-suggestion__row feedback-form__row">

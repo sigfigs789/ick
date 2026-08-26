@@ -481,10 +481,10 @@ describe("recent finds", () => {
 
     // The same badge the game shows on an accepted word, so a find reads the
     // way finding it would have. Read off the badge's own element: the row's
-    // text runs together as "8.33 players", where a substring match would pass
+    // text runs together as "8.43 players", where a substring match would pass
     // for a number never displayed.
     await waitFor(() => expect(finds()[0]).toHaveTextContent("EXTREMELY RARE"));
-    expect(finds()[0].querySelector(".rarity-badge__score")?.textContent).toBe("8.3");
+    expect(finds()[0].querySelector(".rarity-badge__score")?.textContent).toBe("8.4");
   });
 
   it("says how many players found a word, when more than one did", async () => {

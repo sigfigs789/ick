@@ -109,8 +109,8 @@ describe("the unattested sentinel across every system", () => {
 describe("score formatting", () => {
   it("shows two decimals for Mythic and Legend, one decimal below", () => {
     expect(formatRarityScore(0.5)).toBe("9.95"); // Legend (deep tail) -> two decimals
-    expect(formatRarityScore(rarityFor("aardwolf")!.zipf)).toBe("9.74"); // Mythic -> two decimals
-    expect(formatRarityScore(rarityFor("cat")!.zipf)).toBe("4.3"); // below Mythic -> one decimal
+    expect(formatRarityScore(rarityFor("aardwolf")!.zipf)).toBe("9.75"); // Mythic -> two decimals
+    expect(formatRarityScore(rarityFor("cat")!.zipf)).toBe("4.7"); // below Mythic -> one decimal
     expect(formatScore(9.9)).toBe("9.90");
     expect(formatScore(4.3)).toBe("4.3");
   });
