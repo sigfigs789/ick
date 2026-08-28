@@ -110,6 +110,12 @@ export interface ShareOptions {
   weekTotal?: number;
   /** Rarity score summed across the puzzle's month (see game/totals.ts). */
   monthTotal?: number;
+  /**
+   * Whether this is the current puzzle, which is what lets its score be called
+   * "Today". Defaults to false: the neutral "Total" is never wrong, so a caller
+   * that does not know says nothing.
+   */
+  isToday?: boolean;
   /** Adds attribution to a link at the moment it is shared. */
   source?: ShareSource | null;
   /** Uses the shorter X post layout while keeping the selected spoiler setting. */
@@ -149,26 +155,36 @@ export function buildShareText(
 
   const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
-  if (
+  // The stats read narrowest window first: this puzzle, then the week, the
+  // month and the run of days behind them. Which also settles what the first
+  // line's score is called -- "Today" names the window the way the two beneath
+  // it do, where "Total" invited being read as a lifetime figure once there
+  // were longer windows under it. Only where it is true: an archive result is
+  // headed with its own date, and "Today" directly under that date would
+  // contradict it.
+  const progressLine =
     format === "default" &&
     (options.streak !== undefined ||
       options.weekTotal !== undefined ||
-      options.monthTotal !== undefined)
-  ) {
-    const streak = options.streak ?? 0;
-    if (resultLine) lines.push("");
-    lines.push(
-      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
-    );
-  }
+      options.monthTotal !== undefined);
   const raritySummary = [
-    `Total: ${totalRarityScore(words, dateStr).toFixed(1)}`,
+    `${options.isToday ? "Today" : "Total"}: ${totalRarityScore(words, dateStr).toFixed(1)}`,
   ];
   if (format === "default")
     raritySummary.push(
       `Top: ${formatScore(topRarityScore(words, dateStr), dateStr)}`,
     );
+  // The blank line separates the squares from the stats block, so it belongs
+  // wherever that block starts -- and there is no block to separate when the
+  // summary is the only line of it.
+  if (resultLine && progressLine) lines.push("");
   lines.push(raritySummary.join(" · "));
+  if (progressLine) {
+    const streak = options.streak ?? 0;
+    lines.push(
+      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
+    );
+  }
   // Always show the rarest word's odds, but only name the word once it is being
   // revealed ("top" or "all"); the spoiler-free share labels it "Rarest word"
   // instead so it keeps its guarantee of never naming a word.
@@ -185,5 +201,9 @@ export function todayShareText(
   words: AcceptedWord[],
   options?: ShareOptions,
 ): string {
-  return buildShareText(toDateString(new Date()), drop, words, options);
+  // Today by definition, so it says so unless a caller insists otherwise.
+  return buildShareText(toDateString(new Date()), drop, words, {
+    isToday: true,
+    ...options,
+  });
 }

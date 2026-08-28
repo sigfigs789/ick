@@ -11,6 +11,12 @@ interface Props {
   drop: string;
   words: AcceptedWord[];
   streak: StreakState;
+  /**
+   * Whether this is the current puzzle, which is what lets the shared result
+   * call its score "Today" (see game/share.ts). Defaults to false, so an
+   * archive result headed with its own date does not claim to be today's.
+   */
+  isToday?: boolean;
   /** Opens the leaderboard. Omitted in tests that only exercise sharing. */
   onLeaderboard?: () => void;
 }
@@ -23,7 +29,14 @@ const REVEAL_OPTIONS: { value: RevealMode; label: string }[] = [
   { value: "all", label: "All" },
 ];
 
-export function ResultsPanel({ date, drop, words, streak, onLeaderboard }: Props) {
+export function ResultsPanel({
+  date,
+  drop,
+  words,
+  streak,
+  isToday = false,
+  onLeaderboard,
+}: Props) {
   // Default to "top": name the player's rarest word as a low-stakes flex while
   // keeping the rest anonymous. "Hide" stays available for a fully spoiler-free
   // share.
@@ -38,6 +51,7 @@ export function ResultsPanel({ date, drop, words, streak, onLeaderboard }: Props
     streak: streak.currentStreak,
     weekTotal: totals.week,
     monthTotal: totals.month,
+    isToday,
   };
   const shareText = buildShareText(date, drop, words, sharedResultOptions);
   const copiedShareText = buildShareText(date, drop, words, {
@@ -48,6 +62,7 @@ export function ResultsPanel({ date, drop, words, streak, onLeaderboard }: Props
     reveal,
     source: "twitter",
     format: "x",
+    isToday,
   })}`;
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (

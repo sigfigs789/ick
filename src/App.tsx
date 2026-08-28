@@ -250,6 +250,7 @@ export default function App() {
             drop={drop}
             words={progress.acceptedWords}
             streak={streak}
+            isToday={isToday}
             onLeaderboard={() => openLeaderboard("results")}
           />
         )}

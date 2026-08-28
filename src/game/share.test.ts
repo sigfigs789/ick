@@ -178,7 +178,7 @@ describe("buildShareText", () => {
     );
   });
 
-  it("puts the session total directly before the current puzzle's top rarity", () => {
+  it("reads the puzzle's own score first, then the windows around it", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       streak: 4,
       weekTotal: 42.3,
@@ -190,7 +190,28 @@ describe("buildShareText", () => {
       0,
     );
     expect(text).toContain(
-      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days · Week: 42.3 · Month: 118.7\nTotal: ${total.toFixed(1)} · Top: ${rarityScore(2.4, "2024-01-05").toFixed(1)}`,
+      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nTotal: ${total.toFixed(1)} · Top: ${rarityScore(2.4, "2024-01-05").toFixed(1)}\nStreak: 4 days · Week: 42.3 · Month: 118.7`,
+    );
+  });
+
+  it('calls the puzzle score "Today" only on the current puzzle', () => {
+    const options = { streak: 4, weekTotal: 42.3, monthTotal: 118.7 };
+
+    expect(buildShareText("2024-01-05", "str", words, options)).toContain(
+      "\nTotal: ",
+    );
+    expect(
+      buildShareText("2024-01-05", "str", words, { ...options, isToday: true }),
+    ).toContain("\nToday: ");
+    // An archive result is headed with its own date, which "Today" would
+    // contradict; only the label changes, never the number.
+    expect(
+      buildShareText("2024-01-05", "str", words, { ...options, isToday: true }),
+    ).toBe(
+      buildShareText("2024-01-05", "str", words, options).replace(
+        "\nTotal: ",
+        "\nToday: ",
+      ),
     );
   });
 });

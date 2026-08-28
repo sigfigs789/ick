@@ -74,6 +74,29 @@ describe("ResultsPanel share toggle", () => {
     );
   });
 
+  it('labels the score "Today" only when the panel is on the current puzzle', () => {
+    const { unmount } = render(
+      <ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />,
+    );
+    expect(
+      document.querySelector(".results-panel__preview")?.textContent,
+    ).toContain("Total:");
+    unmount();
+
+    render(
+      <ResultsPanel
+        date="2025-01-01"
+        drop="str"
+        words={words}
+        streak={streak}
+        isToday
+      />,
+    );
+    expect(
+      document.querySelector(".results-panel__preview")?.textContent,
+    ).toContain("Today:");
+  });
+
   it("shows every word in the shared text once All is selected", async () => {
     render(
       <ResultsPanel
