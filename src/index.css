@@ -351,7 +351,8 @@ h2 {
   gap: 0.4rem;
   margin-top: 0.25rem;
 }
-.puzzle-nav__arrow {
+.puzzle-nav__arrow,
+.found-words__arrow {
   min-height: 2rem;
   padding: 0.25rem 0.55rem;
   flex: none;
@@ -372,14 +373,17 @@ h2 {
     color 0.15s var(--ease-standard),
     transform 0.15s var(--ease-standard);
 }
-.puzzle-nav__arrow:not(:disabled):hover {
+.puzzle-nav__arrow:not(:disabled):hover,
+.found-words__arrow:not(:disabled):hover {
   background: var(--accent);
   color: var(--accent-fg);
 }
-.puzzle-nav__arrow:not(:disabled):active {
+.puzzle-nav__arrow:not(:disabled):active,
+.found-words__arrow:not(:disabled):active {
   transform: scale(0.96);
 }
-.puzzle-nav__arrow:disabled {
+.puzzle-nav__arrow:disabled,
+.found-words__arrow:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -1520,6 +1524,46 @@ h2 {
   font-weight: 900;
   letter-spacing: 0.08em;
   vertical-align: 0.05rem;
+}
+/*
+ * Stepping the feed back through the week.
+ *
+ * Under the heading rather than beside it: the heading already carries the
+ * day's drop, and a row that held a date, a drop and two buttons would be four
+ * things competing for one line on a phone. Full width and split to the ends,
+ * which is the shape a pager has everywhere.
+ */
+.found-words__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+/*
+ * A row holding its place while the day it belongs to is fetched.
+ *
+ * The same box as a real row -- same padding, same rule underneath -- with
+ * nothing in it, so the list is exactly as tall as it is about to be. It pulses
+ * rather than sitting still, because a stack of empty rules that never moved
+ * would read as a list of blanks somebody found rather than as a list arriving.
+ * The reduced-motion rule near the top of this file stops the pulse, leaving the
+ * height, which is the part that was doing the work.
+ */
+.found-words__item--placeholder {
+  min-height: 1.9rem;
+  background: var(--bg-inset);
+  border-radius: 0.3rem;
+  animation: found-words-pending 1.1s ease-in-out infinite;
+}
+@keyframes found-words-pending {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 /* Development only; never rendered in a production build. */
 .dev-sample-toggle {

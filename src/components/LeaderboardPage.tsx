@@ -3,6 +3,7 @@ import { RarityBadge } from "./RarityBadge";
 import {
   fetchBoards,
   fetchFoundWords,
+  feedFloor,
   type FetchOptions,
   type BoardEntry,
   type Boards,
@@ -10,7 +11,12 @@ import {
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
 import { handleFor } from "../game/handle";
-import { previousMonthName, todayDateString } from "../game/date";
+import {
+  addDays,
+  formatDateLabel,
+  previousMonthName,
+  todayDateString,
+} from "../game/date";
 import { monthResetLabel } from "../game/month";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
@@ -70,6 +76,17 @@ export function LeaderboardPage() {
   const [words, setWords] = useState<readonly FoundWord[]>([]);
   const [state, setState] = useState<LoadState>("loading");
   /**
+   * The feed's own load state, which is not the page's.
+   *
+   * It has one now because the feed can be asked a question whose answer is
+   * legitimately nothing: an earlier day of the week nobody found a word on.
+   * While the feed only ever showed today, an empty list and a list still in
+   * flight looked the same and it did not matter -- the section simply wasn't
+   * there yet. Stepping back makes them different answers to a question the
+   * reader just asked, and each has to be said out loud.
+   */
+  const [feedState, setFeedState] = useState<LoadState>("loading");
+  /**
    * The puzzle this page is about, fixed when the page opened.
    *
    * Read once rather than on every render, so it moves only on a refresh -- the
@@ -81,6 +98,25 @@ export function LeaderboardPage() {
    * the whole list to a new drop mid-poll, under a reader who never asked for it.
    */
   const [today] = useState(todayDateString);
+  /**
+   * The puzzle the finds below are about -- today's, until a reader steps back.
+   *
+   * Only the feed moves. The boards stay on this week and this month, because
+   * those windows are not a day's worth of anything and stepping back a day
+   * would say nothing about either. What a reader is asking for when they press
+   * back is the thing that *is* a day: what everybody found on it.
+   */
+  const [viewing, setViewing] = useState(today);
+  /**
+   * How far back the feed steps (see feedFloor).
+   *
+   * Frozen beside `today` rather than recomputed as the page renders: both
+   * answer "which window am I in", and a tab open across a midnight should carry
+   * one answer to that rather than two that disagree.
+   */
+  const [floor] = useState(() => feedFloor(today));
+  const isToday = viewing === today;
+  const canGoBack = viewing > floor;
   /**
    * Who the boards should call "you".
    *
@@ -96,19 +132,62 @@ export function LeaderboardPage() {
   const boardsReadAt = useRef(0);
 
   /**
-   * Re-read the finds, leaving everything else alone.
+   * Re-read the finds for the day on screen, leaving everything else alone.
    *
-   * A failure here is swallowed on purpose: the last good list stays on screen,
-   * which is a truer thing to show than an empty section over one bad minute.
+   * A failure is swallowed once there is a list to keep: the last good one is a
+   * truer thing to show than an empty section over one bad minute. A failure on
+   * the *first* read of a day is different -- there is nothing behind it, and
+   * silently showing an empty list would say nobody found anything -- so that
+   * one becomes the feed's error state and offers a retry.
    */
   const refreshWords = useCallback(
     (options: FetchOptions = {}) => {
-      fetchFoundWords(today, options)
-        .then(setWords)
-        .catch(() => {});
+      fetchFoundWords(viewing, options)
+        .then((found) => {
+          setWords(found);
+          setFeedState("ready");
+        })
+        .catch(() =>
+          setFeedState((was) => (was === "loading" ? "error" : was)),
+        );
     },
-    [today],
+    [viewing],
   );
+
+  /**
+   * Step the feed to another day of the week.
+   *
+   * Sets the day and nothing else; the effect that follows `viewing` does the
+   * fetching. Nothing is prefetched and no day is held in memory, so a reader
+   * who never presses back costs exactly what they cost before -- one request,
+   * for today. The list is cleared on the way,
+   * because the heading names a drop and the rows under it have to be that
+   * drop's; leaving yesterday's words under today's heading for the length of a
+   * request would be the one wrong thing this could show. The empty list keeps
+   * its height while it is in flight (see .found-words__list), so the page does
+   * not collapse and spring back under the button that was just pressed.
+   */
+  const showDay = useCallback((date: string) => {
+    setViewing(date);
+    setWords([]);
+    setFeedState("loading");
+  }, []);
+
+  /**
+   * How tall the list was, so the next day can be the same height while it
+   * loads.
+   *
+   * A ref rather than state: it is read only at the moment a day is swapped,
+   * and nothing should re-render because a count was recorded. The day arriving
+   * is very often about as long as the day leaving -- the same players on the
+   * same drop -- so the rows the skeleton holds open are close to the rows that
+   * replace them, and the page does not collapse and spring back under the
+   * button that was just pressed.
+   */
+  const lastRowCount = useRef(0);
+  useEffect(() => {
+    if (words.length > 0) lastRowCount.current = words.length;
+  }, [words]);
 
   /**
    * Fetch the boards, and the finds beside them.
@@ -119,8 +198,13 @@ export function LeaderboardPage() {
    * cached once for all of them (see api/leaderboard.ts). Asking together would
    * have made the shared half private.
    *
-   * The page's state follows the boards: a feed that fails is a section that
-   * isn't there, while boards that fail are the page not loading.
+   * The page's state follows the boards: a feed that fails is a section saying
+   * so, while boards that fail are the page not loading.
+   *
+   * The boards only. The feed is fetched by the effect that follows the day on
+   * screen, which is what keeps stepping back a day from re-reading two boards
+   * that did not move -- they are this week and this month whichever day the
+   * feed is showing.
    */
   const load = useCallback(() => {
     setState("loading");
@@ -133,8 +217,7 @@ export function LeaderboardPage() {
       // A board that won't load is a disappointment, not an error the player has
       // to act on -- so it says so plainly and offers a retry, and that is all.
       .catch(() => setState("error"));
-    refreshWords();
-  }, [refreshWords, today]);
+  }, [today]);
 
   /**
    * Re-read the boards without disturbing the page.
@@ -171,6 +254,17 @@ export function LeaderboardPage() {
   }, [load]);
 
   /**
+   * Read the finds for whichever day is on screen.
+   *
+   * Runs on the way in and again every time a reader steps to another day --
+   * `refreshWords` is rebuilt only when `viewing` changes, so this is exactly
+   * once per day looked at. A day nobody presses back to is never requested.
+   */
+  useEffect(() => {
+    refreshWords();
+  }, [refreshWords]);
+
+  /**
    * Keep the finds feed current while the page is open.
    *
    * Today's finds land through the day now, so a page left open would otherwise
@@ -195,25 +289,30 @@ export function LeaderboardPage() {
     // that other callers pass, and the options argument is not a thing a timer
     // should ever be able to set.
     const tick = () => refreshWords();
-    let timer = window.setInterval(tick, REFRESH_MS);
+    // Only today's feed is live. A past day of this week is finished -- the game
+    // refuses a score for a puzzle played after its own date (see
+    // game/leaderboard.ts, submitScore), so no word can ever be added to it --
+    // and polling a list that cannot change would be a request a minute to be
+    // handed the same rows back.
+    let timer = isToday ? window.setInterval(tick, REFRESH_MS) : 0;
     function onVisibilityChange() {
       window.clearInterval(timer);
       if (document.visibilityState === "hidden") return;
-      refreshWords();
+      if (isToday) refreshWords();
       // The boards too, but only after a real absence. Coming back to a page
       // that has been open since this morning and finding last night's
       // standings is the one way they go properly stale -- while a glance at
       // another tab and back is not new information, and re-asking on every
       // return would put this player's own uncached query on a hair trigger.
       if (Date.now() - boardsReadAt.current > BOARDS_STALE_MS) refreshBoards();
-      timer = window.setInterval(tick, REFRESH_MS);
+      if (isToday) timer = window.setInterval(tick, REFRESH_MS);
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [refreshBoards, refreshWords]);
+  }, [isToday, refreshBoards, refreshWords]);
 
   /**
    * Which words turned up since the last look, so the feed can show them
@@ -226,10 +325,24 @@ export function LeaderboardPage() {
    *
    */
   const seenWords = useRef<Set<string> | null>(null);
+  /**
+   * Which day the set above is about, so stepping to another one starts a new
+   * baseline rather than reading a whole different puzzle's words as arrivals.
+   */
+  const seenDay = useRef(today);
   const [arrived, setArrived] = useState<readonly string[]>([]);
 
   useEffect(() => {
     const found = words.map((entry) => entry.word);
+    if (seenDay.current !== viewing) {
+      // A day the reader asked for, arriving all at once because they asked --
+      // which is not the same event as a word turning up under them, and gets
+      // none of the animation that says so.
+      seenDay.current = viewing;
+      seenWords.current = found.length > 0 ? new Set(found) : null;
+      setArrived([]);
+      return;
+    }
     if (seenWords.current === null) {
       // Nothing seen yet and nothing to see: an empty first response is not a
       // baseline, or the real first list would animate in as if it were new.
@@ -245,7 +358,7 @@ export function LeaderboardPage() {
     // unrelated reason does not replay it.
     const timer = window.setTimeout(() => setArrived([]), 1400);
     return () => window.clearTimeout(timer);
-  }, [words]);
+  }, [viewing, words]);
 
   /**
    * Refresh everything on the page, because a reader asked.
@@ -396,7 +509,7 @@ export function LeaderboardPage() {
                 championLabel="Last week's champion"
               />
               <Board
-                heading="Monthly"
+                heading="This month"
                 // The weekday it turns over on and the date that is, which for
                 // a month is computed (see game/month.ts) rather than the
                 // constant the week can get away with -- and the weekday leads,
@@ -427,8 +540,26 @@ export function LeaderboardPage() {
             its own question, and it is the part of this page that works from day
             one -- so boards that failed to load are a reason to show a retry
             above it, never a reason to hide finds that arrived perfectly well. */}
-        {words.length > 0 && (
-          <FoundWords words={words} today={today} arrived={arrived} />
+        {(words.length > 0 || canGoBack || !isToday) && (
+          <FoundWords
+            words={words}
+            date={viewing}
+            isToday={isToday}
+            state={feedState}
+            // Never nothing and never a screenful: a first load has no previous
+            // day to measure, and a very long day should not open a hole the
+            // list may not fill.
+            placeholderRows={Math.min(Math.max(lastRowCount.current, 4), 12)}
+            arrived={arrived}
+            canGoBack={canGoBack}
+            canGoForward={!isToday}
+            onBack={() => showDay(addDays(viewing, -1))}
+            onForward={() => showDay(addDays(viewing, 1))}
+            onRetry={() => {
+              setFeedState("loading");
+              refreshWords();
+            }}
+          />
         )}
 
         <button
@@ -461,13 +592,19 @@ export function LeaderboardPage() {
 }
 
 /**
- * Every word found on today's puzzle, newest first.
+ * Every word found on one puzzle, newest first.
  *
- * One puzzle only, and it is the puzzle the player in front of it is on. A week
- * of history behind it read as an archive, and the drop in the heading is what
- * makes the list mean anything: `asphyxiate` is just a word until you know the
- * day asked for PHY. That is also why the feed is keyed to a puzzle date rather
- * than to a clock -- the drop is the thing these words have in common.
+ * One puzzle at a time, and today's until a reader presses back. The drop in the
+ * heading is what makes the list mean anything -- `asphyxiate` is just a word
+ * until you know the day asked for PHY -- so the feed is keyed to a puzzle date
+ * rather than to a clock, and stepping back moves the whole heading with it.
+ *
+ * Back as far as the week's reset and no further (see game/leaderboard.ts,
+ * feedFloor). It is not an archive: it is the same window the board above it
+ * ranks, which is the one a reader is already holding in their head. What it
+ * fixes is a real loss -- a day's finds used to be gone at the reader's
+ * midnight, so anybody who opened the page in the morning had missed them, and
+ * the words are the part of this page people come back for.
  *
  * Every word rather than each player's best. The feed used to be built from the
  * one word per player the boards rank on, which made it a list of personal bests
@@ -484,41 +621,139 @@ export function LeaderboardPage() {
  */
 function FoundWords({
   words,
-  today,
+  date,
+  isToday,
+  state,
+  placeholderRows,
   arrived,
+  canGoBack,
+  canGoForward,
+  onBack,
+  onForward,
+  onRetry,
 }: {
   words: readonly FoundWord[];
-  today: string;
+  date: string;
+  isToday: boolean;
+  state: LoadState;
+  /** How many rows to hold open while a day loads. */
+  placeholderRows: number;
   arrived: readonly string[];
+  canGoBack: boolean;
+  canGoForward: boolean;
+  onBack: () => void;
+  onForward: () => void;
+  onRetry: () => void;
 }) {
+  // "Today's finds" while it is today's, and the day's own date once it isn't.
+  // The date rather than "Yesterday": two steps back has no such word, and a
+  // heading whose wording changes shape halfway down a week is harder to read
+  // than one that always names the day.
+  const heading = isToday
+    ? "Today's finds"
+    : `Finds from ${formatDateLabel(date)}`;
   return (
-    <section className="found-words" aria-label="Today's finds">
+    <section className="found-words" aria-label={heading}>
       {/* No line under it. "Every word found on today's puzzle" restated the
           heading with the drop already beside it, and the boards above carry
           nothing under their headings either -- one of the three sections
           explaining itself was the odd one out. */}
       <h2 className="leaderboard__board-heading">
-        Today's finds
-        <span className="found-words__drop">{dropForDate(today)}</span>
+        {heading}
+        <span className="found-words__drop">{dropForDate(date)}</span>
       </h2>
-      <ul className="found-words__list">
-        {words.map((found) => (
-          <li
-            key={found.word}
-            className={`found-words__item${
-              arrived.includes(found.word) ? " found-words__item--arrived" : ""
-            }`}
+      {/* Both arrows always rendered, disabled at the ends rather than removed:
+          a control that disappears at the edge of its range takes the shape of
+          the thing with it, and a reader who has stepped back needs to see that
+          forward exists before they know they can. */}
+      <div className="found-words__nav">
+        <button
+          type="button"
+          className="found-words__arrow"
+          onClick={onBack}
+          disabled={!canGoBack}
+          aria-label="Finds from the day before"
+        >
+          <span aria-hidden="true">‹</span>
+          <span>Previous day</span>
+        </button>
+        <button
+          type="button"
+          className="found-words__arrow"
+          onClick={onForward}
+          disabled={!canGoForward}
+          aria-label="Finds from the day after"
+        >
+          <span>Next day</span>
+          <span aria-hidden="true">›</span>
+        </button>
+      </div>
+      {/* One slot for whatever the day has to say, so the three answers -- a
+          list, nothing, or a failure -- all occupy the same ground and the
+          sections below do not move as a reader steps between days. */}
+      {state === "error" ? (
+        <p className="leaderboard__status" aria-live="polite">
+          Couldn't load these finds.{" "}
+          {/* Named apart from the boards' retry above it, which reads the same
+              and does something else. Two buttons called "Try again" on one
+              page are one button to anybody who reaches them by name. */}
+          <button
+            type="button"
+            className="leaderboard__retry"
+            onClick={onRetry}
+            aria-label="Try loading the finds again"
           >
-            <span className="found-words__word">{found.word}</span>
-            <RarityBadge rarity={found.rarity} zipf={found.zipf} />
-            {found.finders > 1 && (
-              <span className="found-words__finders">
-                {found.finders} players
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
+            Try again
+          </button>
+        </p>
+      ) : state === "loading" ? (
+        // Rows rather than a spinner, as many as the day just left had: the
+        // request is one small query and usually lands in a moment, and what a
+        // reader notices in that moment is the page under their thumb jumping,
+        // not the absence of a message. Hidden from the reading order entirely
+        // -- there is nothing here to read -- with the one sentence that is
+        // worth saying announced instead.
+        <>
+          <p className="sr-only" aria-live="polite">
+            Loading the finds…
+          </p>
+          <ul className="found-words__list" aria-hidden="true">
+            {Array.from({ length: placeholderRows }, (_, i) => (
+              <li
+                key={i}
+                className="found-words__item found-words__item--placeholder"
+              />
+            ))}
+          </ul>
+        </>
+      ) : words.length === 0 ? (
+        <p className="leaderboard__status">
+          {isToday
+            ? "Nobody's found anything yet today."
+            : "Nobody found anything on this puzzle."}
+        </p>
+      ) : (
+        <ul className="found-words__list">
+          {words.map((found) => (
+            <li
+              key={found.word}
+              className={`found-words__item${
+                arrived.includes(found.word)
+                  ? " found-words__item--arrived"
+                  : ""
+              }`}
+            >
+              <span className="found-words__word">{found.word}</span>
+              <RarityBadge rarity={found.rarity} zipf={found.zipf} />
+              {found.finders > 1 && (
+                <span className="found-words__finders">
+                  {found.finders} players
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   backfillHistory,
+  feedFloor,
   fetchBoards,
   fetchFoundWords,
   submitScore,
@@ -686,5 +687,29 @@ describe("asking for the list by hand", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+/*
+ * How far back the finds feed goes.
+ */
+describe("how far back the feed looks", () => {
+  it("stops the finds at the week's own reset", () => {
+    // The same window the board above the feed ranks. Further back would turn a
+    // record of the week into an archive of the game. Read on a week that lies
+    // entirely inside recorded history, so the reset is the bound that bites.
+    expect(feedFloor("2026-09-16")).toBe("2026-09-13");
+    expect(feedFloor("2026-09-13")).toBe("2026-09-13");
+  });
+
+  it("never offers a day from before any find was recorded", () => {
+    // The finds table is younger than the game, so a week that starts before it
+    // is held at the first day there is anything to show. "Nobody found
+    // anything on this puzzle" would be a sentence about the schema on one of
+    // those days, and the same lie every time.
+    expect(feedFloor("2026-08-29")).toBe("2026-08-26");
+    expect(feedFloor("2026-08-26")).toBe("2026-08-26");
+    // And it never reaches back past it, however early the puzzle.
+    expect(feedFloor("2026-07-03")).toBe("2026-08-26");
   });
 });
