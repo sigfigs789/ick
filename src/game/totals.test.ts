@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { rarityScore } from "./dictionary";
-import { windowTotals } from "./totals";
+import { weekTotal } from "./totals";
 import type { AcceptedWord, Rarity } from "./types";
 
 function word(w: string, zipf = 5, rarity: Rarity = "Common"): AcceptedWord {
@@ -37,39 +37,36 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("windowTotals", () => {
+describe("weekTotal", () => {
   // 2026-08-20 is a Thursday, so its week runs from Sunday the 16th.
   const words = [word("inkling", 2.6, "Rare"), word("strange", 4.1)];
 
-  it("sums the week from its Sunday and the month from its first", () => {
+  it("sums the days from the week's Sunday onward", () => {
     store("2026-08-16", words); // the week's Sunday
+    store("2026-08-18", words);
     store("2026-08-20", words); // the puzzle being shared
-    store("2026-08-13", words); // this month, previous week
-    store("2026-07-31", words); // last month entirely
 
-    const day = scored("2026-08-16", words);
-    expect(windowTotals("2026-08-20")).toEqual({
-      week: round(day + scored("2026-08-20", words)),
-      month: round(day + scored("2026-08-20", words) + scored("2026-08-13", words)),
-    });
-  });
-
-  it("leaves out the Saturday before the week and the last day of the month before", () => {
-    store("2026-08-15", words); // Saturday, the week before
-    store("2026-08-20", words);
-
-    const totals = windowTotals("2026-08-20");
-    expect(totals.week).toBe(round(scored("2026-08-20", words)));
-    expect(totals.month).toBe(
-      round(scored("2026-08-15", words) + scored("2026-08-20", words))
+    expect(weekTotal("2026-08-20")).toBe(
+      round(
+        scored("2026-08-16", words) +
+          scored("2026-08-18", words) +
+          scored("2026-08-20", words)
+      )
     );
   });
 
-  it("ignores days after the puzzle, so an older result reads its own windows", () => {
+  it("leaves out the Saturday before, which belongs to the week before", () => {
+    store("2026-08-15", words); // Saturday
+    store("2026-08-20", words);
+
+    expect(weekTotal("2026-08-20")).toBe(round(scored("2026-08-20", words)));
+  });
+
+  it("ignores days after the puzzle, so an older result reads its own week", () => {
     store("2026-08-17", words);
     store("2026-08-20", words);
 
-    expect(windowTotals("2026-08-17").week).toBe(round(scored("2026-08-17", words)));
+    expect(weekTotal("2026-08-17")).toBe(round(scored("2026-08-17", words)));
   });
 
   it("ignores archive play, which the boards do not count either", () => {
@@ -87,13 +84,13 @@ describe("windowTotals", () => {
       })
     );
 
-    expect(windowTotals("2026-08-20")).toEqual({ week: 0, month: 0 });
+    expect(weekTotal("2026-08-20")).toBe(0);
   });
 
   it("reads the puzzle the clock is on when no date is given", () => {
     store("2026-08-20", words);
 
-    expect(windowTotals()).toEqual(windowTotals("2026-08-20"));
+    expect(weekTotal()).toBe(weekTotal("2026-08-20"));
   });
 });
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { buildShareText, type RevealMode } from "../game/share";
-import { windowTotals } from "../game/totals";
+import { weekTotal } from "../game/totals";
 import { ShareButton } from "./ShareButton";
 import { TwitterShareButton } from "./TwitterShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -42,15 +42,14 @@ export function ResultsPanel({
   // share.
   const [reveal, setReveal] = useState<RevealMode>("top");
   // Read once per render from this browser's own history rather than the
-  // leaderboard: the numbers are the boards' arithmetic (see game/totals.ts),
-  // but a player who never joined a board still gets them, and nothing here has
-  // to wait on the network to draw a share preview.
-  const totals = windowTotals(date);
+  // leaderboard: the number is the weekly board's arithmetic (see
+  // game/totals.ts), but a player who never joined a board still gets it, and
+  // nothing here has to wait on the network to draw a share preview.
+  const week = weekTotal(date);
   const sharedResultOptions = {
     reveal,
     streak: streak.currentStreak,
-    weekTotal: totals.week,
-    monthTotal: totals.month,
+    weekTotal: week,
     isToday,
   };
   const shareText = buildShareText(date, drop, words, sharedResultOptions);

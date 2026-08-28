@@ -97,7 +97,6 @@ describe("buildShareText", () => {
       spoilerFree: false,
       streak: 4,
       weekTotal: 42.3,
-      monthTotal: 118.7,
       source: null,
       format: "x",
     });
@@ -107,7 +106,6 @@ describe("buildShareText", () => {
     );
     expect(text).not.toContain("Streak:");
     expect(text).not.toContain("Week:");
-    expect(text).not.toContain("Month:");
     expect(text).not.toContain("Top:");
     expect(text).toContain("Total:");
   });
@@ -178,11 +176,10 @@ describe("buildShareText", () => {
     );
   });
 
-  it("puts the streak over the three windows it counts", () => {
+  it("puts the streak over the two windows it counts", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       streak: 4,
       weekTotal: 42.3,
-      monthTotal: 118.7,
     });
 
     const total = words.reduce(
@@ -190,13 +187,13 @@ describe("buildShareText", () => {
       0,
     );
     expect(text).toContain(
-      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days\nTotal: ${total.toFixed(1)} · Week: 42.3 · Month: 118.7`,
+      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days\nTotal: ${total.toFixed(1)} · Week: 42.3`,
     );
     expect(text).not.toContain("Top:");
   });
 
   it('calls the puzzle score "Today" only on the current puzzle', () => {
-    const options = { streak: 4, weekTotal: 42.3, monthTotal: 118.7 };
+    const options = { streak: 4, weekTotal: 42.3 };
 
     expect(buildShareText("2024-01-05", "str", words, options)).toContain(
       "\nTotal: ",
