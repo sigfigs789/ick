@@ -178,7 +178,7 @@ describe("buildShareText", () => {
     );
   });
 
-  it("reads the puzzle's own score first, then the windows around it", () => {
+  it("puts the streak over the three windows it counts", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       streak: 4,
       weekTotal: 42.3,
@@ -190,8 +190,9 @@ describe("buildShareText", () => {
       0,
     );
     expect(text).toContain(
-      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nTotal: ${total.toFixed(1)} · Top: ${rarityScore(2.4, "2024-01-05").toFixed(1)}\nStreak: 4 days · Week: 42.3 · Month: 118.7`,
+      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days\nTotal: ${total.toFixed(1)} · Week: 42.3 · Month: 118.7`,
     );
+    expect(text).not.toContain("Top:");
   });
 
   it('calls the puzzle score "Today" only on the current puzzle', () => {

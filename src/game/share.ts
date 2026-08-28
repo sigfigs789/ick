@@ -1,8 +1,6 @@
 import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
 import {
   formatRarityScore,
-  formatScore,
-  topRarityScore,
   totalRarityScore,
   usesRetunedTiers,
 } from "./dictionary";
@@ -155,35 +153,32 @@ export function buildShareText(
 
   const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
-  // The stats read narrowest window first: this puzzle, then the week, the
-  // month and the run of days behind them. Which also settles what the first
-  // line's score is called -- "Today" names the window the way the two beneath
-  // it do, where "Total" invited being read as a lifetime figure once there
-  // were longer windows under it. Only where it is true: an archive result is
-  // headed with its own date, and "Today" directly under that date would
-  // contradict it.
   const progressLine =
     format === "default" &&
     (options.streak !== undefined ||
       options.weekTotal !== undefined ||
       options.monthTotal !== undefined);
-  const raritySummary = [
-    `${options.isToday ? "Today" : "Total"}: ${totalRarityScore(words, dateStr).toFixed(1)}`,
-  ];
-  if (format === "default")
-    raritySummary.push(
-      `Top: ${formatScore(topRarityScore(words, dateStr), dateStr)}`,
-    );
+  // The score's own label names its window, so that the three windows read as
+  // one series: the puzzle, the week around it, the month around that. "Today"
+  // only where it is true -- an archive result is headed with its own date, and
+  // "Today" under that date would contradict it.
+  const scoreLabel = options.isToday ? "Today" : "Total";
+  const score = totalRarityScore(words, dateStr).toFixed(1);
   // The blank line separates the squares from the stats block, so it belongs
   // wherever that block starts -- and there is no block to separate when the
-  // summary is the only line of it.
+  // score is the only line of it.
   if (resultLine && progressLine) lines.push("");
-  lines.push(raritySummary.join(" · "));
   if (progressLine) {
+    // The streak leads because it is the one figure here that is not a score:
+    // a count of days, in different units from the three under it, and the
+    // line the other three are the detail of.
     const streak = options.streak ?? 0;
+    lines.push(`Streak: ${streak} day${streak === 1 ? "" : "s"}`);
     lines.push(
-      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
+      `${scoreLabel}: ${score} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
     );
+  } else {
+    lines.push(`${scoreLabel}: ${score}`);
   }
   // Always show the rarest word's odds, but only name the word once it is being
   // revealed ("top" or "all"); the spoiler-free share labels it "Rarest word"
