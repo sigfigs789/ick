@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { ResultsPanel } from "./ResultsPanel";
 import { buildShareText } from "../game/share";
-import { weekTotal } from "../game/totals";
+import { windowTotals } from "../game/totals";
 import type { AcceptedWord, StreakState } from "../game/types";
 
 const words: AcceptedWord[] = [
@@ -68,7 +68,8 @@ describe("ResultsPanel share toggle", () => {
       buildShareText(date, "str", words, {
         spoilerFree: true,
         streak: streak.currentStreak,
-        weekTotal: weekTotal(date),
+        weekTotal: windowTotals(date).week,
+        monthTotal: windowTotals(date).month,
       }).split("\n")[0],
     );
   });

@@ -106,6 +106,8 @@ export interface ShareOptions {
   streak?: number;
   /** Rarity score summed across the puzzle's week (see game/totals.ts). */
   weekTotal?: number;
+  /** Rarity score summed across the puzzle's month (see game/totals.ts). */
+  monthTotal?: number;
   /**
    * Whether this is the current puzzle, which is what lets its score be called
    * "Today". Defaults to false: the neutral "Total" is never wrong, so a caller
@@ -154,11 +156,12 @@ export function buildShareText(
   const progressLine =
     format === "default" &&
     (options.streak !== undefined ||
-      options.weekTotal !== undefined);
-  // The score's own label names its window, so that the two windows read as one
-  // series: the puzzle, and the week around it. "Today" only where it is true --
-  // an archive result is headed with its own date, and "Today" under that date
-  // would contradict it.
+      options.weekTotal !== undefined ||
+      options.monthTotal !== undefined);
+  // The score's own label names its window, so that the three windows read as
+  // one series: the puzzle, the week around it, the month around that. "Today"
+  // only where it is true -- an archive result is headed with its own date, and
+  // "Today" under that date would contradict it.
   const scoreLabel = options.isToday ? "Today" : "Total";
   const score = totalRarityScore(words, dateStr).toFixed(1);
   // The blank line separates the squares from the stats block, so it belongs
@@ -167,12 +170,12 @@ export function buildShareText(
   if (resultLine && progressLine) lines.push("");
   if (progressLine) {
     // The streak leads because it is the one figure here that is not a score:
-    // a count of days, in different units from the two under it, and the line
-    // the other two are the detail of.
+    // a count of days, in different units from the three under it, and the
+    // line the other three are the detail of.
     const streak = options.streak ?? 0;
     lines.push(`Streak: ${streak} day${streak === 1 ? "" : "s"}`);
     lines.push(
-      `${scoreLabel}: ${score} · Week: ${(options.weekTotal ?? 0).toFixed(1)}`,
+      `${scoreLabel}: ${score} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
     );
   } else {
     lines.push(`${scoreLabel}: ${score}`);
