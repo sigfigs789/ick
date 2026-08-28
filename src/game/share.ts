@@ -1,8 +1,6 @@
 import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
 import {
   formatRarityScore,
-  formatScore,
-  topRarityScore,
   totalRarityScore,
   usesRetunedTiers,
 } from "./dictionary";
@@ -106,10 +104,16 @@ export interface ShareOptions {
   spoilerFree?: boolean;
   /** Current consecutive-day streak to include in the shared result. */
   streak?: number;
-  /** Total Rare-or-better results to include in the shared result. */
-  crushedIt?: number;
-  /** Total Extremely Rare-or-better results to include in the shared result. */
-  elite?: number;
+  /** Rarity score summed across the puzzle's week (see game/totals.ts). */
+  weekTotal?: number;
+  /** Rarity score summed across the puzzle's month (see game/totals.ts). */
+  monthTotal?: number;
+  /**
+   * Whether this is the current puzzle, which is what lets its score be called
+   * "Today". Defaults to false: the neutral "Total" is never wrong, so a caller
+   * that does not know says nothing.
+   */
+  isToday?: boolean;
   /** Adds attribution to a link at the moment it is shared. */
   source?: ShareSource | null;
   /** Uses the shorter X post layout while keeping the selected spoiler setting. */
@@ -149,26 +153,33 @@ export function buildShareText(
 
   const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
-  if (
+  const progressLine =
     format === "default" &&
     (options.streak !== undefined ||
-      options.crushedIt !== undefined ||
-      options.elite !== undefined)
-  ) {
+      options.weekTotal !== undefined ||
+      options.monthTotal !== undefined);
+  // The score's own label names its window, so that the three windows read as
+  // one series: the puzzle, the week around it, the month around that. "Today"
+  // only where it is true -- an archive result is headed with its own date, and
+  // "Today" under that date would contradict it.
+  const scoreLabel = options.isToday ? "Today" : "Total";
+  const score = totalRarityScore(words, dateStr).toFixed(1);
+  // The blank line separates the squares from the stats block, so it belongs
+  // wherever that block starts -- and there is no block to separate when the
+  // score is the only line of it.
+  if (resultLine && progressLine) lines.push("");
+  if (progressLine) {
+    // The streak leads because it is the one figure here that is not a score:
+    // a count of days, in different units from the three under it, and the
+    // line the other three are the detail of.
     const streak = options.streak ?? 0;
-    if (resultLine) lines.push("");
+    lines.push(`Streak: ${streak} day${streak === 1 ? "" : "s"}`);
     lines.push(
-      `Streak: ${streak} day${streak === 1 ? "" : "s"} · Crushed it: ${options.crushedIt ?? 0} · Elite: ${options.elite ?? 0}`,
+      `${scoreLabel}: ${score} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
     );
+  } else {
+    lines.push(`${scoreLabel}: ${score}`);
   }
-  const raritySummary = [
-    `Total: ${totalRarityScore(words, dateStr).toFixed(1)}`,
-  ];
-  if (format === "default")
-    raritySummary.push(
-      `Top: ${formatScore(topRarityScore(words, dateStr), dateStr)}`,
-    );
-  lines.push(raritySummary.join(" · "));
   // Always show the rarest word's odds, but only name the word once it is being
   // revealed ("top" or "all"); the spoiler-free share labels it "Rarest word"
   // instead so it keeps its guarantee of never naming a word.
@@ -185,5 +196,9 @@ export function todayShareText(
   words: AcceptedWord[],
   options?: ShareOptions,
 ): string {
-  return buildShareText(toDateString(new Date()), drop, words, options);
+  // Today by definition, so it says so unless a caller insists otherwise.
+  return buildShareText(toDateString(new Date()), drop, words, {
+    isToday: true,
+    ...options,
+  });
 }

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { ResultsPanel } from "./ResultsPanel";
 import { buildShareText } from "../game/share";
+import { windowTotals } from "../game/totals";
 import type { AcceptedWord, StreakState } from "../game/types";
 
 const words: AcceptedWord[] = [
@@ -67,10 +68,33 @@ describe("ResultsPanel share toggle", () => {
       buildShareText(date, "str", words, {
         spoilerFree: true,
         streak: streak.currentStreak,
-        crushedIt: streak.crushedIt,
-        elite: streak.elite,
+        weekTotal: windowTotals(date).week,
+        monthTotal: windowTotals(date).month,
       }).split("\n")[0],
     );
+  });
+
+  it('labels the score "Today" only when the panel is on the current puzzle', () => {
+    const { unmount } = render(
+      <ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />,
+    );
+    expect(
+      document.querySelector(".results-panel__preview")?.textContent,
+    ).toContain("Total:");
+    unmount();
+
+    render(
+      <ResultsPanel
+        date="2025-01-01"
+        drop="str"
+        words={words}
+        streak={streak}
+        isToday
+      />,
+    );
+    expect(
+      document.querySelector(".results-panel__preview")?.textContent,
+    ).toContain("Today:");
   });
 
   it("shows every word in the shared text once All is selected", async () => {

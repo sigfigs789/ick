@@ -96,8 +96,8 @@ describe("buildShareText", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       spoilerFree: false,
       streak: 4,
-      crushedIt: 7,
-      elite: 2,
+      weekTotal: 42.3,
+      monthTotal: 118.7,
       source: null,
       format: "x",
     });
@@ -106,8 +106,8 @@ describe("buildShareText", () => {
       `🟪 aardvark (${rarityScore(2.4, "2024-01-05").toFixed(1)})`,
     );
     expect(text).not.toContain("Streak:");
-    expect(text).not.toContain("Crushed it:");
-    expect(text).not.toContain("Elite:");
+    expect(text).not.toContain("Week:");
+    expect(text).not.toContain("Month:");
     expect(text).not.toContain("Top:");
     expect(text).toContain("Total:");
   });
@@ -178,11 +178,11 @@ describe("buildShareText", () => {
     );
   });
 
-  it("puts the session total directly before the current puzzle's top rarity", () => {
+  it("puts the streak over the three windows it counts", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       streak: 4,
-      crushedIt: 7,
-      elite: 2,
+      weekTotal: 42.3,
+      monthTotal: 118.7,
     });
 
     const total = words.reduce(
@@ -190,7 +190,29 @@ describe("buildShareText", () => {
       0,
     );
     expect(text).toContain(
-      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days · Crushed it: 7 · Elite: 2\nTotal: ${total.toFixed(1)} · Top: ${rarityScore(2.4, "2024-01-05").toFixed(1)}`,
+      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days\nTotal: ${total.toFixed(1)} · Week: 42.3 · Month: 118.7`,
+    );
+    expect(text).not.toContain("Top:");
+  });
+
+  it('calls the puzzle score "Today" only on the current puzzle', () => {
+    const options = { streak: 4, weekTotal: 42.3, monthTotal: 118.7 };
+
+    expect(buildShareText("2024-01-05", "str", words, options)).toContain(
+      "\nTotal: ",
+    );
+    expect(
+      buildShareText("2024-01-05", "str", words, { ...options, isToday: true }),
+    ).toContain("\nToday: ");
+    // An archive result is headed with its own date, which "Today" would
+    // contradict; only the label changes, never the number.
+    expect(
+      buildShareText("2024-01-05", "str", words, { ...options, isToday: true }),
+    ).toBe(
+      buildShareText("2024-01-05", "str", words, options).replace(
+        "\nTotal: ",
+        "\nToday: ",
+      ),
     );
   });
 });

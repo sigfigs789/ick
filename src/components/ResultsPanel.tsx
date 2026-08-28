@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { buildShareText, type RevealMode } from "../game/share";
+import { windowTotals } from "../game/totals";
 import { ShareButton } from "./ShareButton";
 import { TwitterShareButton } from "./TwitterShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -10,6 +11,12 @@ interface Props {
   drop: string;
   words: AcceptedWord[];
   streak: StreakState;
+  /**
+   * Whether this is the current puzzle, which is what lets the shared result
+   * call its score "Today" (see game/share.ts). Defaults to false, so an
+   * archive result headed with its own date does not claim to be today's.
+   */
+  isToday?: boolean;
   /** Opens the leaderboard. Omitted in tests that only exercise sharing. */
   onLeaderboard?: () => void;
 }
@@ -22,16 +29,29 @@ const REVEAL_OPTIONS: { value: RevealMode; label: string }[] = [
   { value: "all", label: "All" },
 ];
 
-export function ResultsPanel({ date, drop, words, streak, onLeaderboard }: Props) {
+export function ResultsPanel({
+  date,
+  drop,
+  words,
+  streak,
+  isToday = false,
+  onLeaderboard,
+}: Props) {
   // Default to "top": name the player's rarest word as a low-stakes flex while
   // keeping the rest anonymous. "Hide" stays available for a fully spoiler-free
   // share.
   const [reveal, setReveal] = useState<RevealMode>("top");
+  // Read once per render from this browser's own history rather than the
+  // leaderboard: the numbers are the boards' arithmetic (see game/totals.ts),
+  // but a player who never joined a board still gets them, and nothing here has
+  // to wait on the network to draw a share preview.
+  const totals = windowTotals(date);
   const sharedResultOptions = {
     reveal,
     streak: streak.currentStreak,
-    crushedIt: streak.crushedIt,
-    elite: streak.elite,
+    weekTotal: totals.week,
+    monthTotal: totals.month,
+    isToday,
   };
   const shareText = buildShareText(date, drop, words, sharedResultOptions);
   const copiedShareText = buildShareText(date, drop, words, {
@@ -42,6 +62,7 @@ export function ResultsPanel({ date, drop, words, streak, onLeaderboard }: Props
     reveal,
     source: "twitter",
     format: "x",
+    isToday,
   })}`;
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (
