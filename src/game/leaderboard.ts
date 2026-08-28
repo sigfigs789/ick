@@ -128,6 +128,44 @@ export interface Boards {
  * questions.
  */
 export const BOARD_LIMIT = 15;
+/**
+ * The first puzzle any find was ever recorded against.
+ *
+ * The finds table is younger than the game (see the 2026-08-28 migration): every
+ * word before this day was played, scored and forgotten, because there was
+ * nowhere to write it down. Days before it come back empty and always will.
+ *
+ * Which makes it a floor rather than a thing to render. "Nobody found anything
+ * on this puzzle" is a sentence about the players; on one of those days it would
+ * be a sentence about the schema, and it would be the same lie every time -- the
+ * puzzle had finders, we simply were not keeping them. Better not to offer the
+ * step at all than to answer it wrongly.
+ *
+ * A constant rather than a query: it is a fact about this deployment's history,
+ * fixed forever, and asking the server which days it has rows for would be a
+ * request per page open to learn something that has not changed since August.
+ */
+const FINDS_EPOCH = "2026-08-26";
+
+/**
+ * The earliest puzzle whose finds the feed will step back to.
+ *
+ * The week's own reset, and no further. The feed is the companion to the boards
+ * above it, and the shorter of those two boards is the week -- so "how far back
+ * can I look" already has an answer on the page, and it is the same window the
+ * standings are being fought over. Going further would turn a record of the week
+ * into an archive of the game, which is a different feature with a different
+ * shape (a date picker, paging) and not one anybody asked this page for.
+ *
+ * Held above `FINDS_EPOCH` as well, because a week can start before the first
+ * day this game kept any finds at all.
+ */
+export function feedFloor(today: string = todayDateString()): string {
+  const reset = weekStart(today);
+  // Whichever bound bites first: the week's reset once the week is entirely
+  // inside recorded history, and the first recorded day until it is.
+  return reset > FINDS_EPOCH ? reset : FINDS_EPOCH;
+}
 // A board is worth waiting a moment for, but not worth a spinner that never
 // ends -- past this the page says it couldn't load and offers a retry.
 const FETCH_TIMEOUT_MS = 6000;

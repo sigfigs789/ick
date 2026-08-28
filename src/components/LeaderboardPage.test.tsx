@@ -19,7 +19,7 @@ import { previousMonthName, todayDateString } from "../game/date";
 const ALICE = "11111111-1111-4111-8111-111111111111";
 const BOB = "22222222-2222-4222-8222-222222222222";
 // The second board counts the month, and says so.
-const MONTH_BOARD = "Monthly";
+const MONTH_BOARD = "This month";
 // Somebody a long way down both boards, which is where almost everybody is.
 const CAROL = "33333333-3333-4333-8333-333333333333";
 
@@ -234,7 +234,7 @@ describe("the leaderboard page", () => {
     // down on both boards -- named as what is coming rather than as a result,
     // and with nothing invented in the place a winner will go. An absent one
     // ended the two columns unlevel and read as a load failure.
-    for (const heading of ["This week", "Monthly"]) {
+    for (const heading of ["This week", MONTH_BOARD]) {
       const board = screen.getByRole("region", { name: heading });
       expect(board).toHaveTextContent("Coming up");
       expect(board).toHaveTextContent("Champion not decided yet");
@@ -273,9 +273,9 @@ describe("the leaderboard page", () => {
     // sends -- so the one thing left to say is the day it turns over, which is
     // the first of next month.
     const board = screen.getByRole("region", { name: MONTH_BOARD });
-    expect(board).toHaveTextContent("Monthly");
+    expect(board).toHaveTextContent(MONTH_BOARD);
     // The weekday first, then the date it falls on.
-    expect(board).toHaveTextContent(/^Monthly\s*Resets \w+day, \w+ 1/);
+    expect(board).toHaveTextContent(/^This month\s*Resets \w+day, \w+ 1/);
     // What it used to say: a season, with the two hand-picked dates it ran
     // between under the name.
     expect(board).not.toHaveTextContent(/Season/);
@@ -683,13 +683,39 @@ describe("recent finds", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows nothing at all when there are no finds yet", async () => {
+  it("says so plainly when nobody has found anything today", async () => {
     stubFetch({ ...OPEN, words: [] });
     render(<LeaderboardPage />);
 
-    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    // An empty section with a heading would be worse than no section.
-    expect(screen.queryByRole("region", { name: "Today's finds" })).toBeNull();
+    // The section stays, because it now carries the way back through the week
+    // -- and an empty morning is exactly when yesterday's finds are the thing
+    // worth reaching. What used to be a missing section is one sentence.
+    expect(
+      await screen.findByText("Nobody's found anything yet today."),
+    ).toBeInTheDocument();
+    expect(
+      within(
+        screen.getByRole("region", { name: "Today's finds" }),
+      ).queryAllByRole("listitem"),
+    ).toHaveLength(0);
+  });
+
+  it("keeps the section away entirely when there is nowhere to go and nothing to show", async () => {
+    // A Sunday: the week reset this morning, so there is no earlier day of it
+    // to step back to, and an empty section with a heading and two dead buttons
+    // would be worse than no section.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 23, 9, 0, 0));
+    try {
+      stubFetch({ ...OPEN, words: [] });
+      render(<LeaderboardPage />);
+      await vi.waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+      expect(
+        screen.queryByRole("region", { name: "Today's finds" }),
+      ).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -968,5 +994,203 @@ describe("keeping the finds current", () => {
     await vi.advanceTimersByTimeAsync(0);
     // Coming back refreshes at once rather than waiting out the interval.
     expect(fetchMock.mock.calls.length).toBeGreaterThan(before);
+  });
+});
+
+/*
+ * Stepping the feed back through the week.
+ *
+ * A day's finds used to be gone at the reader's own midnight, so anybody who
+ * opened the page in the morning had missed them -- and the words are the part
+ * of this page people come back for. Back as far as the week's reset, which is
+ * the same window the board above the feed ranks.
+ */
+describe("earlier days of the week", () => {
+  // A Wednesday, so the week's Sunday is three steps back and there is room to
+  // hit the floor without leaving the week. Well clear of the first day any find
+  // was recorded (2026-08-26), so the reset is the bound under test here rather
+  // than that one, which has a test of its own below.
+  const WEDNESDAY = new Date(2026, 8, 16, 9, 0, 0);
+  const TODAY = "2026-09-16";
+  const TUESDAY = "2026-09-15";
+  const SUNDAY = "2026-09-13";
+
+  const YESTERDAY_WORDS = [{ word: "linkboy", zipf: 1.4, finders: 2 }];
+
+  /** Answer the feed per day, and record which days were asked for. */
+  function stubDays(perDay: Record<string, unknown[]> = {}) {
+    const asked: string[] = [];
+    const fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
+      if (init?.method === "POST") return new Response(null, { status: 202 });
+      const href = String(url);
+      if (href.includes("words=1")) {
+        const day = new URL(href, "http://x").searchParams.get("today") ?? "";
+        asked.push(day);
+        return new Response(JSON.stringify({ words: perDay[day] ?? [] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify(OPEN), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return { fetchMock, asked };
+  }
+
+  const back = () =>
+    screen.getByRole("button", { name: "Finds from the day before" });
+  const forward = () =>
+    screen.getByRole("button", { name: "Finds from the day after" });
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(WEDNESDAY);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("shows the day before, headed with its own date and drop", async () => {
+    const { asked } = stubDays({
+      [TODAY]: WORDS,
+      [TUESDAY]: YESTERDAY_WORDS,
+    });
+    render(<LeaderboardPage />);
+    await vi.waitFor(() => expect(screen.getByText("asphyxiate")).toBeTruthy());
+
+    fireEvent.click(back());
+
+    // The heading moves with the list: the drop is what makes a find mean
+    // anything, so a word can never sit under another day's heading.
+    await vi.waitFor(() => expect(screen.getByText("linkboy")).toBeTruthy());
+    const section = screen.getByRole("region", { name: "Finds from Sep 15" });
+    expect(within(section).getByText("linkboy")).toBeTruthy();
+    expect(screen.queryByText("asphyxiate")).toBeNull();
+    expect(asked).toEqual([TODAY, TUESDAY]);
+  });
+
+  it("asks for nothing until somebody presses back", async () => {
+    const { asked } = stubDays();
+    render(<LeaderboardPage />);
+
+    // One day fetched on open, and it is today's. A reader who never steps back
+    // costs exactly what they cost before this existed.
+    await vi.waitFor(() => expect(asked).toEqual([TODAY]));
+  });
+
+  it("stops at the week's reset", async () => {
+    stubDays();
+    render(<LeaderboardPage />);
+    await vi.waitFor(() => expect(back()).toBeEnabled());
+
+    // Wednesday back to Sunday, and no further: the feed is the week the board
+    // above it ranks, not an archive of the game.
+    fireEvent.click(back());
+    fireEvent.click(back());
+    fireEvent.click(back());
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("region", { name: "Finds from Sep 13" }),
+      ).toBeTruthy(),
+    );
+    expect(back()).toBeDisabled();
+    expect(SUNDAY).toBe("2026-09-13");
+  });
+
+  it("offers no step back past the first day any find was recorded", async () => {
+    // The finds table is younger than the game. On the first day it holds, the
+    // week's reset is still three days further back -- and every one of those
+    // days would answer "nobody found anything on this puzzle", which is a
+    // sentence about the schema rather than about the players.
+    vi.setSystemTime(new Date(2026, 7, 26, 9, 0, 0));
+    const { asked } = stubDays({ "2026-08-26": WORDS });
+    render(<LeaderboardPage />);
+    await vi.waitFor(() => expect(screen.getByText("asphyxiate")).toBeTruthy());
+
+    expect(asked).toEqual(["2026-08-26"]);
+    expect(back()).toBeDisabled();
+    fireEvent.click(back());
+    expect(asked).toEqual(["2026-08-26"]);
+  });
+
+  it("walks forward again, and stops on today", async () => {
+    stubDays({ [TUESDAY]: YESTERDAY_WORDS });
+    render(<LeaderboardPage />);
+    await vi.waitFor(() => expect(forward()).toBeDisabled());
+
+    fireEvent.click(back());
+    await vi.waitFor(() => expect(forward()).toBeEnabled());
+    fireEvent.click(forward());
+
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("region", { name: "Today's finds" }),
+      ).toBeTruthy(),
+    );
+    // Today is the end of the road forward; there is no puzzle past it.
+    expect(forward()).toBeDisabled();
+  });
+
+  it("holds the list's height while the next day loads", async () => {
+    // Nothing resolves, so the page stays in the moment between the press and
+    // the answer -- which is the only moment this is about.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: unknown, init?: RequestInit) => {
+        if (init?.method === "POST") return new Response(null, { status: 202 });
+        if (String(url).includes("words=1"))
+          return new Response(JSON.stringify({ words: WORDS }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          });
+        return new Response(JSON.stringify(OPEN), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }),
+    );
+    render(<LeaderboardPage />);
+    await vi.waitFor(() => expect(screen.getByText("asphyxiate")).toBeTruthy());
+
+    fireEvent.click(back());
+
+    // Rows rather than a spinner: what a reader notices in that moment is the
+    // page jumping under their thumb, not a missing message.
+    const placeholders = document.querySelectorAll(
+      ".found-words__item--placeholder",
+    );
+    expect(placeholders.length).toBeGreaterThanOrEqual(WORDS.length);
+  });
+
+  it("leaves a finished day alone rather than polling it", async () => {
+    const { asked } = stubDays({ [TUESDAY]: YESTERDAY_WORDS });
+    render(<LeaderboardPage />);
+    await vi.waitFor(() => expect(asked).toEqual([TODAY]));
+
+    fireEvent.click(back());
+    await vi.waitFor(() => expect(asked).toEqual([TODAY, TUESDAY]));
+
+    // No score can ever be added to a past puzzle -- the game refuses one -- so
+    // a poll here is a request a minute to be handed the same rows back.
+    await act(async () => {
+      vi.advanceTimersByTime(5 * 60_000);
+    });
+    expect(asked).toEqual([TODAY, TUESDAY]);
+  });
+
+  it("does not animate a day the reader asked for", async () => {
+    stubDays({ [TODAY]: WORDS, [TUESDAY]: YESTERDAY_WORDS });
+    render(<LeaderboardPage />);
+    await vi.waitFor(() => expect(screen.getByText("asphyxiate")).toBeTruthy());
+
+    fireEvent.click(back());
+    await vi.waitFor(() => expect(screen.getByText("linkboy")).toBeTruthy());
+
+    // The arrival flash means "this turned up while you were looking". A whole
+    // day appearing because a button was pressed is not that.
+    expect(document.querySelector(".found-words__item--arrived")).toBeNull();
   });
 });
