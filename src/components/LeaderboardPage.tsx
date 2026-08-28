@@ -9,6 +9,7 @@ import {
   type FoundWord,
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
+import { handleFor } from "../game/handle";
 import { previousMonthName, todayDateString } from "../game/date";
 import { monthResetLabel } from "../game/month";
 import { dropForDate } from "../game/drop";
@@ -289,6 +290,33 @@ export function LeaderboardPage() {
             already show, above two headings that say what each one counts. */}
         <div className="app__header-titles">
           <h1>Leaderboard</h1>
+          {/* Your own handle, stated before the boards rather than left to be
+              found in them.
+
+              Nobody is ever told their name anywhere else -- it is derived from
+              the player id and never typed (src/game/handle.ts) -- so the only
+              way to learn it was to spot your own row, which is circular if
+              spotting your row is what you came here to do. It goes in the
+              header because that is the half of the answer that works before
+              you have scrolled, and the half that still works when you are on
+              neither board.
+
+              Not the subtitle that used to sit here: "Ranked by total score"
+              named a column the boards already show. This says the one thing
+              the page cannot say twice.
+
+              "Playing as" rather than "You're": nobody chose this handle, so a
+              page asserting who you *are* is claiming more than it should. A
+              role is what it actually is, and it is the frame that survives
+              handles becoming rerollable. It is also the register the rest of
+              the page is written in -- "Resets on Sundays", "Today's finds" --
+              where a warmer line would be the one thing here raising its
+              voice. */}
+          {playerId && (
+            <p className="leaderboard-page__handle">
+              Playing as <strong>{handleFor(playerId)}</strong>
+            </p>
+          )}
         </div>
         {/* Where a spacer used to be, keeping the title centred against the
             back button -- and now doing something, which is the better way to
@@ -698,7 +726,7 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
       <span className="leaderboard__rank">{entry.rank}</span>
       <span className="leaderboard__name">
         {entry.name}
-        {isYou && <span className="leaderboard__you"> you</span>}
+        {isYou && <span className="leaderboard__you">you</span>}
       </span>
       <span className="leaderboard__meta">
         {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"}

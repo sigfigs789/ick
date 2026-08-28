@@ -552,6 +552,27 @@ describe("who the page thinks you are", () => {
     expect(you[0].textContent).toContain(handleFor(ALICE));
   });
 
+  it("says your handle in the header, so you know what to look for", async () => {
+    localStorage.setItem("ick:player", JSON.stringify({ id: ALICE }));
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // Above the boards and not waiting on them: the point of the line is that
+    // it answers "which one am I" before there is a board to scan.
+    const header = screen.getByRole("banner");
+    expect(header).toHaveTextContent(`Playing as ${handleFor(ALICE)}`);
+  });
+
+  it("says nothing about a handle a browser without an id doesn't have", async () => {
+    // No id in storage, as on a page rendered without Root above it. A name
+    // derived from nothing would be a name that changes on the next open.
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(screen.queryByText(/Playing as/)).toBeNull();
+  });
+
   it("asks for nothing: no call to action, and no explanation under it", async () => {
     stubFetch();
     render(<LeaderboardPage />);

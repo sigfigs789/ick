@@ -1852,12 +1852,30 @@ h2 {
 .leaderboard__find {
   font-weight: 700;
 }
+/*
+ * The mark on your own row: a filled pill rather than faint text.
+ *
+ * It used to be `--fg-faint`, which left the label lighter than the name it
+ * labelled -- so the tint behind the row was doing all the work, and a tint is
+ * something you notice only once you already know to look for it. Filled in the
+ * accent it reads at a glance, which is what a row you are scanning for needs.
+ *
+ * `--accent` inverts between the themes and carries `--accent-fg` with it, so
+ * the pill is dark-on-light and light-on-dark without a second rule.
+ */
 .leaderboard__you {
-  color: var(--fg-faint);
-  font-size: 0.72rem;
-  font-weight: 700;
+  margin-left: 0.4rem;
+  padding: 0.06rem 0.32rem;
+  border-radius: 0.25rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 0.65rem;
+  font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  /* The name wraps (`overflow-wrap: anywhere`), and a pill is the one thing in
+     the row that must not be broken across two lines mid-word. */
+  white-space: nowrap;
 }
 .leaderboard__meta {
   grid-area: meta;
@@ -1987,6 +2005,22 @@ h2 {
   margin-top: 1.8rem;
   padding-top: 1.2rem;
   border-top: 1px solid var(--border);
+}
+/*
+ * "Playing as StormyFox47" under the page title.
+ *
+ * Sized and coloured as `.app__puzzle-number` is on the game's own header --
+ * the same relation to the title above it -- with the handle itself lifted back
+ * to `--fg` so the name is the part that is read.
+ */
+.leaderboard-page__handle {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--fg-faint);
+}
+.leaderboard-page__handle strong {
+  color: var(--fg-muted);
+  font-weight: 800;
 }
 .leaderboard__picker {
   margin-top: 0.8rem;
