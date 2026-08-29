@@ -270,19 +270,26 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
   });
 
-  it("holds the plaque open when nobody won the window", async () => {
+  it("holds the plaque open when nobody won the window, and says when it fills", async () => {
+    onDay(MIDWEEK);
     stubFetch();
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     // A first week, or a month before the game existed. The plaque still goes
-    // down on both boards -- named as what is coming rather than as a result,
-    // and with nothing invented in the place a winner will go. An absent one
-    // ended the two columns unlevel and read as a load failure.
-    for (const heading of ["This week", MONTH_BOARD]) {
-      const board = screen.getByRole("region", { name: heading });
-      expect(board).toHaveTextContent("Coming up");
-      expect(board).toHaveTextContent("Champion not decided yet");
+    // down on both boards -- with nothing invented in the place a winner will
+    // go, because an absent one ended the two columns unlevel and read as a
+    // load failure.
+    //
+    // What it says is the day it gets engraved, which is the question an empty
+    // box actually raises. Each board's answer is the same for every window it
+    // will ever name, so this is one constant per board and not a date.
+    for (const [heading, when] of [
+      ["This week", "on Monday"],
+      [MONTH_BOARD, "on the 2nd"],
+    ]) {
+      expect(plaque(heading)).toHaveTextContent(`Crowned ${when}`);
+      expect(plaque(heading)).toHaveTextContent(`Champion crowned ${when}`);
     }
     expect(screen.queryByText(/'s champion/)).toBeNull();
   });
@@ -322,6 +329,14 @@ describe("the leaderboard page", () => {
         score: 61.2,
         puzzles: 7,
       },
+      lastMonth: {
+        rank: 1,
+        playerId: CAROL,
+        windowWord: "abaci",
+        windowZipf: 2.65,
+        score: 214.8,
+        puzzles: 28,
+      },
     });
     render(<LeaderboardPage />);
 
@@ -332,16 +347,15 @@ describe("the leaderboard page", () => {
     await screen.findByRole("region", { name: "This week" });
     const weekly = plaque("This week");
     expect(weekly).toHaveTextContent("Crowned on Monday");
-    expect(weekly).toHaveTextContent(
-      "Last week's champion is crowned on Monday",
-    );
+    expect(weekly).toHaveTextContent("Champion crowned on Monday");
     expect(weekly).not.toHaveTextContent(handleFor(BOB));
     // The score would name them as surely as the handle would.
     expect(weekly).not.toHaveTextContent("61.2");
 
     // Only the weekly plaque is held: the month did not turn over today, so its
-    // own winner is as final as it was yesterday.
-    expect(plaque(MONTH_BOARD)).not.toHaveTextContent("Crowned on");
+    // own winner is as final as it was yesterday and is named in full.
+    expect(plaque(MONTH_BOARD)).toHaveTextContent(handleFor(CAROL));
+    expect(plaque(MONTH_BOARD)).toHaveTextContent("214.8");
   });
 
   it("holds the monthly plaque on the first, and only that one", async () => {
@@ -356,6 +370,14 @@ describe("the leaderboard page", () => {
         score: 214.8,
         puzzles: 28,
       },
+      lastWeek: {
+        rank: 1,
+        playerId: BOB,
+        windowWord: "wrinkle",
+        windowZipf: 3.31,
+        score: 61.2,
+        puzzles: 7,
+      },
     });
     render(<LeaderboardPage />);
 
@@ -367,7 +389,7 @@ describe("the leaderboard page", () => {
     expect(monthly).not.toHaveTextContent(handleFor(CAROL));
     expect(monthly).not.toHaveTextContent("214.8");
 
-    expect(plaque("This week")).not.toHaveTextContent("Crowned on");
+    expect(plaque("This week")).toHaveTextContent(handleFor(BOB));
   });
 
   it("holds the plaque on the turnover day even with no winner in yet", async () => {
@@ -379,26 +401,36 @@ describe("the leaderboard page", () => {
     // won this week" is provisional in exactly the way the winner's name is: a
     // reader ahead of the last players in that week can be looking at an empty
     // result a late score is about to fill. So the plaque declines both
-    // questions rather than answering the one it cannot take back.
+    // questions rather than answering the one it cannot take back -- and since
+    // an unwon window says exactly the same thing, the reader cannot tell the
+    // two apart, which is the point rather than a shortcut.
     await screen.findByRole("region", { name: "This week" });
     expect(plaque("This week")).toHaveTextContent("Crowned on Monday");
-    expect(plaque("This week")).not.toHaveTextContent("Coming up");
   });
 
-  it("says a window went unwon only once that is settled", async () => {
-    onDay(MIDWEEK);
-    stubFetch();
+  it("says the same thing on a held window as on an unwon one", async () => {
+    onDay(SUNDAY);
+    stubFetch({
+      ...OPEN,
+      lastWeek: {
+        rank: 1,
+        playerId: BOB,
+        windowWord: "wrinkle",
+        windowZipf: 3.31,
+        score: 61.2,
+        puzzles: 7,
+      },
+    });
     render(<LeaderboardPage />);
 
-    // Midweek, so the week being named closed days ago everywhere and "nobody
-    // won it" is finally a claim that cannot be overturned. This is the one
-    // state "Coming up" is for -- a first week, a month before the game
-    // existed -- and it is only ever reached off the turnover day.
+    // Sunday, weekly plaque held with a winner behind it; monthly plaque empty
+    // because nobody won that window at all. Two different reasons for an empty
+    // plaque, one label -- a reader cannot act on the difference, and a plaque
+    // that leaked it would be answering "did anybody win" on a day when that is
+    // still settling.
     await screen.findByRole("region", { name: "This week" });
-    for (const heading of ["This week", MONTH_BOARD]) {
-      expect(plaque(heading)).toHaveTextContent("Coming up");
-      expect(plaque(heading)).not.toHaveTextContent("Crowned on");
-    }
+    expect(plaque("This week")).toHaveTextContent("Crowned on Monday");
+    expect(plaque(MONTH_BOARD)).toHaveTextContent("Crowned on the 2nd");
   });
 
   it("says when the monthly board resets, and names no dates", async () => {
