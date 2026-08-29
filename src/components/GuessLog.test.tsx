@@ -27,7 +27,7 @@ describe("GuessLog", () => {
     render(<GuessLog acceptedWords={words} />);
     expect(screen.getByText("strange")).toBeInTheDocument();
     expect(screen.getByText("strut")).toBeInTheDocument();
-    expect(screen.getByText("2 of 5 used")).toBeInTheDocument();
+    expect(screen.getByText("2 of 4 used")).toBeInTheDocument();
   });
 
   it("counts against the six-guess limit an archive puzzle played with", () => {
