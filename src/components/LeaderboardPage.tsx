@@ -887,22 +887,32 @@ function Board({
           week nobody played -- and the plaque still goes down, empty: an
           engraving line waiting for a name says "this gets won" in a way a
           missing plaque cannot, and it keeps the two boards ending level.
-          Three states, in the order they are asked: nobody has won this window
-          yet, somebody has but it is not safe to say who, or the result is
-          final. The middle two share the empty plaque and differ only in what
-          it says, because a window still settling has not got a name to show
-          either -- it has one that could still change, which is the same
-          nothing dressed up as an answer. */}
+
+          The settling day is asked *first*, before whether there is a champion
+          at all, and that order is the whole of the rule. On the day a window
+          turns over, "did anybody win this" is provisional in exactly the way
+          the winner's name is: a reader an hour ahead of the last players in it
+          can be looking at an empty result that a late score is about to fill.
+          Branching on the champion there would put the one claim that cannot be
+          taken back -- "nobody won" -- on the one day it is not yet true, and a
+          plaque that says nobody won and then names somebody has done the thing
+          the hold exists to prevent.
+
+          So the settling plaque answers neither question. "Crowned on Monday"
+          promises a day and not a name, which leaves it room to resolve either
+          way: to a winner, or to "Coming up" for a window nobody took. Both of
+          those read as the day arriving, where the reverse reads as the page
+          having been wrong. */}
       {championLabel &&
-        (!champion ? (
-          <ChampionPending />
-        ) : championSettles ? (
+        (championSettles ? (
           <ChampionPending
             label={`Crowned ${championSettles}`}
             announcement={`${championLabel} is crowned ${championSettles}`}
           />
-        ) : (
+        ) : champion ? (
           <Champion entry={champion} label={championLabel} />
+        ) : (
+          <ChampionPending />
         ))}
     </section>
   );
@@ -956,12 +966,16 @@ function Champion({ entry, label }: { entry: BoardEntry; label: string }) {
  * when it turns over, and a page that gives the same date twice in one column
  * reads as a slip.
  *
- * The same plaque also stands in on the day a window turns over, when there *is*
- * a winner but not one that would be the same for every reader yet -- then the
- * label names the day instead ("Crowned on Monday"). Deliberately the same
- * shape: both are the plaque declining to guess, and a reader who cannot yet be
- * told a name is owed the reason in the one line there is room for rather than a
+ * The same plaque also stands in for the whole of the day a window turns over,
+ * whether or not a winner has landed yet -- then the label names the day instead
+ * ("Crowned on Monday"). Deliberately the same shape: both are the plaque
+ * declining to guess, and a reader who cannot yet be told a name is owed the day
+ * they can come back for it in the one line there is room for, rather than a
  * different-looking box.
+ *
+ * Which of the two labels shows is therefore not a fact about the window -- it
+ * is a fact about the day it is being read on. "Coming up" is an answer, and it
+ * is only given once it is a settled one.
  */
 function ChampionPending({
   label = "Coming up",

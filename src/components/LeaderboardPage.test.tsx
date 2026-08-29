@@ -370,18 +370,35 @@ describe("the leaderboard page", () => {
     expect(plaque("This week")).not.toHaveTextContent("Crowned on");
   });
 
-  it("says a window has no winner yet rather than that it is settling", async () => {
+  it("holds the plaque on the turnover day even with no winner in yet", async () => {
     onDay(SUNDAY);
     stubFetch();
     render(<LeaderboardPage />);
 
-    // Sunday, but nobody won the week being held -- so there is nothing to
-    // finish counting, and promising a crowning that will never come would be a
-    // worse lie than the one the hold exists to prevent.
+    // No champion in the response, but it is Sunday -- and on Sunday "nobody
+    // won this week" is provisional in exactly the way the winner's name is: a
+    // reader ahead of the last players in that week can be looking at an empty
+    // result a late score is about to fill. So the plaque declines both
+    // questions rather than answering the one it cannot take back.
     await screen.findByRole("region", { name: "This week" });
-    const weekly = plaque("This week");
-    expect(weekly).toHaveTextContent("Coming up");
-    expect(weekly).not.toHaveTextContent("Crowned on");
+    expect(plaque("This week")).toHaveTextContent("Crowned on Monday");
+    expect(plaque("This week")).not.toHaveTextContent("Coming up");
+  });
+
+  it("says a window went unwon only once that is settled", async () => {
+    onDay(MIDWEEK);
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // Midweek, so the week being named closed days ago everywhere and "nobody
+    // won it" is finally a claim that cannot be overturned. This is the one
+    // state "Coming up" is for -- a first week, a month before the game
+    // existed -- and it is only ever reached off the turnover day.
+    await screen.findByRole("region", { name: "This week" });
+    for (const heading of ["This week", MONTH_BOARD]) {
+      expect(plaque(heading)).toHaveTextContent("Coming up");
+      expect(plaque(heading)).not.toHaveTextContent("Crowned on");
+    }
   });
 
   it("says when the monthly board resets, and names no dates", async () => {
