@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { weekStart } from "./week";
+import { weekChampionSettling, weekStart } from "./week";
 
 describe("weekly board window", () => {
   it("starts the week on Sunday", () => {
@@ -31,5 +31,25 @@ describe("weekly board window", () => {
     const sunday = "2026-08-30";
     expect(weekStart(sunday)).toBe(sunday);
     expect(weekStart(saturday)).not.toBe(saturday);
+  });
+
+  it("holds last week's champion for the whole of Sunday and no longer", () => {
+    // The window the plaque names closes at each player's own midnight, so on
+    // Sunday it is still closing somewhere and the winner can still change.
+    expect(weekChampionSettling("2026-08-30")).toBe(true);
+    // Monday morning every clock on earth has left Saturday, and every reader
+    // gets the same answer -- which is the whole of what the hold was for.
+    expect(weekChampionSettling("2026-08-31")).toBe(false);
+    // And no other day of the week is held: the window closed days ago.
+    for (const day of [
+      "2026-09-01",
+      "2026-09-02",
+      "2026-09-03",
+      "2026-09-04",
+    ]) {
+      expect(weekChampionSettling(day)).toBe(false);
+    }
+    // Saturday least of all -- the week being named is still being played.
+    expect(weekChampionSettling("2026-09-05")).toBe(false);
   });
 });

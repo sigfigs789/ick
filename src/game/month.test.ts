@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { monthResetLabel, monthStart, nextMonthStart } from "./month";
+import {
+  monthChampionSettling,
+  monthResetLabel,
+  monthStart,
+  nextMonthStart,
+} from "./month";
 
 describe("monthly board window", () => {
   it("starts the month on the first", () => {
@@ -45,5 +50,16 @@ describe("monthly board window", () => {
     for (const day of august) {
       expect(monthResetLabel(day)).toBe("Resets Tuesday, Sep 1");
     }
+  });
+
+  it("holds last month's champion for the whole of the first and no longer", () => {
+    // The weekly board's rule, one window up -- see week.test.ts.
+    expect(monthChampionSettling("2026-09-01")).toBe(true);
+    expect(monthChampionSettling("2026-09-02")).toBe(false);
+    // Held on the first of every month, including the ones a year turns on.
+    expect(monthChampionSettling("2027-01-01")).toBe(true);
+    // And on no other day, including the last one, when the month being named
+    // is the one still being played.
+    expect(monthChampionSettling("2026-09-30")).toBe(false);
   });
 });

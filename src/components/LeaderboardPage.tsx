@@ -17,7 +17,8 @@ import {
   previousMonthName,
   todayDateString,
 } from "../game/date";
-import { monthResetLabel } from "../game/month";
+import { monthChampionSettling, monthResetLabel } from "../game/month";
+import { weekChampionSettling } from "../game/week";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -507,6 +508,14 @@ export function LeaderboardPage() {
                 // among the live ones would read as though they were.
                 champion={boards.lastWeek}
                 championLabel="Last week's champion"
+                // The day this plaque gets engraved, whichever week it ends
+                // up naming: weeks close on Saturday and are held through
+                // Sunday, so a weekly champion is always a Monday's news.
+                championCrowning="on Monday"
+                // And whether today is that held Sunday -- the day the week it
+                // names has not closed at the same moment for everybody yet.
+                // See game/week.ts.
+                championSettling={weekChampionSettling(today)}
               />
               <Board
                 heading="This month"
@@ -531,6 +540,12 @@ export function LeaderboardPage() {
                 // the last one that finished.
                 champion={boards.lastMonth}
                 championLabel={`${previousMonthName(today)}'s champion`}
+                // The same, one window up: months close on the last and are
+                // held through the first, so a monthly champion is always the
+                // 2nd's news -- every month, which is what lets this be a
+                // constant rather than a date to compute.
+                championCrowning="on the 2nd"
+                championSettling={monthChampionSettling(today)}
               />
             </div>
           </>
@@ -771,6 +786,22 @@ interface BoardProps {
   champion?: BoardEntry | null;
   /** What that window was: "Last week's champion", "July's champion". */
   championLabel?: string;
+  /**
+   * When this plaque gets engraved: "on Monday", "on the 2nd".
+   *
+   * A constant per board rather than a date, because it is the same answer for
+   * every window the board will ever name -- a weekly champion is always a
+   * Monday's news and a monthly one always the 2nd's. So it answers the question
+   * whether the plaque is empty because nobody has won yet or because today is
+   * the day it is being held, and one label serves both.
+   */
+  championCrowning?: string;
+  /**
+   * Whether today is the day this board's window turned over, and so the day a
+   * winner is not safe to name (see game/week.ts). True on Sunday for the week
+   * and on the first for the month; false every other day.
+   */
+  championSettling?: boolean;
 }
 
 /**
@@ -794,6 +825,8 @@ function Board({
   playerId,
   champion,
   championLabel,
+  championCrowning,
+  championSettling,
 }: BoardProps) {
   return (
     <section className="leaderboard__board" aria-label={heading}>
@@ -863,16 +896,34 @@ function Board({
       {/* Outside the empty check on purpose: a board with nobody on it yet is
           exactly when last week's winner is the only thing there is to show,
           and the week that just ended is the reason this week's is empty.
-          Nobody won the closed window -- a month before the game existed, a
-          week nobody played -- and the plaque still goes down, empty: an
-          engraving line waiting for a name says "this gets won" in a way a
-          missing plaque cannot, and it keeps the two boards ending level. */}
-      {championLabel &&
-        (champion ? (
-          <Champion entry={champion} label={championLabel} />
-        ) : (
-          <ChampionPending />
-        ))}
+
+          Two states, and only two. Either there is a champion this reader can
+          safely be told about, or the plaque goes down empty and says when it
+          gets engraved instead.
+
+          The empty one is reached two ways that used to be told apart and no
+          longer are, because a reader cannot act on the difference. Nobody has
+          won the closed window -- a month before the game existed, a week nobody
+          played -- or somebody has but today is the day that window turned over,
+          when the answer is still settling and a name shown now can change under
+          the reader (see game/week.ts). Both are the plaque declining to guess,
+          and the useful thing to say in either case is the same: the day it will
+          have a name on it.
+
+          Which is a constant per board, not a date to compute -- a weekly
+          champion is always a Monday's news, whichever week it turns out to be.
+          That is what collapses the two states into one label. The plaque used
+          to read "Coming up", which said only that the box gets filled; a reader
+          looking at an empty plaque all month wants to know when. */}
+      {championLabel && championCrowning && (
+        <>
+          {champion && !championSettling ? (
+            <Champion entry={champion} label={championLabel} />
+          ) : (
+            <ChampionPending crowning={championCrowning} />
+          )}
+        </>
+      )}
     </section>
   );
 }
@@ -911,7 +962,7 @@ function Champion({ entry, label }: { entry: BoardEntry; label: string }) {
 }
 
 /**
- * The same plaque with nobody on it yet: the window this board will crown next.
+ * The plaque with nobody on it, saying when it will have somebody.
  *
  * It exists because the awarded plaque's absence read as a mistake rather than
  * as a fact. The monthly board's closed window is the month before it, and the
@@ -920,23 +971,35 @@ function Champion({ entry, label }: { entry: BoardEntry; label: string }) {
  * end differently look broken rather than young.
  *
  * A blank engraving line instead of a name, and no score: the shape of a result
- * that is coming, without inventing any part of it. "Coming up" rather than the
- * window's own dates, because the board's heading two lines above already says
- * when it turns over, and a page that gives the same date twice in one column
- * reads as a slip.
+ * that is coming, without inventing any part of it.
+ *
+ * The label is the day, because the day is the only thing there is to say. This
+ * read "Coming up" first, which told a reader the box gets filled and nothing
+ * else -- and on the monthly board, where an unwon window can sit there for a
+ * month, "coming up" is a month of saying nothing. Naming the day answers the
+ * question the empty box actually raises.
+ *
+ * Not the window's own dates, though, which is what "Coming up" was avoiding:
+ * the board's heading two lines above says when it *resets*, and this says when
+ * it gets *crowned*. They are a day apart on purpose and describe different
+ * things -- the board turning over, and this plaque being engraved.
  */
-function ChampionPending() {
+function ChampionPending({ crowning }: { crowning: string }) {
   return (
     <p className="leaderboard__champion leaderboard__champion--pending">
       <span className="leaderboard__champion-trophy" aria-hidden="true">
         🏆
       </span>
-      <span className="leaderboard__champion-label">Coming up</span>
+      <span className="leaderboard__champion-label">Crowned {crowning}</span>
       {/* The line is the whole message to anybody who can see it and says
           nothing at all to anybody who cannot, so it is hidden from the reading
           order and the sentence it stands for is spelled out instead. */}
       <span className="leaderboard__champion-blank" aria-hidden="true" />
-      <span className="sr-only">Champion not decided yet</span>
+      {/* "Champion" and not "last week's champion": on the day a window is
+          settling this plaque is about the window it names, and on an unwon one
+          it is about whichever window fills it next. The day is the part that
+          is true either way. */}
+      <span className="sr-only">Champion crowned {crowning}</span>
     </p>
   );
 }

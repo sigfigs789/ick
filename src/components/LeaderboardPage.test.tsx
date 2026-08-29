@@ -105,6 +105,21 @@ function stubFetch(body: unknown = OPEN) {
   return fetchMock;
 }
 
+/**
+ * The plaque under one board, by the board's heading.
+ *
+ * The element and not the whole board region: a champion is very often also a
+ * live row on the board above their own plaque, so "the board does not mention
+ * this player" is never the assertion wanted -- it is "the plaque does not name
+ * them", and only the plaque can answer that.
+ */
+function plaque(heading: string) {
+  return within(screen.getByRole("region", { name: heading })).getByText(
+    (_, element) =>
+      element?.classList.contains("leaderboard__champion") ?? false,
+  );
+}
+
 /** The rows of one board, by its heading. */
 function boardRows(heading: string) {
   return within(screen.getByRole("region", { name: heading })).getAllByRole(
@@ -139,6 +154,33 @@ function submissions(fetchMock: ReturnType<typeof stubFetch>) {
     );
 }
 
+/**
+ * Read the page as if it were `date`.
+ *
+ * The plaques under the boards depend on which day they are read on: a champion
+ * is held for the whole of the day its window turned over, because that window
+ * closes at a different moment for every player (see game/week.ts). So a test
+ * about a plaque has to fix the day, or it passes six days out of seven and
+ * fails on the one nobody runs the suite on.
+ *
+ * Local noon rather than midnight, so the calendar date is the same one in every
+ * timezone the suite might run in -- the page reads the player's local date, and
+ * a midnight instant lands on the day before for half the world.
+ */
+function onDay(date: string) {
+  // Timers keep advancing on their own: the page polls and waits, and a clock
+  // frozen solid would hang every `waitFor` in the test.
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  vi.setSystemTime(new Date(`${date}T12:00:00`));
+}
+
+/** A day in the middle of both windows, where every plaque is final. */
+const MIDWEEK = "2026-08-26";
+/** A Sunday: the weekly board's window turned over this morning. */
+const SUNDAY = "2026-08-30";
+/** The first, and a Tuesday -- so only the monthly plaque is held. */
+const FIRST_OF_MONTH = "2026-09-01";
+
 beforeEach(() => {
   localStorage.clear();
   window.history.pushState(null, "", "/leaderboard");
@@ -146,6 +188,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("the leaderboard page", () => {
@@ -166,6 +209,8 @@ describe("the leaderboard page", () => {
   });
 
   it("names last week's champion under the weekly board, and last month's under the monthly one", async () => {
+    // Midweek, where both windows closed days ago and both plaques are final.
+    onDay(MIDWEEK);
     stubFetch({
       ...OPEN,
       lastWeek: {
@@ -225,24 +270,32 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
   });
 
-  it("holds the plaque open when nobody won the window", async () => {
+  it("holds the plaque open when nobody won the window, and says when it fills", async () => {
+    onDay(MIDWEEK);
     stubFetch();
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     // A first week, or a month before the game existed. The plaque still goes
-    // down on both boards -- named as what is coming rather than as a result,
-    // and with nothing invented in the place a winner will go. An absent one
-    // ended the two columns unlevel and read as a load failure.
-    for (const heading of ["This week", MONTH_BOARD]) {
-      const board = screen.getByRole("region", { name: heading });
-      expect(board).toHaveTextContent("Coming up");
-      expect(board).toHaveTextContent("Champion not decided yet");
+    // down on both boards -- with nothing invented in the place a winner will
+    // go, because an absent one ended the two columns unlevel and read as a
+    // load failure.
+    //
+    // What it says is the day it gets engraved, which is the question an empty
+    // box actually raises. Each board's answer is the same for every window it
+    // will ever name, so this is one constant per board and not a date.
+    for (const [heading, when] of [
+      ["This week", "on Monday"],
+      [MONTH_BOARD, "on the 2nd"],
+    ]) {
+      expect(plaque(heading)).toHaveTextContent(`Crowned ${when}`);
+      expect(plaque(heading)).toHaveTextContent(`Champion crowned ${when}`);
     }
     expect(screen.queryByText(/'s champion/)).toBeNull();
   });
 
   it("still names last week's winner on a week nobody has scored in yet", async () => {
+    onDay(MIDWEEK);
     stubFetch({
       ...OPEN,
       weekly: [],
@@ -262,6 +315,122 @@ describe("the leaderboard page", () => {
     const weekly = await screen.findByRole("region", { name: "This week" });
     expect(weekly).toHaveTextContent("Last week's champion");
     expect(weekly).toHaveTextContent(handleFor(BOB));
+  });
+
+  it("names nobody on Sunday, and says when the week will be crowned", async () => {
+    onDay(SUNDAY);
+    stubFetch({
+      ...OPEN,
+      lastWeek: {
+        rank: 1,
+        playerId: BOB,
+        windowWord: "wrinkle",
+        windowZipf: 3.31,
+        score: 61.2,
+        puzzles: 7,
+      },
+      lastMonth: {
+        rank: 1,
+        playerId: CAROL,
+        windowWord: "abaci",
+        windowZipf: 2.65,
+        score: 214.8,
+        puzzles: 28,
+      },
+    });
+    render(<LeaderboardPage />);
+
+    // The week this names closed at each player's own midnight, and the last of
+    // those is the better part of a day after the first -- so a name shown now
+    // is one that can still change under the reader. The plaque says when it
+    // will be engraved instead, and engraves nothing.
+    await screen.findByRole("region", { name: "This week" });
+    const weekly = plaque("This week");
+    expect(weekly).toHaveTextContent("Crowned on Monday");
+    expect(weekly).toHaveTextContent("Champion crowned on Monday");
+    expect(weekly).not.toHaveTextContent(handleFor(BOB));
+    // The score would name them as surely as the handle would.
+    expect(weekly).not.toHaveTextContent("61.2");
+
+    // Only the weekly plaque is held: the month did not turn over today, so its
+    // own winner is as final as it was yesterday and is named in full.
+    expect(plaque(MONTH_BOARD)).toHaveTextContent(handleFor(CAROL));
+    expect(plaque(MONTH_BOARD)).toHaveTextContent("214.8");
+  });
+
+  it("holds the monthly plaque on the first, and only that one", async () => {
+    onDay(FIRST_OF_MONTH);
+    stubFetch({
+      ...OPEN,
+      lastMonth: {
+        rank: 1,
+        playerId: CAROL,
+        windowWord: "abaci",
+        windowZipf: 2.65,
+        score: 214.8,
+        puzzles: 28,
+      },
+      lastWeek: {
+        rank: 1,
+        playerId: BOB,
+        windowWord: "wrinkle",
+        windowZipf: 3.31,
+        score: 61.2,
+        puzzles: 7,
+      },
+    });
+    render(<LeaderboardPage />);
+
+    // The same hold, one window up. A Tuesday, so the weekly plaque is
+    // untouched and the two rules are visibly separate.
+    await screen.findByRole("region", { name: MONTH_BOARD });
+    const monthly = plaque(MONTH_BOARD);
+    expect(monthly).toHaveTextContent("Crowned on the 2nd");
+    expect(monthly).not.toHaveTextContent(handleFor(CAROL));
+    expect(monthly).not.toHaveTextContent("214.8");
+
+    expect(plaque("This week")).toHaveTextContent(handleFor(BOB));
+  });
+
+  it("holds the plaque on the turnover day even with no winner in yet", async () => {
+    onDay(SUNDAY);
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // No champion in the response, but it is Sunday -- and on Sunday "nobody
+    // won this week" is provisional in exactly the way the winner's name is: a
+    // reader ahead of the last players in that week can be looking at an empty
+    // result a late score is about to fill. So the plaque declines both
+    // questions rather than answering the one it cannot take back -- and since
+    // an unwon window says exactly the same thing, the reader cannot tell the
+    // two apart, which is the point rather than a shortcut.
+    await screen.findByRole("region", { name: "This week" });
+    expect(plaque("This week")).toHaveTextContent("Crowned on Monday");
+  });
+
+  it("says the same thing on a held window as on an unwon one", async () => {
+    onDay(SUNDAY);
+    stubFetch({
+      ...OPEN,
+      lastWeek: {
+        rank: 1,
+        playerId: BOB,
+        windowWord: "wrinkle",
+        windowZipf: 3.31,
+        score: 61.2,
+        puzzles: 7,
+      },
+    });
+    render(<LeaderboardPage />);
+
+    // Sunday, weekly plaque held with a winner behind it; monthly plaque empty
+    // because nobody won that window at all. Two different reasons for an empty
+    // plaque, one label -- a reader cannot act on the difference, and a plaque
+    // that leaked it would be answering "did anybody win" on a day when that is
+    // still settling.
+    await screen.findByRole("region", { name: "This week" });
+    expect(plaque("This week")).toHaveTextContent("Crowned on Monday");
+    expect(plaque(MONTH_BOARD)).toHaveTextContent("Crowned on the 2nd");
   });
 
   it("says when the monthly board resets, and names no dates", async () => {
