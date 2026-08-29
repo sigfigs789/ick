@@ -17,7 +17,8 @@ import {
   previousMonthName,
   todayDateString,
 } from "../game/date";
-import { monthResetLabel } from "../game/month";
+import { monthChampionSettling, monthResetLabel } from "../game/month";
+import { weekChampionSettling } from "../game/week";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -507,6 +508,14 @@ export function LeaderboardPage() {
                 // among the live ones would read as though they were.
                 champion={boards.lastWeek}
                 championLabel="Last week's champion"
+                // Held for the whole of Sunday, because the week it names does
+                // not close at the same moment for everybody -- see
+                // game/week.ts. The plaque says when it will be engraved and
+                // names nobody until it can name the same person to every
+                // reader.
+                championSettles={
+                  weekChampionSettling(today) ? "on Monday" : undefined
+                }
               />
               <Board
                 heading="This month"
@@ -531,6 +540,10 @@ export function LeaderboardPage() {
                 // the last one that finished.
                 champion={boards.lastMonth}
                 championLabel={`${previousMonthName(today)}'s champion`}
+                // The same hold, on the day this board's window turns over.
+                championSettles={
+                  monthChampionSettling(today) ? "on the 2nd" : undefined
+                }
               />
             </div>
           </>
@@ -771,6 +784,12 @@ interface BoardProps {
   champion?: BoardEntry | null;
   /** What that window was: "Last week's champion", "July's champion". */
   championLabel?: string;
+  /**
+   * When the champion is not safe to name yet, the phrase saying when it will
+   * be: "on Monday", "on the 2nd". Undefined on every other day, which is every
+   * day but the one the window turned over on.
+   */
+  championSettles?: string;
 }
 
 /**
@@ -794,6 +813,7 @@ function Board({
   playerId,
   champion,
   championLabel,
+  championSettles,
 }: BoardProps) {
   return (
     <section className="leaderboard__board" aria-label={heading}>
@@ -866,12 +886,23 @@ function Board({
           Nobody won the closed window -- a month before the game existed, a
           week nobody played -- and the plaque still goes down, empty: an
           engraving line waiting for a name says "this gets won" in a way a
-          missing plaque cannot, and it keeps the two boards ending level. */}
+          missing plaque cannot, and it keeps the two boards ending level.
+          Three states, in the order they are asked: nobody has won this window
+          yet, somebody has but it is not safe to say who, or the result is
+          final. The middle two share the empty plaque and differ only in what
+          it says, because a window still settling has not got a name to show
+          either -- it has one that could still change, which is the same
+          nothing dressed up as an answer. */}
       {championLabel &&
-        (champion ? (
-          <Champion entry={champion} label={championLabel} />
-        ) : (
+        (!champion ? (
           <ChampionPending />
+        ) : championSettles ? (
+          <ChampionPending
+            label={`Crowned ${championSettles}`}
+            announcement={`${championLabel} is crowned ${championSettles}`}
+          />
+        ) : (
+          <Champion entry={champion} label={championLabel} />
         ))}
     </section>
   );
@@ -924,19 +955,32 @@ function Champion({ entry, label }: { entry: BoardEntry; label: string }) {
  * window's own dates, because the board's heading two lines above already says
  * when it turns over, and a page that gives the same date twice in one column
  * reads as a slip.
+ *
+ * The same plaque also stands in on the day a window turns over, when there *is*
+ * a winner but not one that would be the same for every reader yet -- then the
+ * label names the day instead ("Crowned on Monday"). Deliberately the same
+ * shape: both are the plaque declining to guess, and a reader who cannot yet be
+ * told a name is owed the reason in the one line there is room for rather than a
+ * different-looking box.
  */
-function ChampionPending() {
+function ChampionPending({
+  label = "Coming up",
+  announcement = "Champion not decided yet",
+}: {
+  label?: string;
+  announcement?: string;
+}) {
   return (
     <p className="leaderboard__champion leaderboard__champion--pending">
       <span className="leaderboard__champion-trophy" aria-hidden="true">
         🏆
       </span>
-      <span className="leaderboard__champion-label">Coming up</span>
+      <span className="leaderboard__champion-label">{label}</span>
       {/* The line is the whole message to anybody who can see it and says
           nothing at all to anybody who cannot, so it is hidden from the reading
           order and the sentence it stands for is spelled out instead. */}
       <span className="leaderboard__champion-blank" aria-hidden="true" />
-      <span className="sr-only">Champion not decided yet</span>
+      <span className="sr-only">{announcement}</span>
     </p>
   );
 }

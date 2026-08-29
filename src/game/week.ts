@@ -56,3 +56,31 @@ function weekday(date: string): number {
   const [y, m, d] = date.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
+
+/**
+ * Whether last week's champion is still settling -- true on Sunday, false the
+ * rest of the week.
+ *
+ * The plaque under the weekly board names the winner of the seven days before
+ * this window, and that window closes at a different moment for every player,
+ * because it closes at their own midnight (see the note at the top of this
+ * file). A player in Tokyo reaches Sunday roughly twenty hours before the last
+ * player in American Samoa finishes Saturday -- so a name shown on Sunday is a
+ * name that can still change under the reader, and a plaque that changes its
+ * mind is worse than one that has not spoken yet.
+ *
+ * So the whole of Sunday is held: the plaque says when it will be engraved
+ * instead of guessing at whom. By Monday every clock on earth has left Saturday
+ * and the answer is the same everywhere, which is the property a plaque needs
+ * and a live board does not.
+ *
+ * Nothing about the underlying result changes here -- the champion is computed
+ * the same way whenever it is read, and whoever won still won. This decides only
+ * whether it is safe to say so yet.
+ */
+export function weekChampionSettling(
+  date: string = todayDateString(),
+): boolean {
+  // Sunday is the one day that is its own week's start.
+  return weekStart(date) === date;
+}
