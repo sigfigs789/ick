@@ -20,6 +20,7 @@ import App from "./App";
 import { addDays, todayDateString } from "./game/date";
 import { dropForDate } from "./game/drop";
 import { evaluateSubmission } from "./game/submit";
+import { maxGuessesFor } from "./game/constants";
 import { puzzleNumber } from "./game/share";
 import { resetLiveCheckSession } from "./game/liveValidate";
 import dictionaryWords from "./data/dictionary.json";
@@ -33,6 +34,7 @@ vi.mock("@vercel/speed-insights/react", () => ({ SpeedInsights: () => null }));
 const TODAY = todayDateString();
 const YESTERDAY = addDays(TODAY, -1);
 const DROP = dropForDate(TODAY);
+const MAX_GUESSES = maxGuessesFor(TODAY);
 
 /**
  * `count` words that are playable in a single sitting for `drop`: each one
@@ -136,7 +138,7 @@ describe("gameplay end to end", () => {
     await submit(word);
 
     await waitFor(() => expect(loggedWords()).toEqual([word]));
-    expect(screen.getByText(/1 of 5 used/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`1 of ${MAX_GUESSES} used`, "i"))).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(new RegExp(`"${word}" accepted`, "i"));
     // The first word of the day advances the streak, which the display reads
     // out of storage rather than from the submission itself.
@@ -158,7 +160,7 @@ describe("gameplay end to end", () => {
     render(<App />);
 
     expect(loggedWords()).toEqual([word]);
-    expect(screen.getByText(/1 of 5 used/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`1 of ${MAX_GUESSES} used`, "i"))).toBeInTheDocument();
     // Still playable: a restored puzzle picks up mid-game, not finished.
     expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
   });
@@ -189,8 +191,8 @@ describe("gameplay end to end", () => {
     expect(loggedWords()).toEqual([word]);
   });
 
-  it("finishes the puzzle at the guess limit and swaps the form for the results", async () => {
-    const words = playableWords(5, DROP, TODAY);
+  it("finishes the puzzle at the guess limit and takes the form away", async () => {
+    const words = playableWords(MAX_GUESSES, DROP, TODAY);
     render(<App />);
 
     for (const word of words) {
@@ -199,29 +201,47 @@ describe("gameplay end to end", () => {
     }
 
     await waitFor(() =>
-      expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument()
     );
-    expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /i'm done guessing/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
     expect(loggedWords()).toEqual(words);
-    expect(savedProgress(TODAY)?.completed).toBe(true);
-  });
-
-  it("finishes early when the player locks in", async () => {
-    const [word] = playableWords(1, DROP, TODAY);
-    render(<App />);
-
-    await submit(word);
-    await waitFor(() => expect(loggedWords()).toEqual([word]));
-    await userEvent.click(screen.getByRole("button", { name: /i'm done guessing/i }));
-
-    await waitFor(() =>
-      expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument()
-    );
-    expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
     const saved = savedProgress(TODAY);
     expect(saved?.completed).toBe(true);
     expect(saved?.completedAt).toBeTruthy();
+  });
+
+  it("offers the share panel from the first word, without ending the puzzle", async () => {
+    const [word] = playableWords(1, DROP, TODAY);
+    render(<App />);
+
+    // Nothing to share before there is a word.
+    expect(screen.queryByRole("region", { name: /share result/i })).not.toBeInTheDocument();
+    await submit(word);
+    await waitFor(() => expect(loggedWords()).toEqual([word]));
+
+    // The panel arrives and the form stays: sharing used to require pressing
+    // "I'm done guessing", which finished the day for good.
+    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
+    expect(savedProgress(TODAY)?.completed).toBe(false);
+  });
+
+  it("keeps the day's answer hidden until every guess is spent", async () => {
+    const words = playableWords(MAX_GUESSES, DROP, TODAY);
+    render(<App />);
+
+    const revealed = () => document.querySelector(".drop-display__ceiling-word");
+    expect(revealed()).not.toBeInTheDocument();
+
+    for (const [i, word] of words.entries()) {
+      await submit(word);
+      await waitFor(() => expect(loggedWords()).toContain(word));
+      // Still hidden on every guess but the last, which is the whole point:
+      // there is no longer a button that trades the rest of the puzzle for it.
+      if (i < words.length - 1) expect(revealed()).not.toBeInTheDocument();
+    }
+
+    await waitFor(() => expect(revealed()).toBeInTheDocument());
   });
 
   it("keeps an archived puzzle's progress separate from today's", async () => {

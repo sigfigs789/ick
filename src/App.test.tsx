@@ -11,7 +11,6 @@ vi.mock("@vercel/analytics/react", () => ({ Analytics: () => null }));
 vi.mock("@vercel/speed-insights/react", () => ({ SpeedInsights: () => null }));
 
 const submitWord = vi.fn();
-const lockIn = vi.fn();
 
 function puzzle(overrides: Record<string, unknown> = {}) {
   return {
@@ -34,7 +33,6 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     streak: { currentStreak: 0, longestStreak: 0, totalCompleted: 0, crushedIt: 0, elite: 0, highScore: 0 },
     feedback: null,
     submitWord,
-    lockIn,
     resetAnswers: vi.fn(),
     liveNote: null,
     checking: false,
@@ -69,7 +67,7 @@ describe("App", () => {
     expect(submitWord).toHaveBeenCalledWith("strange");
   });
 
-  it("shows archive and lock-in controls only for an unfinished archived puzzle with a word", async () => {
+  it("notes an archived puzzle and offers the share panel from the first word", async () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({
         date: "2026-08-12",
@@ -87,8 +85,16 @@ describe("App", () => {
     render(<App />);
 
     expect(screen.getByText(/playing an old puzzle/i)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /i'm done guessing/i }));
-    expect(lockIn).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /done guessing/i })).not.toBeInTheDocument();
+  });
+
+  it("keeps the share panel away until there is a word to share", () => {
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
+    render(<App />);
+
+    expect(screen.queryByRole("region", { name: /share result/i })).not.toBeInTheDocument();
   });
 
   it("badges the leaderboard until it has been visited, then never again", async () => {

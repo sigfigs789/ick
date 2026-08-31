@@ -70,10 +70,16 @@ export function InstructionsModal({ open, onClose }: Props) {
             about before they are told (they hoard, and the limit is not what
             they think it is); and stopping early is a choice they have to know
             exists, because the button offering it only appears once they have
-            banked a word. */}
+            banked a word.
+
+            The last sentence replaced "lock in when you're done", which named a
+            button that no longer exists. What it says instead is the reason to
+            spend the last guess rather than walk away on three: the answer is
+            what the fourth one buys. */}
         <p className="modal__copy">
           You get {maxGuessesFor()} guesses a day. A word the game turns down costs you nothing, and
-          every word it accepts adds to your score — so keep digging, and lock in when you're done.
+          every word it accepts adds to your score — so keep digging. Use all {maxGuessesFor()} and
+          the day's rarest possible word is revealed.
         </p>
         <p className="modal__rarity-note">
           Rarity scores reflect how often a word appears across books, news, movies, websites, and
