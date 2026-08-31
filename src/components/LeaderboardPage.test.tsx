@@ -684,20 +684,34 @@ describe("recent finds", () => {
   });
 
   it("says so plainly when nobody has found anything today", async () => {
-    stubFetch({ ...OPEN, words: [] });
-    render(<LeaderboardPage />);
+    // A pinned day with somewhere to step back to: past the finds epoch and
+    // past this week's reset, so the feed's floor sits behind it. The empty
+    // section only survives when there is an earlier day to reach (see the
+    // Sunday case below), so reading the clock instead of setting it makes this
+    // test pass or fail on whichever day CI happens to run -- which is how it
+    // broke when a Sunday came around.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 7, 28, 9, 0, 0));
+    try {
+      stubFetch({ ...OPEN, words: [] });
+      render(<LeaderboardPage />);
 
-    // The section stays, because it now carries the way back through the week
-    // -- and an empty morning is exactly when yesterday's finds are the thing
-    // worth reaching. What used to be a missing section is one sentence.
-    expect(
-      await screen.findByText("Nobody's found anything yet today."),
-    ).toBeInTheDocument();
-    expect(
-      within(
-        screen.getByRole("region", { name: "Today's finds" }),
-      ).queryAllByRole("listitem"),
-    ).toHaveLength(0);
+      // The section stays, because it now carries the way back through the week
+      // -- and an empty morning is exactly when yesterday's finds are the thing
+      // worth reaching. What used to be a missing section is one sentence.
+      expect(
+        await vi.waitFor(() =>
+          screen.getByText("Nobody's found anything yet today."),
+        ),
+      ).toBeInTheDocument();
+      expect(
+        within(
+          screen.getByRole("region", { name: "Today's finds" }),
+        ).queryAllByRole("listitem"),
+      ).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("keeps the section away entirely when there is nowhere to go and nothing to show", async () => {

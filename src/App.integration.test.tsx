@@ -18,6 +18,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { addDays, todayDateString } from "./game/date";
+import { maxGuessesFor } from "./game/constants";
 import { dropForDate } from "./game/drop";
 import { evaluateSubmission } from "./game/submit";
 import { puzzleNumber } from "./game/share";
@@ -33,6 +34,17 @@ vi.mock("@vercel/speed-insights/react", () => ({ SpeedInsights: () => null }));
 const TODAY = todayDateString();
 const YESTERDAY = addDays(TODAY, -1);
 const DROP = dropForDate(TODAY);
+/**
+ * Today's guess limit, read from the same function the app reads it from.
+ *
+ * The limit steps down on fixed dates (game/constants.ts), so a literal here is
+ * a test that passes until the calendar reaches the next step and then fails
+ * for a reason that has nothing to do with the code under test -- which is
+ * exactly what happened when the 5 -> 4 step landed. Deriving it keeps these
+ * tests about the wiring between the hook, storage and the form, and lets the
+ * constants' own tests own the schedule.
+ */
+const LIMIT = maxGuessesFor(TODAY);
 
 /**
  * `count` words that are playable in a single sitting for `drop`: each one
@@ -136,7 +148,7 @@ describe("gameplay end to end", () => {
     await submit(word);
 
     await waitFor(() => expect(loggedWords()).toEqual([word]));
-    expect(screen.getByText(/1 of 5 used/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`1 of ${LIMIT} used`, "i"))).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(new RegExp(`"${word}" accepted`, "i"));
     // The first word of the day advances the streak, which the display reads
     // out of storage rather than from the submission itself.
@@ -158,7 +170,7 @@ describe("gameplay end to end", () => {
     render(<App />);
 
     expect(loggedWords()).toEqual([word]);
-    expect(screen.getByText(/1 of 5 used/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`1 of ${LIMIT} used`, "i"))).toBeInTheDocument();
     // Still playable: a restored puzzle picks up mid-game, not finished.
     expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
   });
@@ -190,7 +202,7 @@ describe("gameplay end to end", () => {
   });
 
   it("finishes the puzzle at the guess limit and swaps the form for the results", async () => {
-    const words = playableWords(5, DROP, TODAY);
+    const words = playableWords(LIMIT, DROP, TODAY);
     render(<App />);
 
     for (const word of words) {
