@@ -52,7 +52,7 @@ describe("monthly board window", () => {
     }
   });
 
-  it("holds last month's champion for the whole of the first and no longer", () => {
+  it("calls last month's champion unsettled for the first and no longer", () => {
     // The weekly board's rule, one window up -- see week.test.ts.
     expect(monthChampionSettling("2026-09-01")).toBe(true);
     expect(monthChampionSettling("2026-09-02")).toBe(false);
