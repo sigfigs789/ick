@@ -52,7 +52,10 @@ export default function App() {
     lockIn,
     resetAnswers,
   } = useDailyPuzzle();
-  const [showInstructions, setShowInstructions] = useState(false);
+  // A first-timer who never taps "?" never learns that rarer scores higher --
+  // which is the whole game -- so the rules open themselves once, and only
+  // once. Read on mount for the same reason as the badge below.
+  const [showInstructions, setShowInstructions] = useState(() => !hasSeen("instructions"));
   const [showWordRules, setShowWordRules] = useState(false);
   // Read once on mount rather than on every render: this flips exactly once, in
   // openLeaderboard, and reading storage during a render would be the only
@@ -113,6 +116,13 @@ export default function App() {
     // re-renders; only new feedback events should trigger playback.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
+
+  function closeInstructions() {
+    // Opened by hand or opened for them, either way they have now met the
+    // rules: retire the auto-open for good.
+    markSeen("instructions");
+    setShowInstructions(false);
+  }
 
   function openLeaderboard(from: "header" | "results") {
     trackLeaderboardOpened(from);
@@ -256,7 +266,7 @@ export default function App() {
         )}
       </main>
 
-      <InstructionsModal open={showInstructions} onClose={() => setShowInstructions(false)} />
+      <InstructionsModal open={showInstructions} onClose={closeInstructions} />
       <WordRulesModal open={showWordRules} onClose={() => setShowWordRules(false)} />
     </div>
   );

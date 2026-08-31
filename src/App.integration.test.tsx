@@ -22,6 +22,7 @@ import { dropForDate } from "./game/drop";
 import { evaluateSubmission } from "./game/submit";
 import { puzzleNumber } from "./game/share";
 import { resetLiveCheckSession } from "./game/liveValidate";
+import { markSeen } from "./game/whatsNew";
 import dictionaryWords from "./data/dictionary.json";
 import type { AcceptedWord, DailyProgress } from "./game/types";
 
@@ -118,6 +119,9 @@ function loggedWords(): string[] {
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+  // These cover gameplay, not the welcome: without this the cleared storage
+  // makes every render a first visit, and the rules open over the puzzle.
+  markSeen("instructions");
   resetLiveCheckSession();
   track.mockClear();
   stubFetch();
