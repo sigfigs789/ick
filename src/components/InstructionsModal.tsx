@@ -1,6 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackFeedbackSubmitted } from "../analytics";
-import { MAX_GUESSES } from "../game/constants";
 
 interface Props {
   open: boolean;
@@ -58,27 +57,10 @@ export function InstructionsModal({ open, onClose }: Props) {
           </button>
         </div>
         <p className="modal__copy">WordInk gives everyone the same daily drop—say, “INK”. Find the rarest English word you can that contains it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</p>
-        {/* Removed in #45, back because the modal now greets first-timers who
-            have played nothing yet: without this they learn what a drop is but
-            not what a day of the game costs them, or what keeps a streak. Reads
-            the limit off the constant so the copy can't drift from the rule the
-            way a hardcoded "6" did. */}
-        <p className="modal__copy">
-          Any valid word keeps your streak going. Miss a day and your streak resets to 0. After your
-          first valid word you can lock in, or keep going—up to {MAX_GUESSES} words a day.
-        </p>
         <p className="modal__rarity-note">
           Rarity scores reflect how often a word appears across books, news, movies, websites, and
           social media—not how complex it is. Values are computed using Zipf’s law. The highest ranks
           are Mythic at 9.5+ and Legend at 9.9+.
-        </p>
-        {/* The header chip says "beta"; this is the sentence that cashes it in.
-            It sits directly above the feedback box on purpose -- telling people
-            the game is still moving is only worth doing next to the thing that
-            lets them push it. */}
-        <p className="modal__rarity-note">
-          WordInk is in beta. The word list, the scoring, and the rules are still being tuned, so
-          expect things to change from week to week—if something feels wrong, tell me below.
         </p>
         <form className="word-suggestion feedback-form" onSubmit={submitFeedback}>
           <div className="word-suggestion__row feedback-form__row">
@@ -91,7 +73,7 @@ export function InstructionsModal({ open, onClose }: Props) {
                 setFeedback(event.target.value);
                 setSent(false);
               }}
-              placeholder="Share feedback, leave a suggestion, or help me grow the game"
+              placeholder="Share feedback"
               rows={2}
               maxLength={300}
             />
