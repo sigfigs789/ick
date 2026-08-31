@@ -91,3 +91,26 @@ export function monthChampionSettling(
   // The first is the one day that is its own month's start.
   return monthStart(date) === date;
 }
+
+/** The first of the month before the one `start` begins -- a step back. */
+export function previousMonthStart(start: string): string {
+  const [year, month] = monthStart(start).split("-").map(Number);
+  if (month === 1) return `${year - 1}-12-01`;
+  return `${year}-${String(month - 1).padStart(2, "0")}-01`;
+}
+
+/**
+ * `July 2026`, for a monthly board showing a window the reader has stepped back
+ * to.
+ *
+ * The year comes along because stepping back has no floor inside a year -- a
+ * reader in January is two steps from November of the year before, and a heading
+ * reading "November" there would be the one thing on the page a reader could get
+ * wrong without noticing. The live board says "This month" in the same slot.
+ */
+export function monthLabel(start: string): string {
+  return new Date(`${monthStart(start)}T00:00:00`).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+}

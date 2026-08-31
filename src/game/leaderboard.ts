@@ -19,6 +19,7 @@ import {
   totalRarityScore,
 } from "./dictionary";
 import { todayDateString } from "./date";
+import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { playedOnItsDay } from "./storage";
@@ -298,6 +299,41 @@ export interface FetchOptions {
 }
 
 /**
+ * Which windows the boards should count, when the reader has stepped off the
+ * present.
+ *
+ * Both default to the windows bracketing the date being played, which is what
+ * the page opens on and what every caller but the board navigation wants. A
+ * window given here is used as sent: the server bounds each board at both ends
+ * from it (see api/leaderboard.ts), so a past week is a closed seven days rather
+ * than "everything since".
+ */
+export interface BoardOptions extends FetchOptions {
+  /** The Sunday the weekly board counts from. */
+  week?: string;
+  /** The first of the month the monthly board counts. */
+  month?: string;
+}
+
+/**
+ * The earliest windows the boards will step back to: the ones bracketing the
+ * first puzzle.
+ *
+ * Nothing was ever scored before the game dropped, so a step past these could
+ * only ever produce an empty board -- and unlike the finds feed, which has a
+ * floor of its own because its table is younger than the game (see
+ * `FINDS_EPOCH`), scores really do go back this far: a player who joins today
+ * backfills every puzzle their browser remembers, all the way to the first one.
+ */
+export function weekFloor(): string {
+  return weekStart(FIRST_PUZZLE);
+}
+
+export function monthFloor(): string {
+  return monthStart(FIRST_PUZZLE);
+}
+
+/**
  * The cache-buster: a five-second bucket, not a timestamp.
  *
  * The URL is the cache key, so a unique one per tap means an origin read per
@@ -321,13 +357,16 @@ function freshParam(options: FetchOptions): string {
  */
 export async function fetchBoards(
   date: string = todayDateString(),
-  options: FetchOptions = {}
+  options: BoardOptions = {}
 ): Promise<Boards> {
-  const since = weekStart(date);
+  // The window the reader has stepped to, or the one they are in. Either way it
+  // is a date this client computed, because the puzzle dates it brackets are
+  // this player's own local calendar dates.
+  const since = options.week ?? weekStart(date);
   // The month goes up for the same reason the week does: both windows bracket
   // the player's own local puzzle date, so both have to be computed off the same
-  // clock. The server bounds the far end of it itself.
-  const month = monthStart(date);
+  // clock. The server bounds the far end of both itself.
+  const month = options.month ?? monthStart(date);
   // Who is asking, so the server can send their own row back from below the cut.
   // Nobody has to have joined for the page to work: without an id the boards
   // come back exactly as before, minus a row that would be about nobody.

@@ -370,7 +370,8 @@ h2 {
   margin-top: 0.25rem;
 }
 .puzzle-nav__arrow,
-.found-words__arrow {
+.found-words__arrow,
+.leaderboard__board-arrow {
   min-height: 2rem;
   padding: 0.25rem 0.55rem;
   flex: none;
@@ -392,16 +393,19 @@ h2 {
     transform 0.15s var(--ease-standard);
 }
 .puzzle-nav__arrow:not(:disabled):hover,
-.found-words__arrow:not(:disabled):hover {
+.found-words__arrow:not(:disabled):hover,
+.leaderboard__board-arrow:not(:disabled):hover {
   background: var(--accent);
   color: var(--accent-fg);
 }
 .puzzle-nav__arrow:not(:disabled):active,
-.found-words__arrow:not(:disabled):active {
+.found-words__arrow:not(:disabled):active,
+.leaderboard__board-arrow:not(:disabled):active {
   transform: scale(0.96);
 }
 .puzzle-nav__arrow:disabled,
-.found-words__arrow:disabled {
+.found-words__arrow:disabled,
+.leaderboard__board-arrow:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -1842,6 +1846,39 @@ h2 {
 .leaderboard__row--you {
   background: var(--bg-inset);
   border-radius: 0.45rem;
+}
+/*
+ * Stepping a board back through the windows that have closed.
+ *
+ * Under the heading and split to the ends, which is the shape the finds feed's
+ * pager already has on this page -- two controls doing the same job in two
+ * places should not be two shapes. Its own class rather than the feed's because
+ * the boards sit two to a row on a wide screen, where this one has to fit a
+ * column half the width.
+ */
+.leaderboard__board-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+/*
+ * A row holding the board's height while another window is fetched.
+ *
+ * The same box as a real row -- same height, same rule under it -- with nothing
+ * in it, so the board is exactly as tall as it is about to be and the page does
+ * not move under the button that was just pressed. It pulses rather than sitting
+ * still, so a stack of blank rules reads as a board arriving rather than as one
+ * full of nothing; the reduced-motion rule near the top of this file stops the
+ * pulse and leaves the height, which is the part doing the work.
+ */
+.leaderboard__row--placeholder {
+  display: block;
+  min-height: calc(var(--row-height) - 1px);
+  background: var(--bg-inset);
+  border-radius: 0.3rem;
+  animation: found-words-pending 1.1s ease-in-out infinite;
 }
 /*
  * Your own row, kept on screen however the board is scrolled.

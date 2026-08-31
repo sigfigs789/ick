@@ -292,6 +292,28 @@ describe("reading the boards", () => {
     expect(url).toContain("month=2026-08-01");
   });
 
+  it("asks for the windows a reader has stepped back to", async () => {
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27", { week: "2026-08-16", month: "2026-07-01" });
+    const url = requestedUrl(fetchMock);
+    // A window given here is used as sent: the boards a reader stepped back to
+    // are closed windows, and nothing about the date being played should drag
+    // them forward again.
+    expect(url).toContain("since=2026-08-16");
+    expect(url).toContain("month=2026-07-01");
+  });
+
+  it("steps one window without moving the other", async () => {
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27", { month: "2026-07-01" });
+    // The two boards are different questions over different windows, and the
+    // page lets them be asked separately -- so an unnamed window is still the
+    // live one.
+    expect(requestedUrl(fetchMock)).toContain("since=2026-08-23");
+  });
+
   it("moves the monthly window on the first, with nothing else changing", async () => {
     const fetchMock = stubFetch(boardsResponse({}));
 

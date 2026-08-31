@@ -4,8 +4,12 @@
 // GET /api/leaderboard?since=YYYY-MM-DD&month=YYYY-MM-01&limit=15&player=UUID
 //   -> { weekStart, weekly: [...], weeklySelf, allTime: [...], allTimeSelf,
 //        lastWeek, lastMonth }
-//   The weekly board counts puzzles from `since` onward; the second counts the
-//   month `month` begins. Both come from the client, because the puzzle date
+//   The weekly board counts the seven days from `since`; the second counts the
+//   month `month` begins. Neither has to be the window the caller is currently
+//   in: the page lets a reader step either board back through closed windows and
+//   forward again, and a past window is simply a different pair of dates in the
+//   same two parameters. Both boards are bounded at both ends, so a week the
+//   reader stepped back to is that week and not everything after it. Both come from the client, because the puzzle date
 //   they bracket is the player's own local calendar date (see src/game/week.ts
 //   and src/game/month.ts), so both windows have to be measured on the same
 //   clock. Only the near end of the month is sent: the far end is the last day
@@ -144,6 +148,17 @@ function monthEnd(start: string): string {
   // Day 0 of the next month is the last day of this one, with no table of month
   // lengths and no leap-year case.
   return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+}
+
+/**
+ * The Saturday closing the week that starts on `start`.
+ *
+ * Six days on, which is what a week is here and everywhere else in this game --
+ * the client picks which day a week starts on (src/game/week.ts) and nothing on
+ * this side needs to know which one it picked.
+ */
+function weekEnd(start: string): string {
+  return daysBefore(start, -6);
 }
 
 /**
@@ -650,6 +665,14 @@ async function handleGet(request: Request): Promise<Response> {
       // now a month. Renaming them means dropping and recreating the function,
       // which breaks every request in flight during a deploy for no behaviour
       // either side can see.
+      // The week's far end, which the caller does not send for the same reason
+      // it does not send the month's: one date already says which week it is.
+      // Sent at all because the weekly board is no longer always the live week
+      // -- a reader can step it back -- and an unbounded window would answer
+      // "the week of the 16th" with every score since the 16th. For the live
+      // week it changes nothing: its Saturday is today or later, and no puzzle
+      // exists past today.
+      p_week_until: weekEnd(since),
       p_season_since: month,
       p_season_until: monthEnd(month),
       p_month_since: lastMonth.since,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { weekChampionSettling, weekStart } from "./week";
+import { weekChampionSettling, weekEnd, weekLabel, weekStart } from "./week";
 
 describe("weekly board window", () => {
   it("starts the week on Sunday", () => {
@@ -52,5 +52,20 @@ describe("weekly board window", () => {
     }
     // Saturday least of all -- the week being named is still being played.
     expect(weekChampionSettling("2026-09-05")).toBe(false);
+  });
+});
+
+describe("naming a week the reader stepped back to", () => {
+  it("closes a week on its own Saturday", () => {
+    expect(weekEnd("2026-08-23")).toBe("2026-08-29");
+    // Across a month boundary, which is the case that would need a table of
+    // month lengths if this did its own arithmetic.
+    expect(weekEnd("2026-08-30")).toBe("2026-09-05");
+  });
+
+  it("names a past week by the Sunday it started on", () => {
+    // The Sunday alone: a week is seven days from one everywhere in this game,
+    // so naming both ends spells out the half a reader can already do.
+    expect(weekLabel("2026-08-16")).toBe("Week of Aug 16");
   });
 });
