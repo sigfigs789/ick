@@ -132,7 +132,7 @@ describe("gameplay end to end", () => {
     const [word] = playableWords(1, DROP, TODAY);
     render(<App />);
 
-    expect(screen.getByText(/no guesses yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/no words yet/i)).toBeInTheDocument();
     await submit(word);
 
     await waitFor(() => expect(loggedWords()).toEqual([word]));

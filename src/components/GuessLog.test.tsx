@@ -16,7 +16,7 @@ const streak: StreakState = {
 describe("GuessLog", () => {
   it("shows an empty state with no guesses", () => {
     render(<GuessLog acceptedWords={[]} />);
-    expect(screen.getByText(/no guesses yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/no words yet/i)).toBeInTheDocument();
   });
 
   it("lists each accepted word with its rarity", () => {

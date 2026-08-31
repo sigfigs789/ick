@@ -60,10 +60,10 @@ export function WordRulesModal({ open, onClose }: Props) {
           WordInk's curated word list is sourced from SCOWL and <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>) and contains more than 200,000 words. To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play.
         </p>
         <p className="modal__copy">
-          I'm continuously expanding the list to include more delightful and interesting words. Have a good word in mind? Suggest it and improve the experience for everyone!
+          I'm continuously expanding the list to include more delightful and interesting words. Know a good one that's missing? Suggest it and everybody gets to play it.
         </p>
         <form className="word-suggestion" onSubmit={submitSuggestion}>
-          <label htmlFor="word-suggestion">Know a word we should consider?</label>
+          <label htmlFor="word-suggestion">Suggest a word</label>
           <div className="word-suggestion__row">
             <input
               id="word-suggestion"
@@ -72,7 +72,7 @@ export function WordRulesModal({ open, onClose }: Props) {
                 setSuggestion(event.target.value);
                 setSent(false);
               }}
-              placeholder="Enter word"
+              placeholder="Enter a word"
               autoComplete="off"
               maxLength={80}
             />
