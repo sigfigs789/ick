@@ -14,8 +14,8 @@
 
 const SEEN_PREFIX = "ick:seen:";
 
-/** The features that have ever carried a badge. */
-export type Announcement = "leaderboard";
+/** The features that have ever carried a badge, or a once-only appearance. */
+export type Announcement = "leaderboard" | "instructions";
 
 /**
  * Whether the player has already met this feature.

@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackFeedbackSubmitted } from "../analytics";
+import { MAX_GUESSES } from "../game/constants";
 
 interface Props {
   open: boolean;
@@ -57,6 +58,15 @@ export function InstructionsModal({ open, onClose }: Props) {
           </button>
         </div>
         <p className="modal__copy">WordInk gives everyone the same daily drop—say, “INK”. Find the rarest English word you can that contains it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</p>
+        {/* Removed in #45, back because the modal now greets first-timers who
+            have played nothing yet: without this they learn what a drop is but
+            not what a day of the game costs them, or what keeps a streak. Reads
+            the limit off the constant so the copy can't drift from the rule the
+            way a hardcoded "6" did. */}
+        <p className="modal__copy">
+          Any valid word keeps your streak going. Miss a day and your streak resets to 0. After your
+          first valid word you can lock in, or keep going—up to {MAX_GUESSES} words a day.
+        </p>
         <p className="modal__rarity-note">
           Rarity scores reflect how often a word appears across books, news, movies, websites, and
           social media—not how complex it is. Values are computed using Zipf’s law. The highest ranks

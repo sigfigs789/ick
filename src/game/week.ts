@@ -66,17 +66,20 @@ function weekday(date: string): number {
  * because it closes at their own midnight (see the note at the top of this
  * file). A player in Tokyo reaches Sunday roughly twenty hours before the last
  * player in American Samoa finishes Saturday -- so a name shown on Sunday is a
- * name that can still change under the reader, and a plaque that changes its
- * mind is worse than one that has not spoken yet.
+ * name that can still change under the reader.
  *
- * So the whole of Sunday is held: the plaque says when it will be engraved
- * instead of guessing at whom. By Monday every clock on earth has left Saturday
- * and the answer is the same everywhere, which is the property a plaque needs
- * and a live board does not.
+ * The plaque was held closed for the whole of Sunday because of it, and that
+ * cost more than it bought: the one day the week's result is the freshest news
+ * on the page is the day it said nothing at all, and a reader who came back for
+ * their own win found an empty box. So Sunday names the winner like every other
+ * day, and this flag is what puts the caveat beside the name instead -- the
+ * result stands, some players have not finished, and it can still change until
+ * Monday. By Monday every clock on earth has left Saturday and the answer is the
+ * same everywhere, so the caveat comes off on its own.
  *
  * Nothing about the underlying result changes here -- the champion is computed
  * the same way whenever it is read, and whoever won still won. This decides only
- * whether it is safe to say so yet.
+ * whether the plaque says so with a footnote.
  */
 export function weekChampionSettling(
   date: string = todayDateString(),

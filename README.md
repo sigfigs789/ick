@@ -558,9 +558,11 @@ carries that window's own champion, since a closed board *is* the answer — its
 first row. The live board's plaque still names the window before it. A window
 older than the last one gets no plaque at all when nobody scored in it: "Crowned
 on Monday" under a week from two months ago would be the one thing on the page
-that is simply false. The turnover-day hold applies to the window just gone as
-well as the live one, because that is the board whose top row can still move
-under a reader (see `weekChampionSettling`).
+that is simply false. The turnover-day caveat — the "i" beside the label — is
+carried by the week just gone as well as the live board, since a reader who steps
+back to it is looking at the same window under a different heading, and its top
+row can still move (see `weekChampionSettling`). A week older than that one is
+closed everywhere, whatever today is, and wears no mark.
 
 Stepping is one request for both boards, carrying the two windows the reader is
 looking at, and each board tracks its own loading and error state from the
