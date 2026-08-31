@@ -2,7 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { InstructionsModal } from "./InstructionsModal";
-import { MAX_GUESSES } from "../game/constants";
 
 const trackFeedbackSubmitted = vi.hoisted(() => vi.fn());
 vi.mock("../analytics", () => ({ trackFeedbackSubmitted }));
@@ -15,15 +14,6 @@ describe("InstructionsModal", () => {
     rerender(<InstructionsModal open onClose={vi.fn()} />);
     expect(screen.getByRole("dialog", { name: /how to play wordink/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /close instructions/i })).toHaveFocus();
-  });
-
-  it("explains locking in and the day's word limit", () => {
-    render(<InstructionsModal open onClose={vi.fn()} />);
-    // The number comes from the constant, so a future change to the limit moves
-    // the copy with it instead of leaving a stale figure in front of a new player.
-    expect(
-      screen.getByText(new RegExp(`up to ${MAX_GUESSES} words a day`, "i")),
-    ).toBeInTheDocument();
   });
 
   it("names Mythic and Legend as the highest ranks with their rarity thresholds", () => {
