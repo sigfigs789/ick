@@ -62,6 +62,14 @@ export function InstructionsModal({ open, onClose }: Props) {
           social media—not how complex it is. Values are computed using Zipf’s law. The highest ranks
           are Mythic at 9.5+ and Legend at 9.9+.
         </p>
+        {/* The header chip says "beta"; this is the sentence that cashes it in.
+            It sits directly above the feedback box on purpose -- telling people
+            the game is still moving is only worth doing next to the thing that
+            lets them push it. */}
+        <p className="modal__rarity-note">
+          WordInk is in beta. The word list, the scoring, and the rules are still being tuned, so
+          expect things to change from week to week—if something feels wrong, tell me below.
+        </p>
         <form className="word-suggestion feedback-form" onSubmit={submitFeedback}>
           <div className="word-suggestion__row feedback-form__row">
             <textarea

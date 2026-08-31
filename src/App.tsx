@@ -147,7 +147,18 @@ export default function App() {
       <header className="app__header">
         <SoundToggle enabled={sound.enabled} onToggle={sound.toggle} />
         <div className="app__header-titles">
-          <h1>WordInk</h1>
+          {/* The wordmark carries the beta chip rather than a banner: the game
+              really is changing under players week to week, and a permanent
+              label sets that expectation once, in the one place every screen
+              shows, without spending a row of the puzzle to say it. Title on
+              the chip so the curious get the reason; the h1 text stays
+              "WordInk" for screen readers and page semantics. */}
+          <h1>
+            WordInk
+            <span className="app__beta" title="Still being built — rules and scoring may change.">
+              beta
+            </span>
+          </h1>
           <PuzzleNav
             date={date}
             puzzleNumber={puzzleNumber}
