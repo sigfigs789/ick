@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  crowningMonthName,
   monthChampionSettling,
   monthResetLabel,
   monthStart,
@@ -61,5 +62,21 @@ describe("monthly board window", () => {
     // And on no other day, including the last one, when the month being named
     // is the one still being played.
     expect(monthChampionSettling("2026-09-30")).toBe(false);
+  });
+
+  it("names the month the next crowning is for, from either side of it", () => {
+    // The 2nd of September crowns August, and that is the answer on every day
+    // that looks forward to it -- the days of August itself, and the first of
+    // September, when August has closed but is still being held.
+    // The first is itself a held day, and what it is holding is the month that
+    // closed the night before -- so August's own first still names July.
+    expect(crowningMonthName("2026-08-01")).toBe("July");
+    expect(crowningMonthName("2026-08-02")).toBe("August");
+    expect(crowningMonthName("2026-08-31")).toBe("August");
+    expect(crowningMonthName("2026-09-01")).toBe("August");
+    // And from the 2nd the box is looking at September instead.
+    expect(crowningMonthName("2026-09-02")).toBe("September");
+    // Across a year boundary, the settling day rolls back to December.
+    expect(crowningMonthName("2027-01-01")).toBe("December");
   });
 });

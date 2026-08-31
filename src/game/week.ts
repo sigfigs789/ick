@@ -84,3 +84,21 @@ export function weekChampionSettling(
   // Sunday is the one day that is its own week's start.
   return weekStart(date) === date;
 }
+
+/**
+ * The Sunday of the week whose champion the next crowning will name.
+ *
+ * The empty plaque says which window it is waiting on, and that window is not
+ * always the one the board just left. On the settling day the crowning about to
+ * happen is for the week that closed this morning, so it is a week back; on any
+ * other day that week has already been crowned -- or went unwon and never will
+ * be -- and the next name in the box comes from the week being played now.
+ *
+ * Derived from the day and not from whether a champion exists, which is what
+ * keeps the plaque from answering "did anybody win this" while that is still
+ * settling (see `weekChampionSettling`).
+ */
+export function crowningWeekStart(date: string = todayDateString()): string {
+  const start = weekStart(date);
+  return weekChampionSettling(date) ? addDays(start, -7) : start;
+}

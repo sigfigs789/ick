@@ -17,8 +17,12 @@ import {
   previousMonthName,
   todayDateString,
 } from "../game/date";
-import { monthChampionSettling, monthResetLabel } from "../game/month";
-import { weekChampionSettling } from "../game/week";
+import {
+  crowningMonthName,
+  monthChampionSettling,
+  monthResetLabel,
+} from "../game/month";
+import { crowningWeekStart, weekChampionSettling } from "../game/week";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -512,6 +516,11 @@ export function LeaderboardPage() {
                 // up naming: weeks close on Saturday and are held through
                 // Sunday, so a weekly champion is always a Monday's news.
                 championCrowning="on Monday"
+                // Which week the empty plaque is waiting on, named by its own
+                // Sunday. "Last week's" was relative to a reader who may not
+                // have been here last week, and on an unwon window it pointed
+                // at a week that is closed and will never be crowned at all.
+                championWindow={`Week of ${formatDateLabel(crowningWeekStart(today))}`}
                 // And whether today is that held Sunday -- the day the week it
                 // names has not closed at the same moment for everybody yet.
                 // See game/week.ts.
@@ -545,6 +554,7 @@ export function LeaderboardPage() {
                 // 2nd's news -- every month, which is what lets this be a
                 // constant rather than a date to compute.
                 championCrowning="on the 2nd"
+                championWindow={crowningMonthName(today)}
                 championSettling={monthChampionSettling(today)}
               />
             </div>
@@ -797,6 +807,13 @@ interface BoardProps {
    */
   championCrowning?: string;
   /**
+   * The window the empty plaque is waiting on, named: "Week of Aug 23",
+   * "August". The window the *next* crowning will fill, which on the settling
+   * day is the one this board just left and on any other day is the one being
+   * played -- see `crowningWeekStart`.
+   */
+  championWindow?: string;
+  /**
    * Whether today is the day this board's window turned over, and so the day a
    * winner is not safe to name (see game/week.ts). True on Sunday for the week
    * and on the first for the month; false every other day.
@@ -826,6 +843,7 @@ function Board({
   champion,
   championLabel,
   championCrowning,
+  championWindow,
   championSettling,
 }: BoardProps) {
   return (
@@ -898,44 +916,37 @@ function Board({
           and the week that just ended is the reason this week's is empty.
 
           Two states, and only two. Either there is a champion this reader can
-          safely be told about, or the plaque goes down empty and says when it
-          gets engraved instead.
+          safely be told about, or the plaque goes down empty and says which
+          window it is waiting on and when that window gets crowned.
 
-          The empty one is reached two ways that used to be told apart and no
-          longer are, because a reader cannot act on the difference. Nobody has
-          won the closed window -- a month before the game existed, a week nobody
-          played -- or somebody has but today is the day that window turned over,
-          when the answer is still settling and a name shown now can change under
-          the reader (see game/week.ts). Both are the plaque declining to guess,
-          and the useful thing to say in either case is the same: the day it will
-          have a name on it.
+          The empty one is reached two ways that are deliberately not told
+          apart. Nobody has won the closed window -- a month before the game
+          existed, a week nobody played -- or somebody has but today is the day
+          that window turned over, when the answer is still settling and a name
+          shown now can change under the reader (see game/week.ts). Both are the
+          plaque declining to guess, and both are answered by naming a window and
+          a day, so the two read identically. Which is the point rather than a
+          shortcut: a plaque that distinguished them would be answering "did
+          anybody win this" on the one day that question is itself unsettled.
 
-          Which is a constant per board, not a date to compute -- a weekly
-          champion is always a Monday's news, whichever week it turns out to be.
-          That is what collapses the two states into one label. The plaque used
-          to read "Coming up", which said only that the box gets filled; a reader
-          looking at an empty plaque all month wants to know when. */}
-      {championLabel && championCrowning && (
+          Note the two halves come from different places. The day is a constant
+          per board -- a weekly champion is always a Monday's news, whichever
+          week it turns out to be -- while the window has to be computed, because
+          the window the next crowning fills is last week's on the settling day
+          and this week's on every other. Both are derived from the date and
+          neither from the champion, which is what keeps the leak shut. */}
+      {championLabel && championCrowning && championWindow && (
         <>
           {champion && !championSettling ? (
             <Champion entry={champion} label={championLabel} />
           ) : (
             <ChampionPending
-              // Which window the empty plaque is about, and the two answers
-              // differ. On the turnover day it is the window this board just
-              // left -- the one whose result is still settling -- so it keeps
-              // the awarded plaque's own label and a reader sees "last week's
-              // champion, crowned on Monday" rather than a day with nothing
-              // attached to it. Off that day an empty plaque means the window it
-              // names went unwon and always will, so the next name in this box
-              // comes from the window now being played, and saying "last week's"
-              // would promise a crowning for a week that is closed and empty.
-              //
-              // Branched on the day and not on the champion, which is what keeps
-              // the leak shut: on the turnover day both a won window and an
-              // as-yet-unwon one read identically, so the label cannot answer
-              // "did anybody win this" while that is still settling.
-              label={championSettling ? championLabel : "Next champion"}
+              // Named by the window itself rather than by its relation to
+              // today. Both empty cases point at the window the next crowning
+              // fills, so the label is derived from the date alone -- which is
+              // also what keeps it from leaking whether anybody won: on the
+              // settling day a won window and an unwon one read identically.
+              windowName={championWindow}
               crowning={championCrowning}
             />
           )}
@@ -1006,10 +1017,10 @@ function Champion({ entry, label }: { entry: BoardEntry; label: string }) {
  * plaque being engraved.
  */
 function ChampionPending({
-  label,
+  windowName,
   crowning,
 }: {
-  label: string;
+  windowName: string;
   crowning: string;
 }) {
   return (
@@ -1017,7 +1028,7 @@ function ChampionPending({
       <span className="leaderboard__champion-trophy" aria-hidden="true">
         🏆
       </span>
-      <span className="leaderboard__champion-label">{label}</span>
+      <span className="leaderboard__champion-label">{windowName}</span>
       {/* In the name's own slot, so the plaque keeps its height and the two
           boards go on ending level. No engraving line under it any more: the
           line was standing in for a sentence the plaque could not say, and now

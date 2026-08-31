@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { weekChampionSettling, weekStart } from "./week";
+import { crowningWeekStart, weekChampionSettling, weekStart } from "./week";
 
 describe("weekly board window", () => {
   it("starts the week on Sunday", () => {
@@ -51,5 +51,17 @@ describe("weekly board window", () => {
     }
     // Saturday least of all -- the week being named is still being played.
     expect(weekChampionSettling("2026-09-05")).toBe(false);
+  });
+
+  it("points a week back only while the week is being held", () => {
+    // Sunday: the crowning tomorrow is for the week that closed this morning,
+    // so the plaque names the week before this one.
+    expect(crowningWeekStart("2026-08-30")).toBe("2026-08-23");
+    // Monday onwards that week has been crowned -- or went unwon and never will
+    // be -- so the next name in the box comes from the week being played.
+    expect(crowningWeekStart("2026-08-31")).toBe("2026-08-30");
+    expect(crowningWeekStart("2026-09-05")).toBe("2026-08-30");
+    // And it steps a whole week, not a day, across a month boundary.
+    expect(crowningWeekStart("2026-09-06")).toBe("2026-08-30");
   });
 });

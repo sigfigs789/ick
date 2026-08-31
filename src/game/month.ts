@@ -69,7 +69,9 @@ export function monthResetLabel(date: string = todayDateString()): string {
  * Tuesday, 1 Sep" against the "Sep 1" the rest of the page uses.
  */
 function monthDayLabel(date: string): string {
-  const month = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { month: "short" });
+  const month = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+  });
   return `${month} ${Number(date.slice(8, 10))}`;
 }
 
@@ -88,4 +90,23 @@ export function monthChampionSettling(
 ): boolean {
   // The first is the one day that is its own month's start.
   return monthStart(date) === date;
+}
+
+/**
+ * The name of the month whose champion the next crowning will name.
+ *
+ * The weekly board's `crowningWeekStart`, one window up -- and it collapses to
+ * one answer either way. On the first, the crowning tomorrow is for the month
+ * that closed last night; on any other day of a month it is for the month being
+ * played. Both are "the month that the next 2nd will crown", which on 1 September
+ * and on 29 August alike is August.
+ */
+export function crowningMonthName(date: string = todayDateString()): string {
+  const [y, m] = monthStart(date).split("-").map(Number);
+  // Day 0 of a month is the last day of the one before it, so the settling day
+  // rolls back through January without any wrapping of its own.
+  const month = monthChampionSettling(date)
+    ? new Date(y, m - 1, 0)
+    : new Date(y, m - 1, 1);
+  return month.toLocaleDateString(undefined, { month: "long" });
 }

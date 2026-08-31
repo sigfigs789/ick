@@ -288,15 +288,16 @@ describe("the leaderboard page", () => {
     // What it says is the day it gets engraved, which is the question an empty
     // box actually raises. Each board's answer is the same for every window it
     // will ever name, so this is one constant per board and not a date.
-    for (const [heading, when] of [
-      ["This week", "on Monday"],
-      [MONTH_BOARD, "on the 2nd"],
+    // Named by the window the next crowning fills, which off the settling day
+    // is the one being played -- the closed window went unwon and never will be
+    // crowned, so pointing at it would promise a name that cannot arrive.
+    // ORDINARY_DAY is a Friday in the week of Aug 23, in August.
+    for (const [heading, window, when] of [
+      ["This week", "Week of Aug 23", "on Monday"],
+      [MONTH_BOARD, "August", "on the 2nd"],
     ]) {
+      expect(plaque(heading)).toHaveTextContent(window);
       expect(plaque(heading)).toHaveTextContent(`Crowned ${when}`);
-      // "Next champion" and not the closed window's own name: that window went
-      // unwon and always will, so the name this box gets next comes from the
-      // one being played now.
-      expect(plaque(heading)).toHaveTextContent("Next champion");
     }
     expect(screen.queryByText(/'s champion/)).toBeNull();
   });
@@ -354,11 +355,10 @@ describe("the leaderboard page", () => {
     await screen.findByRole("region", { name: "This week" });
     const weekly = plaque("This week");
     expect(weekly).toHaveTextContent("Crowned on Monday");
-    // Still labelled for the window it is about, exactly as the awarded plaque
-    // would be -- a day with no window attached to it says when without ever
-    // saying what.
-    expect(weekly).toHaveTextContent("Last week's champion");
-    expect(weekly).not.toHaveTextContent("Next champion");
+    // Named for the window it is about. On the settling day that is the week
+    // which closed this morning -- Aug 23 to 29 -- and not the one starting
+    // today, so the plaque points a week back exactly while it is held.
+    expect(weekly).toHaveTextContent("Week of Aug 23");
     expect(weekly).not.toHaveTextContent(handleFor(BOB));
     // The score would name them as surely as the handle would.
     expect(weekly).not.toHaveTextContent("61.2");
@@ -397,9 +397,8 @@ describe("the leaderboard page", () => {
     await screen.findByRole("region", { name: MONTH_BOARD });
     const monthly = plaque(MONTH_BOARD);
     expect(monthly).toHaveTextContent("Crowned on the 2nd");
-    expect(monthly).toHaveTextContent(
-      `${previousMonthName(FIRST_OF_MONTH)}'s champion`,
-    );
+    // The month that closed last night, on the day it is held.
+    expect(monthly).toHaveTextContent("August");
     expect(monthly).not.toHaveTextContent(handleFor(CAROL));
     expect(monthly).not.toHaveTextContent("214.8");
 
