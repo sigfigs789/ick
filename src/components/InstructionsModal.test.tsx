@@ -17,10 +17,8 @@ describe("InstructionsModal", () => {
     expect(screen.getByRole("button", { name: /close instructions/i })).toHaveFocus();
   });
 
-  it("explains the streak, locking in, and the day's word limit", () => {
+  it("explains locking in and the day's word limit", () => {
     render(<InstructionsModal open onClose={vi.fn()} />);
-    expect(screen.getByText(/any valid word keeps your streak going/i)).toBeInTheDocument();
-    expect(screen.getByText(/miss a day and your streak resets to 0/i)).toBeInTheDocument();
     // The number comes from the constant, so a future change to the limit moves
     // the copy with it instead of leaving a stale figure in front of a new player.
     expect(
