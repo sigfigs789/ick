@@ -69,7 +69,9 @@ export function monthResetLabel(date: string = todayDateString()): string {
  * Tuesday, 1 Sep" against the "Sep 1" the rest of the page uses.
  */
 function monthDayLabel(date: string): string {
-  const month = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { month: "short" });
+  const month = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+  });
   return `${month} ${Number(date.slice(8, 10))}`;
 }
 
@@ -81,7 +83,7 @@ function monthDayLabel(date: string): string {
  * player's own midnight, so on the first the plaque under this board is naming a
  * winner that players a day behind can still displace. See
  * `weekChampionSettling` in game/week.ts for the reasoning; the only difference
- * is which boundary is being crossed, and so which day is held.
+ * is which boundary is being crossed, and so which day carries the caveat.
  */
 export function monthChampionSettling(
   date: string = todayDateString(),

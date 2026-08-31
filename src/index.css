@@ -1970,9 +1970,13 @@ h2 {
 .leaderboard__champion {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
+  /* The note row is empty on almost every plaque -- an unwon one, and an awarded
+     one on any day but the one its window turned over -- and an empty grid row
+     costs nothing, so it does not need its own template. */
   grid-template-areas:
     "trophy label score"
-    "trophy name  score";
+    "trophy name  score"
+    "note   note  note";
   align-items: center;
   column-gap: 0.6rem;
   margin: 0.7rem 0 0;
@@ -2018,6 +2022,59 @@ h2 {
   height: 1.35rem;
   border-bottom: 2px solid
     color-mix(in srgb, var(--best-word-accent) 40%, transparent);
+}
+/*
+ * The "i" beside the label on the day the winner can still change.
+ *
+ * Sized to the label rather than to a finger, and deliberately: it sits inside a
+ * line of small caps, and a control built out to a comfortable tap target would
+ * be the loudest thing on a plaque whose point is the name. So the ring stays
+ * the size of the text it annotates and the padding around it does the reaching
+ * -- the pressable box is bigger than the circle a reader sees.
+ */
+.leaderboard__champion-info {
+  /* Inline-flex so the glyph centres in the ring at any font size; middle rather
+     than baseline so the circle sits on the cap height of the label beside it
+     instead of hanging below the line. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-left: 0.35rem;
+  padding: 0;
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--best-word-accent) 60%, transparent);
+  border-radius: 50%;
+  background: none;
+  color: color-mix(in srgb, var(--fg) 62%, var(--best-word-accent));
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 900;
+  /* The label is uppercased; a lowercase "i" is the shape that reads as
+     "information", so it opts out of the inherited transform. */
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1;
+  cursor: pointer;
+}
+.leaderboard__champion-info:hover,
+.leaderboard__champion-info[aria-expanded="true"] {
+  border-color: var(--best-word-accent);
+  color: var(--best-word-accent);
+}
+/* The sentence behind it. Set at the plaque's own muted weight rather than as a
+   warning: the result above it is right, and the note is a caveat on when it
+   goes final, not a correction of it. */
+.leaderboard__champion-note {
+  grid-area: note;
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid
+    color-mix(in srgb, var(--best-word-accent) 22%, transparent);
+  color: color-mix(in srgb, var(--fg) 72%, transparent);
+  font-size: 0.72rem;
+  line-height: 1.4;
 }
 .leaderboard__champion-trophy {
   grid-area: trophy;
