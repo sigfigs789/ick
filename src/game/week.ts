@@ -27,7 +27,7 @@
  * same harmless drift the daily puzzle already has.
  */
 
-import { addDays, todayDateString } from "./date";
+import { addDays, formatDateLabel, todayDateString } from "./date";
 
 /** The Sunday on or before `date`, as YYYY-MM-DD. */
 export function weekStart(date: string = todayDateString()): string {
@@ -83,4 +83,24 @@ export function weekChampionSettling(
 ): boolean {
   // Sunday is the one day that is its own week's start.
   return weekStart(date) === date;
+}
+
+/** The Saturday that closes the week starting on `start`. */
+export function weekEnd(start: string): string {
+  return addDays(start, 6);
+}
+
+/**
+ * `Week of Aug 16`, for a weekly board showing a window the reader has stepped
+ * back to.
+ *
+ * The Sunday alone, not the pair of dates it runs between. A week is seven days
+ * from a Sunday everywhere in this game, so naming both ends spells out the half
+ * a reader can already do -- and the heading it sits in is set in the display
+ * face at fifteen characters wide, where "Aug 16 - Aug 22" wraps and "Week of
+ * Aug 16" does not. The live board says "This week" in the same slot, which is
+ * the same sentence with the Sunday left out because it is today's.
+ */
+export function weekLabel(start: string): string {
+  return `Week of ${formatDateLabel(start)}`;
 }

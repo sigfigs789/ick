@@ -4,6 +4,8 @@ import {
   fetchBoards,
   fetchFoundWords,
   feedFloor,
+  monthFloor,
+  weekFloor,
   type FetchOptions,
   type BoardEntry,
   type Boards,
@@ -17,8 +19,15 @@ import {
   previousMonthName,
   todayDateString,
 } from "../game/date";
-import { monthChampionSettling, monthResetLabel } from "../game/month";
-import { weekChampionSettling } from "../game/week";
+import {
+  monthChampionSettling,
+  monthLabel,
+  monthResetLabel,
+  monthStart,
+  nextMonthStart,
+  previousMonthStart,
+} from "../game/month";
+import { weekChampionSettling, weekLabel, weekStart } from "../game/week";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -51,6 +60,40 @@ const REFRESH_MS = 30_000;
  * enough that a real absence is caught.
  */
 const BOARDS_STALE_MS = 5 * 60_000;
+/**
+ * How many rows a board holds open while it is fetching another window.
+ *
+ * The five the board shows before anybody scrolls it, which is the part of it a
+ * reader is looking at when they press the button -- so the section keeps its
+ * height and the page under their thumb does not jump. The same trick the finds
+ * feed plays with the day it is leaving (see FoundWords).
+ */
+const BOARD_PLACEHOLDER_ROWS = 5;
+
+/** The pair of windows the two boards count, as a request carries them. */
+interface Windows {
+  week: string;
+  month: string;
+}
+
+/**
+ * What one board is doing: showing the window asked for, waiting for it, or
+ * unable to load it.
+ *
+ * Answered by comparing the window the reader is asking for against the one the
+ * boards on screen are about and the one that last failed. Nothing is timed and
+ * no request is tracked -- if the rows in hand are not this window's, they are
+ * on their way.
+ */
+function boardState(
+  wanted: string,
+  onScreen: string | undefined,
+  lastFailed: string | undefined,
+): LoadState {
+  if (onScreen === wanted) return "ready";
+  if (lastFailed === wanted) return "error";
+  return "loading";
+}
 
 /**
  * The leaderboard, as its own page at /leaderboard.
@@ -119,6 +162,52 @@ export function LeaderboardPage() {
   const isToday = viewing === today;
   const canGoBack = viewing > floor;
   /**
+   * The live windows: the week and the month the player is playing in.
+   *
+   * Derived from `today`, which is frozen at mount, so these are the windows the
+   * page opened on and the ones "next" walks back to -- a tab left open across a
+   * Sunday keeps naming the week it was opened in rather than silently becoming
+   * a page about a different one.
+   */
+  const thisWeek = weekStart(today);
+  const thisMonth = monthStart(today);
+  /**
+   * Which windows the two boards are counting, which is what the reader steps.
+   *
+   * Separately, and that is the point of two pieces of state rather than one
+   * offset: the boards answer different questions over different lengths of
+   * time, and a reader comparing last month's standings against this week's is
+   * doing exactly the thing having two boards is for. Nothing links them.
+   *
+   * Both are the near end of the window -- a Sunday and a first -- because that
+   * is what the request carries and what the server bounds each board from (see
+   * game/leaderboard.ts).
+   */
+  const [week, setWeek] = useState(thisWeek);
+  const [month, setMonth] = useState(thisMonth);
+  const weekIsLive = week === thisWeek;
+  const monthIsLive = month === thisMonth;
+  /**
+   * Which windows the boards on screen are actually about, and which ones failed
+   * to load.
+   *
+   * The pair is recorded rather than assumed, because a fetch is in flight for
+   * the length of a step: without this the board would sit under a heading
+   * naming the week the reader just asked for, showing the rows of the week they
+   * left. Comparing what is on screen against what is asked for is the whole of
+   * each board's own loading state, and it needs no timer and no request id --
+   * the last response to land says what it was about.
+   */
+  const [shown, setShown] = useState<Windows | null>(null);
+  const [failed, setFailed] = useState<Windows | null>(null);
+  /**
+   * Each board's state, which after the first load is no longer the page's: one
+   * board can be waiting on a window the reader stepped to while the other is
+   * sitting on rows that never moved.
+   */
+  const weekState = boardState(week, shown?.week, failed?.week);
+  const monthState = boardState(month, shown?.month, failed?.month);
+  /**
    * Who the boards should call "you".
    *
    * Read once, on the way in: the id is minted before this page renders (see
@@ -131,6 +220,16 @@ export function LeaderboardPage() {
    * page that has been sitting there for an hour from one glanced away from.
    */
   const boardsReadAt = useRef(0);
+  /**
+   * Which boards request is the current one.
+   *
+   * A reader stepping twice quickly has two fetches in flight over two different
+   * windows, and nothing says they come back in order. Without this the older
+   * answer could land last and leave the board waiting on a window it already
+   * has. Counted rather than compared against the windows themselves, so a
+   * refresh of the same window is also correctly the newer of the two.
+   */
+  const boardsRequest = useRef(0);
 
   /**
    * Re-read the finds for the day on screen, leaving everything else alone.
@@ -208,17 +307,33 @@ export function LeaderboardPage() {
    * feed is showing.
    */
   const load = useCallback(() => {
-    setState("loading");
-    fetchBoards(today)
+    // The page's own state is the *first* read and nothing after it: once there
+    // are boards on screen, a fetch is one board stepping to another window, and
+    // blanking the whole page -- including the board that did not move -- to
+    // fetch it would be a worse page than the one the reader is looking at. From
+    // then on each board says for itself whether it is waiting (see
+    // `boardState`).
+    setState((was) => (was === "ready" ? was : "loading"));
+    setFailed(null);
+    const request = ++boardsRequest.current;
+    fetchBoards(today, { week, month })
       .then((loaded) => {
+        if (request !== boardsRequest.current) return;
         setBoards(loaded);
+        setShown({ week, month });
         boardsReadAt.current = Date.now();
         setState("ready");
       })
       // A board that won't load is a disappointment, not an error the player has
       // to act on -- so it says so plainly and offers a retry, and that is all.
-      .catch(() => setState("error"));
-  }, [today]);
+      // Recorded against the windows that were asked for, so the board that was
+      // waiting is the one that reports it.
+      .catch(() => {
+        if (request !== boardsRequest.current) return;
+        setState((was) => (was === "ready" ? was : "error"));
+        setFailed({ week, month });
+      });
+  }, [today, week, month]);
 
   /**
    * Re-read the boards without disturbing the page.
@@ -230,14 +345,20 @@ export function LeaderboardPage() {
    */
   const refreshBoards = useCallback(
     (options: FetchOptions = {}) => {
-      fetchBoards(today, options)
+      // Whichever windows are on screen: a reader who stepped back and then
+      // tapped refresh is asking for the board in front of them again, not for
+      // this week's.
+      const request = ++boardsRequest.current;
+      fetchBoards(today, { ...options, week, month })
         .then((loaded) => {
+          if (request !== boardsRequest.current) return;
           setBoards(loaded);
+          setShown({ week, month });
           boardsReadAt.current = Date.now();
         })
         .catch(() => {});
     },
-    [today],
+    [today, week, month],
   );
 
   /**
@@ -490,35 +611,72 @@ export function LeaderboardPage() {
             </ul>
             <div className="leaderboard__boards">
               <Board
-                heading="This week"
+                heading={weekIsLive ? "This week" : weekLabel(week)}
                 // Beside the heading rather than under it: the two boards sit
                 // shoulder to shoulder, and a line under one of them and not
                 // the other pushed its rows half a line down -- two lists side
                 // by side that do not start level read as a mistake. No dates
                 // on either board now. A window you are already in does not
                 // need its days spelled out; when it turns over is the one
-                // thing worth saying, and both boards say exactly that.
-                headingDetail="Resets on Sundays"
+                // thing worth saying, and both boards say exactly that. A
+                // window that has turned over says the other half of it: that
+                // what is on screen is not going to change again.
+                headingDetail={weekIsLive ? "Resets on Sundays" : "Final"}
                 entries={boards.weekly}
                 self={boards.weeklySelf}
-                emptyMessage="Nobody's scored yet this week. Be first."
+                emptyMessage={
+                  weekIsLive
+                    ? "Nobody's scored yet this week. Be first."
+                    : "Nobody scored this week."
+                }
                 playerId={playerId}
+                state={weekState}
+                onRetry={load}
+                // The window this board counts is the reader's to move: back
+                // through the weeks that have finished, forward to the one they
+                // are playing. See the note on the nav in `Board`.
+                unit="week"
+                canGoBack={week > weekFloor()}
+                canGoForward={!weekIsLive}
+                onBack={() => setWeek(addDays(week, -7))}
+                onForward={() => setWeek(addDays(week, 7))}
                 // Who took the week this one replaced. Under the board rather
                 // than in it: they are not competing in this week, and a row
                 // among the live ones would read as though they were.
-                champion={boards.lastWeek}
-                championLabel="Last week's champion"
+                //
+                // On a week that has closed, the plaque is that week's own
+                // winner instead -- the board above it is a final standing, and
+                // the gold line is what it came to. Which is the same sentence
+                // the live board's plaque makes about the week before it, one
+                // window along.
+                champion={weekIsLive ? boards.lastWeek : championOf(boards.weekly)}
+                championLabel={weekIsLive ? "Last week's champion" : "Champion"}
                 // The day this plaque gets engraved, whichever week it ends
                 // up naming: weeks close on Saturday and are held through
                 // Sunday, so a weekly champion is always a Monday's news.
-                championCrowning="on Monday"
+                //
+                // Offered for the live week and the one behind it, and no
+                // further back: an older week nobody played is a week that will
+                // never be crowned, and "Crowned on Monday" under it would be
+                // the one thing on this page that is simply false. It gets no
+                // plaque at all.
+                championCrowning={
+                  weekIsLive || week === addDays(thisWeek, -7)
+                    ? "on Monday"
+                    : undefined
+                }
                 // And whether today is that held Sunday -- the day the week it
                 // names has not closed at the same moment for everybody yet.
-                // See game/week.ts.
-                championSettling={weekChampionSettling(today)}
+                // See game/week.ts. It holds the week just gone as well as the
+                // live one, because that is the window whose top row can still
+                // move under a reader who stepped back to it.
+                championSettling={
+                  weekChampionSettling(today) &&
+                  (weekIsLive || week === addDays(thisWeek, -7))
+                }
               />
               <Board
-                heading="This month"
+                heading={monthIsLive ? "This month" : monthLabel(month)}
                 // The weekday it turns over on and the date that is, which for
                 // a month is computed (see game/month.ts) rather than the
                 // constant the week can get away with -- and the weekday leads,
@@ -527,25 +685,48 @@ export function LeaderboardPage() {
                 // the season's two dates under it -- a window a reader had to
                 // be told the ends of, because they were picked by hand. A
                 // month has ends everybody already knows.
-                headingDetail={monthResetLabel(today)}
+                headingDetail={monthIsLive ? monthResetLabel(today) : "Final"}
                 entries={boards.monthly}
                 self={boards.monthlySelf}
-                emptyMessage="Nobody's scored yet this month. Be first."
+                emptyMessage={
+                  monthIsLive
+                    ? "Nobody's scored yet this month. Be first."
+                    : "Nobody scored this month."
+                }
                 playerId={playerId}
+                state={monthState}
+                onRetry={load}
+                unit="month"
+                canGoBack={month > monthFloor()}
+                canGoForward={!monthIsLive}
+                onBack={() => setMonth(previousMonthStart(month))}
+                onForward={() => setMonth(nextMonthStart(month))}
                 // This board's own window, one step back -- the same relation
                 // last week's champion has to the weekly board. It used to be
                 // the nearest thing available: a season had no completed season
                 // behind it, so the month was borrowed as its closed window.
                 // Now the board is the month, and the plaque under it is simply
-                // the last one that finished.
-                champion={boards.lastMonth}
-                championLabel={`${previousMonthName(today)}'s champion`}
+                // the last one that finished. A month the reader has stepped
+                // back to is finished itself, so it carries its own winner.
+                champion={
+                  monthIsLive ? boards.lastMonth : championOf(boards.monthly)
+                }
+                championLabel={
+                  monthIsLive ? `${previousMonthName(today)}'s champion` : "Champion"
+                }
                 // The same, one window up: months close on the last and are
                 // held through the first, so a monthly champion is always the
                 // 2nd's news -- every month, which is what lets this be a
                 // constant rather than a date to compute.
-                championCrowning="on the 2nd"
-                championSettling={monthChampionSettling(today)}
+                championCrowning={
+                  monthIsLive || month === previousMonthStart(thisMonth)
+                    ? "on the 2nd"
+                    : undefined
+                }
+                championSettling={
+                  monthChampionSettling(today) &&
+                  (monthIsLive || month === previousMonthStart(thisMonth))
+                }
               />
             </div>
           </>
@@ -773,6 +954,20 @@ function FoundWords({
   );
 }
 
+/**
+ * The winner of a window that has closed: the top row of its final standing.
+ *
+ * Taken from the board itself rather than asked of the server, because on a
+ * closed window the board *is* the answer -- the row ranked first is the
+ * champion, and a second query for it could only ever agree or be wrong. Null on
+ * a window nobody scored in, and on the impossible board whose first row is not
+ * rank 1, which is a thing to decline to crown rather than to guess at.
+ */
+function championOf(entries: BoardEntry[]): BoardEntry | null {
+  const top = entries[0];
+  return top && top.rank === 1 ? top : null;
+}
+
 interface BoardProps {
   heading: string;
   /** A note beside the heading, set smaller -- when the board resets. */
@@ -782,6 +977,21 @@ interface BoardProps {
   self: BoardEntry | null;
   emptyMessage: string;
   playerId: string | null;
+  /**
+   * Whether these rows are the window in the heading, on their way, or lost.
+   *
+   * Its own state per board rather than the page's, because the two windows move
+   * independently: stepping the month back must not blank the week beside it.
+   */
+  state: LoadState;
+  /** Ask for this board's window again, after one failed to load. */
+  onRetry: () => void;
+  /** What this board's window is called in its own controls: "week", "month". */
+  unit: string;
+  canGoBack: boolean;
+  canGoForward: boolean;
+  onBack: () => void;
+  onForward: () => void;
   /** Who won this board's last completed window, when anybody did. */
   champion?: BoardEntry | null;
   /** What that window was: "Last week's champion", "July's champion". */
@@ -823,6 +1033,13 @@ function Board({
   self,
   emptyMessage,
   playerId,
+  state,
+  onRetry,
+  unit,
+  canGoBack,
+  canGoForward,
+  onBack,
+  onForward,
   champion,
   championLabel,
   championCrowning,
@@ -836,7 +1053,72 @@ function Board({
           <span className="leaderboard__board-dates">{headingDetail}</span>
         )}
       </h2>
-      {entries.length === 0 ? (
+      {/* Stepping this board's window, back through the ones that have closed
+          and forward to the one being played.
+          Both arrows always rendered and disabled at the ends rather than
+          removed, exactly as the finds feed's are: a control that disappears at
+          the edge of its range takes the shape of the thing with it, and a
+          reader who has stepped back needs to see that forward exists before
+          they know they can come back. Per board, because the two windows are
+          different lengths of time and the comparison between them is the whole
+          reason there are two. */}
+      <div className="leaderboard__board-nav">
+        <button
+          type="button"
+          className="leaderboard__board-arrow"
+          onClick={onBack}
+          disabled={!canGoBack}
+          aria-label={`Previous ${unit}`}
+        >
+          <span aria-hidden="true">‹</span>
+          <span>Previous {unit}</span>
+        </button>
+        <button
+          type="button"
+          className="leaderboard__board-arrow"
+          onClick={onForward}
+          disabled={!canGoForward}
+          aria-label={`Next ${unit}`}
+        >
+          <span>Next {unit}</span>
+          <span aria-hidden="true">›</span>
+        </button>
+      </div>
+      {state === "error" ? (
+        // Named for the board it belongs to: there are three retries on this
+        // page now -- two boards and the feed -- and three buttons called "Try
+        // again" are one button to anybody who reaches them by name.
+        <p className="leaderboard__status" aria-live="polite">
+          Couldn't load this {unit}.{" "}
+          <button
+            type="button"
+            className="leaderboard__retry"
+            onClick={onRetry}
+            aria-label={`Try loading the ${unit} board again`}
+          >
+            Try again
+          </button>
+        </p>
+      ) : state === "loading" ? (
+        // Rows holding the board's height while another window is fetched, for
+        // the reason the feed holds the day's: what a reader notices in that
+        // moment is the page moving under the button they just pressed, not the
+        // absence of a message. Nothing to read, so it is out of the reading
+        // order and the one sentence worth saying is announced instead.
+        <>
+          <p className="sr-only" aria-live="polite">
+            Loading the {unit}…
+          </p>
+          <ol className="leaderboard__list" aria-hidden="true">
+            {Array.from({ length: BOARD_PLACEHOLDER_ROWS }, (_, i) => (
+              <li
+                key={i}
+                className="leaderboard__row leaderboard__row--placeholder"
+              />
+            ))}
+          </ol>
+        </>
+      ) : entries.length === 0 ? (
         <p className="leaderboard__status">{emptyMessage}</p>
       ) : (
         <>
@@ -915,15 +1197,12 @@ function Board({
           That is what collapses the two states into one label. The plaque used
           to read "Coming up", which said only that the box gets filled; a reader
           looking at an empty plaque all month wants to know when. */}
-      {championLabel && championCrowning && (
-        <>
-          {champion && !championSettling ? (
-            <Champion entry={champion} label={championLabel} />
-          ) : (
-            <ChampionPending crowning={championCrowning} />
-          )}
-        </>
-      )}
+      {state === "ready" &&
+        (champion && championLabel && !championSettling ? (
+          <Champion entry={champion} label={championLabel} />
+        ) : championCrowning ? (
+          <ChampionPending crowning={championCrowning} />
+        ) : null)}
     </section>
   );
 }

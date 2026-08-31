@@ -533,11 +533,44 @@ made that a distinction the reader had to work out. Separate headings, separate
 ground, and a heavier rule between them than between the two boards.
 
 **The weekly reset is a window, not a job.** Nothing is deleted or archived on
-Sunday morning: `leaderboard_board(p_since => <sunday>)` simply stops counting
-the rows that fell out of range, and the all-time board is the same function with
-no window. There is no scheduled task that can fail to run. The window start is
+Sunday morning: `leaderboard_board` simply stops counting the rows that fell out
+of range, and the monthly board is the same function over a different pair of
+dates. There is no scheduled task that can fail to run. The window start is
 computed on the client (`src/game/week.ts`) for the same reason the puzzle date
 is: the reset should land at the player's midnight, not at UTC's.
+
+**Both windows step, and each one separately.** Under each heading is a pager —
+*Previous week* / *Next week*, *Previous month* / *Next month* — that walks that
+board back through the windows that have closed and forward again to the one
+being played. Separately, because the two boards are different questions over
+different lengths of time, and comparing last month's standings against this
+week's is the whole reason the page carries two. Both arrows are always there and
+disabled at the ends, the same way the finds feed's are: a control that vanishes
+at the edge of its range takes the shape of the thing with it. Back stops at the
+window the first puzzle fell in (`weekFloor` / `monthFloor` in
+`src/game/leaderboard.ts`) — scores really do go back that far, since a player who
+joins today backfills every puzzle their browser remembers.
+
+A stepped-back board says so in three places: the heading names the window
+(**Week of Aug 16**, **July 2026**) instead of "This week", the note beside it
+reads **Final** rather than when the board resets, and the plaque underneath
+carries that window's own champion, since a closed board *is* the answer — its
+first row. The live board's plaque still names the window before it. A window
+older than the last one gets no plaque at all when nobody scored in it: "Crowned
+on Monday" under a week from two months ago would be the one thing on the page
+that is simply false. The turnover-day hold applies to the window just gone as
+well as the live one, because that is the board whose top row can still move
+under a reader (see `weekChampionSettling`).
+
+Stepping is one request for both boards, carrying the two windows the reader is
+looking at, and each board tracks its own loading and error state from the
+windows the response came back about — so a month being fetched never blanks the
+week beside it, and a failure offers a retry on that board alone. This is also
+why the weekly board is now bounded at *both* ends: the moment `p_since` can be a
+Sunday in the past, "everything from Sunday onward" stops being the same set of
+rows as "the seven days from Sunday". The far end is derived in
+`api/leaderboard.ts` from the near one, exactly as the month's is, so the two can
+never disagree.
 
 **Weeks run Sunday to Saturday**, not the ISO Monday to Sunday, and the reason is
 onboarding rather than convention. A weekly board is only worth playing while you
