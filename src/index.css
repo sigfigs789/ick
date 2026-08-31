@@ -1988,18 +1988,24 @@ h2 {
 .leaderboard__champion--pending .leaderboard__champion-label {
   color: color-mix(in srgb, var(--fg) 55%, var(--best-word-accent));
 }
-/* Where the name goes. Sized to the line the name would occupy so the plaque is
-   the same height whether or not it has been won -- an empty one that sits
-   shorter would make the two columns end unlevel again, which is the thing this
-   plaque is here to fix. Short of the full width on purpose: a rule running the
-   whole box reads as a divider, and one that stops reads as a blank to fill. */
-.leaderboard__champion-blank {
+/* What stands where the name will go: the day this plaque gets engraved.
+   Occupies the name's own row so the plaque is the same height whether or not it
+   has been won -- an empty one that sits shorter would make the two columns end
+   unlevel again, which is the thing this plaque is here to fix.
+
+   Deliberately not the name's own styling. A winner is set at the display face
+   and a step above a board row; this is a sentence about the future, so it is
+   set at the body face and held under the plaque's own gold, close enough to
+   read as part of the plaque and far enough that nobody takes it for somebody's
+   handle. */
+.leaderboard__champion-crowning {
   grid-area: name;
-  align-self: end;
-  width: min(9rem, 70%);
-  height: 1.35rem;
-  border-bottom: 2px solid
-    color-mix(in srgb, var(--best-word-accent) 40%, transparent);
+  color: color-mix(in srgb, var(--fg) 62%, var(--best-word-accent));
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .leaderboard__champion-trophy {
   grid-area: trophy;

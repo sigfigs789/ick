@@ -920,7 +920,24 @@ function Board({
           {champion && !championSettling ? (
             <Champion entry={champion} label={championLabel} />
           ) : (
-            <ChampionPending crowning={championCrowning} />
+            <ChampionPending
+              // Which window the empty plaque is about, and the two answers
+              // differ. On the turnover day it is the window this board just
+              // left -- the one whose result is still settling -- so it keeps
+              // the awarded plaque's own label and a reader sees "last week's
+              // champion, crowned on Monday" rather than a day with nothing
+              // attached to it. Off that day an empty plaque means the window it
+              // names went unwon and always will, so the next name in this box
+              // comes from the window now being played, and saying "last week's"
+              // would promise a crowning for a week that is closed and empty.
+              //
+              // Branched on the day and not on the champion, which is what keeps
+              // the leak shut: on the turnover day both a won window and an
+              // as-yet-unwon one read identically, so the label cannot answer
+              // "did anybody win this" while that is still settling.
+              label={championSettling ? championLabel : "Next champion"}
+              crowning={championCrowning}
+            />
           )}
         </>
       )}
@@ -962,7 +979,8 @@ function Champion({ entry, label }: { entry: BoardEntry; label: string }) {
 }
 
 /**
- * The plaque with nobody on it, saying when it will have somebody.
+ * The plaque with nobody on it, saying which champion it is waiting for and when
+ * it will have them.
  *
  * It exists because the awarded plaque's absence read as a mistake rather than
  * as a fact. The monthly board's closed window is the month before it, and the
@@ -970,36 +988,41 @@ function Champion({ entry, label }: { entry: BoardEntry; label: string }) {
  * while the weekly one beside it ended in gold, and two boards side by side that
  * end differently look broken rather than young.
  *
- * A blank engraving line instead of a name, and no score: the shape of a result
- * that is coming, without inventing any part of it.
+ * Laid out as the awarded plaque exactly: the window in the label, and the row
+ * under it where the name goes. What sits in that row is the day instead of a
+ * name, which is the whole of the difference. It read "Coming up" first, which
+ * told a reader the box gets filled and nothing else -- and on the monthly
+ * board, where an unwon window can sit for a month, that is a month of saying
+ * nothing. Then it read only the day, which said when without ever saying what,
+ * so a plaque under a live board announced a crowning with no window attached.
  *
- * The label is the day, because the day is the only thing there is to say. This
- * read "Coming up" first, which told a reader the box gets filled and nothing
- * else -- and on the monthly board, where an unwon window can sit there for a
- * month, "coming up" is a month of saying nothing. Naming the day answers the
- * question the empty box actually raises.
+ * Both halves are needed and they go in the slots the awarded plaque already
+ * uses for them, so an empty plaque and a won one are read the same way: what
+ * this is, then the answer, and the answer is a day until it is a person.
  *
- * Not the window's own dates, though, which is what "Coming up" was avoiding:
- * the board's heading two lines above says when it *resets*, and this says when
- * it gets *crowned*. They are a day apart on purpose and describe different
- * things -- the board turning over, and this plaque being engraved.
+ * Not the window's dates, though: the board's heading two lines above says when
+ * it *resets*, and this says when it gets *crowned*. They are a day apart on
+ * purpose and describe different things -- the board turning over, and this
+ * plaque being engraved.
  */
-function ChampionPending({ crowning }: { crowning: string }) {
+function ChampionPending({
+  label,
+  crowning,
+}: {
+  label: string;
+  crowning: string;
+}) {
   return (
     <p className="leaderboard__champion leaderboard__champion--pending">
       <span className="leaderboard__champion-trophy" aria-hidden="true">
         🏆
       </span>
-      <span className="leaderboard__champion-label">Crowned {crowning}</span>
-      {/* The line is the whole message to anybody who can see it and says
-          nothing at all to anybody who cannot, so it is hidden from the reading
-          order and the sentence it stands for is spelled out instead. */}
-      <span className="leaderboard__champion-blank" aria-hidden="true" />
-      {/* "Champion" and not "last week's champion": on the day a window is
-          settling this plaque is about the window it names, and on an unwon one
-          it is about whichever window fills it next. The day is the part that
-          is true either way. */}
-      <span className="sr-only">Champion crowned {crowning}</span>
+      <span className="leaderboard__champion-label">{label}</span>
+      {/* In the name's own slot, so the plaque keeps its height and the two
+          boards go on ending level. No engraving line under it any more: the
+          line was standing in for a sentence the plaque could not say, and now
+          that it can say it, a rule as well would be saying it twice. */}
+      <span className="leaderboard__champion-crowning">Crowned {crowning}</span>
     </p>
   );
 }
