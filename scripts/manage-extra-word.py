@@ -353,6 +353,33 @@ def _degree_candidates(word: str) -> list[tuple[str, str]]:
     return []
 
 
+def _superlative_candidates(word: str) -> list[tuple[str, str]]:
+    """Mirror of superlativeBaseCandidates() in src/game/stem.ts.
+
+    The adjective a bare "-est" superlative is the top degree of, paired with the
+    "-er" comparative of the same spelling. The same paired-degree check as
+    _degree_candidates(), on the spelling the MEASURED_FLOOR gate used to hold:
+    "realest" folds because "realer" is a word, "contest" does not because
+    "conter" is not. Seven letters minimum, and a three-letter base only where a
+    doubled consonant vouches for the suffix ("biggest" -> "big").
+    """
+    w = word.lower()
+    if len(w) <= 6 or not w.endswith("est") or w.endswith("iest"):
+        return []
+    stem = w[:-3]
+    counterpart = stem + "er"
+    out: list[tuple[str, str]] = []
+
+    def add(base: str, minimum: int) -> None:
+        if len(base) >= minimum and base != w and all(base != b for b, _ in out):
+            out.append((base, counterpart))
+
+    add(stem, 4)
+    add(stem + "e", 4)
+    add(_strip_doubled_consonant(stem), 3)
+    return out
+
+
 def _unmeasured_candidates(word: str) -> list[str]:
     """Mirror of unmeasuredBaseCandidates() in src/game/stem.ts.
 
@@ -728,6 +755,12 @@ def _inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
     # "-ier"/"-iest" comparatives, ungated -- the paired-degree check stands in
     # for the frequency gate (see degreeBaseCandidates in stem.ts).
     for base, counterpart in _degree_candidates(word):
+        if counterpart in index:
+            add(base)
+    # Bare "-est", on the same check: the comparative in the same spelling is
+    # what tells a superlative from a word that merely ends that way. Its "-er"
+    # half stays gated (see superlativeBaseCandidates in stem.ts).
+    for base, counterpart in _superlative_candidates(word):
         if counterpart in index:
             add(base)
     return out
