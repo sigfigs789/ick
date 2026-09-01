@@ -211,6 +211,10 @@ export function useDailyPuzzle() {
         date: viewedDate,
         isToday: viewedDate === today,
         words: updated.acceptedWords,
+        // Which side of the retry this account of the day comes from. The board
+        // is monotonic per day, so this is what lets the first word banked after
+        // a retry bring the day down to what the player actually holds.
+        retried: updated.retryUsed === true,
       });
       if (isUnattestedZipf(word.zipf)) trackUnattestedScore(viewedDate, word, source);
       const substitution = baseFormSubstitution(word.word, viewedDate);
@@ -397,6 +401,18 @@ export function useDailyPuzzle() {
       setFeedback(null);
       setLiveNote(null);
       liveNotePending.current = false;
+      // Correct the board straight away rather than waiting for the replacement
+      // word. The day's write is monotonic, so this is the submission that is
+      // allowed to lower it (see the 20260831 migration) -- and a player who
+      // takes a word back and then wanders off should not be left ranked on it.
+      // Fire-and-forget like every other write here: nothing waits on it, and a
+      // correction that never lands costs a board position, never a word.
+      submitScore({
+        date: viewedDate,
+        isToday: true,
+        words: updated.acceptedWords,
+        retried: true,
+      });
       trackAnswerRetried(
         viewedDate,
         before.acceptedWords[index],

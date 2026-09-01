@@ -1,9 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDailyPuzzle } from "./useDailyPuzzle";
 import { addDays, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { isValidWord } from "../game/dictionary";
+import { joinBoard } from "../game/player";
 import dictionaryWords from "../data/dictionary.json";
 
 const track = vi.hoisted(() => vi.fn());
@@ -31,6 +32,22 @@ beforeEach(() => {
   localStorage.clear();
   track.mockClear();
 });
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+/** The day in the newest leaderboard submission the client posted. */
+function lastSubmittedDay(
+  fetchMock: ReturnType<typeof vi.fn>
+): Record<string, unknown> | undefined {
+  const bodies = fetchMock.mock.calls
+    .filter(([url]) => String(url) === "/api/leaderboard")
+    .map(([, init]) => JSON.parse(String((init as RequestInit).body)) as Record<string, unknown>);
+  const newest = bodies[bodies.length - 1];
+  const scores = (newest?.scores ?? []) as Record<string, unknown>[];
+  return scores[0];
+}
 
 describe("useDailyPuzzle retry", () => {
   it("offers nothing to retry until a word has been banked", () => {
@@ -136,5 +153,61 @@ describe("useDailyPuzzle retry", () => {
     const { result } = renderHook(() => useDailyPuzzle());
     expect(result.current.canRetry).toBe(false);
     expect(result.current.retrySpent).toBe(true);
+  });
+});
+
+describe("useDailyPuzzle retry and the leaderboard", () => {
+  it("corrects the board straight away rather than waiting for a replacement", async () => {
+    joinBoard();
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(() => useDailyPuzzle());
+    await act(async () => {
+      await result.current.submitWord(FIRST);
+    });
+    await act(async () => {
+      await result.current.submitWord(SECOND);
+    });
+    act(() => result.current.retryAnswer(FIRST));
+
+    const correction = lastSubmittedDay(fetchMock);
+    // Flagged, so the board's monotonic write is allowed to bring the day down
+    // -- and sent now, so a player who takes a word back and then wanders off
+    // is not left ranked on it.
+    expect(correction).toMatchObject({ retried: true, words: 1 });
+  });
+
+  it("keeps the flag on every word banked after the retry", async () => {
+    joinBoard();
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(() => useDailyPuzzle());
+    await act(async () => {
+      await result.current.submitWord(FIRST);
+    });
+    act(() => result.current.retryAnswer(FIRST));
+    await act(async () => {
+      await result.current.submitWord(SECOND);
+    });
+
+    const replacement = lastSubmittedDay(fetchMock);
+    // Without this the replacement reads as a pre-retry straggler and is
+    // dropped, leaving the corrected day stuck at its floor.
+    expect(replacement).toMatchObject({ retried: true });
+  });
+
+  it("leaves the flag off a day that never spent its retry", async () => {
+    joinBoard();
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(() => useDailyPuzzle());
+    await act(async () => {
+      await result.current.submitWord(FIRST);
+    });
+
+    expect(lastSubmittedDay(fetchMock)).not.toHaveProperty("retried");
   });
 });

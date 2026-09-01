@@ -233,6 +233,10 @@ describe("api/leaderboard submissions", () => {
     ["a find that isn't a word", { found: [{ word: "‮inkling", zipf: 3 }] }, "bad-found-word"],
     ["a find with no frequency", { found: [{ word: "inkling" }] }, "bad-found-zipf"],
     ["a find with an impossible frequency", { found: [{ word: "inkling", zipf: 99 }] }, "bad-found-zipf"],
+    // This one decides whether a submission may *lower* a day, so a truthy
+    // value that isn't a boolean is not close enough.
+    ["a retry flag that isn't a boolean", { retried: "yes" }, "bad-retried"],
+    ["a retry flag sent as a number", { retried: 1 }, "bad-retried"],
   ])("refuses %s", async (_label, overrides, reason) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -724,5 +728,44 @@ describe("api/leaderboard recent finds", () => {
 
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({ ok: false, reason: "unavailable" });
+  });
+});
+
+describe("api/leaderboard retried days", () => {
+  it("passes the retry flag through to the write", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(post(score({ retried: true })));
+
+    expect(response.status).toBe(202);
+    expect(rpcCall(fetchMock)?.args.p_scores).toEqual([
+      { date: SUNDAY, word: "inkling", zipf: 2.9, total: 24.6, top: 9.4, words: 5, retried: true },
+    ]);
+  });
+
+  it("leaves the flag off an ordinary day rather than sending the default", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    await handler(post(score({ retried: false })));
+
+    // Absent means false to the write, so saying it would put a field on every
+    // submission ever made to state the ordinary case.
+    const [sent] = rpcCall(fetchMock)?.args.p_scores as Record<string, unknown>[];
+    expect(sent).not.toHaveProperty("retried");
+  });
+
+  it("takes a day that got smaller, which is the whole point of the flag", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    // A four-word day retried down to three: fewer words and a lower total than
+    // the same day would have sent a moment earlier.
+    const response = await handler(
+      post(score({ retried: true, total: 12.1, top: 6.1, words: 3 }))
+    );
+
+    expect(response.status).toBe(202);
+    expect(rpcCall(fetchMock)?.args.p_scores).toMatchObject([
+      { retried: true, total: 12.1, words: 3 },
+    ]);
   });
 });
