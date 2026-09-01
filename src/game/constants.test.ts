@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { FIVE_MAX_GUESSES, LEGACY_MAX_GUESSES, MAX_GUESSES, maxGuessesFor } from "./constants";
+import {
+  FIVE_MAX_GUESSES,
+  LEGACY_MAX_GUESSES,
+  MAX_GUESSES,
+  maxGuessesFor,
+  retryAvailableFor,
+} from "./constants";
 
 describe("maxGuessesFor", () => {
   it("gives the last six-guess puzzle six", () => {
@@ -37,5 +43,34 @@ describe("maxGuessesFor", () => {
     expect(MAX_GUESSES).toBe(4);
     expect(FIVE_MAX_GUESSES).toBe(5);
     expect(LEGACY_MAX_GUESSES).toBe(6);
+  });
+});
+
+describe("retryAvailableFor", () => {
+  it("gives the first puzzle of the feature a retry", () => {
+    expect(retryAvailableFor("2026-09-02")).toBe(true);
+  });
+
+  it("withholds it from the day before", () => {
+    // The day this shipped. A puzzle plays the way it did when it dropped, and
+    // this one dropped without a retry.
+    expect(retryAvailableFor("2026-09-01")).toBe(false);
+  });
+
+  it("withholds it from every earlier puzzle", () => {
+    expect(retryAvailableFor("2026-07-01")).toBe(false);
+    expect(retryAvailableFor("2026-08-30")).toBe(false);
+    expect(retryAvailableFor("2024-01-01")).toBe(false);
+  });
+
+  it("keeps every later puzzle carrying one", () => {
+    expect(retryAvailableFor("2026-09-03")).toBe(true);
+    expect(retryAvailableFor("2027-01-01")).toBe(true);
+  });
+
+  // A missing date means the current puzzle, matching maxGuessesFor above and
+  // the scoring functions in dictionary.ts.
+  it("treats a missing date as the current puzzle", () => {
+    expect(retryAvailableFor()).toBe(true);
   });
 });

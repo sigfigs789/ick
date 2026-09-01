@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDailyPuzzle } from "./useDailyPuzzle";
-import { addDays, todayDateString } from "../game/date";
+import { addDays } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { isValidWord } from "../game/dictionary";
 import { joinBoard } from "../game/player";
@@ -10,7 +10,16 @@ import dictionaryWords from "../data/dictionary.json";
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
 
-const TODAY = todayDateString();
+/**
+ * A fixed puzzle to play, pinned rather than read off the clock.
+ *
+ * The retry is gated to puzzles from RETRY_START on (see game/constants), so a
+ * suite that used the real today would fail before the start and pass after it
+ * -- the same test telling two different stories depending on the day it ran.
+ * Pinning also fixes the drop, which otherwise rotates daily underneath the
+ * word lookups below.
+ */
+const TODAY = "2026-09-15";
 const YESTERDAY = addDays(TODAY, -1);
 const DROP = dropForDate(TODAY).toLowerCase();
 
@@ -31,9 +40,12 @@ const [YESTERDAYS_WORD] = playableWords(dropForDate(YESTERDAY).toLowerCase(), 1)
 beforeEach(() => {
   localStorage.clear();
   track.mockClear();
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(`${TODAY}T12:00:00`));
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -209,5 +221,33 @@ describe("useDailyPuzzle retry and the leaderboard", () => {
     });
 
     expect(lastSubmittedDay(fetchMock)).not.toHaveProperty("retried");
+  });
+});
+
+describe("useDailyPuzzle retry before the feature starts", () => {
+  const BEFORE_START = "2026-09-01";
+
+  beforeEach(() => {
+    vi.setSystemTime(new Date(`${BEFORE_START}T12:00:00`));
+  });
+
+  it("offers no retry on a puzzle that dropped before the start", async () => {
+    const [playable] = playableWords(dropForDate(BEFORE_START).toLowerCase(), 1);
+    const { result } = renderHook(() => useDailyPuzzle());
+    expect(result.current.date).toBe(BEFORE_START);
+    await act(async () => {
+      await result.current.submitWord(playable);
+    });
+
+    const banked = result.current.progress.acceptedWords;
+    expect(banked).toHaveLength(1);
+    // Today's puzzle, freshly played, and still no retry: the feature starts on
+    // 2026-09-02 and a puzzle plays the way it did the day it dropped.
+    expect(result.current.canRetry).toBe(false);
+    expect(result.current.retrySpent).toBe(false);
+    // Refused by the hook, not merely hidden by the UI.
+    act(() => result.current.retryAnswer(banked[0].word));
+    expect(result.current.progress.acceptedWords).toEqual(banked);
+    expect(result.current.progress.retryUsed).toBeUndefined();
   });
 });

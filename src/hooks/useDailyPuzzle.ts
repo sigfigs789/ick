@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { addDays, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
+import { retryAvailableFor } from "../game/constants";
 import { puzzleNumber } from "../game/share";
 import dropData from "../data/drops.json";
 import {
@@ -374,11 +375,15 @@ export function useDailyPuzzle() {
    * belongs to, and the UI says so rather than leaving a player to discover it
    * (see GuessLog).
    */
-  const canRetry = isToday && !progress.retryUsed && progress.acceptedWords.length > 0;
+  const canRetry =
+    isToday &&
+    retryAvailableFor(viewedDate) &&
+    !progress.retryUsed &&
+    progress.acceptedWords.length > 0;
   /** Spent, on a puzzle that was offering it -- so the UI can say so rather than
    * quietly withdrawing the control. Never true on an archive puzzle, where the
    * retry was never on offer in the first place. */
-  const retrySpent = isToday && progress.retryUsed === true;
+  const retrySpent = isToday && retryAvailableFor(viewedDate) && progress.retryUsed === true;
 
   /**
    * Spend the retry on a banked word: drop it and hand its guess back.
@@ -389,7 +394,7 @@ export function useDailyPuzzle() {
    */
   const retryAnswer = useCallback(
     (word: string) => {
-      if (!isToday) return;
+      if (!isToday || !retryAvailableFor(viewedDate)) return;
       const before = progressRef.current;
       const index = before.acceptedWords.findIndex((accepted) => accepted.word === word);
       const updated = retryWord(before, word);

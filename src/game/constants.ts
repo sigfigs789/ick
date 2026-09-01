@@ -29,3 +29,30 @@ export function maxGuessesFor(date?: string): number {
   if (date < FOUR_GUESS_START) return FIVE_MAX_GUESSES;
   return MAX_GUESSES;
 }
+
+/**
+ * The first puzzle that carries a retry.
+ *
+ * Date-gated like the guess limit above, and for the same reason: a puzzle
+ * plays the way it did the day it dropped. Every day before this one was played
+ * without a retry and stays that way, so browsing back to one does not offer a
+ * take-back that nobody had at the time.
+ *
+ * In practice the gate only bites for the days between shipping this and the
+ * start, since the retry is offered on the current puzzle only (see
+ * useDailyPuzzle.canRetry) -- but that window is exactly what it is for, and
+ * stating the start as a date keeps it out of a deploy's timing.
+ */
+const RETRY_START = "2026-09-02";
+
+/**
+ * Whether `date`'s puzzle carries a retry.
+ *
+ * Undefined means the current puzzle, which by definition is not before the
+ * start once the feature is live -- matching how the guess limit and the
+ * scoring systems treat a missing date.
+ */
+export function retryAvailableFor(date?: string): boolean {
+  if (date === undefined) return true;
+  return date >= RETRY_START;
+}
