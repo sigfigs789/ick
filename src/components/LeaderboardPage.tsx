@@ -445,35 +445,51 @@ export function LeaderboardPage() {
    * when none of it did. After that, each refresh diffs against what was already
    * on screen and only the genuinely new ones move.
    *
+   * Finder counts rather than a bare set of words, because the feed is ordered
+   * on a word's most recent sighting: somebody finding a word that is already on
+   * screen lifts it back to the top with its count one higher, and that is the
+   * same event as a new word landing. Marking only words never seen before would
+   * leave the row that just moved the length of the list looking like it had
+   * been sitting there.
    */
-  const seenWords = useRef<Set<string> | null>(null);
+  const seenWords = useRef<Map<string, number> | null>(null);
   /**
-   * Which day the set above is about, so stepping to another one starts a new
-   * baseline rather than reading a whole different puzzle's words as arrivals.
+   * Which day the counts above are about, so stepping to another one starts a
+   * new baseline rather than reading a whole different puzzle's words as
+   * arrivals.
    */
   const seenDay = useRef(today);
   const [arrived, setArrived] = useState<readonly string[]>([]);
 
   useEffect(() => {
-    const found = words.map((entry) => entry.word);
+    const counts = new Map(words.map((entry) => [entry.word, entry.finders]));
     if (seenDay.current !== viewing) {
       // A day the reader asked for, arriving all at once because they asked --
       // which is not the same event as a word turning up under them, and gets
       // none of the animation that says so.
       seenDay.current = viewing;
-      seenWords.current = found.length > 0 ? new Set(found) : null;
+      seenWords.current = counts.size > 0 ? counts : null;
       setArrived([]);
       return;
     }
     if (seenWords.current === null) {
       // Nothing seen yet and nothing to see: an empty first response is not a
       // baseline, or the real first list would animate in as if it were new.
-      if (found.length === 0) return;
-      seenWords.current = new Set(found);
+      if (counts.size === 0) return;
+      seenWords.current = counts;
       return;
     }
-    const fresh = found.filter((word) => !seenWords.current?.has(word));
-    for (const word of found) seenWords.current.add(word);
+    // A word is new, or an old one somebody else has now found. A count that
+    // went *down* is not an arrival: the day's words can only ever be found by
+    // more people, so a smaller number is a word dropping off the end of the
+    // twelve rows and coming back, not news.
+    const seen = seenWords.current;
+    const fresh = [...counts]
+      .filter(([word, finders]) => finders > (seen.get(word) ?? 0))
+      .map(([word]) => word);
+    for (const [word, finders] of counts) {
+      seen.set(word, Math.max(finders, seen.get(word) ?? 0));
+    }
     if (fresh.length === 0) return;
     setArrived(fresh);
     // Cleared once the animation is done, so a later re-render for some

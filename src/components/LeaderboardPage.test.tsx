@@ -998,6 +998,42 @@ describe("finds arriving", () => {
     expect(finds()[1].className).not.toContain("arrived");
   });
 
+  it("marks a word somebody else has now found, back on top with its count up", async () => {
+    // The feed is ordered on a word's most recent sighting, so a word already on
+    // screen returns to the top when a new player finds it. That is the same
+    // event as a new word landing and gets the same animation -- otherwise the
+    // row that just travelled the length of the list would look untouched.
+    let words = [
+      { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
+      { word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-25" },
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ ...OPEN, words }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+      ),
+    );
+    render(<LeaderboardPage />);
+    await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
+    expect(finds()[0]).toHaveTextContent("inkling");
+
+    words = [
+      { word: "asphyxiate", zipf: 2.09, finders: 2, foundOn: "2026-08-25" },
+      { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
+    ];
+    await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
+
+    expect(finds()[0]).toHaveTextContent("asphyxiate");
+    expect(finds()[0]).toHaveTextContent("2 players");
+    expect(finds()[0].className).toContain("arrived");
+    // The one it pushed down is unchanged and says nothing.
+    expect(finds()[1].className).not.toContain("arrived");
+  });
+
   it("stops marking it once the arrival has played", async () => {
     let words = [
       { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
