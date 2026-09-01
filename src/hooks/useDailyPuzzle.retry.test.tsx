@@ -251,3 +251,28 @@ describe("useDailyPuzzle retry before the feature starts", () => {
     expect(result.current.progress.retryUsed).toBeUndefined();
   });
 });
+
+describe("useDailyPuzzle retry allowance", () => {
+  it("reports one retry from the moment the puzzle opens, then none", async () => {
+    const { result } = renderHook(() => useDailyPuzzle());
+    // Before any word: the allowance exists even though there is nothing to
+    // spend it on yet.
+    expect(result.current.retriesLeft).toBe(1);
+    expect(result.current.canRetry).toBe(false);
+
+    await act(async () => {
+      await result.current.submitWord(FIRST);
+    });
+    expect(result.current.retriesLeft).toBe(1);
+
+    act(() => result.current.retryAnswer(FIRST));
+    expect(result.current.retriesLeft).toBe(0);
+  });
+
+  it("reports none at all on a puzzle that carries no retry", () => {
+    const { result } = renderHook(() => useDailyPuzzle());
+    act(() => result.current.goToPrevious());
+    // Null rather than zero: this day never had one to spend.
+    expect(result.current.retriesLeft).toBeNull();
+  });
+});

@@ -384,6 +384,20 @@ export function useDailyPuzzle() {
    * quietly withdrawing the control. Never true on an archive puzzle, where the
    * retry was never on offer in the first place. */
   const retrySpent = isToday && retryAvailableFor(viewedDate) && progress.retryUsed === true;
+  /**
+   * How many retries this puzzle has left, for the guess log's header counter.
+   *
+   * Null when the puzzle carries none at all -- an archive puzzle, or one that
+   * dropped before the feature started. That is a different thing from zero,
+   * which is a retry this puzzle had and the player has spent, so the header can
+   * show a spent allowance without inventing one for a day that never had it.
+   *
+   * Not derived from `canRetry`: the allowance is a fact about the puzzle from
+   * the moment it opens, while `canRetry` also waits for a word worth taking
+   * back. A player should see what they have before they have to spend it.
+   */
+  const retriesLeft: number | null =
+    isToday && retryAvailableFor(viewedDate) ? (progress.retryUsed ? 0 : 1) : null;
 
   /**
    * Spend the retry on a banked word: drop it and hand its guess back.
@@ -463,6 +477,7 @@ export function useDailyPuzzle() {
     submitWord,
     canRetry,
     retrySpent,
+    retriesLeft,
     retryAnswer,
     resetAnswers,
     liveNote,

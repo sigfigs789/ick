@@ -30,6 +30,11 @@ interface Props {
   canRetry?: boolean;
   /** It has been spent, on a puzzle where it was offered in the first place. */
   retrySpent?: boolean;
+  /**
+   * Retries left on this puzzle, shown beside the guess count. Null when the
+   * puzzle carries none, which is not the same as none left.
+   */
+  retriesLeft?: number | null;
   /** Drop a banked word and hand its guess back (see storage.retryWord). */
   onRetry?: (word: string) => void;
 }
@@ -41,6 +46,7 @@ export function GuessLog({
   date,
   canRetry = false,
   retrySpent = false,
+  retriesLeft = null,
   onRetry,
 }: Props) {
   const best = bestWord(acceptedWords);
@@ -55,8 +61,8 @@ export function GuessLog({
   // a phone, three of which are already carrying a crown, a copy affordance and
   // a rarity badge, and a fourth control per row would crowd the one thing the
   // card exists to show. Arming also gives the rule somewhere to be said at the
-  // moment it applies -- one per puzzle, this puzzle only -- instead of a
-  // footnote nobody reads until they have already spent it.
+  // moment it applies -- once per day -- instead of a footnote nobody reads
+  // until they have already spent it.
   const [arming, setArming] = useState(false);
   // Derived rather than cleared by hand: spending the retry flips `canRetry`,
   // and so does the day rolling over under a tab left open overnight.
@@ -80,8 +86,20 @@ export function GuessLog({
       {!completed && (
         <div className="guess-log__header">
           <h2 className="guess-log__title">Guess log</h2>
-          <span className="guess-log__count">
-            {acceptedWords.length} of {maxGuesses} used
+          {/* Both of the day's allowances, in the order they are spent: the
+              retry sits left of the guesses because it is the smaller, rarer
+              one and reads as a modifier on them. Absent entirely on a puzzle
+              that carries no retry, rather than shown as zero -- a day that
+              never had one has nothing to report. */}
+          <span className="guess-log__meters">
+            {retriesLeft !== null && (
+              <span className="guess-log__retries">
+                {retriesLeft} retr{retriesLeft === 1 ? "y" : "ies"}
+              </span>
+            )}
+            <span className="guess-log__count">
+              {acceptedWords.length} of {maxGuesses} used
+            </span>
           </span>
         </div>
       )}
@@ -136,7 +154,7 @@ export function GuessLog({
                   onClick={() => (picking ? retry(w) : copyWord(w))}
                   aria-label={
                     picking
-                      ? `Retry "${w.word}" (${w.rarity}, guess ${i + 1}) — drop it and take the guess back`
+                      ? `Retry "${w.word}" (${w.rarity}, guess ${i + 1}) — clear it and try again`
                       : isCopied
                         ? `Copied "${w.word}"`
                         : `Copy "${w.word}" (${w.rarity}${
@@ -194,9 +212,8 @@ export function GuessLog({
               {/* role="status" so arming the retry announces the rule, which is
                   the one moment it matters and the only place it is said. */}
               <p className="guess-log__retry-prompt" role="status">
-                Tap a word to swap it out. You get its guess back, but the word
-                itself is gone — and it's one retry per puzzle, on today's puzzle
-                only.
+                Select a word to clear and try again. You can only do this once
+                per day.
               </p>
               <button
                 type="button"
@@ -218,7 +235,7 @@ export function GuessLog({
             // Said rather than silently withdrawn: a control that vanishes reads
             // as a bug, and this is also where a player who spent the retry
             // without reading the prompt finds out there isn't another.
-            <p className="guess-log__retry-spent">Retry used — one per puzzle.</p>
+            <p className="guess-log__retry-spent">Retry used — once per day.</p>
           )}
         </div>
       )}

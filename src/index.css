@@ -729,6 +729,29 @@ h2 {
   line-height: 1.2;
   color: var(--fg-muted);
 }
+/* The day's two allowances, sat together at the right of the header. */
+.guess-log__meters {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+/* Quieter than the guess count beside it: one retry is a safety net, not the
+ * thing to play toward, and it should not compete with the number that says how
+ * much of the puzzle is left. Boxed so it reads as a token you hold and spend
+ * rather than a second running tally. */
+.guess-log__retries {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* Retry: one word per puzzle can be swapped out (see game/storage.retryWord).
  *
  * A quiet outline button, not a filled one -- the filled treatment on this page

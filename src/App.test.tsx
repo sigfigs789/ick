@@ -37,6 +37,7 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     submitWord,
     canRetry: false,
     retrySpent: false,
+    retriesLeft: null,
     retryAnswer,
     resetAnswers: vi.fn(),
     liveNote: null,
