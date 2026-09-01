@@ -1840,16 +1840,29 @@ h2 {
    state holds open, so it is declared for the page rather than the board. */
 .leaderboard-page {
   --row-height: 3.03rem;
+  /* How far the docked row's ring and shadow reach past its own box: the 1px
+     ring, plus the widest `--dock-shadow` blur (14px at radius -4px, so 3px to
+     each side). What the list has to hold clear of its scrolling edges. */
+  --dock-bleed: 4px;
 }
 /* Five rows and the top of the sixth. The sliver is the affordance: a list cut
    cleanly at five looks like a list of five, and overlay scrollbars only appear
    once you are already scrolling -- so the half-row is what says there is more.
-   `contain` keeps a flick inside the board from carrying on into the page. */
+   `contain` keeps a flick inside the board from carrying on into the page.
+
+   The side padding is room for the docked row's outline. Scrolling on one axis
+   clips both, and the row filled the box to the pixel -- so its ring and shadow
+   were cut off flush at the left and right edges and the docked card read as a
+   band with square sides. The negative margin gives the padding back to the
+   page, so every row still starts and ends exactly where the column header
+   above it does. */
 .leaderboard__list {
   max-height: calc(var(--row-height) * 5 + 0.95rem);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
+  padding-inline: var(--dock-bleed);
+  margin-inline: calc(-1 * var(--dock-bleed));
 }
 /* Rank and score are fixed columns; the name takes what is left and the meta
    line tucks under it, so a long name truncates instead of shoving the score
