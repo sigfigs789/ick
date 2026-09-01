@@ -1419,6 +1419,26 @@ describe("bare -est superlatives fold onto their adjective (from 2026-09-02)", (
     expect(baseFormSubstitution("tensest", ON_SUP)?.base).toBe("tense");
   });
 
+  it("reads a prefixed superlative as a degree of the prefixed adjective", () => {
+    // The bracketing question the prefix hop asks the wrong way round:
+    // "uncleanest" is un- + "cleanest" only by accident, and it really is the
+    // superlative of "unclean". Stripping the prefix off the degree form came
+    // back scoring "most unclean" as `clean`, its own opposite.
+    for (const [word, base] of [
+      ["uncleanest", "unclean"],
+      ["unjustest", "unjust"],
+      ["unfairest", "unfair"],
+      ["uncommonest", "uncommon"],
+      ["unsoundest", "unsound"],
+      ["unevenest", "uneven"],
+    ] as const) {
+      expect(baseFormSubstitution(word, ON_SUP)?.base, word).toBe(base);
+    }
+    // The adjective's own prefix hop is unaffected -- it is asked at the
+    // adjective, once, on the adjective's own measurement.
+    expect(score("unclean", ON_SUP)).toBe(score("unclean", BEFORE_SUP));
+  });
+
   it("keeps its own score when the adjective is rarer", () => {
     // A cap, never a promotion, like every other fold: "furth" (2.10) is rarer
     // than "furthest" (3.17), so the superlative keeps its own measurement.

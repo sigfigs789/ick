@@ -791,10 +791,19 @@ def _non_inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[s
         # Prefixes, under the same gate, and only onto a residue that is a word
         # rather than a bound combining form ("neolith" -> "lith"). The reviewed
         # table answers that, not a frequency floor -- see load_bound_residues().
+        # ... and not at all where the word reads as a bare "-est" superlative:
+        # a degree suffix owns the bracketing, so the prefix belongs to the
+        # adjective inside it ("uncleanest" is the superlative of "unclean", not
+        # un- + "cleanest"). See hasSuperlativeReading in dictionary.ts.
         bound = load_bound_residues()
-        for candidate in _prefix_candidates(word):
-            if candidate in index and candidate not in bound:
-                add(candidate)
+        superlative = any(
+            base in index and counterpart in index
+            for base, counterpart in _superlative_candidates(word)
+        )
+        if not superlative:
+            for candidate in _prefix_candidates(word):
+                if candidate in index and candidate not in bound:
+                    add(candidate)
     # The bound derivational families, ungated like the "-ization" pair below:
     # nothing accidental ends "-ically" or "-ibly" (see derivedBaseCandidates).
     for candidate in _derived_candidates(word):

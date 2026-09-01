@@ -1731,8 +1731,12 @@ function addNonInflectionalBaseForms(
       // words have no prefix candidate for it to refuse.
       const refused =
         spellings.length > 0 &&
-        scoring.prefixResidues &&
-        prefixFoldExemptParadigm(word, scoring, date);
+        // A superlative's prefix belongs to the adjective inside it, not to the
+        // degree form: "uncleanest" is the superlative of "unclean", and
+        // stripping un- off it reads the word inside out. See
+        // `hasSuperlativeReading`.
+        (hasSuperlativeReading(word, scoring) ||
+          (scoring.prefixResidues && prefixFoldExemptParadigm(word, scoring, date)));
       for (const candidate of refused ? [] : spellings) {
         if (!WORD_INDEX.has(candidate)) continue;
         if (scoring.prefixResidues) {
@@ -1778,6 +1782,33 @@ function nonInflectionalBaseForms(word: string, scoring: Scoring, date?: string)
  * an entry covers the paradigm, rather than asking review to list every
  * inflection of every wrong bracketing.
  */
+/**
+ * Whether `word` reads as a bare "-est" superlative of a word the dictionary
+ * attests -- the base is a word and the comparative in the same spelling
+ * vouches for it (see `superlativeBaseCandidates`).
+ *
+ * Asked of the prefix hop, which is a question about *bracketing*: "uncleanest"
+ * is un- + "cleanest" only by accident, and it really is the superlative of
+ * "unclean". The degree suffix is the outer layer, so the prefix belongs to the
+ * adjective inside it, and stripping the prefix off the superlative reads the
+ * word inside out -- "most unclean" came back scored as `clean`, its own
+ * opposite. Whether that adjective then sheds its prefix is a question asked at
+ * the adjective, once, on the adjective's own measurement: "unclean" is measured
+ * and keeps its score, so the chain stops there.
+ *
+ * The same shape as a `scope: "prefix"` exemption ("antiphonic" is antiphon +
+ * -ic, not anti- + `phonic`), as a rule rather than an entry each. Eight words
+ * need it, all of them prefixed adjectives the superlative fold newly reaches:
+ * "uncleanest", "unclearest", "uncommonest", "unfairest", "unjustest",
+ * "unsoundest", "unstablest", "unchastest".
+ */
+function hasSuperlativeReading(word: string, scoring: Scoring): boolean {
+  if (!scoring.superlativeBases) return false;
+  return superlativeBaseCandidates(word).some(
+    ({ base, counterpart }) => WORD_INDEX.has(base) && WORD_INDEX.has(counterpart)
+  );
+}
+
 function prefixFoldExemptParadigm(word: string, scoring: Scoring, date?: string): boolean {
   if (prefixFoldExempt(word, date)) return true;
   return inflectionalBaseForms(word, scoring, date).some((base) => prefixFoldExempt(base, date));

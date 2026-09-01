@@ -461,6 +461,14 @@ because `-er` is also the agentive suffix: it passes on "shoulder" → "should"
 comparative stays in §7 behind the floor gate, where a wrong reading costs a
 stand-in rather than a measurement.
 
+**The prefix hop is refused where this rule fires.** A degree suffix owns the
+bracketing: "uncleanest" is un- + "cleanest" only by accident, and it really is
+the superlative of "unclean", so stripping the prefix off the degree form scored
+"most unclean" as `clean` — its own opposite. Whether the adjective then sheds
+its prefix is asked at the adjective, once, on the adjective's own measurement.
+Same shape as a `scope: "prefix"` exemption (§9), as a rule rather than an entry
+each; eight words need it.
+
 **Six-letter words are left out** deliberately. At six the `-e` stems are right
 ("wisest" → "wise", "latest" → "late") and the short strips start to miss
 ("modest" → "mode", "divest" → "dive") — and every word at that length is common
