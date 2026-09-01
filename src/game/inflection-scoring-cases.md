@@ -192,6 +192,8 @@ also a real word, proving the base is a gradable adjective.
 end `-ier` — "copier" (no "copiest"), "carrier", "collier", "crier" — keep their
 own measured score.
 
+The same check runs on the bare `-est` spelling from 2026-09-02 — see §10.
+
 ---
 
 ## 5. Transparent derivational suffixes — `-ness`, `-ly`
@@ -247,7 +249,10 @@ are where the wrong-word folds cluster: "the", "not", "cant").
 word these rules mis-fold. All of these are measured **at or above** the floor,
 so the gate excludes them and they keep their real score:
 - `-er`/`-est`: "tempest" (3.29) → "temp", "canter" (2.72) → "cant", "noter"
-  (1.27) → "not", "shoulder" → "should", "comma" → "common".
+  (1.27) → "not", "shoulder" → "should", "comma" → "common". From 2026-09-02 the
+  `-est` half of that list is guarded by the counterpart check instead of the
+  floor (§10), which reaches "tempest" and stops there on a reviewed exemption;
+  the `-er` half is why that check cannot be extended to comparatives.
 - `-ize`/`-ise`: "capsize" → "cap", "downsize" → "downs", "expertise" → "expert".
 - `-able`/`-ible`: "likeable" → "like", "countable" → "county", "fallible" → "fall".
 
@@ -413,6 +418,61 @@ cannot help, because the fossilised word is itself rare. It costs real readings
 the `-en` verbs decision again: a family right often enough to tempt, wrong in a
 way no spelling rule can see. Admitting it needs a vetted table of which words
 really carry the prefix.
+
+---
+
+## 10. Bare superlative — `-est` (2026-09-02 on)
+
+`superlativeBaseCandidates` in [`stem.ts`](stem.ts). §4's counterpart check moved
+to the bare spelling, and it earns the same **ungated** fold — the guard replaces
+the floor rather than joining it.
+
+The gap it closes is what §4 left behind. §7's `-est` strip is gated below the
+floor, so a superlative the corpora actually measure never reached any rule at
+all: 307 of them scored rarer than the ordinary adjective they are the top degree
+of, 81 at Mythic or better ("beautifulest" 9.81 vs "beautiful" 4.08,
+"perfectest" 9.85, "blindest" 9.85).
+
+| Rule | Converts |
+|------|----------|
+| `-est` → stem (needs `-er` to also exist) | realest → real, distinctest → distinct |
+| `-est` → stem + `e` | extremest → extreme, politest → polite |
+| `-est` → de-doubled stem (≥3 letters) | biggest → big, hottest → hot, saddest → sad |
+
+**Guard = the comparative in the same spelling.** Seven letters minimum (§7's
+own), and `-iest` is excluded — that spelling belongs to §4, whose `-y` rewrite
+is the only safe reading of it.
+
+**False positives (blocked by the counterpart check):** "contest" (no "conter"),
+"interest", "protest", "harvest", "posttest", "rearrest" — words that merely end
+`-est` have no comparative, so they never reach the base underneath them.
+
+**The two that get through:** "earnest" ("earner" is a word) and "tempest"
+("temper") are the only dictionary words that clear the check without being
+superlatives. Both have reviewed fold exemptions. Two more — "densest" and
+"tensest" — clear it correctly but lose the frequency vote to a rival stem
+("dens" 4.01 beats "dense" 3.98, "tens" beats "tense"), so they carry score
+overrides pinning the `-e` stem.
+
+**Why only this half of the pair.** Bare `-er` cannot take the same check,
+because `-er` is also the agentive suffix: it passes on "shoulder" → "should"
+("shouldest" is a word), "shower" → "show", "speaker" → "speak", "dweller" →
+"dwell". Nothing in the spelling separates those from "realer", so the bare
+comparative stays in §7 behind the floor gate, where a wrong reading costs a
+stand-in rather than a measurement.
+
+**The prefix hop is refused where this rule fires.** A degree suffix owns the
+bracketing: "uncleanest" is un- + "cleanest" only by accident, and it really is
+the superlative of "unclean", so stripping the prefix off the degree form scored
+"most unclean" as `clean` — its own opposite. Whether the adjective then sheds
+its prefix is asked at the adjective, once, on the adjective's own measurement.
+Same shape as a `scope: "prefix"` exemption (§9), as a rule rather than an entry
+each; eight words need it.
+
+**Six-letter words are left out** deliberately. At six the `-e` stems are right
+("wisest" → "wise", "latest" → "late") and the short strips start to miss
+("modest" → "mode", "divest" → "dive") — and every word at that length is common
+enough already that the fold has nothing to correct.
 
 ---
 

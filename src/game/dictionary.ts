@@ -16,6 +16,7 @@ import {
   inflectedFormCandidates,
   inflectionalBaseCandidates,
   prefixBaseCandidates,
+  superlativeBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
@@ -196,6 +197,20 @@ const DECADE_BANDS_START = "2026-08-27";
 // takes a rank away -- it is Zipf 4.62..4.84 at 0.9, and 0.85 halves it (4.76 up)
 // while adding 0.12 to the mean shown score. It closes entirely at 0.8.
 const SCORE_GAMMA = 0.9;
+
+/*
+ * 2026-09-02. The bare "-est" superlative folds onto its adjective wherever the
+ * "-er" comparative of the same spelling is a word, measured or not -- the
+ * paired-degree check of `degreeBaseCandidates` applied to the spelling the
+ * floor gate had been holding. See `superlativeBaseCandidates` for why "-est"
+ * takes the check and bare "-er" cannot.
+ *
+ * The gap it closes is the one the "-ier"/"-iest" cutover left: a superlative a
+ * corpus measures never reached the gated strip, so 307 of them scored rarer
+ * than the ordinary word they are the top degree of, 81 of those at Mythic or
+ * better ("beautifulest" 9.81, "perfectest" 9.85, "blindest" 9.85).
+ */
+const SUPERLATIVE_BASE_START = "2026-09-02";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -551,6 +566,11 @@ interface Scoring {
   // inflections to the adjective that is the form anyone actually writes (see
   // `derivedFormFolds`). 2026-08-26.
   derivedFormFolds: boolean;
+  // Whether a bare "-est" superlative folds onto its adjective on the strength
+  // of the paired "-er" comparative, rather than only below MEASURED_FLOOR (see
+  // `superlativeBaseCandidates`). 2026-09-02; off for earlier systems so past
+  // puzzles' scores stay frozen (see SUPERLATIVE_BASE_START).
+  superlativeBases: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -584,6 +604,7 @@ interface ScoringFlags {
   paradigmFolds?: boolean;
   prefixResidues?: boolean;
   derivedFormFolds?: boolean;
+  superlativeBases?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
@@ -610,6 +631,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     paradigmFolds = false,
     prefixResidues = false,
     derivedFormFolds = false,
+    superlativeBases = false,
     narrowBands = false,
     scoreCurve = false,
     decadeBands = false,
@@ -667,6 +689,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     paradigmFolds,
     prefixResidues,
     derivedFormFolds,
+    superlativeBases,
   };
 }
 
@@ -740,11 +763,29 @@ const REVIEWED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   derivedFormFolds: true,
   narrowBands: true,
 });
-// The latest system (2026-08-27): the same folds, with the measured band bent by
+// The 2026-08-27 system: the same folds, with the measured band bent by
 // SCORE_GAMMA and its labels read off the shown score's whole point. See
 // DECADE_BANDS_START. `narrowBands` stays on but is now unreachable here --
 // `decadeBands` answers the label question ahead of it -- and is kept so the
 // flag set still describes the profile rather than only its live edges.
+const DECADE_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  prefixBases: true,
+  paradigmFolds: true,
+  prefixResidues: true,
+  derivedFormFolds: true,
+  narrowBands: true,
+  scoreCurve: true,
+  decadeBands: true,
+});
+// The latest system (2026-09-02): the same bands and curve, with the bare "-est"
+// superlative folding onto its adjective wherever the "-er" comparative attests
+// the reading. See SUPERLATIVE_BASE_START.
 const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
@@ -756,6 +797,7 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
+  superlativeBases: true,
   narrowBands: true,
   scoreCurve: true,
   decadeBands: true,
@@ -792,6 +834,7 @@ const LEGACY_SCORING: Scoring = {
   paradigmFolds: false,
   prefixResidues: false,
   derivedFormFolds: false,
+  superlativeBases: false,
 };
 
 /**
@@ -891,6 +934,7 @@ function scoringFor(date?: string): Scoring {
   if (date < PREFIX_BASE_START) return DERIVED_SCORING;
   if (date < REVIEWED_FOLD_START) return PREFIX_SCORING;
   if (date < DECADE_BANDS_START) return REVIEWED_SCORING;
+  if (date < SUPERLATIVE_BASE_START) return DECADE_SCORING;
   return LATEST_SCORING;
 }
 
@@ -1577,6 +1621,15 @@ function addInflectionalBaseForms(
   for (const { base, counterpart } of degreeBaseCandidates(word)) {
     if (WORD_INDEX.has(counterpart)) add(base);
   }
+  // Bare "-est", on the same check and for the same reason: the comparative in
+  // the same spelling is what tells a superlative ("realest", so "realer") from
+  // a word that merely ends that way ("contest", but no "conter"). Its "-er"
+  // half stays behind the floor gate -- see `superlativeBaseCandidates`.
+  if (scoring.superlativeBases) {
+    for (const { base, counterpart } of superlativeBaseCandidates(word)) {
+      if (WORD_INDEX.has(counterpart)) add(base);
+    }
+  }
 }
 
 /**
@@ -1678,8 +1731,12 @@ function addNonInflectionalBaseForms(
       // words have no prefix candidate for it to refuse.
       const refused =
         spellings.length > 0 &&
-        scoring.prefixResidues &&
-        prefixFoldExemptParadigm(word, scoring, date);
+        // A superlative's prefix belongs to the adjective inside it, not to the
+        // degree form: "uncleanest" is the superlative of "unclean", and
+        // stripping un- off it reads the word inside out. See
+        // `hasSuperlativeReading`.
+        (hasSuperlativeReading(word, scoring) ||
+          (scoring.prefixResidues && prefixFoldExemptParadigm(word, scoring, date)));
       for (const candidate of refused ? [] : spellings) {
         if (!WORD_INDEX.has(candidate)) continue;
         if (scoring.prefixResidues) {
@@ -1725,6 +1782,33 @@ function nonInflectionalBaseForms(word: string, scoring: Scoring, date?: string)
  * an entry covers the paradigm, rather than asking review to list every
  * inflection of every wrong bracketing.
  */
+/**
+ * Whether `word` reads as a bare "-est" superlative of a word the dictionary
+ * attests -- the base is a word and the comparative in the same spelling
+ * vouches for it (see `superlativeBaseCandidates`).
+ *
+ * Asked of the prefix hop, which is a question about *bracketing*: "uncleanest"
+ * is un- + "cleanest" only by accident, and it really is the superlative of
+ * "unclean". The degree suffix is the outer layer, so the prefix belongs to the
+ * adjective inside it, and stripping the prefix off the superlative reads the
+ * word inside out -- "most unclean" came back scored as `clean`, its own
+ * opposite. Whether that adjective then sheds its prefix is a question asked at
+ * the adjective, once, on the adjective's own measurement: "unclean" is measured
+ * and keeps its score, so the chain stops there.
+ *
+ * The same shape as a `scope: "prefix"` exemption ("antiphonic" is antiphon +
+ * -ic, not anti- + `phonic`), as a rule rather than an entry each. Eight words
+ * need it, all of them prefixed adjectives the superlative fold newly reaches:
+ * "uncleanest", "unclearest", "uncommonest", "unfairest", "unjustest",
+ * "unsoundest", "unstablest", "unchastest".
+ */
+function hasSuperlativeReading(word: string, scoring: Scoring): boolean {
+  if (!scoring.superlativeBases) return false;
+  return superlativeBaseCandidates(word).some(
+    ({ base, counterpart }) => WORD_INDEX.has(base) && WORD_INDEX.has(counterpart)
+  );
+}
+
 function prefixFoldExemptParadigm(word: string, scoring: Scoring, date?: string): boolean {
   if (prefixFoldExempt(word, date)) return true;
   return inflectionalBaseForms(word, scoring, date).some((base) => prefixFoldExempt(base, date));

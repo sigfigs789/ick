@@ -244,6 +244,65 @@ export function degreeBaseCandidates(word: string): { base: string; counterpart:
 }
 
 /**
+ * The adjective a bare "-est" superlative is the top degree of, paired with the
+ * "-er" comparative of the same spelling. Spelling only -- like
+ * `degreeBaseCandidates`, the caller requires both `base` and `counterpart` to be
+ * dictionary words before trusting the reading.
+ *
+ * The same paired-degree check, moved from the "-ier"/"-iest" spelling to the
+ * bare one, and it earns the same ungated fold. `unmeasuredBaseCandidates` below
+ * also strips "-est", but only under MEASURED_FLOOR, so every superlative a
+ * corpus actually measures kept a score its adjective never had: "realest" 2.20
+ * against "real" 5.60, "beautifulest" a Mythic 9.81 against "beautiful" 4.08.
+ * There were 307 of those, 81 of them showing Mythic or better for being the top
+ * degree of an ordinary word.
+ *
+ * What the counterpart buys here is the same thing it buys there: a word that
+ * merely ends in "-est" has no comparative in the same spelling, so it never
+ * reaches its accidental base. "contest" would strip to "conte" but there is no
+ * "conter"; "interest" has no "interer", "protest" no "proter", "posttest" no
+ * "postter", "rearrest" no "rearrer". Two words in the dictionary pass the check
+ * and are still not superlatives -- "earnest" ("earner" is a word) and "tempest"
+ * ("temper") -- and they are exempted by name in fold-exemptions.json, which is
+ * the file for a word the rules misread that has no base at all.
+ *
+ * "-est" is safe this way and bare "-er" is not, which is why only this half of
+ * the pair is here: "-er" is also the agentive suffix, so the check passes on
+ * "shoulder" -> `should` ("shoulder" is a verb, hence "shouldest"), "shower" ->
+ * `show`, "speaker" -> `speak` and "dweller" -> `dwell`. Nothing in the spelling
+ * separates those from "realer", so the bare comparative stays behind the floor
+ * gate where a wrong reading costs a stand-in rather than a measurement.
+ *
+ * Seven letters, matching the gated rule's own minimum: at six the "-e" stems
+ * are right ("wisest" -> "wise", "latest" -> "late") and the short strips start
+ * to miss ("modest" -> `mode`, "divest" -> `dive`), and the words at that length
+ * are common enough already that the fold has nothing to correct. The doubled
+ * consonant is the one place a three-letter base is offered, because the doubling
+ * is itself evidence of the suffix: "biggest" -> "big", "hottest" -> "hot",
+ * "saddest" -> "sad".
+ *
+ * "-iest" belongs to `degreeBaseCandidates` and is excluded here, so the "-y"
+ * rewrite stays the only reading of that spelling -- the i-stem candidates are
+ * what let "campier" chain to "campus" through the non-word "campi".
+ */
+export function superlativeBaseCandidates(word: string): { base: string; counterpart: string }[] {
+  const w = word.toLowerCase();
+  if (w.length <= 6 || !w.endsWith("est") || w.endsWith("iest")) return [];
+  const stem = w.slice(0, -3);
+  const counterpart = `${stem}er`;
+  const out: { base: string; counterpart: string }[] = [];
+  const add = (base: string, min: number) => {
+    if (base.length >= min && base !== w && !out.some((c) => c.base === base)) {
+      out.push({ base, counterpart });
+    }
+  };
+  add(stem, 4);
+  add(`${stem}e`, 4);
+  add(stripDoubledConsonant(stem), 3);
+  return out;
+}
+
+/**
  * Candidate bases for the suffixes whose spelling is *not* decisive -- safe to
  * consult only for a word that no corpus really attests. The caller enforces
  * that (see MEASURED_FLOOR in dictionary.ts); this function just supplies the

@@ -1325,3 +1325,124 @@ describe("reviewed morphology replaces the fold's frequency guesses (from 2026-0
     }
   });
 });
+
+// The 2026-09-02 cutover: the paired-degree check that earned "-ier"/"-iest" a
+// fold above the measurement floor, moved to the bare "-est" spelling. Until it
+// the gated strip was the only "-est" rule, so every superlative a corpus
+// measures kept a score its adjective never had. See SUPERLATIVE_BASE_START in
+// dictionary.ts and superlativeBaseCandidates in stem.ts.
+describe("bare -est superlatives fold onto their adjective (from 2026-09-02)", () => {
+  const BEFORE_SUP = "2026-09-01"; // last day only the gated strip read "-est"
+  const ON_SUP = "2026-09-02"; // first day the comparative vouches for the fold
+
+  const SUPERLATIVES: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    // The word that prompted the rule, and the shape of the whole family: the
+    // superlative is measured, so the gated strip never reached it, and it
+    // scored four points rarer than the adjective it is the top degree of.
+    ["realest", "real", 8.3, 3.52],
+    ["beautifulest", "beautiful", 9.81, 4.08],
+    ["perfectest", "perfect", 9.85, 4.1],
+    ["blindest", "blind", 9.85, 5.08],
+    ["crookedest", "crooked", 9.81, 6.34],
+    ["distinctest", "distinct", 9.75, 5.41],
+    // The nonstandard superlatives of words that have their own irregular one.
+    ["goodest", "good", 8.94, 2.73],
+    ["bestest", "best", 7.85, 3.16],
+    // Archaic second-person verbs, which end the same way and reach the verb
+    // anyway -- "thou knowest" is a form of "know" whichever reading you take.
+    ["knowest", "know", 8.35, 2.76],
+    ["believest", "believe", 9.56, 3.65],
+    // The doubled consonant, the one place a three-letter base is offered: the
+    // doubling is itself evidence of the suffix.
+    ["biggest", "big", 4.5, 3.41],
+    ["hottest", "hot", 5.96, 4.16],
+    ["saddest", "sad", 6.88, 4.63],
+    // The chain keeps walking, as everywhere else: "littlest" folds through
+    // "little", "winningest" through "winning" onto "win".
+    ["littlest", "little", 7.66, 3.29],
+    ["winningest", "win", 8.19, 3.83],
+  ];
+
+  it.each(SUPERLATIVES)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON_SUP)).toBe(after);
+    expect(score(word, ON_SUP)).toBe(score(base, ON_SUP));
+  });
+
+  it.each(SUPERLATIVES)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_SUP)).toBe(before);
+  });
+
+  it("refuses a word whose spelling has no comparative behind it", () => {
+    // The check is the whole guard: a word that merely ends in "-est" has no
+    // "-er" form in the same spelling, so it never reaches the accidental base
+    // underneath it. There is no "conter", "interer", "proter", "postter" or
+    // "rearrer".
+    for (const word of ["contest", "interest", "protest", "harvest", "posttest", "rearrest"]) {
+      expect(score(word, ON_SUP), `${word} must not fold`).toBe(score(word, BEFORE_SUP));
+    }
+  });
+
+  it("leaves the bare -er comparative behind the floor gate", () => {
+    // "-est" takes the paired check and "-er" cannot, because "-er" is also the
+    // agentive suffix: the same check passes on "shoulder" -> "should"
+    // ("shouldest" is a word), "shower" -> "show", "speaker" -> "speak" and
+    // "dweller" -> "dwell". Measured agent nouns keep their own scores.
+    for (const word of ["shoulder", "shower", "speaker", "dweller", "earner", "opener"]) {
+      expect(score(word, ON_SUP), `${word} must not fold`).toBe(score(word, BEFORE_SUP));
+    }
+  });
+
+  it("stops at six letters, where the short strips start to miss", () => {
+    // At six the "-e" stems are right ("wisest", "latest") and the strips are
+    // not ("modest" -> "mode", "divest" -> "dive"), and the words at that length
+    // are common enough that the fold has nothing to correct.
+    for (const word of ["modest", "divest", "wisest", "latest", "finest", "safest"]) {
+      expect(score(word, ON_SUP), `${word} must not fold`).toBe(score(word, BEFORE_SUP));
+    }
+  });
+
+  it("keeps the two reviewed non-superlatives on their own data", () => {
+    // The only two dictionary words that clear the paired-degree check without
+    // being superlatives: "earnest" ("earner" is a word) and "tempest"
+    // ("temper"). Both are exempt by name -- see fold-exemptions.json.
+    for (const word of ["earnest", "tempest"]) {
+      expect(baseFormSubstitution(word, ON_SUP), `${word} must not fold`).toBeUndefined();
+      expect(score(word, ON_SUP)).toBe(score(word, BEFORE_SUP));
+    }
+  });
+
+  it("takes the reviewed base where two attested stems compete", () => {
+    // "dens" (the plural of den, 4.01) beats "dense" (3.98) on frequency, so the
+    // fold chained "densest" onto "den"; "tens" does the same to "tensest". The
+    // spelling rules cannot say which stem is the real one, so an override does.
+    expect(baseFormSubstitution("densest", ON_SUP)?.base).toBe("dense");
+    expect(baseFormSubstitution("tensest", ON_SUP)?.base).toBe("tense");
+  });
+
+  it("reads a prefixed superlative as a degree of the prefixed adjective", () => {
+    // The bracketing question the prefix hop asks the wrong way round:
+    // "uncleanest" is un- + "cleanest" only by accident, and it really is the
+    // superlative of "unclean". Stripping the prefix off the degree form came
+    // back scoring "most unclean" as `clean`, its own opposite.
+    for (const [word, base] of [
+      ["uncleanest", "unclean"],
+      ["unjustest", "unjust"],
+      ["unfairest", "unfair"],
+      ["uncommonest", "uncommon"],
+      ["unsoundest", "unsound"],
+      ["unevenest", "uneven"],
+    ] as const) {
+      expect(baseFormSubstitution(word, ON_SUP)?.base, word).toBe(base);
+    }
+    // The adjective's own prefix hop is unaffected -- it is asked at the
+    // adjective, once, on the adjective's own measurement.
+    expect(score("unclean", ON_SUP)).toBe(score("unclean", BEFORE_SUP));
+  });
+
+  it("keeps its own score when the adjective is rarer", () => {
+    // A cap, never a promotion, like every other fold: "furth" (2.10) is rarer
+    // than "furthest" (3.17), so the superlative keeps its own measurement.
+    expect(score("furthest", ON_SUP)).toBe(score("furthest", BEFORE_SUP));
+    expect(score("mopier", ON_SUP)).toBe(score("mopier", BEFORE_SUP));
+  });
+});
