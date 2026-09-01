@@ -993,9 +993,53 @@ describe("finds arriving", () => {
 
     expect(finds().map((li) => li.textContent)).toHaveLength(2);
     expect(finds()[0]).toHaveTextContent("asphyxiate");
-    expect(finds()[0].className).toContain("arrived");
+    // A word nobody had seen opens a row for itself, which is the animation
+    // that says so -- not the glow-and-travel a re-found word gets.
+    expect(finds()[0].className).toContain("--arrived");
+    expect(finds()[0].className).not.toContain("refound");
     // The word that was already there is not re-announced.
     expect(finds()[1].className).not.toContain("arrived");
+  });
+
+  it("marks a word somebody else has now found, back on top with its count up", async () => {
+    // The feed is ordered on a word's most recent sighting, so a word already on
+    // screen returns to the top when a new player finds it. That is the same
+    // event as a new word landing and gets the same animation -- otherwise the
+    // row that just travelled the length of the list would look untouched.
+    let words = [
+      { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
+      { word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-25" },
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ ...OPEN, words }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+      ),
+    );
+    render(<LeaderboardPage />);
+    await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
+    expect(finds()[0]).toHaveTextContent("inkling");
+
+    words = [
+      { word: "asphyxiate", zipf: 2.09, finders: 2, foundOn: "2026-08-25" },
+      { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
+    ];
+    await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
+
+    expect(finds()[0]).toHaveTextContent("asphyxiate");
+    expect(finds()[0]).toHaveTextContent("2 players");
+    // Glowing, but as a word that travelled rather than one that appeared: the
+    // arrival animation opens a row's height from nothing, which is the one
+    // thing a row already on screen is not doing.
+    expect(finds()[0].className).toContain("refound");
+    expect(finds()[0].className).not.toContain("--arrived");
+    // The one it pushed down is unchanged and says nothing.
+    expect(finds()[1].className).not.toContain("refound");
+    expect(finds()[1].className).not.toContain("--arrived");
   });
 
   it("stops marking it once the arrival has played", async () => {
@@ -1022,8 +1066,9 @@ describe("finds arriving", () => {
     await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
     expect(finds()[0].className).toContain("arrived");
 
-    // Otherwise an unrelated re-render would replay the animation later.
-    await act(async () => void (await vi.advanceTimersByTimeAsync(1400)));
+    // Otherwise an unrelated re-render would replay the animation later. Held
+    // until the longest animation has finished -- see the timeout in the page.
+    await act(async () => void (await vi.advanceTimersByTimeAsync(2800)));
     expect(finds()[0].className).not.toContain("arrived");
   });
 });

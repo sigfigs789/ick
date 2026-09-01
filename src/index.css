@@ -95,6 +95,17 @@
   --best-word-bg: #fbf3d6;
 
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Slow, then quick, then slow again -- an S-curve, where --ease-standard is a
+     decelerate curve that leaves at full speed and coasts to a stop.
+
+     The difference is who started the movement. A control the reader just tapped
+     should answer instantly, so --ease-standard front-loads it. A row travelling
+     up the finds feed was set off by a stranger finding a word, and the reader is
+     not looking at it yet: leaving at full speed means the first third is over
+     before their eye arrives, and all they see is the coast. Easing in gives them
+     that moment, the middle covers the distance, and easing out lands it
+     somewhere they can read. */
+  --ease-travel: cubic-bezier(0.7, 0, 0.3, 1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1545,12 +1556,53 @@ h2 {
 .found-words__item--arrived {
   animation: found-word-arrive 0.9s var(--ease-standard);
 }
+/*
+ * A word already on the feed that somebody else has just found.
+ *
+ * The same green as an arrival, because it is the same news -- but only the
+ * green. The row is not appearing, it is travelling: it has been on screen all
+ * along and the feed's ordering has lifted it back to the top. Playing the
+ * arrival animation on it would collapse it to no height and re-open it, which
+ * says "this is new" about the one row that isn't.
+ *
+ * Held a beat longer than the move it accompanies. This row is travelling at the
+ * same time, and a tint that has faded out before the journey ends leaves the
+ * reader watching an unremarkable row slide -- the glow is what says why it
+ * moved.
+ */
+@keyframes found-word-refound {
+  from,
+  55% {
+    background: var(--success-bg);
+  }
+  to {
+    background: transparent;
+  }
+}
+.found-words__item--refound {
+  animation: found-word-refound 2.4s var(--ease-standard);
+}
 .found-words__item {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
   padding: 0.35rem 0;
   border-bottom: 1px solid var(--border);
+  /*
+   * What the re-ordering rides on. The list is keyed by word, so a row that
+   * changes place is moved rather than rebuilt; the page offsets it back to
+   * where it was and releases it, and this carries it home (see FoundWords).
+   *
+   * Transform only. Transitioning anything else here would put a delay on the
+   * arrival animation's own properties and blunt it.
+   *
+   * A full second on an S-curve, both deliberately. This is not a control
+   * responding to a tap, where speed reads as crispness -- it is an event the
+   * reader did not cause and is not yet looking at, and the whole job is for
+   * their eye to catch the movement and follow it to the top. At half this it
+   * registered as a flicker: the list was simply different afterwards.
+   */
+  transition: transform 1s var(--ease-travel);
 }
 .found-words__word {
   flex: 1;
