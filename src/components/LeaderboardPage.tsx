@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { RarityBadge } from "./RarityBadge";
 import {
   fetchBoards,
@@ -37,18 +43,22 @@ type LoadState = "loading" | "ready" | "error";
 /**
  * How often an open page re-checks for new finds.
  *
- * Thirty seconds. It used to be sixty, to match the CDN's own cache exactly --
- * which read as one decision but was two, and they add up rather than overlap:
- * a word waits out the shared cache and *then* waits out the rest of a poll, so
- * two sixties were most of a two-minute wait to see a word already found.
+ * Fifteen seconds, matching the CDN's own cache (see api/leaderboard.ts). It was
+ * sixty, then thirty, and the reason for stepping it down twice is that the two
+ * waits add up rather than overlap: a word waits out the shared cache and *then*
+ * waits out the rest of a poll. At sixty and sixty that was most of a two-minute
+ * wait to see a word somebody had already found.
  *
- * The cache is fifteen seconds now (see api/leaderboard.ts), so the worst case
- * is a little under a minute and the usual case is half of that. Deliberately
- * not lowered to fifteen as well: past a point the page is asking more often
- * than a reader can notice, and every one of those is a request from every open
- * tab. Halving the poll buys most of the freshness for half the chatter.
+ * Matching the cache exactly is the floor worth having. Below it the extra
+ * requests cannot return anything new -- they are answered from the same cached
+ * copy -- so a shorter poll would buy nothing but chatter. At fifteen the worst
+ * case is thirty seconds and the usual case is half of that.
+ *
+ * This is a live feed, and since finds are ordered by their most recent sighting
+ * the top of the list is now where the movement is; a poll slow enough to miss
+ * it makes the ordering pointless.
  */
-const REFRESH_MS = 30_000;
+const REFRESH_MS = 15_000;
 /**
  * How old the boards have to be before returning to the tab re-reads them.
  *
@@ -459,7 +469,19 @@ export function LeaderboardPage() {
    * arrivals.
    */
   const seenDay = useRef(today);
+  /** Words on screen for the first time: a row that has to open a gap for itself. */
   const [arrived, setArrived] = useState<readonly string[]>([]);
+  /**
+   * Words already on screen that somebody else has now found: a row that is
+   * travelling up rather than appearing.
+   *
+   * Held apart from `arrived` because the two look nothing alike. A new word
+   * animates its own height open, since there was no row there a moment ago; a
+   * re-found word already has a row, and playing the same animation on it would
+   * collapse it to nothing and re-open it -- the one thing it is not doing. It
+   * moves instead, and only the glow is shared.
+   */
+  const [refound, setRefound] = useState<readonly string[]>([]);
 
   useEffect(() => {
     const counts = new Map(words.map((entry) => [entry.word, entry.finders]));
@@ -470,6 +492,7 @@ export function LeaderboardPage() {
       seenDay.current = viewing;
       seenWords.current = counts.size > 0 ? counts : null;
       setArrived([]);
+      setRefound([]);
       return;
     }
     if (seenWords.current === null) {
@@ -479,22 +502,32 @@ export function LeaderboardPage() {
       seenWords.current = counts;
       return;
     }
-    // A word is new, or an old one somebody else has now found. A count that
-    // went *down* is not an arrival: the day's words can only ever be found by
-    // more people, so a smaller number is a word dropping off the end of the
-    // twelve rows and coming back, not news.
+    // Split by whether the word was on screen a moment ago. A count that went
+    // *down* is neither: the day's words can only ever be found by more people,
+    // so a smaller number is a word that dropped out of the response and came
+    // back, not news.
     const seen = seenWords.current;
-    const fresh = [...counts]
-      .filter(([word, finders]) => finders > (seen.get(word) ?? 0))
-      .map(([word]) => word);
+    const landed: string[] = [];
+    const returned: string[] = [];
+    for (const [word, finders] of counts) {
+      const before = seen.get(word);
+      if (before === undefined) landed.push(word);
+      else if (finders > before) returned.push(word);
+    }
     for (const [word, finders] of counts) {
       seen.set(word, Math.max(finders, seen.get(word) ?? 0));
     }
-    if (fresh.length === 0) return;
-    setArrived(fresh);
+    if (landed.length === 0 && returned.length === 0) return;
+    setArrived(landed);
+    setRefound(returned);
     // Cleared once the animation is done, so a later re-render for some
-    // unrelated reason does not replay it.
-    const timer = window.setTimeout(() => setArrived([]), 1400);
+    // unrelated reason does not replay it. Comfortably past the longest of them
+    // -- the re-found glow, which runs 2.4s beside a 1s travel -- because
+    // clearing the class mid-animation cuts the tint off rather than ending it.
+    const timer = window.setTimeout(() => {
+      setArrived([]);
+      setRefound([]);
+    }, 2800);
     return () => window.clearTimeout(timer);
   }, [viewing, words]);
 
@@ -768,6 +801,7 @@ export function LeaderboardPage() {
             // list may not fill.
             placeholderRows={Math.min(Math.max(lastRowCount.current, 4), 12)}
             arrived={arrived}
+            refound={refound}
             canGoBack={canGoBack}
             canGoForward={!isToday}
             onBack={() => showDay(addDays(viewing, -1))}
@@ -843,6 +877,7 @@ function FoundWords({
   state,
   placeholderRows,
   arrived,
+  refound,
   canGoBack,
   canGoForward,
   onBack,
@@ -856,12 +891,64 @@ function FoundWords({
   /** How many rows to hold open while a day loads. */
   placeholderRows: number;
   arrived: readonly string[];
+  refound: readonly string[];
   canGoBack: boolean;
   canGoForward: boolean;
   onBack: () => void;
   onForward: () => void;
   onRetry: () => void;
 }) {
+  /**
+   * The rows, by word, so a re-ordering can be animated as movement.
+   *
+   * React keys the list by word, so when the order changes it *moves* the
+   * existing node rather than rebuilding it -- the row is the same element in a
+   * new place. That is what makes the animation below possible, and it is why
+   * nothing here has to know which word travelled: the DOM already did it, and
+   * this only replays the journey.
+   */
+  const rows = useRef(new Map<string, HTMLLIElement>());
+  /** Where each row sat last time this ran, to measure the move against. */
+  const wasAt = useRef(new Map<string, number>());
+
+  /**
+   * Slide the rows that moved from where they were to where they now are.
+   *
+   * The standard trick: the DOM is already in its final state by the time this
+   * runs, so each row is offset *back* to where it used to be with no transition,
+   * the layout is flushed, and then the offset is released -- the CSS transition
+   * on `.found-words__item` carries it home. The reader sees the row travel; the
+   * browser only ever laid it out once.
+   *
+   * `offsetTop` rather than a bounding rect, so a page that scrolled between two
+   * polls does not read as every row having moved.
+   *
+   * Skipped entirely when a brand-new word is on screen. That row animates its
+   * own height open, which pushes everything below it down as a matter of
+   * layout, and the established insertion animation should own that frame rather
+   * than fight a transform for it.
+   */
+  useLayoutEffect(() => {
+    const before = wasAt.current;
+    const now = new Map<string, number>();
+    for (const [word, node] of rows.current) now.set(word, node.offsetTop);
+    wasAt.current = now;
+    if (arrived.length > 0) return;
+    for (const [word, top] of now) {
+      const previous = before.get(word);
+      if (previous === undefined || previous === top) continue;
+      const node = rows.current.get(word);
+      if (!node) continue;
+      node.style.transition = "none";
+      node.style.transform = `translateY(${previous - top}px)`;
+      // Read a layout property to flush the offset above before releasing it, or
+      // the two writes coalesce into no move at all.
+      void node.offsetHeight;
+      node.style.transition = "";
+      node.style.transform = "";
+    }
+  }, [words, arrived]);
+
   // "Today's finds" while it is today's, and the day's own date once it isn't.
   // The date rather than "Yesterday": two steps back has no such word, and a
   // heading whose wording changes shape halfway down a week is harder to read
@@ -954,9 +1041,17 @@ function FoundWords({
           {words.map((found) => (
             <li
               key={found.word}
+              ref={(node) => {
+                if (node) rows.current.set(found.word, node);
+                else rows.current.delete(found.word);
+              }}
               className={`found-words__item${
                 arrived.includes(found.word)
                   ? " found-words__item--arrived"
+                  : ""
+              }${
+                refound.includes(found.word)
+                  ? " found-words__item--refound"
                   : ""
               }`}
             >
