@@ -44,6 +44,7 @@ LEGACY_RARITY_PATH = ROOT / "src" / "data" / "rarity-legacy.json"
 SCORE_OVERRIDES_PATH = ROOT / "src" / "data" / "score-overrides.json"
 FOLD_EXEMPTIONS_PATH = ROOT / "src" / "data" / "fold-exemptions.json"
 BOUND_RESIDUES_PATH = ROOT / "src" / "data" / "bound-residues.json"
+MEASUREMENT_UNITS_PATH = ROOT / "src" / "data" / "measurement-units.json"
 DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
 
 # Legacy (pre-rescale) rarity placeholders for a freshly added word. The legacy
@@ -459,6 +460,36 @@ def _prefix_candidates(word: str) -> list[str]:
     return out
 
 
+# Mirror of MEASUREMENT_PREFIXES in src/game/stem.ts.
+MEASUREMENT_PREFIXES = (
+    "yocto", "zepto", "yotta", "zetta", "femto", "hecto", "centi", "micro",
+    "milli", "deka", "deca", "deci", "kilo", "mega", "giga", "tera", "peta",
+    "nano", "pico", "atto", "yobi", "zebi", "exbi", "pebi", "tebi", "gibi",
+    "mebi", "kibi", "exa",
+)
+
+
+def _measurement_candidates(word: str) -> list[str]:
+    """Mirror of measurementBaseCandidates() in src/game/stem.ts.
+
+    The unit a measurement modifier is counting ("kilojoules" -> "joules"). The
+    caller checks the residue against the reviewed unit table, and that check --
+    not a frequency gate -- is what earns this family its fold above
+    MEASURED_FLOOR. Three letters rather than the prefix rule's four, because
+    the table is the guard and it admits "amp", "bar", "bit", "ohm" and "ton".
+    """
+    w = word.lower()
+    out: list[str] = []
+    for prefix in MEASUREMENT_PREFIXES:
+        if not w.startswith(prefix):
+            continue
+        unit = w[len(prefix):]
+        if len(unit) < 3 or unit == w or unit in out:
+            continue
+        out.append(unit)
+    return out
+
+
 def _derived_candidates(word: str) -> list[str]:
     """Mirror of derivedBaseCandidates() in src/game/stem.ts.
 
@@ -678,6 +709,20 @@ def load_bound_residues() -> frozenset[str]:
     return frozenset(json.loads(BOUND_RESIDUES_PATH.read_text()))
 
 
+def load_measurement_units() -> frozenset[str]:
+    """The unit spellings a measurement modifier may fold onto.
+
+    Mirror of MEASUREMENT_UNITS in src/game/dictionary.ts: an allow-list, where
+    the bound residues next door deny. A modifier is transparent -- a kilojoule
+    is a joule -- but its letters open ordinary words ("decadent", "examine",
+    "petaline"), and this family cannot lean on the MEASURED_FLOOR gate because
+    the words it exists for are measured. So the check moves to the residue.
+    """
+    if not MEASUREMENT_UNITS_PATH.exists():
+        return frozenset()
+    return frozenset(json.loads(MEASUREMENT_UNITS_PATH.read_text()))
+
+
 def _override_base(word: str, index: dict[str, int]) -> str | None:
     """Mirror of overrideBase() for the newest system (no date gating)."""
     override = load_score_overrides().get(word)
@@ -804,6 +849,12 @@ def _non_inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[s
             for candidate in _prefix_candidates(word):
                 if candidate in index and candidate not in bound:
                     add(candidate)
+    # The measurement modifiers, ungated on the reviewed unit table rather than
+    # on an ending: "kilojoules" -> "joules" though both are measured.
+    units = load_measurement_units()
+    for candidate in _measurement_candidates(word):
+        if candidate in units:
+            add(candidate)
     # The bound derivational families, ungated like the "-ization" pair below:
     # nothing accidental ends "-ically" or "-ibly" (see derivedBaseCandidates).
     for candidate in _derived_candidates(word):

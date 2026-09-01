@@ -12,6 +12,7 @@ import rarityData from "../data/rarity.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
 import boundResidueData from "../data/bound-residues.json";
+import measurementUnitData from "../data/measurement-units.json";
 import type { AcceptedWord } from "./types";
 
 // The 2026-08-21 cutover: a plural or third-person form no longer out-scores the
@@ -392,6 +393,77 @@ describe("reviewed fold exemptions", () => {
         );
       }
     }
+  });
+});
+
+// src/data/measurement-units.json is what a measurement modifier is allowed to
+// fold onto. An *allow*-list, where the bound residues below deny, because the
+// risk runs the other way: an unlisted unit costs one word a fold it could have
+// had, while a wrongly listed one gives a real unit a frequency collected from
+// something else.
+describe("reviewed measurement units", () => {
+  const ON_UNITS = "2026-09-02";
+  const entries = Object.entries(
+    measurementUnitData as Record<string, { since: string; note?: string }>
+  );
+
+  it("ships a table, so the cases above are not vacuous", () => {
+    expect(entries.length).toBeGreaterThan(100);
+  });
+
+  it.each(entries)("%s is a dictionary word a modifier could reach", (unit) => {
+    // An entry the dictionary does not list can never match, so it is dead
+    // weight and usually a typo.
+    expect(rarityFor(unit), `${unit} is not a dictionary word`).toBeDefined();
+  });
+
+  it.each(entries)("%s is dated into the current era", (_unit, entry) => {
+    expect(entry.since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // Adding an entry *lowers* the scores of everything that folds through it,
+    // so an archived puzzle must never see one reviewed after it was played.
+    expect(entry.since >= "2026-09-02").toBe(true);
+  });
+
+  it("holds back the spellings that are really another word", () => {
+    // Asserted on the data as well as on the behaviour, because this is the
+    // table's one recurring judgement call and the two are separable: a later
+    // rule change could stop "centiares" folding for some unrelated reason and
+    // leave the wrong entry sitting here. "are" is the verb, "base" the ordinary
+    // noun, and "ares" goes with "are" because the chain walks a plural to its
+    // singular. See MEASUREMENT_UNITS in dictionary.ts.
+    for (const spelling of ["are", "ares", "base", "bases"]) {
+      expect(Object.keys(measurementUnitData), spelling).not.toContain(spelling);
+    }
+  });
+
+  it("lists both spellings of a unit that has two, and the plurals", () => {
+    // Deriving the plural from the singular is what folded "microtones" onto
+    // the mass unit through "ton", so the residues are listed outright --
+    // "kilojoules" strips to "joules", never to "joule".
+    for (const unit of ["meter", "metre", "gram", "gramme", "liter", "litre"]) {
+      expect(Object.keys(measurementUnitData), unit).toContain(unit);
+    }
+    for (const plural of ["joules", "bytes", "grams", "metres", "watts", "seconds"]) {
+      expect(Object.keys(measurementUnitData), plural).toContain(plural);
+    }
+  });
+
+  it("never raises a score, whatever a later entry is added for", () => {
+    // The invariant the whole family rests on: a fold caps, so a unit rarer than
+    // the word built on it is inert rather than a promotion. Checked over every
+    // word the table can reach rather than over a sample.
+    const units = new Set(Object.keys(measurementUnitData));
+    let checked = 0;
+    for (const word of dictionaryWords as string[]) {
+      const base = baseFormSubstitution(word, ON_UNITS);
+      if (!base || !units.has(base.base)) continue;
+      checked += 1;
+      expect(score(word, ON_UNITS), `${word} rose to ${base.base}`).toBeLessThanOrEqual(
+        score(word, "2026-09-01")
+      );
+    }
+    // Non-vacuity: the loop has to be finding the family it is asserting about.
+    expect(checked).toBeGreaterThan(300);
   });
 });
 
@@ -1444,5 +1516,128 @@ describe("bare -est superlatives fold onto their adjective (from 2026-09-02)", (
     // than "furthest" (3.17), so the superlative keeps its own measurement.
     expect(score("furthest", ON_SUP)).toBe(score("furthest", BEFORE_SUP));
     expect(score("mopier", ON_SUP)).toBe(score("mopier", BEFORE_SUP));
+  });
+});
+
+// The 2026-09-02 cutover: a measurement modifier is scored as the unit it
+// counts. The transparent-prefix argument -- a prefixed word means its base plus
+// a modifier -- applied to the one prefix family whose residue can be checked
+// against a list rather than guessed at, which is what lets it run above
+// MEASURED_FLOOR where `prefixBaseCandidates` cannot. See MEASUREMENT_BASE_START
+// in dictionary.ts and measurementBaseCandidates in stem.ts.
+describe("measurement modifiers fold onto their unit (from 2026-09-02)", () => {
+  const BEFORE_UNITS = "2026-09-01"; // last day a multiplier bought a rarity
+  const ON_UNITS = "2026-09-02"; // first day the unit is what the word scores as
+
+  const MODIFIED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    // The word that prompted the rule. Measured at Zipf 1.62 and so far above
+    // the floor gate that no prefix rule could ever have reached it, yet a full
+    // point rarer than the joules it counts.
+    ["kilojoules", "joules", 9.08, 7.92],
+    ["megabytes", "bytes", 7.96, 6.85],
+    ["milliseconds", "second", 7.37, 3.47],
+    ["centimeters", "meters", 6.88, 5.52],
+    ["kilograms", "grams", 6.88, 6.07],
+    ["gigawatts", "watts", 8.32, 6.11],
+    // The deep-tail end of the same family: a unit with a multiplier bolted on
+    // that no corpus has ever measured, sitting at a flat 10.00 for it.
+    ["zeptosecond", "second", 10, 3.47],
+    ["exahertz", "hertz", 10, 7.13],
+    ["terapixels", "pixel", 10, 6.21],
+    ["kilocoulomb", "coulomb", 10, 8.04],
+    // The binary modifiers, which are measurement modifiers too.
+    ["gibibyte", "bytes", 10, 6.85],
+    // Three letters, the length `prefixBaseCandidates` refuses: the unit table
+    // is the guard here, so the short units it lists are safe to reach.
+    ["milliamps", "amp", 9.3, 6.1],
+    ["megaton", "tons", 8.12, 5.17],
+    // The chain keeps walking, as everywhere else -- through a second modifier
+    // ("micromillimeter") and through an ordinary prefix ("multimegaton").
+    ["micromillimeter", "meters", 7.03, 5.52],
+    ["multimegaton", "tons", 8.12, 5.17],
+  ];
+
+  it.each(MODIFIED)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON_UNITS)).toBe(after);
+    expect(score(word, ON_UNITS)).toBe(score(base, ON_UNITS));
+  });
+
+  it.each(MODIFIED)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_UNITS)).toBe(before);
+  });
+
+  it("names the unit as the base the player is shown", () => {
+    expect(baseFormSubstitution("kilojoules", ON_UNITS)?.base).toBe("joules");
+    expect(baseFormSubstitution("nanotesla", ON_UNITS)?.base).toBe("tesla");
+    expect(baseFormSubstitution("millimicron", ON_UNITS)?.base).toBe("micron");
+  });
+
+  it("refuses a word that merely opens with the letters of a modifier", () => {
+    // The reason this family cannot borrow `prefixBaseCandidates`' floor gate:
+    // the words it exists for are measured, so the gate would refuse them, and
+    // the coincidences it would otherwise catch are measured too. Every one of
+    // these strips to a real dictionary word -- "dent", "mate", "mine", "ring",
+    // "line", "toma", "phone", "pede" -- and the unit table is what refuses them.
+    for (const word of [
+      "decadent",
+      "decimate",
+      "examine",
+      "hectoring",
+      "picoline",
+      "petaline",
+      "teratoma",
+      "megaphone",
+      "millipede",
+      "centipede",
+      "microtones",
+    ]) {
+      expect(score(word, ON_UNITS), `${word} must not fold`).toBe(score(word, BEFORE_UNITS));
+    }
+  });
+
+  it("leaves the non-measurement senses of a modifier alone", () => {
+    // "micro-", "nano-" and "mega-" are also plain size modifiers, and a
+    // microwave is not a wave of anything measurable. The unit table draws that
+    // line for free: the residue has to be a unit, not merely a word.
+    for (const word of ["microwave", "microscope", "nanotechnology", "megachurch"]) {
+      expect(score(word, ON_UNITS), `${word} must not fold`).toBe(score(word, BEFORE_UNITS));
+    }
+  });
+
+  it("keeps the units whose spelling is really another word off the table", () => {
+    // "are" (the 100-square-metre unit) is the verb, "base" (the base pair) is
+    // the ordinary noun, and both would have handed a genuine unit a frequency
+    // collected from something else entirely -- "centiares" came back at 1.76 as
+    // `are`, "kilobase" as `based`. Deliberately absent; see MEASUREMENT_UNITS.
+    for (const word of ["centiare", "centiares", "deciares", "kilobase", "megabase"]) {
+      expect(score(word, ON_UNITS), `${word} must not fold`).toBe(score(word, BEFORE_UNITS));
+    }
+  });
+
+  it("admits a unit whose spelling is the ordinary word it is a unit of", () => {
+    // The other half of the table's judgement, and the one that looks like the
+    // refused cases but is not. "bar", "bit", "second" and "ton" are everyday
+    // words, and the unit is the *same* word rather than a homograph of it: a
+    // kilobar is a thousand bars of pressure, a gigabit a billion bits. So the
+    // fold onto a common word, and the low score it brings, is the rule working.
+    for (const [word, base] of [
+      ["kilobar", "bar"],
+      ["gigabit", "bit"],
+      ["millisecond", "second"],
+      ["megaton", "tons"],
+    ] as const) {
+      expect(baseFormSubstitution(word, ON_UNITS)?.base, word).toBe(base);
+      expect(score(word, ON_UNITS), word).toBe(score(base, ON_UNITS));
+    }
+  });
+
+  it("caps rather than promotes, like every other fold", () => {
+    // A modifier can only ever pull a word toward its unit's score, never past
+    // it. "farad" and "ampere" are rarer than the "microfarad" and
+    // "microampere" built on them, so the fold is inert there and the words keep
+    // exactly what they had.
+    for (const word of ["microfarad", "microfarads", "microampere", "microamperes"]) {
+      expect(score(word, ON_UNITS), word).toBe(score(word, BEFORE_UNITS));
+    }
   });
 });

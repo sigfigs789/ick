@@ -476,6 +476,63 @@ enough already that the fold has nothing to correct.
 
 ---
 
+## 11. Measurement modifiers — `kilo-`, `mega-`, `milli-`, … (2026-09-02 on)
+
+`measurementBaseCandidates` in [`stem.ts`](stem.ts), gated on the reviewed unit
+table `src/data/measurement-units.json`. A modified unit **is** the unit — a
+kilojoule is a joule, a thousand of them — so the unit is what the word should
+score as. §9's argument, with the residue checked instead of guessed at, which is
+what earns it an **ungated** fold where §9 needs the floor.
+
+The gap it closes sits on both sides of the floor. Below it, a unit with a
+multiplier bolted on is a compound no corpus has measured, so it sat at a flat
+10.00 ("zeptoseconds", "gigameter", "exahertz", "kilocoulomb", 47 Legends in
+all). Above it, the words the floor gate can never reach were scoring rarer than
+the units they count: "kilojoules" 9.08 against 7.92 for "joules",
+"milliseconds" 7.37 against 3.47 for "seconds". 302 words fold, none score
+higher.
+
+| Rule | Converts |
+|------|----------|
+| SI decimal modifier → the unit | kilojoules → joules, milliseconds → second, centimeters → meters |
+| binary (IEC) modifier → the unit | gibibyte → bytes, tebibit → bit |
+| chained through another modifier | micromillimeter → meters, multimegaton → tons |
+
+**Guard = the reviewed unit table, not the floor.** §9's misfires ("preface" →
+"face", "understand" → "stand") are all ordinary words sitting far above
+MEASURED_FLOOR, so the gate excludes them and the residue is never asked about.
+This family cannot borrow that: the words it exists for are *measured*
+themselves. So the check moves onto the residue, where "is this a unit" has a
+closed, reviewable answer that "is this a base" never had. It is also the
+stricter check — it refuses on the merits rather than on frequency, and a data
+refresh cannot move it.
+
+**False positives (blocked by the table):** "decadent" → dent, "decimate" →
+mate, "examine" → mine, "hectoring" → ring, "picoline"/"petaline" → line,
+"teratoma" → toma, "megaphone" → phone, "millipede"/"centipede" → pede. Every
+residue there is a real dictionary word, and every one of those words is measured
+— which is exactly why no gate could have caught them.
+
+**The size senses come free.** `micro-`, `nano-` and `mega-` are also plain size
+modifiers, and a microwave is not a wave of anything measurable. Requiring a
+*unit* rather than a word draws that line without a second rule: "microwave",
+"microscope", "nanotechnology" and "megachurch" are all untouched.
+
+**Both spellings and the plurals are listed** rather than derived. "kilojoules"
+strips to "joules", not to "joule", and deriving the singular from it turned
+"microtones" into a mass unit through "ton". So the table carries
+"meter"/"metre", "gram"/"gramme" and every plural spelling outright.
+
+**Three units are deliberately absent.** "are" (100 m²) is the verb, "ares" goes
+with it because the chain walks the plural straight to the singular, and "base"
+(the base pair) is the ordinary noun. Each would have handed a genuine unit a
+frequency collected from something else — "centiares" came back at 1.76 as `are`,
+"kilobase" as `based`. The collisions that *are* admitted are the ones where the
+ordinary word and the unit are the same word: a kilobar is a thousand bars of
+pressure, a gigabit a billion bits.
+
+---
+
 ## Cases not yet addressed
 
 The families above are the ones the engine handles. It handles a family only when
@@ -669,7 +726,8 @@ each is scored on its own frequency (or fixed one word at a time via an override
 **Nominalizations & big adjective-formers (false positives dominate)**
 - `-ation`/`-tion`/`-ion`, `-ance`/`-ence`, `-ity`/`-ty`, `-ous`, `-al`, `-ic`, `-ify`, `-ment`, `-ism`
 
-**Prefixes (transparent ones handled from 2026-08-24 — see §9)**
+**Prefixes (transparent ones handled from 2026-08-24 — see §9; the measurement
+modifiers from 2026-09-02 — see §11)**
 - Still open: `de-`, `re-`, `co-`, `dis-` — the four English fossilised onto
   Latin stems, where the word is as rare as the false base and the gate cannot
   separate them. Needs a vetted table (`scripts/fold-disagreements.py`).
