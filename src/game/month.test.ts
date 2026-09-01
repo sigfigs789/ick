@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  monthChampionSettling,
-  monthResetLabel,
-  monthStart,
-  nextMonthStart,
-} from "./month";
+import { monthChampionSettling, monthLabel, monthResetLabel, monthStart, nextMonthStart, previousMonthStart } from "./month";
 
 describe("monthly board window", () => {
   it("starts the month on the first", () => {
@@ -52,7 +47,7 @@ describe("monthly board window", () => {
     }
   });
 
-  it("holds last month's champion for the whole of the first and no longer", () => {
+  it("calls last month's champion unsettled for the first and no longer", () => {
     // The weekly board's rule, one window up -- see week.test.ts.
     expect(monthChampionSettling("2026-09-01")).toBe(true);
     expect(monthChampionSettling("2026-09-02")).toBe(false);
@@ -61,5 +56,24 @@ describe("monthly board window", () => {
     // And on no other day, including the last one, when the month being named
     // is the one still being played.
     expect(monthChampionSettling("2026-09-30")).toBe(false);
+  });
+});
+
+describe("stepping the monthly window back", () => {
+  it("takes the first of the month before", () => {
+    expect(previousMonthStart("2026-08-01")).toBe("2026-07-01");
+    // Any day of the month answers for the month it falls in.
+    expect(previousMonthStart("2026-08-26")).toBe("2026-07-01");
+  });
+
+  it("crosses a year backwards without wrapping to the wrong one", () => {
+    expect(previousMonthStart("2027-01-01")).toBe("2026-12-01");
+  });
+
+  it("names a past month with the year on it", () => {
+    // The year comes along because stepping back has no floor inside a year: a
+    // reader in January is two steps from November of the year before.
+    expect(monthLabel("2026-07-01")).toBe("July 2026");
+    expect(monthLabel("2026-12-14")).toBe("December 2026");
   });
 });

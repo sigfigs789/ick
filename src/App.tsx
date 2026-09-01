@@ -7,7 +7,6 @@ import { StreakDisplay } from "./components/StreakDisplay";
 import { ResultsPanel } from "./components/ResultsPanel";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { WordRulesModal } from "./components/WordRulesModal";
-import { SoundToggle } from "./components/SoundToggle";
 import { PuzzleNav } from "./components/PuzzleNav";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
@@ -29,7 +28,11 @@ import {
 import { recordVisit } from "./game/visits";
 import { hasSeen, markSeen } from "./game/whatsNew";
 import { navigate } from "./routes";
-import { beginSession, endSessionSegment, resumeSession } from "./game/sessionTime";
+import {
+  beginSession,
+  endSessionSegment,
+  resumeSession,
+} from "./game/sessionTime";
 
 export default function App() {
   useForceUpdate();
@@ -50,12 +53,19 @@ export default function App() {
     submitWord,
     resetAnswers,
   } = useDailyPuzzle();
-  const [showInstructions, setShowInstructions] = useState(false);
+  // A first-timer who never taps "?" never learns that rarer scores higher --
+  // which is the whole game -- so the rules open themselves once, and only
+  // once. Read on mount for the same reason as the badge below.
+  const [showInstructions, setShowInstructions] = useState(
+    () => !hasSeen("instructions"),
+  );
   const [showWordRules, setShowWordRules] = useState(false);
   // Read once on mount rather than on every render: this flips exactly once, in
   // openLeaderboard, and reading storage during a render would be the only
   // thing here that did.
-  const [leaderboardIsNew, setLeaderboardIsNew] = useState(() => !hasSeen("leaderboard"));
+  const [leaderboardIsNew, setLeaderboardIsNew] = useState(
+    () => !hasSeen("leaderboard"),
+  );
   const [showConfetti, setShowConfetti] = useState(false);
   const sound = useSound();
 
@@ -112,6 +122,13 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
+  function closeInstructions() {
+    // Opened by hand or opened for them, either way they have now met the
+    // rules: retire the auto-open for good.
+    markSeen("instructions");
+    setShowInstructions(false);
+  }
+
   function openLeaderboard(from: "header" | "results") {
     trackLeaderboardOpened(from);
     // Going there is meeting it, from either entry point -- the badge's whole job
@@ -123,7 +140,9 @@ export default function App() {
     navigate("leaderboard");
   }
 
-  const hasWinningWord = progress.acceptedWords.some((word) => isWinningRarity(word.rarity));
+  const hasWinningWord = progress.acceptedWords.some((word) =>
+    isWinningRarity(word.rarity),
+  );
   // Celebrate the first qualifying word only, never a puzzle restored
   // from storage that already contains one.
   const hadWinningWord = useRef(hasWinningWord);
@@ -143,18 +162,21 @@ export default function App() {
     <div className="app">
       {showConfetti && <ConfettiBurst />}
       <header className="app__header">
-        <SoundToggle enabled={sound.enabled} onToggle={sound.toggle} />
-        <div className="app__header-titles">
-          <h1>WordInk</h1>
-          <PuzzleNav
-            date={date}
-            puzzleNumber={puzzleNumber}
-            canGoToPrevious={canGoToPrevious}
-            canGoToNext={canGoToNext}
-            onPrevious={goToPrevious}
-            onNext={goToNext}
-          />
-        </div>
+        {/* The wordmark carries the beta chip rather than a banner: the game
+            really is changing under players week to week, and a permanent
+            label sets that expectation once, in the one place every screen
+            shows, without spending a row of the puzzle to say it. Title on
+            the chip so the curious get the reason; the h1 text stays
+            "WordInk" for screen readers and page semantics. */}
+        <h1>
+          WordInk
+          <span
+            className="app__beta"
+            title="Still being built — rules and scoring may change."
+          >
+            beta
+          </span>
+        </h1>
         <div className="app__header-actions">
           {/* Always here. Earlier versions withheld the trophy until the
               leaderboard had data -- which deadlocked the cold start, since
@@ -194,7 +216,24 @@ export default function App() {
       <Analytics />
       <SpeedInsights />
       <main>
-        <DropDisplay drop={drop} date={date} isToday={isToday} completed={progress.completed} />
+        {/* Below the header rather than inside it: which puzzle you are on is
+            part of the puzzle, not part of the app's identity, and the header
+            reads as one clean bar once it holds only the wordmark and the two
+            things you can go do. */}
+        <PuzzleNav
+          date={date}
+          puzzleNumber={puzzleNumber}
+          canGoToPrevious={canGoToPrevious}
+          canGoToNext={canGoToNext}
+          onPrevious={goToPrevious}
+          onNext={goToNext}
+        />
+        <DropDisplay
+          drop={drop}
+          date={date}
+          isToday={isToday}
+          completed={progress.completed}
+        />
         <GuessLog
           acceptedWords={progress.acceptedWords}
           completed={progress.completed}
@@ -218,14 +257,19 @@ export default function App() {
         />
 
         {import.meta.env.DEV && (
-          <button type="button" className="dev-reset-button" onClick={resetAnswers}>
+          <button
+            type="button"
+            className="dev-reset-button"
+            onClick={resetAnswers}
+          >
             Reset answers
           </button>
         )}
 
         {!progress.completed && !isToday && (
           <p className="archive-note">
-            You're playing an old puzzle — this is just for fun and won't affect your streak.
+            You're playing an old puzzle — this is just for fun and won't affect
+            your streak.
           </p>
         )}
 
@@ -262,8 +306,16 @@ export default function App() {
         )}
       </main>
 
-      <InstructionsModal open={showInstructions} onClose={() => setShowInstructions(false)} />
-      <WordRulesModal open={showWordRules} onClose={() => setShowWordRules(false)} />
+      <InstructionsModal
+        open={showInstructions}
+        onClose={closeInstructions}
+        soundEnabled={sound.enabled}
+        onToggleSound={sound.toggle}
+      />
+      <WordRulesModal
+        open={showWordRules}
+        onClose={() => setShowWordRules(false)}
+      />
     </div>
   );
 }

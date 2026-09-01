@@ -1,12 +1,20 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackFeedbackSubmitted } from "../analytics";
+import { SoundToggle } from "./SoundToggle";
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  soundEnabled: boolean;
+  onToggleSound: () => void;
 }
 
-export function InstructionsModal({ open, onClose }: Props) {
+export function InstructionsModal({
+  open,
+  onClose,
+  soundEnabled,
+  onToggleSound,
+}: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [feedback, setFeedback] = useState("");
   const [sent, setSent] = useState(false);
@@ -56,13 +64,21 @@ export function InstructionsModal({ open, onClose }: Props) {
             ×
           </button>
         </div>
-        <p className="modal__copy">WordInk gives everyone the same daily drop—say, “INK”. Find the rarest English word you can that contains it, like th<strong>INK</strong>, wr<strong>INK</strong>le, or <strong>INK</strong>ling.</p>
-        <p className="modal__rarity-note">
-          Rarity scores reflect how often a word appears across books, news, movies, websites, and
-          social media—not how complex it is. Values are computed using Zipf’s law. The highest ranks
-          are Mythic at 9.5+ and Legend at 9.9+.
+        <p className="modal__copy">
+          WordInk gives everyone the same daily drop—say, “INK”. Find the rarest
+          English word you can that contains it, like th<strong>INK</strong>, wr
+          <strong>INK</strong>le, or <strong>INK</strong>ling.
         </p>
-        <form className="word-suggestion feedback-form" onSubmit={submitFeedback}>
+        <p className="modal__rarity-note">
+          Rarity scores reflect how often a word appears across books, news,
+          movies, websites, and social media—not how complex it is. Values are
+          computed using Zipf’s law. The highest ranks are Mythic at 9.5+ and
+          Legend at 9.9+.
+        </p>
+        <form
+          className="word-suggestion feedback-form"
+          onSubmit={submitFeedback}
+        >
           <div className="word-suggestion__row feedback-form__row">
             <textarea
               id="game-feedback"
@@ -73,7 +89,7 @@ export function InstructionsModal({ open, onClose }: Props) {
                 setFeedback(event.target.value);
                 setSent(false);
               }}
-              placeholder="Share feedback, leave a suggestion, or help me grow the game"
+              placeholder="Share feedback"
               rows={2}
               maxLength={300}
             />
@@ -81,9 +97,14 @@ export function InstructionsModal({ open, onClose }: Props) {
               Send
             </button>
           </div>
-          {sent && <p className="word-suggestion__thanks">Thanks for the feedback!</p>}
+          {sent && (
+            <p className="word-suggestion__thanks">Thanks for the feedback!</p>
+          )}
         </form>
-        <p className="modal__signoff">Made by one person, for fun. Thanks for playing. 🙂</p>
+        <SoundToggle enabled={soundEnabled} onToggle={onToggleSound} />
+        <p className="modal__signoff">
+          Made by one person, for fun. Thanks for playing. 🙂
+        </p>
       </div>
     </div>
   );

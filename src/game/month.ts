@@ -69,7 +69,9 @@ export function monthResetLabel(date: string = todayDateString()): string {
  * Tuesday, 1 Sep" against the "Sep 1" the rest of the page uses.
  */
 function monthDayLabel(date: string): string {
-  const month = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { month: "short" });
+  const month = new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+  });
   return `${month} ${Number(date.slice(8, 10))}`;
 }
 
@@ -81,11 +83,34 @@ function monthDayLabel(date: string): string {
  * player's own midnight, so on the first the plaque under this board is naming a
  * winner that players a day behind can still displace. See
  * `weekChampionSettling` in game/week.ts for the reasoning; the only difference
- * is which boundary is being crossed, and so which day is held.
+ * is which boundary is being crossed, and so which day carries the caveat.
  */
 export function monthChampionSettling(
   date: string = todayDateString(),
 ): boolean {
   // The first is the one day that is its own month's start.
   return monthStart(date) === date;
+}
+
+/** The first of the month before the one `start` begins -- a step back. */
+export function previousMonthStart(start: string): string {
+  const [year, month] = monthStart(start).split("-").map(Number);
+  if (month === 1) return `${year - 1}-12-01`;
+  return `${year}-${String(month - 1).padStart(2, "0")}-01`;
+}
+
+/**
+ * `July 2026`, for a monthly board showing a window the reader has stepped back
+ * to.
+ *
+ * The year comes along because stepping back has no floor inside a year -- a
+ * reader in January is two steps from November of the year before, and a heading
+ * reading "November" there would be the one thing on the page a reader could get
+ * wrong without noticing. The live board says "This month" in the same slot.
+ */
+export function monthLabel(start: string): string {
+  return new Date(`${monthStart(start)}T00:00:00`).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
 }

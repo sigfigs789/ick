@@ -95,6 +95,17 @@
   --best-word-bg: #fbf3d6;
 
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Slow, then quick, then slow again -- an S-curve, where --ease-standard is a
+     decelerate curve that leaves at full speed and coasts to a stop.
+
+     The difference is who started the movement. A control the reader just tapped
+     should answer instantly, so --ease-standard front-loads it. A row travelling
+     up the finds feed was set off by a stranger finding a word, and the reader is
+     not looking at it yet: leaving at full speed means the first third is over
+     before their eye arrives, and all they see is the coast. Easing in gives them
+     that moment, the middle covers the distance, and easing out lands it
+     somewhere they can read. */
+  --ease-travel: cubic-bezier(0.7, 0, 0.3, 1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -244,9 +255,10 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
   padding: 1.25rem 0 1rem;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.25rem;
 }
 .app__header-titles {
   text-align: center;
@@ -259,6 +271,24 @@ h2 {
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+.app__beta {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.35rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.35rem;
+  background: var(--card-bg);
+  color: var(--fg-faint);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  /* Lifted off the baseline so it reads as a tag on the wordmark rather than a
+     shrunken second word sitting in the same line of type. */
+  position: relative;
+  top: -0.45em;
+}
 .app__puzzle-number {
   margin: 0;
   font-size: 0.75rem;
@@ -266,10 +296,10 @@ h2 {
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
 }
-/* The trophy and the "?" share the right end of the header. Two buttons rather
-   than one because they answer different questions and both want to be one tap
-   away; the gap is tight so the pair still reads as a single cluster balancing
-   the sound toggle on the left. */
+/* The trophy and the "?" share the right end of the header, opposite the
+   wordmark. Two buttons rather than one because they answer different questions
+   and both want to be one tap away; the gap is tight so the pair still reads as
+   a single cluster. */
 .app__header-actions {
   display: flex;
   align-items: center;
@@ -328,6 +358,31 @@ h2 {
   transform: scale(0.94);
 }
 
+/* The one setting the game has, sitting at the foot of the how-to-play sheet
+   as a row of type rather than an icon holding a corner of every screen. */
+.modal__setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 1.1rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.modal__setting:hover {
+  border-color: var(--border-strong);
+}
+.modal__setting-value {
+  font-weight: 700;
+  color: var(--fg);
+}
+
 .dev-reset-button {
   display: block;
   margin: 1rem auto 0;
@@ -344,15 +399,17 @@ h2 {
   color: var(--fg);
 }
 /* Puzzle archive navigation */
+/* Its own row under the header now, rather than a line inside it. */
 .puzzle-nav {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  margin-top: 0.25rem;
+  margin: 0 0 1.5rem;
 }
 .puzzle-nav__arrow,
-.found-words__arrow {
+.found-words__arrow,
+.leaderboard__board-arrow {
   min-height: 2rem;
   padding: 0.25rem 0.55rem;
   flex: none;
@@ -374,16 +431,19 @@ h2 {
     transform 0.15s var(--ease-standard);
 }
 .puzzle-nav__arrow:not(:disabled):hover,
-.found-words__arrow:not(:disabled):hover {
+.found-words__arrow:not(:disabled):hover,
+.leaderboard__board-arrow:not(:disabled):hover {
   background: var(--accent);
   color: var(--accent-fg);
 }
 .puzzle-nav__arrow:not(:disabled):active,
-.found-words__arrow:not(:disabled):active {
+.found-words__arrow:not(:disabled):active,
+.leaderboard__board-arrow:not(:disabled):active {
   transform: scale(0.96);
 }
 .puzzle-nav__arrow:disabled,
-.found-words__arrow:disabled {
+.found-words__arrow:disabled,
+.leaderboard__board-arrow:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -1496,12 +1556,53 @@ h2 {
 .found-words__item--arrived {
   animation: found-word-arrive 0.9s var(--ease-standard);
 }
+/*
+ * A word already on the feed that somebody else has just found.
+ *
+ * The same green as an arrival, because it is the same news -- but only the
+ * green. The row is not appearing, it is travelling: it has been on screen all
+ * along and the feed's ordering has lifted it back to the top. Playing the
+ * arrival animation on it would collapse it to no height and re-open it, which
+ * says "this is new" about the one row that isn't.
+ *
+ * Held a beat longer than the move it accompanies. This row is travelling at the
+ * same time, and a tint that has faded out before the journey ends leaves the
+ * reader watching an unremarkable row slide -- the glow is what says why it
+ * moved.
+ */
+@keyframes found-word-refound {
+  from,
+  55% {
+    background: var(--success-bg);
+  }
+  to {
+    background: transparent;
+  }
+}
+.found-words__item--refound {
+  animation: found-word-refound 2.4s var(--ease-standard);
+}
 .found-words__item {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
   padding: 0.35rem 0;
   border-bottom: 1px solid var(--border);
+  /*
+   * What the re-ordering rides on. The list is keyed by word, so a row that
+   * changes place is moved rather than rebuilt; the page offsets it back to
+   * where it was and releases it, and this carries it home (see FoundWords).
+   *
+   * Transform only. Transitioning anything else here would put a delay on the
+   * arrival animation's own properties and blunt it.
+   *
+   * A full second on an S-curve, both deliberately. This is not a control
+   * responding to a tap, where speed reads as crispness -- it is an event the
+   * reader did not cause and is not yet looking at, and the whole job is for
+   * their eye to catch the movement and follow it to the top. At half this it
+   * registered as a flicker: the list was simply different afterwards.
+   */
+  transition: transform 1s var(--ease-travel);
 }
 .found-words__word {
   flex: 1;
@@ -1791,16 +1892,29 @@ h2 {
    state holds open, so it is declared for the page rather than the board. */
 .leaderboard-page {
   --row-height: 3.03rem;
+  /* How far the docked row's ring and shadow reach past its own box: the 1px
+     ring, plus the widest `--dock-shadow` blur (14px at radius -4px, so 3px to
+     each side). What the list has to hold clear of its scrolling edges. */
+  --dock-bleed: 4px;
 }
 /* Five rows and the top of the sixth. The sliver is the affordance: a list cut
    cleanly at five looks like a list of five, and overlay scrollbars only appear
    once you are already scrolling -- so the half-row is what says there is more.
-   `contain` keeps a flick inside the board from carrying on into the page. */
+   `contain` keeps a flick inside the board from carrying on into the page.
+
+   The side padding is room for the docked row's outline. Scrolling on one axis
+   clips both, and the row filled the box to the pixel -- so its ring and shadow
+   were cut off flush at the left and right edges and the docked card read as a
+   band with square sides. The negative margin gives the padding back to the
+   page, so every row still starts and ends exactly where the column header
+   above it does. */
 .leaderboard__list {
   max-height: calc(var(--row-height) * 5 + 0.95rem);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
+  padding-inline: var(--dock-bleed);
+  margin-inline: calc(-1 * var(--dock-bleed));
 }
 /* Rank and score are fixed columns; the name takes what is left and the meta
    line tucks under it, so a long name truncates instead of shoving the score
@@ -1824,6 +1938,39 @@ h2 {
 .leaderboard__row--you {
   background: var(--bg-inset);
   border-radius: 0.45rem;
+}
+/*
+ * Stepping a board back through the windows that have closed.
+ *
+ * Under the heading and split to the ends, which is the shape the finds feed's
+ * pager already has on this page -- two controls doing the same job in two
+ * places should not be two shapes. Its own class rather than the feed's because
+ * the boards sit two to a row on a wide screen, where this one has to fit a
+ * column half the width.
+ */
+.leaderboard__board-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+/*
+ * A row holding the board's height while another window is fetched.
+ *
+ * The same box as a real row -- same height, same rule under it -- with nothing
+ * in it, so the board is exactly as tall as it is about to be and the page does
+ * not move under the button that was just pressed. It pulses rather than sitting
+ * still, so a stack of blank rules reads as a board arriving rather than as one
+ * full of nothing; the reduced-motion rule near the top of this file stops the
+ * pulse and leaves the height, which is the part doing the work.
+ */
+.leaderboard__row--placeholder {
+  display: block;
+  min-height: calc(var(--row-height) - 1px);
+  background: var(--bg-inset);
+  border-radius: 0.3rem;
+  animation: found-words-pending 1.1s ease-in-out infinite;
 }
 /*
  * Your own row, kept on screen however the board is scrolled.
@@ -1952,9 +2099,13 @@ h2 {
 .leaderboard__champion {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
+  /* The note row is empty on almost every plaque -- an unwon one, and an awarded
+     one on any day but the one its window turned over -- and an empty grid row
+     costs nothing, so it does not need its own template. */
   grid-template-areas:
     "trophy label score"
-    "trophy name  score";
+    "trophy name  score"
+    "note   note  note";
   align-items: center;
   column-gap: 0.6rem;
   margin: 0.7rem 0 0;
@@ -2000,6 +2151,59 @@ h2 {
   height: 1.35rem;
   border-bottom: 2px solid
     color-mix(in srgb, var(--best-word-accent) 40%, transparent);
+}
+/*
+ * The "i" beside the label on the day the winner can still change.
+ *
+ * Sized to the label rather than to a finger, and deliberately: it sits inside a
+ * line of small caps, and a control built out to a comfortable tap target would
+ * be the loudest thing on a plaque whose point is the name. So the ring stays
+ * the size of the text it annotates and the padding around it does the reaching
+ * -- the pressable box is bigger than the circle a reader sees.
+ */
+.leaderboard__champion-info {
+  /* Inline-flex so the glyph centres in the ring at any font size; middle rather
+     than baseline so the circle sits on the cap height of the label beside it
+     instead of hanging below the line. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-left: 0.35rem;
+  padding: 0;
+  width: 0.95rem;
+  height: 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--best-word-accent) 60%, transparent);
+  border-radius: 50%;
+  background: none;
+  color: color-mix(in srgb, var(--fg) 62%, var(--best-word-accent));
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 900;
+  /* The label is uppercased; a lowercase "i" is the shape that reads as
+     "information", so it opts out of the inherited transform. */
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1;
+  cursor: pointer;
+}
+.leaderboard__champion-info:hover,
+.leaderboard__champion-info[aria-expanded="true"] {
+  border-color: var(--best-word-accent);
+  color: var(--best-word-accent);
+}
+/* The sentence behind it. Set at the plaque's own muted weight rather than as a
+   warning: the result above it is right, and the note is a caveat on when it
+   goes final, not a correction of it. */
+.leaderboard__champion-note {
+  grid-area: note;
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid
+    color-mix(in srgb, var(--best-word-accent) 22%, transparent);
+  color: color-mix(in srgb, var(--fg) 72%, transparent);
+  font-size: 0.72rem;
+  line-height: 1.4;
 }
 .leaderboard__champion-trophy {
   grid-area: trophy;

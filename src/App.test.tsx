@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
+import { markSeen } from "./game/whatsNew";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
@@ -44,6 +45,9 @@ describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // Every test but the welcome one below is about the puzzle behind the
+    // rules, so start them as a returning player who has already read them.
+    markSeen("instructions");
     window.history.pushState(null, "", "/");
     vi.mocked(useSound).mockReturnValue({
       enabled: true,
@@ -52,6 +56,23 @@ describe("App", () => {
       reject: vi.fn(),
       complete: vi.fn(),
     });
+  });
+
+  it("opens the rules unasked on a first visit, and never again after", async () => {
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
+    // A genuine first-timer: nothing remembered at all, not even the rules.
+    localStorage.clear();
+    const { unmount } = render(<App />);
+
+    expect(screen.getByRole("dialog", { name: /how to play/i })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /close instructions/i }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    // And it stays closed on the next visit -- opening itself is a welcome,
+    // not a toll gate.
+    unmount();
+    render(<App />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("opens the instructions and submits a playable puzzle", async () => {

@@ -362,6 +362,19 @@ describe("api/leaderboard reads", () => {
     });
   });
 
+  it("bounds the weekly board to its own seven days", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    await handler(get(`?since=${SUNDAY}&month=${MONTH}`));
+
+    // The Saturday that closes the week the caller sent. It matters because the
+    // page can step this board back through weeks that have finished, and an
+    // unbounded window would answer "the week of the 23rd" with every score
+    // since the 23rd. For the live week it changes nothing -- its Saturday is
+    // today or later, and no puzzle exists past today.
+    expect(rpcCall(fetchMock)?.args.p_week_until).toBe("2026-08-29");
+  });
+
   it("ends a short month on its own last day", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
