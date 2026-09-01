@@ -22,7 +22,7 @@ let idDuringPageRender: string | null = null;
 const WORDS = [{ word: "inkling", rarity: "Rare" as const, zipf: 2.6 }];
 
 /** Remember a day this browser played, on its own date unless told otherwise. */
-function played(date: string, firstWordAt = `${date}T20:00:00.000Z`) {
+function played(date: string, firstWordAt = `${date}T20:00:00`) {
   localStorage.setItem(
     `ick:progress:${date}`,
     JSON.stringify({
@@ -98,7 +98,7 @@ describe("keeping the board in step on open", () => {
     played("2026-08-20");
     // Pulled out of the archive weeks later. Off the board here for the same
     // reason it is off the streak: you can look up the answers.
-    played("2026-07-04", "2026-08-24T19:00:00.000Z");
+    played("2026-07-04", "2026-08-24T19:00:00");
     const fetchMock = stubFetch();
 
     render(<Root />);

@@ -139,7 +139,7 @@ describe("submitting a score", () => {
 });
 
 /** A stored day, first played at the given time (default: on its own date). */
-function stored(date: string, firstWordAt = `${date}T20:00:00.000Z`): DailyProgress {
+function stored(date: string, firstWordAt = `${date}T20:00:00`): DailyProgress {
   return {
     date,
     drop: "ink",
@@ -242,7 +242,7 @@ describe("importing a joining player's history", () => {
     // the day and stays off the board.
     localStorage.setItem(
       "ick:progress:2026-08-10",
-      JSON.stringify(stored("2026-08-10", "2026-08-24T20:00:00.000Z"))
+      JSON.stringify(stored("2026-08-10", "2026-08-24T20:00:00"))
     );
     const fetchMock = stubFetch();
 
