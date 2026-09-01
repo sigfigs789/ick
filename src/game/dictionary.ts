@@ -4,6 +4,7 @@ import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
 import boundResidueData from "../data/bound-residues.json";
+import measurementUnitData from "../data/measurement-units.json";
 import wordRejectionData from "../data/word-rejections.json";
 import sameRootPinData from "../data/same-root-pins.json";
 import derivedRejectionData from "../data/derived-rejections.json";
@@ -15,6 +16,7 @@ import {
   derivedBaseCandidates,
   inflectedFormCandidates,
   inflectionalBaseCandidates,
+  measurementBaseCandidates,
   prefixBaseCandidates,
   superlativeBaseCandidates,
   unmeasuredBaseCandidates,
@@ -77,11 +79,22 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *   - on/after 2026-08-26: three changes replacing the fold's remaining
  *     frequency guesses with reviewed morphology (see REVIEWED_FOLD_START). No
  *     label mapping moves.
- *   - on/after 2026-08-27 (the latest system): the measured band bends by
+ *   - on/after 2026-08-27: the measured band bends by
  *     SCORE_GAMMA, and its labels key off the shown score's whole point instead
  *     of off Zipf cutoffs (see DECADE_BANDS_START). The first change moves every
  *     measured score up; the second is the only label mapping to move since
  *     2026-08-21.
+ *   - on/after 2026-09-02 (the latest system): two independent folds, one
+ *     cutover each, in the pattern of 2026-08-24.
+ *       * The bare "-est" superlative folds onto its adjective wherever the
+ *         "-er" comparative of the same spelling is a word, rather than only
+ *         below MEASURED_FLOOR (see SUPERLATIVE_BASE_START).
+ *       * A measurement modifier is scored as the unit it counts --
+ *         "kilojoules" as `joules`, "gibibyte" as `bytes`. Ungated by
+ *         MEASURED_FLOOR on the strength of a reviewed unit table; 302 words
+ *         score lower and none higher, 47 of them holding a Legend for a
+ *         multiplier (see MEASUREMENT_BASE_START).
+ *     Neither moves a label mapping.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -211,6 +224,29 @@ const SCORE_GAMMA = 0.9;
  * better ("beautifulest" 9.81, "perfectest" 9.85, "blindest" 9.85).
  */
 const SUPERLATIVE_BASE_START = "2026-09-02";
+
+/*
+ * 2026-09-02, the second of that day's two changes. A word carrying a
+ * measurement modifier -- an SI decimal prefix or its binary counterpart -- is
+ * scored as the unit it is counting: "kilojoules" as `joules`, "megabytes" as
+ * `bytes`, "zeptosecond" as `second`. A modified unit *is* the unit, so this is
+ * the transparent-prefix argument ("codriver" is a driver) applied to the one
+ * family where the residue can be checked rather than guessed at.
+ *
+ * Ungated by MEASURED_FLOOR, unlike `prefixBaseCandidates`, and the reviewed
+ * unit table is what pays for that (see `measurementUnit`). The gate is what a
+ * prefix family needs when its residue is drawn from the whole dictionary; a
+ * residue drawn from a closed list of units is not that.
+ *
+ * 283 words fold and 272 score lower, none higher. What they were holding was
+ * the compound nobody measures: "zeptoseconds" and "gigameter" at a flat 10.00
+ * Legend, "exahertz" and "kilocoulomb" the same, 44 more at Mythic or better --
+ * every one of them an ordinary unit with a multiplier bolted on. The change is
+ * not confined to the deep tail, which is the point of running above the floor:
+ * "kilojoules" was measured at Zipf 1.62 and scored 9.08 Elusive against 7.92
+ * for the joules it counts, and "milliseconds" 7.37 against 4.60 for "seconds".
+ */
+const MEASUREMENT_BASE_START = "2026-09-02";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -502,6 +538,75 @@ function boundPrefixResidue(residue: string, date?: string): boolean {
   return date === undefined || date >= entry.since;
 }
 
+// -- Measurement units (src/data/measurement-units.json) ---------------------
+/** A hand-reviewed unit of measure: a spelling a modifier may fold onto, from `since`. */
+interface MeasurementUnit {
+  since: string;
+  /** Review notes only -- nothing here reads it. */
+  note?: string;
+}
+
+/**
+ * The units a measurement modifier can be counting. "kilojoule" is a joule,
+ * "megabytes" are bytes, a "zeptosecond" is a second -- so the unit is what the
+ * modified word should be scored as, exactly as "codriver" is scored as a
+ * driver.
+ *
+ * An *allow*-list, where the prefix families next door deny (see
+ * `BOUND_RESIDUES`), and the direction is the whole design. A measurement
+ * modifier is as transparent an affix as English has, but the letters it is
+ * spelled with open a great many ordinary words -- "decadent", "decimate",
+ * "examine", "hectoring", "petaline", "picoline", "teratoma" -- and stripping
+ * the modifier off those lands on "dent", "mate", "mine", "ring", "line",
+ * "line" and "toma", every one a real dictionary word. `prefixBaseCandidates`
+ * survives that with the MEASURED_FLOOR gate: its own coincidences ("preface"
+ * -> "face", "understand" -> "stand") are all ordinary words sitting far above
+ * the floor, so the gate excludes them and asks nothing of the residue.
+ *
+ * This family cannot use that gate, because the words it exists for are
+ * measured: "kilojoules" carries a real Zipf of 1.62 and "milliseconds" 2.88,
+ * both well clear of the floor and both scoring rarer than the unit they count.
+ * So the check moves to the residue instead, and asking "is this a unit" is a
+ * question with a closed, reviewable answer in a way that "is this a base"
+ * never was. It is also the strictly better check: it refuses "decadent" and
+ * "megaphone" on the merits rather than on how common they happen to be, and it
+ * is unmoved by a frequency refresh.
+ *
+ * Both spellings of a unit that has two ("meter"/"metre", "gram"/"gramme") and
+ * the plurals, because the plural is a residue in its own right --
+ * "kilojoules" strips to "joules", not to "joule". Listing them beats deriving
+ * them: the "-es" strip that would turn "tones" into "ton" folded "microtones"
+ * onto the mass unit, and a microtone is a musical interval.
+ *
+ * Three units are deliberately absent, each because the spelling it shares with
+ * an ordinary word is the whole of what a corpus measures, so the fold would
+ * hand a real unit the frequency of something else entirely. "are" (100 square
+ * metres) is the verb, and folding "centiares" onto it took a Legend to 1.76.
+ * "ares" goes with it: leaving the plural in was no help, since the chain walks
+ * it straight to the singular. "base" is the base pair, a clipping rather than a
+ * unit spelling of its own, and "kilobase" came back scored as `based`.
+ *
+ * The collisions that *are* admitted are the ones where the ordinary word and
+ * the unit are the same word: a kilobar is a thousand bars of pressure, a
+ * gigabit a billion bits, a millisecond a thousandth of a second. Those fold
+ * onto a common word and score low for it, which is the rule working rather
+ * than failing.
+ *
+ * Dated like the other reviewed tables, and here an entry *lowers* the scores of
+ * everything folding through it, so an archived puzzle must not see a unit
+ * reviewed after it was played.
+ */
+const MEASUREMENT_UNITS: ReadonlyMap<string, MeasurementUnit> = new Map(
+  Object.entries(measurementUnitData as Record<string, MeasurementUnit>)
+);
+
+/** Whether `residue` is a reviewed unit of measure, under `date`'s puzzle. */
+function measurementUnit(residue: string, date?: string): boolean {
+  const entry = MEASUREMENT_UNITS.get(residue);
+  if (!entry) return false;
+  return date === undefined || date >= entry.since;
+}
+
 /** A dated scoring system: how to read a word's Zipf, score it, and label it. */
 interface Scoring {
   zipfAt(index: number): number;
@@ -571,6 +676,11 @@ interface Scoring {
   // `superlativeBaseCandidates`). 2026-09-02; off for earlier systems so past
   // puzzles' scores stay frozen (see SUPERLATIVE_BASE_START).
   superlativeBases: boolean;
+  // Whether a measurement modifier folds onto the unit it counts ("kilojoules"
+  // -> "joules"), ungated by MEASURED_FLOOR on the strength of the reviewed unit
+  // table. 2026-09-02; off for earlier systems so past puzzles' scores stay
+  // frozen (see MEASUREMENT_BASE_START).
+  measurementBases: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -605,6 +715,7 @@ interface ScoringFlags {
   prefixResidues?: boolean;
   derivedFormFolds?: boolean;
   superlativeBases?: boolean;
+  measurementBases?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
@@ -632,6 +743,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     prefixResidues = false,
     derivedFormFolds = false,
     superlativeBases = false,
+    measurementBases = false,
     narrowBands = false,
     scoreCurve = false,
     decadeBands = false,
@@ -690,6 +802,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     prefixResidues,
     derivedFormFolds,
     superlativeBases,
+    measurementBases,
   };
 }
 
@@ -783,9 +896,31 @@ const DECADE_SCORING: Scoring = twoBandScoring(9.9, 0, {
   scoreCurve: true,
   decadeBands: true,
 });
-// The latest system (2026-09-02): the same bands and curve, with the bare "-est"
-// superlative folding onto its adjective wherever the "-er" comparative attests
-// the reading. See SUPERLATIVE_BASE_START.
+// The 2026-09-02 system with the bare "-est" superlative folding onto its
+// adjective wherever the "-er" comparative attests the reading, but not the
+// measurement modifiers. Reached only if MEASUREMENT_BASE_START is ever moved
+// later than SUPERLATIVE_BASE_START; while the two dates are equal, scoringFor
+// steps straight past it to LATEST_SCORING -- the same ladder DERIVED_SCORING
+// and PREFIX_SCORING form for 2026-08-24. See SUPERLATIVE_BASE_START.
+const SUPERLATIVE_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  prefixBases: true,
+  paradigmFolds: true,
+  prefixResidues: true,
+  derivedFormFolds: true,
+  superlativeBases: true,
+  narrowBands: true,
+  scoreCurve: true,
+  decadeBands: true,
+});
+// The latest system (2026-09-02): both of that day's changes -- the bare "-est"
+// superlative, and a measurement modifier scored as the unit it counts. See
+// MEASUREMENT_BASE_START.
 const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
@@ -798,6 +933,7 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   prefixResidues: true,
   derivedFormFolds: true,
   superlativeBases: true,
+  measurementBases: true,
   narrowBands: true,
   scoreCurve: true,
   decadeBands: true,
@@ -835,6 +971,7 @@ const LEGACY_SCORING: Scoring = {
   prefixResidues: false,
   derivedFormFolds: false,
   superlativeBases: false,
+  measurementBases: false,
 };
 
 /**
@@ -935,6 +1072,10 @@ function scoringFor(date?: string): Scoring {
   if (date < REVIEWED_FOLD_START) return PREFIX_SCORING;
   if (date < DECADE_BANDS_START) return REVIEWED_SCORING;
   if (date < SUPERLATIVE_BASE_START) return DECADE_SCORING;
+  // Two rungs for 2026-09-02, laddered like the pair for 2026-08-24 so either
+  // change can move to a later date without dragging the other. While the dates
+  // are equal the middle rung is stepped over.
+  if (date < MEASUREMENT_BASE_START) return SUPERLATIVE_SCORING;
   return LATEST_SCORING;
 }
 
@@ -1745,6 +1886,15 @@ function addNonInflectionalBaseForms(
           add(candidate);
         }
       }
+    }
+  }
+  // The measurement modifiers, ungated for the same reason and on a different
+  // guarantee: not the ending but the *residue* is what is closed here, to a
+  // reviewed list of units (see MEASUREMENT_UNITS). "kilojoules" folds onto
+  // "joules" though both are measured, because a kilojoule is a joule.
+  if (scoring.measurementBases) {
+    for (const candidate of measurementBaseCandidates(word)) {
+      if (measurementUnit(candidate, date)) add(candidate);
     }
   }
   // The bound derivational families: an ending English only ever produces by

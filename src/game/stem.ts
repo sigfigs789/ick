@@ -493,6 +493,73 @@ export function prefixBaseCandidates(word: string): string[] {
 }
 
 /**
+ * The measurement modifiers: the SI decimal prefixes and their binary (IEC)
+ * counterparts, the affixes whose whole job is to say how many of the thing
+ * that follows. Ordered long-to-short like `TRANSPARENT_PREFIXES`, though
+ * nothing here overlaps today.
+ */
+const MEASUREMENT_PREFIXES = [
+  "yocto",
+  "zepto",
+  "yotta",
+  "zetta",
+  "femto",
+  "hecto",
+  "centi",
+  "micro",
+  "milli",
+  "deka",
+  "deca",
+  "deci",
+  "kilo",
+  "mega",
+  "giga",
+  "tera",
+  "peta",
+  "nano",
+  "pico",
+  "atto",
+  "yobi",
+  "zebi",
+  "exbi",
+  "pebi",
+  "tebi",
+  "gibi",
+  "mebi",
+  "kibi",
+  "exa",
+];
+
+/**
+ * The unit a measurement modifier is counting: "kilojoules" -> "joules",
+ * "megabytes" -> "bytes", "zeptosecond" -> "second". A modified unit *is* the
+ * unit -- a kilojoule is a joule, a thousand of them -- so the unit is what the
+ * word should be scored as, in the same way "codriver" is scored as a driver.
+ *
+ * Spelling only. The caller confirms the residue is a *unit* against the
+ * reviewed table in src/data/measurement-units.json, and that check is what
+ * earns this family its fold above MEASURED_FLOOR -- see `measurementUnit` in
+ * dictionary.ts for why the prefix alone cannot.
+ *
+ * Three letters rather than the four `prefixBaseCandidates` insists on. That
+ * floor is there because a short residue is where the wrong-word folds cluster,
+ * and a residue drawn from the whole dictionary has no other guard; here the
+ * table is the guard, and it is what admits "amp", "bar", "bit", "ohm", "rad"
+ * and "ton" while refusing every other three-letter residue in the language.
+ */
+export function measurementBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  for (const prefix of MEASUREMENT_PREFIXES) {
+    if (!w.startsWith(prefix)) continue;
+    const unit = w.slice(prefix.length);
+    if (unit.length < 3 || unit === w || out.includes(unit)) continue;
+    out.push(unit);
+  }
+  return out;
+}
+
+/**
  * Candidate base spellings for the two *bound* derivational suffixes whose base
  * is unambiguous: an "-ization"/"-isation" word is the noun of an "-ize"/"-ise"
  * verb ("organization" -> "organize"), and an "-ability"/"-ibility" word is the

@@ -1,0 +1,424 @@
+{
+  "amp": {
+    "since": "2026-09-02",
+    "note": "The everyday clipping of `ampere` -- `milliamps`."
+  },
+  "ampere": {
+    "since": "2026-09-02"
+  },
+  "amperes": {
+    "since": "2026-09-02",
+    "note": "Plural of `ampere`."
+  },
+  "amps": {
+    "since": "2026-09-02",
+    "note": "Plural of `amp`."
+  },
+  "bar": {
+    "since": "2026-09-02",
+    "note": "The pressure unit -- `millibars`, `kilobars`."
+  },
+  "bars": {
+    "since": "2026-09-02",
+    "note": "Plural of `bar`."
+  },
+  "becquerel": {
+    "since": "2026-09-02"
+  },
+  "becquerels": {
+    "since": "2026-09-02",
+    "note": "Plural of `becquerel`."
+  },
+  "bel": {
+    "since": "2026-09-02",
+    "note": "The unit the decibel is a tenth of -- `decibels`."
+  },
+  "bels": {
+    "since": "2026-09-02",
+    "note": "Plural of `bel`."
+  },
+  "bit": {
+    "since": "2026-09-02"
+  },
+  "bits": {
+    "since": "2026-09-02",
+    "note": "Plural of `bit`."
+  },
+  "byte": {
+    "since": "2026-09-02"
+  },
+  "bytes": {
+    "since": "2026-09-02",
+    "note": "Plural of `byte`."
+  },
+  "calorie": {
+    "since": "2026-09-02"
+  },
+  "calories": {
+    "since": "2026-09-02",
+    "note": "Plural of `calorie`."
+  },
+  "candela": {
+    "since": "2026-09-02"
+  },
+  "candelas": {
+    "since": "2026-09-02",
+    "note": "Plural of `candela`."
+  },
+  "coulomb": {
+    "since": "2026-09-02"
+  },
+  "coulombs": {
+    "since": "2026-09-02",
+    "note": "Plural of `coulomb`."
+  },
+  "curie": {
+    "since": "2026-09-02"
+  },
+  "curies": {
+    "since": "2026-09-02",
+    "note": "Plural of `curie`."
+  },
+  "cycle": {
+    "since": "2026-09-02",
+    "note": "Cycles per second, the pre-SI name for the hertz -- `kilocycles`, `megacycles`."
+  },
+  "cycles": {
+    "since": "2026-09-02",
+    "note": "Plural of `cycle`."
+  },
+  "dalton": {
+    "since": "2026-09-02"
+  },
+  "daltons": {
+    "since": "2026-09-02",
+    "note": "Plural of `dalton`."
+  },
+  "degree": {
+    "since": "2026-09-02"
+  },
+  "degrees": {
+    "since": "2026-09-02",
+    "note": "Plural of `degree`."
+  },
+  "dyne": {
+    "since": "2026-09-02"
+  },
+  "dynes": {
+    "since": "2026-09-02",
+    "note": "Plural of `dyne`."
+  },
+  "erg": {
+    "since": "2026-09-02"
+  },
+  "ergs": {
+    "since": "2026-09-02",
+    "note": "Plural of `erg`."
+  },
+  "farad": {
+    "since": "2026-09-02"
+  },
+  "farads": {
+    "since": "2026-09-02",
+    "note": "Plural of `farad`."
+  },
+  "flop": {
+    "since": "2026-09-02",
+    "note": "Floating-point operations per second -- `gigaflops`, `teraflops`."
+  },
+  "flops": {
+    "since": "2026-09-02",
+    "note": "Plural of `flop`."
+  },
+  "gauss": {
+    "since": "2026-09-02"
+  },
+  "gausses": {
+    "since": "2026-09-02",
+    "note": "Plural of `gauss`."
+  },
+  "gram": {
+    "since": "2026-09-02"
+  },
+  "gramme": {
+    "since": "2026-09-02",
+    "note": "The British spelling of `gram` -- `kilogrammes`."
+  },
+  "grammes": {
+    "since": "2026-09-02",
+    "note": "Plural of `gramme`."
+  },
+  "grams": {
+    "since": "2026-09-02",
+    "note": "Plural of `gram`."
+  },
+  "gray": {
+    "since": "2026-09-02"
+  },
+  "grays": {
+    "since": "2026-09-02",
+    "note": "Plural of `gray`."
+  },
+  "henries": {
+    "since": "2026-09-02",
+    "note": "Plural of `henry`."
+  },
+  "henry": {
+    "since": "2026-09-02"
+  },
+  "henrys": {
+    "since": "2026-09-02",
+    "note": "Plural of `henry`."
+  },
+  "hertz": {
+    "since": "2026-09-02"
+  },
+  "joule": {
+    "since": "2026-09-02"
+  },
+  "joules": {
+    "since": "2026-09-02",
+    "note": "Plural of `joule`."
+  },
+  "lambert": {
+    "since": "2026-09-02",
+    "note": "The luminance unit -- `millilamberts`."
+  },
+  "lamberts": {
+    "since": "2026-09-02",
+    "note": "Plural of `lambert`."
+  },
+  "liter": {
+    "since": "2026-09-02"
+  },
+  "liters": {
+    "since": "2026-09-02",
+    "note": "Plural of `liter`."
+  },
+  "litre": {
+    "since": "2026-09-02"
+  },
+  "litres": {
+    "since": "2026-09-02",
+    "note": "Plural of `litre`."
+  },
+  "lumen": {
+    "since": "2026-09-02"
+  },
+  "lumens": {
+    "since": "2026-09-02",
+    "note": "Plural of `lumen`."
+  },
+  "lux": {
+    "since": "2026-09-02"
+  },
+  "luxes": {
+    "since": "2026-09-02",
+    "note": "Plural of `lux`."
+  },
+  "meter": {
+    "since": "2026-09-02"
+  },
+  "meters": {
+    "since": "2026-09-02",
+    "note": "Plural of `meter`."
+  },
+  "metre": {
+    "since": "2026-09-02"
+  },
+  "metres": {
+    "since": "2026-09-02",
+    "note": "Plural of `metre`."
+  },
+  "micron": {
+    "since": "2026-09-02",
+    "note": "A millionth of a metre, itself modifiable -- `millimicrons`."
+  },
+  "microns": {
+    "since": "2026-09-02",
+    "note": "Plural of `micron`."
+  },
+  "molar": {
+    "since": "2026-09-02",
+    "note": "Moles per litre, the concentration unit -- `millimolar`, `nanomolar`."
+  },
+  "molars": {
+    "since": "2026-09-02",
+    "note": "Plural of `molar`."
+  },
+  "mole": {
+    "since": "2026-09-02"
+  },
+  "moles": {
+    "since": "2026-09-02",
+    "note": "Plural of `mole`."
+  },
+  "morgan": {
+    "since": "2026-09-02",
+    "note": "The genetic linkage unit -- `centimorgans`."
+  },
+  "morgans": {
+    "since": "2026-09-02",
+    "note": "Plural of `morgan`."
+  },
+  "newton": {
+    "since": "2026-09-02"
+  },
+  "newtons": {
+    "since": "2026-09-02",
+    "note": "Plural of `newton`."
+  },
+  "ohm": {
+    "since": "2026-09-02"
+  },
+  "ohms": {
+    "since": "2026-09-02",
+    "note": "Plural of `ohm`."
+  },
+  "osmol": {
+    "since": "2026-09-02",
+    "note": "The osmotic concentration unit -- `milliosmols`."
+  },
+  "osmols": {
+    "since": "2026-09-02",
+    "note": "Plural of `osmol`."
+  },
+  "parsec": {
+    "since": "2026-09-02"
+  },
+  "parsecs": {
+    "since": "2026-09-02",
+    "note": "Plural of `parsec`."
+  },
+  "pascal": {
+    "since": "2026-09-02"
+  },
+  "pascals": {
+    "since": "2026-09-02",
+    "note": "Plural of `pascal`."
+  },
+  "pixel": {
+    "since": "2026-09-02"
+  },
+  "pixels": {
+    "since": "2026-09-02",
+    "note": "Plural of `pixel`."
+  },
+  "poise": {
+    "since": "2026-09-02",
+    "note": "The viscosity unit -- `centipoise`."
+  },
+  "poises": {
+    "since": "2026-09-02",
+    "note": "Plural of `poise`."
+  },
+  "rad": {
+    "since": "2026-09-02"
+  },
+  "radian": {
+    "since": "2026-09-02"
+  },
+  "radians": {
+    "since": "2026-09-02",
+    "note": "Plural of `radian`."
+  },
+  "rads": {
+    "since": "2026-09-02",
+    "note": "Plural of `rad`."
+  },
+  "rem": {
+    "since": "2026-09-02"
+  },
+  "rems": {
+    "since": "2026-09-02",
+    "note": "Plural of `rem`."
+  },
+  "roentgen": {
+    "since": "2026-09-02"
+  },
+  "roentgens": {
+    "since": "2026-09-02",
+    "note": "Plural of `roentgen`."
+  },
+  "second": {
+    "since": "2026-09-02"
+  },
+  "seconds": {
+    "since": "2026-09-02",
+    "note": "Plural of `second`."
+  },
+  "siemens": {
+    "since": "2026-09-02"
+  },
+  "sievert": {
+    "since": "2026-09-02"
+  },
+  "sieverts": {
+    "since": "2026-09-02",
+    "note": "Plural of `sievert`."
+  },
+  "steradian": {
+    "since": "2026-09-02"
+  },
+  "steradians": {
+    "since": "2026-09-02",
+    "note": "Plural of `steradian`."
+  },
+  "stere": {
+    "since": "2026-09-02",
+    "note": "The cubic-metre timber unit -- `decasteres`."
+  },
+  "steres": {
+    "since": "2026-09-02",
+    "note": "Plural of `stere`."
+  },
+  "tesla": {
+    "since": "2026-09-02"
+  },
+  "teslas": {
+    "since": "2026-09-02",
+    "note": "Plural of `tesla`."
+  },
+  "ton": {
+    "since": "2026-09-02"
+  },
+  "tonne": {
+    "since": "2026-09-02"
+  },
+  "tonnes": {
+    "since": "2026-09-02",
+    "note": "Plural of `tonne`."
+  },
+  "tons": {
+    "since": "2026-09-02",
+    "note": "Plural of `ton`."
+  },
+  "torr": {
+    "since": "2026-09-02"
+  },
+  "torrs": {
+    "since": "2026-09-02",
+    "note": "Plural of `torr`."
+  },
+  "volt": {
+    "since": "2026-09-02"
+  },
+  "volts": {
+    "since": "2026-09-02",
+    "note": "Plural of `volt`."
+  },
+  "watt": {
+    "since": "2026-09-02"
+  },
+  "watts": {
+    "since": "2026-09-02",
+    "note": "Plural of `watt`."
+  },
+  "weber": {
+    "since": "2026-09-02"
+  },
+  "webers": {
+    "since": "2026-09-02",
+    "note": "Plural of `weber`."
+  }
+}

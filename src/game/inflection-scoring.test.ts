@@ -1446,3 +1446,109 @@ describe("bare -est superlatives fold onto their adjective (from 2026-09-02)", (
     expect(score("mopier", ON_SUP)).toBe(score("mopier", BEFORE_SUP));
   });
 });
+
+// The 2026-09-02 cutover: a measurement modifier is scored as the unit it
+// counts. The transparent-prefix argument -- a prefixed word means its base plus
+// a modifier -- applied to the one prefix family whose residue can be checked
+// against a list rather than guessed at, which is what lets it run above
+// MEASURED_FLOOR where `prefixBaseCandidates` cannot. See MEASUREMENT_BASE_START
+// in dictionary.ts and measurementBaseCandidates in stem.ts.
+describe("measurement modifiers fold onto their unit (from 2026-09-02)", () => {
+  const BEFORE_UNITS = "2026-09-01"; // last day a multiplier bought a rarity
+  const ON_UNITS = "2026-09-02"; // first day the unit is what the word scores as
+
+  const MODIFIED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    // The word that prompted the rule. Measured at Zipf 1.62 and so far above
+    // the floor gate that no prefix rule could ever have reached it, yet a full
+    // point rarer than the joules it counts.
+    ["kilojoules", "joules", 9.08, 7.92],
+    ["megabytes", "bytes", 7.96, 6.85],
+    ["milliseconds", "second", 7.37, 3.47],
+    ["centimeters", "meters", 6.88, 5.52],
+    ["kilograms", "grams", 6.88, 6.07],
+    ["gigawatts", "watts", 8.32, 6.11],
+    // The deep-tail end of the same family: a unit with a multiplier bolted on
+    // that no corpus has ever measured, sitting at a flat 10.00 for it.
+    ["zeptosecond", "second", 10, 3.47],
+    ["exahertz", "hertz", 10, 7.13],
+    ["terapixels", "pixel", 10, 6.21],
+    ["kilocoulomb", "coulomb", 10, 8.04],
+    // The binary modifiers, which are measurement modifiers too.
+    ["gibibyte", "bytes", 10, 6.85],
+    // Three letters, the length `prefixBaseCandidates` refuses: the unit table
+    // is the guard here, so the short units it lists are safe to reach.
+    ["milliamps", "amp", 9.3, 6.1],
+    ["megaton", "tons", 8.12, 5.17],
+    // The chain keeps walking, as everywhere else -- through a second modifier
+    // ("micromillimeter") and through an ordinary prefix ("multimegaton").
+    ["micromillimeter", "meters", 7.03, 5.52],
+    ["multimegaton", "tons", 8.12, 5.17],
+  ];
+
+  it.each(MODIFIED)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON_UNITS)).toBe(after);
+    expect(score(word, ON_UNITS)).toBe(score(base, ON_UNITS));
+  });
+
+  it.each(MODIFIED)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_UNITS)).toBe(before);
+  });
+
+  it("names the unit as the base the player is shown", () => {
+    expect(baseFormSubstitution("kilojoules", ON_UNITS)?.base).toBe("joules");
+    expect(baseFormSubstitution("nanotesla", ON_UNITS)?.base).toBe("tesla");
+    expect(baseFormSubstitution("millimicron", ON_UNITS)?.base).toBe("micron");
+  });
+
+  it("refuses a word that merely opens with the letters of a modifier", () => {
+    // The reason this family cannot borrow `prefixBaseCandidates`' floor gate:
+    // the words it exists for are measured, so the gate would refuse them, and
+    // the coincidences it would otherwise catch are measured too. Every one of
+    // these strips to a real dictionary word -- "dent", "mate", "mine", "ring",
+    // "line", "toma", "phone", "pede" -- and the unit table is what refuses them.
+    for (const word of [
+      "decadent",
+      "decimate",
+      "examine",
+      "hectoring",
+      "picoline",
+      "petaline",
+      "teratoma",
+      "megaphone",
+      "millipede",
+      "centipede",
+      "microtones",
+    ]) {
+      expect(score(word, ON_UNITS), `${word} must not fold`).toBe(score(word, BEFORE_UNITS));
+    }
+  });
+
+  it("leaves the non-measurement senses of a modifier alone", () => {
+    // "micro-", "nano-" and "mega-" are also plain size modifiers, and a
+    // microwave is not a wave of anything measurable. The unit table draws that
+    // line for free: the residue has to be a unit, not merely a word.
+    for (const word of ["microwave", "microscope", "nanotechnology", "megachurch"]) {
+      expect(score(word, ON_UNITS), `${word} must not fold`).toBe(score(word, BEFORE_UNITS));
+    }
+  });
+
+  it("keeps the units whose spelling is really another word off the table", () => {
+    // "are" (the 100-square-metre unit) is the verb, "base" (the base pair) is
+    // the ordinary noun, and both would have handed a genuine unit a frequency
+    // collected from something else entirely -- "centiares" came back at 1.76 as
+    // `are`, "kilobase" as `based`. Deliberately absent; see MEASUREMENT_UNITS.
+    for (const word of ["centiare", "centiares", "deciares", "kilobase", "megabase"]) {
+      expect(score(word, ON_UNITS), `${word} must not fold`).toBe(score(word, BEFORE_UNITS));
+    }
+  });
+
+  it("caps rather than promotes, like every other fold", () => {
+    // A modifier can only ever pull a word toward its unit's score, never past
+    // it. "farad" and "ampere" are rarer than the "microfarad" and
+    // "microampere" built on them, so the fold is inert there and the words keep
+    // exactly what they had.
+    for (const word of ["microfarad", "microfarads", "microampere", "microamperes"]) {
+      expect(score(word, ON_UNITS), word).toBe(score(word, BEFORE_UNITS));
+    }
+  });
+});
