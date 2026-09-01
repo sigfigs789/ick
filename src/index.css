@@ -244,9 +244,10 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.75rem;
   padding: 1.25rem 0 1rem;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.25rem;
 }
 .app__header-titles {
   text-align: center;
@@ -284,10 +285,10 @@ h2 {
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
 }
-/* The trophy and the "?" share the right end of the header. Two buttons rather
-   than one because they answer different questions and both want to be one tap
-   away; the gap is tight so the pair still reads as a single cluster balancing
-   the sound toggle on the left. */
+/* The trophy and the "?" share the right end of the header, opposite the
+   wordmark. Two buttons rather than one because they answer different questions
+   and both want to be one tap away; the gap is tight so the pair still reads as
+   a single cluster. */
 .app__header-actions {
   display: flex;
   align-items: center;
@@ -346,6 +347,31 @@ h2 {
   transform: scale(0.94);
 }
 
+/* The one setting the game has, sitting at the foot of the how-to-play sheet
+   as a row of type rather than an icon holding a corner of every screen. */
+.modal__setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 1.1rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.modal__setting:hover {
+  border-color: var(--border-strong);
+}
+.modal__setting-value {
+  font-weight: 700;
+  color: var(--fg);
+}
+
 .dev-reset-button {
   display: block;
   margin: 1rem auto 0;
@@ -362,12 +388,13 @@ h2 {
   color: var(--fg);
 }
 /* Puzzle archive navigation */
+/* Its own row under the header now, rather than a line inside it. */
 .puzzle-nav {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  margin-top: 0.25rem;
+  margin: 0 0 1.5rem;
 }
 .puzzle-nav__arrow,
 .found-words__arrow,
