@@ -106,7 +106,7 @@ export function GuessLog({
               </span>
             )}
             <span className="guess-log__count">
-              {acceptedWords.length} of {maxGuesses} used
+              {acceptedWords.length} of {maxGuesses} guesses used
             </span>
           </span>
         </div>
