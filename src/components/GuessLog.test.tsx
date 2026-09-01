@@ -135,10 +135,13 @@ describe("GuessLog retry", () => {
     expect(screen.getByRole("button", { name: /^Copy "strange"/i })).toBeInTheDocument();
   });
 
-  it("says the retry is gone rather than withdrawing the control", () => {
-    render(<GuessLog acceptedWords={words} retrySpent />);
-    expect(screen.getByText(/retry used — once per day/i)).toBeInTheDocument();
+  it("withdraws the control once the retry is spent, saying so only in the header", () => {
+    render(<GuessLog acceptedWords={words} retrySpent retriesLeft={0} />);
+    expect(screen.getByText("0 retries")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /retry a word/i })).not.toBeInTheDocument();
+    // The header counter already says it; a line under the log repeating it was
+    // the same sentence twice.
+    expect(screen.queryByText(/once per day/i)).not.toBeInTheDocument();
   });
 
   it("still offers the retry on a puzzle the last guess finished", () => {

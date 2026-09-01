@@ -89,11 +89,19 @@ export function GuessLog({
           {/* Both of the day's allowances, in the order they are spent: the
               retry sits left of the guesses because it is the smaller, rarer
               one and reads as a modifier on them. Absent entirely on a puzzle
-              that carries no retry, rather than shown as zero -- a day that
-              never had one has nothing to report. */}
+              that carries no retry, rather than shown as spent -- a day that
+              never had one has nothing to report.
+
+              Counted rather than named, and it counts down where the guesses
+              count up: "0 retries" says the whole thing on its own, which is
+              why nothing under the log repeats it. */}
           <span className="guess-log__meters">
             {retriesLeft !== null && (
-              <span className="guess-log__retries">
+              <span
+                className={`guess-log__retries${
+                  retriesLeft === 0 ? " guess-log__retries--spent" : ""
+                }`}
+              >
                 {retriesLeft} retr{retriesLeft === 1 ? "y" : "ies"}
               </span>
             )}
@@ -231,12 +239,7 @@ export function GuessLog({
             >
               <span aria-hidden="true">↺</span> Retry a word
             </button>
-          ) : (
-            // Said rather than silently withdrawn: a control that vanishes reads
-            // as a bug, and this is also where a player who spent the retry
-            // without reading the prompt finds out there isn't another.
-            <p className="guess-log__retry-spent">Retry used — once per day.</p>
-          )}
+          ) : null}
         </div>
       )}
 

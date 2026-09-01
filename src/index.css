@@ -751,6 +751,11 @@ h2 {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* Spent: faded to the faint ink, so a used-up allowance reads as gone at a
+ * glance rather than by reading the number. */
+.guess-log__retries--spent {
+  color: var(--fg-faint);
+}
 
 /* Retry: one word per puzzle can be swapped out (see game/storage.retryWord).
  *
