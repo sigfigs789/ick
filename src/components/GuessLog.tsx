@@ -86,27 +86,28 @@ export function GuessLog({
       {!completed && (
         <div className="guess-log__header">
           <h2 className="guess-log__title">Guess log</h2>
-          {/* Both of the day's allowances, in the order they are spent: the
-              retry sits left of the guesses because it is the smaller, rarer
-              one and reads as a modifier on them. Absent entirely on a puzzle
-              that carries no retry, rather than shown as spent -- a day that
-              never had one has nothing to report.
-
-              Counted rather than named, and it counts down where the guesses
-              count up: "0 retries" says the whole thing on its own, which is
-              why nothing under the log repeats it. */}
+          {/* Both of the day's allowances, as matching chips: what you have
+              left of each, counting down, named so neither number depends on
+              its position to say what it is. The retry sits left of the guesses
+              because it is the smaller, rarer one and reads as a modifier on
+              them, and is absent entirely on a puzzle that carries none --
+              which is a different thing from having none left. */}
           <span className="guess-log__meters">
             {retriesLeft !== null && (
               <span
-                className={`guess-log__retries${
-                  retriesLeft === 0 ? " guess-log__retries--spent" : ""
+                className={`guess-log__chip${
+                  retriesLeft === 0 ? " guess-log__chip--spent" : ""
                 }`}
               >
                 {retriesLeft} retr{retriesLeft === 1 ? "y" : "ies"}
               </span>
             )}
-            <span className="guess-log__count">
-              {acceptedWords.length} of {maxGuesses} guesses used
+            <span
+              className={`guess-log__chip${
+                guessesLeft === 0 ? " guess-log__chip--spent" : ""
+              }`}
+            >
+              {guessesLeft} guess{guessesLeft === 1 ? "" : "es"}
             </span>
           </span>
         </div>
@@ -245,7 +246,7 @@ export function GuessLog({
 
       {!completed && guessesLeft > 0 && acceptedWords.length > 0 && (
         <p className="guess-log__remaining">
-          {guessesLeft} guess{guessesLeft === 1 ? "" : "es"} left. Aim for the highest rarity you can find.
+          Aim for the highest rarity you can find.
         </p>
       )}
 

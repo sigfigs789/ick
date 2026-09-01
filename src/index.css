@@ -584,15 +584,6 @@ h2 {
   font-size: 0.95rem;
   font-weight: 800;
 }
-/* With only four guesses a day, the count carries real weight -- match the
-   heading's size and weight and use the muted (not faint) ink so it reads as
-   information rather than a footnote. */
-.guess-log__count {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: var(--fg-muted);
-  font-variant-numeric: tabular-nums;
-}
 .guess-log__empty {
   margin: 0;
   padding: 0.9rem 1.1rem;
@@ -735,11 +726,11 @@ h2 {
   align-items: baseline;
   gap: 0.5rem;
 }
-/* Quieter than the guess count beside it: one retry is a safety net, not the
- * thing to play toward, and it should not compete with the number that says how
- * much of the puzzle is left. Boxed so it reads as a token you hold and spend
- * rather than a second running tally. */
-.guess-log__retries {
+/* Both allowances wear the same chip, because they are the same kind of thing:
+ * something you hold a countable number of and spend down over the puzzle.
+ * Boxed rather than set as running text so each reads as a token you have left
+ * rather than a tally you have to interpret. */
+.guess-log__chip {
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -751,9 +742,9 @@ h2 {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-/* Spent: faded to the faint ink, so a used-up allowance reads as gone at a
+/* Empty: faded to the faint ink, so a spent allowance reads as gone at a
  * glance rather than by reading the number. */
-.guess-log__retries--spent {
+.guess-log__chip--spent {
   color: var(--fg-faint);
 }
 

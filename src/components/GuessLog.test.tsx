@@ -27,14 +27,13 @@ describe("GuessLog", () => {
     render(<GuessLog acceptedWords={words} />);
     expect(screen.getByText("strange")).toBeInTheDocument();
     expect(screen.getByText("strut")).toBeInTheDocument();
-    expect(screen.getByText("2 of 4 guesses used")).toBeInTheDocument();
+    expect(screen.getByText("2 guesses")).toBeInTheDocument();
   });
 
   it("counts against the six-guess limit an archive puzzle played with", () => {
     const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
     render(<GuessLog acceptedWords={words} date="2024-01-01" />);
-    expect(screen.getByText("1 of 6 guesses used")).toBeInTheDocument();
-    expect(screen.getByText(/5 guesses left/i)).toBeInTheDocument();
+    expect(screen.getByText("5 guesses")).toBeInTheDocument();
   });
 
   it("names the common form when scoring on it cost the guess real points", () => {
@@ -160,7 +159,7 @@ describe("GuessLog retry counter", () => {
     // it on.
     render(<GuessLog acceptedWords={[]} retriesLeft={1} />);
     expect(screen.getByText("1 retry")).toBeInTheDocument();
-    expect(screen.getByText("0 of 4 guesses used")).toBeInTheDocument();
+    expect(screen.getByText("4 guesses")).toBeInTheDocument();
   });
 
   it("counts down to zero once it is spent", () => {
@@ -173,6 +172,6 @@ describe("GuessLog retry counter", () => {
     // feature started, never had a retry to report.
     render(<GuessLog acceptedWords={words} retriesLeft={null} />);
     expect(screen.queryByText(/retr(y|ies)$/)).not.toBeInTheDocument();
-    expect(screen.getByText("1 of 4 guesses used")).toBeInTheDocument();
+    expect(screen.getByText("3 guesses")).toBeInTheDocument();
   });
 });
