@@ -4,7 +4,6 @@ import {
   loadOrCreateProgress,
   loadProgress,
   loadStreak,
-  lockInResult,
   newProgress,
   playedOnItsDay,
   recordAcceptedWord,
@@ -16,7 +15,7 @@ import { rarityScore } from "./dictionary";
 // Every fixture date here predates the five-guess cutover, so these tests run
 // against the six-guess limit those puzzles played with.
 const MAX_GUESSES = maxGuessesFor("2024-01-01");
-import type { AcceptedWord, Rarity } from "./types";
+import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 
 function word(w: string, zipf = 5, rarity: Rarity = "Common"): AcceptedWord {
   return { word: w, rarity, zipf };
@@ -247,12 +246,15 @@ describe("recordAcceptedWord", () => {
     expect(loadStreak()).toMatchObject({ currentStreak: 1, crushedIt: 1, elite: 0 });
   });
 
-  it("tracks an Extremely Rare locked-in win as Elite", () => {
+  it("tracks an Extremely Rare win as Elite", () => {
     let p = recordAcceptedWord(
       newProgress("2024-01-01", "str"),
       word("stranger", 2.4, "Extremely Rare")
     );
-    p = lockInResult(p);
+    // Elite is banked on the word itself; spending the rest of the guesses is
+    // only what makes the puzzle report `won`.
+    expect(loadStreak()).toMatchObject({ crushedIt: 1, elite: 1 });
+    for (let i = 1; i < MAX_GUESSES; i++) p = recordAcceptedWord(p, word(`filler${i}`));
     expect(p.won).toBe(true);
     expect(loadStreak()).toMatchObject({ crushedIt: 1, elite: 1 });
   });
@@ -301,37 +303,50 @@ describe("recordRejectedAttempt", () => {
   });
 });
 
-describe("lockInResult", () => {
-  it("does nothing if no words have been accepted yet", () => {
-    const p = newProgress("2024-01-01", "str");
-    expect(lockInResult(p)).toBe(p);
-  });
+/**
+ * Finishing a puzzle, which now happens exactly one way: the last guess.
+ *
+ * These used to exercise `lockInResult`, the player-initiated early finish
+ * behind the "I'm done guessing" button. The button is gone and so is the
+ * function -- what it did to the record (completed, won, completedAt,
+ * totalCompleted) is now only ever done by spending the guess limit, so the
+ * same properties are asserted against that path.
+ */
+describe("completing a puzzle at the guess limit", () => {
+  /** Spend every guess on `date`'s puzzle, with the first word setting the win. */
+  function playOut(date: string, first: AcceptedWord): DailyProgress {
+    let p = recordAcceptedWord(newProgress(date, "str"), first);
+    for (let i = 1; i < maxGuessesFor(date); i++) {
+      p = recordAcceptedWord(p, word(`filler${i}`));
+    }
+    return p;
+  }
 
-  it("locks in a qualifying result without updating the streak again", () => {
+  it("does not complete a puzzle with guesses still in hand", () => {
     let p = newProgress("2024-01-01", "str");
     p = recordAcceptedWord(p, word("strange", 3.2, "Rare"));
-    const streakBeforeLockIn = loadStreak().currentStreak;
-    const locked = lockInResult(p);
-    expect(locked.completed).toBe(true);
-    expect(locked.won).toBe(true);
-    expect(locked.acceptedWords).toHaveLength(1);
+    expect(p.completed).toBe(false);
+    expect(loadStreak().totalCompleted).toBe(0);
+  });
+
+  it("records a qualifying result without updating the streak again", () => {
+    const streakAfterFirstWord = (() => {
+      recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange", 3.2, "Rare"));
+      return loadStreak().currentStreak;
+    })();
+    localStorage.clear();
+
+    const done = playOut("2024-01-01", word("strange", 3.2, "Rare"));
+    expect(done.completed).toBe(true);
+    expect(done.won).toBe(true);
     expect(loadStreak().currentStreak).toBe(1);
-    expect(loadStreak().currentStreak).toBe(streakBeforeLockIn);
+    expect(loadStreak().currentStreak).toBe(streakAfterFirstWord);
     expect(loadStreak().totalCompleted).toBe(1);
   });
 
-  it("is a no-op once already completed", () => {
-    let p = newProgress("2024-01-01", "str");
-    p = recordAcceptedWord(p, word("strange", 3.2, "Rare"));
-    const locked = lockInResult(p);
-    expect(lockInResult(locked)).toBe(locked);
-  });
-
   it("counts an archived Rare win without advancing the streak", () => {
-    let p = newProgress("2023-06-01", "str");
-    p = recordAcceptedWord(p, word("strange", 3.2, "Rare"));
-    const locked = lockInResult(p);
-    expect(locked.completed).toBe(true);
+    const done = playOut("2023-06-01", word("strange", 3.2, "Rare"));
+    expect(done.completed).toBe(true);
     expect(loadStreak()).toMatchObject({
       currentStreak: 0,
       totalCompleted: 1,
@@ -341,9 +356,7 @@ describe("lockInResult", () => {
   });
 
   it("counts an archived Extremely Rare win as Elite without advancing the streak", () => {
-    let p = newProgress("2023-06-01", "str");
-    p = recordAcceptedWord(p, word("stranger", 2.4, "Extremely Rare"));
-    lockInResult(p);
+    playOut("2023-06-01", word("stranger", 2.4, "Extremely Rare"));
     expect(loadStreak()).toMatchObject({
       currentStreak: 0,
       totalCompleted: 1,
@@ -354,11 +367,19 @@ describe("lockInResult", () => {
 });
 
 describe("streak continuation", () => {
+  /** Play `date`'s puzzle out to its guess limit, winning it on the first word. */
   function complete(date: string) {
     setToday(date);
-    let p = newProgress(date, "str");
-    p = recordAcceptedWord(p, word(`w-${date}`, 3.2, "Rare"));
-    return lockInResult(p);
+    return playOut(date);
+  }
+
+  /** The same, without moving "today" -- for finishing an old puzzle in place. */
+  function playOut(date: string) {
+    let p = recordAcceptedWord(newProgress(date, "str"), word(`w-${date}`, 3.2, "Rare"));
+    for (let i = 1; i < maxGuessesFor(date); i++) {
+      p = recordAcceptedWord(p, word(`w-${date}-${i}`));
+    }
+    return p;
   }
 
   it("increments the streak on consecutive days", () => {
@@ -386,11 +407,10 @@ describe("streak continuation", () => {
   });
 
   it("only counts a given day's completion once", () => {
-    let p = newProgress("2024-01-01", "str");
-    p = recordAcceptedWord(p, word("strange", 3.2, "Rare"));
-    const locked = lockInResult(p);
-    // Re-completing (shouldn't normally happen, but guard against double count)
-    lockInResult(locked);
+    const done = complete("2024-01-01");
+    // A word arriving after the limit -- a live lookup landing late -- must not
+    // re-complete the puzzle and count it a second time.
+    recordAcceptedWord(done, word("onemore", 3.2, "Rare"));
     expect(loadStreak().totalCompleted).toBe(1);
   });
 
@@ -401,9 +421,7 @@ describe("streak continuation", () => {
 
     // Go back and (belatedly) finish a much older, previously-missed puzzle.
     setToday("2024-01-02"); // "today" stays where the streak left off
-    let old = newProgress("2023-11-01", "str");
-    old = recordAcceptedWord(old, word("old-word", 3.2, "Rare"));
-    lockInResult(old);
+    playOut("2023-11-01");
 
     const streak = loadStreak();
     expect(streak.currentStreak).toBe(2); // unchanged

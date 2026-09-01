@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { DropDisplay } from "./components/DropDisplay";
 import { GuessLog } from "./components/GuessLog";
 import { SubmitForm } from "./components/SubmitForm";
-import { LockInButton } from "./components/LockInButton";
 import { FeedbackRegion } from "./components/FeedbackRegion";
 import { StreakDisplay } from "./components/StreakDisplay";
 import { ResultsPanel } from "./components/ResultsPanel";
@@ -52,7 +51,6 @@ export default function App() {
     liveNote,
     checking,
     submitWord,
-    lockIn,
     resetAnswers,
   } = useDailyPuzzle();
   // A first-timer who never taps "?" never learns that rarer scores higher --
@@ -275,10 +273,6 @@ export default function App() {
           </p>
         )}
 
-        {!progress.completed && progress.acceptedWords.length > 0 && (
-          <LockInButton onLockIn={lockIn} />
-        )}
-
         {!progress.completed && (
           <StreakDisplay
             streak={streak}
@@ -288,7 +282,19 @@ export default function App() {
           />
         )}
 
-        {progress.completed && (
+        {/* From the first banked word, not from the end of the puzzle.
+            Sharing used to be the reward for pressing "I'm done guessing",
+            which was the only way to reach this panel short of spending every
+            guess -- so a player sitting on the best word they will find all
+            week had to declare the day over to post it, and the declaration
+            was irreversible. Nothing was ever at stake in it: the streak, the
+            tier counters and the leaderboard all bank on the accepted word
+            itself (see game/storage.ts), so the button gated a text box and
+            nothing else.
+
+            The panel reads the live word list, so a share taken now and a
+            share taken three words later are both current. */}
+        {progress.acceptedWords.length > 0 && (
           <ResultsPanel
             date={date}
             drop={drop}

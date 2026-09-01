@@ -264,26 +264,6 @@ export function recordRejectedAttempt(progress: DailyProgress, rawWord: string):
 }
 
 /**
- * Player-initiated early finish. It wins only when a Rare-or-better word
- * is already present; otherwise it records a loss without changing streaks.
- */
-export function lockInResult(progress: DailyProgress): DailyProgress {
-  if (progress.completed || progress.acceptedWords.length === 0) return progress;
-
-  const updated: DailyProgress = {
-    ...progress,
-    completed: true,
-    won: progress.acceptedWords.some((word) => isWinningRarity(word.rarity)),
-    completedAt: new Date().toISOString(),
-  };
-  saveProgress(updated);
-  if (updated.won) {
-    incrementCompletionTotal();
-  }
-  return updated;
-}
-
-/**
  * Advance the streak as soon as today's first valid word is accepted.
  */
 function updateStreakOnValidAnswer(date: string): void {

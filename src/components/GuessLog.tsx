@@ -61,8 +61,13 @@ export function GuessLog({
       )}
 
       {acceptedWords.length === 0 ? (
+        // No instruction here any more. It read "enter a word below that
+        // contains the drop", which is the submit form's own label one line
+        // underneath -- and that one names the day's letters instead of saying
+        // "the drop" to a player who may not have met the word yet. What an
+        // empty slot is for is saying what will fill it.
         <p className="guess-log__empty">
-          No guesses yet — enter a word below that contains the drop.
+          No words yet — every one you find lands here.
         </p>
       ) : (
         <ol className="guess-log__list">

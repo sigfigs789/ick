@@ -221,11 +221,7 @@ export function trackWordSuggestion(rawWord: string) {
   send("word_suggested", { word: rawWord.trim().toLowerCase() });
 }
 
-export function trackPuzzleCompleted(
-  progress: DailyProgress,
-  completionMethod: "locked_in" | "all_answers",
-  streak: StreakState
-) {
+export function trackPuzzleCompleted(progress: DailyProgress, streak: StreakState) {
   const best = bestWord(progress.acceptedWords);
   send("puzzle_completed", {
     puzzle_date: progress.date,
@@ -235,7 +231,6 @@ export function trackPuzzleCompleted(
     best_rarity: best?.rarity ?? "None",
     best_word: best?.word ?? "None",
     won: progress.won ?? false,
-    completion_method: completionMethod,
     streak_days: streak.currentStreak,
   });
 }

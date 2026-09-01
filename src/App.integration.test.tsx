@@ -148,7 +148,7 @@ describe("gameplay end to end", () => {
     const [word] = playableWords(1, DROP, TODAY);
     render(<App />);
 
-    expect(screen.getByText(/no guesses yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/no words yet/i)).toBeInTheDocument();
     await submit(word);
 
     await waitFor(() => expect(loggedWords()).toEqual([word]));
@@ -205,7 +205,7 @@ describe("gameplay end to end", () => {
     expect(loggedWords()).toEqual([word]);
   });
 
-  it("finishes the puzzle at the guess limit and swaps the form for the results", async () => {
+  it("finishes the puzzle at the guess limit and takes the form away", async () => {
     const words = playableWords(LIMIT, DROP, TODAY);
     render(<App />);
 
@@ -215,29 +215,47 @@ describe("gameplay end to end", () => {
     }
 
     await waitFor(() =>
-      expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument()
     );
-    expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /i'm done guessing/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
     expect(loggedWords()).toEqual(words);
-    expect(savedProgress(TODAY)?.completed).toBe(true);
-  });
-
-  it("finishes early when the player locks in", async () => {
-    const [word] = playableWords(1, DROP, TODAY);
-    render(<App />);
-
-    await submit(word);
-    await waitFor(() => expect(loggedWords()).toEqual([word]));
-    await userEvent.click(screen.getByRole("button", { name: /i'm done guessing/i }));
-
-    await waitFor(() =>
-      expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument()
-    );
-    expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
     const saved = savedProgress(TODAY);
     expect(saved?.completed).toBe(true);
     expect(saved?.completedAt).toBeTruthy();
+  });
+
+  it("offers the share panel from the first word, without ending the puzzle", async () => {
+    const [word] = playableWords(1, DROP, TODAY);
+    render(<App />);
+
+    // Nothing to share before there is a word.
+    expect(screen.queryByRole("region", { name: /share result/i })).not.toBeInTheDocument();
+    await submit(word);
+    await waitFor(() => expect(loggedWords()).toEqual([word]));
+
+    // The panel arrives and the form stays: sharing used to require pressing
+    // "I'm done guessing", which finished the day for good.
+    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
+    expect(savedProgress(TODAY)?.completed).toBe(false);
+  });
+
+  it("keeps the day's answer hidden until every guess is spent", async () => {
+    const words = playableWords(LIMIT, DROP, TODAY);
+    render(<App />);
+
+    const revealed = () => document.querySelector(".drop-display__ceiling-word");
+    expect(revealed()).not.toBeInTheDocument();
+
+    for (const [i, word] of words.entries()) {
+      await submit(word);
+      await waitFor(() => expect(loggedWords()).toContain(word));
+      // Still hidden on every guess but the last, which is the whole point:
+      // there is no longer a button that trades the rest of the puzzle for it.
+      if (i < words.length - 1) expect(revealed()).not.toBeInTheDocument();
+    }
+
+    await waitFor(() => expect(revealed()).toBeInTheDocument());
   });
 
   it("keeps an archived puzzle's progress separate from today's", async () => {

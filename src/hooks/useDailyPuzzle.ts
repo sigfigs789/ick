@@ -6,7 +6,6 @@ import dropData from "../data/drops.json";
 import {
   loadOrCreateProgress,
   loadStreak,
-  lockInResult,
   recordAcceptedWord,
   recordRejectedAttempt,
   resetProgress,
@@ -215,7 +214,7 @@ export function useDailyPuzzle() {
       const substitution = baseFormSubstitution(word.word, viewedDate);
       if (substitution) trackBaseFormSubstitution(viewedDate, substitution);
       if (updated.completed) {
-        trackPuzzleCompleted(updated, "all_answers", updatedStreak);
+        trackPuzzleCompleted(updated, updatedStreak);
       }
       showFeedback("accepted", `"${word.word}" accepted — ${word.rarity}.`, word.rarity);
       return true;
@@ -359,18 +358,6 @@ export function useDailyPuzzle() {
     [drop, viewedDate, acceptWord, rejectWord, applyLiveCheck, showFeedback, shownRejectionReason]
   );
 
-  /** Player-initiated early finish: bank the best word(s) so far instead of using every guess. */
-  const lockIn = useCallback(() => {
-    const updated = lockInResult(progressRef.current);
-    progressRef.current = updated;
-    setProgress(updated);
-    const updatedStreak = loadStreak();
-    if (updated.won) setStreak(updatedStreak);
-    if (updated.completed && !progress.completed) {
-      trackPuzzleCompleted(updated, "locked_in", updatedStreak);
-    }
-  }, [progress.completed]);
-
   const resetAnswers = useCallback(() => {
     const fresh = resetProgress(viewedDate, drop);
     progressRef.current = fresh;
@@ -404,7 +391,6 @@ export function useDailyPuzzle() {
     streak,
     feedback,
     submitWord,
-    lockIn,
     resetAnswers,
     liveNote,
     checking,

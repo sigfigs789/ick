@@ -21,7 +21,7 @@ describe("WordRulesModal", () => {
     expect(screen.getByRole("link", { name: "CC BY-SA 4.0" })).toHaveAttribute("href", "https://creativecommons.org/licenses/by-sa/4.0/");
     expect(dialog).not.toHaveTextContent(/built and maintained by a solo developer/i);
     expect(dialog).toHaveTextContent(/continuously expanding the list to include more delightful and interesting words/i);
-    expect(dialog).toHaveTextContent(/have a good word in mind\? suggest it and improve the experience for everyone/i);
+    expect(dialog).toHaveTextContent(/know a good one that's missing\? suggest it and everybody gets to play it/i);
     expect(screen.getByRole("button", { name: /close word rules/i })).toHaveFocus();
 
     await userEvent.click(screen.getByRole("button", { name: /close word rules/i }));
@@ -33,8 +33,8 @@ describe("WordRulesModal", () => {
   it("records a submitted word suggestion", async () => {
     render(<WordRulesModal open onClose={vi.fn()} />);
 
-    const input = screen.getByLabelText(/know a word we should consider/i);
-    expect(input).toHaveAttribute("placeholder", "Enter word");
+    const input = screen.getByLabelText(/suggest a word/i);
+    expect(input).toHaveAttribute("placeholder", "Enter a word");
     await userEvent.type(input, "  Splashy ");
     await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
 
