@@ -527,6 +527,35 @@ def _derived_candidates(word: str) -> list[str]:
     return out
 
 
+def _privative_candidates(word: str) -> list[str]:
+    """Mirror of privativeBaseCandidates() in src/game/stem.ts.
+
+    The word a "-less" adjective is the absence of ("kindless" -> "kind").
+    Ungated like the bound families above: the strip takes nothing away, and the
+    handful of words that merely end that way leave a residue no dictionary
+    attests ("bless" -> "b", "unless" -> "un"). The "-lessly"/"-lessness"
+    derivatives need no rule -- the "-ly"/"-ness" strips reach the adjective and
+    it folds onward from there.
+    """
+    w = word.lower()
+    out: list[str] = []
+
+    def add(base: str) -> None:
+        if len(base) >= 3 and base != w and base not in out:
+            out.append(base)
+
+    if w.endswith("less") and len(w) > 6:
+        stem = w[:-4]
+        add(stem)
+        # The one spelling change the suffix makes ("pitiless" -> "pity"), and
+        # the doubled "l" it collapses ("skill" + -less -> "skilless").
+        if stem.endswith("i"):
+            add(stem[:-1] + "y")
+        if stem.endswith("l"):
+            add(stem + "l")
+    return out
+
+
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     """Mirror of tenseBaseForm(): -ed/-ing pick the most common valid base.
 
@@ -858,6 +887,10 @@ def _non_inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[s
     # The bound derivational families, ungated like the "-ization" pair below:
     # nothing accidental ends "-ically" or "-ibly" (see derivedBaseCandidates).
     for candidate in _derived_candidates(word):
+        add(candidate)
+    # The privative "-less" family, ungated for the same reason: a word
+    # "without X" is a derivation of X (see privativeBaseCandidates).
+    for candidate in _privative_candidates(word):
         add(candidate)
     add(_scoring_base(word, index))
     return out

@@ -760,3 +760,71 @@ export function inflectedFormCandidates(word: string): string[] {
 
   return out;
 }
+
+/**
+ * The word a privative "-less" adjective was built on: "kindless" -> "kind".
+ *
+ * A word "without X" is a mechanical derivation of X, and until this family
+ * existed it was scored as a discovery instead: 751 of the dictionary's 772
+ * "-less" words scored rarer than the word they are the absence of, "kindless"
+ * at 9.79 Mythic against "kind" at 3.70. The "-lessly" and "-lessness"
+ * derivatives had already folded onto the adjective (the "-ly"/"-ness" strips in
+ * `scoringBaseForm`) and so carried its score, which is how one missing rule
+ * left 1,224 words scoring as discoveries, 372 of them at Mythic or better.
+ *
+ * Ungated by MEASURED_FLOOR, like the bound families in
+ * `derivedBaseCandidates`: it is the ending that makes the fold safe, not the
+ * frequency, and it has to be -- "kindless" is measured at Zipf 1.08 and the
+ * gate would not have reached it. English writes "-less" onto a noun and takes
+ * nothing away, so the strip is decisive, and a word that merely *ends* that way
+ * leaves a residue no dictionary attests: "bless" -> "b", "unless" -> "un",
+ * "nevertheless" -> "neverthe", "nathless" -> "nath". Those seven ("nonetheless"
+ * and "irregardless" are the others) are every non-derived "-less" word in the
+ * dictionary, and the caller's own check -- the candidate must be a word --
+ * refuses all seven without a rule of their own.
+ *
+ * The adjective only. Its "-lessly" and "-lessness" derivatives need no rule
+ * here -- they reach it through the "-ly"/"-ness" strips of `scoringBaseForm`
+ * and fold onward from there -- and reaching past it would be worse than
+ * redundant: a reviewed exemption on the adjective is how this family's wrong
+ * readings are refused, so "listlessly" has to arrive at the exempt "listless"
+ * and stop, not walk to `list` on a route of its own.
+ *
+ * The "-i" -> "-y" rewrite is the one English spelling change the suffix makes,
+ * on a noun that ends in "y": "pitiless" -> "pity", "merciless" -> "mercy",
+ * "penniless" -> "penny". Offered alongside the plain strip rather than instead
+ * of it, since both can be words ("bodiless" reaches the listed "bodi" and the
+ * word it means, "body") and the caller keeps the most common.
+ *
+ * The doubled "l" English collapses when the suffix meets a stem that ends in
+ * one -- "skill" + "-less" written "skilless" -- is the other spelling change,
+ * and it needs the letter put back: the plain strip lands on the listed "skil"
+ * (Zipf 1.90) and would out-vote "skill" (4.42). Restricted to "l", where the
+ * collapse happens; "skill" is the only word the restored spelling reaches, and the
+ * stems that end in a single "l" of their own ("tool", "heel", "coal", "wall")
+ * offer a non-word ("tooll", "heell") the caller's check drops.
+ *
+ * One word in the dictionary the strip mis-reads outright, and it takes review
+ * rather than a rule: "listless" is from the archaic "list" (desire), not the
+ * everyday one, so a fold exemption refuses it.
+ */
+export function privativeBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  const out: string[] = [];
+  const add = (base: string) => {
+    if (base.length >= 3 && base !== w && !out.includes(base)) out.push(base);
+  };
+
+  // Three letters of stem, the same minimum `add` enforces: "endless" (7) is the
+  // shortest "-less" word with a base at all, and anything shorter leaves a
+  // two-letter residue no fold should read as a word.
+  if (w.endsWith("less") && w.length > 6) {
+    const stem = w.slice(0, -4);
+    add(stem);
+    if (stem.endsWith("i")) add(`${stem.slice(0, -1)}y`);
+    // The collapsed "ll" put back ("skilless" -> "skill"); see the note above.
+    if (stem.endsWith("l")) add(`${stem}l`);
+  }
+
+  return out;
+}

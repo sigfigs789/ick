@@ -1641,3 +1641,108 @@ describe("measurement modifiers fold onto their unit (from 2026-09-02)", () => {
     }
   });
 });
+
+// The 2026-09-02 cutover: a word "without X" scores as X. The family had no fold
+// rule at all before it, so 1,224 words -- every "-less" adjective with a base,
+// plus the "-lessly"/"-lessness" derivatives that had folded onto the adjective
+// and were sharing its score -- were scored as discoveries. See
+// PRIVATIVE_BASE_START in dictionary.ts and privativeBaseCandidates in stem.ts.
+describe("privative -less folds onto the word it is the absence of (from 2026-09-02)", () => {
+  const BEFORE_PRIV = "2026-09-01"; // last day the suffix carried its own score
+  const ON_PRIV = "2026-09-02"; // first day "kindless" scores as `kind`
+
+  const PRIVATIVES: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    // The word that prompted the rule: measured at Zipf 1.08, just above the
+    // floor gate, so no gated family could ever have reached it.
+    ["kindless", "kind", 9.79, 3.74],
+    // The rest of the deep-tail end of the family, where the score was furthest
+    // from the everyday word the player actually needed to see.
+    ["newsless", "new", 9.93, 2.53],
+    ["accentless", "accent", 9.41, 5.62],
+    ["weariless", "weary", 9.9, 6.37],
+    // The everyday members, which were only a rank or two out.
+    ["useless", "use", 5.51, 3.2],
+    ["endless", "end", 5.57, 3.4],
+    ["harmless", "harm", 6.11, 5.16],
+    // The "-i" -> "-y" rewrite, the one spelling change the suffix makes.
+    ["pitiless", "pity", 8.15, 5.85],
+    ["penniless", "penny", 7.41, 5.72],
+    // ... including where the plain strip is also a listed word ("bodi", 1.98)
+    // and the rewrite has to out-vote it, and where it is not a word at all.
+    ["bodiless", "body", 9.12, 3.81],
+    ["remediless", "remedy", 8.19, 6.06],
+    // The derivatives, which reach the base through the adjective.
+    ["kindlessly", "kind", 9.79, 3.74],
+    ["faithless", "faith", 7.63, 4.66],
+    ["faithlessly", "faith", 7.63, 4.66],
+    ["faithlessness", "faith", 7.63, 4.66],
+    ["effortlessly", "effort", 6.91, 4.51],
+  ];
+
+  it.each(PRIVATIVES)("%s scores as %s from the cutover on", (word, base, _before, after) => {
+    expect(score(word, ON_PRIV)).toBe(after);
+    expect(score(word, ON_PRIV)).toBe(score(base, ON_PRIV));
+  });
+
+  it.each(PRIVATIVES)("%s kept its own, rarer score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_PRIV)).toBe(before);
+  });
+
+  it("refuses a word that merely ends in -less", () => {
+    // Ungated by MEASURED_FLOOR, so the ending is the whole guard -- and it
+    // holds because the strip is decisive: English writes "-less" onto a noun
+    // and takes nothing away, so a word that is not built that way leaves a
+    // residue no dictionary attests ("bless" -> "b", "unless" -> "un",
+    // "nevertheless" -> "neverthe", "natheless" -> "nath").
+    const merely = ["bless", "unless", "nevertheless", "nonetheless", "natheless", "irregardless"];
+    for (const word of merely) {
+      expect(score(word, ON_PRIV), `${word} must not fold`).toBe(score(word, BEFORE_PRIV));
+    }
+  });
+
+  it("keeps its own score where the base is rarer", () => {
+    // A cap, never a promotion, like every other fold: "feck" (2.24) is rarer
+    // than "feckless" (2.48), and there is no "reck" or "gorm" in circulation
+    // either. All three keep their own measurement.
+    for (const word of ["feckless", "reckless", "gormless"]) {
+      expect(baseFormSubstitution(word, ON_PRIV), `${word} must not fold`).toBeUndefined();
+      expect(score(word, ON_PRIV)).toBe(score(word, BEFORE_PRIV));
+    }
+  });
+
+  it("keeps the reviewed wrong reading on its own data", () => {
+    // "listless" is without `list` in the archaic sense (desire), not without a
+    // list, and the strip cannot see the difference -- so a fold exemption
+    // refuses it. The blanket entry covers the paradigm: the adverb and the noun
+    // fold onto this word and stop, rather than reaching `list` themselves.
+    expect(score("listless", ON_PRIV)).toBe(score("listless", BEFORE_PRIV));
+    for (const word of ["listlessly", "listlessness", "listlessnesses"]) {
+      expect(score(word, ON_PRIV), word).toBe(score("listless", ON_PRIV));
+    }
+  });
+
+  it("puts back the doubled letter the suffix collapsed", () => {
+    // "skilless" is `skill` + -less with one "l" gone, so the plain strip lands
+    // on the listed "skil" (1.90) and would out-vote "skill" (4.42). The
+    // restored spelling is offered alongside it, and "skillessness" reaches the
+    // same base through the adjective.
+    expect(score("skilless", ON_PRIV)).toBe(score("skill", ON_PRIV));
+    expect(score("skillessness", ON_PRIV)).toBe(score("skill", ON_PRIV));
+  });
+
+  it("names the base in the fold note", () => {
+    // The note the player sees. Naming `kind` is the whole point of the rule:
+    // the score is explained by a word they know.
+    expect(baseFormSubstitution("kindless", ON_PRIV)?.base).toBe("kind");
+    expect(baseFormSubstitution("pitiless", ON_PRIV)?.base).toBe("pity");
+    expect(baseFormSubstitution("kindlessly", ON_PRIV)?.base).toBe("kind");
+  });
+
+  it("moves nothing outside the family", () => {
+    // The only spelling the rule reads. A word with no "-less" in it cannot
+    // reach the new candidates at all.
+    for (const word of ["kind", "pity", "body", "faith", "lesson", "lessen", "blessing"]) {
+      expect(score(word, ON_PRIV), `${word} must not move`).toBe(score(word, BEFORE_PRIV));
+    }
+  });
+});

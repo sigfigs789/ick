@@ -4,6 +4,7 @@ import {
   derivedBaseCandidates,
   inflectionalBaseCandidates,
   prefixBaseCandidates,
+  privativeBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
 
@@ -303,6 +304,63 @@ describe("derivedBaseCandidates length bounds", () => {
     expect(derivedBaseCandidates("panicked")).toEqual(["panic", "panick"]);
   });
 });
+
+describe("privativeBaseCandidates", () => {
+  it.each([
+    ["kindless", "kind"],
+    ["endless", "end"],
+    ["bottomless", "bottom"],
+    ["pitiless", "pity"],
+    ["merciless", "mercy"],
+    ["penniless", "penny"],
+    ["remediless", "remedy"],
+  ])("offers %s -> %s", (word, base) => {
+    expect(privativeBaseCandidates(word)).toContain(base);
+  });
+
+  it("puts back the doubled l the suffix collapsed", () => {
+    // "skilless" is `skill` + -less with one "l" gone. The plain strip is
+    // offered too -- the caller keeps the most common -- but "skil" is a listed
+    // word, so without the restored spelling it would win.
+    expect(privativeBaseCandidates("skilless")).toEqual(["skil", "skill"]);
+    // A stem that ends in a single "l" of its own offers a non-word, which the
+    // caller's dictionary check drops.
+    expect(privativeBaseCandidates("toolless")).toEqual(["tool", "tooll"]);
+  });
+
+  it("leaves the -lessly / -lessness derivatives to the -ly and -ness strips", () => {
+    // They reach the adjective through `scoringBaseForm` and fold onward from
+    // there, so a rule here would be redundant -- and one reaching past the
+    // adjective would route around the reviewed exemption that refuses this
+    // family's wrong readings. See the doc comment.
+    expect(privativeBaseCandidates("kindlessly")).toEqual([]);
+    expect(privativeBaseCandidates("kindlessness")).toEqual([]);
+  });
+
+  it("reads nothing shorter than a three-letter stem", () => {
+    // Seven letters minimum, so a word whose strip would leave a fragment never
+    // offers one: "bless" -> "b", "unless" -> "un", and "less" itself.
+    for (const word of ["bless", "unless", "less"]) {
+      expect(privativeBaseCandidates(word), `${word} must offer nothing`).toEqual([]);
+    }
+  });
+
+  it("offers the residues no dictionary attests, and nothing more", () => {
+    // The rest of the non-derived family. The candidates exist but are not
+    // words, so the caller's check refuses them -- no rule of their own needed.
+    expect(privativeBaseCandidates("nevertheless")).toEqual(["neverthe"]);
+    expect(privativeBaseCandidates("natheless")).toEqual(["nathe"]);
+    expect(privativeBaseCandidates("irregardless")).toEqual(["irregard"]);
+  });
+
+  it("is case-insensitive and never offers the word itself", () => {
+    expect(privativeBaseCandidates("KINDLESS")).toEqual(privativeBaseCandidates("kindless"));
+    for (const word of ["kindless", "kindlessly", "pitiless"]) {
+      expect(privativeBaseCandidates(word)).not.toContain(word);
+    }
+  });
+});
+
 describe("prefixBaseCandidates", () => {
   it("offers the base a transparent prefix was attached to", () => {
     expect(prefixBaseCandidates("nonplaying")).toContain("playing");
