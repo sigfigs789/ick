@@ -6,12 +6,19 @@
 --
 -- In practice that buries the thing the feed is for. The feed is a live signal
 -- of what the day's players are turning up right now, and under `min` a word
--- five people are finding this minute sits motionless halfway down -- or, once
--- the day has more than a dozen words, has already fallen off the twelve the
--- endpoint asks for and cannot come back no matter how many people find it. The
--- most recent submission is the news, whether or not the word was new to the
--- feed, so a word somebody just found belongs at the top and takes its
+-- five people are finding this minute sits motionless halfway down the day's
+-- list. The most recent submission is the news, whether or not the word was new
+-- to the feed, so a word somebody just found belongs at the top and takes its
 -- incremented count up with it.
+--
+-- Ordered here rather than in the client because the ordering is the only place
+-- this information exists. The rows the endpoint returns carry `word`, `zipf`,
+-- `finders` and `found_on` -- and `found_on` is the puzzle date, the same value
+-- on every row. Nothing in the payload says *when* a word was found, so the
+-- sequence the rows arrive in is the whole of it. A client can diff finder
+-- counts between two polls and hoist what moved, which works for a page left
+-- open and not at all for a page just opened; a fresh load has nothing to diff
+-- against and would show first-sighting order, which is the case this is for.
 --
 -- The reshuffling that worried the earlier version is bounded by what can move a
 -- row: `found_at` is set once per player per word and never updated (the
