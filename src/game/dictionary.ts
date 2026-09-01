@@ -18,6 +18,7 @@ import {
   inflectionalBaseCandidates,
   measurementBaseCandidates,
   prefixBaseCandidates,
+  privativeBaseCandidates,
   superlativeBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
@@ -84,8 +85,8 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     of off Zipf cutoffs (see DECADE_BANDS_START). The first change moves every
  *     measured score up; the second is the only label mapping to move since
  *     2026-08-21.
- *   - on/after 2026-09-02 (the latest system): two independent folds, one
- *     cutover each, in the pattern of 2026-08-24.
+ *   - on/after 2026-09-02 (the latest system): three independent folds sharing
+ *     one cutover, in the pattern of 2026-08-24.
  *       * The bare "-est" superlative folds onto its adjective wherever the
  *         "-er" comparative of the same spelling is a word, rather than only
  *         below MEASURED_FLOOR (see SUPERLATIVE_BASE_START).
@@ -94,7 +95,13 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         MEASURED_FLOOR on the strength of a reviewed unit table; 302 words
  *         score lower and none higher, 47 of them holding a Legend for a
  *         multiplier (see MEASUREMENT_BASE_START).
- *     Neither moves a label mapping.
+ *       * A privative "-less" adjective folds onto the word it is the absence
+ *         of, carrying its "-lessly"/"-lessness" derivatives with it through the
+ *         "-ly"/"-ness" strips they already took ("kindless" as `kind`). Ungated
+ *         for the same reason the bound families are; 1,224 words score lower
+ *         and none higher, 372 of them holding a Mythic or better for the
+ *         suffix (see PRIVATIVE_BASE_START).
+ *     None of the three moves a label mapping.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -226,7 +233,7 @@ const SCORE_GAMMA = 0.9;
 const SUPERLATIVE_BASE_START = "2026-09-02";
 
 /*
- * 2026-09-02, the second of that day's two changes. A word carrying a
+ * 2026-09-02, the second of that day's three changes. A word carrying a
  * measurement modifier -- an SI decimal prefix or its binary counterpart -- is
  * scored as the unit it is counting: "kilojoules" as `joules`, "megabytes" as
  * `bytes`, "zeptosecond" as `second`. A modified unit *is* the unit, so this is
@@ -247,6 +254,27 @@ const SUPERLATIVE_BASE_START = "2026-09-02";
  * for the joules it counts, and "milliseconds" 7.37 against 4.60 for "seconds".
  */
 const MEASUREMENT_BASE_START = "2026-09-02";
+
+/*
+ * 2026-09-02, the third of that day's three changes. A privative "-less"
+ * adjective folds onto the word it is the absence of: "kindless" -> "kind". Its "-lessly"/"-lessness" derivatives come with it,
+ * since they already folded onto the adjective through the "-ly"/"-ness" strips
+ * ("kindlessness" -> "kindless" -> "kind"). See `privativeBaseCandidates`.
+ *
+ * The family had no fold rule at all, so 1,224 words were scored as discoveries:
+ * "kindless" showed 9.79 Mythic while "kind" showed 3.70, and 751 of the 772
+ * "-less" words scored rarer than their own base. 372 of the 1,224 were holding
+ * a Mythic-or-better score for the suffix, and none moves up. Ungated by
+ * MEASURED_FLOOR like the bound families of DERIVED_BASE_START, which is what
+ * reaches them -- "kindless" is measured at Zipf 1.08, just above the gate.
+ *
+ * Shares 2026-09-02 with SUPERLATIVE_BASE_START and MEASUREMENT_BASE_START --
+ * one cutover carrying three independent changes, in the pattern of 2026-08-24
+ * -- but kept as its own name so any of them can move later without dragging
+ * the others. `scoringFor` ladders a rung per constant, the middle ones stepped
+ * over while the dates are equal.
+ */
+const PRIVATIVE_BASE_START = "2026-09-02";
 
 // Rank/format cutoffs for the latest (Legend) system, fixed on the score scale
 // (not derived from the band ceiling). The rank keys off the score's two-decimal
@@ -681,6 +709,12 @@ interface Scoring {
   // table. 2026-09-02; off for earlier systems so past puzzles' scores stay
   // frozen (see MEASUREMENT_BASE_START).
   measurementBases: boolean;
+  // Whether a privative "-less" adjective folds onto the word it is the absence
+  // of, which is also what carries its "-lessly"/"-lessness" derivatives there
+  // (see `privativeBaseCandidates`). Ungated by MEASURED_FLOOR, like the bound
+  // families in `derivedBaseCandidates`. 2026-09-02; off for earlier systems so
+  // past puzzles' scores stay frozen (see PRIVATIVE_BASE_START).
+  privativeBases: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -716,6 +750,7 @@ interface ScoringFlags {
   derivedFormFolds?: boolean;
   superlativeBases?: boolean;
   measurementBases?: boolean;
+  privativeBases?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
@@ -744,6 +779,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     derivedFormFolds = false,
     superlativeBases = false,
     measurementBases = false,
+    privativeBases = false,
     narrowBands = false,
     scoreCurve = false,
     decadeBands = false,
@@ -803,6 +839,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     derivedFormFolds,
     superlativeBases,
     measurementBases,
+    privativeBases,
   };
 }
 
@@ -918,9 +955,31 @@ const SUPERLATIVE_SCORING: Scoring = twoBandScoring(9.9, 0, {
   scoreCurve: true,
   decadeBands: true,
 });
-// The latest system (2026-09-02): both of that day's changes -- the bare "-est"
-// superlative, and a measurement modifier scored as the unit it counts. See
-// MEASUREMENT_BASE_START.
+// The 2026-09-02 system with the superlative and the measurement modifiers, but
+// not the privative "-less" family -- the next rung of the same ladder, reached
+// only if PRIVATIVE_BASE_START is ever moved later than MEASUREMENT_BASE_START.
+// See MEASUREMENT_BASE_START.
+const MEASUREMENT_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  prefixBases: true,
+  paradigmFolds: true,
+  prefixResidues: true,
+  derivedFormFolds: true,
+  superlativeBases: true,
+  measurementBases: true,
+  narrowBands: true,
+  scoreCurve: true,
+  decadeBands: true,
+});
+// The latest system (2026-09-02): all three of that day's changes -- the bare
+// "-est" superlative, a measurement modifier scored as the unit it counts, and a
+// privative "-less" adjective scored as the word it is the absence of. See
+// PRIVATIVE_BASE_START.
 const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
@@ -934,6 +993,7 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   derivedFormFolds: true,
   superlativeBases: true,
   measurementBases: true,
+  privativeBases: true,
   narrowBands: true,
   scoreCurve: true,
   decadeBands: true,
@@ -972,6 +1032,7 @@ const LEGACY_SCORING: Scoring = {
   derivedFormFolds: false,
   superlativeBases: false,
   measurementBases: false,
+  privativeBases: false,
 };
 
 /**
@@ -1072,10 +1133,11 @@ function scoringFor(date?: string): Scoring {
   if (date < REVIEWED_FOLD_START) return PREFIX_SCORING;
   if (date < DECADE_BANDS_START) return REVIEWED_SCORING;
   if (date < SUPERLATIVE_BASE_START) return DECADE_SCORING;
-  // Two rungs for 2026-09-02, laddered like the pair for 2026-08-24 so either
-  // change can move to a later date without dragging the other. While the dates
-  // are equal the middle rung is stepped over.
+  // Three rungs for 2026-09-02, laddered like the pair for 2026-08-24 so any one
+  // change can move to a later date without dragging the others. While the dates
+  // are equal the middle rungs are stepped over.
   if (date < MEASUREMENT_BASE_START) return SUPERLATIVE_SCORING;
+  if (date < PRIVATIVE_BASE_START) return MEASUREMENT_SCORING;
   return LATEST_SCORING;
 }
 
@@ -1904,6 +1966,14 @@ function addNonInflectionalBaseForms(
   // both are measured, the same way "happier" folds onto "happy".
   if (scoring.derivedBases) {
     for (const candidate of derivedBaseCandidates(word)) add(candidate);
+  }
+  // The privative "-less" family, ungated for the same reason: a word "without
+  // X" is a derivation of X, the strip takes nothing away, and the seven
+  // dictionary words that merely end that way ("bless", "unless",
+  // "nevertheless") leave a residue no dictionary attests. See
+  // `privativeBaseCandidates`.
+  if (scoring.privativeBases) {
+    for (const candidate of privativeBaseCandidates(word)) add(candidate);
   }
 }
 

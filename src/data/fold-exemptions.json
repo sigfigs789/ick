@@ -160,5 +160,9 @@
   "tempest": {
     "since": "2026-09-02",
     "reason": "A storm, not \"most temp\" -- and `temper` is a word, so the paired-degree check the bare -est fold runs on `contest` and `interest` passes here. One of two words in the dictionary that clear the check without being superlatives."
+  },
+  "listless": {
+    "since": "2026-09-02",
+    "reason": "Without `list` in the archaic sense (desire, inclination), not without a list. The privative fold's strip is decisive and the residue is a word, so nothing but review can tell this reading from `spotless`; scoring \"languid\" as the everyday `list` (Zipf 5.28) would show \"Scored as its common form, 'list'\" on a word that has nothing to do with it. The blanket entry covers `listlessly` and `listlessness`, which fold onto this word and stop here."
   }
 }

@@ -209,6 +209,9 @@ the frequent under-counting of familiar derived forms.
 **False positives:** kept in check by the real-word requirement — a stem that
 isn't a dictionary word is discarded rather than folded.
 
+These two strips are also what carry the `-lessly`/`-lessness` derivatives onto
+their `-less` adjective, which folds onward from 2026-09-02 — see §12.
+
 ---
 
 ## 6. Bound derivational suffixes — `-ization`, `-ability`
@@ -533,6 +536,53 @@ pressure, a gigabit a billion bits.
 
 ---
 
+## 12. Privative `-less` (2026-09-02 on)
+
+`privativeBaseCandidates` in [`stem.ts`](stem.ts). A word "without X" is a
+mechanical derivation of X, capped at it and **ungated** — the ending is the
+guard, as in §6 and §8. Shares its cutover with §10 and §11; the three are
+independent.
+
+Until this rule the family had none at all: 751 of the dictionary's 772 `-less`
+words scored rarer than the word they are the absence of, "kindless" at 9.79
+Mythic against "kind" at 3.70. Counting the `-lessly`/`-lessness` derivatives
+that already folded onto the adjective through §5 and so shared its score, 1,224
+words move, 372 of them off a Mythic-or-better score. None moves up.
+
+| Rule | Converts |
+|------|----------|
+| `-less` → stem | kindless → kind, helpless → help, worthless → worth |
+| `-less` → stem with `-i` → `-y` | pitiless → pity, merciless → mercy, penniless → penny |
+| `-less` → stem with the collapsed `ll` restored | skilless → skill |
+
+**Why no floor gate.** "kindless" is measured at Zipf 1.08, so §7's gate would
+never have reached it — the words this rule is for are exactly the ones sitting
+just above the floor. It can run ungated because the strip is decisive: English
+writes `-less` onto a noun and takes nothing away, so a word that merely *ends*
+that way leaves a residue no dictionary attests. All seven of them — "bless" →
+"b", "unless" → "un", "nevertheless" → "neverthe", "nonetheless", "natheless",
+"nathless", "irregardless" — are refused by the real-word check every candidate
+already faces, with no rule of their own.
+
+**The derivatives need no rule.** `-lessly` and `-lessness` reach the adjective
+through §5's `-ly`/`-ness` strips and fold onward from there. A rule reaching
+past the adjective would also route *around* the exemption below, which is how
+this family's one wrong reading is refused.
+
+**The one wrong reading:** "listless" is from the archaic `list` (desire), not
+the everyday one, and no spelling rule can tell it from "spotless". A fold
+exemption refuses it, and the blanket entry covers "listlessly" and
+"listlessness", which stop at it.
+
+**Morphologically real, semantically drifted, and folded anyway:** "restless" →
+rest, "priceless" → price, "ruthless" → ruth, "bootless" → boot, "hapless" →
+hap. Each really is its base plus the suffix; the meaning has moved on, but the
+score a player sees is explained by a word they know. Where the base is rarer
+the cap discards it and the word keeps its own score — "reckless" (no "reck" in
+circulation), "feckless", "gormless".
+
+---
+
 ## Cases not yet addressed
 
 The families above are the ones the engine handles. It handles a family only when
@@ -597,7 +647,6 @@ actually move, with the misfires that actually fire.
 | Suffix | Would fix | False positives (folds onto unrelated real word) |
 |--------|-----------|--------------------------------------------------|
 | `-ful` / `-iful`→`-y` (297 words) | beautiful → beauty, careful → care, powerful → power, merciful → mercy | grateful → grate and awful → (aw) are both **inert** (base rarer, or too short). The measure nouns fold correctly (cupful → cup). Needs the bare stem only: adding a `stem + "e"` variant is what produces carful → care. A near-miss addition. |
-| `-less` (746 words, 317 of them 9.5+) | helpless → help, hopeless → hope, worthless → worth | reckless → reck and regardless → regard are **inert**. Only listless → list is plainly wrong; restless → rest and priceless → price are morphologically real and semantically drifted. One exemption away from viable. |
 | `-hood` (59 words) | childhood → child, brotherhood → brother, falsehood → false | monkshood → monks and underhood → under; likelihood/livelihood are inert (no stem). Two exemptions away from viable. |
 | `-ship` (273 words) | friendship → friend, ownership → owner, leadership → leader | the literal-ship compounds fire: starship → star, warship → war, airship → air, flagship → flag, spaceship → space. worship is inert. A whole FP *class*, not a handful. |
 | `-dom` (66 words) | kingdom → king, boredom → bore, stardom → star | condom → con fires; random → rand and seldom → (seld) are inert. Small family, so the one misfire is most of the risk. |
@@ -606,9 +655,10 @@ actually move, with the misfires that actually fire.
 A note on picking from this table: `scripts/fold-disagreements.py` will tell you
 how many words each row is actually worth before you write the rule. It compares
 every fold against MorphyNet and reports what we do not fold but MorphyNet does,
-bucketed by affix — `-less` is 646 words, `-ally` 512, `-ic` 1,027. That is a
-size estimate and a word list to spot-check, not a verdict: MorphyNet is
-descriptive, so it derives plenty the word rules reject outright.
+bucketed by affix — `-ally` is 512 words, `-ic` 1,027 (`-less` was 646 there
+before §12 closed it). That is a size estimate and a word list to spot-check,
+not a verdict: MorphyNet is descriptive, so it derives plenty the word rules
+reject outright.
 
 ### D. Diminutives & `-ish` — false positives dominate (reason 3)
 
@@ -718,7 +768,7 @@ each is scored on its own frequency (or fixed one word at a time via an override
 - `-cker` after the c → ck rewrite — picnicker, mimicker, panicker *(the `-cked`/`-cking` half is handled in §8)*
 
 **Transparent derivational suffixes**
-- `-less` *(746 words; one exemption away — listless)*, `-hood` *(59; two exemptions — monkshood, underhood)*, `-ful` *(297; bare stem only)*, `-ship` (the literal-ship compounds), `-dom` (condom), `-ward(s)`
+- `-hood` *(59; two exemptions — monkshood, underhood)*, `-ful` *(297; bare stem only)*, `-ship` (the literal-ship compounds), `-dom` (condom), `-ward(s)`
 
 **Diminutives & lexicalized suffixes (false positives dominate)**
 - `-let`, `-ette`, `-ish`, adjectival `-y`
@@ -732,18 +782,21 @@ modifiers from 2026-09-02 — see §11)**
   Latin stems, where the word is as rare as the false base and the gate cannot
   separate them. Needs a vetted table (`scripts/fold-disagreements.py`).
 
-**Next candidates to add**, in order: `-less` (746 words, 317 of them wearing a
-Mythic-or-better score, one exemption), `-hood` (two exemptions), `-ful` (bare
+**Next candidates to add**, in order: `-hood` (two exemptions), `-ful` (bare
 stem only), then bare `-er`/`-est` above the floor once it has a guard of its
 own. Everything else either needs a curated map (the irregulars) or has false
 positives that actually fire on common words — which no gate contains, because
 the MEASURED_FLOOR gate only helps when a rule's misfires land *above* the floor.
 
-The six families §8 and the `c` → `ck` rule closed on 2026-08-24 were the
-previous entry on this list. What they had in common was a **bound** ending:
-nothing accidental ends `-ically`, `-ibly`, `-ologist` or `-eaux`, which is the
-same property that earns §6 its ungated fold. That, rather than the
-MEASURED_FLOOR gate, is the test to apply to the next candidate. §9 is the other
+`-less` was the previous entry on this list, closed as §12 on 2026-09-02: a
+decisive strip, so the ending held the false positives on its own and the one
+wrong reading took a single exemption — the shape this list is looking for.
+
+The six families §8 and the `c` → `ck` rule closed on 2026-08-24 were the entry
+before that. What they had in common was a **bound** ending: nothing accidental
+ends `-ically`, `-ibly`, `-ologist` or `-eaux`, which is the same property that
+earns §6 its ungated fold. That, rather than the MEASURED_FLOOR gate, is the test
+to apply to the next candidate. §9 is the other
 route in: not a bound ending, but misfires that all land above the floor.
 
 **Sizing any of them:** `scripts/fold-disagreements.py` reports what a family is
