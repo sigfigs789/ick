@@ -87,6 +87,34 @@ export function trackAcceptedAnswer(
   });
 }
 
+/**
+ * Record a word set aside with the puzzle's one retry (see storage.retryWord).
+ *
+ * Carries the dropped word's score and where it sat among the day's guesses, so
+ * the obvious question -- whether players spend the retry on a genuinely bad
+ * word or reflexively on whatever they just typed -- is answerable, along with
+ * how often the retry gets used at all.
+ */
+export function trackAnswerRetried(
+  date: string,
+  word: AcceptedWord,
+  guessIndex: number,
+  answerCount: number
+) {
+  send("answer_retried", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    word: word.word,
+    score: rarityScore(word.zipf, date),
+    rarity: word.rarity,
+    // One-based, to read the same way the guess log numbers them.
+    guess_index: guessIndex + 1,
+    // How many words were banked at the moment the retry was spent, so an early
+    // retry and a last-guess one are told apart.
+    answer_count: answerCount,
+  });
+}
+
 /** Record rejected submissions so the word list can be reviewed over time. */
 export function trackRejectedAnswer(date: string, drop: string, rawWord: string) {
   send("answer_rejected", {

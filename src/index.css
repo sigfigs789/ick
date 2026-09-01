@@ -729,6 +729,95 @@ h2 {
   line-height: 1.2;
   color: var(--fg-muted);
 }
+/* Retry: one word per puzzle can be swapped out (see game/storage.retryWord).
+ *
+ * A quiet outline button, not a filled one -- the filled treatment on this page
+ * belongs to Submit and Share, the two things a player is meant to be doing.
+ * Taking a word back is a recovery, offered without being urged. */
+.guess-log__retry {
+  margin: 0.7rem 0 0;
+  text-align: center;
+}
+.guess-log__retry-button {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.45rem 0.9rem;
+  min-height: 2.2rem;
+  border: 2px solid var(--border-strong);
+  border-radius: 0.65rem;
+  background: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s var(--ease-standard),
+    border-color 0.15s var(--ease-standard),
+    background-color 0.15s var(--ease-standard);
+}
+.guess-log__retry-button:hover,
+.guess-log__retry-button:focus-visible {
+  color: var(--fg);
+  border-color: var(--accent);
+  background: var(--bg-inset);
+}
+/* Armed. The whole block firms up so it is obvious the log is now waiting on a
+ * choice rather than sitting there. */
+.guess-log__retry--picking {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.9rem;
+  border: 2px dashed var(--accent);
+  border-radius: 0.75rem;
+  background: var(--bg-inset);
+}
+.guess-log__retry-prompt {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--fg);
+}
+.guess-log__retry-cancel {
+  margin-top: 0.55rem;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.guess-log__retry-cancel:hover {
+  color: var(--fg);
+}
+.guess-log__retry-spent {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--fg-faint);
+}
+/* Cards waiting to be picked. Dashed to match the prompt above them, so the two
+ * read as one armed state rather than a note and some highlighted rows. */
+.guess-log__entry--picking {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+.guess-log__entry--picking .guess-log__entry-button:hover,
+.guess-log__entry--picking .guess-log__entry-button:focus-visible {
+  background: var(--bg-inset);
+}
+/* Sits exactly where the copy affordance does, because it replaces it. */
+.guess-log__retry-hint {
+  grid-column: 3;
+  margin-left: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
 .guess-log__remaining {
   margin: 0.7rem 0 0;
   font-size: 0.82rem;
