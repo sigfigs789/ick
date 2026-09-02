@@ -325,7 +325,7 @@ export function evaluateSubmission(
 // and a word the player invented on purpose shouldn't be told it spelled
 // something else wrong.
 const MISSPELLING_LEAD = "Misspelling?";
-const MISSPELLING_FIX = "Try the correct spelling.";
+const MISSPELLING_FIX = "Check your spelling.";
 
 export const REJECTION_LEADS: Record<string, string> = {
   "not-a-word": "Not found.",

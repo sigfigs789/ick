@@ -96,8 +96,8 @@ describe("FeedbackRegion", () => {
     ["proper-noun", "Proper noun. Names aren't playable."],
     ["already-used", "Already used."],
     ["missing-drop", "Missing the drop. Your word must contain it."],
-    ["misspelling", "Misspelling? Try the correct spelling."],
-    ["check-your-spelling", "Misspelling? Try the correct spelling."],
+    ["misspelling", "Misspelling? Check your spelling."],
+    ["check-your-spelling", "Misspelling? Check your spelling."],
   ] as const)("sets a rejection with something specific to say apart (%s)", (reason, message) => {
     render(
       <FeedbackRegion feedback={{ kind: "rejected", message, reason, key: 1 }} onWordRules={vi.fn()} />
