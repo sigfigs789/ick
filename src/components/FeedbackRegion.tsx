@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Feedback } from "../hooks/useDailyPuzzle";
+import type { RejectionReason } from "../game/types";
+import { REJECTION_LEADS } from "../game/submit";
 
 interface Props {
   feedback: Feedback | null;
@@ -12,7 +14,20 @@ interface Props {
   onWordRules: () => void;
 }
 
-const VISIBLE_MS = 6000;
+const VISIBLE_MS = 12000;
+
+/**
+ * The one verdict that means "we don't have this word": it isn't on the curated
+ * list, and no reference the game consults could place it either.
+ *
+ * Everything else -- a proper noun, an archaic form, a likely typo, a word
+ * already used -- is a different answer that used to wear the same red toast,
+ * and players read the colour rather than the sentence: every rejection was
+ * landing as "not on the list". So the curated-list miss keeps the red, and
+ * every rejection that has something more specific to say takes the caution
+ * yellow, which is the signal that the words below are worth reading.
+ */
+const CURATED_LIST_MISS: RejectionReason = "not-a-word";
 
 /**
  * A single polite live region, styled as a small toast that fades in and
@@ -57,6 +72,21 @@ export function FeedbackRegion({ feedback, note, onWordRules }: Props) {
   // register as new text content so screen readers re-announce them.
   const filler = feedback ? "​".repeat(feedback.key % 20) : "";
 
+  // The lead is bolded out of the sentence it opens, so a skim carries the
+  // verdict on its own. Split off `feedback.message` rather than rendered from
+  // the parts, so the toast can only ever show the exact sentence the rest of
+  // the game announces and reports.
+  const lead = feedback?.reason ? REJECTION_LEADS[feedback.reason] : undefined;
+  const rest =
+    feedback && lead && feedback.message.startsWith(lead)
+      ? feedback.message.slice(lead.length)
+      : null;
+
+  const specific =
+    feedback?.kind === "rejected" &&
+    feedback.reason !== undefined &&
+    feedback.reason !== CURATED_LIST_MISS;
+
   return (
     <>
       {note && (
@@ -74,11 +104,18 @@ export function FeedbackRegion({ feedback, note, onWordRules }: Props) {
         </p>
       )}
       <p
-        className={`feedback${feedback ? ` feedback--${feedback.kind}` : ""}${shown ? " feedback--shown" : ""}`}
+        className={`feedback${feedback ? ` feedback--${feedback.kind}` : ""}${specific ? " feedback--specific" : ""}${shown ? " feedback--shown" : ""}`}
         role="status"
         aria-live="polite"
       >
-        {feedback ? `${feedback.message}${filler}` : ""}
+        {rest !== null ? (
+          <>
+            <strong className="feedback__lead">{lead}</strong>
+            {`${rest}${filler}`}
+          </>
+        ) : (
+          (feedback ? `${feedback.message}${filler}` : "")
+        )}
         {feedback?.kind === "rejected" && (
           <button
             type="button"

@@ -298,19 +298,87 @@ export function evaluateSubmission(
   };
 }
 
-export const REJECTION_MESSAGES: Record<string, string> = {
-  empty: "Type a word first.",
-  "not-a-word": "That word is not in WordInk's curated list.",
-  "proper-noun": "This looks like a proper noun.",
-  abbreviation: "This looks like an abbreviation or acronym.",
-  "name-or-abbreviation": "This looks like a proper noun or abbreviation.",
-  misspelling: "This looks like a misspelling of another word.",
-  obsolete: "This looks archaic or obsolete.",
-  archaic: "This looks like an archaic word.",
-  dated: "This looks dated — no longer in common use.",
-  "missing-drop": "That word doesn't contain the drop.",
-  "same-as-drop": "Your answer can't be the drop itself.",
-  "already-used": "You've already submitted that word.",
-  "same-root-as-used": "That's too close to a word you already used.",
-  "check-your-spelling": "Not found — check your spelling?",
+/**
+ * The bold lead of each rejection: the word that names the verdict, for a
+ * player who reads one word and moves on.
+ *
+ * Players skim the toast rather than read it, and every rejection used to open
+ * with the same shape ("This looks like a...", "That word..."), so they all
+ * landed as the one message they had seen most -- "not on the curated list".
+ * The lead is the part that differs, so it goes first and it is the part in
+ * bold.
+ *
+ * The two not-found verdicts deliberately share a lead: they *are* the same
+ * verdict, and what separates them is the offer that follows.
+ *
+ * `empty` has no lead: "Type a word first." is an instruction rather than a
+ * verdict, and there is nothing in three words to pick out.
+ */
+/**
+ * What a word that looks mistyped is told. Shared rather than written twice: a
+ * word the data knows is a misspelling and one sitting a letter from something
+ * playable are the same mistake to the player, and the useful half of the
+ * message is the fix, not which of the two the game decided it was. One copy is
+ * what stops them drifting apart.
+ */
+// A question, not a verdict: the game is guessing that a typo is what happened,
+// and a word the player invented on purpose shouldn't be told it spelled
+// something else wrong.
+const MISSPELLING_LEAD = "Misspelling?";
+const MISSPELLING_FIX = "Check your spelling.";
+
+export const REJECTION_LEADS: Record<string, string> = {
+  "not-a-word": "Not found.",
+  misspelling: MISSPELLING_LEAD,
+  "check-your-spelling": MISSPELLING_LEAD,
+  "proper-noun": "Proper noun.",
+  abbreviation: "Abbreviation.",
+  "name-or-abbreviation": "Name or abbreviation.",
+  obsolete: "Obsolete.",
+  archaic: "Archaic.",
+  dated: "Dated.",
+  "missing-drop": "Missing the drop.",
+  "same-as-drop": "That's the drop.",
+  "already-used": "Already used.",
+  "same-root-as-used": "Same root.",
 };
+
+/**
+ * What the lead can't say on its own, and nothing more: a rejection is a beat
+ * in the middle of a guess, so a sentence that only restates the lead is a
+ * sentence to read past. `already-used` has no entry at all -- the lead is the
+ * whole message.
+ *
+ * Each one earns its place by adding a rule ("Names aren't playable"), a next
+ * move ("Find a longer word") or the thing that separates it from a lead it
+ * shares. `More info` is on every rejection toast, which is where the long
+ * explanation lives (see WordRulesModal).
+ */
+export const REJECTION_DETAILS: Record<string, string> = {
+  empty: "Type a word first.",
+  "not-a-word": "Not on the curated list.",
+  misspelling: MISSPELLING_FIX,
+  "check-your-spelling": MISSPELLING_FIX,
+  "proper-noun": "Names aren't playable.",
+  abbreviation: "Acronyms aren't playable.",
+  "name-or-abbreviation": "Not playable.",
+  obsolete: "No longer used.",
+  archaic: "Not in modern use.",
+  dated: "No longer common.",
+  "missing-drop": "Your word must contain it.",
+  "same-as-drop": "Find a longer word.",
+  "same-root-as-used": "Too close to a word you used.",
+};
+
+/**
+ * The whole message a player is told, lead and detail together. What screen
+ * readers announce and what the word-check tooling reports; the toast bolds the
+ * lead inside it (see FeedbackRegion).
+ */
+export const REJECTION_MESSAGES: Record<string, string> = Object.fromEntries(
+  Object.keys({ ...REJECTION_LEADS, ...REJECTION_DETAILS }).map((reason) => {
+    const lead = REJECTION_LEADS[reason];
+    const detail = REJECTION_DETAILS[reason];
+    return [reason, [lead, detail].filter(Boolean).join(" ")];
+  })
+);

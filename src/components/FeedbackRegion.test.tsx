@@ -27,7 +27,7 @@ describe("FeedbackRegion", () => {
     expect(region).toHaveTextContent("That word is not in WordInk's curated list.");
     expect(region).toHaveClass("feedback--rejected", "feedback--shown");
 
-    act(() => vi.advanceTimersByTime(6000));
+    act(() => vi.advanceTimersByTime(12000));
     expect(region).not.toHaveClass("feedback--shown");
   });
 
@@ -45,7 +45,7 @@ describe("FeedbackRegion", () => {
     expect(note).toHaveClass("live-note--shown");
 
     // Well past the toast's window: a check still in flight must not fade out.
-    act(() => vi.advanceTimersByTime(12000));
+    act(() => vi.advanceTimersByTime(24000));
     expect(note).toHaveClass("live-note--shown");
   });
 
@@ -87,9 +87,73 @@ describe("FeedbackRegion", () => {
     expect(toast).toHaveClass("feedback--shown");
 
     // One shared window, so neither is left behind on screen.
-    act(() => vi.advanceTimersByTime(6000));
+    act(() => vi.advanceTimersByTime(12000));
     expect(note).not.toHaveClass("live-note--shown");
     expect(toast).not.toHaveClass("feedback--shown");
+  });
+
+  it.each([
+    ["proper-noun", "Proper noun. Names aren't playable."],
+    ["already-used", "Already used."],
+    ["missing-drop", "Missing the drop. Your word must contain it."],
+    ["misspelling", "Misspelling? Check your spelling."],
+    ["check-your-spelling", "Misspelling? Check your spelling."],
+  ] as const)("sets a rejection with something specific to say apart (%s)", (reason, message) => {
+    render(
+      <FeedbackRegion feedback={{ kind: "rejected", message, reason, key: 1 }} onWordRules={vi.fn()} />
+    );
+
+    expect(screen.getByRole("status")).toHaveClass("feedback--specific");
+  });
+
+  it("leaves the curated-list miss on the plain rejection style", () => {
+    render(
+      <FeedbackRegion
+        feedback={{
+          kind: "rejected",
+          message: "Not found. Not on the curated list.",
+          reason: "not-a-word",
+          key: 1,
+        }}
+        onWordRules={vi.fn()}
+      />
+    );
+
+    const region = screen.getByRole("status");
+    expect(region).toHaveClass("feedback--rejected");
+    expect(region).not.toHaveClass("feedback--specific");
+  });
+
+  it("bolds the lead out of the message, leaving the sentence whole", () => {
+    render(
+      <FeedbackRegion
+        feedback={{
+          kind: "rejected",
+          message: "Proper noun. Names aren't playable.",
+          reason: "proper-noun",
+          key: 1,
+        }}
+        onWordRules={vi.fn()}
+      />
+    );
+
+    const region = screen.getByRole("status");
+    expect(region.querySelector(".feedback__lead")).toHaveTextContent("Proper noun.");
+    // The announcement is still the sentence the rest of the game reports.
+    expect(region).toHaveTextContent("Proper noun. Names aren't playable.");
+  });
+
+  it("shows a message with no lead as plain text", () => {
+    render(
+      <FeedbackRegion
+        feedback={{ kind: "rejected", message: "Type a word first.", reason: "empty", key: 1 }}
+        onWordRules={vi.fn()}
+      />
+    );
+
+    const region = screen.getByRole("status");
+    expect(region.querySelector(".feedback__lead")).toBeNull();
+    expect(region).toHaveTextContent("Type a word first.");
   });
 
   it("offers rejected submissions a link to the word rules", async () => {

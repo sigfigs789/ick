@@ -4,6 +4,7 @@ import { isValidWord } from "./dictionary";
 import {
   containsDropInOrder,
   evaluateSubmission,
+  REJECTION_LEADS,
   REJECTION_MESSAGES,
   spellingNearMiss,
 } from "./submit";
@@ -29,14 +30,35 @@ describe("containsDropInOrder", () => {
 });
 
 describe("evaluateSubmission", () => {
-  it("uses concise diagnostic messages for word-rule rejections", () => {
-    expect(REJECTION_MESSAGES["proper-noun"]).toBe("This looks like a proper noun.");
-    expect(REJECTION_MESSAGES.abbreviation).toBe("This looks like an abbreviation or acronym.");
-    expect(REJECTION_MESSAGES["name-or-abbreviation"]).toBe("This looks like a proper noun or abbreviation.");
-    expect(REJECTION_MESSAGES.misspelling).toBe("This looks like a misspelling of another word.");
-    expect(REJECTION_MESSAGES.obsolete).toBe("This looks archaic or obsolete.");
-    expect(REJECTION_MESSAGES.archaic).toBe("This looks like an archaic word.");
-    expect(REJECTION_MESSAGES.dated).toBe("This looks dated — no longer in common use.");
+  it("says it in the lead, and says no more than it has to", () => {
+    expect(REJECTION_MESSAGES["proper-noun"]).toBe("Proper noun. Names aren't playable.");
+    // A known misspelling reads exactly like a near-miss: same mistake, same nudge.
+    expect(REJECTION_MESSAGES.misspelling).toBe("Misspelling? Check your spelling.");
+    expect(REJECTION_MESSAGES.misspelling).toBe(REJECTION_MESSAGES["check-your-spelling"]);
+    expect(REJECTION_MESSAGES["missing-drop"]).toBe("Missing the drop. Your word must contain it.");
+    expect(REJECTION_MESSAGES["not-a-word"]).toBe("Not found. Not on the curated list.");
+    // The lead is the whole message where nothing else has to be said.
+    expect(REJECTION_MESSAGES["already-used"]).toBe("Already used.");
+    expect(REJECTION_MESSAGES.empty).toBe("Type a word first.");
+  });
+
+  it("keeps every rejection to a lead and at most one clause after it", () => {
+    for (const [reason, message] of Object.entries(REJECTION_MESSAGES)) {
+      expect(message.split(". ").length, `${reason} says too much`).toBeLessThanOrEqual(2);
+      expect(message.length, `${reason} is too long to skim`).toBeLessThanOrEqual(45);
+    }
+  });
+
+  it("gives every reason but the empty submission a lead its message opens with", () => {
+    for (const [reason, message] of Object.entries(REJECTION_MESSAGES)) {
+      if (reason === "empty") {
+        expect(REJECTION_LEADS[reason]).toBeUndefined();
+        continue;
+      }
+      const lead = REJECTION_LEADS[reason];
+      expect(lead, `${reason} needs a lead`).toBeTruthy();
+      expect(message.startsWith(lead), `${reason} must open with its lead`).toBe(true);
+    }
   });
 
   it("rejects an empty submission", () => {

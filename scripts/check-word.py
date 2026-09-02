@@ -42,14 +42,14 @@ WORD_RE = re.compile(r"^[a-z]+$")
 # The categories generate-data.py records in rejection-metadata.json, mapped
 # to the same player-facing wording submit.ts shows in REJECTION_MESSAGES.
 REJECTION_MESSAGES = {
-    "proper-noun": "This looks like a proper noun.",
-    "abbreviation": "This looks like an abbreviation or acronym.",
-    "name-or-abbreviation": "This looks like a proper noun or abbreviation.",
-    "misspelling": "This looks like a misspelling of another word.",
-    "obsolete": "This looks archaic or obsolete.",
-    "archaic": "This looks like an archaic word.",
-    "dated": "This looks dated — no longer in common use.",
-    "not-a-word": "That word is not in WordInk's curated list.",
+    "proper-noun": "Proper noun. Names aren't playable.",
+    "abbreviation": "Abbreviation. Acronyms aren't playable.",
+    "name-or-abbreviation": "Name or abbreviation. Not playable.",
+    "misspelling": "Misspelling? Check your spelling.",
+    "obsolete": "Obsolete. No longer used.",
+    "archaic": "Archaic. Not in modern use.",
+    "dated": "Dated. No longer common.",
+    "not-a-word": "Not found. Not on the curated list.",
 }
 
 

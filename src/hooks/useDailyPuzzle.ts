@@ -105,6 +105,11 @@ export interface Feedback {
   kind: "accepted" | "rejected";
   message: string;
   rarity?: Rarity;
+  /**
+   * Why a rejected guess was turned away, so the toast can tell a word the game
+   * explained ("this is a proper noun") from one it simply doesn't carry.
+   */
+  reason?: RejectionReason;
   /** Bumped on every feedback event so screen readers re-announce repeats. */
   key: number;
 }
@@ -168,10 +173,13 @@ export function useDailyPuzzle() {
     setChecking(false);
   }, [viewedDate, drop]);
 
-  const showFeedback = useCallback((kind: Feedback["kind"], message: string, rarity?: Rarity) => {
-    feedbackKey.current += 1;
-    setFeedback({ kind, message, rarity, key: feedbackKey.current });
-  }, []);
+  const showFeedback = useCallback(
+    (kind: Feedback["kind"], message: string, rarity?: Rarity, reason?: RejectionReason) => {
+      feedbackKey.current += 1;
+      setFeedback({ kind, message, rarity, reason, key: feedbackKey.current });
+    },
+    []
+  );
 
   /**
    * Bank an accepted word, fire its analytics, and show the acceptance. Returns
@@ -230,7 +238,7 @@ export function useDailyPuzzle() {
       setProgress(updated);
       trackRejectedAnswer(viewedDate, drop, raw);
       trackRejectionMessage(viewedDate, reason);
-      showFeedback("rejected", REJECTION_MESSAGES[reason]);
+      showFeedback("rejected", REJECTION_MESSAGES[reason], undefined, reason);
     },
     [viewedDate, drop, showFeedback]
   );
@@ -351,7 +359,8 @@ export function useDailyPuzzle() {
       // Past the handoff window: stop making the player wait, but leave the
       // request running -- whatever it finds is still applied and still
       // reported, so a slow lookup costs the player nothing.
-      showFeedback("rejected", REJECTION_MESSAGES[shownRejectionReason(raw, reason)]);
+      const shownLate = shownRejectionReason(raw, reason);
+      showFeedback("rejected", REJECTION_MESSAGES[shownLate], undefined, shownLate);
       void lookup.then((late) => applyLiveCheck(raw, late));
       return result;
     },

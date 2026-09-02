@@ -26,6 +26,8 @@
 
   --danger-fg: #8c1d18;
   --danger-bg: #fbeae9;
+  --caution-fg: #6b4a05;
+  --caution-bg: #fdf3d4;
   --success-fg: #14532d;
   --success-bg: #e9f9ee;
   --focus-ring: #2563eb;
@@ -128,6 +130,8 @@
 
     --danger-fg: #ffb4ac;
     --danger-bg: #3a1a1a;
+    --caution-fg: #f5d98a;
+    --caution-bg: #3a2f10;
     --success-fg: #9fe0b6;
     --success-bg: #10301c;
     --focus-ring: #6d9bff;
@@ -1026,6 +1030,20 @@ h2 {
 .feedback--rejected {
   background: var(--danger-bg);
   color: var(--danger-fg);
+}
+/* A rejection with something specific to say -- a proper noun, an archaic form,
+   a word already used, a guess missing the drop. Red is reserved for the two
+   not-found verdicts, so a colour change is the cue that this toast is not the
+   familiar "not on the curated list" and its sentence is worth reading. */
+/* The lead carries the verdict on its own, for a player who reads the first
+   three words and nothing else. Inherits its colour: the toast already says
+   which kind of answer this is. */
+.feedback__lead {
+  font-weight: 800;
+}
+.feedback--rejected.feedback--specific {
+  background: var(--caution-bg);
+  color: var(--caution-fg);
 }
 /* A word not on the curated list is being checked (see LIVE_HANDOFF_MS). Bare
    left-aligned text with no container: it is not a verdict, just a quiet note
