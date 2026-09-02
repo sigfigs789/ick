@@ -33,7 +33,7 @@ describe("evaluateSubmission", () => {
   it("says it in the lead, and says no more than it has to", () => {
     expect(REJECTION_MESSAGES["proper-noun"]).toBe("Proper noun. Names aren't playable.");
     // A known misspelling reads exactly like a near-miss: same mistake, same nudge.
-    expect(REJECTION_MESSAGES.misspelling).toBe("Not found. Check your spelling?");
+    expect(REJECTION_MESSAGES.misspelling).toBe("Misspelling? Try the correct spelling.");
     expect(REJECTION_MESSAGES.misspelling).toBe(REJECTION_MESSAGES["check-your-spelling"]);
     expect(REJECTION_MESSAGES["missing-drop"]).toBe("Missing the drop. Your word must contain it.");
     expect(REJECTION_MESSAGES["not-a-word"]).toBe("Not found. Not on the curated list.");

@@ -45,7 +45,7 @@ REJECTION_MESSAGES = {
     "proper-noun": "Proper noun. Names aren't playable.",
     "abbreviation": "Abbreviation. Acronyms aren't playable.",
     "name-or-abbreviation": "Name or abbreviation. Not playable.",
-    "misspelling": "Not found. Check your spelling?",
+    "misspelling": "Misspelling? Try the correct spelling.",
     "obsolete": "Obsolete. No longer used.",
     "archaic": "Archaic. Not in modern use.",
     "dated": "Dated. No longer common.",

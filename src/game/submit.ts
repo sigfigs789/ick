@@ -315,22 +315,22 @@ export function evaluateSubmission(
  * verdict, and there is nothing in three words to pick out.
  */
 /**
- * The verdict a word gets when the search came up empty, and the offer that
- * follows it. Shared by three reasons rather than written out three times: a
- * known misspelling, a near-miss on the curated list and a flat miss are all
- * "we don't have this", and the first two are worth the same nudge. Keeping one
- * copy is what stops them drifting apart.
+ * What a word that looks mistyped is told. Shared rather than written twice: a
+ * word the data knows is a misspelling and one sitting a letter from something
+ * playable are the same mistake to the player, and the useful half of the
+ * message is the fix, not which of the two the game decided it was. One copy is
+ * what stops them drifting apart.
  */
-const NOT_FOUND_LEAD = "Not found.";
-const CHECK_SPELLING = "Check your spelling?";
+// A question, not a verdict: the game is guessing that a typo is what happened,
+// and a word the player invented on purpose shouldn't be told it spelled
+// something else wrong.
+const MISSPELLING_LEAD = "Misspelling?";
+const MISSPELLING_FIX = "Try the correct spelling.";
 
 export const REJECTION_LEADS: Record<string, string> = {
-  "not-a-word": NOT_FOUND_LEAD,
-  "check-your-spelling": NOT_FOUND_LEAD,
-  // A word the data knows is a misspelling gets the same message as one that
-  // merely looks like a typo: to the player they are the same mistake, and the
-  // useful half is the nudge, not the label.
-  misspelling: NOT_FOUND_LEAD,
+  "not-a-word": "Not found.",
+  misspelling: MISSPELLING_LEAD,
+  "check-your-spelling": MISSPELLING_LEAD,
   "proper-noun": "Proper noun.",
   abbreviation: "Abbreviation.",
   "name-or-abbreviation": "Name or abbreviation.",
@@ -357,8 +357,8 @@ export const REJECTION_LEADS: Record<string, string> = {
 export const REJECTION_DETAILS: Record<string, string> = {
   empty: "Type a word first.",
   "not-a-word": "Not on the curated list.",
-  "check-your-spelling": CHECK_SPELLING,
-  misspelling: CHECK_SPELLING,
+  misspelling: MISSPELLING_FIX,
+  "check-your-spelling": MISSPELLING_FIX,
   "proper-noun": "Names aren't playable.",
   abbreviation: "Acronyms aren't playable.",
   "name-or-abbreviation": "Not playable.",

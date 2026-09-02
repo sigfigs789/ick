@@ -17,23 +17,17 @@ interface Props {
 const VISIBLE_MS = 12000;
 
 /**
- * The two verdicts that really do mean "we couldn't find this anywhere": the
- * curated list has no such word, or it has one a letter or two away.
+ * The one verdict that means "we don't have this word": it isn't on the curated
+ * list, and no reference the game consults could place it either.
  *
- * Everything else -- a proper noun, an archaic form, a word already used, a
- * guess missing the drop -- is a different answer wearing the same red toast,
+ * Everything else -- a proper noun, an archaic form, a likely typo, a word
+ * already used -- is a different answer that used to wear the same red toast,
  * and players read the colour rather than the sentence: every rejection was
- * landing as "not on the list". So the not-found pair keeps the red, and every
- * rejection that has something more specific to say takes the caution yellow,
- * which is the signal that the words below are worth reading.
+ * landing as "not on the list". So the curated-list miss keeps the red, and
+ * every rejection that has something more specific to say takes the caution
+ * yellow, which is the signal that the words below are worth reading.
  */
-const NOT_FOUND_REASONS = new Set<RejectionReason>([
-  "not-a-word",
-  "check-your-spelling",
-  // Shares the not-found message word for word, so it has to share the colour:
-  // the same sentence in two different boxes reads as a bug.
-  "misspelling",
-]);
+const CURATED_LIST_MISS: RejectionReason = "not-a-word";
 
 /**
  * A single polite live region, styled as a small toast that fades in and
@@ -91,7 +85,7 @@ export function FeedbackRegion({ feedback, note, onWordRules }: Props) {
   const specific =
     feedback?.kind === "rejected" &&
     feedback.reason !== undefined &&
-    !NOT_FOUND_REASONS.has(feedback.reason);
+    feedback.reason !== CURATED_LIST_MISS;
 
   return (
     <>

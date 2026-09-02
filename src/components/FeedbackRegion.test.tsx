@@ -96,6 +96,8 @@ describe("FeedbackRegion", () => {
     ["proper-noun", "Proper noun. Names aren't playable."],
     ["already-used", "Already used."],
     ["missing-drop", "Missing the drop. Your word must contain it."],
+    ["misspelling", "Misspelling? Try the correct spelling."],
+    ["check-your-spelling", "Misspelling? Try the correct spelling."],
   ] as const)("sets a rejection with something specific to say apart (%s)", (reason, message) => {
     render(
       <FeedbackRegion feedback={{ kind: "rejected", message, reason, key: 1 }} onWordRules={vi.fn()} />
@@ -104,13 +106,17 @@ describe("FeedbackRegion", () => {
     expect(screen.getByRole("status")).toHaveClass("feedback--specific");
   });
 
-  it.each([
-    ["not-a-word", "Not found. Not on the curated list."],
-    ["check-your-spelling", "Not found. Check your spelling?"],
-    ["misspelling", "Not found. Check your spelling?"],
-  ] as const)("leaves the not-found verdicts on the plain rejection style (%s)", (reason, message) => {
+  it("leaves the curated-list miss on the plain rejection style", () => {
     render(
-      <FeedbackRegion feedback={{ kind: "rejected", message, reason, key: 1 }} onWordRules={vi.fn()} />
+      <FeedbackRegion
+        feedback={{
+          kind: "rejected",
+          message: "Not found. Not on the curated list.",
+          reason: "not-a-word",
+          key: 1,
+        }}
+        onWordRules={vi.fn()}
+      />
     );
 
     const region = screen.getByRole("status");
