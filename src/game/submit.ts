@@ -298,19 +298,69 @@ export function evaluateSubmission(
   };
 }
 
-export const REJECTION_MESSAGES: Record<string, string> = {
+/**
+ * The bold opening of each rejection: the two or three words that say what
+ * happened, before the sentence that explains it.
+ *
+ * Players skim the toast rather than read it, and every rejection used to open
+ * with the same shape ("This looks like a...", "That word..."), so they all
+ * landed as the one message they had seen most -- "not on the curated list".
+ * The lead is what a skim can carry: it names the verdict on its own, and the
+ * detail after it is there for the players who do read on.
+ *
+ * `empty` has no lead: "Type a word first." is already three words long, and a
+ * label in front of it would be longer than the thing it labels.
+ */
+export const REJECTION_LEADS: Record<string, string> = {
+  "not-a-word": "Not found.",
+  "proper-noun": "Proper noun.",
+  abbreviation: "Abbreviation.",
+  "name-or-abbreviation": "Proper noun or abbreviation.",
+  misspelling: "Misspelling.",
+  obsolete: "Obsolete.",
+  archaic: "Archaic.",
+  dated: "Dated.",
+  "missing-drop": "Missing the drop.",
+  "same-as-drop": "That's the drop itself.",
+  "already-used": "Already used.",
+  "same-root-as-used": "Same root.",
+  "check-your-spelling": "Not found.",
+};
+
+/**
+ * The sentence after the lead. Says what the rule is rather than restating the
+ * label -- a player who reads this far should learn something the lead didn't
+ * already tell them.
+ */
+export const REJECTION_DETAILS: Record<string, string> = {
   empty: "Type a word first.",
   "not-a-word": "That word is not in WordInk's curated list.",
-  "proper-noun": "This looks like a proper noun.",
-  abbreviation: "This looks like an abbreviation or acronym.",
-  "name-or-abbreviation": "This looks like a proper noun or abbreviation.",
-  misspelling: "This looks like a misspelling of another word.",
-  obsolete: "This looks archaic or obsolete.",
-  archaic: "This looks like an archaic word.",
-  dated: "This looks dated — no longer in common use.",
-  "missing-drop": "That word doesn't contain the drop.",
-  "same-as-drop": "Your answer can't be the drop itself.",
+  "proper-noun": "Names of people, places and brands aren't playable.",
+  abbreviation: "Acronyms and shortened forms aren't playable.",
+  "name-or-abbreviation": "Names and shortened forms aren't playable.",
+  // The one rejection with an answer attached: the player has a real word in
+  // mind and spelled it wrong, so the message points at the fix rather than
+  // just naming the problem.
+  misspelling: "This is a misspelling of a real word — try the correct spelling.",
+  obsolete: "This one has dropped out of the language.",
+  archaic: "This one has dropped out of everyday use.",
+  dated: "No longer in common use.",
+  "missing-drop": "Your word has to contain today's letters.",
+  "same-as-drop": "Your answer has to be a longer word that contains it.",
   "already-used": "You've already submitted that word.",
   "same-root-as-used": "That's too close to a word you already used.",
-  "check-your-spelling": "Not found — check your spelling?",
+  "check-your-spelling": "Check your spelling?",
 };
+
+/**
+ * The whole sentence a player is told, lead and detail together. What screen
+ * readers announce and what the word-check tooling reports; the toast renders
+ * the two parts separately so the lead can carry the weight (see
+ * FeedbackRegion).
+ */
+export const REJECTION_MESSAGES: Record<string, string> = Object.fromEntries(
+  Object.entries(REJECTION_DETAILS).map(([reason, detail]) => {
+    const lead = REJECTION_LEADS[reason];
+    return [reason, lead ? `${lead} ${detail}` : detail];
+  })
+);

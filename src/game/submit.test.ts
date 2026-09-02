@@ -4,6 +4,7 @@ import { isValidWord } from "./dictionary";
 import {
   containsDropInOrder,
   evaluateSubmission,
+  REJECTION_LEADS,
   REJECTION_MESSAGES,
   spellingNearMiss,
 } from "./submit";
@@ -29,14 +30,31 @@ describe("containsDropInOrder", () => {
 });
 
 describe("evaluateSubmission", () => {
-  it("uses concise diagnostic messages for word-rule rejections", () => {
-    expect(REJECTION_MESSAGES["proper-noun"]).toBe("This looks like a proper noun.");
-    expect(REJECTION_MESSAGES.abbreviation).toBe("This looks like an abbreviation or acronym.");
-    expect(REJECTION_MESSAGES["name-or-abbreviation"]).toBe("This looks like a proper noun or abbreviation.");
-    expect(REJECTION_MESSAGES.misspelling).toBe("This looks like a misspelling of another word.");
-    expect(REJECTION_MESSAGES.obsolete).toBe("This looks archaic or obsolete.");
-    expect(REJECTION_MESSAGES.archaic).toBe("This looks like an archaic word.");
-    expect(REJECTION_MESSAGES.dated).toBe("This looks dated — no longer in common use.");
+  it("opens every rejection with the lead that names it, then explains", () => {
+    expect(REJECTION_MESSAGES["proper-noun"]).toBe(
+      "Proper noun. Names of people, places and brands aren't playable."
+    );
+    expect(REJECTION_MESSAGES.abbreviation).toBe(
+      "Abbreviation. Acronyms and shortened forms aren't playable."
+    );
+    expect(REJECTION_MESSAGES.misspelling).toBe(
+      "Misspelling. This is a misspelling of a real word — try the correct spelling."
+    );
+    expect(REJECTION_MESSAGES.dated).toBe("Dated. No longer in common use.");
+    // The one rejection short enough to stand without a label.
+    expect(REJECTION_MESSAGES.empty).toBe("Type a word first.");
+  });
+
+  it("gives every reason but the empty submission a lead its message opens with", () => {
+    for (const [reason, message] of Object.entries(REJECTION_MESSAGES)) {
+      if (reason === "empty") {
+        expect(REJECTION_LEADS[reason]).toBeUndefined();
+        continue;
+      }
+      const lead = REJECTION_LEADS[reason];
+      expect(lead, `${reason} needs a lead`).toBeTruthy();
+      expect(message.startsWith(`${lead} `), `${reason} must open with its lead`).toBe(true);
+    }
   });
 
   it("rejects an empty submission", () => {

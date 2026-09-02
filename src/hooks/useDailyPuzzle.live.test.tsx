@@ -4,6 +4,7 @@ import { useDailyPuzzle } from "./useDailyPuzzle";
 import { todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { isValidWord } from "../game/dictionary";
+import { REJECTION_MESSAGES } from "../game/submit";
 import { resetLiveCheckSession } from "../game/liveValidate";
 import { LIVE_CHECK_PENDING, LIVE_CHECK_SETTLED } from "./useDailyPuzzle";
 
@@ -198,7 +199,7 @@ describe("useDailyPuzzle live fallback", () => {
     expect(result.current.progress.acceptedWords).toEqual([]);
     expect(result.current.progress.rejectedAttempts).toEqual([OFF_LIST_WORD]);
     // The specific reason MW supplied, not the generic curated-list message.
-    expect(result.current.feedback?.message).toContain("archaic");
+    expect(result.current.feedback?.message).toBe(REJECTION_MESSAGES.archaic);
     // A rejection is still a finished search: it settles on the empty-handed form.
     expect(result.current.liveNote).toBe(LIVE_CHECK_SETTLED.notFound);
   });
@@ -405,9 +406,7 @@ describe("useDailyPuzzle live fallback", () => {
     });
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(result.current.feedback?.message).toContain(
-      "doesn't contain the drop",
-    );
+    expect(result.current.feedback?.message).toBe(REJECTION_MESSAGES["missing-drop"]);
   });
 
   it("banks a word only once when it is submitted twice mid-flight", async () => {
