@@ -312,7 +312,7 @@ export function evaluateSubmission(
  * whole instruction already.
  */
 export const REJECTION_LEADS: Record<string, string> = {
-  "not-a-word": "Not on the list.",
+  "not-a-word": "Not on the curated list.",
   "proper-noun": "Proper noun.",
   abbreviation: "Abbreviation or acronym.",
   "name-or-abbreviation": "Proper noun or abbreviation.",

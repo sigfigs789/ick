@@ -311,7 +311,7 @@ describe("gameplay end to end", () => {
     await submit(OFF_LIST_WORD);
 
     await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent(/not on the list|spelling/i)
+      expect(screen.getByRole("status")).toHaveTextContent(/not on the curated list|spelling/i)
     );
     expect(loggedWords()).toEqual([]);
   });

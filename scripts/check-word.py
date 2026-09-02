@@ -49,7 +49,7 @@ REJECTION_MESSAGES = {
     "obsolete": "Archaic or obsolete.",
     "archaic": "Archaic.",
     "dated": "Dated. No longer in common use.",
-    "not-a-word": "Not on the list.",
+    "not-a-word": "Not on the curated list.",
 }
 
 
