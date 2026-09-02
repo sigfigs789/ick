@@ -14,7 +14,7 @@ interface Props {
   onWordRules: () => void;
 }
 
-const VISIBLE_MS = 9000;
+const VISIBLE_MS = 12000;
 
 /**
  * The two verdicts that really do mean "we couldn't find this anywhere": the

@@ -27,7 +27,7 @@ describe("FeedbackRegion", () => {
     expect(region).toHaveTextContent("That word is not in WordInk's curated list.");
     expect(region).toHaveClass("feedback--rejected", "feedback--shown");
 
-    act(() => vi.advanceTimersByTime(9000));
+    act(() => vi.advanceTimersByTime(12000));
     expect(region).not.toHaveClass("feedback--shown");
   });
 
@@ -45,7 +45,7 @@ describe("FeedbackRegion", () => {
     expect(note).toHaveClass("live-note--shown");
 
     // Well past the toast's window: a check still in flight must not fade out.
-    act(() => vi.advanceTimersByTime(18000));
+    act(() => vi.advanceTimersByTime(24000));
     expect(note).toHaveClass("live-note--shown");
   });
 
@@ -87,7 +87,7 @@ describe("FeedbackRegion", () => {
     expect(toast).toHaveClass("feedback--shown");
 
     // One shared window, so neither is left behind on screen.
-    act(() => vi.advanceTimersByTime(9000));
+    act(() => vi.advanceTimersByTime(12000));
     expect(note).not.toHaveClass("live-note--shown");
     expect(toast).not.toHaveClass("feedback--shown");
   });
@@ -105,7 +105,7 @@ describe("FeedbackRegion", () => {
   });
 
   it.each([
-    ["not-a-word", "Not found. That word is not in WordInk's curated list."],
+    ["not-a-word", "Not on the list. WordInk only takes words from its curated dictionary."],
     ["check-your-spelling", "Not found. Check your spelling?"],
   ] as const)("leaves the not-found verdicts on the plain rejection style (%s)", (reason, message) => {
     render(

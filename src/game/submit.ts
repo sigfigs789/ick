@@ -299,68 +299,61 @@ export function evaluateSubmission(
 }
 
 /**
- * The bold opening of each rejection: the two or three words that say what
- * happened, before the sentence that explains it.
+ * The bold lead of each rejection: the phrase that names the verdict, for a
+ * player who reads three words and moves on.
  *
  * Players skim the toast rather than read it, and every rejection used to open
  * with the same shape ("This looks like a...", "That word..."), so they all
  * landed as the one message they had seen most -- "not on the curated list".
- * The lead is what a skim can carry: it names the verdict on its own, and the
- * detail after it is there for the players who do read on.
+ * The lead is the part that differs, so it goes first and it is the part in
+ * bold.
  *
- * `empty` has no lead: "Type a word first." is already three words long, and a
- * label in front of it would be longer than the thing it labels.
+ * `empty` has no lead: "Type a word first." is three words long and is the
+ * whole instruction already.
  */
 export const REJECTION_LEADS: Record<string, string> = {
-  "not-a-word": "Not found.",
+  "not-a-word": "Not on the list.",
   "proper-noun": "Proper noun.",
-  abbreviation: "Abbreviation.",
+  abbreviation: "Abbreviation or acronym.",
   "name-or-abbreviation": "Proper noun or abbreviation.",
   misspelling: "Misspelling.",
-  obsolete: "Obsolete.",
+  obsolete: "Archaic or obsolete.",
   archaic: "Archaic.",
   dated: "Dated.",
-  "missing-drop": "Missing the drop.",
+  "missing-drop": "Doesn't contain the drop.",
   "same-as-drop": "That's the drop itself.",
   "already-used": "Already used.",
-  "same-root-as-used": "Same root.",
+  "same-root-as-used": "Too close to a word you already used.",
   "check-your-spelling": "Not found.",
 };
 
 /**
- * The sentence after the lead. Says what the rule is rather than restating the
- * label -- a player who reads this far should learn something the lead didn't
- * already tell them.
+ * What a lead can't say on its own, and nothing more: a rejection is a beat in
+ * the middle of a guess, so anything the lead already covers is a sentence the
+ * player has to read past. Most reasons have no entry here at all -- "Proper
+ * noun." is the entire message.
+ *
+ * `More info` is on every rejection toast, which is where the longer
+ * explanation lives (see WordRulesModal).
  */
 export const REJECTION_DETAILS: Record<string, string> = {
   empty: "Type a word first.",
-  "not-a-word": "That word is not in WordInk's curated list.",
-  "proper-noun": "Names of people, places and brands aren't playable.",
-  abbreviation: "Acronyms and shortened forms aren't playable.",
-  "name-or-abbreviation": "Names and shortened forms aren't playable.",
   // The one rejection with an answer attached: the player has a real word in
-  // mind and spelled it wrong, so the message points at the fix rather than
-  // just naming the problem.
-  misspelling: "This is a misspelling of a real word — try the correct spelling.",
-  obsolete: "This one has dropped out of the language.",
-  archaic: "This one has dropped out of everyday use.",
+  // mind and spelled it wrong, so the message points at the fix.
+  misspelling: "Try the correct spelling.",
   dated: "No longer in common use.",
-  "missing-drop": "Your word has to contain today's letters.",
-  "same-as-drop": "Your answer has to be a longer word that contains it.",
-  "already-used": "You've already submitted that word.",
-  "same-root-as-used": "That's too close to a word you already used.",
   "check-your-spelling": "Check your spelling?",
 };
 
 /**
- * The whole sentence a player is told, lead and detail together. What screen
- * readers announce and what the word-check tooling reports; the toast renders
- * the two parts separately so the lead can carry the weight (see
- * FeedbackRegion).
+ * The whole sentence a player is told, which for most reasons is just the lead.
+ * What screen readers announce and what the word-check tooling reports; the
+ * toast bolds the lead inside it (see FeedbackRegion).
  */
 export const REJECTION_MESSAGES: Record<string, string> = Object.fromEntries(
-  Object.entries(REJECTION_DETAILS).map(([reason, detail]) => {
+  Object.keys({ ...REJECTION_LEADS, ...REJECTION_DETAILS }).map((reason) => {
     const lead = REJECTION_LEADS[reason];
-    return [reason, lead ? `${lead} ${detail}` : detail];
+    const detail = REJECTION_DETAILS[reason];
+    return [reason, [lead, detail].filter(Boolean).join(" ")];
   })
 );

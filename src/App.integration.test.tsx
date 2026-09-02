@@ -185,7 +185,7 @@ describe("gameplay end to end", () => {
     await submit("aeiou".includes(DROP.toLowerCase()) ? "qwrtp" : "aeiou");
 
     await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent(/missing the drop/i)
+      expect(screen.getByRole("status")).toHaveTextContent(/doesn't contain the drop/i)
     );
     expect(loggedWords()).toEqual([]);
     expect(savedProgress(TODAY)?.rejectedAttempts).toHaveLength(1);
@@ -200,7 +200,7 @@ describe("gameplay end to end", () => {
     await submit(word);
 
     await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent(/already submitted that word/i)
+      expect(screen.getByRole("status")).toHaveTextContent(/already used/i)
     );
     expect(loggedWords()).toEqual([word]);
   });
@@ -311,7 +311,7 @@ describe("gameplay end to end", () => {
     await submit(OFF_LIST_WORD);
 
     await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent(/not in WordInk's curated list|spelling/i)
+      expect(screen.getByRole("status")).toHaveTextContent(/not on the list|spelling/i)
     );
     expect(loggedWords()).toEqual([]);
   });

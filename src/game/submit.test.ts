@@ -30,18 +30,14 @@ describe("containsDropInOrder", () => {
 });
 
 describe("evaluateSubmission", () => {
-  it("opens every rejection with the lead that names it, then explains", () => {
-    expect(REJECTION_MESSAGES["proper-noun"]).toBe(
-      "Proper noun. Names of people, places and brands aren't playable."
-    );
-    expect(REJECTION_MESSAGES.abbreviation).toBe(
-      "Abbreviation. Acronyms and shortened forms aren't playable."
-    );
-    expect(REJECTION_MESSAGES.misspelling).toBe(
-      "Misspelling. This is a misspelling of a real word — try the correct spelling."
-    );
+  it("says it in the lead, and says no more than it has to", () => {
+    expect(REJECTION_MESSAGES["proper-noun"]).toBe("Proper noun.");
+    expect(REJECTION_MESSAGES.abbreviation).toBe("Abbreviation or acronym.");
+    expect(REJECTION_MESSAGES.archaic).toBe("Archaic.");
+    expect(REJECTION_MESSAGES["missing-drop"]).toBe("Doesn't contain the drop.");
+    // The few that a lead alone leaves unhelpful: what to do about it.
+    expect(REJECTION_MESSAGES.misspelling).toBe("Misspelling. Try the correct spelling.");
     expect(REJECTION_MESSAGES.dated).toBe("Dated. No longer in common use.");
-    // The one rejection short enough to stand without a label.
     expect(REJECTION_MESSAGES.empty).toBe("Type a word first.");
   });
 
@@ -53,7 +49,7 @@ describe("evaluateSubmission", () => {
       }
       const lead = REJECTION_LEADS[reason];
       expect(lead, `${reason} needs a lead`).toBeTruthy();
-      expect(message.startsWith(`${lead} `), `${reason} must open with its lead`).toBe(true);
+      expect(message.startsWith(lead), `${reason} must open with its lead`).toBe(true);
     }
   });
 
