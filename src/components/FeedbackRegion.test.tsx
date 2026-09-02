@@ -93,9 +93,9 @@ describe("FeedbackRegion", () => {
   });
 
   it.each([
-    ["proper-noun", "Proper noun. Names of people, places and brands aren't playable."],
-    ["already-used", "Already used. You've already submitted that word."],
-    ["missing-drop", "Missing the drop. Your word has to contain today's letters."],
+    ["proper-noun", "Proper noun. Names aren't playable."],
+    ["already-used", "Already used."],
+    ["missing-drop", "Missing the drop. Your word must contain it."],
   ] as const)("sets a rejection with something specific to say apart (%s)", (reason, message) => {
     render(
       <FeedbackRegion feedback={{ kind: "rejected", message, reason, key: 1 }} onWordRules={vi.fn()} />
@@ -105,7 +105,7 @@ describe("FeedbackRegion", () => {
   });
 
   it.each([
-    ["not-a-word", "Not on the curated list."],
+    ["not-a-word", "Not found. Not on the curated list."],
     ["check-your-spelling", "Not found. Check your spelling?"],
   ] as const)("leaves the not-found verdicts on the plain rejection style (%s)", (reason, message) => {
     render(
@@ -122,7 +122,7 @@ describe("FeedbackRegion", () => {
       <FeedbackRegion
         feedback={{
           kind: "rejected",
-          message: "Proper noun. Names of people, places and brands aren't playable.",
+          message: "Proper noun. Names aren't playable.",
           reason: "proper-noun",
           key: 1,
         }}
@@ -133,9 +133,7 @@ describe("FeedbackRegion", () => {
     const region = screen.getByRole("status");
     expect(region.querySelector(".feedback__lead")).toHaveTextContent("Proper noun.");
     // The announcement is still the sentence the rest of the game reports.
-    expect(region).toHaveTextContent(
-      "Proper noun. Names of people, places and brands aren't playable."
-    );
+    expect(region).toHaveTextContent("Proper noun. Names aren't playable.");
   });
 
   it("shows a message with no lead as plain text", () => {

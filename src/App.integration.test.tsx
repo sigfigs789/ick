@@ -185,7 +185,7 @@ describe("gameplay end to end", () => {
     await submit("aeiou".includes(DROP.toLowerCase()) ? "qwrtp" : "aeiou");
 
     await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent(/doesn't contain the drop/i)
+      expect(screen.getByRole("status")).toHaveTextContent(/missing the drop/i)
     );
     expect(loggedWords()).toEqual([]);
     expect(savedProgress(TODAY)?.rejectedAttempts).toHaveLength(1);

@@ -42,14 +42,14 @@ WORD_RE = re.compile(r"^[a-z]+$")
 # The categories generate-data.py records in rejection-metadata.json, mapped
 # to the same player-facing wording submit.ts shows in REJECTION_MESSAGES.
 REJECTION_MESSAGES = {
-    "proper-noun": "Proper noun.",
-    "abbreviation": "Abbreviation or acronym.",
-    "name-or-abbreviation": "Proper noun or abbreviation.",
+    "proper-noun": "Proper noun. Names aren't playable.",
+    "abbreviation": "Abbreviation. Acronyms aren't playable.",
+    "name-or-abbreviation": "Name or abbreviation. Not playable.",
     "misspelling": "Misspelling. Try the correct spelling.",
-    "obsolete": "Archaic or obsolete.",
-    "archaic": "Archaic.",
-    "dated": "Dated. No longer in common use.",
-    "not-a-word": "Not on the curated list.",
+    "obsolete": "Obsolete. No longer used.",
+    "archaic": "Archaic. Not in modern use.",
+    "dated": "Dated. No longer common.",
+    "not-a-word": "Not found. Not on the curated list.",
 }
 
 

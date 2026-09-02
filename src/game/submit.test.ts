@@ -31,14 +31,20 @@ describe("containsDropInOrder", () => {
 
 describe("evaluateSubmission", () => {
   it("says it in the lead, and says no more than it has to", () => {
-    expect(REJECTION_MESSAGES["proper-noun"]).toBe("Proper noun.");
-    expect(REJECTION_MESSAGES.abbreviation).toBe("Abbreviation or acronym.");
-    expect(REJECTION_MESSAGES.archaic).toBe("Archaic.");
-    expect(REJECTION_MESSAGES["missing-drop"]).toBe("Doesn't contain the drop.");
-    // The few that a lead alone leaves unhelpful: what to do about it.
+    expect(REJECTION_MESSAGES["proper-noun"]).toBe("Proper noun. Names aren't playable.");
     expect(REJECTION_MESSAGES.misspelling).toBe("Misspelling. Try the correct spelling.");
-    expect(REJECTION_MESSAGES.dated).toBe("Dated. No longer in common use.");
+    expect(REJECTION_MESSAGES["missing-drop"]).toBe("Missing the drop. Your word must contain it.");
+    expect(REJECTION_MESSAGES["not-a-word"]).toBe("Not found. Not on the curated list.");
+    // The lead is the whole message where nothing else has to be said.
+    expect(REJECTION_MESSAGES["already-used"]).toBe("Already used.");
     expect(REJECTION_MESSAGES.empty).toBe("Type a word first.");
+  });
+
+  it("keeps every rejection to a lead and at most one clause after it", () => {
+    for (const [reason, message] of Object.entries(REJECTION_MESSAGES)) {
+      expect(message.split(". ").length, `${reason} says too much`).toBeLessThanOrEqual(2);
+      expect(message.length, `${reason} is too long to skim`).toBeLessThanOrEqual(45);
+    }
   });
 
   it("gives every reason but the empty submission a lead its message opens with", () => {
