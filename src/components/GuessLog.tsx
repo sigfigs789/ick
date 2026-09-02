@@ -88,7 +88,9 @@ export function GuessLog({
           <h2 className="guess-log__title">Guess log</h2>
           {/* Both of the day's allowances, as matching chips: what you have
               left of each, counting down, named so neither number depends on
-              its position to say what it is. The retry sits left of the guesses
+              its position to say what it is -- and said as "left", because
+              these chips are now the only place the count appears and a bare
+              "3 guesses" reads as easily as spent than remaining. The retry sits left of the guesses
               because it is the smaller, rarer one and reads as a modifier on
               them, and is absent entirely on a puzzle that carries none --
               which is a different thing from having none left. */}
@@ -99,7 +101,7 @@ export function GuessLog({
                   retriesLeft === 0 ? " guess-log__chip--spent" : ""
                 }`}
               >
-                {retriesLeft} retr{retriesLeft === 1 ? "y" : "ies"}
+                {retriesLeft} retr{retriesLeft === 1 ? "y" : "ies"} left
               </span>
             )}
             <span
@@ -107,7 +109,7 @@ export function GuessLog({
                 guessesLeft === 0 ? " guess-log__chip--spent" : ""
               }`}
             >
-              {guessesLeft} guess{guessesLeft === 1 ? "" : "es"}
+              {guessesLeft} guess{guessesLeft === 1 ? "" : "es"} left
             </span>
           </span>
         </div>
