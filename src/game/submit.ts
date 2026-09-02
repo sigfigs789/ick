@@ -314,13 +314,26 @@ export function evaluateSubmission(
  * `empty` has no lead: "Type a word first." is an instruction rather than a
  * verdict, and there is nothing in three words to pick out.
  */
+/**
+ * The verdict a word gets when the search came up empty, and the offer that
+ * follows it. Shared by three reasons rather than written out three times: a
+ * known misspelling, a near-miss on the curated list and a flat miss are all
+ * "we don't have this", and the first two are worth the same nudge. Keeping one
+ * copy is what stops them drifting apart.
+ */
+const NOT_FOUND_LEAD = "Not found.";
+const CHECK_SPELLING = "Check your spelling?";
+
 export const REJECTION_LEADS: Record<string, string> = {
-  "not-a-word": "Not found.",
-  "check-your-spelling": "Not found.",
+  "not-a-word": NOT_FOUND_LEAD,
+  "check-your-spelling": NOT_FOUND_LEAD,
+  // A word the data knows is a misspelling gets the same message as one that
+  // merely looks like a typo: to the player they are the same mistake, and the
+  // useful half is the nudge, not the label.
+  misspelling: NOT_FOUND_LEAD,
   "proper-noun": "Proper noun.",
   abbreviation: "Abbreviation.",
   "name-or-abbreviation": "Name or abbreviation.",
-  misspelling: "Misspelling.",
   obsolete: "Obsolete.",
   archaic: "Archaic.",
   dated: "Dated.",
@@ -344,13 +357,11 @@ export const REJECTION_LEADS: Record<string, string> = {
 export const REJECTION_DETAILS: Record<string, string> = {
   empty: "Type a word first.",
   "not-a-word": "Not on the curated list.",
-  "check-your-spelling": "Check your spelling?",
+  "check-your-spelling": CHECK_SPELLING,
+  misspelling: CHECK_SPELLING,
   "proper-noun": "Names aren't playable.",
   abbreviation: "Acronyms aren't playable.",
   "name-or-abbreviation": "Not playable.",
-  // The one rejection with an answer attached: the player has a real word in
-  // mind and spelled it wrong, so the message points at the fix.
-  misspelling: "Try the correct spelling.",
   obsolete: "No longer used.",
   archaic: "Not in modern use.",
   dated: "No longer common.",

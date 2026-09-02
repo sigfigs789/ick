@@ -27,7 +27,13 @@ const VISIBLE_MS = 12000;
  * rejection that has something more specific to say takes the caution yellow,
  * which is the signal that the words below are worth reading.
  */
-const NOT_FOUND_REASONS = new Set<RejectionReason>(["not-a-word", "check-your-spelling"]);
+const NOT_FOUND_REASONS = new Set<RejectionReason>([
+  "not-a-word",
+  "check-your-spelling",
+  // Shares the not-found message word for word, so it has to share the colour:
+  // the same sentence in two different boxes reads as a bug.
+  "misspelling",
+]);
 
 /**
  * A single polite live region, styled as a small toast that fades in and

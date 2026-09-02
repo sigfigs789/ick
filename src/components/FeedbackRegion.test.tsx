@@ -107,6 +107,7 @@ describe("FeedbackRegion", () => {
   it.each([
     ["not-a-word", "Not found. Not on the curated list."],
     ["check-your-spelling", "Not found. Check your spelling?"],
+    ["misspelling", "Not found. Check your spelling?"],
   ] as const)("leaves the not-found verdicts on the plain rejection style (%s)", (reason, message) => {
     render(
       <FeedbackRegion feedback={{ kind: "rejected", message, reason, key: 1 }} onWordRules={vi.fn()} />
