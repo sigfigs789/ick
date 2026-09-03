@@ -141,13 +141,35 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
   });
 
+  it("names what is new in a callout under the trophy, once the rules are behind them", () => {
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
+    render(<App />);
+
+    // The dot alone cannot say what it is pointing at; the callout can.
+    expect(screen.getByText("New leaderboard")).toBeInTheDocument();
+  });
+
+  it("holds the callout back while the rules are still open", async () => {
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
+    // A genuine first-timer, so the how-to-play sheet opens over the header.
+    localStorage.clear();
+    render(<App />);
+
+    // Pointing at a trophy the player has not been introduced to yet, from
+    // under a sheet covering it, announces nothing.
+    expect(screen.queryByText("New leaderboard")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /close instructions/i }));
+    expect(screen.getByText("New leaderboard")).toBeInTheDocument();
+  });
+
   it("does not badge the leaderboard for a player who has already met it", () => {
     localStorage.setItem("ick:seen:leaderboard", "1");
     vi.mocked(useDailyPuzzle).mockReturnValue(puzzle() as ReturnType<typeof useDailyPuzzle>);
     render(<App />);
 
     expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
-    expect(screen.queryByText("new")).not.toBeInTheDocument();
+    expect(screen.queryByText("New leaderboard")).not.toBeInTheDocument();
   });
 
   it("retires the badge when the leaderboard is reached from the results instead", async () => {

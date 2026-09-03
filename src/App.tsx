@@ -198,12 +198,25 @@ export default function App() {
             title="Leaderboard"
           >
             <span aria-hidden="true">🏆</span>
-            {/* aria-hidden because the button's own label already carries the
-                "(new)" -- a screen reader should hear one thing, not two. */}
+            {/* Both aria-hidden because the button's own label already carries
+                the "(new)" -- a screen reader should hear one thing, not two.
+                The dot marks the trophy; the callout says what is behind it,
+                because a badge nobody can decode is not an announcement.
+
+                Held back until the how-to-play sheet has been met: on a first
+                visit that sheet is open over this header, and a callout
+                pointing at a trophy the player cannot reach yet is noise
+                arriving before the game itself. showInstructions is false
+                exactly when the sheet has been seen and closed. */}
             {leaderboardIsNew && (
-              <span className="app__icon-badge" aria-hidden="true">
-                new
-              </span>
+              <>
+                <span className="app__icon-badge" aria-hidden="true" />
+                {!showInstructions && (
+                  <span className="app__icon-callout" aria-hidden="true">
+                    New leaderboard
+                  </span>
+                )}
+              </>
             )}
           </button>
           <button
