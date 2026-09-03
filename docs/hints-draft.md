@@ -19,19 +19,16 @@ ships.
 
 1. **The rarest words usually bury the drop in the middle.** Not at the start,
    not at the end.
-2. **Join two words you already know.** The drop often falls on the seam.
-3. **Run the alphabet in front of the drop, out loud.** A, then B, then C.
+2. **Run the alphabet in front of the drop, out loud.** A, then B, then C.
    Checking a list beats waiting for a word to arrive.
-4. **Put a prefix on it** — a prefix makes a new word, where a plural or an
-   `-ing` does not.
-5. **Pick a room and stand in it.** A kitchen, a hospital, a workshop.
+3. **Pick a room and stand in it.** A kitchen, a hospital, a workshop.
    Vocabulary is filed by context, so a scene pulls up a shelf where a blank
    search pulls up nothing.
-6. **Ask who says this word.** A chef, a sailor, a botanist. Every trade has
+4. **Ask who says this word.** A chef, a sailor, a botanist. Every trade has
    words the rest of us never use.
-7. **Say it, don't define it.** Sound-based recall reaches different words than
+5. **Say it, don't define it.** Sound-based recall reaches different words than
    meaning-based recall.
-8. **Skip the first word that comes to mind.** It is almost always a common one.
+6. **Skip the first word that comes to mind.** It is almost always a common one.
 
 ## Why general, and not per-drop
 
