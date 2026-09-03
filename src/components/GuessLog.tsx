@@ -100,13 +100,13 @@ export function GuessLog({
               size, weight and ink it has always had, with the retry added
               beside it rather than dressed up as something new.
 
-              Left of total, not spent of total. "X of Y" for something you
-              spend reads as what you still have -- "2 of 3 lives" -- and the
-              spent reading only held while the word "used" was there to force
-              it. It also keeps the number pointing the same way as the
-              resource: a fresh puzzle is "1 of 1 retries · 4 of 4 guesses",
-              full on both counts, where counting spent would open on two
-              zeroes and read as having none.
+              The two run opposite ways on purpose, because they are opposite
+              kinds of number. Guesses count *up* to the limit -- progress
+              through the puzzle, the thing a player is building toward all
+              day. The retry counts *down* from one -- a single reserve, and
+              what matters about a reserve is how much of it is left, not how
+              much has been drawn from it. Matching them to the same direction
+              would make one of the two read wrong.
 
               The retry sits first because it is the smaller, rarer allowance
               and reads as a modifier on the guesses. It is absent entirely on
@@ -121,7 +121,7 @@ export function GuessLog({
                 </span>{" "}
               </>
             )}
-            {guessesLeft} of {maxGuesses} guesses
+            {acceptedWords.length} of {maxGuesses} guesses
           </span>
         </div>
       )}
