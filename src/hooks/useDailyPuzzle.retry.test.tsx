@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDailyPuzzle } from "./useDailyPuzzle";
 import { addDays } from "../game/date";
 import { dropForDate } from "../game/drop";
-import { isValidWord } from "../game/dictionary";
+import { isValidWord, topRarityScore, totalRarityScore } from "../game/dictionary";
 import { joinBoard } from "../game/player";
 import dictionaryWords from "../data/dictionary.json";
 
@@ -274,5 +274,51 @@ describe("useDailyPuzzle retry allowance", () => {
     act(() => result.current.goToPrevious());
     // Null rather than zero: this day never had one to spend.
     expect(result.current.retriesLeft).toBeNull();
+  });
+});
+
+describe("useDailyPuzzle retry and the day's score", () => {
+  it("drops the retried word out of the totals the player is shown", async () => {
+    const { result } = renderHook(() => useDailyPuzzle());
+    await act(async () => {
+      await result.current.submitWord(FIRST);
+    });
+    await act(async () => {
+      await result.current.submitWord(SECOND);
+    });
+    const both = result.current.progress.acceptedWords;
+    const totalBefore = totalRarityScore(both, TODAY);
+    const survivor = both.find((w) => w.word === SECOND)!;
+
+    act(() => result.current.retryAnswer(FIRST));
+
+    const left = result.current.progress.acceptedWords;
+    // The displayed total and top are read off the live word list, so both fall
+    // out with the word rather than needing a rollback of their own: the day
+    // now scores exactly as though only the surviving word was ever played.
+    expect(left).toEqual([survivor]);
+    expect(totalRarityScore(left, TODAY)).toBeLessThan(totalBefore);
+    expect(totalRarityScore(left, TODAY)).toBe(totalRarityScore([survivor], TODAY));
+    expect(topRarityScore(left, TODAY)).toBe(topRarityScore([survivor], TODAY));
+  });
+
+  it("sends no board correction when the retry empties the day", async () => {
+    joinBoard();
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHook(() => useDailyPuzzle());
+    await act(async () => {
+      await result.current.submitWord(FIRST);
+    });
+    const before = fetchMock.mock.calls.length;
+
+    act(() => result.current.retryAnswer(FIRST));
+
+    // The documented residual: a day with no words is not submitted at all, so
+    // the pre-retry row stands until the player banks something. Asserted so it
+    // stays a known cost rather than becoming a surprise.
+    expect(result.current.progress.acceptedWords).toEqual([]);
+    expect(fetchMock.mock.calls.length).toBe(before);
   });
 });
