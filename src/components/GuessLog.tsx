@@ -14,8 +14,8 @@ import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
 
 /**
- * The retry allowance a puzzle carries, for turning "retries left" into the
- * "spent of total" the header shows.
+ * The retry allowance a puzzle carries: the denominator the header counts
+ * what is left against.
  *
  * Display only. What actually holds the rule to one is the boolean the day is
  * saved with (see game/storage.retryWord) -- a count here would be a second
@@ -100,10 +100,13 @@ export function GuessLog({
               size, weight and ink it has always had, with the retry added
               beside it rather than dressed up as something new.
 
-              Spent out of total, both of them. Showing the denominator is what
-              makes a bare number safe -- "0 of 4 guesses" cannot be misread as
-              four remaining the way "4 guesses" could -- so neither needs to
-              spell out "used" or "left".
+              Left of total, not spent of total. "X of Y" for something you
+              spend reads as what you still have -- "2 of 3 lives" -- and the
+              spent reading only held while the word "used" was there to force
+              it. It also keeps the number pointing the same way as the
+              resource: a fresh puzzle is "1 of 1 retries · 4 of 4 guesses",
+              full on both counts, where counting spent would open on two
+              zeroes and read as having none.
 
               The retry sits first because it is the smaller, rarer allowance
               and reads as a modifier on the guesses. It is absent entirely on
@@ -112,13 +115,13 @@ export function GuessLog({
           <span className="guess-log__count">
             {retriesLeft !== null && (
               <>
-                {RETRIES_PER_PUZZLE - retriesLeft} of {RETRIES_PER_PUZZLE} retries{" "}
+                {retriesLeft} of {RETRIES_PER_PUZZLE} retries{" "}
                 <span className="guess-log__count-separator" aria-hidden="true">
                   ·
                 </span>{" "}
               </>
             )}
-            {acceptedWords.length} of {maxGuesses} guesses
+            {guessesLeft} of {maxGuesses} guesses
           </span>
         </div>
       )}
