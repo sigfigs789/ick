@@ -13,16 +13,6 @@ import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
 
-/**
- * The retry allowance a puzzle carries: the denominator the header counts
- * what is left against.
- *
- * Display only. What actually holds the rule to one is the boolean the day is
- * saved with (see game/storage.retryWord) -- a count here would be a second
- * place for the same rule to live, and the two could disagree.
- */
-const RETRIES_PER_PUZZLE = 1;
-
 /** The clipboard form of a logged word: "<tier square> <word> (<score>)".
  * Reuses the share-results palette so a pasted word matches the share text. */
 function copyTextForWord(w: AcceptedWord, date?: string): string {
@@ -40,11 +30,6 @@ interface Props {
   canRetry?: boolean;
   /** It has been spent, on a puzzle where it was offered in the first place. */
   retrySpent?: boolean;
-  /**
-   * Retries left on this puzzle, shown beside the guess count. Null when the
-   * puzzle carries none, which is not the same as none left.
-   */
-  retriesLeft?: number | null;
   /** Drop a banked word and hand its guess back (see storage.retryWord). */
   onRetry?: (word: string) => void;
 }
@@ -56,7 +41,6 @@ export function GuessLog({
   date,
   canRetry = false,
   retrySpent = false,
-  retriesLeft = null,
   onRetry,
 }: Props) {
   const best = bestWord(acceptedWords);
@@ -96,31 +80,13 @@ export function GuessLog({
       {!completed && (
         <div className="guess-log__header">
           <h2 className="guess-log__title">Guess log</h2>
-          {/* Both of the day's allowances, in the count's own voice: same
-              size, weight and ink it has always had, with the retry added
-              beside it rather than dressed up as something new.
-
-              The two run opposite ways on purpose, because they are opposite
-              kinds of number. Guesses count *up* to the limit -- progress
-              through the puzzle, the thing a player is building toward all
-              day. The retry counts *down* from one -- a single reserve, and
-              what matters about a reserve is how much of it is left, not how
-              much has been drawn from it. Matching them to the same direction
-              would make one of the two read wrong.
-
-              The retry sits first because it is the smaller, rarer allowance
-              and reads as a modifier on the guesses. It is absent entirely on
-              a puzzle that carries none, which is a different thing from
-              having spent one. */}
+          {/* Guesses only. The retry used to sit here too, as a second "X of
+              Y" beside this one -- but it is a single yes/no reserve, not a
+              running tally, and pairing it with a real multi-step count made
+              it read as the same kind of number when it isn't. That state now
+              lives on the retry control itself, below: the button *is* the
+              indicator, available or spent, no fraction required. */}
           <span className="guess-log__count">
-            {retriesLeft !== null && (
-              <>
-                {retriesLeft} of {RETRIES_PER_PUZZLE} retries{" "}
-                <span className="guess-log__count-separator" aria-hidden="true">
-                  ·
-                </span>{" "}
-              </>
-            )}
             {acceptedWords.length} of {maxGuesses} guesses
           </span>
         </div>
@@ -231,11 +197,11 @@ export function GuessLog({
         <div className={`guess-log__retry${picking ? " guess-log__retry--picking" : ""}`}>
           {picking ? (
             <>
-              {/* role="status" so arming the retry announces the rule, which is
-                  the one moment it matters and the only place it is said. */}
+              {/* role="status" so arming the retry announces what it does. The
+                  limit itself is said below, before this is ever reached --
+                  no need to repeat it here too. */}
               <p className="guess-log__retry-prompt" role="status">
-                Select a word to clear and try again. You can only do this once
-                per day.
+                Select a word to clear and try again.
               </p>
               <button
                 type="button"
@@ -246,14 +212,29 @@ export function GuessLog({
               </button>
             </>
           ) : canRetry ? (
-            <button
-              type="button"
-              className="guess-log__retry-button"
-              onClick={() => setArming(true)}
-            >
-              <span aria-hidden="true">↺</span> Retry a word
-            </button>
-          ) : null}
+            <>
+              <button
+                type="button"
+                className="guess-log__retry-button"
+                onClick={() => setArming(true)}
+              >
+                <span aria-hidden="true">↺</span> Retry a word
+              </button>
+              {/* Said here, once, before the button is ever pressed -- an
+                  info icon would need a hover state desktop has and mobile
+                  doesn't, or a second tap just to read a sentence. A caption
+                  that is simply always there costs nothing on either. */}
+              <p className="guess-log__retry-note">One retry per puzzle</p>
+            </>
+          ) : (
+            // Spent: the button is gone (there is nothing left to arm), but a
+            // returning player should still see what happened to it rather
+            // than finding it silently missing. Same spot, same icon, just
+            // inert -- the control's own memory of itself.
+            <p className="guess-log__retry-spent">
+              <span aria-hidden="true">↺</span> Retry used
+            </p>
+          )}
         </div>
       )}
 

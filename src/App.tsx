@@ -53,7 +53,6 @@ export default function App() {
     submitWord,
     canRetry,
     retrySpent,
-    retriesLeft,
     retryAnswer,
     resetAnswers,
   } = useDailyPuzzle();
@@ -245,7 +244,6 @@ export default function App() {
           date={date}
           canRetry={canRetry}
           retrySpent={retrySpent}
-          retriesLeft={retriesLeft}
           onRetry={retryAnswer}
         />
 

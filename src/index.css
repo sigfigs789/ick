@@ -733,13 +733,6 @@ h2 {
   color: var(--fg-muted);
   font-variant-numeric: tabular-nums;
 }
-/* Lighter than the numbers it divides, so it separates without being read as
-   part of either count. */
-.guess-log__count-separator {
-  color: var(--fg-faint);
-  font-weight: 700;
-}
-
 /* Retry: one word per puzzle can be swapped out (see game/storage.retryWord).
  *
  * A quiet outline button, not a filled one -- the filled treatment on this page
@@ -771,6 +764,14 @@ h2 {
   color: var(--fg);
   border-color: var(--accent);
   background: var(--bg-inset);
+}
+/* The one fact about the retry worth knowing before you press the button:
+ * fainter than the button itself, so it reads as a footnote rather than a
+ * second thing to act on. */
+.guess-log__retry-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--fg-faint);
 }
 /* Armed. The whole block firms up so it is obvious the log is now waiting on a
  * choice rather than sitting there. */
