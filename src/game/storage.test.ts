@@ -9,6 +9,7 @@ import {
   recordAcceptedWord,
   recordRejectedAttempt,
   resetProgress,
+  retryWord,
 } from "./storage";
 import { rarityScore } from "./dictionary";
 
@@ -642,5 +643,197 @@ describe("stamping when a puzzle was played", () => {
     );
 
     expect(loadProgress("2026-08-20")?.firstWordAt).toBe(progress.firstWordAt);
+  });
+});
+
+describe("retryWord", () => {
+  it("drops the chosen word and hands its guess back", () => {
+    let progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    progress = recordAcceptedWord(progress, word("strut", 3.2, "Rare"));
+
+    const retried = retryWord(progress, "strange");
+
+    expect(retried.acceptedWords).toEqual([word("strut", 3.2, "Rare")]);
+    expect(retried.retryUsed).toBe(true);
+    // And it survives the round trip through storage, so a reload doesn't hand
+    // the word back.
+    expect(loadProgress("2024-01-01")).toMatchObject({
+      acceptedWords: [word("strut", 3.2, "Rare")],
+      retryUsed: true,
+    });
+  });
+
+  it("takes any banked word, not only the newest", () => {
+    let progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    progress = recordAcceptedWord(progress, word("strut"));
+    progress = recordAcceptedWord(progress, word("stroll"));
+
+    const retried = retryWord(progress, "strut");
+
+    expect(retried.acceptedWords.map((w) => w.word)).toEqual(["strange", "stroll"]);
+  });
+
+  it("is spent once, however many words are left to regret", () => {
+    let progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    progress = recordAcceptedWord(progress, word("strut"));
+
+    const once = retryWord(progress, "strange");
+    const twice = retryWord(once, "strut");
+
+    // Returned by identity, so the caller can tell nothing happened.
+    expect(twice).toBe(once);
+    expect(once.acceptedWords.map((w) => w.word)).toEqual(["strut"]);
+  });
+
+  it("leaves progress alone when the word was never banked", () => {
+    const progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    expect(retryWord(progress, "stroll")).toBe(progress);
+  });
+
+  it("re-opens a puzzle the last guess had finished", () => {
+    let progress = newProgress("2024-01-01", "str");
+    for (let i = 0; i < MAX_GUESSES; i += 1) {
+      progress = recordAcceptedWord(progress, word(`word${i}`, 3.2, "Rare"));
+    }
+    expect(progress.completed).toBe(true);
+
+    const retried = retryWord(progress, "word0");
+
+    expect(retried.completed).toBe(false);
+    expect(retried.completedAt).toBeUndefined();
+    expect(retried.won).toBeUndefined();
+    // The freed slot is spendable, and re-finishing counts the completion once.
+    const refilled = recordAcceptedWord(retried, word("stroll", 3.2, "Rare"));
+    expect(refilled.completed).toBe(true);
+    expect(refilled.won).toBe(true);
+    expect(loadStreak().totalCompleted).toBe(1);
+  });
+
+  it("keeps the streak and the day it was played", () => {
+    const progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    const playedAt = progress.firstWordAt;
+    expect(loadStreak().currentStreak).toBe(1);
+
+    const retried = retryWord(progress, "strange");
+
+    // The puzzle was played on its day whether or not the word survived, and a
+    // feature the game offers must not cost a streak.
+    expect(retried.firstWordAt).toBe(playedAt);
+    expect(loadStreak().currentStreak).toBe(1);
+  });
+
+  it("hands back the tier counters the dropped word had earned", () => {
+    const progress = recordAcceptedWord(
+      newProgress("2024-01-01", "str"),
+      word("strange", 1.2, "Legend")
+    );
+    expect(loadStreak()).toMatchObject({ crushedIt: 1, elite: 1 });
+
+    retryWord(progress, "strange");
+
+    expect(loadStreak()).toMatchObject({ crushedIt: 0, elite: 0 });
+  });
+
+  it("keeps a counter another word on the puzzle still holds", () => {
+    let progress = recordAcceptedWord(
+      newProgress("2024-01-01", "str"),
+      word("strange", 3.2, "Rare")
+    );
+    progress = recordAcceptedWord(progress, word("strut", 3.1, "Rare"));
+    expect(loadStreak().crushedIt).toBe(1);
+
+    retryWord(progress, "strange");
+
+    // The counter moves once per puzzle, and the puzzle still has a Rare on it.
+    expect(loadStreak().crushedIt).toBe(1);
+  });
+
+  it("leaves the all-time high score standing", () => {
+    const progress = recordAcceptedWord(
+      newProgress("2024-01-01", "str"),
+      word("strange", 1.2, "Legend")
+    );
+    const best = loadStreak().highScore;
+    expect(best).toBe(rarityScore(1.2, "2024-01-01"));
+
+    retryWord(progress, "strange");
+
+    expect(loadStreak().highScore).toBe(best);
+  });
+});
+
+describe("retryWord round trips", () => {
+  // The rollback tests above prove a tier goes back. These prove it can be
+  // earned again exactly once -- the risk being that a counter handed back and
+  // then re-earned lands at two, or that a rolled-back streak advances twice.
+  it("re-earns the crushed-it counter once, not twice", () => {
+    const progress = recordAcceptedWord(
+      newProgress("2024-01-01", "str"),
+      word("strange", 3.2, "Rare")
+    );
+    expect(loadStreak().crushedIt).toBe(1);
+
+    const retried = retryWord(progress, "strange");
+    expect(loadStreak().crushedIt).toBe(0);
+
+    recordAcceptedWord(retried, word("strut", 3.1, "Rare"));
+    expect(loadStreak().crushedIt).toBe(1);
+  });
+
+  it("re-earns the elite counter once, not twice", () => {
+    const progress = recordAcceptedWord(
+      newProgress("2024-01-01", "str"),
+      word("strange", 1.2, "Legend")
+    );
+    expect(loadStreak().elite).toBe(1);
+
+    const retried = retryWord(progress, "strange");
+    expect(loadStreak().elite).toBe(0);
+
+    recordAcceptedWord(retried, word("strut", 1.1, "Legend"));
+    expect(loadStreak().elite).toBe(1);
+  });
+
+  it("does not advance the streak a second time after retrying the only word", () => {
+    const progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    expect(loadStreak().currentStreak).toBe(1);
+
+    // Back to an empty puzzle, which is the state that makes the next accepted
+    // word look like the day's first one.
+    const retried = retryWord(progress, "strange");
+    expect(retried.acceptedWords).toEqual([]);
+
+    recordAcceptedWord(retried, word("strut"));
+    expect(loadStreak().currentStreak).toBe(1);
+  });
+
+  it("counts a re-finished puzzle's completion once", () => {
+    let progress = newProgress("2024-01-01", "str");
+    for (let i = 0; i < MAX_GUESSES; i += 1) {
+      progress = recordAcceptedWord(progress, word(`word${i}`, 3.2, "Rare"));
+    }
+    expect(loadStreak().totalCompleted).toBe(1);
+
+    let retried = retryWord(progress, "word0");
+    expect(loadStreak().totalCompleted).toBe(0);
+
+    retried = recordAcceptedWord(retried, word("stroll", 3.2, "Rare"));
+    expect(retried.completed).toBe(true);
+    expect(loadStreak().totalCompleted).toBe(1);
+  });
+
+  it("keeps the all-time high score when the retried word was the best", () => {
+    let progress = recordAcceptedWord(
+      newProgress("2024-01-01", "str"),
+      word("strange", 1.2, "Legend")
+    );
+    const best = loadStreak().highScore;
+
+    progress = retryWord(progress, "strange");
+    recordAcceptedWord(progress, word("strut", 5, "Common"));
+
+    // A personal best across every puzzle ever played, and the word was
+    // genuinely found -- a lesser replacement does not lower it.
+    expect(loadStreak().highScore).toBe(best);
   });
 });

@@ -53,13 +53,19 @@
 //   afresh rather than handed a copy the reader has already seen.
 //
 // POST /api/leaderboard
-//   { playerId, scores: [{ date, word, zipf, total, top, words, found? }] }
+//   { playerId, scores: [{ date, word, zipf, total, top, words, retried?, found? }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
 //   One score per player per puzzle. An array because it has two callers of the
 //   same shape: the game submitting today after each accepted word, and a player
 //   joining the board submitting every past puzzle their browser remembers. The
 //   write keeps the higher of the stored and submitted score, so repeats and
 //   out-of-order arrivals are both harmless (see the migration).
+//
+//   `retried` is the one exception, and the only way a day can get smaller: it
+//   says this account of the day comes from after the player spent the puzzle's
+//   one retry, so the write assigns it rather than keeping the larger of the
+//   two -- and drops a pre-retry submission that arrives afterwards. Absent
+//   means false. See the 20260831 migration for why one boolean is enough.
 //
 //   `found` is that day's whole word list, which is what the finds feed is built
 //   from. Optional, and the backfill omits it for past days on purpose: a year of
@@ -409,6 +415,17 @@ interface ScoreEntry {
   top: number;
   words: number;
   /**
+   * Whether this day has spent its one retry (see src/game/storage.ts).
+   *
+   * Optional, and absent means false -- which is what every submission sent
+   * before the retry existed meant, and what a backfilled day without one
+   * means. It is not a claim about the score: it says which side of the retry
+   * this account of the day comes from, so the write can tell a newer statement
+   * from a better one and drop a pre-retry straggler. See the 20260831
+   * migration for the four cases.
+   */
+  retried?: boolean;
+  /**
    * Every word accepted that day, for the finds feed.
    *
    * Optional, and absent is not a degraded submission: the history backfill
@@ -432,7 +449,7 @@ interface ScoreEntry {
  */
 function readScore(raw: unknown): ScoreEntry | string {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return "malformed-score";
-  const { date, word, zipf, total, top, words, found } = raw as Record<string, unknown>;
+  const { date, word, zipf, total, top, words, retried, found } = raw as Record<string, unknown>;
 
   if (typeof date !== "string" || !validPuzzleDate(date)) return "bad-date";
   if (typeof word !== "string" || !WORD_RE.test(word)) return "bad-word";
@@ -450,6 +467,11 @@ function readScore(raw: unknown): ScoreEntry | string {
   if (topScore > totalScore + 0.05) return "inconsistent-scores";
   if (totalScore > wordCount * MAX_TOP + 0.05) return "inconsistent-scores";
 
+  // Absent is the overwhelmingly common case and means false. Anything present
+  // has to be an actual boolean: this decides whether a submission may lower a
+  // day, so a truthy string is not close enough.
+  if (retried !== undefined && typeof retried !== "boolean") return "bad-retried";
+
   const foundWords = readFound(found);
   if (typeof foundWords === "string") return foundWords;
 
@@ -460,6 +482,7 @@ function readScore(raw: unknown): ScoreEntry | string {
     total: Math.round(totalScore * 100) / 100,
     top: Math.round(topScore * 100) / 100,
     words: wordCount,
+    ...(retried === true ? { retried: true } : {}),
     ...(foundWords.length > 0 ? { found: foundWords } : {}),
   };
 }

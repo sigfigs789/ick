@@ -13,6 +13,16 @@ import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
 
+/**
+ * The retry allowance a puzzle carries: the denominator the header counts
+ * what is left against.
+ *
+ * Display only. What actually holds the rule to one is the boolean the day is
+ * saved with (see game/storage.retryWord) -- a count here would be a second
+ * place for the same rule to live, and the two could disagree.
+ */
+const RETRIES_PER_PUZZLE = 1;
+
 /** The clipboard form of a logged word: "<tier square> <word> (<score>)".
  * Reuses the share-results palette so a pasted word matches the share text. */
 function copyTextForWord(w: AcceptedWord, date?: string): string {
@@ -26,6 +36,17 @@ interface Props {
   streak?: StreakState;
   /** Puzzle date, so scores use the scoring system in effect that day. */
   date?: string;
+  /** This puzzle's one retry is still unspent and still reachable. */
+  canRetry?: boolean;
+  /** It has been spent, on a puzzle where it was offered in the first place. */
+  retrySpent?: boolean;
+  /**
+   * Retries left on this puzzle, shown beside the guess count. Null when the
+   * puzzle carries none, which is not the same as none left.
+   */
+  retriesLeft?: number | null;
+  /** Drop a banked word and hand its guess back (see storage.retryWord). */
+  onRetry?: (word: string) => void;
 }
 
 export function GuessLog({
@@ -33,6 +54,10 @@ export function GuessLog({
   completed = false,
   streak,
   date,
+  canRetry = false,
+  retrySpent = false,
+  retriesLeft = null,
+  onRetry,
 }: Props) {
   const best = bestWord(acceptedWords);
   const maxGuesses = maxGuessesFor(date);
@@ -40,6 +65,23 @@ export function GuessLog({
 
   // Tap a logged word to copy it to the clipboard, flashing a brief confirmation.
   const [copiedWord, setCopiedWord] = useState<string | null>(null);
+  // Armed by the retry button, and spent by tapping a word.
+  //
+  // Two taps rather than a retry control on every row: the log is four cards on
+  // a phone, three of which are already carrying a crown, a copy affordance and
+  // a rarity badge, and a fourth control per row would crowd the one thing the
+  // card exists to show. Arming also gives the rule somewhere to be said at the
+  // moment it applies -- once per day -- instead of a footnote nobody reads
+  // until they have already spent it.
+  const [arming, setArming] = useState(false);
+  // Derived rather than cleared by hand: spending the retry flips `canRetry`,
+  // and so does the day rolling over under a tab left open overnight.
+  const picking = arming && canRetry;
+
+  function retry(w: AcceptedWord) {
+    setArming(false);
+    onRetry?.(w.word);
+  }
 
   function copyWord(w: AcceptedWord) {
     void copyText(copyTextForWord(w, date));
@@ -54,8 +96,32 @@ export function GuessLog({
       {!completed && (
         <div className="guess-log__header">
           <h2 className="guess-log__title">Guess log</h2>
+          {/* Both of the day's allowances, in the count's own voice: same
+              size, weight and ink it has always had, with the retry added
+              beside it rather than dressed up as something new.
+
+              The two run opposite ways on purpose, because they are opposite
+              kinds of number. Guesses count *up* to the limit -- progress
+              through the puzzle, the thing a player is building toward all
+              day. The retry counts *down* from one -- a single reserve, and
+              what matters about a reserve is how much of it is left, not how
+              much has been drawn from it. Matching them to the same direction
+              would make one of the two read wrong.
+
+              The retry sits first because it is the smaller, rarer allowance
+              and reads as a modifier on the guesses. It is absent entirely on
+              a puzzle that carries none, which is a different thing from
+              having spent one. */}
           <span className="guess-log__count">
-            {acceptedWords.length} of {maxGuesses} used
+            {retriesLeft !== null && (
+              <>
+                {retriesLeft} of {RETRIES_PER_PUZZLE} retries{" "}
+                <span className="guess-log__count-separator" aria-hidden="true">
+                  ·
+                </span>{" "}
+              </>
+            )}
+            {acceptedWords.length} of {maxGuesses} guesses
           </span>
         </div>
       )}
@@ -94,17 +160,28 @@ export function GuessLog({
             // explanation of the badge.
             const baseNote = baseFormRankDrop(w.word, date);
             return (
-              <li key={w.word} className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}`}>
+              <li
+                key={w.word}
+                className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}${
+                  picking ? " guess-log__entry--picking" : ""
+                }`}
+              >
+                {/* One button, two jobs. While the retry is armed the whole card
+                    is the thing you tap to drop that word, which is why the
+                    retry control could not simply live *inside* this button --
+                    a button in a button is not markup a browser will render. */}
                 <button
                   type="button"
                   className={`guess-log__entry-button${isCopied ? " guess-log__entry-button--copied" : ""}`}
-                  onClick={() => copyWord(w)}
+                  onClick={() => (picking ? retry(w) : copyWord(w))}
                   aria-label={
-                    isCopied
-                      ? `Copied "${w.word}"`
-                      : `Copy "${w.word}" (${w.rarity}${
-                          baseNote ? `, scored as its common form "${baseNote.base}"` : ""
-                        }, guess ${i + 1})`
+                    picking
+                      ? `Retry "${w.word}" (${w.rarity}, guess ${i + 1}) — clear it and try again`
+                      : isCopied
+                        ? `Copied "${w.word}"`
+                        : `Copy "${w.word}" (${w.rarity}${
+                            baseNote ? `, scored as its common form "${baseNote.base}"` : ""
+                          }, guess ${i + 1})`
                   }
                 >
                   {isBest && (
@@ -113,7 +190,13 @@ export function GuessLog({
                     </span>
                   )}
                   <span className="guess-log__word">{w.word}</span>
-                  {isCopied ? (
+                  {picking ? (
+                    // Replaces the copy affordance rather than joining it: while
+                    // the retry is armed, tapping this card does not copy.
+                    <span className="guess-log__retry-hint" aria-hidden="true">
+                      Retry
+                    </span>
+                  ) : isCopied ? (
                     <span className="guess-log__copied" role="status">
                       Copied!
                     </span>
@@ -142,9 +225,41 @@ export function GuessLog({
         </ol>
       )}
 
+      {/* Under the log rather than over it: the retry is about the words above
+          it, and on a completed puzzle this is the only thing left to do. */}
+      {(canRetry || retrySpent) && acceptedWords.length > 0 && (
+        <div className={`guess-log__retry${picking ? " guess-log__retry--picking" : ""}`}>
+          {picking ? (
+            <>
+              {/* role="status" so arming the retry announces the rule, which is
+                  the one moment it matters and the only place it is said. */}
+              <p className="guess-log__retry-prompt" role="status">
+                Select a word to clear and try again. You can only do this once
+                per day.
+              </p>
+              <button
+                type="button"
+                className="guess-log__retry-cancel"
+                onClick={() => setArming(false)}
+              >
+                Never mind
+              </button>
+            </>
+          ) : canRetry ? (
+            <button
+              type="button"
+              className="guess-log__retry-button"
+              onClick={() => setArming(true)}
+            >
+              <span aria-hidden="true">↺</span> Retry a word
+            </button>
+          ) : null}
+        </div>
+      )}
+
       {!completed && guessesLeft > 0 && acceptedWords.length > 0 && (
         <p className="guess-log__remaining">
-          {guessesLeft} guess{guessesLeft === 1 ? "" : "es"} left. Aim for the highest rarity you can find.
+          Aim for the highest rarity you can find.
         </p>
       )}
 

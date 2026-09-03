@@ -51,6 +51,10 @@ export default function App() {
     liveNote,
     checking,
     submitWord,
+    canRetry,
+    retrySpent,
+    retriesLeft,
+    retryAnswer,
     resetAnswers,
   } = useDailyPuzzle();
   // A first-timer who never taps "?" never learns that rarer scores higher --
@@ -239,6 +243,10 @@ export default function App() {
           completed={progress.completed}
           streak={streak}
           date={date}
+          canRetry={canRetry}
+          retrySpent={retrySpent}
+          retriesLeft={retriesLeft}
+          onRetry={retryAnswer}
         />
 
         {!progress.completed && (

@@ -293,6 +293,12 @@ function incrementCompletionTotal(): void {
   saveStreak({ ...streak, totalCompleted: streak.totalCompleted + 1 });
 }
 
+/** Give back the completion a retry un-finished (see retryWord). */
+function decrementCompletionTotal(): void {
+  const streak = loadStreak();
+  saveStreak({ ...streak, totalCompleted: Math.max(0, streak.totalCompleted - 1) });
+}
+
 /** Rarity scores apply once per puzzle, including archive puzzles. */
 function updateRarityScore({
   shouldIncrementCrushedIt,
@@ -310,10 +316,113 @@ function updateRarityScore({
   });
 }
 
+/**
+ * Give back the tier counters a retried word had earned (see retryWord). The
+ * mirror of `updateRarityScore`: each counter moves once per puzzle, so a retry
+ * that removes the puzzle's only winning or elite word puts it back.
+ *
+ * Floored at zero. A counter cannot go negative from a save written before
+ * either counter existed, and a wrong tally is not worth throwing for.
+ */
+function rollBackRarityScore({
+  shouldDecrementCrushedIt,
+  shouldDecrementElite,
+}: {
+  shouldDecrementCrushedIt: boolean;
+  shouldDecrementElite: boolean;
+}): void {
+  if (!shouldDecrementCrushedIt && !shouldDecrementElite) return;
+  const streak = loadStreak();
+  saveStreak({
+    ...streak,
+    crushedIt: Math.max(0, streak.crushedIt - (shouldDecrementCrushedIt ? 1 : 0)),
+    elite: Math.max(0, streak.elite - (shouldDecrementElite ? 1 : 0)),
+  });
+}
+
 /** Keep the player's all-time best rarity score, including archive play. */
 function updateHighScore(zipf: number, date: string): void {
   const streak = loadStreak();
   const score = rarityScore(zipf, date);
   if (score <= streak.highScore) return;
   saveStreak({ ...streak, highScore: score });
+}
+
+/**
+ * Spend this puzzle's one retry on an already-banked word: drop it, hand its
+ * guess back, and let the player spend the slot on something else.
+ *
+ * The case it exists for is the last guess landing on a Common. Four guesses is
+ * few enough that a word you regret is most of a day's play, and without this
+ * the only recourse is waiting for tomorrow.
+ *
+ * One per puzzle, which is what keeps it a mulligan rather than a reroll: with
+ * unlimited retries a player would simply re-spin every slot until a Legend
+ * came up, and the score would stop meaning anything. Any banked word is
+ * eligible, not only the newest -- the regret is usually about the *worst* word,
+ * and which guess it happened to be is beside the point.
+ *
+ * Everything the removed word earned this puzzle is handed back with it, so a
+ * retry cannot be used to bank a tier twice:
+ *
+ *   - completion, when the retry un-finishes a finished puzzle. The count is
+ *     decremented only if this puzzle had actually incremented it (completed and
+ *     won), and re-completing counts it again.
+ *   - the crushed-it and elite counters, when the removed word was the only one
+ *     on the puzzle holding that tier -- which mirrors exactly when they were
+ *     incremented (see updateRarityScore).
+ *
+ * Two things are deliberately *not* rolled back. The streak banked on the first
+ * accepted word, and a day that was played stays played -- taking a streak away
+ * for using a feature the game offers is a punishment nobody asked for. And the
+ * all-time high score stays: it is a personal best across every puzzle ever
+ * played, there is no history kept to recompute it from, and the word was
+ * genuinely found before it was set aside.
+ *
+ * The leaderboard is not rewritten either, because it cannot be: the write is
+ * monotonic per day (`greatest(...)` -- see the leaderboard migration), so a
+ * retry can only ever raise a board score, never lower one. Between a retry and
+ * the replacement word, a player's board total can therefore still include the
+ * word they dropped. That is the safe direction to be wrong in, and the
+ * alternative is a retraction path built for a score nobody is disputing.
+ *
+ * Returns `progress` unchanged when the retry is already spent or the word
+ * isn't banked, so callers can compare by identity to tell whether it happened.
+ */
+export function retryWord(progress: DailyProgress, word: string): DailyProgress {
+  if (progress.retryUsed) return progress;
+  const index = progress.acceptedWords.findIndex((accepted) => accepted.word === word);
+  if (index === -1) return progress;
+
+  const removed = progress.acceptedWords[index];
+  const acceptedWords = progress.acceptedWords.filter((_, i) => i !== index);
+  // Recomputed rather than assumed false: the guess limit is date-gated, and
+  // this is the same question `recordAcceptedWord` asks when banking one.
+  const completed = acceptedWords.length >= maxGuessesFor(progress.date);
+  const countedCompletion = progress.completed && progress.won === true;
+
+  const updated: DailyProgress = {
+    ...progress,
+    acceptedWords,
+    retryUsed: true,
+    completed,
+    // Both are facts about a finished puzzle. A puzzle the retry re-opened has
+    // neither until it finishes again.
+    won: completed ? acceptedWords.some((w) => isWinningRarity(w.rarity)) : undefined,
+    completedAt: completed ? progress.completedAt : undefined,
+    // Kept: it records when this puzzle was *played*, which retrying a word does
+    // not change, and re-banking a word must not restamp it (see playedOnItsDay).
+    firstWordAt: progress.firstWordAt,
+  };
+  saveProgress(updated);
+
+  if (countedCompletion && !completed) decrementCompletionTotal();
+  rollBackRarityScore({
+    shouldDecrementCrushedIt:
+      isWinningRarity(removed.rarity) && !acceptedWords.some((w) => isWinningRarity(w.rarity)),
+    shouldDecrementElite:
+      isEliteRarity(removed.rarity) && !acceptedWords.some((w) => isEliteRarity(w.rarity)),
+  });
+
+  return updated;
 }

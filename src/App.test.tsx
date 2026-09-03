@@ -12,6 +12,7 @@ vi.mock("@vercel/analytics/react", () => ({ Analytics: () => null }));
 vi.mock("@vercel/speed-insights/react", () => ({ SpeedInsights: () => null }));
 
 const submitWord = vi.fn();
+const retryAnswer = vi.fn();
 
 function puzzle(overrides: Record<string, unknown> = {}) {
   return {
@@ -34,6 +35,10 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     streak: { currentStreak: 0, longestStreak: 0, totalCompleted: 0, crushedIt: 0, elite: 0, highScore: 0 },
     feedback: null,
     submitWord,
+    canRetry: false,
+    retrySpent: false,
+    retriesLeft: null,
+    retryAnswer,
     resetAnswers: vi.fn(),
     liveNote: null,
     checking: false,

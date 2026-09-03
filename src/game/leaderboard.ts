@@ -476,6 +476,17 @@ interface ScorePayload {
   top: number;
   words: number;
   /**
+   * Whether this day has spent its one retry (see game/storage.ts, retryWord).
+   *
+   * Sent only when true, and it is not a claim about the score: it says which
+   * side of the retry this account of the day comes from. The board's write is
+   * monotonic per day, so without it a word the player took back would go on
+   * being ranked -- with it, the first submission after a retry is assigned
+   * rather than maxed, and a pre-retry submission still in flight is dropped.
+   * See the 20260831 migration for the four cases.
+   */
+  retried?: boolean;
+  /**
    * Every word accepted that day, which is what the finds feed is built from.
    *
    * Sent only for the puzzle being played, never for a backfilled day: the feed
@@ -497,7 +508,7 @@ interface ScorePayload {
 function scoreFor(
   date: string,
   words: readonly AcceptedWord[],
-  options: { withFound?: boolean } = {}
+  options: { withFound?: boolean; retried?: boolean } = {}
 ): ScorePayload {
   const best = rarest(words);
   return {
@@ -511,6 +522,10 @@ function scoreFor(
     // Capped rather than trusted: the endpoint bounds this too, and sending more
     // than the day's guess limit allows would only get the batch rejected.
     words: Math.min(words.length, maxGuessesFor(date)),
+    // Only when true. False is what the server assumes of an absent flag, so
+    // sending it would put a field on every submission ever made to say the
+    // ordinary thing.
+    ...(options.retried ? { retried: true } : {}),
     ...(options.withFound ? { found: foundFor(date, words) } : {}),
   };
 }
@@ -576,9 +591,11 @@ export function submitScore(options: {
   date: string;
   isToday: boolean;
   words: readonly AcceptedWord[];
+  /** Whether this puzzle's one retry has been spent (DailyProgress.retryUsed). */
+  retried?: boolean;
   playerId?: string | null;
 }): boolean {
-  const { date, isToday, words } = options;
+  const { date, isToday, words, retried } = options;
   const playerId = options.playerId ?? loadPlayerId();
   if (!playerId || !isToday || words.length === 0) return false;
   // The whole running word list goes with it, which is what the finds feed is
@@ -590,7 +607,7 @@ export function submitScore(options: {
   // comes from the whole stored history -- which already includes the words
   // being submitted, since they were saved before this was called. The fallback
   // covers a record too old to carry the timestamp that makes a day eligible.
-  return post(playerId, [scoreFor(date, words, { withFound: true })]);
+  return post(playerId, [scoreFor(date, words, { withFound: true, retried })]);
 }
 
 /**
@@ -620,7 +637,14 @@ export function backfillHistory(
     // scores and not a year of words, which is what keeps the batch inside the
     // request body cap and off a feed that shows one drop at a time.
     .map((progress) =>
-      scoreFor(progress.date, progress.acceptedWords, { withFound: progress.date === today })
+      scoreFor(progress.date, progress.acceptedWords, {
+        withFound: progress.date === today,
+        // Carried on a repaired day too. A day whose retry was spent has a
+        // retracted row on the board, and a submission that says otherwise is
+        // dropped as a straggler -- so a sync that left this off would quietly
+        // stop repairing exactly the days most likely to need it.
+        retried: progress.retryUsed === true,
+      })
     );
   // Named from exactly the days being submitted, so the name and the scores in
   // one request always describe the same history.

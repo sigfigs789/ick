@@ -152,7 +152,7 @@ describe("gameplay end to end", () => {
     await submit(word);
 
     await waitFor(() => expect(loggedWords()).toEqual([word]));
-    expect(screen.getByText(new RegExp(`1 of ${LIMIT} used`, "i"))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`1 of ${LIMIT} guesses`, "i"))).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(new RegExp(`"${word}" accepted`, "i"));
     // The first word of the day advances the streak, which the display reads
     // out of storage rather than from the submission itself.
@@ -174,7 +174,7 @@ describe("gameplay end to end", () => {
     render(<App />);
 
     expect(loggedWords()).toEqual([word]);
-    expect(screen.getByText(new RegExp(`1 of ${LIMIT} used`, "i"))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`1 of ${LIMIT} guesses`, "i"))).toBeInTheDocument();
     // Still playable: a restored puzzle picks up mid-game, not finished.
     expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
   });

@@ -139,7 +139,7 @@ describe("submitting a score", () => {
 });
 
 /** A stored day, first played at the given time (default: on its own date). */
-function stored(date: string, firstWordAt = `${date}T20:00:00.000Z`): DailyProgress {
+function stored(date: string, firstWordAt = `${date}T20:00:00`): DailyProgress {
   return {
     date,
     drop: "ink",
@@ -242,7 +242,7 @@ describe("importing a joining player's history", () => {
     // the day and stays off the board.
     localStorage.setItem(
       "ick:progress:2026-08-10",
-      JSON.stringify(stored("2026-08-10", "2026-08-24T20:00:00.000Z"))
+      JSON.stringify(stored("2026-08-10", "2026-08-24T20:00:00"))
     );
     const fetchMock = stubFetch();
 
@@ -733,5 +733,61 @@ describe("how far back the feed looks", () => {
     expect(feedFloor("2026-08-26")).toBe("2026-08-26");
     // And it never reaches back past it, however early the puzzle.
     expect(feedFloor("2026-07-03")).toBe("2026-08-26");
+  });
+});
+
+describe("a day that spent its retry", () => {
+  it("marks the submission so the board is allowed to lower the day", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+    const today = todayDateString();
+
+    // Three words where a moment ago there were four: the board's write is
+    // monotonic per day, so without this flag the retried word goes on being
+    // ranked no matter what the client sends.
+    submitScore({ date: today, isToday: true, words: WORDS.slice(0, 1), retried: true });
+
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day.retried).toBe(true);
+  });
+
+  it("says nothing on an ordinary day rather than sending the default", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+
+    submitScore({ date: todayDateString(), isToday: true, words: WORDS });
+
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    // Absent means false to the write; saying it would put a field on every
+    // submission ever made to state the ordinary case.
+    expect(day).not.toHaveProperty("retried");
+  });
+
+  it("keeps carrying the flag when a later open re-sends the day", () => {
+    joinBoard();
+    localStorage.setItem(
+      "ick:progress:2026-08-21",
+      JSON.stringify({ ...stored("2026-08-21"), retryUsed: true })
+    );
+    const fetchMock = stubFetch();
+
+    syncHistory("2026-08-21");
+
+    // A repair that left this off would be read as a pre-retry straggler and
+    // dropped -- so the sync would quietly stop repairing exactly the days most
+    // likely to need it.
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day.retried).toBe(true);
+  });
+
+  it("leaves the flag off a synced day that never used its retry", () => {
+    joinBoard();
+    localStorage.setItem("ick:progress:2026-08-21", JSON.stringify(stored("2026-08-21")));
+    const fetchMock = stubFetch();
+
+    syncHistory("2026-08-21");
+
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day).not.toHaveProperty("retried");
   });
 });

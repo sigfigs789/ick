@@ -57,6 +57,18 @@ export interface DailyProgress {
   won?: boolean;
   completedAt?: string; // ISO timestamp
   /**
+   * Whether this puzzle's one retry has been spent (see storage.retryWord).
+   *
+   * One per puzzle, and only ever set -- a retried word is gone for good, and
+   * the slot it gives back can only be spent on a new guess.
+   *
+   * Absent on every puzzle saved before this field existed, which reads as an
+   * unspent retry. That is deliberate: those are archive puzzles by now, and the
+   * retry is offered on the current puzzle only, so the unspent flag is never
+   * reachable on them.
+   */
+  retryUsed?: boolean;
+  /**
    * When the first word was accepted, as an ISO timestamp.
    *
    * The only record of when a puzzle was actually *played*, as opposed to
