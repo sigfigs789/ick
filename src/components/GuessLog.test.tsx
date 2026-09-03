@@ -27,13 +27,13 @@ describe("GuessLog", () => {
     render(<GuessLog acceptedWords={words} />);
     expect(screen.getByText("strange")).toBeInTheDocument();
     expect(screen.getByText("strut")).toBeInTheDocument();
-    expect(screen.getByText("2 guesses left")).toBeInTheDocument();
+    expect(screen.getByText("2 of 4 guesses")).toBeInTheDocument();
   });
 
   it("counts against the six-guess limit an archive puzzle played with", () => {
     const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
     render(<GuessLog acceptedWords={words} date="2024-01-01" />);
-    expect(screen.getByText("5 guesses left")).toBeInTheDocument();
+    expect(screen.getByText("1 of 6 guesses")).toBeInTheDocument();
   });
 
   it("names the common form when scoring on it cost the guess real points", () => {
@@ -136,7 +136,7 @@ describe("GuessLog retry", () => {
 
   it("withdraws the control once the retry is spent, saying so only in the header", () => {
     render(<GuessLog acceptedWords={words} retrySpent retriesLeft={0} />);
-    expect(screen.getByText("0 retries left")).toBeInTheDocument();
+    expect(screen.getByText("1 of 1 retries")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /retry a word/i })).not.toBeInTheDocument();
     // The header counter already says it; a line under the log repeating it was
     // the same sentence twice.
@@ -158,13 +158,13 @@ describe("GuessLog retry counter", () => {
     // moment it opens, not something that appears once there is a word to spend
     // it on.
     render(<GuessLog acceptedWords={[]} retriesLeft={1} />);
-    expect(screen.getByText("1 retry left")).toBeInTheDocument();
-    expect(screen.getByText("4 guesses left")).toBeInTheDocument();
+    expect(screen.getByText("0 of 1 retries")).toBeInTheDocument();
+    expect(screen.getByText("0 of 4 guesses")).toBeInTheDocument();
   });
 
   it("counts down to zero once it is spent", () => {
     render(<GuessLog acceptedWords={words} retriesLeft={0} retrySpent />);
-    expect(screen.getByText("0 retries left")).toBeInTheDocument();
+    expect(screen.getByText("1 of 1 retries")).toBeInTheDocument();
   });
 
   it("says nothing at all on a puzzle that carries no retry", () => {
@@ -172,6 +172,6 @@ describe("GuessLog retry counter", () => {
     // feature started, never had a retry to report.
     render(<GuessLog acceptedWords={words} retriesLeft={null} />);
     expect(screen.queryByText(/retr(y|ies)$/)).not.toBeInTheDocument();
-    expect(screen.getByText("3 guesses left")).toBeInTheDocument();
+    expect(screen.getByText("1 of 4 guesses")).toBeInTheDocument();
   });
 });

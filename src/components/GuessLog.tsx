@@ -13,6 +13,16 @@ import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
 
+/**
+ * The retry allowance a puzzle carries, for turning "retries left" into the
+ * "spent of total" the header shows.
+ *
+ * Display only. What actually holds the rule to one is the boolean the day is
+ * saved with (see game/storage.retryWord) -- a count here would be a second
+ * place for the same rule to live, and the two could disagree.
+ */
+const RETRIES_PER_PUZZLE = 1;
+
 /** The clipboard form of a logged word: "<tier square> <word> (<score>)".
  * Reuses the share-results palette so a pasted word matches the share text. */
 function copyTextForWord(w: AcceptedWord, date?: string): string {
@@ -86,14 +96,16 @@ export function GuessLog({
       {!completed && (
         <div className="guess-log__header">
           <h2 className="guess-log__title">Guess log</h2>
-          {/* Both of the day's allowances, as matching chips: what you have
-              left of each, counting down, named so neither number depends on
-              its position to say what it is -- and said as "left", because
-              these chips are now the only place the count appears and a bare
-              "3 guesses" reads as easily as spent than remaining. The retry sits left of the guesses
-              because it is the smaller, rarer one and reads as a modifier on
-              them, and is absent entirely on a puzzle that carries none --
-              which is a different thing from having none left. */}
+          {/* Both of the day's allowances, as matching chips: spent out of
+              total, named. Showing the denominator is what makes the bare
+              number safe -- "0 of 4 guesses" cannot be misread as four
+              remaining the way "4 guesses" could, so neither chip has to spell
+              out "used" or "left" to be unambiguous.
+
+              The retry sits left of the guesses because it is the smaller,
+              rarer one and reads as a modifier on them, and is absent entirely
+              on a puzzle that carries none -- which is a different thing from
+              having spent one. */}
           <span className="guess-log__meters">
             {retriesLeft !== null && (
               <span
@@ -101,7 +113,7 @@ export function GuessLog({
                   retriesLeft === 0 ? " guess-log__chip--spent" : ""
                 }`}
               >
-                {retriesLeft} retr{retriesLeft === 1 ? "y" : "ies"} left
+                {RETRIES_PER_PUZZLE - retriesLeft} of {RETRIES_PER_PUZZLE} retries
               </span>
             )}
             <span
@@ -109,7 +121,7 @@ export function GuessLog({
                 guessesLeft === 0 ? " guess-log__chip--spent" : ""
               }`}
             >
-              {guessesLeft} guess{guessesLeft === 1 ? "" : "es"} left
+              {acceptedWords.length} of {maxGuesses} guesses
             </span>
           </span>
         </div>
