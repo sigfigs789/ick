@@ -52,6 +52,7 @@ export default function App() {
     checking,
     submitWord,
     canRetry,
+    retryOffered,
     retrySpent,
     retryAnswer,
     resetAnswers,
@@ -243,6 +244,7 @@ export default function App() {
           streak={streak}
           date={date}
           canRetry={canRetry}
+          retryOffered={retryOffered}
           retrySpent={retrySpent}
           onRetry={retryAnswer}
         />

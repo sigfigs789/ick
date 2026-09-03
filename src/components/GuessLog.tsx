@@ -26,8 +26,15 @@ interface Props {
   streak?: StreakState;
   /** Puzzle date, so scores use the scoring system in effect that day. */
   date?: string;
-  /** This puzzle's one retry is still unspent and still reachable. */
+  /** This puzzle's one retry is still unspent and there is a word to spend it on. */
   canRetry?: boolean;
+  /**
+   * This puzzle's one retry is still unspent, whether or not there is
+   * anything to retry yet. Shows the control from the moment the puzzle
+   * opens -- greyed out until `canRetry` -- rather than having it appear out
+   * of nowhere once the first word lands.
+   */
+  retryOffered?: boolean;
   /** It has been spent, on a puzzle where it was offered in the first place. */
   retrySpent?: boolean;
   /** Drop a banked word and hand its guess back (see storage.retryWord). */
@@ -40,6 +47,7 @@ export function GuessLog({
   streak,
   date,
   canRetry = false,
+  retryOffered = false,
   retrySpent = false,
   onRetry,
 }: Props) {
@@ -192,8 +200,13 @@ export function GuessLog({
       )}
 
       {/* Under the log rather than over it: the retry is about the words above
-          it, and on a completed puzzle this is the only thing left to do. */}
-      {(canRetry || retrySpent) && acceptedWords.length > 0 && (
+          it, and on a completed puzzle this is the only thing left to do.
+
+          Shown from the moment the puzzle opens (retryOffered), not only once
+          there is a word to spend it on (canRetry) -- the button starts
+          greyed out rather than appearing out of nowhere the instant a first
+          guess lands. */}
+      {(retryOffered || retrySpent) && (
         <div className={`guess-log__retry${picking ? " guess-log__retry--picking" : ""}`}>
           {picking ? (
             <>
@@ -211,11 +224,13 @@ export function GuessLog({
                 Never mind
               </button>
             </>
-          ) : canRetry ? (
+          ) : retryOffered ? (
             <>
               <button
                 type="button"
                 className="guess-log__retry-button"
+                disabled={!canRetry}
+                title={canRetry ? undefined : "Guess a word first"}
                 onClick={() => setArming(true)}
               >
                 <span aria-hidden="true">↺</span> Retry a word

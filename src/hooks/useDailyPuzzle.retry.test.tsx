@@ -66,6 +66,9 @@ describe("useDailyPuzzle retry", () => {
     const { result } = renderHook(() => useDailyPuzzle());
     expect(result.current.canRetry).toBe(false);
     expect(result.current.retrySpent).toBe(false);
+    // But the day's retry is still there to spend once a word lands -- the UI
+    // shows the control (greyed out) from the moment the puzzle opens.
+    expect(result.current.retryOffered).toBe(true);
   });
 
   it("drops the word, hands the guess back, and spends the retry", async () => {

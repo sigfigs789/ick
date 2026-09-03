@@ -48,13 +48,13 @@ describe("maxGuessesFor", () => {
 
 describe("retryAvailableFor", () => {
   it("gives the first puzzle of the feature a retry", () => {
-    expect(retryAvailableFor("2026-09-02")).toBe(true);
+    expect(retryAvailableFor("2026-09-04")).toBe(true);
   });
 
   it("withholds it from the day before", () => {
-    // The day this shipped. A puzzle plays the way it did when it dropped, and
-    // this one dropped without a retry.
-    expect(retryAvailableFor("2026-09-01")).toBe(false);
+    // The day before this shipped. A puzzle plays the way it did when it
+    // dropped, and this one dropped without a retry.
+    expect(retryAvailableFor("2026-09-03")).toBe(false);
   });
 
   it("withholds it from every earlier puzzle", () => {
@@ -64,7 +64,7 @@ describe("retryAvailableFor", () => {
   });
 
   it("keeps every later puzzle carrying one", () => {
-    expect(retryAvailableFor("2026-09-03")).toBe(true);
+    expect(retryAvailableFor("2026-09-05")).toBe(true);
     expect(retryAvailableFor("2027-01-01")).toBe(true);
   });
 

@@ -765,6 +765,15 @@ h2 {
   border-color: var(--accent);
   background: var(--bg-inset);
 }
+/* Visible but not yet actionable: there's no word banked to spend the retry
+ * on. Faded rather than hidden, so the control's spot on the page never
+ * moves once a guess does land -- and disabled so hover/focus above don't
+ * fire and imply it works. */
+.guess-log__retry-button:disabled {
+  color: var(--fg-faint);
+  border-color: var(--border);
+  cursor: not-allowed;
+}
 /* The one fact about the retry worth knowing before you press the button:
  * fainter than the button itself, so it reads as a footnote rather than a
  * second thing to act on. */
