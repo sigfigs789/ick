@@ -240,22 +240,24 @@ describe("gameplay end to end", () => {
     expect(savedProgress(TODAY)?.completed).toBe(false);
   });
 
-  it("keeps the day's answer hidden until every guess is spent", async () => {
+  it("offers a hint while guesses remain, and stops once they are spent", async () => {
     const words = playableWords(LIMIT, DROP, TODAY);
     render(<App />);
 
-    const revealed = () => document.querySelector(".drop-display__ceiling-word");
-    expect(revealed()).not.toBeInTheDocument();
+    const hintButton = () => screen.queryByRole("button", { name: "See hint" });
+    // A hint teaches a way to look for words, so it is offered from the start --
+    // there is nothing to hint at once the looking is over.
+    expect(hintButton()).toBeInTheDocument();
 
     for (const [i, word] of words.entries()) {
       await submit(word);
       await waitFor(() => expect(loggedWords()).toContain(word));
-      // Still hidden on every guess but the last, which is the whole point:
-      // there is no longer a button that trades the rest of the puzzle for it.
-      if (i < words.length - 1) expect(revealed()).not.toBeInTheDocument();
+      if (i < words.length - 1) expect(hintButton()).toBeInTheDocument();
     }
 
-    await waitFor(() => expect(revealed()).toBeInTheDocument());
+    await waitFor(() => expect(hintButton()).not.toBeInTheDocument());
+    // And the day's answer is never handed over, before or after.
+    expect(document.querySelector(".drop-display__ceiling-word")).not.toBeInTheDocument();
   });
 
   it("keeps an archived puzzle's progress separate from today's", async () => {

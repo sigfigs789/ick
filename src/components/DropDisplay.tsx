@@ -1,19 +1,24 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { formatDateLabel } from "../game/date";
-import { bestWordForDrop } from "../game/dictionary";
+import { hintForDrop } from "../game/hints";
 
 interface Props {
   drop: string;
   date?: string;
   isToday?: boolean;
-  /** Once the puzzle is done, the word itself drops in under the rarity badge. */
+  /** Once the puzzle is done there is nothing left to hint at. */
   completed?: boolean;
 }
 
 export function DropDisplay({ drop, date, isToday = true, completed = false }: Props) {
-  // Recomputed only when the drop itself changes -- a full dictionary scan,
-  // so it's not something we want re-running on unrelated re-renders.
-  const best = useMemo(() => bestWordForDrop(drop, date), [drop, date]);
+  const hint = useMemo(() => hintForDrop(drop), [drop]);
+  const [revealed, setRevealed] = useState(false);
+
+  // Only while there are still guesses to spend: a hint teaches a way to look
+  // for words, which is no use to someone who has finished looking. Not every
+  // drop has one -- see hintForDrop -- and a drop without one shows no button,
+  // which says there is no trick today rather than inventing one.
+  const showHint = !completed && hint !== undefined;
 
   return (
     <div className="drop-display">
@@ -27,14 +32,23 @@ export function DropDisplay({ drop, date, isToday = true, completed = false }: P
           </span>
         ))}
       </p>
-      {best && (
-        <p className="drop-display__ceiling">
-          Best possible score: 10.0
-        </p>
-      )}
-      {completed && best && (
-        <p className="drop-display__ceiling-word">{best.word}</p>
-      )}
+      <p className="drop-display__ceiling">
+        Best possible score: 10.0
+      </p>
+      {showHint &&
+        (revealed ? (
+          <p className="drop-display__hint" role="status">
+            {hint}
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="drop-display__hint-button"
+            onClick={() => setRevealed(true)}
+          >
+            See hint
+          </button>
+        ))}
     </div>
   );
 }

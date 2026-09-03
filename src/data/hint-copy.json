@@ -1,0 +1,10 @@
+{
+ "middle": "Rarest words bury {drop} in the middle.",
+ "end": "Rarest words end with {drop}.",
+ "start": "Rarest words start with {drop}.",
+ "walk": "Run the alphabet in front of {drop}, out loud. A, then B, then C.",
+ "room": "Pick a room and stand in it — a kitchen, a hospital, a workshop.",
+ "who": "Ask who says this word. A chef, a nurse, a driver.",
+ "sound": "Say it out loud. Don't define it.",
+ "second": "Skip the first word that comes to mind. It's a common one."
+}

@@ -1298,31 +1298,6 @@ export function baseFormRankDrop(
 }
 
 /**
- * The single rarest dictionary word containing `drop` as a substring -- the
- * best a player could theoretically submit for this drop. Lower Zipf means
- * rarer, so this is a min-scan over the whole dictionary, same containment
- * rule as submit.ts's containsDropInOrder.
- *
- * Skips the reviewed rejections: this word is shown to the player as the drop's
- * ceiling (see DropDisplay), so it has to be one they could actually have
- * submitted. A rejected word is still in WORDS, which is exactly why the check
- * is needed here and not just in submit.
- */
-export function bestWordForDrop(drop: string, date?: string): AcceptedWord | undefined {
-  const needle = drop.toLowerCase();
-  let best: AcceptedWord | undefined;
-  for (let i = 0; i < WORDS.length; i++) {
-    if (!WORDS[i].includes(needle)) continue;
-    if (curatedRejection(WORDS[i], date) !== undefined) continue;
-    const info = rarityFor(WORDS[i], date)!;
-    if (!best || info.zipf < best.zipf) {
-      best = { word: WORDS[i], ...info };
-    }
-  }
-  return best;
-}
-
-/**
  * A playable answer for `drop` that `word` is only a letter or two away from, or
  * undefined when the guess isn't close to anything -- the signal behind the
  * "check your spelling" nudge (see game/nearMiss.ts for the rule).
@@ -1862,8 +1837,8 @@ function inflectedFormFolds(
     // toward common, so a form no commoner than what the caller already has
     // cannot change the answer -- and confirming the link is the expensive half
     // (a full candidate generation for every spelling offered). Skipping those
-    // is what keeps this off the drop-scan hot path: `bestWordForDrop` walks the
-    // whole dictionary, and most words' inflections are rarer than the word.
+    // is what keeps this off the drop-scan hot path: a caller may walk the whole
+    // dictionary, and most words' inflections are rarer than the word.
     //
     // From REVIEWED_FOLD_START the "cannot change the answer" half only holds
     // above MEASURED_FLOOR. A form below the floor may be rarer than the word

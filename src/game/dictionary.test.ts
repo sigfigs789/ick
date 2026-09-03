@@ -6,7 +6,6 @@ import {
   BASE_FORM_NOTICE_DROP,
   baseFormRankDrop,
   baseFormSubstitution,
-  bestWordForDrop,
   curatedRejection,
   isValidWord,
   rarityFor,
@@ -796,15 +795,6 @@ describe("curated word rejections", () => {
     expect(curatedRejection(word, since)).toBe(reason);
   });
 
-  it("never offers a rejected word as a drop's best possible answer", () => {
-    // bestWordForDrop scans dictionary.json directly and its result is shown to
-    // the player (DropDisplay), so the rejection has to be honoured there too.
-    for (const [word, { since }] of rejections) {
-      const best = bestWordForDrop(word.slice(1, 4), since);
-      expect(best?.word).not.toBe(word);
-    }
-  });
-
   it("leaves words with no entry alone", () => {
     expect(curatedRejection("placate")).toBeUndefined();
     expect(isValidWord("placate")).toBe(true);
@@ -898,14 +888,6 @@ describe("derived word rejections", () => {
     for (const word of ["halt", "fraught", "guerilla", "thy", "unto", "fortnight", "yea"]) {
       expect(curatedRejection(word), `${word} must stay playable`).toBeUndefined();
       expect(isValidWord(word)).toBe(true);
-    }
-  });
-
-  it("never offers a rejected word as a drop's best possible answer", () => {
-    // Sampled rather than exhaustive: bestWordForDrop scans the whole dictionary,
-    // so one call per word would be thousands of full scans.
-    for (const { word } of entries.slice(0, 25)) {
-      expect(bestWordForDrop(word.slice(1, 4))?.word).not.toBe(word);
     }
   });
 

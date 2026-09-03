@@ -526,20 +526,37 @@ h2 {
   justify-content: center;
   gap: 0.4rem;
 }
-.drop-display__ceiling-word {
-  margin: 0.4rem 0 0;
-  font-family: var(--font-display);
-  font-size: 0.95rem;
-  font-weight: 800;
-  text-transform: lowercase;
+.drop-display__hint-button {
+  margin: 0.5rem 0 0;
+  padding: 0.3rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--fg-muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-6px);
+  animation: hint-in 0.4s var(--ease-standard) forwards;
+  animation-delay: 0.15s;
+}
+.drop-display__hint-button:hover {
+  color: var(--fg);
+  border-color: var(--fg-muted);
+}
+.drop-display__hint {
+  margin: 0.5rem auto 0;
+  max-width: 22rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
   color: var(--fg);
   text-align: center;
   opacity: 0;
   transform: translateY(-6px);
-  animation: ceiling-word-in 0.4s var(--ease-standard) forwards;
-  animation-delay: 0.15s;
+  animation: hint-in 0.4s var(--ease-standard) forwards;
 }
-@keyframes ceiling-word-in {
+@keyframes hint-in {
   from {
     opacity: 0;
     transform: translateY(-6px);
