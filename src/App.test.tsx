@@ -36,6 +36,7 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     feedback: null,
     submitWord,
     canRetry: false,
+    retryOffered: false,
     retrySpent: false,
     retriesLeft: null,
     retryAnswer,

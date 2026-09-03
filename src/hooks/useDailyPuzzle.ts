@@ -384,11 +384,14 @@ export function useDailyPuzzle() {
    * belongs to, and the UI says so rather than leaving a player to discover it
    * (see GuessLog).
    */
-  const canRetry =
-    isToday &&
-    retryAvailableFor(viewedDate) &&
-    !progress.retryUsed &&
-    progress.acceptedWords.length > 0;
+  /**
+   * The day's retry is still unspent, whether or not there is a word to
+   * spend it on yet. Split out from `canRetry` below so the control can be
+   * shown -- greyed out -- from the moment the puzzle opens, instead of
+   * appearing out of nowhere once the first word lands (see GuessLog).
+   */
+  const retryOffered = isToday && retryAvailableFor(viewedDate) && !progress.retryUsed;
+  const canRetry = retryOffered && progress.acceptedWords.length > 0;
   /** Spent, on a puzzle that was offering it -- so the UI can say so rather than
    * quietly withdrawing the control. Never true on an archive puzzle, where the
    * retry was never on offer in the first place. */
@@ -485,6 +488,7 @@ export function useDailyPuzzle() {
     feedback,
     submitWord,
     canRetry,
+    retryOffered,
     retrySpent,
     retriesLeft,
     retryAnswer,

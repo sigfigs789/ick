@@ -52,8 +52,8 @@ export default function App() {
     checking,
     submitWord,
     canRetry,
+    retryOffered,
     retrySpent,
-    retriesLeft,
     retryAnswer,
     resetAnswers,
   } = useDailyPuzzle();
@@ -244,8 +244,8 @@ export default function App() {
           streak={streak}
           date={date}
           canRetry={canRetry}
+          retryOffered={retryOffered}
           retrySpent={retrySpent}
-          retriesLeft={retriesLeft}
           onRetry={retryAnswer}
         />
 

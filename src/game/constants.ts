@@ -43,7 +43,7 @@ export function maxGuessesFor(date?: string): number {
  * useDailyPuzzle.canRetry) -- but that window is exactly what it is for, and
  * stating the start as a date keeps it out of a deploy's timing.
  */
-const RETRY_START = "2026-09-02";
+const RETRY_START = "2026-09-04";
 
 /**
  * Whether `date`'s puzzle carries a retry.
