@@ -101,7 +101,7 @@ describe("GuessLog retry", () => {
 
   it("offers no retry when the puzzle isn't the one it belongs to", () => {
     render(<GuessLog acceptedWords={words} />);
-    expect(screen.queryByRole("button", { name: /retry a word/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /retry 1 word/i })).not.toBeInTheDocument();
   });
 
   it("arms, then swaps out the word the player picks", async () => {
@@ -109,7 +109,7 @@ describe("GuessLog retry", () => {
     render(<GuessLog acceptedWords={words} canRetry retryOffered onRetry={onRetry} />);
 
     // Until it is armed, tapping a word still copies it.
-    await userEvent.click(screen.getByRole("button", { name: /retry a word/i }));
+    await userEvent.click(screen.getByRole("button", { name: /retry 1 word/i }));
     await userEvent.click(screen.getByRole("button", { name: /^Retry "strange"/i }));
 
     expect(onRetry).toHaveBeenCalledWith("strange");
@@ -118,14 +118,14 @@ describe("GuessLog retry", () => {
     expect(screen.getByRole("button", { name: /^Copy "strut"/i })).toBeInTheDocument();
   });
 
-  it("says the limit up front, before the button is ever pressed", () => {
+  it("says the limit in the button's own label, before it is ever pressed", () => {
     render(<GuessLog acceptedWords={words} canRetry retryOffered onRetry={vi.fn()} />);
-    expect(screen.getByText(/one retry per puzzle/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /retry 1 word/i })).toBeInTheDocument();
   });
 
   it("says what arming does without repeating the limit already stated above it", async () => {
     render(<GuessLog acceptedWords={words} canRetry retryOffered onRetry={vi.fn()} />);
-    await userEvent.click(screen.getByRole("button", { name: /retry a word/i }));
+    await userEvent.click(screen.getByRole("button", { name: /retry 1 word/i }));
 
     expect(screen.getByText(/select a word to clear and try again/i)).toBeInTheDocument();
     expect(screen.queryByText(/once per day/i)).not.toBeInTheDocument();
@@ -135,7 +135,7 @@ describe("GuessLog retry", () => {
     const onRetry = vi.fn();
     render(<GuessLog acceptedWords={words} canRetry retryOffered onRetry={onRetry} />);
 
-    await userEvent.click(screen.getByRole("button", { name: /retry a word/i }));
+    await userEvent.click(screen.getByRole("button", { name: /retry 1 word/i }));
     await userEvent.click(screen.getByRole("button", { name: /never mind/i }));
 
     expect(onRetry).not.toHaveBeenCalled();
@@ -144,7 +144,7 @@ describe("GuessLog retry", () => {
 
   it("replaces the control with a quiet, inert note once the retry is spent", () => {
     render(<GuessLog acceptedWords={words} retrySpent />);
-    expect(screen.queryByRole("button", { name: /retry a word/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /retry 1 word/i })).not.toBeInTheDocument();
     // The button's own spot now says what happened to it -- no separate
     // counter needed to learn the retry is gone.
     expect(screen.getByText(/retry used/i)).toBeInTheDocument();
@@ -153,7 +153,7 @@ describe("GuessLog retry", () => {
 
   it("says nothing about retries at all on a puzzle that never offered one", () => {
     render(<GuessLog acceptedWords={words} />);
-    expect(screen.queryByRole("button", { name: /retry a word/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /retry 1 word/i })).not.toBeInTheDocument();
     expect(screen.queryByText(/retry used/i)).not.toBeInTheDocument();
   });
 
@@ -161,22 +161,21 @@ describe("GuessLog retry", () => {
     // retryOffered without canRetry: the puzzle carries a retry today, but
     // nothing has been banked yet to spend it on.
     render(<GuessLog acceptedWords={[]} retryOffered />);
-    const button = screen.getByRole("button", { name: /retry a word/i });
+    const button = screen.getByRole("button", { name: /retry 1 word/i });
     expect(button).toBeDisabled();
-    expect(screen.getByText(/one retry per puzzle/i)).toBeInTheDocument();
   });
 
   it("doesn't arm on a click while the button is disabled", async () => {
     const onRetry = vi.fn();
     render(<GuessLog acceptedWords={[]} retryOffered onRetry={onRetry} />);
-    await userEvent.click(screen.getByRole("button", { name: /retry a word/i }));
+    await userEvent.click(screen.getByRole("button", { name: /retry 1 word/i }));
     expect(screen.queryByText(/select a word to clear/i)).not.toBeInTheDocument();
   });
 
   it("still offers the retry on a puzzle the last guess finished", () => {
     render(<GuessLog acceptedWords={words} completed streak={streak} canRetry retryOffered onRetry={vi.fn()} />);
     // The case the feature exists for: the slot is spent and the score is bad.
-    expect(screen.getByRole("button", { name: /retry a word/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /retry 1 word/i })).toBeInTheDocument();
   });
 });
 

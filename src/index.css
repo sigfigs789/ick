@@ -774,14 +774,6 @@ h2 {
   border-color: var(--border);
   cursor: not-allowed;
 }
-/* The one fact about the retry worth knowing before you press the button:
- * fainter than the button itself, so it reads as a footnote rather than a
- * second thing to act on. */
-.guess-log__retry-note {
-  margin: 0.35rem 0 0;
-  font-size: 0.75rem;
-  color: var(--fg-faint);
-}
 /* Armed. The whole block firms up so it is obvious the log is now waiting on a
  * choice rather than sitting there. */
 .guess-log__retry--picking {

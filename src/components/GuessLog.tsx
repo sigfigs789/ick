@@ -225,22 +225,18 @@ export function GuessLog({
               </button>
             </>
           ) : retryOffered ? (
-            <>
-              <button
-                type="button"
-                className="guess-log__retry-button"
-                disabled={!canRetry}
-                title={canRetry ? undefined : "Guess a word first"}
-                onClick={() => setArming(true)}
-              >
-                <span aria-hidden="true">↺</span> Retry a word
-              </button>
-              {/* Said here, once, before the button is ever pressed -- an
-                  info icon would need a hover state desktop has and mobile
-                  doesn't, or a second tap just to read a sentence. A caption
-                  that is simply always there costs nothing on either. */}
-              <p className="guess-log__retry-note">One retry per puzzle</p>
-            </>
+            // The limit is in the label itself now -- "1 word", not "a word"
+            // -- so it doesn't need a separate caption underneath to say the
+            // same thing a second way.
+            <button
+              type="button"
+              className="guess-log__retry-button"
+              disabled={!canRetry}
+              title={canRetry ? undefined : "Guess a word first"}
+              onClick={() => setArming(true)}
+            >
+              <span aria-hidden="true">↺</span> Retry 1 word
+            </button>
           ) : (
             // Spent: the button is gone (there is nothing left to arm), but a
             // returning player should still see what happened to it rather
