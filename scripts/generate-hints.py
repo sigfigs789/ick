@@ -8,9 +8,13 @@ gets. The output is `src/data/hints.json`: drop -> hint key.
 Two kinds of key:
 
   "middle" / "end" / "start"
-      A claim about where the rarest words put the drop. Only assigned when the
-      rare band genuinely concentrates there (>= CONCENTRATION), because the
-      copy states it flat out and a flat claim has to be true.
+      A claim about where the rarest words put the drop. The copy states it flat
+      out, so the claim has to be both true and worth acting on. True means the
+      rare band concentrates there (>= CONCENTRATION). Worth acting on means it
+      concentrates there *more than the common words do* (by >= MARGIN): 97% of
+      the rare words containing "IEN" bury it in the middle, but so do 96% of
+      the common ones and 98% of every word in the dictionary, so telling a
+      player that describes English rather than the puzzle.
   "walk" / "room" / "who" / "sound" / "second"
       A technique, true on any drop. For the drops whose rare words have no
       positional tendency worth stating. Ordered by a hash of the drop so a
@@ -44,8 +48,11 @@ DATA = ROOT / "src" / "data"
 
 # The rare band: attested, uncommon, and still a word a player might know.
 RARE_LO, RARE_HI = 2.4, 3.2
-# Below this share, the drop has no positional tendency worth claiming.
+# Below this share of the rare band, the drop has no positional tendency at all.
 CONCENTRATION = 65
+# And below this lead over the common words, the tendency is not the rare words'
+# -- it belongs to every word with these letters, so it separates nothing.
+MARGIN = 10
 # A word this common scores badly, so naming it gives nothing away.
 COMMON_FLOOR = 4.0
 # The techniques, for drops with no positional claim to make.
@@ -79,25 +86,33 @@ def main() -> None:
     skipped: list[str] = []
     for drop in drops:
         needle = drop.lower()
-        positions: Counter[str] = Counter()
+        rare: Counter[str] = Counter()
+        common: Counter[str] = Counter()
         for word in words:
             if needle not in word or word == needle or word in rejected:
                 continue
-            if len(word) < 4 or not RARE_LO <= zipf[word] <= RARE_HI:
+            if len(word) < 4:
                 continue
+            score = zipf[word]
             i = word.index(needle)
             if i == 0:
-                positions["start"] += 1
+                where = "start"
             elif i + len(needle) == len(word):
-                positions["end"] += 1
+                where = "end"
             else:
-                positions["middle"] += 1
+                where = "middle"
+            if RARE_LO <= score <= RARE_HI:
+                rare[where] += 1
+            elif score >= COMMON_FLOOR:
+                common[where] += 1
 
         candidates: list[str] = []
-        total = sum(positions.values())
-        if total:
-            where, n = positions.most_common(1)[0]
-            if 100 * n / total >= CONCENTRATION:
+        n_rare, n_common = sum(rare.values()), sum(common.values())
+        if n_rare and n_common:
+            where, n = rare.most_common(1)[0]
+            share = 100 * n / n_rare
+            common_share = 100 * common[where] / n_common
+            if share >= CONCENTRATION and share - common_share >= MARGIN:
                 candidates.append(where)
         # Stable per drop rather than random: the same drop should teach the
         # same thing every time it comes round.
