@@ -96,33 +96,29 @@ export function GuessLog({
       {!completed && (
         <div className="guess-log__header">
           <h2 className="guess-log__title">Guess log</h2>
-          {/* Both of the day's allowances, as matching chips: spent out of
-              total, named. Showing the denominator is what makes the bare
-              number safe -- "0 of 4 guesses" cannot be misread as four
-              remaining the way "4 guesses" could, so neither chip has to spell
-              out "used" or "left" to be unambiguous.
+          {/* Both of the day's allowances, in the count's own voice: same
+              size, weight and ink it has always had, with the retry added
+              beside it rather than dressed up as something new.
 
-              The retry sits left of the guesses because it is the smaller,
-              rarer one and reads as a modifier on them, and is absent entirely
-              on a puzzle that carries none -- which is a different thing from
+              Spent out of total, both of them. Showing the denominator is what
+              makes a bare number safe -- "0 of 4 guesses" cannot be misread as
+              four remaining the way "4 guesses" could -- so neither needs to
+              spell out "used" or "left".
+
+              The retry sits first because it is the smaller, rarer allowance
+              and reads as a modifier on the guesses. It is absent entirely on
+              a puzzle that carries none, which is a different thing from
               having spent one. */}
-          <span className="guess-log__meters">
+          <span className="guess-log__count">
             {retriesLeft !== null && (
-              <span
-                className={`guess-log__chip${
-                  retriesLeft === 0 ? " guess-log__chip--spent" : ""
-                }`}
-              >
-                {RETRIES_PER_PUZZLE - retriesLeft} of {RETRIES_PER_PUZZLE} retries
-              </span>
+              <>
+                {RETRIES_PER_PUZZLE - retriesLeft} of {RETRIES_PER_PUZZLE} retries{" "}
+                <span className="guess-log__count-separator" aria-hidden="true">
+                  ·
+                </span>{" "}
+              </>
             )}
-            <span
-              className={`guess-log__chip${
-                guessesLeft === 0 ? " guess-log__chip--spent" : ""
-              }`}
-            >
-              {acceptedWords.length} of {maxGuesses} guesses
-            </span>
+            {acceptedWords.length} of {maxGuesses} guesses
           </span>
         </div>
       )}

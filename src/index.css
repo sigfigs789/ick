@@ -720,32 +720,20 @@ h2 {
   line-height: 1.2;
   color: var(--fg-muted);
 }
-/* The day's two allowances, sat together at the right of the header. */
-.guess-log__meters {
-  display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-}
-/* Both allowances wear the same chip, because they are the same kind of thing:
- * something you hold a countable number of and spend down over the puzzle.
- * Boxed rather than set as running text so each reads as a token you have left
- * rather than a tally you have to interpret. */
-.guess-log__chip {
-  font-size: 0.72rem;
+/* With only four guesses a day, the count carries real weight -- match the
+   heading's size and weight and use the muted (not faint) ink so it reads as
+   information rather than a footnote. */
+.guess-log__count {
+  font-size: 0.95rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
   color: var(--fg-muted);
-  padding: 0.1rem 0.4rem;
-  border: 1px solid var(--border);
-  border-radius: 0.4rem;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
-/* Empty: faded to the faint ink, so a spent allowance reads as gone at a
- * glance rather than by reading the number. */
-.guess-log__chip--spent {
+/* Lighter than the numbers it divides, so it separates without being read as
+   part of either count. */
+.guess-log__count-separator {
   color: var(--fg-faint);
+  font-weight: 700;
 }
 
 /* Retry: one word per puzzle can be swapped out (see game/storage.retryWord).
