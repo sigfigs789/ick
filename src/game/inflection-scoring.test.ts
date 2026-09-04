@@ -387,7 +387,9 @@ describe("reviewed fold exemptions", () => {
     const residues = new Set(Object.keys(boundResidueData));
     for (const [word, entry] of Object.entries(foldExemptionData)) {
       if ((entry as { scope?: string }).scope !== "prefix") continue;
-      for (const residue of prefixBaseCandidates(word)) {
+      // Asked with "pre-" on, the superset: a scoped entry written for an
+      // archived puzzle is checked against the residues that puzzle offered.
+      for (const residue of prefixBaseCandidates(word, true)) {
         expect(residues.has(residue), `${word} could have been a ${residue} table entry`).toBe(
           false
         );
@@ -1743,6 +1745,104 @@ describe("privative -less folds onto the word it is the absence of (from 2026-09
     // reach the new candidates at all.
     for (const word of ["kind", "pity", "body", "faith", "lesson", "lessen", "blessing"]) {
       expect(score(word, ON_PRIV), `${word} must not move`).toBe(score(word, BEFORE_PRIV));
+    }
+  });
+});
+
+// The 2026-09-05 cutover, and the only one so far that takes a fold away: "pre-"
+// leaves the transparent prefixes. See PRE_PREFIX_END in dictionary.ts for the
+// wrong readings that bought the removal and the right ones it costs.
+describe("\"pre-\" stops folding onto the word it was attached to (from 2026-09-05)", () => {
+  const BEFORE_PRE = "2026-09-04"; // last day "precooked" scores as `cook`
+  const ON_PRE = "2026-09-05"; // first day it is scored on its own data
+
+  const RETIRED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    // The wrong readings the change is for, worst first: each showed a base a
+    // player can see and a rank the word had not earned. "pre-" is not a
+    // modifier on any of these -- "preapply" is a spelling of "pre-apply" whose
+    // residue happens to be the listed "app", "prelife" reached the ordinary
+    // "life", and "prefab" is a clipping of "prefabricated" rather than a fab.
+    ["preapply", "app", 4.6, 9.92],
+    ["prelife", "life", 3.08, 9.93],
+    ["prehearing", "hear", 4.06, 8.07],
+    ["precaution", "caution", 5.86, 6.39],
+    ["predominance", "dominance", 6.06, 7.82],
+    ["prefab", "fab", 6.67, 8.11],
+    ["premonish", "monished", 9.36, 9.89],
+    // And the price, which is the larger half: the transparent readings go with
+    // them, and these are folds that were right.
+    ["precooked", "cook", 4.9, 8.69],
+    ["prearranged", "arranged", 5.38, 8.13],
+    ["predawn", "dawn", 5.44, 8.51],
+    ["prebade", "bade", 7.65, 10],
+  ];
+
+  it.each(RETIRED)("%s no longer scores as %s from the cutover on", (word, _base, _b, after) => {
+    expect(score(word, ON_PRE)).toBe(after);
+  });
+
+  it.each(RETIRED)("%s scored as %s the day before", (word, base, before) => {
+    expect(score(word, BEFORE_PRE)).toBe(before);
+    expect(baseFormSubstitution(word, BEFORE_PRE)?.base).toBe(base);
+  });
+
+  it("takes the prefix hop away and leaves every other rule standing", () => {
+    // What "retired" means here: only the prefix strip is gone. A word that can
+    // reach a base without it still does -- "precook" onto its own participle
+    // by the reverse fold, "preapply" onto "preapplied" -- so the removal is one
+    // hop out of the chain rather than an exemption from folding.
+    expect(baseFormSubstitution("precook", ON_PRE)?.base).toBe("precooked");
+    expect(baseFormSubstitution("preapply", ON_PRE)?.base).toBe("preapplied");
+    expect(score("preboil", ON_PRE)).toBe(score("preboiled", ON_PRE));
+  });
+
+  it("raises 808 words and lowers none, every one of them a \"pre-\" word", () => {
+    // The counterpart of the demote-only invariants above, and the reason this
+    // cutover needs one of its own: taking a fold away is the one change that
+    // *can* raise a score, so the guard is not "nothing rose" but "only this
+    // family did". A word outside it moving either way means the flag reached
+    // further than the one prefix it names.
+    const raised: string[] = [];
+    const lowered: string[] = [];
+    for (const word of dictionaryWords as string[]) {
+      const before = score(word, BEFORE_PRE);
+      const after = score(word, ON_PRE);
+      if (after > before + 1e-9) raised.push(word);
+      if (after < before - 1e-9) lowered.push(word);
+    }
+    expect(lowered).toEqual([]);
+    expect(raised.filter((word) => !word.startsWith("pre"))).toEqual([]);
+    // Exact rather than a floor: this is the whole cost of the change, and it
+    // should not grow quietly. 393 of them land at Mythic or better and 236 at
+    // Legend -- see PRE_PREFIX_END for why that is the trade being made.
+    expect(raised).toHaveLength(808);
+  });
+
+  it("leaves the other prefixes exactly where they were", () => {
+    // One entry left the list and nothing else moved: the floor gate, the
+    // residue table and the scoped exemptions are all untouched.
+    for (const word of [
+      "outwill",
+      "overpeople",
+      "misthink",
+      "underbakes",
+      "counterorders",
+      "nonplaying",
+      "antisnob",
+      "subaural",
+      "microdont",
+      "previsor",
+    ]) {
+      expect(score(word, ON_PRE), `${word} must not move`).toBe(score(word, BEFORE_PRE));
+    }
+  });
+
+  it("moves no word the corpora measure, and none the gate already refused", () => {
+    // The words the floor gate was holding never reached the prefix strip, so
+    // they cannot notice it going: "preface" and "present" are measured far
+    // above MEASURED_FLOOR, and "prelect" was refused by the residue table.
+    for (const word of ["preface", "present", "prefer", "prelect", "prepone"]) {
+      expect(score(word, ON_PRE), `${word} must not move`).toBe(score(word, BEFORE_PRE));
     }
   });
 });

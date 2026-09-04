@@ -104,6 +104,11 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         and none higher, 372 of them holding a Mythic or better for the
  *         suffix (see PRIVATIVE_BASE_START).
  *     None of the three moves a label mapping.
+ *   - on/after 2026-09-05 (the latest system): "pre-" leaves the transparent
+ *     prefixes, the first fold rule to be retired rather than added. It was the
+ *     one whose wrong readings a player could see, and 808 words score higher
+ *     for its going -- the price of that (see PRE_PREFIX_END). No label mapping
+ *     moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -141,6 +146,51 @@ const PREFIX_BASE_START = "2026-08-24";
 // `boundPrefixResidue`). Frozen for the 2026-08-24 puzzles that were played on
 // it; nothing from REVIEWED_FOLD_START on reads it.
 const PREFIX_BASE_MIN_ZIPF = 3;
+
+/*
+ * 2026-09-05: "pre-" stops being a foldable prefix, the first of these rules to
+ * be taken away rather than added. Everything else about the prefix fold stays
+ * as it was -- the floor gate, the residue table, the exemptions -- and archived
+ * puzzles keep the scores they were played with, so the flag stays on for every
+ * system before this date (see `Scoring.prePrefixBases`).
+ *
+ * "pre-" folded 808 words and got enough of them wrong to be the family a player
+ * notices. A wrong prefix fold is not a generous score, which is the failure
+ * mode the rest of the fold guards against -- it is a named base and a rank
+ * taken away: "preapply" showed 4.60 Very Common as `app`, "prehearing" 4.06 as
+ * `hear`, "prelife" 3.08 as `life`, "prefab" 6.67 as `fab`. The prefix reads
+ * transparently ("precooked" is cooked) often enough to have earned its place in
+ * 2026-08-24, but English also fossilised it onto Latin stems the way it did
+ * "de-" and "re-": "precaution" is not a caution taken early, "predominance" not
+ * a dominance, "premonish" not a monishing. Nothing in the spelling separates
+ * the two readings, and the floor gate does not separate them either. It is not
+ * even the guard it reads as: 265 of the 808 are measured at or above
+ * MEASURED_FLOOR and folded anyway, laundered through a deep-tail inflection --
+ * "presciences" (0.17) strips the prefix to `science`, and the reverse fold then
+ * caps the measured "prescience" (2.10) at its own plural. "precaution" (3.40)
+ * and "pretext" (3.27) reach their bases the same way. That leak is the prefix
+ * rule's, not this prefix's -- 2,160 measured words fold through it with "pre-"
+ * already gone ("protocol" -> `cole`, "overtime" -> `time`) -- but it is why the
+ * gate could not be the answer here.
+ *
+ * What it costs: all 808 score higher and none lower, 393 of them landing at
+ * Mythic or better and 236 at Legend -- "precook", "prearrange" and "preapprove"
+ * among them, every one a fold that was right. That is the trade, and it is
+ * deliberate: a quietly generous score on a word nobody plays is cheaper than a
+ * visible wrong base on one somebody does.
+ *
+ * Not to be undone per word. The obvious repair is the route REVIEWED_FOLD_START
+ * built -- scoped entries in fold-exemptions.json for the wrong bracketings,
+ * prefix restored -- and it is the wrong tool here, because it needs exactly the
+ * judgement that failed: deciding which "pre-" words carry the prefix cannot be
+ * done from the spelling, and doing it by eye produced calls like "precoding"
+ * read as coded-in-advance (it is a transmit-side transform) and "prescience"
+ * folded onto `science`. Restoring the prefix behind a curated list means
+ * standing behind 808 of those readings. If it ever comes back it comes back on
+ * the attested table scripts/fold-disagreements.py exists to build, not on a
+ * reviewer.
+ */
+const PRE_PREFIX_END = "2026-09-05";
 
 /*
  * 2026-08-26. Three changes, one cutover, because they ship together and no
@@ -717,6 +767,12 @@ interface Scoring {
   // families in `derivedBaseCandidates`. 2026-09-02; off for earlier systems so
   // past puzzles' scores stay frozen (see PRIVATIVE_BASE_START).
   privativeBases: boolean;
+  // Whether "pre-" is one of the transparent prefixes. The only flag here that
+  // reads the other way round -- it is *on* for the systems from 2026-08-24 up
+  // to 2026-09-05, when the prefix was retired, and off from there -- because a
+  // rule taken away has to keep working for the puzzles it was played on just as
+  // one added has to stay off for them (see PRE_PREFIX_END).
+  prePrefixBases: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -753,6 +809,7 @@ interface ScoringFlags {
   superlativeBases?: boolean;
   measurementBases?: boolean;
   privativeBases?: boolean;
+  prePrefixBases?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
@@ -782,6 +839,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     superlativeBases = false,
     measurementBases = false,
     privativeBases = false,
+    prePrefixBases = false,
     narrowBands = false,
     scoreCurve = false,
     decadeBands = false,
@@ -842,6 +900,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     superlativeBases,
     measurementBases,
     privativeBases,
+    prePrefixBases,
   };
 }
 
@@ -898,6 +957,7 @@ const PREFIX_SCORING: Scoring = twoBandScoring(9.9, 0, {
   derivedBases: true,
   inflectionForms: true,
   prefixBases: true,
+  prePrefixBases: true,
   narrowBands: true,
 });
 // The 2026-08-26 system: the three changes that replace the fold's remaining
@@ -910,6 +970,7 @@ const REVIEWED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   derivedBases: true,
   inflectionForms: true,
   prefixBases: true,
+  prePrefixBases: true,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -928,6 +989,7 @@ const DECADE_SCORING: Scoring = twoBandScoring(9.9, 0, {
   derivedBases: true,
   inflectionForms: true,
   prefixBases: true,
+  prePrefixBases: true,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -949,6 +1011,7 @@ const SUPERLATIVE_SCORING: Scoring = twoBandScoring(9.9, 0, {
   derivedBases: true,
   inflectionForms: true,
   prefixBases: true,
+  prePrefixBases: true,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -969,6 +1032,7 @@ const MEASUREMENT_SCORING: Scoring = twoBandScoring(9.9, 0, {
   derivedBases: true,
   inflectionForms: true,
   prefixBases: true,
+  prePrefixBases: true,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -978,10 +1042,33 @@ const MEASUREMENT_SCORING: Scoring = twoBandScoring(9.9, 0, {
   scoreCurve: true,
   decadeBands: true,
 });
-// The latest system (2026-09-02): all three of that day's changes -- the bare
-// "-est" superlative, a measurement modifier scored as the unit it counts, and a
-// privative "-less" adjective scored as the word it is the absence of. See
-// PRIVATIVE_BASE_START.
+// The 2026-09-02 system: all three of that day's changes -- the bare "-est"
+// superlative, a measurement modifier scored as the unit it counts, and a
+// privative "-less" adjective scored as the word it is the absence of -- with
+// "pre-" still folding. See PRIVATIVE_BASE_START.
+const PRIVATIVE_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  prefixBases: true,
+  prePrefixBases: true,
+  paradigmFolds: true,
+  prefixResidues: true,
+  derivedFormFolds: true,
+  superlativeBases: true,
+  measurementBases: true,
+  privativeBases: true,
+  narrowBands: true,
+  scoreCurve: true,
+  decadeBands: true,
+});
+// The latest system (2026-09-05): the 2026-09-02 folds with "pre-" out of the
+// transparent prefixes. `prefixBases` stays on -- the prefix fold is untouched,
+// one prefix shorter -- and `prePrefixBases` is the flag that goes off. See
+// PRE_PREFIX_END.
 const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
@@ -990,6 +1077,7 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   derivedBases: true,
   inflectionForms: true,
   prefixBases: true,
+  prePrefixBases: false,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -1035,6 +1123,7 @@ const LEGACY_SCORING: Scoring = {
   superlativeBases: false,
   measurementBases: false,
   privativeBases: false,
+  prePrefixBases: false,
 };
 
 /**
@@ -1140,6 +1229,10 @@ function scoringFor(date?: string): Scoring {
   // are equal the middle rungs are stepped over.
   if (date < MEASUREMENT_BASE_START) return SUPERLATIVE_SCORING;
   if (date < PRIVATIVE_BASE_START) return MEASUREMENT_SCORING;
+  // The one rung that turns a rule *off* rather than on, so the profile below it
+  // is the fuller of the two: "pre-" folded for every system from 2026-08-24 up
+  // to here. See PRE_PREFIX_END.
+  if (date < PRE_PREFIX_END) return PRIVATIVE_SCORING;
   return LATEST_SCORING;
 }
 
@@ -2009,7 +2102,7 @@ function addNonInflectionalBaseForms(
       // Sixty-one such residues were being refused to keep out about twenty
       // fragments, and the fragments were not the rare ones -- "duce" at 2.51
       // and "lect" at 1.80 sit either side of "gird" at 2.22.
-      const spellings = prefixBaseCandidates(word);
+      const spellings = prefixBaseCandidates(word, scoring.prePrefixBases);
       // A reviewed entry scoped to the prefix refuses this hop and leaves the
       // word's ordinary folds alone -- see FoldExemption.scope. Asked after the
       // spellings, not before: it reads the word's inflectional base, and most
