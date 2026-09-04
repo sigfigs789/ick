@@ -163,17 +163,32 @@ const PREFIX_BASE_MIN_ZIPF = 3;
  * 2026-08-24, but English also fossilised it onto Latin stems the way it did
  * "de-" and "re-": "precaution" is not a caution taken early, "predominance" not
  * a dominance, "premonish" not a monishing. Nothing in the spelling separates
- * the two readings, and the floor gate cannot help, because the fossilised ones
- * are exactly the rare words that fall below it.
+ * the two readings, and the floor gate does not separate them either. It is not
+ * even the guard it reads as: 265 of the 808 are measured at or above
+ * MEASURED_FLOOR and folded anyway, laundered through a deep-tail inflection --
+ * "presciences" (0.17) strips the prefix to `science`, and the reverse fold then
+ * caps the measured "prescience" (2.10) at its own plural. "precaution" (3.40)
+ * and "pretext" (3.27) reach their bases the same way. That leak is the prefix
+ * rule's, not this prefix's -- 2,160 measured words fold through it with "pre-"
+ * already gone ("protocol" -> `cole`, "overtime" -> `time`) -- but it is why the
+ * gate could not be the answer here.
  *
  * What it costs: all 808 score higher and none lower, 393 of them landing at
  * Mythic or better and 236 at Legend -- "precook", "prearrange" and "preapprove"
  * among them, every one a fold that was right. That is the trade, and it is
  * deliberate: a quietly generous score on a word nobody plays is cheaper than a
- * visible wrong base on one somebody does. The way back is the per-word route
- * REVIEWED_FOLD_START built for exactly this -- a scoped entry in
- * fold-exemptions.json for the wrong bracketings, with the prefix restored --
- * and it needs the vetted table scripts/fold-disagreements.py exists to build.
+ * visible wrong base on one somebody does.
+ *
+ * Not to be undone per word. The obvious repair is the route REVIEWED_FOLD_START
+ * built -- scoped entries in fold-exemptions.json for the wrong bracketings,
+ * prefix restored -- and it is the wrong tool here, because it needs exactly the
+ * judgement that failed: deciding which "pre-" words carry the prefix cannot be
+ * done from the spelling, and doing it by eye produced calls like "precoding"
+ * read as coded-in-advance (it is a transmit-side transform) and "prescience"
+ * folded onto `science`. Restoring the prefix behind a curated list means
+ * standing behind 808 of those readings. If it ever comes back it comes back on
+ * the attested table scripts/fold-disagreements.py exists to build, not on a
+ * reviewer.
  */
 const PRE_PREFIX_END = "2026-09-05";
 
