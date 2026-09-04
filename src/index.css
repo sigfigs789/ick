@@ -531,6 +531,9 @@ h2 {
   gap: 0.4rem;
 }
 .drop-display__ceiling-word {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0.4rem 0 0;
   font-family: var(--font-display);
   font-size: 0.95rem;
@@ -567,9 +570,6 @@ h2 {
 .drop-display__ceiling-word--toggle:hover {
   background: var(--bg-inset);
 }
-.drop-display__ceiling-word--toggle .drop-display__ceiling-word-score {
-  margin-left: 0;
-}
 .drop-display__reveal-caret {
   font-size: 0.7rem;
   color: var(--fg-faint);
@@ -582,11 +582,14 @@ h2 {
   color: var(--fg-muted);
   text-align: center;
 }
+/* The tier's colours without the badge's tag or dot: a pill the width of the
+   number, since the reveal sits on one line under the drop. The palette comes
+   from the shared .rarity--* class, so it tracks the badges in both themes. */
 .drop-display__ceiling-word-score {
-  margin-left: 0.4rem;
-  font-size: 0.85rem;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
   font-weight: 700;
-  color: var(--fg-muted);
 }
 @keyframes ceiling-word-in {
   from {

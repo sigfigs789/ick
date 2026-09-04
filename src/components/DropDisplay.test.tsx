@@ -20,11 +20,16 @@ describe("DropDisplay", () => {
     expect(document.querySelector(".drop-display__ceiling-word")).not.toBeInTheDocument();
   });
 
-  it("reveals a learnable word and its score once completed", () => {
+  it("reveals a learnable word, its score and its rarity once completed", () => {
     render(<DropDisplay drop="str" completed />);
     const reveal = learnableWordForDrop("str")!;
     expect(screen.getByText(reveal.word, { exact: false })).toBeInTheDocument();
     expect(screen.getByText(formatRarityScore(reveal.zipf))).toBeInTheDocument();
+    // The score wears the tier's colours; the tier itself is named for a reader
+    // who cannot see them.
+    const score = screen.getByText(formatRarityScore(reveal.zipf)).closest("span")!;
+    expect(score.className).toContain("rarity--");
+    expect(score).toHaveTextContent(reveal.rarity);
   });
 
   it("keeps the definition one click away, and in the reading order meanwhile", async () => {

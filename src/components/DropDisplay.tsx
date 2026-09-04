@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatDateLabel } from "../game/date";
 import { definitionFor, formatRarityScore, learnableWordForDrop } from "../game/dictionary";
+import { rarityClassName } from "./rarityStyles";
 
 interface Props {
   drop: string;
@@ -48,8 +49,15 @@ export function DropDisplay({ drop, date, isToday = true, completed = false }: P
               onClick={() => setDefinitionOpen((wasOpen) => !wasOpen)}
             >
               {reveal.word}
-              <span className="drop-display__ceiling-word-score">
+              {/* The score alone, wearing its tier's colours -- the badge's tag
+                  and dot would cost more room than the reveal is worth. The
+                  tier is named for a screen reader, so nothing rests on the
+                  colour by itself. */}
+              <span
+                className={`drop-display__ceiling-word-score ${rarityClassName(reveal.rarity, date)}`}
+              >
                 {formatRarityScore(reveal.zipf, date)}
+                <span className="sr-only"> {reveal.rarity}</span>
               </span>
               {/* The caret says "there is more here" to the eye; the button's
                   aria-expanded says it to a reader, so the glyph stays silent. */}
@@ -60,8 +68,15 @@ export function DropDisplay({ drop, date, isToday = true, completed = false }: P
           ) : (
             <p className="drop-display__ceiling-word">
               {reveal.word}
-              <span className="drop-display__ceiling-word-score">
+              {/* The score alone, wearing its tier's colours -- the badge's tag
+                  and dot would cost more room than the reveal is worth. The
+                  tier is named for a screen reader, so nothing rests on the
+                  colour by itself. */}
+              <span
+                className={`drop-display__ceiling-word-score ${rarityClassName(reveal.rarity, date)}`}
+              >
                 {formatRarityScore(reveal.zipf, date)}
+                <span className="sr-only"> {reveal.rarity}</span>
               </span>
             </p>
           )}
