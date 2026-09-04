@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatDateLabel } from "../game/date";
-import { bestWordForDrop } from "../game/dictionary";
+import { definitionFor, formatRarityScore, learnableWordForDrop } from "../game/dictionary";
 
 interface Props {
   drop: string;
@@ -13,7 +13,13 @@ interface Props {
 export function DropDisplay({ drop, date, isToday = true, completed = false }: Props) {
   // Recomputed only when the drop itself changes -- a full dictionary scan,
   // so it's not something we want re-running on unrelated re-renders.
-  const best = useMemo(() => bestWordForDrop(drop, date), [drop, date]);
+  const reveal = useMemo(() => learnableWordForDrop(drop, date), [drop, date]);
+  const definition = reveal ? definitionFor(reveal.word) : undefined;
+  const [definitionOpen, setDefinitionOpen] = useState(false);
+
+  // A new puzzle brings a new word, and the definition of the last one has no
+  // business being open under it.
+  useEffect(() => setDefinitionOpen(false), [drop, date]);
 
   return (
     <div className="drop-display">
@@ -27,13 +33,47 @@ export function DropDisplay({ drop, date, isToday = true, completed = false }: P
           </span>
         ))}
       </p>
-      {best && (
+      {reveal && (
         <p className="drop-display__ceiling">
           Best possible score: 10.0
         </p>
       )}
-      {completed && best && (
-        <p className="drop-display__ceiling-word">{best.word}</p>
+      {completed && reveal && (
+        <div className="drop-display__reveal">
+          {definition ? (
+            <button
+              type="button"
+              className="drop-display__ceiling-word drop-display__ceiling-word--toggle"
+              aria-expanded={definitionOpen}
+              onClick={() => setDefinitionOpen((wasOpen) => !wasOpen)}
+            >
+              {reveal.word}
+              <span className="drop-display__ceiling-word-score">
+                {formatRarityScore(reveal.zipf, date)}
+              </span>
+              {/* The caret says "there is more here" to the eye; the button's
+                  aria-expanded says it to a reader, so the glyph stays silent. */}
+              <span className="drop-display__reveal-caret" aria-hidden="true">
+                {definitionOpen ? "▴" : "▾"}
+              </span>
+            </button>
+          ) : (
+            <p className="drop-display__ceiling-word">
+              {reveal.word}
+              <span className="drop-display__ceiling-word-score">
+                {formatRarityScore(reveal.zipf, date)}
+              </span>
+            </p>
+          )}
+          {/* Always in the reading order, shown or not: it is one short line,
+              and a screen reader that had to press the button to hear it would
+              be worse served than the eye that can see the caret. */}
+          {definition && (
+            <p className={`drop-display__definition${definitionOpen ? "" : " sr-only"}`}>
+              {definition}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

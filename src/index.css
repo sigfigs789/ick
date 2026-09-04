@@ -543,6 +543,51 @@ h2 {
   animation: ceiling-word-in 0.4s var(--ease-standard) forwards;
   animation-delay: 0.15s;
 }
+.drop-display__reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.drop-display__ceiling-word--toggle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0.4rem auto 0;
+  padding: 0.1rem 0.35rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--fg);
+}
+.drop-display__ceiling-word--toggle:hover {
+  background: var(--bg-inset);
+}
+.drop-display__ceiling-word--toggle .drop-display__ceiling-word-score {
+  margin-left: 0;
+}
+.drop-display__reveal-caret {
+  font-size: 0.7rem;
+  color: var(--fg-faint);
+}
+.drop-display__definition {
+  margin: 0.2rem auto 0;
+  max-width: 22rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--fg-muted);
+  text-align: center;
+}
+.drop-display__ceiling-word-score {
+  margin-left: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
 @keyframes ceiling-word-in {
   from {
     opacity: 0;
