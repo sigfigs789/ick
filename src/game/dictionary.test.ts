@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
+import dropData from "../data/drops.json";
+import revealWordData from "../data/reveal-words.json";
+import revealDefinitionData from "../data/reveal-definitions.json";
 import {
   CURATED_REJECTION_REASONS,
   RARITY_ORDER,
@@ -8,6 +11,8 @@ import {
   baseFormSubstitution,
   bestWordForDrop,
   curatedRejection,
+  definitionFor,
+  learnableWordForDrop,
   isValidWord,
   rarityFor,
   formatRarityScore,
@@ -805,6 +810,12 @@ describe("curated word rejections", () => {
     }
   });
 
+  it("never reveals a rejected word as a drop's learnable word", () => {
+    for (const [word, { since }] of rejections) {
+      expect(learnableWordForDrop(word.slice(1, 4), since)?.word).not.toBe(word);
+    }
+  });
+
   it("leaves words with no entry alone", () => {
     expect(curatedRejection("placate")).toBeUndefined();
     expect(isValidWord("placate")).toBe(true);
@@ -976,5 +987,79 @@ describe("playable exemptions", () => {
     for (const word of exempt) {
       expect(word in wordRejections, `${word} is both exempt and hand-rejected`).toBe(false);
     }
+  });
+});
+
+describe("reveal words", () => {
+  const reviewed = revealWordData.words as string[];
+
+  it("are all playable dictionary words", () => {
+    for (const word of reviewed) {
+      expect(isValidWord(word)).toBe(true);
+      expect(curatedRejection(word)).toBeUndefined();
+    }
+  });
+
+  it("holds no duplicates and stays sorted", () => {
+    expect(reviewed).toEqual([...new Set(reviewed)].sort());
+  });
+
+  it("all carry a definition, and the two files hold no strays", () => {
+    const glossed = Object.keys(revealDefinitionData);
+    expect(glossed.sort()).toEqual([...reviewed].sort());
+    for (const [word, gloss] of Object.entries(revealDefinitionData)) {
+      expect(gloss.trim()).toBe(gloss);
+      // Long enough to teach the word, short enough to sit under it.
+      expect(gloss.length).toBeGreaterThan(4);
+      expect(gloss.length).toBeLessThanOrEqual(90);
+      expect(definitionFor(word)).toBe(gloss);
+    }
+  });
+
+  it("is what the reveal draws from when the drop reaches one", () => {
+    // "susurrus" is reviewed and lands in the band; the unreviewed pool for
+    // "usu" is the usual mix of forms and jargon, so the reviewed word wins.
+    expect(learnableWordForDrop("usu")?.word).toBe("susurrus");
+  });
+});
+
+describe("learnableWordForDrop", () => {
+  // Drops ship uppercase; the lookups lowercase them, so the assertions do too.
+  const drops = (dropData.drops as string[]).slice(0, 60).map((d) => d.toLowerCase());
+  const reviewed = new Set(revealWordData.words as string[]);
+
+  it("reveals a playable word, never the drop itself", () => {
+    for (const drop of drops) {
+      const pick = learnableWordForDrop(drop)!;
+      expect(pick.word).not.toBe(drop);
+      expect(pick.word.includes(drop)).toBe(true);
+      expect(isValidWord(pick.word)).toBe(true);
+    }
+  });
+
+  it("scores a reviewed reveal inside the 8.0-9.9 band", () => {
+    for (const drop of drops) {
+      const pick = learnableWordForDrop(drop)!;
+      if (!reviewed.has(pick.word)) continue;
+      const shown = Number(formatRarityScore(pick.zipf));
+      expect(shown).toBeGreaterThanOrEqual(8);
+      expect(shown).toBeLessThanOrEqual(9.9);
+      // The whole point of the reveal: the ceiling is a 10.00 nobody can use, so
+      // a reviewed word is always the commoner one a rung below it.
+      expect(pick.zipf).toBeGreaterThan(bestWordForDrop(drop)!.zipf);
+    }
+  });
+
+  it("reaches a reviewed word for all but a handful of the drops", () => {
+    const all = (dropData.drops as string[]).map((d) => d.toLowerCase());
+    const covered = all.filter((d) => reviewed.has(learnableWordForDrop(d)!.word));
+    // 1,051 of 1,055 today. The bar is a floor, not the count, so adding drops
+    // or reveal words never breaks it -- but losing coverage wholesale does.
+    expect(covered.length).toBeGreaterThanOrEqual(1000);
+  });
+
+  it("falls back to the ceiling word when the drop reaches no reviewed word", () => {
+    // "zzl" has no reviewed word, so the reveal is the ceiling it always was.
+    expect(learnableWordForDrop("zzl")).toEqual(bestWordForDrop("zzl"));
   });
 });

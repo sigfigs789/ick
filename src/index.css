@@ -578,6 +578,9 @@ h2 {
   gap: 0.4rem;
 }
 .drop-display__ceiling-word {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0.4rem 0 0;
   font-family: var(--font-display);
   font-size: 0.95rem;
@@ -589,6 +592,51 @@ h2 {
   transform: translateY(-6px);
   animation: ceiling-word-in 0.4s var(--ease-standard) forwards;
   animation-delay: 0.15s;
+}
+.drop-display__reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.drop-display__ceiling-word--toggle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0.4rem auto 0;
+  padding: 0.1rem 0.35rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--fg);
+}
+.drop-display__ceiling-word--toggle:hover {
+  background: var(--bg-inset);
+}
+.drop-display__reveal-caret {
+  font-size: 0.7rem;
+  color: var(--fg-faint);
+}
+.drop-display__definition {
+  margin: 0.2rem auto 0;
+  max-width: 22rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--fg-muted);
+  text-align: center;
+}
+/* The tier's colours without the badge's tag or dot: a pill the width of the
+   number, since the reveal sits on one line under the drop. The palette comes
+   from the shared .rarity--* class, so it tracks the badges in both themes. */
+.drop-display__ceiling-word-score {
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 @keyframes ceiling-word-in {
   from {
