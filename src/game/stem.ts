@@ -429,6 +429,10 @@ const TRANSPARENT_PREFIXES = [
   "neo",
   "non",
   "mis",
+  // Retired on 2026-09-05 and folding for archived puzzles alone, which is why
+  // it is still in the list: the loop below skips it unless the caller's system
+  // carries the prefix (see PRE_PREFIX_END). Left in place rather than at the
+  // end so the long-to-short ordering holds for the dates that read it.
   "pre",
   "sub",
   "out",
@@ -451,6 +455,17 @@ const TRANSPARENT_PREFIXES = [
  * "shone"): a family right often enough to tempt, wrong in a way no rule can
  * see. Admitting it needs a vetted table of which words really carry the
  * prefix, which is what scripts/fold-disagreements.py exists to build.
+ *
+ * "pre-" was in the list from 2026-08-24 until 2026-09-05 and is now out for the
+ * same reason, one family later: it reaches 808 words and the readings it gets
+ * wrong are the ones a player sees. A wrong prefix fold is not a quietly
+ * generous score but a named base and a rank lost -- "preapply" scored 4.60 as
+ * `app`, "prehearing" 4.06 as `hear`, "prelife" 3.08 as `life` -- and the
+ * spelling cannot tell those from the transparent ones, because "pre-" fossilised
+ * onto Latin stems the way "de-" and "re-" did ("precaution" is not a caution
+ * taken early, "predominance" not a dominance, "prefab" not a fab). See
+ * PRE_PREFIX_END in dictionary.ts for what the removal costs in the other
+ * direction.
  */
 
 /**
@@ -479,11 +494,16 @@ const TRANSPARENT_PREFIXES = [
  * holding a near-perfect score -- "outwill" dead-ended at 10.00 with "will"
  * (Zipf 4.98) one strip further, and 186 words in the Mythic band were
  * mis-scored by two points or more the same way.
+ *
+ * `prePrefix` says whether "pre-" is one of the prefixes on the caller's date.
+ * It was until 2026-09-05, and archived puzzles still read it that way -- see
+ * PRE_PREFIX_END.
  */
-export function prefixBaseCandidates(word: string): string[] {
+export function prefixBaseCandidates(word: string, prePrefix: boolean): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
   for (const prefix of TRANSPARENT_PREFIXES) {
+    if (prefix === "pre" && !prePrefix) continue;
     if (!w.startsWith(prefix)) continue;
     const stem = w.slice(prefix.length);
     if (stem.length < 4 || stem === w || out.includes(stem)) continue;

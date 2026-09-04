@@ -430,23 +430,28 @@ TRANSPARENT_PREFIXES = (
     "counter", "pseudo", "quasi", "proto", "trans", "under", "inter", "super",
     "hyper", "multi", "micro", "macro", "ultra", "photo", "semi", "anti",
     "auto", "post", "over", "tele", "mono", "poly", "neo", "non", "mis",
-    "pre", "sub", "out", "un",
+    "sub", "out", "un",
 )
 # Left out: "de", "re", "co", "dis" -- productive, but the four English
 # fossilised onto Latin stems ("delate" -> "late", "refel" -> "fell", "cosh" ->
 # "she", "copious" -> "pious"). The full reasoning is the block comment above
 # TRANSPARENT_PREFIXES in src/game/stem.ts.
+#
+# "pre" is out too, retired on 2026-09-05 for the same reason ("precaution" is
+# not a caution, "prefab" not a fab). This mirror follows the latest system
+# only, so it drops the prefix outright where stem.ts keeps it behind a date
+# flag for the archived puzzles that folded it -- see PRE_PREFIX_END.
 
 
 def _prefix_candidates(word: str) -> list[str]:
     """Mirror of prefixBaseCandidates() in src/game/stem.ts.
 
     The base a prefixed word was built on ("nonplaying" -> "playing"). Admitted
-    only below MEASURED_FLOOR: ungated these fold "preface" -> "face",
-    "mistake" -> "take" and "understand" -> "stand", every one of which is
-    measured far above the floor. (Examples have to come from the prefixes
-    actually listed -- "depart" and "coward" cannot reach this function at all,
-    since "de" and "co" are not in TRANSPARENT_PREFIXES.)
+    only below MEASURED_FLOOR: ungated these fold "mistake" -> "take" and
+    "understand" -> "stand", both measured far above the floor. (Examples have
+    to come from the prefixes actually listed -- "depart", "coward" and, since
+    2026-09-05, "preface" cannot reach this function at all, because "de", "co"
+    and "pre" are not in TRANSPARENT_PREFIXES.)
     """
     w = word.lower()
     out: list[str] = []
