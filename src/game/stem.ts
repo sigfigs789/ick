@@ -405,39 +405,89 @@ export function unmeasuredBaseCandidates(word: string): string[] {
  */
 const TRANSPARENT_PREFIXES = [
   "counter",
-  "pseudo",
-  "quasi",
-  "proto",
-  "trans",
+  "pseudo", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "quasi", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "proto", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "trans", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "under",
-  "inter",
-  "super",
-  "hyper",
-  "multi",
-  "micro",
-  "macro",
-  "ultra",
-  "photo",
-  "semi",
+  "inter", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "super", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "hyper", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "multi", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "micro", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "macro", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "ultra", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "photo", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "semi", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "anti",
-  "auto",
-  "post",
+  "auto", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "post", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "over",
-  "tele",
-  "mono",
-  "poly",
-  "neo",
-  "non",
-  "mis",
-  // Retired on 2026-09-05 and folding for archived puzzles alone, which is why
-  // it is still in the list: the loop below skips it unless the caller's system
-  // carries the prefix (see PRE_PREFIX_END). Left in place rather than at the
-  // end so the long-to-short ordering holds for the dates that read it.
-  "pre",
-  "sub",
+  "tele", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "mono", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "poly", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "neo", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "non", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "mis", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "pre", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "sub", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "out",
   "un",
 ];
+
+/**
+ * The entries retired from the list above, each behind the flag its date turned
+ * off. They stay in the list because archived puzzles still fold them, and in
+ * place rather than at the end so the long-to-short ordering holds for the dates
+ * that read them.
+ *
+ * Both groups went on 2026-09-05, for one reason in two shapes -- a prefix is
+ * only safe where the residue is a word *by construction*. See PRE_PREFIX_END
+ * and COMBINING_PREFIX_END.
+ */
+const RETIRED_PREFIXES = {
+  // "pre-", which attaches to whole English words and to Latin stems alike, so
+  // the reading cannot be told from the spelling ("precaution", "pretext").
+  pre: new Set(["pre"]),
+  // Everything borrowed: the classical combining forms and the Latinate
+  // prefixes alike. What they have in common is that they attach to bound stems
+  // as readily as to English words, so a residue that *is* an English word can
+  // be a coincidence -- "protocol" -> `cole`, "telephony" -> `phony`,
+  // "semination" -> `nation`, "subduce" -> `duce`, "postface" -> `face`.
+  borrowed: new Set([
+    "pseudo",
+    "quasi",
+    "proto",
+    "trans",
+    "inter",
+    "super",
+    "hyper",
+    "multi",
+    "micro",
+    "macro",
+    "ultra",
+    "photo",
+    "semi",
+    "auto",
+    "post",
+    "tele",
+    "mono",
+    "poly",
+    "neo",
+    "non",
+    "mis",
+    "sub",
+  ]),
+};
+
+/*
+ * What is left folding after those two sets come out: "counter-", "under-",
+ * "anti-", "over-", "out-" and "un-". They attach to free-standing English
+ * words, so stripping one lands on a word by construction and the fold is right
+ * by construction -- and they are the entries src/data/bound-residues.json has
+ * never needed a row for. "anti-" is the exception on both counts: five rows,
+ * and borrowed. It stays for now.
+ */
 
 /*
  * The prefixes left out, and why. "de-", "re-", "co-" and "dis-" are the most
@@ -466,6 +516,18 @@ const TRANSPARENT_PREFIXES = [
  * taken early, "predominance" not a dominance, "prefab" not a fab). See
  * PRE_PREFIX_END in dictionary.ts for what the removal costs in the other
  * direction.
+ *
+ * The borrowed prefixes went with it, on the distinction the rule turns on: a
+ * native prefix attaches to a free-standing English word, so its residue is a
+ * word by construction and the fold is right by construction ("overcooked" is
+ * cooked, "unemployment" is employment). A borrowed one attaches to a bound stem
+ * as readily as to a word, so a residue that *is* an English word can be a
+ * coincidence -- and a coincidence is exactly what this rule cannot see.
+ * src/data/bound-residues.json is the tally that separates them: "auto-" needed
+ * 12 rows, "mono-" 12, "poly-" 11, "tele-" 8, "neo-" 7, against none at all for
+ * "un-", "over-", "out-", "under-" and "counter-". Those rows are the fragments
+ * that are not words; the ones that are words got through. See
+ * BORROWED_PREFIX_END for what the set costs.
  */
 
 /**
@@ -495,15 +557,27 @@ const TRANSPARENT_PREFIXES = [
  * (Zipf 4.98) one strip further, and 186 words in the Mythic band were
  * mis-scored by two points or more the same way.
  *
- * `prePrefix` says whether "pre-" is one of the prefixes on the caller's date.
- * It was until 2026-09-05, and archived puzzles still read it that way -- see
- * PRE_PREFIX_END.
+ * `era` says which retired prefixes the caller's date still carries (see
+ * `RETIRED_PREFIXES`). An object rather than two booleans for the reason
+ * `ScoringFlags` is one: a pair of interchangeable positional booleans is a
+ * wrong-slot bug that type-checks.
  */
-export function prefixBaseCandidates(word: string, prePrefix: boolean): string[] {
+export interface PrefixEra {
+  /** Whether "pre-" folds. True before 2026-09-05; see PRE_PREFIX_END. */
+  pre: boolean;
+  /**
+   * Whether the borrowed prefixes fold. True before 2026-09-05; see
+   * BORROWED_PREFIX_END.
+   */
+  borrowed: boolean;
+}
+
+export function prefixBaseCandidates(word: string, era: PrefixEra): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
   for (const prefix of TRANSPARENT_PREFIXES) {
-    if (prefix === "pre" && !prePrefix) continue;
+    if (RETIRED_PREFIXES.pre.has(prefix) && !era.pre) continue;
+    if (RETIRED_PREFIXES.borrowed.has(prefix) && !era.borrowed) continue;
     if (!w.startsWith(prefix)) continue;
     const stem = w.slice(prefix.length);
     if (stem.length < 4 || stem === w || out.includes(stem)) continue;
@@ -526,7 +600,7 @@ const MEASUREMENT_PREFIXES = [
   "femto",
   "hecto",
   "centi",
-  "micro",
+  "micro", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "milli",
   "deka",
   "deca",

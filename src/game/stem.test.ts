@@ -362,12 +362,23 @@ describe("privativeBaseCandidates", () => {
 });
 
 describe("prefixBaseCandidates", () => {
+  // The two sides of the 2026-09-05 retirements: LATEST is the live list,
+  // ARCHIVED the one the puzzles from 2026-08-24 to 2026-09-04 folded with.
+  const LATEST = { pre: false, borrowed: false };
+  const ARCHIVED = { pre: true, borrowed: true };
+
   it("offers the base a transparent prefix was attached to", () => {
-    expect(prefixBaseCandidates("nonplaying", false)).toContain("playing");
-    expect(prefixBaseCandidates("overplanned", false)).toContain("planned");
-    expect(prefixBaseCandidates("misthink", false)).toContain("think");
-    expect(prefixBaseCandidates("outswear", false)).toContain("swear");
-    expect(prefixBaseCandidates("unhoused", false)).toContain("housed");
+    expect(prefixBaseCandidates("overplanned", LATEST)).toContain("planned");
+    expect(prefixBaseCandidates("outswear", LATEST)).toContain("swear");
+    expect(prefixBaseCandidates("unhoused", LATEST)).toContain("housed");
+    expect(prefixBaseCandidates("counterordered", LATEST)).toContain("ordered");
+    expect(prefixBaseCandidates("antisnob", LATEST)).toContain("snob");
+    // The borrowed prefixes are out of the live list and only the archived
+    // systems still offer them -- see RETIRED_PREFIXES.
+    expect(prefixBaseCandidates("nonplaying", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("misthink", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("nonplaying", ARCHIVED)).toContain("playing");
+    expect(prefixBaseCandidates("misthink", ARCHIVED)).toContain("think");
   });
 
   it("prefers the longest prefix that matches", () => {
@@ -375,8 +386,8 @@ describe("prefixBaseCandidates", () => {
     // the only case that can pin the ordering: both match "underbakes", and the
     // longer one is the intended reading. Asserting on a word where a single
     // prefix matches would pass whatever order the list is in.
-    expect(prefixBaseCandidates("underbakes", false)).toEqual(["bakes", "derbakes"]);
-    expect(prefixBaseCandidates("undercooked", false)[0]).toBe("cooked");
+    expect(prefixBaseCandidates("underbakes", LATEST)).toEqual(["bakes", "derbakes"]);
+    expect(prefixBaseCandidates("undercooked", LATEST)[0]).toBe("cooked");
   });
 
   it("leaves out the prefixes English fossilised onto Latin stems", () => {
@@ -384,13 +395,13 @@ describe("prefixBaseCandidates", () => {
     // are, and excluded anyway: nothing in the spelling separates a real
     // derivation from a borrowing that merely opens the same way, and the
     // frequency gate cannot help because the fossilised words are rare.
-    expect(prefixBaseCandidates("delates", false)).toEqual([]);
-    expect(prefixBaseCandidates("refelled", false)).toEqual([]);
-    expect(prefixBaseCandidates("coshes", false)).toEqual([]);
-    expect(prefixBaseCandidates("disparts", false)).toEqual([]);
+    expect(prefixBaseCandidates("delates", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("refelled", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("coshes", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("disparts", LATEST)).toEqual([]);
     // The cost is real -- these are correct readings the rule gives up on.
-    expect(prefixBaseCandidates("codriver", false)).toEqual([]);
-    expect(prefixBaseCandidates("reexplain", false)).toEqual([]);
+    expect(prefixBaseCandidates("codriver", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("reexplain", LATEST)).toEqual([]);
   });
 
   it("leaves out \"pre-\" too, for the puzzles that come after it", () => {
@@ -398,31 +409,31 @@ describe("prefixBaseCandidates", () => {
     // English fossilised it onto stems that were never English words, and the
     // wrong readings ("precaution" as a caution, "prefab" as a fab) cannot be
     // told from the transparent ones by spelling. See PRE_PREFIX_END.
-    expect(prefixBaseCandidates("precaution", false)).toEqual([]);
-    expect(prefixBaseCandidates("prefabbed", false)).toEqual([]);
+    expect(prefixBaseCandidates("precaution", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("prefabbed", LATEST)).toEqual([]);
     // Correct readings given up along with them, as with "codriver" above.
-    expect(prefixBaseCandidates("precooked", false)).toEqual([]);
-    expect(prefixBaseCandidates("prearranged", false)).toEqual([]);
+    expect(prefixBaseCandidates("precooked", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("prearranged", LATEST)).toEqual([]);
   });
 
   it("still strips \"pre-\" for an archived puzzle that folded it", () => {
     // The flag exists for the 2026-08-24..2026-09-04 puzzles alone, whose scores
     // are frozen where they were played.
-    expect(prefixBaseCandidates("precooked", true)).toEqual(["cooked"]);
-    expect(prefixBaseCandidates("precaution", true)).toEqual(["caution"]);
+    expect(prefixBaseCandidates("precooked", ARCHIVED)).toEqual(["cooked"]);
+    expect(prefixBaseCandidates("precaution", ARCHIVED)).toEqual(["caution"]);
     // The flag turns one prefix on and nothing else.
-    expect(prefixBaseCandidates("undercooked", true)).toEqual(
-      prefixBaseCandidates("undercooked", false)
+    expect(prefixBaseCandidates("undercooked", ARCHIVED)).toEqual(
+      prefixBaseCandidates("undercooked", LATEST)
     );
   });
 
   it("drops residues under four letters", () => {
     // Where the wrong-word folds cluster: "unit" -> "it", "union" -> "ion",
     // "overt" -> "t", "outer" -> "er".
-    expect(prefixBaseCandidates("unit", false)).toEqual([]);
-    expect(prefixBaseCandidates("union", false)).toEqual([]);
-    expect(prefixBaseCandidates("overt", false)).toEqual([]);
-    expect(prefixBaseCandidates("outer", false)).toEqual([]);
+    expect(prefixBaseCandidates("unit", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("union", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("overt", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("outer", LATEST)).toEqual([]);
   });
 
   it("still offers the bases that make the gate necessary", () => {
@@ -430,22 +441,23 @@ describe("prefixBaseCandidates", () => {
     // it offers plainly wrong bases for ordinary words. Every one of these is
     // measured far above MEASURED_FLOOR, and the caller's gate is the only
     // thing keeping them out. Asserted so the gate can't be dropped.
-    expect(prefixBaseCandidates("mistake", false)).toContain("take");
-    expect(prefixBaseCandidates("outrage", false)).toContain("rage");
-    expect(prefixBaseCandidates("understand", false)).toContain("stand");
-    expect(prefixBaseCandidates("supermarket", false)).toContain("market");
-    // The two the retired prefix contributed, which the archived systems still
-    // hand the caller.
-    expect(prefixBaseCandidates("preface", true)).toContain("face");
-    expect(prefixBaseCandidates("present", true)).toContain("sent");
+    expect(prefixBaseCandidates("outrage", LATEST)).toContain("rage");
+    expect(prefixBaseCandidates("understand", LATEST)).toContain("stand");
+    expect(prefixBaseCandidates("anticked", LATEST)).toContain("cked");
+    // The ones the retired prefixes contributed, which the archived systems
+    // still hand the caller.
+    expect(prefixBaseCandidates("mistake", ARCHIVED)).toContain("take");
+    expect(prefixBaseCandidates("supermarket", ARCHIVED)).toContain("market");
+    expect(prefixBaseCandidates("preface", ARCHIVED)).toContain("face");
+    expect(prefixBaseCandidates("present", ARCHIVED)).toContain("sent");
   });
 
   it("is case-insensitive and never offers the word itself", () => {
-    expect(prefixBaseCandidates("NONPLAYING", false)).toEqual(
-      prefixBaseCandidates("nonplaying", false)
+    expect(prefixBaseCandidates("NONPLAYING", LATEST)).toEqual(
+      prefixBaseCandidates("nonplaying", LATEST)
     );
     for (const word of ["nonplaying", "overplanned", "misthink"]) {
-      expect(prefixBaseCandidates(word, false)).not.toContain(word);
+      expect(prefixBaseCandidates(word, LATEST)).not.toContain(word);
     }
   });
 });
