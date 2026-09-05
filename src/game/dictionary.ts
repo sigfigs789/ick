@@ -110,13 +110,14 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *       * "pre-" leaves the transparent prefixes. It was the family whose wrong
  *         readings a player could see, and 808 words score higher for its going
  *         (see PRE_PREFIX_END).
- *       * The classical combining forms "proto-", "tele-", "mono-", "poly-" and
- *         "semi-" go with it, on the distinction the list turns on: a native
- *         prefix takes a free-standing word, a combining form takes a bound
- *         stem, so a residue that is a word is a coincidence -- "protocol" as
- *         `cole`, "telephony" as `phony`. 355 words score higher (see
- *         BORROWED_PREFIX_END).
- *     1,163 words rise between them and none falls. Neither moves a label
+ *       * Every borrowed prefix goes with it -- the classical combining forms
+ *         and the Latinate ones alike -- on the distinction the list turns on: a
+ *         native prefix takes a free-standing English word, a borrowed one takes
+ *         a bound stem as readily, so a residue that is a word can be a
+ *         coincidence ("protocol" as `cole`, "subsister" as `sister`). What is
+ *         left folding is "counter-", "under-", "anti-", "over-", "out-" and
+ *         "un-". 3,746 words score higher (see BORROWED_PREFIX_END).
+ *     4,554 words rise between them and none falls. Neither moves a label
  *     mapping.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
@@ -830,10 +831,11 @@ interface Scoring {
   // families in `derivedBaseCandidates`. 2026-09-02; off for earlier systems so
   // past puzzles' scores stay frozen (see PRIVATIVE_BASE_START).
   privativeBases: boolean;
-  // Whether the classical combining forms ("proto-", "tele-", "mono-", "poly-",
-  // "semi-") are among the transparent prefixes. Reads the other way round like
-  // `prePrefixBases` beside it, and retired on the same date: on up to
-  // 2026-09-05, off from there (see BORROWED_PREFIX_END).
+  // Whether the borrowed prefixes -- the classical combining forms and the
+  // Latinate ones, everything but "counter-", "under-", "anti-", "over-",
+  // "out-" and "un-" -- are among the transparent prefixes. Reads the other way
+  // round like `prePrefixBases` beside it, and retired on the same date: on up
+  // to 2026-09-05, off from there (see BORROWED_PREFIX_END).
   borrowedPrefixBases: boolean;
   // Whether "pre-" is one of the transparent prefixes. The only flag here that
   // reads the other way round -- it is *on* for the systems from 2026-08-24 up
@@ -1142,7 +1144,7 @@ const PRIVATIVE_SCORING: Scoring = twoBandScoring(9.9, 0, {
   scoreCurve: true,
   decadeBands: true,
 });
-// The 2026-09-05 system with "pre-" retired but the combining forms still
+// The 2026-09-05 system with "pre-" retired but the borrowed prefixes still
 // folding -- the next rung of the ladder, reached only if BORROWED_PREFIX_END
 // is ever moved later than PRE_PREFIX_END. While the two dates are equal,
 // scoringFor steps straight past it, in the pattern of DERIVED_SCORING.
@@ -1166,11 +1168,12 @@ const PRE_RETIRED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   scoreCurve: true,
   decadeBands: true,
 });
-// The latest system (2026-09-05): the 2026-09-02 folds with "pre-" and the
-// classical combining forms out of the transparent prefixes. `prefixBases` stays
-// on -- the prefix fold is untouched, six prefixes shorter -- and the two flags
-// that go off are `prePrefixBases` and `borrowedPrefixBases`. See
-// PRE_PREFIX_END and BORROWED_PREFIX_END.
+// The latest system (2026-09-05): the 2026-09-02 folds with "pre-" and every
+// borrowed prefix out of the transparent list, leaving "counter-", "under-",
+// "anti-", "over-", "out-" and "un-". `prefixBases` stays on -- the prefix fold
+// is untouched, twenty-three prefixes shorter -- and the two flags that go off
+// are `prePrefixBases` and `borrowedPrefixBases`. See PRE_PREFIX_END and
+// BORROWED_PREFIX_END.
 const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
