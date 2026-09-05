@@ -56,6 +56,7 @@ describe("parked drop tiers", () => {
     ...dropData.challengingDrops,
     ...dropData.hardDrops,
     ...dropData.retiredDrops,
+    ...dropData.affixDrops,
   ];
 
   it("never deals a parked drop", () => {
@@ -69,5 +70,20 @@ describe("parked drop tiers", () => {
 
   it("leaves every published day dealable", () => {
     expect(parked.filter((drop) => dropData.lockedDrops.includes(drop))).toEqual([]);
+  });
+});
+
+// A drop that is itself a prefix or suffix ("ED", "UN", "ISH") makes the puzzle
+// mechanical: append the drop to any word and you have an answer, so the whole
+// class is parked in affixDrops. The rule arrived mid-rotation, so the affixes
+// already dealt -- "ING", "RE", "IVE", and today's "PRE" -- keep their published
+// days and are not listed as parked; only the undealt ones were pulled.
+describe("affix drops", () => {
+  it("keeps every day up to the rule's first day exactly as it was dealt", () => {
+    // 2026-09-06 is the first day the removal was allowed to move; the drops
+    // before it are played or live, and are immutable.
+    expect(dropForDate("2026-09-04")).toBe("PRE");
+    expect(dropForDate("2026-09-05")).toBe("LIS");
+    expect(dropForDate("2026-09-06")).toBe(dropData.drops[67]);
   });
 });

@@ -107,8 +107,14 @@ def main() -> None:
     # Pulled from the calendar by hand, for reasons the thresholds here cannot
     # see; kept listed so a regeneration never re-seeds them.
     retired_drops = existing.get("retiredDrops", [])
+    # Never dealt at all: a drop that is itself an English prefix or suffix
+    # ("ED", "ISH", "UN") turns the puzzle mechanical -- bolt the drop onto any
+    # word and you have an answer -- so the whole class stays out of the
+    # rotation rather than being judged one drop at a time.
+    affix_drops = existing.get("affixDrops", [])
     locked_set = set(
-        locked_drops + seeded_drops + challenging_drops + hard_drops + retired_drops
+        locked_drops + seeded_drops + challenging_drops + hard_drops
+        + retired_drops + affix_drops
     )
     two_letter = [
         result for result in results
@@ -139,6 +145,7 @@ def main() -> None:
         "challengingDrops": challenging_drops,
         "hardDrops": hard_drops,
         "retiredDrops": retired_drops,
+        "affixDrops": affix_drops,
         "drops": ordered_drops,
     }, indent=2) + "\n")
     print(f"Wrote {drops_path}")
