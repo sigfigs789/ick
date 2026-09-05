@@ -1802,6 +1802,8 @@ h2 {
 }
 .found-words__item {
   display: flex;
+  /* So an opened definition takes a line of its own under the row. */
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 0.5rem;
   padding: 0.35rem 0;
@@ -1828,6 +1830,41 @@ h2 {
   font-weight: 700;
   /* A 30-letter word must wrap rather than push the badge off the row. */
   overflow-wrap: anywhere;
+}
+/* The word as a disclosure: the same row, the same weight, plus a caret. It is
+   a button rather than the whole row, so the badge and the finder count stay
+   plain text a reader can select. */
+.found-words__word--toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  color: var(--fg);
+  text-align: left;
+}
+.found-words__word--toggle:hover {
+  text-decoration: underline;
+}
+.found-words__caret {
+  font-size: 0.7rem;
+  color: var(--fg-faint);
+}
+/* Its own line under the row it belongs to, which is what the wrap above is
+   for: a definition beside the badge would squeeze both. Fades in on the same
+   curve as the revealed word's, and the global prefers-reduced-motion rule
+   collapses it to an instant run. */
+.found-words__definition {
+  flex: 0 0 100%;
+  margin: 0 0 0.1rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--fg-muted);
+  animation: ceiling-word-in 0.25s var(--ease-standard);
 }
 /* The drop today's finds had to contain, beside the heading. Without it the
    list is a pile of unrelated words -- `asphyxiate` only means something once

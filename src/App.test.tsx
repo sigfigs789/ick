@@ -189,8 +189,10 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Leaderboard (new)" })).toBeInTheDocument();
     // Either entry point counts as meeting it -- the badge says "there is
     // something here you haven't seen", and now they have.
-    await userEvent.click(screen.getByRole("button", { name: "See the leaderboard" }));
+    await userEvent.click(screen.getByRole("button", { name: "See words others found" }));
     expect(window.location.pathname).toBe("/leaderboard");
+    // Named for the words, and it lands on them.
+    expect(window.location.hash).toBe("#finds");
     expect(screen.getByRole("button", { name: "Leaderboard" })).toBeInTheDocument();
   });
 
@@ -240,6 +242,6 @@ describe("the leaderboard trophy", () => {
     );
     render(<App />);
 
-    expect(screen.getByRole("button", { name: "See the leaderboard" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "See words others found" })).toBeInTheDocument();
   });
 });

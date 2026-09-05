@@ -17,6 +17,15 @@ export type Route = "game" | "leaderboard";
 
 export const LEADERBOARD_PATH = "/leaderboard";
 
+/**
+ * The finds feed's anchor on the leaderboard page.
+ *
+ * A fragment rather than a third route: it is the same page either way, and the
+ * one thing that differs is where the reader lands on it -- which is what a
+ * fragment is for, and what makes the destination linkable and survive a reload.
+ */
+export const FINDS_HASH = "#finds";
+
 /** The route a path names. */
 export function routeFor(pathname: string): Route {
   // Tolerant of a trailing slash, since a shared link may well carry one.
@@ -36,15 +45,17 @@ export function pathFor(route: Route): string {
  * to wake the subscribers below -- one code path for "the URL changed" whether
  * the change came from a click or from the back button.
  */
-export function navigate(route: Route): void {
+export function navigate(route: Route, hash = ""): void {
   const path = pathFor(route);
-  if (window.location.pathname === path) return;
-  window.history.pushState(null, "", path);
+  if (window.location.pathname === path && window.location.hash === hash) return;
+  window.history.pushState(null, "", `${path}${hash}`);
   window.dispatchEvent(new PopStateEvent("popstate"));
-  // A new page starts at the top, the way following a link does. Guarded
-  // because jsdom has no scrollTo, and a router is not worth a console error in
-  // every test that changes page.
-  if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
+  // A new page starts at the top, the way following a link does -- unless it
+  // was asked for by fragment, where the point of the trip is a section further
+  // down and the page scrolls itself to it once that section has rendered.
+  // Guarded because jsdom has no scrollTo, and a router is not worth a console
+  // error in every test that changes page.
+  if (!hash && typeof window.scrollTo === "function") window.scrollTo(0, 0);
 }
 
 /** The current route, kept in step with the address bar. */

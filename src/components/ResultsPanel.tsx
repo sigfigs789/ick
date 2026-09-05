@@ -97,10 +97,15 @@ export function ResultsPanel({
       </div>
       {onLeaderboard && (
         // The second way in, and the one that will get used: a finished puzzle
-        // is the moment a player actually wants to know where the score put
-        // them. The header trophy is for every other moment.
+        // is the moment a player actually wants to know what else was out
+        // there. The header trophy is for every other moment.
+        //
+        // Named for the words rather than the leaderboard, and it lands on the
+        // finds feed to match. A player who has just spent their guesses wants
+        // to see what they missed; the boards are on the same page, one scroll
+        // up, for the ranking they may want next.
         <button type="button" className="results-panel__leaderboard" onClick={onLeaderboard}>
-          See the leaderboard
+          See words others found
         </button>
       )}
     </section>

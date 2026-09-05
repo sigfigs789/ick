@@ -27,7 +27,7 @@ import {
 } from "./analytics";
 import { recordVisit } from "./game/visits";
 import { hasSeen, markSeen } from "./game/whatsNew";
-import { navigate } from "./routes";
+import { FINDS_HASH, navigate } from "./routes";
 import {
   beginSession,
   endSessionSegment,
@@ -141,7 +141,9 @@ export default function App() {
     // badge is already retired when the back button brings them here again.
     markSeen("leaderboard");
     setLeaderboardIsNew(false);
-    navigate("leaderboard");
+    // From the results panel, straight to the finds: that button is named for
+    // the words, and the boards are one scroll up from them.
+    navigate("leaderboard", from === "results" ? FINDS_HASH : "");
   }
 
   const hasWinningWord = progress.acceptedWords.some((word) =>

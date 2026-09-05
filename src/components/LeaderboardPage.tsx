@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -35,10 +36,14 @@ import {
 } from "../game/month";
 import { weekChampionSettling, weekLabel, weekStart } from "../game/week";
 import { dropForDate } from "../game/drop";
-import { navigate } from "../routes";
+import { definitionFor } from "../game/dictionary";
+import { FINDS_HASH, navigate } from "../routes";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
 
 type LoadState = "loading" | "ready" | "error";
+
+/** What FINDS_HASH points at, so a link to the fragment finds the feed. */
+const FINDS_ID = FINDS_HASH.slice(1);
 
 /**
  * How often an open page re-checks for new finds.
@@ -912,6 +917,18 @@ function FoundWords({
   const wasAt = useRef(new Map<string, number>());
 
   /**
+   * The words whose definitions are open, by word.
+   *
+   * Closed to begin with, and one row at a time. "I did not know that was a
+   * word" is what this feed is for, and the answer to it was previously a trip
+   * to a dictionary in another tab -- but a definition under every row would
+   * bury the finds themselves, which are the thing being scanned.
+   */
+  const [openWords, setOpenWords] = useState<readonly string[]>([]);
+  /** A day's finds are a different set of words; none of them are open yet. */
+  useEffect(() => setOpenWords([]), [date]);
+
+  /**
    * Slide the rows that moved from where they were to where they now are.
    *
    * The standard trick: the DOM is already in its final state by the time this
@@ -928,12 +945,18 @@ function FoundWords({
    * layout, and the established insertion animation should own that frame rather
    * than fight a transform for it.
    */
+  const measuredOpen = useRef(openWords);
   useLayoutEffect(() => {
     const before = wasAt.current;
     const now = new Map<string, number>();
     for (const [word, node] of rows.current) now.set(word, node.offsetTop);
     wasAt.current = now;
-    if (arrived.length > 0) return;
+    // A definition opening pushes every row under it down, and that is the
+    // reader's own doing rather than the feed re-ordering: the new positions are
+    // recorded so a later poll measures against them, and nothing travels.
+    const toggled = measuredOpen.current !== openWords;
+    measuredOpen.current = openWords;
+    if (toggled || arrived.length > 0) return;
     for (const [word, top] of now) {
       const previous = before.get(word);
       if (previous === undefined || previous === top) continue;
@@ -947,7 +970,38 @@ function FoundWords({
       node.style.transition = "";
       node.style.transform = "";
     }
-  }, [words, arrived]);
+  }, [words, arrived, openWords]);
+
+  /**
+   * Land on the finds when the page was asked for by fragment.
+   *
+   * The browser cannot do this itself: the section is rendered by React after
+   * the navigation, so there is nothing at the anchor at the moment the URL
+   * changes. Once only -- a poll arriving later must not yank a reader who has
+   * since scrolled somewhere else.
+   */
+  const section = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (window.location.hash !== FINDS_HASH) return;
+    section.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  /**
+   * The definition of each find, looked up once per set of words.
+   *
+   * A dictionary lookup per row per render would be a scan of the word list on
+   * every poll, and the feed re-renders every fifteen seconds.
+   */
+  const definitions = useMemo(
+    () => new Map(words.map((found) => [found.word, definitionFor(found.word)])),
+    [words],
+  );
+
+  function toggleDefinition(word: string) {
+    setOpenWords((open) =>
+      open.includes(word) ? open.filter((w) => w !== word) : [...open, word],
+    );
+  }
 
   // "Today's finds" while it is today's, and the day's own date once it isn't.
   // The date rather than "Yesterday": two steps back has no such word, and a
@@ -957,7 +1011,7 @@ function FoundWords({
     ? "Today's finds"
     : `Finds from ${formatDateLabel(date)}`;
   return (
-    <section className="found-words" aria-label={heading}>
+    <section className="found-words" id={FINDS_ID} ref={section} aria-label={heading}>
       {/* No line under it. "Every word found on today's puzzle" restated the
           heading with the drop already beside it, and the boards above carry
           nothing under their headings either -- one of the three sections
@@ -1055,12 +1109,40 @@ function FoundWords({
                   : ""
               }`}
             >
-              <span className="found-words__word">{found.word}</span>
+              {definitions.get(found.word) ? (
+                <button
+                  type="button"
+                  className="found-words__word found-words__word--toggle"
+                  aria-expanded={openWords.includes(found.word)}
+                  onClick={() => toggleDefinition(found.word)}
+                >
+                  {found.word}
+                  {/* The caret says "there is more here" to the eye; the
+                      button's aria-expanded says it to a reader. */}
+                  <span className="found-words__caret" aria-hidden="true">
+                    {openWords.includes(found.word) ? "▴" : "▾"}
+                  </span>
+                </button>
+              ) : (
+                // No definition to give: the row stays a row rather than
+                // offering a control that opens onto nothing.
+                <span className="found-words__word">{found.word}</span>
+              )}
               <RarityBadge rarity={found.rarity} zipf={found.zipf} />
               {found.finders > 1 && (
                 <span className="found-words__finders">
                   {found.finders} players
                 </span>
+              )}
+              {/* Rendered only while open, unlike the one under the revealed
+                  word: that is a single line under a single word, while this is
+                  a feed of thirty, and thirty definitions in the reading order
+                  at all times would bury the finds for a reader who cannot skip
+                  past them by eye. aria-expanded carries the state instead. */}
+              {openWords.includes(found.word) && (
+                <p className="found-words__definition">
+                  {definitions.get(found.word)}
+                </p>
               )}
             </li>
           ))}

@@ -12,6 +12,7 @@ import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard } from "../game/player";
 import { handleFor } from "../game/handle";
 import { previousMonthName, todayDateString } from "../game/date";
+import { definitionFor } from "../game/dictionary";
 
 // No names come from the server: the client derives a handle from each player
 // id, so the same player is recognisable on both boards without anything being
@@ -861,6 +862,48 @@ describe("recent finds", () => {
     await waitFor(() => expect(finds()[0]).toHaveTextContent("3 players"));
     // One finder needs no count -- "1 players" is noise, and so is "1 player".
     expect(finds()[1]).not.toHaveTextContent("player");
+  });
+
+  it("keeps each find's definition a tap away", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    // "quixotic" is one of the reviewed words, so its row offers the gloss;
+    // "asphyxiate" has none, and stays a plain row rather than a control that
+    // opens onto nothing.
+    await waitFor(() => expect(finds()).toHaveLength(2));
+    const definition = definitionFor("quixotic")!;
+    const toggle = within(finds()[1]).getByRole("button", { name: /quixotic/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText(definition)).toBeNull();
+    expect(within(finds()[0]).queryByRole("button")).toBeNull();
+
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText(definition)).toBeInTheDocument();
+
+    // And folds away again, so a reader scanning the feed can clear it.
+    await userEvent.click(toggle);
+    expect(screen.queryByText(definition)).toBeNull();
+  });
+
+  it("lands on the finds when the page was asked for by fragment", async () => {
+    // jsdom has no scrollIntoView of its own, so this both stands in for it and
+    // records the call.
+    const scrollIntoView = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scrollIntoView;
+    try {
+      window.history.replaceState(null, "", "/leaderboard#finds");
+      stubFetch();
+      render(<LeaderboardPage />);
+
+      // The browser cannot do this itself: React renders the section after the
+      // navigation, so there is nothing at the anchor when the URL changes.
+      await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
   });
 
   it("names the drop the finds had to contain", async () => {
