@@ -120,7 +120,7 @@ describe("evaluateSubmission", () => {
   it("rejects a curated word that carries an out-of-use reason, and says which", () => {
     // These stay in the dictionary so archived puzzles keep scoring them (see the
     // derived rejections in dictionary.test.ts); they just can't be submitted.
-    expect(evaluateSubmission("betwixt", "wix", [])).toEqual({ ok: false, reason: "archaic" });
+    expect(evaluateSubmission("sovran", "ovr", [])).toEqual({ ok: false, reason: "archaic" });
     expect(evaluateSubmission("ranck", "anc", [])).toEqual({ ok: false, reason: "obsolete" });
   });
 
