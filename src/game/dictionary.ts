@@ -115,7 +115,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         prefix takes a free-standing word, a combining form takes a bound
  *         stem, so a residue that is a word is a coincidence -- "protocol" as
  *         `cole`, "telephony" as `phony`. 355 words score higher (see
- *         COMBINING_PREFIX_END).
+ *         BORROWED_PREFIX_END).
  *     1,163 words rise between them and none falls. Neither moves a label
  *     mapping.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
@@ -202,19 +202,24 @@ const PREFIX_BASE_MIN_ZIPF = 3;
 const PRE_PREFIX_END = "2026-09-05";
 
 /*
- * 2026-09-05, the second retirement of that day and the same argument reached
- * from the other side: the classical combining forms "proto-", "tele-", "mono-",
- * "poly-" and "semi-" leave the transparent prefixes.
+ * 2026-09-05, the second retirement of that day and the larger one: every
+ * borrowed prefix leaves the transparent list -- the classical combining forms
+ * ("proto-", "tele-", "mono-", "poly-", "semi-", "auto-", "neo-", "pseudo-",
+ * "photo-", "micro-", "macro-", "ultra-", "hyper-", "quasi-") and the Latinate
+ * ones alike ("non-", "mis-", "sub-", "post-", "inter-", "super-", "multi-",
+ * "trans-"). What is left folding is "counter-", "under-", "anti-", "over-",
+ * "out-" and "un-".
  *
  * What separates the prefixes that work from the ones that do not is whether the
  * residue is a word *by construction*. A native prefix attaches to a
  * free-standing English word, so stripping it lands on a word every time and the
  * fold is right every time -- "overcooked" is cooked, "unemployment" is
- * employment, "undercooked" is cooked. A combining form attaches to a bound
- * stem, so a residue that is an English word is a coincidence, and this rule
- * cannot see a coincidence: "protocols" scored as `cole`, "telephony" as
- * `phony`, "semination" as `nation`, "monopodia" as `podium`, "polygala" as
- * `gala`, "monophony" as `phony`, "prototrophy" as `trophy`.
+ * employment, "undercooked" is cooked. A borrowed prefix attaches to a bound
+ * stem as readily as to a word, so a residue that is an English word can be a
+ * coincidence, and this rule cannot see a coincidence: "protocol" scored as
+ * `cole`, "telephony" as `phony`, "semination" as `nation`, "monopodia" as
+ * `podium`, "polygala" as `gala`, "prototrophy" as `trophy`, "postface" as
+ * `face`, "subsister" as `sister`, "misprised" as `prize`.
  *
  * src/data/bound-residues.json is the same fact already written down. It exists
  * because prefix strips land on fragments that are not words, and the entries
@@ -226,29 +231,29 @@ const PRE_PREFIX_END = "2026-09-05";
  * reading is meant -- the judgement PRE_PREFIX_END records as the one not to
  * rely on.
  *
- * What it costs, in the shape PRE_PREFIX_END records for its half: 355 words
- * score higher and none lower, 193 of them landing at Mythic or better and 123
- * at Legend. The right readings go with the wrong ones -- "semiweekly" was
- * scored as `week`, "protohuman" as `human`, "telemarketing" as `market` -- and
- * "semi-" is the weakest case of the five, since it takes a free-standing word
- * more often than not (58 of its 103 folds land on a residue at Zipf 3+, against
- * 22 of "poly-"'s 76). It comes out with the rest because the residue being a
- * word is still a coincidence when it happens on a bound stem, and the rule
- * cannot tell the two apart.
+ * What it costs, and it is the largest price any of these changes has carried:
+ * 3,746 words score higher and none lower, and with the "pre-" half the day
+ * raises 4,554 -- 2,522 landing at Mythic or better and 1,717 at Legend. Most of
+ * those folds were right: "subdirector" is a director, "microtones" are tones,
+ * "supertitles" are titles, "semiweekly" is weekly. They go because the rule
+ * cannot tell them from the coincidences beside them.
  *
- * Together with the "pre-" half the day raises 1,163 words and lowers none.
+ * That is a deliberate trade of one kind of wrong for another. A word scoring
+ * generously is a word nobody notices; a word told it is a `sister` or a `cole`
+ * is a bug in front of the player. It is also a narrowing of what the fold
+ * claims to be -- a rule that reads English compounds, not one that reads Greek
+ * and Latin ones. Anything wanting the borrowed prefixes back needs an attested
+ * table rather than a reviewer, for the reason PRE_PREFIX_END records.
  *
- * The six with no entries at all -- "un-", "over-", "out-", "under-", "counter-"
- * and "super-" -- are the other end of the same measurement, and neither cutover
- * touches them: 5,956 words still fold on them and not one moves on 2026-09-05.
- * A test pins that over the whole dictionary rather than on samples, since it is
- * what the retirements are defined against.
- *
- * "auto-" (12 entries), "neo-" (7) and "pseudo-" (1, but the same shape) are the
- * obvious next ones and are deliberately left in for now: they are held back for
- * a cutover of their own rather than kept on their merits.
+ * What is left folding is "counter-", "under-", "anti-", "over-", "out-" and
+ * "un-": 5,956 words fold on them and not one moves on 2026-09-05, pinned by a
+ * test over the whole dictionary rather than on samples. Five of the six are
+ * entries src/data/bound-residues.json has never needed a row for. "anti-" is
+ * the exception on both counts -- five rows, and borrowed -- and stays because
+ * its folds are overwhelmingly ordinary ("antisnob" is a snob, "antiaircraft" is
+ * aircraft). The rows say it is the one to watch.
  */
-const COMBINING_PREFIX_END = "2026-09-05";
+const BORROWED_PREFIX_END = "2026-09-05";
 
 /*
  * 2026-08-26. Three changes, one cutover, because they ship together and no
@@ -828,8 +833,8 @@ interface Scoring {
   // Whether the classical combining forms ("proto-", "tele-", "mono-", "poly-",
   // "semi-") are among the transparent prefixes. Reads the other way round like
   // `prePrefixBases` beside it, and retired on the same date: on up to
-  // 2026-09-05, off from there (see COMBINING_PREFIX_END).
-  combiningPrefixBases: boolean;
+  // 2026-09-05, off from there (see BORROWED_PREFIX_END).
+  borrowedPrefixBases: boolean;
   // Whether "pre-" is one of the transparent prefixes. The only flag here that
   // reads the other way round -- it is *on* for the systems from 2026-08-24 up
   // to 2026-09-05, when the prefix was retired, and off from there -- because a
@@ -873,7 +878,7 @@ interface ScoringFlags {
   measurementBases?: boolean;
   privativeBases?: boolean;
   prePrefixBases?: boolean;
-  combiningPrefixBases?: boolean;
+  borrowedPrefixBases?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
@@ -904,7 +909,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     measurementBases = false,
     privativeBases = false,
     prePrefixBases = false,
-    combiningPrefixBases = false,
+    borrowedPrefixBases = false,
     narrowBands = false,
     scoreCurve = false,
     decadeBands = false,
@@ -966,7 +971,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     measurementBases,
     privativeBases,
     prePrefixBases,
-    combiningPrefixBases,
+    borrowedPrefixBases,
   };
 }
 
@@ -1024,7 +1029,7 @@ const PREFIX_SCORING: Scoring = twoBandScoring(9.9, 0, {
   inflectionForms: true,
   prefixBases: true,
   prePrefixBases: true,
-  combiningPrefixBases: true,
+  borrowedPrefixBases: true,
   narrowBands: true,
 });
 // The 2026-08-26 system: the three changes that replace the fold's remaining
@@ -1038,7 +1043,7 @@ const REVIEWED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   inflectionForms: true,
   prefixBases: true,
   prePrefixBases: true,
-  combiningPrefixBases: true,
+  borrowedPrefixBases: true,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -1058,7 +1063,7 @@ const DECADE_SCORING: Scoring = twoBandScoring(9.9, 0, {
   inflectionForms: true,
   prefixBases: true,
   prePrefixBases: true,
-  combiningPrefixBases: true,
+  borrowedPrefixBases: true,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -1081,7 +1086,7 @@ const SUPERLATIVE_SCORING: Scoring = twoBandScoring(9.9, 0, {
   inflectionForms: true,
   prefixBases: true,
   prePrefixBases: true,
-  combiningPrefixBases: true,
+  borrowedPrefixBases: true,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -1103,7 +1108,7 @@ const MEASUREMENT_SCORING: Scoring = twoBandScoring(9.9, 0, {
   inflectionForms: true,
   prefixBases: true,
   prePrefixBases: true,
-  combiningPrefixBases: true,
+  borrowedPrefixBases: true,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -1126,7 +1131,7 @@ const PRIVATIVE_SCORING: Scoring = twoBandScoring(9.9, 0, {
   inflectionForms: true,
   prefixBases: true,
   prePrefixBases: true,
-  combiningPrefixBases: true,
+  borrowedPrefixBases: true,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -1138,7 +1143,7 @@ const PRIVATIVE_SCORING: Scoring = twoBandScoring(9.9, 0, {
   decadeBands: true,
 });
 // The 2026-09-05 system with "pre-" retired but the combining forms still
-// folding -- the next rung of the ladder, reached only if COMBINING_PREFIX_END
+// folding -- the next rung of the ladder, reached only if BORROWED_PREFIX_END
 // is ever moved later than PRE_PREFIX_END. While the two dates are equal,
 // scoringFor steps straight past it, in the pattern of DERIVED_SCORING.
 const PRE_RETIRED_SCORING: Scoring = twoBandScoring(9.9, 0, {
@@ -1150,7 +1155,7 @@ const PRE_RETIRED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   inflectionForms: true,
   prefixBases: true,
   prePrefixBases: false,
-  combiningPrefixBases: true,
+  borrowedPrefixBases: true,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -1164,8 +1169,8 @@ const PRE_RETIRED_SCORING: Scoring = twoBandScoring(9.9, 0, {
 // The latest system (2026-09-05): the 2026-09-02 folds with "pre-" and the
 // classical combining forms out of the transparent prefixes. `prefixBases` stays
 // on -- the prefix fold is untouched, six prefixes shorter -- and the two flags
-// that go off are `prePrefixBases` and `combiningPrefixBases`. See
-// PRE_PREFIX_END and COMBINING_PREFIX_END.
+// that go off are `prePrefixBases` and `borrowedPrefixBases`. See
+// PRE_PREFIX_END and BORROWED_PREFIX_END.
 const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
@@ -1175,7 +1180,7 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   inflectionForms: true,
   prefixBases: true,
   prePrefixBases: false,
-  combiningPrefixBases: false,
+  borrowedPrefixBases: false,
   paradigmFolds: true,
   prefixResidues: true,
   derivedFormFolds: true,
@@ -1222,7 +1227,7 @@ const LEGACY_SCORING: Scoring = {
   measurementBases: false,
   privativeBases: false,
   prePrefixBases: false,
-  combiningPrefixBases: false,
+  borrowedPrefixBases: false,
 };
 
 /**
@@ -1332,9 +1337,9 @@ function scoringFor(date?: string): Scoring {
   // them are the fuller ones: every prefix retired on 2026-09-05 folded for the
   // systems from 2026-08-24 up to here. Laddered a rung per constant like the
   // 2026-08-24 and 2026-09-02 groups, the middle one stepped over while the
-  // dates are equal. See PRE_PREFIX_END and COMBINING_PREFIX_END.
+  // dates are equal. See PRE_PREFIX_END and BORROWED_PREFIX_END.
   if (date < PRE_PREFIX_END) return PRIVATIVE_SCORING;
-  if (date < COMBINING_PREFIX_END) return PRE_RETIRED_SCORING;
+  if (date < BORROWED_PREFIX_END) return PRE_RETIRED_SCORING;
   return LATEST_SCORING;
 }
 
@@ -2206,7 +2211,7 @@ function addNonInflectionalBaseForms(
       // and "lect" at 1.80 sit either side of "gird" at 2.22.
       const spellings = prefixBaseCandidates(word, {
         pre: scoring.prePrefixBases,
-        combining: scoring.combiningPrefixBases,
+        borrowed: scoring.borrowedPrefixBases,
       });
       // A reviewed entry scoped to the prefix refuses this hop and leaves the
       // word's ordinary folds alone -- see FoldExemption.scope. Asked after the

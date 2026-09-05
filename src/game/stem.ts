@@ -405,32 +405,32 @@ export function unmeasuredBaseCandidates(word: string): string[] {
  */
 const TRANSPARENT_PREFIXES = [
   "counter",
-  "pseudo",
-  "quasi",
+  "pseudo", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "quasi", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "proto", // retired 2026-09-05, see `RETIRED_PREFIXES`
-  "trans",
+  "trans", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "under",
-  "inter",
-  "super",
-  "hyper",
-  "multi",
-  "micro",
-  "macro",
-  "ultra",
-  "photo",
+  "inter", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "super", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "hyper", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "multi", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "micro", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "macro", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "ultra", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "photo", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "semi", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "anti",
-  "auto",
-  "post",
+  "auto", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "post", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "over",
   "tele", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "mono", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "poly", // retired 2026-09-05, see `RETIRED_PREFIXES`
-  "neo",
-  "non",
-  "mis",
+  "neo", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "non", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "mis", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "pre", // retired 2026-09-05, see `RETIRED_PREFIXES`
-  "sub",
+  "sub", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "out",
   "un",
 ];
@@ -449,12 +449,45 @@ const RETIRED_PREFIXES = {
   // "pre-", which attaches to whole English words and to Latin stems alike, so
   // the reading cannot be told from the spelling ("precaution", "pretext").
   pre: new Set(["pre"]),
-  // The classical combining forms, which attach to bound stems: where the
-  // residue is an English word it is a coincidence, and the fold is wrong every
-  // time ("protocols" -> `cole`, "telephony" -> `phony`, "semination" ->
-  // `nation`, "monopodia" -> `podium`, "polygala" -> `gala`).
-  combining: new Set(["proto", "tele", "mono", "poly", "semi"]),
+  // Everything borrowed: the classical combining forms and the Latinate
+  // prefixes alike. What they have in common is that they attach to bound stems
+  // as readily as to English words, so a residue that *is* an English word can
+  // be a coincidence -- "protocol" -> `cole`, "telephony" -> `phony`,
+  // "semination" -> `nation`, "subduce" -> `duce`, "postface" -> `face`.
+  borrowed: new Set([
+    "pseudo",
+    "quasi",
+    "proto",
+    "trans",
+    "inter",
+    "super",
+    "hyper",
+    "multi",
+    "micro",
+    "macro",
+    "ultra",
+    "photo",
+    "semi",
+    "auto",
+    "post",
+    "tele",
+    "mono",
+    "poly",
+    "neo",
+    "non",
+    "mis",
+    "sub",
+  ]),
 };
+
+/*
+ * What is left folding after those two sets come out: "counter-", "under-",
+ * "anti-", "over-", "out-" and "un-". They attach to free-standing English
+ * words, so stripping one lands on a word by construction and the fold is right
+ * by construction -- and they are the entries src/data/bound-residues.json has
+ * never needed a row for. "anti-" is the exception on both counts: five rows,
+ * and borrowed. It stays for now.
+ */
 
 /*
  * The prefixes left out, and why. "de-", "re-", "co-" and "dis-" are the most
@@ -484,18 +517,17 @@ const RETIRED_PREFIXES = {
  * PRE_PREFIX_END in dictionary.ts for what the removal costs in the other
  * direction.
  *
- * The classical combining forms "proto-", "tele-", "mono-", "poly-" and "semi-"
- * went with it, on the distinction the rest of the list turns on: a native
- * prefix attaches to a free-standing English word, so its residue is a word by
- * construction and the fold is right by construction ("overcooked" is cooked,
- * "unemployment" is employment). A combining form attaches to a bound stem, so a
- * residue that *is* an English word is a coincidence -- and a coincidence is
- * exactly what this rule cannot see. src/data/bound-residues.json is the tally:
- * "auto-" needed 12 entries, "mono-" 12, "poly-" 11, "tele-" 8, against none at
- * all for "un-", "over-", "out-", "under-", "counter-" and "super-". Those
- * entries are the fragments that are not words; the ones that are got through.
- * See COMBINING_PREFIX_END for what the five cost and why "auto-", "neo-" and
- * "pseudo-" are the obvious next ones.
+ * The borrowed prefixes went with it, on the distinction the rule turns on: a
+ * native prefix attaches to a free-standing English word, so its residue is a
+ * word by construction and the fold is right by construction ("overcooked" is
+ * cooked, "unemployment" is employment). A borrowed one attaches to a bound stem
+ * as readily as to a word, so a residue that *is* an English word can be a
+ * coincidence -- and a coincidence is exactly what this rule cannot see.
+ * src/data/bound-residues.json is the tally that separates them: "auto-" needed
+ * 12 rows, "mono-" 12, "poly-" 11, "tele-" 8, "neo-" 7, against none at all for
+ * "un-", "over-", "out-", "under-" and "counter-". Those rows are the fragments
+ * that are not words; the ones that are words got through. See
+ * BORROWED_PREFIX_END for what the set costs.
  */
 
 /**
@@ -534,10 +566,10 @@ export interface PrefixEra {
   /** Whether "pre-" folds. True before 2026-09-05; see PRE_PREFIX_END. */
   pre: boolean;
   /**
-   * Whether the classical combining forms fold. True before 2026-09-05; see
-   * COMBINING_PREFIX_END.
+   * Whether the borrowed prefixes fold. True before 2026-09-05; see
+   * BORROWED_PREFIX_END.
    */
-  combining: boolean;
+  borrowed: boolean;
 }
 
 export function prefixBaseCandidates(word: string, era: PrefixEra): string[] {
@@ -545,7 +577,7 @@ export function prefixBaseCandidates(word: string, era: PrefixEra): string[] {
   const out: string[] = [];
   for (const prefix of TRANSPARENT_PREFIXES) {
     if (RETIRED_PREFIXES.pre.has(prefix) && !era.pre) continue;
-    if (RETIRED_PREFIXES.combining.has(prefix) && !era.combining) continue;
+    if (RETIRED_PREFIXES.borrowed.has(prefix) && !era.borrowed) continue;
     if (!w.startsWith(prefix)) continue;
     const stem = w.slice(prefix.length);
     if (stem.length < 4 || stem === w || out.includes(stem)) continue;
@@ -568,7 +600,7 @@ const MEASUREMENT_PREFIXES = [
   "femto",
   "hecto",
   "centi",
-  "micro",
+  "micro", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "milli",
   "deka",
   "deca",

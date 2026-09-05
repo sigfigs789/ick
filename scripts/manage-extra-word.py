@@ -426,25 +426,21 @@ def _unmeasured_candidates(word: str) -> list[str]:
 
 
 # Mirror of TRANSPARENT_PREFIXES in src/game/stem.ts.
-TRANSPARENT_PREFIXES = (
-    "counter", "pseudo", "quasi", "trans", "under", "inter", "super",
-    "hyper", "multi", "micro", "macro", "ultra", "photo", "anti",
-    "auto", "post", "over", "neo", "non", "mis",
-    "sub", "out", "un",
-)
+TRANSPARENT_PREFIXES = ("counter", "under", "anti", "over", "out", "un")
 # Left out: "de", "re", "co", "dis" -- productive, but the four English
 # fossilised onto Latin stems ("delate" -> "late", "refel" -> "fell", "cosh" ->
 # "she", "copious" -> "pious"). The full reasoning is the block comment above
 # TRANSPARENT_PREFIXES in src/game/stem.ts.
 #
-# "pre" is out too, retired on 2026-09-05 for the same reason ("precaution" is
-# not a caution, "prefab" not a fab), and with it the classical combining forms
-# "proto", "tele", "mono", "poly" and "semi": they attach to bound stems, so a
-# residue that is an English word is a coincidence ("protocol" -> "cole",
-# "telephony" -> "phony", "semination" -> "nation"). This mirror follows the
-# latest system only, so it drops all six outright where stem.ts keeps them
-# behind date flags for the archived puzzles that folded them -- see
-# PRE_PREFIX_END and COMBINING_PREFIX_END.
+# On 2026-09-05 "pre" went the same way ("precaution" is not a caution, "prefab"
+# not a fab), and with it every borrowed prefix -- the classical combining forms
+# and the Latinate ones alike. They attach to bound stems as readily as to
+# English words, so a residue that is a word can be a coincidence ("protocol" ->
+# "cole", "telephony" -> "phony", "subsister" -> "sister", "postface" -> "face").
+# What is left is the six above, which take free-standing English words. This
+# mirror follows the latest system only, so it drops the retired prefixes
+# outright where stem.ts keeps them behind date flags for the archived puzzles
+# that folded them -- see PRE_PREFIX_END and BORROWED_PREFIX_END.
 
 
 def _prefix_candidates(word: str) -> list[str]:

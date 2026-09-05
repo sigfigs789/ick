@@ -364,15 +364,21 @@ describe("privativeBaseCandidates", () => {
 describe("prefixBaseCandidates", () => {
   // The two sides of the 2026-09-05 retirements: LATEST is the live list,
   // ARCHIVED the one the puzzles from 2026-08-24 to 2026-09-04 folded with.
-  const LATEST = { pre: false, combining: false };
-  const ARCHIVED = { pre: true, combining: true };
+  const LATEST = { pre: false, borrowed: false };
+  const ARCHIVED = { pre: true, borrowed: true };
 
   it("offers the base a transparent prefix was attached to", () => {
-    expect(prefixBaseCandidates("nonplaying", LATEST)).toContain("playing");
     expect(prefixBaseCandidates("overplanned", LATEST)).toContain("planned");
-    expect(prefixBaseCandidates("misthink", LATEST)).toContain("think");
     expect(prefixBaseCandidates("outswear", LATEST)).toContain("swear");
     expect(prefixBaseCandidates("unhoused", LATEST)).toContain("housed");
+    expect(prefixBaseCandidates("counterordered", LATEST)).toContain("ordered");
+    expect(prefixBaseCandidates("antisnob", LATEST)).toContain("snob");
+    // The borrowed prefixes are out of the live list and only the archived
+    // systems still offer them -- see RETIRED_PREFIXES.
+    expect(prefixBaseCandidates("nonplaying", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("misthink", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("nonplaying", ARCHIVED)).toContain("playing");
+    expect(prefixBaseCandidates("misthink", ARCHIVED)).toContain("think");
   });
 
   it("prefers the longest prefix that matches", () => {
@@ -435,12 +441,13 @@ describe("prefixBaseCandidates", () => {
     // it offers plainly wrong bases for ordinary words. Every one of these is
     // measured far above MEASURED_FLOOR, and the caller's gate is the only
     // thing keeping them out. Asserted so the gate can't be dropped.
-    expect(prefixBaseCandidates("mistake", LATEST)).toContain("take");
     expect(prefixBaseCandidates("outrage", LATEST)).toContain("rage");
     expect(prefixBaseCandidates("understand", LATEST)).toContain("stand");
-    expect(prefixBaseCandidates("supermarket", LATEST)).toContain("market");
-    // The two the retired prefix contributed, which the archived systems still
-    // hand the caller.
+    expect(prefixBaseCandidates("anticked", LATEST)).toContain("cked");
+    // The ones the retired prefixes contributed, which the archived systems
+    // still hand the caller.
+    expect(prefixBaseCandidates("mistake", ARCHIVED)).toContain("take");
+    expect(prefixBaseCandidates("supermarket", ARCHIVED)).toContain("market");
     expect(prefixBaseCandidates("preface", ARCHIVED)).toContain("face");
     expect(prefixBaseCandidates("present", ARCHIVED)).toContain("sent");
   });
