@@ -16,11 +16,13 @@ export function DropDisplay({ drop, date, isToday = true, completed = false }: P
   // so it's not something we want re-running on unrelated re-renders.
   const reveal = useMemo(() => learnableWordForDrop(drop, date), [drop, date]);
   const definition = reveal ? definitionFor(reveal.word) : undefined;
-  const [definitionOpen, setDefinitionOpen] = useState(false);
+  // Open by default: the definition is the point of the reveal, so it should be
+  // there to read without asking. The toggle stays for anyone who wants it gone.
+  const [definitionOpen, setDefinitionOpen] = useState(true);
 
-  // A new puzzle brings a new word, and the definition of the last one has no
-  // business being open under it.
-  useEffect(() => setDefinitionOpen(false), [drop, date]);
+  // A new puzzle brings a new word, and its definition starts open the same way
+  // the first one did -- not left closed by a click aimed at the last word.
+  useEffect(() => setDefinitionOpen(true), [drop, date]);
 
   return (
     <div className="drop-display">
