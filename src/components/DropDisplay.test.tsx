@@ -32,27 +32,27 @@ describe("DropDisplay", () => {
     expect(score).toHaveTextContent(reveal.rarity);
   });
 
-  it("keeps the definition one click away, and in the reading order meanwhile", async () => {
+  it("shows the definition with the reveal, and folds it away on request", async () => {
     render(<DropDisplay drop="str" completed />);
     const reveal = learnableWordForDrop("str")!;
     const definition = definitionFor(reveal.word)!;
     const toggle = screen.getByRole("button", { name: new RegExp(reveal.word) });
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    // Present but hidden from the eye, so a screen reader still reads it.
-    expect(screen.getByText(definition)).toHaveClass("sr-only");
-
-    await userEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText(definition)).not.toHaveClass("sr-only");
+
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    // Still in the reading order once folded, just hidden from the eye.
+    expect(screen.getByText(definition)).toHaveClass("sr-only");
   });
 
-  it("closes the definition when the puzzle changes underneath it", async () => {
+  it("opens the definition again when the puzzle changes underneath it", async () => {
     const { rerender } = render(<DropDisplay drop="str" completed />);
     const toggle = screen.getByRole("button", { name: /./ });
     await userEvent.click(toggle);
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
 
     rerender(<DropDisplay drop="ple" date="2026-08-11" isToday={false} completed />);
-    expect(screen.getByRole("button", { name: /./ })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: /./ })).toHaveAttribute("aria-expanded", "true");
   });
 });
