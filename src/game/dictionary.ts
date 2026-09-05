@@ -104,21 +104,19 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         and none higher, 372 of them holding a Mythic or better for the
  *         suffix (see PRIVATIVE_BASE_START).
  *     None of the three moves a label mapping.
- *   - on/after 2026-09-05 (the latest system): two retirements, the first fold
- *     rules to be taken away rather than added, sharing a cutover in the pattern
- *     of 2026-08-24.
- *       * "pre-" leaves the transparent prefixes. It was the family whose wrong
- *         readings a player could see, and 808 words score higher for its going
- *         (see PRE_PREFIX_END).
- *       * Every borrowed prefix goes with it -- the classical combining forms
- *         and the Latinate ones alike -- on the distinction the list turns on: a
- *         native prefix takes a free-standing English word, a borrowed one takes
- *         a bound stem as readily, so a residue that is a word can be a
- *         coincidence ("protocol" as `cole`, "subsister" as `sister`). What is
- *         left folding is "counter-", "under-", "anti-", "over-", "out-" and
- *         "un-". 3,746 words score higher (see BORROWED_PREFIX_END).
- *     4,554 words rise between them and none falls. Neither moves a label
- *     mapping.
+ *   - on/after 2026-09-05: "pre-" leaves the transparent prefixes, the first
+ *     fold rule to be taken away rather than added. It was the family whose
+ *     wrong readings a player could see, and 808 words score higher for its
+ *     going (see PRE_PREFIX_END). No label mapping moves.
+ *   - on/after 2026-09-06 (the latest system): every borrowed prefix goes the
+ *     same way -- the classical combining forms and the Latinate ones alike --
+ *     on the distinction the list turns on: a native prefix takes a
+ *     free-standing English word, a borrowed one takes a bound stem as readily,
+ *     so a residue that is a word can be a coincidence ("protocol" as `cole`,
+ *     "subsister" as `sister`). What is left folding is "counter-", "under-",
+ *     "anti-", "over-", "out-" and "un-". 3,746 words score higher and none
+ *     lower, 4,554 across the two retirements (see BORROWED_PREFIX_END). No
+ *     label mapping moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -203,13 +201,21 @@ const PREFIX_BASE_MIN_ZIPF = 3;
 const PRE_PREFIX_END = "2026-09-05";
 
 /*
- * 2026-09-05, the second retirement of that day and the larger one: every
- * borrowed prefix leaves the transparent list -- the classical combining forms
+ * 2026-09-06, the day after "pre-" went and the larger retirement of the two:
+ * every borrowed prefix leaves the transparent list -- the classical combining forms
  * ("proto-", "tele-", "mono-", "poly-", "semi-", "auto-", "neo-", "pseudo-",
  * "photo-", "micro-", "macro-", "ultra-", "hyper-", "quasi-") and the Latinate
  * ones alike ("non-", "mis-", "sub-", "post-", "inter-", "super-", "multi-",
  * "trans-"). What is left folding is "counter-", "under-", "anti-", "over-",
  * "out-" and "un-".
+ *
+ * A day later than PRE_PREFIX_END rather than sharing its date, and not by
+ * design: 2026-09-05 was already the day in play by the time this was written,
+ * and a cutover reached in the past re-scores the puzzle a player is on --
+ * banked words keep the scores stored with them while anything submitted after
+ * the deploy is scored the new way. That is the rule set out above
+ * PREFIX_BASE_START, and this follows it. PRE_RETIRED_SCORING, the ladder rung
+ * written for a divergence nobody expected to need, is what 2026-09-05 reads.
  *
  * What separates the prefixes that work from the ones that do not is whether the
  * residue is a word *by construction*. A native prefix attaches to a
@@ -233,8 +239,8 @@ const PRE_PREFIX_END = "2026-09-05";
  * rely on.
  *
  * What it costs, and it is the largest price any of these changes has carried:
- * 3,746 words score higher and none lower, and with the "pre-" half the day
- * raises 4,554 -- 2,522 landing at Mythic or better and 1,717 at Legend. Most of
+ * 3,746 words score higher and none lower, 2,129 of them landing at Mythic or
+ * better and 1,481 at Legend -- 4,554 across the two retirements. Most of
  * those folds were right: "subdirector" is a director, "microtones" are tones,
  * "supertitles" are titles, "semiweekly" is weekly. They go because the rule
  * cannot tell them from the coincidences beside them.
@@ -254,7 +260,7 @@ const PRE_PREFIX_END = "2026-09-05";
  * its folds are overwhelmingly ordinary ("antisnob" is a snob, "antiaircraft" is
  * aircraft). The rows say it is the one to watch.
  */
-const BORROWED_PREFIX_END = "2026-09-05";
+const BORROWED_PREFIX_END = "2026-09-06";
 
 /*
  * 2026-08-26. Three changes, one cutover, because they ship together and no
@@ -1144,10 +1150,12 @@ const PRIVATIVE_SCORING: Scoring = twoBandScoring(9.9, 0, {
   scoreCurve: true,
   decadeBands: true,
 });
-// The 2026-09-05 system with "pre-" retired but the borrowed prefixes still
-// folding -- the next rung of the ladder, reached only if BORROWED_PREFIX_END
-// is ever moved later than PRE_PREFIX_END. While the two dates are equal,
-// scoringFor steps straight past it, in the pattern of DERIVED_SCORING.
+// The 2026-09-05 system: "pre-" retired, the borrowed prefixes still folding.
+// This rung was written for a divergence nobody expected to need -- the two
+// retirements were meant to share a date -- and then 2026-09-05 arrived before
+// the second shipped, so it is the profile that day actually reads. The ladder
+// pattern is what made moving one date a one-line change; see
+// BORROWED_PREFIX_END.
 const PRE_RETIRED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
@@ -1337,10 +1345,11 @@ function scoringFor(date?: string): Scoring {
   if (date < MEASUREMENT_BASE_START) return SUPERLATIVE_SCORING;
   if (date < PRIVATIVE_BASE_START) return MEASUREMENT_SCORING;
   // The two rungs that turn a rule *off* rather than on, so the profiles below
-  // them are the fuller ones: every prefix retired on 2026-09-05 folded for the
-  // systems from 2026-08-24 up to here. Laddered a rung per constant like the
-  // 2026-08-24 and 2026-09-02 groups, the middle one stepped over while the
-  // dates are equal. See PRE_PREFIX_END and BORROWED_PREFIX_END.
+  // them are the fuller ones: the retired prefixes folded for every system from
+  // 2026-08-24 up to their dates. A rung per constant like the 2026-08-24 and
+  // 2026-09-02 groups -- and here the middle rung is live rather than stepped
+  // over, because the dates diverged. See PRE_PREFIX_END and
+  // BORROWED_PREFIX_END.
   if (date < PRE_PREFIX_END) return PRIVATIVE_SCORING;
   if (date < BORROWED_PREFIX_END) return PRE_RETIRED_SCORING;
   return LATEST_SCORING;

@@ -1796,23 +1796,15 @@ describe("\"pre-\" stops folding onto the word it was attached to (from 2026-09-
     expect(score("preboil", ON_PRE)).toBe(score("preboiled", ON_PRE));
   });
 
-  it("raises 4,554 words and lowers none, every one carrying a retired prefix", () => {
-    // The counterpart of the demote-only invariants above, and the reason this
-    // cutover needs one of its own: taking a fold away is the one change that
-    // *can* raise a score, so the guard is not "nothing rose" but "only these
-    // families did". A word outside them moving either way means a flag reached
-    // further than the prefixes it names.
+  it("raises 808 words and lowers none, every one of them a \"pre-\" word", () => {
+    // The counterpart of the demote-only invariants above, and the reason a
+    // retirement needs one of its own: taking a fold away is the one change that
+    // *can* raise a score, so the guard is not "nothing rose" but "only this
+    // family did". A word outside it moving either way means the flag reached
+    // further than the one prefix it names.
     //
-    // Shared by both of the day's retirements, since they share a date -- the
-    // "pre-" half is pinned separately below.
-    // Every prefix retired on the date, both halves: "pre-" and the borrowed
-    // set. What is left folding is "counter-", "under-", "anti-", "over-",
-    // "out-" and "un-".
-    const RETIRED = [
-      "pre", "pseudo", "quasi", "proto", "trans", "inter", "super", "hyper",
-      "multi", "micro", "macro", "ultra", "photo", "semi", "auto", "post",
-      "tele", "mono", "poly", "neo", "non", "mis", "sub",
-    ];
+    // The borrowed prefixes have their own counterpart a day later; see
+    // BORROWED_PREFIX_END.
     const raised: string[] = [];
     const lowered: string[] = [];
     for (const word of dictionaryWords as string[]) {
@@ -1822,12 +1814,11 @@ describe("\"pre-\" stops folding onto the word it was attached to (from 2026-09-
       if (after < before - 1e-9) lowered.push(word);
     }
     expect(lowered).toEqual([]);
-    expect(raised.filter((word) => !RETIRED.some((p) => word.startsWith(p)))).toEqual([]);
-    // Exact rather than a floor: this is the whole cost of the day, and it
-    // should not grow quietly. 2,522 land at Mythic or better and 1,717 at
-    // Legend -- see PRE_PREFIX_END and BORROWED_PREFIX_END for the trade.
-    expect(raised).toHaveLength(4554);
-    expect(raised.filter((word) => word.startsWith("pre"))).toHaveLength(808);
+    expect(raised.filter((word) => !word.startsWith("pre"))).toEqual([]);
+    // Exact rather than a floor: this is the whole cost of the change, and it
+    // should not grow quietly. 393 land at Mythic or better and 236 at Legend --
+    // see PRE_PREFIX_END for why that is the trade being made.
+    expect(raised).toHaveLength(808);
   });
 
   it("leaves the prefixes that survive the day exactly where they were", () => {
@@ -1863,8 +1854,8 @@ describe("\"pre-\" stops folding onto the word it was attached to (from 2026-09-
 // a borrowed one takes a bound stem as readily, so a residue that is a word can
 // be a coincidence.
 describe("borrowed prefixes stop folding (from 2026-09-05)", () => {
-  const BEFORE_BORROWED = "2026-09-04"; // last day "telephony" scores as `phony`
-  const ON_BORROWED = "2026-09-05";
+  const BEFORE_BORROWED = "2026-09-05"; // last day "telephony" scores as `phony`
+  const ON_BORROWED = "2026-09-06";
 
   // The coincidence folds, which are the case for the change: not one of these
   // residues is the word the compound was built on, and no frequency gate can
@@ -1919,14 +1910,20 @@ describe("borrowed prefixes stop folding (from 2026-09-05)", () => {
     expect(baseFormSubstitution(word, BEFORE_BORROWED)?.base).toBe(base);
   });
 
-  it("raises 3,746 words, the larger half of the day", () => {
-    // Pinned like the "pre-" count beside it. This is the whole cost of the
-    // change and it should not grow quietly.
-    const raised = (dictionaryWords as string[]).filter(
-      (word) =>
-        !word.startsWith("pre") &&
-        score(word, ON_BORROWED) > score(word, BEFORE_BORROWED) + 1e-9
-    );
+  it("raises 3,746 words and lowers none, the larger of the two retirements", () => {
+    // Pinned like the "pre-" count in the block above, and the same guard: a
+    // retirement is the one change that can raise a score, so what is asserted
+    // is that only the retired families did. 2,129 land at Mythic or better and
+    // 1,481 at Legend.
+    const raised: string[] = [];
+    const lowered: string[] = [];
+    for (const word of dictionaryWords as string[]) {
+      const before = score(word, BEFORE_BORROWED);
+      const after = score(word, ON_BORROWED);
+      if (after > before + 1e-9) raised.push(word);
+      if (after < before - 1e-9) lowered.push(word);
+    }
+    expect(lowered).toEqual([]);
     expect(raised).toHaveLength(3746);
   });
 
