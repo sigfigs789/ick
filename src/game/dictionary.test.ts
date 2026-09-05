@@ -860,7 +860,7 @@ describe("derived word rejections", () => {
   it("tells the player which reason it was", () => {
     // One live example per reason the file carries, so the reason travels all the
     // way to a message rather than collapsing into "not a word".
-    expect(evaluateSubmission("betwixt", "wix", [])).toEqual({ ok: false, reason: "archaic" });
+    expect(evaluateSubmission("sovran", "ovr", [])).toEqual({ ok: false, reason: "archaic" });
     expect(evaluateSubmission("alienist", "ien", [])).toEqual({ ok: false, reason: "dated" });
     expect(evaluateSubmission("prof", "rof", [])).toEqual({ ok: false, reason: "abbreviation" });
     expect(evaluateSubmission("mammon", "amm", [])).toEqual({ ok: false, reason: "proper-noun" });

@@ -31,3 +31,57 @@ oblongata
 hansom
 confab
 previa
+
+# Words the 2026-08-24 out-of-use pass took out in bulk that are still good
+# finds rather than dead spellings. The label is right -- each is archaic, dated
+# or obsolete -- but none is merely another word's spelling, so nothing is lost
+# by keeping them playable and a real find is gained. Every one scores on its own
+# measured frequency (7.9 to 9.81, no unattested perfect 10s); each was checked
+# against its Wiktionary entry for a distinct sense of its own. Spelling variants
+# found in the same sweep (`sovran`, `afeard`, `stablish`, `limbeck`, `jessamine`)
+# stay rejected.
+caoutchouc
+merrythought
+gadzooks
+incarnadine
+emprise
+carcanet
+froward
+nepenthe
+hawkshaw
+quidnunc
+forsooth
+enchiridion
+dayspring
+mayhap
+prithee
+durance
+raiment
+eventide
+betwixt
+gramercy
+
+# Dated, but nobody would call these out of use.
+insatiate
+unwearied
+venturesome
+aviatrix
+howbeit
+threescore
+wastrel
+twelvemonth
+tobacconist
+kerchief
+discotheque
+manufactory
+pianoforte
+toilette
+bedchamber
+
+# Dated in the way a decade is dated, not the way a spelling is.
+candlepower
+phreak
+godown
+dreamboat
+metrosexual
+palmtop
