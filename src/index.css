@@ -621,7 +621,14 @@ h2 {
   font-size: 0.7rem;
   color: var(--fg-faint);
 }
+/* Drops in behind the word on the same curve, a beat later, so the reveal
+   reads as one movement rather than two. `forwards` holds the resting state;
+   the global prefers-reduced-motion rule collapses this to an instant run. */
 .drop-display__definition {
+  opacity: 0;
+  transform: translateY(-6px);
+  animation: ceiling-word-in 0.4s var(--ease-standard) forwards;
+  animation-delay: 0.3s;
   margin: 0.2rem auto 0;
   max-width: 28rem;
   font-size: 0.82rem;
