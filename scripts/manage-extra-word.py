@@ -427,9 +427,9 @@ def _unmeasured_candidates(word: str) -> list[str]:
 
 # Mirror of TRANSPARENT_PREFIXES in src/game/stem.ts.
 TRANSPARENT_PREFIXES = (
-    "counter", "pseudo", "quasi", "proto", "trans", "under", "inter", "super",
-    "hyper", "multi", "micro", "macro", "ultra", "photo", "semi", "anti",
-    "auto", "post", "over", "tele", "mono", "poly", "neo", "non", "mis",
+    "counter", "pseudo", "quasi", "trans", "under", "inter", "super",
+    "hyper", "multi", "micro", "macro", "ultra", "photo", "anti",
+    "auto", "post", "over", "neo", "non", "mis",
     "sub", "out", "un",
 )
 # Left out: "de", "re", "co", "dis" -- productive, but the four English
@@ -438,9 +438,13 @@ TRANSPARENT_PREFIXES = (
 # TRANSPARENT_PREFIXES in src/game/stem.ts.
 #
 # "pre" is out too, retired on 2026-09-05 for the same reason ("precaution" is
-# not a caution, "prefab" not a fab). This mirror follows the latest system
-# only, so it drops the prefix outright where stem.ts keeps it behind a date
-# flag for the archived puzzles that folded it -- see PRE_PREFIX_END.
+# not a caution, "prefab" not a fab), and with it the classical combining forms
+# "proto", "tele", "mono", "poly" and "semi": they attach to bound stems, so a
+# residue that is an English word is a coincidence ("protocol" -> "cole",
+# "telephony" -> "phony", "semination" -> "nation"). This mirror follows the
+# latest system only, so it drops all six outright where stem.ts keeps them
+# behind date flags for the archived puzzles that folded them -- see
+# PRE_PREFIX_END and COMBINING_PREFIX_END.
 
 
 def _prefix_candidates(word: str) -> list[str]:
