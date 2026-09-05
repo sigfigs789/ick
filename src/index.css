@@ -623,7 +623,7 @@ h2 {
 }
 .drop-display__definition {
   margin: 0.2rem auto 0;
-  max-width: 22rem;
+  max-width: 28rem;
   font-size: 0.82rem;
   line-height: 1.45;
   color: var(--fg-muted);

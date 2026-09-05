@@ -1806,11 +1806,17 @@ const LEARNABLE_MAX_SCORE = 9.9;
 const REVEAL_WORDS: readonly string[] = revealWordData.words;
 
 /**
- * One-line glosses for the reviewed words, written for the reveal rather than
- * lifted from a dictionary: what the word means, in the fewest words that still
- * teach it. No part-of-speech labels -- the gloss's own shape carries that ("a
- * jumbled medley", "to speak at length"), which reads better under a word the
- * player just met.
+ * Glosses for the reviewed words, written for the reveal rather than lifted
+ * from a dictionary: what the word means, said plainly enough that a player who
+ * has never seen it could go and use it. They sit behind a toggle, so clarity
+ * wins over brevity every time -- a gloss runs as long as the word needs, gives
+ * the second sense where the word has one, and never leaves a bare synonym to
+ * trade one unfamiliar word for another ("a spittoon", "stinking"). Where the
+ * plainest word for the thing is itself rare, the gloss says what the thing is
+ * as well ("a spittoon: a pot kept on the floor to spit tobacco juice into").
+ * No part-of-speech labels -- the gloss's own shape carries that ("a jumbled
+ * medley", "to speak at length"), which reads better under a word the player
+ * just met.
  *
  * Every reviewed word has one, and a test holds the two files to that.
  */

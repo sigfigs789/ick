@@ -1009,9 +1009,12 @@ describe("reveal words", () => {
     expect(glossed.sort()).toEqual([...reviewed].sort());
     for (const [word, gloss] of Object.entries(revealDefinitionData)) {
       expect(gloss.trim()).toBe(gloss);
-      // Long enough to teach the word, short enough to sit under it.
-      expect(gloss.length).toBeGreaterThan(4);
-      expect(gloss.length).toBeLessThanOrEqual(90);
+      // Long enough to actually teach the word: a full explanation, with the
+      // second sense where the word has one. The gloss sits behind a toggle,
+      // so a few lines cost the player nothing, and a player who does not know
+      // the word is the only reason it is there.
+      expect(gloss.length).toBeGreaterThan(20);
+      expect(gloss.length).toBeLessThanOrEqual(200);
       expect(definitionFor(word)).toBe(gloss);
     }
   });
