@@ -407,7 +407,7 @@ const TRANSPARENT_PREFIXES = [
   "counter",
   "pseudo",
   "quasi",
-  "proto",
+  "proto", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "trans",
   "under",
   "inter",
@@ -418,26 +418,43 @@ const TRANSPARENT_PREFIXES = [
   "macro",
   "ultra",
   "photo",
-  "semi",
+  "semi", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "anti",
   "auto",
   "post",
   "over",
-  "tele",
-  "mono",
-  "poly",
+  "tele", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "mono", // retired 2026-09-05, see `RETIRED_PREFIXES`
+  "poly", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "neo",
   "non",
   "mis",
-  // Retired on 2026-09-05 and folding for archived puzzles alone, which is why
-  // it is still in the list: the loop below skips it unless the caller's system
-  // carries the prefix (see PRE_PREFIX_END). Left in place rather than at the
-  // end so the long-to-short ordering holds for the dates that read it.
-  "pre",
+  "pre", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "sub",
   "out",
   "un",
 ];
+
+/**
+ * The entries retired from the list above, each behind the flag its date turned
+ * off. They stay in the list because archived puzzles still fold them, and in
+ * place rather than at the end so the long-to-short ordering holds for the dates
+ * that read them.
+ *
+ * Both groups went on 2026-09-05, for one reason in two shapes -- a prefix is
+ * only safe where the residue is a word *by construction*. See PRE_PREFIX_END
+ * and COMBINING_PREFIX_END.
+ */
+const RETIRED_PREFIXES = {
+  // "pre-", which attaches to whole English words and to Latin stems alike, so
+  // the reading cannot be told from the spelling ("precaution", "pretext").
+  pre: new Set(["pre"]),
+  // The classical combining forms, which attach to bound stems: where the
+  // residue is an English word it is a coincidence, and the fold is wrong every
+  // time ("protocols" -> `cole`, "telephony" -> `phony`, "semination" ->
+  // `nation`, "monopodia" -> `podium`, "polygala" -> `gala`).
+  combining: new Set(["proto", "tele", "mono", "poly", "semi"]),
+};
 
 /*
  * The prefixes left out, and why. "de-", "re-", "co-" and "dis-" are the most
@@ -466,6 +483,19 @@ const TRANSPARENT_PREFIXES = [
  * taken early, "predominance" not a dominance, "prefab" not a fab). See
  * PRE_PREFIX_END in dictionary.ts for what the removal costs in the other
  * direction.
+ *
+ * The classical combining forms "proto-", "tele-", "mono-", "poly-" and "semi-"
+ * went with it, on the distinction the rest of the list turns on: a native
+ * prefix attaches to a free-standing English word, so its residue is a word by
+ * construction and the fold is right by construction ("overcooked" is cooked,
+ * "unemployment" is employment). A combining form attaches to a bound stem, so a
+ * residue that *is* an English word is a coincidence -- and a coincidence is
+ * exactly what this rule cannot see. src/data/bound-residues.json is the tally:
+ * "auto-" needed 12 entries, "mono-" 12, "poly-" 11, "tele-" 8, against none at
+ * all for "un-", "over-", "out-", "under-", "counter-" and "super-". Those
+ * entries are the fragments that are not words; the ones that are got through.
+ * See COMBINING_PREFIX_END for what the five cost and why "auto-", "neo-" and
+ * "pseudo-" are the obvious next ones.
  */
 
 /**
@@ -495,15 +525,27 @@ const TRANSPARENT_PREFIXES = [
  * (Zipf 4.98) one strip further, and 186 words in the Mythic band were
  * mis-scored by two points or more the same way.
  *
- * `prePrefix` says whether "pre-" is one of the prefixes on the caller's date.
- * It was until 2026-09-05, and archived puzzles still read it that way -- see
- * PRE_PREFIX_END.
+ * `era` says which retired prefixes the caller's date still carries (see
+ * `RETIRED_PREFIXES`). An object rather than two booleans for the reason
+ * `ScoringFlags` is one: a pair of interchangeable positional booleans is a
+ * wrong-slot bug that type-checks.
  */
-export function prefixBaseCandidates(word: string, prePrefix: boolean): string[] {
+export interface PrefixEra {
+  /** Whether "pre-" folds. True before 2026-09-05; see PRE_PREFIX_END. */
+  pre: boolean;
+  /**
+   * Whether the classical combining forms fold. True before 2026-09-05; see
+   * COMBINING_PREFIX_END.
+   */
+  combining: boolean;
+}
+
+export function prefixBaseCandidates(word: string, era: PrefixEra): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
   for (const prefix of TRANSPARENT_PREFIXES) {
-    if (prefix === "pre" && !prePrefix) continue;
+    if (RETIRED_PREFIXES.pre.has(prefix) && !era.pre) continue;
+    if (RETIRED_PREFIXES.combining.has(prefix) && !era.combining) continue;
     if (!w.startsWith(prefix)) continue;
     const stem = w.slice(prefix.length);
     if (stem.length < 4 || stem === w || out.includes(stem)) continue;

@@ -389,7 +389,7 @@ describe("reviewed fold exemptions", () => {
       if ((entry as { scope?: string }).scope !== "prefix") continue;
       // Asked with "pre-" on, the superset: a scoped entry written for an
       // archived puzzle is checked against the residues that puzzle offered.
-      for (const residue of prefixBaseCandidates(word, true)) {
+      for (const residue of prefixBaseCandidates(word, { pre: true, combining: true })) {
         expect(residues.has(residue), `${word} could have been a ${residue} table entry`).toBe(
           false
         );
@@ -1796,12 +1796,16 @@ describe("\"pre-\" stops folding onto the word it was attached to (from 2026-09-
     expect(score("preboil", ON_PRE)).toBe(score("preboiled", ON_PRE));
   });
 
-  it("raises 808 words and lowers none, every one of them a \"pre-\" word", () => {
+  it("raises 1,163 words and lowers none, every one carrying a retired prefix", () => {
     // The counterpart of the demote-only invariants above, and the reason this
     // cutover needs one of its own: taking a fold away is the one change that
-    // *can* raise a score, so the guard is not "nothing rose" but "only this
-    // family did". A word outside it moving either way means the flag reached
-    // further than the one prefix it names.
+    // *can* raise a score, so the guard is not "nothing rose" but "only these
+    // families did". A word outside them moving either way means a flag reached
+    // further than the prefixes it names.
+    //
+    // Shared by both of the day's retirements, since they share a date -- the
+    // "pre-" half is pinned separately below.
+    const RETIRED = ["pre", "proto", "tele", "mono", "poly", "semi"];
     const raised: string[] = [];
     const lowered: string[] = [];
     for (const word of dictionaryWords as string[]) {
@@ -1811,11 +1815,12 @@ describe("\"pre-\" stops folding onto the word it was attached to (from 2026-09-
       if (after < before - 1e-9) lowered.push(word);
     }
     expect(lowered).toEqual([]);
-    expect(raised.filter((word) => !word.startsWith("pre"))).toEqual([]);
-    // Exact rather than a floor: this is the whole cost of the change, and it
-    // should not grow quietly. 393 of them land at Mythic or better and 236 at
-    // Legend -- see PRE_PREFIX_END for why that is the trade being made.
-    expect(raised).toHaveLength(808);
+    expect(raised.filter((word) => !RETIRED.some((p) => word.startsWith(p)))).toEqual([]);
+    // Exact rather than a floor: this is the whole cost of the day, and it
+    // should not grow quietly. 586 land at Mythic or better and 359 at Legend --
+    // see PRE_PREFIX_END and COMBINING_PREFIX_END for the trade being made.
+    expect(raised).toHaveLength(1163);
+    expect(raised.filter((word) => word.startsWith("pre"))).toHaveLength(808);
   });
 
   it("leaves the other prefixes exactly where they were", () => {
@@ -1843,6 +1848,96 @@ describe("\"pre-\" stops folding onto the word it was attached to (from 2026-09-
     // above MEASURED_FLOOR, and "prelect" was refused by the residue table.
     for (const word of ["preface", "present", "prefer", "prelect", "prepone"]) {
       expect(score(word, ON_PRE), `${word} must not move`).toBe(score(word, BEFORE_PRE));
+    }
+  });
+});
+
+// The other half of the 2026-09-05 cutover: the classical combining forms leave
+// the transparent prefixes. See COMBINING_PREFIX_END in dictionary.ts for the
+// distinction it turns on -- a native prefix takes a free-standing word, a
+// combining form takes a bound stem, so a residue that is a word is a
+// coincidence.
+describe("classical combining forms stop folding (from 2026-09-05)", () => {
+  const BEFORE_COMBINING = "2026-09-04"; // last day "telephony" scores as `phony`
+  const ON_COMBINING = "2026-09-05";
+
+  const COINCIDENCES: ReadonlyArray<[word: string, base: string, before: number, after: number]> =
+    [
+      // The coincidence folds, which is the whole case: none of these residues
+      // is the word the compound was built on, and no frequency gate can see
+      // that, because the residue is an ordinary English word.
+      // "protocol" is measured at Zipf 4.15, far above MEASURED_FLOOR, and folded
+      // anyway -- it reaches `cole` through the leak PRE_PREFIX_END records,
+      // where a below-floor inflection strips the prefix and the reverse fold
+      // carries it back up. Retiring the form closes this one by the side door.
+      ["protocol", "cole", 5.57, 5.61],
+      ["protocols", "cole", 5.57, 5.61],
+      ["telephony", "phony", 6.73, 7.36],
+      ["semination", "nation", 4.57, 8.82],
+      ["monopodia", "podium", 6.34, 9.82],
+      ["polygala", "gala", 6.28, 9.54],
+      ["monophony", "phony", 6.73, 9.34],
+      ["prototrophy", "trophy", 5.58, 9.32],
+      ["teletext", "text", 4.38, 8.66],
+      ["semicolonies", "colony", 5.65, 9.74],
+      // And the price, in the same shape as the "pre-" half: where the form does
+      // take a free-standing word, the fold was right and goes with the rest.
+      ["semiweekly", "week", 3.57, 9.67],
+      ["protohuman", "human", 3.88, 9.69],
+      ["telemarketing", "market", 3.97, 7.9],
+      ["polywater", "water", 3.63, 9.56],
+    ];
+
+  it.each(COINCIDENCES)("%s no longer scores as %s from the cutover on", (word, _b, _s, after) => {
+    expect(score(word, ON_COMBINING)).toBe(after);
+  });
+
+  it.each(COINCIDENCES)("%s scored as %s the day before", (word, base, before) => {
+    expect(score(word, BEFORE_COMBINING)).toBe(before);
+    expect(baseFormSubstitution(word, BEFORE_COMBINING)?.base).toBe(base);
+  });
+
+  it("raises 355 words, the smaller half of the day", () => {
+    // Pinned like the "pre-" count beside it: 193 of them land at Mythic or
+    // better and 123 at Legend, which is what retiring a fold costs.
+    const raised = (dictionaryWords as string[]).filter(
+      (word) =>
+        !word.startsWith("pre") &&
+        score(word, ON_COMBINING) > score(word, BEFORE_COMBINING) + 1e-9
+    );
+    expect(raised).toHaveLength(355);
+  });
+
+  it("leaves the combining forms that were not retired folding", () => {
+    // "auto-", "neo-", "pseudo-" and "photo-" are the same shape and are held
+    // back for a cutover of their own rather than kept on their merits -- see
+    // COMBINING_PREFIX_END. Asserted so that holding them back stays a decision
+    // rather than an oversight nobody can see.
+    for (const [word, base] of [
+      ["autotrophy", "trophy"],
+      ["pseudoscope", "scope"],
+      ["photomaps", "map"],
+    ] as const) {
+      expect(baseFormSubstitution(word, ON_COMBINING)?.base, word).toBe(base);
+    }
+  });
+
+  it("moves no word the corpora measure, whatever it starts with", () => {
+    // The floor gate still holds for everything it ever held: these open with a
+    // retired form and are measured far above MEASURED_FLOOR, so they never
+    // reached the strip and cannot notice it going.
+    for (const word of [
+      "television",
+      "telephone",
+      "monopoly",
+      "monolith",
+      "polyester",
+      "semiannual",
+      "semifinal",
+    ]) {
+      expect(score(word, ON_COMBINING), `${word} must not move`).toBe(
+        score(word, BEFORE_COMBINING)
+      );
     }
   });
 });
