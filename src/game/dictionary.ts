@@ -238,6 +238,12 @@ const PRE_PREFIX_END = "2026-09-05";
  *
  * Together with the "pre-" half the day raises 1,163 words and lowers none.
  *
+ * The six with no entries at all -- "un-", "over-", "out-", "under-", "counter-"
+ * and "super-" -- are the other end of the same measurement, and neither cutover
+ * touches them: 5,956 words still fold on them and not one moves on 2026-09-05.
+ * A test pins that over the whole dictionary rather than on samples, since it is
+ * what the retirements are defined against.
+ *
  * "auto-" (12 entries), "neo-" (7) and "pseudo-" (1, but the same shape) are the
  * obvious next ones and are deliberately left in for now: they are held back for
  * a cutover of their own rather than kept on their merits.

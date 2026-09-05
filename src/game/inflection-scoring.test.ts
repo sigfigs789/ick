@@ -1908,6 +1908,30 @@ describe("classical combining forms stop folding (from 2026-09-05)", () => {
     expect(raised).toHaveLength(355);
   });
 
+  it("leaves the native prefixes folding exactly as they were", () => {
+    // The six the retirements are defined against, and the reason the list still
+    // has a rule at all: a native prefix takes a free-standing English word, so
+    // its residue is a word by construction and its folds are right by
+    // construction. Nothing on either cutover may touch them.
+    //
+    // Asserted over the whole dictionary rather than on samples, because "these
+    // six are untouched" is the guarantee, not "these six examples are".
+    const NATIVE = ["un", "over", "out", "under", "counter", "super"];
+    const moved = (dictionaryWords as string[]).filter(
+      (word) =>
+        NATIVE.some((prefix) => word.startsWith(prefix)) &&
+        score(word, ON_COMBINING) !== score(word, BEFORE_COMBINING)
+    );
+    expect(moved).toEqual([]);
+    // Kept honest: a rule that folded nothing would also pass the line above.
+    const folding = (dictionaryWords as string[]).filter(
+      (word) =>
+        NATIVE.some((prefix) => word.startsWith(prefix)) &&
+        baseFormSubstitution(word, ON_COMBINING) !== undefined
+    );
+    expect(folding.length).toBeGreaterThan(5000);
+  });
+
   it("leaves the combining forms that were not retired folding", () => {
     // "auto-", "neo-", "pseudo-" and "photo-" are the same shape and are held
     // back for a cutover of their own rather than kept on their merits -- see
