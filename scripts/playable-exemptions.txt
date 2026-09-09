@@ -77,6 +77,7 @@ manufactory
 pianoforte
 toilette
 bedchamber
+tarry
 
 # Dated in the way a decade is dated, not the way a spelling is.
 candlepower
