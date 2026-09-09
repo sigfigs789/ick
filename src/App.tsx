@@ -121,8 +121,8 @@ export default function App() {
     } else if (feedback.kind === "rejected") {
       sound.reject();
     }
-    // sound.accept/reject are stable across the enabled toggle's own
-    // re-renders; only new feedback events should trigger playback.
+    // sound.accept/reject are stable; only new feedback events should
+    // trigger playback.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
@@ -330,8 +330,6 @@ export default function App() {
       <InstructionsModal
         open={showInstructions}
         onClose={closeInstructions}
-        soundEnabled={sound.enabled}
-        onToggleSound={sound.toggle}
       />
       <WordRulesModal
         open={showWordRules}

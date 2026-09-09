@@ -1,20 +1,12 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackFeedbackSubmitted } from "../analytics";
-import { SoundToggle } from "./SoundToggle";
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  soundEnabled: boolean;
-  onToggleSound: () => void;
 }
 
-export function InstructionsModal({
-  open,
-  onClose,
-  soundEnabled,
-  onToggleSound,
-}: Props) {
+export function InstructionsModal({ open, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [feedback, setFeedback] = useState("");
   const [sent, setSent] = useState(false);
@@ -101,7 +93,6 @@ export function InstructionsModal({
             <p className="word-suggestion__thanks">Thanks for the feedback!</p>
           )}
         </form>
-        <SoundToggle enabled={soundEnabled} onToggle={onToggleSound} />
         <p className="modal__signoff">
           Made by one person, for fun. Thanks for playing. 🙂
         </p>
