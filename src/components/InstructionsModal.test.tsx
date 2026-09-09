@@ -12,8 +12,6 @@ describe("InstructionsModal", () => {
       <InstructionsModal
         open={false}
         onClose={vi.fn()}
-        soundEnabled
-        onToggleSound={vi.fn()}
       />,
     );
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -22,8 +20,6 @@ describe("InstructionsModal", () => {
       <InstructionsModal
         open
         onClose={vi.fn()}
-        soundEnabled
-        onToggleSound={vi.fn()}
       />,
     );
     expect(
@@ -39,8 +35,6 @@ describe("InstructionsModal", () => {
       <InstructionsModal
         open
         onClose={vi.fn()}
-        soundEnabled
-        onToggleSound={vi.fn()}
       />,
     );
     expect(
@@ -56,8 +50,6 @@ describe("InstructionsModal", () => {
       <InstructionsModal
         open
         onClose={onClose}
-        soundEnabled
-        onToggleSound={vi.fn()}
       />,
     );
     const dialog = screen.getByRole("dialog");
@@ -83,8 +75,6 @@ describe("InstructionsModal", () => {
       <InstructionsModal
         open
         onClose={vi.fn()}
-        soundEnabled
-        onToggleSound={vi.fn()}
       />,
     );
     const box = screen.getByLabelText(/share feedback or leave a suggestion/i);
@@ -107,8 +97,6 @@ describe("InstructionsModal", () => {
       <InstructionsModal
         open
         onClose={vi.fn()}
-        soundEnabled
-        onToggleSound={vi.fn()}
       />,
     );
     const box = screen.getByLabelText(/share feedback or leave a suggestion/i);

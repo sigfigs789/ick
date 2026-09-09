@@ -56,8 +56,6 @@ describe("App", () => {
     markSeen("instructions");
     window.history.pushState(null, "", "/");
     vi.mocked(useSound).mockReturnValue({
-      enabled: true,
-      toggle: vi.fn(),
       accept: vi.fn(),
       reject: vi.fn(),
       complete: vi.fn(),
