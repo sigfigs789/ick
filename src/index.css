@@ -2046,6 +2046,13 @@ h2 {
 /* The one column header the board has, sitting over the score. Right-aligned on
    the same 0.4rem the rows are padded by, so it lands exactly over the numbers
    under it, and quiet enough that it reads as a label rather than as a row. */
+/* The two labels over the score column, stacked the way the figures under them
+   are. Set tight and as one block: at the page's ordinary line-height they read
+   as two headings stacked over one board rather than as one header naming two
+   things, and this sits above every board on the page twice over, so the line it
+   saves is worth having. Both at the same size and weight -- they are both
+   labels, and they are already at the faintest setting the page has, so leaning
+   on one would only make it hard to read. The hierarchy is in the numbers. */
 .leaderboard__columns {
   margin: 0.35rem 0 0;
   padding: 0 0.4rem 0.35rem;
@@ -2054,8 +2061,12 @@ h2 {
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.08em;
+  line-height: 1.25;
   text-transform: uppercase;
   border-bottom: 1px solid var(--border);
+}
+.leaderboard__columns span {
+  display: block;
 }
 /* The footnote under both boards: the one rule that governs them. A list rather
    than a sentence because it is a rule, and because there may well be a second
@@ -2111,7 +2122,8 @@ h2 {
 }
 /* Rank and score are fixed columns; the name takes what is left and the meta
    line tucks under it, so a long name truncates instead of shoving the score
-   off the row. */
+   off the row. The second line runs the same three columns as the first, so the
+   best find lands under the total and the count under the name. */
 .leaderboard__row {
   display: grid;
   /* Wide enough for three digits: the row below the cut carries a real rank, and
@@ -2119,7 +2131,7 @@ h2 {
   grid-template-columns: 2.1rem minmax(0, 1fr) auto;
   grid-template-areas:
     "rank name score"
-    ".    meta meta";
+    ".    meta best";
   align-items: baseline;
   column-gap: 0.5rem;
   padding: 0.45rem 0.4rem;
@@ -2230,12 +2242,6 @@ h2 {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-/* The find in a row's detail line: weighted a little so the word reads as a
-   word next to the count and the number, but still plainly secondary to the
-   name above it. */
-.leaderboard__find {
-  font-weight: 700;
-}
 /*
  * The mark on your own row: a filled pill rather than faint text.
  *
@@ -2273,6 +2279,26 @@ h2 {
   grid-area: score;
   font-family: var(--font-display);
   font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+/*
+ * Their best single find in the window, tucked under the total.
+ *
+ * The count's own weight and colour -- the two second-line entries are the same
+ * kind of thing, a detail about the row rather than its headline, and setting
+ * one louder than the other would make the reader work out which. Right-aligned
+ * so it hangs off the total's last digit and the eye reads one column of
+ * numbers down the board, tabular for the same reason.
+ *
+ * It never widens the column: this tops out at `10.0` and is set smaller than
+ * the total above it, which is already three or four digits by the time a board
+ * has a week in it. So nothing here can squeeze the name.
+ */
+.leaderboard__best {
+  grid-area: best;
+  justify-self: end;
+  color: var(--fg-faint);
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
 /*
