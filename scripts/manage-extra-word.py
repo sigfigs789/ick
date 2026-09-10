@@ -581,7 +581,7 @@ def _doubling_tense_stem(word: str) -> str | None:
 
 
 def _blocked_tense_stem(word: str, index: dict[str, int]) -> str | None:
-    """Mirror of blockedTenseStem() in dictionary.ts (2026-09-11 on).
+    """Mirror of blockedTenseStem() in dictionary.ts (2026-09-10 on).
 
     Paired with the silent-"e" reading being a word, so the rule only ever moves
     a fold between two readings of one ending and never takes the last one a
@@ -602,7 +602,7 @@ def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     word try the plain -ed bases too ("taxied" -> "taxi").
     """
     candidates: list[str] = []
-    # The bare-stem reading this spelling cannot carry, from 2026-09-11. Dropping
+    # The bare-stem reading this spelling cannot carry, from 2026-09-10. Dropping
     # it drops the doubled-consonant trim beside it too, which is the same string
     # for these stems.
     blocked = _blocked_tense_stem(word, index)

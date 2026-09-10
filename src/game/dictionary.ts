@@ -120,7 +120,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         "un-". 3,746 words score higher (see BORROWED_PREFIX_END).
  *     4,554 words rise between them and none falls. Neither moves a label
  *     mapping.
- *   - on/after 2026-09-11 (the latest system): the bare-stem reading of an
+ *   - on/after 2026-09-10 (the latest system): the bare-stem reading of an
  *     "-ed"/"-ing" ending is dropped where English spells that stem's own forms
  *     with a doubled consonant, leaving the silent-"e" reading the only one on
  *     offer -- "waning" is `wane`, not `wan`, because "wan" conjugates as
@@ -266,7 +266,7 @@ const PRE_PREFIX_END = "2026-09-05";
 const BORROWED_PREFIX_END = "2026-09-05";
 
 /*
- * 2026-09-11. The bare-stem reading of an "-ed"/"-ing" ending is dropped where
+ * 2026-09-10. The bare-stem reading of an "-ed"/"-ing" ending is dropped where
  * English spells that stem's own forms with a doubled consonant: "waning" is
  * `wane`, not `wan`, because "wan" conjugates as "wanning". Nothing but the
  * spelling decides it, and the spelling is decisive -- see `doublingTenseStem`
@@ -311,13 +311,17 @@ const BORROWED_PREFIX_END = "2026-09-05";
  * handed the archaic verb a preposition's frequency (8.87 -> 3.34). It is a
  * reviewed fold exemption, on the `during` side where the misreading is.
  *
- * Dated the day after the change was written rather than the day of it, which is
- * the rule above PREFIX_BASE_START: 2026-09-10 was the puzzle in play, and its
- * "NIN" drop reaches 18 of the words that move ("waning" among them), so a
- * cutover on that date would have shown one session two scores for the same
- * word. Move it again if this slips past the 11th.
+ * Dated the day in play rather than the day after it, which is the one deliberate
+ * exception to the rule above PREFIX_BASE_START -- the change was wanted in
+ * 2026-09-10's puzzle, whose "NIN" drop is where the misreading was found and
+ * which reaches 18 of the words that move ("waning" among them). The cost is the
+ * one that rule exists to avoid and it was accepted knowingly: a word banked
+ * before the deploy keeps the score stored with it (see storage.ts), so a single
+ * session on that puzzle can show "waning" at 6.1 and 7.14. It is confined to
+ * that one day -- every archived puzzle before it is untouched, and nothing
+ * after it can straddle a deploy.
  */
-const DOUBLING_TENSE_START = "2026-09-11";
+const DOUBLING_TENSE_START = "2026-09-10";
 
 /*
  * 2026-08-26. Three changes, one cutover, because they ship together and no
@@ -902,7 +906,7 @@ interface Scoring {
   borrowedPrefixBases: boolean;
   // Whether the bare-stem reading of an "-ed"/"-ing" ending is dropped where
   // that stem's own forms double their final consonant ("waning" is `wane`, not
-  // `wan`), leaving the silent-"e" reading the only one on offer. 2026-09-11;
+  // `wan`), leaving the silent-"e" reading the only one on offer. 2026-09-10;
   // off for earlier systems so past puzzles' scores stay frozen (see
   // DOUBLING_TENSE_START).
   doublingTenseBases: boolean;
@@ -1266,7 +1270,7 @@ const BORROWED_RETIRED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   scoreCurve: true,
   decadeBands: true,
 });
-// The latest system (2026-09-11): the same folds with one reading taken out of
+// The latest system (2026-09-10): the same folds with one reading taken out of
 // the tense rule's hands -- a bare CVC stem whose own forms double their final
 // consonant is not a reading of an "-ed"/"-ing" spelling, so "waning" folds onto
 // `wane` rather than `wan`. See DOUBLING_TENSE_START.
@@ -2686,7 +2690,7 @@ function blockedTenseStem(word: string, scoring: Scoring): string | undefined {
 
 function tenseBaseForm(word: string, scoring: Scoring): string | undefined {
   const candidates: string[] = [];
-  // The bare-stem reading this spelling cannot carry, from 2026-09-11. Dropping
+  // The bare-stem reading this spelling cannot carry, from 2026-09-10. Dropping
   // it also drops the doubled-consonant trim beside it, which is the same string
   // for these stems -- a blocked stem ends in a *single* consonant, so
   // `stripDoubledConsonant` leaves it alone (see DOUBLING_TENSE_START).

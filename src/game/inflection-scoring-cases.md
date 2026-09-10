@@ -110,7 +110,7 @@ the same reason: the spelling is not decisive.
 | `-ying` → `-y` / `-ie` | trying → try, dying → die |
 | `-ing` → `-e` / bare / de-doubled | making → make, running → run |
 
-The bare strip is withheld from one shape, from 2026-09-11: a stem whose own
+The bare strip is withheld from one shape, from 2026-09-10: a stem whose own
 forms double their final consonant never took the ending bare, so "waning" is
 `wane` and not `wan` ("wan" conjugates as "wanning"). See `doublingTenseStem` in
 [`stem.ts`](stem.ts) and DOUBLING_TENSE_START in [`dictionary.ts`](dictionary.ts).
@@ -358,7 +358,7 @@ These aren't separate cases so much as a mechanism running inside §1–§7.
 | Spelling change | Example (word → base) | Where it lives |
 |-----------------|----------------------|----------------|
 | **Doubled consonant** dropped | running → run, batted → bat, hopped → hop, travelled → travel | `stripDoubledConsonant`, used by every tense/`-er`/`-est` rule (§1, §7) |
-| **Doubled consonant** *required*, so the bare stem is refused | waning → `wane`, not `wan`; bating → `bate`, not `bat` | `doublingTenseStem` (§1, 2026-09-11 on) |
+| **Doubled consonant** *required*, so the bare stem is refused | waning → `wane`, not `wan`; bating → `bate`, not `bat` | `doublingTenseStem` (§1, 2026-09-10 on) |
 | **Silent `-e` restored** | making → make, rated → rate, bakes → bake | tense candidates add `stem + "e"`; `-es` strips only the `s` (§1, §2) |
 | **`y` ↔ `i`** | cries → cry, tried → try, happily → happy, happiness → happy, angrier → angry | `-ies`/`-ied`/`-ily`/`-iness`/`-ier` rules across §1, §2, §4, §5 |
 | **`f` ↔ `v`** | wolves → wolf, knives → knife | `-ves` → `-f`/`-fe` (§2) |

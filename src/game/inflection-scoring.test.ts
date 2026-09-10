@@ -727,7 +727,7 @@ describe("invariants across the whole dictionary", () => {
     "2026-08-20",
     "2026-08-21",
     "2026-08-24",
-    "2026-09-11",
+    "2026-09-10",
     "2027-06-01",
     undefined,
   ];
@@ -2020,14 +2020,14 @@ describe("borrowed prefixes stop folding (from 2026-09-05)", () => {
   });
 });
 
-// The 2026-09-11 cutover: the bare-stem reading of an "-ed"/"-ing" ending is
+// The 2026-09-10 cutover: the bare-stem reading of an "-ed"/"-ing" ending is
 // dropped where English spells that stem's own forms with a doubled consonant,
 // so the silent-"e" reading is the only one left on offer. See
 // DOUBLING_TENSE_START in dictionary.ts, and `doublingTenseStem` in stem.ts for
 // the spelling rule.
-describe("an -ed/-ing ending stops reading as a stem English would double (from 2026-09-11)", () => {
-  const BEFORE_DOUBLING = "2026-09-10"; // last day "waning" scores as `wan`
-  const ON_DOUBLING = "2026-09-11";
+describe("an -ed/-ing ending stops reading as a stem English would double (from 2026-09-10)", () => {
+  const BEFORE_DOUBLING = "2026-09-09"; // last day "waning" scores as `wan`
+  const ON_DOUBLING = "2026-09-10";
 
   // word, the base it took before, the base it takes now (undefined where the
   // right base is *rarer* than the word and so caps nothing), and the scores.

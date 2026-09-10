@@ -162,8 +162,8 @@
     "reason": "A storm, not \"most temp\" -- and `temper` is a word, so the paired-degree check the bare -est fold runs on `contest` and `interest` passes here. One of two words in the dictionary that clear the check without being superlatives."
   },
   "during": {
-    "since": "2026-09-11",
-    "reason": "The preposition, not a tense of the archaic `dure` (to last) it descends from. It needs no fold of its own -- at 5.72 Zipf nothing caps it -- but the reverse direction reads it as `dure`'s participle and hands the verb a preposition's frequency, which the doubling rule of 2026-09-11 is what made reachable (before it, `during` folded onto the fragment-word `dur` and the round trip failed). `dure` dropped 8.87 -> 3.34 on that link, Elusive to Very Common, and it is the one wrong pairing that cutover creates; the exemption breaks it from the `during` side, where the misreading is."
+    "since": "2026-09-10",
+    "reason": "The preposition, not a tense of the archaic `dure` (to last) it descends from. It needs no fold of its own -- at 5.72 Zipf nothing caps it -- but the reverse direction reads it as `dure`'s participle and hands the verb a preposition's frequency, which the doubling rule of 2026-09-10 is what made reachable (before it, `during` folded onto the fragment-word `dur` and the round trip failed). `dure` dropped 8.87 -> 3.34 on that link, Elusive to Very Common, and it is the one wrong pairing that cutover creates; the exemption breaks it from the `during` side, where the misreading is."
   },
   "listless": {
     "since": "2026-09-02",
