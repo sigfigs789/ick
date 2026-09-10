@@ -29,6 +29,11 @@
     "reason": "A dolmen is a megalithic tomb; a dolman is a hussar's jacket. The \"-men\" -> \"-man\" plural rule reads one as the plural of the other, which would refuse a legitimate second answer.",
     "since": "2026-08-24"
   },
+  "during": {
+    "root": "during",
+    "reason": "The preposition, not a tense of the archaic `dure` (to last) it descends from. The 2026-09-10 spelling rule is what reaches it: `dur` stops being a reading of the ending, so the only one left is `dure`, and a puzzle that had taken the preposition would refuse the verb. Scoring exempts the same word for the same reason -- the two files agreeing here is a coincidence of one shared misreading, not the rule.",
+    "since": "2026-09-10"
+  },
   "elves": {
     "root": "elf",
     "reason": "Same as `selves`: the curated `elve` shadows `elf`.",

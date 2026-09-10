@@ -2209,17 +2209,24 @@ describe("an -ed/-ing ending stops reading as a stem English would double (from 
     }
   });
 
-  it("changes scoring only", () => {
-    // Duplicate detection reads `baseForm` and its own tier-1 ranking in
-    // submit.ts, neither of which this cutover touches, so a puzzle's same-root
-    // verdicts are exactly what they were -- including the one this rule
-    // disagrees with: "waning" still keys on `wan`, so a player who found `wan`
-    // is still refused it. Widening a fold has never moved that line by itself
-    // (see the 2026-08-21 block above), and the same-root stemmer is its own
-    // decision with its own cutover.
-    expect(sameRootKey("waning", ON_DOUBLING)).toBe(sameRootKey("waning", BEFORE_DOUBLING));
-    expect(sameRootKey("waning", ON_DOUBLING)).toBe("wan");
-    for (const word of ["waned", "biting", "themed", "noted", "busing"]) {
+  it("agrees with the same-root rule, which moved on the same day", () => {
+    // The two rules stay separate -- scoring a word as its base has never been a
+    // claim that a puzzle may hold only one of them, and duplicate detection
+    // reads `baseForm` and submit.ts's own tier-1 ranking rather than anything
+    // here -- but the *spelling* claim is one claim, and both now make it from
+    // the same date. `refusedTenseStem` is the shared answer (see
+    // SAME_ROOT_DOUBLING_START, and same-root.test.ts for what moved).
+    //
+    // This test was written the other way round when the fold shipped a day
+    // ahead of the identity rule: "waning" scored as `wane` while a puzzle that
+    // had taken `wan` still refused it.
+    expect(sameRootKey("waning", BEFORE_DOUBLING)).toBe("wan");
+    for (const word of ["wane", "waned", "waning"]) {
+      expect(sameRootKey(word, ON_DOUBLING), `${word} keys on wane`).toBe("wane");
+    }
+    // And the words the spelling rule has no opinion about are untouched on both
+    // sides, which is what keeps this from being a claim about the whole stemmer.
+    for (const word of ["waiting", "offering", "wanning", "hopping", "tried", "busing"]) {
       expect(sameRootKey(word, ON_DOUBLING), `${word} keys as before`).toBe(
         sameRootKey(word, BEFORE_DOUBLING)
       );

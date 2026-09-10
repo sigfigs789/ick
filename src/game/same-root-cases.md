@@ -22,7 +22,10 @@ Source of truth:
 - [`inflection-scoring-cases.md`](inflection-scoring-cases.md) — the scoring sibling. Read it for what the shared spelling rules do.
 
 Active from the **2026-08-24** puzzle, gated on the puzzle date so archive play
-keeps the rules a drop was played with (`sameRootInflectionsActive`).
+keeps the rules a drop was played with (`sameRootInflectionsActive`). From the
+**2026-09-10** puzzle the readings English does not spell are dropped before tier
+1 is ranked, on its own gate (`sameRootDoublingActive`) — see the false-refusal
+section below.
 
 ---
 
@@ -34,7 +37,8 @@ keeps the rules a drop was played with (`sameRootInflectionsActive`).
    `-ed`/`-ing` strip swallowed. These all point at _the base of this word_, so
    the loser is a lookalike of the winner (`save` vs `sav`, `play` vs `playe`,
    `bath` vs `bathe`). Impossible readings are dropped first, not ranked — see
-   `impossibleNumberBase`.
+   `impossibleNumberBase` for `-ees`, and `refusedTenseStem`/`refusedEsStem` for
+   the doubling stems and the `-es` strips English writes as `-s` (2026-09-10 on).
 3. **Tier 2 — the stem-changing plurals**, only if tier 1 found nothing
    (`aardwolves` → `aardwolf`). Walling this tier off is what keeps `caves` from
    ever offering `cafe` and `saves` from ever offering `safe`.
@@ -60,18 +64,41 @@ did not, the restored `e` would win and `play`/`played` would come apart.
 The only class that matters. Anything here refuses a word a player is entitled
 to, and should be fixed before anything below it.
 
-**None known.** The one found during development is fixed: for a word ending in
-`-ees`, frequency preferred the two-letter strip (`devotees` → `devote`,
-`advisees` → `advise`, `bargees` → `barge`), refusing the plural to anyone who
-had found the verb. English adds `-s`, never `-es`, to a word already ending in
-`e`, so that reading is now dropped before ranking (`impossibleNumberBase`).
+**None known.** Two classes have been found and fixed, both the same bug: a
+reading English does not spell was ranked against the real one, and frequency
+preferred it because a short consonant stem is nearly always the commoner word.
+
+1. `-ees`, found during development: `devotees` → `devote`, `advisees` →
+   `advise`, `bargees` → `barge`, refusing the plural to anyone who had found the
+   verb. English adds `-s`, never `-es`, to a word already ending in `e`
+   (`impossibleNumberBase`).
+2. The general case, **fixed 2026-09-10** (`refusedTenseStem`, `refusedEsStem`,
+   gated by `sameRootDoublingActive`). Two endings, one claim:
+   - A stem whose own forms **double** their final consonant never took `-ed` or
+     `-ing` bare: `wan` conjugates as `wanning`, so `waning` → `wan` refused
+     `waning` to a player who had found `wan`. Also `biting` → `bit`, `caring` →
+     `car`, `themed` → `them`.
+   - A stem that would have taken **`-s`** never took `-es`: `ban` writes `bans`,
+     so `banes` → `ban` is not a reading. Also `stares` → `star`, `manes` →
+     `man`, `flues` → `flu`, `aides` → `aid`.
+   Both are refused only where the silent-`e` reading is itself a dictionary
+   word, so a spelling with no rival reading keeps the base it has (`busing` →
+   `bus`, `chating` → `chat`). 717 words were keyed on a spelling English does
+   not produce; none is now. Doing both endings at once is load-bearing: fixing
+   only the tense reading moves `baned` to `bane` while `banes` stays on `ban`,
+   which takes a paradigm apart.
+
+   One wrong pairing came with it and is pinned instead: `during` is the
+   preposition, not a tense of `dure`.
 
 **How to look for more.** The shape is a tier-1 candidate that is a _different
-lemma_ rather than a lookalike, and it will almost always be the two-letter `-es`
-strip landing on a shorter real word. To audit, list the words whose key is the
-two-letter strip while the one-letter strip is also a dictionary word, and read
-down by frequency gap — 305 words fit that shape today, mostly harmless
-(`bathes` → `bath`), and the `-ee` agent nouns were the harmful subset.
+lemma_ rather than a lookalike. The two families above were the mechanical ones;
+what is left is where the spelling genuinely allows both readings and only
+knowledge of the word separates them — `bathes`/`bathing` really could be `bath`
+or `bathe`, and frequency picks `bath`. To audit, list the words whose key is the
+two-letter `-es` strip or a bare tense stem while the `-e` spelling is also a
+dictionary word, and read down by frequency gap; after 2026-09-10 every one of
+those left is a stem the ending _could_ have been added to.
 
 ---
 
@@ -83,16 +110,20 @@ order of how likely a player is to hit one.
 
 | #   | Leak                                                                                                                                                                                                   | Count                    | Example                                                                                                                |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| 1   | An `e`-final word stays playable beside its own paradigm, because the paradigm keys on the consonant stem that frequency prefers                                                                       | 850                      | `bathe` + `bathing`/`bathes` (both key on `bath`); `aide` + `aides` (on `aid`)                                         |
+| 1   | An `e`-final word stays playable beside its own paradigm, because the paradigm keys on the consonant stem that frequency prefers                                                                       | 850, less the 756 pairs 2026-09-10 collapsed | What is left is where the bare stem is a spelling the ending really could have been added to: `bathe` + `bathing`/`bathes`, both still on `bath`; `abase` + `abases`, on the sibilant stem `abas` |
+| 1b  | The other side of that repair: a paradigm can still split where only _one_ of its endings has an impossible reading, so the form that can move does and the rest stay behind                            | inside the 2,254 splits  | `antes` (→ `ante`) + `anted` (→ `ant`, a spelling `ant` really could take); `stampedes` + `stampeding`                  |
 | 2   | Irregular plurals whose `-ve`/`-ce` variant spelling is itself curated, so tier 1 settles on the variant and tier 2 is never reached. The plurals a player meets are pinned; the technical tail is not | ~370, 17 pinned          | pinned: `wolves`, `knives`, `indices`, `crises`. Unpinned: `dialyses`/`dialysis`, `fibroses`/`fibrosis`, `plasmolyses` |
 | 3   | A curated truncation keeps its own key while its paradigm moves to the full spelling                                                                                                                   | part of the 2,501 splits | `ach` + `ached`; `advocat` + `advocated`                                                                               |
 | 4   | Same-root pairs with no dictionary word between them, keying on themselves                                                                                                                             | small                    | `broadleaved` + `broadleaves`; `hooved` + `hooves`                                                                     |
 | 5   | Scoring families duplicate detection does not read at all (see below)                                                                                                                                  | —                        | `bureau` + `bureaux`; `physiology` + `physiologist`                                                                    |
 
-Leak 1 is the one to revisit first if this ever feels too loose. Note that
-"fixing" it by preferring the `e`-spelling was tried and is worse: it split
-`bathes` from `bathing` and 3,000 more pairs, because the two forms then answered
-the ending differently.
+Leak 1 was the one to revisit first, and 2026-09-10 is that revisit — done the
+narrow way, because the broad way had already been tried and was worse:
+preferring the `e`-spelling outright split `bathes` from `bathing` and 3,000 more
+pairs, since the two forms then answered the ending differently. Refusing only
+the readings English does not spell leaves both of those on `bath` and moves the
+756 pairs where the bare stem was never a reading at all. Leak 1b is what that
+costs, and it is a leak rather than a refusal.
 
 ---
 
@@ -135,6 +166,16 @@ stay the exact union of `decisiveNumberCandidates` and
 silently changes. `restoredTenseCandidates` covers the same ground as
 `tenseBaseForm` for the tense endings and is _not_ generated from it — if
 scoring's tense rules move, check this one by hand.
+
+**The two refusals are not symmetric across the two systems.**
+`refusedTenseStem` is read by both — the fold from 2026-09-10 (see
+DOUBLING_TENSE_START) and identity from the same date — so a change to it moves
+scores as well as keys. `refusedEsStem` is identity-only: scoring reaches the
+nine worst `-es` folds through reviewed fold exemptions (`bares` → `bar`,
+`stares` → `star` and seven more) and retiring those in favour of the rule is a
+separate cutover with its own review. Until then the two systems disagree about
+`banes`, which is allowed (see the note on `score-overrides.json` below) but is
+worth knowing when reading a fold explanation beside a same-root verdict.
 
 **The pins file is not mirrored** in `scripts/manage-extra-word.py`. That mirror
 exists for the _scoring_ folds only; the audit skills never ask about identity.
