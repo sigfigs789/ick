@@ -170,12 +170,37 @@ scoring's tense rules move, check this one by hand.
 **The two refusals are not symmetric across the two systems.**
 `refusedTenseStem` is read by both — the fold from 2026-09-10 (see
 DOUBLING_TENSE_START) and identity from the same date — so a change to it moves
-scores as well as keys. `refusedEsStem` is identity-only: scoring reaches the
-nine worst `-es` folds through reviewed fold exemptions (`bares` → `bar`,
-`stares` → `star` and seven more) and retiring those in favour of the rule is a
-separate cutover with its own review. Until then the two systems disagree about
-`banes`, which is allowed (see the note on `score-overrides.json` below) but is
-worth knowing when reading a fold explanation beside a same-root verdict.
+scores as well as keys. `refusedEsStem` is **identity-only, and stays that way.**
+
+Moving it to the fold as well looks like the obvious cleanup — it would retire
+nine hand-written exemptions that say by hand what it says mechanically (`bares`
+is "the plural of `bare`, not `bar`", and eight more). It was tried, measured,
+and abandoned: it promoted **613 words, 106 to Mythic or better and 29 to
+Legend.** The rule is about _modern_ spelling, and `-es` was the regular ending
+in Early Modern English, which this dictionary carries hundreds of spellings
+from. For those the two-letter strip is the _right_ reading and the rule cuts
+them off the everyday word they are a spelling of:
+
+| word      | folded to      | rule sends it to  | score          |
+| --------- | -------------- | ----------------- | -------------- |
+| `yeares`  | `year` (5.96)  | `yeare` (1.16)    | 2.98 → 9.69 ⛔ |
+| `breakes` | `break` (5.18) | `breake` (1.19)   | 4.13 → 9.65 ⛔ |
+| `lookes`  | `look` (5.81)  | `looke` (1.72)    | 3.20 → 8.94 ⛔ |
+| `workes`  | `work` (5.96)  | `worke` (1.82)    | 2.98 → 8.81 ⛔ |
+
+60 words went from a Zipf-4-or-commoner cap to a sub-2 base like that. Nothing
+in the letters separates them from the nine: `bare`/`bar` and `yeare`/`year` are
+the same shape, one a different word and one a variant spelling. **This family is
+review's to keep** — nine exemptions is the rule being missing for identity, not
+for scoring.
+
+The asymmetry at the top of this file is the whole reason the same rule is right
+here and wrong there. A key's mistake refuses a legitimate word, so dropping a
+reading costs at worst a leak; a fold's mistake is a score, and telling a player
+that an archaic spelling of `year` is a Mythic is not a cheap mistake. The two
+systems therefore disagree about `banes` (key `bane`, folded onto `ban`), which
+is allowed — see the note on `score-overrides.json` below — but worth knowing
+when reading a fold explanation beside a same-root verdict.
 
 **The pins file is not mirrored** in `scripts/manage-extra-word.py`. That mirror
 exists for the _scoring_ folds only; the audit skills never ask about identity.

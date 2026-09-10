@@ -1687,11 +1687,24 @@ export function mostCommonSameRootBase(
  * of `advisee`, never an "-es" form of `advise`). This generalises it, and the
  * old predicate stays as it is because it runs for archived puzzles too.
  *
- * Duplicate detection only, for now. Scoring reaches the same nine worst folds
- * through reviewed fold exemptions (`bares` -> `bar`, `stares` -> `star`,
- * `fares` -> `far` and six more); retiring those in favour of this rule is the
- * obvious follow-up, and it needs its own cutover and its own review of what
- * moves.
+ * Duplicate detection only, and permanently so. Scoring reaches the same nine
+ * worst folds through reviewed fold exemptions (`bares` -> `bar`, `stares` ->
+ * `star`, `fares` -> `far` and six more), and retiring those in favour of this
+ * rule was tried and abandoned: the rule is a rule about *modern* spelling, and
+ * "-es" was the regular ending in Early Modern English, which this dictionary
+ * carries hundreds of spellings from. On the fold it promoted 613 words, 106 to
+ * Mythic or better and 29 to Legend, because it cut every one of those off the
+ * everyday word it is a spelling of: "yeares" 2.98 -> 9.69 as `yeare` rather
+ * than `year`, "workes" -> `worke`, "lookes" -> `looke`, "breakes" 4.13 -> 9.65.
+ * 60 words went from a Zipf-4-or-commoner cap to a sub-2 base.
+ *
+ * Nothing in the letters separates those from the nine: `bare`/`bar` and
+ * `yeare`/`year` are the same shape, one a different word and one a variant
+ * spelling, so this family is review's to keep. What makes the same rule safe
+ * here is the asymmetry this file's same-root section is built on -- a key's
+ * mistake refuses a legitimate word, so the leak a wrong refusal-of-a-reading
+ * costs is the cheaper error; a fold's mistake is a score, and handing an
+ * archaic spelling of `year` a Mythic is not cheap. See same-root-cases.md.
  */
 export function refusedEsStem(word: string): string | undefined {
   const w = word.toLowerCase();
