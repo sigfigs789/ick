@@ -699,7 +699,9 @@ export function LeaderboardPage() {
                 // the live board's plaque makes about the week before it, one
                 // window along, and on the turnover day the two name the same
                 // player with the same caveat.
-                champion={weekIsLive ? boards.lastWeek : championOf(boards.weekly)}
+                champion={
+                  weekIsLive ? boards.lastWeek : championOf(boards.weekly)
+                }
                 championLabel={weekIsLive ? "Last week's champion" : "Champion"}
                 // The day this plaque goes final, whichever week it ends up
                 // naming: weeks close on Saturday and are settled everywhere by
@@ -763,7 +765,9 @@ export function LeaderboardPage() {
                   monthIsLive ? boards.lastMonth : championOf(boards.monthly)
                 }
                 championLabel={
-                  monthIsLive ? `${previousMonthName(today)}'s champion` : "Champion"
+                  monthIsLive
+                    ? `${previousMonthName(today)}'s champion`
+                    : "Champion"
                 }
                 // The same, one window up: months close on the last and are
                 // settled everywhere by the 2nd, so a monthly champion is
@@ -1482,16 +1486,20 @@ function ChampionPending({ crowning }: { crowning: string }) {
 /**
  * One player's row: who they are, how much they played, and what it added up to.
  *
- * The row used to carry the player's best find inside the board's window --
- * `quixotic 7.9` beside the count. It is held back for now, and the reason is
- * about the number rather than the word: a find is shown with what it scored,
- * and the scoring system is still being corrected, so a word that reads as a 7.9
- * today may not tomorrow. A leaderboard is the wrong place to publish a number
- * that moves. The words themselves are still on the page, under Today's finds,
- * where they are the day's finds rather than a claim about a player.
+ * Under the total sits their best single find inside the board's window -- a
+ * bare number, no word and no label. The total says how much a week of playing
+ * came to, which rewards turning up every day; the number under it says how good
+ * the best day *was*, which is the other thing a player wants to be measured on,
+ * and the two read as one column of scores rather than as a score and a caption.
  *
- * The server still sends the find (`windowWord`), and the client still prices it
- * -- putting it back is this component and nothing else.
+ * The word itself is not here on purpose. It is the day's find under Today's
+ * finds, where it belongs to the day; on a row it would be a claim about a
+ * player, and it would need its own name-length column in a row that already
+ * wraps long names.
+ *
+ * Zero means the find is a word today's dictionary no longer prices and the row
+ * arrived without a stored frequency (see `scoreOf`). That is a gap rather than
+ * a result, so the line is left off instead of reading "0.0".
  */
 function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
   return (
@@ -1505,6 +1513,16 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
         {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"}
       </span>
       <span className="leaderboard__score">{entry.score.toFixed(1)}</span>
+      {entry.windowScore > 0 && (
+        <span className="leaderboard__best">
+          {/* Two numbers stacked in one column are told apart by their size and
+              their position, which says nothing to a reader who gets the row as
+              a sentence -- so the second one is named to them and to nobody
+              else. */}
+          <span className="sr-only">best find </span>
+          {entry.windowScore.toFixed(1)}
+        </span>
+      )}
     </li>
   );
 }

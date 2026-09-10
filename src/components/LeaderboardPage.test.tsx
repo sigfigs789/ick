@@ -208,6 +208,51 @@ describe("the leaderboard page", () => {
     expect(monthly[0]).toHaveTextContent("310.5");
   });
 
+  it("puts each player's best find in the window under their total", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    // Two numbers on the row, and they answer different questions: 41.2 is a
+    // week of playing added up, 8.1 is how good the best day in it was.
+    // `quixotic` is Alice's find this week, and it is priced from the
+    // dictionary here rather than from the `windowZipf` the row carried, so
+    // everyone holding the word shows the same number.
+    expect(boardRows("This week")[0]).toHaveTextContent("41.2");
+    expect(boardRows("This week")[0]).toHaveTextContent("8.1");
+    // The same player's best over the month is a different find, so the two
+    // boards do not simply repeat one number.
+    expect(boardRows(MONTH_BOARD)[1]).toHaveTextContent("8.4");
+
+    // The word itself stays off the row. It is on the page under Today's finds,
+    // where it belongs to the day rather than standing as a claim about a
+    // player -- and unlabelled numbers are what the column is.
+    expect(boardRows("This week")[0]).not.toHaveTextContent("quixotic");
+  });
+
+  it("leaves the line off a find today's dictionary cannot price", async () => {
+    stubFetch({
+      ...OPEN,
+      weekly: [
+        {
+          rank: 1,
+          playerId: ALICE,
+          // A word the dictionary has since dropped, on a row stored before
+          // frequencies were kept: there is no score to show, and "0.0" would
+          // read as a result rather than as the gap it is.
+          windowWord: "zzzzzzzz",
+          score: 41.2,
+          puzzles: 5,
+        },
+      ],
+    });
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(1));
+    expect(boardRows("This week")[0]).toHaveTextContent("41.2");
+    expect(boardRows("This week")[0]).not.toHaveTextContent("0.0");
+  });
+
   it("names last week's champion under the weekly board, and last month's under the monthly one", async () => {
     // Midweek, where both windows closed days ago and both plaques are final.
     onDay(MIDWEEK);
@@ -1545,18 +1590,24 @@ describe("stepping the boards through past windows", () => {
       [`${LAST_WEEK}/${THIS_MONTH}`]: { weekly: rowFor(BOB, 33.1) },
     });
     render(<LeaderboardPage />);
-    await waitFor(() => expect(screen.getByText(handleFor(ALICE))).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText(handleFor(ALICE))).toBeTruthy(),
+    );
 
     fireEvent.click(step("Previous week"));
 
     // The heading moves with the rows: a window's standings must never sit
     // under the name of a different window.
     await waitFor(() =>
-      expect(screen.getByRole("region", { name: "Week of Aug 16" })).toBeTruthy(),
+      expect(
+        screen.getByRole("region", { name: "Week of Aug 16" }),
+      ).toBeTruthy(),
     );
     // Read from the row rather than from the board, which also carries the
     // champion's name on the plaque under it.
-    expect(boardRows("Week of Aug 16")[0].textContent).toContain(handleFor(BOB));
+    expect(boardRows("Week of Aug 16")[0].textContent).toContain(
+      handleFor(BOB),
+    );
     expect(screen.queryByText(handleFor(ALICE))).toBeNull();
 
     // And forward, back to the window the page opened on.
@@ -1581,7 +1632,9 @@ describe("stepping the boards through past windows", () => {
       },
     });
     render(<LeaderboardPage />);
-    await waitFor(() => expect(screen.getByText(handleFor(ALICE))).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText(handleFor(ALICE))).toBeTruthy(),
+    );
 
     fireEvent.click(step("Previous month"));
 
@@ -1625,11 +1678,15 @@ describe("stepping the boards through past windows", () => {
       [`${LAST_WEEK}/${THIS_MONTH}`]: { weekly: rowFor(BOB, 33.1) },
     });
     render(<LeaderboardPage />);
-    await waitFor(() => expect(screen.getByText(handleFor(ALICE))).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText(handleFor(ALICE))).toBeTruthy(),
+    );
 
     fireEvent.click(step("Previous week"));
     await waitFor(() =>
-      expect(screen.getByRole("region", { name: "Week of Aug 16" })).toBeTruthy(),
+      expect(
+        screen.getByRole("region", { name: "Week of Aug 16" }),
+      ).toBeTruthy(),
     );
 
     // A week that has finished is its own answer: the board is the final
@@ -1649,11 +1706,15 @@ describe("stepping the boards through past windows", () => {
       "2026-08-23/2026-08-01": { weekly: rowFor(BOB, 33.1) },
     });
     render(<LeaderboardPage />);
-    await waitFor(() => expect(screen.getByText(handleFor(ALICE))).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText(handleFor(ALICE))).toBeTruthy(),
+    );
 
     fireEvent.click(step("Previous week"));
     await waitFor(() =>
-      expect(screen.getByRole("region", { name: "Week of Aug 23" })).toBeTruthy(),
+      expect(
+        screen.getByRole("region", { name: "Week of Aug 23" }),
+      ).toBeTruthy(),
     );
 
     // The board a reader stepped back to is the same window the live board's
@@ -1677,13 +1738,13 @@ describe("stepping the boards through past windows", () => {
     fireEvent.click(step("Previous week"));
     fireEvent.click(step("Previous week"));
     await waitFor(() =>
-      expect(screen.getByRole("region", { name: "Week of Aug 16" })).toBeTruthy(),
+      expect(
+        screen.getByRole("region", { name: "Week of Aug 16" }),
+      ).toBeTruthy(),
     );
 
     // A week that closed a week ago is closed everywhere, whatever today is.
-    expect(
-      within(plaque("Week of Aug 16")).queryByRole("button"),
-    ).toBeNull();
+    expect(within(plaque("Week of Aug 16")).queryByRole("button")).toBeNull();
   });
 
   it("holds the board's height while another window loads, and leaves the other board alone", async () => {
@@ -1695,7 +1756,9 @@ describe("stepping the boards through past windows", () => {
       },
     });
     render(<LeaderboardPage />);
-    await waitFor(() => expect(screen.getByText(handleFor(ALICE))).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText(handleFor(ALICE))).toBeTruthy(),
+    );
 
     // The next boards request hangs, so the step can be looked at mid-flight.
     const answered = fetchMock.getMockImplementation()!;
@@ -1740,14 +1803,18 @@ describe("stepping the boards through past windows", () => {
       { fail: `${LAST_WEEK}/${THIS_MONTH}` },
     );
     render(<LeaderboardPage />);
-    await waitFor(() => expect(screen.getByText(handleFor(ALICE))).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText(handleFor(ALICE))).toBeTruthy(),
+    );
 
     fireEvent.click(step("Previous week"));
 
     // Named for the board it belongs to: the page carries three retries now.
     await waitFor(() =>
       expect(
-        screen.getByRole("button", { name: "Try loading the week board again" }),
+        screen.getByRole("button", {
+          name: "Try loading the week board again",
+        }),
       ).toBeTruthy(),
     );
     // The failure is that board's, not the page's: the month is untouched and

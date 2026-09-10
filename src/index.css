@@ -2111,7 +2111,8 @@ h2 {
 }
 /* Rank and score are fixed columns; the name takes what is left and the meta
    line tucks under it, so a long name truncates instead of shoving the score
-   off the row. */
+   off the row. The second line runs the same three columns as the first, so the
+   best find lands under the total and the count under the name. */
 .leaderboard__row {
   display: grid;
   /* Wide enough for three digits: the row below the cut carries a real rank, and
@@ -2119,7 +2120,7 @@ h2 {
   grid-template-columns: 2.1rem minmax(0, 1fr) auto;
   grid-template-areas:
     "rank name score"
-    ".    meta meta";
+    ".    meta best";
   align-items: baseline;
   column-gap: 0.5rem;
   padding: 0.45rem 0.4rem;
@@ -2230,12 +2231,6 @@ h2 {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-/* The find in a row's detail line: weighted a little so the word reads as a
-   word next to the count and the number, but still plainly secondary to the
-   name above it. */
-.leaderboard__find {
-  font-weight: 700;
-}
 /*
  * The mark on your own row: a filled pill rather than faint text.
  *
@@ -2273,6 +2268,26 @@ h2 {
   grid-area: score;
   font-family: var(--font-display);
   font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+/*
+ * Their best single find in the window, tucked under the total.
+ *
+ * The count's own weight and colour -- the two second-line entries are the same
+ * kind of thing, a detail about the row rather than its headline, and setting
+ * one louder than the other would make the reader work out which. Right-aligned
+ * so it hangs off the total's last digit and the eye reads one column of
+ * numbers down the board, tabular for the same reason.
+ *
+ * It never widens the column: this tops out at `10.0` and is set smaller than
+ * the total above it, which is already three or four digits by the time a board
+ * has a week in it. So nothing here can squeeze the name.
+ */
+.leaderboard__best {
+  grid-area: best;
+  justify-self: end;
+  color: var(--fg-faint);
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
 /*
