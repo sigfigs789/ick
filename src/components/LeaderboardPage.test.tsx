@@ -688,16 +688,25 @@ describe("the leaderboard page", () => {
     expect(rowMeta("This week", 1)).toContain("3 puzzles");
   });
 
-  it("says what the number on the right of every row is", async () => {
+  it("says what both numbers on the right of every row are", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
     // One header per board, over the column it labels. Every other figure on a
-    // row says what it is in words; the score, which is what the board is
+    // row says what it is in words; the scores, which are what the board is
     // ranked by, had been left to be inferred.
     await waitFor(() =>
       expect(screen.getAllByText("Total score")).toHaveLength(2),
     );
+    // And the second figure in the same column gets the same treatment -- an
+    // unlabelled number under a labelled one reads as a second total.
+    expect(screen.getAllByText("Best find")).toHaveLength(2);
+
+    // Stacked in the order the figures are, so the mapping is read straight
+    // down rather than guessed. Asserted on the header's own text, since which
+    // label belongs to which number is the whole point of the two lines.
+    const header = screen.getAllByText("Total score")[0].parentElement;
+    expect(header).toHaveTextContent(/^Total score\s*Best find$/);
   });
 
   it("marks the player's own row on both boards", async () => {

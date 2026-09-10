@@ -1252,12 +1252,22 @@ function Board({
         <p className="leaderboard__status">{emptyMessage}</p>
       ) : (
         <>
-          {/* What the big number on the right is. Every other figure on the row
-              says what it is in words -- "1 puzzle" -- and the score, the one
+          {/* What the numbers on the right are. Every other figure on the row
+              says what it is in words -- "1 puzzle" -- and the scores, the ones
               the board is actually ranked by, said nothing at all: a reader had
-              to infer 221.3 from context. One label over the column it belongs
-              to, above the rule, is the whole fix. */}
-          <p className="leaderboard__columns">Total score</p>
+              to infer 221.3 from context. One label over the column they belong
+              to, above the rule, is the whole fix.
+
+              Stacked in the order the numbers under it are stacked, so which
+              label goes with which figure is a matter of reading straight down
+              rather than of guessing. Two labels on one line would fit, and
+              would leave a reader mapping left-to-right onto top-to-bottom --
+              which is the confusion this is here to end, not a smaller version
+              of it. */}
+          <p className="leaderboard__columns">
+            <span>Total score</span>
+            <span>Best find</span>
+          </p>
           {/* Five rows of the fifteen, and the rest scrolled to.
               A board that runs its full length pushes the next section off the
               screen entirely, so the page reads as one column of names with
