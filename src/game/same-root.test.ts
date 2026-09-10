@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import dictionaryWords from "../data/dictionary.json";
 import sameRootPins from "../data/same-root-pins.json";
 import { evaluateSubmission, sameRootKey } from "./submit";
-import { isDictionaryWord, isValidWord } from "./dictionary";
+import { isDictionaryWord, isValidWord, refusedEsStem, refusedTenseStem } from "./dictionary";
 import {
   decisiveNumberCandidates,
   inflectionalBaseCandidates,
@@ -242,6 +242,175 @@ describe("invariants across the whole dictionary", () => {
     for (const word of WORDS) {
       const key = sameRootKey(word, AFTER);
       expect(sameRootKey(key, AFTER), word).toBe(key);
+    }
+  });
+});
+
+// The 2026-09-10 cutover: the readings English does not spell are dropped before
+// tier 1 is ranked, rather than ranked and usually preferred. Two endings, one
+// claim -- see SAME_ROOT_DOUBLING_START in dictionary.ts, and `refusedTenseStem`
+// and `refusedEsStem` for the spelling arguments.
+describe("the readings English does not spell (from 2026-09-10)", () => {
+  const BEFORE_SPELLING = "2026-09-09";
+  const ON_SPELLING = "2026-09-10";
+
+  it("stops refusing a word that is not a form of what a player found", () => {
+    // The class this exists for, and the worst kind of bug this file can have:
+    // each pair is two different words, and the second was refused to anyone who
+    // had found the first. "wan" conjugates as "wanning", so "waning" was never
+    // its participle; "ban" writes "bans", so "banes" was never its plural.
+    for (const [found, refused, drop] of [
+      ["wan", "waning", "ANI"],
+      ["wan", "waned", "ANE"],
+      ["ban", "banes", "ANE"],
+      ["bit", "biting", "TIN"],
+      ["star", "stares", "TAR"],
+      ["man", "manes", "ANE"],
+      ["flu", "flues", "LUE"],
+    ] as const) {
+      expect(allowed(found, refused, drop, BEFORE_SPELLING), `${refused} before`).toBe(false);
+      expect(allowed(found, refused, drop, ON_SPELLING), `${refused} after`).toBe(true);
+    }
+  });
+
+  it("puts the paradigm back together on the -e spelling", () => {
+    // The other side of the same move: the forms that were keyed on an unrelated
+    // stem rejoin the lemma they belong to, so a puzzle stops taking two of them.
+    for (const [lemma, form, drop] of [
+      ["wane", "waning", "ANI"],
+      ["bane", "banes", "ANE"],
+      ["flue", "flues", "LUE"],
+      ["hone", "honed", "ONE"],
+      ["kite", "kiting", "ITI"],
+      ["spine", "spines", "PIN"],
+    ] as const) {
+      expect(allowed(lemma, form, drop, BEFORE_SPELLING), `${form} before`).toBe(true);
+      expect(allowed(lemma, form, drop, ON_SPELLING), `${form} after`).toBe(false);
+    }
+    // The whole `wane` paradigm on one key and the whole `wan` paradigm on
+    // another -- two verbs that share a spelling of the stem and nothing else.
+    for (const word of ["wane", "waned", "wanes", "waning"]) {
+      expect(sameRootKey(word, ON_SPELLING), word).toBe("wane");
+    }
+    for (const word of ["wan", "wanned", "wanning", "wans"]) {
+      expect(sameRootKey(word, ON_SPELLING), word).toBe("wan");
+    }
+  });
+
+  it("keys no word on a reading its own spelling rules out", () => {
+    // The change, over the dictionary rather than on the samples above: 717
+    // words were keyed on a spelling English does not produce, and none is now.
+    const refusedFor = (word: string) =>
+      [refusedTenseStem(word), refusedEsStem(word)].filter((stem) => stem !== undefined);
+    const keyedOnRefused = (date: string) =>
+      WORDS.filter((word) => refusedFor(word).includes(sameRootKey(word, date)));
+    expect(keyedOnRefused(ON_SPELLING)).toEqual([]);
+    expect(keyedOnRefused(BEFORE_SPELLING)).toHaveLength(717);
+  });
+
+  it("settles every pair it newly refuses on an -e word", () => {
+    // What the repair looks like in aggregate: 756 pairs collapse, and every one
+    // lands on the silent-"e" spelling -- the reading that was there all along
+    // and losing to frequency. Nothing collapses onto a consonant stem, which is
+    // what would signal the filter had eaten a legitimate reading instead.
+    const before = new Map(WORDS.map((word) => [word, sameRootKey(word, BEFORE_SPELLING)]));
+    const after = new Map(WORDS.map((word) => [word, sameRootKey(word, ON_SPELLING)]));
+    const groups = new Map<string, string[]>();
+    for (const word of WORDS) {
+      const key = after.get(word)!;
+      groups.set(key, [...(groups.get(key) ?? []), word]);
+    }
+    let collapsed = 0;
+    const onConsonant: string[] = [];
+    for (const [key, words] of groups) {
+      for (let i = 0; i < words.length; i++) {
+        for (let j = i + 1; j < words.length; j++) {
+          if (before.get(words[i]) === before.get(words[j])) continue;
+          collapsed++;
+          if (!key.endsWith("e")) onConsonant.push(`${words[i]}+${words[j]} on ${key}`);
+        }
+      }
+    }
+    expect(onConsonant).toEqual([]);
+    expect(collapsed).toBe(756);
+  });
+
+  it("splits only pairs that met on a spelling neither word has", () => {
+    // A leak, and the safe direction as everywhere else in this file -- but the
+    // shape is worth pinning. No rule here strips a final "e", so an "-e" lemma
+    // always keys on itself, which means it was *already* apart from every form
+    // that keyed on the consonant stem. Anything moving onto the lemma is
+    // therefore a repair, and the pairs that come apart are pairs that only ever
+    // met on the bogus key: "ant" + "antes", "stamp" + "stampedes", "aid" +
+    // "aides". 2,254 of them, against 756 repaired.
+    const before = new Map(WORDS.map((word) => [word, sameRootKey(word, BEFORE_SPELLING)]));
+    const after = new Map(WORDS.map((word) => [word, sameRootKey(word, ON_SPELLING)]));
+    const groups = new Map<string, string[]>();
+    for (const word of WORDS) {
+      const key = before.get(word)!;
+      groups.set(key, [...(groups.get(key) ?? []), word]);
+    }
+    let split = 0;
+    for (const words of groups.values()) {
+      for (let i = 0; i < words.length; i++) {
+        for (let j = i + 1; j < words.length; j++) {
+          if (after.get(words[i]) !== after.get(words[j])) split++;
+        }
+      }
+    }
+    expect(split).toBe(2254);
+    expect(WORDS.filter((word) => before.get(word) !== after.get(word))).toHaveLength(744);
+  });
+
+  it("keeps the reading English does spell, however common the rival", () => {
+    // The rule is a spelling test, not a preference for the "-e" word, and these
+    // are where the difference shows. A doubled stem ("hopped") and a stem with
+    // a consonant cluster or two vowels ("bathing", "waiting") really can take
+    // the ending bare, so the bare stem stays a candidate and frequency still
+    // decides -- which is what keeps "bathes" and "bathing" answering alike.
+    for (const [word, key] of [
+      ["hopped", "hop"],
+      ["played", "play"],
+      ["bathes", "bath"],
+      ["bathing", "bath"],
+      ["waiting", "wait"],
+      ["offering", "offer"],
+      ["glasses", "glass"],
+      ["boxes", "box"],
+      ["potatoes", "potato"],
+      ["taxies", "taxi"],
+      ["clothes", "cloth"],
+      ["advisees", "advisee"],
+      ["grapes", "grape"],
+      ["graps", "grap"],
+    ] as const) {
+      expect(sameRootKey(word, ON_SPELLING), word).toBe(key);
+      expect(sameRootKey(word, ON_SPELLING), `${word} unmoved`).toBe(
+        sameRootKey(word, BEFORE_SPELLING)
+      );
+    }
+  });
+
+  it("keeps `during` off the verb it descends from", () => {
+    // The one wrong pairing the rule creates, and it takes a review: "during" is
+    // the preposition, and with `dur` refused the only reading left is `dure`,
+    // the archaic verb. The pin keeps them two finds. Scoring exempts the same
+    // word for the same reason (see fold-exemptions.json).
+    expect(sameRootKey("during", ON_SPELLING)).toBe("during");
+    expect(sameRootKey("dure", ON_SPELLING)).toBe("dure");
+    expect(allowed("dure", "during", "UR", ON_SPELLING)).toBe(true);
+  });
+
+  it("leaves archived puzzles keyed as they were played", () => {
+    expect(sameRootKey("waning", BEFORE_SPELLING)).toBe("wan");
+    expect(sameRootKey("banes", BEFORE_SPELLING)).toBe("ban");
+    expect(allowed("wan", "waning", "ANI", "2026-08-24")).toBe(false);
+  });
+
+  it("still reaches a fixed point", () => {
+    for (const word of WORDS) {
+      const key = sameRootKey(word, ON_SPELLING);
+      expect(sameRootKey(key, ON_SPELLING), word).toBe(key);
     }
   });
 });

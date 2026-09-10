@@ -1629,6 +1629,14 @@ export function boundBaseFormsActive(date?: string): boolean {
 // with when it was current, and the score somebody posted for it stays
 // reachable. Only forward puzzles get the tighter rule.
 const SAME_ROOT_INFLECTION_START = "2026-08-24";
+// The date the same-root rule stopped reading an "-ed"/"-ing" ending as a stem
+// English would have doubled, so "waning" keys on `wane` rather than on `wan`
+// (see `refusedTenseStem`). Its own constant rather than a reuse of the scoring
+// cutover on the same day: scoring a word as its base has never been a claim
+// that a puzzle may hold only one of them, and the two rules have moved
+// separately every time so far. Gated on the puzzle date like the widening
+// above, so an archived drop keeps the verdicts it was played with.
+const SAME_ROOT_DOUBLING_START = "2026-09-10";
 
 /**
  * Whether the curated dictionary has `word` at all, playable or not. Duplicate
@@ -1655,9 +1663,68 @@ export function mostCommonSameRootBase(
   return mostCommonBase(candidates, word, scoringFor(date));
 }
 
+/**
+ * The one spelling an "-es" ending does *not* offer as a base: the two-letter
+ * strip, where the stem could not have taken "-es" in the first place and the
+ * one-letter strip is a dictionary word. "banes" is `bane` + "-s"; `ban` would
+ * have written "bans", so `ban` is not a reading of this spelling at all.
+ *
+ * English writes "-es" onto a sibilant and "-s" onto everything else, so the
+ * stem's last letter decides it: "s", "x", "z" and "h" take the ending
+ * ("glasses", "boxes", "buzzes", "churches"), and so do the "-o" and "-i" words
+ * that keep a vowel before it ("goes", "heroes", "taxies"). Every other letter
+ * is a strip English never produces -- and the two-letter strip is offered
+ * unconditionally, so frequency picked it wherever the residue happened to be a
+ * word, which for a CVC monosyllable it usually is: "bites" keyed on `bit`,
+ * "banes" on `ban`, "cares" on `car`, "hopes" on `hop`.
+ *
+ * The same conservatism as `refusedTenseStem`: only refused where the one-letter
+ * strip is itself a word, so this moves a reading between two spellings of one
+ * ending and never leaves a word with no base at all.
+ *
+ * `impossibleNumberBase` in stem.ts is this rule for the single case of "-ees",
+ * written when it was the only one anybody had traced ("advisees" is the plural
+ * of `advisee`, never an "-es" form of `advise`). This generalises it, and the
+ * old predicate stays as it is because it runs for archived puzzles too.
+ *
+ * Duplicate detection only, and permanently so. Scoring reaches the same nine
+ * worst folds through reviewed fold exemptions (`bares` -> `bar`, `stares` ->
+ * `star`, `fares` -> `far` and six more), and retiring those in favour of this
+ * rule was tried and abandoned: the rule is a rule about *modern* spelling, and
+ * "-es" was the regular ending in Early Modern English, which this dictionary
+ * carries hundreds of spellings from. On the fold it promoted 613 words, 106 to
+ * Mythic or better and 29 to Legend, because it cut every one of those off the
+ * everyday word it is a spelling of: "yeares" 2.98 -> 9.69 as `yeare` rather
+ * than `year`, "workes" -> `worke`, "lookes" -> `looke`, "breakes" 4.13 -> 9.65.
+ * 60 words went from a Zipf-4-or-commoner cap to a sub-2 base.
+ *
+ * Nothing in the letters separates those from the nine: `bare`/`bar` and
+ * `yeare`/`year` are the same shape, one a different word and one a variant
+ * spelling, so this family is review's to keep. What makes the same rule safe
+ * here is the asymmetry this file's same-root section is built on -- a key's
+ * mistake refuses a legitimate word, so the leak a wrong refusal-of-a-reading
+ * costs is the cheaper error; a fold's mistake is a score, and handing an
+ * archaic spelling of `year` a Mythic is not cheap. See same-root-cases.md.
+ */
+export function refusedEsStem(word: string): string | undefined {
+  const w = word.toLowerCase();
+  if (w.length <= 4 || !w.endsWith("es")) return undefined;
+  const stem = w.slice(0, -2);
+  if (/[sxzhoi]$/.test(stem)) return undefined;
+  return WORD_INDEX.has(w.slice(0, -1)) ? stem : undefined;
+}
+
 /** Whether the widened same-root inflections apply to `date`'s puzzle. */
 export function sameRootInflectionsActive(date?: string): boolean {
   return date === undefined || date >= SAME_ROOT_INFLECTION_START;
+}
+
+/**
+ * Whether `date`'s puzzle refuses the doubling stem as a same-root key (see
+ * SAME_ROOT_DOUBLING_START).
+ */
+export function sameRootDoublingActive(date?: string): boolean {
+  return date === undefined || date >= SAME_ROOT_DOUBLING_START;
 }
 
 /**
@@ -2661,19 +2728,34 @@ function mostCommonBase(
  * these can only ever pull a word toward common.
  */
 /**
- * The one spelling `word`'s tense ending does *not* offer as a base, under
- * `date`'s system: the bare stem of an "-ed"/"-ing" ending whose own forms
- * double their final consonant, where the silent-"e" reading is a dictionary
- * word. Undefined -- nothing blocked -- for every other word.
+ * The one spelling `word`'s tense ending does *not* offer as a base: the bare
+ * stem of an "-ed"/"-ing" ending whose own forms double their final consonant,
+ * where the silent-"e" reading is a dictionary word. Undefined -- nothing
+ * refused -- for every other word.
  *
  * `doublingTenseStem` carries the spelling argument and the consonants it holds
  * back; the dictionary half is here because it is the caller's conservatism
  * rather than part of the rule. English never spells "wan" + "-ing" as "waning",
  * full stop -- but a spelling whose other reading is not a word has only the
- * bare strip to hold its paradigm together, and dropping it there would promote
- * "busing" out of `bus` and "chating" out of `chat` for the sake of a base
- * neither has. So the rule *moves* a fold between two readings of one ending and
+ * bare strip to hold its paradigm together, and dropping it there would take
+ * "busing" off `bus` and "chating" off `chat` for the sake of a base neither
+ * has. So the rule *moves* a reading between two spellings of one ending and
  * never removes the last one.
+ *
+ * Date-blind, and exported for the same reason `mostCommonSameRootBase` is:
+ * scoring's fold and same-root identity must answer "which words can this be a
+ * form of" identically, differing only in the date each turns the answer on (see
+ * `blockedTenseStem` below and SAME_ROOT_DOUBLING_START).
+ */
+export function refusedTenseStem(word: string): string | undefined {
+  const stem = doublingTenseStem(word);
+  if (stem === undefined) return undefined;
+  return WORD_INDEX.has(`${stem}e`) ? stem : undefined;
+}
+
+/**
+ * `refusedTenseStem` under `date`'s scoring system -- undefined before the
+ * 2026-09-10 cutover, so archived puzzles keep the scores they were played with.
  *
  * Read by `tenseBaseForm` and by `candidateAdder`, which is what makes it stick:
  * the tense rule is not the only route to the bare stem. `baseForm`'s own
@@ -2682,10 +2764,7 @@ function mostCommonBase(
  * one, so a filter in the tense rule alone would be undone one line later.
  */
 function blockedTenseStem(word: string, scoring: Scoring): string | undefined {
-  if (!scoring.doublingTenseBases) return undefined;
-  const stem = doublingTenseStem(word);
-  if (stem === undefined) return undefined;
-  return WORD_INDEX.has(`${stem}e`) ? stem : undefined;
+  return scoring.doublingTenseBases ? refusedTenseStem(word) : undefined;
 }
 
 function tenseBaseForm(word: string, scoring: Scoring): string | undefined {

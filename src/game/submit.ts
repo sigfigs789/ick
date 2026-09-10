@@ -7,6 +7,9 @@ import {
   nearMissForDrop,
   pinnedSameRoot,
   rarityFor,
+  refusedEsStem,
+  refusedTenseStem,
+  sameRootDoublingActive,
   sameRootInflectionsActive,
 } from "./dictionary";
 import rejectionMetadata from "../data/rejection-metadata.json";
@@ -75,12 +78,19 @@ interface RootFolds {
   bound: boolean;
   /** The inflections `baseForm` misses, from the 2026-08-24 cutover. */
   inflections: boolean;
+  /**
+   * Whether the readings English does not spell -- a doubling stem, and an "-es"
+   * strip onto a stem that would have taken "-s" -- are refused as keys, from
+   * the 2026-09-10 cutover (see SAME_ROOT_DOUBLING_START in dictionary.ts).
+   */
+  spelling: boolean;
 }
 
 function rootFoldsFor(date?: string): RootFolds {
   return {
     bound: boundBaseFormsActive(date),
     inflections: sameRootInflectionsActive(date),
+    spelling: sameRootDoublingActive(date),
   };
 }
 
@@ -205,11 +215,30 @@ function foldOnce(word: string, folds: RootFolds, date?: string): string {
     // Reaching here with `base === word` means no rule matched at all, which is
     // the only way an "-men" plural gets a look: nothing strips it, so its own
     // spelling stands unless the "-man" reading is admitted below.
+    // The readings the word's own spelling rules out, which is the same move
+    // `impossibleNumberBase` beside them makes for "-ees": a spelling English
+    // does not produce is not a rival reading to be ranked, whatever its
+    // frequency. "waning" is not a form of `wan` (which conjugates as
+    // "wanning") and "banes" is not a form of `ban` (which writes "bans"), so
+    // each ending offers exactly one base and it is the "-e" word.
+    //
+    // A filter rather than an ordering, because frequency is the thing being
+    // overruled: the bare CVC stem is nearly always the commoner word, so it
+    // wins every ranking it is allowed into. And both refusals together rather
+    // than either alone, because one alone takes a paradigm apart -- refuse the
+    // tense reading only and "baned" moves to `bane` while "banes" stays on
+    // `ban`, so a puzzle can take two forms of one verb (see
+    // SAME_ROOT_DOUBLING_START).
+    const refused = folds.spelling
+      ? [refusedTenseStem(word), refusedEsStem(word)]
+      : [];
     const tier1 = [
       base,
       ...decisiveNumberCandidates(word),
       ...restoredTenseCandidates(word),
-    ].filter((candidate) => !impossibleNumberBase(word, candidate));
+    ].filter(
+      (candidate) => !impossibleNumberBase(word, candidate) && !refused.includes(candidate)
+    );
     base =
       mostCommonSameRootBase(word, tier1, date) ??
       stemChangingNumberCandidates(word).find(isDictionaryWord) ??
