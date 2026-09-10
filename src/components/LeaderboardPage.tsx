@@ -34,6 +34,7 @@ import {
   previousMonthStart,
 } from "../game/month";
 import { weekChampionSettling, weekLabel, weekStart } from "../game/week";
+import { formatScore } from "../game/dictionary";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -1500,6 +1501,14 @@ function ChampionPending({ crowning }: { crowning: string }) {
  * Zero means the find is a word today's dictionary no longer prices and the row
  * arrived without a stored frequency (see `scoreOf`). That is a gap rather than
  * a result, so the line is left off instead of reading "0.0".
+ *
+ * Formatted by `formatScore` and not by hand. A single word's score carries two
+ * decimals from Mythic up (9.5+), where the top ranks are decided on hundredths
+ * and one decimal would print two different finds as the same number -- and it
+ * is the fixed cutoffs the shown value keys off, so rounding it here would put
+ * the number out of step with the rank the same word wears everywhere else in
+ * the app. The total above it stays at one decimal: it is a sum, which is the
+ * line `formatScore` itself draws.
  */
 function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
   return (
@@ -1520,7 +1529,7 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
               a sentence -- so the second one is named to them and to nobody
               else. */}
           <span className="sr-only">best find </span>
-          {entry.windowScore.toFixed(1)}
+          {formatScore(entry.windowScore)}
         </span>
       )}
     </li>

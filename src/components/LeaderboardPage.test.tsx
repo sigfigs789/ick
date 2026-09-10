@@ -230,6 +230,43 @@ describe("the leaderboard page", () => {
     expect(boardRows("This week")[0]).not.toHaveTextContent("quixotic");
   });
 
+  it("shows a Mythic-or-better find to two decimals, and the total to one", async () => {
+    stubFetch({
+      ...OPEN,
+      weekly: [
+        {
+          rank: 1,
+          playerId: ALICE,
+          // Mythic on a measured frequency, where the top ranks are decided on
+          // hundredths: at one decimal this and a 9.84 would print the same
+          // number, and the shown value is what the rank itself keys off.
+          windowWord: "caoutchouc",
+          windowZipf: 1.07,
+          score: 41.2,
+          puzzles: 5,
+        },
+        {
+          rank: 2,
+          playerId: BOB,
+          // A perfect score reads "10.00" rather than "10.0", the same as it
+          // does on a badge in the game.
+          windowWord: "enshittification",
+          windowZipf: -1.57,
+          score: 24.6,
+          puzzles: 3,
+        },
+      ],
+    });
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(boardRows("This week")[0]).toHaveTextContent("9.81");
+    expect(boardRows("This week")[1]).toHaveTextContent("10.00");
+    // The total is a sum and keeps its single decimal -- the two-decimal rule
+    // is about one word's score, which is the line `formatScore` draws.
+    expect(boardRows("This week")[0]).toHaveTextContent("41.2");
+  });
+
   it("leaves the line off a find today's dictionary cannot price", async () => {
     stubFetch({
       ...OPEN,
