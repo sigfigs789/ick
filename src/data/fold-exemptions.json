@@ -161,6 +161,10 @@
     "since": "2026-09-02",
     "reason": "A storm, not \"most temp\" -- and `temper` is a word, so the paired-degree check the bare -est fold runs on `contest` and `interest` passes here. One of two words in the dictionary that clear the check without being superlatives."
   },
+  "during": {
+    "since": "2026-09-11",
+    "reason": "The preposition, not a tense of the archaic `dure` (to last) it descends from. It needs no fold of its own -- at 5.72 Zipf nothing caps it -- but the reverse direction reads it as `dure`'s participle and hands the verb a preposition's frequency, which the doubling rule of 2026-09-11 is what made reachable (before it, `during` folded onto the fragment-word `dur` and the round trip failed). `dure` dropped 8.87 -> 3.34 on that link, Elusive to Very Common, and it is the one wrong pairing that cutover creates; the exemption breaks it from the `during` side, where the misreading is."
+  },
   "listless": {
     "since": "2026-09-02",
     "reason": "Without `list` in the archaic sense (desire, inclination), not without a list. The privative fold's strip is decisive and the residue is a word, so nothing but review can tell this reading from `spotless`; scoring \"languid\" as the everyday `list` (Zipf 5.28) would show \"Scored as its common form, 'list'\" on a word that has nothing to do with it. The blanket entry covers `listlessly` and `listlessness`, which fold onto this word and stop here."

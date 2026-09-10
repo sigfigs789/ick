@@ -561,6 +561,38 @@ def _privative_candidates(word: str) -> list[str]:
     return out
 
 
+def _doubling_tense_stem(word: str) -> str | None:
+    """Mirror of doublingTenseStem() in stem.ts.
+
+    The bare stem of an "-ed"/"-ing" ending English would have doubled the final
+    consonant of, so the ending was never added to that spelling: "wan" takes
+    "wanning", never "waning". A stressed monosyllable ending in a single
+    consonant after a single vowel, with "h", "w", "x" and "y" left out because
+    they never double.
+    """
+    w = word.lower()
+    if len(w) > 5 and w.endswith("ing") and not w.endswith("ying"):
+        stem = w[:-3]
+    elif len(w) > 4 and w.endswith("ed"):
+        stem = w[:-2]
+    else:
+        return None
+    return stem if re.fullmatch(r"[^aeiouy]*[aeiouy][bcdfgklmnprstvz]", stem) else None
+
+
+def _blocked_tense_stem(word: str, index: dict[str, int]) -> str | None:
+    """Mirror of blockedTenseStem() in dictionary.ts (2026-09-11 on).
+
+    Paired with the silent-"e" reading being a word, so the rule only ever moves
+    a fold between two readings of one ending and never takes the last one a
+    spelling has ("busing" keeps `bus`).
+    """
+    stem = _doubling_tense_stem(word)
+    if stem is None:
+        return None
+    return stem if (stem + "e") in index else None
+
+
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     """Mirror of tenseBaseForm(): -ed/-ing pick the most common valid base.
 
@@ -570,17 +602,25 @@ def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     word try the plain -ed bases too ("taxied" -> "taxi").
     """
     candidates: list[str] = []
+    # The bare-stem reading this spelling cannot carry, from 2026-09-11. Dropping
+    # it drops the doubled-consonant trim beside it too, which is the same string
+    # for these stems.
+    blocked = _blocked_tense_stem(word, index)
     ied = len(word) > 4 and word.endswith("ied")
     if ied:
         candidates.append(word[:-3] + "y")
     if len(word) > 4 and word.endswith("ed"):
         stem = word[:-2]
-        candidates += [stem + "e", stem, _strip_doubled_consonant(stem)]
+        candidates.append(stem + "e")
+        if stem != blocked:
+            candidates += [stem, _strip_doubled_consonant(stem)]
     if len(word) > 4 and word.endswith("ying"):
         candidates += [word[:-4] + "y", word[:-4] + "ie"]
     elif len(word) > 5 and word.endswith("ing"):
         stem = word[:-3]
-        candidates += [stem + "e", stem, _strip_doubled_consonant(stem)]
+        candidates.append(stem + "e")
+        if stem != blocked:
+            candidates += [stem, _strip_doubled_consonant(stem)]
     base, base_zipf = None, float("-inf")
     for candidate in candidates:
         if candidate in index and zipf_at(candidate) > base_zipf:
@@ -819,9 +859,12 @@ def _inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
         return [override]
 
     out: list[str] = []
+    # The reading the word's own spelling rules out, whichever family offers it:
+    # _inflectional_stem() reaches the bare stem too (see _blocked_tense_stem).
+    blocked = _blocked_tense_stem(word, index)
 
     def add(candidate: str | None) -> None:
-        if not candidate or candidate == word:
+        if not candidate or candidate == word or candidate == blocked:
             return
         if candidate not in index or candidate in out:
             return
@@ -854,9 +897,13 @@ def _non_inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[s
         return [override]
 
     out: list[str] = []
+    # _scoring_base() below reaches the bare tense stem through
+    # _inflectional_stem(), so the blocked reading has to be refused here too --
+    # in the TS this file mirrors, one candidateAdder covers both sets.
+    blocked = _blocked_tense_stem(word, index)
 
     def add(candidate: str | None) -> None:
-        if not candidate or candidate == word:
+        if not candidate or candidate == word or candidate == blocked:
             return
         if candidate not in index or candidate in out:
             return

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   baseForm,
   derivedBaseCandidates,
+  doublingTenseStem,
   inflectionalBaseCandidates,
   prefixBaseCandidates,
   privativeBaseCandidates,
@@ -153,6 +154,50 @@ describe("inflectionalBaseCandidates", () => {
     expect(inflectionalBaseCandidates("WOLVES", true)).toEqual(
       inflectionalBaseCandidates("wolves", true)
     );
+  });
+});
+
+describe("doublingTenseStem", () => {
+  it("names the stem a doubled spelling would have to carry the ending", () => {
+    // "wan" conjugates as "wanning", so "waning" is not one of its forms.
+    expect(doublingTenseStem("waning")).toBe("wan");
+    expect(doublingTenseStem("waned")).toBe("wan");
+    expect(doublingTenseStem("biting")).toBe("bit");
+    expect(doublingTenseStem("themed")).toBe("them");
+  });
+
+  it("says nothing about a stem that takes the ending as it stands", () => {
+    // Two vowel letters make the syllable long, so nothing doubles.
+    for (const word of ["waiting", "heating", "seeding", "roaming"]) {
+      expect(doublingTenseStem(word), word).toBeUndefined();
+    }
+    // Unstressed final syllables take the ending bare, which is why the rule
+    // asks for a monosyllable.
+    for (const word of ["offering", "riveting", "traveling", "gathered"]) {
+      expect(doublingTenseStem(word), word).toBeUndefined();
+    }
+    // The consonants that never double.
+    for (const word of ["blahing", "bowing", "boxing", "shahed"]) {
+      expect(doublingTenseStem(word), word).toBeUndefined();
+    }
+  });
+
+  it("leaves the doubled spelling itself alone", () => {
+    // Where the doubling is actually written the bare stem is the *right*
+    // reading, reached through stripDoubledConsonant.
+    for (const word of ["wanning", "hopping", "batted", "runs"]) {
+      expect(doublingTenseStem(word), word).toBeUndefined();
+    }
+  });
+
+  it("takes no interest in an ending that is not a tense", () => {
+    for (const word of ["tried", "dying", "wanes", "wan", "bed"]) {
+      expect(doublingTenseStem(word), word).toBeUndefined();
+    }
+  });
+
+  it("is case-insensitive", () => {
+    expect(doublingTenseStem("WANING")).toBe("wan");
   });
 });
 
