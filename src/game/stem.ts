@@ -214,6 +214,51 @@ export function restoredTenseCandidates(word: string): string[] {
 }
 
 /**
+ * The bare stem of an "-ed"/"-ing" ending English would have doubled the final
+ * consonant of, so the ending cannot have been added to *that* spelling: "wan"
+ * takes "wanning", never "waning"; "bat" takes "batting", never "bating".
+ * Undefined when the word offers no such reading -- the answer for every word
+ * whose stem is fine as it stands ("waiting" -> "wait", "offering" -> "offer").
+ *
+ * A stressed monosyllable ending in a single consonant after a single vowel is
+ * the whole of the rule, and each half of that is load-bearing:
+ *
+ *   - Stress is why the multi-syllable stems are excluded outright rather than
+ *     tested. English doubles only before a stressed final syllable, so
+ *     "offering" is "offer", "riveting" is "rivet" and "traveling" is "travel",
+ *     every one of them taking the ending bare. One vowel letter in the stem is
+ *     the cheapest reading of "monosyllable, and stressed".
+ *   - A single vowel is why "waiting" ("wait") and "heating" ("heat") never
+ *     reach here: two vowel letters make the syllable long and nothing doubles.
+ *
+ * "h", "w", "x" and "y" are out of the consonant set because they never double
+ * ("blahing" is "blah", "bowing" is "bow", "boxing" is "box"). "c" is in it: the
+ * doubling it takes is spelled "-ck-" ("panicking", "trafficked"), which is the
+ * same claim the "-cked"/"-cking" family in `derivedBaseCandidates` makes from
+ * the other side.
+ *
+ * Spelling only, and deliberately not the whole verdict. The caller pairs it
+ * with the silent-"e" reading being a dictionary word (see `blockedTenseStem` in
+ * dictionary.ts), because a spelling with no rival reading needs the bare strip:
+ * "busing" and "chating" have nowhere else to go, and "s" and the misspellings
+ * are exactly where the doubling rule is soft.
+ */
+export function doublingTenseStem(word: string): string | undefined {
+  const w = word.toLowerCase();
+  const stem =
+    w.length > 5 && w.endsWith("ing") && !w.endsWith("ying")
+      ? w.slice(0, -3)
+      : w.length > 4 && w.endsWith("ed")
+        ? w.slice(0, -2)
+        : undefined;
+  if (stem === undefined) return undefined;
+  // The "-ied" words come through the "-ed" branch and fail here on the vowel:
+  // their stem ends in "i" ("tried" -> "tri"), and a doubling stem ends in a
+  // consonant.
+  return /^[^aeiouy]*[aeiouy][bcdfgklmnprstvz]$/.test(stem) ? stem : undefined;
+}
+
+/**
  * The comparative/superlative reading of an "-ier"/"-iest" word: the "-y"
  * adjective it would be a degree of, paired with the *other* degree of the same
  * base. Spelling only -- the caller requires both `base` and `counterpart` to be

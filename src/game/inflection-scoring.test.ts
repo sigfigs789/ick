@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { RARITY_ORDER, baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
 import {
   baseForm,
+  doublingTenseStem,
   inflectedFormCandidates,
   inflectionalBaseCandidates,
   prefixBaseCandidates,
 } from "./stem";
-import { evaluateSubmission } from "./submit";
+import { evaluateSubmission, sameRootKey } from "./submit";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import scoreOverrideData from "../data/score-overrides.json";
@@ -726,6 +727,7 @@ describe("invariants across the whole dictionary", () => {
     "2026-08-20",
     "2026-08-21",
     "2026-08-24",
+    "2026-09-10",
     "2027-06-01",
     undefined,
   ];
@@ -2013,6 +2015,213 @@ describe("borrowed prefixes stop folding (from 2026-09-05)", () => {
     ]) {
       expect(score(word, ON_BORROWED), `${word} must not move`).toBe(
         score(word, BEFORE_BORROWED)
+      );
+    }
+  });
+});
+
+// The 2026-09-10 cutover: the bare-stem reading of an "-ed"/"-ing" ending is
+// dropped where English spells that stem's own forms with a doubled consonant,
+// so the silent-"e" reading is the only one left on offer. See
+// DOUBLING_TENSE_START in dictionary.ts, and `doublingTenseStem` in stem.ts for
+// the spelling rule.
+describe("an -ed/-ing ending stops reading as a stem English would double (from 2026-09-10)", () => {
+  const BEFORE_DOUBLING = "2026-09-09"; // last day "waning" scores as `wan`
+  const ON_DOUBLING = "2026-09-10";
+
+  // word, the base it took before, the base it takes now (undefined where the
+  // right base is *rarer* than the word and so caps nothing), and the scores.
+  const MOVED: ReadonlyArray<
+    [word: string, was: string, now: string | undefined, before: number, after: number]
+  > = [
+    // The case that motivated it: "wan" conjugates as "wanning", so "waning" was
+    // never its participle -- and `wane`, the verb it is one of, is rarer than
+    // the form, which is why nothing caps it now.
+    ["waning", "wan", undefined, 6.1, 7.14],
+    // Its own past tense lands on the gerund instead, through the fold's second
+    // direction: the paradigm settles on one number rather than splitting.
+    ["waned", "wan", "waning", 6.1, 7.14],
+    ["biting", "bit", "bite", 3.86, 5.38],
+    ["themed", "them", "theme", 2.63, 4.94],
+    ["noted", "not", "note", 1.84, 4.34],
+    ["caning", "can", "cane", 2.21, 6.16],
+    ["planing", "plan", "plane", 3.97, 4.8],
+    ["fated", "fat", "fate", 4.61, 5.31],
+    ["scraping", "scrap", "scrape", 5.96, 6.66],
+    // The old base need not even be the stem: "coping" reached `cops` through
+    // the number rules once the tense rule had put it on `cop`.
+    ["coping", "cops", "cope", 5.23, 5.76],
+    ["staring", "star", undefined, 4.12, 5.62],
+  ];
+
+  it.each(MOVED)("%s stops scoring as %s", (word, _was, now, _before, after) => {
+    expect(score(word, ON_DOUBLING)).toBe(after);
+    expect(baseFormSubstitution(word, ON_DOUBLING)?.base).toBe(now);
+  });
+
+  it.each(MOVED)("%s scored as %s the day before", (word, was, _now, before) => {
+    expect(score(word, BEFORE_DOUBLING)).toBe(before);
+    expect(baseFormSubstitution(word, BEFORE_DOUBLING)?.base).toBe(was);
+  });
+
+  it("never lets a word fold onto a stem its own forms would double", () => {
+    // The whole change, stated over the dictionary rather than on the samples
+    // above: not one word may take a base that only exists as a doubled
+    // spelling. 181 did the day before, which is what keeps this from passing
+    // vacuously.
+    const words = dictionaryWords as string[];
+    const dictionary = new Set(words);
+    const blockedStem = (word: string) => {
+      const stem = doublingTenseStem(word);
+      return stem !== undefined && dictionary.has(`${stem}e`) ? stem : undefined;
+    };
+    const foldingOnBlocked = (date: string) =>
+      words.filter((word) => {
+        const stem = blockedStem(word);
+        return stem !== undefined && baseFormSubstitution(word, date)?.base === stem;
+      });
+    expect(foldingOnBlocked(ON_DOUBLING)).toEqual([]);
+    expect(foldingOnBlocked(BEFORE_DOUBLING)).toHaveLength(181);
+  });
+
+  it("leaves a spelling with no rival reading exactly where it was", () => {
+    // The conservatism the rule is paired with (see `blockedTenseStem`): where
+    // the silent-"e" reading is not a word, the bare strip is the only base the
+    // spelling has, and taking it would promote the word for nothing. "bus" is
+    // the honest exception to the doubling rule itself ("busing"/"bussing" are
+    // both written); the rest are misspellings and words that are no tense at
+    // all, and every one keeps the base it had.
+    for (const [word, base] of [
+      ["busing", "bus"],
+      ["bused", "bus"],
+      ["chating", "chat"],
+      ["biped", "bip"],
+    ] as const) {
+      expect(baseFormSubstitution(word, ON_DOUBLING)?.base, `${word} keeps ${base}`).toBe(base);
+      expect(score(word, ON_DOUBLING)).toBe(score(word, BEFORE_DOUBLING));
+    }
+    // And as a class, over the dictionary: 21 words offer a doubling stem with
+    // no "-e" word beside it, 12 of them still folding onto it, and not one
+    // moves on the cutover.
+    const dictionary = new Set(dictionaryWords as string[]);
+    const noRival = (dictionaryWords as string[]).filter((word) => {
+      const stem = doublingTenseStem(word);
+      return stem !== undefined && !dictionary.has(`${stem}e`);
+    });
+    expect(noRival).toHaveLength(21);
+    expect(noRival.filter((word) => baseFormSubstitution(word, ON_DOUBLING))).toHaveLength(12);
+    expect(
+      noRival.filter((word) => score(word, ON_DOUBLING) !== score(word, BEFORE_DOUBLING))
+    ).toEqual([]);
+  });
+
+  it("leaves every other tense fold alone", () => {
+    // The three shapes the spelling rule must never touch: a stem that is fine
+    // as it stands ("wait", "offer"), the doubled spelling itself -- where the
+    // bare stem is the *right* answer and reached through the doubled-consonant
+    // trim -- and the endings this rule has no opinion about.
+    for (const [word, base] of [
+      ["waiting", "wait"],
+      ["offering", "offer"],
+      ["wanning", "wan"],
+      ["hopping", "hop"],
+      ["tried", "try"],
+      ["bathing", "bath"],
+    ] as const) {
+      expect(baseFormSubstitution(word, ON_DOUBLING)?.base, `${word} -> ${base}`).toBe(base);
+      expect(score(word, ON_DOUBLING)).toBe(score(word, BEFORE_DOUBLING));
+    }
+  });
+
+  it("raises 229 words and lowers 23", () => {
+    // Pinned like the counts on the cutovers before it. The rises are the
+    // change: a word stops carrying the frequency of a word it is not a form of.
+    // They are also the shape the demote-only discipline allows -- a fold
+    // pruned, not a score talked up -- so the words reaching the top ranks for
+    // it are listed rather than counted.
+    const words = dictionaryWords as string[];
+    const raised = words.filter(
+      (word) => score(word, ON_DOUBLING) > score(word, BEFORE_DOUBLING) + 1e-9
+    );
+    const lowered = words.filter(
+      (word) => score(word, ON_DOUBLING) < score(word, BEFORE_DOUBLING) - 1e-9
+    );
+    expect(raised).toHaveLength(229);
+    // Every one is an obscure verb form whose score was borrowed from an
+    // ordinary word ("griding" from `grid`, "skiting" from `skit`, "woning"
+    // from `won`), and each new cap is its own verb, itself at the measurement
+    // floor. None reaches Legend.
+    expect(raised.filter((word) => rank(word, ON_DOUBLING) === "Mythic")).toEqual([
+      "cozed",
+      "cozing",
+      "crined",
+      "crining",
+      "grided",
+      "griding",
+      "keping",
+      "preved",
+      "preving",
+      "skited",
+      "skiting",
+      "woning",
+    ]);
+    expect(raised.filter((word) => rank(word, ON_DOUBLING) === "Legend")).toEqual([]);
+    // The falls are all one thing: the second direction reaching a form it
+    // could not reach while the misreading stood, so a verb is now capped at
+    // its own participle ("wane" at "waning", "stare" at "staring", "nake" at
+    // "naked" -- the `belove`/`beloved` shape `inflectedFormFolds` exists for).
+    expect(lowered).toEqual([
+      "chare",
+      "clepe",
+      "cume",
+      "dine",
+      "dote",
+      "dupe",
+      "gape",
+      "kepe",
+      "lase",
+      "lave",
+      "mete",
+      "mire",
+      "mope",
+      "nake",
+      "prate",
+      "preve",
+      "rase",
+      "stare",
+      "stope",
+      "stripe",
+      "stripeless",
+      "tare",
+      "wane",
+    ]);
+  });
+
+  it("keeps the wan/wane paradigms apart", () => {
+    // The player-facing point. Two verbs share a spelling of the stem and
+    // nothing else: `wane` takes "waned"/"waning", `wan` takes
+    // "wanned"/"wanning", and each family now scores off its own data.
+    for (const word of ["wane", "waned", "waning"]) {
+      expect(score(word, ON_DOUBLING), `${word} scores with wane`).toBe(7.14);
+    }
+    for (const word of ["wan", "wanned", "wanning"]) {
+      expect(score(word, ON_DOUBLING), `${word} scores with wan`).toBe(6.1);
+    }
+  });
+
+  it("changes scoring only", () => {
+    // Duplicate detection reads `baseForm` and its own tier-1 ranking in
+    // submit.ts, neither of which this cutover touches, so a puzzle's same-root
+    // verdicts are exactly what they were -- including the one this rule
+    // disagrees with: "waning" still keys on `wan`, so a player who found `wan`
+    // is still refused it. Widening a fold has never moved that line by itself
+    // (see the 2026-08-21 block above), and the same-root stemmer is its own
+    // decision with its own cutover.
+    expect(sameRootKey("waning", ON_DOUBLING)).toBe(sameRootKey("waning", BEFORE_DOUBLING));
+    expect(sameRootKey("waning", ON_DOUBLING)).toBe("wan");
+    for (const word of ["waned", "biting", "themed", "noted", "busing"]) {
+      expect(sameRootKey(word, ON_DOUBLING), `${word} keys as before`).toBe(
+        sameRootKey(word, BEFORE_DOUBLING)
       );
     }
   });

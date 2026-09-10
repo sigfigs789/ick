@@ -16,6 +16,7 @@ import {
   degreeBaseCandidates,
   derivedFormCandidates,
   derivedBaseCandidates,
+  doublingTenseStem,
   inflectedFormCandidates,
   inflectionalBaseCandidates,
   measurementBaseCandidates,
@@ -119,6 +120,14 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *         "un-". 3,746 words score higher (see BORROWED_PREFIX_END).
  *     4,554 words rise between them and none falls. Neither moves a label
  *     mapping.
+ *   - on/after 2026-09-10 (the latest system): the bare-stem reading of an
+ *     "-ed"/"-ing" ending is dropped where English spells that stem's own forms
+ *     with a doubled consonant, leaving the silent-"e" reading the only one on
+ *     offer -- "waning" is `wane`, not `wan`, because "wan" conjugates as
+ *     "wanning". 181 words were folding onto a stem that only exists doubled,
+ *     and the base they took was almost always an unrelated everyday word
+ *     ("themed" as `them`, "noted" as `not`, "biting" as `bit`). 229 words score
+ *     higher and 23 lower (see DOUBLING_TENSE_START). No label mapping moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -255,6 +264,64 @@ const PRE_PREFIX_END = "2026-09-05";
  * aircraft). The rows say it is the one to watch.
  */
 const BORROWED_PREFIX_END = "2026-09-05";
+
+/*
+ * 2026-09-10. The bare-stem reading of an "-ed"/"-ing" ending is dropped where
+ * English spells that stem's own forms with a doubled consonant: "waning" is
+ * `wane`, not `wan`, because "wan" conjugates as "wanning". Nothing but the
+ * spelling decides it, and the spelling is decisive -- see `doublingTenseStem`
+ * in stem.ts for the rule and the consonants left out of it.
+ *
+ * `tenseBaseForm` offers both readings of the ending and keeps the more common,
+ * which is right where they are rival readings ("bathing" between `bath` and
+ * `bathe`) and wrong for this family, where only one of the two is a reading at
+ * all. Frequency then picked the wrong one systematically, because a bare CVC
+ * monosyllable is almost always the commoner word: "waning" scored as `wan`
+ * (3.80 against `wane`'s 2.83), "biting" as `bit`, "themed" as `them` (6.19),
+ * "noted" as `not` (6.69), "staring" as `star`, "planing" as `plan`. Every one
+ * of them read a word as a form of something it is not, and the cap that
+ * followed was the score of an unrelated everyday word.
+ *
+ * Paired with the silent-"e" reading being a dictionary word, so this only ever
+ * *moves* a fold between two spellings of the same ending and never takes the
+ * last one a word has. That is what keeps the family's soft edges intact --
+ * "busing" (the "s" stems barely double at all) and the misspellings that own no
+ * verb ("chating", "fuking") keep the only base they have, and words that are no
+ * tense at all keep theirs too ("biped" stays on `bip`, harmless at 0.52 Zipf
+ * apart).
+ *
+ * 181 words were folding onto a stem English would have doubled; none is now.
+ * 229 score higher for it and 23 lower. The rises are the point -- a word stops
+ * carrying the frequency of a word it is not a form of -- and they are the
+ * demote-only discipline's one legitimate shape: a fold pruned, not a score
+ * talked up. Twelve reach Mythic and none Legend, every one an obscure verb form
+ * whose new cap is its own verb sitting at the measurement floor ("griding" on
+ * `gride`, "skiting" on `skite`, "woning" on `wone`); they are listed by name in
+ * the test rather than counted.
+ *
+ * The falls are the second direction finding a pair the misreading had hidden.
+ * With "waning" reading as `wan`, the round trip in `inflectedFormFolds` refused
+ * to link it to `wane`, so the verb was never capped at its own participle --
+ * the `belove`/`beloved` shape that direction exists for. All 23 are that:
+ * "wane" at "waning", "stare" at "staring", "nake" at "naked", "dine" at
+ * "dining".
+ *
+ * One wrong pairing comes with it and is answered by review rather than by the
+ * rule: "during" is the preposition, not `dure`'s participle, and the new link
+ * handed the archaic verb a preposition's frequency (8.87 -> 3.34). It is a
+ * reviewed fold exemption, on the `during` side where the misreading is.
+ *
+ * Dated the day in play rather than the day after it, which is the one deliberate
+ * exception to the rule above PREFIX_BASE_START -- the change was wanted in
+ * 2026-09-10's puzzle, whose "NIN" drop is where the misreading was found and
+ * which reaches 18 of the words that move ("waning" among them). The cost is the
+ * one that rule exists to avoid and it was accepted knowingly: a word banked
+ * before the deploy keeps the score stored with it (see storage.ts), so a single
+ * session on that puzzle can show "waning" at 6.1 and 7.14. It is confined to
+ * that one day -- every archived puzzle before it is untouched, and nothing
+ * after it can straddle a deploy.
+ */
+const DOUBLING_TENSE_START = "2026-09-10";
 
 /*
  * 2026-08-26. Three changes, one cutover, because they ship together and no
@@ -837,6 +904,12 @@ interface Scoring {
   // round like `prePrefixBases` beside it, and retired on the same date: on up
   // to 2026-09-05, off from there (see BORROWED_PREFIX_END).
   borrowedPrefixBases: boolean;
+  // Whether the bare-stem reading of an "-ed"/"-ing" ending is dropped where
+  // that stem's own forms double their final consonant ("waning" is `wane`, not
+  // `wan`), leaving the silent-"e" reading the only one on offer. 2026-09-10;
+  // off for earlier systems so past puzzles' scores stay frozen (see
+  // DOUBLING_TENSE_START).
+  doublingTenseBases: boolean;
   // Whether "pre-" is one of the transparent prefixes. The only flag here that
   // reads the other way round -- it is *on* for the systems from 2026-08-24 up
   // to 2026-09-05, when the prefix was retired, and off from there -- because a
@@ -881,6 +954,7 @@ interface ScoringFlags {
   privativeBases?: boolean;
   prePrefixBases?: boolean;
   borrowedPrefixBases?: boolean;
+  doublingTenseBases?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
@@ -912,6 +986,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     privativeBases = false,
     prePrefixBases = false,
     borrowedPrefixBases = false,
+    doublingTenseBases = false,
     narrowBands = false,
     scoreCurve = false,
     decadeBands = false,
@@ -974,6 +1049,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     privativeBases,
     prePrefixBases,
     borrowedPrefixBases,
+    doublingTenseBases,
   };
 }
 
@@ -1168,12 +1244,36 @@ const PRE_RETIRED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   scoreCurve: true,
   decadeBands: true,
 });
-// The latest system (2026-09-05): the 2026-09-02 folds with "pre-" and every
-// borrowed prefix out of the transparent list, leaving "counter-", "under-",
-// "anti-", "over-", "out-" and "un-". `prefixBases` stays on -- the prefix fold
-// is untouched, twenty-three prefixes shorter -- and the two flags that go off
-// are `prePrefixBases` and `borrowedPrefixBases`. See PRE_PREFIX_END and
+// The 2026-09-05 system: the 2026-09-02 folds with "pre-" and every borrowed
+// prefix out of the transparent list, leaving "counter-", "under-", "anti-",
+// "over-", "out-" and "un-". `prefixBases` stays on -- the prefix fold is
+// untouched, twenty-three prefixes shorter -- and the two flags that go off are
+// `prePrefixBases` and `borrowedPrefixBases`. See PRE_PREFIX_END and
 // BORROWED_PREFIX_END.
+const BORROWED_RETIRED_SCORING: Scoring = twoBandScoring(9.9, 0, {
+  boundBaseForms: true,
+  legend: true,
+  chainedBaseForms: true,
+  inflectionBases: true,
+  derivedBases: true,
+  inflectionForms: true,
+  prefixBases: true,
+  prePrefixBases: false,
+  borrowedPrefixBases: false,
+  paradigmFolds: true,
+  prefixResidues: true,
+  derivedFormFolds: true,
+  superlativeBases: true,
+  measurementBases: true,
+  privativeBases: true,
+  narrowBands: true,
+  scoreCurve: true,
+  decadeBands: true,
+});
+// The latest system (2026-09-10): the same folds with one reading taken out of
+// the tense rule's hands -- a bare CVC stem whose own forms double their final
+// consonant is not a reading of an "-ed"/"-ing" spelling, so "waning" folds onto
+// `wane` rather than `wan`. See DOUBLING_TENSE_START.
 const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
@@ -1190,6 +1290,7 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   superlativeBases: true,
   measurementBases: true,
   privativeBases: true,
+  doublingTenseBases: true,
   narrowBands: true,
   scoreCurve: true,
   decadeBands: true,
@@ -1229,6 +1330,7 @@ const LEGACY_SCORING: Scoring = {
   superlativeBases: false,
   measurementBases: false,
   privativeBases: false,
+  doublingTenseBases: false,
   prePrefixBases: false,
   borrowedPrefixBases: false,
 };
@@ -1343,6 +1445,7 @@ function scoringFor(date?: string): Scoring {
   // dates are equal. See PRE_PREFIX_END and BORROWED_PREFIX_END.
   if (date < PRE_PREFIX_END) return PRIVATIVE_SCORING;
   if (date < BORROWED_PREFIX_END) return PRE_RETIRED_SCORING;
+  if (date < DOUBLING_TENSE_START) return BORROWED_RETIRED_SCORING;
   return LATEST_SCORING;
 }
 
@@ -2090,7 +2193,7 @@ function inflectionalBaseForms(
   if (decided) return decided;
 
   const out: string[] = [];
-  addInflectionalBaseForms(word, scoring, candidateAdder(out, word));
+  addInflectionalBaseForms(word, scoring, candidateAdder(out, word, scoring));
   return out;
 }
 
@@ -2152,7 +2255,7 @@ function nextBaseForms(word: string, scoring: Scoring, date?: string): string[] 
   if (decided) return decided;
 
   const out: string[] = [];
-  const add = candidateAdder(out, word);
+  const add = candidateAdder(out, word, scoring);
   addInflectionalBaseForms(word, scoring, add);
   addNonInflectionalBaseForms(word, scoring, date, add);
   add(scoringBaseForm(word, scoring));
@@ -2280,7 +2383,7 @@ function nonInflectionalBaseForms(word: string, scoring: Scoring, date?: string)
   const decided = decidedBaseForms(word, scoring, date);
   if (decided) return decided;
   const out: string[] = [];
-  addNonInflectionalBaseForms(word, scoring, date, candidateAdder(out, word));
+  addNonInflectionalBaseForms(word, scoring, date, candidateAdder(out, word, scoring));
   return out;
 }
 
@@ -2329,9 +2432,15 @@ function prefixFoldExemptParadigm(word: string, scoring: Scoring, date?: string)
 }
 
 /** The dedupe-and-check every candidate set adds through. */
-function candidateAdder(out: string[], word: string) {
+function candidateAdder(out: string[], word: string, scoring: Scoring) {
+  // Computed once per set rather than per candidate: every candidate is a
+  // reading of the same word, so the blocked spelling is too.
+  const blocked = blockedTenseStem(word, scoring);
   return (candidate: string | undefined) => {
     if (!candidate || candidate === word) return;
+    // The reading the word's own spelling rules out, whichever family offered it
+    // (see `blockedTenseStem`).
+    if (candidate === blocked) return;
     if (!WORD_INDEX.has(candidate) || out.includes(candidate)) return;
     out.push(candidate);
   };
@@ -2551,8 +2660,41 @@ function mostCommonBase(
  * "belove" (1.10) -- a Mythic. The chained system caps against it instead, so
  * these can only ever pull a word toward common.
  */
+/**
+ * The one spelling `word`'s tense ending does *not* offer as a base, under
+ * `date`'s system: the bare stem of an "-ed"/"-ing" ending whose own forms
+ * double their final consonant, where the silent-"e" reading is a dictionary
+ * word. Undefined -- nothing blocked -- for every other word.
+ *
+ * `doublingTenseStem` carries the spelling argument and the consonants it holds
+ * back; the dictionary half is here because it is the caller's conservatism
+ * rather than part of the rule. English never spells "wan" + "-ing" as "waning",
+ * full stop -- but a spelling whose other reading is not a word has only the
+ * bare strip to hold its paradigm together, and dropping it there would promote
+ * "busing" out of `bus` and "chating" out of `chat` for the sake of a base
+ * neither has. So the rule *moves* a fold between two readings of one ending and
+ * never removes the last one.
+ *
+ * Read by `tenseBaseForm` and by `candidateAdder`, which is what makes it stick:
+ * the tense rule is not the only route to the bare stem. `baseForm`'s own
+ * "-ing"/"-ed" strips reach it too ("waning" -> "wan"), and both
+ * `inflectionalBaseForms` and `nextBaseForms` add that answer alongside this
+ * one, so a filter in the tense rule alone would be undone one line later.
+ */
+function blockedTenseStem(word: string, scoring: Scoring): string | undefined {
+  if (!scoring.doublingTenseBases) return undefined;
+  const stem = doublingTenseStem(word);
+  if (stem === undefined) return undefined;
+  return WORD_INDEX.has(`${stem}e`) ? stem : undefined;
+}
+
 function tenseBaseForm(word: string, scoring: Scoring): string | undefined {
   const candidates: string[] = [];
+  // The bare-stem reading this spelling cannot carry, from 2026-09-10. Dropping
+  // it also drops the doubled-consonant trim beside it, which is the same string
+  // for these stems -- a blocked stem ends in a *single* consonant, so
+  // `stripDoubledConsonant` leaves it alone (see DOUBLING_TENSE_START).
+  const blocked = blockedTenseStem(word, scoring);
 
   // Five-letter forms ("tried", "cried", "dried") are -ied words too. The older
   // systems required six, which dropped them into the generic -ed branch below
@@ -2568,14 +2710,16 @@ function tenseBaseForm(word: string, scoring: Scoring): string | undefined {
   // nothing where the "-y" spelling is right -- the most common base still wins.
   if ((!ied || scoring.inflectionBases) && word.length > 4 && word.endsWith("ed")) {
     const stem = word.slice(0, -2);
-    candidates.push(`${stem}e`, stem, stripDoubledConsonant(stem));
+    candidates.push(`${stem}e`);
+    if (stem !== blocked) candidates.push(stem, stripDoubledConsonant(stem));
   }
 
   if (word.length > 4 && word.endsWith("ying")) {
     candidates.push(`${word.slice(0, -4)}y`, `${word.slice(0, -4)}ie`);
   } else if (word.length > 5 && word.endsWith("ing")) {
     const stem = word.slice(0, -3);
-    candidates.push(`${stem}e`, stem, stripDoubledConsonant(stem));
+    candidates.push(`${stem}e`);
+    if (stem !== blocked) candidates.push(stem, stripDoubledConsonant(stem));
   }
 
   return mostCommonBase(candidates, word, scoring);

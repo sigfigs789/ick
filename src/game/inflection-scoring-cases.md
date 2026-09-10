@@ -110,9 +110,24 @@ the same reason: the spelling is not decisive.
 | `-ying` → `-y` / `-ie` | trying → try, dying → die |
 | `-ing` → `-e` / bare / de-doubled | making → make, running → run |
 
+The bare strip is withheld from one shape, from 2026-09-10: a stem whose own
+forms double their final consonant never took the ending bare, so "waning" is
+`wane` and not `wan` ("wan" conjugates as "wanning"). See `doublingTenseStem` in
+[`stem.ts`](stem.ts) and DOUBLING_TENSE_START in [`dictionary.ts`](dictionary.ts).
+It only fires where the silent-`e` reading is a dictionary word, so it *moves* a
+fold between two readings of one ending and never takes the last reading a
+spelling has ("busing" keeps `bus`).
+
 **False positives (neutralised by the most-common-base check):**
 - "played" could strip to the obscure "playe"; the common "play" wins.
 - "rated" could strip to "rat"; "rate" (far more common) wins.
+- The one shape frequency got *wrong* rather than right, until the doubling rule
+  above: a bare CVC monosyllable is almost always commoner than the verb the
+  ending belongs to, so "waning" took `wan` (3.80 over `wane`'s 2.83), "themed"
+  took `them`, "noted" took `not`, "biting" took `bit`. 181 words folded that
+  way and the base was an unrelated everyday word nearly every time. The
+  most-common-base check cannot help here, because the two candidates were never
+  rival readings — only one of them is a reading at all.
 - "-ed" that isn't a tense: "beloved" would fold onto "belove". Under the old
   *inherit* system this made it a Mythic; the chained system only ever **caps**,
   so a rarer base can never drag a word down — the fold is inert here. Inert in
@@ -343,6 +358,7 @@ These aren't separate cases so much as a mechanism running inside §1–§7.
 | Spelling change | Example (word → base) | Where it lives |
 |-----------------|----------------------|----------------|
 | **Doubled consonant** dropped | running → run, batted → bat, hopped → hop, travelled → travel | `stripDoubledConsonant`, used by every tense/`-er`/`-est` rule (§1, §7) |
+| **Doubled consonant** *required*, so the bare stem is refused | waning → `wane`, not `wan`; bating → `bate`, not `bat` | `doublingTenseStem` (§1, 2026-09-10 on) |
 | **Silent `-e` restored** | making → make, rated → rate, bakes → bake | tense candidates add `stem + "e"`; `-es` strips only the `s` (§1, §2) |
 | **`y` ↔ `i`** | cries → cry, tried → try, happily → happy, happiness → happy, angrier → angry | `-ies`/`-ied`/`-ily`/`-iness`/`-ier` rules across §1, §2, §4, §5 |
 | **`f` ↔ `v`** | wolves → wolf, knives → knife | `-ves` → `-f`/`-fe` (§2) |
