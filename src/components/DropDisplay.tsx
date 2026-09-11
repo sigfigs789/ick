@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { formatDateLabel } from "../game/date";
 import { definitionFor, formatRarityScore, learnableWordForDrop } from "../game/dictionary";
 import { rarityClassName } from "./rarityStyles";
+import { revealGatedFor } from "../game/constants";
 import { RevealWordModal } from "./RevealWordModal";
 
 interface Props {
@@ -11,10 +12,11 @@ interface Props {
   /** Once the puzzle is done, the word itself drops in under the rarity badge. */
   completed?: boolean;
   /**
-   * The puzzle's retry is still unspent. While it is, the word stays behind a
-   * "Word of the day" button: a finished puzzle can be re-opened by retrying a
-   * word (see storage.retryWord), so handing over the best word first would
-   * turn the mulligan into a lookup.
+   * The puzzle's retry is still unspent, which is what makes the reveal cost
+   * something: a finished puzzle can be re-opened by retrying a word (see
+   * storage.retryWord), so handing the word over first would turn the mulligan
+   * into a lookup. With no retry on offer the button still guards the word --
+   * it just asks instead of charging.
    */
   retryOffered?: boolean;
   /** Spend the retry to see the word (see useDailyPuzzle.revealAnswer). */
@@ -39,17 +41,28 @@ export function DropDisplay({
 
   // Armed by the reveal button, and cleared either way by answering it.
   const [confirmingReveal, setConfirmingReveal] = useState(false);
+  // Asked for and shown. Held here rather than in storage: it is a fact about
+  // this sitting, not about the puzzle, and the one thing the reveal does spend
+  // -- the retry -- is saved where every other puzzle fact is.
+  const [revealed, setRevealed] = useState(false);
 
-  // The gate is the retry itself, not a "revealed" flag of its own: spending
-  // it is what opens the word, so a reload finds the same answer showing.
-  const hidden = retryOffered && onReveal !== undefined;
+  // Only from REVEAL_GATE_START: puzzles that printed their word the moment the
+  // last guess landed keep doing so, however far back a player browses.
+  const hidden = revealGatedFor(date) && !revealed;
+  // The retry is the price, and it exists on the current puzzle only. An
+  // archive day still hides its word, but the button there only has to be
+  // pressed -- there is nothing left to charge (see useDailyPuzzle.retryOffered).
+  const costsRetry = retryOffered && onReveal !== undefined;
 
   // A new puzzle brings a new word, and its definition starts open the same way
   // the first one did -- not left closed by a click aimed at the last word.
   useEffect(() => setDefinitionOpen(true), [drop, date]);
 
-  // Nothing left to confirm once the puzzle -- or the retry -- has moved on.
-  useEffect(() => setConfirmingReveal(false), [drop, date, hidden]);
+  // A new puzzle hides its own word again, with nothing left to confirm.
+  useEffect(() => {
+    setConfirmingReveal(false);
+    setRevealed(false);
+  }, [drop, date]);
 
   return (
     <div className="drop-display">
@@ -73,18 +86,19 @@ export function DropDisplay({
           <button
             type="button"
             className="drop-display__reveal-button"
-            onClick={() => setConfirmingReveal(true)}
+            onClick={() => (costsRetry ? setConfirmingReveal(true) : setRevealed(true))}
           >
             Word of the day
           </button>
           {/* The cost is said before the button is pressed as well as in the
               modal: a player deciding whether to tap should not have to tap to
-              find out what it costs. */}
-          <p className="drop-display__reveal-cost">Uses your retry</p>
+              find out what it costs. Nothing is said when nothing is charged. */}
+          {costsRetry && <p className="drop-display__reveal-cost">Uses your retry</p>}
           <RevealWordModal
             open={confirmingReveal}
             onConfirm={() => {
               setConfirmingReveal(false);
+              setRevealed(true);
               onReveal?.();
             }}
             onClose={() => setConfirmingReveal(false)}
