@@ -5,7 +5,6 @@ import {
   MAX_GUESSES,
   maxGuessesFor,
   retryAvailableFor,
-  revealGatedFor,
 } from "./constants";
 
 describe("maxGuessesFor", () => {
@@ -73,26 +72,5 @@ describe("retryAvailableFor", () => {
   // the scoring functions in dictionary.ts.
   it("treats a missing date as the current puzzle", () => {
     expect(retryAvailableFor()).toBe(true);
-  });
-});
-
-describe("revealGatedFor", () => {
-  it("hides the word of the day from the first puzzle of the feature on", () => {
-    expect(revealGatedFor("2026-09-12")).toBe(true);
-    expect(revealGatedFor("2026-09-13")).toBe(true);
-    expect(revealGatedFor("2027-01-01")).toBe(true);
-  });
-
-  it("leaves every earlier puzzle printing its word outright", () => {
-    // These days finished by showing the word, and browsing back to one should
-    // find what it showed rather than a button hiding what was already read.
-    expect(revealGatedFor("2026-09-11")).toBe(false);
-    expect(revealGatedFor("2026-09-04")).toBe(false);
-    expect(revealGatedFor("2026-07-01")).toBe(false);
-  });
-
-  // A missing date means the current puzzle, matching the two gates above.
-  it("treats a missing date as the current puzzle", () => {
-    expect(revealGatedFor()).toBe(true);
   });
 });
