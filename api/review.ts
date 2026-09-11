@@ -4,7 +4,7 @@
 //
 // GET /api/review?list=suggested-words&limit=200
 //   -> { words: [{ word, origin, zipf, pos, firstUse, mwSource, lookups,
-//                  suggestions, firstAt, lastAt, mark }] }
+//                  suggestions, firstAt, lastAt, mark, liveApproved }] }
 // GET /api/review?list=feedback&limit=200
 //   -> { feedback: [{ id, text, at, mark }] }
 //   400 bad-list / bad-limit, 401 unauthorised, 405 wrong method,
@@ -75,6 +75,8 @@ interface SuggestedRow {
   last_at: string | null;
   /** new | accepted | rejected | deferred; only the middle two are marks. */
   status: string | null;
+  /** playable | unknown | suggested: the live MW verdict, when there was one. */
+  outcome: string | null;
 }
 
 /** One row as `list_feedback` returns it. */
@@ -310,6 +312,11 @@ async function handleGet(request: Request): Promise<Response> {
         firstAt: row.first_at,
         lastAt: row.last_at,
         mark: asMark(row.status),
+        // The live Merriam-Webster check approved this word mid-puzzle, so it
+        // was played on MW's say-so and nobody else's. Sent as the question the
+        // page asks rather than as the raw verdict: "unknown" and "suggested"
+        // are both just "no", and neither is worth a second label on the row.
+        liveApproved: row.outcome === "playable",
       })),
     });
   } catch (error: unknown) {

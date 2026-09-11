@@ -16,6 +16,8 @@ const WORDS = [
     firstAt: "2026-09-08T09:00:00Z",
     lastAt: "2026-09-10T12:00:00Z",
     mark: null,
+    // Only ever suggested: nobody played it, so there is no live verdict.
+    liveApproved: false,
   },
   {
     word: "enshittification",
@@ -29,6 +31,7 @@ const WORDS = [
     firstAt: "2026-09-09T09:00:00Z",
     lastAt: "2026-09-10T12:00:00Z",
     mark: "accepted",
+    liveApproved: true,
   },
 ];
 
@@ -103,7 +106,59 @@ describe("SuggestedWordsPage", () => {
     // The lookup count is off the row: "played" already says the word was
     // reached in a puzzle, and how many times was not something anybody
     // triaged on. The endpoint still sends it -- enshittification has 3.
-    expect(screen.queryByText(/lookup/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\d+ lookups?$/)).not.toBeInTheDocument();
+  });
+
+  it("says which words the live lookup approved on its own", async () => {
+    stubFetch();
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("blorp");
+    // The label sits on the word the live check let through, and on no other:
+    // it is the game's own verdict, separate from the triage mark.
+    const live = screen.getAllByText("live lookup approved");
+    expect(live).toHaveLength(1);
+    expect(live[0].closest("li")).toHaveTextContent("enshittification");
+  });
+
+  it("shows a reader the mark without offering to change it", async () => {
+    // A player's view: the box still says accepted, rejected or neither, which
+    // is the answer they came for -- it just is not a button.
+    window.history.pushState(null, "", "/suggested-words");
+    stubFetch();
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("enshittification");
+    const row = within(screen.getByText("enshittification").closest("li") as HTMLElement);
+    expect(row.getByRole("img", { name: /enshittification: accepted/i })).toBeInTheDocument();
+    expect(
+      within(screen.getByText("blorp").closest("li") as HTMLElement).getByRole("img", {
+        name: /blorp: not judged yet/i,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("names the more common word a queued word's score folds onto", async () => {
+    // "reoxygenate" is in the shipped dictionary and caps at "oxygenated", so
+    // the row says what it would actually score as. Read from the dictionary
+    // here rather than sent by the endpoint: the fold is the game's own rule.
+    stubFetch([{ ...WORDS[0], word: "reoxygenate" }]);
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("reoxygenate");
+    expect(screen.getByText(/common form oxygenated/)).toBeInTheDocument();
+  });
+
+  it("says nothing about a common form for a word the dictionary has never seen", async () => {
+    // blorp is not a word, so there is no fold to report and the row does not
+    // invent one.
+    stubFetch();
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("blorp");
+    expect(
+      within(screen.getByText("blorp").closest("li") as HTMLElement).queryByText(/common form/),
+    ).not.toBeInTheDocument();
   });
 
   it("tells an empty queue from a failed read", async () => {

@@ -1,7 +1,8 @@
 import { useCallback } from "react";
-import { MarkToggle, ReviewPage } from "./ReviewPage";
+import { MarkBox, MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
 import { fetchSuggestedWords, hasReviewKey } from "../game/review";
+import { baseFormSubstitution } from "../game/dictionary";
 
 /**
  * The review queue, as a page at /suggested-words.
@@ -39,7 +40,7 @@ export function SuggestedWordsPage() {
   return (
     <ReviewPage
       title="Suggested words"
-      note="Words waiting to be triaged into the dictionary — oldest first."
+      note="Words waiting to be triaged into the dictionary — newest first. A ticked box is one that got in."
       count={rows.length}
       state={state}
       refreshing={refreshing}
@@ -54,12 +55,17 @@ export function SuggestedWordsPage() {
             key={row.word}
             className={`review__item review__item--${markFor(row.word, row.mark) ?? "unmarked"}`}
           >
-            {curating && (
+            {/* The same box either way, and only a curator's is a control:
+                everybody sees whether the word got in, and whoever holds the
+                key can change the answer. */}
+            {curating ? (
               <MarkToggle
                 mark={markFor(row.word, row.mark)}
                 label={row.word}
                 onClick={() => cycle(row.word, row.mark)}
               />
+            ) : (
+              <MarkBox mark={row.mark} label={row.word} />
             )}
             <div className="review__body">
             <div className="review__row">
@@ -87,6 +93,24 @@ export function SuggestedWordsPage() {
                   {row.suggestions} {row.suggestions === 1 ? "suggestion" : "suggestions"}
                 </span>
               )}
+              {/* The game let this one be played on the spot, on the live
+                  Merriam-Webster check and nobody's judgement. Worth its own
+                  label beside the mark: a word can be live-lookup approved and
+                  still be rejected from the dictionary afterwards. */}
+              {row.liveApproved && (
+                <span className="review__live">live lookup approved</span>
+              )}
+              {/* What the word would score as, if it is in the dictionary and
+                  the fold caps it at something more common -- "abaci" scores as
+                  "abacus". Computed here rather than sent: the fold is the
+                  shipped dictionary's own rule, and this page has it. A word
+                  still waiting to be added is not in it, so this stays empty
+                  until the word is actually playable. */}
+              {commonForm(row.word) && (
+                <span className="review__fold">
+                  common form {commonForm(row.word)}
+                </span>
+              )}
               {row.pos.length > 0 && <span>{row.pos.join(", ")}</span>}
               {row.firstUse && <span>first use {row.firstUse}</span>}
               {row.mwSource && <span>{row.mwSource}</span>}
@@ -110,6 +134,19 @@ export function SuggestedWordsPage() {
  * *and* somebody reached for it in a puzzle -- so it is worth naming rather than
  * leaving as a database token.
  */
+/**
+ * The more common word this one's score folds onto, if any.
+ *
+ * Only ever answers for a word the shipped dictionary already contains, which
+ * on this page means a word that has been accepted and regenerated in. For
+ * everything still queued it is undefined, and the row says nothing -- the fold
+ * is a fact about a playable word, and guessing at one for a word the
+ * dictionary has never seen would be inventing it.
+ */
+function commonForm(word: string): string | undefined {
+  return baseFormSubstitution(word)?.base;
+}
+
 function originLabel(origin: string): string {
   if (origin === "both") return "asked for + played";
   if (origin === "live-lookup") return "played";

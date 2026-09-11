@@ -128,19 +128,18 @@ export function sampleReviewResponse(list: "suggested-words" | "feedback"): unkn
   return {
     words: [
       {
-        word: "susurrus",
-        origin: "live-lookup",
-        zipf: 1.62,
+        word: "enshittification",
+        origin: "both",
+        zipf: null,
         pos: ["noun"],
-        firstUse: "1893",
+        firstUse: "2022",
         mwSource: "collegiate",
-        lookups: 6,
-        suggestions: 0,
-        firstAt: hoursAgo(70),
-        // Later than it arrived: a word that keeps being looked up, which is
-        // exactly the row where the two dates differ.
-        lastAt: hoursAgo(28),
-        mark: "accepted",
+        lookups: 4,
+        suggestions: 2,
+        firstAt: hoursAgo(3),
+        lastAt: hoursAgo(3),
+        mark: null,
+        liveApproved: true,
       },
       {
         word: "quixotry",
@@ -154,19 +153,24 @@ export function sampleReviewResponse(list: "suggested-words" | "feedback"): unkn
         firstAt: hoursAgo(9),
         lastAt: hoursAgo(9),
         mark: "rejected",
+        // Only ever suggested, never played: there is no live verdict on it.
+        liveApproved: false,
       },
       {
-        word: "enshittification",
-        origin: "both",
-        zipf: null,
+        word: "susurrus",
+        origin: "live-lookup",
+        zipf: 1.62,
         pos: ["noun"],
-        firstUse: "2022",
+        firstUse: "1893",
         mwSource: "collegiate",
-        lookups: 4,
-        suggestions: 2,
-        firstAt: hoursAgo(3),
-        lastAt: hoursAgo(3),
-        mark: null,
+        lookups: 6,
+        suggestions: 0,
+        firstAt: hoursAgo(70),
+        // Later than it arrived: a word that keeps being looked up, which is
+        // exactly the row where the two dates differ.
+        lastAt: hoursAgo(28),
+        mark: "accepted",
+        liveApproved: true,
       },
     ],
   };

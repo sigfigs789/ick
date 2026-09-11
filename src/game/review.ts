@@ -48,6 +48,12 @@ export interface SuggestedWord {
   lastAt: string | null;
   /** Its triage mark, which for a word is `word_sightings.status`. */
   mark: Mark;
+  /**
+   * Whether the live Merriam-Webster check approved it mid-puzzle, so it was
+   * played without anybody judging it first. A different fact from `mark`: one
+   * is what the game did at the time, the other what a person decided after.
+   */
+  liveApproved: boolean;
 }
 
 /** One note a player left in the how-to-play sheet. */
@@ -154,6 +160,7 @@ function parseWords(raw: unknown): SuggestedWord[] {
       mark: asMark(row.mark),
       firstAt: typeof row.firstAt === "string" ? row.firstAt : null,
       lastAt: typeof row.lastAt === "string" ? row.lastAt : null,
+      liveApproved: row.liveApproved === true,
     });
   }
   return words;

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { MarkToggle, ReviewPage } from "./ReviewPage";
+import { MarkBox, MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
 import { fetchFeedback, hasReviewKey } from "../game/review";
 
@@ -57,7 +57,9 @@ export function FeedbackPage() {
             key={note.id}
             className={`review__item review__item--${markFor(note.id, note.mark) ?? "unmarked"}`}
           >
-            {curating && (
+            {/* The same box either way: a reader sees whether the note was
+                taken up, and a curator can change the answer. */}
+            {curating ? (
               <MarkToggle
                 mark={markFor(note.id, note.mark)}
                 // The date, because a note has no short name and the first words
@@ -65,6 +67,8 @@ export function FeedbackPage() {
                 label={formatWhen(note.at)}
                 onClick={() => cycle(note.id, note.mark)}
               />
+            ) : (
+              <MarkBox mark={note.mark} label={formatWhen(note.at)} />
             )}
             <div className="review__body">
               {/* The note first and the time under it: the text is what anybody

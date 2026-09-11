@@ -56,6 +56,9 @@ describe("api/review", () => {
         first_at: "2026-09-08T09:00:00Z",
         last_at: "2026-09-10T12:00:00Z",
         status: "accepted",
+        // The live check approved this word mid-puzzle, which the row reports
+        // separately from the verdict a person reached afterwards.
+        outcome: "playable",
       },
     ]);
     const response = await handler(get("?list=suggested-words"));
@@ -75,6 +78,7 @@ describe("api/review", () => {
           firstAt: "2026-09-08T09:00:00Z",
           lastAt: "2026-09-10T12:00:00Z",
           mark: "accepted",
+          liveApproved: true,
         },
       ],
     });
