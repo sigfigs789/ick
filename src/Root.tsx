@@ -141,11 +141,7 @@ export function Root() {
        the game's column is sized for one puzzle, and a board wants the room for
        a rank, a name, a find and a score on one line. */
     <div className={`app${route === "game" ? "" : " app--wide"}`}>
-      <AppHeader
-        route={route}
-        instructionsOpen={showInstructions}
-        onHowToPlay={() => setShowInstructions(true)}
-      />
+      <AppHeader route={route} onHowToPlay={() => setShowInstructions(true)} />
       {route === "leaderboard" ? (
         <LeaderboardPage />
       ) : route === "found-words" ? (
