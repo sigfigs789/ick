@@ -730,41 +730,9 @@ function Board({
  * line `formatScore` itself draws.
  */
 function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
-  /**
-   * Whoever is top of this board, dressed as the winner they are.
-   *
-   * The plaques under the boards used to be where the gold went -- one line per
-   * board about the window that had *closed*, which meant the page celebrated
-   * three results nobody could see happening and dressed the live top row like
-   * the fourteen under it. The prize belongs on the board: leading it is the
-   * thing a player is playing for, and on a window that has closed the top row
-   * is the champion anyway, so one treatment now says both.
-   *
-   * The trophy sits in the rank column rather than beside the name. Rank 1 is
-   * what the trophy *means*, so it replaces the digit instead of crowding the
-   * name -- and the column is already the width of three digits, which is more
-   * than enough for it. The number itself stays in the reading order, because
-   * "first" is the part a screen reader needs and a trophy glyph is not a rank.
-   */
-  const isLeader = entry.rank === 1;
   return (
-    <li
-      className={`leaderboard__row${isLeader ? " leaderboard__row--leader" : ""}${
-        isYou ? " leaderboard__row--you" : ""
-      }`}
-    >
-      <span className="leaderboard__rank">
-        {isLeader ? (
-          <>
-            <span className="leaderboard__rank-trophy" aria-hidden="true">
-              🏆
-            </span>
-            <span className="sr-only">{entry.rank}</span>
-          </>
-        ) : (
-          entry.rank
-        )}
-      </span>
+    <li className={`leaderboard__row${isYou ? " leaderboard__row--you" : ""}`}>
+      <span className="leaderboard__rank">{entry.rank}</span>
       <span className="leaderboard__name">
         {entry.name}
         {isYou && <span className="leaderboard__you">you</span>}

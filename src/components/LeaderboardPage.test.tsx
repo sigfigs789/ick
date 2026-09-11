@@ -199,31 +199,6 @@ describe("the leaderboard page", () => {
     expect(monthly[0]).toHaveTextContent("310.5");
   });
 
-  it("crowns the top row of each board and leaves the rest plain", async () => {
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    // The prize sits on the board now rather than on a plaque under it: leading
-    // is the thing being played for, and on a window that has closed the top row
-    // is the champion anyway, so one treatment says both.
-    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    for (const heading of ["Today", "This week", MONTH_BOARD]) {
-      const rows = boardRows(heading);
-      expect(rows[0]).toHaveClass("leaderboard__row--leader");
-      expect(rows[0].querySelector(".leaderboard__rank-trophy")).toBeTruthy();
-      // The digit the trophy stands in for is still read out: "first" is what a
-      // screen reader needs from the column, and a trophy is not a rank.
-      expect(rows[0]).toHaveTextContent("1");
-    }
-    // And nobody else: a board where every row looked won would say nothing.
-    expect(boardRows("This week")[1]).not.toHaveClass(
-      "leaderboard__row--leader",
-    );
-    expect(
-      boardRows("This week")[1].querySelector(".leaderboard__rank-trophy"),
-    ).toBeNull();
-  });
-
   it("puts each player's best find in the window under their total", async () => {
     stubFetch();
     render(<LeaderboardPage />);
