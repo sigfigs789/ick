@@ -2,9 +2,9 @@
 // boards, and takes the score submissions that fill them.
 //
 // GET /api/leaderboard?since=YYYY-MM-DD&month=YYYY-MM-01&day=YYYY-MM-DD
-//                      &champion=YYYY-MM-DD&limit=15&player=UUID
+//                      &limit=15&player=UUID
 //   -> { weekStart, daily: [...], dailySelf, weekly: [...], weeklySelf,
-//        allTime: [...], allTimeSelf, dayChampion, lastWeek, lastMonth }
+//        allTime: [...], allTimeSelf }
 //   The daily board counts the single puzzle `day`; the weekly board counts the
 //   seven days from `since`; the third counts the month `month` begins.
 //   `day` is optional: a caller that omits it gets the two boards it always got,
@@ -29,24 +29,6 @@
 //   `allTimeSelf`, carrying the rank they actually hold rather than a position
 //   inside the fifteen. When they are on the board -- or did not say who they
 //   are -- those are null, because the row is already up there.
-//
-//   `dayChampion`, `lastWeek` and `lastMonth` are the players who topped a
-//   closed window under each board: the single puzzle `champion`, the seven days
-//   before `since`, and the calendar month before `month`.
-//
-//   `champion` is its own parameter rather than "the day before `day`" because
-//   the two answer different questions: `day` is the board the reader is looking
-//   at and moves as they step it, while the plaque under it names the most
-//   recent puzzle that has finished *everywhere* -- a fact about the reader's
-//   today, which does not move at all. The caller picks the date (see
-//   src/game/leaderboard.ts) for the same reason it picks the other windows: a
-//   puzzle date is the player's own local calendar date, and nothing on this
-//   side shares that clock. Omitted, no champion is queried and the key is null. Each is that board's own window one step back, taken
-//   from the same parameter that bounds the board, so a board and the plaque
-//   under it can never name two different windows. Both are ordinary board rows
-//   (rank 1), or null when
-//   nobody scored inside the window. They are what keeps a win from evaporating
-//   when the window it happened in moves on.
 //
 // GET /api/leaderboard?words=1&today=YYYY-MM-DD
 //   -> { words: [...] }
@@ -271,10 +253,6 @@ interface WordEntry {
 interface BoardsResult {
   weekly: BoardRow[];
   allTime: BoardRow[];
-  /** Who topped the week before this one, or null if nobody scored in it. */
-  lastWeek: BoardRow | null;
-  /** The same for the calendar month before the asking player's own. */
-  lastMonth: BoardRow | null;
 }
 
 /**
@@ -334,12 +312,6 @@ function toEntry(row: BoardRow, index: number): BoardEntry {
     score: toNumber(row.total_score),
     puzzles: Number(row.puzzles) || 0,
   };
-}
-
-/** One champion row, or null when the window had no scores in it at all. */
-function toChampion(row: BoardRow | null | undefined): BoardEntry | null {
-  if (!row || typeof row !== "object") return null;
-  return toEntry(row, 0);
 }
 
 /**
@@ -594,7 +566,11 @@ function daysBefore(date: string, days: number): string {
  * The calendar month before the month `start` begins, as [first, last].
  *
  * `start` is the monthly board's own window, so this is that board one step
- * back -- which is exactly the window its champion line reports on. Taken from
+ * back -- the window `leaderboard_boards` still takes a pair of dates for.
+ * Nothing in the response is built from it any more: the boards used to carry a
+ * champion line under them, and this bounded the month it named. The pair is
+ * still sent because the function's signature takes it, and changing that means
+ * dropping and recreating a function every request in flight is using. Taken from
  * the player's own month rather than from UTC, for the same reason the week is:
  * a month boundary should turn over at the reader's midnight, not at somebody
  * else's. Done on the date's own numbers rather than with Date arithmetic, so
@@ -674,13 +650,11 @@ async function handleGet(request: Request): Promise<Response> {
   // an error.
   const claimedPlayer = params.get("player") ?? "";
   const player = UUID_RE.test(claimedPlayer) ? claimedPlayer.toLowerCase() : null;
-  // The month the champion line under the monthly board reports on: the one
-  // before the board's own window. Taken from `month` rather than from `today`,
-  // which is what it used to read, because `month` is now the one thing on the
-  // request that says which month this page is about -- so the board and the
-  // plaque under it cannot name two different months, which two sources could
-  // at a boundary. It also needs no fallback of its own: `month` is validated
-  // above, where `today` was optional.
+  // The month before the board's own window, which `leaderboard_boards` takes a
+  // pair of dates for whether or not anything reads what it computes from them
+  // (see `previousMonth`). Taken from `month` rather than from `today`: `month`
+  // is the one thing on the request that says which month this page is about,
+  // and it is validated above where `today` was optional.
   const lastMonth = previousMonth(month);
   // The single puzzle the daily board counts. Optional, and dropped rather than
   // refused when it is not a date a puzzle exists for: the two long boards are
@@ -688,11 +662,6 @@ async function handleGet(request: Request): Promise<Response> {
   // with them than with a 400.
   const claimedDay = params.get("day") ?? "";
   const day = validPuzzleDate(claimedDay) ? claimedDay : null;
-  // The puzzle the day board's plaque names. Dropped on the same terms as the
-  // day itself: a plaque is worth less than a board, so it is certainly not
-  // worth refusing one over.
-  const claimedChampion = params.get("champion") ?? "";
-  const champion = validPuzzleDate(claimedChampion) ? claimedChampion : null;
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
@@ -708,7 +677,7 @@ async function handleGet(request: Request): Promise<Response> {
     // `leaderboard_boards` to a third window, which means dropping and
     // recreating a function every request in flight is using, for a query it can
     // already run.
-    const [result, dailyRows, championRows] = await Promise.all([
+    const [result, dailyRows] = await Promise.all([
       rpc<BoardsResult>("leaderboard_boards", {
         p_since: since,
         p_limit: limit,
@@ -744,17 +713,6 @@ async function handleGet(request: Request): Promise<Response> {
             p_until: day,
           })
         : Promise.resolve(null),
-      // One puzzle, one row deep: the plaque under the day board. Nobody is
-      // asking, so no player id goes up -- a champion row is the top one or it
-      // is nothing.
-      champion
-        ? rpc<BoardRow[]>("leaderboard_board", {
-            p_since: champion,
-            p_limit: 1,
-            p_player: null,
-            p_until: champion,
-          })
-        : Promise.resolve(null),
     ]);
     const daily = toBoard(dailyRows, limit);
     const weekly = toBoard(result?.weekly ?? null, limit);
@@ -775,16 +733,6 @@ async function handleGet(request: Request): Promise<Response> {
         weeklySelf: weekly.self,
         allTime: allTime.entries,
         allTimeSelf: allTime.self,
-        // The three closed windows, each under the live board it followed. Null
-        // when nobody scored in one -- a month before the game existed, a first
-        // week, or a day nobody played -- which the page renders as no line at
-        // all.
-        //
-        // The day board's is ranked 1 by construction: the query asked for one
-        // row, ordered the way every board here is ordered.
-        dayChampion: toChampion(championRows?.[0]),
-        lastWeek: toChampion(result?.lastWeek),
-        lastMonth: toChampion(result?.lastMonth),
       },
       // A minute: long enough that a burst of opens costs one query, short
       // enough that a player who just scored sees themselves move.

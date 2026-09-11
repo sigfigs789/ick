@@ -18,10 +18,6 @@
     "scrolling out of it. That is the case worth being able to look at: a",
     "player the board would otherwise hide for doing well.",
     "",
-    "lastWeek / lastMonth are the champions of the two closed windows, shown on",
-    "the plaque under each board -- different players from the ones leading now,",
-    "since that is the interesting case.",
-    "",
     "The feed is every word found on the day rather than one per player, so most",
     "of it is ordinary words with one or two finders. That is what it looks like",
     "live, and a fixture of nothing but Legends would not."
@@ -317,30 +313,6 @@
     }
   ],
   "allTimeSelf": null,
-  "dayChampion": {
-    "rank": 1,
-    "playerId": "dev-3",
-    "windowWord": "morphology",
-    "windowZipf": 2.71,
-    "score": 9.1,
-    "puzzles": 1
-  },
-  "lastWeek": {
-    "rank": 1,
-    "playerId": "dev-3",
-    "windowWord": "obfuscate",
-    "windowZipf": 2.86,
-    "score": 61.2,
-    "puzzles": 7
-  },
-  "lastMonth": {
-    "rank": 1,
-    "playerId": "dev-2",
-    "windowWord": "quixotic",
-    "windowZipf": 2.33,
-    "score": 214.8,
-    "puzzles": 28
-  },
   "words": [
     {
       "word": "tinkered",
