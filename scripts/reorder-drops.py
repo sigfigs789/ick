@@ -22,9 +22,10 @@ How it works:
   - Simulated annealing (fixed seed, deterministic) swaps drops within
     same-length slots -- the 2-letter/3-letter cadence never changes -- to
     minimize: overlap with the previous 3 days, plus a penalty for two
-    tion-leaning drops landing within 30 days of each other, plus a tiny
-    drift term that keeps drops near their original position when nothing
-    forces a move. The already-played days before the cut are included as
+    tion-leaning drops landing within 30 days of each other, plus a penalty
+    for two answer-rich (easy) drops landing within 14 days, plus the wrap
+    overlap between the final day and day 1, plus a tiny drift term that
+    keeps drops near their original position when nothing forces a move. The already-played days before the cut are included as
     fixed context, so the first reordered days also steer clear of them.
 """
 import json
@@ -42,6 +43,20 @@ OVERLAP_WEIGHTS = {1: 1.0, 2: 0.4, 3: 0.15}  # by day distance
 TION_FLOOR = 0.10     # drops below 10% tion share don't repel each other
 TION_WINDOW = 30      # days over which two tion drops repel
 TION_WEIGHT = 6.0
+# A drop's familiar-word count is the closest thing the data has to a difficulty
+# score: the more familiar words contain it, the easier the board. The parked
+# tiers (hardDrops, challengingDrops) thin out the hard end by holding drops
+# back, but nothing kept the easy end from clumping, and recycling the
+# pre-launch drops -- the richest in the game -- put 33 more of them in the
+# tail. So the easy end repels itself the way the tion drops do.
+RICH_FAMILIAR = 800   # familiar words above which a drop counts as a soft day
+RICH_SCALE = 2000.0   # normalizes the count into the 0..1 the penalty expects
+RICH_WINDOW = 14      # days over which two soft drops repel
+RICH_WEIGHT = 4.0
+# The rotation wraps: its last day is followed by day 1. Scored explicitly
+# because the optimizer only ever looks backwards, so without this the final
+# slot is free to hold a drop whose whole word set sits inside day 1's.
+WRAP_WEIGHT = 1.0
 DRIFT = 2e-5          # tie-breaker toward a drop's original position
 STEPS = 400_000
 T_START, T_END = 0.02, 0.0005
@@ -89,6 +104,9 @@ def main() -> None:
     count_of = {d: m.bit_count() for d, m in mask_of.items()}
     tion_of = {d: ((m & tion_mask).bit_count() / c if (c := count_of[d]) else 0.0)
                for d, m in mask_of.items()}
+    rich_of = {d: min(c / RICH_SCALE, 1.0) if (c := count_of[d]) >= RICH_FAMILIAR
+               else 0.0
+               for d in mask_of}
 
     overlap_cache: dict[tuple[str, str], float] = {}
 
@@ -124,12 +142,22 @@ def main() -> None:
                 p = prev_drop(seq, i - k)
                 if p is not None and tion_of[p] >= TION_FLOOR:
                     c += TION_WEIGHT * t * tion_of[p] * (TION_WINDOW - k + 1) / TION_WINDOW
+        if rich_of[d]:
+            for k in range(1, RICH_WINDOW + 1):
+                p = prev_drop(seq, i - k)
+                if p is not None and rich_of[p]:
+                    c += (RICH_WEIGHT * rich_of[d] * rich_of[p]
+                          * (RICH_WINDOW - k + 1) / RICH_WINDOW)
+        if i == n - 1:
+            c += WRAP_WEIGHT * overlap(d, drops[0])
         return c + DRIFT * abs(orig_index[d] - i)
 
     def cost_around(seq: list[str], positions: tuple[int, int]) -> float:
         affected = set()
         for p in positions:
             affected.update(q for q in range(p, p + TION_WINDOW + 1) if q < n)
+            if p == n - 1:
+                affected.add(p)  # the wrap term lives on the final slot
         return sum(local_cost(seq, i) for i in affected)
 
     slots_by_len = {2: [i for i, d in enumerate(tail) if len(d) == 2],
@@ -166,9 +194,15 @@ def main() -> None:
         ovs.append(overlap(full[-1], full[0]))  # rotation wraps around
         tion_days = [i for i in range(sort_from, len(full)) if tion_of[full[i]] >= 0.25]
         gaps = [b - a for a, b in zip(tion_days, tion_days[1:])]
+        rich_days = [i for i in range(sort_from, len(full)) if rich_of[full[i]]]
+        rich_gaps = [b - a for a, b in zip(rich_days, rich_days[1:])]
         print(f"--- {label} ---")
         print(f"  adjacent overlap: mean={sum(ovs) / len(ovs):.4f} max={max(ovs):.3f} "
               f">=30%: {sum(o >= 0.3 for o in ovs)}")
+        print(f"  wrap into day 1: {overlap(full[-1], full[0]):.3f} ({full[-1]} -> {full[0]})")
+        if rich_gaps:
+            print(f"  soft days (>={RICH_FAMILIAR} familiar): {len(rich_days)}; day gaps "
+                  f"min={min(rich_gaps)} median={sorted(rich_gaps)[len(rich_gaps) // 2]}")
         if gaps:
             print(f"  tion-heavy days (>=25% share): {len(tion_days)}; day gaps "
                   f"min={min(gaps)} median={sorted(gaps)[len(gaps) // 2]}; "

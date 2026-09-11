@@ -87,3 +87,57 @@ describe("affix drops", () => {
     expect(dropForDate("2026-09-06")).toBe(dropData.drops[67]);
   });
 });
+
+// The pre-launch stretch (days 1-37, 2026-07-01 .. 2026-08-06) was dealt before
+// the game had an audience: every accepted answer recorded against those days
+// arrived in a single archive sweep on 2026-08-31, and they hold the richest
+// boards in the rotation. They were returned to the unplayed tail for a second
+// outing, which is the one sanctioned way a drop repeats -- so the rule that
+// every *other* drop is dealt once is pinned here, along with the shape of the
+// repeat itself.
+describe("recycled drops", () => {
+  const FIRST_RECYCLED_DAY = "2026-09-11";
+  const recycled = new Set<string>(dropData.recycledDrops);
+
+  it("recycles only drops that were already dealt", () => {
+    const dealt = new Set(dropData.lockedDrops);
+    expect([...recycled].filter((drop) => !dealt.has(drop))).toEqual([]);
+  });
+
+  it("deals each recycled drop exactly twice, the repeat in the future", () => {
+    const firstRecycledIndex = dropData.drops.indexOf(
+      dropForDate(FIRST_RECYCLED_DAY)
+    );
+    for (const drop of recycled) {
+      const days = dropData.drops.flatMap((d, i) => (d === drop ? [i] : []));
+      expect(days).toHaveLength(2);
+      expect(days[0]).toBeLessThan(dropData.lockedDrops.length);
+      expect(days[1]).toBeGreaterThanOrEqual(firstRecycledIndex);
+    }
+  });
+
+  it("deals every other drop exactly once", () => {
+    const counts = new Map<string, number>();
+    for (const drop of dropData.drops) {
+      counts.set(drop, (counts.get(drop) ?? 0) + 1);
+    }
+    const repeated = [...counts]
+      .filter(([, n]) => n > 1)
+      .map(([drop]) => drop)
+      .sort();
+    // STR is the one repeat that predates the recycling: it was seeded a second
+    // time on day 44, back when day 44 was still in the future.
+    expect(repeated).toEqual([...recycled, "STR"].sort());
+  });
+
+  it("keeps the affixes that were already dealt out of the tail", () => {
+    // ING, RE and IVE are affixes exempt from affixDrops only because they had
+    // already been published. Recycling one would deal an affix on purpose.
+    for (const affix of ["ING", "RE", "IVE"]) {
+      expect(recycled.has(affix)).toBe(false);
+      expect(dropData.drops.lastIndexOf(affix)).toBeLessThan(
+        dropData.lockedDrops.length
+      );
+    }
+  });
+});
