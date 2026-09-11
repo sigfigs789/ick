@@ -13,6 +13,7 @@ const WORDS = [
     mwSource: null,
     lookups: 0,
     suggestions: 2,
+    firstAt: "2026-09-08T09:00:00Z",
     lastAt: "2026-09-10T12:00:00Z",
   },
   {
@@ -24,6 +25,7 @@ const WORDS = [
     mwSource: "collegiate",
     lookups: 3,
     suggestions: 1,
+    firstAt: "2026-09-09T09:00:00Z",
     lastAt: "2026-09-10T12:00:00Z",
   },
 ];
@@ -55,7 +57,7 @@ afterEach(() => {
 });
 
 describe("SuggestedWordsPage", () => {
-  it("lists the queue in the order the endpoint returned it", async () => {
+  it("lists the queue in the order the endpoint returned it -- submission order", async () => {
     stubFetch();
     render(<SuggestedWordsPage />);
 

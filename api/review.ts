@@ -4,11 +4,15 @@
 //
 // GET /api/review?list=suggested-words&limit=200
 //   -> { words: [{ word, origin, zipf, pos, firstUse, mwSource, lookups,
-//                  suggestions, lastAt }] }
+//                  suggestions, firstAt, lastAt }] }
 // GET /api/review?list=feedback&limit=200
 //   -> { feedback: [{ id, text, at }] }
 //   400 bad-list / bad-limit, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
+//
+// Both lists come back in the order they were submitted, oldest first, which is
+// the order the functions impose (see the migration) rather than anything this
+// file does to them.
 //
 // Both lists were already in the database and reachable only from a psql prompt
 // holding the service-role key (see the 2026-09-11 migration for the two
@@ -48,6 +52,7 @@ interface SuggestedRow {
   mw_source: string | null;
   lookups: number | null;
   suggestions: number | null;
+  first_at: string | null;
   last_at: string | null;
 }
 
@@ -159,6 +164,7 @@ export default async function handler(request: Request): Promise<Response> {
         mwSource: row.mw_source,
         lookups: num(row.lookups) ?? 0,
         suggestions: num(row.suggestions) ?? 0,
+        firstAt: row.first_at,
         lastAt: row.last_at,
       })),
     });

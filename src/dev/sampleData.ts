@@ -108,29 +108,36 @@ function asPlayer<T>(rows: T): T {
  * only ever be looked at in their "couldn't load" state. Every row here is
  * invented; the point is the shapes -- an unattested word beside an attested
  * one, each origin the queue can report, and a note with a line break in it.
+ *
+ * Both lists are in submission order, oldest first, the way the endpoint returns
+ * them: a fixture sorted differently from the real thing would hide the one
+ * property of these pages that is not visible in a single row.
  */
 export function sampleReviewResponse(list: "suggested-words" | "feedback"): unknown {
   if (list === "feedback") {
     return {
       feedback: [
-        { id: 3, text: "The rarity tiers are the best part. More of those.", at: hoursAgo(2) },
-        { id: 2, text: "quixotic should be worth more\nit's a hard word!", at: hoursAgo(20) },
         { id: 1, text: "please add a dark mode", at: hoursAgo(50) },
+        { id: 2, text: "quixotic should be worth more\nit's a hard word!", at: hoursAgo(20) },
+        { id: 3, text: "The rarity tiers are the best part. More of those.", at: hoursAgo(2) },
       ],
     };
   }
   return {
     words: [
       {
-        word: "enshittification",
-        origin: "both",
-        zipf: null,
+        word: "susurrus",
+        origin: "live-lookup",
+        zipf: 1.62,
         pos: ["noun"],
-        firstUse: "2022",
+        firstUse: "1893",
         mwSource: "collegiate",
-        lookups: 4,
-        suggestions: 2,
-        lastAt: hoursAgo(3),
+        lookups: 6,
+        suggestions: 0,
+        firstAt: hoursAgo(70),
+        // Later than it arrived: a word that keeps being looked up, which is
+        // exactly the row where the two dates differ.
+        lastAt: hoursAgo(28),
       },
       {
         word: "quixotry",
@@ -141,18 +148,20 @@ export function sampleReviewResponse(list: "suggested-words" | "feedback"): unkn
         mwSource: null,
         lookups: 0,
         suggestions: 1,
+        firstAt: hoursAgo(9),
         lastAt: hoursAgo(9),
       },
       {
-        word: "susurrus",
-        origin: "live-lookup",
-        zipf: 1.62,
+        word: "enshittification",
+        origin: "both",
+        zipf: null,
         pos: ["noun"],
-        firstUse: "1893",
+        firstUse: "2022",
         mwSource: "collegiate",
-        lookups: 6,
-        suggestions: 0,
-        lastAt: hoursAgo(28),
+        lookups: 4,
+        suggestions: 2,
+        firstAt: hoursAgo(3),
+        lastAt: hoursAgo(3),
       },
     ],
   };

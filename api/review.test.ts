@@ -53,6 +53,7 @@ describe("api/review", () => {
         mw_source: "collegiate",
         lookups: 3,
         suggestions: 2,
+        first_at: "2026-09-08T09:00:00Z",
         last_at: "2026-09-10T12:00:00Z",
       },
     ]);
@@ -70,6 +71,7 @@ describe("api/review", () => {
           mwSource: "collegiate",
           lookups: 3,
           suggestions: 2,
+          firstAt: "2026-09-08T09:00:00Z",
           lastAt: "2026-09-10T12:00:00Z",
         },
       ],
@@ -89,7 +91,7 @@ describe("api/review", () => {
     expect(body.words[0].zipf).toBeNull();
   });
 
-  it("reads the feedback list, newest first as the function returns it", async () => {
+  it("reads the feedback list, in the order the function returns it", async () => {
     withEnv();
     const fetchMock = stubFetch([
       { id: 7, feedback: "more vowels please", created_at: "2026-09-10T12:00:00Z" },

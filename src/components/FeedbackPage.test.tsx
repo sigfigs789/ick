@@ -3,8 +3,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { FeedbackPage } from "./FeedbackPage";
 
 const NOTES = [
-  { id: 7, text: "more vowels please", at: "2026-09-10T12:00:00Z" },
   { id: 6, text: "  loving it  ", at: "2026-09-09T12:00:00Z" },
+  { id: 7, text: "more vowels please", at: "2026-09-10T12:00:00Z" },
   // Nothing but whitespace: the form will not send one, so a row like this is
   // noise from an older shape of the event rather than feedback anybody left.
   { id: 5, text: "   ", at: "2026-09-08T12:00:00Z" },
@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 describe("FeedbackPage", () => {
-  it("shows each note as text, newest first, trimmed", async () => {
+  it("shows each note as text, in the order the endpoint returned it, trimmed", async () => {
     stubFetch();
     render(<FeedbackPage />);
 

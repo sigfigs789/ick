@@ -12,9 +12,11 @@ import { fetchSuggestedWords } from "../game/review";
  * (the `suggested_words` view) and until now that list could only be read from a
  * psql prompt holding the service-role key.
  *
- * Rarest first, which is the order a triage pass wants: a word no corpus attests
- * scores a perfect 10 for whoever finds it, so those are the ones worth judging
- * before anything else.
+ * In the order the words arrived, oldest first, because a queue is a queue: the
+ * word that has been waiting since August has been waiting longest whatever its
+ * frequency turns out to be. Rarest-first was the order the underlying view
+ * imposes, and it is still the order you judge in once you are reading the list
+ * -- but that is a sort the eye can do, since the frequency is on every row.
  *
  * Not linked from anywhere in the app, because it is not a page for players. See
  * src/routes.ts.
@@ -26,7 +28,7 @@ export function SuggestedWordsPage() {
   return (
     <ReviewPage
       title="Suggested words"
-      note="Words waiting to be triaged into the dictionary — rarest first."
+      note="Words waiting to be triaged into the dictionary — oldest first."
       count={rows.length}
       state={state}
       refreshing={refreshing}
@@ -65,7 +67,10 @@ export function SuggestedWordsPage() {
               {row.pos.length > 0 && <span>{row.pos.join(", ")}</span>}
               {row.firstUse && <span>first use {row.firstUse}</span>}
               {row.mwSource && <span>{row.mwSource}</span>}
-              {row.lastAt && <span>{formatWhen(row.lastAt)}</span>}
+              {/* When it arrived, which is what the list is ordered on -- the
+                  last sighting is a different date on a word that keeps coming
+                  back, and putting both on the row would say neither. */}
+              {row.firstAt && <span>{formatWhen(row.firstAt)}</span>}
             </p>
           </li>
         ))}

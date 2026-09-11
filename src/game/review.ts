@@ -26,6 +26,9 @@ export interface SuggestedWord {
   lookups: number;
   /** How many times a player typed it into the suggestion box. */
   suggestions: number;
+  /** When the word first turned up, by either door: the queue's own order. */
+  firstAt: string | null;
+  /** The most recent of the two, which is not what the list is sorted on. */
   lastAt: string | null;
 }
 
@@ -67,12 +70,12 @@ async function read<T>(
   return pick((await response.json()) as Record<string, unknown>);
 }
 
-/** Every word waiting to be triaged into the curated dictionary, rarest first. */
+/** Every word waiting to be triaged into the dictionary, oldest arrival first. */
 export function fetchSuggestedWords(): Promise<SuggestedWord[]> {
   return read("suggested-words", (body) => parseWords(body.words));
 }
 
-/** Every note players have left, newest first. */
+/** Every note players have left, in the order they were written. */
 export function fetchFeedback(): Promise<FeedbackNote[]> {
   return read("feedback", (body) => parseFeedback(body.feedback));
 }
@@ -101,6 +104,7 @@ function parseWords(raw: unknown): SuggestedWord[] {
       mwSource: typeof row.mwSource === "string" ? row.mwSource : null,
       lookups: typeof row.lookups === "number" ? row.lookups : 0,
       suggestions: typeof row.suggestions === "number" ? row.suggestions : 0,
+      firstAt: typeof row.firstAt === "string" ? row.firstAt : null,
       lastAt: typeof row.lastAt === "string" ? row.lastAt : null,
     });
   }

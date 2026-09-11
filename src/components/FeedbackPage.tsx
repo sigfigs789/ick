@@ -6,7 +6,9 @@ import { fetchFeedback } from "../game/review";
 /**
  * The feedback players have left, as a page at /feedback.
  *
- * Everything typed into the box in the how-to-play sheet, newest first. The note
+ * Everything typed into the box in the how-to-play sheet, in the order it was
+ * written. Oldest first because these are read as a sequence: the same player
+ * often writes twice, and the second note answers the first. The note
  * is the whole of what was stored: the event carries no player id, no name and
  * nothing about the person (see src/analytics.ts, trackFeedback), so this page
  * can only ever show what somebody wrote and when it arrived.
@@ -26,7 +28,7 @@ export function FeedbackPage() {
   return (
     <ReviewPage
       title="Submitted feedback"
-      note="Notes players left in the how-to-play sheet — newest first."
+      note="Notes players left in the how-to-play sheet — oldest first."
       count={rows.length}
       state={state}
       refreshing={refreshing}

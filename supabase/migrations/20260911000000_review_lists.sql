@@ -11,9 +11,20 @@
 -- gives: the shape of a read stays fixed on the server, and the only thing the
 -- caller gets to choose is how many rows.
 
--- The review queue, newest activity first within the rarity order the view
--- already imposes. The view's own ORDER BY is not trusted to survive being
--- selected from, so it is restated here.
+-- The review queue, in the order the words arrived.
+--
+-- Submission order rather than the view's own rarest-first: a queue is a queue,
+-- and the word that has been waiting since August is the one that has been
+-- waiting longest whatever its frequency turns out to be. Rarest-first is the
+-- order you *judge* in once you are looking at the list, and it is a sort the
+-- reader can do by eye -- the frequency is on every row.
+--
+-- Which means the list needs the one thing the view does not carry: when each
+-- word first turned up. A word reaches the queue by two doors, so there are two
+-- answers to that -- the first sighting of a live lookup, and the first time a
+-- player typed it into the suggestion box -- and the earlier of them is when the
+-- word arrived. `infinity` stands in for a door the word never came through, so
+-- `least` picks the real one rather than collapsing to null.
 create or replace function public.list_suggested_words(p_limit integer default 200)
 returns table (
   word text,
@@ -24,34 +35,57 @@ returns table (
   mw_source text,
   lookups integer,
   suggestions integer,
+  first_at timestamptz,
   last_at timestamptz
 )
 language sql
 stable
 as $$
+  with asked as (
+    -- The same events the view counts, for their earliest timestamp rather than
+    -- their number. The regex is the game's own input rule, which is what keeps
+    -- junk out of a list built from a free-text box.
+    select
+      lower(e.props ->> 'word') as word,
+      min(e.created_at) as first_suggested_at
+    from public.analytics_events e
+    where e.name = 'word_suggested'
+      and e.props ? 'word'
+      and lower(e.props ->> 'word') ~ '^[a-z]{2,30}$'
+    group by 1
+  )
   select
-    s.word,
-    s.origin,
-    s.zipf,
-    s.pos,
-    s.first_use,
-    s.mw_source,
-    s.lookups::integer,
-    s.suggestions::integer,
-    s.last_at
-  from public.suggested_words s
-  -- Rarest first, then by how often the word keeps coming back: the same order
-  -- the view documents, because it is the order a triage pass wants.
-  order by s.zipf asc nulls first,
-           coalesce(s.lookups, 0) + coalesce(s.suggestions, 0) desc,
-           s.word asc
+    v.word,
+    v.origin,
+    v.zipf,
+    v.pos,
+    v.first_use,
+    v.mw_source,
+    v.lookups::integer,
+    v.suggestions::integer,
+    least(
+      coalesce(s.first_seen_at, 'infinity'::timestamptz),
+      coalesce(a.first_suggested_at, 'infinity'::timestamptz)
+    ) as first_at,
+    v.last_at
+  from public.suggested_words v
+  left join public.word_sightings s on s.word = v.word
+  left join asked a on a.word = v.word
+  -- Oldest first, and the expression repeated rather than the output column
+  -- named: a name that is both an output column and a table column is a fight
+  -- not worth having.
+  order by least(
+             coalesce(s.first_seen_at, 'infinity'::timestamptz),
+             coalesce(a.first_suggested_at, 'infinity'::timestamptz)
+           ) asc,
+           v.word asc
   limit greatest(1, least(coalesce(p_limit, 200), 500));
 $$;
 
 comment on function public.list_suggested_words(integer) is
-  'The suggested_words review queue, rarest first, bounded. Read by api/review.ts.';
+  'The suggested_words review queue, oldest submission first, bounded. Read by api/review.ts.';
 
--- Free-text feedback, newest first.
+-- Free-text feedback, in the order it was submitted.
 --
 -- The event carries nothing but the note: no player id, no name, nothing about
 -- the person (see src/analytics.ts, trackFeedback). What comes back is the text
@@ -76,12 +110,14 @@ as $$
   from public.analytics_events e
   where e.name = 'feedback_submitted'
     and coalesce(btrim(e.props ->> 'feedback'), '') <> ''
-  order by e.created_at desc, e.id desc
+  -- Oldest first: these are read as a sequence -- the same player often writes
+  -- twice, and the second note answers the first.
+  order by e.created_at asc, e.id asc
   limit greatest(1, least(coalesce(p_limit, 200), 500));
 $$;
 
 comment on function public.list_feedback(integer) is
-  'Free-text feedback players have left, newest first, bounded. Read by api/review.ts.';
+  'Free-text feedback players have left, oldest first, bounded. Read by api/review.ts.';
 
 -- Granted to service_role explicitly rather than left to the revoke: a REVOKE
 -- hands nothing to anybody, and these signatures are new.
