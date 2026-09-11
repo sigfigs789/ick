@@ -114,8 +114,6 @@ export default function App() {
 
   function openLeaderboard() {
     trackLeaderboardOpened("results");
-    // Nothing to retire here: the badge on the header's Leaderboards tab is
-    // retired by arriving on the page, from whichever door (see AppHeader).
     navigate("leaderboard");
   }
 
