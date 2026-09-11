@@ -83,7 +83,6 @@ export function InstructionsModal({ open, onClose }: Props) {
               }}
               placeholder="Share feedback"
               rows={2}
-              maxLength={300}
             />
             <button type="submit" disabled={!feedback.trim()}>
               Send

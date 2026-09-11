@@ -419,9 +419,9 @@ describe("unattested-score event", () => {
 });
 
 describe("trackFeedbackSubmitted", () => {
-  it("trims the note and caps it at 200 characters", () => {
-    trackFeedbackSubmitted(`  ${"a".repeat(250)}  `);
-    expect(track).toHaveBeenCalledWith("feedback_submitted", { feedback: "a".repeat(200) });
+  it("trims the note and caps Vercel's copy at the 255 characters it accepts", () => {
+    trackFeedbackSubmitted(`  ${"a".repeat(400)}  `);
+    expect(track).toHaveBeenCalledWith("feedback_submitted", { feedback: "a".repeat(255) });
   });
 });
 

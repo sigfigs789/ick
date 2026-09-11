@@ -251,11 +251,20 @@ export function trackMerriamWebsterFailed(date: string, drop: string, check: Liv
 }
 
 /**
- * Record free-text feedback left in the How to play panel. Trimmed and capped at
- * 200 characters so a long note still lands as a single readable property value.
+ * Record free-text feedback left in the How to play panel.
+ *
+ * The box takes a note of any length, and the whole of it goes to the Supabase
+ * mirror, which is what the feedback review page reads. Vercel Analytics caps a
+ * property value at 255 characters, so the copy on its dashboard is the opening
+ * of the note; the two sinks are addressed separately here rather than through
+ * `send` so that difference is visible instead of costing the full text.
  */
+const VERCEL_VALUE_CHARS = 255;
+
 export function trackFeedbackSubmitted(rawFeedback: string) {
-  send("feedback_submitted", { feedback: rawFeedback.trim().slice(0, 200) });
+  const note = rawFeedback.trim();
+  track("feedback_submitted", { feedback: note.slice(0, VERCEL_VALUE_CHARS) });
+  mirror("feedback_submitted", { feedback: note });
 }
 
 /** Record player suggestions for future curated-list reviews. */

@@ -69,9 +69,9 @@ describe("api/events recording", () => {
   it("truncates a long free-text property rather than rejecting the event", async () => {
     withEnv();
     const fetchMock = stubFetch();
-    await handler(post({ name: "feedback_submitted", props: { feedback: "x".repeat(900) } }));
+    await handler(post({ name: "feedback_submitted", props: { feedback: "x".repeat(5000) } }));
     const props = inserted(fetchMock)?.row.props as Record<string, string>;
-    expect(props.feedback).toHaveLength(500);
+    expect(props.feedback).toHaveLength(4000);
   });
 
   it("accepts the event even when the write itself fails", async () => {
