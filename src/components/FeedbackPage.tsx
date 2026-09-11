@@ -23,15 +23,14 @@ import { fetchFeedback, hasReviewKey } from "../game/review";
  * is an append-only mirror of what the client sent, and this app should not be
  * editing its own log to remember what it has read.
  *
- * Linked from the how-to-play sheet, to whoever has just left a note, which
- * makes this a public wall: what one player wrote is read by the next. Nothing
- * here identifies who wrote what -- the event carries no player id, no name and
- * nothing about the person -- but the words themselves are open, and that is the
- * trade the link makes.
+ * Not linked from anywhere in the app. The how-to-play sheet briefly offered
+ * this page to whoever had just written a note, which would have made it a
+ * public wall -- one player's note read by the next -- and that link was taken
+ * back out. Nothing here identifies who wrote what (the event carries no player
+ * id, no name and nothing about the person), but the words are still theirs.
  *
- * The triage controls are a curator's, not a reader's, and are drawn only for
- * somebody holding the `?key=` the marking endpoint requires (see hasReviewKey,
- * and api/review.ts for the gate itself).
+ * See api/review.ts for what gates the read, and hasReviewKey for why the
+ * triage controls are drawn only for somebody holding the key.
  */
 export function FeedbackPage() {
   const load = useCallback(() => fetchFeedback(), []);

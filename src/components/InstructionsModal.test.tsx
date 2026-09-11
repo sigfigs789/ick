@@ -91,22 +91,21 @@ describe("InstructionsModal", () => {
     expect(screen.getByText(/thanks for the feedback/i)).toBeInTheDocument();
   });
 
-  it("offers the feedback page once a note is sent, and closes on the way there", async () => {
-    const onClose = vi.fn();
+  it("thanks the player without pointing them at everybody else's notes", async () => {
     window.history.pushState(null, "", "/");
-    render(<InstructionsModal open onClose={onClose} />);
+    render(<InstructionsModal open onClose={vi.fn()} />);
 
     await userEvent.type(
       screen.getByLabelText(/share feedback or leave a suggestion/i),
       "more vowel drops please",
     );
     await userEvent.click(screen.getByRole("button", { name: /^send$/i }));
-    await userEvent.click(screen.getByRole("button", { name: /see what everyone/i }));
 
-    // The sheet sits over whatever page you were on, so it has to get out of
-    // the way of the page it just sent you to.
-    expect(onClose).toHaveBeenCalled();
-    expect(window.location.pathname).toBe("/feedback");
+    // A note is written to us, not to the other players: the confirmation says
+    // it landed and offers nothing to open.
+    expect(screen.getByRole("status")).toHaveTextContent(/thanks for the feedback/i);
+    expect(screen.queryByRole("button", { name: /see what everyone/i })).not.toBeInTheDocument();
+    expect(window.location.pathname).toBe("/");
   });
 
   it("ignores a whitespace-only note rather than sending an empty event", async () => {

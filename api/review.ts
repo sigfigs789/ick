@@ -36,17 +36,22 @@
 // and nothing else: no write path, and nothing here triages a word or answers a
 // note.
 //
-// Who may read it: anybody. Both pages are linked from the game -- the
-// how-to-play sheet points whoever just left a note at the feedback list, and
-// the word rules sheet points whoever just suggested a word at the queue -- so
-// these are public lists by decision rather than unlinked ones by default. What
-// a player wrote into the feedback box is readable by every other player, which
-// is the trade that link makes.
+// Who may read it differs by list, because the two pages are not the same kind
+// of page any more.
+//
+//   suggested-words  anybody. The word rules sheet points whoever just suggested
+//                    a word at the queue it joined, so a keyless reader is the
+//                    ordinary case. A queue of words is everybody's.
+//   feedback         keyed, when REVIEW_TOKEN is set. Nothing in the app links
+//                    to it: a note is something one player wrote to us, and the
+//                    pile of them is not a page to hand the next player. Unset,
+//                    it answers anybody who types the URL -- unlinked is not
+//                    protected, and the token is what protection there is.
 //
 // Who may mark: only a request carrying REVIEW_TOKEN as `key`, which the pages
 // take from their own URL and pass along. Unset, nobody can mark anything from
 // anywhere -- the write fails closed, because "unset means anybody" and "the
-// page is linked from the game" together mean a stranger triaging words into
+// queue is linked from the game" together mean a stranger triaging words into
 // the dictionary. A curator sets the token and opens the page with ?key=.
 //
 // Never CDN-cached, in either mode. A response that varies by a secret must not
@@ -262,12 +267,20 @@ async function handlePost(request: Request): Promise<Response> {
 }
 
 async function handleGet(request: Request): Promise<Response> {
-  // Open, unlike the mark above. Both pages are linked from the game, so a
-  // reader arriving without a key is the ordinary case rather than an intruder.
   const params = new URL(request.url).searchParams;
   const list = params.get("list");
   if (list !== "suggested-words" && list !== "feedback") {
     return reply(400, { ok: false, reason: "bad-list" });
+  }
+
+  // The queue is linked from the game and answers anybody. The notes are not
+  // linked from anywhere, and a deployment that sets REVIEW_TOKEN is asking for
+  // them to stay that way. Unlike the mark, this does not fail closed on an
+  // unset token: that would take the feedback page away from a deployment that
+  // has always read it without one, which is a thing to opt into rather than to
+  // wake up to.
+  if (list === "feedback" && (process.env.REVIEW_TOKEN ?? "") !== "" && !authorised(request)) {
+    return reply(401, { ok: false, reason: "unauthorised" });
   }
 
   // A limit that isn't a number is a caller and this endpoint disagreeing, which

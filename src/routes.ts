@@ -16,15 +16,15 @@ import { useEffect, useState } from "react";
  * that had not moved since breakfast. Two pages, two links to send, and the
  * header says which one you are on.
  *
- * The last two -- the word queue and the feedback players have left -- began as
- * curator pages nothing linked to, and are now the page each sheet sends you to
- * once you have written something: suggest a word and you are offered the queue
- * it joined, leave a note and you are offered the wall it landed on. Public to
- * read, in other words, which is a decision about other people's words and not
- * a routing detail. They still have no tab, because they are not part of the
- * daily round.
+ * The last two are the word queue and the feedback players have left, and they
+ * are no longer the same kind of page. The queue is linked: suggest a word and
+ * the sheet offers you the list it joined, because a queue of words is
+ * everybody's. The feedback page is linked from nowhere -- a note is something
+ * one player wrote to us, and the pile of them is not a page to hand the next
+ * player. Neither has a tab; neither is part of the daily round.
  *
- * Marking a row is the part that stayed a curator's: see api/review.ts.
+ * Reading the notes and marking any row are both a curator's, and gated as
+ * such: see api/review.ts.
  *
  * Anything that names none of them is the game, so a stray path still lands on a
  * playable puzzle rather than a 404 rendered by the client.

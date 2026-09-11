@@ -1,6 +1,5 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackFeedbackSubmitted } from "../analytics";
-import { navigate } from "../routes";
 
 interface Props {
   open: boolean;
@@ -90,20 +89,16 @@ export function InstructionsModal({ open, onClose }: Props) {
             </button>
           </div>
           {/* role="status" so the confirmation is announced and not only seen:
-              the box empties either way, and an empty box is not an answer. */}
+              the box empties either way, and an empty box is not an answer.
+
+              No link to /feedback from here, deliberately. The word queue is
+              offered to whoever suggests a word, because a queue of words is
+              everybody's; a note is something one player wrote to us, and
+              pointing the next player at the pile of them is a different thing
+              to publish. See src/routes.ts. */}
           {sent && (
             <p className="word-suggestion__thanks" role="status">
-              Thanks for the feedback!{" "}
-              <button
-                type="button"
-                className="word-suggestion__link"
-                onClick={() => {
-                  onClose();
-                  navigate("feedback");
-                }}
-              >
-                See what everyone{"’"}s said
-              </button>
+              Thanks for the feedback!
             </p>
           )}
         </form>

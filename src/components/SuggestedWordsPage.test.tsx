@@ -88,12 +88,17 @@ describe("SuggestedWordsPage", () => {
     ]);
   });
 
-  it("says a word is unattested rather than leaving its frequency blank", async () => {
+  it("shows what a word would score, not the frequency behind it", async () => {
     stubFetch();
     render(<SuggestedWordsPage />);
 
-    await waitFor(() => expect(screen.getByText("unattested")).toBeInTheDocument());
-    expect(screen.getByText("zipf 1.42")).toBeInTheDocument();
+    // The number a player would see. Zipf runs the other way -- higher means
+    // more common -- so a queue judged on it was judged backwards.
+    await waitFor(() => expect(screen.getByText("9.3")).toBeInTheDocument());
+    // An unattested word still has a score, and the row says both: the 10 it
+    // would earn, and why nobody should trust it.
+    expect(screen.getByText(/^10\.00 · unattested$/)).toBeInTheDocument();
+    expect(screen.queryByText(/zipf/)).not.toBeInTheDocument();
   });
 
   it("names where a candidate came from, and counts only what it has", async () => {

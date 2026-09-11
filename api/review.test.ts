@@ -292,14 +292,33 @@ describe("api/review", () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it("answers a read that carries no key at all -- the lists are public", async () => {
-      // The token gates marking, not reading: both pages are linked from the
-      // game, so a keyless reader is a player, not an intruder.
+    it("answers a keyless read of the queue, which is linked from the game", async () => {
       withEnv(GATED);
       stubFetch([]);
 
-      expect((await handler(get("?list=feedback"))).status).toBe(200);
       expect((await handler(get("?list=suggested-words"))).status).toBe(200);
+    });
+
+    it("refuses a keyless read of the notes, which are linked from nowhere", async () => {
+      // The two lists part company here: a queue of words is everybody's, and a
+      // note is something one player wrote to us.
+      withEnv(GATED);
+      const fetchMock = stubFetch([]);
+
+      expect((await handler(get("?list=feedback"))).status).toBe(401);
+      expect((await handler(get("?list=feedback&key=letmeinn"))).status).toBe(401);
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect((await handler(get("?list=feedback&key=letmein"))).status).toBe(200);
+    });
+
+    it("still answers the notes when no token is configured", async () => {
+      // Unlike a mark, this does not fail closed: taking the feedback page away
+      // from a deployment that has always read it without a token is a thing to
+      // opt into, not to wake up to.
+      withEnv(CONFIGURED);
+      stubFetch([]);
+
+      expect((await handler(get("?list=feedback"))).status).toBe(200);
     });
 
     it("refuses a mark whose key is wrong, without reaching the database", async () => {

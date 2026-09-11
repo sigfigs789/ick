@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { MarkBox, MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
 import { fetchSuggestedWords, hasReviewKey } from "../game/review";
-import { baseFormSubstitution } from "../game/dictionary";
+import { baseFormSubstitution, formatRarityScore, unattestedZipf } from "../game/dictionary";
 
 /**
  * The review queue, as a page at /suggested-words.
@@ -70,10 +70,21 @@ export function SuggestedWordsPage() {
             <div className="review__body">
             <div className="review__row">
               <span className="review__word">{row.word}</span>
-              <span className="review__zipf" title="Frequency, on the Zipf scale">
-                {/* Said rather than shown as a dash: an unattested word is the
-                    interesting case on this page, not a missing value. */}
-                {row.zipf === null ? "unattested" : `zipf ${row.zipf.toFixed(2)}`}
+              <span
+                className="review__zipf"
+                title="What this word would score in a puzzle"
+              >
+                {/* The score a player would see, not the frequency it is
+                    computed from: Zipf is the game's internal scale and reads
+                    backwards (higher means *more* common), so a queue judged on
+                    it was a queue judged in the wrong direction.
+
+                    A word no corpus attests still has a score -- the unattested
+                    floor, which is a perfect 10 -- and it is worth saying both:
+                    the 10 is what the word would earn, and "unattested" is why
+                    nobody should trust it. */}
+                {formatRarityScore(row.zipf ?? unattestedZipf())}
+                {row.zipf === null && " · unattested"}
               </span>
             </div>
             <p className="review__meta">
