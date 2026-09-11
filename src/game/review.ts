@@ -11,6 +11,22 @@ import { sampleReviewResponse, usingSampleData } from "../dev/sampleData";
 /** How long a read waits before giving up, matching the leaderboard's. */
 const FETCH_TIMEOUT_MS = 6000;
 
+/** The mark a row wears, or null for one nobody has judged yet. */
+export type Mark = "accepted" | "rejected" | null;
+
+/**
+ * The next mark in the cycle.
+ *
+ * Unmarked, accepted, rejected, and round again -- so the same control both
+ * sets a mark and takes it back, and a misclick is one more click rather than a
+ * state you cannot get out of.
+ */
+export function nextMark(mark: Mark): Mark {
+  if (mark === null) return "accepted";
+  if (mark === "accepted") return "rejected";
+  return null;
+}
+
 /** One word in the review queue, as the endpoint returns it. */
 export interface SuggestedWord {
   word: string;
@@ -30,6 +46,8 @@ export interface SuggestedWord {
   firstAt: string | null;
   /** The most recent of the two, which is not what the list is sorted on. */
   lastAt: string | null;
+  /** Its triage mark, which for a word is `word_sightings.status`. */
+  mark: Mark;
 }
 
 /** One note a player left in the how-to-play sheet. */
@@ -37,6 +55,7 @@ export interface FeedbackNote {
   id: number;
   text: string;
   at: string;
+  mark: Mark;
 }
 
 /**
@@ -47,9 +66,20 @@ export interface FeedbackNote {
  * `?key=`. Read from the address bar rather than stored: nothing should leave a
  * review key sitting in localStorage on a player's phone.
  */
+function reviewKey(): string | null {
+  return new URLSearchParams(window.location.search).get("key");
+}
+
+/** The key as a trailing parameter, for a URL that already has one. */
 function keyParam(): string {
-  const key = new URLSearchParams(window.location.search).get("key");
+  const key = reviewKey();
   return key ? `&key=${encodeURIComponent(key)}` : "";
+}
+
+/** The key as a whole query string, for a URL that has none. */
+function keyQuery(): string {
+  const key = reviewKey();
+  return key ? `?key=${encodeURIComponent(key)}` : "";
 }
 
 async function read<T>(
@@ -104,11 +134,17 @@ function parseWords(raw: unknown): SuggestedWord[] {
       mwSource: typeof row.mwSource === "string" ? row.mwSource : null,
       lookups: typeof row.lookups === "number" ? row.lookups : 0,
       suggestions: typeof row.suggestions === "number" ? row.suggestions : 0,
+      mark: asMark(row.mark),
       firstAt: typeof row.firstAt === "string" ? row.firstAt : null,
       lastAt: typeof row.lastAt === "string" ? row.lastAt : null,
     });
   }
   return words;
+}
+
+/** Anything that is not one of the two marks is an unmarked row. */
+function asMark(value: unknown): Mark {
+  return value === "accepted" || value === "rejected" ? value : null;
 }
 
 function parseFeedback(raw: unknown): FeedbackNote[] {
@@ -123,7 +159,36 @@ function parseFeedback(raw: unknown): FeedbackNote[] {
       id: typeof row.id === "number" ? row.id : notes.length,
       text,
       at: typeof row.at === "string" ? row.at : "",
+      mark: asMark(row.mark),
     });
   }
   return notes;
+}
+
+/**
+ * Set or clear the mark on one row, and answer with what is stored.
+ *
+ * The stored value rather than the asked-for one: the page draws the mark
+ * optimistically, and this is what lets it correct itself instead of leaving a
+ * tick over a row the database never marked. Rejects on failure, so the caller
+ * can put the old mark back.
+ */
+export async function setMark(
+  list: "suggested-words" | "feedback",
+  ref: string | number,
+  mark: Mark,
+): Promise<Mark> {
+  // Sample data has no server to write to, and a toggle that always failed
+  // would make the fixture worse than nothing: it answers with what was asked
+  // for, and the mark lives as long as the page does.
+  if (import.meta.env.DEV && usingSampleData()) return mark;
+  const response = await fetch(`/api/review${keyQuery()}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ list, ref, mark }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`review mark ${response.status}`);
+  const body = (await response.json()) as Record<string, unknown>;
+  return asMark(body.mark);
 }

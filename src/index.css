@@ -2586,9 +2586,71 @@ h2 {
   gap: 0.1rem;
   grid-template-columns: 1fr;
 }
+/* The mark, then the row. A leading column rather than a trailing one: these
+   pages are read down the left edge, and a tracking control belongs where the
+   eye already is. */
 .review__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
   padding: 0.55rem 0;
   border-bottom: 1px solid var(--border);
+}
+.review__body {
+  flex: 1;
+  min-width: 0;
+}
+/* A judged row, held back a little so the unjudged ones are what the eye lands
+   on. Not hidden and not struck through: the point of keeping a marked row on
+   the list is that it can still be read and changed. */
+.review__item--accepted,
+.review__item--rejected {
+  opacity: 0.7;
+}
+/*
+ * The mark itself: empty, a tick, or a cross, cycling on each click.
+ *
+ * A button rather than a checkbox, because a checkbox has two states and this
+ * has three -- "rejected" and "not looked at yet" are the distinction the
+ * control exists to draw, and a cleared checkbox cannot draw it. Sized as a
+ * real target and square, so a column of them reads as a column.
+ */
+.review__mark {
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-top: 0.05rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.35rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-size: 0.95rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.review__mark:hover {
+  border-color: var(--fg-muted);
+}
+.review__mark--accepted {
+  border-color: var(--success-fg);
+  background: var(--success-bg);
+  color: var(--success-fg);
+}
+.review__mark--rejected {
+  border-color: var(--danger-fg);
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+}
+/* A mark that did not save. Said above the list, because the control itself has
+   already snapped back to where it was. */
+.review__failed {
+  margin: 0 0 0.8rem;
+  color: var(--danger-fg);
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 .review__row {
   display: flex;

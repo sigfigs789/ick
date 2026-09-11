@@ -1,6 +1,6 @@
 import { useCallback } from "react";
-import { ReviewPage } from "./ReviewPage";
-import { formatWhen, useReviewList } from "./reviewList";
+import { MarkToggle, ReviewPage } from "./ReviewPage";
+import { formatWhen, useMarks, useReviewList } from "./reviewList";
 import { fetchSuggestedWords } from "../game/review";
 
 /**
@@ -18,12 +18,19 @@ import { fetchSuggestedWords } from "../game/review";
  * imposes, and it is still the order you judge in once you are reading the list
  * -- but that is a sort the eye can do, since the frequency is on every row.
  *
+ * Each row carries a mark -- accepted, rejected, or nothing yet -- and for a word
+ * that mark *is* `word_sightings.status`, the column the dictionary graduation
+ * pass already reads. So marking a word here is the same act as marking it from
+ * a script, and a word keeps its place on the list once marked rather than
+ * vanishing the moment it is judged.
+ *
  * Not linked from anywhere in the app, because it is not a page for players. See
  * src/routes.ts.
  */
 export function SuggestedWordsPage() {
   const load = useCallback(() => fetchSuggestedWords(), []);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
+  const { markFor, cycle, failed } = useMarks("suggested-words", rows);
 
   return (
     <ReviewPage
@@ -35,10 +42,20 @@ export function SuggestedWordsPage() {
       onRefresh={refresh}
       onRetry={retry}
       empty="Nothing in the queue."
+      markFailed={failed}
     >
       <ul className="review__list">
         {rows.map((row) => (
-          <li key={row.word} className="review__item">
+          <li
+            key={row.word}
+            className={`review__item review__item--${markFor(row.word, row.mark) ?? "unmarked"}`}
+          >
+            <MarkToggle
+              mark={markFor(row.word, row.mark)}
+              label={row.word}
+              onClick={() => cycle(row.word, row.mark)}
+            />
+            <div className="review__body">
             <div className="review__row">
               <span className="review__word">{row.word}</span>
               <span className="review__zipf" title="Frequency, on the Zipf scale">
@@ -72,6 +89,7 @@ export function SuggestedWordsPage() {
                   back, and putting both on the row would say neither. */}
               {row.firstAt && <span>{formatWhen(row.firstAt)}</span>}
             </p>
+            </div>
           </li>
         ))}
       </ul>

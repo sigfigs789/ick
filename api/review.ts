@@ -4,11 +4,26 @@
 //
 // GET /api/review?list=suggested-words&limit=200
 //   -> { words: [{ word, origin, zipf, pos, firstUse, mwSource, lookups,
-//                  suggestions, firstAt, lastAt }] }
+//                  suggestions, firstAt, lastAt, mark }] }
 // GET /api/review?list=feedback&limit=200
-//   -> { feedback: [{ id, text, at }] }
+//   -> { feedback: [{ id, text, at, mark }] }
 //   400 bad-list / bad-limit, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
+//
+// POST /api/review
+//   { list, ref, mark }   mark: "accepted" | "rejected" | null
+//   -> 200 { mark }, 400 malformed, 401 unauthorised, 503 no credentials,
+//      502 upstream unavailable.
+//   The mark a row is wearing: `ref` is the word on the queue or the note's id,
+//   and a null mark clears it. The response says what is stored rather than
+//   echoing what was asked, so the control on the page can draw the database's
+//   answer instead of its own optimism.
+//
+//   Where a mark is kept differs by list, and deliberately. A word's mark *is*
+//   `word_sightings.status`, the column the dictionary graduation pass already
+//   reads, so triaging from the page and triaging from a script are the same
+//   act. A note's mark is a row in `feedback_marks`, because the events table it
+//   would otherwise live in is an append-only mirror of what the client sent.
 //
 // Both lists come back in the order they were submitted, oldest first, which is
 // the order the functions impose (see the migration) rather than anything this
@@ -54,6 +69,8 @@ interface SuggestedRow {
   suggestions: number | null;
   first_at: string | null;
   last_at: string | null;
+  /** new | accepted | rejected | deferred; only the middle two are marks. */
+  status: string | null;
 }
 
 /** One row as `list_feedback` returns it. */
@@ -61,7 +78,31 @@ interface FeedbackRow {
   id: number;
   feedback: string | null;
   created_at: string;
+  mark: string | null;
 }
+
+/** The two marks a row can wear, and nothing else. */
+const MARKS = ["accepted", "rejected"] as const;
+type Mark = (typeof MARKS)[number];
+
+/**
+ * A stored value read as a mark.
+ *
+ * `word_sightings.status` has four values and only two of them are marks: 'new'
+ * is an untouched row and 'deferred' is a state this page has no control for.
+ * Both come back as null -- unmarked -- rather than as a state the toggle would
+ * have to invent a third glyph for. A 'deferred' word set by some other pass
+ * therefore reads as unmarked here, and marking it from the page overwrites it,
+ * which is the honest behaviour for a control that only knows two answers.
+ */
+function asMark(value: string | null): Mark | null {
+  return value === "accepted" || value === "rejected" ? value : null;
+}
+
+/** The word a queue mark is about: the game's own input rule. */
+const WORD_RE = /^[a-z]{2,30}$/;
+// A mark is three fields; nothing here needs a large body.
+const MAX_BODY_BYTES = 2 * 1024;
 
 function reply(status: number, body?: unknown): Response {
   return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -112,12 +153,96 @@ function authorised(request: Request): boolean {
 declare const process: { env: Record<string, string | undefined> };
 
 export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== "GET") {
-    return new Response(null, {
-      status: 405,
-      headers: { allow: "GET", "cache-control": "no-store" },
-    });
+  if (request.method === "GET") return handleGet(request);
+  if (request.method === "POST") return handlePost(request);
+  return new Response(null, {
+    status: 405,
+    headers: { allow: "GET, POST", "cache-control": "no-store" },
+  });
+}
+
+/**
+ * Set or clear the mark on one row.
+ *
+ * Same gate as the read, and worth being plain about what that means: with no
+ * REVIEW_TOKEN configured, anybody who finds these pages can move a mark -- and
+ * a word's mark is the dictionary graduation pass's own input. Reading the lists
+ * openly costs nothing; writing to them openly is a decision, and the token is
+ * how it is taken back.
+ */
+async function handlePost(request: Request): Promise<Response> {
+  if (!authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
+
+  // Same-origin only when the caller declares an origin, which every browser
+  // does on a POST -- the same guard api/events.ts uses, for the same reason.
+  const origin = request.headers.get("origin");
+  if (origin) {
+    let originHost: string;
+    try {
+      originHost = new URL(origin).host;
+    } catch {
+      return reply(403, { ok: false, reason: "bad-origin" });
+    }
+    if (originHost !== new URL(request.url).host) {
+      return reply(403, { ok: false, reason: "cross-origin" });
+    }
   }
+
+  const text = await request.text().catch(() => "");
+  if (text.length > MAX_BODY_BYTES) return reply(413, { ok: false, reason: "too-large" });
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return reply(400, { ok: false, reason: "malformed-json" });
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return reply(400, { ok: false, reason: "malformed-mark" });
+  }
+
+  const { list, ref, mark } = parsed as { list?: unknown; ref?: unknown; mark?: unknown };
+  if (list !== "suggested-words" && list !== "feedback") {
+    return reply(400, { ok: false, reason: "bad-list" });
+  }
+  // Null is a real value here -- it is how a mark is cleared -- so an absent
+  // field and a null one are the same request.
+  if (mark !== null && mark !== undefined && !MARKS.includes(mark as Mark)) {
+    return reply(400, { ok: false, reason: "bad-mark" });
+  }
+  const wanted = (mark ?? null) as Mark | null;
+
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    if (list === "feedback") {
+      // The note's own id, as the list handed it out.
+      if (typeof ref !== "number" || !Number.isInteger(ref) || ref < 1) {
+        return reply(400, { ok: false, reason: "bad-ref" });
+      }
+      const stored = await rpc<string | null>("set_feedback_mark", {
+        p_event_id: ref,
+        p_mark: wanted,
+      });
+      return reply(200, { mark: asMark(stored) });
+    }
+    if (typeof ref !== "string" || !WORD_RE.test(ref)) {
+      return reply(400, { ok: false, reason: "bad-ref" });
+    }
+    // Clearing a word's mark returns it to 'new', which is what an untriaged row
+    // is everywhere else in this database -- there is no fourth state for "was
+    // marked once".
+    await rpc<number>("set_word_status", {
+      p_words: [ref],
+      p_status: wanted ?? "new",
+    });
+    return reply(200, { mark: wanted });
+  } catch (error: unknown) {
+    console.error("[review] mark failed:", error instanceof Error ? error.message : error);
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
+async function handleGet(request: Request): Promise<Response> {
   if (!authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
 
   const params = new URL(request.url).searchParams;
@@ -150,6 +275,7 @@ export default async function handler(request: Request): Promise<Response> {
           id: row.id,
           text: row.feedback ?? "",
           at: row.created_at,
+          mark: asMark(row.mark),
         })),
       });
     }
@@ -166,6 +292,7 @@ export default async function handler(request: Request): Promise<Response> {
         suggestions: num(row.suggestions) ?? 0,
         firstAt: row.first_at,
         lastAt: row.last_at,
+        mark: asMark(row.status),
       })),
     });
   } catch (error: unknown) {

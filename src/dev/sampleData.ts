@@ -107,7 +107,8 @@ function asPlayer<T>(rows: T): T {
  * `vite dev` serves no edge functions, so without this the two review pages can
  * only ever be looked at in their "couldn't load" state. Every row here is
  * invented; the point is the shapes -- an unattested word beside an attested
- * one, each origin the queue can report, and a note with a line break in it.
+ * one, each origin the queue can report, a note with a line break in it, and
+ * every mark a row can wear.
  *
  * Both lists are in submission order, oldest first, the way the endpoint returns
  * them: a fixture sorted differently from the real thing would hide the one
@@ -117,9 +118,9 @@ export function sampleReviewResponse(list: "suggested-words" | "feedback"): unkn
   if (list === "feedback") {
     return {
       feedback: [
-        { id: 1, text: "please add a dark mode", at: hoursAgo(50) },
-        { id: 2, text: "quixotic should be worth more\nit's a hard word!", at: hoursAgo(20) },
-        { id: 3, text: "The rarity tiers are the best part. More of those.", at: hoursAgo(2) },
+        { id: 1, text: "please add a dark mode", at: hoursAgo(50), mark: "accepted" },
+        { id: 2, text: "quixotic should be worth more\nit's a hard word!", at: hoursAgo(20), mark: "rejected" },
+        { id: 3, text: "The rarity tiers are the best part. More of those.", at: hoursAgo(2), mark: null },
       ],
     };
   }
@@ -138,6 +139,7 @@ export function sampleReviewResponse(list: "suggested-words" | "feedback"): unkn
         // Later than it arrived: a word that keeps being looked up, which is
         // exactly the row where the two dates differ.
         lastAt: hoursAgo(28),
+        mark: "accepted",
       },
       {
         word: "quixotry",
@@ -150,6 +152,7 @@ export function sampleReviewResponse(list: "suggested-words" | "feedback"): unkn
         suggestions: 1,
         firstAt: hoursAgo(9),
         lastAt: hoursAgo(9),
+        mark: "rejected",
       },
       {
         word: "enshittification",
@@ -162,6 +165,7 @@ export function sampleReviewResponse(list: "suggested-words" | "feedback"): unkn
         suggestions: 2,
         firstAt: hoursAgo(3),
         lastAt: hoursAgo(3),
+        mark: null,
       },
     ],
   };
