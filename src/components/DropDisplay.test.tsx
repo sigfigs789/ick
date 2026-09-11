@@ -55,8 +55,8 @@ describe("DropDisplay", () => {
     expect(screen.queryByText(reveal.word, { exact: false })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Word of the day" }));
-    const dialog = screen.getByRole("dialog", { name: /word of the day/i });
-    expect(dialog).toHaveTextContent(/costs your retry/i);
+    const dialog = screen.getByRole("dialog", { name: /reveal today's word/i });
+    expect(dialog).toHaveTextContent(/uses up your retry/i);
 
     // Backing out costs nothing and leaves the word hidden.
     await userEvent.click(screen.getByRole("button", { name: /never mind/i }));
