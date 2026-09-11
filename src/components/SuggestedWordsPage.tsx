@@ -2,11 +2,7 @@ import { useCallback } from "react";
 import { MarkBox, MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
 import { fetchSuggestedWords, hasReviewKey } from "../game/review";
-import {
-  baseFormSubstitution,
-  curatedRejection,
-  formatRarityScore,
-} from "../game/dictionary";
+import { curatedRejection, formatRarityScore } from "../game/dictionary";
 
 /**
  * The review queue, as a page at /suggested-words.
@@ -94,34 +90,27 @@ export function SuggestedWordsPage() {
               </span>
             </div>
             <p className="review__meta">
-              {/* Where the word came from, in one label rather than three.
+              {/* Where the word came from, in one label.
 
-                  A word can have arrived by both doors, and when it has, the
-                  suggestion is the one worth saying: somebody asked for this
-                  word on purpose, which is a stronger signal than the game
-                  happening to let it through mid-puzzle. So the count wins when
-                  there is one -- and the count *is* the label, since "suggested"
-                  beside "1 suggestion" was the same word twice.
+                  "suggested" and "1 suggestion" were two labels for one fact,
+                  and the difference between them -- whether an analytics event
+                  survives to be counted -- is bookkeeping no reader of this
+                  page cares about. So the door is the label, and the count
+                  appears only when it is telling you something a second person
+                  asked for the word too.
 
-                  "played" is what is left: the live Merriam-Webster check
-                  approved it in a puzzle and nobody ever asked for it. Worth
+                  A word can have come through both doors, and then the
+                  suggestion wins: somebody asking for a word on purpose is a
+                  stronger signal than the game happening to let it through
+                  mid-puzzle. "played" is what is left -- approved by the live
+                  Merriam-Webster check in a puzzle, and never asked for. Worth
                   saying beside the mark, because a word the live check let
                   through can still be kept out of the dictionary afterwards. */}
-              {row.suggestions > 0 ? (
-                <span>
-                  {row.suggestions} {row.suggestions === 1 ? "suggestion" : "suggestions"}
-                </span>
-              ) : row.liveApproved ? (
+              {row.liveApproved && row.suggestions === 0 ? (
                 <span className="review__live">played</span>
+              ) : row.suggestions > 1 ? (
+                <span>{row.suggestions} suggestions</span>
               ) : (
-                /* Neither a live verdict nor a suggestion event, and still on
-                   the queue: the row was written by a review pass, which seeds a
-                   sighting for a word it judged (caprylate and conization share
-                   a timestamp to the microsecond with the 2026-08-22 pass). The
-                   word came in through the suggestion door -- that is what its
-                   `outcome` says -- and there is simply no event left to count,
-                   so the row says the door and not a number. Silence here read
-                   as a third kind of word, which it is not. */
                 <span>suggested</span>
               )}
               {/* Why the word is unplayable, when the repo has a reason on
@@ -139,17 +128,6 @@ export function SuggestedWordsPage() {
               {rejectionReason(row.word) && (
                 <span className="review__rejected">{rejectionReason(row.word)}</span>
               )}
-              {/* What the word would score as, if it is in the dictionary and
-                  the fold caps it at something more common -- "abaci" scores as
-                  "abacus". Computed here rather than sent: the fold is the
-                  shipped dictionary's own rule, and this page has it. A word
-                  still waiting to be added is not in it, so this stays empty
-                  until the word is actually playable. */}
-              {commonForm(row.word) && (
-                <span className="review__fold">
-                  common form {commonForm(row.word)}
-                </span>
-              )}
               {row.pos.length > 0 && <span>{row.pos.join(", ")}</span>}
               {row.firstUse && <span>first use {row.firstUse}</span>}
               {row.mwSource && <span>{row.mwSource}</span>}
@@ -164,19 +142,6 @@ export function SuggestedWordsPage() {
       </ul>
     </ReviewPage>
   );
-}
-
-/**
- * The more common word this one's score folds onto, if any.
- *
- * Only ever answers for a word the shipped dictionary already contains, which
- * on this page means a word that has been accepted and regenerated in. For
- * everything still queued it is undefined, and the row says nothing -- the fold
- * is a fact about a playable word, and guessing at one for a word the
- * dictionary has never seen would be inventing it.
- */
-function commonForm(word: string): string | undefined {
-  return baseFormSubstitution(word)?.base;
 }
 
 /**

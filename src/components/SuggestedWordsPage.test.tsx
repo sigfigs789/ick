@@ -114,6 +114,8 @@ describe("SuggestedWordsPage", () => {
     expect(screen.getByText("2 suggestions")).toBeInTheDocument();
     expect(screen.queryByText(/asked for/)).not.toBeInTheDocument();
     expect(screen.queryByText(/^played$/)).not.toBeInTheDocument();
+    // One suggestion reads as the door, not as a tally of one.
+    expect(screen.queryByText("1 suggestion")).not.toBeInTheDocument();
     // The lookup count is off the row too: how many times a word was reached
     // was not something anybody triaged on. The endpoint still sends it.
     expect(screen.queryByText(/\d+ lookups?$/)).not.toBeInTheDocument();
@@ -136,39 +138,17 @@ describe("SuggestedWordsPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("names the more common word a queued word's score folds onto", async () => {
-    // "reoxygenate" is in the shipped dictionary and caps at "oxygenated", so
-    // the row says what it would actually score as. Read from the dictionary
-    // here rather than sent by the endpoint: the fold is the game's own rule.
-    stubFetch([{ ...WORDS[0], word: "reoxygenate" }]);
-    render(<SuggestedWordsPage />);
-
-    await screen.findByText("reoxygenate");
-    expect(screen.getByText(/common form oxygenated/)).toBeInTheDocument();
-  });
-
-  it("says nothing about a common form for a word the dictionary has never seen", async () => {
-    // blorp is not a word, so there is no fold to report and the row does not
-    // invent one.
-    stubFetch();
-    render(<SuggestedWordsPage />);
-
-    await screen.findByText("blorp");
-    expect(
-      within(screen.getByText("blorp").closest("li") as HTMLElement).queryByText(/common form/),
-    ).not.toBeInTheDocument();
-  });
-
   it("says played only for a word nobody asked for", async () => {
     stubFetch([
       { ...WORDS[0], word: "blorp", suggestions: 2, liveApproved: true },
       { ...WORDS[1], word: "susurrus", suggestions: 0, liveApproved: true },
+      { ...WORDS[1], word: "caprylate", suggestions: 0, liveApproved: false },
     ]);
     render(<SuggestedWordsPage />);
 
     await screen.findByText("blorp");
     // Both doors, and the suggestion is the one worth saying: somebody asked
-    // for that word on purpose.
+    // for that word on purpose. The count appears because a second person did.
     const asked = within(screen.getByText("blorp").closest("li") as HTMLElement);
     expect(asked.getByText("2 suggestions")).toBeInTheDocument();
     expect(asked.queryByText("played")).not.toBeInTheDocument();
@@ -176,17 +156,11 @@ describe("SuggestedWordsPage", () => {
     expect(
       within(screen.getByText("susurrus").closest("li") as HTMLElement).getByText("played"),
     ).toBeInTheDocument();
-  });
-
-  it("says suggested for a row a review pass seeded, with no count to show", async () => {
-    // No live verdict and no suggestion event left to count: the word still
-    // came in through the suggestion door, and saying nothing at all made it
-    // look like a third kind of row.
-    stubFetch([{ ...WORDS[0], word: "caprylate", suggestions: 0, liveApproved: false }]);
-    render(<SuggestedWordsPage />);
-
-    await screen.findByText("caprylate");
-    expect(screen.getByText("suggested")).toBeInTheDocument();
+    // Neither a live verdict nor a countable event -- a row a review pass
+    // seeded. Same label as any other suggestion, because that is what it is.
+    expect(
+      within(screen.getByText("caprylate").closest("li") as HTMLElement).getByText("suggested"),
+    ).toBeInTheDocument();
   });
 
   it("names the fault when a word has a reviewed rejection on file", async () => {

@@ -2679,10 +2679,6 @@ h2 {
   color: var(--fg);
   font-weight: 700;
 }
-/* The more common word this one's score folds onto. */
-.review__fold {
-  font-style: italic;
-}
 /* The fault a reviewed rejection names -- why the word cannot be played. */
 .review__rejected {
   color: var(--danger-fg);
