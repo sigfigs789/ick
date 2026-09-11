@@ -1,9 +1,9 @@
-import { act, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppHeader } from "./AppHeader";
 import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
-import { navigate, useRoute } from "../routes";
+import { useRoute } from "../routes";
 
 vi.mock("../analytics", () => ({
   trackLeaderboardOpened: vi.fn(),
@@ -16,15 +16,9 @@ const howToPlay = vi.fn();
  * The header wired to the real router, which is the only way to see the thing
  * it is for: a tab is a tab because pressing it changes the page under it.
  */
-function Harness({ instructionsOpen = false }: { instructionsOpen?: boolean }) {
+function Harness() {
   const route = useRoute();
-  return (
-    <AppHeader
-      route={route}
-      instructionsOpen={instructionsOpen}
-      onHowToPlay={howToPlay}
-    />
-  );
+  return <AppHeader route={route} onHowToPlay={howToPlay} />;
 }
 
 beforeEach(() => {
@@ -91,67 +85,5 @@ describe("the header", () => {
     // back to the puzzle to check what a rank was made of.
     await userEvent.click(screen.getByRole("button", { name: /how to play/i }));
     expect(howToPlay).toHaveBeenCalled();
-  });
-
-  it("badges the leaderboard until it has been visited, then never again", async () => {
-    const { unmount } = render(<Harness />);
-
-    // The badge is part of the tab's accessible name, so a screen reader hears
-    // the announcement rather than only seeing it.
-    await userEvent.click(
-      screen.getByRole("button", { name: "Leaderboards (new)" }),
-    );
-    expect(
-      screen.getByRole("button", { name: "Leaderboards" }),
-    ).toBeInTheDocument();
-
-    // And it stays gone across a reload, which is what "once" has to mean.
-    unmount();
-    window.history.pushState(null, "", "/");
-    render(<Harness />);
-    expect(
-      screen.getByRole("button", { name: "Leaderboards" }),
-    ).toBeInTheDocument();
-  });
-
-  it("retires the badge when the leaderboard is reached some other way", () => {
-    render(<Harness />);
-    expect(
-      screen.getByRole("button", { name: "Leaderboards (new)" }),
-    ).toBeInTheDocument();
-
-    // The results panel links straight to the board, and so does a shared URL.
-    // Arriving is meeting it, from whichever direction.
-    act(() => navigate("leaderboard"));
-    expect(
-      screen.getByRole("button", { name: "Leaderboards" }),
-    ).toBeInTheDocument();
-  });
-
-  it("names what is new in a callout, once the rules are behind them", () => {
-    render(<Harness />);
-
-    // The dot alone cannot say what it is pointing at; the callout can.
-    expect(screen.getByText("New leaderboard")).toBeInTheDocument();
-  });
-
-  it("holds the callout back while the rules are still open", () => {
-    // A first-timer has the how-to-play sheet open over this header, and a
-    // callout pointing at a tab they cannot reach yet announces nothing.
-    const { rerender } = render(<Harness instructionsOpen />);
-    expect(screen.queryByText("New leaderboard")).not.toBeInTheDocument();
-
-    rerender(<Harness instructionsOpen={false} />);
-    expect(screen.getByText("New leaderboard")).toBeInTheDocument();
-  });
-
-  it("does not badge the leaderboard for a player who has already met it", () => {
-    localStorage.setItem("ick:seen:leaderboard", "1");
-    render(<Harness />);
-
-    expect(
-      screen.getByRole("button", { name: "Leaderboards" }),
-    ).toBeInTheDocument();
-    expect(screen.queryByText("New leaderboard")).not.toBeInTheDocument();
   });
 });

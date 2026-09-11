@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
 import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
-import { hasSeen, markSeen } from "../game/whatsNew";
 import { navigate, type Route } from "../routes";
 
 /** One tab: where it goes and what it is called. */
@@ -42,39 +40,11 @@ const TABS: readonly Tab[] = [
  */
 export function AppHeader({
   route,
-  instructionsOpen,
   onHowToPlay,
 }: {
   route: Route;
-  /**
-   * Whether the how-to-play sheet is over the page, which the callout below
-   * waits out. See the note on it.
-   */
-  instructionsOpen: boolean;
   onHowToPlay: () => void;
 }) {
-  // Read once on mount rather than on every render: it flips exactly once, in
-  // the effect below, and reading storage during a render would be the only
-  // thing here that did.
-  const [leaderboardIsNew, setLeaderboardIsNew] = useState(
-    () => !hasSeen("leaderboard"),
-  );
-
-  /**
-   * Arriving is meeting it, however the player got here.
-   *
-   * Watched on the route rather than hung off the tab's own click, because the
-   * tab is no longer the only door: the results panel links straight to the
-   * board, and so does a shared URL. The badge's whole job is to say "there is
-   * something here you haven't seen", and once they are looking at it there is
-   * nothing left to say -- from whichever direction they arrived.
-   */
-  useEffect(() => {
-    if (route !== "leaderboard") return;
-    markSeen("leaderboard");
-    setLeaderboardIsNew(false);
-  }, [route]);
-
   function go(tab: Tab) {
     if (tab.route === route) return;
     if (tab.route === "leaderboard") trackLeaderboardOpened("header");
@@ -130,7 +100,6 @@ export function AppHeader({
       <nav className="app__nav" aria-label="Pages">
         {TABS.map((tab) => {
           const current = tab.route === route;
-          const badged = tab.route === "leaderboard" && leaderboardIsNew;
           return (
             <button
               key={tab.route}
@@ -138,29 +107,8 @@ export function AppHeader({
               className={`app__nav-item${current ? " app__nav-item--current" : ""}`}
               onClick={() => go(tab)}
               aria-current={current ? "page" : undefined}
-              // The "(new)" rides on the accessible name, so a screen reader
-              // hears the announcement once -- the dot and the callout below
-              // are both hidden from it for the same reason.
-              aria-label={badged ? `${tab.label} (new)` : undefined}
             >
               <span className="app__nav-label">{tab.label}</span>
-              {badged && (
-                <>
-                  <span className="app__icon-badge" aria-hidden="true" />
-                  {/* The dot marks the tab; the callout says what is behind it,
-                      because a badge nobody can decode is not an announcement.
-
-                      Held back until the how-to-play sheet has been met: on a
-                      first visit that sheet is open over this header, and a
-                      callout pointing at a tab the player cannot reach yet is
-                      noise arriving before the game itself. */}
-                  {!instructionsOpen && (
-                    <span className="app__icon-callout" aria-hidden="true">
-                      New leaderboard
-                    </span>
-                  )}
-                </>
-              )}
             </button>
           );
         })}
