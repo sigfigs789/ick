@@ -136,24 +136,36 @@ describe("useDailyPuzzle retry", () => {
     expect(result.current.canRetry).toBe(true);
   });
 
-  it("keeps the retry off an archive puzzle, however freshly it was played", async () => {
+  it("carries the retry into the archive, on any puzzle from the start on", async () => {
     const { result } = renderHook(() => useDailyPuzzle());
     act(() => result.current.goToPrevious());
     expect(result.current.isToday).toBe(false);
-    // Played right now, on a puzzle that is no longer the current one -- which
-    // is the boundary: the retry belongs to the puzzle, not to the session.
+    // The allowance belongs to the puzzle, not to the day it is being played
+    // on: yesterday dropped after RETRY_START, so it still has its retry.
     await act(async () => {
       await result.current.submitWord(YESTERDAYS_WORD);
     });
-    const banked = result.current.progress.acceptedWords;
-    expect(banked).toHaveLength(1);
+    expect(result.current.canRetry).toBe(true);
 
-    expect(result.current.canRetry).toBe(false);
+    act(() => result.current.retryAnswer(YESTERDAYS_WORD));
+
+    expect(result.current.progress.acceptedWords).toEqual([]);
+    expect(result.current.retrySpent).toBe(true);
+  });
+
+  it("keeps each puzzle's retry its own", async () => {
+    const { result } = renderHook(() => useDailyPuzzle());
+    await act(async () => {
+      await result.current.submitWord(FIRST);
+    });
+    act(() => result.current.retryAnswer(FIRST));
+    expect(result.current.retrySpent).toBe(true);
+
+    // Spending today's does not reach back into yesterday's, which is still
+    // sitting unspent on a puzzle of its own.
+    act(() => result.current.goToPrevious());
+    expect(result.current.retryOffered).toBe(true);
     expect(result.current.retrySpent).toBe(false);
-    // Not merely hidden -- the hook refuses it, so a stale button can't reach it.
-    act(() => result.current.retryAnswer(banked[0].word));
-    expect(result.current.progress.acceptedWords).toEqual(banked);
-    expect(result.current.progress.retryUsed).toBeUndefined();
   });
 
   it("stays spent when the player comes back to the puzzle", async () => {
@@ -207,16 +219,25 @@ describe("useDailyPuzzle reveal", () => {
     );
   });
 
-  it("keeps the reveal off an archive puzzle, which never had a retry to spend", async () => {
+  it("spends an archive puzzle's retry the same way, and posts no board write", async () => {
+    joinBoard();
+    const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
+    vi.stubGlobal("fetch", fetchMock);
+
     const { result } = renderHook(() => useDailyPuzzle());
     act(() => result.current.goToPrevious());
     await act(async () => {
       await result.current.submitWord(YESTERDAYS_WORD);
     });
+    fetchMock.mockClear();
 
     act(() => result.current.revealAnswer());
 
-    expect(result.current.progress.retryUsed).toBeUndefined();
+    expect(result.current.progress.retryUsed).toBe(true);
+    expect(result.current.retrySpent).toBe(true);
+    // Nothing posted: the board takes today's puzzle only, so an archive day's
+    // retry moves this browser's record and leaves the standings alone.
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
@@ -321,11 +342,12 @@ describe("useDailyPuzzle retry allowance", () => {
     expect(result.current.retriesLeft).toBe(0);
   });
 
-  it("reports none at all on a puzzle that carries no retry", () => {
+  it("reports one on an archive puzzle that dropped after the start", () => {
     const { result } = renderHook(() => useDailyPuzzle());
     act(() => result.current.goToPrevious());
-    // Null rather than zero: this day never had one to spend.
-    expect(result.current.retriesLeft).toBeNull();
+    // Yesterday is an archive puzzle now, but it dropped with a retry and keeps
+    // it -- only the release date decides (see constants.retryAvailableFor).
+    expect(result.current.retriesLeft).toBe(1);
   });
 });
 
