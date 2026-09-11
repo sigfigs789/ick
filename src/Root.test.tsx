@@ -18,6 +18,9 @@ vi.mock("./components/LeaderboardPage", () => ({
 vi.mock("./components/FoundWordsPage", () => ({
   FoundWordsPage: () => <div>found words</div>,
 }));
+vi.mock("./components/FoldedWordsPage", () => ({
+  FoldedWordsPage: () => <div>folded words</div>,
+}));
 vi.mock("./analytics", () => ({
   trackLeaderboardJoined: vi.fn(),
   trackLeaderboardOpened: vi.fn(),
@@ -115,6 +118,23 @@ describe("keeping the board in step on open", () => {
     expect(
       screen.getByRole("button", { name: /Leaderboards/ }),
     ).toBeInTheDocument();
+  });
+
+  it("renders the fold table, which no tab points at", () => {
+    stubFetch();
+    window.history.replaceState(null, "", "/folded-words");
+
+    render(<Root />);
+
+    expect(screen.getByText("folded words")).toBeInTheDocument();
+    // Unlinked rather than hidden: the same header is above it, and none of its
+    // tabs is the page you are on -- there is no way in from the app at all.
+    expect(screen.getByRole("banner")).toHaveTextContent("WordInk");
+    expect(screen.queryByRole("button", { name: /Folds/i })).not.toBeInTheDocument();
+    const claiming = screen
+      .getAllByRole("button")
+      .filter((button) => button.getAttribute("aria-current") === "page");
+    expect(claiming).toEqual([]);
   });
 
   it("sends only the days this browser can prove were played on their own date", () => {
