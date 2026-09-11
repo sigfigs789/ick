@@ -19,13 +19,25 @@ How it works:
     actually reach for. Overlap between two drops is |A n B| / min(|A|, |B|).
   - A drop's "tion share" is the fraction of those words containing "tion";
     ONS counts because its familiar set is half -tions plurals.
+  - A drop's difficulty is its Rare+ count from scripts/drop-difficulty.json:
+    the playable words containing it that still score Rare or better after the
+    fold caps inflections at their base. That is the measure the difficulty
+    tiers were cut on (PR #202), applied here to the days that survived the
+    parking rather than to the parking decision. The bottom fifth of the
+    scheduled days are "hard" and two hard days repel each other over a week;
+    the cut is read off the rotation, so it moves with the data.
   - Simulated annealing (fixed seed, deterministic) swaps drops within
     same-length slots -- the 2-letter/3-letter cadence never changes -- to
     minimize: overlap with the previous 3 days, plus a penalty for two
-    tion-leaning drops landing within 30 days of each other, plus a tiny
-    drift term that keeps drops near their original position when nothing
-    forces a move. The already-played days before the cut are included as
-    fixed context, so the first reordered days also steer clear of them.
+    tion-leaning drops landing within 30 days of each other, plus a penalty
+    for two hard drops landing within a week, plus a tiny drift term that
+    keeps drops near their original position when nothing forces a move. The
+    already-played days before the cut are included as fixed context, so the
+    first reordered days also steer clear of them.
+  - Drops listed in seededDrops are pinned where they sit. They are published
+    drops dealt a second time by scripts/reseed-drops.py, placed by hand so
+    the ones with archive play land far out; the sort may arrange the rotation
+    around them but never moves them.
 """
 import json
 import math
@@ -42,6 +54,9 @@ OVERLAP_WEIGHTS = {1: 1.0, 2: 0.4, 3: 0.15}  # by day distance
 TION_FLOOR = 0.10     # drops below 10% tion share don't repel each other
 TION_WINDOW = 30      # days over which two tion drops repel
 TION_WEIGHT = 6.0
+HARD_QUANTILE = 0.2  # the fraction of scheduled days counted as hard
+HARD_WINDOW = 7      # days over which two hard drops repel
+HARD_WEIGHT = 3.0
 DRIFT = 2e-5          # tie-breaker toward a drop's original position
 STEPS = 400_000
 T_START, T_END = 0.02, 0.0005
@@ -60,6 +75,13 @@ def main() -> None:
     sort_from = (from_date - epoch).days
     if not (len(drops_data["lockedDrops"]) <= sort_from < len(drops)):
         sys.exit(f"{from_date} is index {sort_from}; must be inside the unlocked tail")
+
+    difficulty_path = ROOT / "scripts" / "drop-difficulty.json"
+    rare_plus = json.loads(difficulty_path.read_text())["rarePlus"]
+    missing = sorted(set(drops) - set(rare_plus))
+    if missing:
+        sys.exit(f"{difficulty_path.name} has no rating for {', '.join(missing)}; "
+                 "re-run scripts/drop-difficulty.py")
 
     dictionary = json.loads((DATA / "dictionary.json").read_text())
     zipf = json.loads((DATA / "rarity.json").read_text())["zipfHundredths"]
@@ -89,6 +111,14 @@ def main() -> None:
     count_of = {d: m.bit_count() for d, m in mask_of.items()}
     tion_of = {d: ((m & tion_mask).bit_count() / c if (c := count_of[d]) else 0.0)
                for d, m in mask_of.items()}
+
+    # A day is hard when little of what it reaches is worth banking. The cut is
+    # the bottom HARD_QUANTILE of the scheduled days -- not of the candidate
+    # pool, which still holds the drops parked in challengingDrops and
+    # hardDrops, and would drag the cut down to days no one will ever play.
+    scheduled = sorted(rare_plus[d] for d in drops)
+    hard_cut = scheduled[int(len(scheduled) * HARD_QUANTILE)]
+    hard_of = {d: max(0.0, (hard_cut - rare_plus[d]) / hard_cut) for d in mask_of}
 
     overlap_cache: dict[tuple[str, str], float] = {}
 
@@ -124,6 +154,12 @@ def main() -> None:
                 p = prev_drop(seq, i - k)
                 if p is not None and tion_of[p] >= TION_FLOOR:
                     c += TION_WEIGHT * t * tion_of[p] * (TION_WINDOW - k + 1) / TION_WINDOW
+        h = hard_of[d]
+        if h > 0:
+            for k in range(1, HARD_WINDOW + 1):
+                p = prev_drop(seq, i - k)
+                if p is not None and hard_of[p] > 0:
+                    c += HARD_WEIGHT * h * hard_of[p] * (HARD_WINDOW - k + 1) / HARD_WINDOW
         return c + DRIFT * abs(orig_index[d] - i)
 
     def cost_around(seq: list[str], positions: tuple[int, int]) -> float:
@@ -132,8 +168,13 @@ def main() -> None:
             affected.update(q for q in range(p, p + TION_WINDOW + 1) if q < n)
         return sum(local_cost(seq, i) for i in affected)
 
-    slots_by_len = {2: [i for i, d in enumerate(tail) if len(d) == 2],
-                    3: [i for i, d in enumerate(tail) if len(d) == 3]}
+    # Re-seeded drops keep the day they were given; everything else moves
+    # around them.
+    pinned = set(drops_data["seededDrops"])
+    slots_by_len = {n: [i for i, d in enumerate(tail)
+                        if len(d) == n and d not in pinned]
+                    for n in (2, 3)}
+    print(f"pinned: {sum(1 for d in tail if d in pinned)} re-seeded days held in place")
 
     def anneal(seed: int) -> list[str]:
         rng = random.Random(seed)
@@ -166,6 +207,10 @@ def main() -> None:
         ovs.append(overlap(full[-1], full[0]))  # rotation wraps around
         tion_days = [i for i in range(sort_from, len(full)) if tion_of[full[i]] >= 0.25]
         gaps = [b - a for a, b in zip(tion_days, tion_days[1:])]
+        hard_days = [i for i in range(sort_from, len(full)) if hard_of[full[i]] > 0]
+        hard_gaps = [b - a for a, b in zip(hard_days, hard_days[1:])]
+        weeks = [sum(1 for i in hard_days if w <= i < w + 7)
+                 for w in range(sort_from, len(full) - 7)]
         print(f"--- {label} ---")
         print(f"  adjacent overlap: mean={sum(ovs) / len(ovs):.4f} max={max(ovs):.3f} "
               f">=30%: {sum(o >= 0.3 for o in ovs)}")
@@ -173,6 +218,10 @@ def main() -> None:
             print(f"  tion-heavy days (>=25% share): {len(tion_days)}; day gaps "
                   f"min={min(gaps)} median={sorted(gaps)[len(gaps) // 2]}; "
                   f"first: {epoch + timedelta(days=tion_days[0])} ({full[tion_days[0]]})")
+        print(f"  hard days (Rare+ answers <= {hard_cut}): {len(hard_days)}; "
+              f"back to back: {sum(g == 1 for g in hard_gaps)}; "
+              f"within 3 days: {sum(g <= 3 for g in hard_gaps)}; "
+              f"worst week: {max(weeks)} of 7")
 
     report(tail, "before")
     report(seq, "after")
