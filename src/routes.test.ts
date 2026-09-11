@@ -17,6 +17,11 @@ describe("routes", () => {
     expect(routeFor("/found-words/")).toBe("found-words");
   });
 
+  it("recognises the folded words path", () => {
+    expect(routeFor("/folded-words")).toBe("folded-words");
+    expect(routeFor("/folded-words/")).toBe("folded-words");
+  });
+
   it("treats anything else as the game, rather than a client-rendered 404", () => {
     expect(routeFor("/")).toBe("game");
     expect(routeFor("")).toBe("game");
@@ -27,6 +32,7 @@ describe("routes", () => {
   it("maps each route back to its path", () => {
     expect(pathFor("leaderboard")).toBe("/leaderboard");
     expect(pathFor("found-words")).toBe("/found-words");
+    expect(pathFor("folded-words")).toBe("/folded-words");
     expect(pathFor("game")).toBe("/");
   });
 

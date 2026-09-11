@@ -28,6 +28,10 @@ const TABS: readonly Tab[] = [
   // landing now. Stepping back a day is a thing the page offers once you are on
   // it, not the thing the tab is promising.
   { route: "found-words", label: "Today's finds", icon: "📜" },
+  // The fold table (/folded-words) is deliberately not here. It is the whole
+  // scoring rule written out -- a thing to check against, not a thing to play
+  // with -- and a tab for it would put a 115,000-row answer key one press from
+  // the puzzle. Reachable by typing the path, and by nothing on screen.
 ];
 
 /**

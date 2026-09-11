@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import App from "./App";
 import { trackLeaderboardJoined } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
+import { FoldedWordsPage } from "./components/FoldedWordsPage";
 import { FoundWordsPage } from "./components/FoundWordsPage";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
@@ -21,7 +22,7 @@ import { useRoute } from "./routes";
  */
 const SYNC_STALE_MS = 5 * 60_000;
 
-/** Three pages under one header, picked off the address bar. See src/routes.ts. */
+/** Four pages under one header, picked off the address bar. See src/routes.ts. */
 export function Root() {
   const route = useRoute();
 
@@ -150,6 +151,8 @@ export function Root() {
         <LeaderboardPage />
       ) : route === "found-words" ? (
         <FoundWordsPage />
+      ) : route === "folded-words" ? (
+        <FoldedWordsPage />
       ) : (
         <App />
       )}

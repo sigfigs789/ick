@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 /**
  * The whole router.
  *
- * Three pages, no library. `vercel.json` already rewrites every non-`/api/` path
+ * Four pages, no library. `vercel.json` already rewrites every non-`/api/` path
  * to `index.html`, so a real URL is a matter of reading `location.pathname` and
- * pushing to it -- and both of the pages beside the game want a real URL: they
- * are pages you link someone to, open in a second tab, and reach with the back
+ * pushing to it -- and every page beside the game wants a real URL: they are
+ * pages you link someone to, open in a second tab, and reach with the back
  * button, none of which a modal can do.
  *
  * The boards and the finds are two of them rather than one long scroll. They
@@ -16,14 +16,23 @@ import { useEffect, useState } from "react";
  * that had not moved since breakfast. Two pages, two links to send, and the
  * header says which one you are on.
  *
- * Anything that names neither is the game, so a stray path still lands on a
+ * The fourth is unlisted: the fold table (/folded-words), every word in the
+ * dictionary that scores as a more common form. It is a route and nothing else
+ * -- no tab, no link, nothing on any page that leads to it -- because it is the
+ * scoring rule written out in full, which is a thing to check the game against
+ * rather than a thing to play with. Put in front of players it would be an
+ * answer key: 115,000 rows naming, for a great many words, exactly what the
+ * game will give you for them. Reachable by typing the path.
+ *
+ * Anything that names none of them is the game, so a stray path still lands on a
  * playable puzzle rather than a 404 rendered by the client.
  */
 
-export type Route = "game" | "leaderboard" | "found-words";
+export type Route = "game" | "leaderboard" | "found-words" | "folded-words";
 
 export const LEADERBOARD_PATH = "/leaderboard";
 export const FOUND_WORDS_PATH = "/found-words";
+export const FOLDED_WORDS_PATH = "/folded-words";
 
 /** The route a path names. */
 export function routeFor(pathname: string): Route {
@@ -31,6 +40,7 @@ export function routeFor(pathname: string): Route {
   const path = pathname.replace(/\/+$/, "") || "/";
   if (path === LEADERBOARD_PATH) return "leaderboard";
   if (path === FOUND_WORDS_PATH) return "found-words";
+  if (path === FOLDED_WORDS_PATH) return "folded-words";
   return "game";
 }
 
@@ -38,6 +48,7 @@ export function routeFor(pathname: string): Route {
 export function pathFor(route: Route): string {
   if (route === "leaderboard") return LEADERBOARD_PATH;
   if (route === "found-words") return FOUND_WORDS_PATH;
+  if (route === "folded-words") return FOLDED_WORDS_PATH;
   return "/";
 }
 

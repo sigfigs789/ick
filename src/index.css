@@ -2567,3 +2567,127 @@ h2 {
     font-size: 1.5rem;
   }
 }
+
+/* ---- The fold table (/folded-words) -------------------------------------- */
+/*
+ * A reference page, and styled as one: a search box, an order, a count, and
+ * rows. Nothing here animates and nothing arrives -- the whole list is computed
+ * from the bundle the moment the page opens (see FoldedWordsPage), so the only
+ * thing that ever moves it is the reader's own question.
+ */
+.folds__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.folds__search {
+  flex: 1 1 14rem;
+  min-width: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
+.folds__sort {
+  display: flex;
+  gap: 0.3rem;
+}
+.folds__sort-button {
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--card-bg);
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+/* The chosen order is filled rather than merely darker: two outlined buttons
+   side by side, one a shade browner than the other, is not a state anybody
+   reads at a glance. */
+.folds__sort-button--current {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.folds__count {
+  margin: 0 0 0.6rem;
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+}
+.folds__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: 1fr;
+}
+/* Two groups per row -- the pair of words and the pair of scores -- wrapping
+   onto a second line on a phone rather than squeezing four things into one. The
+   scores push right wherever the row has the width for it, so the folded score
+   ends up in a column the eye can run down. */
+.folds__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.6rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.folds__pair {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.folds__word {
+  font-weight: 700;
+}
+/* The common form is the quieter half of the pair: the row is about the word on
+   the left, and what happened to it. */
+.folds__base {
+  color: var(--fg-muted);
+}
+.folds__arrow {
+  color: var(--fg-faint);
+  flex: none;
+}
+.folds__scores {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+/* The score the word did not get, set back so the two badges are not read as
+   equals -- one of them is what the game actually awards, and the arrow between
+   them says which way it went. Faded rather than struck through: a badge is an
+   inline-flex box, which stops a line-through propagating into it, and a rule
+   drawn over the whole chip instead reads as a redaction. */
+.folds__score--own {
+  opacity: 0.6;
+}
+.folds__more {
+  display: block;
+  margin: 1rem auto 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  padding: 0.55rem 1.1rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.folds__more:hover {
+  background: var(--bg-inset);
+}

@@ -42,6 +42,9 @@ describe("the header", () => {
     // Named for what the page opens on, which is what brings anybody back to
     // it through the day.
     expect(screen.getByText("Today's finds")).toBeInTheDocument();
+    // And not the fold table: it has a route, and nothing on screen leads to
+    // it. See TABS in AppHeader.
+    expect(screen.queryByText("Folds")).not.toBeInTheDocument();
     // Labels, not a row of glyphs: a trophy and a scroll cannot say which of
     // the two lists of words is which.
     expect(screen.getByRole("button", { name: /^Play$/ })).toHaveAttribute(
