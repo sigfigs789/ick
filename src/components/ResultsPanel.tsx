@@ -84,10 +84,6 @@ export function ResultsPanel({
           ))}
         </div>
       </fieldset>
-      <pre className="results-panel__preview" aria-hidden="true">
-        <strong>{shareHeading}</strong>
-        {shareDetailLines.length > 0 && `\n${shareDetailLines.join("\n")}`}
-      </pre>
       <div className="results-panel__share-actions">
         <ShareButton text={copiedShareText} onShared={trackResultCopied} />
         <TwitterShareButton
@@ -95,6 +91,10 @@ export function ResultsPanel({
           onShared={trackResultSharedOnX}
         />
       </div>
+      <pre className="results-panel__preview" aria-hidden="true">
+        <strong>{shareHeading}</strong>
+        {shareDetailLines.length > 0 && `\n${shareDetailLines.join("\n")}`}
+      </pre>
       {onLeaderboard && (
         // The second way in, and the one that will get used: a finished puzzle
         // is the moment a player actually wants to know where the score put

@@ -1516,6 +1516,7 @@ h2 {
   cursor: pointer;
 }
 .results-panel__share-actions {
+  margin-top: 0.55rem;
   display: flex;
   justify-content: center;
   gap: 0.6rem;
@@ -1547,7 +1548,7 @@ h2 {
   white-space: pre-wrap;
   color: var(--fg-muted);
 }
-.results-panel__preview + .results-panel__share-actions {
+.results-panel__share-actions + .results-panel__preview {
   margin-top: 0.85rem;
 }
 
