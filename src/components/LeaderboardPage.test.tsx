@@ -41,6 +41,18 @@ const WEEKLY = [
     puzzles: 3,
   },
 ];
+// One puzzle's worth of scoring, which is what the daily board counts: nobody
+// is on it with more than a day's total.
+const DAILY = [
+  {
+    rank: 1,
+    playerId: BOB,
+    windowWord: "kerfuffle",
+    windowZipf: 3.11,
+    score: 9.4,
+    puzzles: 1,
+  },
+];
 const ALL_TIME = [
   {
     rank: 1,
@@ -83,6 +95,7 @@ const WORDS = [
 
 const OPEN = {
   weekStart: "2026-08-23",
+  daily: DAILY,
   weekly: WEEKLY,
   allTime: ALL_TIME,
   words: WORDS,
@@ -192,13 +205,15 @@ afterEach(() => {
 });
 
 describe("the leaderboard page", () => {
-  it("shows both boards at once, each ranked as the database ordered it", async () => {
+  it("shows all three boards at once, each ranked as the database ordered it", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    // Both on screen together -- there is no tab to click and no board hidden
+    // All on screen together -- there is no tab to click and no board hidden
     // behind one. This is the whole layout decision, so it is asserted directly.
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(boardRows("Today")[0]).toHaveTextContent(handleFor(BOB));
+    expect(boardRows("Today")[0]).toHaveTextContent("9.4");
     expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE));
     expect(boardRows("This week")[0]).toHaveTextContent("41.2");
 
@@ -288,6 +303,73 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(1));
     expect(boardRows("This week")[0]).toHaveTextContent("41.2");
     expect(boardRows("This week")[0]).not.toHaveTextContent("0.0");
+  });
+
+  it("names the day board's champion by weekday, with no caveat to explain", async () => {
+    // A Wednesday, so the last puzzle that is over everywhere is Monday's.
+    onDay(MIDWEEK);
+    stubFetch({
+      ...OPEN,
+      dayChampion: {
+        rank: 1,
+        playerId: CAROL,
+        windowWord: "abaci",
+        windowZipf: 2.65,
+        score: 9.1,
+        puzzles: 1,
+      },
+    });
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    const today = screen.getByRole("region", { name: "Today" });
+    // Not yesterday's: a day closes at each player's own midnight, so
+    // yesterday's winner can still change all through today -- every day, for
+    // everybody -- and the plaque would have carried a footnote that never
+    // lifted. Two days back has ended everywhere, so it can simply be stated.
+    expect(today).toHaveTextContent("Monday's champion");
+    expect(today).toHaveTextContent(handleFor(CAROL));
+    expect(today).toHaveTextContent("9.1");
+
+    // Which is the whole point of naming that day rather than yesterday.
+    expect(
+      within(today).queryByRole("button", {
+        name: "Why this winner can still change",
+      }),
+    ).toBeNull();
+    expect(today).not.toHaveTextContent("can change");
+  });
+
+  it("leaves the day board's plaque off when nobody scored that puzzle", async () => {
+    onDay(MIDWEEK);
+    stubFetch({ ...OPEN, dayChampion: null });
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    // The other two hold an empty plaque open because their window still gets
+    // engraved on a day worth naming. A puzzle nobody scored on is finished,
+    // and a promised crowning under it would be a name that never comes.
+    const today = screen.getByRole("region", { name: "Today" });
+    expect(within(today).queryByText(/Crowned on/)).toBeNull();
+    expect(within(today).queryByText(/champion/i)).toBeNull();
+  });
+
+  it("crowns a day the reader stepped back to from its own final standings", async () => {
+    onDay(MIDWEEK);
+    stubFetch(OPEN);
+    render(<LeaderboardPage />);
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+
+    // Two steps back, to a day that is over everywhere: the board above is that
+    // day's final standing, so its top row is the champion and there is nothing
+    // left to draw from another day.
+    await userEvent.click(screen.getByRole("button", { name: "Previous day" }));
+    await userEvent.click(screen.getByRole("button", { name: "Previous day" }));
+
+    const board = screen.getByRole("region", { name: "Aug 24" });
+    await waitFor(() => expect(board).toHaveTextContent("Champion"));
+    expect(board).toHaveTextContent(handleFor(BOB));
+    expect(board).not.toHaveTextContent("Monday's champion");
   });
 
   it("names last week's champion under the weekly board, and last month's under the monthly one", async () => {
@@ -696,11 +778,11 @@ describe("the leaderboard page", () => {
     // row says what it is in words; the scores, which are what the board is
     // ranked by, had been left to be inferred.
     await waitFor(() =>
-      expect(screen.getAllByText("Total score")).toHaveLength(2),
+      expect(screen.getAllByText("Total score")).toHaveLength(3),
     );
     // And the second figure in the same column gets the same treatment -- an
     // unlabelled number under a labelled one reads as a second total.
-    expect(screen.getAllByText("Best find")).toHaveLength(2);
+    expect(screen.getAllByText("Best find")).toHaveLength(3);
 
     // Stacked in the order the figures are, so the mapping is read straight
     // down rather than guessed. Asserted on the header's own text, since which
@@ -768,6 +850,35 @@ describe("the leaderboard page", () => {
     expect(boardRows(MONTH_BOARD)).toHaveLength(2);
   });
 
+  it("counts one puzzle on the day board, and says when it turns over", async () => {
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+
+    // The shortest window the game has, and the one anybody can still win from
+    // nothing: by Thursday a week's board is mostly a week's play.
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    expect(
+      within(screen.getByRole("region", { name: "Today" })).getByText(
+        "Resets at midnight",
+      ),
+    ).toBeInTheDocument();
+    // Asked for as a date rather than derived from the week: a puzzle belongs
+    // to the player's own local calendar day.
+    const url = new URL(String(fetchMock.mock.calls[0][0]), "https://wordink.app");
+    expect(url.searchParams.get("day")).toBe(todayDateString());
+  });
+
+  it("says so when nobody has scored on the day yet", async () => {
+    stubFetch({ ...OPEN, daily: [] });
+    render(<LeaderboardPage />);
+
+    // A board everybody starts level on is empty every morning, which is an
+    // invitation rather than a failure.
+    expect(
+      await screen.findByText("Nobody's scored yet today. Be first."),
+    ).toBeInTheDocument();
+  });
+
   it("asks for the week's board from its Sunday", async () => {
     const fetchMock = stubFetch();
     render(<LeaderboardPage />);
@@ -799,33 +910,6 @@ describe("the leaderboard page", () => {
     );
   });
 
-  it("still shows the finds when only the boards fail", async () => {
-    // Two requests, and only one of them broken. They are separate on purpose
-    // (the boards carry a player id and the feed does not), so they fail
-    // separately too.
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: unknown, init?: RequestInit) => {
-        if (init?.method === "POST") return new Response(null, { status: 202 });
-        if (!String(url).includes("words=1"))
-          return new Response("nope", { status: 502 });
-        return new Response(JSON.stringify({ words: WORDS }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        });
-      }),
-    );
-    render(<LeaderboardPage />);
-
-    // The boards say so, and the feed underneath is unaffected -- hiding words
-    // that arrived perfectly well would be losing the half of the page that
-    // still works.
-    expect(
-      await screen.findByText(/Couldn't load the boards/),
-    ).toBeInTheDocument();
-    const feed = await screen.findByRole("region", { name: "Today's finds" });
-    expect(within(feed).getAllByRole("listitem")).toHaveLength(WORDS.length);
-  });
 });
 
 describe("who the page thinks you are", () => {
@@ -857,15 +941,16 @@ describe("who the page thinks you are", () => {
     expect(you[0].textContent).toContain(handleFor(ALICE));
   });
 
-  it("says your handle in the header, so you know what to look for", async () => {
+  it("says your handle under the page's title, so you know what to look for", async () => {
     localStorage.setItem("ick:player", JSON.stringify({ id: ALICE }));
     stubFetch();
     render(<LeaderboardPage />);
 
     // Above the boards and not waiting on them: the point of the line is that
     // it answers "which one am I" before there is a board to scan.
-    const header = screen.getByRole("banner");
-    expect(header).toHaveTextContent(`Playing as ${handleFor(ALICE)}`);
+    expect(screen.getByText(/Playing as/)).toHaveTextContent(
+      `Playing as ${handleFor(ALICE)}`,
+    );
   });
 
   it("says nothing about a handle a browser without an id doesn't have", async () => {
@@ -897,16 +982,13 @@ describe("who the page thinks you are", () => {
 });
 
 describe("leaving the page", () => {
-  it("goes back to the puzzle from the header and the footer", async () => {
+  it("goes back to the puzzle from the foot of the page", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    await userEvent.click(
-      screen.getByRole("button", { name: "Back to the puzzle" }),
-    );
-    expect(window.location.pathname).toBe("/");
-
-    window.history.pushState(null, "", "/leaderboard");
+    // The back arrow that used to sit in this page's own header is gone with
+    // it: the header is the app's now, and its Play tab is the way home from
+    // every page (see AppHeader).
     await userEvent.click(
       screen.getByRole("button", { name: "Back to today's puzzle" }),
     );
@@ -914,257 +996,8 @@ describe("leaving the page", () => {
   });
 });
 
-describe("recent finds", () => {
-  /** The words feed's list items. */
-  function finds() {
-    return within(
-      screen.getByRole("region", { name: "Today's finds" }),
-    ).getAllByRole("listitem");
-  }
 
-  it("lists the words other players found today", async () => {
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    await waitFor(() => expect(finds()).toHaveLength(2));
-    expect(finds()[0]).toHaveTextContent("asphyxiate");
-    expect(finds()[1]).toHaveTextContent("quixotic");
-  });
-
-  it("badges each word at what it is worth today", async () => {
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    // The same badge the game shows on an accepted word, so a find reads the
-    // way finding it would have. Read off the badge's own element: the row's
-    // text runs together as "8.43 players", where a substring match would pass
-    // for a number never displayed.
-    await waitFor(() => expect(finds()[0]).toHaveTextContent("EXTREMELY RARE"));
-    expect(finds()[0].querySelector(".rarity-badge__score")?.textContent).toBe(
-      "8.4",
-    );
-  });
-
-  it("says how many players found a word, when more than one did", async () => {
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    await waitFor(() => expect(finds()[0]).toHaveTextContent("3 players"));
-    // One finder needs no count -- "1 players" is noise, and so is "1 player".
-    expect(finds()[1]).not.toHaveTextContent("player");
-  });
-
-  it("names the drop the finds had to contain", async () => {
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    // Without it the list is a pile of unrelated words.
-    const section = await screen.findByRole("region", {
-      name: "Today's finds",
-    });
-    expect(
-      section.querySelector(".found-words__drop")?.textContent,
-    ).toBeTruthy();
-    // And nothing under the heading restating it.
-    expect(
-      screen.queryByText("Every word found on today's puzzle."),
-    ).toBeNull();
-  });
-
-  it("shows the feed even when nobody is on the boards yet", async () => {
-    stubFetch({
-      weekStart: "2026-08-23",
-      weekly: [],
-      allTime: [],
-      words: WORDS,
-    });
-    render(<LeaderboardPage />);
-
-    // The feed works from the first word, which is what makes an empty board
-    // safe to show: the page is never empty while the boards fill up.
-    await waitFor(() => expect(finds()).toHaveLength(2));
-    expect(
-      screen.getByRole("region", { name: "This week" }),
-    ).toBeInTheDocument();
-  });
-
-  it("says so plainly when nobody has found anything today", async () => {
-    // A pinned day with somewhere to step back to: past the finds epoch and
-    // past this week's reset, so the feed's floor sits behind it. The empty
-    // section only survives when there is an earlier day to reach (see the
-    // Sunday case below), so reading the clock instead of setting it makes this
-    // test pass or fail on whichever day CI happens to run -- which is how it
-    // broke when a Sunday came around.
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 7, 28, 9, 0, 0));
-    try {
-      stubFetch({ ...OPEN, words: [] });
-      render(<LeaderboardPage />);
-
-      // The section stays, because it now carries the way back through the week
-      // -- and an empty morning is exactly when yesterday's finds are the thing
-      // worth reaching. What used to be a missing section is one sentence.
-      expect(
-        await vi.waitFor(() =>
-          screen.getByText("Nobody's found anything yet today."),
-        ),
-      ).toBeInTheDocument();
-      expect(
-        within(
-          screen.getByRole("region", { name: "Today's finds" }),
-        ).queryAllByRole("listitem"),
-      ).toHaveLength(0);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("keeps the section away entirely when there is nowhere to go and nothing to show", async () => {
-    // A Sunday: the week reset this morning, so there is no earlier day of it
-    // to step back to, and an empty section with a heading and two dead buttons
-    // would be worse than no section.
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 7, 23, 9, 0, 0));
-    try {
-      stubFetch({ ...OPEN, words: [] });
-      render(<LeaderboardPage />);
-      await vi.waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-      expect(
-        screen.queryByRole("region", { name: "Today's finds" }),
-      ).toBeNull();
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-});
-
-describe("finds arriving", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  /** The feed's items, in order. */
-  function finds() {
-    return within(
-      screen.getByRole("region", { name: "Today's finds" }),
-    ).getAllByRole("listitem");
-  }
-
-  it("marks a word that turned up since the last look, and puts it on top", async () => {
-    let words = [
-      { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
-    ];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ ...OPEN, words }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          }),
-      ),
-    );
-    render(<LeaderboardPage />);
-    await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
-    expect(finds()).toHaveLength(1);
-    // Nothing animates on the first load: everything is new to a page that has
-    // just opened, and marking it all would say twelve words just arrived.
-    expect(finds()[0].className).not.toContain("arrived");
-
-    // A rarer word lands later in the day; the feed is newest-first, so it goes
-    // above the one already there and pushes it down.
-    words = [
-      { word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-25" },
-      ...words,
-    ];
-    await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
-
-    expect(finds().map((li) => li.textContent)).toHaveLength(2);
-    expect(finds()[0]).toHaveTextContent("asphyxiate");
-    // A word nobody had seen opens a row for itself, which is the animation
-    // that says so -- not the glow-and-travel a re-found word gets.
-    expect(finds()[0].className).toContain("--arrived");
-    expect(finds()[0].className).not.toContain("refound");
-    // The word that was already there is not re-announced.
-    expect(finds()[1].className).not.toContain("arrived");
-  });
-
-  it("marks a word somebody else has now found, back on top with its count up", async () => {
-    // The feed is ordered on a word's most recent sighting, so a word already on
-    // screen returns to the top when a new player finds it. That is the same
-    // event as a new word landing and gets the same animation -- otherwise the
-    // row that just travelled the length of the list would look untouched.
-    let words = [
-      { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
-      { word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-25" },
-    ];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ ...OPEN, words }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          }),
-      ),
-    );
-    render(<LeaderboardPage />);
-    await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
-    expect(finds()[0]).toHaveTextContent("inkling");
-
-    words = [
-      { word: "asphyxiate", zipf: 2.09, finders: 2, foundOn: "2026-08-25" },
-      { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
-    ];
-    await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
-
-    expect(finds()[0]).toHaveTextContent("asphyxiate");
-    expect(finds()[0]).toHaveTextContent("2 players");
-    // Glowing, but as a word that travelled rather than one that appeared: the
-    // arrival animation opens a row's height from nothing, which is the one
-    // thing a row already on screen is not doing.
-    expect(finds()[0].className).toContain("refound");
-    expect(finds()[0].className).not.toContain("--arrived");
-    // The one it pushed down is unchanged and says nothing.
-    expect(finds()[1].className).not.toContain("refound");
-    expect(finds()[1].className).not.toContain("--arrived");
-  });
-
-  it("stops marking it once the arrival has played", async () => {
-    let words = [
-      { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-25" },
-    ];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        async () =>
-          new Response(JSON.stringify({ ...OPEN, words }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          }),
-      ),
-    );
-    render(<LeaderboardPage />);
-    await act(async () => void (await vi.advanceTimersByTimeAsync(0)));
-
-    words = [
-      { word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-25" },
-      ...words,
-    ];
-    await act(async () => void (await vi.advanceTimersByTimeAsync(60_000)));
-    expect(finds()[0].className).toContain("arrived");
-
-    // Otherwise an unrelated re-render would replay the animation later. Held
-    // until the longest animation has finished -- see the timeout in the page.
-    await act(async () => void (await vi.advanceTimersByTimeAsync(2800)));
-    expect(finds()[0].className).not.toContain("arrived");
-  });
-});
-
-describe("keeping the finds current", () => {
+describe("keeping the boards current", () => {
   // Fake timers go up *before* render: the polling interval is created on mount,
   // and one scheduled against the real clock would never fire under a fake one.
   // advanceTimersByTimeAsync also flushes the promises each fetch settles
@@ -1177,48 +1010,19 @@ describe("keeping the finds current", () => {
     vi.useRealTimers();
   });
 
-  it("re-checks on an interval while the page is open", async () => {
+  it("asks for nothing on a timer", async () => {
     const fetchMock = stubFetch();
     render(<LeaderboardPage />);
     await vi.advanceTimersByTimeAsync(0);
-    expect(boardRows("This week")).toHaveLength(2);
-
-    const first = fetchMock.mock.calls.length;
-    await vi.advanceTimersByTimeAsync(60_000);
-    // Today's finds land through the day, so a page left open must not sit on
-    // the snapshot it opened with.
-    expect(fetchMock.mock.calls.length).toBeGreaterThan(first);
-  });
-
-  it("polls the feed and leaves the boards alone", async () => {
-    const fetchMock = stubFetch();
-    render(<LeaderboardPage />);
-    await vi.advanceTimersByTimeAsync(0);
-    const boardCalls = () =>
-      fetchMock.mock.calls.filter(([url]) => !String(url).includes("words=1"))
-        .length;
-    const opened = boardCalls();
+    const opened = fetchMock.mock.calls.length;
 
     await vi.advanceTimersByTimeAsync(180_000);
 
     // The boards are the request carrying this player's id, so they are the one
     // the CDN cannot share. Re-asking every minute would buy a rank that had
-    // almost certainly not moved, at the price of a private query per open page.
-    expect(boardCalls()).toBe(opened);
-    expect(
-      fetchMock.mock.calls.filter(([url]) => String(url).includes("words=1"))
-        .length,
-    ).toBeGreaterThan(1);
-  });
-
-  it("keeps the boards on screen through a refresh", async () => {
-    stubFetch();
-    render(<LeaderboardPage />);
-    await vi.advanceTimersByTimeAsync(0);
-
-    await vi.advanceTimersByTimeAsync(60_000);
-    // A poll that flashed "Loading the boards…" every minute would be worse
-    // than not polling.
+    // almost certainly not moved, at the price of a private query per open
+    // page. The finds are the live half, and they are their own page now.
+    expect(fetchMock.mock.calls.length).toBe(opened);
     expect(screen.queryByText("Loading the boards…")).toBeNull();
     expect(boardRows("This week")).toHaveLength(2);
   });
@@ -1296,7 +1100,7 @@ describe("keeping the finds current", () => {
     expect(boardCalls()).toBe(opened);
   });
 
-  it("refreshes both halves past the cache when a reader taps refresh", async () => {
+  it("refreshes the boards past the cache when a reader taps refresh", async () => {
     const fetchMock = stubFetch();
     render(<LeaderboardPage />);
     await vi.advanceTimersByTimeAsync(0);
@@ -1309,254 +1113,14 @@ describe("keeping the finds current", () => {
       await vi.advanceTimersByTimeAsync(0);
     });
 
-    // Both: a reader who taps this is refreshing the page, not one section.
-    const asked = fetchMock.mock.calls
-      .slice(opened)
-      .map(([url]) => String(url))
-      .filter((url) => !url.includes("method"));
-    expect(asked.some((url) => url.includes("words=1"))).toBe(true);
-    expect(asked.some((url) => !url.includes("words=1"))).toBe(true);
-    // Every one of them past the shared copy. A client cannot bust a CDN cache
-    // with a header, so a different URL is the only thing that can, and without
-    // it the button would hand back the list the reader just told us is stale.
+    const asked = fetchMock.mock.calls.slice(opened).map(([url]) => String(url));
+    expect(asked.length).toBeGreaterThan(0);
+    // Past the shared copy. A client cannot bust a CDN cache with a header, so
+    // a different URL is the only thing that can, and without it the button
+    // would hand back the standings the reader just told us are stale.
     expect(asked.every((url) => /&t=\d+/.test(url))).toBe(true);
   });
 
-  it("leaves the poll on the shared copy", async () => {
-    const fetchMock = stubFetch();
-    render(<LeaderboardPage />);
-    await vi.advanceTimersByTimeAsync(0);
-    const opened = fetchMock.mock.calls.length;
-
-    await vi.advanceTimersByTimeAsync(30_000);
-
-    // The cache is there to absorb exactly this. Only a person gets to skip it.
-    const polled = fetchMock.mock.calls
-      .slice(opened)
-      .map(([url]) => String(url));
-    expect(polled.length).toBeGreaterThan(0);
-    expect(polled.every((url) => !url.includes("&t="))).toBe(true);
-  });
-
-  it("stops polling while the tab is hidden, and catches up on return", async () => {
-    const fetchMock = stubFetch();
-    render(<LeaderboardPage />);
-    await vi.advanceTimersByTimeAsync(0);
-
-    const hidden = vi
-      .spyOn(document, "visibilityState", "get")
-      .mockReturnValue("hidden");
-    document.dispatchEvent(new Event("visibilitychange"));
-    const before = fetchMock.mock.calls.length;
-
-    await vi.advanceTimersByTimeAsync(180_000);
-    // A backgrounded tab is not being read, so it is not worth a request.
-    expect(fetchMock.mock.calls.length).toBe(before);
-
-    hidden.mockReturnValue("visible");
-    document.dispatchEvent(new Event("visibilitychange"));
-    await vi.advanceTimersByTimeAsync(0);
-    // Coming back refreshes at once rather than waiting out the interval.
-    expect(fetchMock.mock.calls.length).toBeGreaterThan(before);
-  });
-});
-
-/*
- * Stepping the feed back through the week.
- *
- * A day's finds used to be gone at the reader's own midnight, so anybody who
- * opened the page in the morning had missed them -- and the words are the part
- * of this page people come back for. Back as far as the week's reset, which is
- * the same window the board above the feed ranks.
- */
-describe("earlier days of the week", () => {
-  // A Wednesday, so the week's Sunday is three steps back and there is room to
-  // hit the floor without leaving the week. Well clear of the first day any find
-  // was recorded (2026-08-26), so the reset is the bound under test here rather
-  // than that one, which has a test of its own below.
-  const WEDNESDAY = new Date(2026, 8, 16, 9, 0, 0);
-  const TODAY = "2026-09-16";
-  const TUESDAY = "2026-09-15";
-  const SUNDAY = "2026-09-13";
-
-  const YESTERDAY_WORDS = [{ word: "linkboy", zipf: 1.4, finders: 2 }];
-
-  /** Answer the feed per day, and record which days were asked for. */
-  function stubDays(perDay: Record<string, unknown[]> = {}) {
-    const asked: string[] = [];
-    const fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
-      if (init?.method === "POST") return new Response(null, { status: 202 });
-      const href = String(url);
-      if (href.includes("words=1")) {
-        const day = new URL(href, "http://x").searchParams.get("today") ?? "";
-        asked.push(day);
-        return new Response(JSON.stringify({ words: perDay[day] ?? [] }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify(OPEN), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    });
-    vi.stubGlobal("fetch", fetchMock);
-    return { fetchMock, asked };
-  }
-
-  const back = () =>
-    screen.getByRole("button", { name: "Finds from the day before" });
-  const forward = () =>
-    screen.getByRole("button", { name: "Finds from the day after" });
-
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.setSystemTime(WEDNESDAY);
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it("shows the day before, headed with its own date and drop", async () => {
-    const { asked } = stubDays({
-      [TODAY]: WORDS,
-      [TUESDAY]: YESTERDAY_WORDS,
-    });
-    render(<LeaderboardPage />);
-    await vi.waitFor(() => expect(screen.getByText("asphyxiate")).toBeTruthy());
-
-    fireEvent.click(back());
-
-    // The heading moves with the list: the drop is what makes a find mean
-    // anything, so a word can never sit under another day's heading.
-    await vi.waitFor(() => expect(screen.getByText("linkboy")).toBeTruthy());
-    const section = screen.getByRole("region", { name: "Finds from Sep 15" });
-    expect(within(section).getByText("linkboy")).toBeTruthy();
-    expect(screen.queryByText("asphyxiate")).toBeNull();
-    expect(asked).toEqual([TODAY, TUESDAY]);
-  });
-
-  it("asks for nothing until somebody presses back", async () => {
-    const { asked } = stubDays();
-    render(<LeaderboardPage />);
-
-    // One day fetched on open, and it is today's. A reader who never steps back
-    // costs exactly what they cost before this existed.
-    await vi.waitFor(() => expect(asked).toEqual([TODAY]));
-  });
-
-  it("stops at the week's reset", async () => {
-    stubDays();
-    render(<LeaderboardPage />);
-    await vi.waitFor(() => expect(back()).toBeEnabled());
-
-    // Wednesday back to Sunday, and no further: the feed is the week the board
-    // above it ranks, not an archive of the game.
-    fireEvent.click(back());
-    fireEvent.click(back());
-    fireEvent.click(back());
-    await vi.waitFor(() =>
-      expect(
-        screen.getByRole("region", { name: "Finds from Sep 13" }),
-      ).toBeTruthy(),
-    );
-    expect(back()).toBeDisabled();
-    expect(SUNDAY).toBe("2026-09-13");
-  });
-
-  it("offers no step back past the first day any find was recorded", async () => {
-    // The finds table is younger than the game. On the first day it holds, the
-    // week's reset is still three days further back -- and every one of those
-    // days would answer "nobody found anything on this puzzle", which is a
-    // sentence about the schema rather than about the players.
-    vi.setSystemTime(new Date(2026, 7, 26, 9, 0, 0));
-    const { asked } = stubDays({ "2026-08-26": WORDS });
-    render(<LeaderboardPage />);
-    await vi.waitFor(() => expect(screen.getByText("asphyxiate")).toBeTruthy());
-
-    expect(asked).toEqual(["2026-08-26"]);
-    expect(back()).toBeDisabled();
-    fireEvent.click(back());
-    expect(asked).toEqual(["2026-08-26"]);
-  });
-
-  it("walks forward again, and stops on today", async () => {
-    stubDays({ [TUESDAY]: YESTERDAY_WORDS });
-    render(<LeaderboardPage />);
-    await vi.waitFor(() => expect(forward()).toBeDisabled());
-
-    fireEvent.click(back());
-    await vi.waitFor(() => expect(forward()).toBeEnabled());
-    fireEvent.click(forward());
-
-    await vi.waitFor(() =>
-      expect(
-        screen.getByRole("region", { name: "Today's finds" }),
-      ).toBeTruthy(),
-    );
-    // Today is the end of the road forward; there is no puzzle past it.
-    expect(forward()).toBeDisabled();
-  });
-
-  it("holds the list's height while the next day loads", async () => {
-    // Nothing resolves, so the page stays in the moment between the press and
-    // the answer -- which is the only moment this is about.
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: unknown, init?: RequestInit) => {
-        if (init?.method === "POST") return new Response(null, { status: 202 });
-        if (String(url).includes("words=1"))
-          return new Response(JSON.stringify({ words: WORDS }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          });
-        return new Response(JSON.stringify(OPEN), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        });
-      }),
-    );
-    render(<LeaderboardPage />);
-    await vi.waitFor(() => expect(screen.getByText("asphyxiate")).toBeTruthy());
-
-    fireEvent.click(back());
-
-    // Rows rather than a spinner: what a reader notices in that moment is the
-    // page jumping under their thumb, not a missing message.
-    const placeholders = document.querySelectorAll(
-      ".found-words__item--placeholder",
-    );
-    expect(placeholders.length).toBeGreaterThanOrEqual(WORDS.length);
-  });
-
-  it("leaves a finished day alone rather than polling it", async () => {
-    const { asked } = stubDays({ [TUESDAY]: YESTERDAY_WORDS });
-    render(<LeaderboardPage />);
-    await vi.waitFor(() => expect(asked).toEqual([TODAY]));
-
-    fireEvent.click(back());
-    await vi.waitFor(() => expect(asked).toEqual([TODAY, TUESDAY]));
-
-    // No score can ever be added to a past puzzle -- the game refuses one -- so
-    // a poll here is a request a minute to be handed the same rows back.
-    await act(async () => {
-      vi.advanceTimersByTime(5 * 60_000);
-    });
-    expect(asked).toEqual([TODAY, TUESDAY]);
-  });
-
-  it("does not animate a day the reader asked for", async () => {
-    stubDays({ [TODAY]: WORDS, [TUESDAY]: YESTERDAY_WORDS });
-    render(<LeaderboardPage />);
-    await vi.waitFor(() => expect(screen.getByText("asphyxiate")).toBeTruthy());
-
-    fireEvent.click(back());
-    await vi.waitFor(() => expect(screen.getByText("linkboy")).toBeTruthy());
-
-    // The arrival flash means "this turned up while you were looking". A whole
-    // day appearing because a button was pressed is not that.
-    expect(document.querySelector(".found-words__item--arrived")).toBeNull();
-  });
 });
 
 /**
@@ -1597,8 +1161,11 @@ describe("stepping the boards through past windows", () => {
   function stubWindows(
     perWindow: Record<string, { weekly?: unknown[]; allTime?: unknown[] }> = {},
     options: { fail?: string } = {},
+    perDay: Record<string, unknown[]> = {},
   ) {
     const asked: string[] = [];
+    /** Every day the reader's steps asked the day board for, in order. */
+    const askedDays: string[] = [];
     const fetchMock = vi.fn(async (url: unknown, init?: RequestInit) => {
       if (init?.method === "POST") return new Response(null, { status: 202 });
       const href = String(url);
@@ -1611,11 +1178,13 @@ describe("stepping the boards through past windows", () => {
       }
       const key = `${params.get("since")}/${params.get("month")}`;
       asked.push(key);
+      askedDays.push(params.get("day") ?? "");
       if (key === options.fail) return new Response("nope", { status: 502 });
       const body = perWindow[key] ?? {};
       return new Response(
         JSON.stringify({
           weekStart: params.get("since"),
+          daily: perDay[params.get("day") ?? ""] ?? [],
           weekly: body.weekly ?? [],
           allTime: body.allTime ?? [],
         }),
@@ -1623,12 +1192,47 @@ describe("stepping the boards through past windows", () => {
       );
     });
     vi.stubGlobal("fetch", fetchMock);
-    return { fetchMock, asked };
+    return { fetchMock, asked, askedDays };
   }
 
   const step = (name: string) => screen.getByRole("button", { name });
 
   beforeEach(() => onDay(WEDNESDAY));
+
+  it("steps the day board a puzzle at a time, without moving the two beside it", async () => {
+    const YESTERDAY = "2026-08-25";
+    const { asked, askedDays } = stubWindows(
+      { [`${THIS_WEEK}/${THIS_MONTH}`]: { weekly: rowFor(ALICE, 41.2) } },
+      {},
+      {
+        [WEDNESDAY]: rowFor(ALICE, 9.4),
+        [YESTERDAY]: rowFor(BOB, 7.1),
+      },
+    );
+    render(<LeaderboardPage />);
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+
+    await userEvent.click(step("Previous day"));
+
+    // The day's own date once it is not today's, and the board under it is that
+    // day's final standing.
+    await waitFor(() =>
+      expect(boardRows("Aug 25")[0]).toHaveTextContent(handleFor(BOB)),
+    );
+    expect(
+      within(screen.getByRole("region", { name: "Aug 25" })).getByText("Final"),
+    ).toBeInTheDocument();
+    expect(askedDays).toEqual([WEDNESDAY, YESTERDAY]);
+    // The long windows did not move: a day is not a week's worth of anything,
+    // and stepping one says nothing about the other two.
+    expect(new Set(asked)).toEqual(new Set([`${THIS_WEEK}/${THIS_MONTH}`]));
+    expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE));
+
+    await userEvent.click(step("Next day"));
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    // And no step past the puzzle being played, which has not happened yet.
+    expect(step("Next day")).toBeDisabled();
+  });
 
   it("asks for the week the reader stepped back to, and walks forward again", async () => {
     const { asked } = stubWindows({

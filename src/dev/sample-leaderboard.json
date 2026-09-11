@@ -28,6 +28,49 @@
   ],
   "weekStart": "2026-08-23",
   "opensOn": "2026-08-30",
+  "daily": [
+    {
+      "rank": 1,
+      "playerId": "dev-4",
+      "windowWord": "kerfuffle",
+      "windowZipf": 3.11,
+      "score": 9.4,
+      "puzzles": 1
+    },
+    {
+      "rank": 2,
+      "playerId": "dev-you",
+      "windowWord": "phylactery",
+      "windowZipf": 2.42,
+      "score": 8.8,
+      "puzzles": 1
+    },
+    {
+      "rank": 3,
+      "playerId": "dev-2",
+      "windowWord": "sphygmomanometer",
+      "windowZipf": 2.05,
+      "score": 8.1,
+      "puzzles": 1
+    },
+    {
+      "rank": 4,
+      "playerId": "dev-1",
+      "windowWord": "physique",
+      "windowZipf": 3.9,
+      "score": 6.2,
+      "puzzles": 1
+    },
+    {
+      "rank": 5,
+      "playerId": "dev-7",
+      "windowWord": "physics",
+      "windowZipf": 4.6,
+      "score": 4.5,
+      "puzzles": 1
+    }
+  ],
+  "dailySelf": null,
   "weekly": [
     {
       "rank": 1,
@@ -274,6 +317,14 @@
     }
   ],
   "allTimeSelf": null,
+  "dayChampion": {
+    "rank": 1,
+    "playerId": "dev-3",
+    "windowWord": "morphology",
+    "windowZipf": 2.71,
+    "score": 9.1,
+    "puzzles": 1
+  },
   "lastWeek": {
     "rank": 1,
     "playerId": "dev-3",

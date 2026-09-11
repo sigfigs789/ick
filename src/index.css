@@ -255,25 +255,79 @@ h2 {
 }
 
 /* Header */
+/* Two rows: the wordmark and the rules on top, the three pages under them. A
+   row of its own for the tabs because three labelled destinations do not fit a
+   phone's width beside a wordmark -- and because a tab strip that runs the width
+   of the page is the shape people already read as "these are the pages". */
 .app__header {
+  padding: 1.25rem 0 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+.app__header-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 1.25rem 0 1rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 1.25rem;
 }
-.app__header-titles {
-  text-align: center;
-  flex: 1;
-}
-.app__header h1 {
+/* The wordmark, which is an h1 on the puzzle and a plain line elsewhere (see
+   AppHeader) -- so it is styled by class rather than by tag, and looks the same
+   either way. */
+.app__wordmark {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 1.9rem;
   font-weight: 900;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  line-height: 1.1;
+}
+/* The tabs. Evenly divided rather than packed to one side: they are the whole
+   width of the app's navigation, and three equal targets are easier to hit
+   without looking than three of whatever width their labels came to. */
+.app__nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+  margin-top: 0.85rem;
+}
+.app__nav-item {
+  position: relative;
+  /* Not clipped: the badge and its callout deliberately hang outside. */
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.4rem 0.2rem 0.5rem;
+  border: 0;
+  /* The underline that marks the current tab, drawn transparent on the others
+     so nothing moves when it appears. It sits on the header's own bottom rule,
+     which is what makes a tab look attached to the page under it. */
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.15s var(--ease-standard);
+}
+.app__nav-item:hover {
+  color: var(--fg);
+}
+.app__nav-item--current {
+  color: var(--fg);
+  border-bottom-color: var(--fg);
+}
+.app__nav-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.app__nav-label {
+  white-space: nowrap;
 }
 .app__beta {
   display: inline-block;
@@ -300,16 +354,6 @@ h2 {
   letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
 }
-/* The trophy and the "?" share the right end of the header, opposite the
-   wordmark. Two buttons rather than one because they answer different questions
-   and both want to be one tap away; the gap is tight so the pair still reads as
-   a single cluster. */
-.app__header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  flex: none;
-}
 .app__icon-button {
   width: 2.35rem;
   height: 2.35rem;
@@ -329,20 +373,16 @@ h2 {
 .app__icon-button:hover {
   background: var(--bg-inset);
 }
-/* A badged button positions its own badge, and stops clipping it: the button is
-   a circle, and the badge deliberately hangs off the top-right of it. */
-.app__icon-button--badged {
-  position: relative;
-  overflow: visible;
-}
 /* The dot is the marker, not the message: at any size the word "new" fits on
-   a trophy's shoulder it is a smudge, so the pill stops trying to say anything
-   and the callout below says it in full. Only ever drawn once per player --
-   see game/whatsNew.ts. */
+   a tab's shoulder it is a smudge, so the pill stops trying to say anything and
+   the callout below says it in full. Only ever drawn once per player -- see
+   game/whatsNew.ts. Positioned against the tab's icon rather than its box, which
+   is wider than the glyph it marks. */
 .app__icon-badge {
   position: absolute;
-  top: -0.15rem;
-  right: -0.15rem;
+  top: 0.2rem;
+  right: 50%;
+  margin-right: -0.85rem;
   width: 0.6rem;
   height: 0.6rem;
   border-radius: 999px;
@@ -355,18 +395,19 @@ h2 {
   pointer-events: none;
 }
 
-/* The announcement itself: a small pointer hanging under the trophy that names
-   what is new, so the player is told rather than asked to infer. Right-aligned
-   to the button because the button is at the right edge of the header and a
-   centred box would hang off the screen.
+/* The announcement itself: a small pointer hanging under the tab that names what
+   is new, so the player is told rather than asked to infer. Centred on the tab
+   it belongs to, which is in the middle of the strip and so has room on both
+   sides.
 
    pointer-events: none throughout -- the callout sits over the page below the
    header, and nothing about it should ever swallow a tap meant for that page.
    It retires with the badge, on the first visit to the leaderboard. */
 .app__icon-callout {
   position: absolute;
-  top: calc(100% + 0.55rem);
-  right: -0.15rem;
+  top: calc(100% + 0.35rem);
+  left: 50%;
+  transform: translateX(-50%);
   padding: 0.28rem 0.55rem;
   border-radius: 0.45rem;
   background: var(--rarity-elusive-dot);
@@ -385,24 +426,28 @@ h2 {
      the resting state. */
   animation: icon-callout-in 0.32s var(--ease-standard) 0.35s backwards;
 }
-/* The arrow, pointing up at the trophy it belongs to. Inset from the right by
-   the same amount as the dot so the two line up over the button's corner. */
+/* The arrow, pointing up at the tab it belongs to, centred like the box it
+   hangs off. */
 .app__icon-callout::before {
   content: "";
   position: absolute;
   bottom: 100%;
-  right: 0.72rem;
+  left: 50%;
+  margin-left: -0.32rem;
   border: 0.32rem solid transparent;
   border-bottom-color: var(--rarity-elusive-dot);
 }
+/* Translated on X throughout, because the box is centred with a transform and
+   an animation that forgot it would snap the callout half its width sideways on
+   the last frame. */
 @keyframes icon-callout-in {
   from {
     opacity: 0;
-    transform: translateY(-0.3rem);
+    transform: translate(-50%, -0.3rem);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translateX(-50%);
   }
 }
 .app__icon-button:active {
@@ -1688,12 +1733,11 @@ h2 {
 /* Below the boards and clearly apart from them: a heavier rule than the one
    between the two boards, because this is a different kind of list, not a third
    ranking. */
+/* No rule above it any more: it used to be the section under the boards, and
+   the line said "one section ending, another starting". It is the page now, and
+   the only thing above it is the page's own title. */
 .found-words {
-  margin-top: 2.4rem;
-  padding-top: 1.9rem;
-  /* The same rule the boards are separated by, since this is the same kind of
-     boundary: one section of the page ending and another starting. */
-  border-top: 2px solid var(--border-strong);
+  margin-top: 0.4rem;
 }
 /* One column, like the boards. Two columns of words next to two boards of words
    was the layout that made a find hard to tell from a player. */
@@ -1878,14 +1922,40 @@ h2 {
 }
 
 /* Leaderboard */
-/* Its own page, so it gets the room two boards want -- wider than the game's
-   30rem column, which is sized for a single puzzle. */
-.leaderboard-page {
+/* The two pages beside the puzzle get the room a board wants -- wider than the
+   game's 30rem column, which is sized for a single puzzle. Both, rather than
+   only the boards: the header spans all three pages, and a column that changed
+   width as you moved between tabs would take the header with it. */
+.app--wide {
   max-width: 46rem;
 }
-/* Balances the back button so the title stays centred, and matches its size. */
-/* The refresh sits where a spacer used to, so it keeps the title centred
-   against the back button as well as doing its own job. */
+/* A page's own heading, opposite whatever that page can do about its content --
+   which on both of them is a refresh. Below the header rather than in it: the
+   header says which of the three pages you are on, and repeating that in the bar
+   would be the app introducing itself twice. */
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.4rem;
+}
+.page-head__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.page-head__note {
+  margin: 0.35rem 0 0;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+}
+/* Sits opposite the page's own title, on both pages whose content is other
+   people's. */
 .leaderboard-page__refresh {
   width: 2.35rem;
   flex: none;
@@ -1907,18 +1977,6 @@ h2 {
   }
   to {
     transform: rotate(360deg);
-  }
-}
-/* "LEADERBOARD" is nearly twice the length of "WORDINK", so at the game's title
-   size it runs under the back button on a phone. Sized to fit the narrowest
-   viewport instead, and allowed to shrink its tracking before it collides. */
-.leaderboard-page .app__header h1 {
-  font-size: 1.25rem;
-  letter-spacing: 0.04em;
-}
-@media (min-width: 26rem) {
-  .leaderboard-page .app__header h1 {
-    font-size: 1.6rem;
   }
 }
 .leaderboard-page__back {
@@ -1972,15 +2030,21 @@ h2 {
    see it. Only worth doing now that a board is five rows tall: at fifteen, the
    pair was two screens and the comparison was theoretical.
    The rule between them turns on its side and stays the heavier one. */
-@media (min-width: 48rem) {
+@media (min-width: 64rem) {
+  /* Wider still than the 46rem the page reads at, because three boards side by
+     side need it -- and only at a width that actually has it, so a laptop gets
+     the comparison and a phone gets one column. */
+  .app--wide {
+    max-width: 62rem;
+  }
   .leaderboard__boards {
-    grid-template-columns: 1fr 1fr;
-    column-gap: 1.7rem;
+    grid-template-columns: repeat(3, 1fr);
+    column-gap: 1.5rem;
   }
   .leaderboard__board + .leaderboard__board {
     padding-top: 0;
     border-top: 0;
-    padding-left: 1.7rem;
+    padding-left: 1.5rem;
     border-left: 2px solid var(--border-strong);
   }
 }
@@ -2094,7 +2158,7 @@ h2 {
 /* One row, measured: two lines of text inside 0.45rem of padding, plus its
    rule. Five of them is what a board is allowed to take -- and what the loading
    state holds open, so it is declared for the page rather than the board. */
-.leaderboard-page {
+.app--wide {
   --row-height: 3.03rem;
   /* How far the docked row's ring and shadow reach past its own box: the 1px
      ring, plus the widest `--dock-shadow` blur (14px at radius -4px, so 3px to

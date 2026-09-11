@@ -18,7 +18,7 @@ import {
   topRarityScore,
   totalRarityScore,
 } from "./dictionary";
-import { todayDateString } from "./date";
+import { addDays, todayDateString } from "./date";
 import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
@@ -74,6 +74,18 @@ export interface FoundWord {
 }
 
 export interface Boards {
+  /**
+   * One puzzle's standing: everybody who scored on the day the page is showing.
+   *
+   * The shortest window the game has, and the one a player can actually enter
+   * from nothing -- a week's board is most of a week's play by the time anybody
+   * looks at it, while today's is one puzzle everyone starts level on. It is the
+   * same query the weekly board runs, bounded to a single date at both ends (see
+   * api/leaderboard.ts), so a row means exactly what it means on the other two.
+   */
+  daily: BoardEntry[];
+  /** The same row-below-the-cut the other boards get, on the daily one. */
+  dailySelf: BoardEntry | null;
   weekly: BoardEntry[];
   /**
    * This player's own row on the weekly board, when they rank below the last one
@@ -112,6 +124,21 @@ export interface Boards {
    * take the standings with them, so without this a window somebody won leaves
    * no trace anywhere.
    */
+  /**
+   * Who took the last puzzle that is over everywhere: the plaque under the day
+   * board.
+   *
+   * Not yesterday's, which is the thing worth explaining here. A day closes at
+   * each player's own midnight, so a puzzle keeps taking scores for as long as
+   * anybody's local day is still running -- yesterday's winner is a name that
+   * can still change, and the plaque would have had to say so every day of the
+   * year. The day before it has closed in every timezone there is, so the
+   * simpler plaque tells the truth without a footnote (see `championDay`).
+   *
+   * The board's own nav is what keeps yesterday reachable: one press of
+   * "Previous day" is that day's whole standing rather than one line of it.
+   */
+  dayChampion: BoardEntry | null;
   lastWeek: BoardEntry | null;
   lastMonth: BoardEntry | null;
   /** The day the weekly board is counting from, echoed back by the server. */
@@ -309,6 +336,8 @@ export interface FetchOptions {
  * than "everything since".
  */
 export interface BoardOptions extends FetchOptions {
+  /** The single puzzle the daily board counts. */
+  day?: string;
   /** The Sunday the weekly board counts from. */
   week?: string;
   /** The first of the month the monthly board counts. */
@@ -327,6 +356,41 @@ export interface BoardOptions extends FetchOptions {
  */
 export function weekFloor(): string {
   return weekStart(FIRST_PUZZLE);
+}
+
+/**
+ * The newest puzzle that has finished everywhere, which is the one the day
+ * board's plaque names.
+ *
+ * Two days back, not one. A puzzle belongs to the player's own local calendar
+ * date and can only be scored on that date, so it keeps taking scores until the
+ * last timezone's copy of that day ends -- about a day after the first one's.
+ * Yesterday's winner is therefore a name that can still change, all through
+ * today, for everybody: a plaque naming it has to carry a caveat every single
+ * day, which is a footnote that never goes away and so stops being read.
+ *
+ * The day before yesterday has ended in every timezone there is, so the plaque
+ * can simply state who won it. What it costs is a day of freshness, and the
+ * board's own "Previous day" makes that cheap -- yesterday's full standing is
+ * one press away, which is more than a plaque was ever going to say.
+ *
+ * Two days is also inside the week, which is what lets the plaque be labelled
+ * by weekday ("Monday's champion") rather than by a date the reader has to
+ * place.
+ */
+export function championDay(date: string = todayDateString()): string {
+  return addDays(date, -2);
+}
+
+/**
+ * The earliest day the daily board will step back to: the first puzzle.
+ *
+ * Unlike the finds feed, which stops at the week's reset because its table is
+ * younger than the game (see `feedFloor`), scores really do go back this far --
+ * a player who joins today backfills every puzzle their browser remembers.
+ */
+export function dayFloor(): string {
+  return FIRST_PUZZLE;
 }
 
 export function monthFloor(): string {
@@ -363,6 +427,14 @@ export async function fetchBoards(
   // is a date this client computed, because the puzzle dates it brackets are
   // this player's own local calendar dates.
   const since = options.week ?? weekStart(date);
+  // The single puzzle the daily board counts, which is the day being played
+  // until a reader steps it. Sent like the other two windows because it is one:
+  // a puzzle date is the player's own local calendar date, and nothing on the
+  // server shares that clock.
+  const day = options.day ?? date;
+  // The puzzle the day board's plaque names, which does not move when the reader
+  // steps the board: it is the newest one that is over for everybody.
+  const champion = championDay(date);
   // The month goes up for the same reason the week does: both windows bracket
   // the player's own local puzzle date, so both have to be computed off the same
   // clock. The server bounds the far end of both itself.
@@ -383,6 +455,8 @@ export async function fetchBoards(
   const response = await fetch(
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
       `&month=${encodeURIComponent(month)}` +
+      `&day=${encodeURIComponent(day)}` +
+      `&champion=${encodeURIComponent(champion)}` +
       `&limit=${BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
       freshParam(options),
@@ -431,10 +505,13 @@ export async function fetchFoundWords(
 /** Turn one response body -- real or sample -- into the boards the page renders. */
 function readBoards(body: Record<string, unknown>, since: string): Boards {
   return {
+    daily: parseBoard(body.daily),
+    dailySelf: parseSelf(body.dailySelf),
     weekly: parseBoard(body.weekly),
     weeklySelf: parseSelf(body.weeklySelf),
     monthly: parseBoard(body.allTime),
     monthlySelf: parseSelf(body.allTimeSelf),
+    dayChampion: parseChampion(body.dayChampion),
     lastWeek: parseChampion(body.lastWeek),
     lastMonth: parseChampion(body.lastMonth),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,

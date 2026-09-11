@@ -381,14 +381,27 @@ export function trackSessionTime(report: SessionTimeReport) {
 
 /**
  * Leaderboard interest, in two events: opening it, and from where, since the
- * header button and the post-game link are two different moments; and joining,
+ * header tab and the post-game link are two different moments; and joining,
  * which is the one of the two that is a commitment. No score or name is sent --
  * those live in the leaderboard's own table, and duplicating them here would put
  * a display name in the analytics stream for no reason. Nothing records which
- * board was looked at, because both are on screen at once.
+ * board was looked at, because all three are on screen at once.
  */
 export function trackLeaderboardOpened(from: "header" | "results") {
   send("leaderboard_opened", { from });
+}
+
+/**
+ * The other page behind the header, opened.
+ *
+ * Its own event rather than a third `from` on the one above, because it is a
+ * different page now: the finds used to be the bottom half of the leaderboard,
+ * so every open of that page was an open of both and one event could honestly
+ * stand for them. Split apart, "did anybody go and read the words" is a
+ * question only this can answer.
+ */
+export function trackFoundWordsOpened(from: "header" | "results") {
+  send("found_words_opened", { from });
 }
 
 export function trackLeaderboardJoined(isRename: boolean) {

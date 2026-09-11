@@ -283,7 +283,7 @@ describe("api/leaderboard reads", () => {
     ],
   };
 
-  it("returns both boards, with the ranks the database assigned", async () => {
+  it("returns the long boards, with the ranks the database assigned", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
     const response = await handler(get(`?since=${SUNDAY}&month=${MONTH}&limit=10`));
@@ -293,6 +293,10 @@ describe("api/leaderboard reads", () => {
     expect(response.headers.get("cache-control")).toContain("s-maxage=60");
     expect(await response.json()).toEqual({
       weekStart: SUNDAY,
+      // No day was asked for, so no day was queried: an empty board rather than
+      // a missing key, so the page has one shape to read either way.
+      daily: [],
+      dailySelf: null,
       // No name: the client derives a handle from the player id. window_word is
       // the rarest word inside this board's window -- this week's find on the
       // weekly board. Scores are absent on purpose; the client prices words.
@@ -313,16 +317,20 @@ describe("api/leaderboard reads", () => {
           puzzles: 5,
         },
       ],
-      // Nobody won either closed window in this fixture, and the endpoint says
-      // so with a null rather than an absent key: the page has one shape to
-      // read, whether or not there is a champion to put under a board.
+      // Nobody won any of the closed windows in this fixture, and the endpoint
+      // says so with a null rather than an absent key: the page has one shape
+      // to read, whether or not there is a champion to put under a board. The
+      // day board's is null for a second reason -- this request named no
+      // puzzle for it.
+      dayChampion: null,
       lastWeek: null,
       lastMonth: null,
     });
 
-    // One call for both boards, so the two can never disagree with each other.
-    // The feed is not among them -- it is its own request, so that it can be
-    // cached for every player rather than this one.
+    // One call for the two long boards, so they can never disagree with each
+    // other -- and only one, because this request named no day. The feed is not
+    // among them either: it is its own request, so that it can be cached for
+    // every player rather than this one.
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(rpcCall(fetchMock)?.url).toBe(
       "https://project.supabase.co/rest/v1/rpc/leaderboard_boards"
@@ -331,6 +339,71 @@ describe("api/leaderboard reads", () => {
       p_since: SUNDAY,
       p_limit: 10,
     });
+  });
+
+  it("names the day board's champion from the puzzle the caller asked for", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      OPEN,
+      [{ rank: 1, player_id: PLAYER, window_word: "abaci", window_zipf: "2.65", total_score: "9.1", puzzles: 1 }],
+    ]);
+    const response = await handler(
+      get(`?since=${SUNDAY}&month=${MONTH}&champion=2026-08-24`)
+    );
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).dayChampion).toEqual({
+      rank: 1, playerId: PLAYER, windowWord: "abaci", windowZipf: 2.65, score: 9.1, puzzles: 1,
+    });
+    // Its own parameter rather than "the day before `day`": the board moves as
+    // the reader steps it and this does not, so the two are separate questions.
+    // No player id goes up -- a champion row is the top one or it is nothing.
+    expect(rpcCall(fetchMock, 1)?.args).toEqual({
+      p_since: "2026-08-24",
+      p_until: "2026-08-24",
+      p_limit: 1,
+      p_player: null,
+    });
+  });
+
+  it("counts one puzzle for the daily board, bounded at both ends by the day", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      OPEN,
+      [{ rank: 1, player_id: PLAYER, window_word: "inkling", window_zipf: "2.9", total_score: "8.2", puzzles: 1 }],
+    ]);
+    const response = await handler(
+      get(`?since=${SUNDAY}&month=${MONTH}&day=2026-08-25&limit=10`)
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.daily).toEqual([
+      { rank: 1, playerId: PLAYER, windowWord: "inkling", windowZipf: 2.9, score: 8.2, puzzles: 1 },
+    ]);
+    // The inner function the other two boards are built from, with the same
+    // date at both ends: a day board is a week board over one day.
+    expect(rpcCall(fetchMock, 1)?.url).toBe(
+      "https://project.supabase.co/rest/v1/rpc/leaderboard_board"
+    );
+    expect(rpcCall(fetchMock, 1)?.args).toEqual({
+      p_since: "2026-08-25",
+      p_until: "2026-08-25",
+      p_limit: 10,
+      p_player: null,
+    });
+  });
+
+  it("drops a day that names no real puzzle rather than refusing the boards", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    const response = await handler(get(`?since=${SUNDAY}&month=${MONTH}&day=1999-01-01`));
+
+    // The two long boards are the older answer, and a caller that cannot have a
+    // day board is better served with them than with a 400.
+    expect(response.status).toBe(200);
+    expect((await response.json()).daily).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("asks for the boards unconditionally, with no opening date to wait for", async () => {

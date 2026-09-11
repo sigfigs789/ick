@@ -1,21 +1,13 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
-import { RarityBadge } from "./RarityBadge";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchBoards,
-  fetchFoundWords,
-  feedFloor,
+  championDay,
+  dayFloor,
   monthFloor,
   weekFloor,
   type FetchOptions,
   type BoardEntry,
   type Boards,
-  type FoundWord,
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
 import { handleFor } from "../game/handle";
@@ -24,6 +16,7 @@ import {
   formatDateLabel,
   previousMonthName,
   todayDateString,
+  weekdayName,
 } from "../game/date";
 import {
   monthChampionSettling,
@@ -35,31 +28,11 @@ import {
 } from "../game/month";
 import { weekChampionSettling, weekLabel, weekStart } from "../game/week";
 import { formatScore } from "../game/dictionary";
-import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
 
 type LoadState = "loading" | "ready" | "error";
 
-/**
- * How often an open page re-checks for new finds.
- *
- * Fifteen seconds, matching the CDN's own cache (see api/leaderboard.ts). It was
- * sixty, then thirty, and the reason for stepping it down twice is that the two
- * waits add up rather than overlap: a word waits out the shared cache and *then*
- * waits out the rest of a poll. At sixty and sixty that was most of a two-minute
- * wait to see a word somebody had already found.
- *
- * Matching the cache exactly is the floor worth having. Below it the extra
- * requests cannot return anything new -- they are answered from the same cached
- * copy -- so a shorter poll would buy nothing but chatter. At fifteen the worst
- * case is thirty seconds and the usual case is half of that.
- *
- * This is a live feed, and since finds are ordered by their most recent sighting
- * the top of the list is now where the movement is; a poll slow enough to miss
- * it makes the ordering pointless.
- */
-const REFRESH_MS = 15_000;
 /**
  * How old the boards have to be before returning to the tab re-reads them.
  *
@@ -77,12 +50,13 @@ const BOARDS_STALE_MS = 5 * 60_000;
  * The five the board shows before anybody scrolls it, which is the part of it a
  * reader is looking at when they press the button -- so the section keeps its
  * height and the page under their thumb does not jump. The same trick the finds
- * feed plays with the day it is leaving (see FoundWords).
+ * page plays with the day it is leaving (see FoundWordsPage).
  */
 const BOARD_PLACEHOLDER_ROWS = 5;
 
-/** The pair of windows the two boards count, as a request carries them. */
+/** The three windows the boards count, as a request carries them. */
 interface Windows {
+  day: string;
   week: string;
   month: string;
 }
@@ -107,73 +81,43 @@ function boardState(
 }
 
 /**
- * The leaderboard, as its own page at /leaderboard.
+ * The boards, as their own page at /leaderboard.
  *
  * A page rather than a modal because that is what it behaves like: something you
  * link a friend to, open in a second tab, and leave with the back button. A
  * modal can do none of those, and a board is exactly the thing people want to
  * send each other.
  *
- * Both boards are always on screen -- side by side where there is room, stacked
- * into one column where there isn't. Showing both at once is the point of having
- * two: the interesting thing about a weekly board is how it differs from the
- * all-time one, and a player who has to click between them has to hold the first
- * in their head to see it. On a phone the same two boards become one scrolling
- * column, weekly first, since that is the one a new player can still win.
+ * Three windows of the same game, all on screen at once, shortest first. Showing
+ * them together is the point of having three: the interesting thing about any
+ * one of them is how it differs from the others -- who is new today, who is
+ * always there -- and a reader who has to click between them has to hold the
+ * first in their head to see it. Today leads because it is the one anybody can
+ * still win from nothing; by Thursday a week's board is mostly a week's play,
+ * and a month's is a month's.
+ *
+ * The finds that used to sit under all this are their own page now (see
+ * FoundWordsPage): they are a list of *words* under two lists of *players*, they
+ * are read for a different reason, and they were the live half of a page whose
+ * other half had not moved since breakfast.
  */
 export function LeaderboardPage() {
   const [boards, setBoards] = useState<Boards | null>(null);
-  /**
-   * The finds, held apart from the boards because they arrive apart from them:
-   * the boards are fetched once and the feed is polled, so one piece of state
-   * that held both would be re-set every minute with fifteen unchanged rows.
-   */
-  const [words, setWords] = useState<readonly FoundWord[]>([]);
   const [state, setState] = useState<LoadState>("loading");
-  /**
-   * The feed's own load state, which is not the page's.
-   *
-   * It has one now because the feed can be asked a question whose answer is
-   * legitimately nothing: an earlier day of the week nobody found a word on.
-   * While the feed only ever showed today, an empty list and a list still in
-   * flight looked the same and it did not matter -- the section simply wasn't
-   * there yet. Stepping back makes them different answers to a question the
-   * reader just asked, and each has to be said out loud.
-   */
-  const [feedState, setFeedState] = useState<LoadState>("loading");
   /**
    * The puzzle this page is about, fixed when the page opened.
    *
    * Read once rather than on every render, so it moves only on a refresh -- the
    * same way the game fixes its own date at mount (useDailyPuzzle). Both come
-   * from the same clock, so they name the same drop, and the finds below are the
-   * finds for the drop the player was just looking at.
+   * from the same clock, so they name the same drop, and the day board here is
+   * the day the player was just playing.
    *
    * Read on every render instead, a tab left open would cross midnight and swap
-   * the whole list to a new drop mid-poll, under a reader who never asked for it.
+   * every window under a reader who never asked for it.
    */
   const [today] = useState(todayDateString);
   /**
-   * The puzzle the finds below are about -- today's, until a reader steps back.
-   *
-   * Only the feed moves. The boards stay on this week and this month, because
-   * those windows are not a day's worth of anything and stepping back a day
-   * would say nothing about either. What a reader is asking for when they press
-   * back is the thing that *is* a day: what everybody found on it.
-   */
-  const [viewing, setViewing] = useState(today);
-  /**
-   * How far back the feed steps (see feedFloor).
-   *
-   * Frozen beside `today` rather than recomputed as the page renders: both
-   * answer "which window am I in", and a tab open across a midnight should carry
-   * one answer to that rather than two that disagree.
-   */
-  const [floor] = useState(() => feedFloor(today));
-  const isToday = viewing === today;
-  const canGoBack = viewing > floor;
-  /**
-   * The live windows: the week and the month the player is playing in.
+   * The live windows: the day, the week and the month the player is playing in.
    *
    * Derived from `today`, which is frozen at mount, so these are the windows the
    * page opened on and the ones "next" walks back to -- a tab left open across a
@@ -194,8 +138,16 @@ export function LeaderboardPage() {
    * is what the request carries and what the server bounds each board from (see
    * game/leaderboard.ts).
    */
+  const [day, setDay] = useState(today);
   const [week, setWeek] = useState(thisWeek);
   const [month, setMonth] = useState(thisMonth);
+  const dayIsLive = day === today;
+  /**
+   * Whether the day on the board has closed in every timezone, which is what
+   * decides where its plaque comes from: its own top row once it has, and the
+   * last settled day's champion until then (see `championDay`).
+   */
+  const daySettled = day <= championDay(today);
   const weekIsLive = week === thisWeek;
   const monthIsLive = month === thisMonth;
   /**
@@ -216,6 +168,7 @@ export function LeaderboardPage() {
    * board can be waiting on a window the reader stepped to while the other is
    * sitting on rows that never moved.
    */
+  const dayState = boardState(day, shown?.day, failed?.day);
   const weekState = boardState(week, shown?.week, failed?.week);
   const monthState = boardState(month, shown?.month, failed?.month);
   /**
@@ -243,79 +196,11 @@ export function LeaderboardPage() {
   const boardsRequest = useRef(0);
 
   /**
-   * Re-read the finds for the day on screen, leaving everything else alone.
+   * Fetch all three boards.
    *
-   * A failure is swallowed once there is a list to keep: the last good one is a
-   * truer thing to show than an empty section over one bad minute. A failure on
-   * the *first* read of a day is different -- there is nothing behind it, and
-   * silently showing an empty list would say nobody found anything -- so that
-   * one becomes the feed's error state and offers a retry.
-   */
-  const refreshWords = useCallback(
-    (options: FetchOptions = {}) => {
-      fetchFoundWords(viewing, options)
-        .then((found) => {
-          setWords(found);
-          setFeedState("ready");
-        })
-        .catch(() =>
-          setFeedState((was) => (was === "loading" ? "error" : was)),
-        );
-    },
-    [viewing],
-  );
-
-  /**
-   * Step the feed to another day of the week.
-   *
-   * Sets the day and nothing else; the effect that follows `viewing` does the
-   * fetching. Nothing is prefetched and no day is held in memory, so a reader
-   * who never presses back costs exactly what they cost before -- one request,
-   * for today. The list is cleared on the way,
-   * because the heading names a drop and the rows under it have to be that
-   * drop's; leaving yesterday's words under today's heading for the length of a
-   * request would be the one wrong thing this could show. The empty list keeps
-   * its height while it is in flight (see .found-words__list), so the page does
-   * not collapse and spring back under the button that was just pressed.
-   */
-  const showDay = useCallback((date: string) => {
-    setViewing(date);
-    setWords([]);
-    setFeedState("loading");
-  }, []);
-
-  /**
-   * How tall the list was, so the next day can be the same height while it
-   * loads.
-   *
-   * A ref rather than state: it is read only at the moment a day is swapped,
-   * and nothing should re-render because a count was recorded. The day arriving
-   * is very often about as long as the day leaving -- the same players on the
-   * same drop -- so the rows the skeleton holds open are close to the rows that
-   * replace them, and the page does not collapse and spring back under the
-   * button that was just pressed.
-   */
-  const lastRowCount = useRef(0);
-  useEffect(() => {
-    if (words.length > 0) lastRowCount.current = words.length;
-  }, [words]);
-
-  /**
-   * Fetch the boards, and the finds beside them.
-   *
-   * Two requests rather than one, and the split is not cosmetic: the boards
-   * carry this player's id so they can return their own row, which makes that
-   * response theirs alone, while the feed is the same for everybody and can be
-   * cached once for all of them (see api/leaderboard.ts). Asking together would
-   * have made the shared half private.
-   *
-   * The page's state follows the boards: a feed that fails is a section saying
-   * so, while boards that fail are the page not loading.
-   *
-   * The boards only. The feed is fetched by the effect that follows the day on
-   * screen, which is what keeps stepping back a day from re-reading two boards
-   * that did not move -- they are this week and this month whichever day the
-   * feed is showing.
+   * One request, because they are one answer: the three windows are counted from
+   * the same rows and the response carries this player's id, so asking three
+   * times would be three private queries to say one thing.
    */
   const load = useCallback(() => {
     // The page's own state is the *first* read and nothing after it: once there
@@ -327,11 +212,11 @@ export function LeaderboardPage() {
     setState((was) => (was === "ready" ? was : "loading"));
     setFailed(null);
     const request = ++boardsRequest.current;
-    fetchBoards(today, { week, month })
+    fetchBoards(today, { day, week, month })
       .then((loaded) => {
         if (request !== boardsRequest.current) return;
         setBoards(loaded);
-        setShown({ week, month });
+        setShown({ day, week, month });
         boardsReadAt.current = Date.now();
         setState("ready");
       })
@@ -342,9 +227,9 @@ export function LeaderboardPage() {
       .catch(() => {
         if (request !== boardsRequest.current) return;
         setState((was) => (was === "ready" ? was : "error"));
-        setFailed({ week, month });
+        setFailed({ day, week, month });
       });
-  }, [today, week, month]);
+  }, [today, day, week, month]);
 
   /**
    * Re-read the boards without disturbing the page.
@@ -360,16 +245,16 @@ export function LeaderboardPage() {
       // tapped refresh is asking for the board in front of them again, not for
       // this week's.
       const request = ++boardsRequest.current;
-      fetchBoards(today, { ...options, week, month })
+      fetchBoards(today, { ...options, day, week, month })
         .then((loaded) => {
           if (request !== boardsRequest.current) return;
           setBoards(loaded);
-          setShown({ week, month });
+          setShown({ day, week, month });
           boardsReadAt.current = Date.now();
         })
         .catch(() => {});
     },
-    [today, week, month],
+    [today, day, week, month],
   );
 
   /**
@@ -387,691 +272,349 @@ export function LeaderboardPage() {
   }, [load]);
 
   /**
-   * Read the finds for whichever day is on screen.
+   * Re-read the boards when a tab that has been away comes back.
    *
-   * Runs on the way in and again every time a reader steps to another day --
-   * `refreshWords` is rebuilt only when `viewing` changes, so this is exactly
-   * once per day looked at. A day nobody presses back to is never requested.
+   * They are not polled -- a rank does not move under a reader minute by minute,
+   * and this is the request carrying their id, so polling it would mean a
+   * private, uncached query every minute per open page. But a page left open
+   * since this morning and returned to is showing last night's standings, and a
+   * return is exactly when somebody looks. Only after a real absence: a glance
+   * at another tab and back is not new information.
    */
   useEffect(() => {
-    refreshWords();
-  }, [refreshWords]);
-
-  /**
-   * Keep the finds feed current while the page is open.
-   *
-   * Today's finds land through the day now, so a page left open would otherwise
-   * show a snapshot from whenever it was opened -- and the one thing a live list
-   * must not be is stale without saying so.
-   *
-   * Every 60 seconds, which is not an arbitrary number: the endpoint is
-   * CDN-cached for exactly that, so polling faster would return the same bytes
-   * and polling slower would waste freshness already paid for. Nothing runs
-   * while the tab is hidden -- a backgrounded tab is not being read -- and coming
-   * back refreshes immediately rather than waiting out the rest of an interval.
-   *
-   * The finds and nothing else. The boards move slowly enough that a player
-   * would have to be watching for a rank to change under them, and they are the
-   * request carrying this player's id -- so polling them would mean a private,
-   * uncached query every minute per open page, to redraw fifteen rows that had
-   * almost certainly not moved.
-   */
-  useEffect(() => {
-    // Wrapped rather than passed straight to setInterval: the timer hands its
-    // callback nothing, but a bare reference would also accept the event object
-    // that other callers pass, and the options argument is not a thing a timer
-    // should ever be able to set.
-    const tick = () => refreshWords();
-    // Only today's feed is live. A past day of this week is finished -- the game
-    // refuses a score for a puzzle played after its own date (see
-    // game/leaderboard.ts, submitScore), so no word can ever be added to it --
-    // and polling a list that cannot change would be a request a minute to be
-    // handed the same rows back.
-    let timer = isToday ? window.setInterval(tick, REFRESH_MS) : 0;
     function onVisibilityChange() {
-      window.clearInterval(timer);
-      if (document.visibilityState === "hidden") return;
-      if (isToday) refreshWords();
-      // The boards too, but only after a real absence. Coming back to a page
-      // that has been open since this morning and finding last night's
-      // standings is the one way they go properly stale -- while a glance at
-      // another tab and back is not new information, and re-asking on every
-      // return would put this player's own uncached query on a hair trigger.
-      if (Date.now() - boardsReadAt.current > BOARDS_STALE_MS) refreshBoards();
-      if (isToday) timer = window.setInterval(tick, REFRESH_MS);
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - boardsReadAt.current <= BOARDS_STALE_MS) return;
+      refreshBoards();
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => {
-      window.clearInterval(timer);
+    return () =>
       document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }, [isToday, refreshBoards, refreshWords]);
+  }, [refreshBoards]);
 
   /**
-   * Which words turned up since the last look, so the feed can show them
-   * arriving rather than just quietly containing them.
+   * Refresh the boards, because a reader asked.
    *
-   * The first load marks nothing: everything is new to a page that has just
-   * opened, and animating the whole list would say "the whole day just arrived"
-   * when none of it did. After that, each refresh diffs against what was already
-   * on screen and only the genuinely new ones move.
+   * With the cache-buster: a poll can be answered from the shared copy, but
+   * somebody who taps this has just told you the board they are looking at is
+   * not the one they want. Handing them the same bytes back would make the
+   * button a decoration -- which is what a browser reload already is here, since
+   * a client cannot bust a CDN's shared copy.
    *
-   * Finder counts rather than a bare set of words, because the feed is ordered
-   * on a word's most recent sighting: somebody finding a word that is already on
-   * screen lifts it back to the top with its count one higher, and that is the
-   * same event as a new word landing. Marking only words never seen before would
-   * leave the row that just moved the length of the list looking like it had
-   * been sitting there.
-   */
-  const seenWords = useRef<Map<string, number> | null>(null);
-  /**
-   * Which day the counts above are about, so stepping to another one starts a
-   * new baseline rather than reading a whole different puzzle's words as
-   * arrivals.
-   */
-  const seenDay = useRef(today);
-  /** Words on screen for the first time: a row that has to open a gap for itself. */
-  const [arrived, setArrived] = useState<readonly string[]>([]);
-  /**
-   * Words already on screen that somebody else has now found: a row that is
-   * travelling up rather than appearing.
-   *
-   * Held apart from `arrived` because the two look nothing alike. A new word
-   * animates its own height open, since there was no row there a moment ago; a
-   * re-found word already has a row, and playing the same animation on it would
-   * collapse it to nothing and re-open it -- the one thing it is not doing. It
-   * moves instead, and only the glow is shared.
-   */
-  const [refound, setRefound] = useState<readonly string[]>([]);
-
-  useEffect(() => {
-    const counts = new Map(words.map((entry) => [entry.word, entry.finders]));
-    if (seenDay.current !== viewing) {
-      // A day the reader asked for, arriving all at once because they asked --
-      // which is not the same event as a word turning up under them, and gets
-      // none of the animation that says so.
-      seenDay.current = viewing;
-      seenWords.current = counts.size > 0 ? counts : null;
-      setArrived([]);
-      setRefound([]);
-      return;
-    }
-    if (seenWords.current === null) {
-      // Nothing seen yet and nothing to see: an empty first response is not a
-      // baseline, or the real first list would animate in as if it were new.
-      if (counts.size === 0) return;
-      seenWords.current = counts;
-      return;
-    }
-    // Split by whether the word was on screen a moment ago. A count that went
-    // *down* is neither: the day's words can only ever be found by more people,
-    // so a smaller number is a word that dropped out of the response and came
-    // back, not news.
-    const seen = seenWords.current;
-    const landed: string[] = [];
-    const returned: string[] = [];
-    for (const [word, finders] of counts) {
-      const before = seen.get(word);
-      if (before === undefined) landed.push(word);
-      else if (finders > before) returned.push(word);
-    }
-    for (const [word, finders] of counts) {
-      seen.set(word, Math.max(finders, seen.get(word) ?? 0));
-    }
-    if (landed.length === 0 && returned.length === 0) return;
-    setArrived(landed);
-    setRefound(returned);
-    // Cleared once the animation is done, so a later re-render for some
-    // unrelated reason does not replay it. Comfortably past the longest of them
-    // -- the re-found glow, which runs 2.4s beside a 1s travel -- because
-    // clearing the class mid-animation cuts the tint off rather than ending it.
-    const timer = window.setTimeout(() => {
-      setArrived([]);
-      setRefound([]);
-    }, 2800);
-    return () => window.clearTimeout(timer);
-  }, [viewing, words]);
-
-  /**
-   * Refresh everything on the page, because a reader asked.
-   *
-   * Both halves, and with the cache-buster: a poll can be answered from the
-   * shared copy, but somebody who taps this has just told you the list they are
-   * looking at is not the one they want. Handing them the same bytes back would
-   * make the button a decoration -- which is what a browser reload already is
-   * here, since a client cannot bust a CDN's shared copy.
-   *
-   * No loading state on the sections themselves. The boards and the feed on
-   * screen are the last true answer, and blanking them to fetch something the
-   * reader can already see would be a worse page than a slightly old one -- the
-   * same reason `refreshBoards` doesn't. The button says it is working; the
-   * page stays readable underneath.
+   * No loading state on the boards themselves. What is on screen is the last
+   * true answer, and blanking it to fetch something the reader can already see
+   * would be a worse page than a slightly old one -- the same reason
+   * `refreshBoards` doesn't. The button says it is working; the page stays
+   * readable underneath.
    */
   const [refreshing, setRefreshing] = useState(false);
   const refreshAll = useCallback(() => {
     setRefreshing(true);
-    refreshWords({ fresh: true });
     refreshBoards({ fresh: true });
     // Long enough to read as a response to the tap, and it ends on its own
-    // rather than on the requests: neither of them rejects in a way this cares
-    // about, and a button that stayed disabled because a fetch hung would be
-    // worse than one that came back a moment early.
+    // rather than on the request: it does not reject in a way this cares about,
+    // and a button that stayed disabled because a fetch hung would be worse than
+    // one that came back a moment early.
     window.setTimeout(() => setRefreshing(false), 600);
-  }, [refreshBoards, refreshWords]);
+  }, [refreshBoards]);
 
   return (
-    <div className="app leaderboard-page">
-      <header className="app__header">
-        <button
-          type="button"
-          className="app__icon-button"
-          onClick={() => navigate("game")}
-          aria-label="Back to the puzzle"
-          title="Back to the puzzle"
-        >
-          <span aria-hidden="true">‹</span>
-        </button>
-        {/* No subtitle. "Ranked by total score" described a column the boards
-            already show, above two headings that say what each one counts. */}
-        <div className="app__header-titles">
-          <h1>Leaderboard</h1>
-          {/* Your own handle, stated before the boards rather than left to be
-              found in them.
+    <main>
+    <div className="page-head">
+      <div>
+        <h1 className="page-head__title">Leaderboards</h1>
+        {/* Your own handle, stated before the boards rather than left to be
+            found in them.
 
-              Nobody is ever told their name anywhere else -- it is derived from
-              the player id and never typed (src/game/handle.ts) -- so the only
-              way to learn it was to spot your own row, which is circular if
-              spotting your row is what you came here to do. It goes in the
-              header because that is the half of the answer that works before
-              you have scrolled, and the half that still works when you are on
-              neither board.
+            Nobody is ever told their name anywhere else -- it is derived from
+            the player id and never typed (src/game/handle.ts) -- so the only
+            way to learn it was to spot your own row, which is circular if
+            spotting your row is what you came here to do. It goes up here
+            because that is the half of the answer that works before you have
+            scrolled, and the half that still works when you are on none of
+            the three boards.
 
-              Not the subtitle that used to sit here: "Ranked by total score"
-              named a column the boards already show. This says the one thing
-              the page cannot say twice.
+            "Playing as" rather than "You're": nobody chose this handle, so a
+            page asserting who you *are* is claiming more than it should. A
+            role is what it actually is, and it is the frame that survives
+            handles becoming rerollable. It is also the register the rest of
+            the page is written in -- "Resets on Sundays", "Resets at
+            midnight" -- where a warmer line would be the one thing here
+            raising its voice. */}
+        {playerId && (
+          <p className="leaderboard-page__handle">
+            Playing as <strong>{handleFor(playerId)}</strong>
+          </p>
+        )}
+      </div>
+      {/* A refresh belongs on the two pages whose content is other people's,
+          and nowhere else in the app. */}
+      <button
+        type="button"
+        className="app__icon-button leaderboard-page__refresh"
+        onClick={refreshAll}
+        disabled={refreshing}
+        aria-label="Refresh"
+        title="Refresh"
+        data-refreshing={refreshing ? "" : undefined}
+      >
+        <span aria-hidden="true">↻</span>
+      </button>
+    </div>
 
-              "Playing as" rather than "You're": nobody chose this handle, so a
-              page asserting who you *are* is claiming more than it should. A
-              role is what it actually is, and it is the frame that survives
-              handles becoming rerollable. It is also the register the rest of
-              the page is written in -- "Resets on Sundays", "Today's finds" --
-              where a warmer line would be the one thing here raising its
-              voice. */}
-          {playerId && (
-            <p className="leaderboard-page__handle">
-              Playing as <strong>{handleFor(playerId)}</strong>
-            </p>
-          )}
+
+      {/* Both of these hold the room a board will take -- a heading and five
+          rows -- so what is under them stays where it is when the boards land.
+          The alternative is the whole page jumping down a screen a second after
+          it opened, under a reader who had started reading. */}
+      {state === "loading" && (
+        <div className="leaderboard__boards-slot">
+          <p className="leaderboard__status" aria-live="polite">
+            Loading the boards…
+          </p>
         </div>
-        {/* Where a spacer used to be, keeping the title centred against the
-            back button -- and now doing something, which is the better way to
-            hold a space. A refresh belongs on this page and nowhere else in the
-            app: it is the one screen whose content is other people's. */}
-        <button
-          type="button"
-          className="app__icon-button leaderboard-page__refresh"
-          onClick={refreshAll}
-          disabled={refreshing}
-          aria-label="Refresh"
-          title="Refresh"
-          data-refreshing={refreshing ? "" : undefined}
-        >
-          <span aria-hidden="true">↻</span>
-        </button>
-      </header>
+      )}
 
-      <main>
-        {/* Both of these hold the room the boards will take -- a heading and
-            five rows -- so the finds below stay where they are when the boards
-            land. The alternative is the whole page jumping down a screen a
-            second after it opened, under a reader who had started reading. */}
-        {state === "loading" && (
-          <div className="leaderboard__boards-slot">
-            <p className="leaderboard__status" aria-live="polite">
-              Loading the boards…
-            </p>
+      {state === "error" && (
+        <div className="leaderboard__boards-slot">
+          <p className="leaderboard__status" aria-live="polite">
+            Couldn't load the boards.{" "}
+            <button
+              type="button"
+              className="leaderboard__retry"
+              onClick={() => load()}
+            >
+              Try again
+            </button>
+          </p>
+        </div>
+      )}
+
+      {state === "ready" && boards && (
+        <>
+          {/* The one rule all three boards run on, stated before them rather
+              than after: it is the condition a score has to meet to be on any
+              of the lists, so a reader wants it on the way in. Underneath them
+              it had nothing to sit against -- a bullet adrift under the last
+              row. Outside the grid below, so it sits against the first board
+              rather than a column gap away from it. */}
+          <ul className="leaderboard__rules">
+            <li>Only puzzles played on the day they drop count</li>
+          </ul>
+          <div className="leaderboard__boards">
+            <Board
+              // "Today" while it is today's, and the day's own date once it
+              // isn't -- the same wording the finds page heads a day with, for
+              // the same reason: two steps back has no word like "yesterday",
+              // and a heading whose shape changes halfway down a week is
+              // harder to read than one that always names the day.
+              heading={dayIsLive ? "Today" : formatDateLabel(day)}
+              // What a day board resets at, which is the one thing worth
+              // saying about a window everybody is already inside. A day that
+              // has closed says the other half of it: what is on screen is not
+              // going to change again.
+              headingDetail={dayIsLive ? "Resets at midnight" : "Final"}
+              entries={boards.daily}
+              self={boards.dailySelf}
+              emptyMessage={
+                dayIsLive
+                  ? "Nobody's scored yet today. Be first."
+                  : "Nobody scored on this puzzle."
+              }
+              playerId={playerId}
+              state={dayState}
+              onRetry={load}
+              unit="day"
+              canGoBack={day > dayFloor()}
+              canGoForward={!dayIsLive}
+              onBack={() => setDay(addDays(day, -1))}
+              onForward={() => setDay(addDays(day, 1))}
+              // The last puzzle that is over everywhere, named by its weekday.
+              //
+              // Not yesterday's, which is what this was first. A day closes at
+              // each player's own midnight, so yesterday's winner is a name
+              // that can still change all through today -- for everybody, every
+              // day -- and the plaque had to carry a footnote saying so, which
+              // is a caveat that never lifts and so stops being read. Two days
+              // back has ended in every timezone there is, so the line can just
+              // say who won it. See `championDay`.
+              //
+              // A weekday rather than a date, which two days back is what makes
+              // possible: it is inside the week, so "Monday's champion" cannot
+              // mean two different Mondays, and it is the half a reader places
+              // without counting.
+              //
+              // Once the reader steps back to a day that is itself settled, the
+              // board above *is* that day's final standing and its top row is
+              // the champion -- exactly how the other two boards do it.
+              champion={
+                daySettled ? championOf(boards.daily) : boards.dayChampion
+              }
+              championLabel={
+                daySettled ? "Champion" : `${weekdayName(championDay(today))}'s champion`
+              }
+              // No caveat and no empty plaque. Every window this line can name
+              // has closed; and where the other two hold an empty plaque open
+              // because their window still gets engraved on a day worth naming,
+              // a puzzle nobody scored on is finished, so a promised crowning
+              // under it would be a name that never comes.
+            />
+            <Board
+              heading={weekIsLive ? "This week" : weekLabel(week)}
+              // Beside the heading rather than under it: the two boards sit
+              // shoulder to shoulder, and a line under one of them and not
+              // the other pushed its rows half a line down -- two lists side
+              // by side that do not start level read as a mistake. No dates
+              // on either board now. A window you are already in does not
+              // need its days spelled out; when it turns over is the one
+              // thing worth saying, and both boards say exactly that. A
+              // window that has turned over says the other half of it: that
+              // what is on screen is not going to change again.
+              headingDetail={weekIsLive ? "Resets on Sundays" : "Final"}
+              entries={boards.weekly}
+              self={boards.weeklySelf}
+              emptyMessage={
+                weekIsLive
+                  ? "Nobody's scored yet this week. Be first."
+                  : "Nobody scored this week."
+              }
+              playerId={playerId}
+              state={weekState}
+              onRetry={load}
+              // The window this board counts is the reader's to move: back
+              // through the weeks that have finished, forward to the one they
+              // are playing. See the note on the nav in `Board`.
+              unit="week"
+              canGoBack={week > weekFloor()}
+              canGoForward={!weekIsLive}
+              onBack={() => setWeek(addDays(week, -7))}
+              onForward={() => setWeek(addDays(week, 7))}
+              // Who took the week this one replaced. Under the board rather
+              // than in it: they are not competing in this week, and a row
+              // among the live ones would read as though they were.
+              //
+              // On a week that has closed, the plaque is that week's own
+              // winner instead -- the board above it is a final standing, and
+              // the gold line is what it came to. Which is the same sentence
+              // the live board's plaque makes about the week before it, one
+              // window along, and on the turnover day the two name the same
+              // player with the same caveat.
+              champion={
+                weekIsLive ? boards.lastWeek : championOf(boards.weekly)
+              }
+              championLabel={weekIsLive ? "Last week's champion" : "Champion"}
+              // The day this plaque goes final, whichever week it ends up
+              // naming: weeks close on Saturday and are settled everywhere by
+              // Monday, so a weekly champion is always a Monday's news.
+              //
+              // Given for the live week and the one behind it, and no further
+              // back: it is the day an empty plaque says it will be engraved,
+              // and an older week nobody played is a week that never will be.
+              // "Crowned on Monday" under it would be the one thing on this
+              // page that is simply false, so it gets no plaque at all.
+              championCrowning={
+                weekIsLive || week === addDays(thisWeek, -7)
+                  ? "Monday"
+                  : undefined
+              }
+              // And whether today is the Sunday that week turned over on --
+              // the day it has not closed at the same moment for everybody
+              // yet, so the name goes up with the caveat. See game/week.ts.
+              // It covers the week just gone as well as the live one, because
+              // that is the window whose top row can still move under a reader
+              // who stepped back to it.
+              championSettling={
+                weekChampionSettling(today) &&
+                (weekIsLive || week === addDays(thisWeek, -7))
+              }
+            />
+            <Board
+              heading={monthIsLive ? "This month" : monthLabel(month)}
+              // The weekday it turns over on and the date that is, which for
+              // a month is computed (see game/month.ts) rather than the
+              // constant the week can get away with -- and the weekday leads,
+              // because a bare "Sep 1" is a date a reader still has to place
+              // in their own week. This board used to be "Season 1" with
+              // the season's two dates under it -- a window a reader had to
+              // be told the ends of, because they were picked by hand. A
+              // month has ends everybody already knows.
+              headingDetail={monthIsLive ? monthResetLabel(today) : "Final"}
+              entries={boards.monthly}
+              self={boards.monthlySelf}
+              emptyMessage={
+                monthIsLive
+                  ? "Nobody's scored yet this month. Be first."
+                  : "Nobody scored this month."
+              }
+              playerId={playerId}
+              state={monthState}
+              onRetry={load}
+              unit="month"
+              canGoBack={month > monthFloor()}
+              canGoForward={!monthIsLive}
+              onBack={() => setMonth(previousMonthStart(month))}
+              onForward={() => setMonth(nextMonthStart(month))}
+              // This board's own window, one step back -- the same relation
+              // last week's champion has to the weekly board. It used to be
+              // the nearest thing available: a season had no completed season
+              // behind it, so the month was borrowed as its closed window.
+              // Now the board is the month, and the plaque under it is simply
+              // the last one that finished. A month the reader has stepped
+              // back to is finished itself, so it carries its own winner.
+              champion={
+                monthIsLive ? boards.lastMonth : championOf(boards.monthly)
+              }
+              championLabel={
+                monthIsLive
+                  ? `${previousMonthName(today)}'s champion`
+                  : "Champion"
+              }
+              // The same, one window up: months close on the last and are
+              // settled everywhere by the 2nd, so a monthly champion is
+              // always the 2nd's news -- every month, which is what lets this
+              // be a constant rather than a date to compute. Withheld from a
+              // month older than the last one for the same reason the week's
+              // is, so an unwon August of some past year says nothing rather
+              // than promising an engraving that will never come.
+              championCrowning={
+                monthIsLive || month === previousMonthStart(thisMonth)
+                  ? "the 2nd"
+                  : undefined
+              }
+              championSettling={
+                monthChampionSettling(today) &&
+                (monthIsLive || month === previousMonthStart(thisMonth))
+              }
+            />
           </div>
-        )}
+        </>
+      )}
 
-        {state === "error" && (
-          <div className="leaderboard__boards-slot">
-            <p className="leaderboard__status" aria-live="polite">
-              Couldn't load the boards.{" "}
-              <button
-                type="button"
-                className="leaderboard__retry"
-                onClick={() => load()}
-              >
-                Try again
-              </button>
-            </p>
-          </div>
-        )}
+      <button
+        type="button"
+        className="leaderboard-page__back"
+        onClick={() => navigate("game")}
+      >
+        Back to today's puzzle
+      </button>
 
-        {state === "ready" && boards && (
-          <>
-            {/* The one rule both boards run on, stated before them rather than
-                after: it is the condition a score has to meet to be on either
-                list, so a reader wants it on the way in. Underneath the pair it
-                had nothing to sit against -- a bullet adrift between the last
-                row and the next section. Outside the grid below, so it sits
-                against the first board rather than a column gap away from it. */}
-            <ul className="leaderboard__rules">
-              <li>Only puzzles played on the day they drop count</li>
-            </ul>
-            <div className="leaderboard__boards">
-              <Board
-                heading={weekIsLive ? "This week" : weekLabel(week)}
-                // Beside the heading rather than under it: the two boards sit
-                // shoulder to shoulder, and a line under one of them and not
-                // the other pushed its rows half a line down -- two lists side
-                // by side that do not start level read as a mistake. No dates
-                // on either board now. A window you are already in does not
-                // need its days spelled out; when it turns over is the one
-                // thing worth saying, and both boards say exactly that. A
-                // window that has turned over says the other half of it: that
-                // what is on screen is not going to change again.
-                headingDetail={weekIsLive ? "Resets on Sundays" : "Final"}
-                entries={boards.weekly}
-                self={boards.weeklySelf}
-                emptyMessage={
-                  weekIsLive
-                    ? "Nobody's scored yet this week. Be first."
-                    : "Nobody scored this week."
-                }
-                playerId={playerId}
-                state={weekState}
-                onRetry={load}
-                // The window this board counts is the reader's to move: back
-                // through the weeks that have finished, forward to the one they
-                // are playing. See the note on the nav in `Board`.
-                unit="week"
-                canGoBack={week > weekFloor()}
-                canGoForward={!weekIsLive}
-                onBack={() => setWeek(addDays(week, -7))}
-                onForward={() => setWeek(addDays(week, 7))}
-                // Who took the week this one replaced. Under the board rather
-                // than in it: they are not competing in this week, and a row
-                // among the live ones would read as though they were.
-                //
-                // On a week that has closed, the plaque is that week's own
-                // winner instead -- the board above it is a final standing, and
-                // the gold line is what it came to. Which is the same sentence
-                // the live board's plaque makes about the week before it, one
-                // window along, and on the turnover day the two name the same
-                // player with the same caveat.
-                champion={
-                  weekIsLive ? boards.lastWeek : championOf(boards.weekly)
-                }
-                championLabel={weekIsLive ? "Last week's champion" : "Champion"}
-                // The day this plaque goes final, whichever week it ends up
-                // naming: weeks close on Saturday and are settled everywhere by
-                // Monday, so a weekly champion is always a Monday's news.
-                //
-                // Given for the live week and the one behind it, and no further
-                // back: it is the day an empty plaque says it will be engraved,
-                // and an older week nobody played is a week that never will be.
-                // "Crowned on Monday" under it would be the one thing on this
-                // page that is simply false, so it gets no plaque at all.
-                championCrowning={
-                  weekIsLive || week === addDays(thisWeek, -7)
-                    ? "Monday"
-                    : undefined
-                }
-                // And whether today is the Sunday that week turned over on --
-                // the day it has not closed at the same moment for everybody
-                // yet, so the name goes up with the caveat. See game/week.ts.
-                // It covers the week just gone as well as the live one, because
-                // that is the window whose top row can still move under a reader
-                // who stepped back to it.
-                championSettling={
-                  weekChampionSettling(today) &&
-                  (weekIsLive || week === addDays(thisWeek, -7))
-                }
-              />
-              <Board
-                heading={monthIsLive ? "This month" : monthLabel(month)}
-                // The weekday it turns over on and the date that is, which for
-                // a month is computed (see game/month.ts) rather than the
-                // constant the week can get away with -- and the weekday leads,
-                // because a bare "Sep 1" is a date a reader still has to place
-                // in their own week. This board used to be "Season 1" with
-                // the season's two dates under it -- a window a reader had to
-                // be told the ends of, because they were picked by hand. A
-                // month has ends everybody already knows.
-                headingDetail={monthIsLive ? monthResetLabel(today) : "Final"}
-                entries={boards.monthly}
-                self={boards.monthlySelf}
-                emptyMessage={
-                  monthIsLive
-                    ? "Nobody's scored yet this month. Be first."
-                    : "Nobody scored this month."
-                }
-                playerId={playerId}
-                state={monthState}
-                onRetry={load}
-                unit="month"
-                canGoBack={month > monthFloor()}
-                canGoForward={!monthIsLive}
-                onBack={() => setMonth(previousMonthStart(month))}
-                onForward={() => setMonth(nextMonthStart(month))}
-                // This board's own window, one step back -- the same relation
-                // last week's champion has to the weekly board. It used to be
-                // the nearest thing available: a season had no completed season
-                // behind it, so the month was borrowed as its closed window.
-                // Now the board is the month, and the plaque under it is simply
-                // the last one that finished. A month the reader has stepped
-                // back to is finished itself, so it carries its own winner.
-                champion={
-                  monthIsLive ? boards.lastMonth : championOf(boards.monthly)
-                }
-                championLabel={
-                  monthIsLive
-                    ? `${previousMonthName(today)}'s champion`
-                    : "Champion"
-                }
-                // The same, one window up: months close on the last and are
-                // settled everywhere by the 2nd, so a monthly champion is
-                // always the 2nd's news -- every month, which is what lets this
-                // be a constant rather than a date to compute. Withheld from a
-                // month older than the last one for the same reason the week's
-                // is, so an unwon August of some past year says nothing rather
-                // than promising an engraving that will never come.
-                championCrowning={
-                  monthIsLive || month === previousMonthStart(thisMonth)
-                    ? "the 2nd"
-                    : undefined
-                }
-                championSettling={
-                  monthChampionSettling(today) &&
-                  (monthIsLive || month === previousMonthStart(thisMonth))
-                }
-              />
-            </div>
-          </>
-        )}
-
-        {/* Not gated on the boards' state. The feed is its own request, answering
-            its own question, and it is the part of this page that works from day
-            one -- so boards that failed to load are a reason to show a retry
-            above it, never a reason to hide finds that arrived perfectly well. */}
-        {(words.length > 0 || canGoBack || !isToday) && (
-          <FoundWords
-            words={words}
-            date={viewing}
-            isToday={isToday}
-            state={feedState}
-            // Never nothing and never a screenful: a first load has no previous
-            // day to measure, and a very long day should not open a hole the
-            // list may not fill.
-            placeholderRows={Math.min(Math.max(lastRowCount.current, 4), 12)}
-            arrived={arrived}
-            refound={refound}
-            canGoBack={canGoBack}
-            canGoForward={!isToday}
-            onBack={() => showDay(addDays(viewing, -1))}
-            onForward={() => showDay(addDays(viewing, 1))}
-            onRetry={() => {
-              setFeedState("loading");
-              refreshWords();
+      {/* Development only. `import.meta.env.DEV` is a compile-time constant, so
+          this whole branch -- and the fixture it reaches -- is dropped from a
+          production build. Same trick as the "Reset answers" button. */}
+      {import.meta.env.DEV && (
+        <label className="dev-sample-toggle">
+          <input
+            type="checkbox"
+            checked={usingSampleData()}
+            onChange={(e) => {
+              setUsingSampleData(e.target.checked);
+              load();
             }}
           />
-        )}
-
-        <button
-          type="button"
-          className="leaderboard-page__back"
-          onClick={() => navigate("game")}
-        >
-          Back to today's puzzle
-        </button>
-
-        {/* Development only. `import.meta.env.DEV` is a compile-time constant, so
-            this whole branch -- and the fixture it reaches -- is dropped from a
-            production build. Same trick as the "Reset answers" button. */}
-        {import.meta.env.DEV && (
-          <label className="dev-sample-toggle">
-            <input
-              type="checkbox"
-              checked={usingSampleData()}
-              onChange={(e) => {
-                setUsingSampleData(e.target.checked);
-                load();
-              }}
-            />
-            Use sample data
-          </label>
-        )}
-      </main>
-    </div>
-  );
-}
-
-/**
- * Every word found on one puzzle, newest first.
- *
- * One puzzle at a time, and today's until a reader presses back. The drop in the
- * heading is what makes the list mean anything -- `asphyxiate` is just a word
- * until you know the day asked for PHY -- so the feed is keyed to a puzzle date
- * rather than to a clock, and stepping back moves the whole heading with it.
- *
- * Back as far as the week's reset and no further (see game/leaderboard.ts,
- * feedFloor). It is not an archive: it is the same window the board above it
- * ranks, which is the one a reader is already holding in their head. What it
- * fixes is a real loss -- a day's finds used to be gone at the reader's
- * midnight, so anybody who opened the page in the morning had missed them, and
- * the words are the part of this page people come back for.
- *
- * Every word rather than each player's best. The feed used to be built from the
- * one word per player the boards rank on, which made it a list of personal bests
- * and gave it a worse habit: that word is replaced when a player beats it, so a
- * find already on screen would disappear the moment its only finder did better.
- *
- * Its own section below the boards, rather than sharing the top of the page with
- * them. Both are lists of words, and a leaderboard row is a *player* while a
- * find is a *word* -- side by side that distinction is one nobody should have to
- * work out, so the two get separate headings and separate ground.
- *
- * A leaderboard tells you where you came; this tells you what you missed, and
- * "I did not know that was a word" is the thing players actually enjoy.
- */
-function FoundWords({
-  words,
-  date,
-  isToday,
-  state,
-  placeholderRows,
-  arrived,
-  refound,
-  canGoBack,
-  canGoForward,
-  onBack,
-  onForward,
-  onRetry,
-}: {
-  words: readonly FoundWord[];
-  date: string;
-  isToday: boolean;
-  state: LoadState;
-  /** How many rows to hold open while a day loads. */
-  placeholderRows: number;
-  arrived: readonly string[];
-  refound: readonly string[];
-  canGoBack: boolean;
-  canGoForward: boolean;
-  onBack: () => void;
-  onForward: () => void;
-  onRetry: () => void;
-}) {
-  /**
-   * The rows, by word, so a re-ordering can be animated as movement.
-   *
-   * React keys the list by word, so when the order changes it *moves* the
-   * existing node rather than rebuilding it -- the row is the same element in a
-   * new place. That is what makes the animation below possible, and it is why
-   * nothing here has to know which word travelled: the DOM already did it, and
-   * this only replays the journey.
-   */
-  const rows = useRef(new Map<string, HTMLLIElement>());
-  /** Where each row sat last time this ran, to measure the move against. */
-  const wasAt = useRef(new Map<string, number>());
-
-  /**
-   * Slide the rows that moved from where they were to where they now are.
-   *
-   * The standard trick: the DOM is already in its final state by the time this
-   * runs, so each row is offset *back* to where it used to be with no transition,
-   * the layout is flushed, and then the offset is released -- the CSS transition
-   * on `.found-words__item` carries it home. The reader sees the row travel; the
-   * browser only ever laid it out once.
-   *
-   * `offsetTop` rather than a bounding rect, so a page that scrolled between two
-   * polls does not read as every row having moved.
-   *
-   * Skipped entirely when a brand-new word is on screen. That row animates its
-   * own height open, which pushes everything below it down as a matter of
-   * layout, and the established insertion animation should own that frame rather
-   * than fight a transform for it.
-   */
-  useLayoutEffect(() => {
-    const before = wasAt.current;
-    const now = new Map<string, number>();
-    for (const [word, node] of rows.current) now.set(word, node.offsetTop);
-    wasAt.current = now;
-    if (arrived.length > 0) return;
-    for (const [word, top] of now) {
-      const previous = before.get(word);
-      if (previous === undefined || previous === top) continue;
-      const node = rows.current.get(word);
-      if (!node) continue;
-      node.style.transition = "none";
-      node.style.transform = `translateY(${previous - top}px)`;
-      // Read a layout property to flush the offset above before releasing it, or
-      // the two writes coalesce into no move at all.
-      void node.offsetHeight;
-      node.style.transition = "";
-      node.style.transform = "";
-    }
-  }, [words, arrived]);
-
-  // "Today's finds" while it is today's, and the day's own date once it isn't.
-  // The date rather than "Yesterday": two steps back has no such word, and a
-  // heading whose wording changes shape halfway down a week is harder to read
-  // than one that always names the day.
-  const heading = isToday
-    ? "Today's finds"
-    : `Finds from ${formatDateLabel(date)}`;
-  return (
-    <section className="found-words" aria-label={heading}>
-      {/* No line under it. "Every word found on today's puzzle" restated the
-          heading with the drop already beside it, and the boards above carry
-          nothing under their headings either -- one of the three sections
-          explaining itself was the odd one out. */}
-      <h2 className="leaderboard__board-heading">
-        {heading}
-        <span className="found-words__drop">{dropForDate(date)}</span>
-      </h2>
-      {/* Both arrows always rendered, disabled at the ends rather than removed:
-          a control that disappears at the edge of its range takes the shape of
-          the thing with it, and a reader who has stepped back needs to see that
-          forward exists before they know they can. */}
-      <div className="found-words__nav">
-        <button
-          type="button"
-          className="found-words__arrow"
-          onClick={onBack}
-          disabled={!canGoBack}
-          aria-label="Finds from the day before"
-        >
-          <span aria-hidden="true">‹</span>
-          <span>Previous day</span>
-        </button>
-        <button
-          type="button"
-          className="found-words__arrow"
-          onClick={onForward}
-          disabled={!canGoForward}
-          aria-label="Finds from the day after"
-        >
-          <span>Next day</span>
-          <span aria-hidden="true">›</span>
-        </button>
-      </div>
-      {/* One slot for whatever the day has to say, so the three answers -- a
-          list, nothing, or a failure -- all occupy the same ground and the
-          sections below do not move as a reader steps between days. */}
-      {state === "error" ? (
-        <p className="leaderboard__status" aria-live="polite">
-          Couldn't load these finds.{" "}
-          {/* Named apart from the boards' retry above it, which reads the same
-              and does something else. Two buttons called "Try again" on one
-              page are one button to anybody who reaches them by name. */}
-          <button
-            type="button"
-            className="leaderboard__retry"
-            onClick={onRetry}
-            aria-label="Try loading the finds again"
-          >
-            Try again
-          </button>
-        </p>
-      ) : state === "loading" ? (
-        // Rows rather than a spinner, as many as the day just left had: the
-        // request is one small query and usually lands in a moment, and what a
-        // reader notices in that moment is the page under their thumb jumping,
-        // not the absence of a message. Hidden from the reading order entirely
-        // -- there is nothing here to read -- with the one sentence that is
-        // worth saying announced instead.
-        <>
-          <p className="sr-only" aria-live="polite">
-            Loading the finds…
-          </p>
-          <ul className="found-words__list" aria-hidden="true">
-            {Array.from({ length: placeholderRows }, (_, i) => (
-              <li
-                key={i}
-                className="found-words__item found-words__item--placeholder"
-              />
-            ))}
-          </ul>
-        </>
-      ) : words.length === 0 ? (
-        <p className="leaderboard__status">
-          {isToday
-            ? "Nobody's found anything yet today."
-            : "Nobody found anything on this puzzle."}
-        </p>
-      ) : (
-        <ul className="found-words__list">
-          {words.map((found) => (
-            <li
-              key={found.word}
-              ref={(node) => {
-                if (node) rows.current.set(found.word, node);
-                else rows.current.delete(found.word);
-              }}
-              className={`found-words__item${
-                arrived.includes(found.word)
-                  ? " found-words__item--arrived"
-                  : ""
-              }${
-                refound.includes(found.word)
-                  ? " found-words__item--refound"
-                  : ""
-              }`}
-            >
-              <span className="found-words__word">{found.word}</span>
-              <RarityBadge rarity={found.rarity} zipf={found.zipf} />
-              {found.finders > 1 && (
-                <span className="found-words__finders">
-                  {found.finders} players
-                </span>
-              )}
-            </li>
-          ))}
-        </ul>
+          Use sample data
+        </label>
       )}
-    </section>
+    </main>
   );
 }
 
