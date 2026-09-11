@@ -2567,3 +2567,100 @@ h2 {
     font-size: 1.5rem;
   }
 }
+
+/*
+ * The two review pages: the word queue at /suggested-words and the feedback at
+ * /feedback.
+ *
+ * One block for both, because they are the same page twice -- a list of rows,
+ * each a thing to read and nothing to interact with. Plain by intent: these are
+ * not pages for players (nothing in the app links to them), so they borrow the
+ * page head, the refresh and the back button from the leaderboard and spend
+ * nothing of their own on decoration.
+ */
+.review__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.1rem;
+  grid-template-columns: 1fr;
+}
+.review__item {
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.review__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.review__word {
+  font-weight: 700;
+  /* A 30-letter word wraps rather than pushing the frequency off the row. */
+  overflow-wrap: anywhere;
+}
+.review__zipf {
+  flex: none;
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+/* Everything about a row that isn't the row: where it came from, the counts, the
+   labels, when it last turned up. One line that wraps, with the separators drawn
+   rather than typed so no row ends on a stray dot. */
+.review__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.5rem;
+  margin: 0.2rem 0 0;
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+}
+.review__meta > span + span::before {
+  content: "·";
+  margin-right: 0.5rem;
+}
+.review__origin {
+  font-weight: 700;
+}
+/* A word players asked for *and* reached for in a puzzle: the strongest signal
+   the queue has, so it is the one thing on the row that is not grey. */
+.review__origin--both {
+  color: var(--fg);
+}
+/* A note, set as text and given room to be read. `pre-wrap` keeps the line
+   breaks somebody typed; the box will not submit anything longer than 200
+   characters, so there is no clamp here to fight. */
+.review__note {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* How many rows came back, beside the title. A list with a size is a different
+   thing to read than a list without one -- "12" is a morning's work and "300"
+   is a backlog. */
+.review__count {
+  margin-left: 0.5rem;
+  color: var(--fg-muted);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+/* Loading, empty and failed, which on these pages are three different answers
+   and all of them a sentence. */
+.review__status {
+  margin: 1.2rem 0;
+  color: var(--fg-muted);
+}
+.review__retry {
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}

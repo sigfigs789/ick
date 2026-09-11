@@ -17,6 +17,13 @@ describe("routes", () => {
     expect(routeFor("/found-words/")).toBe("found-words");
   });
 
+  it("recognises the two review paths, which nothing links to", () => {
+    expect(routeFor("/suggested-words")).toBe("suggested-words");
+    expect(routeFor("/suggested-words/")).toBe("suggested-words");
+    expect(routeFor("/feedback")).toBe("feedback");
+    expect(routeFor("/feedback/")).toBe("feedback");
+  });
+
   it("treats anything else as the game, rather than a client-rendered 404", () => {
     expect(routeFor("/")).toBe("game");
     expect(routeFor("")).toBe("game");
@@ -27,6 +34,8 @@ describe("routes", () => {
   it("maps each route back to its path", () => {
     expect(pathFor("leaderboard")).toBe("/leaderboard");
     expect(pathFor("found-words")).toBe("/found-words");
+    expect(pathFor("suggested-words")).toBe("/suggested-words");
+    expect(pathFor("feedback")).toBe("/feedback");
     expect(pathFor("game")).toBe("/");
   });
 

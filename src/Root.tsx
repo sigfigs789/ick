@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import App from "./App";
 import { trackLeaderboardJoined } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
+import { FeedbackPage } from "./components/FeedbackPage";
 import { FoundWordsPage } from "./components/FoundWordsPage";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
+import { SuggestedWordsPage } from "./components/SuggestedWordsPage";
 import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
 import { hasSeen, markSeen } from "./game/whatsNew";
@@ -21,7 +23,7 @@ import { useRoute } from "./routes";
  */
 const SYNC_STALE_MS = 5 * 60_000;
 
-/** Three pages under one header, picked off the address bar. See src/routes.ts. */
+/** Five pages under one header, picked off the address bar. See src/routes.ts. */
 export function Root() {
   const route = useRoute();
 
@@ -150,6 +152,14 @@ export function Root() {
         <LeaderboardPage />
       ) : route === "found-words" ? (
         <FoundWordsPage />
+      ) : route === "suggested-words" ? (
+        /* The two review pages, which no tab points at: they render under the
+           same header as everything else, because a page of this app is a page
+           of this app -- there is nothing to be gained by giving a list its own
+           frame, and the header's "?" is as welcome here as anywhere. */
+        <SuggestedWordsPage />
+      ) : route === "feedback" ? (
+        <FeedbackPage />
       ) : (
         <App />
       )}

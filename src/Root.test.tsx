@@ -18,6 +18,12 @@ vi.mock("./components/LeaderboardPage", () => ({
 vi.mock("./components/FoundWordsPage", () => ({
   FoundWordsPage: () => <div>found words</div>,
 }));
+vi.mock("./components/SuggestedWordsPage", () => ({
+  SuggestedWordsPage: () => <div>suggested words</div>,
+}));
+vi.mock("./components/FeedbackPage", () => ({
+  FeedbackPage: () => <div>feedback</div>,
+}));
 vi.mock("./analytics", () => ({
   trackLeaderboardJoined: vi.fn(),
   trackLeaderboardOpened: vi.fn(),
@@ -115,6 +121,24 @@ describe("keeping the board in step on open", () => {
     expect(
       screen.getByRole("button", { name: /Leaderboards/ }),
     ).toBeInTheDocument();
+  });
+
+  it("renders the two review pages, which no tab points at", () => {
+    stubFetch();
+    window.history.replaceState(null, "", "/suggested-words");
+    const { unmount } = render(<Root />);
+
+    expect(screen.getByText("suggested words")).toBeInTheDocument();
+    // Unlinked: the header is the same header, and none of its tabs claims to be
+    // the page you are on.
+    expect(
+      screen.queryByRole("button", { name: /Suggested words/i }),
+    ).not.toBeInTheDocument();
+    unmount();
+
+    window.history.replaceState(null, "", "/feedback");
+    render(<Root />);
+    expect(screen.getByText("feedback")).toBeInTheDocument();
   });
 
   it("sends only the days this browser can prove were played on their own date", () => {
