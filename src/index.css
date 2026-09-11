@@ -2683,6 +2683,11 @@ h2 {
 .review__fold {
   font-style: italic;
 }
+/* The fault a reviewed rejection names -- why the word cannot be played. */
+.review__rejected {
+  color: var(--danger-fg);
+  font-weight: 700;
+}
 /* A note, set as text and given room to be read. `pre-wrap` keeps the line
    breaks somebody typed. The box has no length limit any more, so a long note
    is shown whole and simply takes the room it needs -- a clamp would hide the

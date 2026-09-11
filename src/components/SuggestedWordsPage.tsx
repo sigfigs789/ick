@@ -2,7 +2,11 @@ import { useCallback } from "react";
 import { MarkBox, MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
 import { fetchSuggestedWords, hasReviewKey } from "../game/review";
-import { baseFormSubstitution, formatRarityScore } from "../game/dictionary";
+import {
+  baseFormSubstitution,
+  curatedRejection,
+  formatRarityScore,
+} from "../game/dictionary";
 
 /**
  * The review queue, as a page at /suggested-words.
@@ -89,34 +93,40 @@ export function SuggestedWordsPage() {
               </span>
             </div>
             <p className="review__meta">
-              {/* Where the word came from, said once each way it can be said.
+              {/* Where the word came from, in one label rather than three.
 
-                  There were three labels here and two facts: "asked for" and
-                  this count were the same thing twice, and "played" and "live
-                  lookup approved" became the same thing the moment origin
-                  started meaning a live verdict. So the origin label is gone
-                  and the two facts speak for themselves -- the count says
-                  somebody asked for the word, the label below says the game let
-                  it through on the spot, and a word can be either, both, or
-                  only the first.
+                  A word can have arrived by both doors, and when it has, the
+                  suggestion is the one worth saying: somebody asked for this
+                  word on purpose, which is a stronger signal than the game
+                  happening to let it through mid-puzzle. So the count wins when
+                  there is one -- and the count *is* the label, since "suggested"
+                  beside "1 suggestion" was the same word twice.
 
-                  The count only when there is one: "0 suggestions" on every
-                  live-lookup row would be noise. The lookup count used to sit
-                  here too and no longer does -- how many times a word was
-                  reached was not a number anybody triaged on. The endpoint
-                  still reports it. */}
-              {row.suggestions > 0 && (
+                  "played" is what is left: the live Merriam-Webster check
+                  approved it in a puzzle and nobody ever asked for it. Worth
+                  saying beside the mark, because a word the live check let
+                  through can still be kept out of the dictionary afterwards. */}
+              {row.suggestions > 0 ? (
                 <span>
                   {row.suggestions} {row.suggestions === 1 ? "suggestion" : "suggestions"}
                 </span>
+              ) : (
+                row.liveApproved && <span className="review__live">played</span>
               )}
-              {/* The game let this one be played on the spot, on the live
-                  Merriam-Webster check and nobody's judgement. Worth keeping
-                  beside the mark: a word the live check approved can still be
-                  rejected from the dictionary afterwards, which is exactly the
-                  row where the two verdicts differ. */}
-              {row.liveApproved && (
-                <span className="review__live">live lookup approved</span>
+              {/* Why the word is unplayable, when the repo has a reason on
+                  file. The mark says a word was rejected; this says what the
+                  fault was -- a misspelling, a brand name, a word nothing
+                  attests -- which is the part a reader cannot work out from a
+                  cross. Read from the shipped rejection ledger rather than sent
+                  by the endpoint, for the reason the fold is: the verdict is
+                  already in the bundle.
+
+                  It can appear on an unmarked row, and that is not a
+                  contradiction: the ledger is the repo's decision and the mark
+                  is the database's, and a word judged in a review pass may
+                  never have been marked here at all. */}
+              {rejectionReason(row.word) && (
+                <span className="review__rejected">{rejectionReason(row.word)}</span>
               )}
               {/* What the word would score as, if it is in the dictionary and
                   the fold caps it at something more common -- "abaci" scores as
@@ -156,5 +166,17 @@ export function SuggestedWordsPage() {
  */
 function commonForm(word: string): string | undefined {
   return baseFormSubstitution(word)?.base;
+}
+
+/**
+ * The fault a reviewed rejection names, as the row says it.
+ *
+ * The ledger's own token, hyphens turned to spaces and nothing else invented:
+ * "proper noun", "misspelling", "not a word". These are the words the review
+ * pass chose, and rewriting them here would put a second vocabulary between the
+ * reader and the decision.
+ */
+function rejectionReason(word: string): string | undefined {
+  return curatedRejection(word)?.replace(/-/g, " ");
 }
 

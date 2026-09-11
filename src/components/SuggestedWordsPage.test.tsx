@@ -119,18 +119,6 @@ describe("SuggestedWordsPage", () => {
     expect(screen.queryByText(/\d+ lookups?$/)).not.toBeInTheDocument();
   });
 
-  it("says which words the live lookup approved on its own", async () => {
-    stubFetch();
-    render(<SuggestedWordsPage />);
-
-    await screen.findByText("blorp");
-    // The label sits on the word the live check let through, and on no other:
-    // it is the game's own verdict, separate from the triage mark.
-    const live = screen.getAllByText("live lookup approved");
-    expect(live).toHaveLength(1);
-    expect(live[0].closest("li")).toHaveTextContent("enshittification");
-  });
-
   it("shows a reader the mark without offering to change it", async () => {
     // A player's view: the box still says accepted, rejected or neither, which
     // is the answer they came for -- it just is not a button.
@@ -169,6 +157,34 @@ describe("SuggestedWordsPage", () => {
     expect(
       within(screen.getByText("blorp").closest("li") as HTMLElement).queryByText(/common form/),
     ).not.toBeInTheDocument();
+  });
+
+  it("says played only for a word nobody asked for", async () => {
+    stubFetch([
+      { ...WORDS[0], word: "blorp", suggestions: 2, liveApproved: true },
+      { ...WORDS[1], word: "susurrus", suggestions: 0, liveApproved: true },
+    ]);
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("blorp");
+    // Both doors, and the suggestion is the one worth saying: somebody asked
+    // for that word on purpose.
+    const asked = within(screen.getByText("blorp").closest("li") as HTMLElement);
+    expect(asked.getByText("2 suggestions")).toBeInTheDocument();
+    expect(asked.queryByText("played")).not.toBeInTheDocument();
+    // Never asked for: the live check is the only reason it is here.
+    expect(
+      within(screen.getByText("susurrus").closest("li") as HTMLElement).getByText("played"),
+    ).toBeInTheDocument();
+  });
+
+  it("names the fault when a word has a reviewed rejection on file", async () => {
+    // "absconce" is in the shipped rejection ledger as not-a-word.
+    stubFetch([{ ...WORDS[0], word: "absconce" }]);
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("absconce");
+    expect(screen.getByText("not a word")).toBeInTheDocument();
   });
 
   it("tells an empty queue from a failed read", async () => {
