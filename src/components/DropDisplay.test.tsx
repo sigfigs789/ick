@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { DropDisplay } from "./DropDisplay";
 import { definitionFor, formatRarityScore, learnableWordForDrop } from "../game/dictionary";
 
@@ -44,6 +44,44 @@ describe("DropDisplay", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     // Still in the reading order once folded, just hidden from the eye.
     expect(screen.getByText(definition)).toHaveClass("sr-only");
+  });
+
+  it("holds the word behind a confirmation while the retry is unspent", async () => {
+    const onReveal = vi.fn();
+    const { rerender } = render(
+      <DropDisplay drop="str" completed retryOffered onReveal={onReveal} />,
+    );
+    const reveal = learnableWordForDrop("str")!;
+    expect(screen.queryByText(reveal.word, { exact: false })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Reveal word" }));
+    const dialog = screen.getByRole("dialog", { name: /reveal today's word/i });
+    expect(dialog).toHaveTextContent(/uses up your retry/i);
+
+    // Backing out costs nothing and leaves the word hidden.
+    await userEvent.click(screen.getByRole("button", { name: /never mind/i }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(onReveal).not.toHaveBeenCalled();
+    expect(screen.queryByText(reveal.word, { exact: false })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Reveal word" }));
+    await userEvent.click(
+      screen.getByRole("dialog").querySelector<HTMLButtonElement>(".reveal-modal__confirm")!,
+    );
+    expect(onReveal).toHaveBeenCalledTimes(1);
+
+    // The retry going with it is what opens the word -- there is no separate
+    // "revealed" flag to keep in step.
+    rerender(<DropDisplay drop="str" completed retryOffered={false} onReveal={onReveal} />);
+    expect(screen.getByText(reveal.word, { exact: false })).toBeInTheDocument();
+  });
+
+  it("shows the word outright once the retry is gone", () => {
+    render(<DropDisplay drop="str" completed retryOffered={false} onReveal={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Reveal word" })).not.toBeInTheDocument();
+    expect(
+      screen.getByText(learnableWordForDrop("str")!.word, { exact: false }),
+    ).toBeInTheDocument();
   });
 
   it("opens the definition again when the puzzle changes underneath it", async () => {

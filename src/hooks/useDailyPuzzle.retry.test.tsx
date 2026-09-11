@@ -171,6 +171,55 @@ describe("useDailyPuzzle retry", () => {
   });
 });
 
+describe("useDailyPuzzle reveal", () => {
+  it("spends the retry and keeps the words, so the reveal can't be undone", async () => {
+    const { result } = renderHook(() => useDailyPuzzle());
+    await act(async () => {
+      await result.current.submitWord(FIRST);
+    });
+    const banked = result.current.progress.acceptedWords;
+
+    act(() => result.current.revealAnswer());
+
+    expect(result.current.progress.acceptedWords).toEqual(banked);
+    expect(result.current.retryOffered).toBe(false);
+    expect(result.current.retrySpent).toBe(true);
+    // Nothing left to spend on a word afterwards.
+    act(() => result.current.retryAnswer(FIRST));
+    expect(result.current.progress.acceptedWords).toEqual(banked);
+  });
+
+  it("reports the reveal with the guesses standing behind it", async () => {
+    const { result } = renderHook(() => useDailyPuzzle());
+    await act(async () => {
+      await result.current.submitWord(FIRST);
+    });
+    await act(async () => {
+      await result.current.submitWord(SECOND);
+    });
+    track.mockClear();
+
+    act(() => result.current.revealAnswer());
+
+    expect(track).toHaveBeenCalledWith(
+      "answer_revealed",
+      expect.objectContaining({ puzzle_date: TODAY, answer_count: 2 })
+    );
+  });
+
+  it("keeps the reveal off an archive puzzle, which never had a retry to spend", async () => {
+    const { result } = renderHook(() => useDailyPuzzle());
+    act(() => result.current.goToPrevious());
+    await act(async () => {
+      await result.current.submitWord(YESTERDAYS_WORD);
+    });
+
+    act(() => result.current.revealAnswer());
+
+    expect(result.current.progress.retryUsed).toBeUndefined();
+  });
+});
+
 describe("useDailyPuzzle retry and the leaderboard", () => {
   it("corrects the board straight away rather than waiting for a replacement", async () => {
     joinBoard();

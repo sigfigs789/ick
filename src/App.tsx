@@ -53,6 +53,7 @@ export default function App() {
     retryOffered,
     retrySpent,
     retryAnswer,
+    revealAnswer,
     resetAnswers,
   } = useDailyPuzzle();
   const [showWordRules, setShowWordRules] = useState(false);
@@ -161,6 +162,8 @@ export default function App() {
           date={date}
           isToday={isToday}
           completed={progress.completed}
+          retryOffered={retryOffered}
+          onReveal={revealAnswer}
         />
         <GuessLog
           acceptedWords={progress.acceptedWords}

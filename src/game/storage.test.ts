@@ -10,6 +10,7 @@ import {
   recordRejectedAttempt,
   resetProgress,
   retryWord,
+  forfeitRetry,
 } from "./storage";
 import { rarityScore } from "./dictionary";
 
@@ -759,6 +760,32 @@ describe("retryWord", () => {
     retryWord(progress, "strange");
 
     expect(loadStreak().highScore).toBe(best);
+  });
+});
+
+describe("forfeitRetry", () => {
+  it("spends the retry without touching the words", () => {
+    let progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    progress = recordAcceptedWord(progress, word("strut", 3.2, "Rare"));
+
+    const given = forfeitRetry(progress);
+
+    expect(given.acceptedWords).toEqual(progress.acceptedWords);
+    expect(given.retryUsed).toBe(true);
+    expect(loadProgress("2024-01-01")).toMatchObject({ retryUsed: true });
+  });
+
+  it("closes the door on retrying a word afterwards", () => {
+    const progress = recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange"));
+    const given = forfeitRetry(progress);
+    expect(retryWord(given, "strange")).toBe(given);
+  });
+
+  it("leaves a spent retry alone, by identity", () => {
+    const progress = forfeitRetry(
+      recordAcceptedWord(newProgress("2024-01-01", "str"), word("strange")),
+    );
+    expect(forfeitRetry(progress)).toBe(progress);
   });
 });
 

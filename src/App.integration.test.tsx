@@ -255,7 +255,22 @@ describe("gameplay end to end", () => {
       if (i < words.length - 1) expect(revealed()).not.toBeInTheDocument();
     }
 
+    // Finishing is not enough while the retry is unspent: the word can still
+    // re-open the puzzle, so it costs the retry to look at.
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Reveal word" })).toBeInTheDocument(),
+    );
+    expect(revealed()).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Reveal word" }));
+    await userEvent.click(
+      screen.getByRole("dialog").querySelector<HTMLButtonElement>(".reveal-modal__confirm")!,
+    );
+
     await waitFor(() => expect(revealed()).toBeInTheDocument());
+    // Paid for out of the retry, and the guess log says so.
+    expect(screen.getByText(/retry used/i)).toBeInTheDocument();
+    expect(savedProgress(TODAY)?.retryUsed).toBe(true);
   });
 
   it("keeps an archived puzzle's progress separate from today's", async () => {

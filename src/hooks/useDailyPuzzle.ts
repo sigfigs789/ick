@@ -11,6 +11,7 @@ import {
   recordRejectedAttempt,
   resetProgress,
   retryWord,
+  forfeitRetry,
 } from "../game/storage";
 import { evaluateSubmission, REJECTION_MESSAGES, spellingNearMiss } from "../game/submit";
 import {
@@ -41,6 +42,7 @@ import type {
 import {
   trackAcceptedAnswer,
   trackAnswerRetried,
+  trackAnswerRevealed,
   trackBaseFormSubstitution,
   trackMerriamWebsterApproved,
   trackMerriamWebsterFailed,
@@ -454,6 +456,26 @@ export function useDailyPuzzle() {
     [isToday, viewedDate]
   );
 
+  /**
+   * Give up the retry to see the day's word (see DropDisplay).
+   *
+   * No word moves, so nothing is rolled back and the board is left alone --
+   * the only change is that the retry is spent, which is what closes the door
+   * on looking the answer up and then re-opening the puzzle to play it.
+   *
+   * Rechecks `isToday` for the same reason `retryAnswer` does: a puzzle can go
+   * stale under a tab left open overnight.
+   */
+  const revealAnswer = useCallback(() => {
+    if (!isToday || !retryAvailableFor(viewedDate)) return;
+    const before = progressRef.current;
+    const updated = forfeitRetry(before);
+    if (updated === before) return;
+    progressRef.current = updated;
+    setProgress(updated);
+    trackAnswerRevealed(viewedDate, before.acceptedWords.length);
+  }, [isToday, viewedDate]);
+
   const resetAnswers = useCallback(() => {
     const fresh = resetProgress(viewedDate, drop);
     progressRef.current = fresh;
@@ -492,6 +514,7 @@ export function useDailyPuzzle() {
     retrySpent,
     retriesLeft,
     retryAnswer,
+    revealAnswer,
     resetAnswers,
     liveNote,
     checking,

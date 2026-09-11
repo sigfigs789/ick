@@ -426,3 +426,22 @@ export function retryWord(progress: DailyProgress, word: string): DailyProgress 
 
   return updated;
 }
+
+/**
+ * Give up this puzzle's retry without spending it on a word.
+ *
+ * The one caller is the reveal under the drop (see DropDisplay): a finished
+ * puzzle still holding its retry is a puzzle the player may yet re-open, and
+ * showing them the best word first would turn the mulligan into a lookup. So
+ * the reveal costs the retry, and this is the payment -- the same flag
+ * `retryWord` sets, with none of the roll-back, because no word moved.
+ *
+ * Returns `progress` unchanged when there was no retry left to give up, so
+ * callers can compare by identity to tell whether it happened.
+ */
+export function forfeitRetry(progress: DailyProgress): DailyProgress {
+  if (progress.retryUsed) return progress;
+  const updated: DailyProgress = { ...progress, retryUsed: true };
+  saveProgress(updated);
+  return updated;
+}
