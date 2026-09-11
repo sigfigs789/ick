@@ -3,31 +3,30 @@ import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
 import { hasSeen, markSeen } from "../game/whatsNew";
 import { navigate, type Route } from "../routes";
 
-/** One tab: where it goes, what it is called, and the glyph over the label. */
+/** One tab: where it goes and what it is called. */
 interface Tab {
   route: Route;
   label: string;
-  icon: string;
 }
 
 /**
  * The three pages, in the order a player meets them: the puzzle, then the two
  * things you go and look at once you have played it.
  *
- * Labels rather than a row of glyphs. A trophy is guessable and a scroll is not,
- * and neither of them says which of the two lists of words you are about to get
- * -- the boards rank players and the feed collects words, which is exactly the
- * distinction an icon cannot draw. The glyph stays as the thing the eye finds;
- * the word under it is what makes it a destination.
+ * Labels alone, no glyphs. A trophy is guessable and a scroll is not, and
+ * neither of them says which of the two lists of words you are about to get --
+ * the boards rank players and the feed collects words, which is exactly the
+ * distinction an icon cannot draw. Once the word is doing all the work, the
+ * glyph above it was decoration with a claim on the header's height.
  */
 const TABS: readonly Tab[] = [
-  { route: "game", label: "Play", icon: "🧩" },
-  { route: "leaderboard", label: "Leaderboards", icon: "🏆" },
-  // "Today's finds" rather than "Found words": the page opens on today's
-  // puzzle, and what brings anybody back to it through the day is what is
-  // landing now. Stepping back a day is a thing the page offers once you are on
-  // it, not the thing the tab is promising.
-  { route: "found-words", label: "Today's finds", icon: "📜" },
+  { route: "game", label: "Play" },
+  { route: "leaderboard", label: "Leaderboards" },
+  // "Words found" rather than "Today's finds": the page does not only hold
+  // today's -- it opens there, but stepping back a day is a thing it offers,
+  // and a tab that promises today then shows Tuesday has misnamed itself. The
+  // heading on the page is the one that says which day you are looking at.
+  { route: "found-words", label: "Words found" },
 ];
 
 /**
@@ -144,9 +143,6 @@ export function AppHeader({
               // are both hidden from it for the same reason.
               aria-label={badged ? `${tab.label} (new)` : undefined}
             >
-              <span className="app__nav-icon" aria-hidden="true">
-                {tab.icon}
-              </span>
               <span className="app__nav-label">{tab.label}</span>
               {badged && (
                 <>

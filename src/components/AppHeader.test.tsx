@@ -41,7 +41,7 @@ describe("the header", () => {
     expect(screen.getByText("Leaderboards")).toBeInTheDocument();
     // Named for what the page opens on, which is what brings anybody back to
     // it through the day.
-    expect(screen.getByText("Today's finds")).toBeInTheDocument();
+    expect(screen.getByText("Words found")).toBeInTheDocument();
     // Labels, not a row of glyphs: a trophy and a scroll cannot say which of
     // the two lists of words is which.
     expect(screen.getByRole("button", { name: /^Play$/ })).toHaveAttribute(
@@ -62,7 +62,7 @@ describe("the header", () => {
 
     // And straight across to the other one, without passing through the game --
     // which is the whole reason the header is on every page.
-    await userEvent.click(screen.getByRole("button", { name: "Today's finds" }));
+    await userEvent.click(screen.getByRole("button", { name: "Words found" }));
     expect(window.location.pathname).toBe("/found-words");
     expect(trackLeaderboardOpened).toHaveBeenCalledWith("header");
     expect(trackFoundWordsOpened).toHaveBeenCalledWith("header");
