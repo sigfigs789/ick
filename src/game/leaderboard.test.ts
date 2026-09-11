@@ -347,29 +347,15 @@ describe("reading the boards", () => {
     expect(boards.dailySelf).toBeNull();
   });
 
-  it("asks for the last puzzle that is over everywhere, and reads its champion", async () => {
-    const fetchMock = stubFetch(
-      boardsResponse({
-        dayChampion: {
-          rank: 1,
-          playerId: "22222222-2222-4222-8222-222222222222",
-          windowWord: "abaci",
-          windowZipf: 2.65,
-          score: 9.1,
-          puzzles: 1,
-        },
-      }),
-    );
+  it("asks for no champion at all: every plaque is its own board's top row", async () => {
+    const fetchMock = stubFetch(boardsResponse({}));
 
-    const boards = await fetchBoards("2026-08-27");
-    // Two days back, not one: a puzzle keeps taking scores until the last
-    // timezone's copy of that day ends, so yesterday's winner can still change
-    // all through today and the day before it cannot.
-    expect(requestedUrl(fetchMock)).toContain("champion=2026-08-25");
-    expect(boards.dayChampion?.name).toBe(
-      handleFor("22222222-2222-4222-8222-222222222222"),
-    );
-    expect(boards.dayChampion?.score).toBe(9.1);
+    await fetchBoards("2026-08-27");
+    // The day board's plaque used to name the last puzzle that was over
+    // everywhere, which took a query of its own. It names the top row of the
+    // board it sits under now -- on every day, today included -- so there is
+    // nothing left to ask for (see LeaderboardPage).
+    expect(requestedUrl(fetchMock)).not.toContain("champion=");
   });
 
   it("asks for the day a reader has stepped the board back to", async () => {

@@ -124,21 +124,6 @@ export interface Boards {
    * take the standings with them, so without this a window somebody won leaves
    * no trace anywhere.
    */
-  /**
-   * Who took the last puzzle that is over everywhere: the plaque under the day
-   * board.
-   *
-   * Not yesterday's, which is the thing worth explaining here. A day closes at
-   * each player's own midnight, so a puzzle keeps taking scores for as long as
-   * anybody's local day is still running -- yesterday's winner is a name that
-   * can still change, and the plaque would have had to say so every day of the
-   * year. The day before it has closed in every timezone there is, so the
-   * simpler plaque tells the truth without a footnote (see `championDay`).
-   *
-   * The board's own nav is what keeps yesterday reachable: one press of
-   * "Previous day" is that day's whole standing rather than one line of it.
-   */
-  dayChampion: BoardEntry | null;
   lastWeek: BoardEntry | null;
   lastMonth: BoardEntry | null;
   /** The day the weekly board is counting from, echoed back by the server. */
@@ -367,24 +352,23 @@ export function weekFloor(): string {
 }
 
 /**
- * The newest puzzle that has finished everywhere, which is the one the day
- * board's plaque names.
+ * The newest puzzle that has finished everywhere: the day board's threshold for
+ * calling a standing final.
  *
  * Two days back, not one. A puzzle belongs to the player's own local calendar
  * date and can only be scored on that date, so it keeps taking scores until the
  * last timezone's copy of that day ends -- about a day after the first one's.
- * Yesterday's winner is therefore a name that can still change, all through
- * today, for everybody: a plaque naming it has to carry a caveat every single
- * day, which is a footnote that never goes away and so stops being read.
+ * Yesterday's leader is therefore a name that can still change, all through
+ * today, for everybody, and only the day before it can be called a result
+ * without qualification.
  *
- * The day before yesterday has ended in every timezone there is, so the plaque
- * can simply state who won it. What it costs is a day of freshness, and the
- * board's own "Previous day" makes that cheap -- yesterday's full standing is
- * one press away, which is more than a plaque was ever going to say.
- *
- * Two days is also inside the week, which is what lets the plaque be labelled
- * by weekday ("Monday's champion") rather than by a date the reader has to
- * place.
+ * It used to name the plaque as well as bound it: today's board had no finished
+ * result of its own, so it borrowed this day's winner. That name then followed
+ * the reader as they stepped the board, and three days in a row pointed at one
+ * player. Every plaque is its own board's top row now, labelled by whether this
+ * threshold has passed (see LeaderboardPage) -- so the day the reader is looking
+ * at is the day the plaque is about, and how final it is has become a word
+ * rather than a choice of whose result to show.
  */
 export function championDay(date: string = todayDateString()): string {
   return addDays(date, -2);
@@ -440,15 +424,6 @@ export async function fetchBoards(
   // a puzzle date is the player's own local calendar date, and nothing on the
   // server shares that clock.
   const day = options.day ?? date;
-  // The puzzle the day board's plaque names while the board is live: the newest
-  // one that is over for everybody, which is the freshest result today's board
-  // can state instead of the result it does not have yet.
-  //
-  // Asked for on the live board only. A board the reader stepped back to is its
-  // own result and crowns its own top row (see LeaderboardPage), so on a stepped
-  // day this was a whole extra query per view whose answer the page then had
-  // nowhere to put. Omitted, the server runs no champion query and sends null.
-  const champion = day === date ? championDay(date) : null;
   // The month goes up for the same reason the week does: both windows bracket
   // the player's own local puzzle date, so both have to be computed off the same
   // clock. The server bounds the far end of both itself.
@@ -470,7 +445,6 @@ export async function fetchBoards(
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
       `&month=${encodeURIComponent(month)}` +
       `&day=${encodeURIComponent(day)}` +
-      (champion ? `&champion=${encodeURIComponent(champion)}` : "") +
       `&limit=${BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
       freshParam(options),
@@ -528,7 +502,6 @@ function readBoards(body: Record<string, unknown>, since: string): Boards {
     weeklySelf: parseSelf(body.weeklySelf),
     monthly: parseBoard(body.allTime),
     monthlySelf: parseSelf(body.allTimeSelf),
-    dayChampion: parseChampion(body.dayChampion),
     lastWeek: parseChampion(body.lastWeek),
     lastMonth: parseChampion(body.lastMonth),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,

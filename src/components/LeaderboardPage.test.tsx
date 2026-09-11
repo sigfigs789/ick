@@ -305,40 +305,33 @@ describe("the leaderboard page", () => {
     expect(boardRows("This week")[0]).not.toHaveTextContent("0.0");
   });
 
-  it("names the day board's champion by its date, with no caveat to explain", async () => {
-    // A Wednesday, so the last puzzle that is over everywhere is Monday's --
-    // named by its date, which is how the boards head themselves.
+  it("calls today's plaque leading, off today's own board, with the caveat", async () => {
     onDay(MIDWEEK);
-    stubFetch({
-      ...OPEN,
-      dayChampion: {
-        rank: 1,
-        playerId: CAROL,
-        windowWord: "abaci",
-        windowZipf: 2.65,
-        score: 9.1,
-        puzzles: 1,
-      },
-    });
+    stubFetch(OPEN);
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
     const today = screen.getByRole("region", { name: "Today" });
-    // Not yesterday's: a day closes at each player's own midnight, so
-    // yesterday's winner can still change all through today -- every day, for
-    // everybody -- and the plaque would have carried a footnote that never
-    // lifted. Two days back has ended everywhere, so it can simply be stated.
-    expect(today).toHaveTextContent("Aug 24 champion");
-    expect(today).toHaveTextContent(handleFor(CAROL));
-    expect(today).toHaveTextContent("9.1");
+    // Today's own leader, not a borrowed day's champion. The plaque named the
+    // last puzzle that was over everywhere -- two days back -- which was the
+    // only thing on the page about a puzzle the reader had not asked to see,
+    // and it followed the reader as they stepped, so three boards in a row
+    // pointed at one player.
+    expect(plaque("Today")).toHaveTextContent("Leading");
+    expect(plaque("Today")).toHaveTextContent(handleFor(BOB));
+    expect(plaque("Today")).toHaveTextContent("9.4");
+    expect(today).not.toHaveTextContent("champion");
 
-    // Which is the whole point of naming that day rather than yesterday.
+    // Not a claim to have won: today is still being played, by this reader
+    // among others, and the "i" says when it stops being able to move.
     expect(
-      within(today).queryByRole("button", {
+      within(today).getByRole("button", {
         name: "Why this winner can still change",
       }),
-    ).toBeNull();
-    expect(today).not.toHaveTextContent("can change");
+    ).toBeInTheDocument();
+    expect(plaque("Today")).toHaveTextContent(
+      "The official winner can change until tomorrow",
+    );
   });
 
   it("leaves the day board's plaque off when nobody scored that puzzle", async () => {
@@ -396,7 +389,6 @@ describe("the leaderboard page", () => {
           });
         askedChampions.push(params.get("champion") ?? "");
         const day = params.get("day") ?? "";
-        const champion = params.get("champion");
         return new Response(
           JSON.stringify({
             weekStart: "2026-08-23",
@@ -412,17 +404,6 @@ describe("the leaderboard page", () => {
             ],
             weekly: [],
             allTime: [],
-            // Only ever answered when asked, exactly as the endpoint behaves.
-            dayChampion: champion
-              ? {
-                  rank: 1,
-                  playerId: leaders[champion],
-                  windowWord: "abaci",
-                  windowZipf: 2.65,
-                  score: 9.1,
-                  puzzles: 1,
-                }
-              : null,
           }),
           { status: 200, headers: { "content-type": "application/json" } },
         );
@@ -431,15 +412,15 @@ describe("the leaderboard page", () => {
     render(<LeaderboardPage />);
     await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
 
-    // Today has no result of its own, so it borrows the newest puzzle that is
-    // over everywhere and says which one that is.
-    expect(plaque("Today")).toHaveTextContent("Aug 24 champion");
-    expect(plaque("Today")).toHaveTextContent(handleFor(CAROL));
+    // Today's own leader, under a word that claims no more than the row above
+    // it does. This used to be the last puzzle that was over everywhere --
+    // two days back, and carried along as the reader stepped, so all three of
+    // these boards named the player the third one is actually about.
+    expect(plaque("Today")).toHaveTextContent("Leading");
+    expect(plaque("Today")).toHaveTextContent(handleFor(ALICE));
 
-    // Yesterday names yesterday's leader -- not the borrowed name it used to
-    // carry along, which made three boards in a row agree about a day only one
-    // of them was about. It does not call them champion: the puzzle is still
-    // being played west of the reader, and the "i" says so.
+    // Yesterday's leader under yesterday's heading. Still not a champion: the
+    // puzzle is being played west of the reader, and the "i" says until when.
     await userEvent.click(screen.getByRole("button", { name: "Previous day" }));
     await waitFor(() =>
       expect(plaque("Aug 25")).toHaveTextContent(handleFor(BOB)),
@@ -465,9 +446,10 @@ describe("the leaderboard page", () => {
     expect(plaque("Aug 24")).toHaveTextContent("Champion");
     expect(plaque("Aug 24")).not.toHaveTextContent("can change");
 
-    // Which is a query the stepped boards no longer make the server run: the
-    // borrowed name is asked for on the live board and nowhere else.
-    expect(askedChampions).toEqual(["2026-08-24", "", ""]);
+    // Three boards, three players, and not one champion query behind them: a
+    // plaque is the top row of the board it sits under, which the page already
+    // has.
+    expect(askedChampions).toEqual(["", "", ""]);
   });
 
   it("names last week's champion under the weekly board, and last month's under the monthly one", async () => {

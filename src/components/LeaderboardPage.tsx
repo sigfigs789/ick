@@ -153,13 +153,21 @@ export function LeaderboardPage() {
   const weekIsLive = week === thisWeek;
   const monthIsLive = month === thisMonth;
   /**
-   * Whether the day board is still taking scores it can be beaten by, which is
-   * the one case where its own top row is not a result yet.
+   * When the day on the board stops being able to take scores, for the plaque's
+   * own caveat -- or nothing, on a day that already has.
    *
-   * Only ever yesterday's board: today's is the reader's own live puzzle, and
-   * anything older has closed everywhere.
+   * The physical answer rather than the page's own `daySettled` threshold, which
+   * waits an extra day so that a settled plaque needs no caveat at all. A puzzle
+   * is scored on the player's own local date, so it stops taking them when the
+   * last timezone's copy of that date ends: around midday tomorrow for today's,
+   * and around midday today for yesterday's. This line is only ever read where
+   * the caveat is being carried anyway, so it can say the true thing.
    */
-  const dayIsSettling = !dayIsLive && !daySettled;
+  const dayFinalOn = daySettled
+    ? undefined
+    : dayIsLive
+      ? "tomorrow"
+      : "later today";
   /**
    * Which windows the boards on screen are actually about, and which ones failed
    * to load.
@@ -432,8 +440,8 @@ export function LeaderboardPage() {
               headingDetail={
                 dayIsLive
                   ? "Resets at midnight"
-                  : dayIsSettling
-                    ? "Final later today"
+                  : dayFinalOn
+                    ? `Final ${dayFinalOn}`
                     : "Final"
               }
               entries={boards.daily}
@@ -451,49 +459,36 @@ export function LeaderboardPage() {
               canGoForward={!dayIsLive}
               onBack={() => setDay(addDays(day, -1))}
               onForward={() => setDay(addDays(day, 1))}
-              // Whoever the board above is about -- which is a borrowed name on
-              // exactly one board, and that board's own top row everywhere else.
+              // The top row of the board above, always: every day board's
+              // plaque is about the puzzle its own board counts.
               //
-              // Today has no result of its own to name, so its plaque borrows
-              // the newest puzzle that is over everywhere: two days back, which
-              // is the freshest day whose winner can simply be stated. Named by
-              // its date, because the reader has to be able to tell it apart
-              // from the board it sits under, and the date is how every heading
-              // on this page says which puzzle it means.
+              // It used to borrow. Today has no finished result of its own, so
+              // the plaque named the newest puzzle that was over everywhere --
+              // two days back -- and stepping the board carried that name
+              // along, so today, yesterday and the day before all pointed at
+              // the same player. Three boards agreeing about a day only one of
+              // them was about reads as a page that is stuck; and on today's
+              // board the borrowed name was the only thing on the page that was
+              // about a puzzle the reader had not asked to see.
               //
-              // The borrowed name used to be carried along as the reader
-              // stepped, so today, yesterday and the day before all named the
-              // same player -- twice under a heading about a different puzzle,
-              // and once under its own. Three screens agreeing about a day only
-              // one of them was about reads as a page that is stuck.
-              //
-              // So every board the reader steps back to names itself. A day
-              // that has closed everywhere is a finished result and its top row
-              // is the champion, exactly as the other two boards do it.
-              // Yesterday's is the same top row under a word that does not
-              // claim to be final, with the usual "i" for why -- it is still
-              // being played west of the reader, and a name is what a reader
-              // who came back to check a close finish is there for.
-              champion={
-                dayIsLive ? boards.dayChampion : championOf(boards.daily)
-              }
-              championLabel={
-                dayIsLive
-                  ? `${formatDateLabel(championDay(today))} champion`
-                  : dayIsSettling
-                    ? "Leading"
-                    : "Champion"
-              }
-              championSettling={dayIsSettling}
-              // When yesterday's name stops being able to move, which is the
-              // sentence behind that "i". Passed only where there is a name to
-              // qualify: it doubles as the empty plaque's promise, and a puzzle
-              // nobody scored is finished, so a crowning promised under it would
-              // be a name that never comes.
+              // What the word does is carry how finished the result is. A day
+              // that has closed in every timezone is a champion, exactly as the
+              // other two boards say it. Today and yesterday are both still
+              // taking scores -- today from the reader themselves, yesterday
+              // from players west of them -- so both say "Leading", which
+              // claims only what the row actually shows, and both carry the
+              // usual "i" for when it stops being able to move. A name with a
+              // caveat is what a reader watching a close finish came for; an
+              // empty plaque, or somebody else's day, is not.
+              champion={championOf(boards.daily)}
+              championLabel={dayFinalOn ? "Leading" : "Champion"}
+              championSettling={Boolean(dayFinalOn)}
+              // When the name stops being able to move, which is the sentence
+              // behind that "i". Passed only where there is a name to qualify:
+              // it doubles as the empty plaque's promise, and a plaque promised
+              // under a puzzle nobody has scored is a name that may never come.
               championCrowning={
-                dayIsSettling && championOf(boards.daily)
-                  ? "later today"
-                  : undefined
+                championOf(boards.daily) ? dayFinalOn : undefined
               }
             />
             <Board
