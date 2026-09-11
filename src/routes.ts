@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 /**
  * The whole router.
  *
- * Three pages, no library. `vercel.json` already rewrites every non-`/api/` path
+ * Five pages, no library. `vercel.json` already rewrites every non-`/api/` path
  * to `index.html`, so a real URL is a matter of reading `location.pathname` and
  * pushing to it -- and both of the pages beside the game want a real URL: they
  * are pages you link someone to, open in a second tab, and reach with the back
@@ -16,14 +16,28 @@ import { useEffect, useState } from "react";
  * that had not moved since breakfast. Two pages, two links to send, and the
  * header says which one you are on.
  *
- * Anything that names neither is the game, so a stray path still lands on a
+ * The last two -- the word queue and the feedback players have left -- are not
+ * pages for players, and nothing in the app links to them: they are read by
+ * whoever is curating the dictionary, from a URL they were given. Routes rather
+ * than a separate tool because the data is already behind the app's own edge
+ * functions, and a path is the cheapest way to look at it. Unlinked is not
+ * protected -- see api/review.ts for what actually gates the read.
+ *
+ * Anything that names none of them is the game, so a stray path still lands on a
  * playable puzzle rather than a 404 rendered by the client.
  */
 
-export type Route = "game" | "leaderboard" | "found-words";
+export type Route =
+  | "game"
+  | "leaderboard"
+  | "found-words"
+  | "suggested-words"
+  | "feedback";
 
 export const LEADERBOARD_PATH = "/leaderboard";
 export const FOUND_WORDS_PATH = "/found-words";
+export const SUGGESTED_WORDS_PATH = "/suggested-words";
+export const FEEDBACK_PATH = "/feedback";
 
 /** The route a path names. */
 export function routeFor(pathname: string): Route {
@@ -31,6 +45,8 @@ export function routeFor(pathname: string): Route {
   const path = pathname.replace(/\/+$/, "") || "/";
   if (path === LEADERBOARD_PATH) return "leaderboard";
   if (path === FOUND_WORDS_PATH) return "found-words";
+  if (path === SUGGESTED_WORDS_PATH) return "suggested-words";
+  if (path === FEEDBACK_PATH) return "feedback";
   return "game";
 }
 
@@ -38,6 +54,8 @@ export function routeFor(pathname: string): Route {
 export function pathFor(route: Route): string {
   if (route === "leaderboard") return LEADERBOARD_PATH;
   if (route === "found-words") return FOUND_WORDS_PATH;
+  if (route === "suggested-words") return SUGGESTED_WORDS_PATH;
+  if (route === "feedback") return FEEDBACK_PATH;
   return "/";
 }
 

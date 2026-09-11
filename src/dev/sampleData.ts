@@ -1,8 +1,10 @@
 /**
- * A "use sample data" switch for the leaderboard, for development only.
+ * A "use sample data" switch for the pages that need a server, for development
+ * only.
  *
- * The leaderboard is the one part of this game that cannot be exercised offline
- * -- it needs other players -- which made it the one part you could not look at
+ * The leaderboard is the part of this game that cannot be exercised offline
+ * -- it needs other players -- and the two review pages cannot be exercised at
+ * all without a database behind them, which made it the one part you could not look at
  * without standing up a database. This is the answer to that: a hardcoded
  * fixture in the response's own shape, switched on from the page itself.
  *
@@ -96,4 +98,80 @@ function asPlayer<T>(rows: T): T {
       ? { ...(row as object), playerId }
       : row;
   return (Array.isArray(rows) ? rows.map(swap) : swap(rows)) as T;
+}
+
+/**
+ * The review lists, in the shape /api/review answers with.
+ *
+ * Same switch as the boards, because they are unavailable for the same reason:
+ * `vite dev` serves no edge functions, so without this the two review pages can
+ * only ever be looked at in their "couldn't load" state. Every row here is
+ * invented; the point is the shapes -- an unattested word beside an attested
+ * one, each origin the queue can report, a note with a line break in it, and
+ * every mark a row can wear.
+ *
+ * Both lists are in submission order, oldest first, the way the endpoint returns
+ * them: a fixture sorted differently from the real thing would hide the one
+ * property of these pages that is not visible in a single row.
+ */
+export function sampleReviewResponse(list: "suggested-words" | "feedback"): unknown {
+  if (list === "feedback") {
+    return {
+      feedback: [
+        { id: 1, text: "please add a dark mode", at: hoursAgo(50), mark: "accepted" },
+        { id: 2, text: "quixotic should be worth more\nit's a hard word!", at: hoursAgo(20), mark: "rejected" },
+        { id: 3, text: "The rarity tiers are the best part. More of those.", at: hoursAgo(2), mark: null },
+      ],
+    };
+  }
+  return {
+    words: [
+      {
+        word: "susurrus",
+        origin: "live-lookup",
+        zipf: 1.62,
+        pos: ["noun"],
+        firstUse: "1893",
+        mwSource: "collegiate",
+        lookups: 6,
+        suggestions: 0,
+        firstAt: hoursAgo(70),
+        // Later than it arrived: a word that keeps being looked up, which is
+        // exactly the row where the two dates differ.
+        lastAt: hoursAgo(28),
+        mark: "accepted",
+      },
+      {
+        word: "quixotry",
+        origin: "player",
+        zipf: null,
+        pos: [],
+        firstUse: null,
+        mwSource: null,
+        lookups: 0,
+        suggestions: 1,
+        firstAt: hoursAgo(9),
+        lastAt: hoursAgo(9),
+        mark: "rejected",
+      },
+      {
+        word: "enshittification",
+        origin: "both",
+        zipf: null,
+        pos: ["noun"],
+        firstUse: "2022",
+        mwSource: "collegiate",
+        lookups: 4,
+        suggestions: 2,
+        firstAt: hoursAgo(3),
+        lastAt: hoursAgo(3),
+        mark: null,
+      },
+    ],
+  };
+}
+
+/** A timestamp a given number of hours back, so the fixture is never stale. */
+function hoursAgo(hours: number): string {
+  return new Date(Date.now() - hours * 3_600_000).toISOString();
 }
