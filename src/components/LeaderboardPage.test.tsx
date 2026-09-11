@@ -305,8 +305,9 @@ describe("the leaderboard page", () => {
     expect(boardRows("This week")[0]).not.toHaveTextContent("0.0");
   });
 
-  it("names the day board's champion by weekday, with no caveat to explain", async () => {
-    // A Wednesday, so the last puzzle that is over everywhere is Monday's.
+  it("names the day board's champion by its date, with no caveat to explain", async () => {
+    // A Wednesday, so the last puzzle that is over everywhere is Monday's --
+    // named by its date, which is how the boards head themselves.
     onDay(MIDWEEK);
     stubFetch({
       ...OPEN,
@@ -327,7 +328,7 @@ describe("the leaderboard page", () => {
     // yesterday's winner can still change all through today -- every day, for
     // everybody -- and the plaque would have carried a footnote that never
     // lifted. Two days back has ended everywhere, so it can simply be stated.
-    expect(today).toHaveTextContent("Monday's champion");
+    expect(today).toHaveTextContent("Aug 24 champion");
     expect(today).toHaveTextContent(handleFor(CAROL));
     expect(today).toHaveTextContent("9.1");
 
@@ -369,7 +370,7 @@ describe("the leaderboard page", () => {
     const board = screen.getByRole("region", { name: "Aug 24" });
     await waitFor(() => expect(board).toHaveTextContent("Champion"));
     expect(board).toHaveTextContent(handleFor(BOB));
-    expect(board).not.toHaveTextContent("Monday's champion");
+    expect(board).not.toHaveTextContent("Aug 24 champion");
   });
 
   it("names last week's champion under the weekly board, and last month's under the monthly one", async () => {
@@ -864,7 +865,10 @@ describe("the leaderboard page", () => {
     ).toBeInTheDocument();
     // Asked for as a date rather than derived from the week: a puzzle belongs
     // to the player's own local calendar day.
-    const url = new URL(String(fetchMock.mock.calls[0][0]), "https://wordink.app");
+    const url = new URL(
+      String(fetchMock.mock.calls[0][0]),
+      "https://wordink.app",
+    );
     expect(url.searchParams.get("day")).toBe(todayDateString());
   });
 
@@ -909,7 +913,6 @@ describe("the leaderboard page", () => {
       ).toHaveLength(2),
     );
   });
-
 });
 
 describe("who the page thinks you are", () => {
@@ -995,7 +998,6 @@ describe("leaving the page", () => {
     expect(window.location.pathname).toBe("/");
   });
 });
-
 
 describe("keeping the boards current", () => {
   // Fake timers go up *before* render: the polling interval is created on mount,
@@ -1113,14 +1115,15 @@ describe("keeping the boards current", () => {
       await vi.advanceTimersByTimeAsync(0);
     });
 
-    const asked = fetchMock.mock.calls.slice(opened).map(([url]) => String(url));
+    const asked = fetchMock.mock.calls
+      .slice(opened)
+      .map(([url]) => String(url));
     expect(asked.length).toBeGreaterThan(0);
     // Past the shared copy. A client cannot bust a CDN cache with a header, so
     // a different URL is the only thing that can, and without it the button
     // would hand back the standings the reader just told us are stale.
     expect(asked.every((url) => /&t=\d+/.test(url))).toBe(true);
   });
-
 });
 
 /**

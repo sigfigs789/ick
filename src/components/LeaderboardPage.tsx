@@ -16,7 +16,6 @@ import {
   formatDateLabel,
   previousMonthName,
   todayDateString,
-  weekdayName,
 } from "../game/date";
 import {
   monthChampionSettling,
@@ -320,10 +319,10 @@ export function LeaderboardPage() {
 
   return (
     <main>
-    <div className="page-head">
-      <div>
-        <h1 className="page-head__title">Leaderboards</h1>
-        {/* Your own handle, stated before the boards rather than left to be
+      <div className="page-head">
+        <div>
+          <h1 className="page-head__title">Leaderboards</h1>
+          {/* Your own handle, stated before the boards rather than left to be
             found in them.
 
             Nobody is ever told their name anywhere else -- it is derived from
@@ -341,27 +340,26 @@ export function LeaderboardPage() {
             the page is written in -- "Resets on Sundays", "Resets at
             midnight" -- where a warmer line would be the one thing here
             raising its voice. */}
-        {playerId && (
-          <p className="leaderboard-page__handle">
-            Playing as <strong>{handleFor(playerId)}</strong>
-          </p>
-        )}
-      </div>
-      {/* A refresh belongs on the two pages whose content is other people's,
+          {playerId && (
+            <p className="leaderboard-page__handle">
+              Playing as <strong>{handleFor(playerId)}</strong>
+            </p>
+          )}
+        </div>
+        {/* A refresh belongs on the two pages whose content is other people's,
           and nowhere else in the app. */}
-      <button
-        type="button"
-        className="app__icon-button leaderboard-page__refresh"
-        onClick={refreshAll}
-        disabled={refreshing}
-        aria-label="Refresh"
-        title="Refresh"
-        data-refreshing={refreshing ? "" : undefined}
-      >
-        <span aria-hidden="true">↻</span>
-      </button>
-    </div>
-
+        <button
+          type="button"
+          className="app__icon-button leaderboard-page__refresh"
+          onClick={refreshAll}
+          disabled={refreshing}
+          aria-label="Refresh"
+          title="Refresh"
+          data-refreshing={refreshing ? "" : undefined}
+        >
+          <span aria-hidden="true">↻</span>
+        </button>
+      </div>
 
       {/* Both of these hold the room a board will take -- a heading and five
           rows -- so what is under them stays where it is when the boards land.
@@ -439,10 +437,12 @@ export function LeaderboardPage() {
               // back has ended in every timezone there is, so the line can just
               // say who won it. See `championDay`.
               //
-              // A weekday rather than a date, which two days back is what makes
-              // possible: it is inside the week, so "Monday's champion" cannot
-              // mean two different Mondays, and it is the half a reader places
-              // without counting.
+              // The date rather than the weekday it used to name. A weekday is
+              // the half a reader places without counting, but it also has to be
+              // matched against the date the board above is headed with -- and
+              // "Tuesday's champion" under a board headed "Sep 9" is one line of
+              // arithmetic the reader should not be doing. The same words the
+              // heading uses say which puzzle this is, flatly.
               //
               // Once the reader steps back to a day that is itself settled, the
               // board above *is* that day's final standing and its top row is
@@ -451,7 +451,9 @@ export function LeaderboardPage() {
                 daySettled ? championOf(boards.daily) : boards.dayChampion
               }
               championLabel={
-                daySettled ? "Champion" : `${weekdayName(championDay(today))}'s champion`
+                daySettled
+                  ? "Champion"
+                  : `${formatDateLabel(championDay(today))} champion`
               }
               // No caveat and no empty plaque. Every window this line can name
               // has closed; and where the other two hold an empty plaque open

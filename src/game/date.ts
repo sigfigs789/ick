@@ -35,7 +35,7 @@ export function addDays(dateStr: string, delta: number): string {
   // Built and read back via UTC fields throughout so this never drifts a
   // day depending on the host's timezone offset.
   return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(
-    dt.getUTCDate()
+    dt.getUTCDate(),
   ).padStart(2, "0")}`;
 }
 
@@ -44,25 +44,6 @@ export function formatDateLabel(dateStr: string): string {
   return new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
-  });
-}
-
-/**
- * The weekday a date fell on, spelled out: "Monday".
- *
- * For labelling a day inside the last week, where the name is the half a reader
- * can place without counting -- "Monday's champion" lands where "Sep 14's
- * champion" is a date you have to go and work out. Only safe inside a week, and
- * only used there: a weekday repeats every seven days, so anything further back
- * gets its date instead (see formatDateLabel).
- *
- * Spelled out rather than "Mon", to match the boards' own "Resets on Sundays"
- * and "Resets Thursday, Oct 1" -- three notes on one page, and one abbreviating
- * what the others spell reads as a different kind of label.
- */
-export function weekdayName(dateStr: string): string {
-  return new Date(`${dateStr}T00:00:00`).toLocaleDateString(undefined, {
-    weekday: "long",
   });
 }
 

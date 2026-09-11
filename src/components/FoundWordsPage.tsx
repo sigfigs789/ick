@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { RarityBadge } from "./RarityBadge";
 import {
   fetchFoundWords,
@@ -60,13 +66,15 @@ export function FoundWordsPage() {
   /** The puzzle the list is about -- today's, until a reader steps back. */
   const [viewing, setViewing] = useState(today);
   /**
-   * How far back the feed steps (see feedFloor).
+   * How far back the feed steps (see feedFloor): the first day any find was
+   * recorded.
    *
-   * Frozen beside `today` rather than recomputed as the page renders: both
-   * answer "which window am I in", and a tab open across a midnight should carry
-   * one answer to that rather than two that disagree.
+   * Held in state beside `today` rather than read as the page renders. It is a
+   * constant now, so nothing would move if it were -- but it is read for the
+   * same reason `today` is, and a floor that starts answering a clock again
+   * should start answering it once per mount.
    */
-  const [floor] = useState(() => feedFloor(today));
+  const [floor] = useState(feedFloor);
   const isToday = viewing === today;
   const canGoBack = viewing > floor;
 
@@ -279,9 +287,8 @@ export function FoundWordsPage() {
   }, [refreshWords]);
 
   // "Today's finds" while it is today's, and the day's own date once it isn't.
-  // The date rather than "Yesterday": two steps back has no such word, and a
-  // heading whose wording changes shape halfway down a week is harder to read
-  // than one that always names the day.
+  // The date rather than "Yesterday": two steps back has no such word, and the
+  // feed now walks back weeks, where a relative word says nothing at all.
   //
   // The page's own title rather than a heading inside the section, which is
   // where it used to sit when the section was the bottom half of the
@@ -297,15 +304,20 @@ export function FoundWordsPage() {
       <div className="page-head">
         <div>
           <h1 className="page-head__title">
-            {heading}
+            {heading}{" "}
             {/* The drop, because without it the list is a pile of unrelated
                 words: `asphyxiate` is just a word until you know the day asked
-                for PHY. */}
-            <span className="found-words__drop">{dropForDate(viewing)}</span>
+                for PHY. Quoted and inline rather than set in a chip: the drop is
+                part of the sentence the title says -- finds from Sep 8's "ERE"
+                -- and a badge read as a second, unrelated label. */}
+            <span className="found-words__drop">
+              {"\u201c"}
+              {dropForDate(viewing)}
+              {"\u201d"}
+            </span>
           </h1>
           <p className="page-head__note">
-            Every word anybody turned up on this puzzle — including the ones you
-            didn't.
+            Every word anybody turned up for this drop.
           </p>
         </div>
         {/* A refresh belongs on the two pages whose content is other people's,
@@ -363,12 +375,14 @@ export function FoundWordsPage() {
  * until you know the day asked for PHY -- so the feed is keyed to a puzzle date
  * rather than to a clock, and stepping back moves the whole heading with it.
  *
- * Back as far as the week's reset and no further (see game/leaderboard.ts,
- * feedFloor). It is not an archive: it is the same window the board above it
- * ranks, which is the one a reader is already holding in their head. What it
- * fixes is a real loss -- a day's finds used to be gone at the reader's
- * midnight, so anybody who opened the page in the morning had missed them, and
- * the words are the part of this page people come back for.
+ * Back as far as the first day any find was recorded (see game/leaderboard.ts,
+ * feedFloor) -- the whole archive, one press and one request at a time. It
+ * stopped at the week's reset while it was the bottom half of the leaderboard,
+ * where the week was the window the reader was already holding in their head.
+ * Its own page is the game's record of what has been found, and a record that
+ * forgot every Sunday night was the strange thing: a day's finds used to be gone
+ * at the reader's midnight, and the words are the part of this page people come
+ * back for.
  *
  * Every word rather than each player's best. The feed used to be built from the
  * one word per player the boards rank on, which made it a list of personal bests

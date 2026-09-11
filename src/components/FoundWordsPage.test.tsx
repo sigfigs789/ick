@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { FoundWordsPage } from "./FoundWordsPage";
 
@@ -163,7 +170,6 @@ describe("recent finds", () => {
       vi.useRealTimers();
     }
   });
-
 });
 
 describe("finds arriving", () => {
@@ -369,7 +375,9 @@ describe("keeping the finds current", () => {
     // Past the shared copy. A client cannot bust a CDN cache with a header, so
     // a different URL is the only thing that can, and without it the button
     // would hand back the list the reader just told us is stale.
-    const asked = fetchMock.mock.calls.slice(opened).map(([url]) => String(url));
+    const asked = fetchMock.mock.calls
+      .slice(opened)
+      .map(([url]) => String(url));
     expect(asked.length).toBeGreaterThan(0);
     expect(asked.every((url) => /&t=\d+/.test(url))).toBe(true);
   });
@@ -383,7 +391,9 @@ describe("keeping the finds current", () => {
     await vi.advanceTimersByTimeAsync(30_000);
 
     // The cache is there to absorb exactly this. Only a person gets to skip it.
-    const polled = fetchMock.mock.calls.slice(opened).map(([url]) => String(url));
+    const polled = fetchMock.mock.calls
+      .slice(opened)
+      .map(([url]) => String(url));
     expect(polled.length).toBeGreaterThan(0);
     expect(polled.every((url) => !url.includes("&t="))).toBe(true);
   });
@@ -497,13 +507,16 @@ describe("earlier days of the week", () => {
     await vi.waitFor(() => expect(asked).toEqual([TODAY]));
   });
 
-  it("stops at the week's reset", async () => {
+  it("keeps stepping back past the week's reset", async () => {
     stubDays();
     render(<FoundWordsPage />);
     await vi.waitFor(() => expect(back()).toBeEnabled());
 
-    // Wednesday back to Sunday, and no further: the feed is the week the board
-    // above it ranks, not an archive of the game.
+    // Wednesday back to Sunday, which used to be the end of the road: the feed
+    // was the week the board above it ranked. It is its own page now, and a
+    // record of what has been found that forgot every Sunday night was the odd
+    // thing -- so Sunday steps back too, all the way to the first day any find
+    // was recorded.
     fireEvent.click(back());
     fireEvent.click(back());
     fireEvent.click(back());
@@ -512,8 +525,15 @@ describe("earlier days of the week", () => {
         screen.getByRole("region", { name: "Finds from Sep 13" }),
       ).toBeTruthy(),
     );
-    expect(back()).toBeDisabled();
     expect(SUNDAY).toBe("2026-09-13");
+    expect(back()).toBeEnabled();
+
+    fireEvent.click(back());
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("region", { name: "Finds from Sep 12" }),
+      ).toBeTruthy(),
+    );
   });
 
   it("offers no step back past the first day any find was recorded", async () => {
