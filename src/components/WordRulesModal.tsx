@@ -93,7 +93,7 @@ export function WordRulesModal({ open, onClose }: Props) {
                   navigate("suggested-words");
                 }}
               >
-                See the queue
+                See suggestions
               </button>
             </p>
           )}

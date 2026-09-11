@@ -50,7 +50,7 @@ describe("WordRulesModal", () => {
 
     await userEvent.type(screen.getByLabelText(/suggest a word/i), "splashy");
     await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
-    await userEvent.click(screen.getByRole("button", { name: /see the queue/i }));
+    await userEvent.click(screen.getByRole("button", { name: /see suggestions/i }));
 
     expect(onClose).toHaveBeenCalled();
     expect(window.location.pathname).toBe("/suggested-words");
