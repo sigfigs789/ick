@@ -23,11 +23,20 @@ const TODAY = "2026-09-15";
 const YESTERDAY = addDays(TODAY, -1);
 const DROP = dropForDate(TODAY).toLowerCase();
 
-/** Words playable on a given drop, for banking and then retrying. */
+/**
+ * Words playable on a given drop, for banking and then retrying.
+ *
+ * An inflection of a word already picked is skipped: submitting it substitutes
+ * the base form, which the puzzle has by then already banked, so the second
+ * word never lands and the test is left with one answer where it wanted two.
+ * The dictionary is alphabetical, so a word and its plural sit next to each
+ * other -- "top" would otherwise hand back acetophenetidin and its -s.
+ */
 function playableWords(drop: string, count: number): string[] {
   const found: string[] = [];
   for (const word of dictionaryWords as unknown as string[]) {
     if (word === drop || !word.includes(drop) || !isValidWord(word)) continue;
+    if (found.some((w) => word.startsWith(w) || w.startsWith(word))) continue;
     found.push(word);
     if (found.length === count) return found;
   }
