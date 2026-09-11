@@ -497,13 +497,16 @@ describe("earlier days of the week", () => {
     await vi.waitFor(() => expect(asked).toEqual([TODAY]));
   });
 
-  it("stops at the week's reset", async () => {
+  it("keeps stepping back past the week's reset", async () => {
     stubDays();
     render(<FoundWordsPage />);
     await vi.waitFor(() => expect(back()).toBeEnabled());
 
-    // Wednesday back to Sunday, and no further: the feed is the week the board
-    // above it ranks, not an archive of the game.
+    // Wednesday back to Sunday, which used to be the end of the road: the feed
+    // was the week the board above it ranked. It is its own page now, and a
+    // record of what has been found that forgot every Sunday night was the odd
+    // thing -- so Sunday steps back too, all the way to the first day any find
+    // was recorded.
     fireEvent.click(back());
     fireEvent.click(back());
     fireEvent.click(back());
@@ -512,8 +515,15 @@ describe("earlier days of the week", () => {
         screen.getByRole("region", { name: "Finds from Sep 13" }),
       ).toBeTruthy(),
     );
-    expect(back()).toBeDisabled();
     expect(SUNDAY).toBe("2026-09-13");
+    expect(back()).toBeEnabled();
+
+    fireEvent.click(back());
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("region", { name: "Finds from Sep 12" }),
+      ).toBeTruthy(),
+    );
   });
 
   it("offers no step back past the first day any find was recorded", async () => {

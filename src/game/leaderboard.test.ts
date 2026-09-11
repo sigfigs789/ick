@@ -10,6 +10,7 @@ import {
 import { handleFor } from "./handle";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
+import { FIRST_PUZZLE } from "./drop";
 import type { AcceptedWord, DailyProgress } from "./types";
 
 const WORDS: AcceptedWord[] = [
@@ -778,23 +779,20 @@ describe("asking for the list by hand", () => {
  * How far back the finds feed goes.
  */
 describe("how far back the feed looks", () => {
-  it("stops the finds at the week's own reset", () => {
-    // The same window the board above the feed ranks. Further back would turn a
-    // record of the week into an archive of the game. Read on a week that lies
-    // entirely inside recorded history, so the reset is the bound that bites.
-    expect(feedFloor("2026-09-16")).toBe("2026-09-13");
-    expect(feedFloor("2026-09-13")).toBe("2026-09-13");
+  it("steps back to the first day any find was recorded", () => {
+    // The whole archive, not the week. The feed is its own page now -- the
+    // game's record of what has been found -- and a record that forgot every
+    // Sunday night was the odd thing. Not read off `today` at all: the floor is
+    // a fact about this deployment's history.
+    expect(feedFloor()).toBe("2026-08-26");
   });
 
   it("never offers a day from before any find was recorded", () => {
-    // The finds table is younger than the game, so a week that starts before it
-    // is held at the first day there is anything to show. "Nobody found
-    // anything on this puzzle" would be a sentence about the schema on one of
-    // those days, and the same lie every time.
-    expect(feedFloor("2026-08-29")).toBe("2026-08-26");
-    expect(feedFloor("2026-08-26")).toBe("2026-08-26");
-    // And it never reaches back past it, however early the puzzle.
-    expect(feedFloor("2026-07-03")).toBe("2026-08-26");
+    // The finds table is younger than the game, so the floor sits at the first
+    // day there is anything to show rather than at the first puzzle. "Nobody
+    // found anything on this puzzle" would be a sentence about the schema on one
+    // of those days, and the same lie every time.
+    expect(feedFloor() > FIRST_PUZZLE).toBe(true);
   });
 });
 

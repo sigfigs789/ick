@@ -176,23 +176,22 @@ export const BOARD_LIMIT = 15;
 const FINDS_EPOCH = "2026-08-26";
 
 /**
- * The earliest puzzle whose finds the feed will step back to.
+ * The earliest puzzle whose finds the feed will step back to: the first day any
+ * were recorded.
  *
- * The week's own reset, and no further. The feed is the companion to the boards
- * above it, and the shorter of those two boards is the week -- so "how far back
- * can I look" already has an answer on the page, and it is the same window the
- * standings are being fought over. Going further would turn a record of the week
- * into an archive of the game, which is a different feature with a different
- * shape (a date picker, paging) and not one anybody asked this page for.
+ * It used to stop at the week's reset, on the reasoning that the feed was the
+ * companion to the weekly board above it. Once the finds became their own page
+ * that stopped being true -- the page is the game's record of what has been
+ * found, and a record that forgets on Sunday night is a strange thing to keep.
+ * Stepping back is one press at a time and every day is one request, so the
+ * whole archive costs a reader exactly what they walk through.
  *
- * Held above `FINDS_EPOCH` as well, because a week can start before the first
- * day this game kept any finds at all.
+ * `FINDS_EPOCH` rather than `FIRST_PUZZLE`: the days before it were played and
+ * forgotten, and offering a step to one would say nobody found anything on a
+ * puzzle that had finders.
  */
-export function feedFloor(today: string = todayDateString()): string {
-  const reset = weekStart(today);
-  // Whichever bound bites first: the week's reset once the week is entirely
-  // inside recorded history, and the first recorded day until it is.
-  return reset > FINDS_EPOCH ? reset : FINDS_EPOCH;
+export function feedFloor(): string {
+  return FINDS_EPOCH;
 }
 // A board is worth waiting a moment for, but not worth a spinner that never
 // ends -- past this the page says it couldn't load and offers a retry.
@@ -385,9 +384,9 @@ export function championDay(date: string = todayDateString()): string {
 /**
  * The earliest day the daily board will step back to: the first puzzle.
  *
- * Unlike the finds feed, which stops at the week's reset because its table is
- * younger than the game (see `feedFloor`), scores really do go back this far --
- * a player who joins today backfills every puzzle their browser remembers.
+ * Further back than the finds feed, which stops at the first day its own table
+ * recorded anything (see `feedFloor`): scores really do go back this far -- a
+ * player who joins today backfills every puzzle their browser remembers.
  */
 export function dayFloor(): string {
   return FIRST_PUZZLE;
