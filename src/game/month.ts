@@ -75,23 +75,6 @@ function monthDayLabel(date: string): string {
   return `${month} ${Number(date.slice(8, 10))}`;
 }
 
-/**
- * Whether last month's champion is still settling -- true on the first, false
- * the rest of the month.
- *
- * Exactly the weekly board's problem, one window up: the month closes at each
- * player's own midnight, so on the first the plaque under this board is naming a
- * winner that players a day behind can still displace. See
- * `weekChampionSettling` in game/week.ts for the reasoning; the only difference
- * is which boundary is being crossed, and so which day carries the caveat.
- */
-export function monthChampionSettling(
-  date: string = todayDateString(),
-): boolean {
-  // The first is the one day that is its own month's start.
-  return monthStart(date) === date;
-}
-
 /** The first of the month before the one `start` begins -- a step back. */
 export function previousMonthStart(start: string): string {
   const [year, month] = monthStart(start).split("-").map(Number);

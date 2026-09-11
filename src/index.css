@@ -2235,6 +2235,55 @@ h2 {
   border-radius: 0.45rem;
 }
 /*
+ * The top row of a board, dressed as the win it is.
+ *
+ * This is where the gold went when the champion plaques came off. Three plaques
+ * under three boards spent the page's one loud treatment on windows that had
+ * already closed, while the row everybody is actually racing for looked like
+ * fourteenth place. The prize belongs on the board -- and on a window that has
+ * finished, the top row *is* the champion, so one treatment now says both
+ * "leading" and "won" without the page having to know which.
+ *
+ * The same gold the crowned best word uses elsewhere in the app, and a shallow
+ * sheen across it rather than a flat fill: enough to read as metal at a glance,
+ * not enough to fight the name on it. The rule under the row goes, because a
+ * divider through a filled card reads as a crack in it.
+ */
+.leaderboard__row--leader {
+  border-bottom-color: transparent;
+  border-radius: 0.45rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--best-word-bg) 92%, var(--best-word-accent)) 0%,
+    var(--best-word-bg) 55%,
+    color-mix(in srgb, var(--best-word-bg) 92%, var(--best-word-accent)) 100%
+  );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--best-word-accent) 55%, transparent);
+}
+/* The name and the total, a step louder than the rows under them -- the display
+   face the plaque used to set a winner in, at the row's own size so nothing
+   below it moves. */
+.leaderboard__row--leader .leaderboard__name,
+.leaderboard__row--leader .leaderboard__score {
+  font-family: var(--font-display);
+  font-weight: 900;
+}
+/* The trophy standing in for the digit. Sized to the rank column it replaces
+   rather than to the name beside it: it is a rank, and one blown up to the size
+   of a badge would be the loudest thing in a row whose point is the player. */
+.leaderboard__rank-trophy {
+  font-size: 1rem;
+  line-height: 1;
+}
+/* Both at once -- you are top of the board. The gold stays, since that is the
+   rarer thing to be, and "you" is already said by the pill beside the name; but
+   the docked row needs an opaque fill under it however it is dressed, so the
+   sheen is flattened to the one colour when it is riding an edge. */
+.leaderboard__list .leaderboard__row--leader.leaderboard__row--you {
+  background: var(--best-word-bg);
+}
+/*
  * Stepping a board back through the windows that have closed.
  *
  * Under the heading and split to the ends, which is the shape the finds feed's
@@ -2389,161 +2438,6 @@ h2 {
   justify-self: end;
   color: var(--fg-faint);
   font-size: 0.72rem;
-  font-variant-numeric: tabular-nums;
-}
-/*
- * The champion line under a board: who took the window that just closed.
- *
- * Deliberately not a row. Everything above it is a live standing that will have
- * moved by tomorrow; this is the one line on the page about a result that is
- * final, and it sits under a board it is not competing in. So it gets its own
- * shape -- a plaque rather than a row -- and the gold the crowned best word
- * already uses elsewhere in the app, which is the shortest way to say "won"
- * without a sentence.
- *
- * The trophy spans both lines on the left; the window it belongs to sits over
- * the name, and the score keeps the right edge the rows above it use, so the
- * eye still reads down one column of numbers.
- */
-.leaderboard__champion {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  /* The note row is empty on almost every plaque -- an unwon one, and an awarded
-     one on any day but the one its window turned over -- and an empty grid row
-     costs nothing, so it does not need its own template. */
-  grid-template-areas:
-    "trophy label score"
-    "trophy name  score"
-    "note   note  note";
-  align-items: center;
-  column-gap: 0.6rem;
-  margin: 0.7rem 0 0;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid color-mix(in srgb, var(--best-word-accent) 55%, transparent);
-  border-radius: 0.6rem;
-  /* A shallow sheen across the plaque rather than a flat fill: enough to read as
-     metal at a glance, not enough to fight the text on it. */
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--best-word-bg) 92%, var(--best-word-accent)) 0%,
-    var(--best-word-bg) 55%,
-    color-mix(in srgb, var(--best-word-bg) 92%, var(--best-word-accent)) 100%
-  );
-}
-/* Nobody has won it yet, so the plaque is quieter than the awarded one: the
-   same shape and the same gold, held back to the weight of an outline. It has to
-   read as a slot rather than as a result -- close enough to the awarded plaque
-   that a reader sees what will fill it, far enough that nobody reads the empty
-   line as a name that failed to load. */
-.leaderboard__champion--pending {
-  border-color: color-mix(in srgb, var(--best-word-accent) 26%, transparent);
-  background: color-mix(in srgb, var(--best-word-bg) 45%, transparent);
-}
-/* Dimmed rather than dropped: the trophy is what makes the empty plaque legible
-   as a prize at a glance, and a full-strength one over a blank line looks like
-   it is celebrating nothing. */
-.leaderboard__champion--pending .leaderboard__champion-trophy {
-  opacity: 0.5;
-}
-.leaderboard__champion--pending .leaderboard__champion-label {
-  color: color-mix(in srgb, var(--fg) 55%, var(--best-word-accent));
-}
-/* Where the name goes. Sized to the line the name would occupy so the plaque is
-   the same height whether or not it has been won -- an empty one that sits
-   shorter would make the two columns end unlevel again, which is the thing this
-   plaque is here to fix. Short of the full width on purpose: a rule running the
-   whole box reads as a divider, and one that stops reads as a blank to fill. */
-.leaderboard__champion-blank {
-  grid-area: name;
-  align-self: end;
-  width: min(9rem, 70%);
-  height: 1.35rem;
-  border-bottom: 2px solid
-    color-mix(in srgb, var(--best-word-accent) 40%, transparent);
-}
-/*
- * The "i" beside the label on the day the winner can still change.
- *
- * Sized to the label rather than to a finger, and deliberately: it sits inside a
- * line of small caps, and a control built out to a comfortable tap target would
- * be the loudest thing on a plaque whose point is the name. So the ring stays
- * the size of the text it annotates and the padding around it does the reaching
- * -- the pressable box is bigger than the circle a reader sees.
- */
-.leaderboard__champion-info {
-  /* Inline-flex so the glyph centres in the ring at any font size; middle rather
-     than baseline so the circle sits on the cap height of the label beside it
-     instead of hanging below the line. */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  vertical-align: middle;
-  margin-left: 0.35rem;
-  padding: 0;
-  width: 0.95rem;
-  height: 0.95rem;
-  border: 1px solid color-mix(in srgb, var(--best-word-accent) 60%, transparent);
-  border-radius: 50%;
-  background: none;
-  color: color-mix(in srgb, var(--fg) 62%, var(--best-word-accent));
-  font-family: var(--font-display);
-  font-size: 0.62rem;
-  font-weight: 900;
-  /* The label is uppercased; a lowercase "i" is the shape that reads as
-     "information", so it opts out of the inherited transform. */
-  text-transform: none;
-  letter-spacing: 0;
-  line-height: 1;
-  cursor: pointer;
-}
-.leaderboard__champion-info:hover,
-.leaderboard__champion-info[aria-expanded="true"] {
-  border-color: var(--best-word-accent);
-  color: var(--best-word-accent);
-}
-/* The sentence behind it. Set at the plaque's own muted weight rather than as a
-   warning: the result above it is right, and the note is a caveat on when it
-   goes final, not a correction of it. */
-.leaderboard__champion-note {
-  grid-area: note;
-  margin-top: 0.4rem;
-  padding-top: 0.4rem;
-  border-top: 1px solid
-    color-mix(in srgb, var(--best-word-accent) 22%, transparent);
-  color: color-mix(in srgb, var(--fg) 72%, transparent);
-  font-size: 0.72rem;
-  line-height: 1.4;
-}
-.leaderboard__champion-trophy {
-  grid-area: trophy;
-  font-size: 1.35rem;
-  line-height: 1;
-}
-.leaderboard__champion-label {
-  grid-area: label;
-  color: color-mix(in srgb, var(--fg) 62%, var(--best-word-accent));
-  font-size: 0.66rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-/* The name is the point of the line, so it is set at the display face and a
-   step above a board row -- a winner reads as a winner before anything else on
-   the plaque does. Wrapping for the same reason a row's name wraps: the word is
-   the identity, and a truncated one is worse than a second line. */
-.leaderboard__champion-name {
-  grid-area: name;
-  font-family: var(--font-display);
-  font-size: 1.02rem;
-  font-weight: 900;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.leaderboard__champion-score {
-  grid-area: score;
-  font-family: var(--font-display);
-  font-size: 1.02rem;
-  font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
 .leaderboard__note {

@@ -320,31 +320,6 @@ describe("reading the boards", () => {
     expect(boards.dailySelf).toBeNull();
   });
 
-  it("asks for the last puzzle that is over everywhere, and reads its champion", async () => {
-    const fetchMock = stubFetch(
-      boardsResponse({
-        dayChampion: {
-          rank: 1,
-          playerId: "22222222-2222-4222-8222-222222222222",
-          windowWord: "abaci",
-          windowZipf: 2.65,
-          score: 9.1,
-          puzzles: 1,
-        },
-      }),
-    );
-
-    const boards = await fetchBoards("2026-08-27");
-    // Two days back, not one: a puzzle keeps taking scores until the last
-    // timezone's copy of that day ends, so yesterday's winner can still change
-    // all through today and the day before it cannot.
-    expect(requestedUrl(fetchMock)).toContain("champion=2026-08-25");
-    expect(boards.dayChampion?.name).toBe(
-      handleFor("22222222-2222-4222-8222-222222222222"),
-    );
-    expect(boards.dayChampion?.score).toBe(9.1);
-  });
-
   it("asks for the day a reader has stepped the board back to", async () => {
     const fetchMock = stubFetch(boardsResponse({}));
 
@@ -416,31 +391,6 @@ describe("reading the boards", () => {
     const boards = await fetchBoards("2026-08-27");
     expect(boards.weeklySelf).toBeNull();
     expect(boards.monthlySelf).toBeNull();
-  });
-
-  it("keeps the champion of each closed window", async () => {
-    stubFetch(
-      boardsResponse({
-        lastWeek: { rank: 1, playerId: "won-the-week", windowWord: "inkling", windowZipf: 2.9, score: 61.2, puzzles: 7 },
-        lastMonth: { rank: 1, playerId: "won-the-month", windowWord: "quixotic", windowZipf: 2.33, score: 214.8, puzzles: 28 },
-      })
-    );
-
-    const boards = await fetchBoards("2026-08-27");
-    // Named the same way every other row is, from the id alone -- a champion is
-    // a board row, so nothing here knows a second way to name a player.
-    expect(boards.lastWeek).toMatchObject({ name: handleFor("won-the-week"), score: 61.2 });
-    expect(boards.lastMonth).toMatchObject({ name: handleFor("won-the-month"), score: 214.8 });
-  });
-
-  it("has no champion when nobody scored in the window", async () => {
-    stubFetch(boardsResponse({ lastWeek: null }));
-
-    // A first week, or a month before the game existed. Null rather than a
-    // half-built row, so the page can simply not draw the line.
-    const boards = await fetchBoards("2026-08-27");
-    expect(boards.lastWeek).toBeNull();
-    expect(boards.lastMonth).toBeNull();
   });
 
   it("drops a row from below the cut that arrived without a rank", async () => {

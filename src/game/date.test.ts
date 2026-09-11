@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysSinceEpoch, previousMonthName, toDateString } from "./date";
+import { daysSinceEpoch, toDateString } from "./date";
 
 describe("toDateString", () => {
   it("formats a local date as YYYY-MM-DD", () => {
@@ -28,18 +28,5 @@ describe("daysSinceEpoch", () => {
   it("is unaffected by DST transitions", () => {
     // Spring-forward/fall-back in the US shouldn't skew a plain day count.
     expect(daysSinceEpoch("2024-11-10", "2024-11-01")).toBe(9);
-  });
-});
-
-describe("previousMonthName", () => {
-  it("names the month before the one a date falls in", () => {
-    expect(previousMonthName("2026-08-26")).toBe("July");
-    // The first of a month still belongs to that month, so the answer does not
-    // move on the boundary.
-    expect(previousMonthName("2026-08-01")).toBe("July");
-  });
-
-  it("rolls back into the year before from January", () => {
-    expect(previousMonthName("2026-01-04")).toBe("December");
   });
 });

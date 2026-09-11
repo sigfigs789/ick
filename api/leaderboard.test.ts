@@ -317,14 +317,6 @@ describe("api/leaderboard reads", () => {
           puzzles: 5,
         },
       ],
-      // Nobody won any of the closed windows in this fixture, and the endpoint
-      // says so with a null rather than an absent key: the page has one shape
-      // to read, whether or not there is a champion to put under a board. The
-      // day board's is null for a second reason -- this request named no
-      // puzzle for it.
-      dayChampion: null,
-      lastWeek: null,
-      lastMonth: null,
     });
 
     // One call for the two long boards, so they can never disagree with each
@@ -338,31 +330,6 @@ describe("api/leaderboard reads", () => {
     expect(rpcCall(fetchMock)?.args).toMatchObject({
       p_since: SUNDAY,
       p_limit: 10,
-    });
-  });
-
-  it("names the day board's champion from the puzzle the caller asked for", async () => {
-    withEnv();
-    const fetchMock = stubFetch([
-      OPEN,
-      [{ rank: 1, player_id: PLAYER, window_word: "abaci", window_zipf: "2.65", total_score: "9.1", puzzles: 1 }],
-    ]);
-    const response = await handler(
-      get(`?since=${SUNDAY}&month=${MONTH}&champion=2026-08-24`)
-    );
-
-    expect(response.status).toBe(200);
-    expect((await response.json()).dayChampion).toEqual({
-      rank: 1, playerId: PLAYER, windowWord: "abaci", windowZipf: 2.65, score: 9.1, puzzles: 1,
-    });
-    // Its own parameter rather than "the day before `day`": the board moves as
-    // the reader steps it and this does not, so the two are separate questions.
-    // No player id goes up -- a champion row is the top one or it is nothing.
-    expect(rpcCall(fetchMock, 1)?.args).toEqual({
-      p_since: "2026-08-24",
-      p_until: "2026-08-24",
-      p_limit: 1,
-      p_player: null,
     });
   });
 
@@ -482,63 +449,14 @@ describe("api/leaderboard reads", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("reports the champion of each closed window under the live boards", async () => {
-    withEnv();
-    const fetchMock = stubFetch([
-      {
-        ...OPEN,
-        lastWeek: {
-          rank: 1,
-          player_id: PLAYER,
-          window_word: "quixotic",
-          window_zipf: "2.33",
-          total_score: "61.2",
-          puzzles: 7,
-        },
-        lastMonth: {
-          rank: 1,
-          player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          window_word: "inkling",
-          window_zipf: "2.9",
-          total_score: "214.8",
-          puzzles: 28,
-        },
-      },
-    ]);
-    const response = await handler(get(`?since=${SUNDAY}&month=${MONTH}&today=2026-08-25`));
-    const body = (await response.json()) as Record<string, unknown>;
-
-    // Ordinary board rows, priced and named by the same client code every other
-    // row goes through -- a champion is a board of one, not a new kind of thing.
-    expect(body.lastWeek).toEqual({
-      rank: 1,
-      playerId: PLAYER,
-      windowWord: "quixotic",
-      windowZipf: 2.33,
-      score: 61.2,
-      puzzles: 7,
-    });
-    expect(body.lastMonth).toMatchObject({ rank: 1, score: 214.8, puzzles: 28 });
-
-    // The champion's window is the monthly board's own window, one step back:
-    // taken from `month`, not from `since` (the Sunday bracketing the 1st
-    // belongs to the month before) and no longer from `today` either, now that
-    // `month` is the one parameter that says which month the page is about.
-    // August's board reports on the whole of July.
-    expect(rpcCall(fetchMock)?.args).toMatchObject({
-      p_month_since: "2026-07-01",
-      p_month_until: "2026-07-31",
-    });
-  });
-
-  it("bounds the champion to the month before the board's own, whatever `today` says", async () => {
+  it("bounds the month window it sends from the board's own, whatever `today` says", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    // `today` used to bound this window, which let the board and the plaque
-    // under it name two different months -- a September board over "July's
-    // champion" at a boundary, or whenever `today` was missing and UTC's own
-    // day fell in another month. One parameter now decides both, so the pair
-    // cannot disagree: a date from a different month is simply not consulted.
+    // The pair `leaderboard_boards` takes for the month before the board's own
+    // (see `previousMonth`). `today` used to bound it, which let one request
+    // name two different months -- whenever UTC's own day fell in another one.
+    // `month` decides it alone now, so a date from a different month is simply
+    // not consulted.
     await handler(get(`?since=${SUNDAY}&month=${MONTH}&today=2020-01-04`));
 
     expect(rpcCall(fetchMock)?.args).toMatchObject({
@@ -547,10 +465,10 @@ describe("api/leaderboard reads", () => {
     });
   });
 
-  it("ends the champion's month on its own last day, not on a fixed 31st", async () => {
+  it("ends that month on its own last day, not on a fixed 31st", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);
-    // A July board reports on June, which has thirty days. The arithmetic knows
+    // A July board steps back to June, which has thirty days. The arithmetic knows
     // no month lengths -- it steps back one day from the board's own first --
     // so a short month needs no case of its own.
     await handler(get(`?since=2026-06-28&month=2026-07-01`));
