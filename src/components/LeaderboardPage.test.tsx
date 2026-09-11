@@ -305,33 +305,39 @@ describe("the leaderboard page", () => {
     expect(boardRows("This week")[0]).not.toHaveTextContent("0.0");
   });
 
-  it("calls today's plaque leading, off today's own board, with the caveat", async () => {
+  it("names the day board's champion by weekday, with no caveat to explain", async () => {
+    // A Wednesday, so the last puzzle that is over everywhere is Monday's.
     onDay(MIDWEEK);
-    stubFetch(OPEN);
+    stubFetch({
+      ...OPEN,
+      dayChampion: {
+        rank: 1,
+        playerId: CAROL,
+        windowWord: "abaci",
+        windowZipf: 2.65,
+        score: 9.1,
+        puzzles: 1,
+      },
+    });
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
     const today = screen.getByRole("region", { name: "Today" });
-    // Today's own leader, not a borrowed day's champion. The plaque named the
-    // last puzzle that was over everywhere -- two days back -- which was the
-    // only thing on the page about a puzzle the reader had not asked to see,
-    // and it followed the reader as they stepped, so three boards in a row
-    // pointed at one player.
-    expect(plaque("Today")).toHaveTextContent("Leading");
-    expect(plaque("Today")).toHaveTextContent(handleFor(BOB));
-    expect(plaque("Today")).toHaveTextContent("9.4");
-    expect(today).not.toHaveTextContent("champion");
+    // Not yesterday's: a day closes at each player's own midnight, so
+    // yesterday's winner can still change all through today -- every day, for
+    // everybody -- and the plaque would have carried a footnote that never
+    // lifted. Two days back has ended everywhere, so it can simply be stated.
+    expect(today).toHaveTextContent("Monday's champion");
+    expect(today).toHaveTextContent(handleFor(CAROL));
+    expect(today).toHaveTextContent("9.1");
 
-    // Not a claim to have won: today is still being played, by this reader
-    // among others, and the "i" says when it stops being able to move.
+    // Which is the whole point of naming that day rather than yesterday.
     expect(
-      within(today).getByRole("button", {
+      within(today).queryByRole("button", {
         name: "Why this winner can still change",
       }),
-    ).toBeInTheDocument();
-    expect(plaque("Today")).toHaveTextContent(
-      "The official winner can change until tomorrow",
-    );
+    ).toBeNull();
+    expect(today).not.toHaveTextContent("can change");
   });
 
   it("leaves the day board's plaque off when nobody scored that puzzle", async () => {
@@ -363,93 +369,7 @@ describe("the leaderboard page", () => {
     const board = screen.getByRole("region", { name: "Aug 24" });
     await waitFor(() => expect(board).toHaveTextContent("Champion"));
     expect(board).toHaveTextContent(handleFor(BOB));
-    expect(board).not.toHaveTextContent("Aug 24 champion");
-  });
-
-  it("gives each day board its own leader instead of repeating one champion", async () => {
-    // A Wednesday, and a different player leading each of the three puzzles a
-    // reader can reach from it, so a plaque naming the wrong day is obvious.
-    onDay(MIDWEEK);
-    const leaders: Record<string, string> = {
-      "2026-08-26": ALICE,
-      "2026-08-25": BOB,
-      "2026-08-24": CAROL,
-    };
-    /** Every champion the page asked the server for, "" when it asked for none. */
-    const askedChampions: string[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: unknown, init?: RequestInit) => {
-        if (init?.method === "POST") return new Response(null, { status: 202 });
-        const params = new URL(String(url), "http://x").searchParams;
-        if (params.get("words") === "1")
-          return new Response(JSON.stringify({ words: [] }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          });
-        askedChampions.push(params.get("champion") ?? "");
-        const day = params.get("day") ?? "";
-        return new Response(
-          JSON.stringify({
-            weekStart: "2026-08-23",
-            daily: [
-              {
-                rank: 1,
-                playerId: leaders[day],
-                windowWord: "kerfuffle",
-                windowZipf: 3.11,
-                score: 9.4,
-                puzzles: 1,
-              },
-            ],
-            weekly: [],
-            allTime: [],
-          }),
-          { status: 200, headers: { "content-type": "application/json" } },
-        );
-      }),
-    );
-    render(<LeaderboardPage />);
-    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
-
-    // Today's own leader, under a word that claims no more than the row above
-    // it does. This used to be the last puzzle that was over everywhere --
-    // two days back, and carried along as the reader stepped, so all three of
-    // these boards named the player the third one is actually about.
-    expect(plaque("Today")).toHaveTextContent("Leading");
-    expect(plaque("Today")).toHaveTextContent(handleFor(ALICE));
-
-    // Yesterday's leader under yesterday's heading. Still not a champion: the
-    // puzzle is being played west of the reader, and the "i" says until when.
-    await userEvent.click(screen.getByRole("button", { name: "Previous day" }));
-    await waitFor(() =>
-      expect(plaque("Aug 25")).toHaveTextContent(handleFor(BOB)),
-    );
-    expect(plaque("Aug 25")).toHaveTextContent("Leading");
-    expect(plaque("Aug 25")).not.toHaveTextContent("champion");
-    expect(plaque("Aug 25")).toHaveTextContent(
-      "The official winner can change until later today",
-    );
-    expect(
-      within(screen.getByRole("region", { name: "Aug 25" })).getByRole(
-        "button",
-        { name: "Why this winner can still change" },
-      ),
-    ).toBeInTheDocument();
-
-    // And the day that is over everywhere is crowned from its own top row, with
-    // no caveat left to explain.
-    await userEvent.click(screen.getByRole("button", { name: "Previous day" }));
-    await waitFor(() =>
-      expect(plaque("Aug 24")).toHaveTextContent(handleFor(CAROL)),
-    );
-    expect(plaque("Aug 24")).toHaveTextContent("Champion");
-    expect(plaque("Aug 24")).not.toHaveTextContent("can change");
-
-    // Three boards, three players, and not one champion query behind them: a
-    // plaque is the top row of the board it sits under, which the page already
-    // has.
-    expect(askedChampions).toEqual(["", "", ""]);
+    expect(board).not.toHaveTextContent("Monday's champion");
   });
 
   it("names last week's champion under the weekly board, and last month's under the monthly one", async () => {
@@ -944,10 +864,7 @@ describe("the leaderboard page", () => {
     ).toBeInTheDocument();
     // Asked for as a date rather than derived from the week: a puzzle belongs
     // to the player's own local calendar day.
-    const url = new URL(
-      String(fetchMock.mock.calls[0][0]),
-      "https://wordink.app",
-    );
+    const url = new URL(String(fetchMock.mock.calls[0][0]), "https://wordink.app");
     expect(url.searchParams.get("day")).toBe(todayDateString());
   });
 
@@ -992,6 +909,7 @@ describe("the leaderboard page", () => {
       ).toHaveLength(2),
     );
   });
+
 });
 
 describe("who the page thinks you are", () => {
@@ -1077,6 +995,7 @@ describe("leaving the page", () => {
     expect(window.location.pathname).toBe("/");
   });
 });
+
 
 describe("keeping the boards current", () => {
   // Fake timers go up *before* render: the polling interval is created on mount,
@@ -1194,15 +1113,14 @@ describe("keeping the boards current", () => {
       await vi.advanceTimersByTimeAsync(0);
     });
 
-    const asked = fetchMock.mock.calls
-      .slice(opened)
-      .map(([url]) => String(url));
+    const asked = fetchMock.mock.calls.slice(opened).map(([url]) => String(url));
     expect(asked.length).toBeGreaterThan(0);
     // Past the shared copy. A client cannot bust a CDN cache with a header, so
     // a different URL is the only thing that can, and without it the button
     // would hand back the standings the reader just told us are stale.
     expect(asked.every((url) => /&t=\d+/.test(url))).toBe(true);
   });
+
 });
 
 /**
@@ -1296,16 +1214,13 @@ describe("stepping the boards through past windows", () => {
 
     await userEvent.click(step("Previous day"));
 
-    // The day's own date once it is not today's. Yesterday's board is not final
-    // yet -- it is still being played west of the reader -- and says when it
-    // will be rather than claiming it already is.
+    // The day's own date once it is not today's, and the board under it is that
+    // day's final standing.
     await waitFor(() =>
       expect(boardRows("Aug 25")[0]).toHaveTextContent(handleFor(BOB)),
     );
     expect(
-      within(screen.getByRole("region", { name: "Aug 25" })).getByText(
-        "Final later today",
-      ),
+      within(screen.getByRole("region", { name: "Aug 25" })).getByText("Final"),
     ).toBeInTheDocument();
     expect(askedDays).toEqual([WEDNESDAY, YESTERDAY]);
     // The long windows did not move: a day is not a week's worth of anything,

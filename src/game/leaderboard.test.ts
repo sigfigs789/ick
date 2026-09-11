@@ -20,7 +20,7 @@ const WORDS: AcceptedWord[] = [
 
 function stubFetch(response?: Response) {
   const fetchMock = vi.fn(
-    async () => response ?? new Response(null, { status: 202 }),
+    async () => response ?? new Response(null, { status: 202 })
   );
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
@@ -47,9 +47,7 @@ describe("submitting a score", () => {
     const fetchMock = stubFetch();
     const today = todayDateString();
 
-    expect(submitScore({ date: today, isToday: true, words: WORDS })).toBe(
-      true,
-    );
+    expect(submitScore({ date: today, isToday: true, words: WORDS })).toBe(true);
     const body = posted(fetchMock);
     expect(body).toEqual({
       playerId,
@@ -90,19 +88,14 @@ describe("submitting a score", () => {
 
     // Lowercased on the way out, like the day's rarest word: the endpoint takes
     // nothing else, and the feed shows these to other players verbatim.
-    expect(day.found.map((found) => found.word)).toEqual([
-      "wrinkle",
-      "inkling",
-    ]);
+    expect(day.found.map((found) => found.word)).toEqual(["wrinkle", "inkling"]);
   });
 
   it("prices each find at today's rates, not what it was worth when found", () => {
     joinBoard();
     const fetchMock = stubFetch();
     // A stale frequency, as a record saved under an older dictionary would hold.
-    const words: AcceptedWord[] = [
-      { word: "inkling", rarity: "Rare", zipf: 9.9 },
-    ];
+    const words: AcceptedWord[] = [{ word: "inkling", rarity: "Rare", zipf: 9.9 }];
 
     submitScore({ date: todayDateString(), isToday: true, words });
     const [day] = posted(fetchMock).scores as { found: { zipf: number }[] }[];
@@ -112,9 +105,7 @@ describe("submitting a score", () => {
 
   it("sends nothing when nobody has joined on this browser", () => {
     const fetchMock = stubFetch();
-    expect(
-      submitScore({ date: todayDateString(), isToday: true, words: WORDS }),
-    ).toBe(false);
+    expect(submitScore({ date: todayDateString(), isToday: true, words: WORDS })).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -122,18 +113,14 @@ describe("submitting a score", () => {
     joinBoard();
     const fetchMock = stubFetch();
     // Same reason it stays off the streak: the answers are lookupable.
-    expect(
-      submitScore({ date: "2026-07-04", isToday: false, words: WORDS }),
-    ).toBe(false);
+    expect(submitScore({ date: "2026-07-04", isToday: false, words: WORDS })).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("sends nothing before the first word is accepted", () => {
     joinBoard();
     const fetchMock = stubFetch();
-    expect(
-      submitScore({ date: todayDateString(), isToday: true, words: [] }),
-    ).toBe(false);
+    expect(submitScore({ date: todayDateString(), isToday: true, words: [] })).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -147,7 +134,7 @@ describe("submitting a score", () => {
     // A score that didn't make it is not something to interrupt a game over, so
     // this neither throws nor rejects.
     expect(() =>
-      submitScore({ date: todayDateString(), isToday: true, words: WORDS }),
+      submitScore({ date: todayDateString(), isToday: true, words: WORDS })
     ).not.toThrow();
   });
 });
@@ -170,11 +157,7 @@ describe("importing a joining player's history", () => {
   it("sends every remembered day in one request", () => {
     const playerId = joinBoard();
     const fetchMock = stubFetch();
-    const history = [
-      stored("2026-08-20"),
-      stored("2026-08-21"),
-      stored("2026-08-22"),
-    ];
+    const history = [stored("2026-08-20"), stored("2026-08-21"), stored("2026-08-22")];
 
     expect(backfillHistory(playerId!, history)).toBe(3);
     // One request for the whole history: a year of daily puzzles must not be a
@@ -195,12 +178,7 @@ describe("importing a joining player's history", () => {
     // asphyxiate was worth 8.40 the day it was played (2026-08-14's system) and
     // is worth 8.30 today.
     const history = [
-      {
-        ...stored("2026-08-14"),
-        acceptedWords: [
-          { word: "asphyxiate", rarity: "Extremely Rare" as const, zipf: 2.09 },
-        ],
-      },
+      { ...stored("2026-08-14"), acceptedWords: [{ word: "asphyxiate", rarity: "Extremely Rare" as const, zipf: 2.09 }] },
     ];
     backfillHistory(playerId!, history);
 
@@ -228,9 +206,7 @@ describe("importing a joining player's history", () => {
     ];
     backfillHistory(playerId!, history);
 
-    expect(
-      (posted(fetchMock).scores as Record<string, unknown>[])[0].word,
-    ).toBe("asphyxiate");
+    expect((posted(fetchMock).scores as Record<string, unknown>[])[0].word).toBe("asphyxiate");
   });
 
   it("scores each past day on the system that was in effect that day", () => {
@@ -262,22 +238,19 @@ describe("importing a joining player's history", () => {
 
   it("reads this browser's own history when none is passed", () => {
     const playerId = joinBoard();
-    localStorage.setItem(
-      "ick:progress:2026-08-20",
-      JSON.stringify(stored("2026-08-20")),
-    );
+    localStorage.setItem("ick:progress:2026-08-20", JSON.stringify(stored("2026-08-20")));
     // Played out of the archive days later, so it is not evidence of playing on
     // the day and stays off the board.
     localStorage.setItem(
       "ick:progress:2026-08-10",
-      JSON.stringify(stored("2026-08-10", "2026-08-24T20:00:00")),
+      JSON.stringify(stored("2026-08-10", "2026-08-24T20:00:00"))
     );
     const fetchMock = stubFetch();
 
     expect(backfillHistory(playerId!)).toBe(1);
-    expect(
-      (posted(fetchMock).scores as { date: string }[]).map((s) => s.date),
-    ).toEqual(["2026-08-20"]);
+    expect((posted(fetchMock).scores as { date: string }[]).map((s) => s.date)).toEqual([
+      "2026-08-20",
+    ]);
   });
 });
 
@@ -347,15 +320,29 @@ describe("reading the boards", () => {
     expect(boards.dailySelf).toBeNull();
   });
 
-  it("asks for no champion at all: every plaque is its own board's top row", async () => {
-    const fetchMock = stubFetch(boardsResponse({}));
+  it("asks for the last puzzle that is over everywhere, and reads its champion", async () => {
+    const fetchMock = stubFetch(
+      boardsResponse({
+        dayChampion: {
+          rank: 1,
+          playerId: "22222222-2222-4222-8222-222222222222",
+          windowWord: "abaci",
+          windowZipf: 2.65,
+          score: 9.1,
+          puzzles: 1,
+        },
+      }),
+    );
 
-    await fetchBoards("2026-08-27");
-    // The day board's plaque used to name the last puzzle that was over
-    // everywhere, which took a query of its own. It names the top row of the
-    // board it sits under now -- on every day, today included -- so there is
-    // nothing left to ask for (see LeaderboardPage).
-    expect(requestedUrl(fetchMock)).not.toContain("champion=");
+    const boards = await fetchBoards("2026-08-27");
+    // Two days back, not one: a puzzle keeps taking scores until the last
+    // timezone's copy of that day ends, so yesterday's winner can still change
+    // all through today and the day before it cannot.
+    expect(requestedUrl(fetchMock)).toContain("champion=2026-08-25");
+    expect(boards.dayChampion?.name).toBe(
+      handleFor("22222222-2222-4222-8222-222222222222"),
+    );
+    expect(boards.dayChampion?.score).toBe(9.1);
   });
 
   it("asks for the day a reader has stepped the board back to", async () => {
@@ -371,10 +358,7 @@ describe("reading the boards", () => {
   it("asks for the windows a reader has stepped back to", async () => {
     const fetchMock = stubFetch(boardsResponse({}));
 
-    await fetchBoards("2026-08-27", {
-      week: "2026-08-16",
-      month: "2026-07-01",
-    });
+    await fetchBoards("2026-08-27", { week: "2026-08-16", month: "2026-07-01" });
     const url = requestedUrl(fetchMock);
     // A window given here is used as sent: the boards a reader stepped back to
     // are closed windows, and nothing about the date being played should drag
@@ -414,50 +398,20 @@ describe("reading the boards", () => {
   it("keeps the player's own row from below the cut, at its real rank", async () => {
     stubFetch(
       boardsResponse({
-        weeklySelf: {
-          rank: 61,
-          playerId: "me",
-          windowWord: "inkling",
-          windowZipf: 2.9,
-          score: 12,
-          puzzles: 2,
-        },
-        allTimeSelf: {
-          rank: 214,
-          playerId: "me",
-          windowWord: "quixotic",
-          windowZipf: 2.33,
-          score: 88,
-          puzzles: 19,
-        },
-      }),
+        weeklySelf: { rank: 61, playerId: "me", windowWord: "inkling", windowZipf: 2.9, score: 12, puzzles: 2 },
+        allTimeSelf: { rank: 214, playerId: "me", windowWord: "quixotic", windowZipf: 2.33, score: 88, puzzles: 19 },
+      })
     );
 
     const boards = await fetchBoards("2026-08-27");
     // 61st of everybody, not 16th of what fits -- the number is the only reason
     // this row was sent.
-    expect(boards.weeklySelf).toMatchObject({
-      rank: 61,
-      name: handleFor("me"),
-    });
+    expect(boards.weeklySelf).toMatchObject({ rank: 61, name: handleFor("me") });
     expect(boards.monthlySelf?.rank).toBe(214);
   });
 
   it("has no row below the cut when the player is on the board", async () => {
-    stubFetch(
-      boardsResponse({
-        weekly: [
-          {
-            rank: 1,
-            playerId: "me",
-            windowWord: "inkling",
-            windowZipf: 2.9,
-            score: 12,
-            puzzles: 2,
-          },
-        ],
-      }),
-    );
+    stubFetch(boardsResponse({ weekly: [{ rank: 1, playerId: "me", windowWord: "inkling", windowZipf: 2.9, score: 12, puzzles: 2 }] }));
 
     const boards = await fetchBoards("2026-08-27");
     expect(boards.weeklySelf).toBeNull();
@@ -467,36 +421,16 @@ describe("reading the boards", () => {
   it("keeps the champion of each closed window", async () => {
     stubFetch(
       boardsResponse({
-        lastWeek: {
-          rank: 1,
-          playerId: "won-the-week",
-          windowWord: "inkling",
-          windowZipf: 2.9,
-          score: 61.2,
-          puzzles: 7,
-        },
-        lastMonth: {
-          rank: 1,
-          playerId: "won-the-month",
-          windowWord: "quixotic",
-          windowZipf: 2.33,
-          score: 214.8,
-          puzzles: 28,
-        },
-      }),
+        lastWeek: { rank: 1, playerId: "won-the-week", windowWord: "inkling", windowZipf: 2.9, score: 61.2, puzzles: 7 },
+        lastMonth: { rank: 1, playerId: "won-the-month", windowWord: "quixotic", windowZipf: 2.33, score: 214.8, puzzles: 28 },
+      })
     );
 
     const boards = await fetchBoards("2026-08-27");
     // Named the same way every other row is, from the id alone -- a champion is
     // a board row, so nothing here knows a second way to name a player.
-    expect(boards.lastWeek).toMatchObject({
-      name: handleFor("won-the-week"),
-      score: 61.2,
-    });
-    expect(boards.lastMonth).toMatchObject({
-      name: handleFor("won-the-month"),
-      score: 214.8,
-    });
+    expect(boards.lastWeek).toMatchObject({ name: handleFor("won-the-week"), score: 61.2 });
+    expect(boards.lastMonth).toMatchObject({ name: handleFor("won-the-month"), score: 214.8 });
   });
 
   it("has no champion when nobody scored in the window", async () => {
@@ -512,14 +446,8 @@ describe("reading the boards", () => {
   it("drops a row from below the cut that arrived without a rank", async () => {
     stubFetch(
       boardsResponse({
-        weeklySelf: {
-          playerId: "me",
-          windowWord: "inkling",
-          windowZipf: 2.9,
-          score: 12,
-          puzzles: 2,
-        },
-      }),
+        weeklySelf: { playerId: "me", windowWord: "inkling", windowZipf: 2.9, score: 12, puzzles: 2 },
+      })
     );
 
     // A rank invented from array position would be a lie here -- this row is
@@ -533,36 +461,15 @@ describe("reading the boards", () => {
         JSON.stringify({
           weekStart: "2026-08-23",
           weekly: [
-            {
-              rank: 1,
-              playerId: "a",
-              windowWord: "quixotic",
-              windowZipf: 2.33,
-              score: 40,
-              puzzles: 5,
-            },
-            {
-              rank: 2,
-              playerId: "b",
-              windowWord: "inkling",
-              windowZipf: 2.9,
-              score: 20,
-              puzzles: 3,
-            },
+            { rank: 1, playerId: "a", windowWord: "quixotic", windowZipf: 2.33, score: 40, puzzles: 5 },
+            { rank: 2, playerId: "b", windowWord: "inkling", windowZipf: 2.9, score: 20, puzzles: 3 },
           ],
           allTime: [
-            {
-              rank: 1,
-              playerId: "b",
-              windowWord: "inkling",
-              windowZipf: 2.9,
-              score: 300,
-              puzzles: 40,
-            },
+            { rank: 1, playerId: "b", windowWord: "inkling", windowZipf: 2.9, score: 300, puzzles: 40 },
           ],
         }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
     );
 
     const boards = await fetchBoards("2026-08-27");
@@ -582,27 +489,15 @@ describe("reading the boards", () => {
       new Response(
         JSON.stringify({
           weekly: [
-            {
-              rank: 1,
-              playerId: "a",
-              windowWord: "asphyxiate",
-              windowZipf: 2.09,
-              score: 40,
-            },
+            { rank: 1, playerId: "a", windowWord: "asphyxiate", windowZipf: 2.09, score: 40 },
             { windowWord: "noid", score: 10 },
             { playerId: "c", windowWord: "cypher", score: "lots" },
-            {
-              rank: 4,
-              playerId: "d",
-              windowWord: "inkling",
-              windowZipf: 2.9,
-              score: 5,
-            },
+            { rank: 4, playerId: "d", windowWord: "inkling", windowZipf: 2.9, score: 5 },
           ],
           allTime: "not a board",
         }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
     );
 
     const boards = await fetchBoards("2026-08-27");
@@ -613,10 +508,7 @@ describe("reading the boards", () => {
       [4, "inkling"],
     ]);
     expect(boards.monthly).toEqual([]);
-    expect(boards.weekly[0]).toMatchObject({
-      windowWord: "asphyxiate",
-      puzzles: 0,
-    });
+    expect(boards.weekly[0]).toMatchObject({ windowWord: "asphyxiate", puzzles: 0 });
   });
 
   it("falls back to the requested week when the server echoes nothing", async () => {
@@ -624,7 +516,7 @@ describe("reading the boards", () => {
       new Response(JSON.stringify({ weekly: [], allTime: [] }), {
         status: 200,
         headers: { "content-type": "application/json" },
-      }),
+      })
     );
     // 2026-08-27 is a Thursday; its week began on Sunday the 23rd.
     expect((await fetchBoards("2026-08-27")).weekStart).toBe("2026-08-23");
@@ -645,16 +537,11 @@ describe("the finds feed, fetched on its own", () => {
           // feed -- ordered by when a word turned up, not by how good it is.
           words: [
             { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-26" },
-            {
-              word: "stonyheartedly",
-              zipf: -1.57,
-              finders: 1,
-              foundOn: "2026-08-25",
-            },
+            { word: "stonyheartedly", zipf: -1.57, finders: 1, foundOn: "2026-08-25" },
           ],
         }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
     );
 
     expect((await fetchFoundWords("2026-08-27")).map((w) => w.word)).toEqual([
@@ -674,28 +561,14 @@ describe("the finds feed, fetched on its own", () => {
             { word: "inkling", zipf: 2.9, finders: 1 },
           ],
         }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
     );
 
     const words = await fetchFoundWords("2026-08-27");
     expect(words).toEqual([
-      {
-        word: "asphyxiate",
-        zipf: 2.09,
-        rarity: "Extremely Rare",
-        finders: 3,
-        foundOn: "",
-        today: false,
-      },
-      {
-        word: "inkling",
-        zipf: 2.9,
-        rarity: "Rare",
-        finders: 1,
-        foundOn: "",
-        today: false,
-      },
+      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3, foundOn: "", today: false },
+      { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1, foundOn: "", today: false },
     ]);
   });
 
@@ -703,17 +576,10 @@ describe("the finds feed, fetched on its own", () => {
     stubFetch(
       new Response(
         JSON.stringify({
-          words: [
-            {
-              word: "asphyxiate",
-              zipf: 2.09,
-              finders: 1,
-              foundOn: "2026-08-27",
-            },
-          ],
+          words: [{ word: "asphyxiate", zipf: 2.09, finders: 1, foundOn: "2026-08-27" }],
         }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
     );
 
     const words = await fetchFoundWords("2026-08-27");
@@ -739,8 +605,8 @@ describe("the finds feed, fetched on its own", () => {
             { word: "inkling", zipf: 2.9, finders: 1, foundOn: "2026-08-27" },
           ],
         }),
-        { status: 200, headers: { "content-type": "application/json" } },
-      ),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
     );
 
     // `cat` is Common, and it is still the best word its finder managed that
@@ -757,7 +623,7 @@ describe("the finds feed, fetched on its own", () => {
       new Response(JSON.stringify({ words: [] }), {
         status: 200,
         headers: { "content-type": "application/json" },
-      }),
+      })
     );
     await fetchFoundWords("2026-08-27");
 
@@ -772,9 +638,7 @@ describe("the finds feed, fetched on its own", () => {
 
   it("rejects on a failed read, so a refresh can leave the last list up", async () => {
     stubFetch(new Response("nope", { status: 502 }));
-    await expect(fetchFoundWords("2026-08-27")).rejects.toThrow(
-      "leaderboard words 502",
-    );
+    await expect(fetchFoundWords("2026-08-27")).rejects.toThrow("leaderboard words 502");
   });
 
   it("has an empty feed when the server sends none", async () => {
@@ -782,9 +646,9 @@ describe("the finds feed, fetched on its own", () => {
       new Response(JSON.stringify({}), {
         status: 200,
         headers: { "content-type": "application/json" },
-      }),
+      })
     );
-    expect(await fetchFoundWords("2026-08-27")).toEqual([]);
+    expect((await fetchFoundWords("2026-08-27"))).toEqual([]);
   });
 });
 
@@ -793,14 +657,8 @@ describe("syncing an already-joined player on open", () => {
     const playerId = joinBoard();
     // Stored rather than passed: opening the app knows nothing about a history,
     // it reads one.
-    localStorage.setItem(
-      "ick:progress:2026-08-20",
-      JSON.stringify(stored("2026-08-20")),
-    );
-    localStorage.setItem(
-      "ick:progress:2026-08-21",
-      JSON.stringify(stored("2026-08-21")),
-    );
+    localStorage.setItem("ick:progress:2026-08-20", JSON.stringify(stored("2026-08-20")));
+    localStorage.setItem("ick:progress:2026-08-21", JSON.stringify(stored("2026-08-21")));
     const fetchMock = stubFetch();
 
     expect(syncHistory("2026-08-21")).toBe(2);
@@ -814,10 +672,7 @@ describe("syncing an already-joined player on open", () => {
   });
 
   it("sends nothing when nobody has joined on this browser", () => {
-    localStorage.setItem(
-      "ick:progress:2026-08-20",
-      JSON.stringify(stored("2026-08-20")),
-    );
+    localStorage.setItem("ick:progress:2026-08-20", JSON.stringify(stored("2026-08-20")));
     const fetchMock = stubFetch();
 
     // Opening the app is not joining the board.
@@ -827,14 +682,8 @@ describe("syncing an already-joined player on open", () => {
 
   it("carries the current puzzle's words and no older day's", () => {
     joinBoard();
-    localStorage.setItem(
-      "ick:progress:2026-08-20",
-      JSON.stringify(stored("2026-08-20")),
-    );
-    localStorage.setItem(
-      "ick:progress:2026-08-21",
-      JSON.stringify(stored("2026-08-21")),
-    );
+    localStorage.setItem("ick:progress:2026-08-20", JSON.stringify(stored("2026-08-20")));
+    localStorage.setItem("ick:progress:2026-08-21", JSON.stringify(stored("2026-08-21")));
     const fetchMock = stubFetch();
 
     syncHistory("2026-08-21");
@@ -861,9 +710,7 @@ describe("asking for the list by hand", () => {
   }
 
   it("leaves a poll on the shared copy", async () => {
-    const fetchMock = stubFetch(
-      new Response(JSON.stringify({ words: [] }), { status: 200 }),
-    );
+    const fetchMock = stubFetch(new Response(JSON.stringify({ words: [] }), { status: 200 }));
 
     await fetchFoundWords("2026-08-25");
 
@@ -873,40 +720,27 @@ describe("asking for the list by hand", () => {
   });
 
   it("keeps the feed out of this browser's own cache", async () => {
-    const fetchMock = stubFetch(
-      new Response(JSON.stringify({ words: [] }), { status: 200 }),
-    );
+    const fetchMock = stubFetch(new Response(JSON.stringify({ words: [] }), { status: 200 }));
 
     await fetchFoundWords("2026-08-25");
 
     // The shared copy is the point; a private one is how a poll goes blind.
-    const [, init] = (fetchMock.mock.calls[0] ?? []) as [
-      unknown?,
-      RequestInit?,
-    ];
+    const [, init] = (fetchMock.mock.calls[0] ?? []) as [unknown?, RequestInit?];
     expect(init?.cache).toBe("no-store");
   });
 
   it("busts the cache for a reader who asked", async () => {
-    const fetchMock = stubFetch(
-      new Response(JSON.stringify({ words: [] }), { status: 200 }),
-    );
+    const fetchMock = stubFetch(new Response(JSON.stringify({ words: [] }), { status: 200 }));
 
     await fetchFoundWords("2026-08-25", { fresh: true });
 
     // The URL is the cache key, so a different one is the only way a client can
     // get past a shared copy -- a reload cannot, and neither can a no-cache header.
-    expect(url(fetchMock)).toMatch(
-      /^\/api\/leaderboard\?words=1&today=2026-08-25&t=\d+$/,
-    );
+    expect(url(fetchMock)).toMatch(/^\/api\/leaderboard\?words=1&today=2026-08-25&t=\d+$/);
   });
 
   it("busts the boards too, since a refresh refreshes the page", async () => {
-    const fetchMock = stubFetch(
-      new Response(JSON.stringify({ weekly: [], allTime: [] }), {
-        status: 200,
-      }),
-    );
+    const fetchMock = stubFetch(new Response(JSON.stringify({ weekly: [], allTime: [] }), { status: 200 }));
 
     await fetchBoards("2026-08-25", { fresh: true });
 
@@ -920,8 +754,7 @@ describe("asking for the list by hand", () => {
       // Its own stub: a Response body can only be read once, and this is the
       // one test here that fetches more than once.
       const fetchMock = vi.fn(
-        async () =>
-          new Response(JSON.stringify({ words: [] }), { status: 200 }),
+        async () => new Response(JSON.stringify({ words: [] }), { status: 200 })
       );
       vi.stubGlobal("fetch", fetchMock);
 
@@ -957,9 +790,8 @@ describe("how far back the feed looks", () => {
   it("never offers a day from before any find was recorded", () => {
     // The finds table is younger than the game, so the floor sits at the first
     // day there is anything to show rather than at the first puzzle. "Nobody
-    // found anything on this puzzle" would be a sentence about the schema on
-    // one of those days, and the same lie every time.
-    expect(feedFloor() >= "2026-08-26").toBe(true);
+    // found anything on this puzzle" would be a sentence about the schema on one
+    // of those days, and the same lie every time.
     expect(feedFloor() > FIRST_PUZZLE).toBe(true);
   });
 });
@@ -973,12 +805,7 @@ describe("a day that spent its retry", () => {
     // Three words where a moment ago there were four: the board's write is
     // monotonic per day, so without this flag the retried word goes on being
     // ranked no matter what the client sends.
-    submitScore({
-      date: today,
-      isToday: true,
-      words: WORDS.slice(0, 1),
-      retried: true,
-    });
+    submitScore({ date: today, isToday: true, words: WORDS.slice(0, 1), retried: true });
 
     const [day] = posted(fetchMock).scores as Record<string, unknown>[];
     expect(day.retried).toBe(true);
@@ -1000,7 +827,7 @@ describe("a day that spent its retry", () => {
     joinBoard();
     localStorage.setItem(
       "ick:progress:2026-08-21",
-      JSON.stringify({ ...stored("2026-08-21"), retryUsed: true }),
+      JSON.stringify({ ...stored("2026-08-21"), retryUsed: true })
     );
     const fetchMock = stubFetch();
 
@@ -1015,10 +842,7 @@ describe("a day that spent its retry", () => {
 
   it("leaves the flag off a synced day that never used its retry", () => {
     joinBoard();
-    localStorage.setItem(
-      "ick:progress:2026-08-21",
-      JSON.stringify(stored("2026-08-21")),
-    );
+    localStorage.setItem("ick:progress:2026-08-21", JSON.stringify(stored("2026-08-21")));
     const fetchMock = stubFetch();
 
     syncHistory("2026-08-21");

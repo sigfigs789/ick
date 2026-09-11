@@ -1,12 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { FoundWordsPage } from "./FoundWordsPage";
 
@@ -170,6 +163,7 @@ describe("recent finds", () => {
       vi.useRealTimers();
     }
   });
+
 });
 
 describe("finds arriving", () => {
@@ -375,9 +369,7 @@ describe("keeping the finds current", () => {
     // Past the shared copy. A client cannot bust a CDN cache with a header, so
     // a different URL is the only thing that can, and without it the button
     // would hand back the list the reader just told us is stale.
-    const asked = fetchMock.mock.calls
-      .slice(opened)
-      .map(([url]) => String(url));
+    const asked = fetchMock.mock.calls.slice(opened).map(([url]) => String(url));
     expect(asked.length).toBeGreaterThan(0);
     expect(asked.every((url) => /&t=\d+/.test(url))).toBe(true);
   });
@@ -391,9 +383,7 @@ describe("keeping the finds current", () => {
     await vi.advanceTimersByTimeAsync(30_000);
 
     // The cache is there to absorb exactly this. Only a person gets to skip it.
-    const polled = fetchMock.mock.calls
-      .slice(opened)
-      .map(([url]) => String(url));
+    const polled = fetchMock.mock.calls.slice(opened).map(([url]) => String(url));
     expect(polled.length).toBeGreaterThan(0);
     expect(polled.every((url) => !url.includes("&t="))).toBe(true);
   });

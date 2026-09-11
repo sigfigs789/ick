@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { RarityBadge } from "./RarityBadge";
 import {
   fetchFoundWords,
@@ -71,8 +65,8 @@ export function FoundWordsPage() {
    *
    * Held in state beside `today` rather than read as the page renders. It is a
    * constant now, so nothing would move if it were -- but it is read for the
-   * same reason `today` is, and a floor that starts answering a clock again
-   * should start answering it once per mount.
+   * same reason `today` is, and a floor that goes back to answering a clock
+   * should go back to answering it once per mount.
    */
   const [floor] = useState(feedFloor);
   const isToday = viewing === today;
@@ -307,9 +301,9 @@ export function FoundWordsPage() {
             {heading}{" "}
             {/* The drop, because without it the list is a pile of unrelated
                 words: `asphyxiate` is just a word until you know the day asked
-                for PHY. Quoted and inline rather than set in a chip: the drop is
-                part of the sentence the title says -- finds from Sep 8's "ERE"
-                -- and a badge read as a second, unrelated label. */}
+                for PHY. Quoted and inline rather than set in a chip: it is part
+                of the sentence the title says -- finds from Sep 8's "ERE" -- and
+                a badge beside it read as a second, unrelated label. */}
             <span className="found-words__drop">
               {"\u201c"}
               {dropForDate(viewing)}

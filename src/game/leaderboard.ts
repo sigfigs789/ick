@@ -124,6 +124,21 @@ export interface Boards {
    * take the standings with them, so without this a window somebody won leaves
    * no trace anywhere.
    */
+  /**
+   * Who took the last puzzle that is over everywhere: the plaque under the day
+   * board.
+   *
+   * Not yesterday's, which is the thing worth explaining here. A day closes at
+   * each player's own midnight, so a puzzle keeps taking scores for as long as
+   * anybody's local day is still running -- yesterday's winner is a name that
+   * can still change, and the plaque would have had to say so every day of the
+   * year. The day before it has closed in every timezone there is, so the
+   * simpler plaque tells the truth without a footnote (see `championDay`).
+   *
+   * The board's own nav is what keeps yesterday reachable: one press of
+   * "Previous day" is that day's whole standing rather than one line of it.
+   */
+  dayChampion: BoardEntry | null;
   lastWeek: BoardEntry | null;
   lastMonth: BoardEntry | null;
   /** The day the weekly board is counting from, echoed back by the server. */
@@ -166,7 +181,7 @@ const FINDS_EPOCH = "2026-08-26";
  *
  * It used to stop at the week's reset, on the reasoning that the feed was the
  * companion to the weekly board above it. Once the finds became their own page
- * that stopped being true -- the page is now the game's record of what has been
+ * that stopped being true -- the page is the game's record of what has been
  * found, and a record that forgets on Sunday night is a strange thing to keep.
  * Stepping back is one press at a time and every day is one request, so the
  * whole archive costs a reader exactly what they walk through.
@@ -216,17 +231,12 @@ function parseBoard(raw: unknown): BoardEntry[] {
  * lie -- its rank is the whole reason it was sent -- so `parseSelf` passes none
  * and such a row is dropped instead.
  */
-function parseEntry(
-  item: RawEntry | null,
-  fallbackRank?: number,
-): BoardEntry | null {
+function parseEntry(item: RawEntry | null, fallbackRank?: number): BoardEntry | null {
   if (!item || typeof item !== "object") return null;
   const { rank, playerId, windowWord, windowZipf, score, puzzles } = item;
-  if (typeof playerId !== "string" || typeof windowWord !== "string")
-    return null;
+  if (typeof playerId !== "string" || typeof windowWord !== "string") return null;
   if (typeof score !== "number" || !Number.isFinite(score)) return null;
-  const ranked =
-    typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
+  const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
   if (ranked === undefined) return null;
   // The find is priced here, at today's rates, from the word itself -- so two
   // players holding the same word always show the same number, however long
@@ -238,8 +248,7 @@ function parseEntry(
     windowWord,
     windowScore: scoreOf(windowWord, windowZipf),
     score,
-    puzzles:
-      typeof puzzles === "number" && Number.isFinite(puzzles) ? puzzles : 0,
+    puzzles: typeof puzzles === "number" && Number.isFinite(puzzles) ? puzzles : 0,
   };
 }
 
@@ -266,8 +275,7 @@ function parseChampion(raw: unknown): BoardEntry | null {
 function scoreOf(word: string, storedZipf: unknown): number {
   const zipf = rarityFor(word)?.zipf;
   if (zipf !== undefined) return rarityScore(zipf);
-  if (typeof storedZipf === "number" && Number.isFinite(storedZipf))
-    return rarityScore(storedZipf);
+  if (typeof storedZipf === "number" && Number.isFinite(storedZipf)) return rarityScore(storedZipf);
   return 0;
 }
 
@@ -284,8 +292,7 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
     if (!item || typeof item !== "object") continue;
     const { word, zipf, finders, foundOn } = item;
     if (typeof word !== "string" || !word) continue;
-    const stored =
-      typeof zipf === "number" && Number.isFinite(zipf) ? zipf : undefined;
+    const stored = typeof zipf === "number" && Number.isFinite(zipf) ? zipf : undefined;
     const current = rarityFor(word)?.zipf ?? stored;
     if (current === undefined) continue;
     const rarity = rarityForZipf(current);
@@ -296,8 +303,7 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
       word,
       zipf: current,
       rarity,
-      finders:
-        typeof finders === "number" && Number.isFinite(finders) ? finders : 1,
+      finders: typeof finders === "number" && Number.isFinite(finders) ? finders : 1,
       foundOn: typeof foundOn === "string" ? foundOn : "",
       today: foundOn === today,
     });
@@ -352,23 +358,24 @@ export function weekFloor(): string {
 }
 
 /**
- * The newest puzzle that has finished everywhere: the day board's threshold for
- * calling a standing final.
+ * The newest puzzle that has finished everywhere, which is the one the day
+ * board's plaque names.
  *
  * Two days back, not one. A puzzle belongs to the player's own local calendar
  * date and can only be scored on that date, so it keeps taking scores until the
  * last timezone's copy of that day ends -- about a day after the first one's.
- * Yesterday's leader is therefore a name that can still change, all through
- * today, for everybody, and only the day before it can be called a result
- * without qualification.
+ * Yesterday's winner is therefore a name that can still change, all through
+ * today, for everybody: a plaque naming it has to carry a caveat every single
+ * day, which is a footnote that never goes away and so stops being read.
  *
- * It used to name the plaque as well as bound it: today's board had no finished
- * result of its own, so it borrowed this day's winner. That name then followed
- * the reader as they stepped the board, and three days in a row pointed at one
- * player. Every plaque is its own board's top row now, labelled by whether this
- * threshold has passed (see LeaderboardPage) -- so the day the reader is looking
- * at is the day the plaque is about, and how final it is has become a word
- * rather than a choice of whose result to show.
+ * The day before yesterday has ended in every timezone there is, so the plaque
+ * can simply state who won it. What it costs is a day of freshness, and the
+ * board's own "Previous day" makes that cheap -- yesterday's full standing is
+ * one press away, which is more than a plaque was ever going to say.
+ *
+ * Two days is also inside the week, which is what lets the plaque be labelled
+ * by weekday ("Monday's champion") rather than by a date the reader has to
+ * place.
  */
 export function championDay(date: string = todayDateString()): string {
   return addDays(date, -2);
@@ -413,7 +420,7 @@ function freshParam(options: FetchOptions): string {
  */
 export async function fetchBoards(
   date: string = todayDateString(),
-  options: BoardOptions = {},
+  options: BoardOptions = {}
 ): Promise<Boards> {
   // The window the reader has stepped to, or the one they are in. Either way it
   // is a date this client computed, because the puzzle dates it brackets are
@@ -424,6 +431,9 @@ export async function fetchBoards(
   // a puzzle date is the player's own local calendar date, and nothing on the
   // server shares that clock.
   const day = options.day ?? date;
+  // The puzzle the day board's plaque names, which does not move when the reader
+  // steps the board: it is the newest one that is over for everybody.
+  const champion = championDay(date);
   // The month goes up for the same reason the week does: both windows bracket
   // the player's own local puzzle date, so both have to be computed off the same
   // clock. The server bounds the far end of both itself.
@@ -445,10 +455,11 @@ export async function fetchBoards(
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
       `&month=${encodeURIComponent(month)}` +
       `&day=${encodeURIComponent(day)}` +
+      `&champion=${encodeURIComponent(champion)}` +
       `&limit=${BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
       freshParam(options),
-    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" },
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
   );
   if (!response.ok) throw new Error(`leaderboard ${response.status}`);
   return readBoards((await response.json()) as Record<string, unknown>, since);
@@ -468,13 +479,10 @@ export async function fetchBoards(
  */
 export async function fetchFoundWords(
   date: string = todayDateString(),
-  options: FetchOptions = {},
+  options: FetchOptions = {}
 ): Promise<FoundWord[]> {
   if (import.meta.env.DEV && usingSampleData()) {
-    return parseWords(
-      (sampleBoardsResponse() as Record<string, unknown>).words,
-      date,
-    );
+    return parseWords((sampleBoardsResponse() as Record<string, unknown>).words, date);
   }
   // The date is the only thing this request carries, so two players on the same
   // day send byte-identical URLs and share one cached answer. The server bounds
@@ -486,7 +494,7 @@ export async function fetchFoundWords(
     // shares with everybody, which is the whole arrangement. Without it a poll
     // could be served from disk, and a page that polls a list it cannot see
     // change is worse than one that does not poll at all.
-    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" },
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
   );
   if (!response.ok) throw new Error(`leaderboard words ${response.status}`);
   const body = (await response.json()) as Record<string, unknown>;
@@ -502,6 +510,7 @@ function readBoards(body: Record<string, unknown>, since: string): Boards {
     weeklySelf: parseSelf(body.weeklySelf),
     monthly: parseBoard(body.allTime),
     monthlySelf: parseSelf(body.allTimeSelf),
+    dayChampion: parseChampion(body.dayChampion),
     lastWeek: parseChampion(body.lastWeek),
     lastMonth: parseChampion(body.lastMonth),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,
@@ -575,7 +584,7 @@ interface ScorePayload {
 function scoreFor(
   date: string,
   words: readonly AcceptedWord[],
-  options: { withFound?: boolean; retried?: boolean } = {},
+  options: { withFound?: boolean; retried?: boolean } = {}
 ): ScorePayload {
   const best = rarest(words);
   return {
@@ -604,10 +613,7 @@ function scoreFor(
  * endpoint refuses a longer list, and a batch it refuses costs the player the
  * whole day rather than one word.
  */
-function foundFor(
-  date: string,
-  words: readonly AcceptedWord[],
-): FoundPayload[] {
+function foundFor(date: string, words: readonly AcceptedWord[]): FoundPayload[] {
   return words.slice(0, maxGuessesFor(date)).map((word) => ({
     word: word.word.toLowerCase(),
     zipf: Math.round((rarityFor(word.word)?.zipf ?? word.zipf) * 100) / 100,
@@ -616,9 +622,7 @@ function foundFor(
 
 /** The rarest of one day's words, by today's reckoning. */
 function rarest(words: readonly AcceptedWord[]): AcceptedWord {
-  return words.reduce((best, word) =>
-    scoreToday(word) > scoreToday(best) ? word : best,
-  );
+  return words.reduce((best, word) => (scoreToday(word) > scoreToday(best) ? word : best));
 }
 
 /**
@@ -698,7 +702,7 @@ export function submitScore(options: {
 export function backfillHistory(
   playerId: string,
   history?: readonly DailyProgress[],
-  today: string = todayDateString(),
+  today: string = todayDateString()
 ): number {
   const played = history ?? playedOnItsDay();
   const scores = played
@@ -716,7 +720,7 @@ export function backfillHistory(
         // dropped as a straggler -- so a sync that left this off would quietly
         // stop repairing exactly the days most likely to need it.
         retried: progress.retryUsed === true,
-      }),
+      })
     );
   // Named from exactly the days being submitted, so the name and the scores in
   // one request always describe the same history.

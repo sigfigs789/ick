@@ -1855,8 +1855,7 @@ h2 {
  *
  * Part of the title's own sentence rather than a chip beside it, so it inherits
  * the title's size and weight and only the colour sets it apart. Never broken
- * across lines: three letters are the one thing on the page that has to be read
- * as a unit.
+ * across lines: three letters are the one thing here that has to read as a unit.
  */
 .found-words__drop {
   color: var(--fg-muted);
@@ -1869,23 +1868,22 @@ h2 {
  * Stepping through the week used to move the whole page: "Today's finds NIN"
  * fits a phone on one line and "Finds from Sep 9 ARR" does not, so the title
  * grew a second line on the first press back and the list, the pager and
- * everything under them dropped 26px and sprang back on the way forward. A
- * reader pressing back twice was reading a page that jumped under them both
- * times.
+ * everything under them dropped 26px -- then sprang up again on the way
+ * forward. A reader pressing back twice was reading a page that jumped twice.
  *
  * Broken deliberately rather than left to wrap, so every day is two lines
  * instead of some days being one: the height is then a fact about the phone
  * rather than about which date is on screen. The day's own text always fits the
- * first line at these widths (the rule below keeps that true on the narrowest
- * phones), so the break lands in the same place every time.
+ * first line at these widths -- the rule below keeps that true on the narrowest
+ * phones -- so the break lands in the same place every time.
  */
 @media (max-width: 30rem) {
   .found-words__drop {
     display: block;
   }
 }
-/* Small enough that "Finds from Sep 30" would wrap at full size, which would
-   put the title back to three lines on the longest dates only. */
+/* Narrow enough that "Finds from Sep 30" would wrap at full size, which would
+   put the longest dates back to three lines while shorter ones sat at two. */
 @media (max-width: 22rem) {
   .page-head__title {
     font-size: 1.25rem;
