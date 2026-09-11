@@ -74,17 +74,17 @@ export function SuggestedWordsPage() {
               <span className={`review__origin review__origin--${row.origin}`}>
                 {originLabel(row.origin)}
               </span>
-              {/* Counts only when there are any: a live-lookup word has no
-                  suggestions and a player's word has no lookups, and printing
-                  "0 lookups" on every row would be noise on both. */}
+              {/* Only when there are any: a word that arrived by live lookup has
+                  no suggestions, and "0 suggestions" on every one of those rows
+                  would be noise.
+
+                  The lookup count used to sit beside this and no longer does.
+                  Whether a word was reached in a puzzle is already on the row --
+                  that is what "played" means -- and how many times it was reached
+                  was a number nobody triaged on. The endpoint still reports it. */}
               {row.suggestions > 0 && (
                 <span>
                   {row.suggestions} {row.suggestions === 1 ? "suggestion" : "suggestions"}
-                </span>
-              )}
-              {row.lookups > 0 && (
-                <span>
-                  {row.lookups} {row.lookups === 1 ? "lookup" : "lookups"}
                 </span>
               )}
               {row.pos.length > 0 && <span>{row.pos.join(", ")}</span>}

@@ -110,17 +110,18 @@ function asPlayer<T>(rows: T): T {
  * one, each origin the queue can report, a note with a line break in it, and
  * every mark a row can wear.
  *
- * Both lists are in submission order, oldest first, the way the endpoint returns
- * them: a fixture sorted differently from the real thing would hide the one
- * property of these pages that is not visible in a single row.
+ * Each list is in the order the endpoint returns it -- the queue oldest first,
+ * the feedback newest first -- because a fixture sorted differently from the
+ * real thing would hide the one property of these pages that is not visible in
+ * a single row.
  */
 export function sampleReviewResponse(list: "suggested-words" | "feedback"): unknown {
   if (list === "feedback") {
     return {
       feedback: [
-        { id: 1, text: "please add a dark mode", at: hoursAgo(50), mark: "accepted" },
-        { id: 2, text: "quixotic should be worth more\nit's a hard word!", at: hoursAgo(20), mark: "rejected" },
         { id: 3, text: "The rarity tiers are the best part. More of those.", at: hoursAgo(2), mark: null },
+        { id: 2, text: "quixotic should be worth more\nit's a hard word!", at: hoursAgo(20), mark: "rejected" },
+        { id: 1, text: "please add a dark mode", at: hoursAgo(50), mark: "accepted" },
       ],
     };
   }

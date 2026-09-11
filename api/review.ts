@@ -25,9 +25,10 @@
 //   act. A note's mark is a row in `feedback_marks`, because the events table it
 //   would otherwise live in is an append-only mirror of what the client sent.
 //
-// Both lists come back in the order they were submitted, oldest first, which is
-// the order the functions impose (see the migration) rather than anything this
-// file does to them.
+// The order is the functions' own (see the migrations) rather than anything this
+// file does to them: the queue oldest first, because it is a queue, and the
+// feedback newest first, because the page is reached from the box that writes
+// to it.
 //
 // Both lists were already in the database and reachable only from a psql prompt
 // holding the service-role key (see the 2026-09-11 migration for the two

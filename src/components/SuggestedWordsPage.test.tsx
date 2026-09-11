@@ -100,9 +100,10 @@ describe("SuggestedWordsPage", () => {
     await waitFor(() => expect(screen.getByText("asked for")).toBeInTheDocument());
     expect(screen.getByText("asked for + played")).toBeInTheDocument();
     expect(screen.getByText("2 suggestions")).toBeInTheDocument();
-    expect(screen.getByText("3 lookups")).toBeInTheDocument();
-    // The player-only word has no lookups, so the row does not claim zero.
-    expect(screen.queryByText("0 lookups")).not.toBeInTheDocument();
+    // The lookup count is off the row: "played" already says the word was
+    // reached in a puzzle, and how many times was not something anybody
+    // triaged on. The endpoint still sends it -- enshittification has 3.
+    expect(screen.queryByText(/lookup/)).not.toBeInTheDocument();
   });
 
   it("tells an empty queue from a failed read", async () => {

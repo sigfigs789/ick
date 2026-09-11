@@ -122,7 +122,7 @@ export function fetchSuggestedWords(): Promise<SuggestedWord[]> {
   return read("suggested-words", (body) => parseWords(body.words));
 }
 
-/** Every note players have left, in the order they were written. */
+/** Every note players have left, newest first. */
 export function fetchFeedback(): Promise<FeedbackNote[]> {
   return read("feedback", (body) => parseFeedback(body.feedback));
 }

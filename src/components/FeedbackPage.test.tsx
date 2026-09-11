@@ -55,6 +55,12 @@ describe("FeedbackPage", () => {
       expect(screen.getByText("more vowels please")).toBeInTheDocument(),
     );
     expect(screen.getByText("loving it")).toBeInTheDocument();
+    // Newest first is the list function's doing (see the 2026-09-11 ordering
+    // migration), so what this page owes it is not to re-sort: rows come out in
+    // the order they came in, whatever that order turns out to be.
+    expect(
+      screen.getAllByText(/loving it|more vowels please/).map((node) => node.textContent),
+    ).toEqual(["loving it", "more vowels please"]);
   });
 
   it("drops a note with nothing in it", async () => {
