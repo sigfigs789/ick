@@ -190,12 +190,17 @@ describe("SuggestedWordsPage", () => {
   });
 
   it("names the fault when a word has a reviewed rejection on file", async () => {
-    // "absconce" is in the shipped rejection ledger as not-a-word.
-    stubFetch([{ ...WORDS[0], word: "absconce" }]);
+    // Both are in the shipped rejection ledger: absconce as not-a-word, dremel
+    // as a proper noun (a brand name).
+    stubFetch([
+      { ...WORDS[0], word: "absconce" },
+      { ...WORDS[0], word: "dremel" },
+    ]);
     render(<SuggestedWordsPage />);
 
     await screen.findByText("absconce");
-    expect(screen.getByText("not a word")).toBeInTheDocument();
+    expect(screen.getByText("Not a word")).toBeInTheDocument();
+    expect(screen.getByText("Proper noun")).toBeInTheDocument();
   });
 
   it("tells an empty queue from a failed read", async () => {

@@ -182,12 +182,14 @@ function commonForm(word: string): string | undefined {
 /**
  * The fault a reviewed rejection names, as the row says it.
  *
- * The ledger's own token, hyphens turned to spaces and nothing else invented:
- * "proper noun", "misspelling", "not a word". These are the words the review
- * pass chose, and rewriting them here would put a second vocabulary between the
- * reader and the decision.
+ * The ledger's own token, hyphens turned to spaces and the first letter raised:
+ * "Proper noun", "Misspelling", "Not a word". The words are the review pass's
+ * own -- rewriting them would put a second vocabulary between the reader and
+ * the decision -- and the capital is because this is the one thing on the row
+ * that is a verdict rather than a measurement.
  */
 function rejectionReason(word: string): string | undefined {
-  return curatedRejection(word)?.replace(/-/g, " ");
+  const reason = curatedRejection(word)?.replace(/-/g, " ");
+  return reason && reason[0].toUpperCase() + reason.slice(1);
 }
 
