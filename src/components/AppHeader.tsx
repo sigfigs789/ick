@@ -23,7 +23,11 @@ interface Tab {
 const TABS: readonly Tab[] = [
   { route: "game", label: "Play", icon: "🧩" },
   { route: "leaderboard", label: "Leaderboards", icon: "🏆" },
-  { route: "found-words", label: "Found words", icon: "📜" },
+  // "Today's finds" rather than "Found words": the page opens on today's
+  // puzzle, and what brings anybody back to it through the day is what is
+  // landing now. Stepping back a day is a thing the page offers once you are on
+  // it, not the thing the tab is promising.
+  { route: "found-words", label: "Today's finds", icon: "📜" },
 ];
 
 /**

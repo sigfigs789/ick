@@ -124,6 +124,15 @@ export interface Boards {
    * take the standings with them, so without this a window somebody won leaves
    * no trace anywhere.
    */
+  /**
+   * And who took the puzzle before the one the day board is counting.
+   *
+   * The shortest of the three, and the one whose caveat never lifts while it is
+   * on screen: a day closes at each player's own midnight, so somebody's
+   * yesterday is still being played hours after somebody else's ended. The
+   * plaque says so rather than pretending otherwise (see `Champion`).
+   */
+  lastDay: BoardEntry | null;
   lastWeek: BoardEntry | null;
   lastMonth: BoardEntry | null;
   /** The day the weekly board is counting from, echoed back by the server. */
@@ -468,6 +477,7 @@ function readBoards(body: Record<string, unknown>, since: string): Boards {
     weeklySelf: parseSelf(body.weeklySelf),
     monthly: parseBoard(body.allTime),
     monthlySelf: parseSelf(body.allTimeSelf),
+    lastDay: parseChampion(body.lastDay),
     lastWeek: parseChampion(body.lastWeek),
     lastMonth: parseChampion(body.lastMonth),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,

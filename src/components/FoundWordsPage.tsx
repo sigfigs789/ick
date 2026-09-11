@@ -278,13 +278,33 @@ export function FoundWordsPage() {
     window.setTimeout(() => setRefreshing(false), 600);
   }, [refreshWords]);
 
+  // "Today's finds" while it is today's, and the day's own date once it isn't.
+  // The date rather than "Yesterday": two steps back has no such word, and a
+  // heading whose wording changes shape halfway down a week is harder to read
+  // than one that always names the day.
+  //
+  // The page's own title rather than a heading inside the section, which is
+  // where it used to sit when the section was the bottom half of the
+  // leaderboard. Two headings saying the same thing, one under the other, is
+  // what hoisting it avoids -- and this is the one thing on the page that says
+  // which puzzle everything under it belongs to, which is what a title is.
+  const heading = isToday
+    ? "Today's finds"
+    : `Finds from ${formatDateLabel(viewing)}`;
+
   return (
     <main>
       <div className="page-head">
         <div>
-          <h1 className="page-head__title">Found words</h1>
+          <h1 className="page-head__title">
+            {heading}
+            {/* The drop, because without it the list is a pile of unrelated
+                words: `asphyxiate` is just a word until you know the day asked
+                for PHY. */}
+            <span className="found-words__drop">{dropForDate(viewing)}</span>
+          </h1>
           <p className="page-head__note">
-            Every word anybody turned up on a puzzle — including the ones you
+            Every word anybody turned up on this puzzle — including the ones you
             didn't.
           </p>
         </div>
@@ -305,7 +325,7 @@ export function FoundWordsPage() {
 
       <FoundWords
         words={words}
-        date={viewing}
+        heading={heading}
         isToday={isToday}
         state={feedState}
         // Never nothing and never a screenful: a first load has no previous day
@@ -365,7 +385,7 @@ export function FoundWordsPage() {
  */
 function FoundWords({
   words,
-  date,
+  heading,
   isToday,
   state,
   placeholderRows,
@@ -378,7 +398,8 @@ function FoundWords({
   onRetry,
 }: {
   words: readonly FoundWord[];
-  date: string;
+  /** What the page is calling this day, so the section is labelled the same. */
+  heading: string;
   isToday: boolean;
   state: LoadState;
   /** How many rows to hold open while a day loads. */
@@ -442,23 +463,11 @@ function FoundWords({
     }
   }, [words, arrived]);
 
-  // "Today's finds" while it is today's, and the day's own date once it isn't.
-  // The date rather than "Yesterday": two steps back has no such word, and a
-  // heading whose wording changes shape halfway down a week is harder to read
-  // than one that always names the day.
-  const heading = isToday
-    ? "Today's finds"
-    : `Finds from ${formatDateLabel(date)}`;
   return (
+    /* Labelled rather than headed: the page's title above it already names the
+       day and the drop, and a heading here would be that sentence twice. The
+       label keeps the region findable by name for anybody reading by landmark. */
     <section className="found-words" aria-label={heading}>
-      {/* No line under it. "Every word found on today's puzzle" restated the
-          heading with the drop already beside it, and the boards above carry
-          nothing under their headings either -- one of the three sections
-          explaining itself was the odd one out. */}
-      <h2 className="leaderboard__board-heading">
-        {heading}
-        <span className="found-words__drop">{dropForDate(date)}</span>
-      </h2>
       {/* Both arrows always rendered, disabled at the ends rather than removed:
           a control that disappears at the edge of its range takes the shape of
           the thing with it, and a reader who has stepped back needs to see that

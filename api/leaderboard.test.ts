@@ -317,9 +317,12 @@ describe("api/leaderboard reads", () => {
           puzzles: 5,
         },
       ],
-      // Nobody won either closed window in this fixture, and the endpoint says
-      // so with a null rather than an absent key: the page has one shape to
-      // read, whether or not there is a champion to put under a board.
+      // Nobody won any of the closed windows in this fixture, and the endpoint
+      // says so with a null rather than an absent key: the page has one shape
+      // to read, whether or not there is a champion to put under a board. The
+      // day's is null for a second reason -- no day was asked for, so there is
+      // no day before it either.
+      lastDay: null,
       lastWeek: null,
       lastMonth: null,
     });

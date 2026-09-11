@@ -47,8 +47,10 @@ describe("the found words page", () => {
     stubFetch();
     render(<FoundWordsPage />);
 
+    // The page's title is the day it is showing, which is also what the
+    // header's tab calls it -- and it moves with the reader's steps.
     expect(
-      screen.getByRole("heading", { level: 1, name: "Found words" }),
+      screen.getByRole("heading", { level: 1, name: /Today's finds/ }),
     ).toBeInTheDocument();
     await userEvent.click(
       screen.getByRole("button", { name: "Back to today's puzzle" }),
@@ -126,17 +128,13 @@ describe("recent finds", () => {
     stubFetch();
     render(<FoundWordsPage />);
 
-    // Without it the list is a pile of unrelated words.
-    const section = await screen.findByRole("region", {
-      name: "Today's finds",
-    });
-    expect(
-      section.querySelector(".found-words__drop")?.textContent,
-    ).toBeTruthy();
-    // And nothing under the heading restating it.
-    expect(
-      screen.queryByText("Every word found on today's puzzle."),
-    ).toBeNull();
+    // Without it the list is a pile of unrelated words. In the page's title,
+    // beside the day -- the two answer one question, which puzzle this is.
+    await screen.findByRole("region", { name: "Today's finds" });
+    const title = screen.getByRole("heading", { level: 1 });
+    expect(title.querySelector(".found-words__drop")?.textContent).toBeTruthy();
+    // And said once: the section under it is labelled, not headed.
+    expect(screen.getAllByText("Today's finds")).toHaveLength(1);
   });
 
   it("says so plainly when nobody has found anything today", async () => {

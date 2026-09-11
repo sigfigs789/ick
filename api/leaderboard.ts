@@ -3,7 +3,7 @@
 //
 // GET /api/leaderboard?since=YYYY-MM-DD&month=YYYY-MM-01&day=YYYY-MM-DD&limit=15&player=UUID
 //   -> { weekStart, daily: [...], dailySelf, weekly: [...], weeklySelf,
-//        allTime: [...], allTimeSelf, lastWeek, lastMonth }
+//        allTime: [...], allTimeSelf, lastDay, lastWeek, lastMonth }
 //   The daily board counts the single puzzle `day`; the weekly board counts the
 //   seven days from `since`; the third counts the month `month` begins.
 //   `day` is optional: a caller that omits it gets the two boards it always got,
@@ -29,9 +29,10 @@
 //   inside the fifteen. When they are on the board -- or did not say who they
 //   are -- those are null, because the row is already up there.
 //
-//   `lastWeek` and `lastMonth` are the players who topped the last *completed*
-//   window under each board: the seven days before `since`, and the calendar
-//   month before `month`. Each is that board's own window one step back, taken
+//   `lastDay`, `lastWeek` and `lastMonth` are the players who topped the last
+//   *completed* window under each board: the day before `day`, the seven days
+//   before `since`, and the calendar month before `month`. `lastDay` comes back
+//   only when `day` did, since without one there is no day to be the one before. Each is that board's own window one step back, taken
 //   from the same parameter that bounds the board, so a board and the plaque
 //   under it can never name two different windows. Both are ordinary board rows
 //   (rank 1), or null when
@@ -693,7 +694,7 @@ async function handleGet(request: Request): Promise<Response> {
     // `leaderboard_boards` to a third window, which means dropping and
     // recreating a function every request in flight is using, for a query it can
     // already run.
-    const [result, dailyRows] = await Promise.all([
+    const [result, dailyRows, lastDayRows] = await Promise.all([
       rpc<BoardsResult>("leaderboard_boards", {
         p_since: since,
         p_limit: limit,
@@ -729,6 +730,18 @@ async function handleGet(request: Request): Promise<Response> {
             p_until: day,
           })
         : Promise.resolve(null),
+      // The day before it, one row deep: the plaque under the day board, which
+      // is that board's own window one step back -- exactly the relation
+      // `lastWeek` has to the weekly board. Nobody is asking, so no player id
+      // goes up: a champion row is the top one or it is nothing.
+      day
+        ? rpc<BoardRow[]>("leaderboard_board", {
+            p_since: daysBefore(day, 1),
+            p_limit: 1,
+            p_player: null,
+            p_until: daysBefore(day, 1),
+          })
+        : Promise.resolve(null),
     ]);
     const daily = toBoard(dailyRows, limit);
     const weekly = toBoard(result?.weekly ?? null, limit);
@@ -749,9 +762,14 @@ async function handleGet(request: Request): Promise<Response> {
         weeklySelf: weekly.self,
         allTime: allTime.entries,
         allTimeSelf: allTime.self,
-        // The two closed windows, each under the live board it followed. Null
-        // when nobody scored in one -- a month before the game existed, or a
-        // first week -- which the page renders as no line at all.
+        // The three closed windows, each under the live board it followed. Null
+        // when nobody scored in one -- a month before the game existed, a first
+        // week, or a day nobody played -- which the page renders as no line at
+        // all.
+        //
+        // The day board's is ranked 1 by construction: the query asked for one
+        // row, ordered the way every board here is ordered.
+        lastDay: toChampion(lastDayRows?.[0]),
         lastWeek: toChampion(result?.lastWeek),
         lastMonth: toChampion(result?.lastMonth),
       },

@@ -416,11 +416,31 @@ export function LeaderboardPage() {
               canGoForward={!dayIsLive}
               onBack={() => setDay(addDays(day, -1))}
               onForward={() => setDay(addDays(day, 1))}
-              // No plaque under this one. The champion line exists because a
-              // window that moves takes its standings with it and leaves no
-              // trace -- but the day before this one is a single arrow away
-              // and is its own final board, which says the same thing in full
-              // rather than in one line.
+              // Who took the puzzle before this one -- the same relation the
+              // other two plaques have to the boards above them, one window
+              // down. On a day the reader has stepped back to, the board is
+              // that day's own final standing and the plaque is its top row,
+              // exactly as the other two do it.
+              champion={dayIsLive ? boards.lastDay : championOf(boards.daily)}
+              championLabel={dayIsLive ? "Yesterday's champion" : "Champion"}
+              // And always with the caveat, which is the one thing this board
+              // does differently. The other two turn over on a named day and
+              // are settled by the next one, so their plaques are provisional
+              // for a few hours a week. A day closes at each player's own
+              // midnight, so somebody's yesterday is still being played while
+              // somebody else's has been over for a day -- the name under a day
+              // board is never finished while that day is on screen.
+              //
+              // Carried onto the day just gone as well as the live one, because
+              // that is the same window seen from one step back: the reader is
+              // looking at the standings the plaque above is drawn from.
+              // Anything older has closed everywhere.
+              championSettling={dayIsLive || day === addDays(today, -1)}
+              championFinalOn="the end of today"
+              // And no empty plaque. The other two hold one open because their
+              // window will be engraved on a day worth naming; a puzzle nobody
+              // scored on is finished, and "crowned tomorrow" under it would
+              // promise a name that is never coming.
             />
             <Board
               heading={weekIsLive ? "This week" : weekLabel(week)}
@@ -641,6 +661,19 @@ interface BoardProps {
    */
   championCrowning?: string;
   /**
+   * How the caveat sentence ends, when that is not the crowning day: "the end
+   * of today".
+   *
+   * The two were one prop while both boards' answers were the same word -- a
+   * weekly champion is engraved on Monday and can change until Monday. A day
+   * board breaks that: the plaque under it is engraved as soon as the day ends
+   * and can still change all through the next one, so the empty plaque's day
+   * and the caveat's deadline are different sentences. Defaults to
+   * `championCrowning`, which keeps the other two boards saying exactly what
+   * they said.
+   */
+  championFinalOn?: string;
+  /**
    * Whether today is the day this board's window turned over, and so the day the
    * named winner can still change (see game/week.ts). True on Sunday for the
    * week and on the first for the month; false every other day -- and false on
@@ -679,6 +712,7 @@ function Board({
   champion,
   championLabel,
   championCrowning,
+  championFinalOn,
   championSettling,
 }: BoardProps) {
   return (
@@ -847,7 +881,7 @@ function Board({
             entry={champion}
             label={championLabel}
             provisional={championSettling}
-            finalOn={championCrowning}
+            finalOn={championFinalOn ?? championCrowning}
           />
         ) : championCrowning ? (
           <ChampionPending crowning={championCrowning} />

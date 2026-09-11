@@ -317,6 +317,14 @@
     }
   ],
   "allTimeSelf": null,
+  "lastDay": {
+    "rank": 1,
+    "playerId": "dev-3",
+    "windowWord": "morphology",
+    "windowZipf": 2.71,
+    "score": 9.1,
+    "puzzles": 1
+  },
   "lastWeek": {
     "rank": 1,
     "playerId": "dev-3",

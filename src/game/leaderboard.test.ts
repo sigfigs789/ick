@@ -319,6 +319,31 @@ describe("reading the boards", () => {
     expect(boards.dailySelf).toBeNull();
   });
 
+  it("reads the day board's champion, the puzzle before it", async () => {
+    const fetchMock = stubFetch(
+      boardsResponse({
+        lastDay: {
+          rank: 1,
+          playerId: "22222222-2222-4222-8222-222222222222",
+          windowWord: "abaci",
+          windowZipf: 2.65,
+          score: 9.1,
+          puzzles: 1,
+        },
+      }),
+    );
+
+    const boards = await fetchBoards("2026-08-27");
+    expect(fetchMock).toHaveBeenCalled();
+    // The same relation `lastWeek` has to the weekly board, one window down --
+    // and null when nobody scored on that puzzle, which is a real answer rather
+    // than a failure.
+    expect(boards.lastDay?.name).toBe(
+      handleFor("22222222-2222-4222-8222-222222222222"),
+    );
+    expect(boards.lastDay?.score).toBe(9.1);
+  });
+
   it("asks for the day a reader has stepped the board back to", async () => {
     const fetchMock = stubFetch(boardsResponse({}));
 
