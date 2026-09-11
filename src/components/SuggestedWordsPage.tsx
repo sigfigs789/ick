@@ -87,9 +87,10 @@ export function SuggestedWordsPage() {
                     number is not shown. It is the unattested floor rather than
                     a measurement -- printing it would put the queue's least
                     known words at the top of it, which is the opposite of what
-                    this list is for. The word "unattested" is the whole of what
-                    is known. */}
-                {row.zipf === null ? "unattested" : formatRarityScore(row.zipf)}
+                    this list is for. "TBD" is the honest reading: the word has
+                    no score anybody has measured, and what it would be handed
+                    instead is a placeholder waiting on a decision. */}
+                {row.zipf === null ? "TBD" : formatRarityScore(row.zipf)}
               </span>
             </div>
             <p className="review__meta">
@@ -110,8 +111,18 @@ export function SuggestedWordsPage() {
                 <span>
                   {row.suggestions} {row.suggestions === 1 ? "suggestion" : "suggestions"}
                 </span>
+              ) : row.liveApproved ? (
+                <span className="review__live">played</span>
               ) : (
-                row.liveApproved && <span className="review__live">played</span>
+                /* Neither a live verdict nor a suggestion event, and still on
+                   the queue: the row was written by a review pass, which seeds a
+                   sighting for a word it judged (caprylate and conization share
+                   a timestamp to the microsecond with the 2026-08-22 pass). The
+                   word came in through the suggestion door -- that is what its
+                   `outcome` says -- and there is simply no event left to count,
+                   so the row says the door and not a number. Silence here read
+                   as a third kind of word, which it is not. */
+                <span>suggested</span>
               )}
               {/* Why the word is unplayable, when the repo has a reason on
                   file. The mark says a word was rejected; this says what the

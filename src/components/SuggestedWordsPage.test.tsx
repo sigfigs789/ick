@@ -98,7 +98,7 @@ describe("SuggestedWordsPage", () => {
     // An unattested word would earn a perfect 10, and the row does not say so:
     // that number is the floor rather than a measurement, and printing it would
     // put the least known words at the top of the queue.
-    expect(screen.getByText("unattested")).toBeInTheDocument();
+    expect(screen.getByText("TBD")).toBeInTheDocument();
     expect(screen.queryByText(/10\.00/)).not.toBeInTheDocument();
     expect(screen.queryByText(/zipf/)).not.toBeInTheDocument();
   });
@@ -176,6 +176,17 @@ describe("SuggestedWordsPage", () => {
     expect(
       within(screen.getByText("susurrus").closest("li") as HTMLElement).getByText("played"),
     ).toBeInTheDocument();
+  });
+
+  it("says suggested for a row a review pass seeded, with no count to show", async () => {
+    // No live verdict and no suggestion event left to count: the word still
+    // came in through the suggestion door, and saying nothing at all made it
+    // look like a third kind of row.
+    stubFetch([{ ...WORDS[0], word: "caprylate", suggestions: 0, liveApproved: false }]);
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("caprylate");
+    expect(screen.getByText("suggested")).toBeInTheDocument();
   });
 
   it("names the fault when a word has a reviewed rejection on file", async () => {
