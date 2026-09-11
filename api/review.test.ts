@@ -252,9 +252,9 @@ describe("api/review", () => {
   describe("with a review token configured", () => {
     const GATED = { ...CONFIGURED, REVIEW_TOKEN: "letmein" };
 
-    it("refuses every mark when no token is configured at all", async () => {
-      // Fails closed. Unset used to mean "anybody may mark", which is the one
-      // setting a public link turns into a stranger triaging the dictionary.
+    it("refuses every word mark when no token is configured at all", async () => {
+      // Fails closed. Unset used to mean "anybody may mark", which on a page
+      // linked from the game is a stranger triaging the dictionary.
       withEnv(CONFIGURED);
       const fetchMock = stubFetch([1]);
       const response = await handler(
@@ -262,6 +262,38 @@ describe("api/review", () => {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ list: "suggested-words", ref: "blorp", mark: "accepted" }),
+        }),
+      );
+
+      expect(response.status).toBe(401);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("takes a note's mark without a token, since nothing links to that page", async () => {
+      // A note's mark follows the read: open where no token is configured. It
+      // reaches no part of the game, and the alternative locks the maintainer
+      // out of their own triage page.
+      withEnv(CONFIGURED);
+      stubFetch("accepted");
+      const response = await handler(
+        new Request("https://wordink.app/api/review", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ list: "feedback", ref: 7, mark: "accepted" }),
+        }),
+      );
+
+      expect(response.status).toBe(200);
+    });
+
+    it("refuses a keyless note mark once a token is configured", async () => {
+      withEnv(GATED);
+      const fetchMock = stubFetch("accepted");
+      const response = await handler(
+        new Request("https://wordink.app/api/review", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ list: "feedback", ref: 7, mark: "accepted" }),
         }),
       );
 

@@ -179,24 +179,23 @@ export default async function handler(request: Request): Promise<Response> {
 }
 
 /**
- * Set or clear the mark on one row.
+ * Set or clear the mark on one row. Gated by which list, like the read above,
+ * and for the same reason: the two are no longer the same kind of page.
  *
- * Keyed, always, which is a stricter gate than the read below and the reason the
- * two were split. Both lists are linked from the game now -- the how-to-play
- * sheet offers the feedback page to whoever just left a note, and the word rules
- * sheet offers the queue to whoever just suggested a word -- so every player is
- * a reader, and a word's mark is the dictionary graduation pass's own input.
- * Reading these lists openly is the decision that was taken; letting anybody who
- * read one triage it is not.
+ * A word's mark fails closed. `word_sightings.status` is the dictionary
+ * graduation pass's own input, and the queue is linked from the word rules
+ * sheet -- so "no REVIEW_TOKEN configured" must not mean "anybody may mark",
+ * which on a linked page is a stranger accepting words into the dictionary. No
+ * token, no marking, until one is set.
  *
- * So this fails closed rather than open: with no REVIEW_TOKEN configured there is
- * no key that works, and marking is off everywhere until one is set. The
- * alternative -- unset meaning "anybody" -- is exactly the state a public link
- * turns into a stranger accepting words into the dictionary.
+ * A note's mark follows the read instead: keyed where a token is set, open
+ * where none is. Nothing links to the feedback page, a note's mark lives in a
+ * table of its own, and no part of the game reads it -- the worst a stranger
+ * who guessed the URL could do is tick a note somebody already wrote. That does
+ * not earn a gate that locks the maintainer out of their own triage page until
+ * they go and configure a secret.
  */
 async function handlePost(request: Request): Promise<Response> {
-  if (!authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
-
   // Same-origin only when the caller declares an origin, which every browser
   // does on a POST -- the same guard api/events.ts uses, for the same reason.
   const origin = request.headers.get("origin");
@@ -227,6 +226,14 @@ async function handlePost(request: Request): Promise<Response> {
   const { list, ref, mark } = parsed as { list?: unknown; ref?: unknown; mark?: unknown };
   if (list !== "suggested-words" && list !== "feedback") {
     return reply(400, { ok: false, reason: "bad-list" });
+  }
+
+  // Which list decides how hard this is gated, so the check waits until the list
+  // is known. A word's mark always needs the key; a note's needs one only where
+  // a token is configured, exactly like reading the notes does.
+  const alwaysKeyed = list !== "feedback" || (process.env.REVIEW_TOKEN ?? "") !== "";
+  if (alwaysKeyed && !authorised(request)) {
+    return reply(401, { ok: false, reason: "unauthorised" });
   }
   // Null is a real value here -- it is how a mark is cleared -- so an absent
   // field and a null one are the same request.

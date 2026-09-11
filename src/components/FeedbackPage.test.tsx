@@ -134,15 +134,22 @@ describe("FeedbackPage", () => {
     expect(row().getByRole("button", { name: /unmarked/ })).toBeInTheDocument();
   });
 
-  it("shows a player no triage controls, since the page is linked from the game", async () => {
-    // A player following the link from the how-to-play sheet reads the notes
-    // and marks nothing: triage belongs to whoever holds the key.
+  it("marks a note without a key, on a page nothing links to", async () => {
+    // No REVIEW_TOKEN, no ?key=, and the triage still works: nothing links
+    // here, and a note's mark reaches no part of the game. A deployment that
+    // sets a token gets the strict version for free -- the read needs the key,
+    // so there is no page to click on without one.
     window.history.pushState(null, "", "/feedback");
     stubFetch();
     render(<FeedbackPage />);
 
     await screen.findByText("more vowels please");
-    expect(screen.queryByRole("button", { name: /unmarked/ })).not.toBeInTheDocument();
+    const row = () =>
+      within(screen.getByText("more vowels please").closest("li") as HTMLElement);
+    await userEvent.click(row().getByRole("button", { name: /unmarked/ }));
+
+    await waitFor(() => expect(marked).toHaveLength(1));
+    expect(marked[0]).toEqual({ list: "feedback", ref: 7, mark: "accepted" });
   });
 
   it("offers a retry when the read fails", async () => {

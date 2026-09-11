@@ -1,7 +1,7 @@
 import { useCallback } from "react";
-import { MarkBox, MarkToggle, ReviewPage } from "./ReviewPage";
+import { MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
-import { fetchFeedback, hasReviewKey } from "../game/review";
+import { fetchFeedback } from "../game/review";
 
 /**
  * The feedback players have left, as a page at /feedback.
@@ -29,14 +29,17 @@ import { fetchFeedback, hasReviewKey } from "../game/review";
  * back out. Nothing here identifies who wrote what (the event carries no player
  * id, no name and nothing about the person), but the words are still theirs.
  *
- * See api/review.ts for what gates the read, and hasReviewKey for why the
- * triage controls are drawn only for somebody holding the key.
+ * The triage controls are live here without a key, unlike the word queue's.
+ * Nothing links to this page, a note's mark reaches no part of the game, and
+ * the person who opens it is the person triaging it -- so it behaves the way it
+ * did before any of this was gated. A deployment that sets REVIEW_TOKEN gets
+ * the stricter version for free: the read needs the key, so there is no page to
+ * click on without one. See api/review.ts.
  */
 export function FeedbackPage() {
   const load = useCallback(() => fetchFeedback(), []);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const { markFor, cycle, failed } = useMarks("feedback", rows);
-  const curating = hasReviewKey();
 
   return (
     <ReviewPage
@@ -56,19 +59,13 @@ export function FeedbackPage() {
             key={note.id}
             className={`review__item review__item--${markFor(note.id, note.mark) ?? "unmarked"}`}
           >
-            {/* The same box either way: a reader sees whether the note was
-                taken up, and a curator can change the answer. */}
-            {curating ? (
-              <MarkToggle
-                mark={markFor(note.id, note.mark)}
-                // The date, because a note has no short name and the first words
-                // of one are not a label -- they are the thing being marked.
-                label={formatWhen(note.at)}
-                onClick={() => cycle(note.id, note.mark)}
-              />
-            ) : (
-              <MarkBox mark={note.mark} label={formatWhen(note.at)} />
-            )}
+            <MarkToggle
+              mark={markFor(note.id, note.mark)}
+              // The date, because a note has no short name and the first words
+              // of one are not a label -- they are the thing being marked.
+              label={formatWhen(note.at)}
+              onClick={() => cycle(note.id, note.mark)}
+            />
             <div className="review__body">
               {/* The note first and the time under it: the text is what anybody
                   came here to read, and when it landed is context for it. */}
