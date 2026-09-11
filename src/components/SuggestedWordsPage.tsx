@@ -90,28 +90,26 @@ export function SuggestedWordsPage() {
               </span>
             </div>
             <p className="review__meta">
-              {/* Which door -- or doors -- the word came through, said as
-                  separately as it happened.
+              {/* Which door the word came through, in one label, and a word
+                  that came through both reads as played.
 
-                  These are two independent facts and the database keeps them
-                  that way: `outcome = 'playable'` is a guess the live
-                  Merriam-Webster check approved mid-puzzle, and a
-                  `word_suggested` event is somebody typing the word into the
-                  box in the word rules sheet. They are different acts with
-                  different consequences -- a guess scores in that puzzle and
-                  costs one of the day's four, a suggestion changes nothing
-                  today and asks for the word to exist tomorrow -- and a word
-                  can have arrived by both. Collapsing them to one label lost
-                  exactly that case.
+                  The two are different acts: a guess has to contain the drop,
+                  costs one of the day's four, and -- if the live
+                  Merriam-Webster check approves it -- scores in that puzzle on
+                  the spot; a suggestion satisfies nothing, spends nothing, and
+                  asks for the word to exist tomorrow. Played wins a tie because
+                  it is the stronger evidence: somebody reached for the word
+                  mid-puzzle and a dictionary backed them up, where a suggestion
+                  is a word somebody thought of.
 
                   The count only when a second person asked: one suggestion is
-                  the door, not a tally. A row with neither label would be a row
-                  that is here for no reason, so the suggestion is the fallback
-                  -- it is the only other way onto this list, and for a sighting
-                  a review pass seeded, the one with no event left to count, it
-                  is what `outcome` says. */}
-              {row.liveApproved && <span className="review__live">played</span>}
-              {(row.suggestions > 0 || !row.liveApproved) && (
+                  the door, not a tally. And the suggestion is the fallback for
+                  a row with no live verdict and no event left to count -- the
+                  kind a review pass seeded -- because it is the only other way
+                  onto this list. */}
+              {row.liveApproved ? (
+                <span className="review__live">played</span>
+              ) : (
                 <span>
                   {row.suggestions > 1 ? `${row.suggestions} suggestions` : "suggested"}
                 </span>

@@ -136,16 +136,17 @@ describe("SuggestedWordsPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("says both doors when a word came through both", async () => {
-    // A guess the live check approved *and* a word somebody asked for: two
-    // different acts, and the row no longer has to pick one of them.
-    stubFetch([{ ...WORDS[0], word: "blorp", suggestions: 1, liveApproved: true }]);
+  it("reads a word that came through both doors as played", async () => {
+    // Played is the stronger evidence: somebody reached for the word mid-puzzle
+    // and a dictionary backed them up, where a suggestion is a word somebody
+    // thought of.
+    stubFetch([{ ...WORDS[0], word: "blorp", suggestions: 3, liveApproved: true }]);
     render(<SuggestedWordsPage />);
 
     await screen.findByText("blorp");
     const row = within(screen.getByText("blorp").closest("li") as HTMLElement);
     expect(row.getByText("played")).toBeInTheDocument();
-    expect(row.getByText("suggested")).toBeInTheDocument();
+    expect(row.queryByText(/suggest/)).not.toBeInTheDocument();
   });
 
   it("says one door when a word came through one", async () => {
