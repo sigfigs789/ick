@@ -95,22 +95,27 @@ describe("SuggestedWordsPage", () => {
     // The number a player would see. Zipf runs the other way -- higher means
     // more common -- so a queue judged on it was judged backwards.
     await waitFor(() => expect(screen.getByText("9.3")).toBeInTheDocument());
-    // An unattested word still has a score, and the row says both: the 10 it
-    // would earn, and why nobody should trust it.
-    expect(screen.getByText(/^10\.00 · unattested$/)).toBeInTheDocument();
+    // An unattested word would earn a perfect 10, and the row does not say so:
+    // that number is the floor rather than a measurement, and printing it would
+    // put the least known words at the top of the queue.
+    expect(screen.getByText("unattested")).toBeInTheDocument();
+    expect(screen.queryByText(/10\.00/)).not.toBeInTheDocument();
     expect(screen.queryByText(/zipf/)).not.toBeInTheDocument();
   });
 
-  it("names where a candidate came from, and counts only what it has", async () => {
+  it("says where a candidate came from once, not once per label", async () => {
     stubFetch();
     render(<SuggestedWordsPage />);
 
-    await waitFor(() => expect(screen.getByText("asked for")).toBeInTheDocument());
-    expect(screen.getByText("asked for + played")).toBeInTheDocument();
+    await screen.findByText("blorp");
+    // The count carries the asked-for fact on its own: "asked for" beside "2
+    // suggestions" was the same thing said twice, and "played" said what "live
+    // lookup approved" already says.
     expect(screen.getByText("2 suggestions")).toBeInTheDocument();
-    // The lookup count is off the row: "played" already says the word was
-    // reached in a puzzle, and how many times was not something anybody
-    // triaged on. The endpoint still sends it -- enshittification has 3.
+    expect(screen.queryByText(/asked for/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^played$/)).not.toBeInTheDocument();
+    // The lookup count is off the row too: how many times a word was reached
+    // was not something anybody triaged on. The endpoint still sends it.
     expect(screen.queryByText(/\d+ lookups?$/)).not.toBeInTheDocument();
   });
 

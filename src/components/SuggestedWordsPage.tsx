@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { MarkBox, MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
 import { fetchSuggestedWords, hasReviewKey } from "../game/review";
-import { baseFormSubstitution, formatRarityScore, unattestedZipf } from "../game/dictionary";
+import { baseFormSubstitution, formatRarityScore } from "../game/dictionary";
 
 /**
  * The review queue, as a page at /suggested-words.
@@ -79,35 +79,42 @@ export function SuggestedWordsPage() {
                     backwards (higher means *more* common), so a queue judged on
                     it was a queue judged in the wrong direction.
 
-                    A word no corpus attests still has a score -- the unattested
-                    floor, which is a perfect 10 -- and it is worth saying both:
-                    the 10 is what the word would earn, and "unattested" is why
-                    nobody should trust it. */}
-                {formatRarityScore(row.zipf ?? unattestedZipf())}
-                {row.zipf === null && " · unattested"}
+                    A word no corpus attests would earn a perfect 10, and that
+                    number is not shown. It is the unattested floor rather than
+                    a measurement -- printing it would put the queue's least
+                    known words at the top of it, which is the opposite of what
+                    this list is for. The word "unattested" is the whole of what
+                    is known. */}
+                {row.zipf === null ? "unattested" : formatRarityScore(row.zipf)}
               </span>
             </div>
             <p className="review__meta">
-              <span className={`review__origin review__origin--${row.origin}`}>
-                {originLabel(row.origin)}
-              </span>
-              {/* Only when there are any: a word that arrived by live lookup has
-                  no suggestions, and "0 suggestions" on every one of those rows
-                  would be noise.
+              {/* Where the word came from, said once each way it can be said.
 
-                  The lookup count used to sit beside this and no longer does.
-                  Whether a word was reached in a puzzle is already on the row --
-                  that is what "played" means -- and how many times it was reached
-                  was a number nobody triaged on. The endpoint still reports it. */}
+                  There were three labels here and two facts: "asked for" and
+                  this count were the same thing twice, and "played" and "live
+                  lookup approved" became the same thing the moment origin
+                  started meaning a live verdict. So the origin label is gone
+                  and the two facts speak for themselves -- the count says
+                  somebody asked for the word, the label below says the game let
+                  it through on the spot, and a word can be either, both, or
+                  only the first.
+
+                  The count only when there is one: "0 suggestions" on every
+                  live-lookup row would be noise. The lookup count used to sit
+                  here too and no longer does -- how many times a word was
+                  reached was not a number anybody triaged on. The endpoint
+                  still reports it. */}
               {row.suggestions > 0 && (
                 <span>
                   {row.suggestions} {row.suggestions === 1 ? "suggestion" : "suggestions"}
                 </span>
               )}
               {/* The game let this one be played on the spot, on the live
-                  Merriam-Webster check and nobody's judgement. Worth its own
-                  label beside the mark: a word can be live-lookup approved and
-                  still be rejected from the dictionary afterwards. */}
+                  Merriam-Webster check and nobody's judgement. Worth keeping
+                  beside the mark: a word the live check approved can still be
+                  rejected from the dictionary afterwards, which is exactly the
+                  row where the two verdicts differ. */}
               {row.liveApproved && (
                 <span className="review__live">live lookup approved</span>
               )}
@@ -139,13 +146,6 @@ export function SuggestedWordsPage() {
 }
 
 /**
- * Where a candidate came from, in words.
- *
- * "Both" is the strongest signal the queue has -- a player asked for the word
- * *and* somebody reached for it in a puzzle -- so it is worth naming rather than
- * leaving as a database token.
- */
-/**
  * The more common word this one's score folds onto, if any.
  *
  * Only ever answers for a word the shipped dictionary already contains, which
@@ -158,8 +158,3 @@ function commonForm(word: string): string | undefined {
   return baseFormSubstitution(word)?.base;
 }
 
-function originLabel(origin: string): string {
-  if (origin === "both") return "asked for + played";
-  if (origin === "live-lookup") return "played";
-  return "asked for";
-}

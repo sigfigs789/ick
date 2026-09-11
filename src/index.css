@@ -2672,9 +2672,6 @@ h2 {
   content: "·";
   margin-right: 0.5rem;
 }
-.review__origin {
-  font-weight: 700;
-}
 /* The game approved this word itself, mid-puzzle, on the live Merriam-Webster
    check. Not grey, because next to the triage mark it is the row's other
    verdict and the two are read together. */
@@ -2685,11 +2682,6 @@ h2 {
 /* The more common word this one's score folds onto. */
 .review__fold {
   font-style: italic;
-}
-/* A word players asked for *and* reached for in a puzzle: the strongest signal
-   the queue has, so it is the one thing on the row that is not grey. */
-.review__origin--both {
-  color: var(--fg);
 }
 /* A note, set as text and given room to be read. `pre-wrap` keeps the line
    breaks somebody typed. The box has no length limit any more, so a long note
