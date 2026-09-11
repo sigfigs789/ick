@@ -637,6 +637,16 @@ h2 {
 .drop-display__ceiling-word--toggle:hover {
   background: var(--bg-inset);
 }
+/* The reveal's own caption, in the same small-caps voice as "Today's drop"
+   above it -- the word arrives under a name rather than on its own. */
+.drop-display__reveal-label {
+  margin: 0.7rem 0 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--fg-faint);
+}
 /* Sits where the word itself will land, so the reveal replaces the button in
    place rather than shifting the page under the reader. */
 .drop-display__reveal-button {

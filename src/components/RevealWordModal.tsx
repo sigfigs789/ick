@@ -8,8 +8,8 @@ interface Props {
 }
 
 /**
- * The confirmation behind "Reveal word": seeing the day's best word costs the
- * puzzle's unspent retry (see storage.forfeitRetry).
+ * The confirmation behind "Word of the day": seeing it costs the puzzle's
+ * unspent retry (see storage.forfeitRetry).
  *
  * A modal rather than an inline "are you sure": the cost is not obvious from
  * the button -- a player who has not used the retry yet may not even know they
@@ -45,11 +45,11 @@ export function RevealWordModal({ open, onConfirm, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal__header">
-          <h2 id="reveal-word-heading">Reveal today's word?</h2>
+          <h2 id="reveal-word-heading">See the word of the day?</h2>
         </div>
         <p className="modal__copy">
-          Seeing the word uses up your retry — you won't be able to take a word
-          back on this puzzle afterwards.
+          It's a good one — but it costs your retry, so you won't be able to
+          take a word back on this puzzle afterwards.
         </p>
         <div className="reveal-modal__actions">
           <button
@@ -65,7 +65,7 @@ export function RevealWordModal({ open, onConfirm, onClose }: Props) {
             className="reveal-modal__confirm"
             onClick={onConfirm}
           >
-            Reveal word
+            Show me
           </button>
         </div>
       </div>

@@ -258,11 +258,11 @@ describe("gameplay end to end", () => {
     // Finishing is not enough while the retry is unspent: the word can still
     // re-open the puzzle, so it costs the retry to look at.
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Reveal word" })).toBeInTheDocument(),
+      expect(screen.getByRole("button", { name: "Word of the day" })).toBeInTheDocument(),
     );
     expect(revealed()).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Reveal word" }));
+    await userEvent.click(screen.getByRole("button", { name: "Word of the day" }));
     await userEvent.click(
       screen.getByRole("dialog").querySelector<HTMLButtonElement>(".reveal-modal__confirm")!,
     );

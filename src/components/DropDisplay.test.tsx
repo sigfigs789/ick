@@ -54,9 +54,9 @@ describe("DropDisplay", () => {
     const reveal = learnableWordForDrop("str")!;
     expect(screen.queryByText(reveal.word, { exact: false })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Reveal word" }));
-    const dialog = screen.getByRole("dialog", { name: /reveal today's word/i });
-    expect(dialog).toHaveTextContent(/uses up your retry/i);
+    await userEvent.click(screen.getByRole("button", { name: "Word of the day" }));
+    const dialog = screen.getByRole("dialog", { name: /word of the day/i });
+    expect(dialog).toHaveTextContent(/costs your retry/i);
 
     // Backing out costs nothing and leaves the word hidden.
     await userEvent.click(screen.getByRole("button", { name: /never mind/i }));
@@ -64,7 +64,7 @@ describe("DropDisplay", () => {
     expect(onReveal).not.toHaveBeenCalled();
     expect(screen.queryByText(reveal.word, { exact: false })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Reveal word" }));
+    await userEvent.click(screen.getByRole("button", { name: "Word of the day" }));
     await userEvent.click(
       screen.getByRole("dialog").querySelector<HTMLButtonElement>(".reveal-modal__confirm")!,
     );
@@ -78,7 +78,7 @@ describe("DropDisplay", () => {
 
   it("shows the word outright once the retry is gone", () => {
     render(<DropDisplay drop="str" completed retryOffered={false} onReveal={vi.fn()} />);
-    expect(screen.queryByRole("button", { name: "Reveal word" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Word of the day" })).not.toBeInTheDocument();
     expect(
       screen.getByText(learnableWordForDrop("str")!.word, { exact: false }),
     ).toBeInTheDocument();

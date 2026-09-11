@@ -12,7 +12,7 @@ interface Props {
   completed?: boolean;
   /**
    * The puzzle's retry is still unspent. While it is, the word stays behind a
-   * "Reveal word" button: a finished puzzle can be re-opened by retrying a
+   * "Word of the day" button: a finished puzzle can be re-opened by retrying a
    * word (see storage.retryWord), so handing over the best word first would
    * turn the mulligan into a lookup.
    */
@@ -75,12 +75,12 @@ export function DropDisplay({
             className="drop-display__reveal-button"
             onClick={() => setConfirmingReveal(true)}
           >
-            Reveal word
+            Word of the day
           </button>
           {/* The cost is said before the button is pressed as well as in the
               modal: a player deciding whether to tap should not have to tap to
               find out what it costs. */}
-          <p className="drop-display__reveal-cost">Uses your retry</p>
+          <p className="drop-display__reveal-cost">Costs your retry</p>
           <RevealWordModal
             open={confirmingReveal}
             onConfirm={() => {
@@ -93,6 +93,13 @@ export function DropDisplay({
       )}
       {completed && reveal && !hidden && (
         <div className="drop-display__reveal">
+          {/* The same name the button carried before it was pressed, so what
+              arrives is plainly the thing that was offered -- and so the reveal
+              reads as a word worth knowing rather than an answer key. It is not
+              the day's best word and never claimed to be: the reveal aims below
+              the ceiling, at a rarity a player can plausibly learn (see
+              dictionary.learnableWordForDrop). */}
+          <p className="drop-display__reveal-label">Word of the day</p>
           {definition ? (
             <button
               type="button"
