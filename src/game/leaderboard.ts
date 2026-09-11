@@ -74,6 +74,18 @@ export interface FoundWord {
 }
 
 export interface Boards {
+  /**
+   * One puzzle's standing: everybody who scored on the day the page is showing.
+   *
+   * The shortest window the game has, and the one a player can actually enter
+   * from nothing -- a week's board is most of a week's play by the time anybody
+   * looks at it, while today's is one puzzle everyone starts level on. It is the
+   * same query the weekly board runs, bounded to a single date at both ends (see
+   * api/leaderboard.ts), so a row means exactly what it means on the other two.
+   */
+  daily: BoardEntry[];
+  /** The same row-below-the-cut the other boards get, on the daily one. */
+  dailySelf: BoardEntry | null;
   weekly: BoardEntry[];
   /**
    * This player's own row on the weekly board, when they rank below the last one
@@ -309,6 +321,8 @@ export interface FetchOptions {
  * than "everything since".
  */
 export interface BoardOptions extends FetchOptions {
+  /** The single puzzle the daily board counts. */
+  day?: string;
   /** The Sunday the weekly board counts from. */
   week?: string;
   /** The first of the month the monthly board counts. */
@@ -327,6 +341,17 @@ export interface BoardOptions extends FetchOptions {
  */
 export function weekFloor(): string {
   return weekStart(FIRST_PUZZLE);
+}
+
+/**
+ * The earliest day the daily board will step back to: the first puzzle.
+ *
+ * Unlike the finds feed, which stops at the week's reset because its table is
+ * younger than the game (see `feedFloor`), scores really do go back this far --
+ * a player who joins today backfills every puzzle their browser remembers.
+ */
+export function dayFloor(): string {
+  return FIRST_PUZZLE;
 }
 
 export function monthFloor(): string {
@@ -363,6 +388,11 @@ export async function fetchBoards(
   // is a date this client computed, because the puzzle dates it brackets are
   // this player's own local calendar dates.
   const since = options.week ?? weekStart(date);
+  // The single puzzle the daily board counts, which is the day being played
+  // until a reader steps it. Sent like the other two windows because it is one:
+  // a puzzle date is the player's own local calendar date, and nothing on the
+  // server shares that clock.
+  const day = options.day ?? date;
   // The month goes up for the same reason the week does: both windows bracket
   // the player's own local puzzle date, so both have to be computed off the same
   // clock. The server bounds the far end of both itself.
@@ -383,6 +413,7 @@ export async function fetchBoards(
   const response = await fetch(
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
       `&month=${encodeURIComponent(month)}` +
+      `&day=${encodeURIComponent(day)}` +
       `&limit=${BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
       freshParam(options),
@@ -431,6 +462,8 @@ export async function fetchFoundWords(
 /** Turn one response body -- real or sample -- into the boards the page renders. */
 function readBoards(body: Record<string, unknown>, since: string): Boards {
   return {
+    daily: parseBoard(body.daily),
+    dailySelf: parseSelf(body.dailySelf),
     weekly: parseBoard(body.weekly),
     weeklySelf: parseSelf(body.weeklySelf),
     monthly: parseBoard(body.allTime),

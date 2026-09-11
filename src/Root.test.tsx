@@ -15,7 +15,14 @@ vi.mock("./components/LeaderboardPage", () => ({
     return <div>leaderboard</div>;
   },
 }));
-vi.mock("./analytics", () => ({ trackLeaderboardJoined: vi.fn() }));
+vi.mock("./components/FoundWordsPage", () => ({
+  FoundWordsPage: () => <div>found words</div>,
+}));
+vi.mock("./analytics", () => ({
+  trackLeaderboardJoined: vi.fn(),
+  trackLeaderboardOpened: vi.fn(),
+  trackFoundWordsOpened: vi.fn(),
+}));
 
 let idDuringPageRender: string | null = null;
 
@@ -92,6 +99,22 @@ describe("keeping the board in step on open", () => {
     expect(loadPlayerId()).not.toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(postedDates(fetchMock)).toEqual(["2026-08-20", "2026-08-21"]);
+  });
+
+  it("puts every page under the one header", async () => {
+    stubFetch();
+    window.history.replaceState(null, "", "/found-words");
+
+    render(<Root />);
+
+    // The page picked off the address bar, and the header above it -- the same
+    // element on all three, which is what makes the tabs a way between them
+    // rather than three headers that have to be kept in step.
+    expect(screen.getByText("found words")).toBeInTheDocument();
+    expect(screen.getByRole("banner")).toHaveTextContent("WordInk");
+    expect(
+      screen.getByRole("button", { name: /Leaderboards/ }),
+    ).toBeInTheDocument();
   });
 
   it("sends only the days this browser can prove were played on their own date", () => {

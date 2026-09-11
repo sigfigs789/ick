@@ -1,9 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import App from "./App";
 import { trackLeaderboardJoined } from "./analytics";
+import { AppHeader } from "./components/AppHeader";
+import { FoundWordsPage } from "./components/FoundWordsPage";
+import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
 import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
+import { hasSeen, markSeen } from "./game/whatsNew";
 import { useRoute } from "./routes";
 
 /**
@@ -17,9 +21,23 @@ import { useRoute } from "./routes";
  */
 const SYNC_STALE_MS = 5 * 60_000;
 
-/** Two pages, picked off the address bar. See src/routes.ts. */
+/** Three pages under one header, picked off the address bar. See src/routes.ts. */
 export function Root() {
   const route = useRoute();
+
+  /**
+   * The how-to-play sheet, owned here because the button that opens it is in the
+   * header and the header is on every page.
+   *
+   * It used to live in the game, which was the only page with a "?" -- so a
+   * player reading the boards had no way to check what a rank was made of
+   * without going back to the puzzle first. Opening itself once for a
+   * first-timer is unchanged: a player who never taps "?" never learns that
+   * rarer scores higher, which is the whole game.
+   */
+  const [showInstructions, setShowInstructions] = useState(
+    () => !hasSeen("instructions"),
+  );
 
   /**
    * Give this browser a board identity, on any page, before anything renders.
@@ -117,5 +135,33 @@ export function Root() {
     };
   }, []);
 
-  return route === "leaderboard" ? <LeaderboardPage /> : <App />;
+  return (
+    /* The one page frame, so the header above the router is inside the column
+       every page reads in. The two pages beside the puzzle are wider than it:
+       the game's column is sized for one puzzle, and a board wants the room for
+       a rank, a name, a find and a score on one line. */
+    <div className={`app${route === "game" ? "" : " app--wide"}`}>
+      <AppHeader
+        route={route}
+        instructionsOpen={showInstructions}
+        onHowToPlay={() => setShowInstructions(true)}
+      />
+      {route === "leaderboard" ? (
+        <LeaderboardPage />
+      ) : route === "found-words" ? (
+        <FoundWordsPage />
+      ) : (
+        <App />
+      )}
+      <InstructionsModal
+        open={showInstructions}
+        onClose={() => {
+          // Opened by hand or opened for them, either way they have now met the
+          // rules: retire the auto-open for good.
+          markSeen("instructions");
+          setShowInstructions(false);
+        }}
+      />
+    </div>
+  );
 }

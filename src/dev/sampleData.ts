@@ -55,6 +55,8 @@ export function sampleBoardsResponse(): unknown {
   const shift = newest ? daysSinceEpoch(todayDateString(), newest) : 0;
   return {
     ...sample,
+    daily: asPlayer(sample.daily),
+    dailySelf: asPlayer(sample.dailySelf),
     weekly: asPlayer(sample.weekly),
     weeklySelf: asPlayer(sample.weeklySelf),
     allTime: asPlayer(sample.allTime),

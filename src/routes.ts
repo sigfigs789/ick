@@ -3,30 +3,42 @@ import { useEffect, useState } from "react";
 /**
  * The whole router.
  *
- * Two pages, no library. `vercel.json` already rewrites every non-`/api/` path
+ * Three pages, no library. `vercel.json` already rewrites every non-`/api/` path
  * to `index.html`, so a real URL is a matter of reading `location.pathname` and
- * pushing to it -- and a leaderboard wants a real URL: it is a page you link
- * someone to, open in a second tab, and reach with the back button, none of
- * which a modal can do.
+ * pushing to it -- and both of the pages beside the game want a real URL: they
+ * are pages you link someone to, open in a second tab, and reach with the back
+ * button, none of which a modal can do.
  *
- * Anything that isn't the leaderboard is the game, so a stray path still lands
- * on a playable puzzle rather than a 404 rendered by the client.
+ * The boards and the finds are two of them rather than one long scroll. They
+ * were one page, and the seam was always visible: a leaderboard row is a
+ * *player* and a find is a *word*, they are read for different reasons, and the
+ * one people come back through the day for -- the words -- sat under two boards
+ * that had not moved since breakfast. Two pages, two links to send, and the
+ * header says which one you are on.
+ *
+ * Anything that names neither is the game, so a stray path still lands on a
+ * playable puzzle rather than a 404 rendered by the client.
  */
 
-export type Route = "game" | "leaderboard";
+export type Route = "game" | "leaderboard" | "found-words";
 
 export const LEADERBOARD_PATH = "/leaderboard";
+export const FOUND_WORDS_PATH = "/found-words";
 
 /** The route a path names. */
 export function routeFor(pathname: string): Route {
   // Tolerant of a trailing slash, since a shared link may well carry one.
   const path = pathname.replace(/\/+$/, "") || "/";
-  return path === LEADERBOARD_PATH ? "leaderboard" : "game";
+  if (path === LEADERBOARD_PATH) return "leaderboard";
+  if (path === FOUND_WORDS_PATH) return "found-words";
+  return "game";
 }
 
 /** The path a route lives at. */
 export function pathFor(route: Route): string {
-  return route === "leaderboard" ? LEADERBOARD_PATH : "/";
+  if (route === "leaderboard") return LEADERBOARD_PATH;
+  if (route === "found-words") return FOUND_WORDS_PATH;
+  return "/";
 }
 
 /**

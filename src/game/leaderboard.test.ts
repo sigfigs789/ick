@@ -292,6 +292,43 @@ describe("reading the boards", () => {
     expect(url).toContain("month=2026-08-01");
   });
 
+  it("sends the puzzle the day board counts, and reads it back", async () => {
+    const fetchMock = stubFetch(
+      boardsResponse({
+        daily: [
+          {
+            rank: 1,
+            playerId: "11111111-1111-4111-8111-111111111111",
+            windowWord: "inkling",
+            windowZipf: 2.6,
+            score: 9.4,
+            puzzles: 1,
+          },
+        ],
+      }),
+    );
+
+    const boards = await fetchBoards("2026-08-27");
+    // A single date rather than a pair: the shortest window the game has is one
+    // puzzle, and a puzzle date is the player's own local calendar date.
+    expect(requestedUrl(fetchMock)).toContain("day=2026-08-27");
+    expect(boards.daily).toHaveLength(1);
+    expect(boards.daily[0].name).toBe(
+      handleFor("11111111-1111-4111-8111-111111111111"),
+    );
+    expect(boards.dailySelf).toBeNull();
+  });
+
+  it("asks for the day a reader has stepped the board back to", async () => {
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27", { day: "2026-08-25" });
+    // Used as sent, like the other two windows: a day a reader stepped back to
+    // is a closed puzzle, and nothing about the date being played should drag
+    // it forward again.
+    expect(requestedUrl(fetchMock)).toContain("day=2026-08-25");
+  });
+
   it("asks for the windows a reader has stepped back to", async () => {
     const fetchMock = stubFetch(boardsResponse({}));
 
