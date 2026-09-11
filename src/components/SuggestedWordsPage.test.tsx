@@ -103,17 +103,15 @@ describe("SuggestedWordsPage", () => {
     expect(screen.queryByText(/zipf/)).not.toBeInTheDocument();
   });
 
-  it("says where a candidate came from once, not once per label", async () => {
+  it("says a door once, not once per label", async () => {
     stubFetch();
     render(<SuggestedWordsPage />);
 
     await screen.findByText("blorp");
     // The count carries the asked-for fact on its own: "asked for" beside "2
-    // suggestions" was the same thing said twice, and "played" said what "live
-    // lookup approved" already says.
+    // suggestions" was the same thing said twice.
     expect(screen.getByText("2 suggestions")).toBeInTheDocument();
     expect(screen.queryByText(/asked for/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/^played$/)).not.toBeInTheDocument();
     // One suggestion reads as the door, not as a tally of one.
     expect(screen.queryByText("1 suggestion")).not.toBeInTheDocument();
     // The lookup count is off the row too: how many times a word was reached
@@ -138,24 +136,37 @@ describe("SuggestedWordsPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("says played only for a word nobody asked for", async () => {
+  it("says both doors when a word came through both", async () => {
+    // A guess the live check approved *and* a word somebody asked for: two
+    // different acts, and the row no longer has to pick one of them.
+    stubFetch([{ ...WORDS[0], word: "blorp", suggestions: 1, liveApproved: true }]);
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("blorp");
+    const row = within(screen.getByText("blorp").closest("li") as HTMLElement);
+    expect(row.getByText("played")).toBeInTheDocument();
+    expect(row.getByText("suggested")).toBeInTheDocument();
+  });
+
+  it("says one door when a word came through one", async () => {
     stubFetch([
-      { ...WORDS[0], word: "blorp", suggestions: 2, liveApproved: true },
+      { ...WORDS[0], word: "blorp", suggestions: 2, liveApproved: false },
       { ...WORDS[1], word: "susurrus", suggestions: 0, liveApproved: true },
       { ...WORDS[1], word: "caprylate", suggestions: 0, liveApproved: false },
     ]);
     render(<SuggestedWordsPage />);
 
     await screen.findByText("blorp");
-    // Both doors, and the suggestion is the one worth saying: somebody asked
-    // for that word on purpose. The count appears because a second person did.
+    // Asked for twice and never played: the count says a second person wanted
+    // it, and nothing claims it reached a puzzle.
     const asked = within(screen.getByText("blorp").closest("li") as HTMLElement);
     expect(asked.getByText("2 suggestions")).toBeInTheDocument();
     expect(asked.queryByText("played")).not.toBeInTheDocument();
-    // Never asked for: the live check is the only reason it is here.
-    expect(
-      within(screen.getByText("susurrus").closest("li") as HTMLElement).getByText("played"),
-    ).toBeInTheDocument();
+    // Never asked for: the live check is the only reason it is here, so the
+    // row says "played" and claims no suggestion.
+    const played = within(screen.getByText("susurrus").closest("li") as HTMLElement);
+    expect(played.getByText("played")).toBeInTheDocument();
+    expect(played.queryByText("suggested")).not.toBeInTheDocument();
     // Neither a live verdict nor a countable event -- a row a review pass
     // seeded. Same label as any other suggestion, because that is what it is.
     expect(

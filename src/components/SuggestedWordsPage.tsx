@@ -90,28 +90,31 @@ export function SuggestedWordsPage() {
               </span>
             </div>
             <p className="review__meta">
-              {/* Where the word came from, in one label.
+              {/* Which door -- or doors -- the word came through, said as
+                  separately as it happened.
 
-                  "suggested" and "1 suggestion" were two labels for one fact,
-                  and the difference between them -- whether an analytics event
-                  survives to be counted -- is bookkeeping no reader of this
-                  page cares about. So the door is the label, and the count
-                  appears only when it is telling you something a second person
-                  asked for the word too.
+                  These are two independent facts and the database keeps them
+                  that way: `outcome = 'playable'` is a guess the live
+                  Merriam-Webster check approved mid-puzzle, and a
+                  `word_suggested` event is somebody typing the word into the
+                  box in the word rules sheet. They are different acts with
+                  different consequences -- a guess scores in that puzzle and
+                  costs one of the day's four, a suggestion changes nothing
+                  today and asks for the word to exist tomorrow -- and a word
+                  can have arrived by both. Collapsing them to one label lost
+                  exactly that case.
 
-                  A word can have come through both doors, and then the
-                  suggestion wins: somebody asking for a word on purpose is a
-                  stronger signal than the game happening to let it through
-                  mid-puzzle. "played" is what is left -- approved by the live
-                  Merriam-Webster check in a puzzle, and never asked for. Worth
-                  saying beside the mark, because a word the live check let
-                  through can still be kept out of the dictionary afterwards. */}
-              {row.liveApproved && row.suggestions === 0 ? (
-                <span className="review__live">played</span>
-              ) : row.suggestions > 1 ? (
-                <span>{row.suggestions} suggestions</span>
-              ) : (
-                <span>suggested</span>
+                  The count only when a second person asked: one suggestion is
+                  the door, not a tally. A row with neither label would be a row
+                  that is here for no reason, so the suggestion is the fallback
+                  -- it is the only other way onto this list, and for a sighting
+                  a review pass seeded, the one with no event left to count, it
+                  is what `outcome` says. */}
+              {row.liveApproved && <span className="review__live">played</span>}
+              {(row.suggestions > 0 || !row.liveApproved) && (
+                <span>
+                  {row.suggestions > 1 ? `${row.suggestions} suggestions` : "suggested"}
+                </span>
               )}
               {/* Why the word is unplayable, when the repo has a reason on
                   file. The mark says a word was rejected; this says what the
