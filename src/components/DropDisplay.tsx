@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { formatDateLabel } from "../game/date";
 import { definitionFor, formatRarityScore, learnableWordForDrop } from "../game/dictionary";
 import { rarityClassName } from "./rarityStyles";
+import { revealGatedFor } from "../game/constants";
 import { RevealWordModal } from "./RevealWordModal";
 
 interface Props {
@@ -14,7 +15,8 @@ interface Props {
    * The puzzle's retry is still unspent. While it is, the word stays behind a
    * "Word of the day" button: a finished puzzle can be re-opened by retrying a
    * word (see storage.retryWord), so handing over the best word first would
-   * turn the mulligan into a lookup.
+   * turn the mulligan into a lookup. The retry follows a day into the archive,
+   * so this holds there too.
    */
   retryOffered?: boolean;
   /** Spend the retry to see the word (see useDailyPuzzle.revealAnswer). */
@@ -40,9 +42,13 @@ export function DropDisplay({
   // Armed by the reveal button, and cleared either way by answering it.
   const [confirmingReveal, setConfirmingReveal] = useState(false);
 
-  // The gate is the retry itself, not a "revealed" flag of its own: spending
-  // it is what opens the word, so a reload finds the same answer showing.
-  const hidden = retryOffered && onReveal !== undefined;
+  // Two conditions, and both are about the puzzle rather than the session. The
+  // date is where the reveal shipped: puzzles that finished by printing their
+  // word keep doing so, even the eight days that carried a retry before this
+  // existed (see constants.revealGatedFor). The retry is the price, and
+  // spending it -- here or on a word -- is what opens the word for good, so
+  // there is no "revealed" flag to keep in step across a reload.
+  const hidden = revealGatedFor(date) && retryOffered && onReveal !== undefined;
 
   // A new puzzle brings a new word, and its definition starts open the same way
   // the first one did -- not left closed by a click aimed at the last word.

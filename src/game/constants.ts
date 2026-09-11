@@ -56,3 +56,30 @@ export function retryAvailableFor(date?: string): boolean {
   if (date === undefined) return true;
   return date >= RETRY_START;
 }
+
+/**
+ * The first puzzle whose word of the day stays hidden until it is asked for.
+ *
+ * Date-gated like the retry above, and for the same reason: a puzzle plays the
+ * way it did the day it dropped. The retry itself started eight days earlier
+ * (RETRY_START), and those eight days finished by printing their word -- so
+ * gating the reveal on the retry alone would reach back and hide words those
+ * players have already read. This start is where the reveal actually shipped.
+ *
+ * It gates the puzzle for good, not only while the puzzle is today's: the retry
+ * follows a day into the archive (see useDailyPuzzle.retryOffered), so the word
+ * stays behind the same price whenever the day is played.
+ */
+const REVEAL_GATE_START = "2026-09-12";
+
+/**
+ * Whether `date`'s puzzle hides its word of the day until the retry pays for it.
+ *
+ * Undefined means the current puzzle, which by definition is not before the
+ * start once the feature is live -- matching how the guess limit and the retry
+ * treat a missing date.
+ */
+export function revealGatedFor(date?: string): boolean {
+  if (date === undefined) return true;
+  return date >= REVEAL_GATE_START;
+}

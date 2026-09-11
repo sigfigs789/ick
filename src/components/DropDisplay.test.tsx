@@ -4,6 +4,15 @@ import { describe, expect, it, vi } from "vitest";
 import { DropDisplay } from "./DropDisplay";
 import { definitionFor, formatRarityScore, learnableWordForDrop } from "../game/dictionary";
 
+/**
+ * A puzzle from before the reveal shipped, which prints its word the moment the
+ * last guess lands -- including the days that carried a retry already (see
+ * game/constants.revealGatedFor).
+ */
+const OPEN_DAY = "2026-09-11";
+/** A puzzle from on or after the start, whose word waits to be asked for. */
+const GATED_DAY = "2026-09-12";
+
 describe("DropDisplay", () => {
   it("labels archived puzzles with their calendar date", () => {
     const { rerender } = render(<DropDisplay drop="str" />);
@@ -49,9 +58,9 @@ describe("DropDisplay", () => {
   it("holds the word behind a confirmation while the retry is unspent", async () => {
     const onReveal = vi.fn();
     const { rerender } = render(
-      <DropDisplay drop="str" completed retryOffered onReveal={onReveal} />,
+      <DropDisplay drop="str" date={GATED_DAY} completed retryOffered onReveal={onReveal} />,
     );
-    const reveal = learnableWordForDrop("str")!;
+    const reveal = learnableWordForDrop("str", GATED_DAY)!;
     expect(screen.queryByText(reveal.word, { exact: false })).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Word of the day" }));
@@ -72,15 +81,38 @@ describe("DropDisplay", () => {
 
     // The retry going with it is what opens the word -- there is no separate
     // "revealed" flag to keep in step.
-    rerender(<DropDisplay drop="str" completed retryOffered={false} onReveal={onReveal} />);
+    rerender(
+      <DropDisplay drop="str" date={GATED_DAY} completed retryOffered={false} onReveal={onReveal} />,
+    );
     expect(screen.getByText(reveal.word, { exact: false })).toBeInTheDocument();
   });
 
   it("shows the word outright once the retry is gone", () => {
-    render(<DropDisplay drop="str" completed retryOffered={false} onReveal={vi.fn()} />);
+    render(
+      <DropDisplay drop="str" date={GATED_DAY} completed retryOffered={false} onReveal={vi.fn()} />,
+    );
     expect(screen.queryByRole("button", { name: "Word of the day" })).not.toBeInTheDocument();
     expect(
-      screen.getByText(learnableWordForDrop("str")!.word, { exact: false }),
+      screen.getByText(learnableWordForDrop("str", GATED_DAY)!.word, { exact: false }),
+    ).toBeInTheDocument();
+  });
+
+  it("prints the word outright on a puzzle that dropped before the reveal", () => {
+    // A retry it still has (the feature starts eight days earlier) and a word it
+    // already showed: the date is what decides, not what is left to spend.
+    render(
+      <DropDisplay
+        drop="str"
+        date={OPEN_DAY}
+        isToday={false}
+        completed
+        retryOffered
+        onReveal={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Word of the day" })).not.toBeInTheDocument();
+    expect(
+      screen.getByText(learnableWordForDrop("str", OPEN_DAY)!.word, { exact: false }),
     ).toBeInTheDocument();
   });
 
