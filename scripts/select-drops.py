@@ -112,24 +112,35 @@ def main() -> None:
     # word and you have an answer -- so the whole class stays out of the
     # rotation rather than being judged one drop at a time.
     affix_drops = existing.get("affixDrops", [])
-    locked_set = set(
-        locked_drops + seeded_drops + challenging_drops + hard_drops
-        + retired_drops + affix_drops
-    )
+    # A seeded drop is a published one being dealt a second time, so it is held
+    # out of the exclusion its locked listing would otherwise give it: it is
+    # interleaved with everything else, by the same rule. Seeding them straight
+    # after the locked window instead, as this did while STR was the only one,
+    # deals every re-run back to back -- 39 of them now, five weeks of drops the
+    # first 43 days had already spent.
+    excluded = set(
+        locked_drops + challenging_drops + hard_drops + retired_drops + affix_drops
+    ) - set(seeded_drops)
+    rated = {result["drop"] for result in results}
+    if missing := [drop for drop in seeded_drops if drop not in rated]:
+        raise SystemExit(
+            f"seeded drops missing from the candidate pool: {', '.join(missing)}. "
+            "They would be dropped from the rotation rather than re-dealt."
+        )
     two_letter = [
         result for result in results
-        if len(result["drop"]) == 2 and result["drop"] not in locked_set
+        if len(result["drop"]) == 2 and result["drop"] not in excluded
     ]
     three_letter = [
         result for result in results
-        if len(result["drop"]) == 3 and result["drop"] not in locked_set
+        if len(result["drop"]) == 3 and result["drop"] not in excluded
     ]
     remaining_count = len(two_letter) + len(three_letter)
     two_positions = {
         int((index + 0.5) * remaining_count / len(two_letter))
         for index in range(len(two_letter))
     }
-    ordered_drops = list(locked_drops + seeded_drops)
+    ordered_drops = list(locked_drops)
     two_index = three_index = 0
     for position in range(remaining_count):
         if position in two_positions:
