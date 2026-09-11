@@ -11,6 +11,7 @@ import {
   recordRejectedAttempt,
   resetProgress,
   retryWord,
+  forfeitRetry,
 } from "../game/storage";
 import { evaluateSubmission, REJECTION_MESSAGES, spellingNearMiss } from "../game/submit";
 import {
@@ -41,6 +42,7 @@ import type {
 import {
   trackAcceptedAnswer,
   trackAnswerRetried,
+  trackAnswerRevealed,
   trackBaseFormSubstitution,
   trackMerriamWebsterApproved,
   trackMerriamWebsterFailed,
@@ -377,12 +379,15 @@ export function useDailyPuzzle() {
   /**
    * Whether the puzzle's one retry is available to spend right now.
    *
-   * The current puzzle only. An archive puzzle's score is already recorded --
-   * on the board, in the streak, in a share somebody posted -- and reopening a
-   * finished day to improve it is a different feature from taking a word back
-   * while you are still playing. So the retry lives and dies with the puzzle it
-   * belongs to, and the UI says so rather than leaving a player to discover it
-   * (see GuessLog).
+   * The allowance belongs to the puzzle, not to the calendar: every day from
+   * RETRY_START on carries one, and it is still there when that day becomes an
+   * archive puzzle. Only the release date gates it, because only the release
+   * date is a fact about how the puzzle was meant to play -- a day that dropped
+   * before the feature existed never had a retry and does not get one now.
+   *
+   * What archive play does not get is a board correction. The leaderboard takes
+   * today's puzzle only (see leaderboard.submitScore), so an archive retry
+   * changes what this browser remembers and nothing that is already posted.
    */
   /**
    * The day's retry is still unspent, whether or not there is a word to
@@ -390,37 +395,40 @@ export function useDailyPuzzle() {
    * shown -- greyed out -- from the moment the puzzle opens, instead of
    * appearing out of nowhere once the first word lands (see GuessLog).
    */
-  const retryOffered = isToday && retryAvailableFor(viewedDate) && !progress.retryUsed;
+  const retryOffered = retryAvailableFor(viewedDate) && !progress.retryUsed;
   const canRetry = retryOffered && progress.acceptedWords.length > 0;
   /** Spent, on a puzzle that was offering it -- so the UI can say so rather than
-   * quietly withdrawing the control. Never true on an archive puzzle, where the
-   * retry was never on offer in the first place. */
-  const retrySpent = isToday && retryAvailableFor(viewedDate) && progress.retryUsed === true;
+   * quietly withdrawing the control. Never true on a puzzle that dropped before
+   * the feature, where the retry was never on offer in the first place. */
+  const retrySpent = retryAvailableFor(viewedDate) && progress.retryUsed === true;
   /**
    * How many retries this puzzle has left, for the guess log's header counter.
    *
-   * Null when the puzzle carries none at all -- an archive puzzle, or one that
-   * dropped before the feature started. That is a different thing from zero,
-   * which is a retry this puzzle had and the player has spent, so the header can
-   * show a spent allowance without inventing one for a day that never had it.
+   * Null when the puzzle carries none at all -- one that dropped before the
+   * feature started. That is a different thing from zero, which is a retry this
+   * puzzle had and the player has spent, so the header can show a spent
+   * allowance without inventing one for a day that never had it.
    *
    * Not derived from `canRetry`: the allowance is a fact about the puzzle from
    * the moment it opens, while `canRetry` also waits for a word worth taking
    * back. A player should see what they have before they have to spend it.
    */
-  const retriesLeft: number | null =
-    isToday && retryAvailableFor(viewedDate) ? (progress.retryUsed ? 0 : 1) : null;
+  const retriesLeft: number | null = retryAvailableFor(viewedDate)
+    ? progress.retryUsed
+      ? 0
+      : 1
+    : null;
 
   /**
    * Spend the retry on a banked word: drop it and hand its guess back.
    *
-   * Rechecks `isToday` rather than trusting the caller -- the button is the only
-   * way in today, but a puzzle can go stale under a tab left open overnight, and
-   * this is the boundary that has to hold.
+   * Rechecks the puzzle's own allowance rather than trusting the caller: the
+   * button is the only way in, but a puzzle can go stale under a tab left open
+   * overnight, and this is the boundary that has to hold.
    */
   const retryAnswer = useCallback(
     (word: string) => {
-      if (!isToday || !retryAvailableFor(viewedDate)) return;
+      if (!retryAvailableFor(viewedDate)) return;
       const before = progressRef.current;
       const index = before.acceptedWords.findIndex((accepted) => accepted.word === word);
       const updated = retryWord(before, word);
@@ -438,9 +446,13 @@ export function useDailyPuzzle() {
       // takes a word back and then wanders off should not be left ranked on it.
       // Fire-and-forget like every other write here: nothing waits on it, and a
       // correction that never lands costs a board position, never a word.
+      //
+      // Archive play passes through untouched: `submitScore` takes today's
+      // puzzle only, so retrying a word on an old day corrects this browser's
+      // record and leaves the posted board alone.
       submitScore({
         date: viewedDate,
-        isToday: true,
+        isToday,
         words: updated.acceptedWords,
         retried: true,
       });
@@ -453,6 +465,26 @@ export function useDailyPuzzle() {
     },
     [isToday, viewedDate]
   );
+
+  /**
+   * Give up the retry to see the day's word (see DropDisplay).
+   *
+   * No word moves, so nothing is rolled back and the board is left alone --
+   * the only change is that the retry is spent, which is what closes the door
+   * on looking the answer up and then re-opening the puzzle to play it.
+   *
+   * Rechecks the allowance for the same reason `retryAnswer` does: a puzzle can
+   * go stale under a tab left open overnight.
+   */
+  const revealAnswer = useCallback(() => {
+    if (!retryAvailableFor(viewedDate)) return;
+    const before = progressRef.current;
+    const updated = forfeitRetry(before);
+    if (updated === before) return;
+    progressRef.current = updated;
+    setProgress(updated);
+    trackAnswerRevealed(viewedDate, before.acceptedWords.length);
+  }, [viewedDate]);
 
   const resetAnswers = useCallback(() => {
     const fresh = resetProgress(viewedDate, drop);
@@ -492,6 +524,7 @@ export function useDailyPuzzle() {
     retrySpent,
     retriesLeft,
     retryAnswer,
+    revealAnswer,
     resetAnswers,
     liveNote,
     checking,

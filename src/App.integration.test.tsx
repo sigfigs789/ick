@@ -48,6 +48,12 @@ const DROP = dropForDate(TODAY);
 const LIMIT = maxGuessesFor(TODAY);
 
 /**
+ * A puzzle from on or after the reveal's start, for the one test that has to
+ * stand on the far side of that gate (see game/constants.revealGatedFor).
+ */
+const GATED_DAY = "2026-09-12";
+
+/**
  * `count` words that are playable in a single sitting for `drop`: each one
  * clears every rule *given the ones before it*, so no pick is refused later as
  * a duplicate or a same-root repeat of an earlier one.
@@ -141,6 +147,9 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  // Only the reveal test pins the clock (it has to stand on the far side of a
+  // date gate); every other test here plays on the real one.
+  vi.useRealTimers();
 });
 
 describe("gameplay end to end", () => {
@@ -241,7 +250,14 @@ describe("gameplay end to end", () => {
   });
 
   it("keeps the day's answer hidden until every guess is spent", async () => {
-    const words = playableWords(LIMIT, DROP, TODAY);
+    // Pinned into the gated era rather than played on the real clock: the
+    // reveal is date-gated (game/constants.revealGatedFor), so a suite that
+    // used today would tell one story before the start and another after it.
+    // `shouldAdvanceTime` keeps userEvent's own waits moving.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(`${GATED_DAY}T12:00:00`));
+    const drop = dropForDate(GATED_DAY);
+    const words = playableWords(maxGuessesFor(GATED_DAY), drop, GATED_DAY);
     render(<App />);
 
     const revealed = () => document.querySelector(".drop-display__ceiling-word");
@@ -255,7 +271,22 @@ describe("gameplay end to end", () => {
       if (i < words.length - 1) expect(revealed()).not.toBeInTheDocument();
     }
 
+    // Finishing is not enough while the retry is unspent: the word can still
+    // re-open the puzzle, so it costs the retry to look at.
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Word of the day" })).toBeInTheDocument(),
+    );
+    expect(revealed()).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Word of the day" }));
+    await userEvent.click(
+      screen.getByRole("dialog").querySelector<HTMLButtonElement>(".reveal-modal__confirm")!,
+    );
+
     await waitFor(() => expect(revealed()).toBeInTheDocument());
+    // Paid for out of the retry, and the guess log says so.
+    expect(screen.getByText(/retry used/i)).toBeInTheDocument();
+    expect(savedProgress(GATED_DAY)?.retryUsed).toBe(true);
   });
 
   it("keeps an archived puzzle's progress separate from today's", async () => {

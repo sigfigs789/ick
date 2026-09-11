@@ -115,6 +115,20 @@ export function trackAnswerRetried(
   });
 }
 
+/**
+ * The player traded their unspent retry for a look at the day's word (see
+ * DropDisplay). Counted separately from `answer_retried`: both spend the same
+ * allowance, but one takes a word back and this one buys a spoiler, and how
+ * often players prefer the spoiler is the question worth watching.
+ */
+export function trackAnswerRevealed(date: string, answerCount: number) {
+  send("answer_revealed", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    answer_count: answerCount,
+  });
+}
+
 /** Record rejected submissions so the word list can be reviewed over time. */
 export function trackRejectedAnswer(date: string, drop: string, rawWord: string) {
   send("answer_rejected", {

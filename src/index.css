@@ -557,6 +557,56 @@ h2 {
 .drop-display__ceiling-word--toggle:hover {
   background: var(--bg-inset);
 }
+/* Sits where the word itself will land, so the reveal replaces the button in
+   place rather than shifting the page under the reader. */
+.drop-display__reveal-button {
+  margin: 0.4rem auto 0;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-inset);
+  color: var(--fg);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+.drop-display__reveal-button:hover {
+  background: var(--card-bg);
+}
+.drop-display__reveal-cost {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--fg-faint);
+}
+/* The confirm carries the weight because it is the answer to the question the
+   dialog asks; "Never mind" stays quiet, but keeps a real border so it is not
+   mistaken for a disabled control. */
+.reveal-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+.reveal-modal__cancel,
+.reveal-modal__confirm {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.reveal-modal__cancel {
+  border: 1px solid var(--border);
+  background: var(--bg-inset);
+  color: var(--fg);
+}
+.reveal-modal__confirm {
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: var(--accent-fg);
+}
 .drop-display__reveal-caret {
   font-size: 0.7rem;
   color: var(--fg-faint);
