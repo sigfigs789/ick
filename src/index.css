@@ -298,8 +298,7 @@ h2 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
-  padding: 0.4rem 0.2rem 0.5rem;
+  padding: 0.55rem 0.2rem 0.6rem;
   border: 0;
   /* The underline that marks the current tab, drawn transparent on the others
      so nothing moves when it appears. It sits on the header's own bottom rule,
@@ -309,7 +308,9 @@ h2 {
   background: transparent;
   color: var(--fg-muted);
   font-family: var(--font-display);
-  font-size: 0.68rem;
+  /* Bigger than it was under the glyphs: the label is the whole tab now, and
+     the row has the height the icon used to take. */
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   cursor: pointer;
@@ -321,10 +322,6 @@ h2 {
 .app__nav-item--current {
   color: var(--fg);
   border-bottom-color: var(--fg);
-}
-.app__nav-icon {
-  font-size: 1.05rem;
-  line-height: 1;
 }
 .app__nav-label {
   white-space: nowrap;
