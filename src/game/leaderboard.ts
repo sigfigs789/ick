@@ -440,9 +440,15 @@ export async function fetchBoards(
   // a puzzle date is the player's own local calendar date, and nothing on the
   // server shares that clock.
   const day = options.day ?? date;
-  // The puzzle the day board's plaque names, which does not move when the reader
-  // steps the board: it is the newest one that is over for everybody.
-  const champion = championDay(date);
+  // The puzzle the day board's plaque names while the board is live: the newest
+  // one that is over for everybody, which is the freshest result today's board
+  // can state instead of the result it does not have yet.
+  //
+  // Asked for on the live board only. A board the reader stepped back to is its
+  // own result and crowns its own top row (see LeaderboardPage), so on a stepped
+  // day this was a whole extra query per view whose answer the page then had
+  // nowhere to put. Omitted, the server runs no champion query and sends null.
+  const champion = day === date ? championDay(date) : null;
   // The month goes up for the same reason the week does: both windows bracket
   // the player's own local puzzle date, so both have to be computed off the same
   // clock. The server bounds the far end of both itself.
@@ -464,7 +470,7 @@ export async function fetchBoards(
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
       `&month=${encodeURIComponent(month)}` +
       `&day=${encodeURIComponent(day)}` +
-      `&champion=${encodeURIComponent(champion)}` +
+      (champion ? `&champion=${encodeURIComponent(champion)}` : "") +
       `&limit=${BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
       freshParam(options),
