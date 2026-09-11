@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackWordSuggestion } from "../analytics";
+import { navigate } from "../routes";
 
 interface Props {
   open: boolean;
@@ -80,7 +81,22 @@ export function WordRulesModal({ open, onClose }: Props) {
               Suggest word
             </button>
           </div>
-          {sent && <p className="word-suggestion__thanks">Thanks for the suggestion!</p>}
+          {/* role="status" so the confirmation is announced and not only seen. */}
+          {sent && (
+            <p className="word-suggestion__thanks" role="status">
+              Thanks for the suggestion!{" "}
+              <button
+                type="button"
+                className="word-suggestion__link"
+                onClick={() => {
+                  onClose();
+                  navigate("suggested-words");
+                }}
+              >
+                See the queue
+              </button>
+            </p>
+          )}
         </form>
       </div>
     </div>

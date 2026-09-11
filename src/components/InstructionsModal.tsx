@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackFeedbackSubmitted } from "../analytics";
+import { navigate } from "../routes";
 
 interface Props {
   open: boolean;
@@ -88,8 +89,22 @@ export function InstructionsModal({ open, onClose }: Props) {
               Send
             </button>
           </div>
+          {/* role="status" so the confirmation is announced and not only seen:
+              the box empties either way, and an empty box is not an answer. */}
           {sent && (
-            <p className="word-suggestion__thanks">Thanks for the feedback!</p>
+            <p className="word-suggestion__thanks" role="status">
+              Thanks for the feedback!{" "}
+              <button
+                type="button"
+                className="word-suggestion__link"
+                onClick={() => {
+                  onClose();
+                  navigate("feedback");
+                }}
+              >
+                See what everyone{"’"}s said
+              </button>
+            </p>
           )}
         </form>
         <p className="modal__signoff">

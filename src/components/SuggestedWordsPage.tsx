@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
-import { fetchSuggestedWords } from "../game/review";
+import { fetchSuggestedWords, hasReviewKey } from "../game/review";
 
 /**
  * The review queue, as a page at /suggested-words.
@@ -24,13 +24,17 @@ import { fetchSuggestedWords } from "../game/review";
  * a script, and a word keeps its place on the list once marked rather than
  * vanishing the moment it is judged.
  *
- * Not linked from anywhere in the app, because it is not a page for players. See
- * src/routes.ts.
+ * Linked from the word rules sheet, to whoever has just suggested a word: the
+ * sheet promises that a good word everybody gets to play, and this is where it
+ * goes to wait. So most readers here are players looking for their own word,
+ * and the triage controls are drawn only for a curator -- somebody holding the
+ * `?key=` the marking endpoint requires (see hasReviewKey, and api/review.ts).
  */
 export function SuggestedWordsPage() {
   const load = useCallback(() => fetchSuggestedWords(), []);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const { markFor, cycle, failed } = useMarks("suggested-words", rows);
+  const curating = hasReviewKey();
 
   return (
     <ReviewPage
@@ -50,11 +54,13 @@ export function SuggestedWordsPage() {
             key={row.word}
             className={`review__item review__item--${markFor(row.word, row.mark) ?? "unmarked"}`}
           >
-            <MarkToggle
-              mark={markFor(row.word, row.mark)}
-              label={row.word}
-              onClick={() => cycle(row.word, row.mark)}
-            />
+            {curating && (
+              <MarkToggle
+                mark={markFor(row.word, row.mark)}
+                label={row.word}
+                onClick={() => cycle(row.word, row.mark)}
+              />
+            )}
             <div className="review__body">
             <div className="review__row">
               <span className="review__word">{row.word}</span>

@@ -61,13 +61,30 @@ export interface FeedbackNote {
 /**
  * The token the deployment may require, taken from the page's own URL.
  *
- * The pages are unlinked, so the way somebody reaches one is by being given the
- * URL -- and when REVIEW_TOKEN is set on the deployment, that URL carries a
- * `?key=`. Read from the address bar rather than stored: nothing should leave a
- * review key sitting in localStorage on a player's phone.
+ * Both pages are linked from the game now -- a player who leaves a note or
+ * suggests a word is offered the list it landed on -- so the way somebody
+ * reaches one no longer says anything about who they are. What still does is
+ * the `?key=` on a curator's URL, which is the whole difference between reading
+ * these lists and triaging them: see hasReviewKey below. Read from the address
+ * bar rather than stored, so nothing leaves a review key sitting in
+ * localStorage on a player's phone.
  */
 function reviewKey(): string | null {
   return new URLSearchParams(window.location.search).get("key");
+}
+
+/**
+ * Whether this reader arrived holding a key, and so may be shown the triage
+ * controls.
+ *
+ * Not a permission check -- the endpoint does that, and refuses a mark from
+ * anybody whose key does not match REVIEW_TOKEN. This is what the page draws:
+ * a player following the link from the how-to-play sheet has no key, and
+ * putting an accept/reject control in front of them would be offering a button
+ * that can only fail. A curator opening the URL they were given has one.
+ */
+export function hasReviewKey(): boolean {
+  return (reviewKey() ?? "") !== "";
 }
 
 /** The key as a trailing parameter, for a URL that already has one. */

@@ -42,4 +42,17 @@ describe("WordRulesModal", () => {
     expect(input).toHaveValue("");
     expect(screen.getByText(/thanks for the suggestion/i)).toBeInTheDocument();
   });
+
+  it("offers the queue once a word is suggested, and closes on the way there", async () => {
+    const onClose = vi.fn();
+    window.history.pushState(null, "", "/");
+    render(<WordRulesModal open onClose={onClose} />);
+
+    await userEvent.type(screen.getByLabelText(/suggest a word/i), "splashy");
+    await userEvent.click(screen.getByRole("button", { name: /suggest word/i }));
+    await userEvent.click(screen.getByRole("button", { name: /see the queue/i }));
+
+    expect(onClose).toHaveBeenCalled();
+    expect(window.location.pathname).toBe("/suggested-words");
+  });
 });

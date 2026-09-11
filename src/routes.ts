@@ -16,12 +16,15 @@ import { useEffect, useState } from "react";
  * that had not moved since breakfast. Two pages, two links to send, and the
  * header says which one you are on.
  *
- * The last two -- the word queue and the feedback players have left -- are not
- * pages for players, and nothing in the app links to them: they are read by
- * whoever is curating the dictionary, from a URL they were given. Routes rather
- * than a separate tool because the data is already behind the app's own edge
- * functions, and a path is the cheapest way to look at it. Unlinked is not
- * protected -- see api/review.ts for what actually gates the read.
+ * The last two -- the word queue and the feedback players have left -- began as
+ * curator pages nothing linked to, and are now the page each sheet sends you to
+ * once you have written something: suggest a word and you are offered the queue
+ * it joined, leave a note and you are offered the wall it landed on. Public to
+ * read, in other words, which is a decision about other people's words and not
+ * a routing detail. They still have no tab, because they are not part of the
+ * daily round.
+ *
+ * Marking a row is the part that stayed a curator's: see api/review.ts.
  *
  * Anything that names none of them is the game, so a stray path still lands on a
  * playable puzzle rather than a 404 rendered by the client.

@@ -35,15 +35,18 @@
 // and nothing else: no write path, and nothing here triages a word or answers a
 // note.
 //
-// Who may read it. The pages have no link anywhere in the app, which is a way
-// of not advertising them and not a way of protecting them -- a path nobody
-// links to is still a path anybody can type. That matters more for the feedback
-// list than the queue: the words are the game's own dictionary work, while a
-// note is something a player typed to *us*, and publishing those at a guessable
-// URL is not a thing to do by accident. So: set REVIEW_TOKEN on the deployment
-// and every request has to carry it as `key`, which the pages take from their
-// own URL and pass along. Leave it unset and the lists answer anybody who asks,
-// which is the right default only for a deployment where that is understood.
+// Who may read it: anybody. Both pages are linked from the game -- the
+// how-to-play sheet points whoever just left a note at the feedback list, and
+// the word rules sheet points whoever just suggested a word at the queue -- so
+// these are public lists by decision rather than unlinked ones by default. What
+// a player wrote into the feedback box is readable by every other player, which
+// is the trade that link makes.
+//
+// Who may mark: only a request carrying REVIEW_TOKEN as `key`, which the pages
+// take from their own URL and pass along. Unset, nobody can mark anything from
+// anywhere -- the write fails closed, because "unset means anybody" and "the
+// page is linked from the game" together mean a stranger triaging words into
+// the dictionary. A curator sets the token and opens the page with ?key=.
 //
 // Never CDN-cached, in either mode. A response that varies by a secret must not
 // be handed to the next caller, and a triage list read once in a while is not
@@ -126,7 +129,13 @@ function num(value: number | string | null): number | null {
 }
 
 /**
- * Whether this request may read the lists.
+ * Whether this request carries the deployment's review token.
+ *
+ * Reading and marking ask this the same question and do different things with
+ * the answer: a read without a token is allowed, since both pages are linked
+ * from the game now, while a mark without one is refused. With REVIEW_TOKEN
+ * unset there is no token to carry, so nothing can be marked from anywhere --
+ * see handlePost.
  *
  * Compared in full rather than short-circuiting on the first differing
  * character. A timing side channel on a review page is not the threat anybody
@@ -135,7 +144,7 @@ function num(value: number | string | null): number | null {
  */
 function authorised(request: Request): boolean {
   const expected = process.env.REVIEW_TOKEN ?? "";
-  if (!expected) return true;
+  if (!expected) return false;
   const given = new URL(request.url).searchParams.get("key") ?? "";
   if (given.length !== expected.length) return false;
   let same = 0;
@@ -164,11 +173,18 @@ export default async function handler(request: Request): Promise<Response> {
 /**
  * Set or clear the mark on one row.
  *
- * Same gate as the read, and worth being plain about what that means: with no
- * REVIEW_TOKEN configured, anybody who finds these pages can move a mark -- and
- * a word's mark is the dictionary graduation pass's own input. Reading the lists
- * openly costs nothing; writing to them openly is a decision, and the token is
- * how it is taken back.
+ * Keyed, always, which is a stricter gate than the read below and the reason the
+ * two were split. Both lists are linked from the game now -- the how-to-play
+ * sheet offers the feedback page to whoever just left a note, and the word rules
+ * sheet offers the queue to whoever just suggested a word -- so every player is
+ * a reader, and a word's mark is the dictionary graduation pass's own input.
+ * Reading these lists openly is the decision that was taken; letting anybody who
+ * read one triage it is not.
+ *
+ * So this fails closed rather than open: with no REVIEW_TOKEN configured there is
+ * no key that works, and marking is off everywhere until one is set. The
+ * alternative -- unset meaning "anybody" -- is exactly the state a public link
+ * turns into a stranger accepting words into the dictionary.
  */
 async function handlePost(request: Request): Promise<Response> {
   if (!authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
@@ -243,8 +259,8 @@ async function handlePost(request: Request): Promise<Response> {
 }
 
 async function handleGet(request: Request): Promise<Response> {
-  if (!authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
-
+  // Open, unlike the mark above. Both pages are linked from the game, so a
+  // reader arriving without a key is the ordinary case rather than an intruder.
   const params = new URL(request.url).searchParams;
   const list = params.get("list");
   if (list !== "suggested-words" && list !== "feedback") {

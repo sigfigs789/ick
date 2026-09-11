@@ -63,7 +63,9 @@ function stubFetch(words: unknown = WORDS) {
 beforeEach(() => {
   asked.length = 0;
   marked.length = 0;
-  window.history.pushState(null, "", "/suggested-words");
+  // A curator's URL: the triage controls are drawn only for a reader
+  // holding the key the marking endpoint requires.
+  window.history.pushState(null, "", "/suggested-words?key=let-me-in");
 });
 
 afterEach(() => {
@@ -146,6 +148,19 @@ describe("SuggestedWordsPage", () => {
     // The word itself is the reference: a word's mark is its row in the
     // dictionary's own triage column.
     expect(marked[0]).toEqual({ list: "suggested-words", ref: "blorp", mark: "accepted" });
+  });
+
+  it("shows a player no triage controls, since the page is linked from the game", async () => {
+    // What a player following the link from the word rules sheet gets: the
+    // queue, and no accept/reject button -- the endpoint would refuse the mark
+    // anyway, and a control that can only fail is worse than no control.
+    window.history.pushState(null, "", "/suggested-words");
+    stubFetch();
+    render(<SuggestedWordsPage />);
+
+    await screen.findByText("blorp");
+    expect(screen.queryByRole("button", { name: /unmarked/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /accepted/ })).not.toBeInTheDocument();
   });
 
   it("carries the review key from its own URL, when the deployment wants one", async () => {

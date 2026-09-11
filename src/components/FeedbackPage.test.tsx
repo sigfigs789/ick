@@ -37,7 +37,9 @@ function stubFetch(feedback: unknown = NOTES, markOk = true) {
 
 beforeEach(() => {
   marked.length = 0;
-  window.history.pushState(null, "", "/feedback");
+  // A curator's URL: the triage controls are drawn only for a reader
+  // holding the key the marking endpoint requires.
+  window.history.pushState(null, "", "/feedback?key=let-me-in");
 });
 
 afterEach(() => {
@@ -124,6 +126,17 @@ describe("FeedbackPage", () => {
     // Back where it was: a tick over a row nothing was saved for would make the
     // list a record of clicks rather than of decisions.
     expect(row().getByRole("button", { name: /unmarked/ })).toBeInTheDocument();
+  });
+
+  it("shows a player no triage controls, since the page is linked from the game", async () => {
+    // A player following the link from the how-to-play sheet reads the notes
+    // and marks nothing: triage belongs to whoever holds the key.
+    window.history.pushState(null, "", "/feedback");
+    stubFetch();
+    render(<FeedbackPage />);
+
+    await screen.findByText("more vowels please");
+    expect(screen.queryByRole("button", { name: /unmarked/ })).not.toBeInTheDocument();
   });
 
   it("offers a retry when the read fails", async () => {

@@ -1682,6 +1682,19 @@ h2 {
   color: var(--success-fg);
   font-weight: 700;
 }
+/* A link in everything but the markup: it goes to a page, but through the
+   router rather than a reload, which is a button's job. Named with the thanks
+   line in front of it to outrank `.word-suggestion button` above, which would
+   otherwise draw it as the second accent-coloured button on the row. */
+.word-suggestion__thanks .word-suggestion__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .feedback-form__row {
   align-items: center;
   margin-top: 0.6rem;

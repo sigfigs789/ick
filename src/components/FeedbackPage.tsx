@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
-import { fetchFeedback } from "../game/review";
+import { fetchFeedback, hasReviewKey } from "../game/review";
 
 /**
  * The feedback players have left, as a page at /feedback.
@@ -22,14 +22,21 @@ import { fetchFeedback } from "../game/review";
  * is an append-only mirror of what the client sent, and this app should not be
  * editing its own log to remember what it has read.
  *
- * Not linked from anywhere in the app. See src/routes.ts, and api/review.ts for
- * what gates the read -- a note is something a player wrote to us, and it should
- * not be sitting at a URL anybody can guess.
+ * Linked from the how-to-play sheet, to whoever has just left a note, which
+ * makes this a public wall: what one player wrote is read by the next. Nothing
+ * here identifies who wrote what -- the event carries no player id, no name and
+ * nothing about the person -- but the words themselves are open, and that is the
+ * trade the link makes.
+ *
+ * The triage controls are a curator's, not a reader's, and are drawn only for
+ * somebody holding the `?key=` the marking endpoint requires (see hasReviewKey,
+ * and api/review.ts for the gate itself).
  */
 export function FeedbackPage() {
   const load = useCallback(() => fetchFeedback(), []);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const { markFor, cycle, failed } = useMarks("feedback", rows);
+  const curating = hasReviewKey();
 
   return (
     <ReviewPage
@@ -49,13 +56,15 @@ export function FeedbackPage() {
             key={note.id}
             className={`review__item review__item--${markFor(note.id, note.mark) ?? "unmarked"}`}
           >
-            <MarkToggle
-              mark={markFor(note.id, note.mark)}
-              // The date, because a note has no short name and the first words
-              // of one are not a label -- they are the thing being marked.
-              label={formatWhen(note.at)}
-              onClick={() => cycle(note.id, note.mark)}
-            />
+            {curating && (
+              <MarkToggle
+                mark={markFor(note.id, note.mark)}
+                // The date, because a note has no short name and the first words
+                // of one are not a label -- they are the thing being marked.
+                label={formatWhen(note.at)}
+                onClick={() => cycle(note.id, note.mark)}
+              />
+            )}
             <div className="review__body">
               {/* The note first and the time under it: the text is what anybody
                   came here to read, and when it landed is context for it. */}
