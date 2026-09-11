@@ -305,11 +305,12 @@ describe("the leaderboard page", () => {
     expect(boardRows("This week")[0]).not.toHaveTextContent("0.0");
   });
 
-  it("names yesterday's champion under the day board, with the caveat always up", async () => {
+  it("names the day board's champion by weekday, with no caveat to explain", async () => {
+    // A Wednesday, so the last puzzle that is over everywhere is Monday's.
     onDay(MIDWEEK);
     stubFetch({
       ...OPEN,
-      lastDay: {
+      dayChampion: {
         rank: 1,
         playerId: CAROL,
         windowWord: "abaci",
@@ -322,26 +323,26 @@ describe("the leaderboard page", () => {
 
     await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
     const today = screen.getByRole("region", { name: "Today" });
-    expect(today).toHaveTextContent("Yesterday's champion");
+    // Not yesterday's: a day closes at each player's own midnight, so
+    // yesterday's winner can still change all through today -- every day, for
+    // everybody -- and the plaque would have carried a footnote that never
+    // lifted. Two days back has ended everywhere, so it can simply be stated.
+    expect(today).toHaveTextContent("Monday's champion");
     expect(today).toHaveTextContent(handleFor(CAROL));
     expect(today).toHaveTextContent("9.1");
 
-    // And the caveat every day, not only on a turnover day like the other two:
-    // a day closes at each player's own midnight, so somebody's yesterday is
-    // still being played while somebody else's has been over for a day.
+    // Which is the whole point of naming that day rather than yesterday.
     expect(
-      within(today).getByRole("button", {
+      within(today).queryByRole("button", {
         name: "Why this winner can still change",
       }),
-    ).toBeInTheDocument();
-    expect(today).toHaveTextContent(
-      "The official winner can change until the end of today.",
-    );
+    ).toBeNull();
+    expect(today).not.toHaveTextContent("can change");
   });
 
-  it("leaves the day board's plaque off when nobody scored yesterday", async () => {
+  it("leaves the day board's plaque off when nobody scored that puzzle", async () => {
     onDay(MIDWEEK);
-    stubFetch({ ...OPEN, lastDay: null });
+    stubFetch({ ...OPEN, dayChampion: null });
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
@@ -359,19 +360,16 @@ describe("the leaderboard page", () => {
     render(<LeaderboardPage />);
     await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
 
-    // Two steps back, so the day is closed everywhere and the caveat lifts --
-    // the one step back is the day the plaque above was already about.
+    // Two steps back, to a day that is over everywhere: the board above is that
+    // day's final standing, so its top row is the champion and there is nothing
+    // left to draw from another day.
     await userEvent.click(screen.getByRole("button", { name: "Previous day" }));
     await userEvent.click(screen.getByRole("button", { name: "Previous day" }));
 
     const board = screen.getByRole("region", { name: "Aug 24" });
     await waitFor(() => expect(board).toHaveTextContent("Champion"));
     expect(board).toHaveTextContent(handleFor(BOB));
-    expect(
-      within(board).queryByRole("button", {
-        name: "Why this winner can still change",
-      }),
-    ).toBeNull();
+    expect(board).not.toHaveTextContent("Monday's champion");
   });
 
   it("names last week's champion under the weekly board, and last month's under the monthly one", async () => {

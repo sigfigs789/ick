@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchBoards,
+  championDay,
   dayFloor,
   monthFloor,
   weekFloor,
@@ -10,7 +11,13 @@ import {
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
 import { handleFor } from "../game/handle";
-import { addDays, formatDateLabel, previousMonthName, todayDateString } from "../game/date";
+import {
+  addDays,
+  formatDateLabel,
+  previousMonthName,
+  todayDateString,
+  weekdayName,
+} from "../game/date";
 import {
   monthChampionSettling,
   monthLabel,
@@ -135,6 +142,12 @@ export function LeaderboardPage() {
   const [week, setWeek] = useState(thisWeek);
   const [month, setMonth] = useState(thisMonth);
   const dayIsLive = day === today;
+  /**
+   * Whether the day on the board has closed in every timezone, which is what
+   * decides where its plaque comes from: its own top row once it has, and the
+   * last settled day's champion until then (see `championDay`).
+   */
+  const daySettled = day <= championDay(today);
   const weekIsLive = week === thisWeek;
   const monthIsLive = month === thisMonth;
   /**
@@ -416,31 +429,35 @@ export function LeaderboardPage() {
               canGoForward={!dayIsLive}
               onBack={() => setDay(addDays(day, -1))}
               onForward={() => setDay(addDays(day, 1))}
-              // Who took the puzzle before this one -- the same relation the
-              // other two plaques have to the boards above them, one window
-              // down. On a day the reader has stepped back to, the board is
-              // that day's own final standing and the plaque is its top row,
-              // exactly as the other two do it.
-              champion={dayIsLive ? boards.lastDay : championOf(boards.daily)}
-              championLabel={dayIsLive ? "Yesterday's champion" : "Champion"}
-              // And always with the caveat, which is the one thing this board
-              // does differently. The other two turn over on a named day and
-              // are settled by the next one, so their plaques are provisional
-              // for a few hours a week. A day closes at each player's own
-              // midnight, so somebody's yesterday is still being played while
-              // somebody else's has been over for a day -- the name under a day
-              // board is never finished while that day is on screen.
+              // The last puzzle that is over everywhere, named by its weekday.
               //
-              // Carried onto the day just gone as well as the live one, because
-              // that is the same window seen from one step back: the reader is
-              // looking at the standings the plaque above is drawn from.
-              // Anything older has closed everywhere.
-              championSettling={dayIsLive || day === addDays(today, -1)}
-              championFinalOn="the end of today"
-              // And no empty plaque. The other two hold one open because their
-              // window will be engraved on a day worth naming; a puzzle nobody
-              // scored on is finished, and "crowned tomorrow" under it would
-              // promise a name that is never coming.
+              // Not yesterday's, which is what this was first. A day closes at
+              // each player's own midnight, so yesterday's winner is a name
+              // that can still change all through today -- for everybody, every
+              // day -- and the plaque had to carry a footnote saying so, which
+              // is a caveat that never lifts and so stops being read. Two days
+              // back has ended in every timezone there is, so the line can just
+              // say who won it. See `championDay`.
+              //
+              // A weekday rather than a date, which two days back is what makes
+              // possible: it is inside the week, so "Monday's champion" cannot
+              // mean two different Mondays, and it is the half a reader places
+              // without counting.
+              //
+              // Once the reader steps back to a day that is itself settled, the
+              // board above *is* that day's final standing and its top row is
+              // the champion -- exactly how the other two boards do it.
+              champion={
+                daySettled ? championOf(boards.daily) : boards.dayChampion
+              }
+              championLabel={
+                daySettled ? "Champion" : `${weekdayName(championDay(today))}'s champion`
+              }
+              // No caveat and no empty plaque. Every window this line can name
+              // has closed; and where the other two hold an empty plaque open
+              // because their window still gets engraved on a day worth naming,
+              // a puzzle nobody scored on is finished, so a promised crowning
+              // under it would be a name that never comes.
             />
             <Board
               heading={weekIsLive ? "This week" : weekLabel(week)}
@@ -661,19 +678,6 @@ interface BoardProps {
    */
   championCrowning?: string;
   /**
-   * How the caveat sentence ends, when that is not the crowning day: "the end
-   * of today".
-   *
-   * The two were one prop while both boards' answers were the same word -- a
-   * weekly champion is engraved on Monday and can change until Monday. A day
-   * board breaks that: the plaque under it is engraved as soon as the day ends
-   * and can still change all through the next one, so the empty plaque's day
-   * and the caveat's deadline are different sentences. Defaults to
-   * `championCrowning`, which keeps the other two boards saying exactly what
-   * they said.
-   */
-  championFinalOn?: string;
-  /**
    * Whether today is the day this board's window turned over, and so the day the
    * named winner can still change (see game/week.ts). True on Sunday for the
    * week and on the first for the month; false every other day -- and false on
@@ -712,7 +716,6 @@ function Board({
   champion,
   championLabel,
   championCrowning,
-  championFinalOn,
   championSettling,
 }: BoardProps) {
   return (
@@ -881,7 +884,7 @@ function Board({
             entry={champion}
             label={championLabel}
             provisional={championSettling}
-            finalOn={championFinalOn ?? championCrowning}
+            finalOn={championCrowning}
           />
         ) : championCrowning ? (
           <ChampionPending crowning={championCrowning} />

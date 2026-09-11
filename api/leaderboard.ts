@@ -1,9 +1,10 @@
 // The leaderboard: a Vercel Edge Function that reads the weekly and monthly
 // boards, and takes the score submissions that fill them.
 //
-// GET /api/leaderboard?since=YYYY-MM-DD&month=YYYY-MM-01&day=YYYY-MM-DD&limit=15&player=UUID
+// GET /api/leaderboard?since=YYYY-MM-DD&month=YYYY-MM-01&day=YYYY-MM-DD
+//                      &champion=YYYY-MM-DD&limit=15&player=UUID
 //   -> { weekStart, daily: [...], dailySelf, weekly: [...], weeklySelf,
-//        allTime: [...], allTimeSelf, lastDay, lastWeek, lastMonth }
+//        allTime: [...], allTimeSelf, dayChampion, lastWeek, lastMonth }
 //   The daily board counts the single puzzle `day`; the weekly board counts the
 //   seven days from `since`; the third counts the month `month` begins.
 //   `day` is optional: a caller that omits it gets the two boards it always got,
@@ -29,10 +30,18 @@
 //   inside the fifteen. When they are on the board -- or did not say who they
 //   are -- those are null, because the row is already up there.
 //
-//   `lastDay`, `lastWeek` and `lastMonth` are the players who topped the last
-//   *completed* window under each board: the day before `day`, the seven days
-//   before `since`, and the calendar month before `month`. `lastDay` comes back
-//   only when `day` did, since without one there is no day to be the one before. Each is that board's own window one step back, taken
+//   `dayChampion`, `lastWeek` and `lastMonth` are the players who topped a
+//   closed window under each board: the single puzzle `champion`, the seven days
+//   before `since`, and the calendar month before `month`.
+//
+//   `champion` is its own parameter rather than "the day before `day`" because
+//   the two answer different questions: `day` is the board the reader is looking
+//   at and moves as they step it, while the plaque under it names the most
+//   recent puzzle that has finished *everywhere* -- a fact about the reader's
+//   today, which does not move at all. The caller picks the date (see
+//   src/game/leaderboard.ts) for the same reason it picks the other windows: a
+//   puzzle date is the player's own local calendar date, and nothing on this
+//   side shares that clock. Omitted, no champion is queried and the key is null. Each is that board's own window one step back, taken
 //   from the same parameter that bounds the board, so a board and the plaque
 //   under it can never name two different windows. Both are ordinary board rows
 //   (rank 1), or null when
@@ -679,6 +688,11 @@ async function handleGet(request: Request): Promise<Response> {
   // with them than with a 400.
   const claimedDay = params.get("day") ?? "";
   const day = validPuzzleDate(claimedDay) ? claimedDay : null;
+  // The puzzle the day board's plaque names. Dropped on the same terms as the
+  // day itself: a plaque is worth less than a board, so it is certainly not
+  // worth refusing one over.
+  const claimedChampion = params.get("champion") ?? "";
+  const champion = validPuzzleDate(claimedChampion) ? claimedChampion : null;
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
@@ -694,7 +708,7 @@ async function handleGet(request: Request): Promise<Response> {
     // `leaderboard_boards` to a third window, which means dropping and
     // recreating a function every request in flight is using, for a query it can
     // already run.
-    const [result, dailyRows, lastDayRows] = await Promise.all([
+    const [result, dailyRows, championRows] = await Promise.all([
       rpc<BoardsResult>("leaderboard_boards", {
         p_since: since,
         p_limit: limit,
@@ -730,16 +744,15 @@ async function handleGet(request: Request): Promise<Response> {
             p_until: day,
           })
         : Promise.resolve(null),
-      // The day before it, one row deep: the plaque under the day board, which
-      // is that board's own window one step back -- exactly the relation
-      // `lastWeek` has to the weekly board. Nobody is asking, so no player id
-      // goes up: a champion row is the top one or it is nothing.
-      day
+      // One puzzle, one row deep: the plaque under the day board. Nobody is
+      // asking, so no player id goes up -- a champion row is the top one or it
+      // is nothing.
+      champion
         ? rpc<BoardRow[]>("leaderboard_board", {
-            p_since: daysBefore(day, 1),
+            p_since: champion,
             p_limit: 1,
             p_player: null,
-            p_until: daysBefore(day, 1),
+            p_until: champion,
           })
         : Promise.resolve(null),
     ]);
@@ -769,7 +782,7 @@ async function handleGet(request: Request): Promise<Response> {
         //
         // The day board's is ranked 1 by construction: the query asked for one
         // row, ordered the way every board here is ordered.
-        lastDay: toChampion(lastDayRows?.[0]),
+        dayChampion: toChampion(championRows?.[0]),
         lastWeek: toChampion(result?.lastWeek),
         lastMonth: toChampion(result?.lastMonth),
       },
