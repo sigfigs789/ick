@@ -53,7 +53,7 @@ interface RawWordRow {
  *
  * The anon key, never the service-role one: this key sits in a Reddit app
  * setting, and `anon` can reach nothing here but the two functions the
- * 20260911020000 migration grants it. Returns null on any failure -- an import
+ * 20260911060000 migration grants it. Returns null on any failure -- an import
  * that does not land leaves the last one in place, which is the entire point of
  * caching it.
  */

@@ -30,14 +30,14 @@ own serverless Node runtime, with Redis beside it.
   The website's keys are free non-commercial ones capped at 1,000 requests a day
   for the whole game, which a Reddit audience would exhaust. So this build never
   calls Merriam-Webster: it reads the verdicts the website has already collected,
-  through the `20260911030000` migration, cached read-through in Redis. A word
+  through the `20260911070000` migration, cached read-through in Redis. A word
   the site has judged is known here; one it has not is `unknown`, which is what
   the client already does with a word Merriam-Webster cannot find.
 - **One board holding both games.** The website's aggregate is pulled in on a
   schedule (`src/server/core/import.ts`) and cached; Reddit's own scores never
   leave Reddit. Rows carry where they were played and the shared client names
   them `u/` or `w/`. The read-only door they come through is the
-  `20260911020000` migration -- the anon key, never the service-role key.
+  `20260911060000` migration -- the anon key, never the service-role key.
 
 - **The post is the puzzle** (`src/server/core/puzzle.ts`). A scheduled job puts
   one post up a day and records which puzzle it holds; the client asks
@@ -114,7 +114,7 @@ Reddit's own players, which is a working board.
     devvit settings set supabaseUrl        # defaults to the live project already
     devvit settings set supabaseAnonKey    # the anon key -- NOT service-role
 
-The `20260911020000` and `20260911030000` migrations have to be applied to the
+The `20260911060000` and `20260911070000` migrations have to be applied to the
 website's Supabase first, or the anon key has nothing it may call. `permissions.http.domains` names the live project's host exactly
 (`hjjdnbftdwswkfqnsejt`, the us-east-2 one -- the older us-east-1 project of the
 same name holds none of these tables).
