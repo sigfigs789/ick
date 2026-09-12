@@ -2,6 +2,7 @@
   "expo": {
     "name": "WordInk",
     "slug": "wordink",
+    "owner": "sigfigs789",
     "scheme": "wordink",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -18,7 +19,10 @@
       "**/*"
     ],
     "extra": {
-      "apiOrigin": "https://www.wordink.app"
+      "apiOrigin": "https://www.wordink.app",
+      "eas": {
+        "projectId": "2a165258-630c-4925-98f3-3e33ca6247d7"
+      }
     },
     "ios": {
       "bundleIdentifier": "app.wordink",
