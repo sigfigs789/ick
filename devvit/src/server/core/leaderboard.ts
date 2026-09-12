@@ -249,11 +249,18 @@ export async function readBoard(
     by: 'rank',
   });
   const users = raw.map((entry) => entry.member);
-  const [bests, puzzles, joined] = await Promise.all([
-    redis.hMGet(bestKey(window, start), users),
-    redis.hMGet(puzzlesKey(window, start), users),
-    redis.hMGet(JOINED_KEY, users),
-  ]);
+  // Asking for nothing is not a question Redis will take: HMGET with no fields
+  // is an error, not an empty answer. Nobody having scored yet is the ordinary
+  // state of a board on its first day -- and of every daily board before its
+  // first player -- so it reaches this line far more often than it looks.
+  const [bests, puzzles, joined] =
+    users.length === 0
+      ? [[], [], []]
+      : await Promise.all([
+          redis.hMGet(bestKey(window, start), users),
+          redis.hMGet(puzzlesKey(window, start), users),
+          redis.hMGet(JOINED_KEY, users),
+        ]);
 
   const mine = raw.map((entry, index) => {
     const [word, zipf] = splitBest(bests[index] ?? '');

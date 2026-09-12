@@ -97,6 +97,12 @@ export class FakeRedis {
   }
 
   async hMGet(key: string, fields: string[]): Promise<(string | null)[]> {
+    // Real Redis refuses HMGET with no fields -- "wrong number of arguments" --
+    // and a fake that quietly answered `[]` let a board with no players ship
+    // broken. Matched deliberately; the caller must not ask for nothing.
+    if (fields.length === 0) {
+      throw new Error("ERR wrong number of arguments for 'hmget' command");
+    }
     const hash = this.hashes.get(key);
     return fields.map((field) => hash?.get(field) ?? null);
   }

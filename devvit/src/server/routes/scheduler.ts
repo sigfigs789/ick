@@ -14,6 +14,18 @@ import { monthStartOf, weekStartOf } from '../../shared/windows';
 export const scheduler = new Hono();
 
 scheduler.post('/import', async (c) => {
+  const rows = await importEverything();
+  return c.json({ rows });
+});
+
+/**
+ * Pull the website's players in, for every window a reader can be looking at.
+ *
+ * Exported because three things need it and they must not drift: the schedule,
+ * the install (so a fresh subreddit is not staring at an empty board for the
+ * first quarter of an hour), and a moderator who wants it now.
+ */
+export async function importEverything(): Promise<number> {
   // UTC's own day. The windows a player asks for are computed on *their*
   // calendar, so an import keyed to UTC can be a day off at the edges -- which
   // is why neighbouring days are fetched too rather than only today's.
@@ -38,8 +50,8 @@ scheduler.post('/import', async (c) => {
 
   const rows = imported.reduce((sum, count) => sum + count, 0);
   console.log(`import: ${rows} row(s) across ${imported.length} window(s)`);
-  return c.json({ rows });
-});
+  return rows;
+}
 
 function shiftDays(date: string, days: number): string {
   return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);

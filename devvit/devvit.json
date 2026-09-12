@@ -50,6 +50,13 @@
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/post-create"
+      },
+      {
+        "label": "Refresh website scores",
+        "description": "Pull the website's leaderboard in now instead of waiting for the schedule",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/import-now"
       }
     ]
   },
