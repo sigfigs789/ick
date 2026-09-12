@@ -16,6 +16,28 @@ import { createRoot } from 'react-dom/client';
 import { Root } from '../../../src/Root';
 import { setInMemoryRouting } from '../../../src/routes';
 import { setReporting } from '../../../src/analytics';
+import { setAccount } from '../../../src/game/player';
+
+/**
+ * Play as the Reddit account, not as the browser.
+ *
+ * Must land before the first render: `Root` mints a board identity during
+ * render, and a client that had already invented a UUID by the time the
+ * username arrived would keep it -- naming the player something they are not
+ * and never matching their own row on the board.
+ *
+ * A failure leaves the browser's own identity in place, which is the website's
+ * behaviour and a working game.
+ */
+try {
+  const response = await fetch('/api/init');
+  if (response.ok) {
+    const body = (await response.json()) as { username?: unknown };
+    if (typeof body.username === 'string' && body.username) setAccount(body.username);
+  }
+} catch {
+  // A player with no account plays as this browser, exactly as on the website.
+}
 
 // Route in memory rather than off the address bar. The frame's URL is one the
 // player never sees and cannot link to, and a reload would ask the static

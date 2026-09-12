@@ -7,6 +7,13 @@ import { gameDay } from '../../shared/windows';
 
 export const triggers = new Hono();
 
+/**
+ * Installed, or upgraded to a new version.
+ *
+ * Both, and that is the fix rather than a convenience: every version after the
+ * first arrives as an upgrade, so an import that only ran on install ran once,
+ * before the settings it needs were ever set. A board sat empty for it.
+ */
 triggers.post('/on-app-install', async (c) => {
   try {
     // Put today's puzzle up the moment the app lands, so a fresh install has

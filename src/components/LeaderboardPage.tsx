@@ -10,6 +10,7 @@ import {
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
 import { handleFor } from "../game/handle";
+import { accountName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import {
   monthLabel,
@@ -329,7 +330,7 @@ export function LeaderboardPage() {
             raising its voice. */}
         {playerId && (
           <p className="leaderboard-page__handle">
-            Playing as <strong>{handleFor(playerId)}</strong>
+            Playing as <strong>{selfName(playerId)}</strong>
           </p>
         )}
       </div>
@@ -729,6 +730,19 @@ function Board({
  * the app. The total above it stays at one decimal: it is a sum, which is the
  * line `formatScore` itself draws.
  */
+/**
+ * What to call the player reading the page.
+ *
+ * The same rule the board's own rows follow (see `nameFor` in
+ * game/leaderboard.ts): an account is named, a browser is given a handle. They
+ * have to agree, or the line above the board tells the player one name while
+ * their row on it carries another.
+ */
+function selfName(playerId: string): string {
+  const account = accountName();
+  return account ? `u/${account}` : handleFor(playerId);
+}
+
 function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
   /**
    * Whoever is top of this board, dressed as the winner they are.

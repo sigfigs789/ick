@@ -59,8 +59,39 @@ function newId(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-/** This browser's board identity, or null when nobody has joined. */
+/**
+ * The account this player is signed in as, where the host has accounts.
+ *
+ * Null on this site, which has none. Identity here is a UUID the browser
+ * invents and the name on the board is computed from it -- nobody types a name,
+ * so nobody can be impersonated. Inside a Reddit post the player already has an
+ * account, the server knows which, and the client is told: the id becomes the
+ * username, and the board calls them `u/them` rather than inventing a name for
+ * somebody who has one.
+ */
+let account: string | null = null;
+
+/** Play as an account rather than as this browser. Call before rendering. */
+export function setAccount(name: string | null): void {
+  account = name;
+}
+
+/** The account being played as, or null where the browser is the identity. */
+export function accountName(): string | null {
+  return account;
+}
+
+/**
+ * This browser's board identity, or null when nobody has joined.
+ *
+ * The account, where there is one -- and it has to be, for two reasons that are
+ * really the same one. The id goes up with every score, and the id is what a
+ * board row is matched against to find the player's own. Leave the browser's
+ * UUID in place while the server records the account and the player is told
+ * they are somebody else, and never shown which row is theirs.
+ */
 export function loadPlayerId(): string | null {
+  if (account) return account;
   const raw = safeGet(PLAYER_KEY);
   if (!raw) return null;
   try {
@@ -83,6 +114,9 @@ export function hasJoined(): boolean {
  * whether this browser has been here before.
  */
 export function joinBoard(): string | null {
+  // An account needs no minting and nothing stored: it is already an identity,
+  // and it is the same one on every device the player signs in from.
+  if (account) return account;
   const existing = loadPlayerId();
   if (existing) return existing;
   const id = newId();
