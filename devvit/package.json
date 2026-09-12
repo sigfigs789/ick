@@ -12,7 +12,7 @@
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "login": "devvit login",
     "test:types": "tsc --build",
-    "test:unit": "node --experimental-strip-types --no-warnings=ExperimentalWarning --test \"src/**/*.test.ts\""
+    "test:unit": "cd .. && npx vitest run devvit/tests"
   },
   "engines": {
     "node": ">=24.0.0"

@@ -3,11 +3,25 @@
   "compilerOptions": {
     "outDir": "../dist/types/client",
     "tsBuildInfoFile": "../dist/types/client/tsconfig.tsbuildinfo",
-    "customConditions": ["browser"],
-    "rootDir": "../src/client"
+    "customConditions": [
+      "browser"
+    ],
+    "rootDir": "../..",
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "allowImportingTsExtensions": true,
+    "emitDeclarationOnly": true
   },
-  "include": ["../src/client/**/*"],
-  "exclude": [],
+  "include": [
+    "../src/client/**/*",
+    "../../src/**/*",
+    "../../src/**/*.json"
+  ],
+  "exclude": [
+    "../../src/**/*.test.ts",
+    "../../src/**/*.test.tsx",
+    "../../src/test/**/*"
+  ],
   "references": [
     {
       "path": "./tsconfig.shared.json"
