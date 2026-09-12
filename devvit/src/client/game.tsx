@@ -1,4 +1,4 @@
-// The WordInk puzzle itself, rendered inside the Reddit post's expanded webview.
+// WordInk, rendered inside the Reddit post's expanded webview.
 //
 // The game is the same React tree the website runs; it is imported from the
 // repo's own `src/` rather than copied, so the two front-ends cannot drift.
@@ -8,8 +8,9 @@ import '../../../src/index.css';
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from '../../../src/App';
+import { Root } from '../../../src/Root';
 import { setPuzzleDay } from '../../../src/game/date';
+import { setInMemoryRouting } from '../../../src/routes';
 
 /**
  * Ask the post which puzzle it is, then draw it.
@@ -40,8 +41,18 @@ async function puzzleDay(): Promise<string | null> {
 const day = await puzzleDay();
 if (day) setPuzzleDay(day);
 
+// Route in memory rather than off the address bar. The frame's URL is one the
+// player never sees and cannot link to, and a reload would ask the static
+// server for `/leaderboard`, which has no rewrite in front of it. The header's
+// tabs are the navigation, which is all a player inside a post has anyway.
+setInMemoryRouting(true);
+
+// `Root` rather than `App`: the puzzle is one of five pages, and the other four
+// -- the header, the boards, the finds -- are the rest of the game. Rendering
+// the puzzle alone left everything the server does for the leaderboard with no
+// way to be seen.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <Root />
   </StrictMode>
 );
