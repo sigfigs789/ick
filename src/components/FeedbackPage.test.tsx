@@ -37,7 +37,9 @@ function stubFetch(feedback: unknown = NOTES, markOk = true) {
 
 beforeEach(() => {
   marked.length = 0;
-  window.history.pushState(null, "", "/feedback");
+  // A curator's URL: the triage controls are drawn only for a reader
+  // holding the key the marking endpoint requires.
+  window.history.pushState(null, "", "/feedback?key=let-me-in");
 });
 
 afterEach(() => {
@@ -53,6 +55,12 @@ describe("FeedbackPage", () => {
       expect(screen.getByText("more vowels please")).toBeInTheDocument(),
     );
     expect(screen.getByText("loving it")).toBeInTheDocument();
+    // Newest first is the list function's doing (see the 2026-09-11 ordering
+    // migration), so what this page owes it is not to re-sort: rows come out in
+    // the order they came in, whatever that order turns out to be.
+    expect(
+      screen.getAllByText(/loving it|more vowels please/).map((node) => node.textContent),
+    ).toEqual(["loving it", "more vowels please"]);
   });
 
   it("drops a note with nothing in it", async () => {
@@ -124,6 +132,24 @@ describe("FeedbackPage", () => {
     // Back where it was: a tick over a row nothing was saved for would make the
     // list a record of clicks rather than of decisions.
     expect(row().getByRole("button", { name: /unmarked/ })).toBeInTheDocument();
+  });
+
+  it("marks a note without a key, on a page nothing links to", async () => {
+    // No REVIEW_TOKEN, no ?key=, and the triage still works: nothing links
+    // here, and a note's mark reaches no part of the game. A deployment that
+    // sets a token gets the strict version for free -- the read needs the key,
+    // so there is no page to click on without one.
+    window.history.pushState(null, "", "/feedback");
+    stubFetch();
+    render(<FeedbackPage />);
+
+    await screen.findByText("more vowels please");
+    const row = () =>
+      within(screen.getByText("more vowels please").closest("li") as HTMLElement);
+    await userEvent.click(row().getByRole("button", { name: /unmarked/ }));
+
+    await waitFor(() => expect(marked).toHaveLength(1));
+    expect(marked[0]).toEqual({ list: "feedback", ref: 7, mark: "accepted" });
   });
 
   it("offers a retry when the read fails", async () => {

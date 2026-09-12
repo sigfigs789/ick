@@ -110,22 +110,52 @@ function asPlayer<T>(rows: T): T {
  * one, each origin the queue can report, a note with a line break in it, and
  * every mark a row can wear.
  *
- * Both lists are in submission order, oldest first, the way the endpoint returns
- * them: a fixture sorted differently from the real thing would hide the one
- * property of these pages that is not visible in a single row.
+ * Each list is in the order the endpoint returns it -- the queue oldest first,
+ * the feedback newest first -- because a fixture sorted differently from the
+ * real thing would hide the one property of these pages that is not visible in
+ * a single row.
  */
 export function sampleReviewResponse(list: "suggested-words" | "feedback"): unknown {
   if (list === "feedback") {
     return {
       feedback: [
-        { id: 1, text: "please add a dark mode", at: hoursAgo(50), mark: "accepted" },
-        { id: 2, text: "quixotic should be worth more\nit's a hard word!", at: hoursAgo(20), mark: "rejected" },
         { id: 3, text: "The rarity tiers are the best part. More of those.", at: hoursAgo(2), mark: null },
+        { id: 2, text: "quixotic should be worth more\nit's a hard word!", at: hoursAgo(20), mark: "rejected" },
+        { id: 1, text: "please add a dark mode", at: hoursAgo(50), mark: "accepted" },
       ],
     };
   }
   return {
     words: [
+      {
+        word: "enshittification",
+        origin: "both",
+        zipf: null,
+        pos: ["noun"],
+        firstUse: "2022",
+        mwSource: "collegiate",
+        lookups: 4,
+        suggestions: 2,
+        firstAt: hoursAgo(3),
+        lastAt: hoursAgo(3),
+        mark: null,
+        liveApproved: true,
+      },
+      {
+        word: "quixotry",
+        origin: "player",
+        zipf: null,
+        pos: [],
+        firstUse: null,
+        mwSource: null,
+        lookups: 0,
+        suggestions: 1,
+        firstAt: hoursAgo(9),
+        lastAt: hoursAgo(9),
+        mark: "rejected",
+        // Only ever suggested, never played: there is no live verdict on it.
+        liveApproved: false,
+      },
       {
         word: "susurrus",
         origin: "live-lookup",
@@ -140,32 +170,7 @@ export function sampleReviewResponse(list: "suggested-words" | "feedback"): unkn
         // exactly the row where the two dates differ.
         lastAt: hoursAgo(28),
         mark: "accepted",
-      },
-      {
-        word: "quixotry",
-        origin: "player",
-        zipf: null,
-        pos: [],
-        firstUse: null,
-        mwSource: null,
-        lookups: 0,
-        suggestions: 1,
-        firstAt: hoursAgo(9),
-        lastAt: hoursAgo(9),
-        mark: "rejected",
-      },
-      {
-        word: "enshittification",
-        origin: "both",
-        zipf: null,
-        pos: ["noun"],
-        firstUse: "2022",
-        mwSource: "collegiate",
-        lookups: 4,
-        suggestions: 2,
-        firstAt: hoursAgo(3),
-        lastAt: hoursAgo(3),
-        mark: null,
+        liveApproved: true,
       },
     ],
   };

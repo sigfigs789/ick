@@ -278,6 +278,11 @@
     "reason": "misspelling",
     "since": "2026-08-22"
   },
+  "dremel": {
+    "note": "Proper noun: the Dremel rotary tool, a US brand name (Wiktionary carries it only capitalised, as a trademark).",
+    "reason": "proper-noun",
+    "since": "2026-09-11"
+  },
   "eate": {
     "reason": "obsolete",
     "since": "2026-08-19"
@@ -301,6 +306,11 @@
     "note": "Misspelling of `falconer`.",
     "reason": "misspelling",
     "since": "2026-08-22"
+  },
+  "foellinger": {
+    "note": "Proper noun: the surname, as in the Foellinger Auditorium. No dictionary carries it at all.",
+    "reason": "proper-noun",
+    "since": "2026-09-11"
   },
   "glicerol": {
     "note": "Misspelling of `glycerol`.",
@@ -386,6 +396,11 @@
     "note": "Abbreviation: an acronym.",
     "reason": "abbreviation",
     "since": "2026-08-22"
+  },
+  "ote": {
+    "note": "Abbreviation: the ISO 639-3 language code for Mezquital Otomi. Translingual on Wiktionary, with no English entry.",
+    "reason": "abbreviation",
+    "since": "2026-09-11"
   },
   "parenthethical": {
     "note": "Misspelling of `parenthetical`.",

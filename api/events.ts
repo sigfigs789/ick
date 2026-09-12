@@ -26,7 +26,7 @@ const NAME_RE = /^[a-z][a-z0-9_]{0,63}$/;
 // A public endpoint, so the shape is bounded before anything reaches the database.
 const MAX_BODY_BYTES = 8 * 1024;
 const MAX_PROPS = 32;
-const MAX_VALUE_CHARS = 500;
+const MAX_VALUE_CHARS = 4000;
 
 type PropValue = string | number | boolean | null;
 
@@ -44,8 +44,9 @@ function reply(status: number, body?: unknown): Response {
  * Validate the properties of one event. Strict rather than lenient: a value of an
  * unexpected type means the client and this endpoint have drifted apart, and
  * saying so is more useful than quietly dropping a field and leaving a row that
- * looks complete. Long strings are the exception -- free-text feedback is capped
- * on the way in and truncating it is the intended behaviour, not a drift signal.
+ * looks complete. Long strings are the exception -- free-text feedback has no
+ * length limit in the game, so the cap here is a bound on a public endpoint
+ * rather than a drift signal, and truncating past it is the intended behaviour.
  */
 function cleanProps(raw: unknown): Record<string, PropValue> | string {
   if (raw === undefined || raw === null) return {};
