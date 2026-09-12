@@ -148,11 +148,16 @@ Distribution Certificate is not validated for non-interactive builds.
 Credentials are not set up. Run this command again in interactive mode.
 ```
 
-So the first build is run by hand, from a terminal that can answer a prompt:
+So the first build is run by hand, from a terminal that can answer a prompt.
+Every command in this file is run from this directory, `native/`:
 
 ```bash
-cd native && npx eas-cli build --platform ios --profile production
+npx eas-cli build --platform ios --profile production
 ```
+
+Note that `eas login` is not part of this and should not be run for it: that is
+the *Expo* account, which is already set (see `owner` in `app.json`) and has
+nothing to do with Apple. The Apple ID is asked for by the build itself.
 
 It asks for the Apple ID, then a two-factor code from a trusted device, and
 offers to register the bundle identifier and generate the credentials. Say yes
