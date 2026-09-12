@@ -2,7 +2,7 @@
   "name": "ick",
   "private": true,
   "version": "0.0.0",
-  "description": "A daily word-drop puzzle inspired by Wordle and BombParty.",
+  "description": "A daily game where you find the rarest word you can, inspired by Wordle and BombParty.",
   "type": "module",
   "scripts": {
     "dev": "vite",

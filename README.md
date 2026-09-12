@@ -1,9 +1,9 @@
 # WordInk
 
-A daily word-drop puzzle inspired by Wordle and BombParty. Every player
-gets the same 2- or 3-letter drop each day (like `STR`, `OU`, or `MP`)
-and enters valid English words that contain it, in order, for up to 4
-distinct guesses. The goal is finding the rarest word you can — your best
+A daily game where you find the rarest word you can, inspired by Wordle
+and BombParty. Every player gets the same 2- or 3-letter drop each day
+(like `STR`, `OU`, or `MP`) and enters valid English words that contain
+it, in order, for up to 4 distinct guesses. The goal is rarity — your best
 one is crowned in the log. No timer, no login, no traditional score, just
 a friendly rarity reveal (Very Common → Extremely Rare) on every accepted
 word. Stop anytime with "Lock in my result," or use all 4 guesses.

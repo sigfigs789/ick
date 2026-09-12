@@ -1,7 +1,7 @@
 {
-  "name": "WordInk — daily word-drop puzzle",
+  "name": "WordInk — find the rarest word each day",
   "short_name": "WordInk",
-  "description": "A daily word-drop puzzle: find the rarest words you can that contain today's drop.",
+  "description": "A daily game where you find the rarest word you can that contains today's letters.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
