@@ -168,6 +168,13 @@ interface RawEntry {
   windowZipf?: unknown;
   score?: unknown;
   puzzles?: unknown;
+  /**
+   * Where this row was played, on a board that holds more than one game's
+   * players. Sent only by the Reddit build, whose board merges its own players
+   * with the ones imported from this site; this site's own endpoint sends no
+   * such key, and a row without one is named exactly as it always was.
+   */
+  source?: unknown;
 }
 
 /**
@@ -208,12 +215,28 @@ function parseEntry(item: RawEntry | null, fallbackRank?: number): BoardEntry | 
   return {
     rank: ranked,
     playerId,
-    name: handleFor(playerId),
+    name: nameFor(playerId, item.source),
     windowWord,
     windowScore: scoreOf(windowWord, windowZipf),
     score,
     puzzles: typeof puzzles === "number" && Number.isFinite(puzzles) ? puzzles : 0,
   };
+}
+
+/**
+ * What to call a player, which depends on which game they played.
+ *
+ * On this site there is one kind of player and the name is what it has always
+ * been: a handle derived from their id (see game/handle.ts). The Reddit build
+ * shows one board holding both its own players and the ones imported from here,
+ * and a board mixing two populations has to say which is which -- so it marks
+ * each row's origin and the two read as the prefixes their homes already use.
+ * A Reddit row's id *is* the username, so it needs no derivation.
+ */
+function nameFor(playerId: string, source: unknown): string {
+  if (source === "r") return `u/${playerId}`;
+  if (source === "w") return `w/${handleFor(playerId)}`;
+  return handleFor(playerId);
 }
 
 /** Read the player's own row from below the cut, or null if there isn't one. */

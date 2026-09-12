@@ -15,23 +15,41 @@
  * somebody else.
  */
 
-/** One board row, as both boards and the self-row below the cut return it. */
+/**
+ * Where a row was played, on a board that holds both games' players.
+ *
+ * `r` is a Reddit account and its id is the username itself; `w` is a player
+ * imported from the website, whose id is the UUID their browser invented and
+ * whose name the client derives from it. The client renders the two as `u/` and
+ * `w/` -- see `nameFor` in src/game/leaderboard.ts.
+ */
+export type Source = 'r' | 'w';
+
+/**
+ * One board row, in the keys the shared client reads.
+ *
+ * camelCase, and short: this is the website's wire, not the SQL's column names.
+ * `api/leaderboard.ts` maps one to the other on its side and so does this file;
+ * a row in the database's own spelling is a row the client silently drops.
+ */
 export interface BoardRow {
   rank: number;
-  /** The Reddit username. Named `player_id` on the wire for the shared client. */
-  player_id: string;
-  window_word: string;
-  window_zipf: number;
-  total_score: number;
+  /** A Reddit username, or an imported player's UUID. See `source`. */
+  playerId: string;
+  /** The rarest word inside this board's window. */
+  windowWord: string;
+  windowZipf: number;
+  score: number;
   puzzles: number;
+  source: Source;
 }
 
-/** One word in the finds feed. */
+/** One word in the finds feed, in the keys the shared client reads. */
 export interface FoundRow {
   word: string;
   zipf: number;
   finders: number;
-  found_on: string;
+  foundOn: string;
 }
 
 /** The boards response, keys as the shared client reads them. */

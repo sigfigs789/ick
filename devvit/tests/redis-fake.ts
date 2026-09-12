@@ -36,6 +36,34 @@ export interface ZRangeOptions {
 export class FakeRedis {
   private hashes = new Map<string, Map<string, string>>();
   private zsets = new Map<string, Map<string, number>>();
+  private strings = new Map<string, string>();
+  private ttls = new Map<string, number>();
+
+  // -- plain keys -----------------------------------------------------------
+  // Where an imported board is cached, as one JSON blob per window.
+
+  async get(key: string): Promise<string | undefined> {
+    return this.strings.get(key);
+  }
+
+  async set(key: string, value: string): Promise<string> {
+    this.strings.set(key, value);
+    return 'OK';
+  }
+
+  /**
+   * Recorded rather than simulated. No test here turns on a key ageing out, but
+   * `ttlOf` lets one assert that a cached import was given an expiry at all --
+   * an import cached forever would go stale silently.
+   */
+  async expire(key: string, seconds: number): Promise<void> {
+    this.ttls.set(key, seconds);
+  }
+
+  /** The expiry set on a key, or undefined if none was. */
+  ttlOf(key: string): number | undefined {
+    return this.ttls.get(key);
+  }
 
   // -- hashes ---------------------------------------------------------------
 

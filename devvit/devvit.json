@@ -44,5 +44,34 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build"
+  },
+  "permissions": {
+    "http": {
+      "enable": true,
+      "domains": [
+        "supabase.co"
+      ]
+    }
+  },
+  "settings": {
+    "global": {
+      "supabaseUrl": {
+        "type": "string",
+        "label": "The website's Supabase project URL, https://<ref>.supabase.co"
+      },
+      "supabaseAnonKey": {
+        "type": "string",
+        "label": "The website's Supabase anon key -- never the service-role key",
+        "isSecret": true
+      }
+    }
+  },
+  "scheduler": {
+    "tasks": {
+      "importWebsiteBoard": {
+        "endpoint": "/internal/scheduler/import",
+        "cron": "*/15 * * * *"
+      }
+    }
   }
 }

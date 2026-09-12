@@ -46,6 +46,7 @@ import {
   type ScoreSubmission,
 } from '../../shared/leaderboard';
 import { monthStartOf, weekStartOf } from '../../shared/windows';
+import { importedBoard, importedFinds } from './import';
 
 /** Which window a board counts. The key prefix is the whole difference. */
 type Window = 'd' | 'w' | 'm';
@@ -247,8 +248,6 @@ export async function readBoard(
     reverse: true,
     by: 'rank',
   });
-  if (raw.length === 0) return [];
-
   const users = raw.map((entry) => entry.member);
   const [bests, puzzles, joined] = await Promise.all([
     redis.hMGet(bestKey(window, start), users),
@@ -256,7 +255,7 @@ export async function readBoard(
     redis.hMGet(JOINED_KEY, users),
   ]);
 
-  const rows = raw.map((entry, index) => {
+  const mine = raw.map((entry, index) => {
     const [word, zipf] = splitBest(bests[index] ?? '');
     return {
       user: entry.member,
@@ -265,20 +264,41 @@ export async function readBoard(
       zipf,
       puzzles: Number(puzzles[index] ?? 0),
       joined: Number(joined[index] ?? 0),
+      source: 'r' as const,
     };
   });
 
+  // The website's players for the same window, imported on a schedule (see
+  // core/import.ts). They rank on exactly the same terms as Reddit's own: both
+  // games score with the same dictionary, so the totals are comparable, and a
+  // board that sorted its two halves differently would not be one board.
+  //
+  // They carry no arrival time -- the import publishes an aggregate, not a
+  // history -- so the last tie-break falls through to the id, which is stable.
+  // Only a tie on total *and* on rarest word ever reaches it.
+  const theirs = (await importedBoard(window, start)).map((row) => ({
+    user: row.playerId,
+    total: round1(row.score),
+    word: row.windowWord,
+    zipf: row.windowZipf,
+    puzzles: row.puzzles,
+    joined: Number.MAX_SAFE_INTEGER,
+    source: 'w' as const,
+  }));
+
+  const rows = [...mine, ...theirs];
   rows.sort(
     (a, b) => b.total - a.total || a.zipf - b.zipf || a.joined - b.joined || a.user.localeCompare(b.user)
   );
 
   return rows.slice(0, bounded).map((row, index) => ({
     rank: index + 1,
-    player_id: row.user,
-    window_word: row.word,
-    window_zipf: row.zipf,
-    total_score: row.total,
+    playerId: row.user,
+    windowWord: row.word,
+    windowZipf: row.zipf,
+    score: row.total,
     puzzles: row.puzzles,
+    source: row.source,
   }));
 }
 
@@ -300,16 +320,26 @@ export async function readSelf(
   user: string,
   board: readonly BoardRow[]
 ): Promise<BoardRow | null> {
-  if (board.some((row) => row.player_id === user)) return null;
+  if (board.some((row) => row.source === 'r' && row.playerId === user)) return null;
   const key = boardKey(window, start);
   const total = await redis.zScore(key, user);
   if (total === undefined || total === null) return null;
 
   const [rank, best, puzzles] = await Promise.all([
-    // zRank counts from the bottom, so the number of players above is everything
-    // in the set minus this player's position minus themselves.
-    Promise.all([redis.zCard(key), redis.zRank(key, user)]).then(
-      ([size, below]) => size - (below ?? 0)
+    // zRank counts from the bottom, so the number of Reddit players above is
+    // everything in the set minus this player's position minus themselves.
+    //
+    // The sorted set holds only Reddit's own players, and the board this rank
+    // is read against holds both populations -- so the website's players above
+    // this score have to be counted too, or a player sitting sixteenth on the
+    // merged board is told they are first.
+    Promise.all([
+      redis.zCard(key),
+      redis.zRank(key, user),
+      importedBoard(window, start),
+    ]).then(
+      ([size, below, imported]) =>
+        size - (below ?? 0) + imported.filter((row) => row.score > total).length
     ),
     redis.hGet(bestKey(window, start), user),
     redis.hGet(puzzlesKey(window, start), user),
@@ -318,11 +348,12 @@ export async function readSelf(
 
   return {
     rank,
-    player_id: user,
-    window_word: word,
-    window_zipf: zipf,
-    total_score: round1(total),
+    playerId: user,
+    windowWord: word,
+    windowZipf: zipf,
+    score: round1(total),
     puzzles: Number(puzzles ?? 0),
+    source: 'r',
   };
 }
 
@@ -345,7 +376,6 @@ export async function readFinds(date: string, limit = WORDS_LIMIT): Promise<Foun
     reverse: true,
     by: 'rank',
   });
-  if (entries.length === 0) return [];
 
   const rows = await Promise.all(
     entries.map(async (entry) => {
@@ -354,11 +384,25 @@ export async function readFinds(date: string, limit = WORDS_LIMIT): Promise<Foun
         word: entry.member,
         zipf: Number(stored?.zipf ?? 0),
         finders: Number(stored?.finders ?? 1),
-        found_on: date,
+        foundOn: date,
       };
     })
   );
-  return rows;
+
+  // The website's finders for the same puzzle, folded in by word. A word both
+  // populations turned up is one row carrying both counts -- the feed answers
+  // "how many people found this", and splitting it by which game they were
+  // playing would answer a question nobody asked.
+  //
+  // Reddit's own rows lead, because they are the live half and the order here is
+  // newest-first; imported words the live half has not seen are appended.
+  const merged = new Map(rows.map((row) => [row.word, { ...row }]));
+  for (const find of await importedFinds(date)) {
+    const held = merged.get(find.word);
+    if (held) held.finders += find.finders;
+    else merged.set(find.word, { ...find, foundOn: date });
+  }
+  return [...merged.values()];
 }
 
 async function readDay(date: string, user: string): Promise<DayRow | null> {
