@@ -91,6 +91,23 @@ describe("InstructionsModal", () => {
     expect(screen.getByText(/thanks for the feedback/i)).toBeInTheDocument();
   });
 
+  it("thanks the player without pointing them at everybody else's notes", async () => {
+    window.history.pushState(null, "", "/");
+    render(<InstructionsModal open onClose={vi.fn()} />);
+
+    await userEvent.type(
+      screen.getByLabelText(/share feedback or leave a suggestion/i),
+      "more vowel drops please",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^send$/i }));
+
+    // A note is written to us, not to the other players: the confirmation says
+    // it landed and offers nothing to open.
+    expect(screen.getByRole("status")).toHaveTextContent(/thanks for the feedback/i);
+    expect(screen.queryByRole("button", { name: /see what everyone/i })).not.toBeInTheDocument();
+    expect(window.location.pathname).toBe("/");
+  });
+
   it("ignores a whitespace-only note rather than sending an empty event", async () => {
     trackFeedbackSubmitted.mockClear();
     render(

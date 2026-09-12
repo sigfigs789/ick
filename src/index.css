@@ -1682,6 +1682,19 @@ h2 {
   color: var(--success-fg);
   font-weight: 700;
 }
+/* A link in everything but the markup: it goes to a page, but through the
+   router rather than a reload, which is a button's job. Named with the thanks
+   line in front of it to outrank `.word-suggestion button` above, which would
+   otherwise draw it as the second accent-coloured button on the row. */
+.word-suggestion__thanks .word-suggestion__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .feedback-form__row {
   align-items: center;
   margin-top: 0.6rem;
@@ -2604,6 +2617,10 @@ h2 {
 .review__mark:hover {
   border-color: var(--fg-muted);
 }
+/* The same box with nothing to press: a reader's copy of the mark. */
+.review__mark--static {
+  cursor: default;
+}
 .review__mark--accepted {
   border-color: var(--success-fg);
   background: var(--success-bg);
@@ -2655,17 +2672,22 @@ h2 {
   content: "·";
   margin-right: 0.5rem;
 }
-.review__origin {
+/* The game approved this word itself, mid-puzzle, on the live Merriam-Webster
+   check. Not grey, because next to the triage mark it is the row's other
+   verdict and the two are read together. */
+.review__live {
+  color: var(--fg);
   font-weight: 700;
 }
-/* A word players asked for *and* reached for in a puzzle: the strongest signal
-   the queue has, so it is the one thing on the row that is not grey. */
-.review__origin--both {
-  color: var(--fg);
+/* The fault a reviewed rejection names -- why the word cannot be played. */
+.review__rejected {
+  color: var(--danger-fg);
+  font-weight: 700;
 }
 /* A note, set as text and given room to be read. `pre-wrap` keeps the line
-   breaks somebody typed; the box will not submit anything longer than 200
-   characters, so there is no clamp here to fight. */
+   breaks somebody typed. The box has no length limit any more, so a long note
+   is shown whole and simply takes the room it needs -- a clamp would hide the
+   part somebody went to the trouble of writing. */
 .review__note {
   margin: 0;
   white-space: pre-wrap;

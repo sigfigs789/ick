@@ -1,7 +1,8 @@
 import { useCallback } from "react";
-import { MarkToggle, ReviewPage } from "./ReviewPage";
+import { MarkBox, MarkToggle, ReviewPage } from "./ReviewPage";
 import { formatWhen, useMarks, useReviewList } from "./reviewList";
-import { fetchSuggestedWords } from "../game/review";
+import { fetchSuggestedWords, hasReviewKey } from "../game/review";
+import { curatedRejection, formatRarityScore } from "../game/dictionary";
 
 /**
  * The review queue, as a page at /suggested-words.
@@ -24,18 +25,22 @@ import { fetchSuggestedWords } from "../game/review";
  * a script, and a word keeps its place on the list once marked rather than
  * vanishing the moment it is judged.
  *
- * Not linked from anywhere in the app, because it is not a page for players. See
- * src/routes.ts.
+ * Linked from the word rules sheet, to whoever has just suggested a word: the
+ * sheet promises that a good word everybody gets to play, and this is where it
+ * goes to wait. So most readers here are players looking for their own word,
+ * and the triage controls are drawn only for a curator -- somebody holding the
+ * `?key=` the marking endpoint requires (see hasReviewKey, and api/review.ts).
  */
 export function SuggestedWordsPage() {
   const load = useCallback(() => fetchSuggestedWords(), []);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const { markFor, cycle, failed } = useMarks("suggested-words", rows);
+  const curating = hasReviewKey();
 
   return (
     <ReviewPage
       title="Suggested words"
-      note="Words waiting to be triaged into the dictionary — oldest first."
+      note="Words waiting to be triaged into the dictionary — newest first. A ticked box is one that got in."
       count={rows.length}
       state={state}
       refreshing={refreshing}
@@ -50,36 +55,79 @@ export function SuggestedWordsPage() {
             key={row.word}
             className={`review__item review__item--${markFor(row.word, row.mark) ?? "unmarked"}`}
           >
-            <MarkToggle
-              mark={markFor(row.word, row.mark)}
-              label={row.word}
-              onClick={() => cycle(row.word, row.mark)}
-            />
+            {/* The same box either way, and only a curator's is a control:
+                everybody sees whether the word got in, and whoever holds the
+                key can change the answer. */}
+            {curating ? (
+              <MarkToggle
+                mark={markFor(row.word, row.mark)}
+                label={row.word}
+                onClick={() => cycle(row.word, row.mark)}
+              />
+            ) : (
+              <MarkBox mark={row.mark} label={row.word} />
+            )}
             <div className="review__body">
             <div className="review__row">
               <span className="review__word">{row.word}</span>
-              <span className="review__zipf" title="Frequency, on the Zipf scale">
-                {/* Said rather than shown as a dash: an unattested word is the
-                    interesting case on this page, not a missing value. */}
-                {row.zipf === null ? "unattested" : `zipf ${row.zipf.toFixed(2)}`}
+              <span
+                className="review__zipf"
+                title="What this word would score in a puzzle"
+              >
+                {/* The score a player would see, not the frequency it is
+                    computed from: Zipf is the game's internal scale and reads
+                    backwards (higher means *more* common), so a queue judged on
+                    it was a queue judged in the wrong direction.
+
+                    A word no corpus attests would earn a perfect 10, and that
+                    number is not shown. It is the unattested floor rather than
+                    a measurement -- printing it would put the queue's least
+                    known words at the top of it, which is the opposite of what
+                    this list is for. "TBD" is the honest reading: the word has
+                    no score anybody has measured, and what it would be handed
+                    instead is a placeholder waiting on a decision. */}
+                {row.zipf === null ? "TBD" : formatRarityScore(row.zipf)}
               </span>
             </div>
             <p className="review__meta">
-              <span className={`review__origin review__origin--${row.origin}`}>
-                {originLabel(row.origin)}
-              </span>
-              {/* Counts only when there are any: a live-lookup word has no
-                  suggestions and a player's word has no lookups, and printing
-                  "0 lookups" on every row would be noise on both. */}
-              {row.suggestions > 0 && (
+              {/* Which door the word came through, in one label, and a word
+                  that came through both reads as played.
+
+                  The two are different acts: a guess has to contain the drop,
+                  costs one of the day's four, and -- if the live
+                  Merriam-Webster check approves it -- scores in that puzzle on
+                  the spot; a suggestion satisfies nothing, spends nothing, and
+                  asks for the word to exist tomorrow. Played wins a tie because
+                  it is the stronger evidence: somebody reached for the word
+                  mid-puzzle and a dictionary backed them up, where a suggestion
+                  is a word somebody thought of.
+
+                  The count only when a second person asked: one suggestion is
+                  the door, not a tally. And the suggestion is the fallback for
+                  a row with no live verdict and no event left to count -- the
+                  kind a review pass seeded -- because it is the only other way
+                  onto this list. */}
+              {row.liveApproved ? (
+                <span className="review__live">played</span>
+              ) : (
                 <span>
-                  {row.suggestions} {row.suggestions === 1 ? "suggestion" : "suggestions"}
+                  {row.suggestions > 1 ? `${row.suggestions} suggestions` : "suggested"}
                 </span>
               )}
-              {row.lookups > 0 && (
-                <span>
-                  {row.lookups} {row.lookups === 1 ? "lookup" : "lookups"}
-                </span>
+              {/* Why the word is unplayable, when the repo has a reason on
+                  file. The mark says a word was rejected; this says what the
+                  fault was -- a misspelling, a brand name, a word nothing
+                  attests -- which is the part a reader cannot work out from a
+                  cross. Read from the shipped rejection ledger rather than sent
+                  by the endpoint, for the reason the fold is: the verdict is
+                  already in the bundle.
+
+                  It can appear on an unmarked row, and that is not a
+                  contradiction: the ledger is the repo's decision and the mark
+                  is the database's, and a word judged in a review pass may
+                  never have been marked here at all. */}
+              {rejectionReason(row.word) && (
+                <span className="review__rejected">{rejectionReason(row.word)}</span>
               )}
               {row.pos.length > 0 && <span>{row.pos.join(", ")}</span>}
               {row.firstUse && <span>first use {row.firstUse}</span>}
@@ -98,14 +146,16 @@ export function SuggestedWordsPage() {
 }
 
 /**
- * Where a candidate came from, in words.
+ * The fault a reviewed rejection names, as the row says it.
  *
- * "Both" is the strongest signal the queue has -- a player asked for the word
- * *and* somebody reached for it in a puzzle -- so it is worth naming rather than
- * leaving as a database token.
+ * The ledger's own token, hyphens turned to spaces and the first letter raised:
+ * "Proper noun", "Misspelling", "Not a word". The words are the review pass's
+ * own -- rewriting them would put a second vocabulary between the reader and
+ * the decision -- and the capital is because this is the one thing on the row
+ * that is a verdict rather than a measurement.
  */
-function originLabel(origin: string): string {
-  if (origin === "both") return "asked for + played";
-  if (origin === "live-lookup") return "played";
-  return "asked for";
+function rejectionReason(word: string): string | undefined {
+  const reason = curatedRejection(word)?.replace(/-/g, " ");
+  return reason && reason[0].toUpperCase() + reason.slice(1);
 }
+

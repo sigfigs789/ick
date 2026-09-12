@@ -6,10 +6,11 @@ import { fetchFeedback } from "../game/review";
 /**
  * The feedback players have left, as a page at /feedback.
  *
- * Everything typed into the box in the how-to-play sheet, in the order it was
- * written. Oldest first because these are read as a sequence: the same player
- * often writes twice, and the second note answers the first. The note
- * is the whole of what was stored: the event carries no player id, no name and
+ * Everything typed into the box in the how-to-play sheet, newest first -- the
+ * page is reached from that box, so whoever opens it most often just wrote the
+ * note at the top. (It was oldest first while this was a curator's backlog and
+ * nothing linked to it; see the 2026-09-11 ordering migration.) The note is the
+ * whole of what was stored: the event carries no player id, no name and
  * nothing about the person (see src/analytics.ts, trackFeedback), so this page
  * can only ever show what somebody wrote and when it arrived.
  *
@@ -22,9 +23,18 @@ import { fetchFeedback } from "../game/review";
  * is an append-only mirror of what the client sent, and this app should not be
  * editing its own log to remember what it has read.
  *
- * Not linked from anywhere in the app. See src/routes.ts, and api/review.ts for
- * what gates the read -- a note is something a player wrote to us, and it should
- * not be sitting at a URL anybody can guess.
+ * Not linked from anywhere in the app. The how-to-play sheet briefly offered
+ * this page to whoever had just written a note, which would have made it a
+ * public wall -- one player's note read by the next -- and that link was taken
+ * back out. Nothing here identifies who wrote what (the event carries no player
+ * id, no name and nothing about the person), but the words are still theirs.
+ *
+ * The triage controls are live here without a key, unlike the word queue's.
+ * Nothing links to this page, a note's mark reaches no part of the game, and
+ * the person who opens it is the person triaging it -- so it behaves the way it
+ * did before any of this was gated. A deployment that sets REVIEW_TOKEN gets
+ * the stricter version for free: the read needs the key, so there is no page to
+ * click on without one. See api/review.ts.
  */
 export function FeedbackPage() {
   const load = useCallback(() => fetchFeedback(), []);
@@ -34,7 +44,7 @@ export function FeedbackPage() {
   return (
     <ReviewPage
       title="Submitted feedback"
-      note="Notes players left in the how-to-play sheet — oldest first."
+      note="Notes players left in the how-to-play sheet — newest first."
       count={rows.length}
       state={state}
       refreshing={refreshing}

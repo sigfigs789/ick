@@ -4,7 +4,7 @@
 //
 // GET /api/review?list=suggested-words&limit=200
 //   -> { words: [{ word, origin, zipf, pos, firstUse, mwSource, lookups,
-//                  suggestions, firstAt, lastAt, mark }] }
+//                  suggestions, firstAt, lastAt, mark, liveApproved }] }
 // GET /api/review?list=feedback&limit=200
 //   -> { feedback: [{ id, text, at, mark }] }
 //   400 bad-list / bad-limit, 401 unauthorised, 405 wrong method,
@@ -25,9 +25,10 @@
 //   act. A note's mark is a row in `feedback_marks`, because the events table it
 //   would otherwise live in is an append-only mirror of what the client sent.
 //
-// Both lists come back in the order they were submitted, oldest first, which is
-// the order the functions impose (see the migration) rather than anything this
-// file does to them.
+// The order is the functions' own (see the migrations) rather than anything this
+// file does to them: the queue oldest first, because it is a queue, and the
+// feedback newest first, because the page is reached from the box that writes
+// to it.
 //
 // Both lists were already in the database and reachable only from a psql prompt
 // holding the service-role key (see the 2026-09-11 migration for the two
@@ -35,15 +36,23 @@
 // and nothing else: no write path, and nothing here triages a word or answers a
 // note.
 //
-// Who may read it. The pages have no link anywhere in the app, which is a way
-// of not advertising them and not a way of protecting them -- a path nobody
-// links to is still a path anybody can type. That matters more for the feedback
-// list than the queue: the words are the game's own dictionary work, while a
-// note is something a player typed to *us*, and publishing those at a guessable
-// URL is not a thing to do by accident. So: set REVIEW_TOKEN on the deployment
-// and every request has to carry it as `key`, which the pages take from their
-// own URL and pass along. Leave it unset and the lists answer anybody who asks,
-// which is the right default only for a deployment where that is understood.
+// Who may read it differs by list, because the two pages are not the same kind
+// of page any more.
+//
+//   suggested-words  anybody. The word rules sheet points whoever just suggested
+//                    a word at the queue it joined, so a keyless reader is the
+//                    ordinary case. A queue of words is everybody's.
+//   feedback         keyed, when REVIEW_TOKEN is set. Nothing in the app links
+//                    to it: a note is something one player wrote to us, and the
+//                    pile of them is not a page to hand the next player. Unset,
+//                    it answers anybody who types the URL -- unlinked is not
+//                    protected, and the token is what protection there is.
+//
+// Who may mark: only a request carrying REVIEW_TOKEN as `key`, which the pages
+// take from their own URL and pass along. Unset, nobody can mark anything from
+// anywhere -- the write fails closed, because "unset means anybody" and "the
+// queue is linked from the game" together mean a stranger triaging words into
+// the dictionary. A curator sets the token and opens the page with ?key=.
 //
 // Never CDN-cached, in either mode. A response that varies by a secret must not
 // be handed to the next caller, and a triage list read once in a while is not
@@ -71,6 +80,8 @@ interface SuggestedRow {
   last_at: string | null;
   /** new | accepted | rejected | deferred; only the middle two are marks. */
   status: string | null;
+  /** playable | unknown | suggested: the live MW verdict, when there was one. */
+  outcome: string | null;
 }
 
 /** One row as `list_feedback` returns it. */
@@ -126,7 +137,13 @@ function num(value: number | string | null): number | null {
 }
 
 /**
- * Whether this request may read the lists.
+ * Whether this request carries the deployment's review token.
+ *
+ * Reading and marking ask this the same question and do different things with
+ * the answer: a read without a token is allowed, since both pages are linked
+ * from the game now, while a mark without one is refused. With REVIEW_TOKEN
+ * unset there is no token to carry, so nothing can be marked from anywhere --
+ * see handlePost.
  *
  * Compared in full rather than short-circuiting on the first differing
  * character. A timing side channel on a review page is not the threat anybody
@@ -135,7 +152,7 @@ function num(value: number | string | null): number | null {
  */
 function authorised(request: Request): boolean {
   const expected = process.env.REVIEW_TOKEN ?? "";
-  if (!expected) return true;
+  if (!expected) return false;
   const given = new URL(request.url).searchParams.get("key") ?? "";
   if (given.length !== expected.length) return false;
   let same = 0;
@@ -162,17 +179,23 @@ export default async function handler(request: Request): Promise<Response> {
 }
 
 /**
- * Set or clear the mark on one row.
+ * Set or clear the mark on one row. Gated by which list, like the read above,
+ * and for the same reason: the two are no longer the same kind of page.
  *
- * Same gate as the read, and worth being plain about what that means: with no
- * REVIEW_TOKEN configured, anybody who finds these pages can move a mark -- and
- * a word's mark is the dictionary graduation pass's own input. Reading the lists
- * openly costs nothing; writing to them openly is a decision, and the token is
- * how it is taken back.
+ * A word's mark fails closed. `word_sightings.status` is the dictionary
+ * graduation pass's own input, and the queue is linked from the word rules
+ * sheet -- so "no REVIEW_TOKEN configured" must not mean "anybody may mark",
+ * which on a linked page is a stranger accepting words into the dictionary. No
+ * token, no marking, until one is set.
+ *
+ * A note's mark follows the read instead: keyed where a token is set, open
+ * where none is. Nothing links to the feedback page, a note's mark lives in a
+ * table of its own, and no part of the game reads it -- the worst a stranger
+ * who guessed the URL could do is tick a note somebody already wrote. That does
+ * not earn a gate that locks the maintainer out of their own triage page until
+ * they go and configure a secret.
  */
 async function handlePost(request: Request): Promise<Response> {
-  if (!authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
-
   // Same-origin only when the caller declares an origin, which every browser
   // does on a POST -- the same guard api/events.ts uses, for the same reason.
   const origin = request.headers.get("origin");
@@ -203,6 +226,14 @@ async function handlePost(request: Request): Promise<Response> {
   const { list, ref, mark } = parsed as { list?: unknown; ref?: unknown; mark?: unknown };
   if (list !== "suggested-words" && list !== "feedback") {
     return reply(400, { ok: false, reason: "bad-list" });
+  }
+
+  // Which list decides how hard this is gated, so the check waits until the list
+  // is known. A word's mark always needs the key; a note's needs one only where
+  // a token is configured, exactly like reading the notes does.
+  const alwaysKeyed = list !== "feedback" || (process.env.REVIEW_TOKEN ?? "") !== "";
+  if (alwaysKeyed && !authorised(request)) {
+    return reply(401, { ok: false, reason: "unauthorised" });
   }
   // Null is a real value here -- it is how a mark is cleared -- so an absent
   // field and a null one are the same request.
@@ -243,12 +274,20 @@ async function handlePost(request: Request): Promise<Response> {
 }
 
 async function handleGet(request: Request): Promise<Response> {
-  if (!authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
-
   const params = new URL(request.url).searchParams;
   const list = params.get("list");
   if (list !== "suggested-words" && list !== "feedback") {
     return reply(400, { ok: false, reason: "bad-list" });
+  }
+
+  // The queue is linked from the game and answers anybody. The notes are not
+  // linked from anywhere, and a deployment that sets REVIEW_TOKEN is asking for
+  // them to stay that way. Unlike the mark, this does not fail closed on an
+  // unset token: that would take the feedback page away from a deployment that
+  // has always read it without one, which is a thing to opt into rather than to
+  // wake up to.
+  if (list === "feedback" && (process.env.REVIEW_TOKEN ?? "") !== "" && !authorised(request)) {
+    return reply(401, { ok: false, reason: "unauthorised" });
   }
 
   // A limit that isn't a number is a caller and this endpoint disagreeing, which
@@ -293,6 +332,11 @@ async function handleGet(request: Request): Promise<Response> {
         firstAt: row.first_at,
         lastAt: row.last_at,
         mark: asMark(row.status),
+        // The live Merriam-Webster check approved this word mid-puzzle, so it
+        // was played on MW's say-so and nobody else's. Sent as the question the
+        // page asks rather than as the raw verdict: "unknown" and "suggested"
+        // are both just "no", and neither is worth a second label on the row.
+        liveApproved: row.outcome === "playable",
       })),
     });
   } catch (error: unknown) {

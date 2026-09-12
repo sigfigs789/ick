@@ -132,3 +132,37 @@ export function MarkToggle({
     </button>
   );
 }
+
+/**
+ * The same mark, for somebody who is only reading: a tick if the row was
+ * accepted, a cross if it was rejected, an empty box if nobody has judged it
+ * yet.
+ *
+ * The box is the whole point rather than a decoration on a control. These pages
+ * are linked from the game, and the first question a player has about the word
+ * they suggested is whether it got in -- which the mark has always answered and
+ * only a curator could see. A span and not a disabled button: there is nothing
+ * here to press, and a control that cannot be used is a worse way of saying so
+ * than no control.
+ */
+export function MarkBox({ mark, label }: { mark: Mark; label: string }) {
+  const state = mark ?? "unmarked";
+  const said =
+    mark === "accepted"
+      ? "accepted"
+      : mark === "rejected"
+        ? "rejected"
+        : "not judged yet";
+  return (
+    <span
+      className={`review__mark review__mark--${state} review__mark--static`}
+      role="img"
+      aria-label={`${label}: ${said}`}
+      title={said}
+    >
+      <span aria-hidden="true">
+        {mark === "accepted" ? "✓" : mark === "rejected" ? "✕" : ""}
+      </span>
+    </span>
+  );
+}

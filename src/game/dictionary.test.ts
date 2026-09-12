@@ -108,7 +108,8 @@ const wiktionaryScienceWords = ["biohacking", "neuropsychopharmacology", "scient
 describe("isValidWord", () => {
   it("keeps the curated dictionary size intentional", () => {
     // Update this only when deliberately regenerating or editing the word list.
-    expect(dictionaryWords).toHaveLength(225_482);
+    // 225,483 since `floterial` was accepted off the review queue on 2026-09-11.
+    expect(dictionaryWords).toHaveLength(225_483);
   });
 
   it("accepts a common real word", () => {

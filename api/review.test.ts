@@ -56,6 +56,9 @@ describe("api/review", () => {
         first_at: "2026-09-08T09:00:00Z",
         last_at: "2026-09-10T12:00:00Z",
         status: "accepted",
+        // The live check approved this word mid-puzzle, which the row reports
+        // separately from the verdict a person reached afterwards.
+        outcome: "playable",
       },
     ]);
     const response = await handler(get("?list=suggested-words"));
@@ -75,6 +78,7 @@ describe("api/review", () => {
           firstAt: "2026-09-08T09:00:00Z",
           lastAt: "2026-09-10T12:00:00Z",
           mark: "accepted",
+          liveApproved: true,
         },
       ],
     });
@@ -158,8 +162,13 @@ describe("api/review", () => {
   });
 
   describe("marks", () => {
+    // Marking is keyed, always -- these lists are linked from the game, so a
+    // reader is not a curator. Every request here carries the key the
+    // deployment is configured with.
+    const KEYED = { ...CONFIGURED, REVIEW_TOKEN: "letmein" };
+
     function mark(body: unknown, init: RequestInit = {}): Request {
-      return new Request("https://wordink.app/api/review", {
+      return new Request("https://wordink.app/api/review?key=letmein", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: typeof body === "string" ? body : JSON.stringify(body),
@@ -168,7 +177,7 @@ describe("api/review", () => {
     }
 
     it("writes a word's mark to the column the dictionary pass reads", async () => {
-      withEnv();
+      withEnv(KEYED);
       // `set_word_status` answers with how many rows it settled.
       const fetchMock = stubFetch([1]);
       const response = await handler(
@@ -183,7 +192,7 @@ describe("api/review", () => {
     });
 
     it("clears a word's mark by returning it to the untriaged state", async () => {
-      withEnv();
+      withEnv(KEYED);
       const fetchMock = stubFetch([1]);
       const response = await handler(mark({ list: "suggested-words", ref: "blorp", mark: null }));
 
@@ -193,7 +202,7 @@ describe("api/review", () => {
     });
 
     it("writes a note's mark to its own table, and answers with what is stored", async () => {
-      withEnv();
+      withEnv(KEYED);
       const fetchMock = stubFetch("accepted");
       const response = await handler(mark({ list: "feedback", ref: 7, mark: "accepted" }));
 
@@ -205,7 +214,7 @@ describe("api/review", () => {
     });
 
     it("refuses a mark it does not have, and a reference of the wrong shape", async () => {
-      withEnv();
+      withEnv(KEYED);
       stubFetch([1]);
 
       expect((await handler(mark({ list: "feedback", ref: 7, mark: "maybe" }))).status).toBe(400);
@@ -217,7 +226,7 @@ describe("api/review", () => {
     });
 
     it("takes marks from its own pages only", async () => {
-      withEnv();
+      withEnv(KEYED);
       stubFetch([1]);
       const response = await handler(
         mark(
@@ -231,7 +240,7 @@ describe("api/review", () => {
     });
 
     it("tells the page a mark did not land", async () => {
-      withEnv();
+      withEnv(KEYED);
       vi.spyOn(console, "error").mockImplementation(() => {});
       stubFetch(500);
       const response = await handler(mark({ list: "feedback", ref: 7, mark: "accepted" }));
@@ -242,6 +251,55 @@ describe("api/review", () => {
 
   describe("with a review token configured", () => {
     const GATED = { ...CONFIGURED, REVIEW_TOKEN: "letmein" };
+
+    it("refuses every word mark when no token is configured at all", async () => {
+      // Fails closed. Unset used to mean "anybody may mark", which on a page
+      // linked from the game is a stranger triaging the dictionary.
+      withEnv(CONFIGURED);
+      const fetchMock = stubFetch([1]);
+      const response = await handler(
+        new Request("https://wordink.app/api/review", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ list: "suggested-words", ref: "blorp", mark: "accepted" }),
+        }),
+      );
+
+      expect(response.status).toBe(401);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("takes a note's mark without a token, since nothing links to that page", async () => {
+      // A note's mark follows the read: open where no token is configured. It
+      // reaches no part of the game, and the alternative locks the maintainer
+      // out of their own triage page.
+      withEnv(CONFIGURED);
+      stubFetch("accepted");
+      const response = await handler(
+        new Request("https://wordink.app/api/review", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ list: "feedback", ref: 7, mark: "accepted" }),
+        }),
+      );
+
+      expect(response.status).toBe(200);
+    });
+
+    it("refuses a keyless note mark once a token is configured", async () => {
+      withEnv(GATED);
+      const fetchMock = stubFetch("accepted");
+      const response = await handler(
+        new Request("https://wordink.app/api/review", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ list: "feedback", ref: 7, mark: "accepted" }),
+        }),
+      );
+
+      expect(response.status).toBe(401);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
 
     it("answers a request carrying the key", async () => {
       withEnv(GATED);
@@ -266,13 +324,49 @@ describe("api/review", () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it("refuses one that does not, without reaching the database", async () => {
+    it("answers a keyless read of the queue, which is linked from the game", async () => {
+      withEnv(GATED);
+      stubFetch([]);
+
+      expect((await handler(get("?list=suggested-words"))).status).toBe(200);
+    });
+
+    it("refuses a keyless read of the notes, which are linked from nowhere", async () => {
+      // The two lists part company here: a queue of words is everybody's, and a
+      // note is something one player wrote to us.
       withEnv(GATED);
       const fetchMock = stubFetch([]);
 
       expect((await handler(get("?list=feedback"))).status).toBe(401);
       expect((await handler(get("?list=feedback&key=letmeinn"))).status).toBe(401);
-      expect((await handler(get("?list=feedback&key=letmeon"))).status).toBe(401);
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect((await handler(get("?list=feedback&key=letmein"))).status).toBe(200);
+    });
+
+    it("still answers the notes when no token is configured", async () => {
+      // Unlike a mark, this does not fail closed: taking the feedback page away
+      // from a deployment that has always read it without a token is a thing to
+      // opt into, not to wake up to.
+      withEnv(CONFIGURED);
+      stubFetch([]);
+
+      expect((await handler(get("?list=feedback"))).status).toBe(200);
+    });
+
+    it("refuses a mark whose key is wrong, without reaching the database", async () => {
+      withEnv(GATED);
+      const fetchMock = stubFetch([1]);
+      const wrong = (key: string) =>
+        new Request(`https://wordink.app/api/review?key=${key}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ list: "feedback", ref: 7, mark: "accepted" }),
+        });
+
+      // Wrong by a character, and wrong at the same length: the compare is
+      // constant-time and neither shape gets any further.
+      expect((await handler(wrong("letmeinn"))).status).toBe(401);
+      expect((await handler(wrong("letmeon"))).status).toBe(401);
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });
