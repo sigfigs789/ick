@@ -24,7 +24,7 @@
     "http": {
       "enable": true,
       "domains": [
-        "supabase.co"
+        "hjjdnbftdwswkfqnsejt.supabase.co"
       ]
     }
   },
@@ -32,7 +32,8 @@
     "global": {
       "supabaseUrl": {
         "type": "string",
-        "label": "The website's Supabase project URL, https://<ref>.supabase.co"
+        "label": "The website's Supabase project URL",
+        "defaultValue": "https://hjjdnbftdwswkfqnsejt.supabase.co"
       },
       "supabaseAnonKey": {
         "type": "string",

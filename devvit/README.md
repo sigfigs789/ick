@@ -111,10 +111,17 @@ review by Reddit.
 The merged board is dormant until both are set; without them the app shows
 Reddit's own players, which is a working board.
 
-    devvit settings set supabaseUrl        # https://<ref>.supabase.co
+    devvit settings set supabaseUrl        # defaults to the live project already
     devvit settings set supabaseAnonKey    # the anon key -- NOT service-role
 
 The `20260911020000` and `20260911030000` migrations have to be applied to the
-website's Supabase first, or the anon key has nothing it may call. And narrow
-`permissions.http.domains` in `devvit.json` from `supabase.co` to the project's
-own host before publishing.
+website's Supabase first, or the anon key has nothing it may call. `permissions.http.domains` names the live project's host exactly
+(`hjjdnbftdwswkfqnsejt`, the us-east-2 one -- the older us-east-1 project of the
+same name holds none of these tables).
+
+One thing to expect from the word check rather than be surprised by: the site
+had judged 31 words when this was written, because the live fallback only fires
+for a word the curated dictionary does not already carry. So a novel word on
+Reddit will almost always come back `unknown` and the game's own rejection will
+stand. The mechanism is right and the table fills as the site is played, but the
+benefit today is small.
