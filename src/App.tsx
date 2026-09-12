@@ -23,6 +23,7 @@ import {
   trackLeaderboardOpened,
   trackSessionTime,
   trackVisit,
+  isReporting,
 } from "./analytics";
 import { recordVisit } from "./game/visits";
 import { navigate } from "./routes";
@@ -142,8 +143,15 @@ export default function App() {
     <>
       {showConfetti && <ConfettiBurst />}
 
-      <Analytics />
-      <SpeedInsights />
+      {/* Not mounted where reporting is off: inside a Reddit post both scripts
+          are blocked by the frame's content policy, and neither should be
+          reaching a third party from there in any case. See analytics.ts. */}
+      {isReporting() && (
+        <>
+          <Analytics />
+          <SpeedInsights />
+        </>
+      )}
       <main>
         {/* Below the header rather than inside it: which puzzle you are on is
             part of the puzzle, not part of the app's identity -- and the header

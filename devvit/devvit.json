@@ -17,23 +17,8 @@
     "dir": "dist/server",
     "entry": "index.cjs"
   },
-  "menu": {
-    "items": [
-      {
-        "label": "Post today's puzzle",
-        "description": "Put up the WordInk post for today, if it has none yet",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/post-create"
-      }
-    ]
-  },
-  "triggers": {
-    "onAppInstall": "/internal/triggers/on-app-install"
-  },
-  "scripts": {
-    "dev": "vite build --watch",
-    "build": "vite build"
+  "marketingAssets": {
+    "icon": "assets/icon.png"
   },
   "permissions": {
     "http": {
@@ -56,6 +41,20 @@
       }
     }
   },
+  "menu": {
+    "items": [
+      {
+        "label": "Post today's puzzle",
+        "description": "Put up the WordInk post for today, if it has none yet",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/post-create"
+      }
+    ]
+  },
+  "triggers": {
+    "onAppInstall": "/internal/triggers/on-app-install"
+  },
   "scheduler": {
     "tasks": {
       "importWebsiteBoard": {
@@ -67,5 +66,9 @@
         "cron": "5 0 * * *"
       }
     }
+  },
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build"
   }
 }

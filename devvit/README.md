@@ -53,18 +53,35 @@ own serverless Node runtime, with Redis beside it.
   the board and off the streak for the same reason it is on the site -- you can
   look up the answers. `useDailyPuzzle.fixedDay.test.tsx` holds this.
 
+- **The splash, the icon and the rest of the post's surface.** `splash.css` is
+  written in the game's own palette rather than the template's Tailwind, because
+  most people scrolling past will see only that. It says nothing about the day's
+  drop -- not knowing the letters until you open it is the game, which is also
+  why the post's title is the date.
+- **Nothing is reported from inside a post.** Vercel's scripts are blocked by
+  the frame's content policy and `/api/events` is a path this build does not
+  serve, so every event would be a blocked script and a request into nothing --
+  and reporting what Reddit's players do to a third party is the one thing this
+  build is careful not to do anywhere else. The seam is `setReporting` in
+  `src/analytics.ts`, on everywhere but here.
+
 ## What still has to be built
 
-- **Progress cannot live in localStorage.** The webview's storage is per-device
-  and not guaranteed across sessions. Streaks, past-puzzle history, and
-  `src/game/visits.ts` belong in Redis under the username.
+- **Progress still lives in localStorage**, and the leaderboard does not cover
+  it. The board holds one summary row per player per puzzle -- the day's rarest
+  word and its totals -- which is what a board needs and not what a *game*
+  needs: the guesses in flight, the streak, and which days have been played are
+  none of them in it. In a webview that storage is per-device, so a player
+  moving between the Reddit app on a phone and Reddit on a desktop starts again
+  with no streak. Not a blocker for publishing; it is the largest quality gap
+  that remains.
 - **`/api/events`.** The analytics mirror, which has no reader and so is the
   least urgent thing here.
 - **Routing has no server.** `src/routes.ts` leans on the `vercel.json` rewrite
   to `index.html`. There is no rewrite layer here; the five pages need hash or
   in-memory routing.
-- **Vercel Analytics and Speed Insights come out**, along with the `sendBeacon`
-  in `src/analytics.ts` -- all of it calls domains that will not be allowlisted.
+- **The bundle is being shipped as it is** -- 5.8 MB, 1.6 MB gzipped, almost all
+  of it the dictionary. A deliberate call rather than an oversight; see below.
 
 ## The bundle
 

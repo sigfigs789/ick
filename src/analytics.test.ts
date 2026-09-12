@@ -13,6 +13,8 @@ import {
   trackVisitEngaged,
   trackFeedbackSubmitted,
   trackSessionTime,
+  setReporting,
+  isReporting,
 } from "./analytics";
 import { unattestedZipf, rarityScore } from "./game/dictionary";
 import { puzzleNumber } from "./game/share";
@@ -505,5 +507,27 @@ describe("supabase mirror", () => {
 
     expect(() => trackShareArrival()).not.toThrow();
     expect(track).toHaveBeenCalledWith("arrived_from_share");
+  });
+});
+
+describe("a host that reports nothing", () => {
+  afterEach(() => {
+    // Back on, or every test after this one silently records nothing.
+    setReporting(true);
+  });
+
+  it("reports by default, which is what this site relies on", () => {
+    expect(isReporting()).toBe(true);
+  });
+
+  it("sends nothing to Vercel once turned off", () => {
+    setReporting(false);
+    trackResultCopied();
+    expect(track).not.toHaveBeenCalled();
+  });
+
+  it("says so, so the SDK components are never mounted", () => {
+    setReporting(false);
+    expect(isReporting()).toBe(false);
   });
 });

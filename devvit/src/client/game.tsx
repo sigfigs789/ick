@@ -11,6 +11,7 @@ import { createRoot } from 'react-dom/client';
 import { Root } from '../../../src/Root';
 import { setPuzzleDay } from '../../../src/game/date';
 import { setInMemoryRouting } from '../../../src/routes';
+import { setReporting } from '../../../src/analytics';
 
 /**
  * Ask the post which puzzle it is, then draw it.
@@ -46,6 +47,13 @@ if (day) setPuzzleDay(day);
 // server for `/leaderboard`, which has no rewrite in front of it. The header's
 // tabs are the navigation, which is all a player inside a post has anyway.
 setInMemoryRouting(true);
+
+// Report nothing. Vercel's scripts are blocked by the frame's content policy
+// and `/api/events` is a path this build does not serve, so every event would
+// be a blocked script and a request into nothing -- and reporting what Reddit's
+// players do to a third party is the one thing this build is careful not to do
+// anywhere else.
+setReporting(false);
 
 // `Root` rather than `App`: the puzzle is one of five pages, and the other four
 // -- the header, the boards, the finds -- are the rest of the game. Rendering

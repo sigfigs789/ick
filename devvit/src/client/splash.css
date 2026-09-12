@@ -1,0 +1,125 @@
+/*
+ * The splash: what a WordInk post looks like in the feed before anybody taps it.
+ *
+ * Written in the game's own palette rather than the template's Tailwind, because
+ * this is the first and most often seen thing the app has -- most people
+ * scrolling past will see only this -- and it should read as the game rather
+ * than as a framework's defaults.
+ *
+ * It says nothing about today's drop. Not knowing the letters until you open it
+ * is the whole game, and a splash that leaked them would be answering the
+ * puzzle in the feed. The post's title is the date for exactly the same reason.
+ */
+
+:root {
+  --ink: #1a1a1b;
+  --paper: #fafafa;
+  --muted: #5d6066;
+  --line: #d3d6da;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 100vh;
+  margin: 0;
+  padding: 1.5rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Libre Franklin", -apple-system, "Segoe UI", Roboto, sans-serif;
+  text-align: center;
+}
+
+.splash__mark {
+  width: 84px;
+  height: 84px;
+  border-radius: 20px;
+  /* The mark carries its own dark ground, so nothing is drawn behind it. */
+  display: block;
+}
+
+.splash__name {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.splash__tagline {
+  margin: 0;
+  max-width: 26ch;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.splash__play {
+  margin-top: 0.25rem;
+  padding: 0.7rem 2rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.splash__play:hover {
+  background: #3a3a3b;
+}
+
+.splash__play:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Reddit renders posts on the viewer's own theme; follow it rather than
+   punching a light card into a dark feed. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f2f2f3;
+    --paper: #0f0f10;
+    --muted: #9ea1a7;
+    --line: #2a2a2c;
+  }
+
+  .splash__play {
+    background: #f2f2f3;
+    color: #0f0f10;
+  }
+
+  .splash__play:hover {
+    background: #d8d8da;
+  }
+}
+
+/* A short post in a crowded feed: keep it legible when the frame is tiny. */
+@media (max-height: 260px) {
+  .splash {
+    gap: 0.6rem;
+    padding: 1rem;
+  }
+
+  .splash__mark {
+    width: 56px;
+    height: 56px;
+  }
+
+  .splash__name {
+    font-size: 1.35rem;
+  }
+
+  .splash__tagline {
+    display: none;
+  }
+}
