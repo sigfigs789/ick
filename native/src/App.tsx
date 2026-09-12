@@ -10,7 +10,7 @@ import { useAppState } from './hooks/useAppState';
 import { FoundWordsScreen } from './screens/FoundWordsScreen';
 import { LeaderboardScreen } from './screens/LeaderboardScreen';
 import { PlayScreen } from './screens/PlayScreen';
-import { radius, space } from './theme/tokens';
+import { space } from './theme/tokens';
 import { useTheme } from './theme/useTheme';
 
 type Route = 'game' | 'leaderboard' | 'found-words';
@@ -118,20 +118,23 @@ export function App() {
 
         <View style={[styles.header, { borderBottomColor: theme.border }]}>
           <View style={styles.bar}>
-            <View style={styles.wordmarkRow}>
-              <Text style={[styles.wordmark, { color: theme.fg }]} accessibilityRole="header">
-                WordInk
-              </Text>
-              {/* The beta chip rather than a banner: the game really is changing
-                  under players week to week, and a permanent label sets that
-                  expectation once without spending a row of the puzzle on it. */}
-              <Text
-                style={[styles.beta, { color: theme.fgMuted, backgroundColor: theme.bgInset }]}
-                accessibilityLabel="Beta. Still being built — rules and scoring may change."
-              >
-                beta
-              </Text>
-            </View>
+            {/* The wordmark alone. The website and the Reddit build both wear a
+                "beta" chip beside it, which is honest -- the game really is
+                changing under players week to week, and saying so once in the
+                chrome is cheaper than a banner.
+
+                This build cannot. App Store Review Guideline 2.2 rules out
+                demos, betas and trial versions, and a label in the app's own
+                header saying "beta" is the first thing a reviewer reads. The
+                word is the risk, not the fact behind it: nothing about how
+                often the game changes is different here, and the rules sheet
+                still opens itself on a first run.
+
+                Dropping it in the shared header instead would have taken the
+                chip off the website too, where it is doing its job. */}
+            <Text style={[styles.wordmark, { color: theme.fg }]} accessibilityRole="header">
+              WordInk
+            </Text>
 
             <Pressable
               onPress={() => {
@@ -221,25 +224,10 @@ const styles = StyleSheet.create({
     paddingTop: space.sm,
     paddingBottom: space.md,
   },
-  wordmarkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.sm,
-  },
   wordmark: {
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: -0.4,
-  },
-  beta: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    overflow: 'hidden',
-    borderRadius: radius.sm,
-    paddingHorizontal: space.sm,
-    paddingVertical: 2,
   },
   help: {
     width: 30,
