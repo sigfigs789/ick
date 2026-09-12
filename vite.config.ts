@@ -150,5 +150,15 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    alias: {
+      // The Devvit tests live in this suite but their dependency tree does not:
+      // devvit/ keeps its own node_modules and CI installs only the root's. The
+      // tests mock this module anyway; the stub exists so the import resolves.
+      // See devvit/tests/devvit-server-stub.ts.
+      '@devvit/web/server': new URL(
+        './devvit/tests/devvit-server-stub.ts',
+        import.meta.url,
+      ).pathname,
+    },
   },
 })
