@@ -38,6 +38,8 @@ export class FakeRedis {
   private zsets = new Map<string, Map<string, number>>();
   private strings = new Map<string, string>();
   private ttls = new Map<string, number>();
+  /** Every key `set` has touched, in order, so a test can assert write order. */
+  private written: string[] = [];
 
   // -- plain keys -----------------------------------------------------------
   // Where an imported board is cached, as one JSON blob per window.
@@ -48,7 +50,13 @@ export class FakeRedis {
 
   async set(key: string, value: string): Promise<string> {
     this.strings.set(key, value);
+    this.written.push(key);
     return 'OK';
+  }
+
+  /** The keys `set` has touched, in the order it touched them. */
+  keysWritten(): string[] {
+    return [...this.written];
   }
 
   /**

@@ -8,6 +8,7 @@
 
 import { Hono } from 'hono';
 import { importBoard, importFinds } from '../core/import';
+import { createPuzzlePost } from '../core/puzzle';
 import { monthStartOf, weekStartOf } from '../../shared/windows';
 
 export const scheduler = new Hono();
@@ -43,3 +44,20 @@ scheduler.post('/import', async (c) => {
 function shiftDays(date: string, days: number): string {
   return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
 }
+
+/**
+ * Put up the day's puzzle.
+ *
+ * UTC's day, because a post has to be made at some single moment and UTC is the
+ * only clock a server has. It is not the same question the website answers --
+ * there "today" is the reader's own calendar date, which is right for a page
+ * anybody can open at any time. Here the post *is* the puzzle, so the only thing
+ * that matters is that exactly one goes up a day and that it says which day it
+ * is. Both hold under any timezone.
+ */
+scheduler.post('/daily-post', async (c) => {
+  const date = new Date().toISOString().slice(0, 10);
+  const { postId, created } = await createPuzzlePost(date);
+  console.log(`daily-post: ${date} -> ${postId}${created ? '' : ' (already posted)'}`);
+  return c.json({ postId, created });
+});

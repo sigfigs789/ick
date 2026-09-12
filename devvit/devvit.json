@@ -20,23 +20,13 @@
   "menu": {
     "items": [
       {
-        "label": "Create a new post",
-        "description": "wordink",
+        "label": "Post today's puzzle",
+        "description": "Put up the WordInk post for today, if it has none yet",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/post-create"
-      },
-      {
-        "label": "Example form",
-        "description": "Show a simple form",
-        "location": "subreddit",
-        "forUserType": "moderator",
-        "endpoint": "/internal/menu/example-form"
       }
     ]
-  },
-  "forms": {
-    "exampleForm": "/internal/form/example-submit"
   },
   "triggers": {
     "onAppInstall": "/internal/triggers/on-app-install"
@@ -71,6 +61,10 @@
       "importWebsiteBoard": {
         "endpoint": "/internal/scheduler/import",
         "cron": "*/15 * * * *"
+      },
+      "dailyPuzzlePost": {
+        "endpoint": "/internal/scheduler/daily-post",
+        "cron": "5 0 * * *"
       }
     }
   }

@@ -39,15 +39,22 @@ own serverless Node runtime, with Redis beside it.
   them `u/` or `w/`. The read-only door they come through is the
   `20260911020000` migration -- the anon key, never the service-role key.
 
+- **The post is the puzzle** (`src/server/core/puzzle.ts`). A scheduled job puts
+  one post up a day and records which puzzle it holds; the client asks
+  `/api/init` and fixes the day before the first render. A player opening
+  Tuesday's post on Friday plays Tuesday's puzzle, and two players either side
+  of the date line get the same one, because they are looking at the same thing
+  rather than at two clocks. The seam it uses is `setPuzzleDay` in
+  `src/game/date.ts` -- inert on the website, which never calls it.
+
 ## What still has to be built
 
+- **Archive navigation still shows.** The game's previous/next puzzle arrows
+  are drawn inside a post that holds exactly one puzzle. They should go, or the
+  post is not quite the puzzle after all.
 - **Progress cannot live in localStorage.** The webview's storage is per-device
   and not guaranteed across sessions. Streaks, past-puzzle history, and
   `src/game/visits.ts` belong in Redis under the username.
-- **The post is the puzzle.** The website derives the drop from the player's
-  local date against `src/data/drops.json`. Here a scheduled job should create
-  one post per day and that post carries its drop -- which removes the clock
-  arithmetic rather than porting it.
 - **`/api/events`.** The analytics mirror, which has no reader and so is the
   least urgent thing here.
 - **Routing has no server.** `src/routes.ts` leans on the `vercel.json` rewrite
