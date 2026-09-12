@@ -136,6 +136,51 @@ eas submit --platform ios --latest
 eas submit --platform android --latest
 ```
 
+### The one step that has to be interactive
+
+The very first iOS build needs an Apple Distribution certificate and an App
+Store provisioning profile, and EAS cannot create either without talking to
+Apple as you. In a non-interactive run it stops before doing any work:
+
+```
+✔ Using remote iOS credentials (Expo server)
+Distribution Certificate is not validated for non-interactive builds.
+Credentials are not set up. Run this command again in interactive mode.
+```
+
+So the first build is run by hand, from a terminal that can answer a prompt.
+Every command in this file is run from this directory, `native/`:
+
+```bash
+npx eas-cli build --platform ios --profile production
+```
+
+Note that `eas login` is not part of this and should not be run for it: that is
+the *Expo* account, which is already set (see `owner` in `app.json`) and has
+nothing to do with Apple. The Apple ID is asked for by the build itself.
+
+It asks for the Apple ID, then a two-factor code from a trusted device, and
+offers to register the bundle identifier and generate the credentials. Say yes
+to all of it. What it makes is stored on EAS against this project, so this is a
+once-per-account step rather than a once-per-build one -- every build after it
+can run unattended, including from CI.
+
+Submission is separate and never needs the password. Generate an App Store
+Connect API key (Users and Access -> Integrations -> App Store Connect API,
+access **App Manager**), and point `eas submit` at it:
+
+```bash
+export EXPO_ASC_API_KEY_PATH=/path/to/AuthKey_XXXXXXXX.p8
+export EXPO_ASC_KEY_ID=XXXXXXXX
+export EXPO_ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000
+npx eas-cli submit --platform ios --latest
+```
+
+Environment variables rather than `eas.json` fields deliberately: the key is a
+credential, and the three values that identify it have no business in a tracked
+file. Apple allows the `.p8` to be downloaded exactly once, so keep it
+somewhere durable.
+
 ### Before the first submission
 
 These are the things that are not decided by any file in this repo, and each one
