@@ -16,27 +16,36 @@ is no Vercel in the picture and no outbound network except domains declared in
 `game.html` loads in a sandboxed webview. The server in `src/server` is Reddit's
 own serverless Node runtime, with Redis beside it.
 
+## What is built
+
+- **The leaderboard**, on Reddit's own Redis (`src/server/core/leaderboard.ts`).
+  The website derives every board from its rows on each read; Redis has no
+  `GROUP BY`, so the aggregation happens at write time and `submitScores` is the
+  only writer. Its arithmetic is under test in `tests/leaderboard.test.ts`.
+- **Identity from the post.** The server asks Reddit who is calling and ignores
+  the `player` query parameter and the `playerId` in the POST body that the
+  website takes. A client that names itself on a board it competes in is a
+  client that can name somebody else.
+- **One board holding both games.** The website's aggregate is pulled in on a
+  schedule (`src/server/core/import.ts`) and cached; Reddit's own scores never
+  leave Reddit. Rows carry where they were played and the shared client names
+  them `u/` or `w/`. The read-only door they come through is the
+  `20260911020000` migration -- the anon key, never the service-role key.
+
 ## What still has to be built
 
-The scaffold builds and renders the real game. None of the seam below exists
-yet, and each item is a thing the website gets from the browser that a post has
-to supply instead.
-
-- **The three Vercel functions become Hono routes.** `api/leaderboard.ts`,
-  `api/validate.ts`, and `api/events.ts` move to `src/server/routes/`. Supabase
-  and Merriam-Webster are outbound HTTP and need declaring in `devvit.json`, or
-  replacing: the leaderboard is a natural fit for Redis sorted sets.
-- **Identity comes from Reddit.** `src/game/player.ts` mints a UUID into
-  localStorage and `handleFor` derives a display name from it. Inside a post the
-  server knows the actual username. Better boards, but it retires the UUID
-  scheme and every Supabase row keyed by one.
 - **Progress cannot live in localStorage.** The webview's storage is per-device
   and not guaranteed across sessions. Streaks, past-puzzle history, and
   `src/game/visits.ts` belong in Redis under the username.
 - **The post is the puzzle.** The website derives the drop from the player's
-  local date against `src/data/drops.json`. Here a scheduled job creates one
-  post per day and that post carries its drop -- which removes the clock
+  local date against `src/data/drops.json`. Here a scheduled job should create
+  one post per day and that post carries its drop -- which removes the clock
   arithmetic rather than porting it.
+- **`/api/validate` and `/api/events`.** Validation is the interesting one: the
+  website's Merriam-Webster keys are free non-commercial ones capped at 1,000
+  requests a day, which Reddit traffic would exhaust. The verdicts it has
+  already collected are in Supabase's `word_sightings`, so the same read-only
+  import could serve them and Merriam-Webster need never be called from here.
 - **Routing has no server.** `src/routes.ts` leans on the `vercel.json` rewrite
   to `index.html`. There is no rewrite layer here; the five pages need hash or
   in-memory routing.
@@ -65,3 +74,16 @@ subscribers to install into:
 
 `upload` puts the app where only you can see it. `publish` files it for human
 review by Reddit.
+
+## Settings the import needs
+
+The merged board is dormant until both are set; without them the app shows
+Reddit's own players, which is a working board.
+
+    devvit settings set supabaseUrl        # https://<ref>.supabase.co
+    devvit settings set supabaseAnonKey    # the anon key -- NOT service-role
+
+The `20260911020000` migration has to be applied to the website's Supabase
+first, or the anon key has nothing it may call. And narrow
+`permissions.http.domains` in `devvit.json` from `supabase.co` to the project's
+own host before publishing.
