@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WordInk — Privacy Policy</title>
+    <meta name="robots" content="index, follow" />
+    <style>
+      :root { color-scheme: light dark; --ink:#1a1a1b; --paper:#fafafa; --muted:#5d6066; --line:#d3d6da; }
+      @media (prefers-color-scheme: dark) { :root { --ink:#f2f2f3; --paper:#0f0f10; --muted:#9ea1a7; --line:#2a2a2c; } }
+      body { margin:0 auto; max-width:44rem; padding:2.5rem 1.25rem 5rem; background:var(--paper); color:var(--ink);
+             font:16px/1.6 "Libre Franklin",-apple-system,"Segoe UI",Roboto,sans-serif; }
+      h1 { font-size:1.9rem; letter-spacing:-0.02em; margin:0 0 .25rem; }
+      h2 { font-size:1.15rem; margin:2.25rem 0 .6rem; }
+      .updated { color:var(--muted); font-size:.9rem; margin:0 0 2rem; }
+      ul { padding-left:1.2rem; } li { margin:.35rem 0; }
+      hr { border:0; border-top:1px solid var(--line); margin:2.5rem 0; }
+      a { color:inherit; }
+      .back { display:inline-block; margin-top:2rem; color:var(--muted); text-decoration:none; }
+      .back:hover { color:var(--ink); }
+    </style>
+  </head>
+  <body>
+    <h1>Privacy Policy</h1>
+    <p class="updated">WordInk — last updated 11 September 2026</p>
+
+    <p>
+      WordInk is a daily word game, run by one person. This page describes what the game
+      stores and why, in plain terms. It covers both the website at
+      <a href="https://www.wordink.app/">wordink.app</a> and the WordInk app on Reddit.
+    </p>
+
+    <h2>There are no accounts on the website</h2>
+    <p>
+      The website asks for nothing. There is no sign-up, no email address, no password, and
+      nothing you type about yourself. Your browser invents a random identifier the first time
+      you play, and that identifier is what a leaderboard row belongs to. The name shown beside
+      it — something like <em>StormyFox47</em> — is computed from that identifier. It is not a
+      name you choose and it says nothing about you.
+    </p>
+    <p>
+      Clearing your browser's site data erases that identifier, your puzzle progress and your
+      streak. There is no way to recover them, because there is nothing tying them to you.
+    </p>
+
+    <h2>What the website stores</h2>
+    <ul>
+      <li><strong>In your browser:</strong> your random identifier, the puzzles you have played, your streak, and which notices you have seen. This stays on your device.</li>
+      <li><strong>On the server:</strong> one row per player per puzzle — the random identifier, the date, your rarest word of that day, and your scores. This is what the leaderboard is built from.</li>
+      <li><strong>Words looked up:</strong> when you try a word the game's dictionary does not carry, the word is checked against a dictionary service and the answer is recorded so it need not be asked again. The record is of the <em>word</em>, not of who tried it.</li>
+      <li><strong>Usage events:</strong> anonymous counts of things like puzzles started and words accepted, used to see whether the game works. No identifier is attached.</li>
+    </ul>
+
+    <h2>The Reddit app</h2>
+    <p>
+      Inside Reddit, the game runs as a Reddit app. There, your Reddit username is your
+      identity — Reddit tells the app who you are, and your scores are stored under that
+      username on Reddit's own infrastructure. Your username is displayed on the leaderboard
+      inside the app, as <code>u/yourname</code>.
+    </p>
+    <ul>
+      <li>Your Reddit username is <strong>not</strong> sent off Reddit, and is not stored in any database outside it.</li>
+      <li>The Reddit app reports no usage analytics at all.</li>
+      <li>It reads public leaderboard totals and word data from the website's database so that both sets of players can appear on one board. That is a one-way read: nothing about Reddit players is written back.</li>
+    </ul>
+
+    <h2>What is never collected</h2>
+    <p>
+      No names, no email addresses, no passwords, no payment details, no location, no contacts,
+      and no advertising or cross-site tracking identifiers. The game does not sell data, and
+      there is nothing here that could be sold.
+    </p>
+
+    <h2>Who else sees it</h2>
+    <p>
+      The website's data is held in a hosted database (Supabase) and served through a hosting
+      provider (Vercel), both acting only as infrastructure. Dictionary lookups go to
+      Merriam-Webster and Datamuse, and carry only the word being looked up. Reddit holds the
+      data belonging to the Reddit app. Nobody else receives any of it.
+    </p>
+
+    <h2>Removing your data</h2>
+    <p>
+      On the website: clearing your browser's site data removes everything stored on your
+      device and disconnects you from your leaderboard rows, which cannot then be traced back
+      to you. To have leaderboard rows deleted outright, or to ask anything about this policy,
+      write to <a href="mailto:hello@wordink.app">hello@wordink.app</a>.
+    </p>
+
+    <h2>Children</h2>
+    <p>
+      WordInk is not directed at children under 13 and collects nothing that would identify
+      anyone of any age.
+    </p>
+
+    <h2>Changes</h2>
+    <p>
+      If this policy changes, the date at the top changes with it. Material changes will be
+      noted in the game itself.
+    </p>
+
+    <hr />
+    <a class="back" href="/">← Back to WordInk</a>
+  </body>
+</html>
