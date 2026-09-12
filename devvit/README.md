@@ -99,6 +99,33 @@ subscribers to install into:
 `upload` puts the app where only you can see it. `publish` files it for human
 review by Reddit.
 
+## The import is blocked on Reddit granting outbound HTTP
+
+Nothing reaches Supabase from inside the app yet, and it is not the
+configuration. Every call is refused before it leaves:
+
+    PERMISSION_DENIED: HTTP request to domain: <host> is not allowed
+
+What has been ruled out, each by trying it:
+
+- the hostname -- the exact host and the apex `supabase.co` are both refused;
+- the config shape -- it is identical to `reddit/devvit-HotAndCold`, a published
+  app that fetches four external domains this way;
+- the toolchain -- refused on CLI 0.14.2 and on 0.14.3;
+- the settings -- they read back fine; the failure is at `fetch`, after them;
+- anything Supabase-specific -- a probe at `raw.githubusercontent.com`, added to
+  the allowlist moments earlier, was refused in exactly the same way.
+
+So the allowlist is not being applied to this app at all. The likeliest reading
+is that outbound HTTP is granted by Reddit rather than declared by the developer
+-- "domains you declared **and Reddit approved**" -- and that an uploaded,
+unpublished app has not been granted any. If so it resolves at review, and
+nothing here needs changing.
+
+Until then the game is whole without it: Reddit's own board, its own finds feed,
+and a word check that answers `unknown` where the website would have asked
+Merriam-Webster. What is missing is the website's players merged in.
+
 ## Settings the import needs
 
 The merged board is dormant until both are set; without them the app shows

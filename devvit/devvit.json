@@ -24,7 +24,9 @@
     "http": {
       "enable": true,
       "domains": [
-        "hjjdnbftdwswkfqnsejt.supabase.co"
+        "supabase.co",
+        "hjjdnbftdwswkfqnsejt.supabase.co",
+        "raw.githubusercontent.com"
       ]
     }
   },
