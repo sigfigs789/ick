@@ -26,6 +26,13 @@ own serverless Node runtime, with Redis beside it.
   the `player` query parameter and the `playerId` in the POST body that the
   website takes. A client that names itself on a board it competes in is a
   client that can name somebody else.
+- **The live word check, without Merriam-Webster** (`src/server/core/verdicts.ts`).
+  The website's keys are free non-commercial ones capped at 1,000 requests a day
+  for the whole game, which a Reddit audience would exhaust. So this build never
+  calls Merriam-Webster: it reads the verdicts the website has already collected,
+  through the `20260911030000` migration, cached read-through in Redis. A word
+  the site has judged is known here; one it has not is `unknown`, which is what
+  the client already does with a word Merriam-Webster cannot find.
 - **One board holding both games.** The website's aggregate is pulled in on a
   schedule (`src/server/core/import.ts`) and cached; Reddit's own scores never
   leave Reddit. Rows carry where they were played and the shared client names
@@ -41,11 +48,8 @@ own serverless Node runtime, with Redis beside it.
   local date against `src/data/drops.json`. Here a scheduled job should create
   one post per day and that post carries its drop -- which removes the clock
   arithmetic rather than porting it.
-- **`/api/validate` and `/api/events`.** Validation is the interesting one: the
-  website's Merriam-Webster keys are free non-commercial ones capped at 1,000
-  requests a day, which Reddit traffic would exhaust. The verdicts it has
-  already collected are in Supabase's `word_sightings`, so the same read-only
-  import could serve them and Merriam-Webster need never be called from here.
+- **`/api/events`.** The analytics mirror, which has no reader and so is the
+  least urgent thing here.
 - **Routing has no server.** `src/routes.ts` leans on the `vercel.json` rewrite
   to `index.html`. There is no rewrite layer here; the five pages need hash or
   in-memory routing.
@@ -83,7 +87,7 @@ Reddit's own players, which is a working board.
     devvit settings set supabaseUrl        # https://<ref>.supabase.co
     devvit settings set supabaseAnonKey    # the anon key -- NOT service-role
 
-The `20260911020000` migration has to be applied to the website's Supabase
-first, or the anon key has nothing it may call. And narrow
+The `20260911020000` and `20260911030000` migrations have to be applied to the
+website's Supabase first, or the anon key has nothing it may call. And narrow
 `permissions.http.domains` in `devvit.json` from `supabase.co` to the project's
 own host before publishing.
