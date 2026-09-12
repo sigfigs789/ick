@@ -1,14 +1,28 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { todayDateString } from '../../../src/game/date';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { addDays, formatDateLabel, todayDateString } from '../../../src/game/date';
 import { formatScore } from '../../../src/game/dictionary';
 import {
   BOARD_LIMIT,
+  dayFloor,
   fetchBoards,
+  monthFloor,
+  weekFloor,
   type BoardEntry,
   type Boards,
 } from '../../../src/game/leaderboard';
+import { monthLabel, monthStart, nextMonthStart, previousMonthStart } from '../../../src/game/month';
 import { loadPlayerId } from '../../../src/game/player';
+import { weekLabel, weekStart } from '../../../src/game/week';
+import { StepNav } from '../components/StepNav';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
@@ -38,59 +52,139 @@ function boardFor(boards: Boards, window: Window): { rows: BoardEntry[]; self: B
  * The rows come from the website's own endpoint through the website's own
  * client, so a phone player and a browser player are on the same board rather
  * than on two boards that happen to look alike.
+ *
+ * ## Stepping
+ *
+ * Each board walks its own axis, and the step is the window's own unit: the
+ * daily board moves a day, the weekly seven, the monthly to the first of the
+ * month before. A week stepped by one day would be six days of the week you
+ * were already reading.
+ *
+ * The three windows are held separately and sent together, which is what the
+ * endpoint takes. Stepping the month back therefore must not disturb the week
+ * beside it -- and because each is its own piece of state, it cannot.
+ *
+ * Every board bottoms out at the window bracketing the first puzzle, because a
+ * step past that could only ever produce an empty board.
  */
 export function LeaderboardScreen() {
   const theme = useTheme();
   const [window, setWindow] = useState<Window>('daily');
+
+  /*
+   * Today, fixed once for the life of the screen.
+   *
+   * Read again on every render it would be a moving floor: a board left open
+   * across midnight would quietly decide the reader had stepped into the
+   * future, and the forward arrow would switch itself off under them.
+   */
+  const [today] = useState(todayDateString);
+
+  const [day, setDay] = useState(today);
+  const [week, setWeek] = useState(() => weekStart(today));
+  const [month, setMonth] = useState(() => monthStart(today));
+
   const [boards, setBoards] = useState<Boards | null>(null);
+  const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const playerId = loadPlayerId();
 
   /*
-   * The first load, and the only one that is not asked for.
+   * A step means the rows on screen no longer belong to the label above them,
+   * so the spinner goes up in the same render that moves the window rather
+   * than in an effect afterwards. An effect would paint one frame of the old
+   * window's rows under the new window's name first.
+   */
+  const windowKey = `${day}|${week}|${month}`;
+  const [lastWindowKey, setLastWindowKey] = useState(windowKey);
+  if (lastWindowKey !== windowKey) {
+    setLastWindowKey(windowKey);
+    setLoading(true);
+  }
+
+  /*
+   * Load whichever windows are on screen, and again whenever one is stepped.
    *
    * The request is started and awaited inside the effect rather than through a
-   * shared helper, so the `cancelled` flag can be closed over: a reader who
-   * opens the boards and switches tab before the network answers would
-   * otherwise have a late response write into a screen that is gone.
+   * shared helper, so the `cancelled` flag can be closed over. That matters
+   * more here than it looks: a reader pressing back twice quickly has two
+   * fetches in flight over two different windows, and the first one to be sent
+   * is not necessarily the first to answer. Without the flag the older window's
+   * rows could land last and sit under the newer window's label.
    *
-   * A board that will not load is worth saying so about and worth nothing
-   * more. There is no retry loop, because the pull-to-refresh gesture below is
-   * a better retry than any timer -- it happens when somebody actually wants
-   * the board, which is the only moment a refresh is worth a request.
+   * A board that will not load is worth saying so about and worth nothing more.
+   * There is no retry loop, because the pull-to-refresh gesture below happens
+   * when somebody actually wants the board, which is the only moment a refresh
+   * is worth a request.
    */
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
-        const next = await fetchBoards(todayDateString(), { fresh: false });
+        const next = await fetchBoards(today, { day, week, month });
         if (cancelled) return;
         setBoards(next);
         setFailed(false);
       } catch {
         if (!cancelled) setFailed(true);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [today, day, week, month]);
 
   /** Pull to refresh: the reader has seen this board and wants the next one. */
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      setBoards(await fetchBoards(todayDateString(), { fresh: true }));
+      setBoards(await fetchBoards(today, { day, week, month, fresh: true }));
       setFailed(false);
     } catch {
       setFailed(true);
     }
     setRefreshing(false);
-  }, []);
+  }, [today, day, week, month]);
 
   const board = boards ? boardFor(boards, window) : null;
+
+  /*
+   * What the arrows do, per window.
+   *
+   * Forward is capped at the window containing today rather than at today
+   * itself: the week a reader is in is not over, and refusing to step to it
+   * because it has not finished would strand them one week back.
+   */
+  const stepper = {
+    daily: {
+      unit: 'day',
+      label: day === today ? 'Today' : formatDateLabel(day),
+      canGoBack: day > dayFloor(),
+      canGoForward: day < today,
+      onBack: () => setDay(addDays(day, -1)),
+      onForward: () => setDay(addDays(day, 1)),
+    },
+    weekly: {
+      unit: 'week',
+      label: weekLabel(week),
+      canGoBack: week > weekFloor(),
+      canGoForward: week < weekStart(today),
+      onBack: () => setWeek(addDays(week, -7)),
+      onForward: () => setWeek(addDays(week, 7)),
+    },
+    monthly: {
+      unit: 'month',
+      label: monthLabel(month),
+      canGoBack: month > monthFloor(),
+      canGoForward: month < monthStart(today),
+      onBack: () => setMonth(previousMonthStart(month)),
+      onForward: () => setMonth(nextMonthStart(month)),
+    },
+  }[window];
 
   return (
     <View style={styles.fill}>
@@ -113,42 +207,55 @@ export function LeaderboardScreen() {
         })}
       </View>
 
+      <StepNav
+        label={stepper.label}
+        unit={stepper.unit}
+        canGoBack={stepper.canGoBack}
+        canGoForward={stepper.canGoForward}
+        onBack={stepper.onBack}
+        onForward={stepper.onForward}
+      />
+
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.fgMuted} />
         }
       >
-        {boards === null && !failed && (
+        {/* A spinner rather than the outgoing window's rows. The label above
+            names a week, and the rows under it have to be that week's -- three
+            names from the week you just left, sitting under the heading for the
+            week you asked for, is the one wrong thing this screen could show. */}
+        {loading && (
           <View style={styles.centered}>
             <ActivityIndicator color={theme.fgMuted} />
           </View>
         )}
 
-        {failed && boards === null && (
+        {!loading && failed && (
           <Text style={[styles.message, { color: theme.fgMuted }]}>
             Couldn't load the board. Pull down to try again.
           </Text>
         )}
 
-        {board && board.rows.length === 0 && (
+        {!loading && !failed && board && board.rows.length === 0 && (
           <Text style={[styles.message, { color: theme.fgMuted }]}>
-            Nobody has scored on this one yet. Play a word and you'll be first.
+            Nobody scored on this one. Play a word and you'll be first.
           </Text>
         )}
 
-        {board?.rows.map((entry) => (
-          <Row key={entry.playerId} entry={entry} isYou={entry.playerId === playerId} />
-        ))}
+        {!loading &&
+          !failed &&
+          board?.rows.map((entry) => (
+            <Row key={entry.playerId} entry={entry} isYou={entry.playerId === playerId} />
+          ))}
 
         {/* The player's own row, when they rank below the cut -- carrying the
             rank they actually hold. The short board is only safe because of
             this: it got shorter without hiding anybody. */}
-        {board?.self && (
+        {!loading && !failed && board?.self && (
           <>
-            <Text style={[styles.cut, { color: theme.fgFaint }]}>
-              Below the top {BOARD_LIMIT}
-            </Text>
+            <Text style={[styles.cut, { color: theme.fgFaint }]}>Below the top {BOARD_LIMIT}</Text>
             <Row entry={board.self} isYou />
           </>
         )}
@@ -225,6 +332,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: space.lg,
+    paddingTop: space.sm,
     paddingBottom: space.xxl * 2,
     gap: space.sm,
   },
