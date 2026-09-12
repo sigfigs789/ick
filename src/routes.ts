@@ -42,6 +42,41 @@ export const FOUND_WORDS_PATH = "/found-words";
 export const SUGGESTED_WORDS_PATH = "/suggested-words";
 export const FEEDBACK_PATH = "/feedback";
 
+/**
+ * Whether the route lives in memory rather than in the address bar, and what it
+ * is when it does.
+ *
+ * False everywhere on this site, and nothing here turns it on. It exists for a
+ * host with no address bar to read: inside a Reddit post the game runs in a
+ * sandboxed frame whose URL the player never sees, cannot link to, and cannot
+ * reach with a back button -- and where a reload would ask the static server for
+ * `/leaderboard`, which has no rewrite in front of it and no such file behind
+ * it.
+ *
+ * The pages are still pages there; what changes is only where "which page" is
+ * kept. The header's tabs are the whole of the navigation, which is what a
+ * player inside a post has anyway.
+ */
+let inMemory = false;
+let memoryRoute: Route = "game";
+
+/**
+ * Keep the route in memory instead of the address bar.
+ *
+ * Call once, before anything renders. The two unlinked curator pages become
+ * unreachable when this is on, which is correct: they are reached by typing a
+ * URL, and there is no URL to type.
+ */
+export function setInMemoryRouting(enabled: boolean): void {
+  inMemory = enabled;
+  memoryRoute = "game";
+}
+
+/** The route right now, from wherever this host keeps it. */
+function currentRoute(): Route {
+  return inMemory ? memoryRoute : routeFor(window.location.pathname);
+}
+
 /** The route a path names. */
 export function routeFor(pathname: string): Route {
   // Tolerant of a trailing slash, since a shared link may well carry one.
@@ -70,6 +105,15 @@ export function pathFor(route: Route): string {
  * the change came from a click or from the back button.
  */
 export function navigate(route: Route): void {
+  if (inMemory) {
+    if (memoryRoute === route) return;
+    memoryRoute = route;
+    // The same wake-up the address bar's change sends, so `useRoute` has one
+    // code path for "the route moved" whichever host it is running on.
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
+    return;
+  }
   const path = pathFor(route);
   if (window.location.pathname === path) return;
   window.history.pushState(null, "", path);
@@ -80,12 +124,12 @@ export function navigate(route: Route): void {
   if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
 }
 
-/** The current route, kept in step with the address bar. */
+/** The current route, kept in step with wherever this host keeps it. */
 export function useRoute(): Route {
-  const [route, setRoute] = useState<Route>(() => routeFor(window.location.pathname));
+  const [route, setRoute] = useState<Route>(() => currentRoute());
 
   useEffect(() => {
-    const sync = () => setRoute(routeFor(window.location.pathname));
+    const sync = () => setRoute(currentRoute());
     window.addEventListener("popstate", sync);
     // Re-read on mount as well: the address bar is the source of truth, and it
     // can have moved between the initial state above and this effect running.

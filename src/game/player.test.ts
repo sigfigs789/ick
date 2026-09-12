@@ -1,5 +1,12 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { hasJoined, joinBoard, leaveBoard, loadPlayerId } from "./player";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  accountName,
+  hasJoined,
+  joinBoard,
+  leaveBoard,
+  loadPlayerId,
+  setAccount,
+} from "./player";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -73,5 +80,41 @@ describe("the player on this browser", () => {
     joinBoard();
     leaveBoard();
     expect(loadPlayerId()).toBeNull();
+  });
+});
+
+describe("playing as an account", () => {
+  afterEach(() => {
+    // Back to the browser's own identity, or every test after this one is
+    // signed in as somebody.
+    setAccount(null);
+  });
+
+  it("is off by default, which is what this site relies on", () => {
+    expect(accountName()).toBeNull();
+  });
+
+  it("is the id that goes up with a score, so the server records the right one", () => {
+    joinBoard();
+    const browserId = loadPlayerId();
+    setAccount("some_redditor");
+    expect(loadPlayerId()).toBe("some_redditor");
+    expect(loadPlayerId()).not.toBe(browserId);
+  });
+
+  it("needs no minting and stores nothing", () => {
+    setAccount("some_redditor");
+    expect(joinBoard()).toBe("some_redditor");
+    setAccount(null);
+    // Nothing was written under the account, so the browser is still unjoined.
+    expect(hasJoined()).toBe(false);
+  });
+
+  it("hands identity back to the browser when cleared", () => {
+    setAccount("some_redditor");
+    setAccount(null);
+    const id = joinBoard();
+    expect(id).not.toBe("some_redditor");
+    expect(loadPlayerId()).toBe(id);
   });
 });

@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { navigate, pathFor, routeFor } from "./routes";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { act, renderHook } from "@testing-library/react";
+import { navigate, pathFor, routeFor, setInMemoryRouting, useRoute } from "./routes";
 
 beforeEach(() => {
   window.history.pushState(null, "", "/");
@@ -62,5 +63,59 @@ describe("routes", () => {
     navigate("leaderboard");
     window.removeEventListener("popstate", listener);
     expect(heard).toBe(1);
+  });
+});
+
+describe("routing in memory, for a host with no address bar", () => {
+  afterEach(() => {
+    // Back to the address bar, or every test after this one routes in memory.
+    setInMemoryRouting(false);
+  });
+
+  it("is off by default, which is what this site relies on", () => {
+    window.history.pushState(null, "", "/leaderboard");
+    const { result } = renderHook(() => useRoute());
+    expect(result.current).toBe("leaderboard");
+  });
+
+  it("starts on the game, whatever the address bar happens to say", () => {
+    window.history.pushState(null, "", "/leaderboard");
+    setInMemoryRouting(true);
+    const { result } = renderHook(() => useRoute());
+    expect(result.current).toBe("game");
+  });
+
+  it("moves between pages without touching the address bar", () => {
+    window.history.pushState(null, "", "/");
+    setInMemoryRouting(true);
+    const { result } = renderHook(() => useRoute());
+
+    act(() => navigate("leaderboard"));
+    expect(result.current).toBe("leaderboard");
+    // The URL is the one thing that must not move: a reload would ask the
+    // static server for a path it has no rewrite for and no file behind.
+    expect(window.location.pathname).toBe("/");
+
+    act(() => navigate("found-words"));
+    expect(result.current).toBe("found-words");
+    expect(window.location.pathname).toBe("/");
+  });
+
+  it("comes back to the game", () => {
+    setInMemoryRouting(true);
+    const { result } = renderHook(() => useRoute());
+    act(() => navigate("leaderboard"));
+    act(() => navigate("game"));
+    expect(result.current).toBe("game");
+  });
+
+  it("hands routing back to the address bar when switched off", () => {
+    setInMemoryRouting(true);
+    act(() => navigate("leaderboard"));
+    setInMemoryRouting(false);
+
+    window.history.pushState(null, "", "/found-words");
+    const { result } = renderHook(() => useRoute());
+    expect(result.current).toBe("found-words");
   });
 });

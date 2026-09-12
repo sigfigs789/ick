@@ -57,7 +57,32 @@ function mirror(name: string, props?: EventProps): void {
  * past the dashboard's retention window. Vercel is called first so a problem with
  * the mirror cannot cost the event its primary destination.
  */
+/**
+ * Whether this host reports anything at all.
+ *
+ * True on this site, which is what all of the above is for. False inside a
+ * Reddit post, and not as a preference: the frame's content policy blocks
+ * Vercel's scripts outright, and `/api/events` is a path that build does not
+ * serve -- so every event would be a blocked script and a request into nothing.
+ *
+ * There is a better reason than either. Reporting from inside a post would send
+ * what Reddit's players do to a third party, which is the one thing that build
+ * is careful not to do anywhere else.
+ */
+let reporting = true;
+
+/** Turn reporting off, for a host that must not do it. Call before rendering. */
+export function setReporting(enabled: boolean): void {
+  reporting = enabled;
+}
+
+/** Whether events are being reported, for the components that mount the SDKs. */
+export function isReporting(): boolean {
+  return reporting;
+}
+
 function send(name: string, props?: EventProps): void {
+  if (!reporting) return;
   // Called with one argument when there are no properties, exactly as before, so
   // an event with no dimensions still reaches Vercel as a bare event name.
   if (props) track(name, props);

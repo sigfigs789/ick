@@ -434,6 +434,65 @@ describe("reading the boards", () => {
     expect(boards.monthly).toHaveLength(1);
   });
 
+  it("names a row by where it was played, on a board holding two games", async () => {
+    // Only the Reddit build sends `source`, and only because its board merges
+    // its own players with the ones imported from here. Two populations on one
+    // list have to be told apart, and the prefixes are the ones each home
+    // already uses.
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          weekly: [
+            {
+              rank: 1,
+              playerId: "some_redditor",
+              source: "r",
+              windowWord: "asphyxiate",
+              windowZipf: 2.09,
+              score: 40,
+            },
+            {
+              rank: 2,
+              playerId: "11111111-1111-4111-8111-111111111111",
+              source: "w",
+              windowWord: "inkling",
+              windowZipf: 2.9,
+              score: 20,
+            },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    const boards = await fetchBoards("2026-08-27");
+    expect(boards.weekly.map((e) => e.name)).toEqual([
+      // A Reddit row's id is the username already, so there is nothing to derive.
+      "u/some_redditor",
+      `w/${handleFor("11111111-1111-4111-8111-111111111111")}`,
+    ]);
+  });
+
+  it("names a row with no source exactly as it always did", async () => {
+    // This site's own endpoint sends no source, and must keep producing the
+    // name it has always produced -- every handle on the live board depends on
+    // it, and a row that renamed itself would rename a player.
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          weekly: [
+            { rank: 1, playerId: "a", windowWord: "asphyxiate", windowZipf: 2.09, score: 40 },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+
+    const boards = await fetchBoards("2026-08-27");
+    expect(boards.weekly[0].name).toBe(handleFor("a"));
+    expect(boards.weekly[0].name).not.toContain("/");
+  });
+
   it("drops a malformed row instead of failing the whole board", async () => {
     stubFetch(
       new Response(
