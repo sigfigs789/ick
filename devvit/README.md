@@ -1,10 +1,74 @@
 # WordInk on Reddit
 
-The Reddit build of the game, on Reddit's Developer Platform (Devvit).
+A daily word game. Every player gets the same two or three letters — say `INK` —
+and has four guesses to find the rarest English word containing them, in order:
+`thINK`, `wrINKle`, `INKling`. Rarer scores higher, so the game is not "find a
+word" but "find the word nobody else thought of". There is no timer and nothing
+to buy.
+
+## How a round plays
+
+1. A post goes up each day. Its splash shows the game's name and nothing about
+   the day's letters — not knowing them until you open it is the point.
+2. Tapping it opens the puzzle. The letters appear, and you enter words that
+   contain them.
+3. Each accepted word is scored on how rare it is, measured against published
+   word-frequency data rather than on length or difficulty.
+4. Your best word and your total go on the board. Three tabs across the top:
+   **Play**, **Leaderboards**, and **Words found** — everything anybody turned
+   up on that day's puzzle.
+
+Archive puzzles are playable from the same post. They do not count towards the
+board or the streak, for the obvious reason that the answers are lookupable.
+
+## What it stores, and where
+
+- **On Reddit, under the player's username:** their score for each puzzle, their
+  rarest word of that day, and which words they found. This is what the
+  leaderboard and the finds feed are built from. It lives in the app's own Redis
+  and goes nowhere else.
+- **In the player's browser:** the puzzle in progress and their streak.
+- **Nothing is reported to any analytics service.** The website this game also
+  runs on uses Vercel Analytics; that is switched off in this build, because
+  sending what Reddit's players do to a third party is not something this app
+  should do.
+
+There is a privacy policy at https://www.wordink.app/privacy.html and terms at
+https://www.wordink.app/terms.html.
+
+## Why it asks for what it asks for
+
+- **Outbound HTTP, to one host.** The same game runs at
+  [wordink.app](https://www.wordink.app/), and this app reads two things from
+  that site's database: the public leaderboard totals, so both sets of players
+  can appear on one board, and the dictionary verdicts the website has already
+  collected, so this app never has to call Merriam-Webster itself. Both are
+  reads. **No Reddit username, and nothing about any Reddit player, is ever sent
+  off Reddit.** The only host it contacts is the project's own Supabase
+  instance, declared in `devvit.json`.
+- **Creating posts, and acting as a moderator.** A scheduled job puts up one
+  post a day, which is how the game is played at all. A moderator menu item
+  creates one by hand if the schedule is missed.
+- **The scheduler.** Two jobs: the daily post, and a periodic refresh of the
+  imported leaderboard.
+
+## Trying it
+
+Install it to a test subreddit and a post appears immediately; the moderator
+menu also has *"Post today's puzzle"*. Play a word or two and the board fills
+in. The app needs two settings before the imported half of the leaderboard has
+anything in it — see **Settings the import needs** at the bottom.
+
+---
+
+The rest of this file is about how the port is built, and is aimed at whoever
+works on it next.
+
+## How the game is put together
 
 It is a separate npm project on purpose. The website keeps shipping from the
 repo root to Vercel exactly as before; this directory adds a second front-end
-over the same game core. `src/client/game.tsx` imports `App` from `../../../src`
+over the same game core. `src/client/game.tsx` imports `Root` from `../../../src`
 rather than copying it, so the puzzle, the scoring, and the dictionary cannot
 drift between the two. What differs is everything around the game.
 
@@ -99,10 +163,10 @@ subscribers to install into:
 `upload` puts the app where only you can see it. `publish` files it for human
 review by Reddit.
 
-## The import is blocked on Reddit granting outbound HTTP
+## The state of the outbound-HTTP grant
 
-Nothing reaches Supabase from inside the app yet, and it is not the
-configuration. Every call is refused before it leaves:
+The import described above is written and tested but has never fetched
+anything: every call is refused before it leaves the app.
 
     PERMISSION_DENIED: HTTP request to domain: <host> is not allowed
 
