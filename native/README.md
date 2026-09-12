@@ -141,7 +141,12 @@ eas submit --platform android --latest
 These are the things that are not decided by any file in this repo, and each one
 needs an account rather than a commit:
 
-- **`eas init`**, which mints the project id `app.json` will carry.
+- ~~**`eas init`**~~ — done. The project is
+  [`@sigfigs789/wordink`](https://expo.dev/accounts/sigfigs789/projects/wordink),
+  and `app.json` carries its `owner` and `extra.eas.projectId`. It sits on the
+  personal account rather than `sigfigs789s-team`, which is the team Expo
+  creates alongside one; a project can be transferred between accounts from
+  expo.dev if that ever needs to change.
 - **An Apple Developer account** ($99/yr) and an App Store Connect app record
   with the bundle identifier `app.wordink`. EAS can create the signing
   credentials.
