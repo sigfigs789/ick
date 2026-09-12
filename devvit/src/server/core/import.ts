@@ -62,9 +62,17 @@ async function callRpc<T>(name: string, args: Record<string, unknown>): Promise<
     settings.get<string>('supabaseUrl'),
     settings.get<string>('supabaseAnonKey'),
   ]);
-  // Unconfigured is not an error. An install with no key simply shows Reddit's
-  // own players, which is a working board.
-  if (!url || !key) return null;
+  // Unconfigured is not an error -- an install with no key simply shows
+  // Reddit's own players, which is a working board. It is said out loud all the
+  // same: a board that is empty because nothing was configured looks exactly
+  // like a board that is empty because the import is broken, and the difference
+  // took a day to find once.
+  if (!url || !key) {
+    console.error(
+      `import: not configured (url ${url ? 'set' : 'missing'}, key ${key ? 'set' : 'missing'})`
+    );
+    return null;
+  }
 
   try {
     const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/${name}`, {
@@ -77,12 +85,19 @@ async function callRpc<T>(name: string, args: Record<string, unknown>): Promise<
       body: JSON.stringify(args),
     });
     if (!response.ok) {
-      console.error(`import: ${name} answered ${response.status}`);
+      // The body carries PostgREST's own reason -- a missing function, a denied
+      // grant -- which is the whole of the diagnosis and is otherwise lost.
+      const detail = await response.text().catch(() => '');
+      console.error(`import: ${name} answered ${response.status}: ${detail.slice(0, 300)}`);
       return null;
     }
-    return (await response.json()) as T[];
+    const rows = (await response.json()) as T[];
+    console.log(`import: ${name} returned ${rows.length} row(s)`);
+    return rows;
   } catch (error) {
-    console.error(`import: ${name} failed`, error);
+    // A blocked host lands here rather than as a status, so the message is the
+    // only thing that distinguishes "not allowlisted" from "Supabase is down".
+    console.error(`import: ${name} threw: ${error instanceof Error ? error.message : String(error)}`);
     return null;
   }
 }
