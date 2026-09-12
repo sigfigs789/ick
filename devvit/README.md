@@ -39,20 +39,13 @@ own serverless Node runtime, with Redis beside it.
   them `u/` or `w/`. The read-only door they come through is the
   `20260911060000` migration -- the anon key, never the service-role key.
 
-- **The post is the puzzle** (`src/server/core/puzzle.ts`). A scheduled job puts
-  one post up a day and records which puzzle it holds; the client asks
-  `/api/init` and fixes the day before the first render. A player opening
-  Tuesday's post on Friday plays Tuesday's puzzle, and two players either side
-  of the date line get the same one, because they are looking at the same thing
-  rather than at two clocks. The seam it uses is `setPuzzleDay` in
-  `src/game/date.ts` -- inert on the website, which never calls it.
-
-  The archive comes along unchanged: fixing the day moves the anchor, and the
-  previous/next arrows walk back from it to the first puzzle and forward to it
-  again, exactly as they do on the website. Archive play inside a post is off
-  the board and off the streak for the same reason it is on the site -- you can
-  look up the answers. `useDailyPuzzle.fixedDay.test.tsx` holds this.
-
+- **One post a day, and the day is the player's own.** A scheduled job puts up
+  a post each morning, titled with the day it went up. The post is a doorway to
+  the game rather than a container for one puzzle: the game reads the date off
+  the device exactly as the website does, so any post opens whatever puzzle it
+  is for whoever opens it. `gameDay` in `src/shared/windows.ts` decides the day
+  a post goes up, and is ten hours behind UTC so a post is never dated ahead of
+  the westernmost player's device.
 - **The splash, the icon and the rest of the post's surface.** `splash.css` is
   written in the game's own palette rather than the template's Tailwind, because
   most people scrolling past will see only that. It says nothing about the day's

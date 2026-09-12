@@ -71,7 +71,7 @@
       },
       "dailyPuzzlePost": {
         "endpoint": "/internal/scheduler/daily-post",
-        "cron": "5 0 * * *"
+        "cron": "5 10 * * *"
       }
     }
   },

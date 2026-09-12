@@ -3,6 +3,7 @@ import type { UiResponse } from '@devvit/web/shared';
 import { context } from '@devvit/web/server';
 import { createPuzzlePost } from '../core/puzzle';
 import { importEverything } from './scheduler';
+import { gameDay } from '../../shared/windows';
 
 export const menu = new Hono();
 
@@ -16,7 +17,7 @@ export const menu = new Hono();
  */
 menu.post('/post-create', async (c) => {
   try {
-    const date = new Date().toISOString().slice(0, 10);
+    const date = gameDay();
     const { postId, created } = await createPuzzlePost(date);
 
     return c.json<UiResponse>(

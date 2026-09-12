@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { daysSinceEpoch, setPuzzleDay, toDateString, todayDateString } from "./date";
+import { describe, expect, it } from "vitest";
+import { daysSinceEpoch, toDateString } from "./date";
 
 describe("toDateString", () => {
   it("formats a local date as YYYY-MM-DD", () => {
@@ -28,28 +28,5 @@ describe("daysSinceEpoch", () => {
   it("is unaffected by DST transitions", () => {
     // Spring-forward/fall-back in the US shouldn't skew a plain day count.
     expect(daysSinceEpoch("2024-11-10", "2024-11-01")).toBe(9);
-  });
-});
-
-describe("a host that fixes the puzzle day", () => {
-  afterEach(() => {
-    // Hand the day back to the clock, or every test after this one is on a
-    // Tuesday in 2026.
-    setPuzzleDay(null);
-  });
-
-  it("is not fixed by default, which is what this site relies on", () => {
-    expect(todayDateString()).toBe(toDateString(new Date()));
-  });
-
-  it("answers with the day it was given", () => {
-    setPuzzleDay("2026-07-08");
-    expect(todayDateString()).toBe("2026-07-08");
-  });
-
-  it("hands the day back to the clock when cleared", () => {
-    setPuzzleDay("2026-07-08");
-    setPuzzleDay(null);
-    expect(todayDateString()).toBe(toDateString(new Date()));
   });
 });

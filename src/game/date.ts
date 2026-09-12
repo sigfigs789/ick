@@ -4,42 +4,9 @@
  * same way a daily newspaper puzzle does.
  */
 
-/**
- * The puzzle day a host has fixed, or null when the wall clock decides.
- *
- * Null everywhere on this site, and there is no code path here that sets it.
- * It exists for a host where "today" is not a question about the player's
- * clock: on Reddit the game is played inside a post, one post is one puzzle,
- * and a player opening Tuesday's post on Friday is on Tuesday's puzzle. There
- * the day is a property of where you are, not of when you are.
- */
-let fixedPuzzleDay: string | null = null;
-
-/**
- * Fix the day, for a host that knows which puzzle the player is on.
- *
- * Deliberately reaches every caller of `todayDateString` rather than only the
- * one that picks the drop. "Today" has to mean one thing at a time: the drop,
- * the progress key, the streak, the board windows and the finds feed are all
- * scoped to the day being played, and a game whose puzzle came from the post
- * while its leaderboard window came from the clock would be two games.
- *
- * Must be called before anything renders -- the day is read during render, and
- * a change afterwards would not reach a component that has already read it.
- *
- * Passing null hands the day back to the clock, which is what every test that
- * touches this does when it finishes.
- */
-export function setPuzzleDay(date: string | null): void {
-  fixedPuzzleDay = date;
-}
-
-/**
- * Today's date as YYYY-MM-DD -- the player's local calendar date, unless a host
- * has fixed the puzzle day (see `setPuzzleDay`).
- */
+/** Returns today's date as YYYY-MM-DD in the player's local timezone. */
 export function todayDateString(): string {
-  return fixedPuzzleDay ?? toDateString(new Date());
+  return toDateString(new Date());
 }
 
 export function toDateString(d: Date): string {

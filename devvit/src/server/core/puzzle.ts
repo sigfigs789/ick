@@ -1,43 +1,19 @@
 /**
- * Which puzzle a post holds.
+ * The day's post.
  *
- * The website asks the player's clock what day it is, because on the web
- * "today's puzzle" should match the date on your wall -- the way a newspaper
- * puzzle does. Inside Reddit that question has a better answer: one post is one
- * puzzle, and the post knows which.
+ * A post does not hold a puzzle. The game reads the day off the player's own
+ * device, here exactly as on the website, so every post opens whatever puzzle
+ * it is for whoever opens it -- a doorway to the game rather than a container
+ * for one day of it.
  *
- * That is not a workaround for the clock, it is a better model of the thing.
- * A player opening Tuesday's post on Friday is playing Tuesday's puzzle; the
- * comments under it are about Tuesday's drop, and a game that showed them
- * Friday's would be the odd one out on its own page. It also removes every
- * timezone question the website has to hold: two players either side of the date
- * line open the same post and get the same puzzle, because they are looking at
- * the same thing rather than at two clocks.
- *
- * The date is written when the post is created and never recomputed. A post is
- * a permanent object and its puzzle has to be too -- deriving it later from
- * anything, including the post's own age, would mean a post whose puzzle
- * changed under the people discussing it.
+ * What the date below is for is the posting itself: one post a day, titled with
+ * the day it went up, and never two for the same day.
  */
 
 import { context, reddit, redis } from '@devvit/web/server';
 
-/** The puzzle one post holds. Written once, at creation. */
-const postPuzzleKey = (postId: string) => `post:${postId}:day`;
 /** The post created for one puzzle, so a day is not posted twice. */
 const puzzlePostKey = (date: string) => `day:${date}:post`;
-
-/**
- * The puzzle a post holds, or null if it holds none.
- *
- * Null is a real answer, not a failure: a post created before this build knew
- * to record a date has none, and the client falls back to the player's own
- * clock exactly as the website does. That keeps an old post playable rather
- * than blank.
- */
-export async function puzzleDateFor(postId: string): Promise<string | null> {
-  return (await redis.get(postPuzzleKey(postId))) ?? null;
-}
 
 /**
  * Create one puzzle's post, unless it already has one.
@@ -60,11 +36,6 @@ export async function createPuzzlePost(date: string): Promise<{ postId: string; 
     title: titleFor(date),
   });
 
-  // The puzzle is recorded before the claim, so a crash between the two leaves a
-  // post that knows its day rather than a day that has claimed a post nobody can
-  // read. The worst case is a second post tomorrow, which is visible and
-  // fixable; a post with no puzzle is neither.
-  await redis.set(postPuzzleKey(post.id), date);
   await redis.set(puzzlePostKey(date), post.id);
   return { postId: post.id, created: true };
 }
@@ -72,8 +43,9 @@ export async function createPuzzlePost(date: string): Promise<{ postId: string; 
 /**
  * What the post is called.
  *
- * The date rather than the drop: a title carrying the drop would put the puzzle
- * in the feed, and the whole game is not knowing it until you open it.
+ * The day it went up, and never the drop: a title carrying the drop would put
+ * the puzzle in the feed, and the whole game is not knowing it until you open
+ * it.
  */
 function titleFor(date: string): string {
   const [year, month, day] = date.split('-').map(Number);

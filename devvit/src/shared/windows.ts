@@ -50,3 +50,37 @@ function isoDate(dt: Date): string {
     dt.getUTCDate()
   ).padStart(2, '0')}`;
 }
+
+/**
+ * How far behind UTC the game's own day runs.
+ *
+ * Ten hours, which is Hawaii -- the westernmost timezone this game has players
+ * in. See `gameDay` for why it is the west that decides.
+ */
+const GAME_DAY_OFFSET_HOURS = 10;
+
+/**
+ * The date a post created right now should hold.
+ *
+ * Not UTC's date, which is the bug this replaced: a server computing "today" in
+ * UTC is already on tomorrow for everybody west of it, so a player in Hawaii
+ * opening the day's post at four in the afternoon was handed a puzzle dated the
+ * twelfth while their own device said the eleventh. Ten hours of every day, the
+ * post was a day they had not reached.
+ *
+ * The asymmetry is the whole of the reasoning. A post a day *behind* a player is
+ * harmless -- they have played that day, the puzzle is real, and a late puzzle is
+ * still a puzzle. A post a day *ahead* is nonsense: the date has not happened,
+ * and on the website it is a day they could not have played. So the date to
+ * publish is the one that has already arrived in the westernmost place anybody
+ * plays from, and everywhere further east is at most a few hours behind it.
+ *
+ * Computed from the offset rather than taken from a clock at posting time, so it
+ * is the same answer whether the schedule asks, an install asks, or a moderator
+ * asks at some unplanned hour of the night.
+ */
+export function gameDay(now: Date = new Date()): string {
+  return new Date(now.getTime() - GAME_DAY_OFFSET_HOURS * 3600_000)
+    .toISOString()
+    .slice(0, 10);
+}

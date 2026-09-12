@@ -9,7 +9,7 @@
 import { Hono } from 'hono';
 import { importBoard, importFinds } from '../core/import';
 import { createPuzzlePost } from '../core/puzzle';
-import { monthStartOf, weekStartOf } from '../../shared/windows';
+import { gameDay, monthStartOf, weekStartOf } from '../../shared/windows';
 
 export const scheduler = new Hono();
 
@@ -68,7 +68,7 @@ function shiftDays(date: string, days: number): string {
  * is. Both hold under any timezone.
  */
 scheduler.post('/daily-post', async (c) => {
-  const date = new Date().toISOString().slice(0, 10);
+  const date = gameDay();
   const { postId, created } = await createPuzzlePost(date);
   console.log(`daily-post: ${date} -> ${postId}${created ? '' : ' (already posted)'}`);
   return c.json({ postId, created });
