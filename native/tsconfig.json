@@ -1,0 +1,17 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true
+  },
+  // Only this project's own files are listed. Everything it reuses from the
+  // repo's `src/` is reached by following imports, so exactly the shared
+  // modules this app actually uses get checked -- and the website's own
+  // entry point and DOM components, which are not this app's to compile, do
+  // not get dragged in.
+  "include": ["index.ts", "src/**/*"]
+}

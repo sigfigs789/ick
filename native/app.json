@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "WordInk",
+    "slug": "wordink",
+    "scheme": "wordink",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#fafafa",
+    "primaryColor": "#1a1a1b",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a1b"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "extra": {
+      "apiOrigin": "https://www.wordink.app"
+    },
+    "ios": {
+      "bundleIdentifier": "app.wordink",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "app.wordink",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a1b"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [],
+      "blockedPermissions": []
+    },
+    "plugins": [
+      "expo-sqlite"
+    ],
+    "platforms": [
+      "ios",
+      "android"
+    ]
+  }
+}
