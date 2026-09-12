@@ -1,6 +1,6 @@
 {
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
-  "name": "wordink",
+  "name": "wordinkapp",
   "post": {
     "dir": "dist/client",
     "entrypoints": {
@@ -71,5 +71,8 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build"
+  },
+  "dev": {
+    "subreddit": "wordinkapp_dev"
   }
 }
