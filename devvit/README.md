@@ -47,11 +47,14 @@ own serverless Node runtime, with Redis beside it.
   rather than at two clocks. The seam it uses is `setPuzzleDay` in
   `src/game/date.ts` -- inert on the website, which never calls it.
 
+  The archive comes along unchanged: fixing the day moves the anchor, and the
+  previous/next arrows walk back from it to the first puzzle and forward to it
+  again, exactly as they do on the website. Archive play inside a post is off
+  the board and off the streak for the same reason it is on the site -- you can
+  look up the answers. `useDailyPuzzle.fixedDay.test.tsx` holds this.
+
 ## What still has to be built
 
-- **Archive navigation still shows.** The game's previous/next puzzle arrows
-  are drawn inside a post that holds exactly one puzzle. They should go, or the
-  post is not quite the puzzle after all.
 - **Progress cannot live in localStorage.** The webview's storage is per-device
   and not guaranteed across sessions. Streaks, past-puzzle history, and
   `src/game/visits.ts` belong in Redis under the username.
