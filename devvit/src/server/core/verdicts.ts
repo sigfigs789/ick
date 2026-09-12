@@ -111,7 +111,14 @@ export async function verdictFor(word: string): Promise<Verdict> {
     }
     rows = (await response.json()) as RawVerdict[];
   } catch (error) {
-    return blank(normalized, 'error', 'upstream-error', String(error));
+    const message = error instanceof Error ? error.message : String(error);
+    // The platform refusing the call is not a failed lookup, it is a lookup
+    // that cannot happen here at all -- so it is reported as `forbidden`, which
+    // the client treats as permanent and stops asking after. The alternative is
+    // a doomed round trip on every unusual word, and a player's daily lookup
+    // budget spent on requests that never left.
+    const refused = message.includes('PERMISSION_DENIED') || message.includes('is not allowed');
+    return blank(normalized, 'error', refused ? 'forbidden' : 'upstream-error', message);
   }
 
   const verdict = rows[0] ? read(rows[0]) : blank(normalized, 'unknown', null);

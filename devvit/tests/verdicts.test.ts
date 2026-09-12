@@ -121,6 +121,31 @@ describe("a lookup that fails", () => {
     expect(verdict.outcome).not.toBe("unknown");
   });
 
+  it("reports a platform refusal as permanent, so the client stops asking", async () => {
+    // Outbound HTTP is granted by Reddit, not declared by the app. Where it has
+    // not been granted, every lookup is refused before it leaves -- and
+    // `forbidden` is in the client's PERMANENT_FAILURES, so it asks once and
+    // then plays on with the bundled dictionary alone.
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new Error("7 PERMISSION_DENIED: HTTP request to domain: x.supabase.co is not allowed");
+    }));
+    expect(await verdictFor("enshittification")).toMatchObject({
+      outcome: "error",
+      reason: "forbidden",
+    });
+  });
+
+  it("keeps an ordinary failure retryable", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new Error("socket hang up");
+    }));
+    // Not permanent: a blip must not disable the check for the session.
+    expect(await verdictFor("enshittification")).toMatchObject({
+      outcome: "error",
+      reason: "upstream-error",
+    });
+  });
+
   it("survives the request throwing", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => {
       throw new Error("network down");
