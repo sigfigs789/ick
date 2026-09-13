@@ -12,6 +12,12 @@
   --border: #d3d6da;
   --border-strong: #b6b9bd;
   --card-bg: #ffffff;
+  /* The chosen segment of a segmented control, raised out of its inset track.
+     Its own value rather than --card-bg, because "raised" is a direction and
+     not a colour: on the light page that is up towards white, on the dark one
+     it is up *off* a card surface that sits below the track rather than above
+     it. One var, set per theme, keeps the rule that uses it honest in both. */
+  --segment-on: #ffffff;
   --card-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.06);
   /* What a row docked to the edge of a scrolling list casts over the rows
      passing underneath it. Both edges, because it can dock to either, and
@@ -120,6 +126,8 @@
     --border: #3a3a3c;
     --border-strong: #4d4f52;
     --card-bg: #19191b;
+    /* Lifted clear of the #1c1c1e track, which #19191b would sink into. */
+    --segment-on: #35353a;
     --card-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 28px rgb(0 0 0 / 0.35);
     --dock-shadow:
       0 -6px 14px -4px rgb(0 0 0 / 0.75), 0 6px 14px -4px rgb(0 0 0 / 0.75);
@@ -2027,38 +2035,45 @@ h2 {
 /* The window picker, on the narrow layout only -- the component renders it
    nowhere else (see LeaderboardPage), because a laptop already has all three
    boards on screen and a picker there would only hide two of them.
-   A row of three, each taking a third of the width, so they read as one control
-   with three settings rather than as three loose buttons -- and so the one that
-   is on is a filled third of a bar, which is legible at a glance from arm's
-   length. Full width because they are the choice the whole section is made on.*/
+
+   A segmented control rather than three loose buttons: one inset track with the
+   chosen third raised out of it, which is the shape the phone app uses for the
+   same three windows (native/src/screens/LeaderboardScreen.tsx) and the shape
+   iOS has taught everybody to read as "one of these". Small, because it is a
+   setting and not an action -- the page's own headings are what a reader is
+   here for, and a control that outweighs them is one more thing to look past. */
 .leaderboard__windows {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.4rem;
-  margin-bottom: 1.1rem;
+  gap: 2px;
+  margin-bottom: 1rem;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-inset);
 }
 .leaderboard__window {
-  border: 2px solid var(--border);
+  border: 0;
   border-radius: 999px;
-  background: var(--bg);
-  padding: 0.5rem 0.25rem;
+  background: transparent;
+  /* Enough to clear 2.25rem of target on the track while the type stays at the
+     size of a label. The whole segment is the hit area, gap included. */
+  padding: 0.42rem 0.25rem;
   color: var(--fg-muted);
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 0.8rem;
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  /* A thumb-sized target: these are on a phone by definition. */
-  min-height: 2.5rem;
+  font-weight: 700;
+  line-height: 1.2;
   cursor: pointer;
 }
-/* The one that is on, said in fill rather than in a tint -- the same way a row
-   marks "you". Colour alone would be the only thing carrying the state; the
-   inversion is visible without it. */
+/* The chosen third, raised out of the track: the surface a card is on, and a
+   shadow tight enough to say "above this" without reading as a card of its own.
+   Two things carry it, fill and lift, so it survives a page where colour does
+   not. */
 .leaderboard__window[aria-pressed="true"] {
-  border-color: var(--fg);
-  background: var(--fg);
-  color: var(--bg);
+  background: var(--segment-on);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  color: var(--fg);
 }
 /* The line between one board and the next has to outrank the lines between the
    rows inside them, or the page reads as one long list with headings loose in
