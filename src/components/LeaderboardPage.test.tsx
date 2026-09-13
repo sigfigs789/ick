@@ -1064,3 +1064,83 @@ describe("stepping the boards through past windows", () => {
     ).toBeTruthy();
   });
 });
+
+/**
+ * Report the viewport as narrower than the layout's 64rem breakpoint, the way a
+ * phone does.
+ *
+ * jsdom ships no `matchMedia` at all, which is why every test above gets the
+ * wide layout without asking for it (see hooks/useNarrowLayout). This stubs the
+ * one query the page asks: the wide layout does not match, so the page is on a
+ * phone.
+ */
+function narrowViewport() {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })),
+  );
+}
+
+describe("the leaderboard page on a phone", () => {
+  it("shows one board at a time, picked with the pills, starting on the day", async () => {
+    narrowViewport();
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    // The other two are not merely scrolled past -- they are not on the page,
+    // which is the difference between this and the stacked layout it replaces.
+    expect(screen.queryByRole("region", { name: "This week" })).toBeNull();
+    expect(screen.queryByRole("region", { name: MONTH_BOARD })).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Week" }));
+    expect(boardRows("This week")).toHaveLength(2);
+    expect(screen.queryByRole("region", { name: "Today" })).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Month" }));
+    expect(within(screen.getByRole("region", { name: MONTH_BOARD })).getByText(
+      handleFor(BOB),
+    )).toBeTruthy();
+  });
+
+  it("says which window is showing", async () => {
+    narrowViewport();
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    expect(screen.getByRole("button", { name: "Day" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Week" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Week" }));
+    expect(screen.getByRole("button", { name: "Week" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Day" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("leaves the wide layout with all three boards and no pills", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    expect(boardRows("This week")).toHaveLength(2);
+    expect(boardRows(MONTH_BOARD)).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: "Day" })).toBeNull();
+  });
+});
