@@ -47,6 +47,24 @@ const BOARDS_STALE_MS = 5 * 60_000;
  */
 const BOARD_PLACEHOLDER_ROWS = 5;
 
+/** Which board a narrow screen is showing, when it can only show one. */
+type BoardWindow = "daily" | "weekly" | "monthly";
+
+/**
+ * The pills, in the order the boards are in.
+ *
+ * Named for the live window rather than for the one on screen: a reader who has
+ * stepped the day board back to Sep 5 still picked it by pressing "Today", and a
+ * pill that renamed itself under them would be a control whose label depends on
+ * what it did last. The heading inside the board is where the window being read
+ * is named, and it is the thing that moves.
+ */
+const BOARD_TABS: { key: BoardWindow; label: string }[] = [
+  { key: "daily", label: "Today" },
+  { key: "weekly", label: "This week" },
+  { key: "monthly", label: "This month" },
+];
+
 /** The three windows the boards count, as a request carries them. */
 interface Windows {
   day: string;
@@ -81,13 +99,21 @@ function boardState(
  * modal can do none of those, and a board is exactly the thing people want to
  * send each other.
  *
- * Three windows of the same game, all on screen at once, shortest first. Showing
- * them together is the point of having three: the interesting thing about any
- * one of them is how it differs from the others -- who is new today, who is
- * always there -- and a reader who has to click between them has to hold the
- * first in their head to see it. Today leads because it is the one anybody can
- * still win from nothing; by Thursday a week's board is mostly a week's play,
- * and a month's is a month's.
+ * Three windows of the same game, shortest first. On a laptop all three are on
+ * screen at once, which is the point of having three: the interesting thing
+ * about any one of them is how it differs from the others -- who is new today,
+ * who is always there -- and a reader who has to click between them has to hold
+ * the first in their head to see it. Today leads because it is the one anybody
+ * can still win from nothing; by Thursday a week's board is mostly a week's
+ * play, and a month's is a month's.
+ *
+ * On a phone that comparison is not on offer at any price -- three boards stack,
+ * and the month lands two screens down where nobody scrolls to it. So below the
+ * width that fits three columns the pills take over and show one at a time, the
+ * way the phone app has always shown them. The choosing lives in the stylesheet
+ * (`.leaderboard__windows`, `.leaderboard__boards[data-window]`): all three are
+ * always rendered and always fetched -- they come back in one response anyway --
+ * and the layout decides how many of them a screen is wide enough to say.
  *
  * The finds that used to sit under all this are their own page now (see
  * FoundWordsPage): they are a list of *words* under two lists of *players*, they
@@ -134,6 +160,21 @@ export function LeaderboardPage() {
   const [day, setDay] = useState(today);
   const [week, setWeek] = useState(thisWeek);
   const [month, setMonth] = useState(thisMonth);
+  /**
+   * Which of the three a screen too narrow for three is showing.
+   *
+   * Only ever read by the pills and by the `data-window` the stylesheet keys off
+   * (see `.leaderboard__boards[data-window]`), so on a laptop this is state that
+   * changes nothing: all three boards are on screen there, and the pills that
+   * would move this are not. Kept in one place rather than behind a matchMedia
+   * hook because the breakpoint is a layout fact, and the stylesheet is where
+   * this page keeps its layout facts -- a second copy of `64rem` in JavaScript
+   * would be a number that has to be changed twice.
+   *
+   * Today, because it is the one a player can still enter from nothing -- the
+   * same reason it leads the row on a wide screen.
+   */
+  const [boardWindow, setBoardWindow] = useState<BoardWindow>("daily");
   const dayIsLive = day === today;
   const weekIsLive = week === thisWeek;
   const monthIsLive = month === thisMonth;
@@ -388,13 +429,45 @@ export function LeaderboardPage() {
           <ul className="leaderboard__rules">
             <li>Only puzzles played on the day they drop count</li>
           </ul>
-          <div className="leaderboard__boards">
+          {/* Which board, on a screen that can only hold one.
+              Hidden at the width where all three are side by side, because
+              there the row of pills would be a control for choosing between
+              things the reader is already looking at. Below it they stack, and
+              three stacked boards are two screens of scrolling to reach the
+              month -- a board you have to go looking for is one most people
+              never see. Pills rather than the accordion or the select the
+              stacked layout could also have used: the phone app has had this
+              exact control at the top of this exact screen since it shipped
+              (native/src/screens/LeaderboardScreen.tsx), and somebody who plays
+              in both should not have to learn the page twice. */}
+          <div
+            className="leaderboard__windows"
+            role="tablist"
+            aria-label="Which leaderboard"
+          >
+            {BOARD_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                id={`leaderboard-tab-${tab.key}`}
+                aria-selected={tab.key === boardWindow}
+                aria-controls={`leaderboard-board-${tab.key}`}
+                className="leaderboard__window"
+                onClick={() => setBoardWindow(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="leaderboard__boards" data-window={boardWindow}>
             <Board
               // "Today" while it is today's, and the day's own date once it
               // isn't -- the same wording the finds page heads a day with, for
               // the same reason: two steps back has no word like "yesterday",
               // and a heading whose shape changes halfway down a week is
               // harder to read than one that always names the day.
+              boardWindow="daily"
               heading={dayIsLive ? "Today" : formatDateLabel(day)}
               // What a day board resets at, which is the one thing worth
               // saying about a window everybody is already inside. A day that
@@ -418,6 +491,7 @@ export function LeaderboardPage() {
               onForward={() => setDay(addDays(day, 1))}
             />
             <Board
+              boardWindow="weekly"
               heading={weekIsLive ? "This week" : weekLabel(week)}
               // Beside the heading rather than under it: the two boards sit
               // shoulder to shoulder, and a line under one of them and not
@@ -449,6 +523,7 @@ export function LeaderboardPage() {
               onForward={() => setWeek(addDays(week, 7))}
             />
             <Board
+              boardWindow="monthly"
               heading={monthIsLive ? "This month" : monthLabel(month)}
               // The weekday it turns over on and the date that is, which for
               // a month is computed (see game/month.ts) rather than the
@@ -508,6 +583,11 @@ export function LeaderboardPage() {
 }
 
 interface BoardProps {
+  /**
+   * Which of the three this is, for the pills to point at and the stylesheet to
+   * show or hide when only one of them fits.
+   */
+  boardWindow: BoardWindow;
   heading: string;
   /** A note beside the heading, set smaller -- when the board resets. */
   headingDetail?: string;
@@ -546,6 +626,7 @@ interface BoardProps {
  * on it is the real one -- 61st of everybody, not 16th of what fits.
  */
 function Board({
+  boardWindow,
   heading,
   headingDetail,
   entries,
@@ -561,7 +642,12 @@ function Board({
   onForward,
 }: BoardProps) {
   return (
-    <section className="leaderboard__board" aria-label={heading}>
+    <section
+      className="leaderboard__board"
+      id={`leaderboard-board-${boardWindow}`}
+      data-window={boardWindow}
+      aria-label={heading}
+    >
       <h2 className="leaderboard__board-heading">
         {heading}
         {headingDetail && (

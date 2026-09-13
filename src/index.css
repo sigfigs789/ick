@@ -2016,10 +2016,86 @@ h2 {
    table split down the middle -- you have to check the heading to know which
    ranking you are looking at. One under the other, each is unmistakably its own
    list, and the weekly one comes first because it is the one still winnable. */
+/* Which board, on a screen that can only hold one.
+   A row of pills in a track, which is the phone app's own control for this
+   (native/src/screens/LeaderboardScreen.tsx) rather than a second idea for the
+   same job -- somebody who plays in both places should recognise it. Gone
+   entirely at the width where all three boards sit side by side: there it would
+   be a chooser between three things already on screen.
+   `display: none` rather than `visibility` or an off-screen class, so at that
+   width it leaves the accessibility tree too -- a tablist naming a selection
+   that governs nothing is worse than no tablist. */
+.leaderboard__windows {
+  display: flex;
+  gap: 0.2rem;
+  margin-top: 1.1rem;
+  /* Clear of the board's heading, which is the window's name and reads as the
+     pills' answer -- set tight against them it read as part of the control. */
+  margin-bottom: 0.9rem;
+  padding: 0.2rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-inset);
+}
+.leaderboard__window {
+  flex: 1;
+  min-height: 2.1rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.15s var(--ease-standard),
+    color 0.15s var(--ease-standard);
+}
+/* The selected pill in the accent, which is this app's one word for "this is
+   the marked one" -- the same fill the "you" tag on a row carries and the same
+   one the step arrows take on hover.
+   A white card in the track was the first try, and it is what the phone app
+   does; on the website's dark theme `--card-bg` is *darker* than `--bg-inset`,
+   so the lifted card sank into the track and the selection was a guess. The
+   accent inverts with the theme and is unmistakable in both. */
+.leaderboard__window[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.leaderboard__window:not([aria-selected="true"]):hover {
+  color: var(--fg);
+}
 .leaderboard__boards {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.8rem;
+}
+/* One board at a time, chosen by the pills. The other two are out of the
+   document rather than scrolled past: three stacked boards put the month two
+   screens down, and a board you have to go looking for is one most people never
+   find. The rule between boards goes with them -- with one board on screen
+   there is nothing for it to separate.
+
+   Bounded from above rather than undone inside the wide query below, which is
+   the one arrangement of these two rules that does not turn on specificity: a
+   `:not()` selector outranks any plain restore, so a `display: block` for the
+   three-column layout would have lost to the hiding rule it was meant to
+   cancel. Below the width where three boards fit, and nowhere else. */
+@media (max-width: 63.999rem) {
+  .leaderboard__boards[data-window="daily"]
+    .leaderboard__board:not([data-window="daily"]),
+  .leaderboard__boards[data-window="weekly"]
+    .leaderboard__board:not([data-window="weekly"]),
+  .leaderboard__boards[data-window="monthly"]
+    .leaderboard__board:not([data-window="monthly"]) {
+    display: none;
+  }
+  .leaderboard__boards[data-window] .leaderboard__board {
+    padding-top: 0;
+    border-top: 0;
+  }
 }
 .leaderboard__board {
   min-width: 0;
@@ -2045,6 +2121,11 @@ h2 {
      the comparison and a phone gets one column. */
   .app--wide {
     max-width: 62rem;
+  }
+  /* Gone at the width where all three boards are side by side: a chooser
+     between three things the reader is already looking at. */
+  .leaderboard__windows {
+    display: none;
   }
   .leaderboard__boards {
     grid-template-columns: repeat(3, 1fr);

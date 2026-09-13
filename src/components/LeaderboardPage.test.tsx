@@ -576,6 +576,69 @@ describe("the leaderboard page", () => {
 
 });
 
+/**
+ * Which board a screen too narrow for three is showing.
+ *
+ * The showing itself is the stylesheet's -- all three boards are rendered and
+ * fetched whatever is selected, and `data-window` is what a media query keys off
+ * -- so what is testable here is the wiring: that the pills exist, that pressing
+ * one moves the selection, and that the attribute the CSS reads follows it.
+ */
+describe("choosing a board on a narrow screen", () => {
+  it("opens on today, the one a player can still win from nothing", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    const tabs = await screen.findAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      "Today",
+      "This week",
+      "This month",
+    ]);
+    expect(screen.getByRole("tab", { name: "Today" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("moves the selection, and the attribute the layout reads, to the pill pressed", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await userEvent.click(await screen.findByRole("tab", { name: MONTH_BOARD }));
+
+    const month = screen.getByRole("tab", { name: MONTH_BOARD });
+    expect(month).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Today" })).toHaveAttribute(
+      "aria-selected",
+      "false",
+    );
+    // What the media query hides the other two boards by.
+    expect(
+      document.querySelector(".leaderboard__boards"),
+    ).toHaveAttribute("data-window", "monthly");
+    // Each pill names the board it governs, so a screen reader following it
+    // lands on the right one.
+    expect(month).toHaveAttribute("aria-controls", "leaderboard-board-monthly");
+    expect(
+      screen.getByRole("region", { name: MONTH_BOARD }),
+    ).toHaveAttribute("id", "leaderboard-board-monthly");
+  });
+
+  it("leaves all three boards on the page, whichever pill is selected", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await userEvent.click(await screen.findByRole("tab", { name: MONTH_BOARD }));
+
+    // Rendered and already loaded, all three: they come back in one response,
+    // and the choosing is a matter of width rather than of what exists.
+    expect(screen.getByRole("region", { name: "Today" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "This week" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: MONTH_BOARD })).toBeInTheDocument();
+  });
+});
+
 describe("who the page thinks you are", () => {
   it("mints nobody: the identity is the app's, not this page's", async () => {
     playedToday("2026-08-20", "inkling", 2.9);
