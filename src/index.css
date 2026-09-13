@@ -2024,6 +2024,42 @@ h2 {
 .leaderboard__board {
   min-width: 0;
 }
+/* The window picker, on the narrow layout only -- the component renders it
+   nowhere else (see LeaderboardPage), because a laptop already has all three
+   boards on screen and a picker there would only hide two of them.
+   A row of three, each taking a third of the width, so they read as one control
+   with three settings rather than as three loose buttons -- and so the one that
+   is on is a filled third of a bar, which is legible at a glance from arm's
+   length. Full width because they are the choice the whole section is made on.*/
+.leaderboard__windows {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  margin-bottom: 1.1rem;
+}
+.leaderboard__window {
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  padding: 0.5rem 0.25rem;
+  color: var(--fg-muted);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  /* A thumb-sized target: these are on a phone by definition. */
+  min-height: 2.5rem;
+  cursor: pointer;
+}
+/* The one that is on, said in fill rather than in a tint -- the same way a row
+   marks "you". Colour alone would be the only thing carrying the state; the
+   inversion is visible without it. */
+.leaderboard__window[aria-pressed="true"] {
+  border-color: var(--fg);
+  background: var(--fg);
+  color: var(--bg);
+}
 /* The line between one board and the next has to outrank the lines between the
    rows inside them, or the page reads as one long list with headings loose in
    it. Two pixels of the stronger border against the rows' one of the plain one,
