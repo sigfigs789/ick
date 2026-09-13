@@ -47,7 +47,7 @@ const BOARDS_STALE_MS = 5 * 60_000;
  */
 const BOARD_PLACEHOLDER_ROWS = 5;
 
-/** Which board a narrow screen is showing, when it can only show one. */
+/** Which board a phone is showing, when it can only show one. */
 type BoardWindow = "daily" | "weekly" | "monthly";
 
 /**
@@ -108,12 +108,16 @@ function boardState(
  * play, and a month's is a month's.
  *
  * On a phone that comparison is not on offer at any price -- three boards stack,
- * and the month lands two screens down where nobody scrolls to it. So below the
- * width that fits three columns the pills take over and show one at a time, the
- * way the phone app has always shown them. The choosing lives in the stylesheet
- * (`.leaderboard__windows`, `.leaderboard__boards[data-window]`): all three are
- * always rendered and always fetched -- they come back in one response anyway --
- * and the layout decides how many of them a screen is wide enough to say.
+ * and the month lands two screens down where nobody scrolls to it. So on a phone
+ * the pills take over and show one at a time, the way the phone app has always
+ * shown them. A browser is left alone at every width: dragged narrow it stacks
+ * the three boards exactly as it always has, which is why the stylesheet asks
+ * about the pointer as well as the width (see `.leaderboard__windows`).
+ *
+ * The choosing lives in the stylesheet (`.leaderboard__windows`,
+ * `.leaderboard__boards[data-window]`): all three boards are always rendered and
+ * always fetched -- they come back in one response anyway -- and the layout
+ * decides how many of them the surface is able to say.
  *
  * The finds that used to sit under all this are their own page now (see
  * FoundWordsPage): they are a list of *words* under two lists of *players*, they
@@ -161,15 +165,15 @@ export function LeaderboardPage() {
   const [week, setWeek] = useState(thisWeek);
   const [month, setMonth] = useState(thisMonth);
   /**
-   * Which of the three a screen too narrow for three is showing.
+   * Which of the three a phone is showing.
    *
    * Only ever read by the pills and by the `data-window` the stylesheet keys off
-   * (see `.leaderboard__boards[data-window]`), so on a laptop this is state that
-   * changes nothing: all three boards are on screen there, and the pills that
-   * would move this are not. Kept in one place rather than behind a matchMedia
-   * hook because the breakpoint is a layout fact, and the stylesheet is where
-   * this page keeps its layout facts -- a second copy of `64rem` in JavaScript
-   * would be a number that has to be changed twice.
+   * (see `.leaderboard__boards[data-window]`), so in a browser this is state that
+   * changes nothing: every board is on the page there, and the pills that would
+   * move this are not. Kept in one place rather than behind a matchMedia hook
+   * because which surface gets which layout is a layout fact, and the stylesheet
+   * is where this page keeps its layout facts -- a second copy of the query in
+   * JavaScript would be a condition that has to be changed twice.
    *
    * Today, because it is the one a player can still enter from nothing -- the
    * same reason it leads the row on a wide screen.
@@ -429,17 +433,18 @@ export function LeaderboardPage() {
           <ul className="leaderboard__rules">
             <li>Only puzzles played on the day they drop count</li>
           </ul>
-          {/* Which board, on a screen that can only hold one.
-              Hidden at the width where all three are side by side, because
-              there the row of pills would be a control for choosing between
-              things the reader is already looking at. Below it they stack, and
-              three stacked boards are two screens of scrolling to reach the
-              month -- a board you have to go looking for is one most people
-              never see. Pills rather than the accordion or the select the
-              stacked layout could also have used: the phone app has had this
-              exact control at the top of this exact screen since it shipped
-              (native/src/screens/LeaderboardScreen.tsx), and somebody who plays
-              in both should not have to learn the page twice. */}
+          {/* Which board, on a phone.
+              A phone stacks the three boards, and three stacked boards are two
+              screens of scrolling to reach the month -- a board you have to go
+              looking for is one most people never see. Pills rather than the
+              accordion or the select the stacked layout could also have used:
+              the phone app has had this exact control at the top of this exact
+              screen since it shipped (native/src/screens/LeaderboardScreen.tsx),
+              and somebody who plays in both should not have to learn the page
+              twice.
+              A browser never shows these, at any width: it stacks the boards the
+              way it always has. The stylesheet is what decides that, and asks
+              about the pointer as well as the width to do it. */}
           <div
             className="leaderboard__windows"
             role="tablist"
@@ -585,7 +590,7 @@ export function LeaderboardPage() {
 interface BoardProps {
   /**
    * Which of the three this is, for the pills to point at and the stylesheet to
-   * show or hide when only one of them fits.
+   * show or hide when a phone can only hold one.
    */
   boardWindow: BoardWindow;
   heading: string;

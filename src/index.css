@@ -2016,17 +2016,17 @@ h2 {
    table split down the middle -- you have to check the heading to know which
    ranking you are looking at. One under the other, each is unmistakably its own
    list, and the weekly one comes first because it is the one still winnable. */
-/* Which board, on a screen that can only hold one.
+/* Which board, on a phone.
    A row of pills in a track, which is the phone app's own control for this
    (native/src/screens/LeaderboardScreen.tsx) rather than a second idea for the
-   same job -- somebody who plays in both places should recognise it. Gone
-   entirely at the width where all three boards sit side by side: there it would
-   be a chooser between three things already on screen.
-   `display: none` rather than `visibility` or an off-screen class, so at that
-   width it leaves the accessibility tree too -- a tablist naming a selection
-   that governs nothing is worse than no tablist. */
+   same job -- somebody who plays in both places should recognise it.
+   Off by default and switched on only by the query below, so every surface that
+   is not a phone keeps the layout it has always had. `display: none` rather than
+   `visibility` or an off-screen class, so it leaves the accessibility tree with
+   it -- a tablist naming a selection that governs nothing is worse than no
+   tablist. */
 .leaderboard__windows {
-  display: flex;
+  display: none;
   gap: 0.2rem;
   margin-top: 1.1rem;
   /* Clear of the board's heading, which is the window's name and reads as the
@@ -2072,18 +2072,32 @@ h2 {
   grid-template-columns: 1fr;
   gap: 1.8rem;
 }
-/* One board at a time, chosen by the pills. The other two are out of the
-   document rather than scrolled past: three stacked boards put the month two
-   screens down, and a board you have to go looking for is one most people never
-   find. The rule between boards goes with them -- with one board on screen
-   there is nothing for it to separate.
+/* The pills, and the one board at a time they choose between.
+   The other two boards are out of the document rather than scrolled past: three
+   stacked boards put the month two screens down, and a board you have to go
+   looking for is one most people never find.
+
+   Both conditions, and the second one is the point. Width alone cannot tell a
+   phone from a browser window somebody has dragged narrow, and the browser is
+   not what this is for: on a laptop the three boards stack exactly as they
+   always have, at every width, which is the layout that page has shipped with.
+   `pointer: coarse` asks about the primary input rather than about touch
+   support, so a touchscreen laptop driven by its trackpad still reads as fine
+   and still gets the browser's layout.
+   The width is kept alongside it so a tablet wide enough for three columns gets
+   three columns rather than a chooser between boards already on screen.
+   Where `pointer` is not reported the pills simply never appear and the page
+   falls back to the stacked boards -- the layout it had last week.
 
    Bounded from above rather than undone inside the wide query below, which is
    the one arrangement of these two rules that does not turn on specificity: a
    `:not()` selector outranks any plain restore, so a `display: block` for the
    three-column layout would have lost to the hiding rule it was meant to
-   cancel. Below the width where three boards fit, and nowhere else. */
-@media (max-width: 63.999rem) {
+   cancel. */
+@media (max-width: 63.999rem) and (pointer: coarse) {
+  .leaderboard__windows {
+    display: flex;
+  }
   .leaderboard__boards[data-window="daily"]
     .leaderboard__board:not([data-window="daily"]),
   .leaderboard__boards[data-window="weekly"]
@@ -2121,11 +2135,6 @@ h2 {
      the comparison and a phone gets one column. */
   .app--wide {
     max-width: 62rem;
-  }
-  /* Gone at the width where all three boards are side by side: a chooser
-     between three things the reader is already looking at. */
-  .leaderboard__windows {
-    display: none;
   }
   .leaderboard__boards {
     grid-template-columns: repeat(3, 1fr);
