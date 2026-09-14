@@ -49,35 +49,6 @@ describe("the Freeform week announcement", () => {
     sessionStorage.clear();
   });
 
-  it("reaches a first-timer, once the how-to-play sheet is out of the way", async () => {
-    // Everybody gets it, including a browser with no history at all: the rules
-    // it describes are the ones they are about to play under. A first-timer is
-    // owed both sheets, and two dialogs in one paint delivers neither.
-    render(<Root />);
-    // The instructions come first, because they are the sheet that explains
-    // what a score is.
-    expect(howToPlay()).toBeInTheDocument();
-    expect(sheet()).not.toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: /close/i }));
-    expect(howToPlay()).not.toBeInTheDocument();
-    expect(sheet()).toBeInTheDocument();
-  });
-
-  it("reopens from the header button after it has been dismissed", async () => {
-    localStorage.setItem("ick:seen:instructions", "1");
-    render(<Root />);
-    expect(sheet()).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: /^close$/i }));
-    expect(sheet()).not.toBeInTheDocument();
-
-    // The button stays all week and opens the sheet again -- dismissing it
-    // retires the *automatic* opening, not the way back to it.
-    await userEvent.click(screen.getByRole("button", { name: /freeform week/i }));
-    expect(sheet()).toBeInTheDocument();
-  });
-
   /** A stored puzzle with one accepted word, which is what "played" counts. */
   function playedPuzzle(date: string) {
     localStorage.setItem(
@@ -90,58 +61,73 @@ describe("the Freeform week announcement", () => {
     );
   }
 
-  it("opens again on a new visit for a player who has played twice", () => {
-    localStorage.setItem("ick:seen:instructions", "1");
-    localStorage.setItem("ick:seen:freeform", "1");
+  it("opens itself for a returning player, once the how-to-play sheet is out of the way", async () => {
     playedPuzzle("2026-09-10");
-    playedPuzzle("2026-09-11");
-
-    // Already seen, so the once-only opening is spent -- and it opens anyway,
-    // because these are the players whose sense of a word's worth the week
-    // upends.
     render(<Root />);
+    // The instructions come first, because they are the sheet that explains
+    // what a score is, and two dialogs in one paint delivers neither.
+    expect(howToPlay()).toBeInTheDocument();
+    expect(sheet()).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /close/i }));
+    expect(howToPlay()).not.toBeInTheDocument();
     expect(sheet()).toBeInTheDocument();
   });
 
-  it("leaves a one-puzzle player with the sheet they already dismissed", () => {
+  it("leaves a first-timer alone", () => {
+    // No puzzle behind them, so there is no sense of a word's worth for the
+    // week to upend -- the sheet would stand between them and their first game.
     localStorage.setItem("ick:seen:instructions", "1");
-    localStorage.setItem("ick:seen:freeform", "1");
-    playedPuzzle("2026-09-10");
-
     render(<Root />);
     expect(sheet()).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /freeform week/i }),
+    ).toBeInTheDocument();
   });
 
-  it("repeats once per visit, not once per render", async () => {
+  it("reopens from the header button after it has been dismissed", async () => {
     localStorage.setItem("ick:seen:instructions", "1");
-    localStorage.setItem("ick:seen:freeform", "1");
     playedPuzzle("2026-09-10");
-    playedPuzzle("2026-09-11");
+    render(<Root />);
+    expect(sheet()).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^close$/i }));
+    expect(sheet()).not.toBeInTheDocument();
+
+    // The button stays all week and opens the sheet again -- dismissing it
+    // retires the *automatic* opening, not the way back to it.
+    await userEvent.click(
+      screen.getByRole("button", { name: /freeform week/i }),
+    );
+    expect(sheet()).toBeInTheDocument();
+  });
+
+  it("opens itself exactly once, ever", async () => {
+    localStorage.setItem("ick:seen:instructions", "1");
+    playedPuzzle("2026-09-10");
 
     const first = render(<Root />);
     expect(sheet()).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /^close$/i }));
     first.unmount();
 
-    // A reload inside the same session is the same open. Only a new session --
-    // a genuinely new visit -- earns another showing.
+    // A reload, a new tab, a visit on Thursday: all the same. Dismissing it is
+    // permanent, and playing more puzzles does not earn it back.
+    playedPuzzle("2026-09-11");
     render(<Root />);
     expect(sheet()).not.toBeInTheDocument();
   });
 
-  it("does not open itself twice, across mounts", () => {
+  it("opens again if it was never dismissed", () => {
+    // The stored flag is written on close, not on show, so a player who closed
+    // the tab without reading it is still owed the one opening.
     localStorage.setItem("ick:seen:instructions", "1");
+    playedPuzzle("2026-09-10");
     const first = render(<Root />);
     expect(sheet()).toBeInTheDocument();
     first.unmount();
 
-    // Nothing was dismissed, so the flag is unset and it opens again. The flag
-    // is what retires it, and it is written on close (see whatsNew).
-    localStorage.setItem("ick:seen:freeform", "1");
     render(<Root />);
-    expect(sheet()).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /freeform week/i }),
-    ).toBeInTheDocument();
+    expect(sheet()).toBeInTheDocument();
   });
 });
