@@ -78,6 +78,16 @@ export function AppHeader({
     return () => clearTimeout(timer);
   }, [freeform]);
 
+  /**
+   * Open the sheet and retire the badge in the same gesture. Pressing either one
+   * is the badge having worked, so it has no business sitting there afterwards
+   * waiting out its timer over a sheet the player has already read.
+   */
+  function openFreeform() {
+    setBadgeShowing(false);
+    onFreeform?.();
+  }
+
   function go(tab: Tab) {
     if (tab.route === route) return;
     if (tab.route === "leaderboard") trackLeaderboardOpened("header");
@@ -137,18 +147,23 @@ export function AppHeader({
             <button
               type="button"
               className="app__freeform-button"
-              onClick={onFreeform}
+              onClick={openFreeform}
               aria-label="Freeform week — what’s changed"
             >
               Freeform
             </button>
             {/* Decoration: the button's own label above already carries this,
-                so the badge is not announced a second time. */}
+                so the badge is not announced a second time -- and it is skipped
+                by the keyboard for the same reason. It takes a press anyway,
+                because it is the part of the pair the eye is on, and a label
+                that ignores the finger aimed at it reads as broken. The button
+                behind it is the accessible control and does the same thing. */}
             <span
               className={`app__freeform-badge${
                 badgeShowing ? "" : " app__freeform-badge--faded"
               }`}
               aria-hidden="true"
+              onClick={openFreeform}
             >
               Scoring update
             </span>

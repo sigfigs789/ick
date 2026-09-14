@@ -108,6 +108,32 @@ describe("the Freeform week button", () => {
     expect(onFreeform).toHaveBeenCalled();
   });
 
+  it("retires the badge the moment the button is pressed", async () => {
+    render(
+      <AppHeader route="game" onHowToPlay={howToPlay} onFreeform={vi.fn()} />,
+    );
+    const badge = screen.getByText(/scoring update/i);
+    expect(badge).not.toHaveClass("app__freeform-badge--faded");
+
+    // Pressing it is the badge having worked; waiting out its timer over a
+    // sheet the player has already read is not.
+    await userEvent.click(screen.getByRole("button", { name: /freeform/i }));
+    expect(badge).toHaveClass("app__freeform-badge--faded");
+  });
+
+  it("opens the sheet from the badge itself, and retires it too", async () => {
+    const onFreeform = vi.fn();
+    render(
+      <AppHeader route="game" onHowToPlay={howToPlay} onFreeform={onFreeform} />,
+    );
+    const badge = screen.getByText(/scoring update/i);
+
+    // The badge is the part of the pair the eye is on, so it takes the press.
+    await userEvent.click(badge);
+    expect(onFreeform).toHaveBeenCalled();
+    expect(badge).toHaveClass("app__freeform-badge--faded");
+  });
+
   it("fades the badge after ten seconds and leaves the button alone", () => {
     vi.useFakeTimers();
     try {

@@ -1680,19 +1680,59 @@ const DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: 
  * particular word) than a sense label can.
  */
 export function curatedRejection(word: string, date?: string): RejectionReason | undefined {
+  const reason = reviewedRejection(word, date);
+  if (reason === undefined) return undefined;
+  if (isFreeformWeek(date) && FREEFORM_WAIVED_REJECTIONS.has(reason)) return undefined;
+  return reason;
+}
+
+/**
+ * The waived reasons worth saying out loud when a word is accepted: the three
+ * about a word's *age*.
+ *
+ * "Obsolete, but accepted" is a small fact about the word -- it tells a player
+ * they have reached for something out of use and the week let it stand, which is
+ * the kind of thing the week is for. "Acronym, but accepted" is not a fact about
+ * the word so much as a category it was filed under, and reading it on every
+ * initialism would be noise. The other three waived reasons stay silent for the
+ * same reason: nobody needs telling that "NASA" is a name.
+ */
+const NOTED_WAIVERS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
+  "obsolete",
+  "archaic",
+  "dated",
+]);
+
+/**
+ * The reason a word *would* have been refused for, on a week that is letting it
+ * through anyway -- so the acceptance can say which rule it is standing on
+ * ("'tabacco' is obsolete, but accepted"). Undefined for a word that needed no
+ * waiver, outside the week for every word, and for the waived reasons that are
+ * not worth a player's attention (see NOTED_WAIVERS).
+ *
+ * The other half of `curatedRejection` rather than a second reading of the data:
+ * the two split one verdict between them, and a word is refused by that function
+ * or explained by this one, never both.
+ */
+export function waivedRejection(word: string, date?: string): RejectionReason | undefined {
+  if (!isFreeformWeek(date)) return undefined;
+  const reason = reviewedRejection(word, date);
+  return reason !== undefined && NOTED_WAIVERS.has(reason) ? reason : undefined;
+}
+
+/**
+ * The reviewed verdict on a word under `date`, before the week has any say in
+ * it. Two lists, and the hand-written one is asked first.
+ */
+function reviewedRejection(word: string, date?: string): RejectionReason | undefined {
   const normalized = word.toLowerCase();
-  const waive = isFreeformWeek(date);
   const rejection = WORD_REJECTIONS.get(normalized);
-  if (rejection && (date === undefined || date >= rejection.since)) {
-    if (!waive || !FREEFORM_WAIVED_REJECTIONS.has(rejection.reason)) return rejection.reason;
-  }
+  if (rejection && (date === undefined || date >= rejection.since)) return rejection.reason;
   // Falls through when the reviewed rejection isn't in force yet: the derived list
   // can carry an earlier date than the hand entry, and the earlier verdict is
   // still a verdict.
   const derived = DERIVED_REJECTIONS.get(normalized);
-  if (derived && (date === undefined || date >= derived.since)) {
-    if (!waive || !FREEFORM_WAIVED_REJECTIONS.has(derived.reason)) return derived.reason;
-  }
+  if (derived && (date === undefined || date >= derived.since)) return derived.reason;
   return undefined;
 }
 

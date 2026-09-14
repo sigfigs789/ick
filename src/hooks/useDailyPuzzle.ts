@@ -20,6 +20,7 @@ import {
   rarityForZipf,
   totalRarityScore,
   unattestedZipf,
+  waivedRejection,
 } from "../game/dictionary";
 import {
   checkWordLive,
@@ -55,6 +56,18 @@ import {
 import { submitScore } from "../game/leaderboard";
 import { markSessionEngaged } from "../game/visits";
 import { markGuess } from "../game/sessionTime";
+
+/**
+ * How the acceptance names a waived reason. Adjectives rather than the data's
+ * own slugs, because the sentence they land in is about the word: "obsolete,
+ * but accepted" reads as a remark, where "obsolete-word, but accepted" reads as
+ * a database field.
+ */
+const WAIVED_LABELS: Record<string, string> = {
+  obsolete: "obsolete",
+  archaic: "archaic",
+  dated: "dated",
+};
 
 /**
  * What the game says while a live lookup runs, and what it says once the lookup
@@ -233,7 +246,17 @@ export function useDailyPuzzle() {
       if (updated.completed) {
         trackPuzzleCompleted(updated, updatedStreak);
       }
-      showFeedback("accepted", `"${word.word}" accepted — ${word.rarity}.`, word.rarity);
+      // Freeform week lets a word in that its age would otherwise have kept out,
+      // and says so: a player who reaches for "tabacco" and has it counted is
+      // owed the reason it counted, which is also the week in miniature.
+      const waived = waivedRejection(word.word, viewedDate);
+      showFeedback(
+        "accepted",
+        waived
+          ? `"${word.word}" is ${WAIVED_LABELS[waived]}, but accepted — ${word.rarity}.`
+          : `"${word.word}" accepted — ${word.rarity}.`,
+        word.rarity
+      );
       return true;
     },
     [viewedDate, today, showFeedback]

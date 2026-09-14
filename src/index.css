@@ -465,7 +465,10 @@ h2 {
   white-space: nowrap;
   /* Rides above the button and clear of the wordmark beside it. */
   z-index: 1;
-  pointer-events: none;
+  /* Takes a press like the button under it (see AppHeader); once faded it stops
+     taking them, so an invisible label cannot swallow a tap meant for the
+     wordmark. */
+  cursor: pointer;
   /* Fades out on a timer (see BADGE_VISIBLE_MS). Opacity only -- it is
      absolutely positioned and already out of the flow, so nothing moves when it
      goes, and the button it points at is left exactly where the eye found it. */
@@ -474,6 +477,7 @@ h2 {
 }
 .app__freeform-badge--faded {
   opacity: 0;
+  pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .app__freeform-badge {

@@ -8,6 +8,7 @@ import {
   isFreeformWeek,
   isValidWord,
   rarityFor,
+  waivedRejection,
 } from "./dictionary";
 import { evaluateSubmission } from "./submit";
 import WORDS from "../data/dictionary.json";
@@ -206,6 +207,25 @@ describe("freeform week rejections", () => {
     const drop = word!.slice(1, 3).toUpperCase();
     expect(evaluateSubmission(word!, drop, [], DURING).ok).toBe(true);
     expect(evaluateSubmission(word!, drop, [], AFTER).ok).toBe(false);
+  });
+
+  it("names an age-related waiver, so an acceptance can explain itself", () => {
+    const obsolete = wordRejectedFor("obsolete");
+    expect(obsolete).toBeDefined();
+    expect(waivedRejection(obsolete!, DURING)).toBe("obsolete");
+    // Outside the week nothing is waived, because nothing is being let through.
+    expect(waivedRejection(obsolete!, BEFORE)).toBeUndefined();
+  });
+
+  it("says nothing about the waivers a player would not care about", () => {
+    // Being an acronym or a name is a category a word was filed under, not a
+    // fact about it worth a line in the acceptance. The word still plays.
+    for (const reason of ["abbreviation", "proper-noun", "name-or-abbreviation"]) {
+      const word = wordRejectedFor(reason);
+      if (!word) continue;
+      expect(isValidWord(word, DURING), `${reason} plays`).toBe(true);
+      expect(waivedRejection(word, DURING), `${reason} is silent`).toBeUndefined();
+    }
   });
 
   it("leaves a word that is not in the dictionary to the live lookup", () => {
