@@ -9,6 +9,7 @@
 //      useDailyPuzzle).
 
 import { todayDateString } from "./date";
+import { waivesRejectionReason } from "./dictionary";
 import type { RejectionReason } from "./types";
 
 /**
@@ -25,6 +26,23 @@ const LIVE_ABORT_MS = 15000;
 
 /** Words worth spending quota on: the game's own input rule. */
 const ELIGIBLE_RE = /^[a-z]{2,30}$/;
+
+/**
+ * The shape of a verdict, as a number the request carries.
+ *
+ * /api/validate answers are cached at the CDN for a day, and served stale for a
+ * week after that. That is right for the question it answers -- whether a word
+ * is real does not change -- but it caches the answer's *shape* too, and when
+ * that changes an old entry is not stale, it is wrong.
+ *
+ * Bump this whenever a verdict starts carrying something the client reads. It
+ * went to 2 when rejected verdicts began carrying a frequency: entries cached
+ * before that hold `zipf: null`, and freeform week banks those words, so a
+ * player would have scored a perfectly ordinary archaic word at the unattested
+ * floor -- a flat 10.00 -- for up to a week after the fix shipped, purely
+ * because somebody had looked it up first.
+ */
+const VALIDATE_SHAPE = 2;
 
 /**
  * Failure reasons that will not fix themselves: the daily quota is spent, a key
@@ -198,6 +216,47 @@ export function rejectionReasonForLive(check: LiveCheck): RejectionReason {
   return "not-a-word";
 }
 
+/**
+ * The one live verdict freeform week does not lift.
+ *
+ * Named as its own constant rather than left to fall out of `MAPPED_REASONS`
+ * below: "everything but offensive" is the rule, and a rule that important
+ * should be legible at the point it is enforced rather than inferred from a
+ * word's absence from a list of copy strings.
+ */
+const OFFENSIVE = "offensive";
+
+/**
+ * The register a live verdict refused `check.word` for, on a week that takes it
+ * anyway -- or undefined when the verdict stands.
+ *
+ * The live half of `curatedRejection`'s waiver, and the last place the week had
+ * to reach. The offline data waives a register rejection by declining to name it
+ * (see `rejectionReasonFor` in submit.ts), which sends the word here for a real
+ * answer; without this that answer is the same refusal a second time, and the
+ * word has taken a network round trip to arrive at it. The two lists that hold
+ * the register verdicts -- ours and Merriam-Webster's -- have to lift together
+ * or the week is only true of words we happened to have already curated.
+ *
+ * Only a `rejected` verdict is a candidate. "unknown" is Merriam-Webster saying
+ * it has never heard of the word, which is not a judgement about register and
+ * not the week's to overturn -- a week that let those through would take any
+ * string of letters, which is not "play any word" but "play any keystroke".
+ *
+ * "offensive" stays refused. It is the one thing MW objects to that is not about
+ * how old a word is or what it names, and no reading of "play however you want"
+ * reaches it.
+ */
+export function waivedLiveRejection(
+  check: LiveCheck,
+  date?: string
+): RejectionReason | undefined {
+  if (check.outcome !== "rejected") return undefined;
+  if (check.reason === OFFENSIVE) return undefined;
+  const reason = rejectionReasonForLive(check);
+  return waivesRejectionReason(reason, date) ? reason : undefined;
+}
+
 /** Whether this input is worth a live lookup at all. */
 export function eligibleForLiveCheck(word: string): boolean {
   return ELIGIBLE_RE.test(word);
@@ -278,7 +337,7 @@ export async function checkWordLive(word: string): Promise<LiveCheck> {
 
   let response: Response;
   try {
-    response = await fetch(`/api/validate?word=${encodeURIComponent(normalized)}`, {
+    response = await fetch(`/api/validate?word=${encodeURIComponent(normalized)}&v=${VALIDATE_SHAPE}`, {
       signal: AbortSignal.timeout(LIVE_ABORT_MS),
     });
   } catch (error) {

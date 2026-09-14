@@ -231,7 +231,15 @@ export function trackMerriamWebsterApproved(
   drop: string,
   check: LiveCheck,
   info: RarityInfo,
-  applied: boolean
+  applied: boolean,
+  /**
+   * The register Merriam-Webster refused the word for, on a week that banked it
+   * anyway -- null for an ordinary approval. Worth a field of its own rather
+   * than being read back off `outcome`: it is the number that says how much of
+   * freeform week's reach came from lifting the register rules, which is most of
+   * what the trial is deciding.
+   */
+  waived: string | null = null
 ) {
   send("merriam_webster_approved", {
     puzzle_date: date,
@@ -248,6 +256,7 @@ export function trackMerriamWebsterApproved(
     elapsed_ms: check.elapsedMs,
     within_handoff: check.elapsedMs <= LIVE_HANDOFF_MS,
     applied,
+    waived,
   });
 }
 

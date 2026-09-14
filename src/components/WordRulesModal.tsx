@@ -68,7 +68,7 @@ export function WordRulesModal({ open, date, onClose }: Props) {
         <p className="modal__copy">
           WordInk's word list is sourced from SCOWL and <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>) and contains more than 200,000 words.{" "}
           {isFreeformWeek(date)
-            ? "It's freeform week, so almost all of it is in play: proper nouns, abbreviations, and obsolete, archaic or dated words all count. Misspellings, hyphenated words and words with punctuation are the only ones left out."
+            ? "It's freeform week, so almost all of it is in play: proper nouns, abbreviations, and obsolete, archaic or dated words all count, whether or not the list already carried them. Misspellings, offensive words, hyphenated words and words with punctuation are the only ones left out."
             : "To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play."}
         </p>
         <p className="modal__copy">

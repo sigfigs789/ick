@@ -28,6 +28,7 @@ import {
   rejectionReasonForLive,
   shouldReportFailure,
   STILL_PENDING,
+  waivedLiveRejection,
   withHandoff,
   type LiveCheck,
 } from "../game/liveValidate";
@@ -209,7 +210,7 @@ export function useDailyPuzzle() {
    * business, not the player's.
    */
   const acceptWord = useCallback(
-    (word: AcceptedWord, source: "curated" | "live"): boolean => {
+    (word: AcceptedWord, source: "curated" | "live", liveWaiver?: RejectionReason): boolean => {
       const before = progressRef.current;
       const updated = recordAcceptedWord(before, word);
       if (updated === before) return false;
@@ -249,11 +250,19 @@ export function useDailyPuzzle() {
       // Freeform week lets a word in that its age would otherwise have kept out,
       // and says so: a player who reaches for "tabacco" and has it counted is
       // owed the reason it counted, which is also the week in miniature.
-      const waived = waivedRejection(word.word, viewedDate);
+      //
+      // Either waiver reads the same to the player, and has to: whether the word
+      // was in our dictionary carrying a reviewed "obsolete" or came back
+      // obsolete from Merriam-Webster is a fact about our data, not about their
+      // word. The label lookup is what decides whether anything is said at all,
+      // so a waiver with no adjective (a proper noun, an abbreviation) falls
+      // through to the plain acceptance rather than printing an empty one.
+      const waived = liveWaiver ?? waivedRejection(word.word, viewedDate);
+      const label = waived ? WAIVED_LABELS[waived] : undefined;
       showFeedback(
         "accepted",
-        waived
-          ? `"${word.word}" is ${WAIVED_LABELS[waived]}, but accepted — ${word.rarity}.`
+        label
+          ? `"${word.word}" is ${label}, but accepted — ${word.rarity}.`
           : `"${word.word}" accepted — ${word.rarity}.`,
         word.rarity
       );
@@ -302,17 +311,23 @@ export function useDailyPuzzle() {
    */
   const applyLiveCheck = useCallback(
     (raw: string, check: LiveCheck): SubmissionResult => {
+      // A register verdict the week waives is a find, not a miss -- the search
+      // did turn the word up, and the only thing that stood between the player
+      // and the word was a rule this week does not apply. Saying "not found"
+      // over a word about to be banked would be the sheet's promise and the
+      // game's own note contradicting each other in the same breath.
+      const liveWaiver = waivedLiveRejection(check, viewedDate);
+      const found = check.outcome === "playable" || liveWaiver !== undefined;
+
       if (liveNotePending.current) {
-        const settled =
-          check.outcome === "playable" ? LIVE_CHECK_SETTLED.found : LIVE_CHECK_SETTLED.notFound;
-        setLiveNote(settled);
+        setLiveNote(found ? LIVE_CHECK_SETTLED.found : LIVE_CHECK_SETTLED.notFound);
       }
 
-      if (check.outcome === "playable") {
+      if (found) {
         const info = liveRarity(check, viewedDate);
         const word: AcceptedWord = { word: check.word, ...info };
-        const applied = acceptWord(word, "live");
-        trackMerriamWebsterApproved(viewedDate, drop, check, info, applied);
+        const applied = acceptWord(word, "live", liveWaiver);
+        trackMerriamWebsterApproved(viewedDate, drop, check, info, applied, liveWaiver ?? null);
         if (applied) return { ok: true, word };
         // Approved, but the puzzle finished while the lookup was in flight. The
         // submit form is gone by then, so there is nothing useful to say and no

@@ -419,12 +419,33 @@ async function respond(request: Request): Promise<Response> {
       : null;
 
   if (classification.outcome !== "playable") {
+    // A *rejected* word gets a frequency too, even though this endpoint is
+    // refusing it. The refusal is about register -- a proper noun, an archaic
+    // sense -- and the game has a week that waives exactly those and then has to
+    // price the word it just took. Without a number here every waived word lands
+    // at the unattested floor and scores a perfect 10.00, which would say a
+    // perfectly ordinary obsolete word is as rare as one no corpus has ever
+    // recorded (see waivedLiveRejection).
+    //
+    // Only for "rejected". An "unknown" verdict is a word no reference carried,
+    // so there is nothing to price and nothing that will ever waive it, and
+    // those are the bulk of the misses -- pricing them would spend a lookup per
+    // typo. Datamuse has no quota of its own (the 1,000/day is MW's), and the
+    // answer is cached with the verdict.
+    let zipf: number | null = null;
+    if (classification.outcome === "rejected") {
+      try {
+        zipf = await fetchZipf(word);
+      } catch {
+        zipf = null;
+      }
+    }
     return json(
       {
         word,
         outcome: classification.outcome,
         reason: classification.reason,
-        zipf: null,
+        zipf,
         pos: classification.pos,
         firstUse: classification.firstUse,
         source,
