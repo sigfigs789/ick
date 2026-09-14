@@ -411,9 +411,12 @@ h2 {
   padding-top: 1rem;
   border-top: 1px solid var(--border);
 }
+/* Normal weight, not the bold a one-line question wore: this is a sentence of
+   reasoning rather than a label, and a bold paragraph above two bold buttons
+   leaves nothing for the buttons to stand out from. */
 .freeform__ask {
-  margin: 0 0 0.6rem;
-  font-weight: 700;
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
 }
 .freeform__vote-buttons {
   display: flex;

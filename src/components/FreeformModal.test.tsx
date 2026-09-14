@@ -34,9 +34,15 @@ describe("FreeformModal", () => {
     expect(screen.getByRole("button", { name: /close/i })).toHaveFocus();
   });
 
-  it("says the change can become permanent", () => {
+  it("says the change can become permanent, above the buttons that decide it", () => {
     open();
-    expect(screen.getByText(/if enough of you like it, it stays/i)).toBeInTheDocument();
+    const stakes = screen.getByText(/this can be made permanent/i);
+    const group = screen.getByRole("group", { name: /permanent/i });
+    // Before the vote, not in the sign-off under the feedback box: a player
+    // deciding whether to tap needs to know the tap decides something.
+    expect(stakes.compareDocumentPosition(group)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 
   it("sends a vote on the tap, without waiting for a note", async () => {

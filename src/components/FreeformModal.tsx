@@ -102,11 +102,17 @@ export function FreeformModal({ open, date, onClose }: Props) {
           And nothing’s too close to anything else — <strong>play</strong>,{" "}
           <strong>plays</strong> and <strong>played</strong> are three answers
           now, each scored on its own. Old words, proper nouns and abbreviations
-          are all in too. Play the words you want to play.
+          are all in too.
         </p>
         <div className="freeform__vote">
+          {/* The stakes before the buttons rather than after them. It used to
+              sit in the sign-off under the feedback box, which is below the
+              fold on a phone and after the moment it was meant to inform -- a
+              player deciding whether to bother tapping needs to know the tap
+              decides something. */}
           <p className="freeform__ask" id="freeform-vote-label">
-            What do you think?
+            This can be made permanent — it’s down to your feedback. Let me know
+            if you enjoy playing this way more.
           </p>
           {/* A group rather than two loose buttons, so a screen reader hears the
               question before the answers. `aria-pressed` because these are a
@@ -172,9 +178,7 @@ export function FreeformModal({ open, date, onClose }: Props) {
             </p>
           )}
         </form>
-        <p className="modal__signoff">
-          It’s a trial for the week. If enough of you like it, it stays for good.
-        </p>
+        <p className="modal__signoff">It’s a trial, just for this week.</p>
       </div>
     </div>
   );
