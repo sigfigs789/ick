@@ -303,7 +303,12 @@ export function evaluateSubmission(
   if (!WORD_CHARS.test(word)) {
     return { ok: false, reason: "not-a-word" };
   }
-  if (word === drop.toLowerCase()) {
+  // The drop itself is a word like any other during freeform week. Refusing it
+  // is a rule about what makes an interesting answer rather than about what is
+  // a word, which puts it with the fold and the same-root check rather than
+  // with the gates below -- and "ACC" is only unplayable the rest of the time
+  // because it is also an abbreviation. See FREEFORM_START.
+  if (!isFreeformWeek(date) && word === drop.toLowerCase()) {
     return { ok: false, reason: "same-as-drop" };
   }
   if (!containsDropInOrder(word, drop)) {
@@ -407,7 +412,10 @@ export const REJECTION_LEADS: Record<string, string> = {
  */
 export const REJECTION_DETAILS: Record<string, string> = {
   empty: "Type a word first.",
-  "not-a-word": "Not on the curated list.",
+  // Says where the game looked rather than naming a list of ours: a player who
+  // has just been told "not on the curated list" has learnt that we keep a list,
+  // not that their word is unknown to the dictionaries behind it.
+  "not-a-word": "Not in available dictionaries.",
   misspelling: MISSPELLING_FIX,
   "check-your-spelling": MISSPELLING_FIX,
   "proper-noun": "Names aren't playable.",

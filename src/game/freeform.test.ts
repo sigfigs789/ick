@@ -128,6 +128,29 @@ describe("freeform week submissions", () => {
     expect(plays.word!.zipf).not.toBe(played.word!.zipf);
   });
 
+  it("takes the drop itself as an answer", () => {
+    // Refusing the drop is a rule about what makes an interesting answer, not
+    // about what is a word -- so it goes with the fold rather than with the
+    // gates that stay. "acc" is playable now that abbreviations are too.
+    expect(evaluateSubmission("acc", "ACC", [], BEFORE)).toEqual({
+      ok: false,
+      reason: "same-as-drop",
+    });
+    expect(evaluateSubmission("acc", "ACC", [], DURING).ok).toBe(true);
+    expect(evaluateSubmission("acc", "ACC", [], AFTER)).toEqual({
+      ok: false,
+      reason: "same-as-drop",
+    });
+  });
+
+  it("still refuses a word that does not contain the drop", () => {
+    // The gate the week does not touch: the drop is the puzzle.
+    expect(evaluateSubmission("stone", "LAY", [], DURING)).toEqual({
+      ok: false,
+      reason: "missing-drop",
+    });
+  });
+
   it("still refuses the exact same spelling twice", () => {
     // The one duplicate rule the week does not touch: the same string again is
     // not a second word under any scoring system.

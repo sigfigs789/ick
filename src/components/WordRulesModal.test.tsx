@@ -7,13 +7,13 @@ const analytics = vi.hoisted(() => ({ trackWordSuggestion: vi.fn() }));
 vi.mock("../analytics", () => ({ trackWordSuggestion: analytics.trackWordSuggestion }));
 
 describe("WordRulesModal", () => {
-  it("explains the curated list and closes from its controls", async () => {
+  it("explains the word list and closes from its controls", async () => {
     const onClose = vi.fn();
     render(<WordRulesModal open onClose={onClose} />);
 
     const dialog = screen.getByRole("dialog", { name: /word rules/i });
     expect(screen.getByRole("heading", { name: "Word rules" })).toBeInTheDocument();
-    expect(dialog).toHaveTextContent(/curated word list is sourced from scowl and wiktionary .*and contains more than 200,000 words/i);
+    expect(dialog).toHaveTextContent(/word list is sourced from scowl and wiktionary .*and contains more than 200,000 words/i);
     expect(dialog).toHaveTextContent(/proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words/i);
     expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for play/i);
     expect(dialog).toHaveTextContent(/used under.*cc by-sa 4\.0/i);
@@ -54,5 +54,21 @@ describe("WordRulesModal", () => {
 
     expect(onClose).toHaveBeenCalled();
     expect(window.location.pathname).toBe("/suggested-words");
+  });
+});
+
+describe("WordRulesModal during freeform week", () => {
+  it("stops saying archaic words are unplayable while they are being played", () => {
+    render(<WordRulesModal open date="2026-09-15" onClose={vi.fn()} />);
+    const dialog = screen.getByRole("dialog");
+    // Sourcing and licensing are true whatever week it is.
+    expect(dialog).toHaveTextContent(/sourced from SCOWL and Wiktionary/i);
+    expect(dialog).toHaveTextContent(/it's freeform week, so almost all of it is in play/i);
+    expect(dialog).not.toHaveTextContent(/aren't eligible for play/i);
+  });
+
+  it("says the usual rules outside the week", () => {
+    render(<WordRulesModal open date="2026-09-13" onClose={vi.fn()} />);
+    expect(screen.getByRole("dialog")).toHaveTextContent(/aren't eligible for play/i);
   });
 });

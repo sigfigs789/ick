@@ -1,13 +1,16 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackWordSuggestion } from "../analytics";
+import { isFreeformWeek } from "../game/dictionary";
 import { navigate } from "../routes";
 
 interface Props {
   open: boolean;
+  /** The puzzle being played, which decides which eligibility rules are true. */
+  date?: string;
   onClose: () => void;
 }
 
-export function WordRulesModal({ open, onClose }: Props) {
+export function WordRulesModal({ open, date, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [suggestion, setSuggestion] = useState("");
   const [sent, setSent] = useState(false);
@@ -57,8 +60,16 @@ export function WordRulesModal({ open, onClose }: Props) {
             ×
           </button>
         </div>
+        {/* The second sentence is the half that moves. Sourcing and licensing
+            are true whatever week it is; which kinds of word are eligible is
+            exactly what freeform week suspends, and a rules panel that goes on
+            saying archaic words are unplayable while the player is scoring them
+            is worse than no rules panel. */}
         <p className="modal__copy">
-          WordInk's curated word list is sourced from SCOWL and <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>) and contains more than 200,000 words. To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play.
+          WordInk's word list is sourced from SCOWL and <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>) and contains more than 200,000 words.{" "}
+          {isFreeformWeek(date)
+            ? "It's freeform week, so almost all of it is in play: proper nouns, abbreviations, and obsolete, archaic or dated words all count. Misspellings, hyphenated words and words with punctuation are the only ones left out."
+            : "To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play."}
         </p>
         <p className="modal__copy">
           I'm continuously expanding the list to include more delightful and interesting words. Know a good one that's missing? Suggest it and everybody gets to play it.
