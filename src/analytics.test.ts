@@ -291,7 +291,22 @@ describe("merriam-webster events", () => {
       elapsed_ms: 420,
       within_handoff: true,
       applied: true,
+      // An ordinary approval: nothing had to be waived to bank it.
+      waived: null,
     });
+  });
+
+  it("names the register a freeform-week word was banked in spite of", () => {
+    // The count that says how much of the week's reach came from lifting the
+    // register rules rather than from the fold going quiet.
+    const check = liveCheck({ outcome: "rejected", reason: "archaic" });
+    const info: RarityInfo = { zipf: check.zipf!, rarity: "Legend" };
+    trackMerriamWebsterApproved("2026-09-15", "TIO", check, info, true, "archaic");
+
+    expect(track).toHaveBeenCalledWith(
+      "merriam_webster_approved",
+      expect.objectContaining({ word: "borborygmus", applied: true, waived: "archaic" })
+    );
   });
 
   it("marks a word scored from the unattested floor as unattested", () => {

@@ -165,6 +165,33 @@ describe("api/validate classification", () => {
     });
   });
 
+  it("prices a word it rejects, so a week that waives the reason can score it", async () => {
+    withKeys();
+    // The refusal is about register, and the game has a week that lifts exactly
+    // those (see waivedLiveRejection). A rejected word with no frequency lands
+    // at the unattested floor and takes a perfect 10.00, which would call an
+    // ordinary archaic word rarer than anything a corpus has ever recorded.
+    stubFetch({ mw: [ERST], datamuse: [{ word: "erst", tags: ["adv", "f:0.015800"] }] });
+    const result = await body(await handler(request("erst")));
+    expect(result).toMatchObject({ outcome: "rejected", reason: "archaic" });
+    // zipf = log10(0.0158) + 3
+    expect(result.zipf as number).toBeCloseTo(1.199, 3);
+  });
+
+  it("spends no frequency lookup on a word no reference carried", async () => {
+    withKeys();
+    // "unknown" is the bulk of the misses -- every typo lands here -- and
+    // nothing will ever waive it, so there is nothing to price.
+    const fetchMock = stubFetch({ mw: ["spelling-suggestion"] });
+    expect(await body(await handler(request("qwertyx")))).toMatchObject({
+      outcome: "unknown",
+      zipf: null,
+    });
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).includes("datamuse"))
+    ).toHaveLength(0);
+  });
+
   it("ignores entries whose headword is not the queried word", async () => {
     withKeys();
     // What MW actually does for a miss: related entries plus suggestion strings.

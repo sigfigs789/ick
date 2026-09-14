@@ -6,6 +6,7 @@ import {
   LIVE_HANDOFF_MS,
   rejectionReasonForLive,
   STILL_PENDING,
+  waivedLiveRejection,
   withHandoff,
   type LiveCheck,
 } from "./liveValidate";
@@ -161,6 +162,52 @@ describe("rejectionReasonForLive", () => {
     expect(rejectionReasonForLive(check({ outcome: "error", reason: "quota-exceeded" }))).toBe(
       "not-a-word"
     );
+  });
+});
+
+describe("waivedLiveRejection", () => {
+  // A day inside the trial and one outside it. Both are puzzle dates, which is
+  // what the waiver is asked about -- not the clock.
+  const DURING = "2026-09-15";
+  const AFTER = "2026-09-22";
+
+  it("takes a word Merriam-Webster refused for its register", () => {
+    // The whole point of the week reaching this far: these words are not in the
+    // curated list, so the offline data declines to name their reason and sends
+    // them here. If the verdict stood, the week would be true only of the
+    // archaic words we happened to have curated already.
+    for (const reason of ["archaic", "obsolete", "proper-noun", "abbreviation", "name-or-abbreviation"]) {
+      expect(waivedLiveRejection(check({ outcome: "rejected", reason }), DURING)).toBe(reason);
+    }
+  });
+
+  it("keeps refusing an offensive word, which is the one thing the week does not lift", () => {
+    expect(waivedLiveRejection(check({ outcome: "rejected", reason: "offensive" }), DURING)).toBe(
+      undefined
+    );
+  });
+
+  it("does not invent a word out of a verdict that found nothing", () => {
+    // "unknown" is MW saying it has never heard of the word. That is not a
+    // judgement about register, and waiving it would take any string of letters.
+    expect(waivedLiveRejection(check({ outcome: "unknown" }), DURING)).toBe(undefined);
+    expect(
+      waivedLiveRejection(check({ outcome: "error", reason: "quota-exceeded" }), DURING)
+    ).toBe(undefined);
+    expect(waivedLiveRejection(check({ outcome: "playable", reason: null }), DURING)).toBe(
+      undefined
+    );
+  });
+
+  it("waives nothing outside the window, in either direction", () => {
+    expect(waivedLiveRejection(check({ outcome: "rejected", reason: "archaic" }), AFTER)).toBe(
+      undefined
+    );
+    expect(waivedLiveRejection(check({ outcome: "rejected", reason: "archaic" }), "2026-09-13")).toBe(
+      undefined
+    );
+    // Undated reads as not freeform, like every other caller.
+    expect(waivedLiveRejection(check({ outcome: "rejected", reason: "archaic" }))).toBe(undefined);
   });
 });
 

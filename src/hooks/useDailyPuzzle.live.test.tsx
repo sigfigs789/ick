@@ -8,6 +8,21 @@ import { REJECTION_MESSAGES } from "../game/submit";
 import { resetLiveCheckSession } from "../game/liveValidate";
 import { LIVE_CHECK_PENDING, LIVE_CHECK_SETTLED } from "./useDailyPuzzle";
 
+/**
+ * Pinned to the first ordinary puzzle after the freeform trial.
+ *
+ * These cases are about the rule that holds the rest of the time -- a word a
+ * reference found and the game still will not take. Freeform week waives exactly
+ * those refusals (see waivedLiveRejection), so on a date inside the window there
+ * is no refusal left to assert, and the file would be testing the calendar
+ * rather than the rule. The week's own behaviour has its own file:
+ * useDailyPuzzle.freeform.test.tsx.
+ */
+vi.mock("../game/date", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../game/date")>()),
+  todayDateString: () => "2026-09-22",
+}));
+
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
 
