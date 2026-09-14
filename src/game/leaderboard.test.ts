@@ -7,6 +7,7 @@ import {
   submitScore,
   syncHistory,
 } from "./leaderboard";
+import { rarityScore } from "./dictionary";
 import { handleFor } from "./handle";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
@@ -172,11 +173,12 @@ describe("importing a joining player's history", () => {
     ]);
   });
 
-  it("sends each day's frozen score with a current frequency for its word", () => {
+  it("sends each day's score and its word on the same day's terms", () => {
     const playerId = joinBoard();
     const fetchMock = stubFetch();
-    // asphyxiate was worth 8.40 the day it was played (2026-08-14's system) and
-    // is worth 8.30 today.
+    // asphyxiate measured 1.80 under 2026-08-14's system and measures 2.09
+    // today, which is the difference between what that day's game showed and
+    // what today's dictionary would say.
     const history = [
       { ...stored("2026-08-14"), acceptedWords: [{ word: "asphyxiate", rarity: "Extremely Rare" as const, zipf: 2.09 }] },
     ];
@@ -185,10 +187,12 @@ describe("importing a joining player's history", () => {
     const day = (posted(fetchMock).scores as Record<string, unknown>[])[0];
     // The day keeps the score it was played for...
     expect(day.top).toBe(8.4);
-    // ...while its word travels with a current frequency, so the board can rank
-    // words found years apart against each other and price them the same.
+    // ...and its word keeps the frequency that produced it. The two used to
+    // travel on different systems -- a score frozen at the day beside a
+    // frequency from today -- which is how a board row came to disagree with
+    // the game it reported. 8.40 is what 1.80 scores on 2026-08-14.
     expect(day.word).toBe("asphyxiate");
-    expect(day.zipf).toBe(2.09);
+    expect(day.zipf).toBe(1.8);
   });
 
   it("sends the rarest word of each day, not the first", () => {
@@ -318,6 +322,52 @@ describe("reading the boards", () => {
       handleFor("11111111-1111-4111-8111-111111111111"),
     );
     expect(boards.dailySelf).toBeNull();
+  });
+
+  it("shows a find at the price its own puzzle gave it", async () => {
+    stubFetch(
+      boardsResponse({
+        daily: [
+          {
+            rank: 1,
+            playerId: "11111111-1111-4111-8111-111111111111",
+            windowWord: "kindless",
+            // 1.08 is what freeform week measured. Today's dictionary folds the
+            // word onto "kind" at 5.45, so a fresh lookup here would have shown
+            // the player a smaller number than the game gave them for the find
+            // it is naming them by.
+            windowZipf: 1.08,
+            score: 9.4,
+            puzzles: 1,
+          },
+        ],
+      }),
+    );
+
+    const boards = await fetchBoards("2026-09-15");
+    expect(boards.daily[0].windowScore).toBe(rarityScore(1.08));
+    expect(boards.daily[0].windowScore).not.toBe(rarityScore(5.45));
+  });
+
+  it("prices a row that arrived without a frequency from the dictionary", async () => {
+    // The one case left for a fresh lookup: a row with no stored number at all.
+    stubFetch(
+      boardsResponse({
+        daily: [
+          {
+            rank: 1,
+            playerId: "11111111-1111-4111-8111-111111111111",
+            windowWord: "inkling",
+            windowZipf: null,
+            score: 9.4,
+            puzzles: 1,
+          },
+        ],
+      }),
+    );
+
+    const boards = await fetchBoards("2026-09-15");
+    expect(boards.daily[0].windowScore).toBe(rarityScore(2.9));
   });
 
   it("asks for the day a reader has stepped the board back to", async () => {
