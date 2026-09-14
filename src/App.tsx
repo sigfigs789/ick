@@ -251,6 +251,7 @@ export default function App() {
 
       <WordRulesModal
         open={showWordRules}
+        date={date}
         onClose={() => setShowWordRules(false)}
       />
     </>

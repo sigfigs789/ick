@@ -15,7 +15,7 @@
 const SEEN_PREFIX = "ick:seen:";
 
 /** The features that have ever carried a badge, or a once-only appearance. */
-export type Announcement = "instructions";
+export type Announcement = "instructions" | "freeform";
 
 /**
  * Whether the player has already met this feature.
@@ -30,6 +30,39 @@ export function hasSeen(what: Announcement): boolean {
     return localStorage.getItem(SEEN_PREFIX + what) !== null;
   } catch {
     return true;
+  }
+}
+
+const SESSION_PREFIX = "ick:announced:";
+
+/**
+ * Whether this feature has already been announced in *this* browsing session.
+ *
+ * The bound on an announcement that repeats. `hasSeen` above is permanent and
+ * answers "has this player ever met it"; this answers "have we already shown it
+ * since they opened the app", so a reload, a tab switch or a back-navigation
+ * cannot bring the same sheet back. A new session is a new open, which is the
+ * unit "on open" means.
+ *
+ * Storage that can't be read reports *announced*, for the reason `hasSeen`
+ * reports seen: a browser that cannot remember the showing would repeat it on
+ * every render, and a missed announcement is much cheaper than that.
+ */
+export function announcedThisSession(what: Announcement): boolean {
+  try {
+    return sessionStorage.getItem(SESSION_PREFIX + what) !== null;
+  } catch {
+    return true;
+  }
+}
+
+/** Record that this feature has been announced in this session. */
+export function markAnnouncedThisSession(what: Announcement): void {
+  try {
+    sessionStorage.setItem(SESSION_PREFIX + what, "1");
+  } catch {
+    // Same as markSeen: a store that cannot be written is one the reader above
+    // treats as already announced, so nothing was shown to record.
   }
 }
 

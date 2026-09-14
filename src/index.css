@@ -276,7 +276,9 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  /* Tight enough that the wordmark, the update pill and the "?" hold one line
+     on a 375px phone. */
+  gap: 0.5rem;
 }
 /* The wordmark, which is an h1 on the puzzle and a plain line elsewhere (see
    AppHeader) -- so it is styled by class rather than by tag, and looks the same
@@ -289,6 +291,25 @@ h2 {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   line-height: 1.1;
+}
+/* On a phone the wordmark, the Freeform pill and the "?" stop fitting on one
+   line, and a wrapped wordmark drops the beta chip under it. Stepping the type
+   down is cheaper than any of the alternatives -- the row is the app's identity
+   and it should read as one line on every phone. Two steps, because the width
+   range is wide: a 430px phone has room the 320px one has not.
+
+   Applies whether or not the pill is there. The row was already tight at these
+   widths without it, and a wordmark that changes size when a button comes and
+   goes would be the more obvious fault. */
+@media (max-width: 429px) {
+  .app__wordmark {
+    font-size: 1.6rem;
+  }
+}
+@media (max-width: 359px) {
+  .app__wordmark {
+    font-size: 1.2rem;
+  }
 }
 /* The tabs. Evenly divided rather than packed to one side: they are the whole
    width of the app's navigation, and three equal targets are easier to hit
@@ -380,6 +401,162 @@ h2 {
 }
 .app__icon-button:active {
   transform: scale(0.94);
+}
+/* The right-hand end of the header bar: the Freeform pill and the "?", kept
+   together so space-between cannot put the width of the page between them (see
+   AppHeader). */
+.app__header-actions {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 0.5rem;
+}
+/* The announcement button and the badge floating under it. The wrapper is what
+   the badge is positioned against, and it takes no space of its own. */
+.app__freeform-nav {
+  position: relative;
+  flex: none;
+  display: flex;
+}
+/* A word, not a glyph, so it is a pill rather than one of the circles beside
+   it. Sized to the type it holds: a fixed height matching .app__icon-button so
+   the three sit on one line, and horizontal padding rather than a width. */
+.app__freeform-button {
+  height: 2.35rem;
+  /* Padding tuned against the one thing that has to hold: the wordmark staying
+     on one line at 375px. That leaves about 58px here once the "?" and the gaps
+     are paid for, and "Update" at this size comes to 57. */
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s var(--ease-standard),
+    transform 0.15s var(--ease-standard);
+}
+.app__freeform-button:hover {
+  background: var(--bg-inset);
+}
+.app__freeform-button:active {
+  transform: scale(0.94);
+}
+/* Floated under the button rather than tucked inside it: the badge names the
+   kind of week, which is more than fits on the control itself, and sitting
+   below keeps the button's own word readable above it.
+
+   `top: 100%` so it hangs out of the button's bottom edge and the row's height
+   never changes with it -- the header must not grow for a label. The negative
+   margin pulls it back over the button so the pair reads as one object, and
+   what is left clears the nav row's own 0.85rem of top margin. */
+.app__freeform-badge {
+  position: absolute;
+  top: 100%;
+  /* Right-aligned to the button rather than centred on it. The badge is wider
+     than the control it marks, and centring pushed its right end under the "?"
+     circle; growing leftwards instead keeps it clear, under the gap beside the
+     wordmark, where nothing sits at this height. */
+  right: 0;
+  /* Pulled further over the button than the type grew, so the extra height goes
+     upward into the button rather than down towards the nav row -- what is left
+     below still has to clear the nav's own 0.85rem of top margin. */
+  margin-top: -0.5rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  /* Rides above the button and clear of the wordmark beside it. */
+  z-index: 1;
+  /* Takes a press like the button under it (see AppHeader); once faded it stops
+     taking them, so an invisible label cannot swallow a tap meant for the
+     wordmark. */
+  cursor: pointer;
+  /* Fades out on a timer (see BADGE_VISIBLE_MS). Opacity only -- it is
+     absolutely positioned and already out of the flow, so nothing moves when it
+     goes, and the button it points at is left exactly where the eye found it. */
+  opacity: 1;
+  transition: opacity 0.6s var(--ease-standard);
+}
+.app__freeform-badge--faded {
+  opacity: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app__freeform-badge {
+    transition: none;
+  }
+}
+
+/* -- Freeform week notice ------------------------------------------------- */
+/* The vote sits in its own bordered block between the copy and the feedback
+   box, because it is the one thing on the sheet being asked *of* the player --
+   without the rule above it, two buttons under two paragraphs read as the end
+   of the paragraphs. */
+.freeform__vote {
+  margin: 1.1rem 0 0.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+/* Normal weight, not the bold a one-line question wore: this is a sentence of
+   reasoning rather than a label, and a bold paragraph above two bold buttons
+   leaves nothing for the buttons to stand out from. */
+.freeform__ask {
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+.freeform__vote-buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+/* Equal width, so neither verdict is the bigger target. A trial asking whether
+   people like a change has an obvious thumb on the scale available to it, and
+   declining to use it is most of what makes the answer worth having. */
+.freeform__vote-button {
+  flex: 1;
+  padding: 0.6rem 0.5rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border-strong);
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 0.15s var(--ease-standard),
+    transform 0.15s var(--ease-standard);
+}
+.freeform__vote-button:hover {
+  background: var(--bg-inset);
+}
+.freeform__vote-button:active {
+  transform: scale(0.97);
+}
+/* The chosen one inverts, the same way every other committed choice in the app
+   does. Both verdicts get the identical treatment -- no green for yes and red
+   for no, which would tell the player which answer was wanted. */
+.freeform__vote-button--picked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.freeform__vote-button--picked:hover {
+  background: var(--accent-hover);
+}
+.freeform__voted {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: var(--fg-faint);
 }
 
 .dev-reset-button {

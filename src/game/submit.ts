@@ -1,8 +1,10 @@
 import {
   boundBaseFormsActive,
   curatedRejection,
+  isFreeformWeek,
   isValidWord,
   isDictionaryWord,
+  waivesRejectionReason,
   mostCommonSameRootBase,
   nearMissForDrop,
   pinnedSameRoot,
@@ -55,12 +57,24 @@ function includesSorted(words: readonly string[], word: string): boolean {
  * is the only source that can explain a word still present in the dictionary.
  * Falls back to the ESDB/Wiktionary categories for words that simply never made
  * the curated list.
+ *
+ * A metadata category the week waives is dropped rather than returned, which is
+ * what sends the word to the live Merriam-Webster lookup: that check runs only
+ * for a bare "not-a-word", so naming the register here would refuse the word
+ * outright (see `worthChecking` in useDailyPuzzle). Without this the week is
+ * inconsistent with itself -- an archaic word the dictionary happens to carry
+ * plays, while the 10,309 archaic words it does not carry are turned away
+ * without ever being looked up. Misspellings keep their verdict, here as
+ * everywhere else: there is nothing to prove about a typo.
  */
 function rejectionReasonFor(word: string, date?: string): RejectionReason | undefined {
-  return (
-    curatedRejection(word, date) ??
-    METADATA_REASONS.find((reason) => includesSorted(metadataByReason[reason] ?? [], word))
+  const curated = curatedRejection(word, date);
+  if (curated !== undefined) return curated;
+  const metadata = METADATA_REASONS.find((reason) =>
+    includesSorted(metadataByReason[reason] ?? [], word)
   );
+  if (metadata !== undefined && waivesRejectionReason(metadata, date)) return undefined;
+  return metadata;
 }
 
 /** True if `drop`'s letters appear contiguously and in order inside `word`. */
@@ -261,6 +275,11 @@ function foldOnce(word: string, folds: RootFolds, date?: string): string {
  *
  * Words this puzzle has already taken are not near misses: pointing at one would
  * send the player back to a word the same-root rule would refuse.
+ *
+ * During freeform week that rule is off, so the exclusion narrows to the words
+ * actually used -- a relative of an accepted word is a perfectly good suggestion
+ * that week, and filtering by root would have gone on hiding the answers the
+ * week exists to allow.
  */
 export function spellingNearMiss(
   rawInput: string,
@@ -270,6 +289,10 @@ export function spellingNearMiss(
 ): string | undefined {
   const word = rawInput.trim().toLowerCase();
   if (!WORD_CHARS.test(word)) return undefined;
+  if (isFreeformWeek(date)) {
+    const used = new Set(alreadyAccepted.map((accepted) => accepted.word));
+    return nearMissForDrop(word, drop, date, (candidate) => used.has(candidate));
+  }
   const folds = rootFoldsFor(date);
   const usedRoots = new Set(alreadyAccepted.map((accepted) => rootKey(accepted.word, folds, date)));
   // Passed last on purpose: rootKey is the expensive test, and this predicate
@@ -293,7 +316,12 @@ export function evaluateSubmission(
   if (!WORD_CHARS.test(word)) {
     return { ok: false, reason: "not-a-word" };
   }
-  if (word === drop.toLowerCase()) {
+  // The drop itself is a word like any other during freeform week. Refusing it
+  // is a rule about what makes an interesting answer rather than about what is
+  // a word, which puts it with the fold and the same-root check rather than
+  // with the gates below -- and "ACC" is only unplayable the rest of the time
+  // because it is also an abbreviation. See FREEFORM_START.
+  if (!isFreeformWeek(date) && word === drop.toLowerCase()) {
     return { ok: false, reason: "same-as-drop" };
   }
   if (!containsDropInOrder(word, drop)) {
@@ -302,10 +330,22 @@ export function evaluateSubmission(
   if (alreadyAccepted.some((w) => w.word === word)) {
     return { ok: false, reason: "already-used" };
   }
-  const folds = rootFoldsFor(date);
-  const wordRoot = rootKey(word, folds, date);
-  if (alreadyAccepted.some((w) => rootKey(w.word, folds, date) === wordRoot)) {
-    return { ok: false, reason: "same-root-as-used" };
+  // Freeform week drops the same-root refusal along with the fold that defines
+  // it. The two are one rule asked in two places -- scoring folds "plays" onto
+  // "play" to price it, and this folds them together to call them one word --
+  // so a week that lets you play a word on its own terms has to let you play the
+  // whole paradigm: "play", "plays" and "played" are three answers, each scored
+  // as itself. See FREEFORM_START.
+  //
+  // The exact-duplicate check above is untouched and deliberately so: the same
+  // spelling twice is not a second word under any scoring system, and refusing
+  // it is not the rule anybody asked to be rid of.
+  if (!isFreeformWeek(date)) {
+    const folds = rootFoldsFor(date);
+    const wordRoot = rootKey(word, folds, date);
+    if (alreadyAccepted.some((w) => rootKey(w.word, folds, date) === wordRoot)) {
+      return { ok: false, reason: "same-root-as-used" };
+    }
   }
   if (!isValidWord(word, date)) {
     return {
@@ -385,7 +425,10 @@ export const REJECTION_LEADS: Record<string, string> = {
  */
 export const REJECTION_DETAILS: Record<string, string> = {
   empty: "Type a word first.",
-  "not-a-word": "Not on the curated list.",
+  // Says where the game looked rather than naming a list of ours: a player who
+  // has just been told "not on the curated list" has learnt that we keep a list,
+  // not that their word is unknown to the dictionaries behind it.
+  "not-a-word": "Not in available dictionaries.",
   misspelling: MISSPELLING_FIX,
   "check-your-spelling": MISSPELLING_FIX,
   "proper-noun": "Names aren't playable.",

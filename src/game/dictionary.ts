@@ -128,6 +128,28 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     and the base they took was almost always an unrelated everyday word
  *     ("themed" as `them`, "noted" as `not`, "biting" as `bit`). 229 words score
  *     higher and 23 lower (see DOUBLING_TENSE_START). No label mapping moves.
+ *   - 2026-09-14 to 2026-09-21 inclusive -- "Freeform week", a trial rather than
+ *     a cutover, and the only entry here that is a *window* rather than a rung.
+ *     Every fold above is skipped and each word scores on its own measured
+ *     frequency: 115,474 of the 220,078 playable words score higher, 93,283 of
+ *     them a full rank higher, and Legend goes from 9.0% of the dictionary to
+ *     27.1%. Nothing is demoted, because a fold has only ever been a cap.
+ *     Deliberately an off switch rather than a deletion -- the rules stay where
+ *     they are, the window steps over them, and 2026-09-22 lands back on the
+ *     latest system with every archived puzzle either side of the week still
+ *     scoring exactly as it was played. See FREEFORM_START.
+ *     The same-root refusal in submit.ts goes with it, since it is this fold
+ *     asked a second way: scoring folds "plays" onto "play" to price it, and
+ *     same-root folds them together to call them one word. A week that scores a
+ *     word on its own terms has to let it be played on them, so "play", "plays"
+ *     and "played" are three answers. Submitting one spelling twice is still
+ *     refused -- that was never the fold.
+ *     The reviewed rejections that refuse a real word for its *register* go too
+ *     -- proper nouns, abbreviations, and the obsolete/archaic/dated trio -- on
+ *     the same argument: a week about playing however you want does not get to
+ *     say which register is allowed. Misspellings and non-words stay refused,
+ *     which is the line the curation rules already draw (see
+ *     FREEFORM_WAIVED_REJECTIONS).
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -322,6 +344,48 @@ const BORROWED_PREFIX_END = "2026-09-05";
  * after it can straddle a deploy.
  */
 const DOUBLING_TENSE_START = "2026-09-10";
+
+/**
+ * "Freeform week": the window in which no word folds and every score is the
+ * word's own measured frequency. Start inclusive, end exclusive, so the trial
+ * runs 2026-09-14 through 2026-09-21 inclusive, and 2026-09-22 is back on the
+ * latest system. Eight puzzles rather than seven -- Monday the 14th through
+ * Monday the 21st -- so the trial covers a whole week and the day that closes
+ * it, and every weekday appears at least once.
+ *
+ * Read by scoring (`adjustedZipf`) and by same-root duplicate detection
+ * (`evaluateSubmission`), which are the two places the fold is consulted and so
+ * the two places the week has to reach.
+ *
+ * A window rather than a rung, which is the whole shape of the thing: every
+ * other date here turns a rule on or off for good, and the ladder in
+ * `scoringFor` reads them in order because scoring only ever moves forward. A
+ * trial does not, so this is asked as a range and the rules it skips are left
+ * untouched behind it -- see the `folds` flag. If the trial is kept, this
+ * becomes an ordinary rung and `FREEFORM_END` goes away; if it is not, the two
+ * dates stay exactly as they are and the week keeps the scores it was played
+ * with, like every other archived puzzle.
+ *
+ * Both dates are puzzle dates, compared as strings like every other cutover
+ * here, so the week turns over with the puzzle rather than with a clock.
+ */
+export const FREEFORM_START = "2026-09-14";
+export const FREEFORM_END = "2026-09-22";
+
+/**
+ * Whether `date`'s puzzle is played under the freeform rules.
+ *
+ * An omitted date reads as *not* freeform, unlike everywhere else in this file
+ * where it means "the newest system". The difference is deliberate: an undated
+ * call is the leaderboard and the finds feed pricing somebody's word by today's
+ * dictionary, and those have to keep answering the same thing all week or every
+ * historical find would reprice on the 14th and reprice back on the 21st. The
+ * puzzle itself always knows its own date and passes it.
+ */
+export function isFreeformWeek(date?: string): boolean {
+  if (date === undefined) return false;
+  return date >= FREEFORM_START && date < FREEFORM_END;
+}
 
 /*
  * 2026-08-26. Three changes, one cutover, because they ship together and no
@@ -910,6 +974,12 @@ interface Scoring {
   // off for earlier systems so past puzzles' scores stay frozen (see
   // DOUBLING_TENSE_START).
   doublingTenseBases: boolean;
+  // Whether this system folds at all. True for every dated system but the
+  // freeform window, which skips the fold wholesale and scores each word on its
+  // own frequency (see FREEFORM_START). The one flag here that reads as a
+  // master switch rather than a rule: the rules it stands in front of are
+  // unchanged and untested by it, so turning it back on restores them exactly.
+  folds: boolean;
   // Whether "pre-" is one of the transparent prefixes. The only flag here that
   // reads the other way round -- it is *on* for the systems from 2026-08-24 up
   // to 2026-09-05, when the prefix was retired, and off from there -- because a
@@ -955,6 +1025,10 @@ interface ScoringFlags {
   prePrefixBases?: boolean;
   borrowedPrefixBases?: boolean;
   doublingTenseBases?: boolean;
+  // Defaults to *true*, the other way round from every flag above it, because a
+  // fold is not a rule some past system lacked -- it is what scoring has always
+  // done. Only the freeform profile passes false. See FREEFORM_START.
+  folds?: boolean;
   // Whether the retuned measured Zipf bands apply -- see measuredRarity. Labels
   // only; no score moves. Off for earlier systems so archived puzzles keep the
   // labels they were played with (see NARROW_BANDS_START).
@@ -987,6 +1061,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     prePrefixBases = false,
     borrowedPrefixBases = false,
     doublingTenseBases = false,
+    folds = true,
     narrowBands = false,
     scoreCurve = false,
     decadeBands = false,
@@ -1050,6 +1125,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     prePrefixBases,
     borrowedPrefixBases,
     doublingTenseBases,
+    folds,
   };
 }
 
@@ -1296,7 +1372,19 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   decadeBands: true,
 });
 
+/**
+ * Freeform week: the latest system with the fold switched off.
+ *
+ * Built by spreading `LATEST_SCORING` rather than by another `twoBandScoring`
+ * call, so it cannot drift from it -- the week changes exactly one thing, and
+ * the bands, the curve, the labels and the formatting are all still the latest
+ * system's. Precomputed rather than spread per call because `scoringFor` is on
+ * the drop-scan hot path (`bestWordForDrop` asks it once per dictionary word).
+ */
+const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
+
 const LEGACY_SCORING: Scoring = {
+  folds: true,
   zipfAt: (i) => legacyZipfTenths[i] / 10,
   // The legacy scale is defined over LEGACY_MIN_ZIPF..LEGACY_MAX_ZIPF and has no
   // clamp of its own, so a Zipf below its floor scores past 10. A live-validated
@@ -1446,6 +1534,11 @@ function scoringFor(date?: string): Scoring {
   if (date < PRE_PREFIX_END) return PRIVATIVE_SCORING;
   if (date < BORROWED_PREFIX_END) return PRE_RETIRED_SCORING;
   if (date < DOUBLING_TENSE_START) return BORROWED_RETIRED_SCORING;
+  // The one rung asked as a range rather than a threshold: the freeform trial is
+  // a window, and the puzzles after it are back on the system before it. Asked
+  // last so it reads as what it is -- the latest system with one switch thrown --
+  // and so a later cutover slots in above it without thinking about the week.
+  if (isFreeformWeek(date)) return FREEFORM_SCORING;
   return LATEST_SCORING;
 }
 
@@ -1474,6 +1567,35 @@ export const CURATED_REJECTION_REASONS = [
   "not-a-word",
 ] as const;
 export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
+
+/**
+ * The rejection reasons freeform week waives -- the ones that refuse a real word
+ * for the kind of word it is rather than for not being one.
+ *
+ * A player reaching for "thou" or "NASA" or "wireless telegraphy" is playing the
+ * language as they find it, and a week about playing however you want has no
+ * business telling them which register is allowed. Every entry here is a word;
+ * what the reviewer objected to was its standing.
+ *
+ * Two reasons stay in force, and the line between them and the list is the same
+ * one the curation rules draw: a spelling of *another* word is not a word
+ * somebody wants to play, it is a mistake, and letting it through would score a
+ * typo as a deep-tail find -- "recieve" is not a bolder way to play "receive".
+ * "not-a-word" is the same objection stated outright. Neither is a judgement
+ * about register, so neither is the week's to lift.
+ *
+ * Words absent from the curated dictionary altogether are untouched by this and
+ * still go to the live lookup: the week widens which *words* are playable, not
+ * what counts as one.
+ */
+const FREEFORM_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
+  "proper-noun",
+  "abbreviation",
+  "name-or-abbreviation",
+  "obsolete",
+  "archaic",
+  "dated",
+]);
 
 /**
  * Reviewed rejections, each with the reason a player sees when they try the word.
@@ -1560,6 +1682,68 @@ const DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: 
  * particular word) than a sense label can.
  */
 export function curatedRejection(word: string, date?: string): RejectionReason | undefined {
+  const reason = reviewedRejection(word, date);
+  if (reason === undefined) return undefined;
+  if (isFreeformWeek(date) && FREEFORM_WAIVED_REJECTIONS.has(reason)) return undefined;
+  return reason;
+}
+
+/**
+ * Whether `date`'s puzzle waives `reason` outright -- the question
+ * `curatedRejection` answers for itself, exposed for the *other* rejection
+ * source.
+ *
+ * src/data/rejection-metadata.json classifies about 107,000 words that never
+ * made the curated dictionary, and submit.ts reads it to explain a refusal. A
+ * category from that file is final in a way a curated rejection is not: it
+ * short-circuits the live Merriam-Webster lookup, because normally there is
+ * nothing to check -- the game has already decided the word's kind is
+ * unplayable. During the week that reasoning is inverted, and a word refused for
+ * its register has to be allowed to prove itself like any other unknown word.
+ */
+export function waivesRejectionReason(reason: RejectionReason, date?: string): boolean {
+  return isFreeformWeek(date) && FREEFORM_WAIVED_REJECTIONS.has(reason);
+}
+
+/**
+ * The waived reasons worth saying out loud when a word is accepted: the three
+ * about a word's *age*.
+ *
+ * "Obsolete, but accepted" is a small fact about the word -- it tells a player
+ * they have reached for something out of use and the week let it stand, which is
+ * the kind of thing the week is for. "Acronym, but accepted" is not a fact about
+ * the word so much as a category it was filed under, and reading it on every
+ * initialism would be noise. The other three waived reasons stay silent for the
+ * same reason: nobody needs telling that "NASA" is a name.
+ */
+const NOTED_WAIVERS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
+  "obsolete",
+  "archaic",
+  "dated",
+]);
+
+/**
+ * The reason a word *would* have been refused for, on a week that is letting it
+ * through anyway -- so the acceptance can say which rule it is standing on
+ * ("'tabacco' is obsolete, but accepted"). Undefined for a word that needed no
+ * waiver, outside the week for every word, and for the waived reasons that are
+ * not worth a player's attention (see NOTED_WAIVERS).
+ *
+ * The other half of `curatedRejection` rather than a second reading of the data:
+ * the two split one verdict between them, and a word is refused by that function
+ * or explained by this one, never both.
+ */
+export function waivedRejection(word: string, date?: string): RejectionReason | undefined {
+  if (!isFreeformWeek(date)) return undefined;
+  const reason = reviewedRejection(word, date);
+  return reason !== undefined && NOTED_WAIVERS.has(reason) ? reason : undefined;
+}
+
+/**
+ * The reviewed verdict on a word under `date`, before the week has any say in
+ * it. Two lists, and the hand-written one is asked first.
+ */
+function reviewedRejection(word: string, date?: string): RejectionReason | undefined {
   const normalized = word.toLowerCase();
   const rejection = WORD_REJECTIONS.get(normalized);
   if (rejection && (date === undefined || date >= rejection.since)) return rejection.reason;
@@ -1811,6 +1995,11 @@ export function baseFormSubstitution(
   if (i === undefined) return undefined;
   const scoring = scoringFor(date);
   const ownZipf = scoring.zipfAt(i);
+
+  // Nothing folded, so there is no substitution to report and the "Scored as its
+  // common form" note stays off for the week -- the score on screen really is
+  // the word's own (see FREEFORM_START).
+  if (!scoring.folds) return undefined;
 
   // Under the chained system every fold is a cap, so a substitution happened
   // only where the chain actually beat the word's own frequency. The base
@@ -2073,6 +2262,13 @@ export function nearMissForDrop(
  * answer.
  */
 function adjustedZipf(word: string, zipf: number, scoring: Scoring, date?: string): number {
+  // Freeform week: the word's own frequency, full stop. Returned before any rule
+  // below is consulted -- including the reviewed overrides, which are decisions
+  // about which base a word folds onto and have nothing to say once nothing
+  // folds. Every rule below is left exactly as it is; this is the whole of the
+  // change (see FREEFORM_START).
+  if (!scoring.folds) return zipf;
+
   // The latest system resolves the whole fold chain and caps against every link,
   // so no rule can leave a word rarer than its own measurement.
   if (scoring.chainedBaseForms) {

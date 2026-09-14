@@ -36,7 +36,7 @@ describe("evaluateSubmission", () => {
     expect(REJECTION_MESSAGES.misspelling).toBe("Misspelling? Check your spelling.");
     expect(REJECTION_MESSAGES.misspelling).toBe(REJECTION_MESSAGES["check-your-spelling"]);
     expect(REJECTION_MESSAGES["missing-drop"]).toBe("Missing the drop. Your word must contain it.");
-    expect(REJECTION_MESSAGES["not-a-word"]).toBe("Not found. Not on the curated list.");
+    expect(REJECTION_MESSAGES["not-a-word"]).toBe("Not found. Not in available dictionaries.");
     // The lead is the whole message where nothing else has to be said.
     expect(REJECTION_MESSAGES["already-used"]).toBe("Already used.");
     expect(REJECTION_MESSAGES.empty).toBe("Type a word first.");

@@ -15,5 +15,5 @@
 // if index.html were cached below the floor, stale tabs would reload forever.
 // vercel.json pins this with no-store on "/" and "/index.html" — keep it that
 // way if you ever touch the caching headers.
-export const APP_VERSION = 19;
-export const MIN_VERSION = 19;
+export const APP_VERSION = 20;
+export const MIN_VERSION = 20;

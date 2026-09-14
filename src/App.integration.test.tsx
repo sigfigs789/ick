@@ -342,7 +342,7 @@ describe("gameplay end to end", () => {
     await submit(OFF_LIST_WORD);
 
     await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent(/not on the curated list|spelling/i)
+      expect(screen.getByRole("status")).toHaveTextContent(/not in available dictionaries|spelling/i)
     );
     expect(loggedWords()).toEqual([]);
   });

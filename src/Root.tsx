@@ -4,12 +4,21 @@ import { trackLeaderboardJoined } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
 import { FeedbackPage } from "./components/FeedbackPage";
 import { FoundWordsPage } from "./components/FoundWordsPage";
+import { FreeformModal } from "./components/FreeformModal";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
 import { SuggestedWordsPage } from "./components/SuggestedWordsPage";
+import { todayDateString } from "./game/date";
+import { isFreeformWeek } from "./game/dictionary";
 import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
-import { hasSeen, markSeen } from "./game/whatsNew";
+import { playedPuzzleCount } from "./game/storage";
+import {
+  announcedThisSession,
+  hasSeen,
+  markAnnouncedThisSession,
+  markSeen,
+} from "./game/whatsNew";
 import { useRoute } from "./routes";
 
 /**
@@ -22,6 +31,17 @@ import { useRoute } from "./routes";
  * up again counts as opening the app -- which, on a phone, it is.
  */
 const SYNC_STALE_MS = 5 * 60_000;
+
+/**
+ * How many puzzles a player has to have scored on before the Freeform notice
+ * opens itself again on each new visit.
+ *
+ * Two, because two is the first number that means "this is not their first
+ * time": a player with one puzzle behind them has nothing to compare the week's
+ * scores against, and a player with two has started to learn what a word is
+ * worth -- which is exactly the expectation the week upends.
+ */
+const FREEFORM_REPEAT_MIN_PUZZLES = 2;
 
 /** Five pages under one header, picked off the address bar. See src/routes.ts. */
 export function Root() {
@@ -40,6 +60,55 @@ export function Root() {
   const [showInstructions, setShowInstructions] = useState(
     () => !hasSeen("instructions"),
   );
+
+  /**
+   * Today's date, read once per mount.
+   *
+   * Today's rather than the puzzle being viewed: the notice is about the week
+   * the player is in, so stepping back to an archived puzzle should not make it
+   * appear or disappear. A tab left open across midnight keeps the value it
+   * mounted with, which is the same thing every other date in this app does and
+   * is not worth a timer -- being a day stale on a notice costs nothing.
+   */
+  const today = useRef(todayDateString());
+  const freeform = isFreeformWeek(today.current);
+
+  /**
+   * The Freeform week notice, opened for the player and left reachable from the
+   * header's "Freeform" button for the rest of the week.
+   *
+   * Two ways in. Everybody gets it once, first-timers included: the rules it
+   * describes are the rules they are about to play under, so there is no cohort
+   * it does not apply to, and a new player who is never told is the one most
+   * likely to take the week's scoring for the game's own.
+   *
+   * A player who has played at least twice gets it again, on each new open of
+   * the app. They are the ones with a feel for what a word is worth, so they are
+   * the ones a changed score will puzzle -- and a single sheet on the day the
+   * trial opened is easy to dismiss and forget by Thursday. The repeat is what
+   * makes sure the week is *read* by the people whose scores it moves, and it
+   * costs them a tap they have already learnt.
+   *
+   * `announcedThisSession` is the bound that keeps "on each open" from meaning
+   * "on each render": a reload, a tab switch or a back-navigation is the same
+   * open, and only a new session counts as another one.
+   */
+  const repeatForRegulars = () =>
+    playedPuzzleCount() >= FREEFORM_REPEAT_MIN_PUZZLES &&
+    !announcedThisSession("freeform");
+  const [showFreeform, setShowFreeform] = useState(
+    () => freeform && (!hasSeen("freeform") || repeatForRegulars()),
+  );
+
+  function closeFreeform() {
+    // Opened by hand or opened for them: either way the announcement has been
+    // delivered. `markSeen` retires the once-only opening for good; the session
+    // flag retires this open's repeat, so a regular gets it at most once per
+    // time they come back (see whatsNew).
+    markSeen("freeform");
+    markAnnouncedThisSession("freeform");
+    setShowFreeform(false);
+  }
 
   /**
    * Give this browser a board identity, on any page, before anything renders.
@@ -143,7 +212,13 @@ export function Root() {
        the game's column is sized for one puzzle, and a board wants the room for
        a rank, a name, a find and a score on one line. */
     <div className={`app${route === "game" ? "" : " app--wide"}`}>
-      <AppHeader route={route} onHowToPlay={() => setShowInstructions(true)} />
+      <AppHeader
+        route={route}
+        onHowToPlay={() => setShowInstructions(true)}
+        // Passed only during the week, which is what makes the "i" come and go
+        // with the trial rather than needing to be taken out again afterwards.
+        onFreeform={freeform ? () => setShowFreeform(true) : undefined}
+      />
       {route === "leaderboard" ? (
         <LeaderboardPage />
       ) : route === "found-words" ? (
@@ -159,6 +234,16 @@ export function Root() {
       ) : (
         <App />
       )}
+      {/* Queued behind the instructions rather than stacked on top of them: a
+          first-timer during the week is owed both sheets, and two dialogs in
+          one paint is not a way to deliver either. The how-to-play comes first
+          because it is the one that explains what a score is, and this one
+          appears as it closes. */}
+      <FreeformModal
+        open={showFreeform && !showInstructions}
+        date={today.current}
+        onClose={closeFreeform}
+      />
       <InstructionsModal
         open={showInstructions}
         onClose={() => {
