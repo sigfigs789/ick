@@ -118,6 +118,174 @@ describe("newProgress / loadOrCreateProgress", () => {
     expect(loadProgress("2026-08-15")?.acceptedWords[0].rarity).toBe("Mythic");
   });
 
+  it("lifts the fold off a freeform-week word banked before the week shipped", () => {
+    // "hearses" folded onto "hear" (5.23) under the system the 14th's puzzle ran
+    // for its first few hours. Freeform week scores it on its own 1.82, and the
+    // finds feed already does -- the guess log has to agree.
+    localStorage.setItem(
+      "ick:progress:2026-09-14",
+      JSON.stringify({
+        ...newProgress("2026-09-14", "rs"),
+        acceptedWords: [{ word: "hearses", rarity: "Very Common", zipf: 5.23 }],
+      })
+    );
+
+    expect(loadProgress("2026-09-14")?.acceptedWords[0]).toEqual({
+      word: "hearses",
+      rarity: "Extremely Rare",
+      zipf: 1.82,
+    });
+  });
+
+  it("writes the lifted fold back, so the repair survives the next load", () => {
+    localStorage.setItem(
+      "ick:progress:2026-09-14",
+      JSON.stringify({
+        ...newProgress("2026-09-14", "rs"),
+        acceptedWords: [{ word: "hearses", rarity: "Very Common", zipf: 5.23 }],
+      })
+    );
+
+    loadProgress("2026-09-14");
+
+    const saved = JSON.parse(localStorage.getItem("ick:progress:2026-09-14") ?? "null");
+    expect(saved.acceptedWords[0].zipf).toBe(1.82);
+  });
+
+  it("leaves a freeform-week word that was already priced on its own frequency", () => {
+    // The ordinary case: banked after the week shipped, so there is no fold to
+    // lift and nothing should be rewritten.
+    const own: AcceptedWord = { word: "hearses", rarity: "Extremely Rare", zipf: 1.82 };
+    localStorage.setItem(
+      "ick:progress:2026-09-14",
+      JSON.stringify({ ...newProgress("2026-09-14", "rs"), acceptedWords: [own] })
+    );
+
+    expect(loadProgress("2026-09-14")?.acceptedWords[0]).toEqual(own);
+  });
+
+  it("leaves a folded word alone on a puzzle outside the freeform window", () => {
+    // The 13th was played under the folding system and keeps the score it was
+    // played for, like every other archived puzzle.
+    const folded: AcceptedWord = { word: "hearses", rarity: "Very Common", zipf: 5.23 };
+    localStorage.setItem(
+      "ick:progress:2026-09-13",
+      JSON.stringify({ ...newProgress("2026-09-13", "rs"), acceptedWords: [folded] })
+    );
+
+    expect(loadProgress("2026-09-13")?.acceptedWords[0]).toEqual(folded);
+  });
+
+  it("never reprices a freeform-week word the dictionary now measures as rarer", () => {
+    // Only a fold coming off. A stored Zipf already below the word's own
+    // measurement is not a substitution, so a corpus refresh cannot demote a
+    // banked word through this path.
+    const saved: AcceptedWord = { word: "hearses", rarity: "Legend", zipf: 0.4 };
+    localStorage.setItem(
+      "ick:progress:2026-09-14",
+      JSON.stringify({ ...newProgress("2026-09-14", "rs"), acceptedWords: [saved] })
+    );
+
+    expect(loadProgress("2026-09-14")?.acceptedWords[0]).toEqual(saved);
+  });
+
+  it("leaves a live-validated freeform-week word the dictionary cannot price", () => {
+    const live: AcceptedWord = { word: "piloerection", rarity: "Legend", zipf: -1.57 };
+    localStorage.setItem(
+      "ick:progress:2026-09-14",
+      JSON.stringify({ ...newProgress("2026-09-14", "rs"), acceptedWords: [live] })
+    );
+
+    expect(loadProgress("2026-09-14")?.acceptedWords[0]).toEqual(live);
+  });
+
+  describe("the day's tallies, once a freeform word is repriced", () => {
+    // The puzzle from the report: "arsehole" (Rare) banked the crushed-it, and
+    // "hearses" banked as Very Common banked nothing. Repairing it to Extremely
+    // Rare gives the day an Elite it never had.
+    function savePuzzle(words: AcceptedWord[], completed = false) {
+      localStorage.setItem(
+        "ick:progress:2026-09-14",
+        JSON.stringify({ ...newProgress("2026-09-14", "rs"), acceptedWords: words, completed })
+      );
+    }
+
+    const folded: AcceptedWord = { word: "hearses", rarity: "Very Common", zipf: 5.23 };
+    const rare: AcceptedWord = { word: "arsehole", rarity: "Rare", zipf: 2.8 };
+
+    beforeEach(() => {
+      localStorage.setItem(
+        "ick:streak",
+        JSON.stringify({
+          currentStreak: 1,
+          longestStreak: 1,
+          totalCompleted: 0,
+          crushedIt: 10,
+          elite: 9,
+          highScore: 0,
+        })
+      );
+    });
+
+    it("awards the day the elite tier the repriced word carries", () => {
+      savePuzzle([rare, folded]);
+      loadProgress("2026-09-14");
+
+      // Crushed-it was already banked by "arsehole", so only Elite moves.
+      expect(loadStreak()).toMatchObject({ crushedIt: 10, elite: 10 });
+    });
+
+    it("awards both tiers when the repriced word is the only word", () => {
+      savePuzzle([folded]);
+      loadProgress("2026-09-14");
+
+      expect(loadStreak()).toMatchObject({ crushedIt: 11, elite: 10 });
+    });
+
+    it("counts each tier once, however often the puzzle is loaded", () => {
+      savePuzzle([rare, folded]);
+      loadProgress("2026-09-14");
+      loadProgress("2026-09-14");
+      loadProgress("2026-09-14");
+
+      expect(loadStreak()).toMatchObject({ crushedIt: 10, elite: 10 });
+    });
+
+    it("does not refund a tier the day never held, when the word is retried", () => {
+      // The asymmetry this pairing exists for: retryWord hands back the tier the
+      // removed word holds *now*, so a repriced word that was never awarded one
+      // would take an Elite earned on some other day with it.
+      savePuzzle([rare, folded]);
+      const loaded = loadProgress("2026-09-14");
+      expect(loadStreak()).toMatchObject({ elite: 10 });
+
+      retryWord(loaded!, "hearses");
+
+      expect(loadStreak()).toMatchObject({ crushedIt: 10, elite: 9 });
+    });
+
+    it("raises the all-time best to the repriced score", () => {
+      savePuzzle([folded]);
+      loadProgress("2026-09-14");
+
+      expect(loadStreak().highScore).toBe(rarityScore(1.82, "2026-09-14"));
+    });
+
+    it("restates won, and counts the completion, on a finished puzzle", () => {
+      savePuzzle([folded], true);
+
+      expect(loadProgress("2026-09-14")?.won).toBe(true);
+      expect(loadStreak().totalCompleted).toBe(1);
+    });
+
+    it("leaves the tallies alone when there is no fold to lift", () => {
+      savePuzzle([rare, { word: "hearses", rarity: "Extremely Rare", zipf: 1.82 }]);
+      loadProgress("2026-09-14");
+
+      expect(loadStreak()).toMatchObject({ crushedIt: 10, elite: 9, totalCompleted: 0 });
+    });
+  });
+
   it.each([0.1, 0.3, 0.5])("refreshes words saved with the former %s unknown-frequency fallback", (zipf) => {
     localStorage.setItem(
       "ick:progress:2024-01-01",

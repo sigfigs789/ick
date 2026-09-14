@@ -1,8 +1,8 @@
 import { addDays, toDateString, todayDateString } from "./date";
 import { maxGuessesFor } from "./constants";
-import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
+import { isFreeformWeek, rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
-import type { AcceptedWord, DailyProgress, StreakState } from "./types";
+import type { AcceptedWord, DailyProgress, Rarity, StreakState } from "./types";
 
 const PROGRESS_PREFIX = "ick:progress:";
 const STREAK_KEY = "ick:streak";
@@ -32,14 +32,47 @@ export function loadProgress(date: string): DailyProgress | null {
   // The deep-tail top rank has been "Elusive", then "Mythic", and is now
   // "Legend" -- with "Elusive" since revived for a mid-ladder tier, so its
   // migration is date-gated below. Also refresh words saved with the former
-  // unknown-frequency fallbacks now that the dictionary uses 1.4.
+  // unknown-frequency fallbacks now that the dictionary uses 1.4, and lift the
+  // fold off a freeform-week word banked before the week's scoring shipped.
   let migrated = false;
+  // Tracked apart from `migrated`: the rank renames above cannot move a word
+  // across a tier line (Elusive, Mythic and Legend are all winning and all
+  // elite), so the freeform repair is the only one of these with a day's tally
+  // riding on it.
+  let repriced = false;
   const acceptedWords = progress.acceptedWords.map((word) => {
     if (word.zipf === 0.1 || word.zipf === 0.3 || word.zipf === 0.5) {
       const current = rarityFor(word.word, date);
       if (current) {
         migrated = true;
         return { word: word.word, ...current };
+      }
+    }
+    // Freeform week, on a save that predates it. A word banked under the folding
+    // system carries the base word's frequency rather than its own -- "hearses"
+    // saved at 5.23, which is "hear" -- and nothing downstream re-derives a
+    // banked word, so the guess log would show that price for the rest of the
+    // week while the finds feed, which prices each row by the puzzle it was
+    // found on, showed the 1.82 the word actually measures. The week's whole
+    // promise is the second number.
+    //
+    // The window is narrow and it closes: only a puzzle inside the trial is
+    // touched, and only where the correction is a fold coming *off*. Under this
+    // week `rarityFor` returns the word's own frequency, and a fold is a cap, so
+    // the stored number can only be the higher of the two if one was applied.
+    // Everything else passes through untouched -- a live-validated word the
+    // dictionary cannot price at all, or a corpus refresh that moved the
+    // measurement in either direction -- which keeps this a repair of a known
+    // substitution rather than a standing licence to reprice archived play.
+    //
+    // The tier this word now holds is settled below rather than here, because
+    // the counters count days and not words (see `settleRepricedDay`).
+    if (isFreeformWeek(date)) {
+      const own = rarityFor(word.word, date);
+      if (own && own.zipf < word.zipf) {
+        migrated = true;
+        repriced = true;
+        return { word: word.word, ...own };
       }
     }
     // "Elusive" named the deep-tail top rank long before Mythic and then Legend
@@ -67,9 +100,56 @@ export function loadProgress(date: string): DailyProgress | null {
     }
     return word;
   });
-  const loaded = { ...progress, acceptedWords };
+  // `won` is a stored fact about a finished puzzle rather than a derived one, so
+  // a repair that carries a word over the winning line has to restate it. Only
+  // for a puzzle that is actually finished: an unfinished one has no `won` yet.
+  const won =
+    repriced && progress.completed ? acceptedWords.some((w) => isWinningRarity(w.rarity)) : undefined;
+  const loaded = { ...progress, acceptedWords, ...(won === undefined ? {} : { won }) };
+  // Saved before the tally is settled, and deliberately in that order. The write
+  // is what stops the repair running twice -- a re-priced word no longer reads as
+  // folded -- so if anything here is going to fail, the tally missing an award is
+  // a better outcome than the award landing on every load forever.
   if (migrated) saveProgress(loaded);
+  if (repriced) settleRepricedDay(progress.acceptedWords, loaded, date);
   return loaded;
+}
+
+/**
+ * Bring the day's tallies up to the prices the freeform repair just wrote.
+ *
+ * The repair is the only migration here that can move a word across a tier line,
+ * and the counters either side of it are not symmetric without this. They are
+ * incremented once per puzzle when a word is banked (`updateRarityScore`) and
+ * handed back on the same terms when one is retried (`rollBackRarityScore`) --
+ * so a word banked as Very Common and repaired to Extremely Rare would be
+ * refunded an Elite it was never awarded, taking with it one earned on another
+ * day. That is the bug this exists to prevent; the award the player is owed is
+ * the same fix seen from the other side.
+ *
+ * Asked of the day and not of the word, which is what the counters count:
+ * "days you found a Rare word or better". A puzzle already holding the tier on
+ * another word gains nothing, exactly as banking a second Rare does not.
+ *
+ * Idempotent by way of the save above rather than by a marker of its own: the
+ * repair fires only on a word still carrying a fold, and the word it repaired is
+ * written back without one.
+ */
+function settleRepricedDay(before: AcceptedWord[], after: DailyProgress, date: string): void {
+  const gained = (holds: (r: Rarity) => boolean) =>
+    !before.some((w) => holds(w.rarity)) && after.acceptedWords.some((w) => holds(w.rarity));
+  const crushedIt = gained(isWinningRarity);
+  const elite = gained(isEliteRarity);
+
+  updateRarityScore({ shouldIncrementCrushedIt: crushedIt, shouldIncrementElite: elite });
+  // A finished puzzle only counts as completed if it was won, so the completion
+  // total moves on exactly the condition the crushed-it counter does -- this is
+  // `recordAcceptedWord`'s `justCompleted && won`, arriving late.
+  if (crushedIt && after.completed) incrementCompletionTotal();
+  // Monotonic, like every other call to it: a repriced word is rarer than it was
+  // saved as, so this can only raise a personal best, and re-running it cannot
+  // move it twice.
+  for (const word of after.acceptedWords) updateHighScore(word.zipf, date);
 }
 
 /**
