@@ -3,10 +3,14 @@ import {
   FREEFORM_END,
   FREEFORM_START,
   baseFormSubstitution,
+  curatedRejection,
+  isDictionaryWord,
   isFreeformWeek,
+  isValidWord,
   rarityFor,
 } from "./dictionary";
 import { evaluateSubmission } from "./submit";
+import WORDS from "../data/dictionary.json";
 import { hasEverPlayed } from "./storage";
 import type { AcceptedWord } from "./types";
 
@@ -135,6 +139,64 @@ describe("freeform week submissions", () => {
   it("goes back to refusing relatives the day the week ends", () => {
     const result = evaluateSubmission("plays", "LAY", [accepted("play")], AFTER);
     expect(result).toEqual({ ok: false, reason: "same-root-as-used" });
+  });
+});
+
+describe("freeform week rejections", () => {
+  /**
+   * A real word per waived reason, found in the reviewed data rather than named
+   * here: the point is that the whole category lifts, and a hand-picked example
+   * would go stale the next time review moved a word between reasons.
+   */
+  function wordRejectedFor(reason: string): string | undefined {
+    return WORDS.find(
+      (word) => curatedRejection(word, BEFORE) === reason && isDictionaryWord(word),
+    );
+  }
+
+  it("still refuses a misspelling, which is a spelling of another word", () => {
+    const word = wordRejectedFor("misspelling");
+    expect(word).toBeDefined();
+    expect(curatedRejection(word!, DURING)).toBe("misspelling");
+    expect(isValidWord(word!, DURING)).toBe(false);
+  });
+
+  it("lets a word play that was refused for its register", () => {
+    for (const reason of [
+      "proper-noun",
+      "abbreviation",
+      "name-or-abbreviation",
+      "obsolete",
+      "archaic",
+      "dated",
+    ]) {
+      const word = wordRejectedFor(reason);
+      if (!word) continue; // no word carries this reason in the current data
+      expect(curatedRejection(word, BEFORE), `${reason} before`).toBe(reason);
+      expect(curatedRejection(word, DURING), `${reason} during`).toBeUndefined();
+      expect(isValidWord(word, DURING), `${reason} playable`).toBe(true);
+    }
+  });
+
+  it("accepts one at the submit boundary, and refuses it again after", () => {
+    const word = wordRejectedFor("archaic") ?? wordRejectedFor("obsolete");
+    expect(word).toBeDefined();
+    const drop = word!.slice(1, 3).toUpperCase();
+    expect(evaluateSubmission(word!, drop, [], DURING).ok).toBe(true);
+    expect(evaluateSubmission(word!, drop, [], AFTER).ok).toBe(false);
+  });
+
+  it("leaves a word that is not in the dictionary to the live lookup", () => {
+    // The week widens which words are playable, not what counts as one.
+    expect(isValidWord("zzzzqqq", DURING)).toBe(false);
+  });
+
+  it("does not waive anything outside the window", () => {
+    const word = wordRejectedFor("proper-noun");
+    expect(word).toBeDefined();
+    expect(isValidWord(word!, BEFORE)).toBe(false);
+    expect(isValidWord(word!, AFTER)).toBe(false);
+    expect(isValidWord(word!)).toBe(false);
   });
 });
 

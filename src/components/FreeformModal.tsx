@@ -101,7 +101,8 @@ export function FreeformModal({ open, date, onClose }: Props) {
         <p className="modal__copy">
           And nothing’s too close to anything else — <strong>play</strong>,{" "}
           <strong>plays</strong> and <strong>played</strong> are three answers
-          now, each scored on its own. Play the words you want to play.
+          now, each scored on its own. Old words, proper nouns and abbreviations
+          are all in too. Play the words you want to play.
         </p>
         <div className="freeform__vote">
           <p className="freeform__ask" id="freeform-vote-label">

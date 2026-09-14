@@ -144,6 +144,12 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     word on its own terms has to let it be played on them, so "play", "plays"
  *     and "played" are three answers. Submitting one spelling twice is still
  *     refused -- that was never the fold.
+ *     The reviewed rejections that refuse a real word for its *register* go too
+ *     -- proper nouns, abbreviations, and the obsolete/archaic/dated trio -- on
+ *     the same argument: a week about playing however you want does not get to
+ *     say which register is allowed. Misspellings and non-words stay refused,
+ *     which is the line the curation rules already draw (see
+ *     FREEFORM_WAIVED_REJECTIONS).
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -1561,6 +1567,35 @@ export const CURATED_REJECTION_REASONS = [
 export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
 
 /**
+ * The rejection reasons freeform week waives -- the ones that refuse a real word
+ * for the kind of word it is rather than for not being one.
+ *
+ * A player reaching for "thou" or "NASA" or "wireless telegraphy" is playing the
+ * language as they find it, and a week about playing however you want has no
+ * business telling them which register is allowed. Every entry here is a word;
+ * what the reviewer objected to was its standing.
+ *
+ * Two reasons stay in force, and the line between them and the list is the same
+ * one the curation rules draw: a spelling of *another* word is not a word
+ * somebody wants to play, it is a mistake, and letting it through would score a
+ * typo as a deep-tail find -- "recieve" is not a bolder way to play "receive".
+ * "not-a-word" is the same objection stated outright. Neither is a judgement
+ * about register, so neither is the week's to lift.
+ *
+ * Words absent from the curated dictionary altogether are untouched by this and
+ * still go to the live lookup: the week widens which *words* are playable, not
+ * what counts as one.
+ */
+const FREEFORM_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
+  "proper-noun",
+  "abbreviation",
+  "name-or-abbreviation",
+  "obsolete",
+  "archaic",
+  "dated",
+]);
+
+/**
  * Reviewed rejections, each with the reason a player sees when they try the word.
  * Two kinds, told apart by whether the word is on the curated list: a word that
  * stays in the dictionary but is no longer playable from `since` on, and a word
@@ -1646,13 +1681,18 @@ const DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: 
  */
 export function curatedRejection(word: string, date?: string): RejectionReason | undefined {
   const normalized = word.toLowerCase();
+  const waive = isFreeformWeek(date);
   const rejection = WORD_REJECTIONS.get(normalized);
-  if (rejection && (date === undefined || date >= rejection.since)) return rejection.reason;
+  if (rejection && (date === undefined || date >= rejection.since)) {
+    if (!waive || !FREEFORM_WAIVED_REJECTIONS.has(rejection.reason)) return rejection.reason;
+  }
   // Falls through when the reviewed rejection isn't in force yet: the derived list
   // can carry an earlier date than the hand entry, and the earlier verdict is
   // still a verdict.
   const derived = DERIVED_REJECTIONS.get(normalized);
-  if (derived && (date === undefined || date >= derived.since)) return derived.reason;
+  if (derived && (date === undefined || date >= derived.since)) {
+    if (!waive || !FREEFORM_WAIVED_REJECTIONS.has(derived.reason)) return derived.reason;
+  }
   return undefined;
 }
 
