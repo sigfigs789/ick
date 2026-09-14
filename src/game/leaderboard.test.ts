@@ -91,7 +91,7 @@ describe("submitting a score", () => {
     expect(day.found.map((found) => found.word)).toEqual(["wrinkle", "inkling"]);
   });
 
-  it("prices each find at today's rates, not what it was worth when found", () => {
+  it("prices each find from the dictionary, not from the record's stored number", () => {
     joinBoard();
     const fetchMock = stubFetch();
     // A stale frequency, as a record saved under an older dictionary would hold.
@@ -605,6 +605,55 @@ describe("the finds feed, fetched on its own", () => {
     ]);
   });
 
+  /** One row of the feed, as the endpoint returns it. */
+  function feed(word: string, zipf: number, foundOn: string) {
+    return new Response(
+      JSON.stringify({ words: [{ word, zipf, finders: 1, foundOn }] }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    );
+  }
+
+  it("prices a find by the puzzle it was found on, not by today's dictionary", async () => {
+    // "kindless" is the mismatch in miniature. Freeform week scores it on its
+    // own frequency at 1.08 and the game shows Mythic; every other system folds
+    // it onto "kind" at 5.45 and calls it Very Common. Priced undated, the feed
+    // contradicted the game about the same word on the same afternoon.
+    stubFetch(feed("kindless", 5.45, "2026-09-15"));
+
+    expect(await fetchFoundWords("2026-09-15")).toEqual([
+      {
+        word: "kindless",
+        zipf: 1.08,
+        rarity: "Mythic",
+        finders: 1,
+        foundOn: "2026-09-15",
+        today: true,
+      },
+    ]);
+  });
+
+  it("leaves a find from outside the week on the system that day ran", async () => {
+    // The other half of the same rule: dating the feed is not a licence for the
+    // week to reprice everything behind it.
+    stubFetch(feed("kindless", 1.08, "2026-09-13"));
+
+    expect(await fetchFoundWords("2026-09-15")).toMatchObject([
+      { word: "kindless", zipf: 5.45, rarity: "Very Common", today: false },
+    ]);
+  });
+
+  it("reads a missing date as no date, rather than as the dawn of the game", async () => {
+    // Every cutover is a string comparison and "" sorts below all of them, so a
+    // row that arrives without a date would price on the legacy scale the game
+    // used in July -- 1.4 and "Extremely Rare" for this word, which is neither
+    // what any player saw nor a number anything else on the page would show.
+    stubFetch(feed("kindless", 5.45, ""));
+
+    expect(await fetchFoundWords("2026-09-15")).toMatchObject([
+      { word: "kindless", zipf: 5.45, rarity: "Very Common" },
+    ]);
+  });
+
   it("keeps an ordinary word, because it was still somebody's best", async () => {
     stubFetch(
       new Response(
@@ -700,10 +749,13 @@ describe("syncing an already-joined player on open", () => {
     // The feed shows one drop, so words for any other day would be rows nobody
     // can see -- and a browser with a year of history would not fit the body.
     expect(scores[0].found).toBeUndefined();
-    // Priced at today's rates, like everywhere else on the page.
+    // Priced by the puzzle, like the `total` and `top` beside it -- the feed is
+    // a record of what happened on that drop, so the number it carries is the
+    // one the player was shown. "wrinkle" is 3.12 under the system in force on
+    // the 21st and 3.31 under today's, and 3.12 is what that day's game said.
     expect(scores[1].found).toEqual([
       { word: "inkling", zipf: 2.9 },
-      { word: "wrinkle", zipf: 3.31 },
+      { word: "wrinkle", zipf: 3.12 },
     ]);
   });
 });

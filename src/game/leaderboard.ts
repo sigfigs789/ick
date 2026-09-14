@@ -259,8 +259,25 @@ function scoreOf(word: string, storedZipf: unknown): number {
 /**
  * Read the words feed, dropping anything malformed rather than throwing.
  *
- * Each word is looked up fresh in today's dictionary and only falls back to the
- * frequency the server stored for a word today's dictionary doesn't carry.
+ * Each word is priced by the puzzle it was found on, and only falls back to the
+ * frequency the server stored for a word that puzzle's dictionary doesn't carry.
+ *
+ * By the puzzle's date rather than today's, which is the difference between a
+ * record and a re-reckoning. This feed is an account of what happened on one
+ * drop -- these words, these players, that day -- and the player who banked one
+ * watched the game put a number on it. Pricing it again on today's terms is how
+ * a word the game called Mythic an hour ago turns up here as Very Common.
+ *
+ * That was invisible while every scoring change moved forward, because today's
+ * system was then the newest anything had ever been priced at. Freeform week is
+ * the first that does not: the puzzle in front of the player runs a system the
+ * undated call does not return, so the feed disagreed with the game about the
+ * same word on the same afternoon.
+ *
+ * Deliberately unlike the board above it, where a find is still priced at
+ * today's rates for everyone (see `scoreOf`). A board is a comparison between
+ * players and has to put two people holding the same word on the same number; a
+ * feed is a record of a puzzle and has to agree with the puzzle.
  */
 function parseWords(raw: unknown, today: string): FoundWord[] {
   if (!Array.isArray(raw)) return [];
@@ -269,10 +286,15 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
     if (!item || typeof item !== "object") continue;
     const { word, zipf, finders, foundOn } = item;
     if (typeof word !== "string" || !word) continue;
+    // An absent or malformed date has to read as "no date", not as the empty
+    // string: every cutover here is a string comparison, and "" sorts below all
+    // of them -- so passing it through would price the word on the legacy scale
+    // the game used in July.
+    const playedOn = typeof foundOn === "string" && foundOn ? foundOn : undefined;
     const stored = typeof zipf === "number" && Number.isFinite(zipf) ? zipf : undefined;
-    const current = rarityFor(word)?.zipf ?? stored;
+    const current = rarityFor(word, playedOn)?.zipf ?? stored;
     if (current === undefined) continue;
-    const rarity = rarityForZipf(current);
+    const rarity = rarityForZipf(current, playedOn);
     // No rarity bar. The feed is what the day's players found, and a Common word
     // is part of what happened -- cutting it would quietly turn a record of the
     // puzzle into a highlight reel, which the boards above already are.
@@ -553,7 +575,17 @@ function scoreFor(
 }
 
 /**
- * A day's word list for the feed, priced the same way the day's rarest word is.
+ * A day's word list for the feed, priced by the day it was played.
+ *
+ * The sending half of `parseWords`, and dated for the same reason: this list is
+ * what the feed shows back as a record of the puzzle, so the number that leaves
+ * here has to be the number the player was shown. It is only ever read for a
+ * word the reader's own dictionary does not carry -- a live Merriam-Webster
+ * approval, most often -- but that is exactly the case with no second chance to
+ * get it right.
+ *
+ * Unlike the rarest word in `scoreFor` above, which is a claim about the player
+ * rather than a record of the puzzle and stays on today's terms.
  *
  * Trimmed to the day's guess limit for the same reason `words` is capped: the
  * endpoint refuses a longer list, and a batch it refuses costs the player the
@@ -562,7 +594,7 @@ function scoreFor(
 function foundFor(date: string, words: readonly AcceptedWord[]): FoundPayload[] {
   return words.slice(0, maxGuessesFor(date)).map((word) => ({
     word: word.word.toLowerCase(),
-    zipf: Math.round((rarityFor(word.word)?.zipf ?? word.zipf) * 100) / 100,
+    zipf: Math.round((rarityFor(word.word, date)?.zipf ?? word.zipf) * 100) / 100,
   }));
 }
 
