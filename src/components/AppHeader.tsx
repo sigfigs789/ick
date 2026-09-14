@@ -128,6 +128,13 @@ export function AppHeader({
             </span>
           </p>
         )}
+        {/* The two controls travel as a pair, in their own box. The bar is
+            space-between, which spreads its children across the full width --
+            with the wordmark, this and the "?" as three siblings that parked
+            "Freeform" in the middle of the header on any screen wide enough to
+            have a middle. Grouped, the bar has two children again and the pair
+            stays at the right edge where the "?" has always been. */}
+        <div className="app__header-actions">
         {/* Sits before the "?" so the two read left to right as
             news-then-reference, and so the badge under it is not hard against
             the edge of a phone.
@@ -177,6 +184,7 @@ export function AppHeader({
         >
           ?
         </button>
+        </div>
       </div>
       {/* Under the wordmark rather than beside it: three labelled destinations
           do not fit a phone's width next to a wordmark, and a row of its own

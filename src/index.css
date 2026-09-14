@@ -402,6 +402,15 @@ h2 {
 .app__icon-button:active {
   transform: scale(0.94);
 }
+/* The right-hand end of the header bar: the Freeform pill and the "?", kept
+   together so space-between cannot put the width of the page between them (see
+   AppHeader). */
+.app__header-actions {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 0.5rem;
+}
 /* The announcement button and the badge floating under it. The wrapper is what
    the badge is positioned against, and it takes no space of its own. */
 .app__freeform-nav {
@@ -453,14 +462,17 @@ h2 {
      circle; growing leftwards instead keeps it clear, under the gap beside the
      wordmark, where nothing sits at this height. */
   right: 0;
-  margin-top: -0.3rem;
-  padding: 0.12rem 0.4rem;
+  /* Pulled further over the button than the type grew, so the extra height goes
+     upward into the button rather than down towards the nav row -- what is left
+     below still has to clear the nav's own 0.85rem of top margin. */
+  margin-top: -0.5rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 999px;
   background: var(--accent);
   color: var(--accent-fg);
-  font-size: 0.5rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
   /* Rides above the button and clear of the wordmark beside it. */

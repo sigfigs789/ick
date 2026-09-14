@@ -12,7 +12,13 @@ import { todayDateString } from "./game/date";
 import { isFreeformWeek } from "./game/dictionary";
 import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
-import { hasSeen, markSeen } from "./game/whatsNew";
+import { playedPuzzleCount } from "./game/storage";
+import {
+  announcedThisSession,
+  hasSeen,
+  markAnnouncedThisSession,
+  markSeen,
+} from "./game/whatsNew";
 import { useRoute } from "./routes";
 
 /**
@@ -25,6 +31,17 @@ import { useRoute } from "./routes";
  * up again counts as opening the app -- which, on a phone, it is.
  */
 const SYNC_STALE_MS = 5 * 60_000;
+
+/**
+ * How many puzzles a player has to have scored on before the Freeform notice
+ * opens itself again on each new visit.
+ *
+ * Two, because two is the first number that means "this is not their first
+ * time": a player with one puzzle behind them has nothing to compare the week's
+ * scores against, and a player with two has started to learn what a word is
+ * worth -- which is exactly the expectation the week upends.
+ */
+const FREEFORM_REPEAT_MIN_PUZZLES = 2;
 
 /** Five pages under one header, picked off the address bar. See src/routes.ts. */
 export function Root() {
@@ -57,22 +74,39 @@ export function Root() {
   const freeform = isFreeformWeek(today.current);
 
   /**
-   * The Freeform week notice, opened for the player once and left reachable from
-   * the header's "Freeform" button for the rest of the week.
+   * The Freeform week notice, opened for the player and left reachable from the
+   * header's "Freeform" button for the rest of the week.
    *
-   * Everybody gets it, first-timers included. The rules it describes are the
-   * rules they are about to play under, so there is no cohort it does not apply
-   * to -- and a new player who is never told is the one most likely to take the
-   * week's scoring for the game's own.
+   * Two ways in. Everybody gets it once, first-timers included: the rules it
+   * describes are the rules they are about to play under, so there is no cohort
+   * it does not apply to, and a new player who is never told is the one most
+   * likely to take the week's scoring for the game's own.
+   *
+   * A player who has played at least twice gets it again, on each new open of
+   * the app. They are the ones with a feel for what a word is worth, so they are
+   * the ones a changed score will puzzle -- and a single sheet on the day the
+   * trial opened is easy to dismiss and forget by Thursday. The repeat is what
+   * makes sure the week is *read* by the people whose scores it moves, and it
+   * costs them a tap they have already learnt.
+   *
+   * `announcedThisSession` is the bound that keeps "on each open" from meaning
+   * "on each render": a reload, a tab switch or a back-navigation is the same
+   * open, and only a new session counts as another one.
    */
+  const repeatForRegulars = () =>
+    playedPuzzleCount() >= FREEFORM_REPEAT_MIN_PUZZLES &&
+    !announcedThisSession("freeform");
   const [showFreeform, setShowFreeform] = useState(
-    () => freeform && !hasSeen("freeform"),
+    () => freeform && (!hasSeen("freeform") || repeatForRegulars()),
   );
 
   function closeFreeform() {
     // Opened by hand or opened for them: either way the announcement has been
-    // delivered, and it is retired for good (see whatsNew).
+    // delivered. `markSeen` retires the once-only opening for good; the session
+    // flag retires this open's repeat, so a regular gets it at most once per
+    // time they come back (see whatsNew).
     markSeen("freeform");
+    markAnnouncedThisSession("freeform");
     setShowFreeform(false);
   }
 

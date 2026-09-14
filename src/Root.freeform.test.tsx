@@ -44,7 +44,10 @@ const sheet = () => screen.queryByRole("dialog", { name: /freeform week/i });
 const howToPlay = () => screen.queryByRole("dialog", { name: /how to play/i });
 
 describe("the Freeform week announcement", () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
 
   it("reaches a first-timer, once the how-to-play sheet is out of the way", async () => {
     // Everybody gets it, including a browser with no history at all: the rules
@@ -73,6 +76,57 @@ describe("the Freeform week announcement", () => {
     // retires the *automatic* opening, not the way back to it.
     await userEvent.click(screen.getByRole("button", { name: /freeform week/i }));
     expect(sheet()).toBeInTheDocument();
+  });
+
+  /** A stored puzzle with one accepted word, which is what "played" counts. */
+  function playedPuzzle(date: string) {
+    localStorage.setItem(
+      `ick:progress:${date}`,
+      JSON.stringify({
+        date,
+        drop: "INK",
+        acceptedWords: [{ word: "think", rarity: "Common", zipf: 4.5 }],
+      }),
+    );
+  }
+
+  it("opens again on a new visit for a player who has played twice", () => {
+    localStorage.setItem("ick:seen:instructions", "1");
+    localStorage.setItem("ick:seen:freeform", "1");
+    playedPuzzle("2026-09-10");
+    playedPuzzle("2026-09-11");
+
+    // Already seen, so the once-only opening is spent -- and it opens anyway,
+    // because these are the players whose sense of a word's worth the week
+    // upends.
+    render(<Root />);
+    expect(sheet()).toBeInTheDocument();
+  });
+
+  it("leaves a one-puzzle player with the sheet they already dismissed", () => {
+    localStorage.setItem("ick:seen:instructions", "1");
+    localStorage.setItem("ick:seen:freeform", "1");
+    playedPuzzle("2026-09-10");
+
+    render(<Root />);
+    expect(sheet()).not.toBeInTheDocument();
+  });
+
+  it("repeats once per visit, not once per render", async () => {
+    localStorage.setItem("ick:seen:instructions", "1");
+    localStorage.setItem("ick:seen:freeform", "1");
+    playedPuzzle("2026-09-10");
+    playedPuzzle("2026-09-11");
+
+    const first = render(<Root />);
+    expect(sheet()).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /^close$/i }));
+    first.unmount();
+
+    // A reload inside the same session is the same open. Only a new session --
+    // a genuinely new visit -- earns another showing.
+    render(<Root />);
+    expect(sheet()).not.toBeInTheDocument();
   });
 
   it("does not open itself twice, across mounts", () => {

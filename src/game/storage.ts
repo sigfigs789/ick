@@ -121,6 +121,40 @@ const LATE_FINISH_GRACE_HOURS = 4;
  * Read through `loadProgress`, so historical words come back with today's rarity
  * migrations applied rather than whatever tier name they were saved under.
  */
+/**
+ * How many puzzles this browser has ever scored on -- any day, any date, one
+ * accepted word or twelve.
+ *
+ * Counts puzzles rather than words, because "has played twice" is a question
+ * about sittings: four words on one drop is one puzzle, and a player who has
+ * only ever played once should not read as experienced for having had a good
+ * day. Deliberately weaker than `playedOnItsDay` below, which insists a puzzle
+ * was played on its own day and throws out anything it cannot date -- that one
+ * decides what may go on a leaderboard, this one only decides whether somebody
+ * has seen the game enough to notice its rules changing.
+ *
+ * Reads the raw JSON rather than going through `loadProgress`: the question is
+ * whether there is a word in there, and the rarity migrations that function runs
+ * are a lot of work to answer it.
+ *
+ * Storage that cannot be read reports none, which for the caller means the
+ * ordinary once-only announcement rather than the repeat.
+ */
+export function playedPuzzleCount(): number {
+  let keys: string[];
+  try {
+    keys = Object.keys(localStorage).filter((key) => key.startsWith(PROGRESS_PREFIX));
+  } catch {
+    return 0;
+  }
+  let played = 0;
+  for (const key of keys) {
+    const progress = safeParse<DailyProgress>(localStorage.getItem(key));
+    if (progress?.acceptedWords?.length) played++;
+  }
+  return played;
+}
+
 export function playedOnItsDay(): DailyProgress[] {
   let keys: string[];
   try {
