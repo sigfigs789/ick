@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   FREEFORM_END,
   FREEFORM_START,
@@ -11,7 +11,6 @@ import {
 } from "./dictionary";
 import { evaluateSubmission } from "./submit";
 import WORDS from "../data/dictionary.json";
-import { hasEverPlayed } from "./storage";
 import type { AcceptedWord } from "./types";
 
 /** A day inside the trial, and the two days that bracket it. */
@@ -197,41 +196,5 @@ describe("freeform week rejections", () => {
     expect(isValidWord(word!, BEFORE)).toBe(false);
     expect(isValidWord(word!, AFTER)).toBe(false);
     expect(isValidWord(word!)).toBe(false);
-  });
-});
-
-describe("hasEverPlayed", () => {
-  beforeEach(() => localStorage.clear());
-
-  it("is false for a browser that has never stored a puzzle", () => {
-    expect(hasEverPlayed()).toBe(false);
-  });
-
-  it("is false for a puzzle opened but never scored on", () => {
-    localStorage.setItem(
-      "ick:progress:2026-09-12",
-      JSON.stringify({ date: "2026-09-12", drop: "INK", acceptedWords: [] }),
-    );
-    expect(hasEverPlayed()).toBe(false);
-  });
-
-  it("is true after a single accepted word, undated and unfinished", () => {
-    // Deliberately weaker than playedOnItsDay: this only decides whether
-    // somebody has seen the game work, so archive play and an abandoned puzzle
-    // with no timestamp both count.
-    localStorage.setItem(
-      "ick:progress:2026-09-12",
-      JSON.stringify({
-        date: "2026-09-12",
-        drop: "INK",
-        acceptedWords: [{ word: "think", rarity: "Common", zipf: 4.5 }],
-      }),
-    );
-    expect(hasEverPlayed()).toBe(true);
-  });
-
-  it("ignores junk in storage rather than throwing on it", () => {
-    localStorage.setItem("ick:progress:2026-09-12", "not json");
-    expect(hasEverPlayed()).toBe(false);
   });
 });

@@ -121,40 +121,6 @@ const LATE_FINISH_GRACE_HOURS = 4;
  * Read through `loadProgress`, so historical words come back with today's rarity
  * migrations applied rather than whatever tier name they were saved under.
  */
-/**
- * Whether this browser has ever finished a move -- one accepted word, on any
- * puzzle, on any day.
- *
- * Deliberately a much weaker question than `playedOnItsDay` below, and asked for
- * a different purpose: that one decides what may go on a leaderboard, so it
- * insists a puzzle was played on its own day and throws out anything it cannot
- * date. This one only decides whether somebody has seen the game work, which is
- * what earns them an announcement about the scoring changing. Archive play
- * counts, an unfinished puzzle counts, and a day with no timestamp counts --
- * a player who found one word knows what a score looks like.
- *
- * Reads the raw JSON rather than going through `loadProgress`, because the
- * question is "is there a word in here" and the rarity migrations that function
- * runs are a lot of work to answer it. Stops at the first day that qualifies.
- *
- * Storage that cannot be read reports *not played*, which for the caller means
- * no announcement: a browser with no memory has no history to have played, and
- * showing a first-timer a notice about rules changing is worse than missing it.
- */
-export function hasEverPlayed(): boolean {
-  let keys: string[];
-  try {
-    keys = Object.keys(localStorage).filter((key) => key.startsWith(PROGRESS_PREFIX));
-  } catch {
-    return false;
-  }
-  for (const key of keys) {
-    const progress = safeParse<DailyProgress>(localStorage.getItem(key));
-    if (progress?.acceptedWords?.length) return true;
-  }
-  return false;
-}
-
 export function playedOnItsDay(): DailyProgress[] {
   let keys: string[];
   try {

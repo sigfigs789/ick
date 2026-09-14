@@ -12,7 +12,6 @@ import { todayDateString } from "./game/date";
 import { isFreeformWeek } from "./game/dictionary";
 import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
-import { hasEverPlayed } from "./game/storage";
 import { hasSeen, markSeen } from "./game/whatsNew";
 import { useRoute } from "./routes";
 
@@ -59,29 +58,14 @@ export function Root() {
 
   /**
    * The Freeform week notice, opened for the player once and left reachable from
-   * the header's "i" afterwards.
+   * the header's "Freeform" button for the rest of the week.
    *
-   * Three conditions, and the middle one is the point: it opens only for a
-   * browser that has *played*. The sheet announces that a rule they have watched
-   * operate is switched off for the week, which is news to somebody who has seen
-   * a word rescored and noise to somebody who has not yet found their first.
-   * A first-timer meets the instructions instead, and picks this up from the "i"
-   * if they ever care.
-   *
-   * Read once at mount rather than watched: a player who finds their first word
-   * mid-session gets the notice on their next visit, which is the right moment
-   * for it anyway -- interrupting somebody's first ever word to explain scoring
-   * history is the one time this is certain to be unwelcome.
+   * Everybody gets it, first-timers included. The rules it describes are the
+   * rules they are about to play under, so there is no cohort it does not apply
+   * to -- and a new player who is never told is the one most likely to take the
+   * week's scoring for the game's own.
    */
   const [showFreeform, setShowFreeform] = useState(
-    () => freeform && hasEverPlayed() && !hasSeen("freeform"),
-  );
-  /**
-   * Whether the "i" still wears its dot. Held in state beside the sheet rather
-   * than read from storage at render, so dismissing the sheet clears the dot in
-   * the same paint rather than on the next mount.
-   */
-  const [freeformUnseen, setFreeformUnseen] = useState(
     () => freeform && !hasSeen("freeform"),
   );
 
@@ -89,7 +73,6 @@ export function Root() {
     // Opened by hand or opened for them: either way the announcement has been
     // delivered, and it is retired for good (see whatsNew).
     markSeen("freeform");
-    setFreeformUnseen(false);
     setShowFreeform(false);
   }
 
@@ -201,7 +184,6 @@ export function Root() {
         // Passed only during the week, which is what makes the "i" come and go
         // with the trial rather than needing to be taken out again afterwards.
         onFreeform={freeform ? () => setShowFreeform(true) : undefined}
-        freeformUnseen={freeformUnseen}
       />
       {route === "leaderboard" ? (
         <LeaderboardPage />
@@ -218,8 +200,13 @@ export function Root() {
       ) : (
         <App />
       )}
+      {/* Queued behind the instructions rather than stacked on top of them: a
+          first-timer during the week is owed both sheets, and two dialogs in
+          one paint is not a way to deliver either. The how-to-play comes first
+          because it is the one that explains what a score is, and this one
+          appears as it closes. */}
       <FreeformModal
-        open={showFreeform}
+        open={showFreeform && !showInstructions}
         date={today.current}
         onClose={closeFreeform}
       />

@@ -14,11 +14,10 @@ interface Props {
  * The Freeform week notice: what changed, a verdict to tap, and a box to say
  * more.
  *
- * Shown once to a player who has already played -- see `hasEverPlayed` -- and
- * reachable from the "i" in the header forever after. A first-timer never sees
- * it, deliberately: it announces the *absence* of a rule they have never met,
- * and "we stopped rescoring your word to its common form" means nothing to
- * somebody who has not yet watched it happen.
+ * Shown once to every player, and reachable from the header's "Freeform" button
+ * for the rest of the week. First-timers included: the rules it describes are
+ * the rules they are about to play under, and a new player who is never told is
+ * the one most likely to take the week's scoring for the game's own.
  *
  * The vote and the note are two separate submissions rather than one form. Most
  * people will tap a button and close the sheet, and requiring a note to register
@@ -89,20 +88,8 @@ export function FreeformModal({ open, date, onClose }: Props) {
           </button>
         </div>
         <p className="modal__copy">
-          A lot of you told me the scoring was getting in your way — you’d find a
-          word, and WordInk would quietly rescore it as its “common form”. So
-          I’m giving your way a shot.
-        </p>
-        <p className="modal__copy">
-          All week, every word scores exactly as you played it. Find{" "}
-          <strong>kindless</strong> and you’re scored for <strong>kindless</strong>
-          , not for <em>kind</em>.
-        </p>
-        <p className="modal__copy">
-          And nothing’s too close to anything else — <strong>play</strong>,{" "}
-          <strong>plays</strong> and <strong>played</strong> are three answers
-          now, each scored on its own. Old words, proper nouns and abbreviations
-          are all in too.
+          Play any word you want — it can be archaic, it can be silly, and it
+          won’t be rescored to its “common form”.
         </p>
         <div className="freeform__vote">
           {/* The stakes before the buttons rather than after them. It used to
@@ -111,8 +98,7 @@ export function FreeformModal({ open, date, onClose }: Props) {
               player deciding whether to bother tapping needs to know the tap
               decides something. */}
           <p className="freeform__ask" id="freeform-vote-label">
-            This can be made permanent — it’s down to your feedback. Let me know
-            if you enjoy playing this way more.
+            Let me know if you prefer this style and it can be made permanent!
           </p>
           {/* A group rather than two loose buttons, so a screen reader hears the
               question before the answers. `aria-pressed` because these are a
@@ -125,22 +111,24 @@ export function FreeformModal({ open, date, onClose }: Props) {
             <button
               type="button"
               className={`freeform__vote-button${
-                vote === "love" ? " freeform__vote-button--picked" : ""
-              }`}
-              aria-pressed={vote === "love"}
-              onClick={() => castVote("love")}
-            >
-              Love it!
-            </button>
-            <button
-              type="button"
-              className={`freeform__vote-button${
                 vote === "boo" ? " freeform__vote-button--picked" : ""
               }`}
               aria-pressed={vote === "boo"}
               onClick={() => castVote("boo")}
             >
-              Boooo
+              {/* The emoji is aria-hidden so the button is announced as its
+                  words alone -- "Boooo", not "Boooo thumbs down sign". */}
+              Boooo <span aria-hidden="true">👎</span>
+            </button>
+            <button
+              type="button"
+              className={`freeform__vote-button${
+                vote === "love" ? " freeform__vote-button--picked" : ""
+              }`}
+              aria-pressed={vote === "love"}
+              onClick={() => castVote("love")}
+            >
+              Love it! <span aria-hidden="true">❤️</span>
             </button>
           </div>
           {/* role="status" so the acknowledgement is announced, not only seen --
@@ -148,9 +136,7 @@ export function FreeformModal({ open, date, onClose }: Props) {
               an answer to "did that count". */}
           {vote && (
             <p className="freeform__voted" role="status">
-              {vote === "love"
-                ? "Noted — glad it’s landing."
-                : "Noted — sorry, and thank you for saying so."}
+              {vote === "love" ? "Noted — thank you! 🙂" : "Noted — thanks for saying so."}
             </p>
           )}
         </div>
@@ -165,7 +151,7 @@ export function FreeformModal({ open, date, onClose }: Props) {
                 setFeedback(event.target.value);
                 setSent(false);
               }}
-              placeholder="Anything else? (optional)"
+              placeholder="I like this direction but…"
               rows={2}
             />
             <button type="submit" disabled={!feedback.trim()}>
@@ -178,7 +164,6 @@ export function FreeformModal({ open, date, onClose }: Props) {
             </p>
           )}
         </form>
-        <p className="modal__signoff">It’s a trial, just for this week.</p>
       </div>
     </div>
   );

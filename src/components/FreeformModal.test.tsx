@@ -36,7 +36,7 @@ describe("FreeformModal", () => {
 
   it("says the change can become permanent, above the buttons that decide it", () => {
     open();
-    const stakes = screen.getByText(/this can be made permanent/i);
+    const stakes = screen.getByText(/can be made permanent/i);
     const group = screen.getByRole("group", { name: /permanent/i });
     // Before the vote, not in the sign-off under the feedback box: a player
     // deciding whether to tap needs to know the tap decides something.
@@ -45,12 +45,21 @@ describe("FreeformModal", () => {
     );
   });
 
+  it("puts Boooo first, so the softer answer is not the default target", async () => {
+    open();
+    const names = screen
+      .getAllByRole("button", { pressed: false })
+      .map((b) => b.textContent ?? "");
+    expect(names[0]).toMatch(/boooo/i);
+    expect(names[1]).toMatch(/love it/i);
+  });
+
   it("sends a vote on the tap, without waiting for a note", async () => {
     open();
-    await userEvent.click(screen.getByRole("button", { name: "Love it!" }));
+    await userEvent.click(screen.getByRole("button", { name: /love it/i }));
     expect(trackFreeformVote).toHaveBeenCalledWith("love", DATE);
     expect(trackFreeformFeedback).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Love it!" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /love it/i })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -58,8 +67,8 @@ describe("FreeformModal", () => {
 
   it("lets a player change their mind, and does not resend the same vote", async () => {
     open();
-    const love = screen.getByRole("button", { name: "Love it!" });
-    const boo = screen.getByRole("button", { name: "Boooo" });
+    const love = screen.getByRole("button", { name: /love it/i });
+    const boo = screen.getByRole("button", { name: /boooo/i });
 
     await userEvent.click(love);
     await userEvent.click(love);
@@ -73,7 +82,7 @@ describe("FreeformModal", () => {
 
   it("carries the vote alongside the note when one was cast", async () => {
     open();
-    await userEvent.click(screen.getByRole("button", { name: "Boooo" }));
+    await userEvent.click(screen.getByRole("button", { name: /boooo/i }));
     await userEvent.type(screen.getByRole("textbox"), "  bring back the folding  ");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
 

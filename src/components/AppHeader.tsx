@@ -1,5 +1,18 @@
+import { useEffect, useState } from "react";
 import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
 import { navigate, type Route } from "../routes";
+
+/**
+ * How long the "Scoring update" badge stays before fading out.
+ *
+ * Long enough to be read by somebody who opened the app and looked at the
+ * puzzle first, short enough that it is gone before it becomes furniture. It
+ * fades on every load rather than once ever: the badge is what catches the eye,
+ * and the button it points at is what remains -- so a player who missed it on
+ * Monday still gets a shot at it on Tuesday, and a player who has read it three
+ * times is not stuck looking at it.
+ */
+const BADGE_VISIBLE_MS = 10_000;
 
 /** One tab: where it goes and what it is called. */
 interface Tab {
@@ -42,19 +55,29 @@ export function AppHeader({
   route,
   onHowToPlay,
   onFreeform,
-  freeformUnseen = false,
 }: {
   route: Route;
   onHowToPlay: () => void;
   /**
    * Open the Freeform week notice. Absent outside the trial week, which is what
-   * takes the "i" off the header again once it is over -- there is no
+   * takes the button off the header again once it is over -- there is no
    * announcement to read, so there is nothing to point at.
    */
   onFreeform?: () => void;
-  /** Whether the "i" still carries its dot (see whatsNew). */
-  freeformUnseen?: boolean;
 }) {
+  const freeform = Boolean(onFreeform);
+  /**
+   * Whether the badge is still up. Keyed off `freeform` rather than the callback
+   * itself, which is a fresh arrow on every parent render and would restart the
+   * timer with it.
+   */
+  const [badgeShowing, setBadgeShowing] = useState(true);
+  useEffect(() => {
+    if (!freeform) return;
+    const timer = setTimeout(() => setBadgeShowing(false), BADGE_VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, [freeform]);
+
   function go(tab: Tab) {
     if (tab.route === route) return;
     if (tab.route === "leaderboard") trackLeaderboardOpened("header");
@@ -95,29 +118,41 @@ export function AppHeader({
             </span>
           </p>
         )}
-        {/* The "i" sits before the "?" so the two read left to right as
-            news-then-reference, and so the badge is not the last thing on the
-            row -- a dot hard against the edge of a phone reads as a rendering
-            fault rather than a marker. */}
+        {/* Sits before the "?" so the two read left to right as
+            news-then-reference, and so the badge under it is not hard against
+            the edge of a phone.
+
+            A word rather than a glyph. An "i" in a circle is the same shape as
+            the "?" beside it and says even less -- between two identical
+            circles a player has no way to tell the rules from the news without
+            pressing one. "Freeform" names the week it opens, and the badge
+            under it says what kind of week that is.
+
+            Shown to everybody rather than only to whoever has not read the
+            sheet: it is a label on the rules currently in force, not an unread
+            marker. The button stays all week; the badge is the part that fades,
+            having done its job once the eye has landed on it. */}
         {onFreeform && (
-          <button
-            type="button"
-            className="app__icon-button app__icon-button--news"
-            onClick={onFreeform}
-            aria-label={
-              freeformUnseen
-                ? "New scoring rules this week"
-                : "About Freeform week"
-            }
-          >
-            i
-            {/* The dot is decoration: what it means is already in the button's
-                own label above, so it is hidden from the accessibility tree
-                rather than announced twice. */}
-            {freeformUnseen && (
-              <span className="app__icon-badge" aria-hidden="true" />
-            )}
-          </button>
+          <div className="app__freeform-nav">
+            <button
+              type="button"
+              className="app__freeform-button"
+              onClick={onFreeform}
+              aria-label="Freeform week — what’s changed"
+            >
+              Freeform
+            </button>
+            {/* Decoration: the button's own label above already carries this,
+                so the badge is not announced a second time. */}
+            <span
+              className={`app__freeform-badge${
+                badgeShowing ? "" : " app__freeform-badge--faded"
+              }`}
+              aria-hidden="true"
+            >
+              Scoring update
+            </span>
+          </div>
         )}
         <button
           type="button"

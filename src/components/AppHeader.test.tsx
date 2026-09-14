@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AppHeader } from "./AppHeader";
@@ -85,5 +85,51 @@ describe("the header", () => {
     // back to the puzzle to check what a rank was made of.
     await userEvent.click(screen.getByRole("button", { name: /how to play/i }));
     expect(howToPlay).toHaveBeenCalled();
+  });
+});
+
+describe("the Freeform week button", () => {
+  it("is absent outside the week, so nothing points at a notice that is over", () => {
+    render(<AppHeader route="game" onHowToPlay={howToPlay} />);
+    expect(
+      screen.queryByRole("button", { name: /freeform/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/scoring update/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the button and its badge to everybody during the week", async () => {
+    const onFreeform = vi.fn();
+    render(
+      <AppHeader route="game" onHowToPlay={howToPlay} onFreeform={onFreeform} />,
+    );
+    const button = screen.getByRole("button", { name: /freeform/i });
+    expect(screen.getByText(/scoring update/i)).toBeInTheDocument();
+    await userEvent.click(button);
+    expect(onFreeform).toHaveBeenCalled();
+  });
+
+  it("fades the badge after ten seconds and leaves the button alone", () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <AppHeader route="game" onHowToPlay={howToPlay} onFreeform={vi.fn()} />,
+      );
+      const badge = screen.getByText(/scoring update/i);
+      expect(badge).not.toHaveClass("app__freeform-badge--faded");
+
+      act(() => {
+        vi.advanceTimersByTime(10_000);
+      });
+
+      // Faded rather than unmounted: it is absolutely positioned, so fading it
+      // moves nothing, and the button it points at stays exactly where the eye
+      // found it -- all week, which is the half that must not fade.
+      expect(badge).toHaveClass("app__freeform-badge--faded");
+      expect(
+        screen.getByRole("button", { name: /freeform/i }),
+      ).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
