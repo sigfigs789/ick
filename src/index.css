@@ -381,6 +381,84 @@ h2 {
 .app__icon-button:active {
   transform: scale(0.94);
 }
+/* The "i" is an announcement rather than a reference, so it anchors the dot.
+   `position: relative` only -- everything else it wants it already has from
+   .app__icon-button, and restating those here is how the two drift apart. */
+.app__icon-button--news {
+  position: relative;
+}
+/* The unread dot. Sized in em so it tracks the button's own type rather than
+   needing a second breakpoint, and given a ring in the page background so it
+   still reads as a separate mark where it overlaps the button's border. */
+.app__icon-badge {
+  position: absolute;
+  top: 0.12rem;
+  right: 0.12rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--danger-fg);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+
+/* -- Freeform week notice ------------------------------------------------- */
+/* The vote sits in its own bordered block between the copy and the feedback
+   box, because it is the one thing on the sheet being asked *of* the player --
+   without the rule above it, two buttons under two paragraphs read as the end
+   of the paragraphs. */
+.freeform__vote {
+  margin: 1.1rem 0 0.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.freeform__ask {
+  margin: 0 0 0.6rem;
+  font-weight: 700;
+}
+.freeform__vote-buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+/* Equal width, so neither verdict is the bigger target. A trial asking whether
+   people like a change has an obvious thumb on the scale available to it, and
+   declining to use it is most of what makes the answer worth having. */
+.freeform__vote-button {
+  flex: 1;
+  padding: 0.6rem 0.5rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border-strong);
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 0.15s var(--ease-standard),
+    transform 0.15s var(--ease-standard);
+}
+.freeform__vote-button:hover {
+  background: var(--bg-inset);
+}
+.freeform__vote-button:active {
+  transform: scale(0.97);
+}
+/* The chosen one inverts, the same way every other committed choice in the app
+   does. Both verdicts get the identical treatment -- no green for yes and red
+   for no, which would tell the player which answer was wanted. */
+.freeform__vote-button--picked {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+.freeform__vote-button--picked:hover {
+  background: var(--accent-hover);
+}
+.freeform__voted {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: var(--fg-faint);
+}
 
 .dev-reset-button {
   display: block;

@@ -1,6 +1,7 @@
 import {
   boundBaseFormsActive,
   curatedRejection,
+  isFreeformWeek,
   isValidWord,
   isDictionaryWord,
   mostCommonSameRootBase,
@@ -261,6 +262,11 @@ function foldOnce(word: string, folds: RootFolds, date?: string): string {
  *
  * Words this puzzle has already taken are not near misses: pointing at one would
  * send the player back to a word the same-root rule would refuse.
+ *
+ * During freeform week that rule is off, so the exclusion narrows to the words
+ * actually used -- a relative of an accepted word is a perfectly good suggestion
+ * that week, and filtering by root would have gone on hiding the answers the
+ * week exists to allow.
  */
 export function spellingNearMiss(
   rawInput: string,
@@ -270,6 +276,10 @@ export function spellingNearMiss(
 ): string | undefined {
   const word = rawInput.trim().toLowerCase();
   if (!WORD_CHARS.test(word)) return undefined;
+  if (isFreeformWeek(date)) {
+    const used = new Set(alreadyAccepted.map((accepted) => accepted.word));
+    return nearMissForDrop(word, drop, date, (candidate) => used.has(candidate));
+  }
   const folds = rootFoldsFor(date);
   const usedRoots = new Set(alreadyAccepted.map((accepted) => rootKey(accepted.word, folds, date)));
   // Passed last on purpose: rootKey is the expensive test, and this predicate
@@ -302,10 +312,22 @@ export function evaluateSubmission(
   if (alreadyAccepted.some((w) => w.word === word)) {
     return { ok: false, reason: "already-used" };
   }
-  const folds = rootFoldsFor(date);
-  const wordRoot = rootKey(word, folds, date);
-  if (alreadyAccepted.some((w) => rootKey(w.word, folds, date) === wordRoot)) {
-    return { ok: false, reason: "same-root-as-used" };
+  // Freeform week drops the same-root refusal along with the fold that defines
+  // it. The two are one rule asked in two places -- scoring folds "plays" onto
+  // "play" to price it, and this folds them together to call them one word --
+  // so a week that lets you play a word on its own terms has to let you play the
+  // whole paradigm: "play", "plays" and "played" are three answers, each scored
+  // as itself. See FREEFORM_START.
+  //
+  // The exact-duplicate check above is untouched and deliberately so: the same
+  // spelling twice is not a second word under any scoring system, and refusing
+  // it is not the rule anybody asked to be rid of.
+  if (!isFreeformWeek(date)) {
+    const folds = rootFoldsFor(date);
+    const wordRoot = rootKey(word, folds, date);
+    if (alreadyAccepted.some((w) => rootKey(w.word, folds, date) === wordRoot)) {
+      return { ok: false, reason: "same-root-as-used" };
+    }
   }
   if (!isValidWord(word, date)) {
     return {

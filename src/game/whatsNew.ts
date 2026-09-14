@@ -15,7 +15,7 @@
 const SEEN_PREFIX = "ick:seen:";
 
 /** The features that have ever carried a badge, or a once-only appearance. */
-export type Announcement = "instructions";
+export type Announcement = "instructions" | "freeform";
 
 /**
  * Whether the player has already met this feature.

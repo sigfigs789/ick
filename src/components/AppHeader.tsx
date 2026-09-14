@@ -41,9 +41,19 @@ const TABS: readonly Tab[] = [
 export function AppHeader({
   route,
   onHowToPlay,
+  onFreeform,
+  freeformUnseen = false,
 }: {
   route: Route;
   onHowToPlay: () => void;
+  /**
+   * Open the Freeform week notice. Absent outside the trial week, which is what
+   * takes the "i" off the header again once it is over -- there is no
+   * announcement to read, so there is nothing to point at.
+   */
+  onFreeform?: () => void;
+  /** Whether the "i" still carries its dot (see whatsNew). */
+  freeformUnseen?: boolean;
 }) {
   function go(tab: Tab) {
     if (tab.route === route) return;
@@ -84,6 +94,30 @@ export function AppHeader({
               beta
             </span>
           </p>
+        )}
+        {/* The "i" sits before the "?" so the two read left to right as
+            news-then-reference, and so the badge is not the last thing on the
+            row -- a dot hard against the edge of a phone reads as a rendering
+            fault rather than a marker. */}
+        {onFreeform && (
+          <button
+            type="button"
+            className="app__icon-button app__icon-button--news"
+            onClick={onFreeform}
+            aria-label={
+              freeformUnseen
+                ? "New scoring rules this week"
+                : "About Freeform week"
+            }
+          >
+            i
+            {/* The dot is decoration: what it means is already in the button's
+                own label above, so it is hidden from the accessibility tree
+                rather than announced twice. */}
+            {freeformUnseen && (
+              <span className="app__icon-badge" aria-hidden="true" />
+            )}
+          </button>
         )}
         <button
           type="button"

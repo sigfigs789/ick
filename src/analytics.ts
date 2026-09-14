@@ -292,6 +292,51 @@ export function trackFeedbackSubmitted(rawFeedback: string) {
   mirror("feedback_submitted", { feedback: note });
 }
 
+/**
+ * The verdict on Freeform week: one tap, "love" or "boo".
+ *
+ * This is the vote the trial is actually decided on, so it is sent on the tap
+ * rather than held until the note beside it is written -- most people will press
+ * a button and nothing else, and a vote that only counts when accompanied by an
+ * essay is a vote from the people who write essays.
+ *
+ * `date` is the puzzle they were looking at when they voted, which is what makes
+ * the tally readable afterwards: a vote cast on the 14th is a first impression
+ * and one cast on the 20th is a week's experience, and the week is short enough
+ * that the difference is most of what there is to learn.
+ *
+ * Fire-and-forget through `send`, like every other event here -- a vote must
+ * never be able to interrupt the game it is about.
+ */
+export function trackFreeformVote(vote: "love" | "boo", date: string) {
+  send("freeform_vote", { vote, date });
+}
+
+/**
+ * The free-text note left under the Freeform week vote.
+ *
+ * Split from the vote rather than sent with it, because the two are given at
+ * different moments and either can arrive without the other. Addressed to both
+ * sinks by hand for the same reason `trackFeedbackSubmitted` is: Vercel truncates
+ * a property at 255 characters and the Supabase mirror is what gets read.
+ *
+ * The vote is carried along when there is one, so a note can be read next to the
+ * verdict it explains without joining two tables on a timestamp.
+ */
+export function trackFreeformFeedback(
+  rawFeedback: string,
+  date: string,
+  vote: "love" | "boo" | null
+) {
+  const note = rawFeedback.trim();
+  track("freeform_feedback", {
+    feedback: note.slice(0, VERCEL_VALUE_CHARS),
+    date,
+    vote,
+  });
+  mirror("freeform_feedback", { feedback: note, date, vote });
+}
+
 /** Record player suggestions for future curated-list reviews. */
 export function trackWordSuggestion(rawWord: string) {
   send("word_suggested", { word: rawWord.trim().toLowerCase() });

@@ -4,11 +4,15 @@ import { trackLeaderboardJoined } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
 import { FeedbackPage } from "./components/FeedbackPage";
 import { FoundWordsPage } from "./components/FoundWordsPage";
+import { FreeformModal } from "./components/FreeformModal";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
 import { SuggestedWordsPage } from "./components/SuggestedWordsPage";
+import { todayDateString } from "./game/date";
+import { isFreeformWeek } from "./game/dictionary";
 import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
+import { hasEverPlayed } from "./game/storage";
 import { hasSeen, markSeen } from "./game/whatsNew";
 import { useRoute } from "./routes";
 
@@ -40,6 +44,54 @@ export function Root() {
   const [showInstructions, setShowInstructions] = useState(
     () => !hasSeen("instructions"),
   );
+
+  /**
+   * Today's date, read once per mount.
+   *
+   * Today's rather than the puzzle being viewed: the notice is about the week
+   * the player is in, so stepping back to an archived puzzle should not make it
+   * appear or disappear. A tab left open across midnight keeps the value it
+   * mounted with, which is the same thing every other date in this app does and
+   * is not worth a timer -- being a day stale on a notice costs nothing.
+   */
+  const today = useRef(todayDateString());
+  const freeform = isFreeformWeek(today.current);
+
+  /**
+   * The Freeform week notice, opened for the player once and left reachable from
+   * the header's "i" afterwards.
+   *
+   * Three conditions, and the middle one is the point: it opens only for a
+   * browser that has *played*. The sheet announces that a rule they have watched
+   * operate is switched off for the week, which is news to somebody who has seen
+   * a word rescored and noise to somebody who has not yet found their first.
+   * A first-timer meets the instructions instead, and picks this up from the "i"
+   * if they ever care.
+   *
+   * Read once at mount rather than watched: a player who finds their first word
+   * mid-session gets the notice on their next visit, which is the right moment
+   * for it anyway -- interrupting somebody's first ever word to explain scoring
+   * history is the one time this is certain to be unwelcome.
+   */
+  const [showFreeform, setShowFreeform] = useState(
+    () => freeform && hasEverPlayed() && !hasSeen("freeform"),
+  );
+  /**
+   * Whether the "i" still wears its dot. Held in state beside the sheet rather
+   * than read from storage at render, so dismissing the sheet clears the dot in
+   * the same paint rather than on the next mount.
+   */
+  const [freeformUnseen, setFreeformUnseen] = useState(
+    () => freeform && !hasSeen("freeform"),
+  );
+
+  function closeFreeform() {
+    // Opened by hand or opened for them: either way the announcement has been
+    // delivered, and it is retired for good (see whatsNew).
+    markSeen("freeform");
+    setFreeformUnseen(false);
+    setShowFreeform(false);
+  }
 
   /**
    * Give this browser a board identity, on any page, before anything renders.
@@ -143,7 +195,14 @@ export function Root() {
        the game's column is sized for one puzzle, and a board wants the room for
        a rank, a name, a find and a score on one line. */
     <div className={`app${route === "game" ? "" : " app--wide"}`}>
-      <AppHeader route={route} onHowToPlay={() => setShowInstructions(true)} />
+      <AppHeader
+        route={route}
+        onHowToPlay={() => setShowInstructions(true)}
+        // Passed only during the week, which is what makes the "i" come and go
+        // with the trial rather than needing to be taken out again afterwards.
+        onFreeform={freeform ? () => setShowFreeform(true) : undefined}
+        freeformUnseen={freeformUnseen}
+      />
       {route === "leaderboard" ? (
         <LeaderboardPage />
       ) : route === "found-words" ? (
@@ -159,6 +218,11 @@ export function Root() {
       ) : (
         <App />
       )}
+      <FreeformModal
+        open={showFreeform}
+        date={today.current}
+        onClose={closeFreeform}
+      />
       <InstructionsModal
         open={showInstructions}
         onClose={() => {
