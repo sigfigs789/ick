@@ -1689,6 +1689,23 @@ export function curatedRejection(word: string, date?: string): RejectionReason |
 }
 
 /**
+ * Whether `date`'s puzzle waives `reason` outright -- the question
+ * `curatedRejection` answers for itself, exposed for the *other* rejection
+ * source.
+ *
+ * src/data/rejection-metadata.json classifies about 107,000 words that never
+ * made the curated dictionary, and submit.ts reads it to explain a refusal. A
+ * category from that file is final in a way a curated rejection is not: it
+ * short-circuits the live Merriam-Webster lookup, because normally there is
+ * nothing to check -- the game has already decided the word's kind is
+ * unplayable. During the week that reasoning is inverted, and a word refused for
+ * its register has to be allowed to prove itself like any other unknown word.
+ */
+export function waivesRejectionReason(reason: RejectionReason, date?: string): boolean {
+  return isFreeformWeek(date) && FREEFORM_WAIVED_REJECTIONS.has(reason);
+}
+
+/**
  * The waived reasons worth saying out loud when a word is accepted: the three
  * about a word's *age*.
  *

@@ -231,6 +231,30 @@ describe("freeform week rejections", () => {
     }
   });
 
+  it("sends an uncurated word refused for its register to the live lookup", () => {
+    // src/data/rejection-metadata.json classifies ~107,000 words that never made
+    // the dictionary. Naming their register refuses them outright, because the
+    // live check runs only for a bare "not-a-word" -- so during the week the
+    // category is dropped and the word gets to prove itself like any other
+    // unknown one. "aasvogel" is listed obsolete and is not in the dictionary.
+    const before = evaluateSubmission("aasvogel", "VOG", [], BEFORE);
+    expect(before).toEqual({ ok: false, reason: "obsolete" });
+
+    const during = evaluateSubmission("aasvogel", "VOG", [], DURING);
+    expect(during).toEqual({ ok: false, reason: "not-a-word" });
+
+    // And back to a named refusal once the trial is over.
+    expect(evaluateSubmission("aasvogel", "VOG", [], AFTER)).toEqual({
+      ok: false,
+      reason: "obsolete",
+    });
+  });
+
+  it("keeps an uncurated misspelling final, with nothing to look up", () => {
+    const during = evaluateSubmission("freind", "REI", [], DURING);
+    expect(during).toEqual({ ok: false, reason: "misspelling" });
+  });
+
   it("leaves a word that is not in the dictionary to the live lookup", () => {
     // The week widens which words are playable, not what counts as one.
     expect(isValidWord("zzzzqqq", DURING)).toBe(false);

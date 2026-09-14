@@ -4,6 +4,7 @@ import {
   isFreeformWeek,
   isValidWord,
   isDictionaryWord,
+  waivesRejectionReason,
   mostCommonSameRootBase,
   nearMissForDrop,
   pinnedSameRoot,
@@ -56,12 +57,24 @@ function includesSorted(words: readonly string[], word: string): boolean {
  * is the only source that can explain a word still present in the dictionary.
  * Falls back to the ESDB/Wiktionary categories for words that simply never made
  * the curated list.
+ *
+ * A metadata category the week waives is dropped rather than returned, which is
+ * what sends the word to the live Merriam-Webster lookup: that check runs only
+ * for a bare "not-a-word", so naming the register here would refuse the word
+ * outright (see `worthChecking` in useDailyPuzzle). Without this the week is
+ * inconsistent with itself -- an archaic word the dictionary happens to carry
+ * plays, while the 10,309 archaic words it does not carry are turned away
+ * without ever being looked up. Misspellings keep their verdict, here as
+ * everywhere else: there is nothing to prove about a typo.
  */
 function rejectionReasonFor(word: string, date?: string): RejectionReason | undefined {
-  return (
-    curatedRejection(word, date) ??
-    METADATA_REASONS.find((reason) => includesSorted(metadataByReason[reason] ?? [], word))
+  const curated = curatedRejection(word, date);
+  if (curated !== undefined) return curated;
+  const metadata = METADATA_REASONS.find((reason) =>
+    includesSorted(metadataByReason[reason] ?? [], word)
   );
+  if (metadata !== undefined && waivesRejectionReason(metadata, date)) return undefined;
+  return metadata;
 }
 
 /** True if `drop`'s letters appear contiguously and in order inside `word`. */
