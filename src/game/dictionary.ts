@@ -128,14 +128,14 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     and the base they took was almost always an unrelated everyday word
  *     ("themed" as `them`, "noted" as `not`, "biting" as `bit`). 229 words score
  *     higher and 23 lower (see DOUBLING_TENSE_START). No label mapping moves.
- *   - 2026-09-14 to 2026-09-20 inclusive -- "Freeform week", a trial rather than
+ *   - 2026-09-14 to 2026-09-21 inclusive -- "Freeform week", a trial rather than
  *     a cutover, and the only entry here that is a *window* rather than a rung.
  *     Every fold above is skipped and each word scores on its own measured
  *     frequency: 115,474 of the 220,078 playable words score higher, 93,283 of
  *     them a full rank higher, and Legend goes from 9.0% of the dictionary to
  *     27.1%. Nothing is demoted, because a fold has only ever been a cap.
  *     Deliberately an off switch rather than a deletion -- the rules stay where
- *     they are, the window steps over them, and 2026-09-21 lands back on the
+ *     they are, the window steps over them, and 2026-09-22 lands back on the
  *     latest system with every archived puzzle either side of the week still
  *     scoring exactly as it was played. See FREEFORM_START.
  *     The same-root refusal in submit.ts goes with it, since it is this fold
@@ -348,8 +348,10 @@ const DOUBLING_TENSE_START = "2026-09-10";
 /**
  * "Freeform week": the window in which no word folds and every score is the
  * word's own measured frequency. Start inclusive, end exclusive, so the trial
- * runs 2026-09-14 through 2026-09-20 and 2026-09-21 is back on the latest
- * system.
+ * runs 2026-09-14 through 2026-09-21 inclusive, and 2026-09-22 is back on the
+ * latest system. Eight puzzles rather than seven -- Monday the 14th through
+ * Monday the 21st -- so the trial covers a whole week and the day that closes
+ * it, and every weekday appears at least once.
  *
  * Read by scoring (`adjustedZipf`) and by same-root duplicate detection
  * (`evaluateSubmission`), which are the two places the fold is consulted and so
@@ -368,7 +370,7 @@ const DOUBLING_TENSE_START = "2026-09-10";
  * here, so the week turns over with the puzzle rather than with a clock.
  */
 export const FREEFORM_START = "2026-09-14";
-export const FREEFORM_END = "2026-09-21";
+export const FREEFORM_END = "2026-09-22";
 
 /**
  * Whether `date`'s puzzle is played under the freeform rules.

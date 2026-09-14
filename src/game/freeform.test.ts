@@ -24,6 +24,9 @@ describe("isFreeformWeek", () => {
     expect(isFreeformWeek(BEFORE)).toBe(false);
     expect(isFreeformWeek(FREEFORM_START)).toBe(true);
     expect(isFreeformWeek("2026-09-20")).toBe(true);
+    // The last day of the trial, and the reason FREEFORM_END is the 22nd: the
+    // constant is exclusive, so "through the 21st" is a 22nd.
+    expect(isFreeformWeek("2026-09-21")).toBe(true);
     expect(isFreeformWeek(FREEFORM_END)).toBe(false);
   });
 
