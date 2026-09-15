@@ -1516,7 +1516,7 @@ h2 {
   gap: 0.25rem;
   color: var(--fg-muted);
   font-size: 0.9rem;
-  padding: 0.6rem 0;
+  padding: 0.6rem 0 0.35rem;
 }
 .streak-display__row {
   display: flex;
@@ -1560,8 +1560,11 @@ h2 {
 
 /* Results */
 .results-panel {
-  margin-top: 0.5rem;
-  padding: 1.5rem 1.4rem;
+  margin-top: 0.25rem;
+  /* Less room at the top than the sides and bottom: the panel used to open
+     with a heading, and now opens with the share buttons, which carry their
+     own visual weight. */
+  padding: 1rem 1.4rem 1.5rem;
   border: 1px solid var(--border);
   border-radius: 1rem;
   background: var(--card-bg);
