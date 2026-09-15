@@ -50,6 +50,14 @@ setInMemoryRouting(true);
 // be a blocked script and a request into nothing -- and reporting what Reddit's
 // players do to a third party is the one thing this build is careful not to do
 // anywhere else.
+//
+// Load-bearing beyond that, and not obviously so from here: the `setAccount`
+// above makes a Reddit username this player's board identity, and analytics is
+// free to send a board identity with an event (see src/analytics.ts) because
+// everywhere else it is a UUID the browser invented. This call is the whole of
+// what keeps a real login out of those sinks. So it stays unconditional and it
+// stays in this file, next to the call that creates the problem it solves --
+// devvit/tests/reporting.test.ts fails if either stops being true.
 setReporting(false);
 
 // `Root` rather than `App`: the puzzle is one of five pages, and the other four
