@@ -1642,15 +1642,15 @@ h2 {
   font-size: 0.92rem;
 }
 .results-panel__spoiler-toggle {
-  margin: 0 0 0.425rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  margin: 0.85rem 0 0.425rem;
   padding: 0;
   border: 0;
   font-size: 0.85rem;
   color: var(--fg-muted);
-}
-.results-panel__spoiler-toggle legend {
-  padding: 0;
-  margin-bottom: 0.3rem;
 }
 .results-panel__spoiler-options {
   display: flex;
@@ -1701,9 +1701,6 @@ h2 {
   text-align: left;
   white-space: pre-wrap;
   color: var(--fg-muted);
-}
-.results-panel__preview + .results-panel__share-actions {
-  margin-top: 0.85rem;
 }
 
 .confetti {
