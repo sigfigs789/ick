@@ -842,7 +842,7 @@ h2 {
   margin: 0 0 1.5rem;
 }
 .guess-log--completed {
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 .guess-log__header {
   display: flex;
@@ -858,7 +858,7 @@ h2 {
 }
 .guess-log__completion-trackers {
   margin-top: 0.3rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.65rem;
 }
 .guess-log__title {
   margin: 0;
