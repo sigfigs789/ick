@@ -12,6 +12,7 @@ import {
   trackVisit,
   trackVisitEngaged,
   trackFeedbackSubmitted,
+  trackFreeformVote,
   trackSessionTime,
   setReporting,
   isReporting,
@@ -509,6 +510,40 @@ describe("supabase mirror", () => {
     // An event with no properties sends none, rather than an empty object.
     expect(await payload(init.body)).toEqual({ name: "arrived_from_share" });
     vi.unstubAllGlobals();
+  });
+
+  it("mirrors the Freeform verdict with the voter, and tells Vercel without one", async () => {
+    vi.stubEnv("MODE", "production");
+    localStorage.setItem("ick:player", JSON.stringify({ id: "player-1" }));
+    const beacon = stubBeacon();
+
+    trackFreeformVote("boo", "2026-09-15");
+
+    // The tally needs to know two rows came from one person; Vercel does not,
+    // and nothing player-identifying has ever gone there.
+    expect(track).toHaveBeenCalledWith("freeform_vote", { vote: "boo", date: "2026-09-15" });
+    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
+    expect(await payload(body)).toEqual({
+      name: "freeform_vote",
+      props: { vote: "boo", date: "2026-09-15", voter: "player-1" },
+    });
+    localStorage.clear();
+  });
+
+  it("still records a verdict from a browser with no id to give", async () => {
+    vi.stubEnv("MODE", "production");
+    localStorage.clear();
+    const beacon = stubBeacon();
+
+    trackFreeformVote("love", "2026-09-15");
+
+    // Uncollapsible, not uncounted: a player who cannot be identified still has
+    // a verdict, and dropping it would quietly exclude private browsing.
+    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
+    expect(await payload(body)).toEqual({
+      name: "freeform_vote",
+      props: { vote: "love", date: "2026-09-15", voter: null },
+    });
   });
 
   it("keeps the event flowing to Vercel when the mirror throws", () => {

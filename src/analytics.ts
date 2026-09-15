@@ -10,6 +10,7 @@ import type {
   RejectionReason,
   StreakState,
 } from "./game/types";
+import { loadPlayerId } from "./game/player";
 import { currentVisit, type VisitOutcome } from "./game/visits";
 import { markShare, type SessionTimeReport } from "./game/sessionTime";
 import { APP_VERSION } from "./version";
@@ -314,11 +315,28 @@ export function trackFeedbackSubmitted(rawFeedback: string) {
  * and one cast on the 20th is a week's experience, and the week is short enough
  * that the difference is most of what there is to learn.
  *
- * Fire-and-forget through `send`, like every other event here -- a vote must
+ * `voter` is what makes the tally a count of people rather than of taps. Without
+ * it a row says only that somebody somewhere pressed love, so one player who
+ * changed their mind twice and three players who agreed are the same three rows,
+ * and a trial decided on that count is decided on nothing. With it the read is
+ * the latest row per voter, which is the behaviour the sheet has always claimed
+ * (see components/FreeformModal.tsx) and could not deliver.
+ *
+ * It is the board identity, minted on open and already sent with every score --
+ * not a new thing to carry, and nothing personal: a UUID this browser invented
+ * (see game/player.ts). It goes to the Supabase mirror alone. Vercel Analytics
+ * gets the vote without it, because nothing player-identifying has ever gone
+ * there and one tally is not worth making that untrue. Null where a browser has
+ * no id at all (private browsing with storage off); such a vote still counts,
+ * it just cannot be collapsed with another from the same person.
+ *
+ * Fire-and-forget in both directions, like every other event here -- a vote must
  * never be able to interrupt the game it is about.
  */
 export function trackFreeformVote(vote: "love" | "boo", date: string) {
-  send("freeform_vote", { vote, date });
+  if (!reporting) return;
+  track("freeform_vote", { vote, date });
+  mirror("freeform_vote", { vote, date, voter: loadPlayerId() });
 }
 
 /**
@@ -330,7 +348,10 @@ export function trackFreeformVote(vote: "love" | "boo", date: string) {
  * a property at 255 characters and the Supabase mirror is what gets read.
  *
  * The vote is carried along when there is one, so a note can be read next to the
- * verdict it explains without joining two tables on a timestamp.
+ * verdict it explains without joining two tables on a timestamp. The voter id
+ * goes with it for the same reason it goes on the vote: it is what ties a note
+ * to the verdict that player ended up on, including one they cast later or in
+ * another session. Mirror only -- see `trackFreeformVote`.
  */
 export function trackFreeformFeedback(
   rawFeedback: string,
@@ -343,7 +364,7 @@ export function trackFreeformFeedback(
     date,
     vote,
   });
-  mirror("freeform_feedback", { feedback: note, date, vote });
+  mirror("freeform_feedback", { feedback: note, date, vote, voter: loadPlayerId() });
 }
 
 /** Record player suggestions for future curated-list reviews. */
