@@ -84,19 +84,17 @@ describe("freeform week, words the curated list has never heard of", () => {
   it("accepts a word a lexicon describes and scores it on its own frequency", () => {
     const result = evaluateSubmission("sermonics", DROP, [], FREEFORM_DATE);
     expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.word.zipf).toBeCloseTo(1.5);
-    expect(isUnattestedZipf(result.word.zipf)).toBe(false);
+    expect(result.word!.zipf).toBeCloseTo(1.5);
+    expect(isUnattestedZipf(result.word!.zipf)).toBe(false);
   });
 
   it("accepts an unattested lexicon word at the flat Legend sentinel", () => {
     const result = evaluateSubmission("serpentivorous", DROP, [], FREEFORM_DATE);
     expect(result.ok).toBe(true);
-    if (!result.ok) return;
     // The decision this rests on: no corpus counts the word, and freeform week
     // prices it as a Legend rather than refusing it.
-    expect(isUnattestedZipf(result.word.zipf)).toBe(true);
-    expect(result.word.rarity).toBe("Legend");
+    expect(isUnattestedZipf(result.word!.zipf)).toBe(true);
+    expect(result.word!.rarity).toBe("Legend");
   });
 
   it("still refuses a misspelling, which the week never waived", () => {
