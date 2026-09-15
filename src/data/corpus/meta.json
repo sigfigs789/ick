@@ -1,0 +1,37 @@
+{
+  "attested": 497899,
+  "count": 1217270,
+  "license": "Derived from Wiktionary, CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)",
+  "sources": [
+    "dictionary",
+    "exemptions",
+    "extra_words",
+    "google_books",
+    "macos_dict",
+    "norvig",
+    "online_words",
+    "wordfreq",
+    "wiktionary"
+  ],
+  "tagCounts": {
+    "abbreviation": 9460,
+    "archaic": 14315,
+    "capitalized-only": 183101,
+    "dated": 3531,
+    "misspelling": 6393,
+    "not-in-wiktionary": 257582,
+    "obsolete": 18311,
+    "proper-noun": 132014
+  },
+  "tagOrder": [
+    "proper-noun",
+    "capitalized-only",
+    "obsolete",
+    "archaic",
+    "dated",
+    "abbreviation",
+    "misspelling",
+    "not-in-wiktionary"
+  ],
+  "zipfScale": 32
+}
