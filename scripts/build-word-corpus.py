@@ -18,9 +18,10 @@ Outputs (src/data/corpus/):
   words.txt   front-coded word list, one per line: shared-prefix length as a
               single char (chr(48+n)) followed by the remaining suffix
   tags.bin    one byte per word, bit flags indexed by TAG_ORDER
+  sources.bin one byte per word, bit flags indexed by SOURCE_ORDER
   zipf.bin    one byte per word: round(zipf * 32), 0 meaning no corpus attests it
-  meta.json   counts, tag order, and the zipf scale, so the client decodes
-              without hardcoding anything
+  meta.json   counts, tag and source order, and the zipf scale, so the client
+              decodes without hardcoding anything
 
 Derived from Wiktionary; the data stays CC BY-SA 4.0 (see meta.json).
 
@@ -46,6 +47,11 @@ LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
 WORD_RE = re.compile(r"^[a-z]+$")
 
 # Bit order for tags.bin. Append only -- the client decodes by index.
+#
+# Every tag here is a lexical property of the word. Where a word *came from* is
+# not one of those, so provenance lives in sources.bin instead: "we have no
+# lexical data for this word" and "this word is an abbreviation" are different
+# kinds of claim, and a runtime filter wants them separately.
 TAG_ORDER = [
     "proper-noun",
     "capitalized-only",
@@ -54,7 +60,25 @@ TAG_ORDER = [
     "dated",
     "abbreviation",
     "misspelling",
-    "not-in-wiktionary",
+]
+
+# Bit order for sources.bin. Append only, and keep it to eight.
+#
+# This is what separates a vetted word from an unvetted one. A word absent from
+# Wiktionary carries no tags at all -- not because it is clean, but because
+# nothing described it. Norvig's Google Web 1T is the sharp edge: it attests
+# 160,690 words no lexicon has, and most are crawl residue ("mxps", "emci",
+# "travelglobe"). Without the source bits those are indistinguishable from a
+# word Wiktionary vetted and found nothing wrong with.
+SOURCE_ORDER = [
+    "wiktionary",
+    "dictionary",
+    "macos_dict",
+    "wordfreq",
+    "norvig",
+    "google_books",
+    "datamuse",
+    "curated",
 ]
 ZIPF_SCALE = 32  # zipf.bin stores round(zipf * 32); 0 means unattested
 
@@ -70,13 +94,19 @@ MISSPELLING_TAGS = {"misspelling", "pronunciation-spelling"}
 # them would un-play words the game already accepts.
 DICTIONARY_PATH = ROOT / "src" / "data" / "dictionary.json"
 
-CURATED_LISTS = {
-    "extra_words": ROOT / "scripts" / "extra-words.txt",
-    "online_words": ROOT / "scripts" / "online-words.txt",
-    "exemptions": ROOT / "scripts" / "playable-exemptions.txt",
+# The three small hand-maintained lists share one "curated" bit; they are
+# edited by the same review process and no filter needs to tell them apart.
+CURATED_PATHS = [
+    ROOT / "scripts" / "extra-words.txt",
+    ROOT / "scripts" / "online-words.txt",
+    ROOT / "scripts" / "playable-exemptions.txt",
+]
+
+SOURCE_LISTS = {
     "macos_dict": Path("/usr/share/dict/words"),
     "norvig": ROOT / "scripts" / "norvig-count-1w.txt",
     "google_books": ROOT / "scripts" / "google-books-counts.txt",
+    "datamuse": ROOT / "scripts" / "datamuse-zipf.txt",
 }
 
 
@@ -201,34 +231,48 @@ def main() -> None:
     args = parser.parse_args()
 
     records, entries, shape = read_wiktionary(args.source)
-    extra = {name: load_list(path) for name, path in CURATED_LISTS.items()}
-    extra["dictionary"] = {
+    sources = {name: load_list(path) for name, path in SOURCE_LISTS.items()}
+    sources["curated"] = set().union(*(load_list(path) for path in CURATED_PATHS))
+    sources["dictionary"] = {
         word for word in json.loads(DICTIONARY_PATH.read_text()) if WORD_RE.fullmatch(word)
     }
+    sources["wiktionary"] = set(records)
     try:
         from wordfreq import get_frequency_dict
 
-        extra["wordfreq"] = {w for w in get_frequency_dict("en", wordlist="best") if WORD_RE.fullmatch(w)}
+        sources["wordfreq"] = {
+            w for w in get_frequency_dict("en", wordlist="best") if WORD_RE.fullmatch(w)
+        }
     except ModuleNotFoundError:
         sys.exit("wordfreq is required; install it with: pip3 install --user wordfreq")
 
-    universe = set(records).union(*extra.values())
+    universe = set().union(*sources.values())
     words = sorted(universe)
     index = {word: i for i, word in enumerate(words)}
 
     waterfall = FrequencyWaterfall()
     tag_bits = bytearray(len(words))
+    source_bits = bytearray(len(words))
     zipf_bytes = bytearray(len(words))
     counts: collections.Counter = collections.Counter()
+    source_counts: collections.Counter = collections.Counter()
     attested = 0
+    membership = {name: sources[name] for name in SOURCE_ORDER}
     for word in words:
         record = records.get(word)
-        tags = tags_for(record) if record else ["not-in-wiktionary"]
+        # No record means no lexicon described this word, which is not itself a
+        # property of the word -- sources.bin says so, and says by whose absence.
         mask = 0
-        for tag in tags:
+        for tag in tags_for(record) if record else []:
             mask |= 1 << TAG_ORDER.index(tag)
             counts[tag] += 1
         tag_bits[index[word]] = mask
+        source_mask = 0
+        for bit, name in enumerate(SOURCE_ORDER):
+            if word in membership[name]:
+                source_mask |= 1 << bit
+                source_counts[name] += 1
+        source_bits[index[word]] = source_mask
         zipf = waterfall.zipf(word)
         if zipf is not None:
             attested += 1
@@ -237,16 +281,18 @@ def main() -> None:
     args.out_dir.mkdir(parents=True, exist_ok=True)
     (args.out_dir / "words.txt").write_text(front_code(words) + "\n")
     (args.out_dir / "tags.bin").write_bytes(bytes(tag_bits))
+    (args.out_dir / "sources.bin").write_bytes(bytes(source_bits))
     (args.out_dir / "zipf.bin").write_bytes(bytes(zipf_bytes))
     (args.out_dir / "meta.json").write_text(
         json.dumps(
             {
                 "count": len(words),
                 "tagOrder": TAG_ORDER,
+                "sourceOrder": SOURCE_ORDER,
                 "zipfScale": ZIPF_SCALE,
                 "attested": attested,
                 "tagCounts": dict(sorted(counts.items())),
-                "sources": sorted(extra) + ["wiktionary"],
+                "sourceCounts": dict(sorted(source_counts.items())),
                 "license": f"Derived from Wiktionary, CC BY-SA 4.0 ({LICENSE_URL})",
             },
             indent=2,
@@ -259,6 +305,9 @@ def main() -> None:
     print(f"Corpus: {len(words)} words, {attested} attested, {len(words) - attested} unattested")
     for tag, n in sorted(counts.items()):
         print(f"  {tag:20s} {n}")
+    print("Sources:")
+    for name, n in sorted(source_counts.items()):
+        print(f"  {name:20s} {n}")
     print(f"Wrote {args.out_dir}")
 
 

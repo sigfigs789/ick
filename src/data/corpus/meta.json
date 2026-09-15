@@ -2,16 +2,25 @@
   "attested": 497899,
   "count": 1217270,
   "license": "Derived from Wiktionary, CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/)",
-  "sources": [
+  "sourceCounts": {
+    "curated": 689,
+    "datamuse": 4,
+    "dictionary": 225483,
+    "google_books": 90275,
+    "macos_dict": 234454,
+    "norvig": 333333,
+    "wiktionary": 959688,
+    "wordfreq": 289023
+  },
+  "sourceOrder": [
+    "wiktionary",
     "dictionary",
-    "exemptions",
-    "extra_words",
-    "google_books",
     "macos_dict",
-    "norvig",
-    "online_words",
     "wordfreq",
-    "wiktionary"
+    "norvig",
+    "google_books",
+    "datamuse",
+    "curated"
   ],
   "tagCounts": {
     "abbreviation": 9460,
@@ -19,7 +28,6 @@
     "capitalized-only": 183101,
     "dated": 3531,
     "misspelling": 6393,
-    "not-in-wiktionary": 257582,
     "obsolete": 18311,
     "proper-noun": 132014
   },
@@ -30,8 +38,7 @@
     "archaic",
     "dated",
     "abbreviation",
-    "misspelling",
-    "not-in-wiktionary"
+    "misspelling"
   ],
   "zipfScale": 32
 }
