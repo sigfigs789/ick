@@ -1516,7 +1516,7 @@ h2 {
   gap: 0.25rem;
   color: var(--fg-muted);
   font-size: 0.9rem;
-  padding: 0.6rem 0 0.15rem;
+  padding: 0.6rem 0 0;
 }
 .streak-display__row {
   display: flex;
@@ -1560,11 +1560,11 @@ h2 {
 
 /* Results */
 .results-panel {
-  margin-top: 0.15rem;
-  /* Much less room at the top than the sides and bottom: the panel used to
-     open with a heading, and now opens with the share buttons, which carry
-     their own visual weight and want to sit close to the score above them. */
-  padding: 0.5rem 1.4rem 1.5rem;
+  /* Close under the score line: the panel is what the score line leads into,
+     so the card sits right below it rather than floating free. The card's own
+     padding keeps the share buttons off its edge. */
+  margin-top: 0.2rem;
+  padding: 1.5rem 1.4rem;
   border: 1px solid var(--border);
   border-radius: 1rem;
   background: var(--card-bg);
