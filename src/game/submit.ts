@@ -9,11 +9,14 @@ import {
   nearMissForDrop,
   pinnedSameRoot,
   rarityFor,
+  rarityForZipf,
+  unattestedZipf,
   refusedEsStem,
   refusedTenseStem,
   sameRootDoublingActive,
   sameRootInflectionsActive,
 } from "./dictionary";
+import { corpusEntry, sourceBit, tagBit } from "./corpus";
 import rejectionMetadata from "../data/rejection-metadata.json";
 import {
   baseForm,
@@ -302,6 +305,48 @@ export function spellingNearMiss(
   );
 }
 
+
+/**
+ * The sources that amount to "a lexicon says this is a word".
+ *
+ * Norvig's Google Web 1T and wordfreq are frequency corpora, not dictionaries:
+ * between them they attest ~160k strings no lexicon has, and the bulk of it is
+ * crawl residue -- "mxps", "emci", "travelglobe". A word carrying only those
+ * bits has been *counted*, never *described*, and "not-a-word" is precisely the
+ * objection to it. Freeform week does not waive that one.
+ */
+const LEXICON_SOURCES =
+  sourceBit("wiktionary") | sourceBit("dictionary") | sourceBit("macos_dict") | sourceBit("curated");
+
+/**
+ * What freeform week makes of a word the curated dictionary has never heard of.
+ *
+ * The week's existing waivers say which objections it will not make: register
+ * ones -- archaic, obsolete, proper noun, abbreviation -- are the week's to
+ * lift, while "misspelling" and "not-a-word" are not, because a spelling of
+ * another word is a mistake rather than a bolder way to play. This applies that
+ * same line to the corpus: any lexicon word passes, a misspelling does not, and
+ * a string only a frequency corpus ever counted is not a word to begin with.
+ *
+ * Returns undefined when the corpus has nothing to say -- including before it
+ * has loaded -- so the caller falls through to the live lookup exactly as it
+ * did before the corpus existed. The corpus never makes a word *less* playable.
+ */
+function freeformCorpusVerdict(word: string, date?: string): SubmissionResult | undefined {
+  if (!isFreeformWeek(date)) return undefined;
+  const entry = corpusEntry(word);
+  if (!entry) return undefined;
+  if (entry.tags & tagBit("misspelling")) return undefined;
+  if (!(entry.sources & LEXICON_SOURCES)) return undefined;
+
+  // A word no corpus attests scores the unattested sentinel -- a flat 10.00
+  // Legend. That is a stand-in rather than a measurement, and it is what the
+  // live lookup already hands a word it can find no frequency for, so a word
+  // scores the same here whether the corpus or Merriam-Webster vouched for it.
+  const zipf = entry.zipf ?? unattestedZipf();
+  return { ok: true, word: { word, rarity: rarityForZipf(zipf, date), zipf } };
+}
+
 export function evaluateSubmission(
   rawInput: string,
   drop: string,
@@ -348,6 +393,11 @@ export function evaluateSubmission(
     }
   }
   if (!isValidWord(word, date)) {
+    // Consulted only for words the curated list has never heard of: a curated
+    // word that freeform week already waives never reaches here, because
+    // curatedRejection has lifted its reason and isValidWord is true.
+    const fromCorpus = freeformCorpusVerdict(word, date);
+    if (fromCorpus) return fromCorpus;
     return {
       ok: false,
       reason: rejectionReasonFor(word, date) ?? "not-a-word",

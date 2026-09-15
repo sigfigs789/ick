@@ -14,7 +14,7 @@ Sources, unioned:
   - wordfreq / Norvig / Google Books / Datamuse -- the rarity waterfall
   - the macOS system dictionary and the repo's own curated lists
 
-Outputs (src/data/corpus/):
+Outputs (public/corpus/, served as static assets and fetched at runtime):
   words.txt   front-coded word list, one per line: shared-prefix length as a
               single char (chr(48+n)) followed by the remaining suffix
   tags.bin    one byte per word, bit flags indexed by TAG_ORDER
@@ -41,7 +41,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from frequency import FrequencyWaterfall
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT_DIR = ROOT / "src" / "data" / "corpus"
+OUT_DIR = ROOT / "public" / "corpus"
 SOURCE_URL = "https://kaikki.org/dictionary/English/kaikki.org-dictionary-English.jsonl"
 LICENSE_URL = "https://creativecommons.org/licenses/by-sa/4.0/"
 WORD_RE = re.compile(r"^[a-z]+$")
