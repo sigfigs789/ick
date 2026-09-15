@@ -21,6 +21,8 @@ interface Props {
   onLeaderboard?: () => void;
 }
 
+const SPOILER_LABEL_ID = "results-panel-reveal-label";
+
 // Naming answers is opt-in so shared results stay spoiler-free by default; the
 // player can reveal just their rarest word ("Top") or every word ("All").
 const REVEAL_OPTIONS: { value: RevealMode; label: string }[] = [
@@ -67,8 +69,21 @@ export function ResultsPanel({
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (
     <section className="results-panel" aria-label="Share result">
-      <fieldset className="results-panel__spoiler-toggle">
-        <legend>Show answers</legend>
+      <div className="results-panel__share-actions">
+        <ShareButton text={copiedShareText} onShared={trackResultCopied} />
+        <TwitterShareButton
+          text={twitterShareText}
+          onShared={trackResultSharedOnX}
+        />
+      </div>
+      {/* A radiogroup rather than a fieldset: the label sits on the same row as
+          the options, and a <legend> can't join a flex row. */}
+      <div
+        className="results-panel__spoiler-toggle"
+        role="radiogroup"
+        aria-labelledby={SPOILER_LABEL_ID}
+      >
+        <span id={SPOILER_LABEL_ID}>Show answers</span>
         <div className="results-panel__spoiler-options">
           {REVEAL_OPTIONS.map((option) => (
             <label key={option.value}>
@@ -83,18 +98,11 @@ export function ResultsPanel({
             </label>
           ))}
         </div>
-      </fieldset>
+      </div>
       <pre className="results-panel__preview" aria-hidden="true">
         <strong>{shareHeading}</strong>
         {shareDetailLines.length > 0 && `\n${shareDetailLines.join("\n")}`}
       </pre>
-      <div className="results-panel__share-actions">
-        <ShareButton text={copiedShareText} onShared={trackResultCopied} />
-        <TwitterShareButton
-          text={twitterShareText}
-          onShared={trackResultSharedOnX}
-        />
-      </div>
       {onLeaderboard && (
         // The second way in, and the one that will get used: a finished puzzle
         // is the moment a player actually wants to know where the score put
