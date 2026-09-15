@@ -11,6 +11,13 @@ interface Props {
    * the input with the verdict below it.
    */
   note?: string | null;
+  /**
+   * Whether to hold the toast's slot open. True while the puzzle is playable,
+   * so a verdict arriving doesn't shove the page down; false once the guess
+   * form is gone, when no verdict can arrive and the reserved slot is just a
+   * hole between the guess log and the results panel.
+   */
+  reserveSpace?: boolean;
   onWordRules: () => void;
 }
 
@@ -36,7 +43,12 @@ const CURATED_LIST_MISS: RejectionReason = "not-a-word";
  * React to treat the text as new content -- the fade is purely visual and
  * doesn't affect what's read.
  */
-export function FeedbackRegion({ feedback, note, onWordRules }: Props) {
+export function FeedbackRegion({
+  feedback,
+  note,
+  reserveSpace = true,
+  onWordRules,
+}: Props) {
   const [shown, setShown] = useState(false);
   const [noteShown, setNoteShown] = useState(false);
 
@@ -104,7 +116,7 @@ export function FeedbackRegion({ feedback, note, onWordRules }: Props) {
         </p>
       )}
       <p
-        className={`feedback${feedback ? ` feedback--${feedback.kind}` : ""}${specific ? " feedback--specific" : ""}${shown ? " feedback--shown" : ""}`}
+        className={`feedback${feedback ? ` feedback--${feedback.kind}` : ""}${specific ? " feedback--specific" : ""}${shown ? " feedback--shown" : ""}${reserveSpace ? "" : " feedback--collapsed"}`}
         role="status"
         aria-live="polite"
       >

@@ -858,7 +858,7 @@ h2 {
 }
 .guess-log__completion-trackers {
   margin-top: 0.3rem;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.65rem;
 }
 .guess-log__title {
   margin: 0;
@@ -1393,6 +1393,12 @@ h2 {
     opacity 0.35s var(--ease-standard),
     transform 0.35s var(--ease-standard);
 }
+/* Nothing to say and nothing that could arrive: with the guess form gone the
+   toast's reserved slot is a hole above the results panel, so it collapses. */
+.feedback--collapsed {
+  min-height: 0;
+  margin: 0;
+}
 .feedback--shown {
   opacity: 1;
   transform: translateY(0);
@@ -1516,7 +1522,7 @@ h2 {
   gap: 0.25rem;
   color: var(--fg-muted);
   font-size: 0.9rem;
-  padding: 0.6rem 0;
+  padding: 0.6rem 0 0;
 }
 .streak-display__row {
   display: flex;
@@ -1560,7 +1566,10 @@ h2 {
 
 /* Results */
 .results-panel {
-  margin-top: 0.5rem;
+  /* Close under the score line: the panel is what the score line leads into,
+     so the card sits right below it rather than floating free. The card's own
+     padding keeps the share buttons off its edge. */
+  margin-top: 0.2rem;
   padding: 1.5rem 1.4rem;
   border: 1px solid var(--border);
   border-radius: 1rem;

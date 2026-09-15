@@ -196,6 +196,7 @@ export default function App() {
         <FeedbackRegion
           feedback={feedback}
           note={liveNote}
+          reserveSpace={!progress.completed}
           onWordRules={() => setShowWordRules(true)}
         />
 
