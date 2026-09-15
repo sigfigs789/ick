@@ -92,7 +92,19 @@ function send(name: string, props?: EventProps): void {
 }
 
 /**
- * Send game activity to Vercel without player-identifying information.
+ * Send game activity to Vercel.
+ *
+ * What identity may ride along, since this used to say "without
+ * player-identifying information" and that was broader than the real rule: the
+ * board identity is fine to send. It is a UUID this browser invented, and the
+ * name shown beside it is computed from that UUID rather than typed by anyone
+ * (see game/player.ts, game/handle.ts) -- there is nobody behind it to identify.
+ *
+ * The thing that must never be reported is a Reddit login, and it cannot be:
+ * an account name exists only inside a Reddit post, and that build turns
+ * reporting off outright (see devvit/src/client/game.tsx, which calls both
+ * `setAccount` and `setReporting(false)`). The guarantee is the switch, not the
+ * omission of a field here.
  */
 export function trackAcceptedAnswer(
   date: string,
@@ -324,19 +336,16 @@ export function trackFeedbackSubmitted(rawFeedback: string) {
  *
  * It is the board identity, minted on open and already sent with every score --
  * not a new thing to carry, and nothing personal: a UUID this browser invented
- * (see game/player.ts). It goes to the Supabase mirror alone. Vercel Analytics
- * gets the vote without it, because nothing player-identifying has ever gone
- * there and one tally is not worth making that untrue. Null where a browser has
- * no id at all (private browsing with storage off); such a vote still counts,
- * it just cannot be collapsed with another from the same person.
+ * (see game/player.ts). It goes to both sinks through `send`, so the tally is
+ * the same one wherever it is read. Null where a browser has no id at all
+ * (private browsing with storage off); such a vote still counts, it just cannot
+ * be collapsed with another from the same person.
  *
- * Fire-and-forget in both directions, like every other event here -- a vote must
+ * Fire-and-forget through `send`, like every other event here -- a vote must
  * never be able to interrupt the game it is about.
  */
 export function trackFreeformVote(vote: "love" | "boo", date: string) {
-  if (!reporting) return;
-  track("freeform_vote", { vote, date });
-  mirror("freeform_vote", { vote, date, voter: loadPlayerId() });
+  send("freeform_vote", { vote, date, voter: loadPlayerId() });
 }
 
 /**
@@ -351,7 +360,7 @@ export function trackFreeformVote(vote: "love" | "boo", date: string) {
  * verdict it explains without joining two tables on a timestamp. The voter id
  * goes with it for the same reason it goes on the vote: it is what ties a note
  * to the verdict that player ended up on, including one they cast later or in
- * another session. Mirror only -- see `trackFreeformVote`.
+ * another session.
  */
 export function trackFreeformFeedback(
   rawFeedback: string,
@@ -359,12 +368,14 @@ export function trackFreeformFeedback(
   vote: "love" | "boo" | null
 ) {
   const note = rawFeedback.trim();
+  const voter = loadPlayerId();
   track("freeform_feedback", {
     feedback: note.slice(0, VERCEL_VALUE_CHARS),
     date,
     vote,
+    voter,
   });
-  mirror("freeform_feedback", { feedback: note, date, vote, voter: loadPlayerId() });
+  mirror("freeform_feedback", { feedback: note, date, vote, voter });
 }
 
 /** Record player suggestions for future curated-list reviews. */
