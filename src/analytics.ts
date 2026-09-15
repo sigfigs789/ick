@@ -10,6 +10,7 @@ import type {
   RejectionReason,
   StreakState,
 } from "./game/types";
+import { loadPlayerId } from "./game/player";
 import { currentVisit, type VisitOutcome } from "./game/visits";
 import { markShare, type SessionTimeReport } from "./game/sessionTime";
 import { APP_VERSION } from "./version";
@@ -91,7 +92,19 @@ function send(name: string, props?: EventProps): void {
 }
 
 /**
- * Send game activity to Vercel without player-identifying information.
+ * Send game activity to Vercel.
+ *
+ * What identity may ride along, since this used to say "without
+ * player-identifying information" and that was broader than the real rule: the
+ * board identity is fine to send. It is a UUID this browser invented, and the
+ * name shown beside it is computed from that UUID rather than typed by anyone
+ * (see game/player.ts, game/handle.ts) -- there is nobody behind it to identify.
+ *
+ * The thing that must never be reported is a Reddit login, and it cannot be:
+ * an account name exists only inside a Reddit post, and that build turns
+ * reporting off outright (see devvit/src/client/game.tsx, which calls both
+ * `setAccount` and `setReporting(false)`). The guarantee is the switch, not the
+ * omission of a field here.
  */
 export function trackAcceptedAnswer(
   date: string,
@@ -314,11 +327,25 @@ export function trackFeedbackSubmitted(rawFeedback: string) {
  * and one cast on the 20th is a week's experience, and the week is short enough
  * that the difference is most of what there is to learn.
  *
+ * `voter` is what makes the tally a count of people rather than of taps. Without
+ * it a row says only that somebody somewhere pressed love, so one player who
+ * changed their mind twice and three players who agreed are the same three rows,
+ * and a trial decided on that count is decided on nothing. With it the read is
+ * the latest row per voter, which is the behaviour the sheet has always claimed
+ * (see components/FreeformModal.tsx) and could not deliver.
+ *
+ * It is the board identity, minted on open and already sent with every score --
+ * not a new thing to carry, and nothing personal: a UUID this browser invented
+ * (see game/player.ts). It goes to both sinks through `send`, so the tally is
+ * the same one wherever it is read. Null where a browser has no id at all
+ * (private browsing with storage off); such a vote still counts, it just cannot
+ * be collapsed with another from the same person.
+ *
  * Fire-and-forget through `send`, like every other event here -- a vote must
  * never be able to interrupt the game it is about.
  */
 export function trackFreeformVote(vote: "love" | "boo", date: string) {
-  send("freeform_vote", { vote, date });
+  send("freeform_vote", { vote, date, voter: loadPlayerId() });
 }
 
 /**
@@ -330,7 +357,10 @@ export function trackFreeformVote(vote: "love" | "boo", date: string) {
  * a property at 255 characters and the Supabase mirror is what gets read.
  *
  * The vote is carried along when there is one, so a note can be read next to the
- * verdict it explains without joining two tables on a timestamp.
+ * verdict it explains without joining two tables on a timestamp. The voter id
+ * goes with it for the same reason it goes on the vote: it is what ties a note
+ * to the verdict that player ended up on, including one they cast later or in
+ * another session.
  */
 export function trackFreeformFeedback(
   rawFeedback: string,
@@ -338,12 +368,14 @@ export function trackFreeformFeedback(
   vote: "love" | "boo" | null
 ) {
   const note = rawFeedback.trim();
+  const voter = loadPlayerId();
   track("freeform_feedback", {
     feedback: note.slice(0, VERCEL_VALUE_CHARS),
     date,
     vote,
+    voter,
   });
-  mirror("freeform_feedback", { feedback: note, date, vote });
+  mirror("freeform_feedback", { feedback: note, date, vote, voter });
 }
 
 /** Record player suggestions for future curated-list reviews. */
