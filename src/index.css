@@ -842,7 +842,7 @@ h2 {
   margin: 0 0 1.5rem;
 }
 .guess-log--completed {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 .guess-log__header {
   display: flex;
@@ -858,7 +858,7 @@ h2 {
 }
 .guess-log__completion-trackers {
   margin-top: 0.3rem;
-  margin-bottom: 0.85rem;
+  margin-bottom: 0.5rem;
 }
 .guess-log__title {
   margin: 0;
@@ -1392,6 +1392,12 @@ h2 {
   transition:
     opacity 0.35s var(--ease-standard),
     transform 0.35s var(--ease-standard);
+}
+/* Nothing to say and nothing that could arrive: with the guess form gone the
+   toast's reserved slot is a hole above the results panel, so it collapses. */
+.feedback--collapsed {
+  min-height: 0;
+  margin: 0;
 }
 .feedback--shown {
   opacity: 1;
