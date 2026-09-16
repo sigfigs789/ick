@@ -1,8 +1,38 @@
 #!/usr/bin/env python3
 """
 Rates every drop by the scoring it actually offers: how many playable words
-containing it land Rare or better once the fold has capped inflections at their
-base.
+containing it land Rare or better.
+
+Three counts per drop, because the game now has two scoring systems in play and
+the difference between them is not a rounding error:
+
+  - `rarePlus`: the fold on, which is every ordinary day. An inflection is
+    capped at its base, so "abacuses" scores as "abacus" and is not an option.
+  - `freeformRarePlus`: the fold off, which is freeform week (FREEFORM_START in
+    src/game/dictionary.ts). Every word scores on its own measured frequency,
+    so the capped inflections come back as bankable answers.
+  - `freeformUnattested`: the words behind that drop carrying the unattested
+    sentinel (see `unattestedZipf`), each of which displays a flat 10.00 /
+    Legend when the fold is off.
+
+The third is the one that decides whether a freeform day is worth playing. The
+fold is what normally rescues a sentinel word -- `isUnattestedZipf` is read
+*after* adjustment, so a sentinel with an attested base scores on its base's
+real frequency. Without the fold nothing rescues it: 8,789 playable words carry
+the sentinel and only 414 of them survive the fold, so freeform week restores
+roughly 21x as many free perfect scores.
+
+That lands very unevenly across drops. The counts are dominated by one
+structural family -- the drops catching "-ness" and "-esses", where unattested
+formations are effectively unlimited -- and NES is the clearest case: 3 free
+10.00s with the fold on, 3,007 without it. A drop can be perfectly well
+behaved on an ordinary day and hand out the whole scoreboard inside the window,
+which is why this is measured per drop rather than reasoned about per word.
+
+A caveat that belongs with the number: a missing Zipf is a gap in the corpora,
+not a property of the word. This measure is a fair way to schedule *around* the
+gap for a known window; it is not a verdict on the words themselves, and it
+will move as the corpora improve.
 
 This is the measure PR #202 sorted the difficulty tiers on -- challengingDrops
 is Rare+ under 160, hardDrops 160..289 -- computed there by hand and never
@@ -21,7 +51,7 @@ in this measure as soon as that mirror is brought up to date.
 Run:
     python3 scripts/drop-difficulty.py
 
-Writes scripts/drop-difficulty.json: one Rare+ count per drop named anywhere in
+Writes scripts/drop-difficulty.json: all three counts per drop named anywhere in
 drops.json (the rotation and every parked tier). Takes about a minute.
 """
 import importlib.util
@@ -69,31 +99,74 @@ def main() -> None:
     wanted = {d for key, value in drops_data.items()
               if isinstance(value, list) for d in value}
 
+    # The sentinel is the rarest value in the data, assigned to every word no
+    # corpus attests. Read off the data rather than hardcoded, so it follows a
+    # regeneration (see src/game/dictionary.ts, which derives MIN_ZIPF the same
+    # way).
+    sentinel = min(hundredths) / 100
+
     counts = {drop: 0 for drop in wanted}
+    freeform_counts = {drop: 0 for drop in wanted}
+    unattested_counts = {drop: 0 for drop in wanted}
     scored = 0
+    freeform_scored = 0
+    unattested_scored = 0
     for word in dictionary:
         if word in rejections:
             continue
+        raw = round(zipf_at(word), 2)
+        # The fold off is the freeform reading, and it is the cheaper of the two
+        # to reach -- a word Rare+ under the fold is Rare+ without it, never the
+        # other way round -- so it gates the folded count.
+        if scoring.rarity_label(raw, max_zipf) not in RARE_OR_BETTER:
+            continue
+        freeform_scored += 1
+        grams = {word[j:j + n].upper()
+                 for n in (2, 3) for j in range(len(word) - n + 1)}
+        hits = grams & wanted
+        for gram in hits:
+            freeform_counts[gram] += 1
+        if raw == sentinel:
+            unattested_scored += 1
+            for gram in hits:
+                unattested_counts[gram] += 1
         zipf = round(scoring.adjusted_zipf(word, index, zipf_at), 2)
         if scoring.rarity_label(zipf, max_zipf) not in RARE_OR_BETTER:
             continue
         scored += 1
-        grams = {word[j:j + n].upper() for n in (2, 3) for j in range(len(word) - n + 1)}
-        for gram in grams & wanted:
+        for gram in hits:
             counts[gram] += 1
 
     OUT.write_text(json.dumps({
         "measure": "playable words containing the drop that score Rare or better "
                    "(displayed score >= 7.0) after the scoring fold",
+        "freeformMeasure": "the same count with the fold off, which is how "
+                           "freeform week scores (see FREEFORM_START)",
+        "freeformUnattestedMeasure": "playable words containing the drop that "
+                                     "carry the unattested sentinel Zipf, each "
+                                     "a flat 10.00 / Legend with the fold off",
         "source": "scripts/drop-difficulty.py",
         "wordsCounted": scored,
+        "freeformWordsCounted": freeform_scored,
+        "freeformUnattestedWordsCounted": unattested_scored,
         "rarePlus": dict(sorted(counts.items(), key=lambda kv: (kv[1], kv[0]))),
+        "freeformRarePlus": dict(
+            sorted(freeform_counts.items(), key=lambda kv: (kv[1], kv[0]))
+        ),
+        "freeformUnattested": dict(
+            sorted(unattested_counts.items(), key=lambda kv: (kv[1], kv[0]))
+        ),
     }, indent=2) + "\n")
 
     ranked = sorted(counts.items(), key=lambda kv: kv[1])
-    print(f"{scored} words score Rare or better; rated {len(counts)} drops")
+    print(f"{scored} words score Rare or better ({freeform_scored} with the fold "
+          f"off); rated {len(counts)} drops")
     print("  hardest:", ", ".join(f"{d} {n}" for d, n in ranked[:8]))
     print("  easiest:", ", ".join(f"{d} {n}" for d, n in ranked[-8:]))
+    free_ranked = sorted(unattested_counts.items(), key=lambda kv: -kv[1])
+    print(f"{unattested_scored} of them are unattested -- a flat 10.00 each "
+          f"inside freeform week")
+    print("  most generous:", ", ".join(f"{d} {n}" for d, n in free_ranked[:8]))
     print(f"Wrote {OUT}")
 
 
