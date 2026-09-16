@@ -370,4 +370,67 @@ describe("api/review", () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });
+
+  it("reads the freeform trial as a tally, a breakdown and the notes", async () => {
+    withEnv();
+    // Two rpcs rather than one: the votes and the notes, asked for together.
+    const fetchMock = vi.fn(async (url: string) => {
+      const body = String(url).endsWith("list_freeform_votes")
+        ? [
+            { voter: "a", vote: "love", puzzle_date: "2026-09-14", created_at: "2026-09-14T10:00:00Z" },
+            { voter: "b", vote: "boo", puzzle_date: "2026-09-14", created_at: "2026-09-14T11:00:00Z" },
+            { voter: "c", vote: "love", puzzle_date: "2026-09-15", created_at: "2026-09-15T09:00:00Z" },
+            // No date on the event: counted in the tally, left out of the
+            // breakdown, because the verdict is real and only the day is missing.
+            { voter: "d", vote: "love", puzzle_date: null, created_at: "2026-09-15T10:00:00Z" },
+          ]
+        : [
+            {
+              id: 19471,
+              feedback: "two scores would be better",
+              puzzle_date: "2026-09-14",
+              vote: "love",
+              created_at: "2026-09-14T15:22:23Z",
+            },
+          ];
+      return new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await handler(get("?list=freeform"));
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    // The voter ids stay in the database: the page shows sides and notes, and
+    // has no use for who.
+    expect(JSON.stringify(body)).not.toContain("voter");
+    expect(body).toEqual({
+      tally: { love: 3, boo: 1 },
+      byDate: [
+        { date: "2026-09-14", love: 1, boo: 1 },
+        { date: "2026-09-15", love: 1, boo: 0 },
+      ],
+      notes: [
+        {
+          id: 19471,
+          text: "two scores would be better",
+          at: "2026-09-14T15:22:23Z",
+          date: "2026-09-14",
+          vote: "love",
+        },
+      ],
+    });
+  });
+
+  it("keeps the freeform report behind the review token when one is set", async () => {
+    withEnv({ ...CONFIGURED, REVIEW_TOKEN: "sesame" });
+    const fetchMock = stubFetch([]);
+
+    expect((await handler(get("?list=freeform"))).status).toBe(401);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect((await handler(get("?list=freeform&key=sesame"))).status).toBe(200);
+  });
 });

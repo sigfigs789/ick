@@ -3005,3 +3005,86 @@ h2 {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* The Freeform week report at /freeform-feedback: the vote above, the notes
+   below. Its own block rather than more `review__` rules, because this page is
+   not a queue -- nothing here is marked, and the thing at the top is a tally
+   rather than a row. */
+.freeform-report__tally {
+  margin: 0 0 1.4rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg);
+}
+/* Two sides, side by side where there is room and stacked where there is not --
+   a phone reads them as two lines rather than two squeezed columns. */
+.freeform-report__counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.8rem;
+}
+.freeform-report__side {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 0.2rem 0.5rem;
+}
+.freeform-report__side-label {
+  font-weight: 700;
+}
+.freeform-report__side-count {
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.freeform-report__side-share {
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* The same share as a bar, spanning the row under its own numbers. */
+.freeform-report__bar {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+}
+.freeform-report__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--fg-muted);
+}
+.freeform-report__side--love .freeform-report__bar-fill {
+  background: var(--success-fg);
+}
+.freeform-report__side--boo .freeform-report__bar-fill {
+  background: var(--danger-fg);
+}
+/* The day-by-day cut, which only appears once the trial has more than one day
+   in it. Small: it is context for the tally above, not a second tally. */
+.freeform-report__days {
+  width: 100%;
+  margin-top: 0.4rem;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.freeform-report__days-note {
+  margin-top: 0.9rem;
+}
+.freeform-report__days th,
+.freeform-report__days td {
+  padding: 0.25rem 0.5rem 0.25rem 0;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.freeform-report__days thead th {
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+.freeform-report__heading {
+  margin: 0 0 0.6rem;
+  font-size: 1.1rem;
+}

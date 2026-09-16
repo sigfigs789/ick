@@ -23,6 +23,8 @@ describe("routes", () => {
     expect(routeFor("/suggested-words/")).toBe("suggested-words");
     expect(routeFor("/feedback")).toBe("feedback");
     expect(routeFor("/feedback/")).toBe("feedback");
+    expect(routeFor("/freeform-feedback")).toBe("freeform-feedback");
+    expect(routeFor("/freeform-feedback/")).toBe("freeform-feedback");
   });
 
   it("treats anything else as the game, rather than a client-rendered 404", () => {
@@ -37,6 +39,7 @@ describe("routes", () => {
     expect(pathFor("found-words")).toBe("/found-words");
     expect(pathFor("suggested-words")).toBe("/suggested-words");
     expect(pathFor("feedback")).toBe("/feedback");
+    expect(pathFor("freeform-feedback")).toBe("/freeform-feedback");
     expect(pathFor("game")).toBe("/");
   });
 

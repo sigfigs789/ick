@@ -115,7 +115,34 @@ function asPlayer<T>(rows: T): T {
  * real thing would hide the one property of these pages that is not visible in
  * a single row.
  */
-export function sampleReviewResponse(list: "suggested-words" | "feedback"): unknown {
+export function sampleReviewResponse(
+  list: "suggested-words" | "feedback" | "freeform",
+): unknown {
+  if (list === "freeform") {
+    return {
+      tally: { love: 7, boo: 3 },
+      byDate: [
+        { date: "2026-09-14", love: 2, boo: 2 },
+        { date: "2026-09-15", love: 5, boo: 1 },
+      ],
+      notes: [
+        {
+          id: 2,
+          text: "How hard would it be to have two scores? One pure, one silly.",
+          at: hoursAgo(5),
+          date: "2026-09-15",
+          vote: "love",
+        },
+        {
+          id: 1,
+          text: "I liked knowing my word meant something.",
+          at: hoursAgo(26),
+          date: "2026-09-14",
+          vote: "boo",
+        },
+      ],
+    };
+  }
   if (list === "feedback") {
     return {
       feedback: [

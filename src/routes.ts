@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 /**
  * The whole router.
  *
- * Five pages, no library. `vercel.json` already rewrites every non-`/api/` path
+ * Six pages, no library. `vercel.json` already rewrites every non-`/api/` path
  * to `index.html`, so a real URL is a matter of reading `location.pathname` and
  * pushing to it -- and both of the pages beside the game want a real URL: they
  * are pages you link someone to, open in a second tab, and reach with the back
@@ -16,12 +16,15 @@ import { useEffect, useState } from "react";
  * that had not moved since breakfast. Two pages, two links to send, and the
  * header says which one you are on.
  *
- * The last two are the word queue and the feedback players have left, and they
- * are no longer the same kind of page. The queue is linked: suggest a word and
+ * The last three are the word queue, the feedback players have left, and the
+ * Freeform week verdict, and they are no longer the same kind of page. The queue is linked: suggest a word and
  * the sheet offers you the list it joined, because a queue of words is
  * everybody's. The feedback page is linked from nowhere -- a note is something
  * one player wrote to us, and the pile of them is not a page to hand the next
- * player. Neither has a tab; neither is part of the daily round.
+ * player. The freeform page is the same kind of thing again, and unlinked for
+ * the same reason plus one of its own: it shows a running vote on a trial the
+ * players are still in, and a tally is not a thing to put in front of the
+ * people still voting. None has a tab; none is part of the daily round.
  *
  * Reading the notes and marking any row are both a curator's, and gated as
  * such: see api/review.ts.
@@ -35,12 +38,14 @@ export type Route =
   | "leaderboard"
   | "found-words"
   | "suggested-words"
-  | "feedback";
+  | "feedback"
+  | "freeform-feedback";
 
 export const LEADERBOARD_PATH = "/leaderboard";
 export const FOUND_WORDS_PATH = "/found-words";
 export const SUGGESTED_WORDS_PATH = "/suggested-words";
 export const FEEDBACK_PATH = "/feedback";
+export const FREEFORM_FEEDBACK_PATH = "/freeform-feedback";
 
 /**
  * Whether the route lives in memory rather than in the address bar, and what it
@@ -63,7 +68,7 @@ let memoryRoute: Route = "game";
 /**
  * Keep the route in memory instead of the address bar.
  *
- * Call once, before anything renders. The two unlinked curator pages become
+ * Call once, before anything renders. The three unlinked curator pages become
  * unreachable when this is on, which is correct: they are reached by typing a
  * URL, and there is no URL to type.
  */
@@ -85,6 +90,7 @@ export function routeFor(pathname: string): Route {
   if (path === FOUND_WORDS_PATH) return "found-words";
   if (path === SUGGESTED_WORDS_PATH) return "suggested-words";
   if (path === FEEDBACK_PATH) return "feedback";
+  if (path === FREEFORM_FEEDBACK_PATH) return "freeform-feedback";
   return "game";
 }
 
@@ -94,6 +100,7 @@ export function pathFor(route: Route): string {
   if (route === "found-words") return FOUND_WORDS_PATH;
   if (route === "suggested-words") return SUGGESTED_WORDS_PATH;
   if (route === "feedback") return FEEDBACK_PATH;
+  if (route === "freeform-feedback") return FREEFORM_FEEDBACK_PATH;
   return "/";
 }
 

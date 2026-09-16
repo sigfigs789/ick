@@ -56,6 +56,39 @@ export interface SuggestedWord {
   liveApproved: boolean;
 }
 
+/** The side a player came down on in the Freeform week trial. */
+export type Vote = "love" | "boo";
+
+/** One note left under the Freeform week vote. */
+export interface FreeformNote {
+  id: number;
+  text: string;
+  at: string;
+  /** The puzzle the writer was looking at, or null on an older event. */
+  date: string | null;
+  /**
+   * The verdict this note sits beside: the one it was sent with, or failing
+   * that the one its writer ended up on. Null where they never voted at all --
+   * a note without a tap is still a note, and guessing a side for it would be
+   * putting words in somebody's mouth.
+   */
+  vote: Vote | null;
+}
+
+/** How the two sides stand: a count of players, not of taps. */
+export interface FreeformTally {
+  love: number;
+  boo: number;
+}
+
+/** The whole trial as the page reads it. */
+export interface FreeformVerdict {
+  tally: FreeformTally;
+  /** The same tally per puzzle date, oldest day first. */
+  byDate: readonly (FreeformTally & { date: string })[];
+  notes: readonly FreeformNote[];
+}
+
 /** One note a player left in the how-to-play sheet. */
 export interface FeedbackNote {
   id: number;
@@ -106,7 +139,7 @@ function keyQuery(): string {
 }
 
 async function read<T>(
-  list: "suggested-words" | "feedback",
+  list: "suggested-words" | "feedback" | "freeform",
   pick: (body: Record<string, unknown>) => T,
 ): Promise<T> {
   // `vite dev` serves no edge functions, so these lists have no server to ask
@@ -131,6 +164,11 @@ export function fetchSuggestedWords(): Promise<SuggestedWord[]> {
 /** Every note players have left, newest first. */
 export function fetchFeedback(): Promise<FeedbackNote[]> {
   return read("feedback", (body) => parseFeedback(body.feedback));
+}
+
+/** The Freeform week trial: where the vote stands, and what people wrote. */
+export function fetchFreeform(): Promise<FreeformVerdict> {
+  return read("freeform", parseFreeform);
 }
 
 /**
@@ -164,6 +202,56 @@ function parseWords(raw: unknown): SuggestedWord[] {
     });
   }
   return words;
+}
+
+/**
+ * The trial as a typed value.
+ *
+ * Every part of it is optional in the reading: a tally with no votes yet, a
+ * breakdown with no dated ones, a list with no notes. All three are real states
+ * of a trial in its first hours, and none of them is an error -- the page says
+ * "nothing yet" where it finds one, which is different from "could not load".
+ */
+function parseFreeform(body: Record<string, unknown>): FreeformVerdict {
+  return {
+    tally: parseTally(body.tally),
+    byDate: Array.isArray(body.byDate)
+      ? body.byDate.flatMap((entry) => {
+          if (!entry || typeof entry !== "object") return [];
+          const row = entry as Record<string, unknown>;
+          if (typeof row.date !== "string" || row.date === "") return [];
+          return [{ date: row.date, ...parseTally(row) }];
+        })
+      : [],
+    notes: parseFreeformNotes(body.notes),
+  };
+}
+
+function parseTally(raw: unknown): FreeformTally {
+  const row = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  return {
+    love: typeof row.love === "number" ? row.love : 0,
+    boo: typeof row.boo === "number" ? row.boo : 0,
+  };
+}
+
+function parseFreeformNotes(raw: unknown): FreeformNote[] {
+  if (!Array.isArray(raw)) return [];
+  const notes: FreeformNote[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as Record<string, unknown>;
+    const text = typeof row.text === "string" ? row.text.trim() : "";
+    if (text === "") continue;
+    notes.push({
+      id: typeof row.id === "number" ? row.id : notes.length,
+      text,
+      at: typeof row.at === "string" ? row.at : "",
+      date: typeof row.date === "string" ? row.date : null,
+      vote: row.vote === "love" || row.vote === "boo" ? row.vote : null,
+    });
+  }
+  return notes;
 }
 
 /** Anything that is not one of the two marks is an unmarked row. */
