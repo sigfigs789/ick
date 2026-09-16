@@ -26,7 +26,7 @@
     },
     "ios": {
       "bundleIdentifier": "app.wordink",
-      "buildNumber": "4",
+      "buildNumber": "5",
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
