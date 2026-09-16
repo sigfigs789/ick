@@ -3079,26 +3079,45 @@ export function formatRarityScore(zipf: number, date?: string): string {
 }
 
 /**
- * Sum the displayed rarity scores earned during one game session.
+ * Sum the rarity scores earned during one game session, as the sum comes out.
  *
- * Rounded to hundredths, which is the precision the words themselves carry: a
- * deep-tail find is priced to the cent (9.95), so a total rounded to tenths is
- * a number the player cannot reconstruct from their own board. It used to round
- * to tenths, and a day of 10 + 10 + 9.95 + 10 stored itself as a flat 40 --
- * 39.95 landing exactly on the half and rounding up, then printed as a total
- * nobody could add up to.
+ * Unrounded on purpose: this is the number that goes to the leaderboard, and
+ * the precision of a stored score is the endpoint's to decide (see
+ * api/leaderboard.ts, which normalises every number in a submission to
+ * hundredths). A client that rounds first has made that decision for it, and
+ * cannot be talked out of it afterwards -- the day this game shipped rounding a
+ * day's total to tenths *before* posting it, a puzzle of 10 + 10 + 9.95 + 10
+ * was submitted, stored and shown as a flat 40, and the 39.95 was gone by the
+ * time any server saw it.
  *
- * Rounded at all, rather than left raw, because the sum of a handful of
- * hundredths is a binary fraction with a tail on it, and that tail would reach
- * the leaderboard as 39.950000000000003.
+ * So the sum leaves with its whole binary tail on it (39.950000000000003) and
+ * the endpoint is what makes it 39.95. Anything showing this number to a player
+ * wants `totalRarityScore`.
+ */
+export function rawTotalRarityScore(
+  words: readonly Pick<AcceptedWord, "zipf">[],
+  date?: string
+): number {
+  const scoring = scoringFor(date);
+  return words.reduce((sum, word) => sum + scoring.score(word.zipf), 0);
+}
+
+/**
+ * The same total, to the hundredth: what a player is shown.
+ *
+ * Hundredths because that is the precision the words themselves carry -- a
+ * deep-tail find is priced to the cent (9.95), so a total rounded any coarser
+ * is a number the player cannot reconstruct from their own finds.
+ *
+ * This rounds for the screen and nothing else. It deliberately matches what the
+ * endpoint stores, so the page and the board agree; it is not the thing the
+ * board is told (see `rawTotalRarityScore`).
  */
 export function totalRarityScore(
   words: readonly Pick<AcceptedWord, "zipf">[],
   date?: string
 ): number {
-  const scoring = scoringFor(date);
-  const total = words.reduce((sum, word) => sum + scoring.score(word.zipf), 0);
-  return roundToCents(total);
+  return roundToCents(rawTotalRarityScore(words, date));
 }
 
 /**

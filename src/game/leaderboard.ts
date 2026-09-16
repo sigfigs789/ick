@@ -15,8 +15,8 @@ import {
   rarityFor,
   rarityForZipf,
   rarityScore,
+  rawTotalRarityScore,
   topRarityScore,
-  totalRarityScore,
 } from "./dictionary";
 import { todayDateString } from "./date";
 import { FIRST_PUZZLE } from "./drop";
@@ -568,6 +568,14 @@ interface ScorePayload {
  * derives both the words it shows from these rows -- a player's name is the
  * rarest across all of them, and the weekly detail is the rarest inside the
  * window. Nothing here asserts what the player should be called.
+ *
+ * Every number here goes up unrounded. What precision a stored score has is the
+ * endpoint's decision, and it makes it: api/leaderboard.ts rounds each number in
+ * a submission to hundredths as it reads it. A client that rounds first has
+ * taken that decision away, and nothing downstream can give it back -- this
+ * file used to post a day's total already rounded to tenths, so a puzzle worth
+ * 39.95 was stored as 40 and the hundredths were gone before any server saw
+ * them. The screen rounds; the wire does not.
  */
 function scoreFor(
   date: string,
@@ -581,8 +589,8 @@ function scoreFor(
     // The measurement this puzzle gave it. This is the number the board shows
     // back as the player's find (see `scoreOf`), and it is the only place the
     // puzzle's date is still known, so it has to leave carrying that price.
-    zipf: Math.round((rarityFor(best.word, date)?.zipf ?? best.zipf) * 100) / 100,
-    total: totalRarityScore(words, date),
+    zipf: rarityFor(best.word, date)?.zipf ?? best.zipf,
+    total: rawTotalRarityScore(words, date),
     top: topRarityScore(words, date),
     // Capped rather than trusted: the endpoint bounds this too, and sending more
     // than the day's guess limit allows would only get the batch rejected.
@@ -615,7 +623,7 @@ function scoreFor(
 function foundFor(date: string, words: readonly AcceptedWord[]): FoundPayload[] {
   return words.slice(0, maxGuessesFor(date)).map((word) => ({
     word: word.word.toLowerCase(),
-    zipf: Math.round((rarityFor(word.word, date)?.zipf ?? word.zipf) * 100) / 100,
+    zipf: rarityFor(word.word, date)?.zipf ?? word.zipf,
   }));
 }
 

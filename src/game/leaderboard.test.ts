@@ -7,7 +7,7 @@ import {
   submitScore,
   syncHistory,
 } from "./leaderboard";
-import { rarityScore } from "./dictionary";
+import { rarityScore, rawTotalRarityScore } from "./dictionary";
 import { handleFor } from "./handle";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
@@ -74,6 +74,30 @@ describe("submitting a score", () => {
     const day = (body.scores as Record<string, number>[])[0];
     // The two numbers the game already shows the player, not a third scheme.
     expect(day.top).toBeLessThanOrEqual(day.total);
+  });
+
+  it("posts the total unrounded, and leaves the precision to the endpoint", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+    const today = todayDateString();
+    // Three perfect deep-tail finds and one priced a nickel under: 39.95, which
+    // this file used to round to tenths before posting -- landing on the half,
+    // rounding up, and storing a 40 no player could add their finds up to.
+    const words: AcceptedWord[] = [
+      { word: "togethering", rarity: "Legend", zipf: -1.57 },
+      { word: "togethership", rarity: "Legend", zipf: -1.57 },
+      { word: "untogether", rarity: "Legend", zipf: 0.53 },
+      { word: "untogetherness", rarity: "Legend", zipf: -1.57 },
+    ];
+
+    submitScore({ date: today, isToday: true, words });
+    const [day] = posted(fetchMock).scores as { total: number }[];
+
+    // The raw sum, tail and all. The endpoint rounds it to 39.95 as it reads it
+    // (see api/leaderboard.ts) -- what a stored score's precision is belongs to
+    // the server, and a client that rounds first has decided it for good.
+    expect(day.total).toBe(rawTotalRarityScore(words, today));
+    expect(Math.round(day.total * 100) / 100).toBe(39.95);
   });
 
   it("sends every word found, in the order they were found", () => {
