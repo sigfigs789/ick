@@ -7,6 +7,9 @@
 //                  suggestions, firstAt, lastAt, mark, liveApproved }] }
 // GET /api/review?list=feedback&limit=200
 //   -> { feedback: [{ id, text, at, mark }] }
+// GET /api/review?list=freeform&limit=200
+//   -> { tally: { love, boo }, byDate: [{ date, love, boo }],
+//        notes: [{ id, text, at, date, vote }] }
 //   400 bad-list / bad-limit, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
@@ -42,6 +45,10 @@
 //   suggested-words  anybody. The word rules sheet points whoever just suggested
 //                    a word at the queue it joined, so a keyless reader is the
 //                    ordinary case. A queue of words is everybody's.
+//   freeform         keyed, on the same terms as the feedback below it: the
+//                    notes are the same kind of thing, and the tally beside
+//                    them is a trial's running result, which is not a number to
+//                    hand a player mid-trial.
 //   feedback         keyed, when REVIEW_TOKEN is set. Nothing in the app links
 //                    to it: a note is something one player wrote to us, and the
 //                    pile of them is not a page to hand the next player. Unset,
@@ -90,6 +97,29 @@ interface FeedbackRow {
   feedback: string | null;
   created_at: string;
   mark: string | null;
+}
+
+/** One row as `list_freeform_votes` returns it. */
+interface FreeformVoteRow {
+  voter: string;
+  vote: string;
+  puzzle_date: string | null;
+  created_at: string;
+}
+
+/** One row as `list_freeform_feedback` returns it. */
+interface FreeformNoteRow {
+  id: number;
+  feedback: string | null;
+  puzzle_date: string | null;
+  vote: string | null;
+  created_at: string;
+}
+
+/** A love/boo count, which is what every part of the freeform read comes to. */
+interface Tally {
+  love: number;
+  boo: number;
 }
 
 /** The two marks a row can wear, and nothing else. */
@@ -276,7 +306,7 @@ async function handlePost(request: Request): Promise<Response> {
 async function handleGet(request: Request): Promise<Response> {
   const params = new URL(request.url).searchParams;
   const list = params.get("list");
-  if (list !== "suggested-words" && list !== "feedback") {
+  if (list !== "suggested-words" && list !== "feedback" && list !== "freeform") {
     return reply(400, { ok: false, reason: "bad-list" });
   }
 
@@ -286,7 +316,7 @@ async function handleGet(request: Request): Promise<Response> {
   // unset token: that would take the feedback page away from a deployment that
   // has always read it without one, which is a thing to opt into rather than to
   // wake up to.
-  if (list === "feedback" && (process.env.REVIEW_TOKEN ?? "") !== "" && !authorised(request)) {
+  if (list !== "suggested-words" && (process.env.REVIEW_TOKEN ?? "") !== "" && !authorised(request)) {
     return reply(401, { ok: false, reason: "unauthorised" });
   }
 
@@ -307,6 +337,32 @@ async function handleGet(request: Request): Promise<Response> {
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
+    if (list === "freeform") {
+      // Two reads rather than one, because the votes and the notes are two
+      // questions -- and together rather than in sequence, since neither
+      // depends on the other and the page shows them as one answer.
+      const [voteRows, noteRows] = await Promise.all([
+        rpc<FreeformVoteRow[] | null>("list_freeform_votes", {}),
+        rpc<FreeformNoteRow[] | null>("list_freeform_feedback", { p_limit: limit }),
+      ]);
+      const votes = voteRows ?? [];
+      return reply(200, {
+        // Counted here rather than in SQL because the two counts the page wants
+        // are the same collapse read twice, and the row that carries them --
+        // one voter, one verdict -- is the thing the database is authoritative
+        // about. What does not leave this function is the voter id: the page
+        // shows sides and notes, and has no use for who.
+        tally: tally(votes),
+        byDate: byDate(votes),
+        notes: (noteRows ?? []).map((row) => ({
+          id: row.id,
+          text: row.feedback ?? "",
+          at: row.created_at,
+          date: row.puzzle_date,
+          vote: row.vote === "love" || row.vote === "boo" ? row.vote : null,
+        })),
+      });
+    }
     if (list === "feedback") {
       const rows = await rpc<FeedbackRow[] | null>("list_feedback", { p_limit: limit });
       return reply(200, {
@@ -345,4 +401,39 @@ async function handleGet(request: Request): Promise<Response> {
     console.error("[review] read failed:", error instanceof Error ? error.message : error);
     return reply(502, { ok: false, reason: "unavailable" });
   }
+}
+
+/** How the two sides stand, over every voter given. */
+function tally(votes: readonly FreeformVoteRow[]): Tally {
+  return {
+    love: votes.filter((row) => row.vote === "love").length,
+    boo: votes.filter((row) => row.vote === "boo").length,
+  };
+}
+
+/**
+ * The same tally cut by the puzzle the verdict was cast on, oldest day first.
+ *
+ * The week is short and the difference between its ends is most of what there
+ * is to learn from it: a vote on the first day is a first impression of a
+ * notice, and one on the last is a week of actually playing under the rules.
+ * A flat love-to-boo hides exactly that.
+ *
+ * A vote whose event carried no date is left out of this breakdown and still
+ * counted in the tally above -- it is a real verdict from a real player, and
+ * the only thing missing is which day to file it under.
+ */
+function byDate(votes: readonly FreeformVoteRow[]): Array<Tally & { date: string }> {
+  const days = new Map<string, Tally>();
+  for (const row of votes) {
+    const date = row.puzzle_date;
+    if (!date) continue;
+    const day = days.get(date) ?? { love: 0, boo: 0 };
+    if (row.vote === "love") day.love += 1;
+    else if (row.vote === "boo") day.boo += 1;
+    days.set(date, day);
+  }
+  return [...days.entries()]
+    .map(([date, counts]) => ({ date, ...counts }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }

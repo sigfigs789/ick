@@ -21,6 +21,7 @@ export function ReviewPage({
   onRefresh,
   onRetry,
   empty,
+  isEmpty,
   markFailed,
   children,
 }: {
@@ -35,6 +36,16 @@ export function ReviewPage({
   onRetry: () => void;
   /** What to say when the read worked and there was nothing in it. */
   empty: string;
+  /**
+   * Whether there is nothing to show, where that is not simply `count === 0`.
+   *
+   * The two queue pages are a count of rows and nothing else, so the count
+   * answers it. The freeform report is a tally *and* a list of notes, and a
+   * trial with votes but no notes yet has plenty to show -- taking the page
+   * away because one of its two halves is empty is the wrong answer to the
+   * wrong question.
+   */
+  isEmpty?: boolean;
   /** Whether a mark failed to save, which the page has to admit to. */
   markFailed?: boolean;
   children: ReactNode;
@@ -73,7 +84,9 @@ export function ReviewPage({
           </button>
         </p>
       )}
-      {state === "ready" && count === 0 && <p className="review__status">{empty}</p>}
+      {state === "ready" && (isEmpty ?? count === 0) && (
+        <p className="review__status">{empty}</p>
+      )}
       {/* Above the list rather than on the row that failed: the mark has
           already snapped back there, and what a reader needs next is the reason
           and the knowledge that nothing was saved. */}
@@ -82,7 +95,7 @@ export function ReviewPage({
           Couldn{"’"}t save that mark — it{"’"}s been put back.
         </p>
       )}
-      {state === "ready" && count > 0 && children}
+      {state === "ready" && !(isEmpty ?? count === 0) && children}
 
       <button
         type="button"
