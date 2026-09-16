@@ -267,14 +267,33 @@ export function LeaderboardScreen() {
 function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
   const theme = useTheme();
 
+  /*
+   * Two rows are dressed differently, and the gold belongs to the rarer one.
+   *
+   * Leading the board is what a player is racing for, so rank 1 takes the same
+   * gold the crowned best word wears elsewhere, with the trophy standing in for
+   * the digit -- rank 1 is what a trophy *means*, so it replaces the number
+   * instead of crowding the name. Being yourself is merely where you are, so
+   * your own row is the quieter inset grey: enough to find at a glance while
+   * scrolling, not enough to look like a prize.
+   *
+   * Both at once keeps the gold, because top of the board is the rarer thing to
+   * be and the row already says "you" beside the name. This is the treatment
+   * the website's board has (see `.leaderboard__row--leader` in index.css); the
+   * two front-ends showing the same standings should dress them the same way.
+   */
+  const isLeader = entry.rank === 1;
+  const background = isLeader ? theme.bestWordBg : isYou ? theme.bgInset : theme.cardBg;
+  const outline = isLeader ? theme.bestWordAccent : theme.border;
+
   return (
     <View
       style={[
         styles.row,
         {
-          backgroundColor: isYou ? theme.bestWordBg : theme.cardBg,
-          borderColor: isYou ? theme.bestWordAccent : theme.border,
-          borderWidth: isYou ? 1.5 : StyleSheet.hairlineWidth,
+          backgroundColor: background,
+          borderColor: outline,
+          borderWidth: isLeader || isYou ? 1.5 : StyleSheet.hairlineWidth,
         },
       ]}
       accessible
@@ -284,10 +303,18 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
         `${entry.windowWord ? `, best word ${entry.windowWord}` : ''}`
       }
     >
-      <Text style={[styles.rank, { color: theme.fgMuted }]}>{entry.rank}</Text>
+      {/* The rank itself stays in the row's accessibility label above, because
+          "first" is the part a screen reader needs and a trophy glyph is not a
+          rank. */}
+      <Text style={[styles.rank, { color: theme.fgMuted }]}>
+        {isLeader ? '\u{1F3C6}' : entry.rank}
+      </Text>
 
       <View style={styles.who}>
-        <Text style={[styles.name, { color: theme.fg }]} numberOfLines={1}>
+        <Text
+          style={[styles.name, isLeader && styles.nameLeader, { color: theme.fg }]}
+          numberOfLines={1}
+        >
           {entry.name}
           {isYou && <Text style={{ color: theme.fgMuted }}> · you</Text>}
         </Text>
@@ -299,7 +326,9 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
       </View>
 
       <View style={styles.scoreBlock}>
-        <Text style={[styles.score, { color: theme.fg }]}>{formatScore(entry.score)}</Text>
+        <Text style={[styles.score, isLeader && styles.scoreLeader, { color: theme.fg }]}>
+          {formatScore(entry.score)}
+        </Text>
         <Text style={[styles.puzzles, { color: theme.fgFaint }]}>
           {entry.puzzles} {entry.puzzles === 1 ? 'puzzle' : 'puzzles'}
         </Text>
@@ -376,6 +405,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  /* A step louder than the rows under it, at the row's own size so nothing
+     below it moves. */
+  nameLeader: {
+    fontWeight: '900',
+  },
   word: {
     fontSize: 12,
   },
@@ -386,6 +420,9 @@ const styles = StyleSheet.create({
   score: {
     fontSize: 16,
     fontWeight: '800',
+  },
+  scoreLeader: {
+    fontWeight: '900',
   },
   puzzles: {
     fontSize: 11,

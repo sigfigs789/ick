@@ -1,5 +1,5 @@
 import { setReporting } from '../../../src/analytics';
-import { installLocalStorage } from './storage';
+import { installLocalStorage, installSessionStorage } from './storage';
 import { installFetchBaseUrl } from './net';
 
 /**
@@ -18,8 +18,11 @@ import { installFetchBaseUrl } from './net';
  */
 export function installHost(): void {
   // Synchronous key-value storage, which is what the game's persistence layer
-  // is written against and what a device does not have.
+  // is written against and what a device does not have. Both halves of the Web
+  // Storage API: the game reaches for `sessionStorage` on the first guess, and
+  // a missing global is a thrown ReferenceError here rather than `undefined`.
   installLocalStorage();
+  installSessionStorage();
 
   // `/api/...` resolved against the site, since there is no page for a
   // root-relative path to be relative to.

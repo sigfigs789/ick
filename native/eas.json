@@ -19,9 +19,20 @@
       "android": {
         "buildType": "app-bundle"
       }
+    },
+    "simulator": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6812644489",
+        "appleTeamId": "RMVHUCXLJ4"
+      }
+    }
   }
 }

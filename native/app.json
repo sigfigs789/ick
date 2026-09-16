@@ -13,7 +13,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a1b"
+      "backgroundColor": "#fafafa"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -26,7 +26,7 @@
     },
     "ios": {
       "bundleIdentifier": "app.wordink",
-      "buildNumber": "1",
+      "buildNumber": "7",
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
@@ -40,7 +40,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a1a1b"
+        "backgroundColor": "#fafafa"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
