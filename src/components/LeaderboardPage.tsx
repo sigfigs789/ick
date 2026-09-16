@@ -20,7 +20,7 @@ import {
   previousMonthStart,
 } from "../game/month";
 import { weekLabel, weekStart } from "../game/week";
-import { formatScore } from "../game/dictionary";
+import { formatScore, formatTotal } from "../game/dictionary";
 import { navigate } from "../routes";
 import { useNarrowLayout } from "../hooks/useNarrowLayout";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
@@ -804,8 +804,9 @@ function Board({
  * and one decimal would print two different finds as the same number -- and it
  * is the fixed cutoffs the shown value keys off, so rounding it here would put
  * the number out of step with the rank the same word wears everywhere else in
- * the app. The total above it stays at one decimal: it is a sum, which is the
- * line `formatScore` itself draws.
+ * the app. The total above it carries two decimals as well, through
+ * `formatTotal` -- a total is a sum of numbers priced to the cent, so a tenth
+ * of it is a digit the player cannot account for.
  */
 /**
  * What to call the player reading the page.
@@ -863,7 +864,7 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
       <span className="leaderboard__meta">
         {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"}
       </span>
-      <span className="leaderboard__score">{entry.score.toFixed(1)}</span>
+      <span className="leaderboard__score">{formatTotal(entry.score)}</span>
       {entry.windowScore > 0 && (
         <span className="leaderboard__best">
           {/* Two numbers stacked in one column are told apart by their size and

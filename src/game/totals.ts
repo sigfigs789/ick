@@ -48,7 +48,10 @@ export function windowTotals(date: string = todayDateString()): WindowTotals {
 }
 
 // Rounded once at the end rather than per day, so the window total matches the
-// sum a player adds up from their own daily totals.
+// sum a player adds up from their own daily totals. To hundredths, like the
+// daily totals themselves and like the boards that add them up -- a week of
+// two-decimal days does not come to a round tenth, and rounding it to one would
+// put this number a hundredth away from the board it promises to agree with.
 function round(total: number): number {
-  return Math.round(total * 10) / 10;
+  return Math.round(total * 100) / 100;
 }

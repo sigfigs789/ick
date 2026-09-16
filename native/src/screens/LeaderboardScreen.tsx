@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { addDays, formatDateLabel, todayDateString } from '../../../src/game/date';
-import { formatScore } from '../../../src/game/dictionary';
+import { formatScore, formatTotal } from '../../../src/game/dictionary';
 import {
   BOARD_LIMIT,
   dayFloor,
@@ -299,7 +299,7 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
       accessible
       accessibilityLabel={
         `${isYou ? 'You, ' : ''}rank ${entry.rank}, ${entry.name}, ` +
-        `${formatScore(entry.score)} across ${entry.puzzles} ${entry.puzzles === 1 ? 'puzzle' : 'puzzles'}` +
+        `${formatTotal(entry.score)} across ${entry.puzzles} ${entry.puzzles === 1 ? 'puzzle' : 'puzzles'}` +
         `${entry.windowWord ? `, best word ${entry.windowWord}` : ''}`
       }
     >
@@ -327,7 +327,7 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
 
       <View style={styles.scoreBlock}>
         <Text style={[styles.score, isLeader && styles.scoreLeader, { color: theme.fg }]}>
-          {formatScore(entry.score)}
+          {formatTotal(entry.score)}
         </Text>
         <Text style={[styles.puzzles, { color: theme.fgFaint }]}>
           {entry.puzzles} {entry.puzzles === 1 ? 'puzzle' : 'puzzles'}

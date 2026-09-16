@@ -4,6 +4,8 @@ import {
   rarityScore,
   formatRarityScore,
   formatScore,
+  formatTotal,
+  totalRarityScore,
   unattestedZipf,
 } from "./dictionary";
 
@@ -118,5 +120,30 @@ describe("score formatting", () => {
   it("always shows one decimal under the legacy system", () => {
     expect(formatRarityScore(rarityFor("autecism", BEFORE)!.zipf, BEFORE)).toBe("9.4");
     expect(formatScore(9.4, BEFORE)).toBe("9.4");
+  });
+
+  it("shows a total's two decimals whatever band it would fall in", () => {
+    // A total has no bands: every total clears any single word's ceiling, so the
+    // question `formatScore` answers has no answer for one.
+    expect(formatTotal(39.95)).toBe("39.95");
+    expect(formatTotal(40)).toBe("40.00");
+    expect(formatTotal(2.5)).toBe("2.50");
+  });
+});
+
+describe("a puzzle's total", () => {
+  it("keeps the hundredths its words were priced in", () => {
+    // Three perfect deep-tail finds and one a nickel under -- 39.95, which
+    // rounded to tenths landed on the half and became a flat 40.
+    const words = [{ zipf: -1.57 }, { zipf: -1.57 }, { zipf: 0.53 }, { zipf: -1.57 }];
+    expect(words.map((w) => rarityScore(w.zipf, WIDE))).toEqual([10, 10, 9.95, 10]);
+    expect(totalRarityScore(words, WIDE)).toBe(39.95);
+  });
+
+  it("rounds the float tail off the sum rather than carrying it to the board", () => {
+    // Four words at 9.95 is 39.800000000000004 added up in binary.
+    expect(totalRarityScore([{ zipf: 0.53 }, { zipf: 0.53 }, { zipf: 0.53 }, { zipf: 0.53 }], WIDE)).toBe(
+      39.8
+    );
   });
 });

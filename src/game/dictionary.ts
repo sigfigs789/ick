@@ -3078,14 +3078,41 @@ export function formatRarityScore(zipf: number, date?: string): string {
   return scoring.format(scoring.score(zipf));
 }
 
-/** Sum the displayed rarity scores earned during one game session. */
+/**
+ * Sum the displayed rarity scores earned during one game session.
+ *
+ * Rounded to hundredths, which is the precision the words themselves carry: a
+ * deep-tail find is priced to the cent (9.95), so a total rounded to tenths is
+ * a number the player cannot reconstruct from their own board. It used to round
+ * to tenths, and a day of 10 + 10 + 9.95 + 10 stored itself as a flat 40 --
+ * 39.95 landing exactly on the half and rounding up, then printed as a total
+ * nobody could add up to.
+ *
+ * Rounded at all, rather than left raw, because the sum of a handful of
+ * hundredths is a binary fraction with a tail on it, and that tail would reach
+ * the leaderboard as 39.950000000000003.
+ */
 export function totalRarityScore(
   words: readonly Pick<AcceptedWord, "zipf">[],
   date?: string
 ): number {
   const scoring = scoringFor(date);
   const total = words.reduce((sum, word) => sum + scoring.score(word.zipf), 0);
-  return Math.round(total * 10) / 10;
+  return roundToCents(total);
+}
+
+/**
+ * Format a summed total for display: always two decimals.
+ *
+ * Unlike `formatScore`, which is a single word's score and shows one decimal or
+ * two depending on which band the word sits in, a total has no bands -- every
+ * total is above any word's ceiling, so the band question has no answer for it.
+ * Two decimals everywhere means the number on a board is the number a player
+ * gets by adding up their finds, and the tenths a total used to print are what
+ * made 39.95 read as 40.
+ */
+export function formatTotal(total: number): string {
+  return total.toFixed(2);
 }
 
 /** Highest displayed rarity score earned in the current puzzle. */
