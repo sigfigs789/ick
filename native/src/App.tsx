@@ -132,8 +132,18 @@ export function App() {
 
                 Dropping it in the shared header instead would have taken the
                 chip off the website too, where it is doing its job. */}
+            {/* Two words, and only one of them is the name of anything. "Word"
+                is what every game in this category is called; "Ink" is the half
+                that makes it this one, so it wears the Mythic red -- the tier
+                colour that is the same value in both themes, which is why it
+                can be set here without a light and a dark spelling.
+
+                One Text with a nested one rather than a row of two: a wordmark
+                that wraps or spaces oddly is a broken name, and nesting keeps
+                the pair kerned and wrapped as the single word it is. */}
             <Text style={[styles.wordmark, { color: theme.fg }]} accessibilityRole="header">
-              WordInk
+              Word
+              <Text style={{ color: theme.rarity.Mythic.dot }}>Ink</Text>
             </Text>
 
             <Pressable
