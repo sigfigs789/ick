@@ -2408,7 +2408,10 @@ h2 {
      each side). What the list has to hold clear of its scrolling edges. */
   --dock-bleed: 4px;
 }
-/* Five rows and the top of the sixth. The sliver is the affordance: a list cut
+/* Five rows and the top of the sixth -- the cap the wide layout keeps, where
+   three boards share the page and none of them can have all of it. The narrow
+   layout lifts it a little further down this file. The sliver is the
+   affordance: a list cut
    cleanly at five looks like a list of five, and overlay scrollbars only appear
    once you are already scrolling -- so the half-row is what says there is more.
    `contain` keeps a flick inside the board from carrying on into the page.
@@ -2426,6 +2429,56 @@ h2 {
   scrollbar-width: thin;
   padding-inline: var(--dock-bleed);
   margin-inline: calc(-1 * var(--dock-bleed));
+}
+/* On the narrow layout the five-row cap is a rule against a page that no longer
+   exists. Five was the answer to three boards stacked in one scroll: a board at
+   its full length pushed the next heading off the screen, and the page read as
+   one long column of names. The pills made each window its own page -- there is
+   only ever one board under them -- so the room the other two used to need is
+   just room, and a board that stops a third of the way down a phone is throwing
+   it away.
+
+   No number replaces the five. The page becomes a column the height of the
+   screen, and the list is the part of it that gives: everything around it --
+   heading, nav, column header, the back button under it -- takes what it needs
+   and the board's rows take the rest. So the cut lands exactly above the back
+   button on every phone, and the page itself never scrolls; only the rows do,
+   which is the one scroll a reader wants here.
+
+   `flex-shrink` and not `flex-grow`: a board of three rows stays three rows
+   tall rather than stretching into a box with a hole under its last name. The
+   list only ever shrinks, and only as far as the screen makes it.
+
+   Scoped by `:has()` because the height has to come from the app shell, which
+   is shared with the finds page -- this is the one page that wants it. */
+/* On the narrow layout the board is not a box inside a page -- it is the page.
+   The five-row cap and the scroller under it were the answer to three boards
+   stacked in one column: a board at its full length pushed the next heading off
+   the screen, and the whole thing read as one long list of names with headings
+   loose in it. The pills ended that. There is only ever one board under them,
+   so there is nothing below it to protect, and a list that stops a third of the
+   way down a phone and scrolls inside itself is asking for a second scroll
+   gesture to read a page that would have fitted in one.
+
+   So the rows just run, and the page scrolls -- which is exactly what the finds
+   page does with the same shape of list on the same screens, and the two pages
+   are a swipe apart in the header.
+
+   The docked row keeps working: with no scroller of its own the sticky edges
+   resolve against the page, so your row rides the bottom of the screen while it
+   is below the fold and sits in the flow once you reach it. Same rule, same
+   behaviour, one scrollport up. */
+@media (max-width: 63.999rem) {
+  .leaderboard__list {
+    max-height: none;
+    overflow-y: visible;
+    /* Both were the scroller's: nothing to contain, and the side padding was
+       room for the docked row's ring against a clipped edge that is now gone.
+       Left in place they would only inset the rows from the column header. */
+    overscroll-behavior: auto;
+    padding-inline: 0;
+    margin-inline: 0;
+  }
 }
 /* Rank and score are fixed columns; the name takes what is left and the meta
    line tucks under it, so a long name truncates instead of shoving the score

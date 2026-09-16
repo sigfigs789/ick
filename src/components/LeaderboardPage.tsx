@@ -731,13 +731,12 @@ function Board({
             <span>Total score</span>
             <span>Best find</span>
           </p>
-          {/* Five rows of the fifteen, and the rest scrolled to.
-              A board that runs its full length pushes the next section off the
-              screen entirely, so the page reads as one column of names with
-              headings in it -- the boards were what made the sections hard to
-              tell apart. Five rows is a top five, which is the part anybody
-              reads first, and the whole fifteen is one flick away.
-              Focusable, because a region that scrolls has to be reachable by
+          {/* Fifteen rows. How many of them are on screen at once is the
+              stylesheet's: three boards side by side on a laptop each cut to
+              five with the rest one flick away, so no one of them runs the
+              length of the page; one board on a phone running its full length,
+              because there is nothing under it to push off.
+              Focusable, because where it does scroll it has to be reachable by
               keyboard as well as by thumb; labelled so it is announced as the
               board it belongs to rather than as a bare scroll box. */}
           <ol
