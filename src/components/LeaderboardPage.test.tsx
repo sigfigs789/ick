@@ -278,9 +278,33 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     expect(boardRows("This week")[0]).toHaveTextContent("9.81");
     expect(boardRows("This week")[1]).toHaveTextContent("10.00");
-    // The total is a sum and keeps its single decimal -- the two-decimal rule
-    // is about one word's score, which is the line `formatScore` draws.
-    expect(boardRows("This week")[0]).toHaveTextContent("41.2");
+    // The total carries two decimals too: it is a sum of words priced to the
+    // cent, so a tenth of it is a digit the player cannot account for.
+    expect(boardRows("This week")[0]).toHaveTextContent("41.20");
+  });
+
+  it("shows a total's hundredths rather than rounding them into the tenth", async () => {
+    stubFetch({
+      ...OPEN,
+      daily: [
+        {
+          rank: 1,
+          playerId: ALICE,
+          // 10 + 10 + 9.95 + 10: a day of three perfect finds and one priced a
+          // nickel under. At one decimal the sum lands on the half and rounds
+          // up to a flat 40, which is the number this board used to print and
+          // no player could add their finds up to.
+          windowWord: "togethership",
+          windowZipf: -1.57,
+          score: 39.95,
+          puzzles: 1,
+        },
+      ],
+    });
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    expect(boardRows("Today")[0]).toHaveTextContent("39.95");
   });
 
   it("leaves the line off a find today's dictionary cannot price", async () => {

@@ -97,6 +97,7 @@ describe("windowTotals", () => {
   });
 });
 
+/** The hundredths the windows round to, matching `totalRarityScore`. */
 function round(total: number): number {
-  return Math.round(total * 10) / 10;
+  return Math.round(total * 100) / 100;
 }
