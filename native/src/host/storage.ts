@@ -32,30 +32,89 @@ import { Storage as SQLiteStorage } from 'expo-sqlite/kv-store';
  * makes the enumeration real.
  */
 
+/**
+ * The bag of strings a shim reads and writes.
+ *
+ * `expo-sqlite`'s store satisfies this as it is; the in-memory one below is
+ * the whole of what `sessionStorage` needs, since a session's flags are meant
+ * to die with the run that set them.
+ */
+interface StorageBackend {
+  getItemSync(key: string): string | null;
+  setItemSync(key: string, value: string): void;
+  removeItemSync(key: string): void;
+  clearSync(): void;
+  getKeyByIndexSync(index: number): string | null;
+  getLengthSync(): number;
+  getAllKeysSync(): string[];
+}
+
+/**
+ * `sessionStorage`'s backing store: a Map that starts empty every launch.
+ *
+ * The web clears it when the tab closes, and an app run is the same span --
+ * these keys exist to dedupe within one visit (`visits.ts`) and to hold a
+ * live-lookup circuit breaker open (`liveValidate.ts`). Persisting either
+ * across launches would be the wrong answer, not merely a slower one.
+ */
+class MemoryBackend implements StorageBackend {
+  private readonly entries = new Map<string, string>();
+
+  getItemSync(key: string): string | null {
+    return this.entries.has(key) ? (this.entries.get(key) as string) : null;
+  }
+
+  setItemSync(key: string, value: string): void {
+    this.entries.set(key, value);
+  }
+
+  removeItemSync(key: string): void {
+    this.entries.delete(key);
+  }
+
+  clearSync(): void {
+    this.entries.clear();
+  }
+
+  getKeyByIndexSync(index: number): string | null {
+    return [...this.entries.keys()][index] ?? null;
+  }
+
+  getLengthSync(): number {
+    return this.entries.size;
+  }
+
+  getAllKeysSync(): string[] {
+    return [...this.entries.keys()];
+  }
+}
+
 /** The methods the Web Storage API puts on the object itself. */
 class WebStorageShim {
+  constructor(private readonly backend: StorageBackend) {}
+
   getItem(key: string): string | null {
-    return SQLiteStorage.getItemSync(key);
+    return this.backend.getItemSync(key);
   }
 
   setItem(key: string, value: string): void {
-    SQLiteStorage.setItemSync(key, String(value));
+    this.backend.setItemSync(key, String(value));
   }
 
   removeItem(key: string): void {
-    SQLiteStorage.removeItemSync(key);
+    this.backend.removeItemSync(key);
   }
 
   clear(): void {
-    SQLiteStorage.clearSync();
+    this.backend.clearSync();
   }
 
   key(index: number): string | null {
-    return SQLiteStorage.getKeyByIndexSync(index);
+    return this.backend.getKeyByIndexSync(index);
   }
 
   get length(): number {
-    return SQLiteStorage.getLengthSync();
+    return this.backend.getLengthSync();
   }
 
   toString(): string {
@@ -80,7 +139,7 @@ function ownNames(instance: object): Set<string> {
  * The shared code uses both, so the proxy has to serve both -- with the
  * methods always winning, or a stored key named `length` would shadow one.
  */
-function withStoredKeysAsProperties(shim: WebStorageShim): Storage {
+function withStoredKeysAsProperties(shim: WebStorageShim, backend: StorageBackend): Storage {
   const builtin = ownNames(shim);
 
   return new Proxy(shim, {
@@ -121,7 +180,7 @@ function withStoredKeysAsProperties(shim: WebStorageShim): Storage {
      * which is exactly the silent-empty-history failure described at the top.
      */
     ownKeys() {
-      return [...new Set(SQLiteStorage.getAllKeysSync())].filter((key) => !builtin.has(key));
+      return [...new Set(backend.getAllKeysSync())].filter((key) => !builtin.has(key));
     },
 
     getOwnPropertyDescriptor(target, prop) {
@@ -147,7 +206,28 @@ function withStoredKeysAsProperties(shim: WebStorageShim): Storage {
 export function installLocalStorage(): void {
   if (typeof globalThis.localStorage !== 'undefined') return;
   Object.defineProperty(globalThis, 'localStorage', {
-    value: withStoredKeysAsProperties(new WebStorageShim()),
+    value: withStoredKeysAsProperties(new WebStorageShim(SQLiteStorage), SQLiteStorage),
+    writable: false,
+    configurable: true,
+  });
+}
+
+/**
+ * Put `sessionStorage` on the global object, on the same terms.
+ *
+ * Not optional, and not only for completeness. `visits.markSessionEngaged()`
+ * is the first thing `submitWord` calls, and it reads `sessionStorage`
+ * directly. Hermes throws a ReferenceError for a global that was never
+ * defined -- not `undefined`, which the `safeGet` guards around those reads
+ * are written to survive -- so without this the very first guess rejects the
+ * promise before the word is banked. The screen answers by clearing the input
+ * and showing nothing at all, which reads exactly like a game that ignores you.
+ */
+export function installSessionStorage(): void {
+  if (typeof globalThis.sessionStorage !== 'undefined') return;
+  const backend = new MemoryBackend();
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    value: withStoredKeysAsProperties(new WebStorageShim(backend), backend),
     writable: false,
     configurable: true,
   });
