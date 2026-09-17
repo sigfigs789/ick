@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Feedback } from "../hooks/useDailyPuzzle";
+import type { SubmissionResult } from "../game/types";
 
 /** One breath of the border pulse, matching input-checking-pulse in index.css. */
 const PULSE_MS = 1200;
@@ -10,7 +11,11 @@ interface Props {
   feedback: Feedback | null;
   /** A live lookup is running and the player is waiting on it. */
   checking?: boolean;
-  onSubmit: (word: string) => void;
+  /**
+   * Answers with the verdict when it has one: a rejected word stays in the box
+   * (see handleSubmit), so anything that can reject must say so.
+   */
+  onSubmit: (word: string) => void | SubmissionResult | Promise<SubmissionResult | void>;
 }
 
 export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmit }: Props) {
@@ -53,15 +58,22 @@ export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmi
     };
   }, [checking, pulsing]);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!value.trim() || disabled) return;
-    onSubmit(value);
-    setValue("");
+    const submitted = value;
+    if (!submitted.trim() || disabled) return;
     // Tapping the on-screen Submit button (as opposed to the keyboard's own
     // "go"/"done" key) shouldn't dismiss the mobile keyboard -- re-focus so
     // the player can keep typing their next guess without tapping back in.
     inputRef.current?.focus();
+    const result = await onSubmit(submitted);
+    // A rejected word stays in the box. A near miss is usually a letter away
+    // from an accepted one, and retyping it from scratch is the player's
+    // punishment for having been close.
+    if (result && !result.ok) return;
+    // A live lookup can answer long after the player moved on, so only clear
+    // the box if what is in it is still the word that was submitted.
+    setValue((current) => (current === submitted ? "" : current));
   }
 
   // Wordle-style shake on a rejected submission. Force a reflow before
@@ -76,7 +88,7 @@ export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmi
   }, [feedback]);
 
   return (
-    <form className="submit-form" onSubmit={handleSubmit}>
+    <form className="submit-form" onSubmit={(e) => void handleSubmit(e)}>
       <label className="submit-form__label" htmlFor="word-input">
         {disabled
           ? "You've completed this puzzle"
