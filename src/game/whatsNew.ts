@@ -94,7 +94,7 @@ export function freeformBadgeFor(date: string): FreeformBadge {
   if (date >= FREEFORM_EXTENDED_START) {
     return {
       key: "freeform-extended-badge",
-      label: "Freeform extended by 1 week",
+      label: "Freeform extended 1 week",
     };
   }
   return { key: "freeform-badge", label: "Scoring update" };

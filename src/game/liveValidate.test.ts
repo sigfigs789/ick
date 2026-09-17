@@ -10,6 +10,7 @@ import {
   withHandoff,
   type LiveCheck,
 } from "./liveValidate";
+import { FREEFORM_END } from "./dictionary";
 
 function stubResponse(body: unknown, status = 200, valid = true) {
   const fetchMock = vi.fn(
@@ -167,9 +168,11 @@ describe("rejectionReasonForLive", () => {
 
 describe("waivedLiveRejection", () => {
   // A day inside the trial and one outside it. Both are puzzle dates, which is
-  // what the waiver is asked about -- not the clock.
+  // what the waiver is asked about -- not the clock. The day after is taken off
+  // the constant, because the trial has been extended once and a literal date
+  // would have slipped inside the window when it was.
   const DURING = "2026-09-15";
-  const AFTER = "2026-09-22";
+  const AFTER = FREEFORM_END;
 
   it("takes a word Merriam-Webster refused for its register", () => {
     // The whole point of the week reaching this far: these words are not in the

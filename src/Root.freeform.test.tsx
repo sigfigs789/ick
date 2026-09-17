@@ -262,7 +262,7 @@ describe("the Freeform week announcement", () => {
       localStorage.setItem("ick:seen:instructions", "1");
       localStorage.setItem("ick:seen:freeform-badge", "1");
       render(<Root />);
-      expect(screen.getByText(/freeform extended by 1 week/i)).not.toHaveClass(
+      expect(screen.getByText(/freeform extended 1 week/i)).not.toHaveClass(
         "app__freeform-badge--faded",
       );
     });
@@ -278,13 +278,13 @@ describe("the Freeform week announcement", () => {
       localStorage.setItem("ick:seen:freeform-badge", "1");
       const first = render(<Root />);
       await userEvent.click(
-        screen.getByText(/freeform extended by 1 week/i),
+        screen.getByText(/freeform extended 1 week/i),
       );
       expect(sheet()).toBeInTheDocument();
       first.unmount();
 
       render(<Root />);
-      expect(screen.getByText(/freeform extended by 1 week/i)).toHaveClass(
+      expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
         "app__freeform-badge--faded",
       );
     });
@@ -297,13 +297,13 @@ describe("the Freeform week announcement", () => {
         act(() => {
           vi.advanceTimersByTime(10_000);
         });
-        expect(screen.getByText(/freeform extended by 1 week/i)).toHaveClass(
+        expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
           "app__freeform-badge--faded",
         );
         first.unmount();
 
         render(<Root />);
-        expect(screen.getByText(/freeform extended by 1 week/i)).toHaveClass(
+        expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
           "app__freeform-badge--faded",
         );
       } finally {
@@ -317,13 +317,13 @@ describe("the Freeform week announcement", () => {
       const first = render(<Root />);
       expect(sheet()).toBeInTheDocument();
       await userEvent.click(screen.getByRole("button", { name: /^close$/i }));
-      expect(screen.getByText(/freeform extended by 1 week/i)).toHaveClass(
+      expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
         "app__freeform-badge--faded",
       );
       first.unmount();
 
       render(<Root />);
-      expect(screen.getByText(/freeform extended by 1 week/i)).toHaveClass(
+      expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
         "app__freeform-badge--faded",
       );
     });

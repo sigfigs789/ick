@@ -119,11 +119,11 @@ describe("the Freeform week button", () => {
         route="game"
         onHowToPlay={howToPlay}
         onFreeform={vi.fn()}
-        badgeLabel="Freeform extended by 1 week"
+        badgeLabel="Freeform extended 1 week"
       />,
     );
     expect(
-      screen.getByText(/freeform extended by 1 week/i),
+      screen.getByText(/freeform extended 1 week/i),
     ).toBeInTheDocument();
   });
 
