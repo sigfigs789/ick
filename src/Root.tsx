@@ -14,7 +14,7 @@ import { isFreeformWeek } from "./game/dictionary";
 import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
 import { playedPuzzleCount } from "./game/storage";
-import { hasSeen, markSeen } from "./game/whatsNew";
+import { freeformBadgeFor, hasSeen, markSeen } from "./game/whatsNew";
 import { useRoute } from "./routes";
 
 /**
@@ -89,7 +89,17 @@ export function Root() {
   );
 
   /**
-   * Whether the header's "Scoring update" badge is still owed.
+   * Which announcement the header's badge is carrying today, and the bit that
+   * retires it. Chosen by the calendar, so the week's opening news gives way to
+   * the extension on its own -- see `freeformBadgeFor`.
+   *
+   * Off `today.current`, which is read once per mount, so the pair cannot change
+   * under a badge that is already up.
+   */
+  const badge = freeformBadgeFor(today.current);
+
+  /**
+   * Whether that badge is still owed.
    *
    * Its own bit rather than the sheet's, because the two are met in different
    * ways and one of the ways is barely being met at all: the badge retires on
@@ -101,9 +111,7 @@ export function Root() {
    * immediately -- `hasSeen` is read at mount and would not, on its own, notice
    * the answer changing under it.
    */
-  const [freeformBadge, setFreeformBadge] = useState(
-    () => !hasSeen("freeform-badge"),
-  );
+  const [freeformBadge, setFreeformBadge] = useState(() => !hasSeen(badge.key));
 
   /**
    * The badge is finished: retire it, in this session and every one after.
@@ -112,11 +120,13 @@ export function Root() {
    * closed, or simply out of its ten seconds. All three are the badge having had
    * its moment, and none of them is worth a second one.
    *
-   * This retires *this* badge, not the badge as a mechanism: the next thing
-   * worth announcing gets its own key in game/whatsNew.ts and a fresh one.
+   * This retires *today's* badge, not the badge as a mechanism: the extension
+   * has its own bit, so dismissing "Scoring update" in week one leaves the
+   * second announcement still owed, and the next thing worth announcing gets a
+   * key in game/whatsNew.ts and a fresh one again.
    */
   function retireBadge() {
-    markSeen("freeform-badge");
+    markSeen(badge.key);
     setFreeformBadge(false);
   }
 
@@ -251,6 +261,7 @@ export function Root() {
         // with the trial rather than needing to be taken out again afterwards.
         onFreeform={freeform ? openFreeform : undefined}
         badge={freeformBadge}
+        badgeLabel={badge.label}
         onBadgeDone={retireBadge}
       />
       {route === "leaderboard" ? (

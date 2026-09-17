@@ -3,7 +3,7 @@ import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
 import { navigate, type Route } from "../routes";
 
 /**
- * How long the "Scoring update" badge stays before it is retired.
+ * How long the Freeform badge stays before it is retired.
  *
  * Long enough to be read by somebody who opened the app and looked at the
  * puzzle first, short enough that it is gone before it becomes furniture. The
@@ -61,6 +61,7 @@ export function AppHeader({
   onHowToPlay,
   onFreeform,
   badge = true,
+  badgeLabel,
   onBadgeDone,
 }: {
   route: Route;
@@ -81,6 +82,19 @@ export function AppHeader({
    * storage lives.
    */
   badge?: boolean;
+  /**
+   * What the badge says. Passed in rather than written here because the button
+   * carries more than one piece of news across the trial -- the week's scoring
+   * change first, its extension later -- and which one is owed is a question
+   * about the calendar and this player's storage, both of which live with the
+   * rest of the announcement's state in src/Root.tsx. The header's job is to
+   * put the words under the button and take them away on time.
+   *
+   * No label, no badge: a header asked to show the button without any news to
+   * put under it draws the button alone, rather than an empty pill or one
+   * wearing a wording this file had no business keeping a copy of.
+   */
+  badgeLabel?: string;
   /**
    * The badge is finished: it has been up for its ten seconds, or it has been
    * pressed. Said upwards rather than remembered here, because "this player has
@@ -108,10 +122,13 @@ export function AppHeader({
   });
 
   useEffect(() => {
-    if (!freeform || !badge) return;
+    // No label is no badge on screen (see `badgeLabel`), and a badge nobody can
+    // see has nothing to finish -- timing one out would retire an announcement
+    // that was never made.
+    if (!freeform || !badge || !badgeLabel) return;
     const timer = setTimeout(() => badgeDone.current?.(), BADGE_VISIBLE_MS);
     return () => clearTimeout(timer);
-  }, [freeform, badge]);
+  }, [freeform, badge, badgeLabel]);
 
   /**
    * Open the sheet and retire the badge in the same gesture. Pressing either one
@@ -184,7 +201,9 @@ export function AppHeader({
             sheet: it is a label on the rules currently in force, not an unread
             marker. The button stays all week; the badge is the part that goes,
             and it goes for good -- pressed, read and dismissed, or simply sat
-            in front of the player for its ten seconds. */}
+            in front of the player for its ten seconds. Each piece of news gets
+            its own badge and its own bit, so retiring one does not spend the
+            next. */}
         {onFreeform && (
           <div className="app__freeform-nav">
             <button
@@ -201,15 +220,17 @@ export function AppHeader({
                 because it is the part of the pair the eye is on, and a label
                 that ignores the finger aimed at it reads as broken. The button
                 behind it is the accessible control and does the same thing. */}
-            <span
-              className={`app__freeform-badge${
-                badge ? "" : " app__freeform-badge--faded"
-              }`}
-              aria-hidden="true"
-              onClick={openFreeform}
-            >
-              Scoring update
-            </span>
+            {badgeLabel && (
+              <span
+                className={`app__freeform-badge${
+                  badge ? "" : " app__freeform-badge--faded"
+                }`}
+                aria-hidden="true"
+                onClick={openFreeform}
+              >
+                {badgeLabel}
+              </span>
+            )}
           </div>
         )}
         <button
