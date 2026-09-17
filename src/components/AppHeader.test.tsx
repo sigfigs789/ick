@@ -108,52 +108,123 @@ describe("the Freeform week button", () => {
     expect(onFreeform).toHaveBeenCalled();
   });
 
-  it("retires the badge the moment the button is pressed", async () => {
+  it("says the badge is finished the moment the button is pressed", async () => {
+    const onBadgeDone = vi.fn();
     render(
-      <AppHeader route="game" onHowToPlay={howToPlay} onFreeform={vi.fn()} />,
+      <AppHeader
+        route="game"
+        onHowToPlay={howToPlay}
+        onFreeform={vi.fn()}
+        onBadgeDone={onBadgeDone}
+      />,
     );
-    const badge = screen.getByText(/scoring update/i);
-    expect(badge).not.toHaveClass("app__freeform-badge--faded");
 
     // Pressing it is the badge having worked; waiting out its timer over a
     // sheet the player has already read is not.
     await userEvent.click(screen.getByRole("button", { name: /freeform/i }));
-    expect(badge).toHaveClass("app__freeform-badge--faded");
+    expect(onBadgeDone).toHaveBeenCalled();
   });
 
-  it("opens the sheet from the badge itself, and retires it too", async () => {
+  it("opens the sheet from the badge itself, and finishes it too", async () => {
     const onFreeform = vi.fn();
+    const onBadgeDone = vi.fn();
     render(
-      <AppHeader route="game" onHowToPlay={howToPlay} onFreeform={onFreeform} />,
+      <AppHeader
+        route="game"
+        onHowToPlay={howToPlay}
+        onFreeform={onFreeform}
+        onBadgeDone={onBadgeDone}
+      />,
     );
-    const badge = screen.getByText(/scoring update/i);
 
     // The badge is the part of the pair the eye is on, so it takes the press.
-    await userEvent.click(badge);
+    await userEvent.click(screen.getByText(/scoring update/i));
     expect(onFreeform).toHaveBeenCalled();
-    expect(badge).toHaveClass("app__freeform-badge--faded");
+    expect(onBadgeDone).toHaveBeenCalled();
   });
 
-  it("fades the badge after ten seconds and leaves the button alone", () => {
+  it("says the badge is finished once its ten seconds are up", () => {
     vi.useFakeTimers();
     try {
+      const onBadgeDone = vi.fn();
       render(
-        <AppHeader route="game" onHowToPlay={howToPlay} onFreeform={vi.fn()} />,
+        <AppHeader
+          route="game"
+          onHowToPlay={howToPlay}
+          onFreeform={vi.fn()}
+          onBadgeDone={onBadgeDone}
+        />,
       );
-      const badge = screen.getByText(/scoring update/i);
-      expect(badge).not.toHaveClass("app__freeform-badge--faded");
+      expect(onBadgeDone).not.toHaveBeenCalled();
 
       act(() => {
         vi.advanceTimersByTime(10_000);
       });
 
+      // Sitting in front of the player for ten seconds is the eye having had
+      // its chance, and counts the same as a press.
+      expect(onBadgeDone).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not restart the ten seconds when the parent re-renders", () => {
+    vi.useFakeTimers();
+    try {
+      const onBadgeDone = vi.fn();
+      const header = () => (
+        <AppHeader
+          route="game"
+          onHowToPlay={howToPlay}
+          // Fresh arrows every render, as the real parent hands over.
+          onFreeform={() => {}}
+          onBadgeDone={() => onBadgeDone()}
+        />
+      );
+      const { rerender } = render(header());
+
+      // The puzzle above this re-renders on every keystroke; a badge whose
+      // clock started over each time would never reach ten seconds.
+      act(() => {
+        vi.advanceTimersByTime(9_000);
+      });
+      rerender(header());
+      act(() => {
+        vi.advanceTimersByTime(1_000);
+      });
+      expect(onBadgeDone).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("fades a finished badge and leaves the button alone", () => {
+    vi.useFakeTimers();
+    try {
+      render(
+        <AppHeader
+          route="game"
+          onHowToPlay={howToPlay}
+          onFreeform={vi.fn()}
+          badge={false}
+        />,
+      );
+
       // Faded rather than unmounted: it is absolutely positioned, so fading it
       // moves nothing, and the button it points at stays exactly where the eye
       // found it -- all week, which is the half that must not fade.
-      expect(badge).toHaveClass("app__freeform-badge--faded");
+      expect(screen.getByText(/scoring update/i)).toHaveClass(
+        "app__freeform-badge--faded",
+      );
       expect(
         screen.getByRole("button", { name: /freeform/i }),
       ).toBeInTheDocument();
+
+      // And no timer for a badge that is already done.
+      act(() => {
+        vi.advanceTimersByTime(10_000);
+      });
     } finally {
       vi.useRealTimers();
     }

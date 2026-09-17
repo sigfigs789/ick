@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Root } from "./Root";
@@ -143,6 +143,34 @@ describe("the Freeform week announcement", () => {
     expect(screen.getByText(/scoring update/i)).toHaveClass(
       "app__freeform-badge--faded",
     );
+  });
+
+  it("retires the badge for good once its ten seconds are up", () => {
+    vi.useFakeTimers();
+    try {
+      localStorage.setItem("ick:seen:instructions", "1");
+      const first = render(<Root />);
+      expect(screen.getByText(/scoring update/i)).not.toHaveClass(
+        "app__freeform-badge--faded",
+      );
+
+      act(() => {
+        vi.advanceTimersByTime(10_000);
+      });
+      expect(screen.getByText(/scoring update/i)).toHaveClass(
+        "app__freeform-badge--faded",
+      );
+      first.unmount();
+
+      // Ten seconds in front of the player is the badge having had its chance,
+      // and it does not get a second one tomorrow either.
+      render(<Root />);
+      expect(screen.getByText(/scoring update/i)).toHaveClass(
+        "app__freeform-badge--faded",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("retires the badge for good once it has been pressed", async () => {

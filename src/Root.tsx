@@ -106,9 +106,14 @@ export function Root() {
    * The announcement has been delivered: retire it, in this session and every
    * one after.
    *
-   * Reached from either half of the pair -- pressing the header's button or
-   * badge, and closing the sheet however it was opened -- because both are the
-   * player having met it.
+   * Every way it can be delivered comes through here -- pressing the header's
+   * button or badge, closing the sheet however it was opened, and the badge
+   * simply finishing its ten seconds on screen. All three are the player having
+   * met it, and none of them is worth a second showing.
+   *
+   * This retires *this* announcement, not the badge as a mechanism: the next
+   * thing worth announcing gets its own key in game/whatsNew.ts and its own
+   * fresh badge.
    */
   function retireFreeform() {
     markSeen("freeform");
@@ -236,6 +241,7 @@ export function Root() {
         // with the trial rather than needing to be taken out again afterwards.
         onFreeform={freeform ? openFreeform : undefined}
         badge={freeformBadge}
+        onBadgeDone={retireFreeform}
       />
       {route === "leaderboard" ? (
         <LeaderboardPage />
