@@ -14,8 +14,17 @@
 
 const SEEN_PREFIX = "ick:seen:";
 
-/** The features that have ever carried a badge, or a once-only appearance. */
-export type Announcement = "instructions" | "freeform";
+/**
+ * The features that have ever carried a badge, or a once-only appearance.
+ *
+ * "freeform" and "freeform-badge" are one week's announcement told two ways,
+ * and they are two bits because they are met two ways. The sheet is read; the
+ * badge is only looked at. A player who watched the badge time out has seen
+ * that something changed, which is all the badge ever claimed to say -- it has
+ * no business also spending the one automatic opening of the sheet that
+ * actually explains the change.
+ */
+export type Announcement = "instructions" | "freeform" | "freeform-badge";
 
 /**
  * Whether the player has already met this feature.

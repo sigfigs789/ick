@@ -88,11 +88,58 @@ export function Root() {
       playedPuzzleCount() >= FREEFORM_MIN_PUZZLES,
   );
 
+  /**
+   * Whether the header's "Scoring update" badge is still owed.
+   *
+   * Its own bit rather than the sheet's, because the two are met in different
+   * ways and one of the ways is barely being met at all: the badge retires on
+   * sight, after ten seconds of sitting in front of the player, and that is not
+   * a player who has read what changed. Sharing a bit would have spent their one
+   * automatic opening of the sheet on a label they merely glanced at.
+   *
+   * Held in state as well as storage so retiring it repaints the header
+   * immediately -- `hasSeen` is read at mount and would not, on its own, notice
+   * the answer changing under it.
+   */
+  const [freeformBadge, setFreeformBadge] = useState(
+    () => !hasSeen("freeform-badge"),
+  );
+
+  /**
+   * The badge is finished: retire it, in this session and every one after.
+   *
+   * Every way it can finish comes through here -- pressed, its sheet read and
+   * closed, or simply out of its ten seconds. All three are the badge having had
+   * its moment, and none of them is worth a second one.
+   *
+   * This retires *this* badge, not the badge as a mechanism: the next thing
+   * worth announcing gets its own key in game/whatsNew.ts and a fresh one.
+   */
+  function retireBadge() {
+    markSeen("freeform-badge");
+    setFreeformBadge(false);
+  }
+
   function closeFreeform() {
     // Opened by hand or opened for them: either way the announcement has been
-    // delivered, so `markSeen` retires the automatic opening for good.
+    // delivered, so `markSeen` retires the automatic opening for good -- and the
+    // badge with it, there being nothing left for it to point at.
     markSeen("freeform");
+    retireBadge();
     setShowFreeform(false);
+  }
+
+  /**
+   * Open the sheet from the header.
+   *
+   * Only the badge is retired here. The sheet is about to be read, and closing
+   * it is what retires the automatic opening -- a player who opens it by hand
+   * and closes it unread is in exactly the same place as one who never opened
+   * it, which is the case `closeFreeform` already handles for everyone.
+   */
+  function openFreeform() {
+    retireBadge();
+    setShowFreeform(true);
   }
 
   /**
@@ -202,7 +249,9 @@ export function Root() {
         onHowToPlay={() => setShowInstructions(true)}
         // Passed only during the week, which is what makes the "i" come and go
         // with the trial rather than needing to be taken out again afterwards.
-        onFreeform={freeform ? () => setShowFreeform(true) : undefined}
+        onFreeform={freeform ? openFreeform : undefined}
+        badge={freeformBadge}
+        onBadgeDone={retireBadge}
       />
       {route === "leaderboard" ? (
         <LeaderboardPage />

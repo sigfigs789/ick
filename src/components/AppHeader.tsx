@@ -1,16 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
 import { navigate, type Route } from "../routes";
 
 /**
- * How long the "Scoring update" badge stays before fading out.
+ * How long the "Scoring update" badge stays before it is retired.
  *
  * Long enough to be read by somebody who opened the app and looked at the
- * puzzle first, short enough that it is gone before it becomes furniture. It
- * fades on every load rather than once ever: the badge is what catches the eye,
- * and the button it points at is what remains -- so a player who missed it on
- * Monday still gets a shot at it on Tuesday, and a player who has read it three
- * times is not stuck looking at it.
+ * puzzle first, short enough that it is gone before it becomes furniture. The
+ * ten seconds are the badge's whole life, not this load's: when they run out it
+ * is retired for good, exactly as if it had been pressed.
+ *
+ * That is the point of a badge. It is there to catch the eye once, and having
+ * been up in front of the player for ten seconds is the eye having had its
+ * chance -- an announcement that keeps reappearing until it is clicked is a nag,
+ * and a player who read the two words and did not care has still read them. The
+ * button underneath is what remains, all week, for anybody who wants the sheet
+ * later.
  */
 const BADGE_VISIBLE_MS = 10_000;
 
@@ -55,6 +60,8 @@ export function AppHeader({
   route,
   onHowToPlay,
   onFreeform,
+  badge = true,
+  onBadgeDone,
 }: {
   route: Route;
   onHowToPlay: () => void;
@@ -64,19 +71,47 @@ export function AppHeader({
    * announcement to read, so there is nothing to point at.
    */
   onFreeform?: () => void;
+  /**
+   * Whether the badge is still owed -- false once this player has met the
+   * announcement, in any session. The button is unaffected: it is a label on
+   * the rules currently in force and stays all week either way.
+   *
+   * Defaults to owed so the badge is what a caller gets by not deciding; the
+   * app decides in src/Root.tsx, which is where the announcement's one bit of
+   * storage lives.
+   */
+  badge?: boolean;
+  /**
+   * The badge is finished: it has been up for its ten seconds, or it has been
+   * pressed. Said upwards rather than remembered here, because "this player has
+   * met the announcement" outlives the header and belongs with the rest of the
+   * announcement's state.
+   */
+  onBadgeDone?: () => void;
 }) {
   const freeform = Boolean(onFreeform);
+
   /**
-   * Whether the badge is still up. Keyed off `freeform` rather than the callback
-   * itself, which is a fresh arrow on every parent render and would restart the
-   * timer with it.
+   * The current `onBadgeDone`, reachable from a timer that must not be restarted
+   * to reach it.
+   *
+   * The callback is a fresh arrow on every parent render, so an effect that
+   * depended on it would clear and re-arm the timeout each time -- and a badge
+   * whose ten seconds start over whenever the puzzle above it re-renders never
+   * reaches ten seconds at all. The effect below depends on the two booleans
+   * that actually decide whether a timer should exist, and reads the callback
+   * through here when it fires.
    */
-  const [badgeShowing, setBadgeShowing] = useState(true);
+  const badgeDone = useRef(onBadgeDone);
   useEffect(() => {
-    if (!freeform) return;
-    const timer = setTimeout(() => setBadgeShowing(false), BADGE_VISIBLE_MS);
+    badgeDone.current = onBadgeDone;
+  });
+
+  useEffect(() => {
+    if (!freeform || !badge) return;
+    const timer = setTimeout(() => badgeDone.current?.(), BADGE_VISIBLE_MS);
     return () => clearTimeout(timer);
-  }, [freeform]);
+  }, [freeform, badge]);
 
   /**
    * Open the sheet and retire the badge in the same gesture. Pressing either one
@@ -84,7 +119,7 @@ export function AppHeader({
    * waiting out its timer over a sheet the player has already read.
    */
   function openFreeform() {
-    setBadgeShowing(false);
+    onBadgeDone?.();
     onFreeform?.();
   }
 
@@ -147,8 +182,9 @@ export function AppHeader({
 
             Shown to everybody rather than only to whoever has not read the
             sheet: it is a label on the rules currently in force, not an unread
-            marker. The button stays all week; the badge is the part that fades,
-            having done its job once the eye has landed on it. */}
+            marker. The button stays all week; the badge is the part that goes,
+            and it goes for good -- pressed, read and dismissed, or simply sat
+            in front of the player for its ten seconds. */}
         {onFreeform && (
           <div className="app__freeform-nav">
             <button
@@ -167,7 +203,7 @@ export function AppHeader({
                 behind it is the accessible control and does the same thing. */}
             <span
               className={`app__freeform-badge${
-                badgeShowing ? "" : " app__freeform-badge--faded"
+                badge ? "" : " app__freeform-badge--faded"
               }`}
               aria-hidden="true"
               onClick={openFreeform}
