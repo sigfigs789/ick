@@ -18,6 +18,39 @@ describe("SubmitForm", () => {
     expect(input).toHaveValue("");
   });
 
+  it("leaves a rejected word in the box to be fixed", async () => {
+    const onSubmit = vi.fn().mockResolvedValue({ ok: false, reason: "not-a-word" });
+    render(<SubmitForm drop="str" disabled={false} feedback={null} onSubmit={onSubmit} />);
+
+    const input = screen.getByLabelText(/enter a word containing "STR"/i);
+    await userEvent.type(input, "strangge");
+    await userEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+    expect(onSubmit).toHaveBeenCalledWith("strangge");
+    expect(input).toHaveValue("strangge");
+  });
+
+  it("keeps what the player typed while a slow lookup was running", async () => {
+    let settle: (result: { ok: boolean }) => void = () => {};
+    const onSubmit = vi.fn().mockReturnValue(
+      new Promise<{ ok: boolean }>((resolve) => {
+        settle = resolve;
+      })
+    );
+    render(<SubmitForm drop="str" disabled={false} feedback={null} onSubmit={onSubmit} />);
+
+    const input = screen.getByLabelText(/enter a word containing "STR"/i);
+    await userEvent.type(input, "strange");
+    await userEvent.click(screen.getByRole("button", { name: /submit/i }));
+    await userEvent.clear(input);
+    await userEvent.type(input, "stray");
+
+    await act(async () => {
+      settle({ ok: true });
+    });
+    expect(input).toHaveValue("stray");
+  });
+
   it("does not submit an empty or whitespace-only value", async () => {
     const onSubmit = vi.fn();
     render(
