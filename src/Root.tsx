@@ -88,11 +88,43 @@ export function Root() {
       playedPuzzleCount() >= FREEFORM_MIN_PUZZLES,
   );
 
+  /**
+   * Whether the header's "Scoring update" badge is still owed.
+   *
+   * The same bit as the automatic opening above, deliberately: both are the one
+   * question of whether this player has met the announcement yet, and a badge
+   * that still points at a sheet the player has read is the badge lying. Held in
+   * state as well as storage so retiring it repaints the header immediately --
+   * `hasSeen` is read at mount and would not, on its own, notice the answer
+   * changing under it.
+   */
+  const [freeformBadge, setFreeformBadge] = useState(
+    () => !hasSeen("freeform"),
+  );
+
+  /**
+   * The announcement has been delivered: retire it, in this session and every
+   * one after.
+   *
+   * Reached from either half of the pair -- pressing the header's button or
+   * badge, and closing the sheet however it was opened -- because both are the
+   * player having met it.
+   */
+  function retireFreeform() {
+    markSeen("freeform");
+    setFreeformBadge(false);
+  }
+
   function closeFreeform() {
     // Opened by hand or opened for them: either way the announcement has been
     // delivered, so `markSeen` retires the automatic opening for good.
-    markSeen("freeform");
+    retireFreeform();
     setShowFreeform(false);
+  }
+
+  function openFreeform() {
+    retireFreeform();
+    setShowFreeform(true);
   }
 
   /**
@@ -202,7 +234,8 @@ export function Root() {
         onHowToPlay={() => setShowInstructions(true)}
         // Passed only during the week, which is what makes the "i" come and go
         // with the trial rather than needing to be taken out again afterwards.
-        onFreeform={freeform ? () => setShowFreeform(true) : undefined}
+        onFreeform={freeform ? openFreeform : undefined}
+        badge={freeformBadge}
       />
       {route === "leaderboard" ? (
         <LeaderboardPage />
