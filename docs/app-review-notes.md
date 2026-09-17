@@ -73,7 +73,7 @@ mechanisms.
 
 | Service | What it does |
 | --- | --- |
-| **Vercel** | Hosts wordink.app and the app's API — leaderboard reads, score writes, live word validation. The only server the app talks to. |
+| **Vercel** | Runs the app's backend: the endpoints it calls for leaderboard reads, score writes and live word validation. The only server the app talks to. They are the website's own endpoints, shared so that there is one leaderboard across every version of the game. |
 | **Supabase** (Postgres) | The database behind the leaderboard and the finds feed. |
 | **Merriam-Webster Dictionary API** | Server-side only: is a word the offline dictionary rejected nonetheless real, current and inoffensive? The key never reaches the device. |
 | **Datamuse API** | Server-side only: a frequency for such a word, so it scores on the same scale as the curated ones. |
