@@ -91,44 +91,54 @@ export function Root() {
   /**
    * Whether the header's "Scoring update" badge is still owed.
    *
-   * The same bit as the automatic opening above, deliberately: both are the one
-   * question of whether this player has met the announcement yet, and a badge
-   * that still points at a sheet the player has read is the badge lying. Held in
-   * state as well as storage so retiring it repaints the header immediately --
-   * `hasSeen` is read at mount and would not, on its own, notice the answer
-   * changing under it.
+   * Its own bit rather than the sheet's, because the two are met in different
+   * ways and one of the ways is barely being met at all: the badge retires on
+   * sight, after ten seconds of sitting in front of the player, and that is not
+   * a player who has read what changed. Sharing a bit would have spent their one
+   * automatic opening of the sheet on a label they merely glanced at.
+   *
+   * Held in state as well as storage so retiring it repaints the header
+   * immediately -- `hasSeen` is read at mount and would not, on its own, notice
+   * the answer changing under it.
    */
   const [freeformBadge, setFreeformBadge] = useState(
-    () => !hasSeen("freeform"),
+    () => !hasSeen("freeform-badge"),
   );
 
   /**
-   * The announcement has been delivered: retire it, in this session and every
-   * one after.
+   * The badge is finished: retire it, in this session and every one after.
    *
-   * Every way it can be delivered comes through here -- pressing the header's
-   * button or badge, closing the sheet however it was opened, and the badge
-   * simply finishing its ten seconds on screen. All three are the player having
-   * met it, and none of them is worth a second showing.
+   * Every way it can finish comes through here -- pressed, its sheet read and
+   * closed, or simply out of its ten seconds. All three are the badge having had
+   * its moment, and none of them is worth a second one.
    *
-   * This retires *this* announcement, not the badge as a mechanism: the next
-   * thing worth announcing gets its own key in game/whatsNew.ts and its own
-   * fresh badge.
+   * This retires *this* badge, not the badge as a mechanism: the next thing
+   * worth announcing gets its own key in game/whatsNew.ts and a fresh one.
    */
-  function retireFreeform() {
-    markSeen("freeform");
+  function retireBadge() {
+    markSeen("freeform-badge");
     setFreeformBadge(false);
   }
 
   function closeFreeform() {
     // Opened by hand or opened for them: either way the announcement has been
-    // delivered, so `markSeen` retires the automatic opening for good.
-    retireFreeform();
+    // delivered, so `markSeen` retires the automatic opening for good -- and the
+    // badge with it, there being nothing left for it to point at.
+    markSeen("freeform");
+    retireBadge();
     setShowFreeform(false);
   }
 
+  /**
+   * Open the sheet from the header.
+   *
+   * Only the badge is retired here. The sheet is about to be read, and closing
+   * it is what retires the automatic opening -- a player who opens it by hand
+   * and closes it unread is in exactly the same place as one who never opened
+   * it, which is the case `closeFreeform` already handles for everyone.
+   */
   function openFreeform() {
-    retireFreeform();
+    retireBadge();
     setShowFreeform(true);
   }
 
@@ -241,7 +251,7 @@ export function Root() {
         // with the trial rather than needing to be taken out again afterwards.
         onFreeform={freeform ? openFreeform : undefined}
         badge={freeformBadge}
-        onBadgeDone={retireFreeform}
+        onBadgeDone={retireBadge}
       />
       {route === "leaderboard" ? (
         <LeaderboardPage />

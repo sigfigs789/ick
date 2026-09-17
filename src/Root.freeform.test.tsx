@@ -173,6 +173,34 @@ describe("the Freeform week announcement", () => {
     }
   });
 
+  it("still owes the sheet to a player whose badge only timed out", () => {
+    vi.useFakeTimers();
+    try {
+      // A first-timer during the week: no puzzle behind them, so the sheet is
+      // not offered yet and the badge is all they get.
+      localStorage.setItem("ick:seen:instructions", "1");
+      const first = render(<Root />);
+      act(() => {
+        vi.advanceTimersByTime(10_000);
+      });
+      expect(sheet()).not.toBeInTheDocument();
+      first.unmount();
+
+      // Watching two words fade is not having read what changed. Once they have
+      // a game behind them the sheet still opens itself, exactly once, as it
+      // would have if the badge had never existed.
+      playedPuzzle("2026-09-10");
+      render(<Root />);
+      expect(sheet()).toBeInTheDocument();
+      // And the badge stays retired: it has had its moment either way.
+      expect(screen.getByText(/scoring update/i)).toHaveClass(
+        "app__freeform-badge--faded",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("retires the badge for good once it has been pressed", async () => {
     // A first-timer, so the sheet never opens itself: the press is the only
     // thing that has happened, and it is enough.
@@ -190,7 +218,7 @@ describe("the Freeform week announcement", () => {
 
   it("leaves the button itself alone once the badge is retired", () => {
     localStorage.setItem("ick:seen:instructions", "1");
-    localStorage.setItem("ick:seen:freeform", "1");
+    localStorage.setItem("ick:seen:freeform-badge", "1");
     render(<Root />);
     // The button is a label on the rules currently in force, not an unread
     // marker -- it stays all week for everybody.
