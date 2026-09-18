@@ -1,0 +1,38 @@
+name: Push an empty commit
+
+# Run this by hand (Actions tab -> "Push an empty commit" -> Run workflow).
+# It pushes a single empty commit straight to main, authored as sigfigs789 so
+# Vercel will build it -- commits authored by anyone else are blocked, and the
+# deploy simply never happens. Handy for re-triggering a deploy without a code
+# change.
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: Commit message
+        required: false
+        default: Empty commit
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  empty-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push the empty commit
+        env:
+          MESSAGE: ${{ inputs.message }}
+        run: |
+          git config user.name 'sigfigs789'
+          git config user.email '82550419+sigfigs789@users.noreply.github.com'
+          git commit --allow-empty -m "$MESSAGE"
+          git push origin HEAD:main
