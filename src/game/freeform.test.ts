@@ -24,9 +24,14 @@ describe("isFreeformWeek", () => {
     expect(isFreeformWeek(BEFORE)).toBe(false);
     expect(isFreeformWeek(FREEFORM_START)).toBe(true);
     expect(isFreeformWeek("2026-09-20")).toBe(true);
-    // The last day of the trial, and the reason FREEFORM_END is the 22nd: the
-    // constant is exclusive, so "through the 21st" is a 22nd.
+    // The day the first week would have ended, and the day after it. The trial
+    // was extended by a week on the 20th, and extending it means one unbroken
+    // range -- a puzzle in here must not fall back to the folding system.
     expect(isFreeformWeek("2026-09-21")).toBe(true);
+    expect(isFreeformWeek("2026-09-22")).toBe(true);
+    // The last day of the trial, and the reason FREEFORM_END is the 29th: the
+    // constant is exclusive, so "through the 28th" is a 29th.
+    expect(isFreeformWeek("2026-09-28")).toBe(true);
     expect(isFreeformWeek(FREEFORM_END)).toBe(false);
   });
 

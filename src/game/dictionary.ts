@@ -348,10 +348,21 @@ const DOUBLING_TENSE_START = "2026-09-10";
 /**
  * "Freeform week": the window in which no word folds and every score is the
  * word's own measured frequency. Start inclusive, end exclusive, so the trial
- * runs 2026-09-14 through 2026-09-21 inclusive, and 2026-09-22 is back on the
- * latest system. Eight puzzles rather than seven -- Monday the 14th through
- * Monday the 21st -- so the trial covers a whole week and the day that closes
- * it, and every weekday appears at least once.
+ * runs 2026-09-14 through 2026-09-28 inclusive, and 2026-09-29 is back on the
+ * latest system.
+ *
+ * Two weeks, not the one the name says. The first ran Monday the 14th through
+ * Monday the 21st -- eight puzzles, so the trial covered a whole week and the
+ * day that closed it -- and on the 20th it was extended by another, on the same
+ * shape: through Monday the 28th, with the 29th back on the latest system. The
+ * name is left alone because it is what the header, the sheet and every
+ * existing key call it, and renaming a week players are in the middle of buys
+ * nothing. See FREEFORM_EXTENDED_START in game/whatsNew.ts, which is the date
+ * the header started saying so.
+ *
+ * Extending rather than re-opening matters for the archive: the window is one
+ * unbroken range, so no puzzle inside it falls back to the folding system and
+ * every score played under the trial keeps the rules it was played with.
  *
  * Read by scoring (`adjustedZipf`) and by same-root duplicate detection
  * (`evaluateSubmission`), which are the two places the fold is consulted and so
@@ -370,7 +381,7 @@ const DOUBLING_TENSE_START = "2026-09-10";
  * here, so the week turns over with the puzzle rather than with a clock.
  */
 export const FREEFORM_START = "2026-09-14";
-export const FREEFORM_END = "2026-09-22";
+export const FREEFORM_END = "2026-09-29";
 
 /**
  * Whether `date`'s puzzle is played under the freeform rules.

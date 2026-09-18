@@ -23,8 +23,18 @@ const SEEN_PREFIX = "ick:seen:";
  * that something changed, which is all the badge ever claimed to say -- it has
  * no business also spending the one automatic opening of the sheet that
  * actually explains the change.
+ *
+ * "freeform-extended-badge" is a third bit for a second piece of news on the
+ * same button. Extending the week is not what the first badge announced, so a
+ * player who dismissed "Scoring update" has not been told about it, and reusing
+ * that bit would mean the people most likely to care -- the ones who read the
+ * first announcement -- are exactly the ones who never see the second.
  */
-export type Announcement = "instructions" | "freeform" | "freeform-badge";
+export type Announcement =
+  | "instructions"
+  | "freeform"
+  | "freeform-badge"
+  | "freeform-extended-badge";
 
 /**
  * Whether the player has already met this feature.
@@ -50,4 +60,42 @@ export function markSeen(what: Announcement): void {
     // Nothing to do, and nothing worth doing: a store that cannot be written is
     // one hasSeen cannot read either, so no badge was drawn to begin with.
   }
+}
+
+/**
+ * The puzzle date from which the header's badge announces the extension rather
+ * than the scoring change.
+ *
+ * A date rather than a flag, so the switch happens on its own and the two
+ * announcements cannot overlap: before it the badge is the week's opening news,
+ * on and after it the badge is the extension, and there is never a moment with
+ * two badges competing for one button.
+ */
+export const FREEFORM_EXTENDED_START = "2026-09-20";
+
+/** What the header's badge says, and which bit retires it. */
+export interface FreeformBadge {
+  key: Announcement;
+  label: string;
+}
+
+/**
+ * Which announcement the Freeform badge is carrying on `date`.
+ *
+ * One badge at a time, chosen by the calendar. The label and the storage key
+ * travel together because they have to agree -- a badge dismissed under one
+ * wording must not come back wearing the other, and a new wording that reused
+ * the old bit would never appear for the players who already dismissed it.
+ *
+ * Compared as strings like every other cutover in this app, so it turns over
+ * with the puzzle rather than with a clock.
+ */
+export function freeformBadgeFor(date: string): FreeformBadge {
+  if (date >= FREEFORM_EXTENDED_START) {
+    return {
+      key: "freeform-extended-badge",
+      label: "Freeform extended 1 week",
+    };
+  }
+  return { key: "freeform-badge", label: "Scoring update" };
 }

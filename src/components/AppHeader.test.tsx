@@ -100,12 +100,41 @@ describe("the Freeform week button", () => {
   it("shows the button and its badge to everybody during the week", async () => {
     const onFreeform = vi.fn();
     render(
-      <AppHeader route="game" onHowToPlay={howToPlay} onFreeform={onFreeform} />,
+      <AppHeader
+        route="game"
+        onHowToPlay={howToPlay}
+        onFreeform={onFreeform}
+        badgeLabel="Scoring update"
+      />,
     );
     const button = screen.getByRole("button", { name: /freeform/i });
     expect(screen.getByText(/scoring update/i)).toBeInTheDocument();
     await userEvent.click(button);
     expect(onFreeform).toHaveBeenCalled();
+  });
+
+  it("says whatever it is handed, so a second week's news can use the same button", () => {
+    render(
+      <AppHeader
+        route="game"
+        onHowToPlay={howToPlay}
+        onFreeform={vi.fn()}
+        badgeLabel="Freeform extended 1 week"
+      />,
+    );
+    expect(
+      screen.getByText(/freeform extended 1 week/i),
+    ).toBeInTheDocument();
+  });
+
+  it("draws the button alone when there is no news to put under it", () => {
+    render(
+      <AppHeader route="game" onHowToPlay={howToPlay} onFreeform={vi.fn()} />,
+    );
+    expect(
+      screen.getByRole("button", { name: /freeform/i }),
+    ).toBeInTheDocument();
+    expect(document.querySelector(".app__freeform-badge")).toBeNull();
   });
 
   it("says the badge is finished the moment the button is pressed", async () => {
@@ -115,6 +144,7 @@ describe("the Freeform week button", () => {
         route="game"
         onHowToPlay={howToPlay}
         onFreeform={vi.fn()}
+        badgeLabel="Scoring update"
         onBadgeDone={onBadgeDone}
       />,
     );
@@ -133,6 +163,7 @@ describe("the Freeform week button", () => {
         route="game"
         onHowToPlay={howToPlay}
         onFreeform={onFreeform}
+        badgeLabel="Scoring update"
         onBadgeDone={onBadgeDone}
       />,
     );
@@ -152,6 +183,7 @@ describe("the Freeform week button", () => {
           route="game"
           onHowToPlay={howToPlay}
           onFreeform={vi.fn()}
+          badgeLabel="Scoring update"
           onBadgeDone={onBadgeDone}
         />,
       );
@@ -179,6 +211,7 @@ describe("the Freeform week button", () => {
           onHowToPlay={howToPlay}
           // Fresh arrows every render, as the real parent hands over.
           onFreeform={() => {}}
+          badgeLabel="Scoring update"
           onBadgeDone={() => onBadgeDone()}
         />
       );
@@ -207,6 +240,7 @@ describe("the Freeform week button", () => {
           route="game"
           onHowToPlay={howToPlay}
           onFreeform={vi.fn()}
+          badgeLabel="Scoring update"
           badge={false}
         />,
       );

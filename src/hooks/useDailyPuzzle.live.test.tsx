@@ -18,10 +18,16 @@ import { LIVE_CHECK_PENDING, LIVE_CHECK_SETTLED } from "./useDailyPuzzle";
  * rather than the rule. The week's own behaviour has its own file:
  * useDailyPuzzle.freeform.test.tsx.
  */
-vi.mock("../game/date", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../game/date")>()),
-  todayDateString: () => "2026-09-22",
-}));
+vi.mock("../game/date", async (importOriginal) => {
+  // The first puzzle back on the folding system, taken off the constant rather
+  // than written out: the trial has been extended once already, and a literal
+  // date here would have quietly moved inside the window when it was.
+  const { FREEFORM_END } = await import("../game/dictionary");
+  return {
+    ...(await importOriginal<typeof import("../game/date")>()),
+    todayDateString: () => FREEFORM_END,
+  };
+});
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
