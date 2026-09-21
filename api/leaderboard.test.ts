@@ -86,12 +86,7 @@ describe("api/leaderboard submissions", () => {
     expect(call?.args).toEqual({
       p_player_id: PLAYER,
       // No name: the board derives it from the day's own rarest word.
-      // `mode` on every day: the table holds one row per player per puzzle per
-      // mode, and a submission that named none would be filed by the default
-      // rather than by where it was played.
-      p_scores: [
-        { date: SUNDAY, mode: "standard", word: "inkling", zipf: 2.9, total: 24.6, top: 9.4, words: 5 },
-      ],
+      p_scores: [{ date: SUNDAY, word: "inkling", zipf: 2.9, total: 24.6, top: 9.4, words: 5 }],
     });
   });
 
@@ -330,14 +325,11 @@ describe("api/leaderboard reads", () => {
     // every player rather than this one.
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(rpcCall(fetchMock)?.url).toBe(
-      "https://project.supabase.co/rest/v1/rpc/leaderboard_boards_scoped"
+      "https://project.supabase.co/rest/v1/rpc/leaderboard_boards"
     );
     expect(rpcCall(fetchMock)?.args).toMatchObject({
       p_since: SUNDAY,
       p_limit: 10,
-      // Standard for a request that named no mode: a caller predating the switch
-      // means the boards as they were, and those are Standard's.
-      p_mode: "standard",
     });
   });
 
@@ -359,14 +351,13 @@ describe("api/leaderboard reads", () => {
     // The inner function the other two boards are built from, with the same
     // date at both ends: a day board is a week board over one day.
     expect(rpcCall(fetchMock, 1)?.url).toBe(
-      "https://project.supabase.co/rest/v1/rpc/leaderboard_board_scoped"
+      "https://project.supabase.co/rest/v1/rpc/leaderboard_board"
     );
     expect(rpcCall(fetchMock, 1)?.args).toEqual({
       p_since: "2026-08-25",
       p_until: "2026-08-25",
       p_limit: 10,
       p_player: null,
-      p_mode: "standard",
     });
   });
 
@@ -739,16 +730,7 @@ describe("api/leaderboard retried days", () => {
 
     expect(response.status).toBe(202);
     expect(rpcCall(fetchMock)?.args.p_scores).toEqual([
-      {
-        date: SUNDAY,
-        mode: "standard",
-        word: "inkling",
-        zipf: 2.9,
-        total: 24.6,
-        top: 9.4,
-        words: 5,
-        retried: true,
-      },
+      { date: SUNDAY, word: "inkling", zipf: 2.9, total: 24.6, top: 9.4, words: 5, retried: true },
     ]);
   });
 

@@ -248,6 +248,35 @@ describe("the mode on the share", () => {
     ).toContain("Drop: INK · Standard");
   });
 
+  it("puts its name where the week and month totals go", () => {
+    setMode("freeform");
+    const text = buildShareText(MODE_CHOICE_START, "ink", WORDS, {
+      streak: 3,
+      weekTotal: 40,
+      monthTotal: 120,
+      isToday: true,
+    });
+    // A week total and a month total are board numbers, and Freeform is not on
+    // the board -- quoting them would invite a comparison the game refuses to
+    // make.
+    expect(text).toContain("Today: 5.1 · Freeform");
+    expect(text).not.toContain("Week:");
+    expect(text).not.toContain("Month:");
+    // The streak is a count of days rather than a score, and it is still true.
+    expect(text).toContain("Streak: 3 days");
+  });
+
+  it("keeps both totals in Standard", () => {
+    setMode("standard");
+    const text = buildShareText(MODE_CHOICE_START, "ink", WORDS, {
+      streak: 3,
+      weekTotal: 40,
+      monthTotal: 120,
+      isToday: true,
+    });
+    expect(text).toContain("Week: 40.0 · Month: 120.0");
+  });
+
   it("says nothing on a puzzle the calendar decided", () => {
     // Before the switch everybody played one way, so a mode label would be
     // naming a choice nobody had.

@@ -201,22 +201,6 @@ const WORDS_LIMIT = 500;
  */
 const WORDS_CACHE_SECONDS = 15;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-/**
- * The two rule sets a score can be played under (see src/game/mode.ts).
- *
- * Validated as an enumeration rather than passed through, for the reason every
- * other field here is: there are no accounts, so an unauthenticated caller
- * decides what it sends, and a mode this endpoint does not recognise would
- * silently open a third board nobody can read.
- */
-const MODES = ["standard", "freeform"] as const;
-type Mode = (typeof MODES)[number];
-const DEFAULT_MODE: Mode = "standard";
-function readMode(raw: unknown): Mode | null {
-  return typeof raw === "string" && (MODES as readonly string[]).includes(raw)
-    ? (raw as Mode)
-    : null;
-}
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** One row as `leaderboard_board` returns it. */
@@ -409,8 +393,6 @@ interface FoundEntry {
 /** One puzzle's score, validated. */
 interface ScoreEntry {
   date: string;
-  /** Which board this day goes on -- see src/game/mode.ts. */
-  mode: Mode;
   /** That day's rarest word, and the frequency it was judged on. */
   word: string;
   zipf: number;
@@ -452,17 +434,9 @@ interface ScoreEntry {
  */
 function readScore(raw: unknown): ScoreEntry | string {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return "malformed-score";
-  const { date, mode, word, zipf, total, top, words, retried, found } = raw as Record<
-    string,
-    unknown
-  >;
+  const { date, word, zipf, total, top, words, retried, found } = raw as Record<string, unknown>;
 
   if (typeof date !== "string" || !validPuzzleDate(date)) return "bad-date";
-  // Absent means Standard, which is what every submission sent before the switch
-  // existed meant and what the column defaults to. Anything present has to be a
-  // mode this endpoint knows.
-  const scoreMode = mode === undefined ? DEFAULT_MODE : readMode(mode);
-  if (scoreMode === null) return "bad-mode";
   if (typeof word !== "string" || !WORD_RE.test(word)) return "bad-word";
   if (typeof zipf !== "number" || !Number.isFinite(zipf)) return "bad-zipf";
   if (zipf < MIN_ZIPF || zipf > MAX_ZIPF) return "bad-zipf";
@@ -488,7 +462,6 @@ function readScore(raw: unknown): ScoreEntry | string {
 
   return {
     date,
-    mode: scoreMode,
     word,
     zipf: Math.round(zipf * 100) / 100,
     total: Math.round(totalScore * 100) / 100,
@@ -689,10 +662,6 @@ async function handleGet(request: Request): Promise<Response> {
   // with them than with a 400.
   const claimedDay = params.get("day") ?? "";
   const day = validPuzzleDate(claimedDay) ? claimedDay : null;
-  // Which set of boards. Defaulted rather than refused when it is missing or
-  // unrecognised: a caller that predates the switch is asking for the boards as
-  // they were, and those are Standard's.
-  const mode = readMode(params.get("mode")) ?? DEFAULT_MODE;
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
@@ -709,7 +678,7 @@ async function handleGet(request: Request): Promise<Response> {
     // recreating a function every request in flight is using, for a query it can
     // already run.
     const [result, dailyRows] = await Promise.all([
-      rpc<BoardsResult>("leaderboard_boards_scoped", {
+      rpc<BoardsResult>("leaderboard_boards", {
         p_since: since,
         p_limit: limit,
         // There is no opening date any more, so the gate the function still carries
@@ -735,15 +704,13 @@ async function handleGet(request: Request): Promise<Response> {
         p_season_until: monthEnd(month),
         p_month_since: lastMonth.since,
         p_month_until: lastMonth.until,
-        p_mode: mode,
       }),
       day
-        ? rpc<BoardRow[]>("leaderboard_board_scoped", {
+        ? rpc<BoardRow[]>("leaderboard_board", {
             p_since: day,
             p_limit: limit,
             p_player: player,
             p_until: day,
-            p_mode: mode,
           })
         : Promise.resolve(null),
     ]);

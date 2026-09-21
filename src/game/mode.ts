@@ -8,11 +8,14 @@
  * and the choice remembered.
  *
  * The mode is a *player* setting, not a puzzle one. Every puzzle from the choice
- * date on can be played either way, each mode carries its own progress (a full
- * set of guesses each -- see game/storage.ts) and its own leaderboards, and
- * nothing about a past puzzle moves: dates before MODE_CHOICE_START still answer
- * to the calendar, so the trial week keeps the rules it was played with and
- * everything before it keeps the fold.
+ * date on can be played either way and each mode carries its own progress -- a
+ * full set of guesses each, see game/storage.ts -- and nothing about a past
+ * puzzle moves: dates before MODE_CHOICE_START still answer to the calendar, so
+ * the trial week keeps the rules it was played with and everything before it
+ * keeps the fold.
+ *
+ * Only Standard is ranked. There is one leaderboard and Freeform does not reach
+ * it, because the two do not produce comparable numbers -- see `isRanked`.
  *
  * Held in a module variable as well as in storage, deliberately. Scoring is
  * asked about a word in a hundred places -- `rarityFor`, `rarityScore`,
@@ -23,8 +26,6 @@
  */
 
 export type GameMode = "standard" | "freeform";
-
-export const GAME_MODES: readonly GameMode[] = ["standard", "freeform"];
 
 /** What each mode is called on screen. */
 export const MODE_LABELS: Record<GameMode, string> = {
@@ -171,6 +172,27 @@ export function modeIsChosen(date: string): boolean {
 export function modeForDate(date: string): GameMode {
   if (modeIsChosen(date)) return currentMode();
   return date >= FREEFORM_TRIAL_START ? "freeform" : DEFAULT_MODE;
+}
+
+/**
+ * Whether a day's play belongs on the leaderboard.
+ *
+ * There is one board and it is Standard's (see leaderboard.submitScore). The
+ * test is about the *choice*, not about the rules: the trial week ran freeform
+ * for everybody at once, so those days were ranked against each other fairly and
+ * are ranked still -- taking them off now would delete two weeks of standings to
+ * enforce a rule that did not exist while they were played.
+ *
+ * What is off the board is a day somebody chose to play in Freeform, from
+ * MODE_CHOICE_START on, where the alternative was one board ranking whoever had
+ * the switch on.
+ *
+ * Takes the mode rather than deriving it, because the callers have it on the
+ * record being submitted and that is the mode it was played in -- a live lookup
+ * can settle after the player has flipped the switch.
+ */
+export function isRanked(date: string, mode: GameMode = modeForDate(date)): boolean {
+  return !modeIsChosen(date) || mode === "standard";
 }
 
 /** Whether `date`'s puzzle skips the scoring fold -- see game/dictionary.ts. */

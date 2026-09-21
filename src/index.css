@@ -497,6 +497,40 @@ h2 {
   }
 }
 
+/* -- Rainbow word --------------------------------------------------------- */
+/* The "Freeform" standing where a Standard result's week and month totals go
+   (see components/RainbowWord.tsx). One hue per letter, set inline; everything
+   that decides whether it is readable lives here.
+
+   Bold, because the preview is monospaced at a small size and a hue alone is
+   not enough weight to carry a word at that scale -- and because this line is
+   otherwise the plainest one in the block. */
+.rainbow-word {
+  font-weight: 700;
+}
+/* Lightness tuned down rather than left at the middle of the range: at 50% the
+   greens and cyans of this sweep fall under the 4.5:1 AA asks for against the
+   preview's light background, and a word that is delightful and unreadable is
+   just unreadable. */
+.rainbow-word__letter {
+  color: hsl(var(--rainbow-hue) 85% 34%);
+}
+@media (prefers-color-scheme: dark) {
+  /* And back up against a dark one, where the same hues fail from the other
+     direction. */
+  .rainbow-word__letter {
+    color: hsl(var(--rainbow-hue) 90% 68%);
+  }
+}
+/* Colour is the whole of this effect, so a reader who has asked for less of it
+   gets the word in the text colour it sits in rather than a muted rainbow. The
+   word says "Freeform" either way; nothing is carried by the hue alone. */
+@media (prefers-contrast: more) {
+  .rainbow-word__letter {
+    color: inherit;
+  }
+}
+
 /* -- Mode switch ---------------------------------------------------------- */
 /* The switch and the badge floating under it. Shares the freeform button's
    metrics exactly -- it is the same control in the same slot, doing the thing
@@ -2371,39 +2405,6 @@ h2 {
    iOS has taught everybody to read as "one of these". Small, because it is a
    setting and not an action -- the page's own headings are what a reader is
    here for, and a control that outweighs them is one more thing to look past. */
-/* The same segmented track as the window picker below it, in two cells rather
-   than three -- they are the same kind of control and should not look like two
-   ideas. Unlike that one it is shown at every width: there is no screen wide
-   enough for both sets of boards at once, so this never hides anything that
-   would otherwise be visible. */
-.leaderboard__modes {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2px;
-  margin-bottom: 0.75rem;
-  padding: 3px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--bg-inset);
-}
-.leaderboard__mode {
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  padding: 0.42rem 0.25rem;
-  color: var(--fg-muted);
-  font-family: var(--font-body);
-  font-size: 0.8rem;
-  font-weight: 700;
-  line-height: 1.2;
-  cursor: pointer;
-}
-.leaderboard__mode[aria-pressed="true"] {
-  background: var(--segment-on);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
-  color: var(--fg);
-}
-
 .leaderboard__windows {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -11,7 +11,7 @@ import { rarityScore, rawTotalRarityScore } from "./dictionary";
 import { handleFor } from "./handle";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
-import { modeForDate } from "./mode";
+import { MODE_CHOICE_START, resetModeCache } from "./mode";
 import { FIRST_PUZZLE } from "./drop";
 import type { AcceptedWord, DailyProgress } from "./types";
 
@@ -58,11 +58,6 @@ describe("submitting a score", () => {
       scores: [
         {
           date: today,
-          // The mode the day is in, which for a real "today" is whatever the
-          // calendar or the switch says -- asserted through the same function
-          // rather than pinned to a string, because this test runs on every
-          // date and the answer is meant to move with them.
-          mode: modeForDate(today),
           word: "inkling",
           zipf: 2.9,
           total: expect.any(Number),
@@ -990,5 +985,78 @@ describe("a day that spent its retry", () => {
 
     const [day] = posted(fetchMock).scores as Record<string, unknown>[];
     expect(day).not.toHaveProperty("retried");
+  });
+});
+
+describe("Freeform stays off the board", () => {
+  const CHOSEN = MODE_CHOICE_START;
+  const WORDS_HERE: AcceptedWord[] = [{ word: "inkling", rarity: "Rare", zipf: 2.9 }];
+
+  beforeEach(() => {
+    resetModeCache();
+  });
+
+  it("sends nothing for a day the player chose to spend in Freeform", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+    expect(
+      submitScore({ date: CHOSEN, isToday: true, words: WORDS_HERE, mode: "freeform" }),
+    ).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("still sends a Standard day on the same puzzle", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+    expect(
+      submitScore({ date: CHOSEN, isToday: true, words: WORDS_HERE, mode: "standard" }),
+    ).toBe(true);
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
+  it("keeps the trial week on the board, which everybody played the same way", () => {
+    // Freeform by the calendar rather than by choice: those days ranked against
+    // each other fairly and are ranked still.
+    joinBoard();
+    const fetchMock = stubFetch();
+    expect(
+      submitScore({
+        date: "2026-09-20",
+        isToday: true,
+        words: WORDS_HERE,
+        mode: "freeform",
+      }),
+    ).toBe(true);
+    expect(fetchMock).toHaveBeenCalled();
+  });
+
+  it("leaves a Freeform day out of a history import", () => {
+    const playerId = joinBoard()!;
+    const fetchMock = stubFetch();
+    const history: DailyProgress[] = [
+      {
+        date: CHOSEN,
+        drop: "INK",
+        mode: "standard",
+        acceptedWords: WORDS_HERE,
+        rejectedAttempts: [],
+        completed: false,
+      },
+      {
+        date: CHOSEN,
+        drop: "INK",
+        mode: "freeform",
+        acceptedWords: WORDS_HERE,
+        rejectedAttempts: [],
+        completed: false,
+      },
+    ];
+    // A browser that has played both ways holds a record of each, and the
+    // import is the one path that could quietly put the wrong one on the board.
+    expect(backfillHistory(playerId, history, CHOSEN)).toBe(1);
+    const body = posted(fetchMock);
+    expect((body.scores as Record<string, unknown>[]).map((day) => day.date)).toEqual([
+      CHOSEN,
+    ]);
   });
 });

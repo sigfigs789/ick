@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { buildShareText, type RevealMode } from "../game/share";
+import { Fragment, useState } from "react";
+import { FREEFORM_STATS_LABEL, buildShareText, type RevealMode } from "../game/share";
+import { RainbowWord } from "./RainbowWord";
 import { windowTotals } from "../game/totals";
 import { ShareButton } from "./ShareButton";
 import { TwitterShareButton } from "./TwitterShareButton";
@@ -30,6 +31,32 @@ interface Props {
 }
 
 const SPOILER_LABEL_ID = "results-panel-reveal-label";
+
+/**
+ * Colour the one "Freeform" a Freeform result puts where its week and month
+ * totals would be (see game/share.ts).
+ *
+ * Done here rather than in `buildShareText` because it is a property of *this*
+ * rendering and not of the share: what leaves the app is plain text, which has
+ * no colour to carry. So the builder stays a pure string and the preview paints
+ * one token of it.
+ *
+ * Only the stats line can contain the token, and only once -- the heading says
+ * the mode too, but it is rendered as its own element above this and never
+ * reaches here. A line without it is returned untouched, which is every line of
+ * every Standard result.
+ */
+function paintFreeform(line: string) {
+  const at = line.indexOf(FREEFORM_STATS_LABEL);
+  if (at === -1) return line;
+  return (
+    <>
+      {line.slice(0, at)}
+      <RainbowWord word={FREEFORM_STATS_LABEL} />
+      {line.slice(at + FREEFORM_STATS_LABEL.length)}
+    </>
+  );
+}
 
 // Naming answers is opt-in so shared results stay spoiler-free by default; the
 // player can reveal just their rarest word ("Top") or every word ("All").
@@ -112,7 +139,13 @@ export function ResultsPanel({
       </div>
       <pre className="results-panel__preview" aria-hidden="true">
         <strong>{shareHeading}</strong>
-        {shareDetailLines.length > 0 && `\n${shareDetailLines.join("\n")}`}
+        {shareDetailLines.length > 0 && "\n"}
+        {shareDetailLines.map((line, index) => (
+          <Fragment key={index}>
+            {index > 0 && "\n"}
+            {paintFreeform(line)}
+          </Fragment>
+        ))}
       </pre>
       {onLeaderboard && (
         // The second way in, and the one that will get used: a finished puzzle

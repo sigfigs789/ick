@@ -86,8 +86,8 @@ export function InstructionsModal({ open, onClose }: Props) {
             </p>
             <p className="modal__copy">
               <strong>Freeform</strong> — every word is scored on its own
-              frequency, so “plays” is worth what “plays” is worth. Rarer scores,
-              and its own four words and its own leaderboard.
+              frequency, so “plays” is worth what “plays” is worth. Rarer
+              scores, its own four words, and no leaderboard.
             </p>
             <p className="modal__modes-note">
               Switch any time with the mode button in the header. Freeform also

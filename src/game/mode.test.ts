@@ -5,6 +5,7 @@ import {
   MODE_CHOICE_START,
   currentMode,
   freeformForDate,
+  isRanked,
   loadMode,
   modeForDate,
   modeIsChosen,
@@ -97,5 +98,31 @@ describe("which mode a puzzle is in", () => {
     setMode("standard");
     expect(freeformForDate(AFTER_SWITCH)).toBe(false);
     expect(freeformForDate(IN_TRIAL)).toBe(true);
+  });
+});
+
+describe("which days the board ranks", () => {
+  it("ranks the trial week, which everybody played the same way", () => {
+    // Those days were freeform for everyone at once, so they ranked against
+    // each other fairly -- and they are on the board already. Taking them off
+    // now would delete two weeks of standings to enforce a rule that did not
+    // exist while they were played.
+    setMode("freeform");
+    expect(isRanked(IN_TRIAL, "freeform")).toBe(true);
+    expect(isRanked(BEFORE_TRIAL, "standard")).toBe(true);
+  });
+
+  it("leaves a chosen Freeform day off it", () => {
+    expect(isRanked(AFTER_SWITCH, "freeform")).toBe(false);
+    expect(isRanked(AFTER_SWITCH, "standard")).toBe(true);
+  });
+
+  it("reads the mode off the record rather than the switch", () => {
+    // A live lookup can settle after the player has flipped it, and the day
+    // belongs to the game it was submitted to.
+    setMode("freeform");
+    expect(isRanked(AFTER_SWITCH, "standard")).toBe(true);
+    setMode("standard");
+    expect(isRanked(AFTER_SWITCH, "freeform")).toBe(false);
   });
 });
