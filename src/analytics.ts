@@ -11,6 +11,7 @@ import type {
   StreakState,
 } from "./game/types";
 import { loadPlayerId } from "./game/player";
+import { modeForDate, type GameMode } from "./game/mode";
 import { currentVisit, type VisitOutcome } from "./game/visits";
 import { markShare, type SessionTimeReport } from "./game/sessionTime";
 import { APP_VERSION } from "./version";
@@ -106,6 +107,23 @@ function send(name: string, props?: EventProps): void {
  * `setAccount` and `setReporting(false)`). The guarantee is the switch, not the
  * omission of a field here.
  */
+/**
+ * Which rules a puzzle was played under, on every event about playing one.
+ *
+ * A dimension rather than an event, because the question the modes raise is not
+ * "who switches" -- it is whether the two are the same game. Every number the
+ * dashboard already carries (how many words a player banks, what they score,
+ * how often they finish, how often a guess is refused, how often the live lookup
+ * is reached for) is worth knowing per mode, and none of that is answerable from
+ * a switch event alone.
+ *
+ * Off the puzzle's date rather than off the switch's current position, so an
+ * archived day reports the mode it was actually played in.
+ */
+function modeOf(date: string): GameMode {
+  return modeForDate(date);
+}
+
 export function trackAcceptedAnswer(
   date: string,
   word: AcceptedWord,
@@ -116,6 +134,7 @@ export function trackAcceptedAnswer(
   send("answer_accepted", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
+    mode: modeOf(date),
     answer_count: answerCount,
     word: word.word,
     score: rarityScore(word.zipf, date),
@@ -182,6 +201,7 @@ export function trackRejectionMessage(date: string, reason: RejectionReason) {
   send("rejection_message_shown", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
+    mode: modeOf(date),
     rejection_reason: reason,
   });
 }
@@ -388,6 +408,9 @@ export function trackPuzzleCompleted(progress: DailyProgress, streak: StreakStat
   send("puzzle_completed", {
     puzzle_date: progress.date,
     puzzle_number: puzzleNumber(progress.date),
+    // The record's own, when it carries one: a puzzle finished after the player
+    // flipped the switch was still played under the rules it was played under.
+    mode: progress.mode ?? modeOf(progress.date),
     answer_count: progress.acceptedWords.length,
     best_score: best ? rarityScore(best.zipf, progress.date) : 0,
     best_rarity: best?.rarity ?? "None",
@@ -536,6 +559,23 @@ export function trackLeaderboardOpened(from: "header" | "results") {
  */
 export function trackFoundWordsOpened(from: "header" | "results") {
   send("found_words_opened", { from });
+}
+
+/**
+ * The player moved the switch between Standard and Freeform.
+ *
+ * Both ends, not just the destination: "went to Freeform" and "came back from
+ * Freeform" are different facts about the same player, and a single field cannot
+ * tell them apart on its own.
+ *
+ * Fired only when a person presses the control -- not when the mode is restored
+ * from storage on load, which is not a decision anybody made today and would
+ * turn this into a visit count that already exists. What the *steady state*
+ * looks like is answered by the `mode` dimension on every play event, which is
+ * the more useful half of the two.
+ */
+export function trackModeChanged(from: GameMode, to: GameMode) {
+  send("mode_changed", { from, to });
 }
 
 export function trackLeaderboardJoined(isRename: boolean) {

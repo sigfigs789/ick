@@ -16,7 +16,7 @@ import {
 import { evaluateSubmission, REJECTION_MESSAGES, spellingNearMiss } from "../game/submit";
 import {
   baseFormSubstitution,
-  isFreeformWeek,
+  usesFreeformRules,
   isUnattestedZipf,
   rarityForZipf,
   totalRarityScore,
@@ -59,6 +59,8 @@ import {
 import { submitScore } from "../game/leaderboard";
 import { markSessionEngaged } from "../game/visits";
 import { markGuess } from "../game/sessionTime";
+import { modeIsChosen } from "../game/mode";
+import { useGameMode } from "./useGameMode";
 
 /**
  * How the acceptance names a waived reason. Adjectives rather than the data's
@@ -145,6 +147,11 @@ function liveRarity(check: LiveCheck, date: string): RarityInfo {
 export function useDailyPuzzle() {
   const today = useMemo(() => todayDateString(), []);
   const [viewedDate, setViewedDate] = useState(today);
+  // Read rather than set here: the switch lives in the header (see
+  // components/ModeToggle.tsx). What this subscription buys is a re-render when
+  // it moves, which is what reloads the day's progress from the other mode's key
+  // and reprices every word on screen.
+  const [mode] = useGameMode();
   const drop = useMemo(() => dropForDate(viewedDate), [viewedDate]);
   const isToday = viewedDate === today;
   const canGoToPrevious = viewedDate > dropData.epoch;
@@ -182,8 +189,9 @@ export function useDailyPuzzle() {
   // start a second lookup or bank the same word twice.
   const inFlight = useRef<Set<string>>(new Set());
 
-  // Freeform week plays off the expansive corpus as well as the curated list,
-  // so start fetching it as soon as such a puzzle is in view. Nothing waits on
+  // Freeform plays off the expansive corpus as well as the curated list, so
+  // start fetching it as soon as such a puzzle is in view -- which now includes
+  // the moment the player flips the switch on today's puzzle. Nothing waits on
   // it: until it arrives submissions fall through to the live lookup exactly as
   // they always have, and a failed fetch is not surfaced because a player on a
   // bad connection still has a full game without it.
@@ -191,12 +199,14 @@ export function useDailyPuzzle() {
   // Only freeform dates pay the 3.6MB. An ordinary daily puzzle never consults
   // the corpus, so it should never download it.
   useEffect(() => {
-    if (isFreeformWeek(viewedDate)) void loadCorpus();
-  }, [viewedDate]);
+    if (usesFreeformRules(viewedDate)) void loadCorpus();
+  }, [viewedDate, mode]);
 
-  // Reload whenever the viewed puzzle changes (browsing the archive) --
-  // each date's progress is saved independently (see storage.ts), so
-  // switching back to a puzzle you'd already started resumes it.
+  // Reload whenever the viewed puzzle changes (browsing the archive) or the mode
+  // does -- each date's progress is saved independently per mode (see
+  // storage.ts), so switching back to a puzzle you had already started resumes
+  // it, and flipping the switch opens that day's other game with its own
+  // untouched set of guesses.
   useEffect(() => {
     const loaded = loadOrCreateProgress(viewedDate, drop);
     progressRef.current = loaded;
@@ -204,7 +214,7 @@ export function useDailyPuzzle() {
     setFeedback(null);
     setLiveNote(null);
     setChecking(false);
-  }, [viewedDate, drop]);
+  }, [viewedDate, drop, mode]);
 
   const showFeedback = useCallback(
     (kind: Feedback["kind"], message: string, rarity?: Rarity, reason?: RejectionReason) => {
@@ -250,6 +260,10 @@ export function useDailyPuzzle() {
         date: viewedDate,
         isToday: viewedDate === today,
         words: updated.acceptedWords,
+        // Off the record rather than off the switch: a live lookup can settle
+        // after the player has flipped it, and the word belongs to the game it
+        // was submitted to.
+        mode: updated.mode,
         // Which side of the retry this account of the day comes from. The board
         // is monotonic per day, so this is what lets the first word banked after
         // a retry bring the day down to what the player actually holds.
@@ -507,6 +521,7 @@ export function useDailyPuzzle() {
         isToday,
         words: updated.acceptedWords,
         retried: true,
+        mode: updated.mode,
       });
       trackAnswerRetried(
         viewedDate,
@@ -561,6 +576,10 @@ export function useDailyPuzzle() {
     date: viewedDate,
     puzzleNumber: puzzleNumber(viewedDate),
     isToday,
+    /** The rules this puzzle is being played under, for the copy that names them. */
+    mode,
+    /** Whether this puzzle is one the switch decides at all (see game/mode.ts). */
+    modeChosen: modeIsChosen(viewedDate),
     canGoToPrevious,
     canGoToNext,
     goToPrevious,

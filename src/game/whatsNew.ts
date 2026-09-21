@@ -12,6 +12,8 @@
  * means seeing it again.
  */
 
+import { MODE_CHOICE_START } from "./mode";
+
 const SEEN_PREFIX = "ick:seen:";
 
 /**
@@ -34,7 +36,15 @@ export type Announcement =
   | "instructions"
   | "freeform"
   | "freeform-badge"
-  | "freeform-extended-badge";
+  | "freeform-extended-badge"
+  /**
+   * The fourth bit, for the news that the week became a switch. Its own again,
+   * and for the same reason: a player who dismissed "Freeform extended 1 week"
+   * was told the trial was running longer, not that it had ended and left a
+   * control behind. Reusing that bit would hide the switch from exactly the
+   * players who read the announcements.
+   */
+  | "mode-toggle-badge";
 
 /**
  * Whether the player has already met this feature.
@@ -63,39 +73,45 @@ export function markSeen(what: Announcement): void {
 }
 
 /**
- * The puzzle date from which the header's badge announces the extension rather
- * than the scoring change.
+ * The puzzle date from which the header's badge announced the extension rather
+ * than the week's opening scoring change.
  *
- * A date rather than a flag, so the switch happens on its own and the two
- * announcements cannot overlap: before it the badge is the week's opening news,
- * on and after it the badge is the extension, and there is never a moment with
- * two badges competing for one button.
+ * Both of those announcements are over -- see `headerBadgeFor`. The constant is
+ * kept because the two bits it chose between are still in the union above and
+ * still sitting in players' storage, and a date that explains a stored key is
+ * worth more than one less line.
  */
 export const FREEFORM_EXTENDED_START = "2026-09-20";
 
 /** What the header's badge says, and which bit retires it. */
-export interface FreeformBadge {
+export interface HeaderBadge {
   key: Announcement;
   label: string;
 }
 
 /**
- * Which announcement the Freeform badge is carrying on `date`.
+ * The badge the header is carrying on `date`, or none.
  *
- * One badge at a time, chosen by the calendar. The label and the storage key
- * travel together because they have to agree -- a badge dismissed under one
- * wording must not come back wearing the other, and a new wording that reused
- * the old bit would never appear for the players who already dismissed it.
+ * One badge at a time, chosen by the calendar, with the label and the storage
+ * key travelling together because they have to agree -- a badge dismissed under
+ * one wording must not come back wearing the other, and a new wording that
+ * reused the old bit would never appear for the players who already dismissed
+ * it.
  *
- * Compared as strings like every other cutover in this app, so it turns over
+ * There is exactly one now: "Change mode", pointing at the switch the trial
+ * week left behind (see game/mode.ts). The week's own two announcements are
+ * gone with the week -- their button is a control now rather than a notice, and
+ * a badge saying the trial has been extended would be pointing at something
+ * that is no longer true.
+ *
+ * Null before MODE_CHOICE_START, because there is nothing to point at: the
+ * switch is not on the header yet, and a badge floating under the "?" would be
+ * marking the rules button as new.
+ *
+ * Compared as a string like every other cutover in this app, so it turns over
  * with the puzzle rather than with a clock.
  */
-export function freeformBadgeFor(date: string): FreeformBadge {
-  if (date >= FREEFORM_EXTENDED_START) {
-    return {
-      key: "freeform-extended-badge",
-      label: "Freeform extended 1 week",
-    };
-  }
-  return { key: "freeform-badge", label: "Scoring update" };
+export function headerBadgeFor(date: string): HeaderBadge | null {
+  if (date < MODE_CHOICE_START) return null;
+  return { key: "mode-toggle-badge", label: "Change mode" };
 }

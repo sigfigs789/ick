@@ -245,6 +245,7 @@ export default function App() {
             words={progress.acceptedWords}
             streak={streak}
             isToday={isToday}
+            mode={progress.mode}
             onLeaderboard={openLeaderboard}
           />
         )}

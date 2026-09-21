@@ -11,6 +11,7 @@ import { rarityScore, rawTotalRarityScore } from "./dictionary";
 import { handleFor } from "./handle";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
+import { modeForDate } from "./mode";
 import { FIRST_PUZZLE } from "./drop";
 import type { AcceptedWord, DailyProgress } from "./types";
 
@@ -57,6 +58,11 @@ describe("submitting a score", () => {
       scores: [
         {
           date: today,
+          // The mode the day is in, which for a real "today" is whatever the
+          // calendar or the switch says -- asserted through the same function
+          // rather than pinned to a string, because this test runs on every
+          // date and the answer is meant to move with them.
+          mode: modeForDate(today),
           word: "inkling",
           zipf: 2.9,
           total: expect.any(Number),

@@ -3,12 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Root } from "./Root";
 import { FREEFORM_START } from "./game/dictionary";
-import { FREEFORM_EXTENDED_START } from "./game/whatsNew";
+import { MODE_CHOICE_START } from "./game/mode";
 
 /**
- * Root under a date inside the trial week, which is the only way to see the
- * announcement at all -- the header button and the sheet both hang off
- * `isFreeformWeek(todayDateString())`.
+ * Root under a pinned date, which is the only way to see either of the two
+ * things this file is about: the trial week's sheet, which hangs off
+ * `usesFreeformRules(todayDateString())`, and the mode switch and its badge,
+ * which hang off `modeIsChosen(todayDateString())`. The two never overlap --
+ * the trial's last day is the day before the switch appears.
  *
  * Its own file rather than a case in Root.test.tsx, because pinning today's
  * date is not something that file's other tests should have to share: they are
@@ -41,6 +43,7 @@ vi.mock("./analytics", () => ({
   trackLeaderboardJoined: vi.fn(),
   trackLeaderboardOpened: vi.fn(),
   trackFoundWordsOpened: vi.fn(),
+  trackModeChanged: vi.fn(),
   trackFreeformVote: vi.fn(),
   trackFreeformFeedback: vi.fn(),
   trackFeedbackSubmitted: vi.fn(),
@@ -87,26 +90,6 @@ describe("the Freeform week announcement", () => {
     localStorage.setItem("ick:seen:instructions", "1");
     render(<Root />);
     expect(sheet()).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /freeform week/i }),
-    ).toBeInTheDocument();
-  });
-
-  it("reopens from the header button after it has been dismissed", async () => {
-    localStorage.setItem("ick:seen:instructions", "1");
-    playedPuzzle("2026-09-10");
-    render(<Root />);
-    expect(sheet()).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: /^close$/i }));
-    expect(sheet()).not.toBeInTheDocument();
-
-    // The button stays all week and opens the sheet again -- dismissing it
-    // retires the *automatic* opening, not the way back to it.
-    await userEvent.click(
-      screen.getByRole("button", { name: /freeform week/i }),
-    );
-    expect(sheet()).toBeInTheDocument();
   });
 
   it("opens itself exactly once, ever", async () => {
@@ -125,227 +108,129 @@ describe("the Freeform week announcement", () => {
     expect(sheet()).not.toBeInTheDocument();
   });
 
-  it("keeps the badge up for a player who has not met the announcement", () => {
+  it("puts no switch on the header while the calendar is still deciding", () => {
     localStorage.setItem("ick:seen:instructions", "1");
     render(<Root />);
-    expect(screen.getByText(/scoring update/i)).not.toHaveClass(
-      "app__freeform-badge--faded",
+    // Inside the trial everybody is on the same rules, so a control offering a
+    // choice would be offering one nobody has -- and a badge pointing at it
+    // would be marking the "?" as new.
+    expect(
+      screen.queryByRole("button", { name: /switch to/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/change mode/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("the mode switch, from the choice date on", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    clock.today = MODE_CHOICE_START;
+    localStorage.setItem("ick:seen:instructions", "1");
+  });
+
+  const modeButton = () => screen.getByRole("button", { name: /switch to/i });
+
+  it("opens on Standard for a player who has never chosen", () => {
+    render(<Root />);
+    expect(modeButton()).toHaveTextContent("Standard");
+  });
+
+  it("remembers the choice, in this session and the next", async () => {
+    const first = render(<Root />);
+    await userEvent.click(modeButton());
+    expect(modeButton()).toHaveTextContent("Freeform");
+    first.unmount();
+
+    // A mode is a setting, not a session: a player who switched on Monday is
+    // still in Freeform on Tuesday without being asked again.
+    render(<Root />);
+    expect(modeButton()).toHaveTextContent("Freeform");
+  });
+
+  it("keeps the badge up for a player who has not met it", () => {
+    render(<Root />);
+    expect(screen.getByText(/change mode/i)).not.toHaveClass(
+      "app__mode-badge--faded",
     );
   });
 
-  it("retires the badge for good once the sheet has been closed", async () => {
-    localStorage.setItem("ick:seen:instructions", "1");
-    playedPuzzle("2026-09-10");
+  it("retires the badge for good once the switch has been used", async () => {
     const first = render(<Root />);
-    expect(sheet()).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /^close$/i }));
-    expect(screen.getByText(/scoring update/i)).toHaveClass(
-      "app__freeform-badge--faded",
+    await userEvent.click(modeButton());
+    expect(screen.getByText(/change mode/i)).toHaveClass(
+      "app__mode-badge--faded",
     );
     first.unmount();
 
-    // The next session too: the badge points at news, and there is none left
-    // for a player who has read it.
+    // The badge exists to point at a control nobody has seen. A player who has
+    // used it has seen it, and does not need telling again tomorrow.
     render(<Root />);
-    expect(screen.getByText(/scoring update/i)).toHaveClass(
-      "app__freeform-badge--faded",
+    expect(screen.getByText(/change mode/i)).toHaveClass(
+      "app__mode-badge--faded",
     );
   });
 
   it("retires the badge for good once its ten seconds are up", () => {
     vi.useFakeTimers();
     try {
-      localStorage.setItem("ick:seen:instructions", "1");
       const first = render(<Root />);
-      expect(screen.getByText(/scoring update/i)).not.toHaveClass(
-        "app__freeform-badge--faded",
+      expect(screen.getByText(/change mode/i)).not.toHaveClass(
+        "app__mode-badge--faded",
       );
 
       act(() => {
         vi.advanceTimersByTime(10_000);
       });
-      expect(screen.getByText(/scoring update/i)).toHaveClass(
-        "app__freeform-badge--faded",
+      expect(screen.getByText(/change mode/i)).toHaveClass(
+        "app__mode-badge--faded",
       );
       first.unmount();
 
       // Ten seconds in front of the player is the badge having had its chance,
       // and it does not get a second one tomorrow either.
       render(<Root />);
-      expect(screen.getByText(/scoring update/i)).toHaveClass(
-        "app__freeform-badge--faded",
+      expect(screen.getByText(/change mode/i)).toHaveClass(
+        "app__mode-badge--faded",
       );
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it("still owes the sheet to a player whose badge only timed out", () => {
+  it("leaves the switch itself alone once the badge is retired", () => {
+    localStorage.setItem("ick:seen:mode-toggle-badge", "1");
+    render(<Root />);
+    // The switch is a control, not an unread marker: it stays for good, and
+    // only the label under it goes.
+    expect(modeButton()).toBeInTheDocument();
+    expect(screen.getByText(/change mode/i)).toHaveClass(
+      "app__mode-badge--faded",
+    );
+  });
+
+  it("writes its own bit and none of the week's", () => {
     vi.useFakeTimers();
     try {
-      // A first-timer during the week: no puzzle behind them, so the sheet is
-      // not offered yet and the badge is all they get.
-      localStorage.setItem("ick:seen:instructions", "1");
-      const first = render(<Root />);
+      render(<Root />);
       act(() => {
         vi.advanceTimersByTime(10_000);
       });
-      expect(sheet()).not.toBeInTheDocument();
-      first.unmount();
 
-      // Watching two words fade is not having read what changed. Once they have
-      // a game behind them the sheet still opens itself, exactly once, as it
-      // would have if the badge had never existed.
-      playedPuzzle("2026-09-10");
-      render(<Root />);
-      expect(sheet()).toBeInTheDocument();
-      // And the badge stays retired: it has had its moment either way.
-      expect(screen.getByText(/scoring update/i)).toHaveClass(
-        "app__freeform-badge--faded",
-      );
+      // Each announcement keeps its own flag, so retiring one never counts as
+      // having met another -- in any direction.
+      expect(localStorage.getItem("ick:seen:mode-toggle-badge")).toBe("1");
+      expect(localStorage.getItem("ick:seen:freeform-badge")).toBeNull();
+      expect(
+        localStorage.getItem("ick:seen:freeform-extended-badge"),
+      ).toBeNull();
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it("retires the badge for good once it has been pressed", async () => {
-    // A first-timer, so the sheet never opens itself: the press is the only
-    // thing that has happened, and it is enough.
-    localStorage.setItem("ick:seen:instructions", "1");
-    const first = render(<Root />);
-    await userEvent.click(screen.getByText(/scoring update/i));
-    expect(sheet()).toBeInTheDocument();
-    first.unmount();
-
+  it("does not open the trial sheet, which is over", () => {
     render(<Root />);
-    expect(screen.getByText(/scoring update/i)).toHaveClass(
-      "app__freeform-badge--faded",
-    );
-  });
-
-  it("leaves the button itself alone once the badge is retired", () => {
-    localStorage.setItem("ick:seen:instructions", "1");
-    localStorage.setItem("ick:seen:freeform-badge", "1");
-    render(<Root />);
-    // The button is a label on the rules currently in force, not an unread
-    // marker -- it stays all week for everybody.
-    expect(
-      screen.getByRole("button", { name: /freeform week/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/scoring update/i)).toHaveClass(
-      "app__freeform-badge--faded",
-    );
-  });
-
-  it("opens again if it was never dismissed", () => {
-    // The stored flag is written on close, not on show, so a player who closed
-    // the tab without reading it is still owed the one opening.
-    localStorage.setItem("ick:seen:instructions", "1");
-    playedPuzzle("2026-09-10");
-    const first = render(<Root />);
-    expect(sheet()).toBeInTheDocument();
-    first.unmount();
-
-    render(<Root />);
-    expect(sheet()).toBeInTheDocument();
-  });
-
-  describe("and the extension announced partway through it", () => {
-    beforeEach(() => {
-      clock.today = FREEFORM_EXTENDED_START;
-    });
-
-    it("tells a player who already dismissed the first badge", () => {
-      // The whole point of a second bit: the players who read "Scoring update"
-      // and dismissed it are the ones most likely to care that the week is
-      // running on, and a shared flag would hide it from exactly them.
-      localStorage.setItem("ick:seen:instructions", "1");
-      localStorage.setItem("ick:seen:freeform-badge", "1");
-      render(<Root />);
-      expect(screen.getByText(/freeform extended 1 week/i)).not.toHaveClass(
-        "app__freeform-badge--faded",
-      );
-    });
-
-    it("says only the newer thing, never both at once", () => {
-      localStorage.setItem("ick:seen:instructions", "1");
-      render(<Root />);
-      expect(screen.queryByText(/scoring update/i)).not.toBeInTheDocument();
-    });
-
-    it("retires for good once it has been pressed", async () => {
-      localStorage.setItem("ick:seen:instructions", "1");
-      localStorage.setItem("ick:seen:freeform-badge", "1");
-      const first = render(<Root />);
-      await userEvent.click(
-        screen.getByText(/freeform extended 1 week/i),
-      );
-      expect(sheet()).toBeInTheDocument();
-      first.unmount();
-
-      render(<Root />);
-      expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
-        "app__freeform-badge--faded",
-      );
-    });
-
-    it("retires for good once its ten seconds are up", () => {
-      vi.useFakeTimers();
-      try {
-        localStorage.setItem("ick:seen:instructions", "1");
-        const first = render(<Root />);
-        act(() => {
-          vi.advanceTimersByTime(10_000);
-        });
-        expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
-          "app__freeform-badge--faded",
-        );
-        first.unmount();
-
-        render(<Root />);
-        expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
-          "app__freeform-badge--faded",
-        );
-      } finally {
-        vi.useRealTimers();
-      }
-    });
-
-    it("retires for good once the sheet has been closed", async () => {
-      localStorage.setItem("ick:seen:instructions", "1");
-      playedPuzzle("2026-09-10");
-      const first = render(<Root />);
-      expect(sheet()).toBeInTheDocument();
-      await userEvent.click(screen.getByRole("button", { name: /^close$/i }));
-      expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
-        "app__freeform-badge--faded",
-      );
-      first.unmount();
-
-      render(<Root />);
-      expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
-        "app__freeform-badge--faded",
-      );
-    });
-
-    it("writes its own bit and only its own", () => {
-      vi.useFakeTimers();
-      try {
-        localStorage.setItem("ick:seen:instructions", "1");
-        render(<Root />);
-        act(() => {
-          vi.advanceTimersByTime(10_000);
-        });
-
-        // Each announcement keeps its own flag, so retiring one never counts
-        // as having met the other -- in either direction.
-        expect(localStorage.getItem("ick:seen:freeform-extended-badge")).toBe(
-          "1",
-        );
-        expect(localStorage.getItem("ick:seen:freeform-badge")).toBeNull();
-      } finally {
-        vi.useRealTimers();
-      }
-    });
+    expect(sheet()).not.toBeInTheDocument();
   });
 });

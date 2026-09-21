@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WordRulesModal } from "./WordRulesModal";
+import { MODE_CHOICE_START, resetModeCache, setMode } from "../game/mode";
 
 const analytics = vi.hoisted(() => ({ trackWordSuggestion: vi.fn() }));
 vi.mock("../analytics", () => ({ trackWordSuggestion: analytics.trackWordSuggestion }));
@@ -69,6 +70,32 @@ describe("WordRulesModal during freeform week", () => {
 
   it("says the usual rules outside the week", () => {
     render(<WordRulesModal open date="2026-09-13" onClose={vi.fn()} />);
+    expect(screen.getByRole("dialog")).toHaveTextContent(/aren't eligible for play/i);
+  });
+});
+
+describe("WordRulesModal in Freeform mode", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetModeCache();
+  });
+
+  it("waives less than the week did, and says so", () => {
+    setMode("freeform");
+    render(<WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />);
+    const dialog = screen.getByRole("dialog");
+    // The mode lifts the name-and-abbreviation rules and nothing else: a panel
+    // promising archaic words here would promise something the game refuses.
+    expect(dialog).toHaveTextContent(/proper nouns and abbreviations count too/i);
+    expect(dialog).toHaveTextContent(
+      /obsolete, archaic or dated words, hyphenated words and words with punctuation are still out/i,
+    );
+    expect(dialog).not.toHaveTextContent(/it's freeform week/i);
+  });
+
+  it("says the usual rules in Standard", () => {
+    setMode("standard");
+    render(<WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />);
     expect(screen.getByRole("dialog")).toHaveTextContent(/aren't eligible for play/i);
   });
 });

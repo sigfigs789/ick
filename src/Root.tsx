@@ -10,11 +10,13 @@ import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
 import { SuggestedWordsPage } from "./components/SuggestedWordsPage";
 import { todayDateString } from "./game/date";
-import { isFreeformWeek } from "./game/dictionary";
+import { usesFreeformRules } from "./game/dictionary";
+import { modeIsChosen } from "./game/mode";
+import { useGameMode } from "./hooks/useGameMode";
 import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
 import { playedPuzzleCount } from "./game/storage";
-import { freeformBadgeFor, hasSeen, markSeen } from "./game/whatsNew";
+import { hasSeen, headerBadgeFor, markSeen } from "./game/whatsNew";
 import { useRoute } from "./routes";
 
 /**
@@ -68,7 +70,19 @@ export function Root() {
    * is not worth a timer -- being a day stale on a notice costs nothing.
    */
   const today = useRef(todayDateString());
-  const freeform = isFreeformWeek(today.current);
+  const freeform = usesFreeformRules(today.current);
+
+  /**
+   * The mode, owned here because the switch that changes it is in the header and
+   * the header is on every page.
+   *
+   * Only offered from MODE_CHOICE_START. Before it the calendar decides -- the
+   * trial week was freeform for everybody, and everything before that folded --
+   * so a switch on the header would be a control that does nothing to the puzzle
+   * under it.
+   */
+  const [mode, chooseMode] = useGameMode();
+  const chooseable = modeIsChosen(today.current);
 
   /**
    * The Freeform week notice, opened once for the player and left reachable
@@ -96,7 +110,7 @@ export function Root() {
    * Off `today.current`, which is read once per mount, so the pair cannot change
    * under a badge that is already up.
    */
-  const badge = freeformBadgeFor(today.current);
+  const badge = headerBadgeFor(today.current);
 
   /**
    * Whether that badge is still owed.
@@ -111,7 +125,9 @@ export function Root() {
    * immediately -- `hasSeen` is read at mount and would not, on its own, notice
    * the answer changing under it.
    */
-  const [freeformBadge, setFreeformBadge] = useState(() => !hasSeen(badge.key));
+  const [freeformBadge, setFreeformBadge] = useState(
+    () => badge !== null && !hasSeen(badge.key),
+  );
 
   /**
    * The badge is finished: retire it, in this session and every one after.
@@ -126,10 +142,13 @@ export function Root() {
    * key in game/whatsNew.ts and a fresh one again.
    */
   function retireBadge() {
-    markSeen(badge.key);
+    if (badge) markSeen(badge.key);
     setFreeformBadge(false);
   }
 
+  // No `openFreeform` any more: the header's button is the mode switch now, and
+  // the sheet is the trial's, reachable only by the automatic opening above
+  // while the trial window is still running.
   function closeFreeform() {
     // Opened by hand or opened for them: either way the announcement has been
     // delivered, so `markSeen` retires the automatic opening for good -- and the
@@ -137,19 +156,6 @@ export function Root() {
     markSeen("freeform");
     retireBadge();
     setShowFreeform(false);
-  }
-
-  /**
-   * Open the sheet from the header.
-   *
-   * Only the badge is retired here. The sheet is about to be read, and closing
-   * it is what retires the automatic opening -- a player who opens it by hand
-   * and closes it unread is in exactly the same place as one who never opened
-   * it, which is the case `closeFreeform` already handles for everyone.
-   */
-  function openFreeform() {
-    retireBadge();
-    setShowFreeform(true);
   }
 
   /**
@@ -257,11 +263,12 @@ export function Root() {
       <AppHeader
         route={route}
         onHowToPlay={() => setShowInstructions(true)}
-        // Passed only during the week, which is what makes the "i" come and go
-        // with the trial rather than needing to be taken out again afterwards.
-        onFreeform={freeform ? openFreeform : undefined}
+        // Passed only from the choice date, which is what keeps the switch off a
+        // build deployed ahead of it rather than needing to be taken out again.
+        mode={chooseable ? mode : undefined}
+        onModeChange={chooseable ? chooseMode : undefined}
         badge={freeformBadge}
-        badgeLabel={badge.label}
+        badgeLabel={badge?.label}
         onBadgeDone={retireBadge}
       />
       {route === "leaderboard" ? (

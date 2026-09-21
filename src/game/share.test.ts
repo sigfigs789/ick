@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { buildShareText, puzzleNumber } from "./share";
 import dropData from "../data/drops.json";
 import { rarityScore } from "./dictionary";
+import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import type { AcceptedWord } from "./types";
 
 describe("puzzleNumber", () => {
@@ -214,5 +215,46 @@ describe("buildShareText", () => {
         "\nToday: ",
       ),
     );
+  });
+});
+
+describe("the mode on the share", () => {
+  const WORDS: AcceptedWord[] = [{ word: "think", rarity: "Common", zipf: 4.5 }];
+
+  beforeEach(() => {
+    localStorage.clear();
+    resetModeCache();
+  });
+
+  it("names the mode from the choice date on", () => {
+    // Two people posting the same drop are no longer posting the same game, so
+    // the heading has to say which. It rides on the heading rather than taking a
+    // line, because a share this short cannot spare a row for one word.
+    expect(buildShareText(MODE_CHOICE_START, "ink", WORDS)).toContain(
+      "Drop: INK · Standard",
+    );
+    setMode("freeform");
+    expect(buildShareText(MODE_CHOICE_START, "ink", WORDS)).toContain(
+      "Drop: INK · Freeform",
+    );
+  });
+
+  it("takes the mode from the record rather than the switch", () => {
+    // An archived day shares the rules it was played under, not the ones the
+    // player happens to be in now.
+    setMode("freeform");
+    expect(
+      buildShareText(MODE_CHOICE_START, "ink", WORDS, { mode: "standard" }),
+    ).toContain("Drop: INK · Standard");
+  });
+
+  it("says nothing on a puzzle the calendar decided", () => {
+    // Before the switch everybody played one way, so a mode label would be
+    // naming a choice nobody had.
+    setMode("freeform");
+    const text = buildShareText("2026-09-20", "ink", WORDS);
+    expect(text).toContain("Drop: INK");
+    expect(text).not.toContain("Freeform");
+    expect(text).not.toContain("Standard");
   });
 });

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { GAME_MODES, MODE_LABELS, currentMode, type GameMode } from "../game/mode";
 import {
   fetchBoards,
   dayFloor,
@@ -115,6 +116,21 @@ function boardState(
  * other half had not moved since breakfast.
  */
 export function LeaderboardPage() {
+  /**
+   * Which set of boards is on screen.
+   *
+   * Two sets, because the two modes score differently enough that one board
+   * would rank them together and mean nothing -- Freeform prices every word on
+   * its own frequency, so an afternoon of it outscores a Standard week (see
+   * game/mode.ts). They are the same three windows twice, not six boards: a
+   * reader picks a set and then reads it exactly as they always have.
+   *
+   * Opens on the mode the reader plays in, which is the board they came to look
+   * at. Standard is listed first either way, because it is the game's default
+   * and the larger population -- the order is about which board is the reference
+   * one, not about which the reader wants today.
+   */
+  const [boardMode, setBoardMode] = useState<GameMode>(currentMode);
   const [boards, setBoards] = useState<Boards | null>(null);
   const [state, setState] = useState<LoadState>("loading");
   /**
@@ -240,7 +256,7 @@ export function LeaderboardPage() {
     setState((was) => (was === "ready" ? was : "loading"));
     setFailed(null);
     const request = ++boardsRequest.current;
-    fetchBoards(today, { day, week, month })
+    fetchBoards(today, { mode: boardMode, day, week, month })
       .then((loaded) => {
         if (request !== boardsRequest.current) return;
         setBoards(loaded);
@@ -257,7 +273,7 @@ export function LeaderboardPage() {
         setState((was) => (was === "ready" ? was : "error"));
         setFailed({ day, week, month });
       });
-  }, [today, day, week, month]);
+  }, [today, boardMode, day, week, month]);
 
   /**
    * Re-read the boards without disturbing the page.
@@ -273,7 +289,7 @@ export function LeaderboardPage() {
       // tapped refresh is asking for the board in front of them again, not for
       // this week's.
       const request = ++boardsRequest.current;
-      fetchBoards(today, { ...options, day, week, month })
+      fetchBoards(today, { mode: boardMode, ...options, day, week, month })
         .then((loaded) => {
           if (request !== boardsRequest.current) return;
           setBoards(loaded);
@@ -282,7 +298,7 @@ export function LeaderboardPage() {
         })
         .catch(() => {});
     },
-    [today, day, week, month],
+    [today, boardMode, day, week, month],
   );
 
   /**
@@ -426,8 +442,39 @@ export function LeaderboardPage() {
               it had nothing to sit against -- a bullet adrift under the last
               row. Outside the grid below, so it sits against the first board
               rather than a column gap away from it. */}
+          {/* Which set. Above the window picker and above the rule line,
+              because it is the larger of the two questions: the window decides
+              how much of a board you are looking at, and this decides which
+              board. Buttons with `aria-pressed` for the same reason the window
+              picker uses them -- what they switch is a section of the page that
+              keeps its own headings, not a tab panel.
+
+              Shown on every screen size, unlike the window picker: there is no
+              width at which both sets fit at once, so this is never a way of
+              hiding something already on screen. */}
+          <div
+            className="leaderboard__modes"
+            role="group"
+            aria-label="Which leaderboards to show"
+          >
+            {GAME_MODES.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className="leaderboard__mode"
+                aria-pressed={boardMode === mode}
+                onClick={() => setBoardMode(mode)}
+              >
+                {MODE_LABELS[mode]}
+              </button>
+            ))}
+          </div>
           <ul className="leaderboard__rules">
             <li>Only puzzles played on the day they drop count</li>
+            {/* Named rather than left to the picker above: a screenshot of this
+                page, or a reader who arrived on their own mode without pressing
+                anything, should still say which game these scores are from. */}
+            <li>{MODE_LABELS[boardMode]} mode scores only</li>
           </ul>
           {/* Which board, on the layout that only has room for one at a time.
               Above the boards rather than beside each heading, because it is one

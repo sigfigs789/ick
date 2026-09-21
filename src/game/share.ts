@@ -4,6 +4,7 @@ import {
   totalRarityScore,
   usesRetunedTiers,
 } from "./dictionary";
+import { MODE_LABELS, modeForDate, modeIsChosen, type GameMode } from "./mode";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -118,6 +119,19 @@ export interface ShareOptions {
   source?: ShareSource | null;
   /** Uses the shorter X post layout while keeping the selected spoiler setting. */
   format?: "default" | "x";
+  /**
+   * Which rules the puzzle was played under, when the reader needs telling.
+   *
+   * Named on the share from MODE_CHOICE_START on, because from there two people
+   * posting the same drop are no longer posting the same game: an unfolded 9.9
+   * and a folded 6.1 are both honest results and a reader comparing them without
+   * being told which is which is being misled by the format. Left off for every
+   * puzzle before it, where the date already decided the rules for everybody and
+   * a mode line would be a label on a choice nobody made.
+   *
+   * Defaults to the mode the record carries, which is the mode it was played in.
+   */
+  mode?: GameMode;
 }
 
 /**
@@ -151,7 +165,12 @@ export function buildShareText(
     })
     .join("\n");
 
-  const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
+  // The mode rides on the heading rather than taking a line of its own: it is a
+  // fact about the puzzle, like the date and the drop beside it, and a share
+  // this short cannot spare a row to say one word.
+  const mode = options.mode ?? modeForDate(dateStr);
+  const modeLabel = modeIsChosen(dateStr) ? ` · ${MODE_LABELS[mode]}` : "";
+  const lines = [`${label} — Drop: ${drop.toUpperCase()}${modeLabel}`];
   if (resultLine) lines.push("", resultLine);
   const progressLine =
     format === "default" &&

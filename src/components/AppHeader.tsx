@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
 import { navigate, type Route } from "../routes";
+import { ModeToggle } from "./ModeToggle";
+import type { GameMode } from "../game/mode";
 
 /**
- * How long the Freeform badge stays before it is retired.
+ * How long the header badge stays before it is retired.
  *
  * Long enough to be read by somebody who opened the app and looked at the
  * puzzle first, short enough that it is gone before it becomes furniture. The
@@ -59,7 +61,8 @@ const TABS: readonly Tab[] = [
 export function AppHeader({
   route,
   onHowToPlay,
-  onFreeform,
+  mode,
+  onModeChange,
   badge = true,
   badgeLabel,
   onBadgeDone,
@@ -67,11 +70,13 @@ export function AppHeader({
   route: Route;
   onHowToPlay: () => void;
   /**
-   * Open the Freeform week notice. Absent outside the trial week, which is what
-   * takes the button off the header again once it is over -- there is no
-   * announcement to read, so there is nothing to point at.
+   * The mode the player is in, and the way to change it. Absent before
+   * MODE_CHOICE_START, which is what keeps the switch off the header on a build
+   * deployed ahead of the date -- there is nothing to choose while the calendar
+   * is still deciding.
    */
-  onFreeform?: () => void;
+  mode?: GameMode;
+  onModeChange?: (mode: GameMode) => void;
   /**
    * Whether the badge is still owed -- false once this player has met the
    * announcement, in any session. The button is unaffected: it is a label on
@@ -103,7 +108,7 @@ export function AppHeader({
    */
   onBadgeDone?: () => void;
 }) {
-  const freeform = Boolean(onFreeform);
+  const switchable = Boolean(mode && onModeChange);
 
   /**
    * The current `onBadgeDone`, reachable from a timer that must not be restarted
@@ -125,19 +130,19 @@ export function AppHeader({
     // No label is no badge on screen (see `badgeLabel`), and a badge nobody can
     // see has nothing to finish -- timing one out would retire an announcement
     // that was never made.
-    if (!freeform || !badge || !badgeLabel) return;
+    if (!switchable || !badge || !badgeLabel) return;
     const timer = setTimeout(() => badgeDone.current?.(), BADGE_VISIBLE_MS);
     return () => clearTimeout(timer);
-  }, [freeform, badge, badgeLabel]);
+  }, [switchable, badge, badgeLabel]);
 
   /**
-   * Open the sheet and retire the badge in the same gesture. Pressing either one
-   * is the badge having worked, so it has no business sitting there afterwards
-   * waiting out its timer over a sheet the player has already read.
+   * Switch modes and retire the badge in the same gesture. Pressing either one
+   * is the badge having worked -- it exists to point at this control, and once
+   * the control has been used it has nothing left to point at.
    */
-  function openFreeform() {
+  function changeMode(next: GameMode) {
     onBadgeDone?.();
-    onFreeform?.();
+    onModeChange?.(next);
   }
 
   function go(tab: Tab) {
@@ -188,45 +193,28 @@ export function AppHeader({
             stays at the right edge where the "?" has always been. */}
         <div className="app__header-actions">
         {/* Sits before the "?" so the two read left to right as
-            news-then-reference, and so the badge under it is not hard against
+            state-then-reference, and so the badge under it is not hard against
             the edge of a phone.
 
-            A word rather than a glyph. An "i" in a circle is the same shape as
-            the "?" beside it and says even less -- between two identical
-            circles a player has no way to tell the rules from the news without
-            pressing one. "Freeform" names the week it opens, and the badge
-            under it says what kind of week that is.
-
-            Shown to everybody rather than only to whoever has not read the
-            sheet: it is a label on the rules currently in force, not an unread
-            marker. The button stays all week; the badge is the part that goes,
-            and it goes for good -- pressed, read and dismissed, or simply sat
-            in front of the player for its ten seconds. Each piece of news gets
-            its own badge and its own bit, so retiring one does not spend the
-            next. */}
-        {onFreeform && (
-          <div className="app__freeform-nav">
-            <button
-              type="button"
-              className="app__freeform-button"
-              onClick={openFreeform}
-              aria-label="Freeform week — what’s changed"
-            >
-              Freeform
-            </button>
-            {/* Decoration: the button's own label above already carries this,
-                so the badge is not announced a second time -- and it is skipped
-                by the keyboard for the same reason. It takes a press anyway,
-                because it is the part of the pair the eye is on, and a label
-                that ignores the finger aimed at it reads as broken. The button
-                behind it is the accessible control and does the same thing. */}
+            A word rather than a glyph, for the same reason it was a word when
+            it announced the week: an icon here would be a second circle beside
+            the "?" saying even less. The label names the mode you are in, and
+            the badge under it says the label is something you can press. */}
+        {mode && onModeChange && (
+          <div className="app__mode-nav">
+            <ModeToggle mode={mode} onChange={changeMode} />
+            {/* Decoration: the toggle's own accessible name already says both
+                the mode and where pressing goes, so the badge is not announced
+                a second time -- and it is skipped by the keyboard for the same
+                reason. It takes a press anyway, because it is the part of the
+                pair the eye is on, and a label that ignores the finger aimed at
+                it reads as broken. The button behind it is the accessible
+                control and does the same thing. */}
             {badgeLabel && (
               <span
-                className={`app__freeform-badge${
-                  badge ? "" : " app__freeform-badge--faded"
-                }`}
+                className={`app__mode-badge${badge ? "" : " app__mode-badge--faded"}`}
                 aria-hidden="true"
-                onClick={openFreeform}
+                onClick={() => changeMode(mode === "standard" ? "freeform" : "standard")}
               >
                 {badgeLabel}
               </span>

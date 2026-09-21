@@ -4,6 +4,7 @@ import { windowTotals } from "../game/totals";
 import { ShareButton } from "./ShareButton";
 import { TwitterShareButton } from "./TwitterShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
+import type { GameMode } from "../game/mode";
 import { trackResultCopied, trackResultSharedOnX } from "../analytics";
 
 interface Props {
@@ -17,6 +18,13 @@ interface Props {
    * archive result headed with its own date does not claim to be today's.
    */
   isToday?: boolean;
+  /**
+   * The rules this puzzle was played under, named on the share from
+   * MODE_CHOICE_START on (see game/share.ts). Taken from the progress record
+   * rather than from the switch, so an archived day shares the mode it was
+   * played in.
+   */
+  mode?: GameMode;
   /** Opens the leaderboard. Omitted in tests that only exercise sharing. */
   onLeaderboard?: () => void;
 }
@@ -37,6 +45,7 @@ export function ResultsPanel({
   words,
   streak,
   isToday = false,
+  mode,
   onLeaderboard,
 }: Props) {
   // Default to "top": name the player's rarest word as a low-stakes flex while
@@ -54,6 +63,7 @@ export function ResultsPanel({
     weekTotal: totals.week,
     monthTotal: totals.month,
     isToday,
+    mode,
   };
   const shareText = buildShareText(date, drop, words, sharedResultOptions);
   const copiedShareText = buildShareText(date, drop, words, {
@@ -65,6 +75,7 @@ export function ResultsPanel({
     source: "twitter",
     format: "x",
     isToday,
+    mode,
   })}`;
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   return (

@@ -13,6 +13,7 @@ import {
   forfeitRetry,
 } from "./storage";
 import { rarityScore } from "./dictionary";
+import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 
 // Every fixture date here predates the five-guess cutover, so these tests run
 // against the six-guess limit those puzzles played with.
@@ -862,5 +863,67 @@ describe("retryWord round trips", () => {
     // A personal best across every puzzle ever played, and the word was
     // genuinely found -- a lesser replacement does not lower it.
     expect(loadStreak().highScore).toBe(best);
+  });
+});
+
+describe("two modes, two games", () => {
+  const DAY = MODE_CHOICE_START;
+  const WORD = { word: "think", rarity: "Common" as const, zipf: 4.5 };
+
+  beforeEach(() => {
+    localStorage.clear();
+    resetModeCache();
+    // On the puzzle's own day, so a word banked here is one the record can
+    // prove was played when it dropped (see playedOnItsDay).
+    setToday(DAY);
+  });
+
+  it("keeps each mode's guesses to itself", () => {
+    // The whole point of two modes rather than one with a setting: switching is
+    // meant to be something you can do mid-morning without spending the guesses
+    // you already made.
+    setMode("standard");
+    recordAcceptedWord(loadOrCreateProgress(DAY, "INK"), WORD);
+    expect(loadProgress(DAY)?.acceptedWords).toHaveLength(1);
+
+    setMode("freeform");
+    expect(loadProgress(DAY)).toBeNull();
+    recordAcceptedWord(loadOrCreateProgress(DAY, "INK"), WORD);
+    expect(loadProgress(DAY)?.acceptedWords).toHaveLength(1);
+
+    setMode("standard");
+    expect(loadProgress(DAY)?.acceptedWords).toHaveLength(1);
+  });
+
+  it("stamps the record with the mode it was played in", () => {
+    setMode("freeform");
+    expect(loadOrCreateProgress(DAY, "INK").mode).toBe("freeform");
+    // And not before the choice date, where the date already decides.
+    expect(loadOrCreateProgress("2026-09-20", "INK").mode).toBeUndefined();
+  });
+
+  it("leaves Standard on the bare key every save already uses", () => {
+    // Standard keeps the key this game has always used, so nothing stored
+    // before the switch moves and there is no migration; only Freeform is
+    // named. Asserted on the keys because that is the compatibility promise.
+    setMode("standard");
+    recordAcceptedWord(loadOrCreateProgress(DAY, "INK"), WORD);
+    setMode("freeform");
+    recordAcceptedWord(loadOrCreateProgress(DAY, "INK"), WORD);
+
+    expect(localStorage.getItem(`ick:progress:${DAY}`)).not.toBeNull();
+    expect(localStorage.getItem(`ick:progress:${DAY}:freeform`)).not.toBeNull();
+  });
+
+  it("reads a day played both ways back as two records, one per board", () => {
+    // What the leaderboard's history import walks: each mode is its own day's
+    // play and gets its own row, so neither can lower the other.
+    setMode("standard");
+    recordAcceptedWord(loadOrCreateProgress(DAY, "INK"), WORD);
+    setMode("freeform");
+    recordAcceptedWord(loadOrCreateProgress(DAY, "INK"), WORD);
+
+    const played = playedOnItsDay().filter((day) => day.date === DAY);
+    expect(played.map((day) => day.mode)).toEqual(["freeform", "standard"]);
   });
 });

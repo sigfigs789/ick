@@ -1,5 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackFeedbackSubmitted } from "../analytics";
+import { modeIsChosen } from "../game/mode";
+import { todayDateString } from "../game/date";
 
 interface Props {
   open: boolean;
@@ -67,6 +69,32 @@ export function InstructionsModal({ open, onClose }: Props) {
           computed using Zipf’s law. The highest ranks are Mythic at 9.5+ and
           Legend at 9.9+.
         </p>
+        {/* The two modes, once there are two. Short on purpose: this sheet is
+            the first thing a new player sees, and the difference between them is
+            one sentence each -- whether a word is priced as itself or as the
+            common word it is a form of. Everything else about the two is the
+            same game, so everything above this still applies to both.
+
+            Only from MODE_CHOICE_START. Before it there is one set of rules and
+            a section headed "Standard" would be naming a choice nobody has. */}
+        {modeIsChosen(todayDateString()) && (
+          <div className="modal__modes">
+            <h3 className="modal__modes-heading">Two ways to play</h3>
+            <p className="modal__copy">
+              <strong>Standard</strong> — a word is scored as the common word
+              it’s a form of: “plays” counts as <em>play</em>. Four words a day.
+            </p>
+            <p className="modal__copy">
+              <strong>Freeform</strong> — every word is scored on its own
+              frequency, so “plays” is worth what “plays” is worth. Rarer scores,
+              and its own four words and its own leaderboard.
+            </p>
+            <p className="modal__modes-note">
+              Switch any time with the mode button in the header. Both modes
+              refuse the same words.
+            </p>
+          </div>
+        )}
         <form
           className="word-suggestion feedback-form"
           onSubmit={submitFeedback}
