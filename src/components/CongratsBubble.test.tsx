@@ -93,14 +93,22 @@ describe("the congratulation bubble", () => {
     await waitFor(() => expect(screen.queryByRole("button")).toBeNull());
   });
 
-  it("pops off the page when it is pressed, and does not come back", async () => {
+  it("splats into ink when it is hit, and the ink soaks away", async () => {
     stubFetch({ weekly: [WINNER] });
-    const { unmount } = render(<CongratsBubble today={TUESDAY} />);
+    const { container, unmount } = render(<CongratsBubble today={TUESDAY} />);
 
     await userEvent.click(await screen.findByRole("button"));
-    // The pop plays and then the bubble is gone -- there is nothing left to
-    // dismiss and nothing to press twice.
-    await waitFor(() => expect(screen.queryByRole("button")).toBeNull());
+    // The bubble is gone the moment it is hit, and what is left is the blot --
+    // decorative, so it is asserted by class rather than by role.
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(container.querySelector(".congrats-bubble__splat")).not.toBeNull();
+
+    // And then the ink goes too: there is nothing left to dismiss and nothing
+    // to press twice.
+    await waitFor(
+      () => expect(container.querySelector(".congrats-bubble__splat")).toBeNull(),
+      { timeout: 3000 },
+    );
 
     // Popped is remembered, so opening the page again later in the day is not a
     // second congratulation for the same week.

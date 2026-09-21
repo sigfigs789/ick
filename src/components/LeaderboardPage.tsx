@@ -461,111 +461,113 @@ export function LeaderboardPage() {
               ))}
             </div>
           )}
-          <div className="leaderboard__boards">
-            {showsBoard("day") && (
-              <Board
-                // "Today" while it is today's, and the day's own date once it
-                // isn't -- the same wording the finds page heads a day with, for
-                // the same reason: two steps back has no word like "yesterday",
-                // and a heading whose shape changes halfway down a week is
-                // harder to read than one that always names the day.
-                heading={dayIsLive ? "Today" : formatDateLabel(day)}
-                // What a day board resets at, which is the one thing worth
-                // saying about a window everybody is already inside. A day that
-                // has closed says the other half of it: what is on screen is not
-                // going to change again.
-                headingDetail={dayIsLive ? "Resets at midnight" : "Final"}
-                entries={boards.daily}
-                self={boards.dailySelf}
-                emptyMessage={
-                  dayIsLive
-                    ? "Nobody's scored yet today. Be first."
-                    : "Nobody scored on this puzzle."
-                }
-                playerId={playerId}
-                state={dayState}
-                onRetry={load}
-                unit="day"
-                canGoBack={day > dayFloor()}
-                canGoForward={!dayIsLive}
-                onBack={() => setDay(addDays(day, -1))}
-                onForward={() => setDay(addDays(day, 1))}
-              />
-            )}
-            {showsBoard("week") && (
-              <Board
-                heading={weekIsLive ? "This week" : weekLabel(week)}
-                // Beside the heading rather than under it: the two boards sit
-                // shoulder to shoulder, and a line under one of them and not
-                // the other pushed its rows half a line down -- two lists side
-                // by side that do not start level read as a mistake. No dates
-                // on either board now. A window you are already in does not
-                // need its days spelled out; when it turns over is the one
-                // thing worth saying, and both boards say exactly that. A
-                // window that has turned over says the other half of it: that
-                // what is on screen is not going to change again.
-                headingDetail={weekIsLive ? "Resets on Sundays" : "Final"}
-                entries={boards.weekly}
-                self={boards.weeklySelf}
-                emptyMessage={
-                  weekIsLive
-                    ? "Nobody's scored yet this week. Be first."
-                    : "Nobody scored this week."
-                }
-                playerId={playerId}
-                state={weekState}
-                onRetry={load}
-                // The window this board counts is the reader's to move: back
-                // through the weeks that have finished, forward to the one they
-                // are playing. See the note on the nav in `Board`.
-                unit="week"
-                canGoBack={week > weekFloor()}
-                canGoForward={!weekIsLive}
-                onBack={() => setWeek(addDays(week, -7))}
-                onForward={() => setWeek(addDays(week, 7))}
-              />
-            )}
-            {showsBoard("month") && (
-              <Board
-                heading={monthIsLive ? "This month" : monthLabel(month)}
-                // The weekday it turns over on and the date that is, which for
-                // a month is computed (see game/month.ts) rather than the
-                // constant the week can get away with -- and the weekday leads,
-                // because a bare "Sep 1" is a date a reader still has to place
-                // in their own week. This board used to be "Season 1" with
-                // the season's two dates under it -- a window a reader had to
-                // be told the ends of, because they were picked by hand. A
-                // month has ends everybody already knows.
-                headingDetail={monthIsLive ? monthResetLabel(today) : "Final"}
-                entries={boards.monthly}
-                self={boards.monthlySelf}
-                emptyMessage={
-                  monthIsLive
-                    ? "Nobody's scored yet this month. Be first."
-                    : "Nobody scored this month."
-                }
-                playerId={playerId}
-                state={monthState}
-                onRetry={load}
-                unit="month"
-                canGoBack={month > monthFloor()}
-                canGoForward={!monthIsLive}
-                onBack={() => setMonth(previousMonthStart(month))}
-                onForward={() => setMonth(nextMonthStart(month))}
-              />
-            )}
+          {/* The boards, and the layer the congratulation wanders over. The
+              bubble is positioned against this box rather than the viewport,
+              because what it is about is the standings -- it names the winner
+              of the window that just closed, which is the one result the boards
+              themselves cannot show, and it drifts around them until somebody
+              hits it. Two days a month at most (see game/congrats.ts).
+              Inside the loaded branch, so there is never a congratulation
+              floating over a board that says it couldn't load. */}
+          <div className="leaderboard__boards-area">
+            <CongratsBubble today={today} />
+            <div className="leaderboard__boards">
+              {showsBoard("day") && (
+                <Board
+                  // "Today" while it is today's, and the day's own date once it
+                  // isn't -- the same wording the finds page heads a day with, for
+                  // the same reason: two steps back has no word like "yesterday",
+                  // and a heading whose shape changes halfway down a week is
+                  // harder to read than one that always names the day.
+                  heading={dayIsLive ? "Today" : formatDateLabel(day)}
+                  // What a day board resets at, which is the one thing worth
+                  // saying about a window everybody is already inside. A day that
+                  // has closed says the other half of it: what is on screen is not
+                  // going to change again.
+                  headingDetail={dayIsLive ? "Resets at midnight" : "Final"}
+                  entries={boards.daily}
+                  self={boards.dailySelf}
+                  emptyMessage={
+                    dayIsLive
+                      ? "Nobody's scored yet today. Be first."
+                      : "Nobody scored on this puzzle."
+                  }
+                  playerId={playerId}
+                  state={dayState}
+                  onRetry={load}
+                  unit="day"
+                  canGoBack={day > dayFloor()}
+                  canGoForward={!dayIsLive}
+                  onBack={() => setDay(addDays(day, -1))}
+                  onForward={() => setDay(addDays(day, 1))}
+                />
+              )}
+              {showsBoard("week") && (
+                <Board
+                  heading={weekIsLive ? "This week" : weekLabel(week)}
+                  // Beside the heading rather than under it: the two boards sit
+                  // shoulder to shoulder, and a line under one of them and not
+                  // the other pushed its rows half a line down -- two lists side
+                  // by side that do not start level read as a mistake. No dates
+                  // on either board now. A window you are already in does not
+                  // need its days spelled out; when it turns over is the one
+                  // thing worth saying, and both boards say exactly that. A
+                  // window that has turned over says the other half of it: that
+                  // what is on screen is not going to change again.
+                  headingDetail={weekIsLive ? "Resets on Sundays" : "Final"}
+                  entries={boards.weekly}
+                  self={boards.weeklySelf}
+                  emptyMessage={
+                    weekIsLive
+                      ? "Nobody's scored yet this week. Be first."
+                      : "Nobody scored this week."
+                  }
+                  playerId={playerId}
+                  state={weekState}
+                  onRetry={load}
+                  // The window this board counts is the reader's to move: back
+                  // through the weeks that have finished, forward to the one they
+                  // are playing. See the note on the nav in `Board`.
+                  unit="week"
+                  canGoBack={week > weekFloor()}
+                  canGoForward={!weekIsLive}
+                  onBack={() => setWeek(addDays(week, -7))}
+                  onForward={() => setWeek(addDays(week, 7))}
+                />
+              )}
+              {showsBoard("month") && (
+                <Board
+                  heading={monthIsLive ? "This month" : monthLabel(month)}
+                  // The weekday it turns over on and the date that is, which for
+                  // a month is computed (see game/month.ts) rather than the
+                  // constant the week can get away with -- and the weekday leads,
+                  // because a bare "Sep 1" is a date a reader still has to place
+                  // in their own week. This board used to be "Season 1" with
+                  // the season's two dates under it -- a window a reader had to
+                  // be told the ends of, because they were picked by hand. A
+                  // month has ends everybody already knows.
+                  headingDetail={monthIsLive ? monthResetLabel(today) : "Final"}
+                  entries={boards.monthly}
+                  self={boards.monthlySelf}
+                  emptyMessage={
+                    monthIsLive
+                      ? "Nobody's scored yet this month. Be first."
+                      : "Nobody scored this month."
+                  }
+                  playerId={playerId}
+                  state={monthState}
+                  onRetry={load}
+                  unit="month"
+                  canGoBack={month > monthFloor()}
+                  canGoForward={!monthIsLive}
+                  onBack={() => setMonth(previousMonthStart(month))}
+                  onForward={() => setMonth(nextMonthStart(month))}
+                />
+              )}
+            </div>
           </div>
         </>
       )}
-
-      {/* The one result the boards themselves cannot show: who won the window
-          that closed. It floats over them rather than sitting in the page,
-          because it is an aside to the standings and not a row of them, and it
-          appears on two days a month at most -- the Tuesday after a week ends
-          and the second after a month does. Outside the loaded/error branches
-          above on purpose: it asks its own question of the server and answers
-          it or doesn't, and the boards never wait on it. */}
-      <CongratsBubble today={today} />
 
       <button
         type="button"

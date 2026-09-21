@@ -8,30 +8,45 @@ import {
 } from "../game/congrats";
 
 /**
- * How long the pop animation runs before the bubble is taken off the page.
+ * How long the splat is on screen before it is taken off the page.
  *
- * Long enough to read as a burst rather than a disappearance, short enough that
- * nobody waits for it. A timer rather than `animationend`, because a reader who
- * has asked for reduced motion gets no animation to end -- the global rule near
- * the top of index.css cuts every one of them to nothing -- and a bubble that
- * hung around forever for exactly those players would be the worst version of
- * this.
+ * The blot lands fast, sits for a beat and soaks away, which is long enough to
+ * be the thing the reader did and short enough that nobody waits for it. A
+ * timer rather than `animationend`, because a reader who has asked for reduced
+ * motion gets no animation to end -- the global rule near the top of
+ * index.css cuts every one of them to nothing -- and ink that stayed on the
+ * board forever for exactly those players would be the worst version of this.
  */
-const POP_MS = 260;
+const SPLAT_MS = 900;
 
 /**
- * A bubble floating over the boards, naming the player who won the window that
- * just closed, which pops when it is pressed.
+ * How many droplets fly off the blot.
+ *
+ * Enough to read as ink hitting paper rather than a circle appearing; few
+ * enough that each one is its own mark. They are thrown at even angles from
+ * the centre and land at different distances (see the nth-child rules in
+ * index.css), which is what keeps an even fan from looking like a clock face.
+ */
+const DROPLETS = 7;
+
+/**
+ * A bubble drifting around the boards, naming the player who won the window
+ * that just closed, which splats into an ink blot when it is hit.
  *
  * It appears on two days: the Tuesday after a week ends and the second of the
  * month after a month does (see game/congrats.ts). The rest of the time this
  * renders nothing and asks the server nothing.
  *
- * Pressing it is the whole of the interaction -- there is no close button
- * hiding in a corner, because the bubble *is* the button and a thing you pop is
- * the one control nobody needs told about. It stays popped afterwards: the
- * window it named is remembered in this browser, so the congratulation is one
- * appearance and not a thing to dismiss again at lunch.
+ * It moves, and that is the point: a notice parked at the foot of the page is
+ * furniture, and furniture is read once and then looked past. Something
+ * wandering over the board is asking to be hit -- and this game is called
+ * WordInk, so what a hit leaves behind is ink. Pressing it is the whole of the
+ * interaction; there is no close button hiding in a corner, because the bubble
+ * *is* the button.
+ *
+ * It stays popped afterwards: the window it named is remembered in this
+ * browser, so the congratulation is one appearance and not a thing to burst
+ * again at lunch.
  *
  * Deliberately not part of the boards' own loading: this is a second, small
  * request for a window nothing else on the page is showing, and if it fails or
@@ -46,8 +61,9 @@ export function CongratsBubble({ today }: { today: string }) {
    */
   const spot = useMemo(() => congratsSpot(today), [today]);
   const [winner, setWinner] = useState<string | null>(null);
-  const [popped, setPopped] = useState(false);
-  /** Taken off the page, once the pop has finished playing. */
+  /** Hit: the bubble is gone and the ink is landing where it was. */
+  const [splatting, setSplatting] = useState(false);
+  /** Taken off the page, once the ink has soaked away. */
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
@@ -82,38 +98,53 @@ export function CongratsBubble({ today }: { today: string }) {
   // one plenty of screen readers never announce.
   if (!spot || gone) return null;
 
-  function pop() {
-    if (!spot || popped) return;
-    // Remembered on the press rather than when the animation finishes, so a
-    // reader who navigates away mid-pop has still popped it.
+  function splat() {
+    if (!spot || splatting) return;
+    // Remembered on the hit rather than when the ink clears, so a reader who
+    // navigates away mid-splat has still popped it.
     markCongratsPopped(spot);
-    setPopped(true);
-    window.setTimeout(() => setGone(true), POP_MS);
+    setSplatting(true);
+    window.setTimeout(() => setGone(true), SPLAT_MS);
   }
 
   return (
-    // Fixed to the foot of the viewport, not to a point in the page: it floats
-    // *over* the boards, so it has to stay in front of whichever rows a reader
-    // has scrolled to. Low rather than centred, so it never covers the rows it
-    // is about.
+    // Over the boards rather than in the flow beside them -- the layer the
+    // bubble wanders across. It catches nothing itself: the page underneath is
+    // still the page, and only the bubble takes a press.
     <div className="congrats-bubble" aria-live="polite">
       {winner && (
-        <button
-          type="button"
-          className={`congrats-bubble__pop${popped ? " congrats-bubble__pop--popped" : ""}`}
-          onClick={pop}
-          // What pressing it does, for a reader who cannot see that it is a
-          // bubble. The message itself is the label, so this is the only part
-          // that needs saying separately.
-          title="Pop"
+        // The wandering happens here, on the layer the bubble and its ink share,
+        // so the blot lands exactly where the bubble was standing when it was
+        // hit -- the drift is held still for the splat rather than restarted.
+        <div
+          className="congrats-bubble__drift"
+          data-splatting={splatting ? "" : undefined}
         >
-          <span className="congrats-bubble__emoji" aria-hidden="true">
-            🎉
-          </span>
-          <span className="congrats-bubble__text">
-            {congratsMessage(winner, spot)}
-          </span>
-        </button>
+          {splatting ? (
+            <span className="congrats-bubble__splat" aria-hidden="true">
+              {Array.from({ length: DROPLETS }, (_, index) => (
+                <span key={index} className="congrats-bubble__drop" />
+              ))}
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="congrats-bubble__pop"
+              onClick={splat}
+              // What hitting it does, for a reader who cannot see that it is a
+              // bubble. The message itself is the label, so this is the only
+              // part that needs saying separately.
+              title="Pop"
+            >
+              <span className="congrats-bubble__emoji" aria-hidden="true">
+                🎉
+              </span>
+              <span className="congrats-bubble__text">
+                {congratsMessage(winner, spot)}
+              </span>
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
