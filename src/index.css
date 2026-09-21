@@ -657,6 +657,49 @@ h2 {
 .dev-reset-button:hover {
   color: var(--fg);
 }
+/* The dev-only time machine (src/dev/DevDateBar.tsx). Pinned to the corner so
+   it sits outside every page's layout and cannot be mistaken for the game. */
+.dev-date-bar {
+  position: fixed;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border, currentColor);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  opacity: 0.65;
+  font-size: 0.75rem;
+}
+
+.dev-date-bar:hover,
+.dev-date-bar:focus-within {
+  opacity: 1;
+}
+
+.dev-date-bar button {
+  border: 0;
+  padding: 0.1rem 0.35rem;
+  background: transparent;
+  color: var(--fg-faint);
+  font: inherit;
+  cursor: pointer;
+}
+
+.dev-date-bar button:hover {
+  color: var(--fg);
+}
+
+.dev-date-bar input {
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+}
+
 /* Puzzle archive navigation */
 /* Its own row under the header now, rather than a line inside it. */
 .puzzle-nav {

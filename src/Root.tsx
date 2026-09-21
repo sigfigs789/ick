@@ -9,6 +9,7 @@ import { FreeformModal } from "./components/FreeformModal";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
 import { SuggestedWordsPage } from "./components/SuggestedWordsPage";
+import { DevDateBar } from "./dev/DevDateBar";
 import { todayDateString } from "./game/date";
 import { usesFreeformRules } from "./game/dictionary";
 import { modeIsChosen } from "./game/mode";
@@ -298,6 +299,9 @@ export function Root() {
         date={today.current}
         onClose={closeFreeform}
       />
+      {/* Development only: `import.meta.env.DEV` is a compile-time constant, so
+          this and everything under it drops out of a production build. */}
+      {import.meta.env.DEV && <DevDateBar />}
       <InstructionsModal
         open={showInstructions}
         onClose={() => {
