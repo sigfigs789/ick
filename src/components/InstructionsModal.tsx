@@ -90,8 +90,9 @@ export function InstructionsModal({ open, onClose }: Props) {
               and its own four words and its own leaderboard.
             </p>
             <p className="modal__modes-note">
-              Switch any time with the mode button in the header. Both modes
-              refuse the same words.
+              Switch any time with the mode button in the header. Freeform also
+              lets proper nouns and abbreviations play; both modes refuse
+              misspellings and obsolete, archaic or dated words.
             </p>
           </div>
         )}
