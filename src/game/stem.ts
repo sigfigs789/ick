@@ -617,6 +617,22 @@ export interface PrefixEra {
   borrowed: boolean;
 }
 
+/**
+ * The prefixes that fold on `era`'s dates, alphabetical rather than in the
+ * long-to-short order `prefixBaseCandidates` reads them in: this is the list
+ * shown to a player (see `foldAffixGroups`), and a scan for the one on the word
+ * in front of them is easier down an alphabetical column than down a length
+ * one. Derived from the table above rather than written out beside the copy, so
+ * retiring a prefix takes it out of the explanation too.
+ */
+export function transparentPrefixes(era: PrefixEra): string[] {
+  return TRANSPARENT_PREFIXES.filter(
+    (prefix) =>
+      (era.pre || !RETIRED_PREFIXES.pre.has(prefix)) &&
+      (era.borrowed || !RETIRED_PREFIXES.borrowed.has(prefix))
+  ).sort();
+}
+
 export function prefixBaseCandidates(word: string, era: PrefixEra): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];
@@ -686,6 +702,15 @@ const MEASUREMENT_PREFIXES = [
  * table is the guard, and it is what admits "amp", "bar", "bit", "ohm", "rad"
  * and "ton" while refusing every other three-letter residue in the language.
  */
+/**
+ * The measurement modifiers, alphabetical and for the same reason as
+ * `transparentPrefixes`: they are shown to a player, not matched against a
+ * word.
+ */
+export function measurementPrefixes(): string[] {
+  return [...MEASUREMENT_PREFIXES].sort();
+}
+
 export function measurementBaseCandidates(word: string): string[] {
   const w = word.toLowerCase();
   const out: string[] = [];

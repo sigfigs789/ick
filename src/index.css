@@ -992,14 +992,42 @@ h2 {
   letter-spacing: 0.01em;
 }
 /* Quiet enough to read as a footnote to the word rather than a warning: the
- * score is correct, this only says which word it was measured from. */
+ * score is correct, this only says which word it was measured from.
+ *
+ * A sibling of the card's button rather than a row inside it, because it
+ * carries a button of its own ("More info") and a button cannot contain one.
+ * The padding reproduces what the button's grid used to give it: the same
+ * left indent as the word above, and the card's own bottom padding. */
 .guess-log__base-note {
-  /* Row two, starting under the word rather than under the crown and running
-   * the full width -- nothing else occupies that row. */
-  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.35rem;
+  margin: -0.25rem 0 0;
+  padding: 0 0.9rem 0.5rem;
   font-size: 0.72rem;
   line-height: 1.2;
   color: var(--fg-muted);
+}
+/* Underlined text, like the rejection note's own "More info" -- the affordance
+ * has to read as a link at 0.72rem, where a border or a background would weigh
+ * more than the sentence it sits in. */
+.guess-log__base-note-info {
+  padding: 0.1rem 0.25rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.guess-log__base-note-info:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: var(--fg);
 }
 /* With only four guesses a day, the count carries real weight -- match the
    heading's size and weight and use the muted (not faint) ink so it reads as
@@ -1828,6 +1856,84 @@ h2 {
 }
 .modal__copy:last-child {
   margin-bottom: 0;
+}
+
+/* Common forms: what the guess log's base-form note links to. */
+/* The player's own word and the form it scored as, big enough to be the answer
+   to the question that opened the panel rather than a caption on it. */
+.common-form__pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+}
+.common-form__word {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+.common-form__arrow {
+  color: var(--fg-muted);
+}
+.common-form__groups {
+  margin: 0.8rem 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.7rem;
+}
+/* A ruled list rather than cards: ten groups of cards is a stack of boxes to
+   scroll past, where a rule per group keeps the panel one thing to read. */
+.common-form__group {
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+.common-form__group:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.common-form__group-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+/* The affixes themselves, monospaced so a hyphen reads as part of the affix
+   rather than as punctuation between two of them. */
+.common-form__affixes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.4rem;
+  margin: 0.2rem 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--fg);
+}
+/* An affix is one unbreakable token: its own hyphen is a break opportunity
+   the browser will take at phone width, and "-cked" split after the hyphen
+   reads as two things that are not words. */
+.common-form__affix {
+  white-space: nowrap;
+}
+/* A link, not a button: it is a phrase inside a sentence, and the modal's
+   default button chrome would make the sentence carry a control. */
+.common-form__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.common-form__example {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
 }
 .word-suggestion {
   margin-top: 1.2rem;

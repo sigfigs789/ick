@@ -20,9 +20,11 @@ import {
   inflectedFormCandidates,
   inflectionalBaseCandidates,
   measurementBaseCandidates,
+  measurementPrefixes,
   prefixBaseCandidates,
   privativeBaseCandidates,
   superlativeBaseCandidates,
+  transparentPrefixes,
   unmeasuredBaseCandidates,
 } from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
@@ -2117,6 +2119,124 @@ export function baseFormRankDrop(
   const shown = (zipf: number) => Number(scoring.format(scoring.score(zipf)));
   const drop = roundToCents(shown(substitution.ownZipf) - shown(substitution.baseZipf));
   return drop >= BASE_FORM_NOTICE_DROP ? substitution : undefined;
+}
+
+/**
+ * One family of affixes the fold can read through, as it is shown to a player.
+ *
+ * `example` is a word that really folds this way today, and the test beside
+ * this function runs every one of them through `baseFormSubstitution` -- an
+ * explanation of the scoring that names a fold the scoring does not make is
+ * worse than no explanation, and these are exactly the claims that rot as
+ * families are added and retired.
+ */
+export interface FoldAffixGroup {
+  /** What the affixes have in common, in a player's words. */
+  title: string;
+  /** The affixes themselves, written the way they are read: "-ness", "over-". */
+  affixes: string[];
+  /** A word this family folds, and the form it is scored as. */
+  example: { word: string; base: string };
+}
+
+/**
+ * The affixes that can rescore a word to its common form on `date`, grouped for
+ * the "more info" panel behind the note (see `baseFormRankDrop`).
+ *
+ * Date-scoped like everything else here, because the set has moved twice and
+ * archived puzzles still play under the set they had: "pre-" and the borrowed
+ * prefixes folded until 2026-09-05 (see PRE_PREFIX_END, BORROWED_PREFIX_END),
+ * and a panel that describes today's rules while the player is looking at a
+ * score from August explains the wrong fold.
+ *
+ * The prefix rows are derived from stem.ts's own tables, so a prefix cannot be
+ * retired from the scoring and left behind in the copy. The suffix rows cannot
+ * be -- those endings live in the branch conditions of the candidate
+ * generators rather than in a list -- so each row names the generator that owns
+ * it and the two have to move together, the same lockstep the Python mirror in
+ * scripts/manage-extra-word.py is kept in.
+ *
+ * Returns nothing when the fold is off entirely (freeform week), where there is
+ * no note to explain in the first place.
+ */
+export function foldAffixGroups(date?: string): FoldAffixGroup[] {
+  const scoring = scoringFor(date);
+  if (!scoring.folds) return [];
+
+  const groups: FoldAffixGroup[] = [];
+  // `baseForm` and `inflectionalBaseCandidates`.
+  groups.push({
+    title: "Plurals, tenses and participles",
+    affixes: ["-s", "-es", "-ies", "-ed", "-ied", "-ing"],
+    example: { word: "hurrying", base: "hurry" },
+  });
+  // `foreignPluralCandidates` -- the plurals English took with the noun.
+  groups.push({
+    title: "Plurals from Latin, Greek and French",
+    affixes: ["-ae", "-ices", "-ves", "-men", "-es"],
+    example: { word: "wolves", base: "wolf" },
+  });
+  // The transparent suffixes in `scoringBaseForm`.
+  groups.push({
+    title: "Adverbs and quality nouns",
+    affixes: ["-ly", "-ness"],
+    example: { word: "sparsely", base: "sparse" },
+  });
+  if (scoring.derivedBases) {
+    groups.push({
+      title: "Endings only ever built by adding them",
+      affixes: ["-ically", "-ably", "-ibly", "-ologist", "-cked", "-cking", "-eaux"],
+      example: { word: "mythologist", base: "mythology" },
+    });
+  }
+  if (scoring.boundBaseForms) {
+    groups.push({
+      title: "Nouns built from a verb or an adjective",
+      affixes: ["-ization", "-isation", "-ability", "-ibility"],
+      example: { word: "readability", base: "readable" },
+    });
+  }
+  if (scoring.superlativeBases) {
+    groups.push({
+      title: "Comparatives and superlatives",
+      affixes: ["-er", "-est", "-ier", "-iest"],
+      example: { word: "sparsest", base: "sparse" },
+    });
+  }
+  if (scoring.privativeBases) {
+    groups.push({
+      title: "Without the thing",
+      affixes: ["-less"],
+      example: { word: "penniless", base: "penny" },
+    });
+  }
+  // `unmeasuredBaseCandidates`: the families that run on rare words only.
+  groups.push({
+    title: "Verbs and adjectives made from a noun",
+    affixes: ["-ize", "-ise", "-able", "-ible"],
+    example: { word: "tautologize", base: "tautology" },
+  });
+  if (scoring.prefixBases) {
+    groups.push({
+      title: "Prefixes",
+      affixes: transparentPrefixes({
+        pre: scoring.prePrefixBases,
+        borrowed: scoring.borrowedPrefixBases,
+      }).map((prefix) => `${prefix}-`),
+      // The chain carries it past "planned" to "plan", which is the fold
+      // working as intended and worth showing: a prefix strip is one hop of
+      // several, not the whole answer.
+      example: { word: "overplanned", base: "plan" },
+    });
+  }
+  if (scoring.measurementBases) {
+    groups.push({
+      title: "How many of the unit",
+      affixes: measurementPrefixes().map((prefix) => `${prefix}-`),
+      example: { word: "kilojoules", base: "joules" },
+    });
+  }
+  return groups;
 }
 
 /**
