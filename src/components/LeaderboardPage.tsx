@@ -24,6 +24,7 @@ import { formatScore, formatTotal } from "../game/dictionary";
 import { navigate } from "../routes";
 import { useNarrowLayout } from "../hooks/useNarrowLayout";
 import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
+import { CongratsBubble } from "./CongratsBubble";
 
 type LoadState = "loading" | "ready" | "error";
 
@@ -556,6 +557,15 @@ export function LeaderboardPage() {
           </div>
         </>
       )}
+
+      {/* The one result the boards themselves cannot show: who won the window
+          that closed. It floats over them rather than sitting in the page,
+          because it is an aside to the standings and not a row of them, and it
+          appears on two days a month at most -- the Tuesday after a week ends
+          and the second after a month does. Outside the loaded/error branches
+          above on purpose: it asks its own question of the server and answers
+          it or doesn't, and the boards never wait on it. */}
+      <CongratsBubble today={today} />
 
       <button
         type="button"

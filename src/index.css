@@ -2195,6 +2195,105 @@ h2 {
 .leaderboard-page__back:hover {
   background: var(--bg-inset);
 }
+
+/*
+ * The congratulation bubble, floating over the boards.
+ *
+ * Fixed to the foot of the viewport rather than placed in the page: it is about
+ * a window nothing on screen is showing, it has to stay in front of whichever
+ * rows have been scrolled to, and low down it never covers the rows it is
+ * about. Centred on the column so it reads as part of this page and not as a
+ * toast the browser threw.
+ *
+ * Dressed in the same gold the winning row wears, because it is saying the same
+ * thing about a window that has closed -- and it has the page's one bit of
+ * motion, a slow bob, because a bubble that sat perfectly still is a banner.
+ * The global prefers-reduced-motion rule near the top of this file collapses
+ * both the bob and the pop to nothing, and the bubble still appears, still
+ * reads and still pops on a press.
+ */
+.congrats-bubble {
+  position: fixed;
+  z-index: 20;
+  /* Both edges, and the bubble centred inside it by the flexbox: pinned at one
+     edge with `left: 50%` the bubble may only be half the viewport wide before
+     it wraps, which on a phone breaks one sentence across three lines. */
+  left: 0;
+  right: 0;
+  /* Clear of a phone's home indicator, and of anything the browser docks. */
+  bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
+  /* The strip is only a way of placing the bubble; the page underneath it is
+     still the page, and a full-width band swallowing presses at the foot of it
+     would be a bug nobody could see. */
+  pointer-events: none;
+}
+.congrats-bubble__pop {
+  pointer-events: auto;
+  /* Wide enough for the sentence on one line at most handle lengths, and never
+     wider than the strip it is centred in. */
+  max-width: 27rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--best-word-accent) 60%, transparent);
+  border-radius: 999px;
+  padding: 0.6rem 1.05rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--best-word-bg) 88%, var(--best-word-accent)) 0%,
+    var(--best-word-bg) 60%,
+    color-mix(in srgb, var(--best-word-bg) 88%, var(--best-word-accent)) 100%
+  );
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+  animation:
+    congrats-bubble-in 0.35s var(--ease-standard) backwards,
+    congrats-bubble-bob 3.6s ease-in-out 0.35s infinite;
+}
+.congrats-bubble__emoji {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+/* The press: one quick swell and then gone, which is what popping looks like.
+   It runs once and does not return, because the element is taken off the page
+   as it finishes (see CongratsBubble). */
+.congrats-bubble__pop--popped {
+  animation: congrats-bubble-pop 0.26s var(--ease-standard) forwards;
+}
+@keyframes congrats-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.6rem) scale(0.92);
+  }
+}
+@keyframes congrats-bubble-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.3rem);
+  }
+}
+@keyframes congrats-bubble-pop {
+  40% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
 .leaderboard__imported {
   color: var(--success-fg);
   font-weight: 700;

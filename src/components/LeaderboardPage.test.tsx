@@ -165,7 +165,10 @@ function submissions(fetchMock: ReturnType<typeof stubFetch>) {
  */
 function onDay(date: string) {
   // Timers keep advancing on their own: the page polls and waits, and a clock
-  // frozen solid would hang every `waitFor` in the test.
+  // frozen solid would hang every `waitFor` in the test. Real timers first, so
+  // a test setting its own day over the suite's default is installing one mock
+  // rather than a second on top of it.
+  vi.useRealTimers();
   vi.useFakeTimers({ shouldAdvanceTime: true });
   vi.setSystemTime(new Date(`${date}T12:00:00`));
 }
@@ -173,6 +176,13 @@ function onDay(date: string) {
 beforeEach(() => {
   localStorage.clear();
   window.history.pushState(null, "", "/leaderboard");
+  // A Wednesday in the middle of a month, unless a test says otherwise. The
+  // page names last week's winner on a Tuesday and last month's on the second
+  // (see game/congrats.ts), and that costs a request -- so a suite running on
+  // whatever day it happens to be run would count a different number of fetches
+  // one day in nine. Noon local, so the calendar date is the same one in every
+  // timezone.
+  onDay("2026-08-26");
 });
 
 afterEach(() => {
@@ -691,7 +701,11 @@ describe("keeping the boards current", () => {
   // advanceTimersByTimeAsync also flushes the promises each fetch settles
   // through, so it stands in for waitFor, which cannot run on a frozen clock.
   beforeEach(() => {
+    // Over the suite's own advancing clock, which is why the real ones go back
+    // up first: this block needs a frozen one.
+    vi.useRealTimers();
     vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-26T12:00:00"));
   });
 
   afterEach(() => {
