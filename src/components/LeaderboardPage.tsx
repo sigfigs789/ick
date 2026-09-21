@@ -466,7 +466,8 @@ export function LeaderboardPage() {
               because what it is about is the standings -- it names the winner
               of the window that just closed, which is the one result the boards
               themselves cannot show, and it drifts around them until somebody
-              hits it. Two days a month at most (see game/congrats.ts).
+              hits it, for a few days after each window closes (see
+              game/congrats.ts).
               Inside the loaded branch, so there is never a congratulation
               floating over a board that says it couldn't load. */}
           <div className="leaderboard__boards-area">

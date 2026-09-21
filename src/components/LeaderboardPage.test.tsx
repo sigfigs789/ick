@@ -176,13 +176,13 @@ function onDay(date: string) {
 beforeEach(() => {
   localStorage.clear();
   window.history.pushState(null, "", "/leaderboard");
-  // A Wednesday in the middle of a month, unless a test says otherwise. The
-  // page names last week's winner on a Tuesday and last month's on the second
-  // (see game/congrats.ts), and that costs a request -- so a suite running on
-  // whatever day it happens to be run would count a different number of fetches
-  // one day in nine. Noon local, so the calendar date is the same one in every
-  // timezone.
-  onDay("2026-08-26");
+  // A Friday late in a month, unless a test says otherwise. The page
+  // congratulates last week's winner from Monday to Thursday and last month's
+  // from the second to the fifth (see game/congrats.ts), and either costs a
+  // request -- so a suite running on whatever day it happens to be run would
+  // count a different number of fetches on most of them. Noon local, so the
+  // calendar date is the same one in every timezone.
+  onDay("2026-08-28");
 });
 
 afterEach(() => {
@@ -705,7 +705,7 @@ describe("keeping the boards current", () => {
     // up first: this block needs a frozen one.
     vi.useRealTimers();
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-26T12:00:00"));
+    vi.setSystemTime(new Date("2026-08-28T12:00:00"));
   });
 
   afterEach(() => {
@@ -830,12 +830,12 @@ describe("keeping the boards current", () => {
  *
  * The week and the month step independently, because they are two different
  * questions and comparing one against the other is the whole reason the page
- * carries two boards. Everything here is read on a midweek Wednesday, well
- * inside both windows (see `onDay`).
+ * carries two boards. Everything here is read on a Friday late in the month,
+ * well inside both windows and clear of every congratulation (see `onDay`).
  */
 describe("stepping the boards through past windows", () => {
-  /** A Wednesday: this week starts Sunday the 23rd, and this month on the 1st. */
-  const WEDNESDAY = "2026-08-26";
+  /** A Friday: this week starts Sunday the 23rd, and this month on the 1st. */
+  const FRIDAY = "2026-08-28";
   const THIS_WEEK = "2026-08-23";
   const LAST_WEEK = "2026-08-16";
   const THIS_MONTH = "2026-08-01";
@@ -899,15 +899,15 @@ describe("stepping the boards through past windows", () => {
 
   const step = (name: string) => screen.getByRole("button", { name });
 
-  beforeEach(() => onDay(WEDNESDAY));
+  beforeEach(() => onDay(FRIDAY));
 
   it("steps the day board a puzzle at a time, without moving the two beside it", async () => {
-    const YESTERDAY = "2026-08-25";
+    const YESTERDAY = "2026-08-27";
     const { asked, askedDays } = stubWindows(
       { [`${THIS_WEEK}/${THIS_MONTH}`]: { weekly: rowFor(ALICE, 41.2) } },
       {},
       {
-        [WEDNESDAY]: rowFor(ALICE, 9.4),
+        [FRIDAY]: rowFor(ALICE, 9.4),
         [YESTERDAY]: rowFor(BOB, 7.1),
       },
     );
@@ -919,12 +919,12 @@ describe("stepping the boards through past windows", () => {
     // The day's own date once it is not today's, and the board under it is that
     // day's final standing.
     await waitFor(() =>
-      expect(boardRows("Aug 25")[0]).toHaveTextContent(handleFor(BOB)),
+      expect(boardRows("Aug 27")[0]).toHaveTextContent(handleFor(BOB)),
     );
     expect(
-      within(screen.getByRole("region", { name: "Aug 25" })).getByText("Final"),
+      within(screen.getByRole("region", { name: "Aug 27" })).getByText("Final"),
     ).toBeInTheDocument();
-    expect(askedDays).toEqual([WEDNESDAY, YESTERDAY]);
+    expect(askedDays).toEqual([FRIDAY, YESTERDAY]);
     // The long windows did not move: a day is not a week's worth of anything,
     // and stepping one says nothing about the other two.
     expect(new Set(asked)).toEqual(new Set([`${THIS_WEEK}/${THIS_MONTH}`]));

@@ -10,9 +10,8 @@ import {
 } from 'react-native';
 import {
   congratsMessage,
-  congratsPopped,
-  congratsSpot,
   markCongratsPopped,
+  pendingCongratsSpot,
 } from '../../../src/game/congrats';
 import { fetchBoards } from '../../../src/game/leaderboard';
 import { radius, space } from '../theme/tokens';
@@ -65,14 +64,15 @@ const DROPS = [
  * closed, which splats into an ink blot when it is hit.
  *
  * The same feature the website has, off the same rules (see
- * src/game/congrats.ts): the Tuesday after a week ends, the second of the month
- * after a month does, and nothing on any other day. Sharing that module is what
+ * src/game/congrats.ts): the four days from the Monday after a week ends, the
+ * four from the second of the month, and nothing outside them -- and nothing at
+ * all once it has been popped. Sharing that module is what
  * keeps the two front-ends congratulating the same player on the same day --
  * the phone deciding for itself when a week ends is exactly the kind of second
  * answer that drifts.
  *
  * The board itself says who is *leading* -- rank 1 wears the gold on every
- * window -- but a week that closed on Saturday is a step back by Tuesday, and
+ * window -- but a week that closed on Saturday is a step back by Monday, and
  * nobody steps back to a board they were not already on. This is the one place
  * a result gets said out loud.
  *
@@ -90,7 +90,7 @@ export function CongratsBubble({ today }: { today: string }) {
    * is itself fixed when the screen mounts (see LeaderboardScreen), so an app
    * left open across midnight does not grow a bubble.
    */
-  const spot = useMemo(() => congratsSpot(today), [today]);
+  const spot = useMemo(() => pendingCongratsSpot(today), [today]);
   const [winner, setWinner] = useState<string | null>(null);
   /** Hit: the bubble is gone and the ink is landing where it was. */
   const [splatting, setSplatting] = useState(false);
@@ -135,10 +135,10 @@ export function CongratsBubble({ today }: { today: string }) {
   }, []);
 
   useEffect(() => {
-    // Nothing to say today, or this window's bubble has already been popped on
-    // this device. Asked before the request, so a player who popped it this
-    // morning costs the server nothing this afternoon.
-    if (!spot || congratsPopped(spot)) return;
+    // Nothing owed today -- either no window is standing or every one that is
+    // has been popped here already. Settled before the request, so a player who
+    // popped it on the Monday costs the server nothing on the Tuesday.
+    if (!spot) return;
     let live = true;
     // The same endpoint the board comes from, asked for the window that closed
     // rather than the one being played.

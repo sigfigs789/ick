@@ -2,55 +2,72 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   congratsMessage,
   congratsPopped,
-  congratsSpot,
+  congratsSpots,
   markCongratsPopped,
+  pendingCongratsSpot,
 } from "./congrats";
 
 describe("which win a day congratulates", () => {
-  it("names last week's winner on a Tuesday", () => {
-    // 2026-09-15 is a Tuesday. Its own week began on the 13th, so the week that
-    // closed is the one that began nine days earlier.
-    expect(congratsSpot("2026-09-15")).toEqual({
-      window: "week",
-      start: "2026-09-06",
-    });
-  });
+  beforeEach(() => localStorage.clear());
 
-  it("says nothing on any other weekday", () => {
-    // Sunday through Saturday of one week, minus its Tuesday. A window has just
-    // closed on the Sunday too, and it is deliberately quiet there: a board is
-    // still moving at the boundary.
-    for (const date of [
-      "2026-09-13",
-      "2026-09-14",
-      "2026-09-16",
-      "2026-09-17",
-      "2026-09-18",
-      "2026-09-19",
-    ]) {
-      expect(congratsSpot(date)).toBeNull();
+  it("names last week's winner from the Monday to the Thursday", () => {
+    // The week of the 13th: its Monday is the 14th, so the week that closed is
+    // the one that began eight days before that.
+    for (const date of ["2026-09-14", "2026-09-15", "2026-09-16", "2026-09-17"]) {
+      expect(pendingCongratsSpot(date)).toEqual({
+        window: "week",
+        start: "2026-09-06",
+      });
     }
   });
 
-  it("names last month's winner on the second", () => {
-    expect(congratsSpot("2026-10-02")).toEqual({
-      window: "month",
-      start: "2026-09-01",
-    });
+  it("says nothing on the days either side of that run", () => {
+    // The Sunday a window has just closed on, which is deliberately quiet --
+    // the board is still moving at the boundary -- and the Friday and Saturday,
+    // by which point the result is old news said late.
+    for (const date of ["2026-09-13", "2026-09-18", "2026-09-19"]) {
+      expect(pendingCongratsSpot(date)).toBeNull();
+    }
+  });
+
+  it("names last month's winner from the second to the fifth", () => {
+    for (const date of ["2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05"]) {
+      expect(pendingCongratsSpot(date)).toMatchObject({
+        window: "month",
+        start: "2026-09-01",
+      });
+    }
     // Across a year boundary, the one case a month's arithmetic could get wrong.
-    expect(congratsSpot("2027-01-02")).toEqual({
+    expect(pendingCongratsSpot("2027-01-02")).toMatchObject({
       window: "month",
       start: "2026-12-01",
     });
+    // And not on the first, when the month has only just shut, nor on the sixth.
+    expect(congratsSpots("2026-10-01").some((s) => s.window === "month")).toBe(false);
+    expect(congratsSpots("2026-10-06").some((s) => s.window === "month")).toBe(false);
   });
 
-  it("gives the month the day when the second falls on a Tuesday", () => {
-    // 2026-12-02 is a Wednesday; 2027-02-02 is a Tuesday, where both rules fire
-    // and the larger result takes it.
-    expect(congratsSpot("2027-02-02")).toEqual({
-      window: "month",
-      start: "2027-01-01",
+  it("offers the month first when both are owed, and the week once it is popped", () => {
+    // 2026-11-02 is a Monday, where both runs begin on the same day.
+    const month = { window: "month", start: "2026-10-01" } as const;
+    expect(pendingCongratsSpot("2026-11-02")).toEqual(month);
+
+    // Popping the larger result does not swallow the smaller one: the week is
+    // still owed, and is what the bubble carries next.
+    markCongratsPopped(month);
+    expect(pendingCongratsSpot("2026-11-02")).toEqual({
+      window: "week",
+      start: "2026-10-25",
     });
+  });
+
+  it("stays gone for the rest of the run once it is popped", () => {
+    const week = { window: "week", start: "2026-09-06" } as const;
+    markCongratsPopped(week);
+    // The Tuesday, Wednesday and Thursday of a run whose Monday was splatted.
+    for (const date of ["2026-09-15", "2026-09-16", "2026-09-17"]) {
+      expect(pendingCongratsSpot(date)).toBeNull();
+    }
   });
 });
 
