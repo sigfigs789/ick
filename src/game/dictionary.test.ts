@@ -24,6 +24,7 @@ import {
   isUnattestedZipf,
   unattestedZipf,
 } from "./dictionary";
+import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import rarityData from "../data/rarity.json";
 import scoreOverrides from "../data/score-overrides.json";
 import wordRejections from "../data/word-rejections.json";
@@ -595,6 +596,20 @@ describe("foldAffixGroups", () => {
 
   it("has nothing to explain during freeform week, when nothing folds", () => {
     expect(foldAffixGroups(FREEFORM_START)).toEqual([]);
+  });
+
+  it("has nothing to explain in Freeform mode either, on the same puzzle", () => {
+    // The seam between the fold explainer and the mode switch: the week was a
+    // date, the mode is a setting, and this panel is built from the same
+    // `scoringFor` the scoring reads -- so it follows the switch without being
+    // told about it. Standard on the very same puzzle still has its lists.
+    localStorage.clear();
+    resetModeCache();
+    setMode("freeform");
+    expect(foldAffixGroups(MODE_CHOICE_START)).toEqual([]);
+
+    setMode("standard");
+    expect(foldAffixGroups(MODE_CHOICE_START).length).toBeGreaterThan(0);
   });
 });
 
