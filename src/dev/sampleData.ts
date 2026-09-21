@@ -8,21 +8,23 @@
  * without standing up a database. This is the answer to that: a hardcoded
  * fixture in the response's own shape, switched on from the page itself.
  *
- * Every export here is guarded by `import.meta.env.DEV`, so in a production
- * build the checks fold to `false`, this module's branches are dropped, and the
- * fixture JSON is never pulled into the bundle. The dev-only "Reset answers"
- * button in App.tsx works the same way.
+ * Every export here is guarded by `DEV_TOOLS` (see src/dev/devTools.ts), so on
+ * the production build the checks fold to `false`, this module's branches are
+ * dropped, and the fixture JSON is never pulled into the bundle. On a preview
+ * deploy the switch is there to be used. The "Reset answers" button in App.tsx
+ * works the same way.
  */
 
 import sample from "./sample-leaderboard.json";
 import { addDays, daysSinceEpoch, todayDateString } from "../game/date";
 import { loadPlayerId } from "../game/player";
+import { DEV_TOOLS } from "./devTools";
 
 const SAMPLE_KEY = "ick:dev-sample-leaderboard";
 
 /** Whether sample data is standing in for the server right now. */
 export function usingSampleData(): boolean {
-  if (!import.meta.env.DEV) return false;
+  if (!DEV_TOOLS) return false;
   try {
     return localStorage.getItem(SAMPLE_KEY) === "1";
   } catch {
@@ -32,7 +34,7 @@ export function usingSampleData(): boolean {
 
 /** Turn the sample data on or off. Remembered, so a reload keeps it. */
 export function setUsingSampleData(on: boolean): void {
-  if (!import.meta.env.DEV) return;
+  if (!DEV_TOOLS) return;
   try {
     if (on) localStorage.setItem(SAMPLE_KEY, "1");
     else localStorage.removeItem(SAMPLE_KEY);

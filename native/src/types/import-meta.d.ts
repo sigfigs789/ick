@@ -7,15 +7,22 @@
  * files that read the build mode fail to typecheck here while compiling
  * perfectly well for the website.
  *
- * Only the two fields the shared code actually reads, and both are the exact
- * types Vite gives them -- a wider declaration would let a new use of
- * `import.meta` typecheck here that the Babel plugin does not rewrite, and it
- * would fail at bundle time instead. See tools/babel-plugin-import-meta-env.cjs
- * for what happens to these expressions on the way into the bundle.
+ * Only the fields the shared code actually reads, and each the exact type Vite
+ * gives it -- a wider declaration would let a new use of `import.meta`
+ * typecheck here that the Babel plugin does not rewrite, and it would fail at
+ * bundle time instead. See tools/babel-plugin-import-meta-env.cjs for what
+ * happens to these expressions on the way into the bundle.
  */
 interface ImportMetaEnv {
   readonly DEV: boolean;
   readonly MODE: string;
+  /**
+   * Optional, and always undefined in this bundle: it is a website deploy's
+   * flag, set by the root vite.config.ts on a Vercel preview build, and the
+   * plugin's stand-in object does not carry it. `src/dev/devTools.ts` reads it
+   * and falls back to `DEV`, which here is Metro's own `__DEV__`.
+   */
+  readonly VITE_DEV_TOOLS?: string;
 }
 
 interface ImportMeta {

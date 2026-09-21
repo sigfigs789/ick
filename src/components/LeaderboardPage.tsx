@@ -9,6 +9,7 @@ import {
   type Boards,
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
+import { DEV_TOOLS } from "../dev/devTools";
 import { handleFor } from "../game/handle";
 import { accountName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
@@ -565,10 +566,10 @@ export function LeaderboardPage() {
         Back to today's puzzle
       </button>
 
-      {/* Development only. `import.meta.env.DEV` is a compile-time constant, so
-          this whole branch -- and the fixture it reaches -- is dropped from a
-          production build. Same trick as the "Reset answers" button. */}
-      {import.meta.env.DEV && (
+      {/* Development and preview builds only. `DEV_TOOLS` folds to a constant,
+          so on production this whole branch -- and the fixture it reaches -- is
+          dropped from the bundle. Same trick as the "Reset answers" button. */}
+      {DEV_TOOLS && (
         <label className="dev-sample-toggle">
           <input
             type="checkbox"

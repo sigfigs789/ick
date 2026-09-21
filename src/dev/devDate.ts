@@ -8,16 +8,20 @@
  * midnight, is to move that one function rather than to thread a date through
  * the app or to change the machine's clock.
  *
- * Guarded by `import.meta.env.DEV` the same way src/dev/sampleData.ts is: in a
+ * Guarded by `DEV_TOOLS` the same way src/dev/sampleData.ts is: on the
  * production build the checks fold to `false`, the branches drop out, and
- * `todayDateString()` is the plain wall-clock reading it has always been.
+ * `todayDateString()` is the plain wall-clock reading it has always been. A
+ * preview deploy keeps the picker, which is where moving the date is most
+ * useful -- on a phone, against a real build.
  */
+
+import { DEV_TOOLS } from "./devTools";
 
 const KEY = "ick:dev-date";
 
 /** The date standing in for today, or null when the wall clock is in charge. */
 export function devDateOverride(): string | null {
-  if (!import.meta.env.DEV) return null;
+  if (!DEV_TOOLS) return null;
   try {
     const stored = localStorage.getItem(KEY);
     return stored && /^\d{4}-\d{2}-\d{2}$/.test(stored) ? stored : null;
@@ -28,7 +32,7 @@ export function devDateOverride(): string | null {
 
 /** Set the stand-in date, or pass null to hand today back to the wall clock. */
 export function setDevDateOverride(date: string | null): void {
-  if (!import.meta.env.DEV) return;
+  if (!DEV_TOOLS) return;
   try {
     if (date) localStorage.setItem(KEY, date);
     else localStorage.removeItem(KEY);

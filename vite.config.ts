@@ -16,6 +16,23 @@ import { APP_VERSION, MIN_VERSION } from './src/version'
 // doesn't install. Only the two members used below.
 declare const process: { env: Record<string, string | undefined>; cwd(): string }
 
+/*
+ * Turn the developer affordances on for a Vercel *preview* deploy -- the branch
+ * build opened from a pull request -- and leave them off for production.
+ *
+ * VERCEL_ENV is Vercel's own build-time variable ("production", "preview" or
+ * "development"). It is not VITE_-prefixed, so it never reaches the browser by
+ * itself; this copies the one bit of it that matters into a variable that does.
+ * Set here at module scope, before Vite reads the environment, so it lands in
+ * `import.meta.env` the same way a .env entry would. A local `npm run build` has
+ * no VERCEL_ENV and so builds exactly like production, which is what makes it a
+ * usable rehearsal of one.
+ *
+ * See src/dev/devTools.ts for what reads it, and why it is read off
+ * `import.meta.env` rather than a defined global.
+ */
+if (process.env.VERCEL_ENV === 'preview') process.env.VITE_DEV_TOOLS = '1'
+
 /** The bits of the Node request/response the middleware below actually touches. */
 interface DevRequest {
   url?: string
