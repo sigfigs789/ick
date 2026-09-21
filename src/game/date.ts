@@ -4,8 +4,19 @@
  * same way a daily newspaper puzzle does.
  */
 
-/** Returns today's date as YYYY-MM-DD in the player's local timezone. */
+import { devDateOverride } from "../dev/devDate";
+
+/** Returns today's date as YYYY-MM-DD in the player's local timezone.
+ *
+ * In a development build a date picked from the dev bar stands in for the wall
+ * clock, so the whole app -- puzzle, archive, streak, boards -- can be moved
+ * through time together. See src/dev/devDate.ts; in production the check folds
+ * away and this is the wall clock alone. */
 export function todayDateString(): string {
+  if (import.meta.env.DEV) {
+    const override = devDateOverride();
+    if (override) return override;
+  }
   return toDateString(new Date());
 }
 
