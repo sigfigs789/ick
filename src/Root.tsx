@@ -10,6 +10,7 @@ import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
 import { SuggestedWordsPage } from "./components/SuggestedWordsPage";
 import { DevDateBar } from "./dev/DevDateBar";
+import { DEV_TOOLS } from "./dev/devTools";
 import { todayDateString } from "./game/date";
 import { usesFreeformRules } from "./game/dictionary";
 import { modeIsChosen } from "./game/mode";
@@ -299,9 +300,9 @@ export function Root() {
         date={today.current}
         onClose={closeFreeform}
       />
-      {/* Development only: `import.meta.env.DEV` is a compile-time constant, so
+      {/* Development and preview builds only: `DEV_TOOLS` folds to a constant, so
           this and everything under it drops out of a production build. */}
-      {import.meta.env.DEV && <DevDateBar />}
+      {DEV_TOOLS && <DevDateBar />}
       <InstructionsModal
         open={showInstructions}
         onClose={() => {

@@ -19,6 +19,7 @@ import {
   topRarityScore,
 } from "./dictionary";
 import { todayDateString } from "./date";
+import { DEV_TOOLS } from "../dev/devTools";
 import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
@@ -435,7 +436,7 @@ export async function fetchBoards(
   // fixture stands in for the server so the page can be worked on without one.
   // Parsed by exactly the same code as a real response, so a change to that
   // parsing cannot pass here and fail in production.
-  if (import.meta.env.DEV && usingSampleData()) {
+  if (DEV_TOOLS && usingSampleData()) {
     return readBoards(sampleBoardsResponse() as Record<string, unknown>, since);
   }
   // The player's own date goes up because the puzzle a find belongs to is the
@@ -469,7 +470,7 @@ export async function fetchFoundWords(
   date: string = todayDateString(),
   options: FetchOptions = {}
 ): Promise<FoundWord[]> {
-  if (import.meta.env.DEV && usingSampleData()) {
+  if (DEV_TOOLS && usingSampleData()) {
     return parseWords((sampleBoardsResponse() as Record<string, unknown>).words, date);
   }
   // The date is the only thing this request carries, so two players on the same

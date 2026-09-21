@@ -9,6 +9,7 @@ import {
 } from "../game/dictionary";
 import { copyText } from "../clipboard";
 import { raritySymbol } from "../game/share";
+import { CommonFormModal } from "./CommonFormModal";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -66,6 +67,10 @@ export function GuessLog({
   // moment it applies -- once per day -- instead of a footnote nobody reads
   // until they have already spent it.
   const [arming, setArming] = useState(false);
+  // The word whose common-form note has its panel open, or null. The word
+  // rather than a boolean: the panel leads with the pair it was opened from,
+  // and a log can carry several notes at once.
+  const [explaining, setExplaining] = useState<{ word: string; base: string } | null>(null);
   // Derived rather than cleared by hand: spending the retry flips `canRetry`,
   // and so does the day rolling over under a tab left open overnight.
   const picking = arming && canRetry;
@@ -185,14 +190,35 @@ export function GuessLog({
                   <span className="guess-log__entry-meta">
                     <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
                   </span>
-                  {baseNote && (
-                    // Already said in the button's aria-label, so the visible
-                    // copy is decoration for a screen reader.
-                    <span className="guess-log__base-note" aria-hidden="true">
+                </button>
+                {/* Outside the card's button rather than in it, which is what
+                    the "More info" control costs: a button cannot contain
+                    another one, and the note is the only thing on the card
+                    with a second thing to say. It keeps the card's row-two
+                    position and indent, so the move is invisible.
+
+                    Hidden while the retry is armed: the whole card is the
+                    thing you tap then, and a live control sitting in it is a
+                    hole in that target. */}
+                {baseNote && !picking && (
+                  <p className="guess-log__base-note">
+                    {/* The text is already in the button's aria-label above,
+                        so the visible copy stays out of the reading order --
+                        but the control beside it must not, hence a label of
+                        its own that names the word it is about. */}
+                    <span aria-hidden="true">
                       Scored as its common form, “{baseNote.base}”
                     </span>
-                  )}
-                </button>
+                    <button
+                      type="button"
+                      className="guess-log__base-note-info"
+                      onClick={() => setExplaining({ word: w.word, base: baseNote.base })}
+                      aria-label={`Why “${w.word}” was scored as its common form “${baseNote.base}”`}
+                    >
+                      More info
+                    </button>
+                  </p>
+                )}
               </li>
             );
           })}
@@ -254,6 +280,12 @@ export function GuessLog({
           Aim for the highest rarity you can find.
         </p>
       )}
+
+      <CommonFormModal
+        word={explaining ?? undefined}
+        date={date}
+        onClose={() => setExplaining(null)}
+      />
 
       {completed && streak && (
         <div className="guess-log__completion-trackers">

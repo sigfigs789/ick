@@ -5,6 +5,7 @@ import revealWordData from "../data/reveal-words.json";
 import revealDefinitionData from "../data/reveal-definitions.json";
 import {
   CURATED_REJECTION_REASONS,
+  FREEFORM_START,
   RARITY_ORDER,
   BASE_FORM_NOTICE_DROP,
   baseFormRankDrop,
@@ -12,6 +13,7 @@ import {
   bestWordForDrop,
   curatedRejection,
   definitionFor,
+  foldAffixGroups,
   learnableWordForDrop,
   isValidWord,
   rarityFor,
@@ -544,6 +546,55 @@ describe("baseFormRankDrop", () => {
         RARITY_ORDER.indexOf(rarityForZipf(note.ownZipf))
       );
     }
+  });
+});
+
+describe("foldAffixGroups", () => {
+  it("names only folds the scoring actually makes", () => {
+    // The guard that keeps the panel honest. Every worked example is a claim
+    // about the scoring made in copy a player reads, and the families move --
+    // "pre-" and the borrowed prefixes were retired after the note shipped. An
+    // example that stops folding has to fail here rather than sit in the panel
+    // describing a fold that no longer happens.
+    for (const group of foldAffixGroups()) {
+      const sub = baseFormSubstitution(group.example.word);
+      expect(sub?.base, `${group.title}: ${group.example.word}`).toBe(group.example.base);
+    }
+  });
+
+  it("gives every group affixes to show", () => {
+    const groups = foldAffixGroups();
+    expect(groups.length).toBeGreaterThan(0);
+    for (const group of groups) {
+      expect(group.affixes.length, group.title).toBeGreaterThan(0);
+      // Written the way they are read -- "-ness", "over-" -- so the panel can
+      // print them as they come.
+      for (const affix of group.affixes) {
+        expect(affix, group.title).toMatch(/^(-[a-z]+|[a-z]+-)$/);
+      }
+    }
+  });
+
+  it("describes the prefixes the puzzle in front of the player was scored with", () => {
+    const prefixes = (date?: string) =>
+      foldAffixGroups(date).find((group) => group.title === "Prefixes")?.affixes ?? [];
+
+    // "pre-" and the borrowed prefixes folded until 2026-09-05 and archived
+    // puzzles still play under that set, so the panel has to describe the set
+    // that scored the day being looked at rather than today's.
+    expect(prefixes("2026-09-04")).toContain("pre-");
+    expect(prefixes("2026-09-04")).toContain("mono-");
+    expect(prefixes()).not.toContain("pre-");
+    expect(prefixes()).not.toContain("mono-");
+    // What is left is the native set, which never went anywhere.
+    expect(prefixes()).toEqual(["anti-", "counter-", "out-", "over-", "un-", "under-"]);
+
+    // Before the prefix fold existed at all there is no prefix row to show.
+    expect(prefixes("2026-08-01")).toEqual([]);
+  });
+
+  it("has nothing to explain during freeform week, when nothing folds", () => {
+    expect(foldAffixGroups(FREEFORM_START)).toEqual([]);
   });
 });
 

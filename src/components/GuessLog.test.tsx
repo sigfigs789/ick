@@ -52,6 +52,50 @@ describe("GuessLog", () => {
     ).toBeInTheDocument();
   });
 
+  it("explains the fold behind the note's More info", async () => {
+    const words: AcceptedWord[] = [
+      { word: "materialnesses", rarity: "Common", zipf: 4.95 },
+    ];
+    render(<GuessLog acceptedWords={words} />);
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: /why “materialnesses” was scored as its common form “material”/i,
+      })
+    );
+
+    const panel = screen.getByRole("dialog", { name: /common forms/i });
+    // The player's own pair first, then the rule it is an instance of.
+    expect(panel).toHaveTextContent("materialnesses");
+    expect(panel).toHaveTextContent("material");
+    // One element per affix (they must not break across lines), so the row is
+    // read off the heading's own list rather than matched as a sentence.
+    const affixesUnder = (heading: RegExp) =>
+      Array.from(
+        screen
+          .getByRole("heading", { name: heading })
+          .parentElement!.querySelectorAll(".common-form__affix")
+      ).map((node) => node.textContent);
+    expect(affixesUnder(/adverbs and quality nouns/i)).toEqual(["-ly,", "-ness"]);
+    expect(affixesUnder(/^prefixes$/i)).toEqual([
+      "anti-,",
+      "counter-,",
+      "out-,",
+      "over-,",
+      "un-,",
+      "under-",
+    ]);
+
+    await userEvent.click(screen.getByRole("button", { name: /close common forms/i }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("offers nothing to explain on a word with no note", () => {
+    const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
+    render(<GuessLog acceptedWords={words} />);
+    expect(screen.queryByRole("button", { name: /More info/i })).not.toBeInTheDocument();
+  });
+
   it("leaves a word alone when its base barely changed the score", () => {
     const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
     render(<GuessLog acceptedWords={words} />);
