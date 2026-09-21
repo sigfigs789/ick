@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchBoards } from "../game/leaderboard";
 import {
   congratsMessage,
-  congratsPopped,
-  congratsSpot,
   markCongratsPopped,
+  pendingCongratsSpot,
 } from "../game/congrats";
 
 /**
@@ -33,9 +32,11 @@ const DROPLETS = 7;
  * A bubble drifting around the boards, naming the player who won the window
  * that just closed, which splats into an ink blot when it is hit.
  *
- * It appears on two days: the Tuesday after a week ends and the second of the
- * month after a month does (see game/congrats.ts). The rest of the time this
- * renders nothing and asks the server nothing.
+ * It stands for four days after a window closes -- Monday to Thursday for a
+ * week, the second to the fifth for a month (see game/congrats.ts) -- so a
+ * player who only opens the boards midweek still gets told. The rest of the
+ * time, and once it has been popped, this renders nothing and asks the server
+ * nothing.
  *
  * It moves, and that is the point: a notice parked at the foot of the page is
  * furniture, and furniture is read once and then looked past. Something
@@ -44,9 +45,9 @@ const DROPLETS = 7;
  * interaction; there is no close button hiding in a corner, because the bubble
  * *is* the button.
  *
- * It stays popped afterwards: the window it named is remembered in this
- * browser, so the congratulation is one appearance and not a thing to burst
- * again at lunch.
+ * Popping it is final: the window it named is remembered in this browser, so
+ * one splat ends that congratulation for good, whatever is left of its four
+ * days.
  *
  * Deliberately not part of the boards' own loading: this is a second, small
  * request for a window nothing else on the page is showing, and if it fails or
@@ -59,7 +60,7 @@ export function CongratsBubble({ today }: { today: string }) {
    * `today` is itself frozen at mount by the page above (see LeaderboardPage),
    * so a tab left open across midnight does not grow a bubble.
    */
-  const spot = useMemo(() => congratsSpot(today), [today]);
+  const spot = useMemo(() => pendingCongratsSpot(today), [today]);
   const [winner, setWinner] = useState<string | null>(null);
   /** Hit: the bubble is gone and the ink is landing where it was. */
   const [splatting, setSplatting] = useState(false);
@@ -67,10 +68,11 @@ export function CongratsBubble({ today }: { today: string }) {
   const [gone, setGone] = useState(false);
 
   useEffect(() => {
-    // Nothing to say today, or this one has already been popped on this
-    // browser. Checked before the fetch rather than after it, so a player who
-    // popped it this morning costs the server nothing this afternoon.
-    if (!spot || congratsPopped(spot)) return;
+    // Nothing owed today -- either no window is standing or every one that is
+    // has been popped here already. Settled before the fetch rather than after
+    // it, so a player who popped it on the Monday costs the server nothing on
+    // the Tuesday.
+    if (!spot) return;
     let live = true;
     // The same endpoint the boards come from, asked for the closed window
     // instead of the live one. It answers with all three boards and only one of

@@ -5,8 +5,10 @@ import { CongratsBubble } from "./CongratsBubble";
 import { handleFor } from "../game/handle";
 
 const ALICE = "11111111-1111-4111-8111-111111111111";
-// 2026-09-15 is a Tuesday: the week that closed began on the 6th.
-const TUESDAY = "2026-09-15";
+// 2026-09-14 is a Monday: the week that closed began on the 6th. It is also
+// past the fifth, so the month is not owed anything and the week is the only
+// congratulation in play.
+const MONDAY = "2026-09-14";
 const LAST_WEEK = "2026-09-06";
 // The second of a month, whose winner is August's.
 const SECOND = "2026-09-02";
@@ -48,16 +50,16 @@ beforeEach(() => localStorage.clear());
 afterEach(() => vi.unstubAllGlobals());
 
 describe("the congratulation bubble", () => {
-  it("names last week's winner on a Tuesday, and asks for the week that closed", async () => {
+  it("names last week's winner on a Monday, and asks for the week that closed", async () => {
     const { asked } = stubFetch({ weekly: [WINNER] });
-    render(<CongratsBubble today={TUESDAY} />);
+    render(<CongratsBubble today={MONDAY} />);
 
     expect(
       await screen.findByRole("button", {
         name: `Congrats ${handleFor(ALICE)} for last week's win`,
       }),
     ).toBeInTheDocument();
-    // The window nothing else on the page is showing: the Sunday nine days
+    // The window nothing else on the page is showing: the Sunday eight days
     // back, not the one the live board is counting from.
     expect(params(asked[0]).get("since")).toBe(LAST_WEEK);
   });
@@ -76,8 +78,9 @@ describe("the congratulation bubble", () => {
 
   it("says nothing, and asks nothing, on an ordinary day", async () => {
     const { fetchMock } = stubFetch({ weekly: [WINNER] });
-    // A Wednesday, in the middle of a month.
-    render(<CongratsBubble today="2026-09-16" />);
+    // A Friday, past both runs: the week's ended on Thursday and the month's
+    // on the fifth.
+    render(<CongratsBubble today="2026-09-18" />);
 
     await Promise.resolve();
     expect(screen.queryByRole("button")).toBeNull();
@@ -86,16 +89,29 @@ describe("the congratulation bubble", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("still names last week's winner to a player whose first visit is Thursday", async () => {
+    // The whole point of the run: a bubble that only ever appeared on the
+    // Monday would miss everybody who did not open the boards on the Monday.
+    stubFetch({ weekly: [WINNER] });
+    render(<CongratsBubble today="2026-09-17" />);
+
+    expect(
+      await screen.findByRole("button", {
+        name: `Congrats ${handleFor(ALICE)} for last week's win`,
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("stays quiet when nobody scored in the window that closed", async () => {
     stubFetch({ weekly: [] });
-    render(<CongratsBubble today={TUESDAY} />);
+    render(<CongratsBubble today={MONDAY} />);
 
     await waitFor(() => expect(screen.queryByRole("button")).toBeNull());
   });
 
   it("splats into ink when it is hit, and the ink soaks away", async () => {
     stubFetch({ weekly: [WINNER] });
-    const { container, unmount } = render(<CongratsBubble today={TUESDAY} />);
+    const { container, unmount } = render(<CongratsBubble today={MONDAY} />);
 
     await userEvent.click(await screen.findByRole("button"));
     // The bubble is gone the moment it is hit, and what is left is the blot --
@@ -110,10 +126,10 @@ describe("the congratulation bubble", () => {
       { timeout: 3000 },
     );
 
-    // Popped is remembered, so opening the page again later in the day is not a
-    // second congratulation for the same week.
+    // Popped is remembered, so opening the page again -- later that day or on
+    // the Thursday -- is not a second congratulation for the same week.
     unmount();
-    render(<CongratsBubble today={TUESDAY} />);
+    render(<CongratsBubble today="2026-09-17" />);
     await waitFor(() => expect(screen.queryByRole("button")).toBeNull());
   });
 });

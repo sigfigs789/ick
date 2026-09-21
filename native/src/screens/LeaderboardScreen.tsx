@@ -264,8 +264,9 @@ export function LeaderboardScreen() {
 
       {/* The one result the board cannot show: who won the window that closed.
           Over the list rather than in it, because it is an aside to the
-          standings and not a row of them, and it appears on two days a month at
-          most (see src/game/congrats.ts). Outside the ScrollView so it stays
+          standings and not a row of them, and it stands for a few days after
+          each window closes (see src/game/congrats.ts). Outside the ScrollView
+          so it stays
           put while the board is scrolled underneath it. */}
       <CongratsBubble today={today} />
     </View>
