@@ -14,11 +14,7 @@ import {
 import {
   COMPLETE_DICTIONARY_START,
   FREEFORM_START,
-  formatScore,
   isUnattestedZipf,
-  rarityScore,
-  topRankForScore,
-  unmeasuredZipf,
 } from "./dictionary";
 
 const DATE = COMPLETE_DICTIONARY_START;
@@ -119,29 +115,23 @@ afterEach(() => {
 });
 
 describe("words the curated list has never heard of", () => {
-  it("accepts a described word and prices it at the unmeasured floor", () => {
+  it("accepts a described word and leaves it at the unattested sentinel", () => {
     const result = evaluateSubmission("alaphosphin", "pho", [], DATE);
     expect(result.ok).toBe(true);
-    expect(result.word!.zipf).toBeCloseTo(unmeasuredZipf());
-    // Not the curated list's flat-10 sentinel: the floor is a price, and a word
-    // nobody has counted does not thereby become the rarest word anyone played.
-    expect(isUnattestedZipf(result.word!.zipf)).toBe(false);
+    // The same value rarity.json already holds for a curated word no corpus
+    // attests: a missing Zipf is a gap in the corpora, and the wider dictionary
+    // does not invent a frequency to fill it.
+    expect(isUnattestedZipf(result.word!.zipf)).toBe(true);
+    expect(result.word!.rarity).toBe("Legend");
   });
 
-  it("keeps the two top ranks for measured rarity", () => {
-    const result = evaluateSubmission("alaphosphin", "pho", [], DATE);
-    expect(topRankForScore(rarityScore(result.word!.zipf, DATE))).toBeUndefined();
-    expect(result.word!.rarity).toBe("Elusive");
-    expect(formatScore(rarityScore(result.word!.zipf, DATE), DATE)).toBe("9.2");
-  });
-
-  it("folds an unmeasured word onto a measured base before flooring it", () => {
+  it("folds an unmeasured word onto a measured base where it has one", () => {
     const result = evaluateSubmission("abrupts", "rup", [], DATE);
     expect(result.ok).toBe(true);
     // "abrupt" is Zipf 3.38, so the fold prices the word on a real measurement
-    // rather than at the floor a word with no reachable base takes.
+    // rather than on the sentinel a word with no reachable base keeps.
     expect(result.word!.zipf).toBeCloseTo(3.38);
-    expect(result.word!.zipf).toBeGreaterThan(unmeasuredZipf());
+    expect(isUnattestedZipf(result.word!.zipf)).toBe(false);
   });
 });
 
@@ -208,7 +198,7 @@ describe("the corpus never blocks play", () => {
 
   it("leaves the ordinary gates in force", () => {
     expect(evaluateSubmission("alaphosphin", "zzz", [], DATE).ok).toBe(false);
-    const used = [{ word: "alaphosphin", rarity: "Elusive" as const, zipf: unmeasuredZipf() }];
+    const used = [{ word: "alaphosphin", rarity: "Legend" as const, zipf: -1.57 }];
     expect(evaluateSubmission("alaphosphin", "pho", used, DATE).ok).toBe(false);
   });
 });

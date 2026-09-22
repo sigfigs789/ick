@@ -12,7 +12,7 @@ import {
   rarityFor,
   rarityForZipf,
   unattestedZipf,
-  unmeasuredRarityFor,
+  offListRarityFor,
   refusedEsStem,
   refusedTenseStem,
   sameRootDoublingActive,
@@ -397,7 +397,7 @@ function completeDictionaryVerdict(word: string, date?: string): SubmissionResul
   const reason = corpusRejection(entry.tags, entry.zipf);
   if (reason) return { ok: false, reason };
 
-  const info = unmeasuredRarityFor(word, entry.zipf, date);
+  const info = offListRarityFor(word, entry.zipf, date);
   return { ok: true, word: { word, rarity: info.rarity, zipf: info.zipf } };
 }
 

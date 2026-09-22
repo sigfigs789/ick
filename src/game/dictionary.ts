@@ -2014,68 +2014,40 @@ export function rarityFor(word: string, date?: string): RarityInfo | undefined {
 }
 
 /**
- * What a word carries when nothing measures it and nothing it folds onto does
- * either -- the price of the complete dictionary (see COMPLETE_DICTIONARY_START).
- *
- * 561,319 of the corpus words the wider dictionary admits have no frequency at
- * all: not a wordfreq count, not a Norvig count, not a Google Books count. The
- * sentinel the curated list uses for its own handful of these (`unattestedZipf`,
- * a flat perfect 10) cannot carry that many, and the reason is not the number but
- * what the number claims. The sentinel says "rarer than everything measured",
- * which is a finding, and it is the right one for a reviewed word the corpora
- * simply have not caught up with ("enshittification"). Said of half a million
- * unreviewed Wiktionary headwords it is not a finding at all -- most of them are
- * obscure, a good few are ordinary words nobody counted, and the corpus cannot
- * tell which is which. What is actually known is only that the word exists.
- *
- * So the unmeasured price is set where it claims the least: high, because a word
- * no corpus has ever counted is genuinely hard to find, but below the two ranks
- * that mean "the rarest thing anyone played". Zipf 1.5 scores 9.24 -- Elusive,
- * the rank directly under Mythic -- so a measured find always beats an unmeasured
- * one, and a perfect 10 stays something only measured rarity can earn. See
- * `unmeasuredRarityFor`, which applies it, and `topRankForScore`, whose cutoffs
- * this sits under by construction (pinned by a test, not by arithmetic here).
- *
- * This is a price, not a tier: nothing labels the word, nothing in the UI says
- * "unmeasured", and a data refresh that finally counts the word scores it on its
- * own frequency with no entry to remove. The gap stays a gap in the corpus rather
- * than becoming a property of the word.
- */
-const UNMEASURED_ZIPF = 1.5;
-
-/** The Zipf an off-list word carries when no corpus measures it or its bases. */
-export function unmeasuredZipf(): number {
-  return UNMEASURED_ZIPF;
-}
-
-/**
  * Price a word the curated list does not hold: the corpus words the complete
  * dictionary admits (see COMPLETE_DICTIONARY_START), and live-validated words
  * before them.
  *
- * `ownZipf` is whatever the caller's source measured, or null when it measured
- * nothing. The fold runs first and in full -- an off-list word walks the same
- * chain a curated one does, because `chainedBase` already tolerates a word it has
- * no index for -- so "enrichening" reaches "enrich" and is priced by it. Every
- * link of that chain is a curated word with a real frequency, which is the point:
- * the fold is how an unmeasured word borrows a measurement instead of inventing
- * one. ~70,000 of the corpus's unmeasured words reach a measured base this way.
+ * The same rule a curated word gets, applied to a word with no index entry, and
+ * nothing here is new arithmetic. `ownZipf` is whatever the caller's source
+ * measured, or null when it measured nothing, which stands in the sentinel --
+ * exactly the value rarity.json already holds for a curated word no corpus
+ * attests, so an unattested word scores the flat 10.00 Legend here that it has
+ * always scored everywhere else.
  *
- * What is left over -- 491,306 words with no measurement anywhere, "alaphosphin",
- * "boxwallahs", "dipyridyls" -- takes UNMEASURED_ZIPF. The fold is still a cap
- * rather than a substitution, so a measured word is never dragged below its own
- * frequency by a rarer base, exactly as `adjustedZipf` has it.
+ * The fold then runs in full, because `chainedBase` already tolerates a word it
+ * has no index for: an off-list word walks the same chain a curated one does, and
+ * ~70,000 of the corpus's unmeasured words reach a measured base that prices them
+ * ("abrupts" is capped at "abrupt", Zipf 3.38). Every link of that chain is a
+ * curated word with a real frequency, which is the point -- the fold is how an
+ * unmeasured word borrows a measurement instead of being assigned one. The fold
+ * is a cap rather than a substitution, so a measured word is never dragged below
+ * its own frequency by a rarer base, exactly as `adjustedZipf` has it.
+ *
+ * What is left over -- the words with no measurement anywhere, "alaphosphin",
+ * "boxwallahs", "dipyridyls" -- keeps the sentinel and scores 10.00. That is the
+ * decision the wider dictionary rests on and it is deliberate: a missing Zipf is
+ * a gap in the corpora, not a property of the word, and the game does not invent
+ * a frequency it does not have.
  */
-export function unmeasuredRarityFor(
+export function offListRarityFor(
   word: string,
   ownZipf: number | null,
   date?: string
 ): RarityInfo {
   const normalized = word.toLowerCase();
   const scoring = scoringFor(date);
-  // The floor stands in for the word's own frequency when it has none, so a fold
-  // onto a base that is *itself* unmeasured cannot price the word below it.
-  const own = ownZipf ?? UNMEASURED_ZIPF;
+  const own = ownZipf ?? unattestedZipf();
   const chained = scoring.folds ? chainedBase(normalized, scoring, date) : undefined;
   const zipf = chained ? Math.max(own, chained.zipf) : own;
   return { rarity: scoring.rarity(zipf), zipf };
