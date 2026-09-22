@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { corpusAttests, corpusEntry, loadCorpus, sourceBit, tagBit } from "./corpus";
 import { baseFormSubstitution, rarityFor } from "./dictionary";
+import { isRanked, modeForDate, resetModeCache, setMode } from "./mode";
 import curated from "../data/dictionary.json";
 
 /**
@@ -147,6 +148,43 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
       // than becoming the story.
       expect(up).toBeLessThan(40);
       expect(up * 20).toBeLessThan(down);
+    });
+
+    it("leaves Freeform alone entirely, because Freeform does not fold", () => {
+      // The mode switch lands on 2026-09-27 and this cutover on the 28th, so the
+      // two are one day apart and it is worth saying which one owns what. The
+      // switch decides whether a word folds; this decides what the fold may
+      // reach. Freeform answers "it does not fold" to the first question, which
+      // makes the second moot -- `lexiconHas` has exactly one consumer and it is
+      // the fold.
+      //
+      // Swept over the whole list rather than spot-checked, because "no effect"
+      // is the kind of claim a handful of words can pass by accident.
+      resetModeCache();
+      setMode("freeform");
+      try {
+        expect(modeForDate(AFTER)).toBe("freeform");
+        let moved = 0;
+        for (const word of curated as string[]) {
+          if (rarityFor(word, BEFORE)!.zipf !== rarityFor(word, AFTER)!.zipf) moved++;
+        }
+        expect(moved).toBe(0);
+      } finally {
+        resetModeCache();
+      }
+    });
+
+    it("leaves the mode switch itself working on both sides", () => {
+      resetModeCache();
+      setMode("standard");
+      try {
+        expect(modeForDate(BEFORE)).toBe("standard");
+        expect(modeForDate(AFTER)).toBe("standard");
+        expect(isRanked(AFTER, "standard")).toBe(true);
+        expect(isRanked(AFTER, "freeform")).toBe(false);
+      } finally {
+        resetModeCache();
+      }
     });
 
     it("keeps an '-ily' adverb on its adjective rather than on a homograph", () => {
