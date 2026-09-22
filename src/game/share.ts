@@ -4,6 +4,7 @@ import {
   totalRarityScore,
   usesRetunedTiers,
 } from "./dictionary";
+import { MODE_LABELS, modeForDate, modeIsChosen, type GameMode } from "./mode";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -94,6 +95,19 @@ function rarestWord(words: AcceptedWord[]): AcceptedWord | undefined {
  */
 export type RevealMode = "none" | "top" | "all";
 
+/**
+ * The word Freeform puts where the week and month totals go, and the mode that
+ * puts it there.
+ *
+ * Exported because the in-app preview renders this one token in colour (see
+ * components/RainbowWord.tsx) and has to find it in a line this file built. A
+ * shared constant rather than a literal in both places: the two have to agree
+ * exactly or the preview quietly stops colouring anything, which is a failure
+ * nothing would catch.
+ */
+export const FREEFORM_STATS_LABEL = "Freeform";
+const FREEFORM_STATS_MODE: GameMode = "freeform";
+
 export interface ShareOptions {
   /** How much to reveal in the result lines. Defaults to "none". */
   reveal?: RevealMode;
@@ -118,6 +132,19 @@ export interface ShareOptions {
   source?: ShareSource | null;
   /** Uses the shorter X post layout while keeping the selected spoiler setting. */
   format?: "default" | "x";
+  /**
+   * Which rules the puzzle was played under, when the reader needs telling.
+   *
+   * Named on the share from MODE_CHOICE_START on, because from there two people
+   * posting the same drop are no longer posting the same game: an unfolded 9.9
+   * and a folded 6.1 are both honest results and a reader comparing them without
+   * being told which is which is being misled by the format. Left off for every
+   * puzzle before it, where the date already decided the rules for everybody and
+   * a mode line would be a label on a choice nobody made.
+   *
+   * Defaults to the mode the record carries, which is the mode it was played in.
+   */
+  mode?: GameMode;
 }
 
 /**
@@ -151,7 +178,14 @@ export function buildShareText(
     })
     .join("\n");
 
-  const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
+  // The mode rides on the heading rather than taking a line of its own: it is a
+  // fact about the puzzle, like the date and the drop beside it, and a share
+  // this short cannot spare a row to say one word. The heading also survives the
+  // X layout, which drops the stats block entirely -- so this is the one place
+  // that names the mode on every share there is.
+  const mode = options.mode ?? modeForDate(dateStr);
+  const modeLabel = modeIsChosen(dateStr) ? ` · ${MODE_LABELS[mode]}` : "";
+  const lines = [`${label} — Drop: ${drop.toUpperCase()}${modeLabel}`];
   if (resultLine) lines.push("", resultLine);
   const progressLine =
     format === "default" &&
@@ -174,8 +208,20 @@ export function buildShareText(
     // line the other three are the detail of.
     const streak = options.streak ?? 0;
     lines.push(`Streak: ${streak} day${streak === 1 ? "" : "s"}`);
+    // Freeform says its name where the two window totals go, rather than
+    // quoting them. A week total and a month total are board numbers -- they are
+    // the boards' own arithmetic, computed so a shared result agrees with the
+    // rank it claims (see game/totals.ts) -- and Freeform is not ranked. Two
+    // sums of a window nothing compares would be inviting a comparison the game
+    // does not make.
+    //
+    // It also earns the space: what a reader most wants to know about an
+    // unfamiliar number is which game produced it, and this is the line their
+    // eye is already on.
     lines.push(
-      `${scoreLabel}: ${score} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
+      mode === FREEFORM_STATS_MODE
+        ? `${scoreLabel}: ${score} · ${FREEFORM_STATS_LABEL}`
+        : `${scoreLabel}: ${score} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
     );
   } else {
     lines.push(`${scoreLabel}: ${score}`);

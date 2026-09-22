@@ -9,6 +9,7 @@ import {
   type Boards,
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
+import { DEV_TOOLS } from "../dev/devTools";
 import { handleFor } from "../game/handle";
 import { accountName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
@@ -429,6 +430,11 @@ export function LeaderboardPage() {
               rather than a column gap away from it. */}
           <ul className="leaderboard__rules">
             <li>Only puzzles played on the day they drop count</li>
+            {/* Said out loud rather than left to be discovered by a Freeform
+                player wondering where their score went. The boards are
+                Standard's, and there is no second set -- see
+                game/leaderboard.ts, submitScore. */}
+            <li>Standard mode only — Freeform isn't ranked</li>
           </ul>
           {/* Which board, on the layout that only has room for one at a time.
               Above the boards rather than beside each heading, because it is one
@@ -578,10 +584,10 @@ export function LeaderboardPage() {
         Back to today's puzzle
       </button>
 
-      {/* Development only. `import.meta.env.DEV` is a compile-time constant, so
-          this whole branch -- and the fixture it reaches -- is dropped from a
-          production build. Same trick as the "Reset answers" button. */}
-      {import.meta.env.DEV && (
+      {/* Development and preview builds only. `DEV_TOOLS` folds to a constant,
+          so on production this whole branch -- and the fixture it reaches -- is
+          dropped from the bundle. Same trick as the "Reset answers" button. */}
+      {DEV_TOOLS && (
         <label className="dev-sample-toggle">
           <input
             type="checkbox"

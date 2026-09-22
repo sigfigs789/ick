@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { rarityScore } from "./dictionary";
 import { windowTotals } from "./totals";
+import { MODE_CHOICE_START } from "./mode";
 import type { AcceptedWord, Rarity } from "./types";
 
 function word(w: string, zipf = 5, rarity: Rarity = "Common"): AcceptedWord {
@@ -94,6 +95,33 @@ describe("windowTotals", () => {
     store("2026-08-20", words);
 
     expect(windowTotals()).toEqual(windowTotals("2026-08-20"));
+  });
+
+  it("leaves a chosen Freeform day out, because the board never saw it", () => {
+    const day = MODE_CHOICE_START;
+    vi.setSystemTime(new Date(`${day}T12:00:00`));
+    // The same puzzle played both ways, as a browser that has been switching
+    // holds it: one on the bare key, one on Freeform's.
+    store(day, words);
+    localStorage.setItem(
+      `ick:progress:${day}:freeform`,
+      JSON.stringify({
+        date: day,
+        drop: "ink",
+        mode: "freeform",
+        acceptedWords: words,
+        rejectedAttempts: [],
+        completed: true,
+        firstWordAt: `${day}T12:00:00`,
+        completedAt: `${day}T12:30:00`,
+      })
+    );
+
+    // These numbers promise to agree with the board, and a Freeform day never
+    // reaches it -- counting it would inflate the week by exactly the scores
+    // Freeform hands out for skipping the fold.
+    const one = round(scored(day, words));
+    expect(windowTotals(day)).toEqual({ week: one, month: one });
   });
 });
 

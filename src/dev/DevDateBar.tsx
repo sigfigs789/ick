@@ -1,5 +1,6 @@
 import { addDays, todayDateString, toDateString } from "../game/date";
 import { devDateOverride, setDevDateOverride } from "./devDate";
+import { DEV_TOOLS } from "./devTools";
 
 /**
  * The dev-only time machine: a date picker, a day either side of it, and a way
@@ -12,11 +13,11 @@ import { devDateOverride, setDevDateOverride } from "./devDate";
  * has to work around. A reload is the honest version of what changing the date
  * means: the app opened on that day.
  *
- * Rendered only under `import.meta.env.DEV`, so nothing here reaches a
+ * Rendered only under `DEV_TOOLS` -- dev and preview deploys -- so nothing here reaches a
  * production bundle. See src/dev/devDate.ts.
  */
 export function DevDateBar() {
-  if (!import.meta.env.DEV) return null;
+  if (!DEV_TOOLS) return null;
 
   const override = devDateOverride();
   const today = todayDateString();

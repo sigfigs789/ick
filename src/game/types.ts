@@ -1,3 +1,5 @@
+import type { GameMode } from "./mode";
+
 export type Rarity =
   /** Retired at NARROW_BANDS_START -- reachable only on archived puzzles. */
   | "Quotidian"
@@ -46,10 +48,24 @@ export interface SubmissionResult {
   word?: AcceptedWord;
 }
 
-/** Persisted per calendar date in localStorage. */
+/** Persisted per calendar date -- and, from MODE_CHOICE_START, per mode -- in
+ * localStorage. */
 export interface DailyProgress {
   date: string; // YYYY-MM-DD
   drop: string;
+  /**
+   * Which rules this day was played under (see game/mode.ts).
+   *
+   * Absent on every puzzle saved before the switch existed, which reads as the
+   * mode that date's calendar decided: Standard for anything before the trial
+   * week, Freeform inside it. Present from MODE_CHOICE_START on, because from
+   * there the date no longer answers the question.
+   *
+   * Carried on the record as well as in the key so a save that is passed around
+   * -- to the leaderboard's history import, to a submission in flight -- keeps
+   * saying which board it belongs on.
+   */
+  mode?: GameMode;
   acceptedWords: AcceptedWord[];
   rejectedAttempts: string[];
   completed: boolean;

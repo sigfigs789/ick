@@ -62,7 +62,16 @@ export interface TransferPayload {
   id: string;
   /** `ick:streak` verbatim, absent on a browser that has never played. */
   streak?: string;
-  /** Date (`YYYY-MM-DD`) to that day's stored progress, verbatim. */
+  /**
+   * Stored progress, verbatim, keyed by the part of the storage key that
+   * follows `ick:progress:`.
+   *
+   * That is a bare date for a Standard day and `<date>:freeform` for a Freeform
+   * one -- the two slots a date can have had since modes were split (see
+   * `progressKey` in game/storage.ts). Keyed by the slot rather than the date
+   * because a player can have both for the same day, and keying by date would
+   * mean one of them silently not arriving.
+   */
   progress: Record<string, string>;
 }
 
@@ -77,7 +86,17 @@ export interface TransferSummary {
 
 /** A player id is a UUID and nothing else. Anything else is not a transfer. */
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/**
+ * A progress slot: a date, optionally carrying the mode suffix that a day
+ * played in Freeform is saved under.
+ *
+ * The suffix is matched loosely (`[a-z]+`) rather than spelled `freeform`, so
+ * that a third mode moves without anything here being changed -- the shape is
+ * what this is guarding, and a slot name is `storage.ts`'s business. The date
+ * in front of it is matched exactly, because it is checked against what the
+ * save itself claims.
+ */
+const SLOT_RE = /^(\d{4}-\d{2}-\d{2})(?::[a-z]+)?$/;
 
 /**
  * Ceilings on what will be decoded, because the input is a URL a stranger can
@@ -115,10 +134,10 @@ export function collectTransfer(): TransferPayload | null {
   const progress: Record<string, string> = {};
   for (const key of keys) {
     if (!key.startsWith(PROGRESS_PREFIX)) continue;
-    const date = key.slice(PROGRESS_PREFIX.length);
-    if (!DATE_RE.test(date)) continue;
+    const slot = key.slice(PROGRESS_PREFIX.length);
+    if (!SLOT_RE.test(slot)) continue;
     const raw = readKey(key);
-    if (raw) progress[date] = raw;
+    if (raw) progress[slot] = raw;
   }
 
   const streak = readKey(STREAK_KEY);
@@ -130,9 +149,19 @@ export function collectTransfer(): TransferPayload | null {
   };
 }
 
-/** What a payload amounts to in the three numbers a page needs to describe it. */
+/**
+ * What a payload amounts to in the three numbers a page needs to describe it.
+ *
+ * Counted in dates rather than in slots. A day played in both modes is two
+ * saves and one day, and "6 days of play" for a week in which somebody tried
+ * Freeform twice would be a number the reader could not reconcile with their
+ * own memory of the week -- which is the only thing they have to check this
+ * screen against.
+ */
 export function summarise(payload: TransferPayload): TransferSummary {
-  const dates = Object.keys(payload.progress).sort();
+  const dates = [
+    ...new Set(Object.keys(payload.progress).map((slot) => slot.slice(0, 10))),
+  ].sort();
   return {
     id: payload.id,
     days: dates.length,
@@ -219,8 +248,9 @@ function validate(json: string): TransferPayload | null {
   if (entries.length > MAX_DAYS) return null;
 
   const kept: Record<string, string> = {};
-  for (const [date, raw] of entries) {
-    if (!DATE_RE.test(date)) return null;
+  for (const [slot, raw] of entries) {
+    const match = SLOT_RE.exec(slot);
+    if (!match) return null;
     if (typeof raw !== "string") return null;
     let day: unknown;
     try {
@@ -229,11 +259,12 @@ function validate(json: string): TransferPayload | null {
       return null;
     }
     if (!day || typeof day !== "object" || Array.isArray(day)) return null;
-    // The save has to say it is the day it is filed under. Without this a
-    // payload could write one puzzle's words over every date in the calendar.
-    if ((day as { date?: unknown }).date !== date) return null;
+    // The save has to say it is the day it is filed under -- the date part of
+    // the slot, since the rest of it names a mode rather than a day. Without
+    // this a payload could write one puzzle's words over the whole calendar.
+    if ((day as { date?: unknown }).date !== match[1]) return null;
     if (!Array.isArray((day as { acceptedWords?: unknown }).acceptedWords)) return null;
-    kept[date] = raw;
+    kept[slot] = raw;
   }
 
   return {
@@ -278,8 +309,8 @@ function isJsonObject(raw: string): boolean {
  */
 export function applyTransfer(payload: TransferPayload): boolean {
   try {
-    for (const [date, raw] of Object.entries(payload.progress)) {
-      localStorage.setItem(PROGRESS_PREFIX + date, raw);
+    for (const [slot, raw] of Object.entries(payload.progress)) {
+      localStorage.setItem(PROGRESS_PREFIX + slot, raw);
     }
     if (payload.streak) localStorage.setItem(STREAK_KEY, payload.streak);
     localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: payload.id }));

@@ -14,6 +14,7 @@ import { signalTap } from '../host/feedback';
 import { copyText } from '../host/share';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
+import { CommonFormSheet } from './CommonFormSheet';
 import { RarityBadge } from './RarityBadge';
 import { StreakDisplay } from './StreakDisplay';
 
@@ -73,6 +74,15 @@ export function GuessLog({
    */
   const [arming, setArming] = useState(false);
   const picking = arming && canRetry;
+
+  /*
+   * The word whose common-form note has its sheet open, or undefined. The word
+   * rather than a boolean: the sheet leads with the pair it was opened from,
+   * and a log can be carrying several notes at once.
+   */
+  const [explaining, setExplaining] = useState<{ word: string; base: string } | undefined>(
+    undefined
+  );
 
   useEffect(() => () => {
     if (copyTimer.current) clearTimeout(copyTimer.current);
@@ -175,16 +185,36 @@ export function GuessLog({
 
                 <RarityBadge rarity={word.rarity} zipf={word.zipf} date={date} />
 
-                {baseNote && (
-                  // Already carried by the row's label, so this copy is for the
-                  // eye only and is kept out of the reading order.
-                  <Text
-                    style={[styles.baseNote, { color: theme.fgFaint }]}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                  >
-                    Scored as its common form, “{baseNote.base}”
-                  </Text>
+                {/* Hidden while the retry is armed: the whole card is the
+                    thing you tap then, and a live control inside it is a hole
+                    in that target. */}
+                {baseNote && !picking && (
+                  <View style={styles.baseNoteRow}>
+                    {/* The sentence is already carried by the row's own label,
+                        so it stays out of the reading order -- but the control
+                        beside it must not, and it names its word itself. */}
+                    <Text
+                      style={[styles.baseNote, { color: theme.fgFaint }]}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      Scored as its common form, “{baseNote.base}”
+                    </Text>
+                    <Pressable
+                      onPress={() => {
+                        signalTap();
+                        setExplaining({ word: word.word, base: baseNote.base });
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Why “${word.word}” was scored as its common form “${baseNote.base}”`}
+                      hitSlop={space.sm}
+                      style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                    >
+                      <Text style={[styles.baseNoteInfo, { color: theme.fgMuted }]}>
+                        More info
+                      </Text>
+                    </Pressable>
+                  </View>
                 )}
               </Pressable>
             );
@@ -241,6 +271,12 @@ export function GuessLog({
           )}
         </View>
       )}
+
+      <CommonFormSheet
+        word={explaining}
+        date={date}
+        onClose={() => setExplaining(undefined)}
+      />
 
       {completed && streak && (
         <View style={styles.trackers}>
@@ -306,9 +342,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  /* The note and its "More info" on one line, wrapping to two on a long
+     common form rather than pushing the control off the card. */
+  baseNoteRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    columnGap: space.sm,
+  },
   baseNote: {
     fontSize: 11,
     fontStyle: 'italic',
+  },
+  baseNoteInfo: {
+    fontSize: 11,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   retry: {
     alignItems: 'center',

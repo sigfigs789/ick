@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { DropDisplay } from "./components/DropDisplay";
 import { GuessLog } from "./components/GuessLog";
+import { DEV_TOOLS } from "./dev/devTools";
 import { SubmitForm } from "./components/SubmitForm";
 import { FeedbackRegion } from "./components/FeedbackRegion";
 import { StreakDisplay } from "./components/StreakDisplay";
@@ -200,7 +201,7 @@ export default function App() {
           onWordRules={() => setShowWordRules(true)}
         />
 
-        {import.meta.env.DEV && (
+        {DEV_TOOLS && (
           <button
             type="button"
             className="dev-reset-button"
@@ -245,6 +246,7 @@ export default function App() {
             words={progress.acceptedWords}
             streak={streak}
             isToday={isToday}
+            mode={progress.mode}
             onLeaderboard={openLeaderboard}
           />
         )}

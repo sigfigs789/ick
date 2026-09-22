@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { ResultsPanel } from "./ResultsPanel";
 import { buildShareText } from "../game/share";
 import { windowTotals } from "../game/totals";
+import { MODE_CHOICE_START } from "../game/mode";
 import type { AcceptedWord, StreakState } from "../game/types";
 
 const words: AcceptedWord[] = [
@@ -158,5 +159,60 @@ describe("ResultsPanel share toggle", () => {
     expect(xPost).toContain("strange (4.6)");
     expect(xPost).not.toContain("Streak:");
     expect(xPost).not.toContain("Top:");
+  });
+});
+
+describe("the Freeform preview", () => {
+  it("paints one hue per letter where the totals would be", () => {
+    const { container } = render(
+      <ResultsPanel
+        date={MODE_CHOICE_START}
+        drop="str"
+        words={words}
+        streak={streak}
+        isToday
+        mode="freeform"
+      />,
+    );
+
+    const letters = container.querySelectorAll(".rainbow-word__letter");
+    expect([...letters].map((el) => el.textContent).join("")).toBe("Freeform");
+    // Spread across the whole word rather than fixed per position, so the first
+    // letter starts at red and the last reaches the far end of the sweep.
+    const hues = [...letters].map((el) =>
+      Number((el as HTMLElement).style.getPropertyValue("--rainbow-hue")),
+    );
+    expect(hues[0]).toBe(0);
+    expect(hues[hues.length - 1]).toBe(300);
+    expect(hues).toEqual([...hues].sort((a, b) => a - b));
+  });
+
+  it("leaves a Standard preview as plain text", () => {
+    const { container } = render(
+      <ResultsPanel
+        date={MODE_CHOICE_START}
+        drop="str"
+        words={words}
+        streak={streak}
+        isToday
+        mode="standard"
+      />,
+    );
+    expect(container.querySelector(".rainbow-word")).toBeNull();
+    expect(screen.getByLabelText("Share result")).toHaveTextContent(/Week:/);
+  });
+
+  it("keeps the text that actually leaves the app plain", () => {
+    // Colour is a property of this rendering, not of the share: what goes to a
+    // clipboard or an X post is plain text and has no colour to carry.
+    const text = buildShareText(MODE_CHOICE_START, "str", words, {
+      isToday: true,
+      mode: "freeform",
+      streak: 1,
+      weekTotal: 40,
+      monthTotal: 120,
+    });
+    expect(text).toContain("· Freeform");
+    expect(text).not.toContain("<");
   });
 });

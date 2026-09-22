@@ -65,6 +65,21 @@ describe("collectTransfer", () => {
   it("is nothing at all on a browser that has never joined", () => {
     expect(collectTransfer()).toBeNull();
   });
+
+  it("carries a day played in Freeform beside the same day played in Standard", () => {
+    // Two modes are two saves under one date (see `progressKey`). Keying the
+    // payload by date rather than by slot would drop one of them silently,
+    // which is the sort of loss nobody notices until the history is gone.
+    seed(ID, { "2026-09-18": day("2026-09-18") });
+    localStorage.setItem("ick:progress:2026-09-18:freeform", day("2026-09-18", "crust"));
+
+    const payload = collectTransfer();
+
+    expect(Object.keys(payload?.progress ?? {}).sort()).toEqual([
+      "2026-09-18",
+      "2026-09-18:freeform",
+    ]);
+  });
 });
 
 describe("encode and decode", () => {
@@ -205,6 +220,19 @@ describe("summarise", () => {
     });
 
     expect(summary).toEqual({ id: ID, days: 3, first: "2026-09-01", last: "2026-09-19" });
+  });
+
+  it("counts a day played both ways once", () => {
+    const summary = summarise({
+      v: TRANSFER_VERSION,
+      id: ID,
+      progress: {
+        "2026-09-18": day("2026-09-18"),
+        "2026-09-18:freeform": day("2026-09-18"),
+      },
+    });
+
+    expect(summary.days).toBe(1);
   });
 
   it("says so when there is nothing but an identity", () => {

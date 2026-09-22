@@ -19,6 +19,10 @@
  * these modules are tested by Vitest against the web build and not by running
  * this bundle.
  *
+ * Only `DEV` and `MODE` are supplied. `src/dev/devTools.ts` also reads
+ * `VITE_DEV_TOOLS`, which is a website deploy's business and is meant to come
+ * back undefined here -- the app then falls back to Metro's own `__DEV__`.
+ *
  * Narrow on purpose: it matches `import.meta.env` and nothing else. A bare
  * `import.meta` or an `import.meta.url` is left alone to fail loudly, because
  * either would mean shared code had grown a dependency on the bundler that this

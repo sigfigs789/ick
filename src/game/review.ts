@@ -7,6 +7,7 @@
 // says it could not load.
 
 import { sampleReviewResponse, usingSampleData } from "../dev/sampleData";
+import { DEV_TOOLS } from "../dev/devTools";
 
 /** How long a read waits before giving up, matching the leaderboard's. */
 const FETCH_TIMEOUT_MS = 6000;
@@ -145,7 +146,7 @@ async function read<T>(
   // `vite dev` serves no edge functions, so these lists have no server to ask
   // unless one is running. Same switch as the leaderboard's (see
   // dev/sampleData.ts), and dropped from a production build with it.
-  if (import.meta.env.DEV && usingSampleData()) {
+  if (DEV_TOOLS && usingSampleData()) {
     return pick(sampleReviewResponse(list) as Record<string, unknown>);
   }
   const response = await fetch(`/api/review?list=${list}${keyParam()}`, {
@@ -293,7 +294,7 @@ export async function setMark(
   // Sample data has no server to write to, and a toggle that always failed
   // would make the fixture worse than nothing: it answers with what was asked
   // for, and the mark lives as long as the page does.
-  if (import.meta.env.DEV && usingSampleData()) return mark;
+  if (DEV_TOOLS && usingSampleData()) return mark;
   const response = await fetch(`/api/review${keyQuery()}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
