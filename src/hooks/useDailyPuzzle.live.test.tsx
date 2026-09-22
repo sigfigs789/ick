@@ -29,6 +29,23 @@ vi.mock("../game/date", async (importOriginal) => {
   };
 });
 
+/**
+ * The corpus fetch is stubbed out for this file, not exercised by it.
+ *
+ * The pinned date is COMPLETE_DICTIONARY_START (it is FREEFORM_END, and the two
+ * are the same day), so the hook starts fetching the corpus as soon as it
+ * renders -- four requests through the same `fetch` these cases stub to count
+ * live lookups with. What they are asserting is how often /api/validate is
+ * called, so the corpus load is noise in the count rather than a behaviour under
+ * test, and it has its own file (corpusSubmit.test.ts, completeDictionary.test.ts).
+ * Only the loader is replaced: `corpusEntry` keeps answering "nothing loaded",
+ * which is what sends an off-list word to the live lookup in the first place.
+ */
+vi.mock("../game/corpus", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../game/corpus")>()),
+  loadCorpus: () => Promise.resolve(false),
+}));
+
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
 

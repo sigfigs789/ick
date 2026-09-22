@@ -89,6 +89,48 @@ nothing is watching the total. Worth a look if the bundle budget ever tightens â
 both are sorted word lists and compress far better as newline-joined strings than
 as JSON arrays.
 
+## 8. The reveal still only knows the curated list
+
+`bestWordForDrop`, `learnableWordForDrop` and `nearMissForDrop` in
+`src/game/dictionary.ts` sweep `dictionary.json`, so from
+COMPLETE_DICTIONARY_START they answer a narrower question than the one the player
+is playing: the best word *on the curated list*, not the best word reachable.
+
+Mostly this is invisible by construction, and that is the unmeasured floor doing
+it -- a corpus word nobody has counted scores 9.24, which no curated top answer
+loses to. The exception is the 10,519 corpus words that *do* carry a measured
+Zipf: one of those can out-score the word the reveal names, and on a drop where
+it does, the reveal is wrong rather than merely conservative.
+
+Fix, if taken: it cannot be a sweep. The corpus is a fetched 1.2M-entry blob and
+best-word runs per drop, so this wants the sweep done offline in
+`build-word-corpus.py` and its answer shipped beside the drop, the way
+`drop-difficulty.json` already is.
+
+## 9. Two prices for the same missing measurement
+
+A curated word no corpus attests takes `unattestedZipf()` -- a flat perfect 10.
+A corpus word in exactly the same state takes `unmeasuredZipf()` -- 9.24. The
+split is defensible and deliberate: the curated list's handful are reviewed
+(that is what `audit-unscored-legends` does to them), and half a million
+unreviewed Wiktionary headwords are not. It is still two answers to one
+question, and the seam shows the day a reviewed word is added to the curated
+list and its score jumps 0.76 for no reason a player can see.
+
+Worth revisiting once the audit skills have run against the wider set: if the
+reviewed-Legend population stays small, the honest simplification is for the
+sentinel to become a reviewed *override* per word rather than a tier the list
+confers.
+
+## 10. `select-drops.py` and the difficulty data still count the curated list
+
+Both scripts measure how rich a drop is from `dictionary.json`. From the wider
+dictionary a drop's real reachable set is larger, and unevenly so -- a drop whose
+extra words are all unmeasured gains nothing playable-but-scoring, while one
+sitting on a productive stem gains hundreds. Drop selection is therefore tuned
+against a set the game no longer uses. Related to entry 4, which is the same
+mismatch between two scripts rather than between a script and the game.
+
 ## 7. Decisions parked, not bugs
 
 - **Archaic words below the gate.** `betwixt` (Zipf 2.39), `quoth` (2.08),

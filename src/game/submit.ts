@@ -1,5 +1,6 @@
 import {
   boundBaseFormsActive,
+  completeDictionaryActive,
   curatedRejection,
   isFreeformWeek,
   isValidWord,
@@ -11,6 +12,7 @@ import {
   rarityFor,
   rarityForZipf,
   unattestedZipf,
+  unmeasuredRarityFor,
   refusedEsStem,
   refusedTenseStem,
   sameRootDoublingActive,
@@ -332,6 +334,73 @@ const LEXICON_SOURCES =
  * has loaded -- so the caller falls through to the live lookup exactly as it
  * did before the corpus existed. The corpus never makes a word *less* playable.
  */
+/**
+ * The Zipf at or above which the out-of-use tags are ignored, the same gate the
+ * curated list's derived rejections use and for the same reason: obsolete,
+ * archaic and dated are sense labels, and their false positives are precisely the
+ * common words -- "halt" is tagged obsolete off one dead sense, "fortnight"
+ * dated. Nothing corpora still measure in live use is out of use, whatever a
+ * sense label says. Below the gate the tags hold up (a 24-word sample came back
+ * 24 for 24), and a word with no measurement at all is below it by construction.
+ *
+ * The structural tags -- misspelling, proper noun, abbreviation -- take no gate,
+ * because Wiktionary gives those to a headword with no ordinary sense at all and
+ * a common abbreviation is still an abbreviation. See DERIVED_REJECTIONS.
+ */
+const OUT_OF_USE_MAX_ZIPF = 2.5;
+
+/**
+ * The rejection a corpus word's own tags amount to, or undefined when it is
+ * playable -- the "after the fact" half of the complete dictionary. The corpus
+ * stores what is known about a word rather than a verdict on it (see
+ * game/corpus.ts), so the verdict is made here, at the point of play, by the same
+ * rules the curated list's own rejections follow.
+ */
+function corpusRejection(tags: number, zipf: number | null): RejectionReason | undefined {
+  if (tags & tagBit("misspelling")) return "misspelling";
+  // Two tags, one verdict: "capitalized-only" is a word that never appears
+  // lowercase, which is the evidence for a proper noun rather than a separate
+  // objection to it, and the player is told the same thing either way.
+  if (tags & (tagBit("proper-noun") | tagBit("capitalized-only"))) return "proper-noun";
+  if (tags & tagBit("abbreviation")) return "abbreviation";
+  if (zipf !== null && zipf >= OUT_OF_USE_MAX_ZIPF) return undefined;
+  if (tags & tagBit("obsolete")) return "obsolete";
+  if (tags & tagBit("archaic")) return "archaic";
+  if (tags & tagBit("dated")) return "dated";
+  return undefined;
+}
+
+/**
+ * What the wider dictionary makes of a word the curated list has never heard of,
+ * from COMPLETE_DICTIONARY_START on.
+ *
+ * Only asked about a word the curated list does not hold: a curated word carries
+ * a reviewed verdict, and a hand-reviewed decision about one word outranks a
+ * sense label every time -- including when the review was to reject it, which is
+ * why this checks `isDictionaryWord` rather than trusting the caller's
+ * `isValidWord` to have meant "not in the list".
+ *
+ * The lexicon line is the one freeform week already draws and it is not about
+ * register: a string only a frequency corpus ever counted has been *counted*,
+ * never *described*, and is not a word to begin with. Those fall through to the
+ * live lookup exactly as they did before the corpus existed, so the corpus can
+ * still only widen what is playable here -- everything it refuses, it refuses by
+ * naming a fault the player is told.
+ */
+function completeDictionaryVerdict(word: string, date?: string): SubmissionResult | undefined {
+  if (!completeDictionaryActive(date)) return undefined;
+  if (isDictionaryWord(word)) return undefined;
+  const entry = corpusEntry(word);
+  if (!entry) return undefined;
+  if (!(entry.sources & LEXICON_SOURCES)) return undefined;
+
+  const reason = corpusRejection(entry.tags, entry.zipf);
+  if (reason) return { ok: false, reason };
+
+  const info = unmeasuredRarityFor(word, entry.zipf, date);
+  return { ok: true, word: { word, rarity: info.rarity, zipf: info.zipf } };
+}
+
 function freeformCorpusVerdict(word: string, date?: string): SubmissionResult | undefined {
   if (!isFreeformWeek(date)) return undefined;
   const entry = corpusEntry(word);
@@ -396,7 +465,7 @@ export function evaluateSubmission(
     // Consulted only for words the curated list has never heard of: a curated
     // word that freeform week already waives never reaches here, because
     // curatedRejection has lifted its reason and isValidWord is true.
-    const fromCorpus = freeformCorpusVerdict(word, date);
+    const fromCorpus = freeformCorpusVerdict(word, date) ?? completeDictionaryVerdict(word, date);
     if (fromCorpus) return fromCorpus;
     return {
       ok: false,

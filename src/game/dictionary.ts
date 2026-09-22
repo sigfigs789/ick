@@ -398,6 +398,43 @@ export function isFreeformWeek(date?: string): boolean {
   return date >= FREEFORM_START && date < FREEFORM_END;
 }
 
+/**
+ * "The complete dictionary": the date from which standard mode plays off the
+ * expansive corpus rather than off the curated list alone.
+ *
+ * The curated list is 225,483 words chosen by a filter that ran *before* the
+ * word was judged -- a Wiktionary headword tagged archaic or proper-noun never
+ * entered it, so the list conflates "not a word" with "not a word we allow".
+ * The corpus (see game/corpus.ts) holds 1,217,270 headwords with those
+ * judgements as tags rather than as an absence, which is the same information
+ * kept the other way round: complete first, filtered at the point of play. From
+ * this date the curated list stops being the boundary of what is a word and
+ * becomes what it always really was -- the words we have a measured frequency
+ * and a reviewed fold for -- and the corpus answers everything outside it, with
+ * the tags applied as the rejections they already are (`corpusVerdict` in
+ * submit.ts).
+ *
+ * Standard mode only, and the freeform check below is what says so rather than
+ * the date: the two rules are opposites where they meet. Freeform week waives
+ * the register objections and prices every word on its own frequency; the
+ * complete dictionary makes those same objections the reason a word is refused,
+ * and prices an unmeasured word at a floor. The date is set to FREEFORM_END so
+ * the two never overlap today -- the week ends, the dictionary opens -- but the
+ * trial has been extended once already, and a window that moved over this date
+ * would otherwise turn freeform week into the one thing it is not.
+ *
+ * An omitted date means the newest system, like every other rung here and unlike
+ * `isFreeformWeek` -- an undated call is pricing a word for the leaderboard or
+ * the finds feed, and those read the current rules.
+ */
+export const COMPLETE_DICTIONARY_START = "2026-09-29";
+
+/** Whether `date`'s puzzle plays standard mode off the expansive corpus. */
+export function completeDictionaryActive(date?: string): boolean {
+  if (isFreeformWeek(date)) return false;
+  return date === undefined || date >= COMPLETE_DICTIONARY_START;
+}
+
 /*
  * 2026-08-26. Three changes, one cutover, because they ship together and no
  * archived puzzle falls between them -- a date each would buy three rungs in
@@ -1973,6 +2010,74 @@ export function rarityFor(word: string, date?: string): RarityInfo | undefined {
   if (i === undefined) return undefined;
   const scoring = scoringFor(date);
   const zipf = adjustedZipf(normalized, scoring.zipfAt(i), scoring, date);
+  return { rarity: scoring.rarity(zipf), zipf };
+}
+
+/**
+ * What a word carries when nothing measures it and nothing it folds onto does
+ * either -- the price of the complete dictionary (see COMPLETE_DICTIONARY_START).
+ *
+ * 561,319 of the corpus words the wider dictionary admits have no frequency at
+ * all: not a wordfreq count, not a Norvig count, not a Google Books count. The
+ * sentinel the curated list uses for its own handful of these (`unattestedZipf`,
+ * a flat perfect 10) cannot carry that many, and the reason is not the number but
+ * what the number claims. The sentinel says "rarer than everything measured",
+ * which is a finding, and it is the right one for a reviewed word the corpora
+ * simply have not caught up with ("enshittification"). Said of half a million
+ * unreviewed Wiktionary headwords it is not a finding at all -- most of them are
+ * obscure, a good few are ordinary words nobody counted, and the corpus cannot
+ * tell which is which. What is actually known is only that the word exists.
+ *
+ * So the unmeasured price is set where it claims the least: high, because a word
+ * no corpus has ever counted is genuinely hard to find, but below the two ranks
+ * that mean "the rarest thing anyone played". Zipf 1.5 scores 9.24 -- Elusive,
+ * the rank directly under Mythic -- so a measured find always beats an unmeasured
+ * one, and a perfect 10 stays something only measured rarity can earn. See
+ * `unmeasuredRarityFor`, which applies it, and `topRankForScore`, whose cutoffs
+ * this sits under by construction (pinned by a test, not by arithmetic here).
+ *
+ * This is a price, not a tier: nothing labels the word, nothing in the UI says
+ * "unmeasured", and a data refresh that finally counts the word scores it on its
+ * own frequency with no entry to remove. The gap stays a gap in the corpus rather
+ * than becoming a property of the word.
+ */
+const UNMEASURED_ZIPF = 1.5;
+
+/** The Zipf an off-list word carries when no corpus measures it or its bases. */
+export function unmeasuredZipf(): number {
+  return UNMEASURED_ZIPF;
+}
+
+/**
+ * Price a word the curated list does not hold: the corpus words the complete
+ * dictionary admits (see COMPLETE_DICTIONARY_START), and live-validated words
+ * before them.
+ *
+ * `ownZipf` is whatever the caller's source measured, or null when it measured
+ * nothing. The fold runs first and in full -- an off-list word walks the same
+ * chain a curated one does, because `chainedBase` already tolerates a word it has
+ * no index for -- so "enrichening" reaches "enrich" and is priced by it. Every
+ * link of that chain is a curated word with a real frequency, which is the point:
+ * the fold is how an unmeasured word borrows a measurement instead of inventing
+ * one. ~70,000 of the corpus's unmeasured words reach a measured base this way.
+ *
+ * What is left over -- 491,306 words with no measurement anywhere, "alaphosphin",
+ * "boxwallahs", "dipyridyls" -- takes UNMEASURED_ZIPF. The fold is still a cap
+ * rather than a substitution, so a measured word is never dragged below its own
+ * frequency by a rarer base, exactly as `adjustedZipf` has it.
+ */
+export function unmeasuredRarityFor(
+  word: string,
+  ownZipf: number | null,
+  date?: string
+): RarityInfo {
+  const normalized = word.toLowerCase();
+  const scoring = scoringFor(date);
+  // The floor stands in for the word's own frequency when it has none, so a fold
+  // onto a base that is *itself* unmeasured cannot price the word below it.
+  const own = ownZipf ?? UNMEASURED_ZIPF;
+  const chained = scoring.folds ? chainedBase(normalized, scoring, date) : undefined;
+  const zipf = chained ? Math.max(own, chained.zipf) : own;
   return { rarity: scoring.rarity(zipf), zipf };
 }
 

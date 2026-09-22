@@ -16,6 +16,7 @@ import {
 import { evaluateSubmission, REJECTION_MESSAGES, spellingNearMiss } from "../game/submit";
 import {
   baseFormSubstitution,
+  completeDictionaryActive,
   isFreeformWeek,
   isUnattestedZipf,
   rarityForZipf,
@@ -182,16 +183,18 @@ export function useDailyPuzzle() {
   // start a second lookup or bank the same word twice.
   const inFlight = useRef<Set<string>>(new Set());
 
-  // Freeform week plays off the expansive corpus as well as the curated list,
-  // so start fetching it as soon as such a puzzle is in view. Nothing waits on
-  // it: until it arrives submissions fall through to the live lookup exactly as
-  // they always have, and a failed fetch is not surfaced because a player on a
-  // bad connection still has a full game without it.
+  // Every puzzle from COMPLETE_DICTIONARY_START plays off the expansive corpus as
+  // well as the curated list -- and freeform week did before it -- so start
+  // fetching it as soon as such a puzzle is in view. Nothing waits on it: until
+  // it arrives submissions fall through to the live lookup exactly as they always
+  // have, and a failed fetch is not surfaced because a player on a bad connection
+  // still has a full game without it.
   //
-  // Only freeform dates pay the 3.6MB. An ordinary daily puzzle never consults
-  // the corpus, so it should never download it.
+  // Only puzzles that consult it pay the 3.6MB, which now means the archive is
+  // the exception rather than the rule: a puzzle from before either cutover never
+  // asks the corpus anything, so it should never download it.
   useEffect(() => {
-    if (isFreeformWeek(viewedDate)) void loadCorpus();
+    if (isFreeformWeek(viewedDate) || completeDictionaryActive(viewedDate)) void loadCorpus();
   }, [viewedDate]);
 
   // Reload whenever the viewed puzzle changes (browsing the archive) --
