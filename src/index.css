@@ -3657,3 +3657,110 @@ h2 {
   margin: 0 0 0.6rem;
   font-size: 1.1rem;
 }
+
+/*
+ * Moving a player to another browser, at /transfer.
+ *
+ * Its own block rather than more `review__` rules: those pages are lists a
+ * curator reads, and this one is a single decision with a consequence. What it
+ * borrows from them -- `review__status` for the failures -- it borrows because
+ * a failure is a sentence there and a sentence here too.
+ */
+.transfer__who {
+  margin: 1.2rem 0;
+}
+/* The warning that the link is a credential, and the warning that the old
+   handle stays behind. Set apart from the prose around it, because both are
+   things a reader who skims still has to have read. */
+.transfer__warn {
+  margin: 1.2rem 0;
+  border-left: 3px solid var(--danger-fg);
+  padding-left: 0.8rem;
+  color: var(--fg-muted);
+}
+.transfer__note {
+  margin: 1.2rem 0;
+  color: var(--fg-muted);
+}
+/* The link itself: a textarea so it can be selected and copied by hand where
+   the clipboard button cannot run, and monospace so a truncated one is
+   visibly truncated. */
+.transfer__link {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.6rem;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  resize: vertical;
+}
+.transfer__action {
+  display: block;
+  margin: 1.2rem 0 0;
+  border: none;
+  border-radius: 0.6rem;
+  padding: 0.7rem 1.3rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.transfer__action:hover {
+  background: var(--accent-hover);
+}
+.transfer__action:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+/* Declining is a plain link, not a second button of equal weight: the page
+   asked a question with one answer worth making easy to give deliberately. */
+.transfer__cancel {
+  display: block;
+  margin: 0.9rem 0 0;
+  border: none;
+  padding: 0;
+  background: none;
+  color: var(--fg-muted);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+/* Becoming a player whose id you already have: the other half of /transfer,
+   and the half that needs no second device. Set apart from the link builder
+   above it, because the two are opposite directions and a reader who wants one
+   should not have to read the other. */
+.transfer__adopt {
+  margin-top: 2.4rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.4rem;
+}
+.transfer__heading {
+  margin: 0 0 0.6rem;
+  font-size: 1.1rem;
+}
+.transfer__label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+}
+/* Monospace and full width: an id is proofread character by character, and a
+   proportional font at phone width makes that harder than it needs to be. */
+.transfer__input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  padding: 0.6rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+}

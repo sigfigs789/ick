@@ -5,7 +5,21 @@ import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 
-const PROGRESS_PREFIX = "ick:progress:";
+/**
+ * The two key families a player's record lives under.
+ *
+ * Exported for the transfer path (see game/transfer.ts), which copies them to
+ * another browser as raw strings. It reads and writes them without going
+ * through the functions here on purpose: what it moves is a saved record, not a
+ * game in progress, and it must not be reshaped on the way by whatever
+ * migration `loadProgress` happens to be running this month.
+ *
+ * Note for anyone adding a third key family, or a second suffix beside
+ * Freeform's: the transfer copies whole keys under this prefix, suffix and all,
+ * so a new *shape* under the same prefix moves for free -- but a new prefix
+ * does not, and has to be named there as well or it silently stays behind.
+ */
+export const PROGRESS_PREFIX = "ick:progress:";
 
 /**
  * Where one puzzle's progress lives, which from MODE_CHOICE_START depends on
@@ -46,7 +60,7 @@ function readProgressKey(key: string): { date: string; mode: GameMode } {
   // answer: the trial week is freeform, everything before it standard.
   return { date, mode: modeIsChosen(date) ? "standard" : modeForDate(date) };
 }
-const STREAK_KEY = "ick:streak";
+export const STREAK_KEY = "ick:streak";
 const EMPTY_STREAK: StreakState = {
   currentStreak: 0,
   longestStreak: 0,
