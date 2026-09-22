@@ -4,8 +4,17 @@ import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 
-const PROGRESS_PREFIX = "ick:progress:";
-const STREAK_KEY = "ick:streak";
+/**
+ * The two key families a player's record lives under.
+ *
+ * Exported for the transfer path (see game/transfer.ts), which copies them to
+ * another browser as raw strings. It reads and writes them without going
+ * through the functions here on purpose: what it moves is a saved record, not a
+ * game in progress, and it must not be reshaped on the way by whatever
+ * migration `loadProgress` happens to be running this month.
+ */
+export const PROGRESS_PREFIX = "ick:progress:";
+export const STREAK_KEY = "ick:streak";
 const EMPTY_STREAK: StreakState = {
   currentStreak: 0,
   longestStreak: 0,

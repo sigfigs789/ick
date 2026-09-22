@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 /**
  * The whole router.
  *
- * Six pages, no library. `vercel.json` already rewrites every non-`/api/` path
+ * Seven pages, no library. `vercel.json` already rewrites every non-`/api/` path
  * to `index.html`, so a real URL is a matter of reading `location.pathname` and
  * pushing to it -- and both of the pages beside the game want a real URL: they
  * are pages you link someone to, open in a second tab, and reach with the back
@@ -26,6 +26,12 @@ import { useEffect, useState } from "react";
  * players are still in, and a tally is not a thing to put in front of the
  * people still voting. None has a tab; none is part of the daily round.
  *
+ * `/transfer` is unlinked too, and for a reason of its own rather than an
+ * editorial one: it is where a player moves themselves to a new browser, and
+ * the string it deals in is the player id, which is the whole of an identity
+ * here (see game/transfer.ts). Nothing in the game shows that id, so a page
+ * that does had better be one nobody arrives at by wandering.
+ *
  * Reading the notes and marking any row are both a curator's, and gated as
  * such: see api/review.ts.
  *
@@ -39,13 +45,15 @@ export type Route =
   | "found-words"
   | "suggested-words"
   | "feedback"
-  | "freeform-feedback";
+  | "freeform-feedback"
+  | "transfer";
 
 export const LEADERBOARD_PATH = "/leaderboard";
 export const FOUND_WORDS_PATH = "/found-words";
 export const SUGGESTED_WORDS_PATH = "/suggested-words";
 export const FEEDBACK_PATH = "/feedback";
 export const FREEFORM_FEEDBACK_PATH = "/freeform-feedback";
+export const TRANSFER_PATH = "/transfer";
 
 /**
  * Whether the route lives in memory rather than in the address bar, and what it
@@ -91,6 +99,7 @@ export function routeFor(pathname: string): Route {
   if (path === SUGGESTED_WORDS_PATH) return "suggested-words";
   if (path === FEEDBACK_PATH) return "feedback";
   if (path === FREEFORM_FEEDBACK_PATH) return "freeform-feedback";
+  if (path === TRANSFER_PATH) return "transfer";
   return "game";
 }
 
@@ -101,6 +110,7 @@ export function pathFor(route: Route): string {
   if (route === "suggested-words") return SUGGESTED_WORDS_PATH;
   if (route === "feedback") return FEEDBACK_PATH;
   if (route === "freeform-feedback") return FREEFORM_FEEDBACK_PATH;
+  if (route === "transfer") return TRANSFER_PATH;
   return "/";
 }
 

@@ -9,6 +9,7 @@ import { FreeformModal } from "./components/FreeformModal";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
 import { SuggestedWordsPage } from "./components/SuggestedWordsPage";
+import { TransferPage } from "./components/TransferPage";
 import { DevDateBar } from "./dev/DevDateBar";
 import { todayDateString } from "./game/date";
 import { isFreeformWeek } from "./game/dictionary";
@@ -41,7 +42,7 @@ const SYNC_STALE_MS = 5 * 60_000;
  */
 const FREEFORM_MIN_PUZZLES = 1;
 
-/** Six pages under one header, picked off the address bar. See src/routes.ts. */
+/** Seven pages under one header, picked off the address bar. See src/routes.ts. */
 export function Root() {
   const route = useRoute();
 
@@ -54,9 +55,17 @@ export function Root() {
    * without going back to the puzzle first. Opening itself once for a
    * first-timer is unchanged: a player who never taps "?" never learns that
    * rarer scores higher, which is the whole game.
+   *
+   * Except on `/transfer`, which is the one page a first-timer can land on
+   * having already played for months -- a new phone opening a link from the old
+   * one (see components/TransferPage.tsx). That page asks a yes-or-no question
+   * about an identity, and covering it with a sheet explaining what a Zipf score
+   * is puts a dialog in front of a decision, for a reader who needs neither. The
+   * sheet is still one tap away on the "?" like everywhere else, and it opens
+   * itself on the next page they go to, which is the puzzle.
    */
   const [showInstructions, setShowInstructions] = useState(
-    () => !hasSeen("instructions"),
+    () => route !== "transfer" && !hasSeen("instructions"),
   );
 
   /**
@@ -279,6 +288,8 @@ export function Root() {
         <FeedbackPage />
       ) : route === "freeform-feedback" ? (
         <FreeformFeedbackPage />
+      ) : route === "transfer" ? (
+        <TransferPage />
       ) : (
         <App />
       )}

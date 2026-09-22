@@ -29,7 +29,15 @@
  * leaderboard it is a fine one.
  */
 
-const PLAYER_KEY = "ick:player";
+/**
+ * Where this browser keeps its identity.
+ *
+ * Exported for the transfer path (see game/transfer.ts), which moves this key
+ * bodily from one browser to another rather than going through `joinBoard` --
+ * adopting an id that already exists is the one thing every function below is
+ * written to avoid doing by accident, so it cannot be done through them.
+ */
+export const PLAYER_KEY = "ick:player";
 
 function safeGet(key: string): string | null {
   try {
