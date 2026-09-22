@@ -33,6 +33,7 @@ import {
   transparentPrefixes,
   unmeasuredBaseCandidates,
 } from "./stem";
+import { corpusAttests, corpusEntry } from "./corpus";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
 import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types";
 
@@ -158,6 +159,24 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     say which register is allowed. Misspellings and non-words stay refused,
  *     which is the line the curation rules already draw (see
  *     FREEFORM_WAIVED_REJECTIONS).
+ *   - on/after 2026-09-28 (the latest system): the fold stops reading the
+ *     curated list and reads the expansive corpus instead. The first entry here
+ *     that changes the *list* a rule is applied to rather than the rule -- every
+ *     fold above is untouched and none is added.
+ *     What it fixes is the ceiling `rarityForUncurated` names in its own
+ *     docstring: a fold could only ever reach one of the 225,483 curated words,
+ *     so a derivation whose base was not on the list scored on the fact that
+ *     nobody writes it. 1,232 words score lower for the change and 21 higher,
+ *     the promotions being spellings whose fold was never load-bearing (a
+ *     Latin-plural guard that a bigger lexicon flips, and five words crossing a
+ *     band boundary by hundredths).
+ *     The lexicon behind it is narrower than the corpus: a headword has to carry
+ *     a lexicon source, no disqualifying tag, and a real count. All three were
+ *     learned by measurement -- names ("airi" for `airy`), dead spellings
+ *     ("destin" for `destined`) and uncounted entries ("curli" for `curly`)
+ *     stood in front of real bases and handed 58 words a Mythic or better they
+ *     had not earned. See `corpusAttests` in corpus.ts and CORPUS_ONLY_START.
+ *     No label mapping moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -697,11 +716,11 @@ const SCORE_OVERRIDES: ReadonlyMap<string, ScoreOverride> = new Map(
  * override is active. A base missing from the dictionary is ignored rather than
  * trusted -- a test pins that this never happens in the shipped data.
  */
-function overrideBase(word: string, date?: string): string | undefined {
+function overrideBase(word: string, scoring: Scoring, date?: string): string | undefined {
   const override = SCORE_OVERRIDES.get(word);
   if (!override) return undefined;
   if (date !== undefined && date < override.since) return undefined;
-  return WORD_INDEX.has(override.base) ? override.base : undefined;
+  return lexiconHas(override.base, scoring) ? override.base : undefined;
 }
 
 // -- Curated fold exemptions (src/data/fold-exemptions.json) -----------------
@@ -765,8 +784,8 @@ const FOLD_EXEMPTIONS: ReadonlyMap<string, FoldExemption> = new Map(
  * well as Latin plurals -- "stadia" (the surveying instrument, hence "stadias")
  * -- which keep their own scores rather than folding.
  */
-function latinPluralsAllowed(word: string): boolean {
-  return !WORD_INDEX.has(word + "s");
+function latinPluralsAllowed(word: string, scoring: Scoring): boolean {
+  return !lexiconHas(word + "s", scoring);
 }
 
 /** Whether `word` is exempt from every fold under `date`'s puzzle. */
@@ -946,6 +965,11 @@ interface Scoring {
   // 2026-08-24 cutover; off for earlier systems so past puzzles' scores stay
   // frozen (see PREFIX_BASE_START).
   prefixBases: boolean;
+  // Whether the fold reads the expansive corpus rather than the curated list
+  // when it asks "is this a word" and "how common is it". The one flag that
+  // changes where the answer comes from rather than which rule is applied to it
+  // -- see CORPUS_ONLY_START.
+  corpusLexicon: boolean;
   // Whether a word is also capped at the regular inflections built *on* it --
   // the fold's reverse direction, so the bare lemma of a verb only ever written
   // as a participle stops scoring as a deep-tail find (see
@@ -1150,6 +1174,10 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     prePrefixBases,
     borrowedPrefixBases,
     doublingTenseBases,
+    // Every dated profile below predates the corpus cutover and reads the
+    // curated index; CORPUS_SCORING is built by spreading the latest one and
+    // turning this on.
+    corpusLexicon: false,
     folds,
   };
 }
@@ -1406,10 +1434,51 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
  * system's. Precomputed rather than spread per call because `scoringFor` is on
  * the drop-scan hot path (`bestWordForDrop` asks it once per dictionary word).
  */
+/**
+ * The first puzzle whose fold reads the expansive corpus instead of the curated
+ * list.
+ *
+ * The curated list has always been two things at once: the set of words a
+ * submission is allowed to be, and the set of words the *fold* is allowed to
+ * reach. `corpusVerdict` took the first job away from it -- since
+ * MODE_CHOICE_START a word the list never held is playable on the corpus's own
+ * evidence -- but the second stayed, and it is the one that shows. A corpus word
+ * folds "unmasticated" onto a base only if that base happens to be one of the
+ * 225,483, so `rarityForUncurated` says plainly what it cannot do: "it cannot
+ * fold onto a base that is itself uncurated, because every link is priced out of
+ * the index". An uncurated base leaves the derivation scoring as itself, which
+ * is to say scoring on the fact that nobody writes it -- a Legend for a suffix.
+ *
+ * From here the fold asks the corpus instead: 1.2M headwords, a lexicon source
+ * behind each one, and a waterfall Zipf of its own. Every rule is the rule it
+ * already was. What changes is only the list the rules are applied to, which is
+ * why this is a lexicon flag on the profile rather than a new fold.
+ *
+ * Dated like every other cutover here, and for the same reason: the corpus
+ * prices a curated word slightly differently (zipf.bin quantises to 1/32, while
+ * rarity.json carries hundredths) and reaches bases the curated fold never
+ * could, so every score it touches would move. An archived puzzle plays as it
+ * was played.
+ */
+const CORPUS_ONLY_START = "2026-09-28";
+
+/**
+ * The corpus era: the latest fold, reading the expansive corpus.
+ *
+ * Spread from `LATEST_SCORING` rather than built by another `twoBandScoring`
+ * call, for the reason `FREEFORM_SCORING` is -- the era changes exactly one
+ * thing and must not drift from the system it changes it in.
+ */
+const CORPUS_SCORING: Scoring = { ...LATEST_SCORING, corpusLexicon: true };
+
 const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
+
+/** The corpus era's freeform half: the fold off, the lexicon still the corpus. */
+const CORPUS_FREEFORM_SCORING: Scoring = { ...CORPUS_SCORING, folds: false };
 
 const LEGACY_SCORING: Scoring = {
   folds: true,
+  corpusLexicon: false,
   zipfAt: (i) => legacyZipfTenths[i] / 10,
   // The legacy scale is defined over LEGACY_MIN_ZIPF..LEGACY_MAX_ZIPF and has no
   // clamp of its own, so a Zipf below its floor scores past 10. A live-validated
@@ -1563,6 +1632,9 @@ function scoringFor(date?: string): Scoring {
   // a window, and the puzzles after it are back on the system before it. Asked
   // last so it reads as what it is -- the latest system with one switch thrown --
   // and so a later cutover slots in above it without thinking about the week.
+  if (date >= CORPUS_ONLY_START) {
+    return usesFreeformRules(date) ? CORPUS_FREEFORM_SCORING : CORPUS_SCORING;
+  }
   if (usesFreeformRules(date)) return FREEFORM_SCORING;
   return LATEST_SCORING;
 }
@@ -2113,7 +2185,7 @@ export function baseFormSubstitution(
     return undefined;
   }
 
-  const override = overrideBase(normalized, date);
+  const override = overrideBase(normalized, scoring, date);
   if (override) {
     return {
       word: normalized,
@@ -2494,7 +2566,7 @@ function adjustedZipf(word: string, zipf: number, scoring: Scoring, date?: strin
   // inherited outright, like the transparent suffixes -- the override says "no
   // rarer than its base", so a later data refresh that measures the word as
   // *more* common than its base is still free to score it on its own frequency.
-  const override = overrideBase(word, date);
+  const override = overrideBase(word, scoring, date);
   if (override) return Math.max(zipf, zipfFor(override, scoring));
 
   const tenseBase = tenseBaseForm(word, scoring);
@@ -2548,7 +2620,7 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
   let best: ChainedBase | undefined;
   // The word's own frequency, so the reverse fold can skip a form that could not
   // beat it -- see the `floor` argument to `inflectedFormFolds`.
-  const own = WORD_INDEX.has(word) ? zipfFor(word, scoring) : -Infinity;
+  const own = lexiconHas(word, scoring) ? zipfFor(word, scoring) : -Infinity;
 
   for (let depth = 0; depth < MAX_FOLD_DEPTH && frontier.length > 0; depth++) {
     const next: string[] = [];
@@ -2634,7 +2706,7 @@ function decidedBaseForms(
   // the two files must never share a word (pinned by a test).
   if (scoring.inflectionBases && foldExempt(word, date)) return [];
 
-  const override = overrideBase(word, date);
+  const override = overrideBase(word, scoring, date);
   if (override) return [override];
 
   if (!scoring.inflectionBases) {
@@ -2681,7 +2753,7 @@ function addInflectionalBaseForms(
 ): void {
   add(tenseBaseForm(word, scoring));
   add(baseForm(word));
-  for (const candidate of inflectionalBaseCandidates(word, latinPluralsAllowed(word))) {
+  for (const candidate of inflectionalBaseCandidates(word, latinPluralsAllowed(word, scoring))) {
     add(candidate);
   }
   // "-ier"/"-iest" comparatives, ungated: unlike bare "-er"/"-est", the "-y"
@@ -2692,7 +2764,7 @@ function addInflectionalBaseForms(
   // comparative ("angrier", "earliest", "prettiest") scored rarer than its own
   // adjective while the only degree rules lived behind the gate.
   for (const { base, counterpart } of degreeBaseCandidates(word)) {
-    if (WORD_INDEX.has(counterpart)) add(base);
+    if (lexiconHas(counterpart, scoring)) add(base);
   }
   // Bare "-est", on the same check and for the same reason: the comparative in
   // the same spelling is what tells a superlative ("realest", so "realer") from
@@ -2700,7 +2772,7 @@ function addInflectionalBaseForms(
   // half stays behind the floor gate -- see `superlativeBaseCandidates`.
   if (scoring.superlativeBases) {
     for (const { base, counterpart } of superlativeBaseCandidates(word)) {
-      if (WORD_INDEX.has(counterpart)) add(base);
+      if (lexiconHas(counterpart, scoring)) add(base);
     }
   }
 }
@@ -2760,7 +2832,7 @@ function addNonInflectionalBaseForms(
   // reason "specialest" can fold to "special" while "tempest" keeps its own
   // score. See `unmeasuredBaseCandidates` for the families and the words that
   // would break without the gate.
-  if (WORD_INDEX.has(word) && zipfFor(word, scoring) < MEASURED_FLOOR) {
+  if (lexiconHas(word, scoring) && zipfFor(word, scoring) < MEASURED_FLOOR) {
     // A tensed "-ize"/"-ise" form is deliberately absent from this set: it
     // folds through its own verb -- already a candidate via the tense and
     // number rules above -- so the gate is applied *at the verb*, once per
@@ -2814,7 +2886,7 @@ function addNonInflectionalBaseForms(
         (hasSuperlativeReading(word, scoring) ||
           (scoring.prefixResidues && prefixFoldExemptParadigm(word, scoring, date)));
       for (const candidate of refused ? [] : spellings) {
-        if (!WORD_INDEX.has(candidate)) continue;
+        if (!lexiconHas(candidate, scoring)) continue;
         if (scoring.prefixResidues) {
           if (!boundPrefixResidue(candidate, date)) add(candidate);
         } else if (zipfFor(candidate, scoring) >= PREFIX_BASE_MIN_ZIPF) {
@@ -2898,7 +2970,7 @@ function nonInflectionalBaseForms(word: string, scoring: Scoring, date?: string)
 function hasSuperlativeReading(word: string, scoring: Scoring): boolean {
   if (!scoring.superlativeBases) return false;
   return superlativeBaseCandidates(word).some(
-    ({ base, counterpart }) => WORD_INDEX.has(base) && WORD_INDEX.has(counterpart)
+    ({ base, counterpart }) => lexiconHas(base, scoring) && lexiconHas(counterpart, scoring)
   );
 }
 
@@ -2917,7 +2989,7 @@ function candidateAdder(out: string[], word: string, scoring: Scoring) {
     // The reading the word's own spelling rules out, whichever family offered it
     // (see `blockedTenseStem`).
     if (candidate === blocked) return;
-    if (!WORD_INDEX.has(candidate) || out.includes(candidate)) return;
+    if (!lexiconHas(candidate, scoring) || out.includes(candidate)) return;
     out.push(candidate);
   };
 }
@@ -3014,15 +3086,13 @@ function candidateAdder(out: string[], word: string, scoring: Scoring) {
  */
 function derivedFormFolds(word: string, scoring: Scoring, date?: string): string[] {
   if (!scoring.derivedFormFolds) return [];
-  if (foldExempt(word, date) || overrideBase(word, date)) return [];
-  const index = WORD_INDEX.get(word);
-  if (index === undefined || scoring.zipfAt(index) >= MEASURED_FLOOR) return [];
+  if (foldExempt(word, date) || overrideBase(word, scoring, date)) return [];
+  if (!lexiconHas(word, scoring) || zipfFor(word, scoring) >= MEASURED_FLOOR) return [];
 
   const out: string[] = [];
   for (const form of derivedFormCandidates(word)) {
-    const formIndex = WORD_INDEX.get(form);
-    if (formIndex === undefined) continue;
-    if (scoring.zipfAt(formIndex) < MEASURED_FLOOR) continue;
+    if (!lexiconHas(form, scoring)) continue;
+    if (zipfFor(form, scoring) < MEASURED_FLOOR) continue;
     out.push(form);
   }
   return out;
@@ -3035,12 +3105,11 @@ function inflectedFormFolds(
   floor = -Infinity
 ): string[] {
   if (!scoring.inflectionForms) return [];
-  if (foldExempt(word, date) || overrideBase(word, date)) return [];
+  if (foldExempt(word, date) || overrideBase(word, scoring, date)) return [];
 
   const out: string[] = [];
   for (const form of inflectedFormCandidates(word)) {
-    const index = WORD_INDEX.get(form);
-    if (index === undefined) continue;
+    if (!lexiconHas(form, scoring)) continue;
     // The frequency test before the round trip, not after. A cap can only pull
     // toward common, so a form no commoner than what the caller already has
     // cannot change the answer -- and confirming the link is the expensive half
@@ -3056,7 +3125,7 @@ function inflectedFormFolds(
     // 4.42, which the measured lemma may not do for itself. Skipping it left the
     // pair 6.5 points apart. The floor is what keeps the extra work bounded:
     // above it nothing has changed, and the forms below it are the deep tail.
-    const formZipf = scoring.zipfAt(index);
+    const formZipf = zipfFor(form, scoring);
     if (formZipf <= floor && !(scoring.paradigmFolds && formZipf < MEASURED_FLOOR)) continue;
     const readings = scoring.paradigmFolds
       ? inflectionalBaseForms(form, scoring, date)
@@ -3077,13 +3146,30 @@ function inflectedFormFolds(
  */
 function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
   const inflected = baseForm(word);
-  if (inflected !== word && WORD_INDEX.has(inflected)) return inflected;
+  if (inflected !== word && lexiconHas(inflected, scoring)) return inflected;
 
   for (const suffix of ["ness", "ly"]) {
     if (!word.endsWith(suffix) || word.length <= suffix.length + 2) continue;
     const stem = word.slice(0, -suffix.length);
     const candidates = [stem, stem.endsWith("i") ? `${stem.slice(0, -1)}y` : ""];
-    const base = candidates.find((candidate) => candidate && WORD_INDEX.has(candidate));
+    // The bare stem first and the "-y" rewrite second, and until the corpus era
+    // the first of the two that was a word won outright. That order was only
+    // ever safe because the curated list did not hold the bare stems: "ugli" and
+    // "veri" are not on it, so "uglily" and "verily" fell through to "ugly" and
+    // "very" as intended. The corpus holds both -- "ugli" the fruit is a real
+    // word with a real count -- and first-past-the-post handed "uglily" the
+    // fruit, dropping it from Common to Mythic, and "verily" from Very Common to
+    // Rare.
+    //
+    // `mostCommonBase` is the function written for this exact failure: its own
+    // note is that preferring the most common base "keeps a rare homograph of a
+    // candidate spelling from hijacking the fold", which is "ugli" to the letter.
+    // Gated to the corpus era rather than applied throughout, because the two
+    // orders disagree wherever both spellings are words and an archived puzzle
+    // must not feel it.
+    const base = scoring.corpusLexicon
+      ? mostCommonBase(candidates, word, scoring)
+      : candidates.find((candidate) => candidate && lexiconHas(candidate, scoring));
     if (base) return base;
   }
 
@@ -3091,7 +3177,7 @@ function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
   // the wide-band era. Capped at the base like the transparent suffixes above:
   // "aggrandization" scores as "aggrandize", never rarer than it.
   if (scoring.boundBaseForms) {
-    const bound = boundBaseCandidates(word).find((candidate) => WORD_INDEX.has(candidate));
+    const bound = boundBaseCandidates(word).find((candidate) => lexiconHas(candidate, scoring));
     if (bound) return bound;
   }
   return undefined;
@@ -3116,7 +3202,7 @@ function mostCommonBase(
   let base: string | undefined;
   let baseZipf = -Infinity;
   for (const candidate of candidates) {
-    if (candidate === word || !WORD_INDEX.has(candidate)) continue;
+    if (candidate === word || !lexiconHas(candidate, scoring)) continue;
     const zipf = zipfFor(candidate, scoring);
     if (zipf > baseZipf) {
       base = candidate;
@@ -3213,8 +3299,51 @@ function tenseBaseForm(word: string, scoring: Scoring): string | undefined {
   return mostCommonBase(candidates, word, scoring);
 }
 
+/**
+ * Whether the fold may treat `word` as a word at all -- the membership test
+ * every rule in this file is built on, and the one thing CORPUS_ONLY_START
+ * changes.
+ *
+ * Before the cutover: the curated index, the only list there was.
+ *
+ * From it: the curated index *or* a corpus headword a lexicon attests. A union
+ * rather than a swap, and deliberately so. The curated list is a subset of the
+ * corpus's `dictionary` source bit -- all 225,483 of it, the same file built
+ * both -- so the union is the corpus, save for the window where the corpus has
+ * not loaded. In that window the union is the curated list and the fold behaves
+ * exactly as it did the day before the cutover, which is the answer this module
+ * has given since the corpus existed: nothing waits on the fetch, and a player
+ * on a bad connection gets the game, not a spinner.
+ *
+ * The direction of the degradation is what makes that safe to accept. A fold
+ * only ever caps, so a base the fold cannot reach leaves a word scoring *higher*
+ * -- the pre-cutover answer -- and never lets through a word it should have
+ * refused. See `loadCorpus` in corpus.ts, which useDailyPuzzle starts as soon as
+ * a consulting puzzle is in view, so the window is a cold first paint rather
+ * than a normal one.
+ */
+function lexiconHas(word: string, scoring: Scoring): boolean {
+  return WORD_INDEX.has(word) || (scoring.corpusLexicon && corpusAttests(word));
+}
+
+/**
+ * What the fold prices `word` at. Only ever asked of a word `lexiconHas` has
+ * already vouched for.
+ *
+ * The curated index wins where it has the word, in both eras. rarity.json
+ * carries hundredths against zipf.bin's 1/32, so reading the corpus for a word
+ * the curated data already measures would move scores to no purpose -- the
+ * cutover is about the bases the fold can *reach*, not about repricing the ones
+ * it always could.
+ *
+ * A corpus word no frequency corpus counts takes the unattested sentinel, the
+ * same stand-in `corpusVerdict` hands it and the same one the live lookup hands
+ * a word Merriam-Webster vouches for and nobody has counted.
+ */
 function zipfFor(word: string, scoring: Scoring): number {
-  return scoring.zipfAt(WORD_INDEX.get(word)!);
+  const i = WORD_INDEX.get(word);
+  if (i !== undefined) return scoring.zipfAt(i);
+  return corpusEntry(word)?.zipf ?? unattestedZipf();
 }
 
 function stripDoubledConsonant(stem: string): string {
