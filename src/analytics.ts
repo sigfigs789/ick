@@ -191,6 +191,7 @@ export function trackRejectedAnswer(date: string, drop: string, rawWord: string)
   send("answer_rejected", {
     puzzle_date: date,
     puzzle_number: puzzleNumber(date),
+    mode: modeOf(date),
     drop: drop.toLowerCase(),
     word: rawWord.trim().toLowerCase(),
   });
