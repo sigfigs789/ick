@@ -166,16 +166,17 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     What it fixes is the ceiling `rarityForUncurated` names in its own
  *     docstring: a fold could only ever reach one of the 225,483 curated words,
  *     so a derivation whose base was not on the list scored on the fact that
- *     nobody writes it. 1,232 words score lower for the change and 21 higher,
- *     the promotions being spellings whose fold was never load-bearing (a
- *     Latin-plural guard that a bigger lexicon flips, and five words crossing a
+ *     nobody writes it. 2,877 words score lower for the change and 33 higher,
+ *     the promotions being spellings whose fold was never load-bearing (mostly a
+ *     Latin-plural guard that a bigger lexicon flips, plus a few words crossing a
  *     band boundary by hundredths).
- *     The lexicon behind it is narrower than the corpus: a headword has to carry
- *     a lexicon source, no disqualifying tag, and a real count. All three were
- *     learned by measurement -- names ("airi" for `airy`), dead spellings
- *     ("destin" for `destined`) and uncounted entries ("curli" for `curly`)
- *     stood in front of real bases and handed 58 words a Mythic or better they
- *     had not earned. See `corpusAttests` in corpus.ts and CORPUS_ONLY_START.
+ *     The lexicon behind it is 790,130 headwords -- everything a lexicon attests
+ *     that carries no tag the game treats as a fault. The tag test was learned by
+ *     measurement: names ("airi" standing in front of `airy`) and dead spellings
+ *     ("destin" for `destined`) handed 58 words a Mythic or better they had not
+ *     earned. Frequency is deliberately *not* a condition, since an uncounted
+ *     headword can never win `mostCommonBase` and is still a rung the chain walks
+ *     through. See `corpusAttests` in corpus.ts and CORPUS_ONLY_START.
  *     No label mapping moves.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.

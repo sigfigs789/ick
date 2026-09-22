@@ -329,24 +329,46 @@ export const LEXICON_SOURCES =
   sourceBit("wiktionary") | sourceBit("dictionary") | sourceBit("macos_dict") | sourceBit("curated");
 
 /**
- * Whether a lexicon -- not merely a frequency count -- attests `word`, *and* the
- * word carries no tag the game treats as a fault.
+ * Whether `word` is a word the fold may price another word against: a lexicon
+ * attests it, and it carries no tag the game treats as a fault.
  *
- * Both halves are load-bearing, and the second was learned the hard way. A fold
- * base is a word the game is willing to print, so the lexicon behind the fold
- * has to be the words the game would accept rather than every string in the
- * corpus. Admitting the tagged ones put 58 words into Mythic or Legend that had
- * no business there: "airi" (a given name, tagged proper-noun) outbid "airy" as
- * the base of "airily", "porki" did the same to "porky", and "destin"
- * (obsolete) to "destined" -- each one a name or a dead spelling standing in
- * front of the real base and capping the word at its own thin frequency, or at
- * nothing. "porkinesses" went from Rare to Legend on that.
+ * This is the whole lexicon behind the corpus-era fold, and it is deliberately
+ * the widest one that is still *words*. 790,130 headwords qualify, against the
+ * 225,483 of the curated list the fold used to be confined to.
+ *
+ * The source test is the one `corpusVerdict` already applies. Norvig and
+ * wordfreq are frequency corpora, not dictionaries: between them they attest
+ * ~160k strings no lexicon has, and the bulk of it is crawl residue -- "mxps",
+ * "emci", "travelglobe". A string carrying only those bits has been *counted*,
+ * never *described*.
+ *
+ * The tag test was learned by measurement, and it is the only narrowing that
+ * survived one. A fold base is a word the game is willing to print, so admitting
+ * the tagged headwords put 58 words into Mythic or Legend that had not earned
+ * it: "airi" (a given name, tagged proper-noun, counted at 1.88) outbid "airy"
+ * as the base of "airily", "porki" did the same to "porky", and "destin"
+ * (obsolete) to "destined" -- each a name or a dead spelling standing in front
+ * of the real base and capping the word at its own thin frequency.
  *
  * No waiver is consulted, unlike `corpusVerdict`, and the asymmetry is the
  * point: a waiver is a decision about what a *player* may submit under a mode's
  * rules, and this is a question about what may serve as evidence for how common
  * another word is. A proper noun is not evidence about an adjective in either
  * mode. Freeform never reaches this anyway -- it does not fold.
+ *
+ * What is deliberately *not* tested is whether anything has ever counted the
+ * word. 570,052 of the 790,130 have no frequency at all, and an earlier cut of
+ * this excluded them on the argument that a word nobody counts cannot say how
+ * common anything is. That argument is true about `mostCommonBase`, which takes
+ * a maximum and can never pick an uncounted candidate -- and it was the wrong
+ * diagnosis of the bug it was written for. "curli" (the bacterial fibre, real,
+ * untagged, uncounted) took "curlily" from Uncommon to Legend not because it was
+ * uncounted but because `scoringBaseForm` took the *first* candidate spelling
+ * that was a word rather than the most common one. Fixing that fixed the whole
+ * "-ily"/"-iness" family, and the exclusion then cost 1,645 correct demotions to
+ * prevent 12 promotions. An uncounted headword is still a rung the chain can
+ * walk *through* to reach something common on the other side, which is most of
+ * what the corpus was opened for.
  *
  * False before the corpus loads, like every other question this module answers,
  * so a caller falls through to whatever it did without the corpus.
@@ -355,23 +377,5 @@ export function corpusAttests(word: string): boolean {
   const entry = corpusEntry(word);
   if (!entry) return false;
   if (!(entry.sources & LEXICON_SOURCES)) return false;
-  if (entry.tags !== 0) return false;
-  // And it has to have been *counted*, not merely listed.
-  //
-  // This is the narrower half of the same lesson. A fold prices a word by a
-  // relative somebody actually writes, so a headword no frequency corpus counts
-  // at all carries no information about how common anything is -- it cannot win
-  // `mostCommonBase` on merit, and where a spelling rule commits to it before
-  // the rule that would have found the real base, it caps the word at the
-  // unattested sentinel and hands it a Legend. "curli" is a genuine Wiktionary
-  // entry (the bacterial fibre) with no tag to disqualify it and no count
-  // behind it, and it took "curlily" from Uncommon to Legend by standing where
-  // "curly" belonged. Same for "flakily", "frothily", "tinniness", "uglily".
-  //
-  // Not a claim that an uncounted word is a lesser word -- the game refuses to
-  // make that claim about a word on its own account. It is a claim about
-  // evidence: a word nobody has counted is not evidence about a word somebody
-  // has. Such a word is still perfectly playable, and `corpusVerdict` still
-  // accepts it on its own terms and scores it through the sentinel.
-  return entry.zipf !== null;
+  return entry.tags === 0;
 }

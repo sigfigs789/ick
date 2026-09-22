@@ -68,12 +68,26 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
       expect(corpusAttests("destin")).toBe(false);
     });
 
-    it("refuses a headword no corpus has ever counted", () => {
-      // "curli" is a real Wiktionary entry (the bacterial fibre) carrying no tag
-      // to disqualify it and no count to recommend it. It took "curlily" from
-      // Uncommon to Legend.
+    it("takes a headword nothing has ever counted", () => {
+      // "curli" is a real Wiktionary entry (the bacterial fibre), untagged and
+      // uncounted. It is admitted: `mostCommonBase` takes a maximum, so an
+      // uncounted candidate can never be picked as a base, and the chain can
+      // still walk *through* it to something common beyond. It once took
+      // "curlily" from Uncommon to Legend, but the fault was
+      // `scoringBaseForm` taking the first candidate rather than the most
+      // common one -- see the "-ily" case below.
       expect(corpusEntry("curli")!.zipf).toBeNull();
-      expect(corpusAttests("curli")).toBe(false);
+      expect(corpusAttests("curli")).toBe(true);
+    });
+
+    it("is the widest lexicon that is still words", () => {
+      // 790,130 headwords, against the 225,483 the fold used to be confined to.
+      // Pinned loosely: what must not happen silently is the lexicon collapsing
+      // back toward the size of the list it replaced, which is exactly what an
+      // over-eager filter here did once.
+      let admitted = 0;
+      for (const word of curated as string[]) if (corpusAttests(word)) admitted++;
+      expect(admitted).toBeGreaterThan(200_000);
     });
 
     it("refuses a string only the frequency corpora have seen", () => {
@@ -103,11 +117,11 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
       for (const word of curated as string[]) {
         if (rarityFor(word, BEFORE)!.zipf !== rarityFor(word, AFTER)!.zipf) moved++;
       }
-      // 1,253 of 225,483 -- see the PR body for the breakdown. Pinned as a range
+      // 2,910 of 225,483 -- see the PR body for the breakdown. Pinned as a range
       // so the data can be rebuilt without rewriting the test, and so a change
       // that suddenly moves ten times as much has to say so out loud.
-      expect(moved).toBeGreaterThan(900);
-      expect(moved).toBeLessThan(1800);
+      expect(moved).toBeGreaterThan(2_000);
+      expect(moved).toBeLessThan(4_500);
     });
   });
 
@@ -142,12 +156,12 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
         if (after > before) down++;
         else if (after < before) up++;
       }
-      expect(down).toBeGreaterThan(1000);
+      expect(down).toBeGreaterThan(2_000);
       // The promotions are named and accounted for in the PR body; what this
       // pins is that they stay a rounding error against the demotions rather
       // than becoming the story.
-      expect(up).toBeLessThan(40);
-      expect(up * 20).toBeLessThan(down);
+      expect(up).toBeLessThan(60);
+      expect(up * 40).toBeLessThan(down);
     });
 
     it("leaves Freeform alone entirely, because Freeform does not fold", () => {
