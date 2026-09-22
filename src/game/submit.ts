@@ -16,7 +16,7 @@ import {
   sameRootDoublingActive,
   sameRootInflectionsActive,
 } from "./dictionary";
-import { corpusEntry, reasonsOf, sourceBit } from "./corpus";
+import { LEXICON_SOURCES, corpusEntry, reasonsOf } from "./corpus";
 import { isBlocked } from "./blocklist";
 import { FREEFORM_TRIAL_START, MODE_CHOICE_START } from "./mode";
 import rejectionMetadata from "../data/rejection-metadata.json";
@@ -306,19 +306,6 @@ export function spellingNearMiss(
     usedRoots.has(rootKey(candidate, folds, date))
   );
 }
-
-
-/**
- * The sources that amount to "a lexicon says this is a word".
- *
- * Norvig's Google Web 1T and wordfreq are frequency corpora, not dictionaries:
- * between them they attest ~160k strings no lexicon has, and the bulk of it is
- * crawl residue -- "mxps", "emci", "travelglobe". A word carrying only those
- * bits has been *counted*, never *described*, and "not-a-word" is precisely the
- * objection to it. Freeform week does not waive that one.
- */
-const LEXICON_SOURCES =
-  sourceBit("wiktionary") | sourceBit("dictionary") | sourceBit("macos_dict") | sourceBit("curated");
 
 /**
  * Whether `date`'s puzzle plays off the corpus as well as the curated list.

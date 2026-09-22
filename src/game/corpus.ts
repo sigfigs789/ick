@@ -310,3 +310,72 @@ export function resetCorpusForTests(): void {
   loaded = undefined;
   inFlight = undefined;
 }
+
+/**
+ * The sources that amount to "a lexicon says this is a word".
+ *
+ * Norvig's Google Web 1T and wordfreq are frequency corpora, not dictionaries:
+ * between them they attest ~160k strings no lexicon has, and the bulk of it is
+ * crawl residue -- "mxps", "emci", "travelglobe". A word carrying only those
+ * bits has been *counted*, never *described*, and "not-a-word" is precisely the
+ * objection to it.
+ *
+ * Lives here rather than in submit.ts because two callers need it now and they
+ * cannot share it from there: dictionary.ts is imported *by* submit.ts, so the
+ * lexicon behind the corpus-era fold (see CORPUS_ONLY_START) would have to
+ * reach through a cycle to ask the same question submit.ts asks.
+ */
+export const LEXICON_SOURCES =
+  sourceBit("wiktionary") | sourceBit("dictionary") | sourceBit("macos_dict") | sourceBit("curated");
+
+/**
+ * Whether `word` is a word the fold may price another word against: a lexicon
+ * attests it, and it carries no tag the game treats as a fault.
+ *
+ * This is the whole lexicon behind the corpus-era fold, and it is deliberately
+ * the widest one that is still *words*. 790,130 headwords qualify, against the
+ * 225,483 of the curated list the fold used to be confined to.
+ *
+ * The source test is the one `corpusVerdict` already applies. Norvig and
+ * wordfreq are frequency corpora, not dictionaries: between them they attest
+ * ~160k strings no lexicon has, and the bulk of it is crawl residue -- "mxps",
+ * "emci", "travelglobe". A string carrying only those bits has been *counted*,
+ * never *described*.
+ *
+ * The tag test was learned by measurement, and it is the only narrowing that
+ * survived one. A fold base is a word the game is willing to print, so admitting
+ * the tagged headwords put 58 words into Mythic or Legend that had not earned
+ * it: "airi" (a given name, tagged proper-noun, counted at 1.88) outbid "airy"
+ * as the base of "airily", "porki" did the same to "porky", and "destin"
+ * (obsolete) to "destined" -- each a name or a dead spelling standing in front
+ * of the real base and capping the word at its own thin frequency.
+ *
+ * No waiver is consulted, unlike `corpusVerdict`, and the asymmetry is the
+ * point: a waiver is a decision about what a *player* may submit under a mode's
+ * rules, and this is a question about what may serve as evidence for how common
+ * another word is. A proper noun is not evidence about an adjective in either
+ * mode. Freeform never reaches this anyway -- it does not fold.
+ *
+ * What is deliberately *not* tested is whether anything has ever counted the
+ * word. 570,052 of the 790,130 have no frequency at all, and an earlier cut of
+ * this excluded them on the argument that a word nobody counts cannot say how
+ * common anything is. That argument is true about `mostCommonBase`, which takes
+ * a maximum and can never pick an uncounted candidate -- and it was the wrong
+ * diagnosis of the bug it was written for. "curli" (the bacterial fibre, real,
+ * untagged, uncounted) took "curlily" from Uncommon to Legend not because it was
+ * uncounted but because `scoringBaseForm` took the *first* candidate spelling
+ * that was a word rather than the most common one. Fixing that fixed the whole
+ * "-ily"/"-iness" family, and the exclusion then cost 1,645 correct demotions to
+ * prevent 12 promotions. An uncounted headword is still a rung the chain can
+ * walk *through* to reach something common on the other side, which is most of
+ * what the corpus was opened for.
+ *
+ * False before the corpus loads, like every other question this module answers,
+ * so a caller falls through to whatever it did without the corpus.
+ */
+export function corpusAttests(word: string): boolean {
+  const entry = corpusEntry(word);
+  if (!entry) return false;
+  if (!(entry.sources & LEXICON_SOURCES)) return false;
+  return entry.tags === 0;
+}
