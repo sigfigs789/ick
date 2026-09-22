@@ -9,6 +9,7 @@ import {
   trackMerriamWebsterApproved,
   trackMerriamWebsterFailed,
   trackUnattestedScore,
+  trackRejectedAnswer,
   trackVisit,
   trackVisitEngaged,
   trackFeedbackSubmitted,
@@ -19,6 +20,7 @@ import {
 } from "./analytics";
 import { unattestedZipf, rarityScore } from "./game/dictionary";
 import { puzzleNumber } from "./game/share";
+import { FREEFORM_TRIAL_START } from "./game/mode";
 import type { LiveCheck } from "./game/liveValidate";
 import type { RarityInfo } from "./game/types";
 import { recordVisit, type VisitOutcome } from "./game/visits";
@@ -561,6 +563,34 @@ describe("supabase mirror", () => {
 
     expect(() => trackShareArrival()).not.toThrow();
     expect(track).toHaveBeenCalledWith("arrived_from_share");
+  });
+});
+
+describe("answer_rejected", () => {
+  // A rejection is the one play event the mode question is sharpest about:
+  // Freeform refuses fewer words by design, so a refusal rate read across both
+  // modes at once is two different numbers averaged into one that describes
+  // neither.
+  it("carries the mode the puzzle was played under", () => {
+    trackRejectedAnswer(FREEFORM_TRIAL_START, "ick", "  Tabacco ");
+
+    expect(track).toHaveBeenCalledWith("answer_rejected", {
+      puzzle_date: FREEFORM_TRIAL_START,
+      puzzle_number: puzzleNumber(FREEFORM_TRIAL_START),
+      mode: "freeform",
+      drop: "ick",
+      word: "tabacco",
+    });
+  });
+
+  it("reports an archived day as the mode it was actually played in", () => {
+    const beforeTrial = "2026-08-18";
+    trackRejectedAnswer(beforeTrial, "ICK", "Zyzzyva");
+
+    expect(track).toHaveBeenCalledWith(
+      "answer_rejected",
+      expect.objectContaining({ puzzle_date: beforeTrial, mode: "standard" })
+    );
   });
 });
 
