@@ -13,6 +13,7 @@ import { DEV_TOOLS } from "../dev/devTools";
 import { handleFor } from "../game/handle";
 import { accountName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
+import { modeIsChosen } from "../game/mode";
 import {
   monthLabel,
   monthResetLabel,
@@ -433,8 +434,15 @@ export function LeaderboardPage() {
             {/* Said out loud rather than left to be discovered by a Freeform
                 player wondering where their score went. The boards are
                 Standard's, and there is no second set -- see
-                game/leaderboard.ts, submitScore. */}
-            <li>Standard mode only — Freeform isn't ranked</li>
+                game/leaderboard.ts, submitScore.
+
+                Only once there are two modes to tell apart. Before
+                MODE_CHOICE_START everybody is on the same rules, so this line
+                would be drawing a distinction the reader does not have yet --
+                naming "Standard" to a player who has never been offered
+                anything else, and "Freeform" as a thing that isn't ranked in
+                the very week it is the only way to play. */}
+            {modeIsChosen(today) && <li>Standard mode only — Freeform isn't ranked</li>}
           </ul>
           {/* Which board, on the layout that only has room for one at a time.
               Above the boards rather than beside each heading, because it is one

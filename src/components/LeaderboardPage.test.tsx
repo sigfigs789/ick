@@ -12,6 +12,8 @@ import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard } from "../game/player";
 import { handleFor } from "../game/handle";
 import { todayDateString } from "../game/date";
+import { MODE_CHOICE_START } from "../game/mode";
+import { setDevDateOverride } from "../dev/devDate";
 
 // No names come from the server: the client derives a handle from each player
 // id, so the same player is recognisable on both boards without anything being
@@ -1180,5 +1182,36 @@ describe("the leaderboard page on a phone", () => {
     expect(boardRows("This week")).toHaveLength(2);
     expect(boardRows(MONTH_BOARD)).toHaveLength(2);
     expect(screen.queryByRole("button", { name: "Day" })).toBeNull();
+  });
+});
+
+describe("naming the mode the boards rank", () => {
+  afterEach(() => {
+    setDevDateOverride(null);
+  });
+
+  it("says nothing while there is only one way to play", async () => {
+    // Before MODE_CHOICE_START everybody is on the same rules. Naming
+    // "Standard" to a player who has never been offered anything else draws a
+    // distinction they do not have -- and calling Freeform unranked in the very
+    // week it is the only way to play is worse than saying nothing.
+    setDevDateOverride("2026-09-21");
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(screen.getByText(/played on the day they drop/i)).toBeInTheDocument();
+    expect(screen.queryByText(/standard mode only/i)).not.toBeInTheDocument();
+  });
+
+  it("says so once both modes are live", async () => {
+    // From the choice date it is the answer to a real question: a Freeform
+    // player wondering where their score went.
+    setDevDateOverride(MODE_CHOICE_START);
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(screen.getByText(/standard mode only/i)).toBeInTheDocument();
   });
 });
