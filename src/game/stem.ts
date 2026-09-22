@@ -648,6 +648,64 @@ export function prefixBaseCandidates(word: string, era: PrefixEra): string[] {
 }
 
 /**
+ * The two prefixes that fold whatever the word's own frequency says: "counter-"
+ * and "anti-". The same strip `prefixBaseCandidates` performs, off the floor
+ * gate that holds the rest of the list back -- see UNGATED_PREFIX_START in
+ * dictionary.ts for the argument.
+ *
+ * Why these two and not the other four left in TRANSPARENT_PREFIXES. A gate is
+ * only worth removing where the wrong readings it was catching are not there to
+ * catch, and that is a question about how many ordinary English words merely
+ * *open* with the letters. "over-", "out-", "under-" and "un-" are the letters
+ * of common words ("overt", "outer", "understand", "unit", "uncle", "united"),
+ * so ungating them would fold measured words no player would accept the base
+ * for. "counter-" and "anti-" are not: above the floor they reach 547 curated
+ * words, and the readings are the prefix's own -- "counterattack" is an attack,
+ * "antiviral" is viral, "countermeasure" a measure. The handful that merely open
+ * that way are wrong bracketings rather than coincidences of frequency
+ * ("antidote" is not a dote, "antimony" not a money), which is what
+ * fold-exemptions.json is for and what the floor gate was never doing.
+ *
+ * "anti-" is the borrowed one of the pair and the one that inverts rather than
+ * modifies: an antifreeze is not a freeze the way a codriver is a driver. It
+ * folds anyway, because the fold is a claim about which form of a word is the
+ * common one and not about what the word denotes -- "antifreeze" is "freeze"
+ * plus a modifier a reader supplies, and scoring it as a deep-tail find says
+ * something plainly false about how familiar the string is. The readings it gets
+ * wrong in *kind* rather than in degree are the reviewed entries.
+ *
+ * Long-to-short like TRANSPARENT_PREFIXES, though the two do not overlap.
+ */
+const UNGATED_PREFIXES = ["counter", "anti"];
+
+/**
+ * The base a "counter-"/"anti-" word was built on, with no frequency gate
+ * behind it: "counterattack" -> "attack", "antiviral" -> "viral". Spelling
+ * only -- the caller still confirms the residue is a word, is not a bound
+ * fragment (`boundPrefixResidue`) and is not a reviewed misreading
+ * (fold-exemptions.json), exactly as it does for the gated list.
+ *
+ * The four-letter residue floor is `prefixBaseCandidates`', for its reason: the
+ * wrong-word folds cluster in the short residues, and a three-letter base
+ * carries frequency collected from every word containing it.
+ */
+export function ungatedPrefixBaseCandidates(word: string): string[] {
+  const w = word.toLowerCase();
+  for (const prefix of UNGATED_PREFIXES) {
+    if (!w.startsWith(prefix)) continue;
+    const stem = w.slice(prefix.length);
+    if (stem.length < 4 || stem === w) continue;
+    return [stem];
+  }
+  return [];
+}
+
+/** The prefixes `ungatedPrefixBaseCandidates` reads, for the player-facing list. */
+export function ungatedPrefixes(): string[] {
+  return [...UNGATED_PREFIXES].sort();
+}
+
+/**
  * The measurement modifiers: the SI decimal prefixes and their binary (IEC)
  * counterparts, the affixes whose whole job is to say how many of the thing
  * that follows. Ordered long-to-short like `TRANSPARENT_PREFIXES`, though

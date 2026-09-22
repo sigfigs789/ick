@@ -31,6 +31,7 @@ import {
   privativeBaseCandidates,
   superlativeBaseCandidates,
   transparentPrefixes,
+  ungatedPrefixBaseCandidates,
   unmeasuredBaseCandidates,
 } from "./stem";
 import { corpusAttests, corpusEntry } from "./corpus";
@@ -372,6 +373,47 @@ const BORROWED_PREFIX_END = "2026-09-05";
  * after it can straddle a deploy.
  */
 const DOUBLING_TENSE_START = "2026-09-10";
+
+/*
+ * 2026-09-27: "counter-" and "anti-" fold whatever the word's own frequency
+ * says. The two transparent prefixes come off the MEASURED_FLOOR gate the rest
+ * of the list stays behind.
+ *
+ * Shares MODE_CHOICE_START with the mode switch, the first date a Standard
+ * player is choosing the folding system rather than being handed it. Nothing
+ * about the switch requires this and nothing here requires the switch; they ride
+ * the same cutover because a player meeting the two systems side by side is the
+ * moment for the folding one to be at its best, and one date is one explanation.
+ *
+ * What the gate was doing, and why not here. MEASURED_FLOOR keeps a spelling
+ * guess from overruling a real measurement, and for the prefix rule it is the
+ * only thing standing between the fold and "preface" -> `face`, "present" ->
+ * `sent`, "understand" -> `stand`. That argument is about how many ordinary
+ * English words merely *open* with a prefix's letters, and for these two the
+ * answer is almost none: above the floor they move 510 curated words, and the
+ * readings are the prefix's own -- "counterattack" is an attack (7.37 -> 4.26 on
+ * the shown score), "countermeasure" a measure, "antiviral" viral, "antitrust" a
+ * trust. The words that merely open that way are wrong *bracketings* rather than
+ * frequency coincidences -- "antidote" is not a dote, "antimony" not a money,
+ * "antigen" not a gen -- and a frequency gate never saw those either: they are
+ * reviewed entries in fold-exemptions.json, scoped to the prefix, and that is
+ * the tool REVIEWED_FOLD_START built for exactly this. Eighteen of them were
+ * needed for the two prefixes together, against the 510 the rule gets right.
+ *
+ * The other four transparent prefixes stay gated, and the reason is the same one
+ * read the other way: "over-", "out-", "under-" and "un-" *are* the openings of
+ * common words ("overt", "outer", "understand", "unit", "uncle"), so ungating
+ * them would fold measured words onto bases no player would accept. See
+ * `ungatedPrefixBaseCandidates` in stem.ts.
+ *
+ * One day later the bases widen under it: from CORPUS_ONLY_START the fold prices
+ * against the corpus lexicon rather than the curated list, and this rule inherits
+ * that like every other -- "antiabortionism" reaches `abortionism`, a word only
+ * the corpus carries, and "antichrist" reaches `christ`. Two cutovers a day
+ * apart and deliberately separate: this one is about *when* a strip is allowed,
+ * that one about what any strip may land on.
+ */
+const UNGATED_PREFIX_START = MODE_CHOICE_START;
 
 /**
  * Freeform: the rules under which no word folds and every score is the word's
@@ -1024,6 +1066,11 @@ interface Scoring {
   // off for earlier systems so past puzzles' scores stay frozen (see
   // DOUBLING_TENSE_START).
   doublingTenseBases: boolean;
+  // Whether "counter-" and "anti-" strip whatever the word's own frequency says.
+  // The rest of the transparent prefixes stay behind MEASURED_FLOOR. 2026-09-27;
+  // off for earlier systems so past puzzles' scores stay frozen (see
+  // UNGATED_PREFIX_START).
+  ungatedPrefixBases: boolean;
   // Whether this system folds at all. True for every dated system but the
   // freeform window, which skips the fold wholesale and scores each word on its
   // own frequency (see FREEFORM_START). The one flag here that reads as a
@@ -1075,6 +1122,7 @@ interface ScoringFlags {
   prePrefixBases?: boolean;
   borrowedPrefixBases?: boolean;
   doublingTenseBases?: boolean;
+  ungatedPrefixBases?: boolean;
   // Defaults to *true*, the other way round from every flag above it, because a
   // fold is not a rule some past system lacked -- it is what scoring has always
   // done. Only the freeform profile passes false. See FREEFORM_START.
@@ -1111,6 +1159,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     prePrefixBases = false,
     borrowedPrefixBases = false,
     doublingTenseBases = false,
+    ungatedPrefixBases = false,
     folds = true,
     narrowBands = false,
     scoreCurve = false,
@@ -1175,6 +1224,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     prePrefixBases,
     borrowedPrefixBases,
     doublingTenseBases,
+    ungatedPrefixBases,
     // Every dated profile below predates the corpus cutover and reads the
     // curated index; CORPUS_SCORING is built by spreading the latest one and
     // turning this on.
@@ -1400,11 +1450,12 @@ const BORROWED_RETIRED_SCORING: Scoring = twoBandScoring(9.9, 0, {
   scoreCurve: true,
   decadeBands: true,
 });
-// The latest system (2026-09-10): the same folds with one reading taken out of
-// the tense rule's hands -- a bare CVC stem whose own forms double their final
-// consonant is not a reading of an "-ed"/"-ing" spelling, so "waning" folds onto
-// `wane` rather than `wan`. See DOUBLING_TENSE_START.
-const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
+// The 2026-09-10 system: the same folds with one reading taken out of the tense
+// rule's hands -- a bare CVC stem whose own forms double their final consonant
+// is not a reading of an "-ed"/"-ing" spelling, so "waning" folds onto `wane`
+// rather than `wan`. See DOUBLING_TENSE_START. The system every puzzle from that
+// date up to the mode switch was played on.
+const DOUBLING_SCORING: Scoring = twoBandScoring(9.9, 0, {
   boundBaseForms: true,
   legend: true,
   chainedBaseForms: true,
@@ -1425,6 +1476,12 @@ const LATEST_SCORING: Scoring = twoBandScoring(9.9, 0, {
   scoreCurve: true,
   decadeBands: true,
 });
+// The latest system (2026-09-27): the same folds with "counter-" and "anti-" off
+// the floor gate. See UNGATED_PREFIX_START.
+const LATEST_SCORING: Scoring = {
+  ...DOUBLING_SCORING,
+  ungatedPrefixBases: true,
+};
 
 /**
  * Freeform week: the latest system with the fold switched off.
@@ -1516,6 +1573,7 @@ const LEGACY_SCORING: Scoring = {
   doublingTenseBases: false,
   prePrefixBases: false,
   borrowedPrefixBases: false,
+  ungatedPrefixBases: false,
 };
 
 /**
@@ -1637,6 +1695,11 @@ function scoringFor(date?: string): Scoring {
     return usesFreeformRules(date) ? CORPUS_FREEFORM_SCORING : CORPUS_SCORING;
   }
   if (usesFreeformRules(date)) return FREEFORM_SCORING;
+  // Below the freeform fork rather than above it, unlike every rung before it.
+  // The fork is a range and this is a threshold, and the trial week sits *under*
+  // this date: asked first, the rung would answer DOUBLING_SCORING for the
+  // window's own dates and the trial would quietly start folding again.
+  if (date < UNGATED_PREFIX_START) return DOUBLING_SCORING;
   return LATEST_SCORING;
 }
 
@@ -2750,7 +2813,7 @@ function inflectionalBaseForms(
 function addInflectionalBaseForms(
   word: string,
   scoring: Scoring,
-  add: (candidate: string | undefined) => void,
+  add: CandidateAdder,
 ): void {
   add(tenseBaseForm(word, scoring));
   add(baseForm(word));
@@ -2822,7 +2885,7 @@ function addNonInflectionalBaseForms(
   word: string,
   scoring: Scoring,
   date: string | undefined,
-  add: (candidate: string | undefined) => void
+  add: CandidateAdder
 ): void {
   // Suffixes whose spelling is not decisive, admitted only where the word's own
   // frequency is a stand-in rather than a measurement. Below MEASURED_FLOOR the
@@ -2870,31 +2933,26 @@ function addNonInflectionalBaseForms(
       // Sixty-one such residues were being refused to keep out about twenty
       // fragments, and the fragments were not the rare ones -- "duce" at 2.51
       // and "lect" at 1.80 sit either side of "gird" at 2.22.
-      const spellings = prefixBaseCandidates(word, {
-        pre: scoring.prePrefixBases,
-        borrowed: scoring.borrowedPrefixBases,
-      });
-      // A reviewed entry scoped to the prefix refuses this hop and leaves the
-      // word's ordinary folds alone -- see FoldExemption.scope. Asked after the
-      // spellings, not before: it reads the word's inflectional base, and most
-      // words have no prefix candidate for it to refuse.
-      const refused =
-        spellings.length > 0 &&
-        // A superlative's prefix belongs to the adjective inside it, not to the
-        // degree form: "uncleanest" is the superlative of "unclean", and
-        // stripping un- off it reads the word inside out. See
-        // `hasSuperlativeReading`.
-        (hasSuperlativeReading(word, scoring) ||
-          (scoring.prefixResidues && prefixFoldExemptParadigm(word, scoring, date)));
-      for (const candidate of refused ? [] : spellings) {
-        if (!lexiconHas(candidate, scoring)) continue;
-        if (scoring.prefixResidues) {
-          if (!boundPrefixResidue(candidate, date)) add(candidate);
-        } else if (zipfFor(candidate, scoring) >= PREFIX_BASE_MIN_ZIPF) {
-          add(candidate);
-        }
-      }
+      addPrefixBases(
+        word,
+        prefixBaseCandidates(word, {
+          pre: scoring.prePrefixBases,
+          borrowed: scoring.borrowedPrefixBases,
+        }),
+        scoring,
+        date,
+        add
+      );
     }
+  }
+  // "counter-" and "anti-", off the gate the rest of the list sits behind: the
+  // two prefixes whose letters are not also the opening of a pile of ordinary
+  // English words, so there is no measured word for a floor to protect. Run
+  // outside the branch above rather than inside it, which is the whole change --
+  // a word below the floor reaches the same candidate either way, and the
+  // duplicate is dropped by `add`. See UNGATED_PREFIX_START.
+  if (scoring.ungatedPrefixBases) {
+    addPrefixBases(word, ungatedPrefixBaseCandidates(word), scoring, date, add);
   }
   // The measurement modifiers, ungated for the same reason and on a different
   // guarantee: not the ending but the *residue* is what is closed here, to a
@@ -2922,6 +2980,51 @@ function addNonInflectionalBaseForms(
     for (const candidate of privativeBaseCandidates(word)) add(candidate);
   }
 }
+
+/**
+ * Admit the prefix strips `spellings` offers, against the reviewed guards both
+ * prefix families answer to: the residue is a word the fold may price against
+ * (`lexiconHas`), it is not a bound fragment (`boundPrefixResidue`), the word is
+ * not a reviewed misreading of the prefix, and the prefix is not one the
+ * adjective inside a superlative owns.
+ *
+ * Shared so the two families cannot drift on what a prefix base is: they differ
+ * on *when* the strip is allowed, and on nothing else. What they may land on is
+ * one question with one answer, which from CORPUS_ONLY_START is a corpus
+ * headword as readily as a curated word -- "antiabortionism" -> `abortionism`.
+ */
+function addPrefixBases(
+  word: string,
+  spellings: string[],
+  scoring: Scoring,
+  date: string | undefined,
+  add: CandidateAdder
+): void {
+  if (spellings.length === 0) return;
+  // A reviewed entry scoped to the prefix refuses this hop and leaves the
+  // word's ordinary folds alone -- see FoldExemption.scope. Asked after the
+  // spellings, not before: it reads the word's inflectional base, and most
+  // words have no prefix candidate for it to refuse.
+  //
+  // A superlative's prefix belongs to the adjective inside it, not to the degree
+  // form: "uncleanest" is the superlative of "unclean", and stripping un- off it
+  // reads the word inside out. See `hasSuperlativeReading`.
+  if (
+    hasSuperlativeReading(word, scoring) ||
+    (scoring.prefixResidues && prefixFoldExemptParadigm(word, scoring, date))
+  ) {
+    return;
+  }
+  for (const candidate of spellings) {
+    if (!lexiconHas(candidate, scoring)) continue;
+    if (scoring.prefixResidues) {
+      if (!boundPrefixResidue(candidate, date)) add(candidate);
+    } else if (zipfFor(candidate, scoring) >= PREFIX_BASE_MIN_ZIPF) {
+      add(candidate);
+    }
+  }
+}
+
 
 /**
  * The rungs above `word` on its own ladder, with none of the rival readings of
@@ -2980,12 +3083,15 @@ function prefixFoldExemptParadigm(word: string, scoring: Scoring, date?: string)
   return inflectionalBaseForms(word, scoring, date).some((base) => prefixFoldExempt(base, date));
 }
 
+/** How every candidate set adds a base: the dedupe-and-check below. */
+type CandidateAdder = (candidate: string | undefined) => void;
+
 /** The dedupe-and-check every candidate set adds through. */
-function candidateAdder(out: string[], word: string, scoring: Scoring) {
+function candidateAdder(out: string[], word: string, scoring: Scoring): CandidateAdder {
   // Computed once per set rather than per candidate: every candidate is a
   // reading of the same word, so the blocked spelling is too.
   const blocked = blockedTenseStem(word, scoring);
-  return (candidate: string | undefined) => {
+  return (candidate) => {
     if (!candidate || candidate === word) return;
     // The reading the word's own spelling rules out, whichever family offered it
     // (see `blockedTenseStem`).
