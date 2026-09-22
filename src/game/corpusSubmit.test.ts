@@ -1,33 +1,54 @@
-// Freeform week playing off the corpus: which words it lets in, which it still
-// refuses, and what they score.
+// Playing off the corpus: which words it lets in, which it still refuses, and
+// what they score. Three eras -- before the trial the corpus is not consulted at
+// all, the trial week consults it waiving six reasons, and from MODE_CHOICE_START
+// both modes consult it waiving three and treating the rest as verdicts.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluateSubmission } from "./submit";
 import { CORPUS_SOURCES, CORPUS_TAGS, loadCorpus, resetCorpusForTests, sourceBit, tagBit } from "./corpus";
 import { FREEFORM_START, isUnattestedZipf } from "./dictionary";
+import { MODE_CHOICE_START } from "./mode";
 
 const FREEFORM_DATE = FREEFORM_START;
 const ORDINARY_DATE = "2026-09-01"; // before the window
+const CHOICE_DATE = MODE_CHOICE_START; // both modes, one set of tags
 const DROP = "ser";
 
 // Sorted, as the corpus always is.
 // None of these are in the curated dictionary -- the corpus branch is only
 // reached for words it has never heard of.
-const WORDS = ["sermonics", "serpentivorous", "sersion", "serxyz"];
+const WORDS = [
+  "prosery",
+  "sermonicky",
+  "sermonics",
+  "serpentivorous",
+  "sersed",
+  "sersion",
+  "serxyz",
+];
 const TAGS: Record<string, number> = {
+  prosery: tagBit("proper-noun"),
+  sermonicky: tagBit("obsolete"),
   sermonics: 0,
   serpentivorous: 0,
+  sersed: 0,
   sersion: tagBit("misspelling"),
   serxyz: 0,
 };
 const SOURCES: Record<string, number> = {
+  prosery: sourceBit("wiktionary"),
+  sermonicky: sourceBit("wiktionary"),
   sermonics: sourceBit("wiktionary") | sourceBit("norvig"),
   serpentivorous: sourceBit("wiktionary") | sourceBit("macos_dict"),
+  sersed: sourceBit("wiktionary"),
   sersion: sourceBit("wiktionary"),
   serxyz: sourceBit("norvig"), // counted by a frequency corpus, described by nobody
 };
 const ZIPF: Record<string, number> = {
+  prosery: 0,
+  sermonicky: 16, // 0.5 -- below the out-of-use ceiling, so the tag is trusted
   sermonics: 48, // 48 / 32 = 1.5
   serpentivorous: 0, // unattested
+  sersed: 0,
   sersion: 64,
   serxyz: 40,
 };
@@ -114,11 +135,59 @@ describe("freeform week, words the curated list has never heard of", () => {
   });
 });
 
-describe("outside freeform week", () => {
+describe("before the trial", () => {
   it("does not consult the corpus at all", () => {
     for (const word of ["sermonics", "serpentivorous"]) {
       expect(evaluateSubmission(word, DROP, [], ORDINARY_DATE).ok).toBe(false);
     }
+  });
+});
+
+describe("from the mode switch, both modes off one corpus", () => {
+  it("accepts a lexicon word the curated list never held", () => {
+    const result = evaluateSubmission("sermonics", DROP, [], CHOICE_DATE);
+    expect(result.ok).toBe(true);
+    // Not its own 1.5: an ordinary puzzle folds, and "sermonics" is a plural of
+    // the curated "sermonic". The trial week is the one that reads the 1.5.
+    expect(result.word!.zipf).toBeGreaterThan(1.5);
+  });
+
+  it("still accepts a proper noun, which both modes waive", () => {
+    expect(evaluateSubmission("prosery", DROP, [], CHOICE_DATE).ok).toBe(true);
+  });
+
+  it("refuses an out-of-use word and says which register", () => {
+    // The trio goes back in force at the switch: the same word plays during the
+    // trial week and does not play here.
+    expect(evaluateSubmission("sermonicky", DROP, [], FREEFORM_DATE).ok).toBe(true);
+    const result = evaluateSubmission("sermonicky", DROP, [], CHOICE_DATE);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe("obsolete");
+  });
+
+  it("names the misspelling rather than leaving it to the live lookup", () => {
+    const result = evaluateSubmission("sersion", DROP, [], CHOICE_DATE);
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe("misspelling");
+  });
+
+  it("still refuses a string only a frequency corpus ever counted", () => {
+    expect(evaluateSubmission("serxyz", DROP, [], CHOICE_DATE).ok).toBe(false);
+  });
+
+  it("folds an unattested derivation onto its curated base", () => {
+    // "sersed" is unattested, so on its own frequency it would be a flat 10.00
+    // Legend. The fold reads it as a tense form of the curated "serse" and caps
+    // it there -- the whole reason a corpus word is not scored off its raw Zipf.
+    const result = evaluateSubmission("sersed", DROP, [], CHOICE_DATE);
+    expect(result.ok).toBe(true);
+    expect(isUnattestedZipf(result.word!.zipf)).toBe(false);
+  });
+
+  it("leaves the trial week scoring each word on its own frequency", () => {
+    const trial = evaluateSubmission("sersed", DROP, [], FREEFORM_DATE);
+    expect(trial.ok).toBe(true);
+    expect(isUnattestedZipf(trial.word!.zipf)).toBe(true);
   });
 });
 

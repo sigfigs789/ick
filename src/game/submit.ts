@@ -9,14 +9,16 @@ import {
   nearMissForDrop,
   pinnedSameRoot,
   rarityFor,
-  rarityForZipf,
+  rarityForUncurated,
   unattestedZipf,
   refusedEsStem,
   refusedTenseStem,
   sameRootDoublingActive,
   sameRootInflectionsActive,
 } from "./dictionary";
-import { corpusEntry, sourceBit, tagBit } from "./corpus";
+import { corpusEntry, reasonsOf, sourceBit } from "./corpus";
+import { isBlocked } from "./blocklist";
+import { FREEFORM_TRIAL_START, MODE_CHOICE_START } from "./mode";
 import rejectionMetadata from "../data/rejection-metadata.json";
 import {
   baseForm,
@@ -319,32 +321,127 @@ const LEXICON_SOURCES =
   sourceBit("wiktionary") | sourceBit("dictionary") | sourceBit("macos_dict") | sourceBit("curated");
 
 /**
- * What freeform week makes of a word the curated dictionary has never heard of.
+ * Whether `date`'s puzzle plays off the corpus as well as the curated list.
  *
- * The week's existing waivers say which objections it will not make: register
- * ones -- archaic, obsolete, proper noun, abbreviation -- are the week's to
- * lift, while "misspelling" and "not-a-word" are not, because a spelling of
- * another word is a mistake rather than a bolder way to play. This applies that
- * same line to the corpus: any lexicon word passes, a misspelling does not, and
- * a string only a frequency corpus ever counted is not a word to begin with.
+ * One continuous range rather than two, because FREEFORM_TRIAL_END *is*
+ * MODE_CHOICE_START: the trial week opened the corpus and the mode switch keeps
+ * it open for both modes. What changes at the seam is not whether the corpus is
+ * read but which of its tags are objections, and that question already has an
+ * owner in `waivesRejectionReason`.
+ *
+ * Before the trial nothing consults it. An omitted date reads as not consulting
+ * it either -- an undated call is pricing somebody else's word for a board or a
+ * feed, not judging a submission, and there is nothing there to look up.
+ */
+export function consultsCorpus(date?: string): boolean {
+  return date !== undefined && date >= FREEFORM_TRIAL_START;
+}
+
+/**
+ * Whether a corpus tag `date`'s puzzle does not waive refuses the word outright,
+ * rather than merely declining to vouch for it.
+ *
+ * Only the trial week does the latter, and only because its puzzles are already
+ * played. See the call site.
+ */
+function tagsAreVerdicts(date?: string): boolean {
+  return date !== undefined && date >= MODE_CHOICE_START;
+}
+
+/**
+ * The Zipf at or above which an out-of-use tag is ignored, mirroring
+ * OUT_OF_USE_ZIPF_CEILING in scripts/generate-data.py and the gate on the
+ * derived rejections it writes (see DERIVED_REJECTIONS in dictionary.ts).
+ *
+ * The trio's false positives are precisely the common words -- "halt" (3.93),
+ * "fraught" (3.12) and "guerilla" (2.90) are each tagged obsolete off one dead
+ * sense, "thy" and "unto" archaic, "yea" and "fortnight" dated -- so a word
+ * corpora still measure in live use is not out of use, whatever a sense label
+ * says. Below the gate the tag is reliable.
+ *
+ * The same number rather than a second judgement on purpose: the tags here and
+ * the tags in derived-rejections.json come from the same Wiktextract pass, so a
+ * word being on the curated list or off it cannot be what decides how far its
+ * label is trusted. The structural tags take no gate, for the reason
+ * generate-data.py gives: "cd" being common says nothing about whether it is an
+ * abbreviation.
+ */
+const OUT_OF_USE_ZIPF_CEILING = 2.5;
+
+const OUT_OF_USE_REASONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
+  "obsolete",
+  "archaic",
+  "dated",
+]);
+
+/**
+ * What the game makes of a word the curated dictionary has never heard of.
+ *
+ * The corpus is the expansive list -- 1.2M headwords, tagged rather than
+ * filtered -- and this is the one place that turns its tags into a verdict. What
+ * it will and will not object to is not decided here: it asks
+ * `waivesRejectionReason`, the same function the curated list is judged by, so
+ * the two lists answer to one rule and a word cannot be playable on one and
+ * refused on the other for the kind of word it is.
+ *
+ * That is what makes it safe to consult in both modes. Freeform week reaches it
+ * waiving six reasons, an ordinary puzzle from MODE_CHOICE_START waiving three
+ * -- names and abbreviations, which the trial settled, while the age trio goes
+ * back in force -- and each gets the corpus filtered to its own rules from the
+ * same data. Before FREEFORM_TRIAL_START nothing consults it at all: an archived
+ * puzzle plays as it was played, and a word refused in August is refused there
+ * still.
+ *
+ * Two objections no waiver lifts, and the corpus is where they bite hardest. A
+ * misspelling is a mistake rather than a bolder way to play. And a string
+ * carrying only frequency-corpus bits has been *counted*, never *described* --
+ * Norvig and wordfreq between them attest ~160k strings no lexicon has, mostly
+ * crawl residue like "mxps" and "travelglobe" -- which is what "not-a-word"
+ * means. The blocklist is the third, and it is not a waiver question at all: it
+ * is a decision about words the game will not print, and the corpus carries no
+ * tag for it (see blocklist.ts).
  *
  * Returns undefined when the corpus has nothing to say -- including before it
  * has loaded -- so the caller falls through to the live lookup exactly as it
  * did before the corpus existed. The corpus never makes a word *less* playable.
  */
-function freeformCorpusVerdict(word: string, date?: string): SubmissionResult | undefined {
-  if (!usesFreeformRules(date)) return undefined;
+function corpusVerdict(word: string, date?: string): SubmissionResult | undefined {
+  if (!consultsCorpus(date)) return undefined;
+  if (isBlocked(word)) return undefined;
   const entry = corpusEntry(word);
   if (!entry) return undefined;
-  if (entry.tags & tagBit("misspelling")) return undefined;
   if (!(entry.sources & LEXICON_SOURCES)) return undefined;
 
   // A word no corpus attests scores the unattested sentinel -- a flat 10.00
-  // Legend. That is a stand-in rather than a measurement, and it is what the
-  // live lookup already hands a word it can find no frequency for, so a word
-  // scores the same here whether the corpus or Merriam-Webster vouched for it.
-  const zipf = entry.zipf ?? unattestedZipf();
-  return { ok: true, word: { word, rarity: rarityForZipf(zipf, date), zipf } };
+  // Legend before the fold. That is a stand-in rather than a measurement, and it
+  // is what the live lookup already hands a word it can find no frequency for,
+  // so a word scores the same here whether the corpus or Merriam-Webster
+  // vouched for it.
+  const ownZipf = entry.zipf ?? unattestedZipf();
+  for (const reason of reasonsOf(entry.tags)) {
+    if (waivesRejectionReason(reason, date)) continue;
+    // A live-use measurement outranks the label, for the trio only.
+    if (OUT_OF_USE_REASONS.has(reason) && ownZipf >= OUT_OF_USE_ZIPF_CEILING) continue;
+    // From MODE_CHOICE_START the tag is the verdict and the player is told it,
+    // which is the whole of "the corpus is the dictionary now": a tag that only
+    // withheld an opinion would leave the word to the live lookup, and Merriam-
+    // Webster has no view on whether Wiktionary calls a sense obsolete. Curated
+    // words have worked this way since derived-rejections.json (see
+    // DERIVED_REJECTIONS), and the two lists now answer alike.
+    //
+    // The trial week keeps falling through instead, unchanged. Its puzzles are
+    // archived and a word accepted on the 16th has to still be accepted when
+    // somebody opens that day -- the same reason every scoring cutover in
+    // dictionary.ts is kept rather than replaced.
+    if (!tagsAreVerdicts(date)) return undefined;
+    return { ok: false, reason };
+  }
+
+  // Scored through the fold, not off the raw number: a corpus word is far more
+  // often a mechanical derivation than a curated one, and an unwritten suffix on
+  // an everyday base is not a rare word. See rarityForUncurated.
+  const { rarity, zipf } = rarityForUncurated(word, ownZipf, date);
+  return { ok: true, word: { word, rarity, zipf } };
 }
 
 export function evaluateSubmission(
@@ -359,6 +456,29 @@ export function evaluateSubmission(
     return { ok: false, reason: "empty" };
   }
   if (!WORD_CHARS.test(word)) {
+    return { ok: false, reason: "not-a-word" };
+  }
+  // The blocklist, asked of every word rather than of the corpus alone.
+  //
+  // It used to be applied once, at build time, on the assumption that the
+  // curated list was the only way a word could reach a player. That stopped
+  // being true twice over: the live Merriam-Webster lookup answers for words
+  // the list never held, and the corpus now answers for 1.2M more. Asking here
+  // covers all three sources with one check.
+  //
+  // It also catches the two entries that were never applied at all. The file
+  // allows a reviewed note beside an entry and both loaders read the line whole,
+  // so "niggardly  # sounds like a slur despite unrelated etymology" was a
+  // blocklist entry no word could ever equal -- and "niggardly" duly shipped in
+  // dictionary.json and has been playable ever since. The loaders are fixed;
+  // this is what makes the fix reach a dictionary that is already built.
+  //
+  // "not-a-word" rather than a reason of its own, and deliberately the one
+  // reason that normally earns a live lookup -- `eligibleForLiveCheck` refuses
+  // these words, so the lookup never runs and the player gets the ordinary
+  // not-on-the-list message. Naming the real reason would mean printing the
+  // category back at them, which is the thing the list exists to avoid.
+  if (isBlocked(word)) {
     return { ok: false, reason: "not-a-word" };
   }
   // The drop itself is a word like any other during freeform week. Refusing it
@@ -396,7 +516,7 @@ export function evaluateSubmission(
     // Consulted only for words the curated list has never heard of: a curated
     // word that freeform week already waives never reaches here, because
     // curatedRejection has lifted its reason and isValidWord is true.
-    const fromCorpus = freeformCorpusVerdict(word, date);
+    const fromCorpus = corpusVerdict(word, date);
     if (fromCorpus) return fromCorpus;
     return {
       ok: false,

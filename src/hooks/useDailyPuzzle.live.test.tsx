@@ -44,9 +44,20 @@ function eventPayload(name: string): Record<string, unknown> | undefined {
 const DROP = dropForDate(todayDateString());
 const OFF_LIST_WORD = `${DROP.toLowerCase()}qxz`;
 
-/** Resolve /api/validate with `body`, optionally after a delay. */
+/**
+ * Resolve /api/validate with `body`, optionally after a delay.
+ *
+ * Every puzzle from the trial week on also fetches the word corpus on mount
+ * (see consultsCorpus), and this date is one of them. Those requests are turned
+ * away rather than served: the corpus would answer for `OFF_LIST_WORD` before
+ * the live lookup ever ran, and this file is about the live lookup. A refused
+ * fetch is the case loadCorpus is built to shrug off, so the game carries on
+ * exactly as it did before the corpus existed -- which is the state these cases
+ * want. The returned spy counts only the /api/validate calls, for the same
+ * reason.
+ */
 function stubValidate(body: unknown, delayMs = 0) {
-  const fetchMock = vi.fn(async () => {
+  const validate = vi.fn(async () => {
     if (delayMs > 0)
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     return {
@@ -59,8 +70,15 @@ function stubValidate(body: unknown, delayMs = 0) {
       json: async () => body,
     } as unknown as Response;
   });
-  vi.stubGlobal("fetch", fetchMock);
-  return fetchMock;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) =>
+      String(url).startsWith("/corpus")
+        ? Promise.resolve({ ok: false } as unknown as Response)
+        : validate()
+    )
+  );
+  return validate;
 }
 
 function playable(zipf: number | null) {

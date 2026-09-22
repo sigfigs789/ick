@@ -13,10 +13,14 @@ import {
   retryWord,
   forfeitRetry,
 } from "../game/storage";
-import { evaluateSubmission, REJECTION_MESSAGES, spellingNearMiss } from "../game/submit";
+import {
+  consultsCorpus,
+  evaluateSubmission,
+  REJECTION_MESSAGES,
+  spellingNearMiss,
+} from "../game/submit";
 import {
   baseFormSubstitution,
-  usesFreeformRules,
   isUnattestedZipf,
   rarityForZipf,
   totalRarityScore,
@@ -189,17 +193,19 @@ export function useDailyPuzzle() {
   // start a second lookup or bank the same word twice.
   const inFlight = useRef<Set<string>>(new Set());
 
-  // Freeform plays off the expansive corpus as well as the curated list, so
-  // start fetching it as soon as such a puzzle is in view -- which now includes
-  // the moment the player flips the switch on today's puzzle. Nothing waits on
-  // it: until it arrives submissions fall through to the live lookup exactly as
-  // they always have, and a failed fetch is not surfaced because a player on a
-  // bad connection still has a full game without it.
+  // Every puzzle from the trial week on plays off the expansive corpus as well
+  // as the curated list, so start fetching it as soon as one is in view.
+  // Nothing waits on it: until it arrives submissions fall through to the live
+  // lookup exactly as they always have, and a failed fetch is not surfaced
+  // because a player on a bad connection still has a full game without it.
   //
-  // Only freeform dates pay the 3.6MB. An ordinary daily puzzle never consults
-  // the corpus, so it should never download it.
+  // It used to be freeform's alone, on the argument that an ordinary puzzle
+  // never consults it and so should never pay the 3.6MB. Both modes consult it
+  // now (see corpusVerdict in submit.ts), so both fetch it -- and the cost is
+  // the same download in either mode, once, cached by version. Archive puzzles
+  // before the trial still never ask for it.
   useEffect(() => {
-    if (usesFreeformRules(viewedDate)) void loadCorpus();
+    if (consultsCorpus(viewedDate)) void loadCorpus();
   }, [viewedDate, mode]);
 
   // Reload whenever the viewed puzzle changes (browsing the archive) or the mode

@@ -102,6 +102,15 @@ CURATED_PATHS = [
     ROOT / "scripts" / "playable-exemptions.txt",
 ]
 
+# The blocklist is the one judgement the corpus deliberately does not carry: it
+# is a decision about what the game will print, not an observation about the
+# word, so it stays out of tags.bin. It still has to *reach* the client, because
+# nothing filters the corpus at build time -- 34 of the 36 entries are attested
+# lexicon words with clean tags. Mirrored into src/data/ as JSON for the client
+# to import; blocklist.test.ts holds the two in lockstep.
+BLOCKLIST_PATH = ROOT / "scripts" / "blocklist.txt"
+BLOCKLIST_JSON_PATH = ROOT / "src" / "data" / "blocklist.json"
+
 SOURCE_LISTS = {
     "macos_dict": Path("/usr/share/dict/words"),
     "norvig": ROOT / "scripts" / "norvig-count-1w.txt",
@@ -277,6 +286,21 @@ def main() -> None:
         if zipf is not None:
             attested += 1
             zipf_bytes[index[word]] = max(1, min(255, round(zipf * ZIPF_SCALE)))
+
+    # Read here rather than through load_list, which keeps the whole line: the
+    # blocklist puts a reviewed note beside an entry and the note is not part of
+    # the word. Kept identical to load_blocklist in generate-data.py.
+    blocklist = sorted(
+        word
+        for word in (
+            line.partition("#")[0].strip().lower()
+            for line in BLOCKLIST_PATH.read_text().splitlines()
+        )
+        if word
+    )
+    BLOCKLIST_JSON_PATH.write_text(
+        "[\n" + ",\n".join(json.dumps(word) for word in blocklist) + "\n]\n"
+    )
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     (args.out_dir / "words.txt").write_text(front_code(words) + "\n")

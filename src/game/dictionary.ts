@@ -2030,6 +2030,36 @@ export function rarityFor(word: string, date?: string): RarityInfo | undefined {
   return { rarity: scoring.rarity(zipf), zipf };
 }
 
+/**
+ * `rarityFor` for a word the curated list has never heard of, scored from a
+ * frequency the caller brings -- the corpus's waterfall Zipf, or the unattested
+ * sentinel when no corpus counts it (see corpusVerdict in submit.ts).
+ *
+ * The fold is the whole point of routing these through here rather than reading
+ * the Zipf straight off the corpus. A corpus word is far more likely than a
+ * curated one to be a mechanical derivation nobody has bothered to write down --
+ * "unmasticated", "coevaporating", "remarketable" -- and a derivation scored on
+ * its own frequency is scored on the fact that it is unwritten, which is how an
+ * ordinary base word turns into a Legend by growing a suffix. Everything the
+ * fold knows applies unchanged: the chain walks the same rules, caps against the
+ * same curated bases, and can only ever make a word *more* common.
+ *
+ * What it cannot do is fold onto a base that is itself uncurated, because every
+ * link is priced out of the index (see `zipfFor`). That is a ceiling on how much
+ * this helps, not a wrong answer: an unfound base leaves the word scoring as
+ * itself, exactly as it would have without the call.
+ *
+ * Freeform week reaches this too and gets its own frequency back untouched,
+ * because `adjustedZipf` returns early when the profile does not fold -- the one
+ * behaviour the trial week was about.
+ */
+export function rarityForUncurated(word: string, ownZipf: number, date?: string): RarityInfo {
+  const normalized = word.toLowerCase();
+  const scoring = scoringFor(date);
+  const zipf = adjustedZipf(normalized, ownZipf, scoring, date);
+  return { rarity: scoring.rarity(zipf), zipf };
+}
+
 /** A word whose rarity was inherited from a base form rather than its own data. */
 export interface BaseFormSubstitution {
   /** The word the player actually submitted. */
