@@ -19,6 +19,10 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     date: "2026-08-13",
     puzzleNumber: 958,
     isToday: true,
+    // A puzzle from before the switch, so the calendar decides and the game is
+    // the folding one -- which is what every case in this file is about.
+    mode: "standard" as const,
+    modeChosen: false,
     canGoToPrevious: true,
     canGoToNext: false,
     goToPrevious: vi.fn(),

@@ -12,6 +12,8 @@
  * means seeing it again.
  */
 
+import { MODE_CHOICE_START } from "./mode";
+
 const SEEN_PREFIX = "ick:seen:";
 
 /**
@@ -34,7 +36,15 @@ export type Announcement =
   | "instructions"
   | "freeform"
   | "freeform-badge"
-  | "freeform-extended-badge";
+  | "freeform-extended-badge"
+  /**
+   * The fourth bit, for the news that the week became a switch. Its own again,
+   * and for the same reason: a player who dismissed "Freeform extended 1 week"
+   * was told the trial was running longer, not that it had ended and left a
+   * control behind. Reusing that bit would hide the switch from exactly the
+   * players who read the announcements.
+   */
+  | "mode-toggle-badge";
 
 /**
  * Whether the player has already met this feature.
@@ -64,38 +74,56 @@ export function markSeen(what: Announcement): void {
 
 /**
  * The puzzle date from which the header's badge announces the extension rather
- * than the scoring change.
+ * than the week's opening scoring change.
  *
  * A date rather than a flag, so the switch happens on its own and the two
- * announcements cannot overlap: before it the badge is the week's opening news,
- * on and after it the badge is the extension, and there is never a moment with
- * two badges competing for one button.
+ * announcements cannot overlap. Still live: the trial runs to MODE_CHOICE_START,
+ * and until then the header is the trial's -- see `headerBadgeFor`.
  */
 export const FREEFORM_EXTENDED_START = "2026-09-20";
 
 /** What the header's badge says, and which bit retires it. */
-export interface FreeformBadge {
+export interface HeaderBadge {
   key: Announcement;
   label: string;
 }
 
 /**
- * Which announcement the Freeform badge is carrying on `date`.
+ * The badge the header is carrying on `date`, or none.
  *
- * One badge at a time, chosen by the calendar. The label and the storage key
- * travel together because they have to agree -- a badge dismissed under one
- * wording must not come back wearing the other, and a new wording that reused
- * the old bit would never appear for the players who already dismissed it.
+ * One badge at a time, chosen by the calendar, with the label and the storage
+ * key travelling together because they have to agree -- a badge dismissed under
+ * one wording must not come back wearing the other, and a new wording that
+ * reused the old bit would never appear for the players who already dismissed
+ * it.
  *
- * Compared as strings like every other cutover in this app, so it turns over
+ * Three, one era each. The trial's two are still live, because the trial is:
+ * until MODE_CHOICE_START the header carries the week's button and the week's
+ * news, exactly as it does today. From that date the button becomes the mode
+ * switch and the badge becomes "Change mode".
+ *
+ * Never null in practice -- there has been a badge on this header since the
+ * trial opened and there is one after it -- but the type says so anyway, because
+ * "no badge" is a state the header already draws correctly and a future era with
+ * nothing to announce should not have to invent a label to say nothing.
+ *
+ * Compared as a string like every other cutover in this app, so it turns over
  * with the puzzle rather than with a clock.
  */
-export function freeformBadgeFor(date: string): FreeformBadge {
+export function headerBadgeFor(date: string): HeaderBadge | null {
+  // From the choice date the button under this badge is a switch rather than a
+  // notice, so the badge stops being news and becomes an instruction: it points
+  // at a control most players have never seen, and "Change mode" is the whole of
+  // what there is to say about it.
+  if (date >= MODE_CHOICE_START) {
+    return { key: "mode-toggle-badge", label: "Change mode" };
+  }
+  // Until then the trial is still running and the header is still the trial's:
+  // the button opens the week's notice and the badge carries the week's news,
+  // exactly as they have all along. Nothing about the switch reaches a puzzle
+  // before MODE_CHOICE_START, and neither does its badge.
   if (date >= FREEFORM_EXTENDED_START) {
-    return {
-      key: "freeform-extended-badge",
-      label: "Freeform extended 1 week",
-    };
+    return { key: "freeform-extended-badge", label: "Freeform extended 1 week" };
   }
   return { key: "freeform-badge", label: "Scoring update" };
 }

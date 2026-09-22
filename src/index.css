@@ -497,6 +497,123 @@ h2 {
   }
 }
 
+/* -- Rainbow word --------------------------------------------------------- */
+/* The "Freeform" standing where a Standard result's week and month totals go
+   (see components/RainbowWord.tsx). One hue per letter, set inline; everything
+   that decides whether it is readable lives here.
+
+   Bold, because the preview is monospaced at a small size and a hue alone is
+   not enough weight to carry a word at that scale -- and because this line is
+   otherwise the plainest one in the block. */
+.rainbow-word {
+  font-weight: 700;
+}
+/* Lightness tuned down rather than left at the middle of the range: at 50% the
+   greens and cyans of this sweep fall under the 4.5:1 AA asks for against the
+   preview's light background, and a word that is delightful and unreadable is
+   just unreadable. */
+.rainbow-word__letter {
+  color: hsl(var(--rainbow-hue) 85% 34%);
+}
+@media (prefers-color-scheme: dark) {
+  /* And back up against a dark one, where the same hues fail from the other
+     direction. */
+  .rainbow-word__letter {
+    color: hsl(var(--rainbow-hue) 90% 68%);
+  }
+}
+/* Colour is the whole of this effect, so a reader who has asked for less of it
+   gets the word in the text colour it sits in rather than a muted rainbow. The
+   word says "Freeform" either way; nothing is carried by the hue alone. */
+@media (prefers-contrast: more) {
+  .rainbow-word__letter {
+    color: inherit;
+  }
+}
+
+/* -- Mode switch ---------------------------------------------------------- */
+/* The switch and the badge floating under it. Shares the freeform button's
+   metrics exactly -- it is the same control in the same slot, doing the thing
+   the announcement used to point at -- so the wordmark still holds one line at
+   375px with the "?" beside it. */
+.app__mode-nav {
+  position: relative;
+  flex: none;
+  display: flex;
+}
+.app__mode-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  height: 2.35rem;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.15s var(--ease-standard),
+    transform 0.15s var(--ease-standard);
+}
+.app__mode-button:hover {
+  background: var(--bg-inset);
+}
+.app__mode-button:active {
+  transform: scale(0.94);
+}
+/* Freeform reads as the away strip: same shape, filled, so a glance at the
+   header answers "which game am I in" without reading the word. The word is
+   still there and still the accessible name -- this is the second signal, not
+   the only one. */
+.app__mode-button--freeform {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+.app__mode-button--freeform:hover {
+  background: var(--accent);
+  filter: brightness(1.06);
+}
+.app__mode-swap {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+/* Identical to the announcement badge it replaces -- see .app__freeform-badge
+   for why it hangs out of the button's bottom edge and grows leftwards. */
+.app__mode-badge {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: -0.5rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 1;
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 0.6s var(--ease-standard);
+}
+.app__mode-badge--faded {
+  opacity: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app__mode-badge {
+    transition: none;
+  }
+}
+
 /* -- Freeform week notice ------------------------------------------------- */
 /* The vote sits in its own bordered block between the copy and the feedback
    box, because it is the one thing on the sheet being asked *of* the player --
@@ -1035,14 +1152,42 @@ h2 {
   letter-spacing: 0.01em;
 }
 /* Quiet enough to read as a footnote to the word rather than a warning: the
- * score is correct, this only says which word it was measured from. */
+ * score is correct, this only says which word it was measured from.
+ *
+ * A sibling of the card's button rather than a row inside it, because it
+ * carries a button of its own ("More info") and a button cannot contain one.
+ * The padding reproduces what the button's grid used to give it: the same
+ * left indent as the word above, and the card's own bottom padding. */
 .guess-log__base-note {
-  /* Row two, starting under the word rather than under the crown and running
-   * the full width -- nothing else occupies that row. */
-  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.35rem;
+  margin: -0.25rem 0 0;
+  padding: 0 0.9rem 0.5rem;
   font-size: 0.72rem;
   line-height: 1.2;
   color: var(--fg-muted);
+}
+/* Underlined text, like the rejection note's own "More info" -- the affordance
+ * has to read as a link at 0.72rem, where a border or a background would weigh
+ * more than the sentence it sits in. */
+.guess-log__base-note-info {
+  padding: 0.1rem 0.25rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.guess-log__base-note-info:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: var(--fg);
 }
 /* With only four guesses a day, the count carries real weight -- match the
    heading's size and weight and use the muted (not faint) ink so it reads as
@@ -1857,6 +2002,26 @@ h2 {
   font-size: 0.82rem;
   line-height: 1.45;
 }
+/* The two modes, set off from the paragraphs above so they read as a section
+   rather than more of the explanation. A rule and some room, nothing else: it
+   is four short lines and a box around them would make it the loudest thing on
+   a sheet that opens itself. */
+.modal__modes {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+.modal__modes-heading {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+.modal__modes-note {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .modal__signoff {
   margin: 1rem 0 0;
   color: var(--fg-faint);
@@ -1871,6 +2036,84 @@ h2 {
 }
 .modal__copy:last-child {
   margin-bottom: 0;
+}
+
+/* Common forms: what the guess log's base-form note links to. */
+/* The player's own word and the form it scored as, big enough to be the answer
+   to the question that opened the panel rather than a caption on it. */
+.common-form__pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+}
+.common-form__word {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+.common-form__arrow {
+  color: var(--fg-muted);
+}
+.common-form__groups {
+  margin: 0.8rem 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.7rem;
+}
+/* A ruled list rather than cards: ten groups of cards is a stack of boxes to
+   scroll past, where a rule per group keeps the panel one thing to read. */
+.common-form__group {
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+.common-form__group:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.common-form__group-title {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+/* The affixes themselves, monospaced so a hyphen reads as part of the affix
+   rather than as punctuation between two of them. */
+.common-form__affixes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.4rem;
+  margin: 0.2rem 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--fg);
+}
+/* An affix is one unbreakable token: its own hyphen is a break opportunity
+   the browser will take at phone width, and "-cked" split after the hyphen
+   reads as two things that are not words. */
+.common-form__affix {
+  white-space: nowrap;
+}
+/* A link, not a button: it is a phrase inside a sentence, and the modal's
+   default button chrome would make the sentence carry a control. */
+.common-form__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.common-form__example {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--fg-muted);
 }
 .word-suggestion {
   margin-top: 1.2rem;

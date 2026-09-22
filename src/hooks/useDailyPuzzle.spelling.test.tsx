@@ -145,7 +145,11 @@ describe("useDailyPuzzle spelling nudge", () => {
   });
 
   it("does not nudge when a reference found the word and the game still won't take it", async () => {
-    stubValidate(verdict(NEAR_MISS, "rejected", "proper-noun"));
+    // Obsolete rather than a proper noun: from MODE_CHOICE_START names and
+    // abbreviations are playable in both modes, so a proper-noun verdict is a
+    // word being *accepted* here and would test nothing. The age trio is what
+    // is still refused on a word spelled exactly as it was meant.
+    stubValidate(verdict(NEAR_MISS, "rejected", "obsolete"));
     const { result } = renderHook(() => useDailyPuzzle());
 
     await act(async () => {
@@ -153,8 +157,8 @@ describe("useDailyPuzzle spelling nudge", () => {
     });
 
     // Spelled exactly as meant -- there is no typo to go looking for.
-    expect(result.current.feedback?.message).toBe(REJECTION_MESSAGES["proper-noun"]);
-    expect(reasonsShown()).toEqual(["proper-noun"]);
+    expect(result.current.feedback?.message).toBe(REJECTION_MESSAGES["obsolete"]);
+    expect(reasonsShown()).toEqual(["obsolete"]);
   });
 
   it("leaves every other rejection alone", async () => {

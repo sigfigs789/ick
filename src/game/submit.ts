@@ -1,7 +1,7 @@
 import {
   boundBaseFormsActive,
   curatedRejection,
-  isFreeformWeek,
+  usesFreeformRules,
   isValidWord,
   isDictionaryWord,
   waivesRejectionReason,
@@ -292,7 +292,7 @@ export function spellingNearMiss(
 ): string | undefined {
   const word = rawInput.trim().toLowerCase();
   if (!WORD_CHARS.test(word)) return undefined;
-  if (isFreeformWeek(date)) {
+  if (usesFreeformRules(date)) {
     const used = new Set(alreadyAccepted.map((accepted) => accepted.word));
     return nearMissForDrop(word, drop, date, (candidate) => used.has(candidate));
   }
@@ -333,7 +333,7 @@ const LEXICON_SOURCES =
  * did before the corpus existed. The corpus never makes a word *less* playable.
  */
 function freeformCorpusVerdict(word: string, date?: string): SubmissionResult | undefined {
-  if (!isFreeformWeek(date)) return undefined;
+  if (!usesFreeformRules(date)) return undefined;
   const entry = corpusEntry(word);
   if (!entry) return undefined;
   if (entry.tags & tagBit("misspelling")) return undefined;
@@ -366,7 +366,7 @@ export function evaluateSubmission(
   // a word, which puts it with the fold and the same-root check rather than
   // with the gates below -- and "ACC" is only unplayable the rest of the time
   // because it is also an abbreviation. See FREEFORM_START.
-  if (!isFreeformWeek(date) && word === drop.toLowerCase()) {
+  if (!usesFreeformRules(date) && word === drop.toLowerCase()) {
     return { ok: false, reason: "same-as-drop" };
   }
   if (!containsDropInOrder(word, drop)) {
@@ -385,7 +385,7 @@ export function evaluateSubmission(
   // The exact-duplicate check above is untouched and deliberately so: the same
   // spelling twice is not a second word under any scoring system, and refusing
   // it is not the rule anybody asked to be rid of.
-  if (!isFreeformWeek(date)) {
+  if (!usesFreeformRules(date)) {
     const folds = rootFoldsFor(date);
     const wordRoot = rootKey(word, folds, date);
     if (alreadyAccepted.some((w) => rootKey(w.word, folds, date) === wordRoot)) {

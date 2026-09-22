@@ -1,3 +1,9 @@
+import {
+  FREEFORM_TRIAL_END,
+  FREEFORM_TRIAL_START,
+  MODE_CHOICE_START,
+  freeformForDate,
+} from "./mode";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
@@ -20,9 +26,11 @@ import {
   inflectedFormCandidates,
   inflectionalBaseCandidates,
   measurementBaseCandidates,
+  measurementPrefixes,
   prefixBaseCandidates,
   privativeBaseCandidates,
   superlativeBaseCandidates,
+  transparentPrefixes,
   unmeasuredBaseCandidates,
 } from "./stem";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
@@ -346,57 +354,63 @@ const BORROWED_PREFIX_END = "2026-09-05";
 const DOUBLING_TENSE_START = "2026-09-10";
 
 /**
- * "Freeform week": the window in which no word folds and every score is the
- * word's own measured frequency. Start inclusive, end exclusive, so the trial
- * runs 2026-09-14 through 2026-09-28 inclusive, and 2026-09-29 is back on the
- * latest system.
+ * Freeform: the rules under which no word folds and every score is the word's
+ * own measured frequency.
  *
- * Two weeks, not the one the name says. The first ran Monday the 14th through
- * Monday the 21st -- eight puzzles, so the trial covered a whole week and the
- * day that closed it -- and on the 20th it was extended by another, on the same
- * shape: through Monday the 28th, with the 29th back on the latest system. The
- * name is left alone because it is what the header, the sheet and every
- * existing key call it, and renaming a week players are in the middle of buys
- * nothing. See FREEFORM_EXTENDED_START in game/whatsNew.ts, which is the date
- * the header started saying so.
+ * It began as a window in the calendar. The trial ran Monday 2026-09-14 through
+ * Sunday the 26th -- a week, then a second one announced on the 20th -- with
+ * every player on the same system on the same day, and every puzzle either side
+ * of it on the folding system. From MODE_CHOICE_START it is a switch instead:
+ * the two systems sit side by side and the player picks, with Standard the
+ * default and the choice remembered (see game/mode.ts).
  *
- * Extending rather than re-opening matters for the archive: the window is one
- * unbroken range, so no puzzle inside it falls back to the folding system and
- * every score played under the trial keeps the rules it was played with.
+ * The trial's dates are frozen where they are, which is the point of ending it
+ * this way rather than extending it again. A puzzle inside the window still
+ * plays freeform for everybody whatever the switch says, a puzzle before it
+ * still folds, and every score played under the trial keeps the rules it was
+ * played with -- the same promise every cutover above makes.
  *
  * Read by scoring (`adjustedZipf`) and by same-root duplicate detection
  * (`evaluateSubmission`), which are the two places the fold is consulted and so
- * the two places the week has to reach.
+ * the two places this has to reach.
  *
- * A window rather than a rung, which is the whole shape of the thing: every
- * other date here turns a rule on or off for good, and the ladder in
- * `scoringFor` reads them in order because scoring only ever moves forward. A
- * trial does not, so this is asked as a range and the rules it skips are left
- * untouched behind it -- see the `folds` flag. If the trial is kept, this
- * becomes an ordinary rung and `FREEFORM_END` goes away; if it is not, the two
- * dates stay exactly as they are and the week keeps the scores it was played
- * with, like every other archived puzzle.
+ * Not a rung on the ladder in `scoringFor`, and now permanently not one: the
+ * dates above turn a rule on for good because scoring only ever moved forward,
+ * and this is a fork rather than a step. So it is asked separately and the rules
+ * it skips are left untouched behind it -- see the `folds` flag.
  *
- * Both dates are puzzle dates, compared as strings like every other cutover
- * here, so the week turns over with the puzzle rather than with a clock.
+ * The dates live in game/mode.ts and are re-exported here under the names this
+ * file has always used. One home, because the scoring side and the record side
+ * (which board a day belongs on, which key its progress is saved under) have to
+ * agree about which mode a day is in, and a constant with two homes eventually
+ * disagrees with itself.
  */
-export const FREEFORM_START = "2026-09-14";
-export const FREEFORM_END = "2026-09-29";
+export const FREEFORM_START = FREEFORM_TRIAL_START;
+export const FREEFORM_END = FREEFORM_TRIAL_END;
 
 /**
- * Whether `date`'s puzzle is played under the freeform rules.
+ * Whether `date`'s puzzle is played under the freeform rules -- by the calendar
+ * inside the trial window, and by the player's own switch from
+ * MODE_CHOICE_START on.
  *
  * An omitted date reads as *not* freeform, unlike everywhere else in this file
- * where it means "the newest system". The difference is deliberate: an undated
- * call is the leaderboard and the finds feed pricing somebody's word by today's
- * dictionary, and those have to keep answering the same thing all week or every
- * historical find would reprice on the 14th and reprice back on the 21st. The
- * puzzle itself always knows its own date and passes it.
+ * where it means "the newest system". The difference is deliberate, and it
+ * matters more now than it did during the trial: an undated call is the
+ * leaderboard or the finds feed pricing somebody else's word, and those have to
+ * keep answering the same thing for every reader -- otherwise a stranger's find
+ * would reprice itself the moment *you* flipped your own switch. The puzzle
+ * itself always knows its own date and passes it.
  */
-export function isFreeformWeek(date?: string): boolean {
+export function usesFreeformRules(date?: string): boolean {
   if (date === undefined) return false;
-  return date >= FREEFORM_START && date < FREEFORM_END;
+  return freeformForDate(date);
 }
+
+/**
+ * @deprecated The former name, from when this was a week rather than a mode.
+ * Kept so nothing has to change in one commit; new callers say what they mean.
+ */
+export const isFreeformWeek = usesFreeformRules;
 
 /*
  * 2026-08-26. Three changes, one cutover, because they ship together and no
@@ -1549,7 +1563,7 @@ function scoringFor(date?: string): Scoring {
   // a window, and the puzzles after it are back on the system before it. Asked
   // last so it reads as what it is -- the latest system with one switch thrown --
   // and so a later cutover slots in above it without thinking about the week.
-  if (isFreeformWeek(date)) return FREEFORM_SCORING;
+  if (usesFreeformRules(date)) return FREEFORM_SCORING;
   return LATEST_SCORING;
 }
 
@@ -1580,26 +1594,47 @@ export const CURATED_REJECTION_REASONS = [
 export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
 
 /**
- * The rejection reasons freeform week waives -- the ones that refuse a real word
- * for the kind of word it is rather than for not being one.
+ * The rejection reasons a puzzle waives -- the ones that refuse a real word for
+ * the kind of word it is rather than for not being one.
  *
- * A player reaching for "thou" or "NASA" or "wireless telegraphy" is playing the
- * language as they find it, and a week about playing however you want has no
- * business telling them which register is allowed. Every entry here is a word;
- * what the reviewer objected to was its standing.
+ * Three sets, and which one applies is a question about the *date*, not about
+ * the mode. That is the shape worth noticing: from MODE_CHOICE_START the two
+ * modes accept exactly the same words and differ only in what they are worth.
+ * Freeform is a scoring system, not a permissions system.
  *
- * Two reasons stay in force, and the line between them and the list is the same
- * one the curation rules draw: a spelling of *another* word is not a word
- * somebody wants to play, it is a mistake, and letting it through would score a
- * typo as a deep-tail find -- "recieve" is not a bolder way to play "receive".
- * "not-a-word" is the same objection stated outright. Neither is a judgement
- * about register, so neither is the week's to lift.
+ * Before the trial, nothing was waived: a word filed as a proper noun or an
+ * abbreviation was refused, full stop.
+ *
+ * The trial week waived six. A player reaching for "thou" or "NASA" was playing
+ * the language as they found it, and a week about playing however you want had
+ * no business telling them which register was allowed.
+ *
+ * From the choice date, both modes waive three. The names and abbreviations stay
+ * playable because the trial settled that question: they refuse words that are
+ * alive and ordinary and merely filed under a category, which is a rule about
+ * paperwork rather than about English. "NASA" is a word people say. The age trio
+ * -- obsolete, archaic, dated -- goes back in force, because a word nobody has
+ * used since 1650 is a lookup rather than a find, and the trial's appetite for
+ * those did not outlast the trial.
+ *
+ * Two reasons were never waived by any of them, and the line between them and
+ * these is the one the curation rules already draw: a spelling of *another* word
+ * is not a word somebody wants to play, it is a mistake, and letting it through
+ * would score a typo as a deep-tail find -- "recieve" is not a bolder way to
+ * play "receive". "not-a-word" is the same objection stated outright.
  *
  * Words absent from the curated dictionary altogether are untouched by this and
- * still go to the live lookup: the week widens which *words* are playable, not
+ * still go to the live lookup: a waiver widens which *words* are playable, not
  * what counts as one.
+ *
+ * Every set is kept rather than replaced, for the reason every scoring cutover
+ * in this file is kept: a puzzle plays exactly as it played, so a word accepted
+ * on the 18th is still accepted if somebody opens that day from the archive, and
+ * one refused in August is refused there still.
  */
-const FREEFORM_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
+const NO_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>();
+
+const TRIAL_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
   "proper-noun",
   "abbreviation",
   "name-or-abbreviation",
@@ -1607,6 +1642,25 @@ const FREEFORM_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<Rejecti
   "archaic",
   "dated",
 ]);
+
+const NAME_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
+  "proper-noun",
+  "abbreviation",
+  "name-or-abbreviation",
+]);
+
+/**
+ * Which set `date`'s puzzle is playing under.
+ *
+ * The mode is not consulted, and an undated call waives nothing. The undated
+ * case is the leaderboard and the finds feed pricing somebody else's word, which
+ * is not a submission being judged -- there is nothing there to waive.
+ */
+function waivedRejectionsFor(date?: string): ReadonlySet<RejectionReason> {
+  if (date === undefined) return NO_WAIVED_REJECTIONS;
+  if (date >= MODE_CHOICE_START) return NAME_WAIVED_REJECTIONS;
+  return usesFreeformRules(date) ? TRIAL_WAIVED_REJECTIONS : NO_WAIVED_REJECTIONS;
+}
 
 /**
  * Reviewed rejections, each with the reason a player sees when they try the word.
@@ -1695,7 +1749,7 @@ const DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: 
 export function curatedRejection(word: string, date?: string): RejectionReason | undefined {
   const reason = reviewedRejection(word, date);
   if (reason === undefined) return undefined;
-  if (isFreeformWeek(date) && FREEFORM_WAIVED_REJECTIONS.has(reason)) return undefined;
+  if (waivedRejectionsFor(date).has(reason)) return undefined;
   return reason;
 }
 
@@ -1713,7 +1767,7 @@ export function curatedRejection(word: string, date?: string): RejectionReason |
  * its register has to be allowed to prove itself like any other unknown word.
  */
 export function waivesRejectionReason(reason: RejectionReason, date?: string): boolean {
-  return isFreeformWeek(date) && FREEFORM_WAIVED_REJECTIONS.has(reason);
+  return waivedRejectionsFor(date).has(reason);
 }
 
 /**
@@ -1745,9 +1799,9 @@ const NOTED_WAIVERS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
  * or explained by this one, never both.
  */
 export function waivedRejection(word: string, date?: string): RejectionReason | undefined {
-  if (!isFreeformWeek(date)) return undefined;
   const reason = reviewedRejection(word, date);
-  return reason !== undefined && NOTED_WAIVERS.has(reason) ? reason : undefined;
+  if (reason === undefined || !waivedRejectionsFor(date).has(reason)) return undefined;
+  return NOTED_WAIVERS.has(reason) ? reason : undefined;
 }
 
 /**
@@ -2117,6 +2171,124 @@ export function baseFormRankDrop(
   const shown = (zipf: number) => Number(scoring.format(scoring.score(zipf)));
   const drop = roundToCents(shown(substitution.ownZipf) - shown(substitution.baseZipf));
   return drop >= BASE_FORM_NOTICE_DROP ? substitution : undefined;
+}
+
+/**
+ * One family of affixes the fold can read through, as it is shown to a player.
+ *
+ * `example` is a word that really folds this way today, and the test beside
+ * this function runs every one of them through `baseFormSubstitution` -- an
+ * explanation of the scoring that names a fold the scoring does not make is
+ * worse than no explanation, and these are exactly the claims that rot as
+ * families are added and retired.
+ */
+export interface FoldAffixGroup {
+  /** What the affixes have in common, in a player's words. */
+  title: string;
+  /** The affixes themselves, written the way they are read: "-ness", "over-". */
+  affixes: string[];
+  /** A word this family folds, and the form it is scored as. */
+  example: { word: string; base: string };
+}
+
+/**
+ * The affixes that can rescore a word to its common form on `date`, grouped for
+ * the "more info" panel behind the note (see `baseFormRankDrop`).
+ *
+ * Date-scoped like everything else here, because the set has moved twice and
+ * archived puzzles still play under the set they had: "pre-" and the borrowed
+ * prefixes folded until 2026-09-05 (see PRE_PREFIX_END, BORROWED_PREFIX_END),
+ * and a panel that describes today's rules while the player is looking at a
+ * score from August explains the wrong fold.
+ *
+ * The prefix rows are derived from stem.ts's own tables, so a prefix cannot be
+ * retired from the scoring and left behind in the copy. The suffix rows cannot
+ * be -- those endings live in the branch conditions of the candidate
+ * generators rather than in a list -- so each row names the generator that owns
+ * it and the two have to move together, the same lockstep the Python mirror in
+ * scripts/manage-extra-word.py is kept in.
+ *
+ * Returns nothing when the fold is off entirely (freeform week), where there is
+ * no note to explain in the first place.
+ */
+export function foldAffixGroups(date?: string): FoldAffixGroup[] {
+  const scoring = scoringFor(date);
+  if (!scoring.folds) return [];
+
+  const groups: FoldAffixGroup[] = [];
+  // `baseForm` and `inflectionalBaseCandidates`.
+  groups.push({
+    title: "Plurals, tenses and participles",
+    affixes: ["-s", "-es", "-ies", "-ed", "-ied", "-ing"],
+    example: { word: "hurrying", base: "hurry" },
+  });
+  // `foreignPluralCandidates` -- the plurals English took with the noun.
+  groups.push({
+    title: "Plurals from Latin, Greek and French",
+    affixes: ["-ae", "-ices", "-ves", "-men", "-es"],
+    example: { word: "wolves", base: "wolf" },
+  });
+  // The transparent suffixes in `scoringBaseForm`.
+  groups.push({
+    title: "Adverbs and quality nouns",
+    affixes: ["-ly", "-ness"],
+    example: { word: "sparsely", base: "sparse" },
+  });
+  if (scoring.derivedBases) {
+    groups.push({
+      title: "Endings only ever built by adding them",
+      affixes: ["-ically", "-ably", "-ibly", "-ologist", "-cked", "-cking", "-eaux"],
+      example: { word: "mythologist", base: "mythology" },
+    });
+  }
+  if (scoring.boundBaseForms) {
+    groups.push({
+      title: "Nouns built from a verb or an adjective",
+      affixes: ["-ization", "-isation", "-ability", "-ibility"],
+      example: { word: "readability", base: "readable" },
+    });
+  }
+  if (scoring.superlativeBases) {
+    groups.push({
+      title: "Comparatives and superlatives",
+      affixes: ["-er", "-est", "-ier", "-iest"],
+      example: { word: "sparsest", base: "sparse" },
+    });
+  }
+  if (scoring.privativeBases) {
+    groups.push({
+      title: "Without the thing",
+      affixes: ["-less"],
+      example: { word: "penniless", base: "penny" },
+    });
+  }
+  // `unmeasuredBaseCandidates`: the families that run on rare words only.
+  groups.push({
+    title: "Verbs and adjectives made from a noun",
+    affixes: ["-ize", "-ise", "-able", "-ible"],
+    example: { word: "tautologize", base: "tautology" },
+  });
+  if (scoring.prefixBases) {
+    groups.push({
+      title: "Prefixes",
+      affixes: transparentPrefixes({
+        pre: scoring.prePrefixBases,
+        borrowed: scoring.borrowedPrefixBases,
+      }).map((prefix) => `${prefix}-`),
+      // The chain carries it past "planned" to "plan", which is the fold
+      // working as intended and worth showing: a prefix strip is one hop of
+      // several, not the whole answer.
+      example: { word: "overplanned", base: "plan" },
+    });
+  }
+  if (scoring.measurementBases) {
+    groups.push({
+      title: "How many of the unit",
+      affixes: measurementPrefixes().map((prefix) => `${prefix}-`),
+      example: { word: "kilojoules", base: "joules" },
+    });
+  }
+  return groups;
 }
 
 /**

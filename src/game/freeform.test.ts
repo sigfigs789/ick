@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   FREEFORM_END,
   FREEFORM_START,
@@ -11,6 +11,7 @@ import {
   waivedRejection,
 } from "./dictionary";
 import { evaluateSubmission } from "./submit";
+import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import WORDS from "../data/dictionary.json";
 import type { AcceptedWord } from "./types";
 
@@ -29,9 +30,11 @@ describe("isFreeformWeek", () => {
     // range -- a puzzle in here must not fall back to the folding system.
     expect(isFreeformWeek("2026-09-21")).toBe(true);
     expect(isFreeformWeek("2026-09-22")).toBe(true);
-    // The last day of the trial, and the reason FREEFORM_END is the 29th: the
-    // constant is exclusive, so "through the 28th" is a 29th.
-    expect(isFreeformWeek("2026-09-28")).toBe(true);
+    // The last day of the trial, and the reason FREEFORM_END is the 27th: the
+    // constant is exclusive, so "through the 26th" is a 27th. From the 27th on
+    // the calendar stops deciding and the player's own switch does -- which,
+    // unset in this test, is Standard.
+    expect(isFreeformWeek("2026-09-26")).toBe(true);
     expect(isFreeformWeek(FREEFORM_END)).toBe(false);
   });
 
@@ -255,6 +258,70 @@ describe("freeform week rejections", () => {
     });
   });
 
+  describe("in Freeform mode, which is not the trial week", () => {
+    // The mode waives less than the week did: the age trio goes back in force,
+    // because the thing Freeform is *for* is the scoring, and handing out the
+    // dictionary's dead words on top of it is a second, unrelated change.
+    const IN_MODE = MODE_CHOICE_START;
+
+    beforeEach(() => {
+      localStorage.clear();
+      resetModeCache();
+      setMode("freeform");
+    });
+
+    it("refuses an obsolete, archaic or dated word, as Standard does", () => {
+      for (const reason of ["obsolete", "archaic", "dated"]) {
+        const word = wordRejectedFor(reason);
+        if (!word) continue;
+        expect(curatedRejection(word, IN_MODE), `${reason} in mode`).toBe(reason);
+        expect(isValidWord(word, IN_MODE), `${reason} unplayable`).toBe(false);
+        // And nothing to explain, because nothing was let through.
+        expect(waivedRejection(word, IN_MODE), `${reason} silent`).toBeUndefined();
+      }
+    });
+
+    it("still lets a name or an abbreviation play", () => {
+      // These refuse words that are alive and ordinary and merely filed under a
+      // category -- the same objection the fold makes, that your word is really
+      // some other word.
+      for (const reason of ["proper-noun", "abbreviation", "name-or-abbreviation"]) {
+        const word = wordRejectedFor(reason);
+        if (!word) continue;
+        expect(curatedRejection(word, IN_MODE), `${reason} in mode`).toBeUndefined();
+        expect(isValidWord(word, IN_MODE), `${reason} plays`).toBe(true);
+      }
+    });
+
+    it("names an uncurated word's register again, with no live lookup owed", () => {
+      expect(evaluateSubmission("aasvogel", "VOG", [], IN_MODE)).toEqual({
+        ok: false,
+        reason: "obsolete",
+      });
+    });
+
+    it("leaves the trial week's own puzzles exactly as they played", () => {
+      // The switch is set to Freeform above, and it still has no say here: a
+      // word accepted on the 18th is accepted if somebody opens that day from
+      // the archive.
+      const word = wordRejectedFor("archaic") ?? wordRejectedFor("obsolete");
+      expect(word).toBeDefined();
+      expect(curatedRejection(word!, DURING)).toBeUndefined();
+    });
+
+    it("still skips the fold, which is what the mode is for", () => {
+      // The register rules coming back is not the scoring coming back:
+      // "kindless" is priced as itself here and folded onto "kind" in Standard.
+      const own = rarityFor("kindless", IN_MODE)?.zipf;
+      const base = rarityFor("kind", IN_MODE)?.zipf;
+      expect(own).toBeDefined();
+      expect(own).not.toBe(base);
+
+      setMode("standard");
+      expect(rarityFor("kindless", IN_MODE)?.zipf).toBe(base);
+    });
+  });
+
   it("keeps an uncurated misspelling final, with nothing to look up", () => {
     const during = evaluateSubmission("freind", "REI", [], DURING);
     expect(during).toEqual({ ok: false, reason: "misspelling" });
@@ -265,11 +332,42 @@ describe("freeform week rejections", () => {
     expect(isValidWord("zzzzqqq", DURING)).toBe(false);
   });
 
-  it("does not waive anything outside the window", () => {
+  it("waived nothing before the trial, and waives nothing undated", () => {
     const word = wordRejectedFor("proper-noun");
     expect(word).toBeDefined();
     expect(isValidWord(word!, BEFORE)).toBe(false);
-    expect(isValidWord(word!, AFTER)).toBe(false);
+    // The undated call is the leaderboard and the finds feed pricing somebody
+    // else's word, which is not a submission being judged.
     expect(isValidWord(word!)).toBe(false);
+  });
+
+  it("keeps names and abbreviations playable after the trial, in both modes", () => {
+    // The one thing the trial settled for good: these refuse words that are
+    // alive and ordinary and merely filed under a category. From
+    // MODE_CHOICE_START they play whichever mode you are in -- the modes differ
+    // in what a word is worth, not in which words there are.
+    for (const reason of ["proper-noun", "abbreviation", "name-or-abbreviation"]) {
+      const word = wordRejectedFor(reason);
+      if (!word) continue;
+      localStorage.clear();
+      resetModeCache();
+      setMode("standard");
+      expect(isValidWord(word, AFTER), `${reason} in Standard`).toBe(true);
+      setMode("freeform");
+      expect(isValidWord(word, AFTER), `${reason} in Freeform`).toBe(true);
+    }
+  });
+
+  it("puts the age trio back in force after the trial, in both modes", () => {
+    for (const reason of ["obsolete", "archaic", "dated"]) {
+      const word = wordRejectedFor(reason);
+      if (!word) continue;
+      localStorage.clear();
+      resetModeCache();
+      setMode("standard");
+      expect(isValidWord(word, AFTER), `${reason} in Standard`).toBe(false);
+      setMode("freeform");
+      expect(isValidWord(word, AFTER), `${reason} in Freeform`).toBe(false);
+    }
   });
 });

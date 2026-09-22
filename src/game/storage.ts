@@ -1,10 +1,51 @@
 import { addDays, toDateString, todayDateString } from "./date";
+import { modeForDate, modeIsChosen, type GameMode } from "./mode";
 import { maxGuessesFor } from "./constants";
 import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
 
 const PROGRESS_PREFIX = "ick:progress:";
+
+/**
+ * Where one puzzle's progress lives, which from MODE_CHOICE_START depends on
+ * which mode it is being played in.
+ *
+ * Standard keeps the bare key this game has always used, so nothing already
+ * saved moves and no migration is needed -- every puzzle before the switch was
+ * played in exactly one way, and that one way is what the bare key holds.
+ * Freeform gets a suffix, and with it its own four guesses, its own retry and
+ * its own record of the day. That is the point of two modes rather than one with
+ * a setting: switching is meant to be something you can do mid-morning without
+ * spending the guesses you already made.
+ *
+ * The suffix is Freeform's rather than Standard's because Standard is the one
+ * with history behind it. Naming the new thing costs nothing; renaming the old
+ * one costs every save in every browser.
+ */
+function progressKey(date: string, mode: GameMode = modeForDate(date)): string {
+  return modeIsChosen(date) && mode === "freeform"
+    ? `${PROGRESS_PREFIX}${date}:freeform`
+    : PROGRESS_PREFIX + date;
+}
+
+/**
+ * Read a progress key back: the puzzle it belongs to, and the mode it was played
+ * in. The inverse of `progressKey`, for the two scans that walk every save this
+ * browser holds and have only the keys to go on.
+ */
+function readProgressKey(key: string): { date: string; mode: GameMode } {
+  const rest = key.slice(PROGRESS_PREFIX.length);
+  const [date, suffix] = rest.split(":");
+  if (suffix === "freeform") return { date, mode: "freeform" };
+  // An unsuffixed key in the chosen era is Standard's, always -- the suffix is
+  // Freeform's marker and nothing else writes one. Deliberately not
+  // `modeForDate`, which would read the switch's *current* position and so
+  // relabel every Standard day the moment the player flipped it. Before the
+  // choice date there is no suffix to carry and the calendar is the whole
+  // answer: the trial week is freeform, everything before it standard.
+  return { date, mode: modeIsChosen(date) ? "standard" : modeForDate(date) };
+}
 const STREAK_KEY = "ick:streak";
 const EMPTY_STREAK: StreakState = {
   currentStreak: 0,
@@ -24,8 +65,8 @@ function safeParse<T>(raw: string | null): T | null {
   }
 }
 
-export function loadProgress(date: string): DailyProgress | null {
-  const progress = safeParse<DailyProgress>(localStorage.getItem(PROGRESS_PREFIX + date));
+export function loadProgress(date: string, mode?: GameMode): DailyProgress | null {
+  const progress = safeParse<DailyProgress>(localStorage.getItem(progressKey(date, mode)));
   if (!progress) return null;
 
   // Keep progress saved under a former top-tier name playable across renames.
@@ -167,14 +208,20 @@ export function playedOnItsDay(): DailyProgress[] {
 
   const played: DailyProgress[] = [];
   for (const key of keys) {
-    const progress = loadProgress(key.slice(PROGRESS_PREFIX.length));
+    const { date, mode } = readProgressKey(key);
+    const progress = loadProgress(date, mode);
     if (!progress || progress.acceptedWords.length === 0) continue;
     const playedAt = progress.firstWordAt ?? progress.completedAt;
     if (!playedAt) continue;
     if (!playedOnDate(playedAt, progress.date)) continue;
-    played.push(progress);
+    // The mode comes off the key rather than out of the record, so a day saved
+    // before the field existed still lands on the right board.
+    played.push(progress.mode ? progress : { ...progress, mode });
   }
-  return played.sort((a, b) => a.date.localeCompare(b.date));
+  // By date, then by mode, so a day played both ways submits in a stable order.
+  return played.sort(
+    (a, b) => a.date.localeCompare(b.date) || (a.mode ?? "").localeCompare(b.mode ?? "")
+  );
 }
 
 /**
@@ -196,13 +243,20 @@ function playedOnDate(timestamp: string, date: string): boolean {
 }
 
 function saveProgress(progress: DailyProgress): void {
-  localStorage.setItem(PROGRESS_PREFIX + progress.date, JSON.stringify(progress));
+  // Keyed by the record's own mode rather than by the switch's current position:
+  // a live lookup can settle after the player has flipped it, and a word banked
+  // then belongs to the puzzle it was submitted to.
+  localStorage.setItem(progressKey(progress.date, progress.mode), JSON.stringify(progress));
 }
 
 export function newProgress(date: string, drop: string): DailyProgress {
   return {
     date,
     drop,
+    // Stamped so the record says which rules it was played under, rather than
+    // being re-derived from a switch that has moved since. Only from the chosen
+    // era: before it, a date already decides its own mode.
+    ...(modeIsChosen(date) ? { mode: modeForDate(date) } : {}),
     acceptedWords: [],
     rejectedAttempts: [],
     completed: false,
@@ -217,7 +271,7 @@ export function loadOrCreateProgress(date: string, drop: string): DailyProgress 
 
 /** Development-only UI uses this to start the viewed puzzle over. */
 export function resetProgress(date: string, drop: string): DailyProgress {
-  localStorage.removeItem(PROGRESS_PREFIX + date);
+  localStorage.removeItem(progressKey(date));
   return newProgress(date, drop);
 }
 

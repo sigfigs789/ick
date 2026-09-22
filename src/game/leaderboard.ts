@@ -19,9 +19,11 @@ import {
   topRarityScore,
 } from "./dictionary";
 import { todayDateString } from "./date";
+import { DEV_TOOLS } from "../dev/devTools";
 import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
+import { isRanked, modeForDate, type GameMode } from "./mode";
 import { playedOnItsDay } from "./storage";
 import { sampleBoardsResponse, usingSampleData } from "../dev/sampleData";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
@@ -434,7 +436,7 @@ export async function fetchBoards(
   // fixture stands in for the server so the page can be worked on without one.
   // Parsed by exactly the same code as a real response, so a change to that
   // parsing cannot pass here and fail in production.
-  if (import.meta.env.DEV && usingSampleData()) {
+  if (DEV_TOOLS && usingSampleData()) {
     return readBoards(sampleBoardsResponse() as Record<string, unknown>, since);
   }
   // The player's own date goes up because the puzzle a find belongs to is the
@@ -468,7 +470,7 @@ export async function fetchFoundWords(
   date: string = todayDateString(),
   options: FetchOptions = {}
 ): Promise<FoundWord[]> {
-  if (import.meta.env.DEV && usingSampleData()) {
+  if (DEV_TOOLS && usingSampleData()) {
     return parseWords((sampleBoardsResponse() as Record<string, unknown>).words, date);
   }
   // The date is the only thing this request carries, so two players on the same
@@ -678,11 +680,34 @@ export function submitScore(options: {
   words: readonly AcceptedWord[];
   /** Whether this puzzle's one retry has been spent (DailyProgress.retryUsed). */
   retried?: boolean;
+  /**
+   * Which rules the day was played under. Taken from the progress record rather
+   * than from the switch, so a word banked by a live lookup that settled after
+   * the player flipped modes is judged by the game it was submitted to.
+   */
+  mode?: GameMode;
   playerId?: string | null;
 }): boolean {
   const { date, isToday, words, retried } = options;
+  const mode = options.mode ?? modeForDate(date);
   const playerId = options.playerId ?? loadPlayerId();
   if (!playerId || !isToday || words.length === 0) return false;
+  // A day the player chose to spend in Freeform is not on the board. The two
+  // systems do not produce comparable numbers -- Freeform prices every word on
+  // its own frequency and hands out a Legend where Standard folds the word onto
+  // its common form -- so one board holding both would rank whoever had the
+  // switch on, and two boards would split a daily game's population in half to
+  // no one's benefit.
+  //
+  // So Freeform is a way to play rather than a way to compete: you get your
+  // score, you can share it, and nothing leaves the browser. The words go with
+  // it -- `found` is what the finds feed is built from, and a feed priced on
+  // Standard's terms is the wrong place for a word only Freeform would accept.
+  //
+  // The trial week is untouched by this and still submits: everybody was on the
+  // same rules on those days, so they ranked against each other fairly, and they
+  // are on the board already (see `isRanked`).
+  if (!isRanked(date, mode)) return false;
   // The whole running word list goes with it, which is what the finds feed is
   // built from. Re-sent in full after every accepted word: each word is written
   // once and the repeats are discarded, so this is idempotent rather than
@@ -716,6 +741,11 @@ export function backfillHistory(
   const played = history ?? playedOnItsDay();
   const scores = played
     .filter((progress) => progress.acceptedWords.length > 0)
+    // Ranked days only, for the reason `submitScore` gives: a chosen Freeform
+    // day is not on the board, and a history import is the one path that could
+    // quietly put it there -- a browser that has been playing both ways holds a
+    // record of each.
+    .filter((progress) => isRanked(progress.date, progress.mode))
     // Words with today's puzzle and no other. Somebody who joins after playing
     // gets the finds they already made onto the feed rather than waiting for
     // their next word -- while a browser with a year of history sends a year of
