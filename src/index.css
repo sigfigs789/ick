@@ -2481,6 +2481,289 @@ h2 {
 .leaderboard-page__back:hover {
   background: var(--bg-inset);
 }
+
+/*
+ * The congratulation bubble, wandering over the boards.
+ *
+ * It fills the boards' own box and catches no presses, so what is underneath is
+ * still the page; the bubble inside it is the only thing that takes a click.
+ * Parked at an edge it would be furniture -- read once, then looked past -- so
+ * it drifts across the standings instead, which is what makes it something a
+ * player goes and hits rather than something they tolerate.
+ *
+ * Dressed in the same gold the winning row wears, because it is saying the same
+ * thing about a window that has closed. The global prefers-reduced-motion rule
+ * near the top of this file collapses every animation here: the bubble then
+ * simply sits at the end of its path, still readable, still hittable, and its
+ * ink lands without flying.
+ */
+/* The box the bubble is placed against: the boards themselves. */
+.leaderboard__boards-area {
+  position: relative;
+}
+.congrats-bubble {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  /* The strip is only a way of placing the bubble; a full-size pane swallowing
+     presses over the boards would be a bug nobody could see. */
+  pointer-events: none;
+}
+/*
+ * The drift, and the thing the ink inherits.
+ *
+ * Both the bubble and the blot it becomes live on this layer, so a splat lands
+ * exactly where the bubble was standing: the wander is paused for the hit
+ * rather than reset, which a second animated layer could not promise.
+ *
+ * `left`/`top` rather than a transform, because the path is a share of the
+ * boards' box and a transform percentage is a share of the bubble. Slow, and
+ * one element -- the cost of animating position here is a rounding error, and
+ * it buys a path that means the same thing on a laptop and on a phone.
+ */
+.congrats-bubble__drift {
+  position: absolute;
+  /* Centred on its point, so the path describes where the bubble *is* rather
+     than where its top-left corner is. */
+  transform: translate(-50%, -50%);
+  /* Sized from the sentence, then capped -- not from whatever space happens to
+     be left beside it. An absolutely positioned box shrinks to fit the room
+     between its own edge and its container's, so a bubble two thirds of the way
+     across the boards would have wrapped itself into a column a third of the
+     width of the screen. */
+  width: max-content;
+  max-width: min(27rem, 84vw);
+  animation: congrats-bubble-drift 26s ease-in-out infinite;
+}
+.congrats-bubble__drift[data-splatting] {
+  /* Ink does not wander. The path stops where it was hit, and the blot below
+     lands on that spot. */
+  animation-play-state: paused;
+}
+/*
+ * The path: five turns around the boards and back to where it started.
+ *
+ * Kept off the edges, so the bubble never hangs half outside the box it is
+ * about, and away from dead centre for long -- the standings are what the
+ * reader is here for, and a notice parked over the middle of them is in the
+ * way rather than on the loose.
+ */
+@keyframes congrats-bubble-drift {
+  0% {
+    left: 50%;
+    top: 16%;
+  }
+  20% {
+    left: 74%;
+    top: 38%;
+  }
+  40% {
+    left: 60%;
+    top: 76%;
+  }
+  60% {
+    left: 28%;
+    top: 62%;
+  }
+  80% {
+    left: 34%;
+    top: 24%;
+  }
+  100% {
+    left: 50%;
+    top: 16%;
+  }
+}
+/* On a phone the bubble is most of the width of the screen, so a path that
+   moved sideways would hang it off both edges in turn. It keeps the same walk
+   up and down the one column instead. */
+@media (max-width: 40rem) {
+  @keyframes congrats-bubble-drift {
+    0% {
+      left: 50%;
+      top: 12%;
+    }
+    50% {
+      left: 50%;
+      top: 82%;
+    }
+    100% {
+      left: 50%;
+      top: 12%;
+    }
+  }
+}
+.congrats-bubble__pop {
+  pointer-events: auto;
+  /* The width is the drifting layer's, which is where the sentence is measured
+     and capped. */
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--best-word-accent) 60%, transparent);
+  border-radius: 999px;
+  padding: 0.6rem 1.05rem;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--best-word-bg) 88%, var(--best-word-accent)) 0%,
+    var(--best-word-bg) 60%,
+    color-mix(in srgb, var(--best-word-bg) 88%, var(--best-word-accent)) 100%
+  );
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  animation: congrats-bubble-in 0.35s var(--ease-standard) backwards;
+}
+/* The sentence gets two lines where one will not fit, which on a phone it will
+   not. Nowhere else: a wrapped bubble mid-drift changes shape as it goes. */
+@media (max-width: 40rem) {
+  .congrats-bubble__pop {
+    white-space: normal;
+  }
+}
+.congrats-bubble__emoji {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+@keyframes congrats-bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+/*
+ * What is left when it is hit: ink on the board.
+ *
+ * A game called WordInk should not burst its bubble into nothing. The blot is
+ * one irregular mark -- the border-radius is eight different values, which is
+ * the cheapest way to get a shape that is not a circle -- thrown on at speed
+ * and then soaking away. It is in the page's own ink colour rather than the
+ * bubble's gold: the gold was the prize, and this is what the prize left
+ * behind.
+ *
+ * Decorative and hidden from assistive technology entirely. The sentence was
+ * already announced when the bubble arrived, and a screen reader has nothing to
+ * gain from being told about a stain.
+ */
+.congrats-bubble__splat {
+  position: relative;
+  display: block;
+  width: 4.75rem;
+  height: 4.75rem;
+  /* Pulled back by half its size on both axes, so the blot is centred on the
+     point the bubble was centred on rather than hanging off it. */
+  margin: -2.375rem;
+  /* Six overlapping circles rather than one rounded box, and each one opaque to
+     its own radius: their union is the silhouette, so the edge comes out lobed
+     and off-centre the way a thrown drop does. A single border-radius blob,
+     however uneven the eight values, still reads as a circle -- which is the
+     one thing ink never looks like. */
+  background:
+    radial-gradient(circle at 45% 48%, var(--fg) 0 33%, transparent 34%),
+    radial-gradient(circle at 66% 37%, var(--fg) 0 20%, transparent 21%),
+    radial-gradient(circle at 33% 30%, var(--fg) 0 17%, transparent 18%),
+    radial-gradient(circle at 61% 67%, var(--fg) 0 21%, transparent 22%),
+    radial-gradient(circle at 27% 63%, var(--fg) 0 15%, transparent 16%),
+    radial-gradient(circle at 74% 57%, var(--fg) 0 11%, transparent 12%);
+  animation: congrats-splat-land 0.9s var(--ease-standard) forwards;
+}
+/* The spray. Each droplet is thrown along its own angle -- an even fan would
+   read as a clock face -- and they are different sizes, because ink is. */
+.congrats-bubble__drop {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 52% 48% 43% 57% / 49% 55% 45% 51%;
+  background: var(--fg);
+  animation: congrats-splat-fly 0.9s var(--ease-standard) forwards;
+}
+.congrats-bubble__drop:nth-child(1) {
+  --drop-x: -3.1rem;
+  --drop-y: -1.9rem;
+  --drop-size: 0.9;
+}
+.congrats-bubble__drop:nth-child(2) {
+  --drop-x: 2.2rem;
+  --drop-y: -2.8rem;
+  --drop-size: 0.6;
+}
+.congrats-bubble__drop:nth-child(3) {
+  --drop-x: 3.4rem;
+  --drop-y: 0.9rem;
+  --drop-size: 1.1;
+}
+.congrats-bubble__drop:nth-child(4) {
+  --drop-x: 1.2rem;
+  --drop-y: 3.2rem;
+  --drop-size: 0.7;
+}
+.congrats-bubble__drop:nth-child(5) {
+  --drop-x: -2.4rem;
+  --drop-y: 2.6rem;
+  --drop-size: 0.95;
+}
+.congrats-bubble__drop:nth-child(6) {
+  --drop-x: -3.6rem;
+  --drop-y: 0.4rem;
+  --drop-size: 0.55;
+}
+.congrats-bubble__drop:nth-child(7) {
+  --drop-x: 0.4rem;
+  --drop-y: -3.6rem;
+  --drop-size: 0.8;
+}
+/* Struck on hard and flattened, then soaking away: the blot overshoots its size
+   in the first fifth of the animation, which is the whole of what makes it read
+   as landing rather than growing. */
+@keyframes congrats-splat-land {
+  0% {
+    opacity: 0;
+    transform: scale(0.15) rotate(-12deg);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.12) rotate(-4deg);
+  }
+  36% {
+    transform: scale(0.94) rotate(0deg);
+  }
+  60% {
+    opacity: 0.95;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06) rotate(2deg);
+  }
+}
+@keyframes congrats-splat-fly {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  22% {
+    opacity: 1;
+  }
+  60% {
+    transform: translate(calc(-50% + var(--drop-x)), calc(-50% + var(--drop-y)))
+      scale(var(--drop-size));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--drop-x) * 1.08), calc(-50% + var(--drop-y) * 1.08))
+      scale(calc(var(--drop-size) * 0.9));
+  }
+}
+}
 .leaderboard__imported {
   color: var(--success-fg);
   font-weight: 700;

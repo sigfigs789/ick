@@ -22,6 +22,7 @@ import {
 import { monthLabel, monthStart, nextMonthStart, previousMonthStart } from '../../../src/game/month';
 import { loadPlayerId } from '../../../src/game/player';
 import { weekLabel, weekStart } from '../../../src/game/week';
+import { CongratsBubble } from '../components/CongratsBubble';
 import { StepNav } from '../components/StepNav';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
@@ -260,6 +261,14 @@ export function LeaderboardScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* The one result the board cannot show: who won the window that closed.
+          Over the list rather than in it, because it is an aside to the
+          standings and not a row of them, and it stands for a few days after
+          each window closes (see src/game/congrats.ts). Outside the ScrollView
+          so it stays
+          put while the board is scrolled underneath it. */}
+      <CongratsBubble today={today} />
     </View>
   );
 }

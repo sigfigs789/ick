@@ -165,7 +165,10 @@ function submissions(fetchMock: ReturnType<typeof stubFetch>) {
  */
 function onDay(date: string) {
   // Timers keep advancing on their own: the page polls and waits, and a clock
-  // frozen solid would hang every `waitFor` in the test.
+  // frozen solid would hang every `waitFor` in the test. Real timers first, so
+  // a test setting its own day over the suite's default is installing one mock
+  // rather than a second on top of it.
+  vi.useRealTimers();
   vi.useFakeTimers({ shouldAdvanceTime: true });
   vi.setSystemTime(new Date(`${date}T12:00:00`));
 }
@@ -173,6 +176,13 @@ function onDay(date: string) {
 beforeEach(() => {
   localStorage.clear();
   window.history.pushState(null, "", "/leaderboard");
+  // A Friday late in a month, unless a test says otherwise. The page
+  // congratulates last week's winner from Monday to Thursday and last month's
+  // from the second to the fifth (see game/congrats.ts), and either costs a
+  // request -- so a suite running on whatever day it happens to be run would
+  // count a different number of fetches on most of them. Noon local, so the
+  // calendar date is the same one in every timezone.
+  onDay("2026-08-28");
 });
 
 afterEach(() => {
@@ -691,7 +701,11 @@ describe("keeping the boards current", () => {
   // advanceTimersByTimeAsync also flushes the promises each fetch settles
   // through, so it stands in for waitFor, which cannot run on a frozen clock.
   beforeEach(() => {
+    // Over the suite's own advancing clock, which is why the real ones go back
+    // up first: this block needs a frozen one.
+    vi.useRealTimers();
     vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-28T12:00:00"));
   });
 
   afterEach(() => {
@@ -816,12 +830,12 @@ describe("keeping the boards current", () => {
  *
  * The week and the month step independently, because they are two different
  * questions and comparing one against the other is the whole reason the page
- * carries two boards. Everything here is read on a midweek Wednesday, well
- * inside both windows (see `onDay`).
+ * carries two boards. Everything here is read on a Friday late in the month,
+ * well inside both windows and clear of every congratulation (see `onDay`).
  */
 describe("stepping the boards through past windows", () => {
-  /** A Wednesday: this week starts Sunday the 23rd, and this month on the 1st. */
-  const WEDNESDAY = "2026-08-26";
+  /** A Friday: this week starts Sunday the 23rd, and this month on the 1st. */
+  const FRIDAY = "2026-08-28";
   const THIS_WEEK = "2026-08-23";
   const LAST_WEEK = "2026-08-16";
   const THIS_MONTH = "2026-08-01";
@@ -885,15 +899,15 @@ describe("stepping the boards through past windows", () => {
 
   const step = (name: string) => screen.getByRole("button", { name });
 
-  beforeEach(() => onDay(WEDNESDAY));
+  beforeEach(() => onDay(FRIDAY));
 
   it("steps the day board a puzzle at a time, without moving the two beside it", async () => {
-    const YESTERDAY = "2026-08-25";
+    const YESTERDAY = "2026-08-27";
     const { asked, askedDays } = stubWindows(
       { [`${THIS_WEEK}/${THIS_MONTH}`]: { weekly: rowFor(ALICE, 41.2) } },
       {},
       {
-        [WEDNESDAY]: rowFor(ALICE, 9.4),
+        [FRIDAY]: rowFor(ALICE, 9.4),
         [YESTERDAY]: rowFor(BOB, 7.1),
       },
     );
@@ -905,12 +919,12 @@ describe("stepping the boards through past windows", () => {
     // The day's own date once it is not today's, and the board under it is that
     // day's final standing.
     await waitFor(() =>
-      expect(boardRows("Aug 25")[0]).toHaveTextContent(handleFor(BOB)),
+      expect(boardRows("Aug 27")[0]).toHaveTextContent(handleFor(BOB)),
     );
     expect(
-      within(screen.getByRole("region", { name: "Aug 25" })).getByText("Final"),
+      within(screen.getByRole("region", { name: "Aug 27" })).getByText("Final"),
     ).toBeInTheDocument();
-    expect(askedDays).toEqual([WEDNESDAY, YESTERDAY]);
+    expect(askedDays).toEqual([FRIDAY, YESTERDAY]);
     // The long windows did not move: a day is not a week's worth of anything,
     // and stepping one says nothing about the other two.
     expect(new Set(asked)).toEqual(new Set([`${THIS_WEEK}/${THIS_MONTH}`]));
