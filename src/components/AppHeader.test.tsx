@@ -89,11 +89,45 @@ describe("the header", () => {
   });
 });
 
+describe("the trial week's button", () => {
+  it("opens the week's notice, and finishes the badge with it", async () => {
+    const onFreeform = vi.fn();
+    const onBadgeDone = vi.fn();
+    render(
+      <AppHeader
+        route="game"
+        onHowToPlay={howToPlay}
+        onFreeform={onFreeform}
+        badgeLabel="Freeform extended 1 week"
+        onBadgeDone={onBadgeDone}
+      />,
+    );
+    // Unchanged from the week it was built for: the trial runs to
+    // MODE_CHOICE_START and the header is the trial's until then.
+    expect(screen.getByText(/freeform extended 1 week/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /freeform week/i }));
+    expect(onFreeform).toHaveBeenCalled();
+    expect(onBadgeDone).toHaveBeenCalled();
+  });
+
+  it("offers no switch alongside it -- one slot, one era", () => {
+    render(
+      <AppHeader route="game" onHowToPlay={howToPlay} onFreeform={vi.fn()} />,
+    );
+    expect(
+      screen.queryByRole("button", { name: /switch to/i }),
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe("the mode switch", () => {
-  it("is absent before the choice date, when the calendar still decides", () => {
+  it("is absent when neither era is offered", () => {
     render(<AppHeader route="game" onHowToPlay={howToPlay} />);
     expect(
       screen.queryByRole("button", { name: /switch to/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /freeform week/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/change mode/i)).not.toBeInTheDocument();
   });

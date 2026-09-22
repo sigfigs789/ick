@@ -74,28 +74,35 @@ describe("WordRulesModal during freeform week", () => {
   });
 });
 
-describe("WordRulesModal in Freeform mode", () => {
+describe("WordRulesModal from the choice date", () => {
   beforeEach(() => {
     localStorage.clear();
     resetModeCache();
   });
 
-  it("waives less than the week did, and says so", () => {
-    setMode("freeform");
-    render(<WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />);
-    const dialog = screen.getByRole("dialog");
-    // The mode lifts the name-and-abbreviation rules and nothing else: a panel
-    // promising archaic words here would promise something the game refuses.
-    expect(dialog).toHaveTextContent(/proper nouns and abbreviations count too/i);
-    expect(dialog).toHaveTextContent(
-      /obsolete, archaic or dated words, hyphenated words and words with punctuation are still out/i,
-    );
-    expect(dialog).not.toHaveTextContent(/it's freeform week/i);
+  it("says the same thing in either mode, because the rules are the same", () => {
+    // The modes differ in what a word is worth, not in which words there are.
+    // A panel that made the eligibility sound mode-dependent would be inviting
+    // players to switch for a word that plays either way.
+    for (const mode of ["standard", "freeform"] as const) {
+      setMode(mode);
+      const { unmount } = render(
+        <WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />,
+      );
+      const dialog = screen.getByRole("dialog");
+      expect(dialog, mode).toHaveTextContent(/proper nouns and abbreviations count/i);
+      expect(dialog, mode).toHaveTextContent(/in either mode/i);
+      // The trial's wider promise is gone with the trial.
+      expect(dialog, mode).not.toHaveTextContent(/it's freeform week/i);
+      unmount();
+    }
   });
 
-  it("says the usual rules in Standard", () => {
+  it("still refuses the age trio in the copy, as the game does", () => {
     setMode("standard");
     render(<WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />);
-    expect(screen.getByRole("dialog")).toHaveTextContent(/aren't eligible for play/i);
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      /obsolete, archaic or dated words, hyphenated words and words with punctuation aren't eligible/i,
+    );
   });
 });

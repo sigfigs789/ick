@@ -61,6 +61,7 @@ const TABS: readonly Tab[] = [
 export function AppHeader({
   route,
   onHowToPlay,
+  onFreeform,
   mode,
   onModeChange,
   badge = true,
@@ -70,10 +71,20 @@ export function AppHeader({
   route: Route;
   onHowToPlay: () => void;
   /**
+   * Open the trial week's notice. Passed only while the trial is running, which
+   * is what takes the button off the header once it is over.
+   *
+   * The other half of a pair with `mode`/`onModeChange` below: this slot in the
+   * header holds the week's notice until MODE_CHOICE_START and the mode switch
+   * from it, and never both -- the two eras do not overlap, because the trial
+   * ends on the day the switch appears. Which one is offered is src/Root.tsx's
+   * decision; this file only draws whichever it was handed.
+   */
+  onFreeform?: () => void;
+  /**
    * The mode the player is in, and the way to change it. Absent before
-   * MODE_CHOICE_START, which is what keeps the switch off the header on a build
-   * deployed ahead of the date -- there is nothing to choose while the calendar
-   * is still deciding.
+   * MODE_CHOICE_START, which is what keeps the switch off the header while the
+   * calendar is still deciding -- there is nothing to choose yet.
    */
   mode?: GameMode;
   onModeChange?: (mode: GameMode) => void;
@@ -108,7 +119,9 @@ export function AppHeader({
    */
   onBadgeDone?: () => void;
 }) {
-  const switchable = Boolean(mode && onModeChange);
+  // Whether this header has anything in its news-or-control slot, which is what
+  // a badge needs to sit under. Either era counts; they never coincide.
+  const switchable = Boolean(onFreeform) || Boolean(mode && onModeChange);
 
   /**
    * The current `onBadgeDone`, reachable from a timer that must not be restarted
@@ -143,6 +156,16 @@ export function AppHeader({
   function changeMode(next: GameMode) {
     onBadgeDone?.();
     onModeChange?.(next);
+  }
+
+  /**
+   * Open the trial's sheet and retire the badge in the same gesture. Pressing
+   * either one is the badge having worked, so it has no business sitting there
+   * afterwards waiting out its timer over a sheet the player has already read.
+   */
+  function openFreeform() {
+    onBadgeDone?.();
+    onFreeform?.();
   }
 
   function go(tab: Tab) {
@@ -200,6 +223,37 @@ export function AppHeader({
             it announced the week: an icon here would be a second circle beside
             the "?" saying even less. The label names the mode you are in, and
             the badge under it says the label is something you can press. */}
+        {/* The trial's button, while the trial is running. Unchanged from the
+            week it was built for: a word rather than a glyph, because an "i" in
+            a circle is the same shape as the "?" beside it and says less. */}
+        {onFreeform && (
+          <div className="app__freeform-nav">
+            <button
+              type="button"
+              className="app__freeform-button"
+              onClick={openFreeform}
+              aria-label="Freeform week — what’s changed"
+            >
+              Freeform
+            </button>
+            {/* Decoration: the button's own label above already carries this, so
+                the badge is not announced a second time -- and it is skipped by
+                the keyboard for the same reason. It takes a press anyway,
+                because it is the part of the pair the eye is on, and a label
+                that ignores the finger aimed at it reads as broken. */}
+            {badgeLabel && (
+              <span
+                className={`app__freeform-badge${
+                  badge ? "" : " app__freeform-badge--faded"
+                }`}
+                aria-hidden="true"
+                onClick={openFreeform}
+              >
+                {badgeLabel}
+              </span>
+            )}
+          </div>
+        )}
         {mode && onModeChange && (
           <div className="app__mode-nav">
             <ModeToggle mode={mode} onChange={changeMode} />

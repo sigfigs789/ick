@@ -112,12 +112,40 @@ describe("the Freeform week announcement", () => {
     localStorage.setItem("ick:seen:instructions", "1");
     render(<Root />);
     // Inside the trial everybody is on the same rules, so a control offering a
-    // choice would be offering one nobody has -- and a badge pointing at it
-    // would be marking the "?" as new.
+    // choice would be offering one nobody has. The week's own button is there
+    // instead, exactly as it has been all along.
     expect(
       screen.queryByRole("button", { name: /switch to/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/change mode/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /freeform week/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("reopens the sheet from the header button after it has been dismissed", async () => {
+    localStorage.setItem("ick:seen:instructions", "1");
+    playedPuzzle("2026-09-10");
+    render(<Root />);
+    expect(sheet()).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^close$/i }));
+    expect(sheet()).not.toBeInTheDocument();
+
+    // The button stays all week and opens the sheet again -- dismissing it
+    // retires the *automatic* opening, not the way back to it.
+    await userEvent.click(
+      screen.getByRole("button", { name: /freeform week/i }),
+    );
+    expect(sheet()).toBeInTheDocument();
+  });
+
+  it("keeps the week's own badge up, not the switch's", () => {
+    localStorage.setItem("ick:seen:instructions", "1");
+    render(<Root />);
+    expect(screen.getByText(/scoring update/i)).not.toHaveClass(
+      "app__freeform-badge--faded",
+    );
   });
 });
 

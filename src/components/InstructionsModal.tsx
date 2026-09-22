@@ -90,9 +90,9 @@ export function InstructionsModal({ open, onClose }: Props) {
               scores, its own four words, and no leaderboard.
             </p>
             <p className="modal__modes-note">
-              Switch any time with the mode button in the header. Freeform also
-              lets proper nouns and abbreviations play; both modes refuse
-              misspellings and obsolete, archaic or dated words.
+              Switch any time with the mode button in the header. Both modes
+              accept exactly the same words — the difference is only what
+              they’re worth.
             </p>
           </div>
         )}

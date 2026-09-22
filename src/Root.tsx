@@ -148,9 +148,6 @@ export function Root() {
     setFreeformBadge(false);
   }
 
-  // No `openFreeform` any more: the header's button is the mode switch now, and
-  // the sheet is the trial's, reachable only by the automatic opening above
-  // while the trial window is still running.
   function closeFreeform() {
     // Opened by hand or opened for them: either way the announcement has been
     // delivered, so `markSeen` retires the automatic opening for good -- and the
@@ -158,6 +155,19 @@ export function Root() {
     markSeen("freeform");
     retireBadge();
     setShowFreeform(false);
+  }
+
+  /**
+   * Open the trial's sheet from the header.
+   *
+   * Only the badge is retired here. The sheet is about to be read, and closing
+   * it is what retires the automatic opening -- a player who opens it by hand
+   * and closes it unread is in exactly the same place as one who never opened
+   * it, which is the case `closeFreeform` already handles for everyone.
+   */
+  function openFreeform() {
+    retireBadge();
+    setShowFreeform(true);
   }
 
   /**
@@ -265,8 +275,11 @@ export function Root() {
       <AppHeader
         route={route}
         onHowToPlay={() => setShowInstructions(true)}
-        // Passed only from the choice date, which is what keeps the switch off a
-        // build deployed ahead of it rather than needing to be taken out again.
+        // One slot, two eras, never both at once. Until MODE_CHOICE_START the
+        // header is the trial's and nothing here changes -- the button opens the
+        // week's notice, exactly as it does today. From that date the trial is
+        // over and the same slot holds the mode switch.
+        onFreeform={!chooseable && freeform ? openFreeform : undefined}
         mode={chooseable ? mode : undefined}
         onModeChange={chooseable ? chooseMode : undefined}
         badge={freeformBadge}

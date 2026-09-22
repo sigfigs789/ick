@@ -1594,41 +1594,46 @@ export const CURATED_REJECTION_REASONS = [
 export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
 
 /**
- * The rejection reasons Freeform waives -- the ones that refuse a real word for
+ * The rejection reasons a puzzle waives -- the ones that refuse a real word for
  * the kind of word it is rather than for not being one.
  *
- * Two sets, because the trial and the mode do not draw the same line.
+ * Three sets, and which one applies is a question about the *date*, not about
+ * the mode. That is the shape worth noticing: from MODE_CHOICE_START the two
+ * modes accept exactly the same words and differ only in what they are worth.
+ * Freeform is a scoring system, not a permissions system.
+ *
+ * Before the trial, nothing was waived: a word filed as a proper noun or an
+ * abbreviation was refused, full stop.
  *
  * The trial week waived six. A player reaching for "thou" or "NASA" was playing
  * the language as they found it, and a week about playing however you want had
  * no business telling them which register was allowed.
  *
- * The mode waives three. The age trio -- obsolete, archaic, dated -- goes back in
- * force, because the two systems now sit side by side permanently and the thing
- * Freeform is *for* is the scoring: every word priced on its own frequency
- * instead of folded onto its common form. Handing out the dictionary's dead
- * words on top of that is a second, unrelated change riding along with it, and it
- * is the one players are least likely to want -- a word nobody has used since
- * 1650 is a lookup, not a find. What stays waived is the name-and-abbreviation
- * trio, which refuses words that are alive and ordinary and merely filed under a
- * category, and which reads as the same objection the fold makes: that your word
- * is really some other word.
+ * From the choice date, both modes waive three. The names and abbreviations stay
+ * playable because the trial settled that question: they refuse words that are
+ * alive and ordinary and merely filed under a category, which is a rule about
+ * paperwork rather than about English. "NASA" is a word people say. The age trio
+ * -- obsolete, archaic, dated -- goes back in force, because a word nobody has
+ * used since 1650 is a lookup rather than a find, and the trial's appetite for
+ * those did not outlast the trial.
  *
- * Two reasons were never waived by either, and the line between them and these
- * is the one the curation rules already draw: a spelling of *another* word is
- * not a word somebody wants to play, it is a mistake, and letting it through
- * would score a typo as a deep-tail find -- "recieve" is not a bolder way to play
- * "receive". "not-a-word" is the same objection stated outright.
+ * Two reasons were never waived by any of them, and the line between them and
+ * these is the one the curation rules already draw: a spelling of *another* word
+ * is not a word somebody wants to play, it is a mistake, and letting it through
+ * would score a typo as a deep-tail find -- "recieve" is not a bolder way to
+ * play "receive". "not-a-word" is the same objection stated outright.
  *
  * Words absent from the curated dictionary altogether are untouched by this and
- * still go to the live lookup: Freeform widens which *words* are playable, not
+ * still go to the live lookup: a waiver widens which *words* are playable, not
  * what counts as one.
  *
- * The trial's set is kept rather than replaced, for the reason every scoring
- * cutover in this file is kept: a puzzle inside that window plays exactly as it
- * played, so a word accepted on the 18th is still accepted if somebody opens
- * that day from the archive.
+ * Every set is kept rather than replaced, for the reason every scoring cutover
+ * in this file is kept: a puzzle plays exactly as it played, so a word accepted
+ * on the 18th is still accepted if somebody opens that day from the archive, and
+ * one refused in August is refused there still.
  */
+const NO_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>();
+
 const TRIAL_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
   "proper-noun",
   "abbreviation",
@@ -1638,17 +1643,23 @@ const TRIAL_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionR
   "dated",
 ]);
 
-const FREEFORM_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
+const NAME_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
   "proper-noun",
   "abbreviation",
   "name-or-abbreviation",
 ]);
 
-/** Which of the two sets `date`'s puzzle is playing under. */
+/**
+ * Which set `date`'s puzzle is playing under.
+ *
+ * The mode is not consulted, and an undated call waives nothing. The undated
+ * case is the leaderboard and the finds feed pricing somebody else's word, which
+ * is not a submission being judged -- there is nothing there to waive.
+ */
 function waivedRejectionsFor(date?: string): ReadonlySet<RejectionReason> {
-  return date !== undefined && date < MODE_CHOICE_START
-    ? TRIAL_WAIVED_REJECTIONS
-    : FREEFORM_WAIVED_REJECTIONS;
+  if (date === undefined) return NO_WAIVED_REJECTIONS;
+  if (date >= MODE_CHOICE_START) return NAME_WAIVED_REJECTIONS;
+  return usesFreeformRules(date) ? TRIAL_WAIVED_REJECTIONS : NO_WAIVED_REJECTIONS;
 }
 
 /**
@@ -1738,7 +1749,7 @@ const DERIVED_REJECTIONS: ReadonlyMap<string, { reason: RejectionReason; since: 
 export function curatedRejection(word: string, date?: string): RejectionReason | undefined {
   const reason = reviewedRejection(word, date);
   if (reason === undefined) return undefined;
-  if (usesFreeformRules(date) && waivedRejectionsFor(date).has(reason)) return undefined;
+  if (waivedRejectionsFor(date).has(reason)) return undefined;
   return reason;
 }
 
@@ -1756,7 +1767,7 @@ export function curatedRejection(word: string, date?: string): RejectionReason |
  * its register has to be allowed to prove itself like any other unknown word.
  */
 export function waivesRejectionReason(reason: RejectionReason, date?: string): boolean {
-  return usesFreeformRules(date) && waivedRejectionsFor(date).has(reason);
+  return waivedRejectionsFor(date).has(reason);
 }
 
 /**
@@ -1788,7 +1799,6 @@ const NOTED_WAIVERS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
  * or explained by this one, never both.
  */
 export function waivedRejection(word: string, date?: string): RejectionReason | undefined {
-  if (!usesFreeformRules(date)) return undefined;
   const reason = reviewedRejection(word, date);
   if (reason === undefined || !waivedRejectionsFor(date).has(reason)) return undefined;
   return NOTED_WAIVERS.has(reason) ? reason : undefined;

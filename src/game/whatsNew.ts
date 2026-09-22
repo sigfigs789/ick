@@ -73,13 +73,12 @@ export function markSeen(what: Announcement): void {
 }
 
 /**
- * The puzzle date from which the header's badge announced the extension rather
+ * The puzzle date from which the header's badge announces the extension rather
  * than the week's opening scoring change.
  *
- * Both of those announcements are over -- see `headerBadgeFor`. The constant is
- * kept because the two bits it chose between are still in the union above and
- * still sitting in players' storage, and a date that explains a stored key is
- * worth more than one less line.
+ * A date rather than a flag, so the switch happens on its own and the two
+ * announcements cannot overlap. Still live: the trial runs to MODE_CHOICE_START,
+ * and until then the header is the trial's -- see `headerBadgeFor`.
  */
 export const FREEFORM_EXTENDED_START = "2026-09-20";
 
@@ -98,20 +97,33 @@ export interface HeaderBadge {
  * reused the old bit would never appear for the players who already dismissed
  * it.
  *
- * There is exactly one now: "Change mode", pointing at the switch the trial
- * week left behind (see game/mode.ts). The week's own two announcements are
- * gone with the week -- their button is a control now rather than a notice, and
- * a badge saying the trial has been extended would be pointing at something
- * that is no longer true.
+ * Three, one era each. The trial's two are still live, because the trial is:
+ * until MODE_CHOICE_START the header carries the week's button and the week's
+ * news, exactly as it does today. From that date the button becomes the mode
+ * switch and the badge becomes "Change mode".
  *
- * Null before MODE_CHOICE_START, because there is nothing to point at: the
- * switch is not on the header yet, and a badge floating under the "?" would be
- * marking the rules button as new.
+ * Never null in practice -- there has been a badge on this header since the
+ * trial opened and there is one after it -- but the type says so anyway, because
+ * "no badge" is a state the header already draws correctly and a future era with
+ * nothing to announce should not have to invent a label to say nothing.
  *
  * Compared as a string like every other cutover in this app, so it turns over
  * with the puzzle rather than with a clock.
  */
 export function headerBadgeFor(date: string): HeaderBadge | null {
-  if (date < MODE_CHOICE_START) return null;
-  return { key: "mode-toggle-badge", label: "Change mode" };
+  // From the choice date the button under this badge is a switch rather than a
+  // notice, so the badge stops being news and becomes an instruction: it points
+  // at a control most players have never seen, and "Change mode" is the whole of
+  // what there is to say about it.
+  if (date >= MODE_CHOICE_START) {
+    return { key: "mode-toggle-badge", label: "Change mode" };
+  }
+  // Until then the trial is still running and the header is still the trial's:
+  // the button opens the week's notice and the badge carries the week's news,
+  // exactly as they have all along. Nothing about the switch reaches a puzzle
+  // before MODE_CHOICE_START, and neither does its badge.
+  if (date >= FREEFORM_EXTENDED_START) {
+    return { key: "freeform-extended-badge", label: "Freeform extended 1 week" };
+  }
+  return { key: "freeform-badge", label: "Scoring update" };
 }

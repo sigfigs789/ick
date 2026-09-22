@@ -332,11 +332,42 @@ describe("freeform week rejections", () => {
     expect(isValidWord("zzzzqqq", DURING)).toBe(false);
   });
 
-  it("does not waive anything outside the window", () => {
+  it("waived nothing before the trial, and waives nothing undated", () => {
     const word = wordRejectedFor("proper-noun");
     expect(word).toBeDefined();
     expect(isValidWord(word!, BEFORE)).toBe(false);
-    expect(isValidWord(word!, AFTER)).toBe(false);
+    // The undated call is the leaderboard and the finds feed pricing somebody
+    // else's word, which is not a submission being judged.
     expect(isValidWord(word!)).toBe(false);
+  });
+
+  it("keeps names and abbreviations playable after the trial, in both modes", () => {
+    // The one thing the trial settled for good: these refuse words that are
+    // alive and ordinary and merely filed under a category. From
+    // MODE_CHOICE_START they play whichever mode you are in -- the modes differ
+    // in what a word is worth, not in which words there are.
+    for (const reason of ["proper-noun", "abbreviation", "name-or-abbreviation"]) {
+      const word = wordRejectedFor(reason);
+      if (!word) continue;
+      localStorage.clear();
+      resetModeCache();
+      setMode("standard");
+      expect(isValidWord(word, AFTER), `${reason} in Standard`).toBe(true);
+      setMode("freeform");
+      expect(isValidWord(word, AFTER), `${reason} in Freeform`).toBe(true);
+    }
+  });
+
+  it("puts the age trio back in force after the trial, in both modes", () => {
+    for (const reason of ["obsolete", "archaic", "dated"]) {
+      const word = wordRejectedFor(reason);
+      if (!word) continue;
+      localStorage.clear();
+      resetModeCache();
+      setMode("standard");
+      expect(isValidWord(word, AFTER), `${reason} in Standard`).toBe(false);
+      setMode("freeform");
+      expect(isValidWord(word, AFTER), `${reason} in Freeform`).toBe(false);
+    }
   });
 });

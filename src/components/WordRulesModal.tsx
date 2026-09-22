@@ -63,23 +63,22 @@ export function WordRulesModal({ open, date, onClose }: Props) {
         </div>
         {/* The second sentence is the half that moves. Sourcing and licensing
             are true whatever the rules are; which kinds of word are eligible is
-            exactly what Freeform changes, and a rules panel that goes on saying
-            a word is unplayable while the player is scoring it is worse than no
-            rules panel.
+            not, and a rules panel that goes on saying a word is unplayable while
+            the player is scoring it is worse than no rules panel.
 
-            Three sentences rather than two, because the trial week and the mode
-            do not waive the same things. The week lifted every register rule
-            there is; the mode lifts only the name-and-abbreviation ones, and a
-            panel that promised archaic words in Freeform would be promising
-            something the game now refuses. The week's sentence stays because
-            its puzzles are still in the archive and still play that way. */}
+            Three sentences, one per era, and the *mode* is not asked: from
+            MODE_CHOICE_START both modes accept the same words and differ only in
+            what they are worth. Before that the trial week waived every register
+            rule there is, and before the trial none of them were waived -- both
+            of those are still reachable from the archive and still play that
+            way. See waivedRejectionsFor in game/dictionary.ts. */}
         <p className="modal__copy">
           WordInk's word list is sourced from SCOWL and <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>) and contains more than 200,000 words.{" "}
-          {!usesFreeformRules(date)
-            ? "To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play."
-            : date !== undefined && modeIsChosen(date)
-              ? "You're in Freeform, so proper nouns and abbreviations count too, whether or not the list already carried them. Misspellings, offensive words, obsolete, archaic or dated words, hyphenated words and words with punctuation are still out."
-              : "It's freeform week, so almost all of it is in play: proper nouns, abbreviations, and obsolete, archaic or dated words all count, whether or not the list already carried them. Misspellings, offensive words, hyphenated words and words with punctuation are the only ones left out."}
+          {date !== undefined && modeIsChosen(date)
+            ? "Proper nouns and abbreviations count, whether or not the list already carried them. Misspellings, offensive words, obsolete, archaic or dated words, hyphenated words and words with punctuation aren't eligible for play — in either mode."
+            : usesFreeformRules(date)
+              ? "It's freeform week, so almost all of it is in play: proper nouns, abbreviations, and obsolete, archaic or dated words all count, whether or not the list already carried them. Misspellings, offensive words, hyphenated words and words with punctuation are the only ones left out."
+              : "To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play."}
         </p>
         <p className="modal__copy">
           I'm continuously expanding the list to include more delightful and interesting words. Know a good one that's missing? Suggest it and everybody gets to play it.
