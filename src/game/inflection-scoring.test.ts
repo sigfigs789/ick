@@ -2233,3 +2233,96 @@ describe("an -ed/-ing ending stops reading as a stem English would double (from 
     }
   });
 });
+
+describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)', () => {
+  // The day before is inside the freeform trial, where nothing folds at all, so
+  // the "before" comparison is taken from the last ordinary folding puzzle --
+  // the system this cutover changes (see UNGATED_PREFIX_START, and
+  // `scoringFor`'s note on why the rung sits below the freeform fork).
+  const BEFORE_UNGATED = "2026-09-13"; // last folding puzzle before the trial
+  const ON_UNGATED = "2026-09-27"; // first puzzle on the switch
+
+  // word, the base it takes now, the score before, the score on/after. Every one
+  // is measured above MEASURED_FLOOR, which is the only reason it did not fold
+  // already.
+  const MOVED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    ["counterattack", "attack", 7.37, 4.26],
+    ["countermeasure", "measures", 7.36, 4.87],
+    ["counterexample", "example", 8.32, 4.0],
+    ["counterclockwise", "clockwise", 7.73, 6.93],
+    ["antiviral", "viral", 7.44, 5.71],
+    ["antitrust", "trust", 6.7, 4.21],
+    ["antiabortion", "abortion", 9.13, 5.48],
+    ["anticancer", "cancer", 7.97, 4.5],
+    // The two readings that invert rather than modify, and fold anyway: the
+    // claim is about which form of a string is the common one, not about what
+    // the word denotes. An antifreeze is not a freeze, and scoring it a
+    // deep-tail find says something plainly false about the string.
+    ["antisocial", "social", 7.03, 3.78],
+    ["antifreeze", "freeze", 7.81, 5.67],
+  ];
+
+  it.each(MOVED)("%s folds onto %s", (word, base, _before, after) => {
+    expect(score(word, ON_UNGATED)).toBe(after);
+    expect(baseFormSubstitution(word, ON_UNGATED)?.base).toBe(base);
+  });
+
+  it.each(MOVED)("%s kept its own score the day the fold last ran", (word, _base, before) => {
+    expect(score(word, BEFORE_UNGATED)).toBe(before);
+  });
+
+  // The wrong *bracketings*, which is what a frequency gate never caught either
+  // and what fold-exemptions.json is for: the letters are there and the prefix
+  // is not. Scoped to the prefix, so the word's ordinary folds still run.
+  const EXEMPT: ReadonlyArray<[word: string, unreachable: string, score: number]> = [
+    ["antibody", "body", 6.43],
+    ["counterpart", "part", 6.17],
+    ["antimony", "monies", 7.84],
+    ["antiphony", "phony", 9.77],
+    ["antipathetic", "pathetic", 9.42],
+    ["counterpane", "pane", 8.54],
+    ["antidotes", "dot", 6.86],
+  ];
+
+  it.each(EXEMPT)("%s never reaches %s", (word, unreachable, expected) => {
+    expect(score(word, ON_UNGATED)).toBe(expected);
+    expect(baseFormSubstitution(word, ON_UNGATED)?.base).not.toBe(unreachable);
+  });
+
+  it("moves 510 words, every one of them prefixed, and lowers no score", () => {
+    // The change stated over the dictionary rather than on the samples above.
+    // Two claims: nothing outside the two prefixes moves at all -- this is one
+    // family, not a retune -- and every move is a fold, which can only ever make
+    // a word more common.
+    const moved = (dictionaryWords as string[]).filter(
+      (word) => rarityFor(word, ON_UNGATED)!.zipf !== rarityFor(word, BEFORE_UNGATED)!.zipf
+    );
+    expect(moved).toHaveLength(510);
+    expect(moved.filter((word) => !/^(anti|counter)/.test(word))).toEqual([]);
+    for (const word of moved) {
+      expect(
+        rarityFor(word, ON_UNGATED)!.zipf,
+        `${word} is no rarer than it was`
+      ).toBeGreaterThan(rarityFor(word, BEFORE_UNGATED)!.zipf);
+    }
+  });
+
+  it("leaves the other four transparent prefixes behind the gate", () => {
+    // The argument for ungating is about how many ordinary words merely open
+    // with a prefix's letters, and for these it is a great many. Each of these
+    // is measured, so the gate is the only thing between it and a base it was
+    // never built on.
+    for (const word of ["overtime", "understand", "outrage", "uncle", "unclean"]) {
+      expect(score(word, ON_UNGATED), `${word} is unchanged`).toBe(score(word, BEFORE_UNGATED));
+    }
+    expect(baseFormSubstitution("understand", ON_UNGATED)).toBeUndefined();
+    expect(baseFormSubstitution("outrage", ON_UNGATED)).toBeUndefined();
+  });
+
+  it("still refuses a prefix the word inside a superlative owns", () => {
+    // `hasSuperlativeReading` runs for both prefix families, which is what the
+    // shared `addPrefixBases` is for: "uncleanest" is the superlative of
+    // "unclean", not un- + "cleanest".
+    expect(baseFormSubstitution("uncleanest", ON_UNGATED)?.base).toBe("unclean");
+  });
+});

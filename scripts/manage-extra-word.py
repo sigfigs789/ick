@@ -465,6 +465,27 @@ def _prefix_candidates(word: str) -> list[str]:
     return out
 
 
+# Mirror of UNGATED_PREFIXES in src/game/stem.ts: the two prefixes that fold
+# whatever the word's own frequency says, from 2026-09-27 (see
+# UNGATED_PREFIX_START in dictionary.ts). The other four in TRANSPARENT_PREFIXES
+# stay behind the MEASURED_FLOOR gate, because their letters are also the opening
+# of a pile of ordinary words ("overt", "outer", "unit") and these two are not.
+UNGATED_PREFIXES = ("counter", "anti")
+
+
+def _ungated_prefix_candidates(word: str) -> list[str]:
+    """Mirror of ungatedPrefixBaseCandidates() in src/game/stem.ts."""
+    w = word.lower()
+    for prefix in UNGATED_PREFIXES:
+        if not w.startswith(prefix):
+            continue
+        stem = w[len(prefix):]
+        if len(stem) < 4 or stem == w:
+            continue
+        return [stem]
+    return []
+
+
 # Mirror of MEASUREMENT_PREFIXES in src/game/stem.ts.
 MEASUREMENT_PREFIXES = (
     "yocto", "zepto", "yotta", "zetta", "femto", "hecto", "centi", "micro",
@@ -761,10 +782,28 @@ def load_fold_exemptions() -> frozenset[str]:
     contributes no fold candidates at all, so it scores on its own data and no
     chain passes through it. Every entry is active here because this module only
     scores under the newest (undated) system.
+
+    Scoped entries are not here -- see load_prefix_fold_exemptions().
     """
     if not FOLD_EXEMPTIONS_PATH.exists():
         return frozenset()
-    return frozenset(json.loads(FOLD_EXEMPTIONS_PATH.read_text()))
+    entries = json.loads(FOLD_EXEMPTIONS_PATH.read_text())
+    return frozenset(w for w, entry in entries.items() if not entry.get("scope"))
+
+
+@functools.cache
+def load_prefix_fold_exemptions() -> frozenset[str]:
+    """The entries scoped to the prefix hop ("scope": "prefix").
+
+    Mirror of prefixFoldExempt(): these refuse the prefix strip alone and leave
+    the word's ordinary folds running, which is what a wrong *bracketing* needs
+    ("antiphonic" is antiphon + -ic, but "antibodies" is still the plural of
+    "antibody").
+    """
+    if not FOLD_EXEMPTIONS_PATH.exists():
+        return frozenset()
+    entries = json.loads(FOLD_EXEMPTIONS_PATH.read_text())
+    return frozenset(w for w, entry in entries.items() if entry.get("scope") == "prefix")
 
 
 
@@ -914,22 +953,24 @@ def _non_inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[s
         # set: they fold through their own verb (see nextBaseForms).
         for candidate in _unmeasured_candidates(word):
             add(candidate)
-        # Prefixes, under the same gate, and only onto a residue that is a word
-        # rather than a bound combining form ("neolith" -> "lith"). The reviewed
-        # table answers that, not a frequency floor -- see load_bound_residues().
-        # ... and not at all where the word reads as a bare "-est" superlative:
-        # a degree suffix owns the bracketing, so the prefix belongs to the
-        # adjective inside it ("uncleanest" is the superlative of "unclean", not
-        # un- + "cleanest"). See hasSuperlativeReading in dictionary.ts.
-        bound = load_bound_residues()
-        superlative = any(
-            base in index and counterpart in index
-            for base, counterpart in _superlative_candidates(word)
-        )
-        if not superlative:
-            for candidate in _prefix_candidates(word):
-                if candidate in index and candidate not in bound:
-                    add(candidate)
+        # The rest of the transparent prefixes, under the same gate. What a
+        # prefix base has to survive is _prefix_bases(), shared with the ungated
+        # pair below so the two cannot drift.
+        for candidate in _prefix_bases(word, _prefix_candidates(word), index, zipf_at):
+            add(candidate)
+    # "counter-" and "anti-", off that gate: the two prefixes with no measured
+    # words for a floor to protect, so the strip runs on the word's own spelling
+    # alone ("counterattack" -> "attack", "antiviral" -> "viral"). See
+    # UNGATED_PREFIX_START in dictionary.ts.
+    #
+    # The corpus half of that cutover has no mirror here: this module scores off
+    # the curated list, so a base only the 1.2M-word corpus carries
+    # ("antiabortionism" -> `abortionism`, "antichrist" -> `christ`) is one it
+    # cannot see. It reports the word rarer than the game does, never commoner,
+    # which is the safe direction for a script whose job is to catch a word
+    # scoring higher than it should.
+    for candidate in _prefix_bases(word, _ungated_prefix_candidates(word), index, zipf_at):
+        add(candidate)
     # The measurement modifiers, ungated on the reviewed unit table rather than
     # on an ending: "kilojoules" -> "joules" though both are measured.
     units = load_measurement_units()
@@ -946,6 +987,47 @@ def _non_inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[s
         add(candidate)
     add(_scoring_base(word, index))
     return out
+
+
+def _prefix_fold_exempt_paradigm(word: str, index: dict[str, int], zipf_at) -> bool:
+    """Mirror of prefixFoldExemptParadigm(): the entry covers the paradigm.
+
+    A scoped entry names one word, and its inflections reach the same strip on
+    their own ("antibodies" offers `bodies` without ever passing through
+    "antibody"). Reading one step back is what keeps the file's promise that an
+    entry covers the paradigm, rather than asking review to list every inflection
+    of every wrong bracketing.
+    """
+    exempt = load_prefix_fold_exemptions()
+    if word in exempt:
+        return True
+    return any(base in exempt for base in _inflectional_bases(word, index, zipf_at))
+
+
+def _prefix_bases(
+    word: str, spellings: list[str], index: dict[str, int], zipf_at
+) -> list[str]:
+    """Mirror of addPrefixBases(): the prefix strips that survive review.
+
+    A residue has to be a word rather than a bound combining form ("neolith" ->
+    "lith"), which the reviewed table answers and not a frequency floor -- see
+    load_bound_residues(). The whole hop is refused for a reviewed wrong
+    bracketing, and where the word reads as a bare "-est" superlative: a degree
+    suffix owns the bracketing, so the prefix belongs to the adjective inside it
+    ("uncleanest" is the superlative of "unclean", not un- + "cleanest"). See
+    hasSuperlativeReading in dictionary.ts.
+    """
+    if not spellings:
+        return []
+    if _prefix_fold_exempt_paradigm(word, index, zipf_at):
+        return []
+    if any(
+        base in index and counterpart in index
+        for base, counterpart in _superlative_candidates(word)
+    ):
+        return []
+    bound = load_bound_residues()
+    return [c for c in spellings if c in index and c not in bound]
 
 
 def _most_common(candidates: list[str], word: str, index: dict[str, int], zipf_at) -> str | None:

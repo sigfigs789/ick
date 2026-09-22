@@ -201,6 +201,22 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
       }
     });
 
+    it("carries the ungated prefixes onto bases only the corpus has", () => {
+      // The two cutovers compose, a day apart: 2026-09-27 lets "anti-" strip a
+      // measured word at all (see UNGATED_PREFIX_START), and this one decides
+      // what the strip may land on. `christ` is a corpus headword with no tag
+      // against it and no curated entry, so the pair of them is what gets
+      // "antichrist" onto it.
+      expect(CURATED.has("christ")).toBe(false);
+      expect(corpusAttests("christ")).toBe(true);
+      expect(baseFormSubstitution("antichrist", BEFORE)?.base).toBeUndefined();
+      expect(baseFormSubstitution("antichrist", AFTER)?.base).toBe("christ");
+      // And a residue the lexicon refuses is still refused with the prefix off
+      // the gate: "arin" is a name, so "antiarin" needs no exemption of its own.
+      expect(corpusAttests("arin")).toBe(false);
+      expect(baseFormSubstitution("antiarin", AFTER)?.base).toBeUndefined();
+    });
+
     it("keeps an '-ily' adverb on its adjective rather than on a homograph", () => {
       // "ugli" the fruit and "veri" are both corpus words with real counts, and
       // first-past-the-post handed them "uglily" and "verily". See

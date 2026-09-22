@@ -168,5 +168,95 @@
   "listless": {
     "since": "2026-09-02",
     "reason": "Without `list` in the archaic sense (desire, inclination), not without a list. The privative fold's strip is decisive and the residue is a word, so nothing but review can tell this reading from `spotless`; scoring \"languid\" as the everyday `list` (Zipf 5.28) would show \"Scored as its common form, 'list'\" on a word that has nothing to do with it. The blanket entry covers `listlessly` and `listlessness`, which fold onto this word and stop here."
+  },
+  "antibody": {
+    "since": "2026-09-27",
+    "reason": "A loan-translation of Antikörper: the `body` in it is the 19th-century sense of a material substance, and no reader supplies it -- an antibody is not a body the way a counterattack is an attack. The highest-impact reading the ungated prefix reaches (3.56 -> 5.40, `body`), and the one a player would call a bug.",
+    "scope": "prefix"
+  },
+  "antigen": {
+    "since": "2026-09-27",
+    "reason": "From antibody + generator, a coinage rather than a bracketing: not anti- + `gen`, and not against genes. `antigens` strips to `gens` (a Roman clan) at 4.33.",
+    "scope": "prefix"
+  },
+  "antigene": {
+    "since": "2026-09-27",
+    "reason": "The older spelling of `antigen`, and the same coinage; the strip reads it as anti- + `gene`, which is the meaning it does not have.",
+    "scope": "prefix"
+  },
+  "antidote": {
+    "since": "2026-09-27",
+    "reason": "From Greek antidoton (given against), not anti- + `dote`. Left to the rules `antidotes` reaches `dot` at 4.05 through its own plural.",
+    "scope": "prefix"
+  },
+  "antidotal": {
+    "since": "2026-09-27",
+    "reason": "Of an antidote, and it needs its own entry: nothing folds an -al adjective back to its noun, so it reaches `dotal` (of a dowry) on its own. Same shape as `televisionally`.",
+    "scope": "prefix"
+  },
+  "antidotally": {
+    "since": "2026-09-27",
+    "reason": "The adverb of `antidotal`, on its own path to `dotal` for the same reason.",
+    "scope": "prefix"
+  },
+  "antipathetic": {
+    "since": "2026-09-27",
+    "reason": "From `antipathy` + -etic, not anti- + `pathetic`. A word about dislike, scored 4.11 as the word for feeble.",
+    "scope": "prefix"
+  },
+  "antimony": {
+    "since": "2026-09-27",
+    "reason": "The element (Latin antimonium), not anti- + `mony`. The strip lands on the Scots `mony` and the reverse fold carries it to `monies`, so the metal scored 3.15 as money.",
+    "scope": "prefix"
+  },
+  "antiphon": {
+    "since": "2026-09-27",
+    "reason": "The sung response (Greek antiphona), not anti- + `phon` (a unit of loudness). The sibling of `antiphonic`, which has been exempt since 2026-08-26 for the same misreading.",
+    "scope": "prefix"
+  },
+  "antiphony": {
+    "since": "2026-09-27",
+    "reason": "The practice of singing antiphons, and its own entry rather than a form of `antiphon`: the strip reads it as anti- + `phony` and scores a liturgical term 3.35 as the word for fake.",
+    "scope": "prefix"
+  },
+  "antipolo": {
+    "since": "2026-09-27",
+    "reason": "The breadfruit tree (Tagalog), not anti- + `polo`.",
+    "scope": "prefix"
+  },
+  "anticline": {
+    "since": "2026-09-27",
+    "reason": "The geological fold (Greek anti + klinein, to lean), not anti- + `cline` -- a cline is a gradient in a population, an unrelated technical term that happens to be the residue.",
+    "scope": "prefix"
+  },
+  "antistat": {
+    "since": "2026-09-27",
+    "reason": "An antistatic agent, clipped from `antistatic` rather than built on `stat`. The strip reaches `stat` and the reverse fold carries it to `stats`, 4.33.",
+    "scope": "prefix"
+  },
+  "antichlor": {
+    "since": "2026-09-27",
+    "reason": "The agent that removes chlorine: anti- + a bound combining form, not the free word `chlor`.",
+    "scope": "prefix"
+  },
+  "counterpart": {
+    "since": "2026-09-27",
+    "reason": "From French contrepartie, and not a part: the thing that corresponds to another, scored 5.78 as `part`. The `anti-`/`counter-` pair's other flagship misreading beside `antibody`.",
+    "scope": "prefix"
+  },
+  "counterpane": {
+    "since": "2026-09-27",
+    "reason": "A bedspread, from courtepointe reshaped by folk etymology -- no counter and no pane in it. Its plural strips further still, to `pan` at 4.39.",
+    "scope": "prefix"
+  },
+  "countermand": {
+    "since": "2026-09-27",
+    "reason": "From Latin contramandare, not counter- + `mand` (a term of art in behaviour analysis).",
+    "scope": "prefix"
+  },
+  "countervail": {
+    "since": "2026-09-27",
+    "reason": "From contravalere, not counter- + `vail` (an archaic word for a tip or a lowering).",
+    "scope": "prefix"
   }
 }
