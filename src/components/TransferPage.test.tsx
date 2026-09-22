@@ -51,7 +51,9 @@ describe("the browser being left", () => {
     render(<TransferPage />);
 
     expect(screen.getByText(handleFor(MINE))).toBeInTheDocument();
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    // The id field is always there; the link is what must not be, until asked.
+    expect(screen.queryByRole("textbox", { name: /transfer link/i }))
+      .not.toBeInTheDocument();
   });
 
   it("warns that the link is the identity, before it exists", () => {
@@ -69,7 +71,7 @@ describe("the browser being left", () => {
     render(<TransferPage />);
     await userEvent.click(screen.getByRole("button", { name: /build transfer link/i }));
 
-    const box = await screen.findByRole("textbox");
+    const box = await screen.findByRole("textbox", { name: /transfer link/i });
     expect((box as HTMLTextAreaElement).value).toContain("/transfer#");
   });
 
@@ -79,6 +81,77 @@ describe("the browser being left", () => {
     expect(screen.getByText(/no player yet/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /build transfer link/i }))
       .not.toBeInTheDocument();
+  });
+});
+
+describe("becoming a player by id", () => {
+  it("shows the handle the id resolves to before doing anything", async () => {
+    seed(MINE);
+
+    render(<TransferPage />);
+    await userEvent.type(screen.getByLabelText(/player id/i), THEIRS);
+    await userEvent.click(screen.getByRole("button", { name: /check this id/i }));
+
+    // The handle is the proofreading step: a mistyped character gives a name
+    // the reader will not recognise.
+    expect(screen.getByText(handleFor(THEIRS))).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("ick:player") ?? "{}").id).toBe(MINE);
+  });
+
+  it("adopts the player on the second press", async () => {
+    seed(MINE);
+    const replace = vi.fn();
+    Object.defineProperty(window, "location", {
+      value: { ...window.location, replace },
+      writable: true,
+    });
+
+    render(<TransferPage />);
+    await userEvent.type(screen.getByLabelText(/player id/i), THEIRS);
+    await userEvent.click(screen.getByRole("button", { name: /check this id/i }));
+    await userEvent.click(screen.getByRole("button", { name: /yes, become/i }));
+
+    expect(JSON.parse(localStorage.getItem("ick:player") ?? "{}").id).toBe(THEIRS);
+    expect(replace).toHaveBeenCalledWith("/");
+  });
+
+  it("leaves whatever this browser already had", async () => {
+    seed(MINE, ["2026-09-01"]);
+    Object.defineProperty(window, "location", {
+      value: { ...window.location, replace: vi.fn() },
+      writable: true,
+    });
+
+    render(<TransferPage />);
+    await userEvent.type(screen.getByLabelText(/player id/i), THEIRS);
+    await userEvent.click(screen.getByRole("button", { name: /check this id/i }));
+    await userEvent.click(screen.getByRole("button", { name: /yes, become/i }));
+
+    expect(localStorage.getItem("ick:progress:2026-09-01")).toBe(day("2026-09-01"));
+  });
+
+  it("says so when what was typed is not an id", async () => {
+    seed(MINE);
+
+    render(<TransferPage />);
+    await userEvent.type(screen.getByLabelText(/player id/i), "NorthernBear87");
+    await userEvent.click(screen.getByRole("button", { name: /check this id/i }));
+
+    expect(screen.getByText(/isn.t a player id/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /yes, become/i })).not.toBeInTheDocument();
+  });
+
+  it("has nothing to do when the id is the one already here", async () => {
+    seed(MINE);
+
+    render(<TransferPage />);
+    await userEvent.type(screen.getByLabelText(/player id/i), MINE);
+    await userEvent.click(screen.getByRole("button", { name: /check this id/i }));
+
+    // "is already", not "already": the section's own heading opens with the
+    // word, and matching that would pass without the page having said anything.
+    expect(screen.getByText(/is already/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /yes, become/i })).not.toBeInTheDocument();
   });
 });
 

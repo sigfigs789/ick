@@ -3,6 +3,7 @@ import {
   applyTransfer,
   collectTransfer,
   decodeTransfer,
+  playerIdFrom,
   encodeTransfer,
   summarise,
   TRANSFER_VERSION,
@@ -162,6 +163,27 @@ describe("encode and decode", () => {
     expect(await decodeTransfer("")).toBeNull();
     expect(await decodeTransfer("2abcdef")).toBeNull();
     expect(await decodeTransfer("0!!!!!")).toBeNull();
+  });
+});
+
+describe("playerIdFrom", () => {
+  it("takes an id as it is", () => {
+    expect(playerIdFrom(ID)).toBe(ID);
+  });
+
+  it("forgives space, case, and a whole link pasted in", () => {
+    expect(playerIdFrom(`  ${ID}  `)).toBe(ID);
+    expect(playerIdFrom(ID.toUpperCase())).toBe(ID);
+    expect(playerIdFrom(`https://www.wordink.app/transfer#${ID}`)).toBe(ID);
+  });
+
+  it("refuses anything that is not one", () => {
+    expect(playerIdFrom("")).toBeNull();
+    expect(playerIdFrom("NorthernBear87")).toBeNull();
+    // A character short: the kind of typo the handle shown next is there to
+    // catch, rejected before it can even be shown.
+    expect(playerIdFrom(ID.slice(0, -1))).toBeNull();
+    expect(playerIdFrom(ID.replace(/-/g, ""))).toBeNull();
   });
 });
 

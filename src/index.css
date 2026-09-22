@@ -3731,3 +3731,36 @@ h2 {
   text-decoration: underline;
   cursor: pointer;
 }
+/* Becoming a player whose id you already have: the other half of /transfer,
+   and the half that needs no second device. Set apart from the link builder
+   above it, because the two are opposite directions and a reader who wants one
+   should not have to read the other. */
+.transfer__adopt {
+  margin-top: 2.4rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.4rem;
+}
+.transfer__heading {
+  margin: 0 0 0.6rem;
+  font-size: 1.1rem;
+}
+.transfer__label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+}
+/* Monospace and full width: an id is proofread character by character, and a
+   proportional font at phone width makes that harder than it needs to be. */
+.transfer__input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  padding: 0.6rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+}

@@ -6,7 +6,9 @@ import {
   collectTransfer,
   decodeTransfer,
   encodeTransfer,
+  playerIdFrom,
   summarise,
+  TRANSFER_VERSION,
   type TransferPayload,
 } from "../game/transfer";
 import { navigate, TRANSFER_PATH } from "../routes";
@@ -156,13 +158,149 @@ function SendTransfer() {
           </p>
           {/* Selectable text as well as a button: the clipboard needs a secure
               origin and a permission, and neither is guaranteed. */}
-          <textarea className="transfer__link" readOnly rows={4} value={link} />
+          <textarea
+            className="transfer__link"
+            aria-label="Transfer link"
+            readOnly
+            rows={4}
+            value={link}
+          />
           <button type="button" className="transfer__action" onClick={() => void copy()}>
             {copied ? "Copied" : "Copy link"}
           </button>
         </>
       )}
+
+      <AdoptById />
     </>
+  );
+}
+
+/**
+ * The other direction, on the same page: become a player whose id you already
+ * have.
+ *
+ * A link is for moving a record off a browser that still has one. This is for
+ * the case where there is nothing to move -- a browser whose storage was
+ * cleared, or one that is simply the only device there is -- and the identity
+ * is known. It restores everything the identity owns, which is the board
+ * record, and nothing it does not, which is the local history.
+ *
+ * Typed rather than pasted from a link because 36 characters is typeable and a
+ * phone with no other device in the room has nothing to paste from.
+ *
+ * The confirmation step is not ceremony. A handle is a pure function of the id
+ * (game/handle.ts), so showing the handle *before* applying turns the id into
+ * something a human can proofread: a single mistyped character produces a
+ * completely different name, and the reader knows the name they are expecting.
+ * It is a checksum that happens to be readable.
+ */
+function AdoptById() {
+  const [entered, setEntered] = useState("");
+  const [candidate, setCandidate] = useState<string | null>(null);
+  const [bad, setBad] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const current = loadPlayerId();
+
+  function check() {
+    const id = playerIdFrom(entered);
+    setCandidate(id);
+    setBad(id === null);
+  }
+
+  function adopt() {
+    if (!candidate) return;
+    // No days: the identity is the whole of what an id can restore. See
+    // `applyTransfer`, which leaves whatever this browser already has.
+    if (!applyTransfer({ v: TRANSFER_VERSION, id: candidate, progress: {} })) {
+      setFailed(true);
+      return;
+    }
+    window.location.replace("/");
+  }
+
+  return (
+    <section className="transfer__adopt">
+      <h2 className="transfer__heading">Already know your player id?</h2>
+      <p className="transfer__note">
+        Make this browser that player. Its board record comes back; days played
+        on a browser you no longer have do not.
+      </p>
+
+      <label className="transfer__label" htmlFor="transfer-id">
+        Player id
+      </label>
+      <input
+        id="transfer-id"
+        className="transfer__input"
+        type="text"
+        inputMode="text"
+        autoComplete="off"
+        autoCapitalize="none"
+        spellCheck={false}
+        placeholder="00000000-0000-0000-0000-000000000000"
+        value={entered}
+        onChange={(event) => {
+          setEntered(event.target.value);
+          setCandidate(null);
+          setBad(false);
+        }}
+      />
+
+      {!candidate && (
+        <button
+          type="button"
+          className="transfer__action"
+          onClick={check}
+          disabled={entered.trim() === ""}
+        >
+          Check this id
+        </button>
+      )}
+
+      {bad && (
+        <p className="review__status">
+          That isn{"’"}t a player id. It{"’"}s 36 characters with four dashes.
+        </p>
+      )}
+
+      {candidate && candidate === current && (
+        <p className="review__status">
+          This browser is already {handleFor(candidate)}.
+        </p>
+      )}
+
+      {candidate && candidate !== current && (
+        <>
+          <p className="transfer__who">
+            That id is <strong>{handleFor(candidate)}</strong>.{" "}
+            {current ? (
+              <>
+                This browser plays as <strong>{handleFor(current)}</strong> and
+                will stop.
+              </>
+            ) : (
+              <>This browser has no player yet.</>
+            )}
+          </p>
+          <p className="transfer__warn">
+            If that name isn{"’"}t the one you expected, the id is wrong — check
+            it rather than going on.
+          </p>
+          <button type="button" className="transfer__action" onClick={adopt}>
+            Yes, become {handleFor(candidate)}
+          </button>
+        </>
+      )}
+
+      {failed && (
+        <p className="review__status">
+          Couldn{"’"}t save to this browser — storage is full or switched off,
+          and nothing was changed.
+        </p>
+      )}
+    </section>
   );
 }
 

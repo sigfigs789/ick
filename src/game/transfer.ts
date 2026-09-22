@@ -150,6 +150,25 @@ export function collectTransfer(): TransferPayload | null {
 }
 
 /**
+ * A player id typed or pasted by hand, cleaned up, or null when it is not one.
+ *
+ * The other way into this page, and the shorter one. A link carries a record
+ * between two browsers; an id carries only the identity, and at 36 characters
+ * it can be read off one screen and typed into another -- which is the whole
+ * of what somebody needs when the browser being fixed is the only one they
+ * have, or when the one that held the record is gone.
+ *
+ * Forgiving about how it arrives: surrounding space, a case that does not
+ * match, and a whole URL pasted in when the id was what was asked for. None of
+ * those is a different id, and refusing them teaches the reader nothing. What
+ * it will not do is guess at something that is not a UUID.
+ */
+export function playerIdFrom(raw: string): string | null {
+  const lowered = raw.trim().replace(/^.*[#/]/, "").toLowerCase();
+  return ID_RE.test(lowered) ? lowered : null;
+}
+
+/**
  * What a payload amounts to in the three numbers a page needs to describe it.
  *
  * Counted in dates rather than in slots. A day played in both modes is two
