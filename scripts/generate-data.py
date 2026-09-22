@@ -184,8 +184,13 @@ def load_blocklist() -> set[str]:
         return set()
     words = set()
     for line in BLOCKLIST_PATH.read_text().splitlines():
-        line = line.strip().lower()
-        if line and not line.startswith("#"):
+        # Trailing comments are stripped, not just whole-line ones. The file
+        # invites a note beside an entry ("niggardly  # sounds like a slur
+        # despite unrelated etymology") and reading the line whole turned those
+        # two entries into strings no word can equal, which quietly un-blocked
+        # them -- "niggardly" shipped in the dictionary for it.
+        line = line.partition("#")[0].strip().lower()
+        if line:
             words.add(line)
     return words
 

@@ -11,6 +11,7 @@
 import { todayDateString } from "./date";
 import { waivesRejectionReason } from "./dictionary";
 import type { RejectionReason } from "./types";
+import { isBlocked } from "./blocklist";
 
 /**
  * How long a player waits for a live verdict before the rejection is shown.
@@ -259,7 +260,10 @@ export function waivedLiveRejection(
 
 /** Whether this input is worth a live lookup at all. */
 export function eligibleForLiveCheck(word: string): boolean {
-  return ELIGIBLE_RE.test(word);
+  // The blocklist is asked here as well as in evaluateSubmission, because this
+  // is the one path that can accept a word the game never listed. Merriam-
+  // Webster carries every entry on that list and would vouch for all of them.
+  return ELIGIBLE_RE.test(word) && !isBlocked(word);
 }
 
 /** Whether the player has a connection. Absent the API, assume they do. */

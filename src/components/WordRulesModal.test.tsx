@@ -98,6 +98,14 @@ describe("WordRulesModal from the choice date", () => {
     }
   });
 
+  it("counts the corpus rather than the curated list", () => {
+    // The undated panel still says 200,000: the curated list is the whole of
+    // what an archived puzzle before the switch could reach.
+    setMode("standard");
+    render(<WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />);
+    expect(screen.getByRole("dialog")).toHaveTextContent(/more than 900,000 words/i);
+  });
+
   it("still refuses the age trio in the copy, as the game does", () => {
     setMode("standard");
     render(<WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />);

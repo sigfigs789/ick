@@ -40,6 +40,8 @@ export function WordRulesModal({ open, date, onClose }: Props) {
     setSent(true);
   }
 
+  const listSize = date !== undefined && modeIsChosen(date) ? "900,000" : "200,000";
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -61,6 +63,12 @@ export function WordRulesModal({ open, date, onClose }: Props) {
             ×
           </button>
         </div>
+        {/* How big the list is moved with the second sentence, once. From
+            MODE_CHOICE_START a submission is checked against the full tagged
+            corpus rather than the curated list alone, which is 975,000 playable
+            words against 220,000 -- a number the panel cannot go on
+            understating by a factor of four. Before that date the curated list
+            really was the whole of it, and the archive still plays that way. */}
         {/* The second sentence is the half that moves. Sourcing and licensing
             are true whatever the rules are; which kinds of word are eligible is
             not, and a rules panel that goes on saying a word is unplayable while
@@ -73,7 +81,7 @@ export function WordRulesModal({ open, date, onClose }: Props) {
             of those are still reachable from the archive and still play that
             way. See waivedRejectionsFor in game/dictionary.ts. */}
         <p className="modal__copy">
-          WordInk's word list is sourced from SCOWL and <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>) and contains more than 200,000 words.{" "}
+          WordInk's word list is sourced from SCOWL and <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>) and contains more than {listSize} words.{" "}
           {date !== undefined && modeIsChosen(date)
             ? "Proper nouns and abbreviations count, whether or not the list already carried them. Misspellings, offensive words, obsolete, archaic or dated words, hyphenated words and words with punctuation aren't eligible for play — in either mode."
             : usesFreeformRules(date)

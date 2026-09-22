@@ -17,6 +17,7 @@
 // "unknown" and the caller falls through to the live lookup exactly as before.
 
 import { APP_VERSION } from "../version";
+import type { RejectionReason } from "./types";
 
 /** Where build-word-corpus.py writes, served straight out of public/. */
 const CORPUS_BASE = "/corpus";
@@ -76,6 +77,59 @@ export function tagsOf(mask: number): CorpusTag[] {
 
 export function sourcesOf(mask: number): CorpusSource[] {
   return CORPUS_SOURCES.filter((_, bit) => (mask >> bit) & 1);
+}
+
+/**
+ * The rejection a tag amounts to, so the corpus can be judged by the same
+ * waivers the curated list is (see waivesRejectionReason in dictionary.ts).
+ *
+ * A tag is an observation and a RejectionReason is a verdict, which is why this
+ * mapping lives here rather than in the tag list itself: the corpus builder has
+ * no opinion about playability and the two vocabularies only meet at this line.
+ *
+ * "capitalized-only" maps onto "proper-noun" because it is the same claim
+ * arrived at by a different route -- Wiktionary filed the headword under a name
+ * part of speech, or nobody ever wrote it lower-case -- and a player who tries
+ * "kaohsiung" is owed the same answer either way.
+ */
+export const CORPUS_TAG_REASONS: Readonly<Record<CorpusTag, RejectionReason>> = {
+  "proper-noun": "proper-noun",
+  "capitalized-only": "proper-noun",
+  obsolete: "obsolete",
+  archaic: "archaic",
+  dated: "dated",
+  abbreviation: "abbreviation",
+  misspelling: "misspelling",
+};
+
+/**
+ * The reasons a tag mask carries, strongest first, so a caller that has to name
+ * one names the most specific. The order is REASON_PRIORITY from
+ * scripts/generate-data.py read downward, and the two files are the same
+ * judgement: a misspelling is the most definite fault a word can have, a name
+ * or abbreviation outranks a register, and within the registers "obsolete"
+ * (dead) outranks "archaic" outranks "dated" (merely old-fashioned) so the
+ * message never overstates how dead the word is.
+ */
+const REASON_STRENGTH: readonly CorpusTag[] = [
+  "misspelling",
+  "abbreviation",
+  "proper-noun",
+  "capitalized-only",
+  "obsolete",
+  "archaic",
+  "dated",
+];
+
+/** Every reason a tag mask carries, strongest first. */
+export function reasonsOf(mask: number): RejectionReason[] {
+  const reasons: RejectionReason[] = [];
+  for (const tag of REASON_STRENGTH) {
+    if (!(mask & tagBit(tag))) continue;
+    const reason = CORPUS_TAG_REASONS[tag];
+    if (!reasons.includes(reason)) reasons.push(reason);
+  }
+  return reasons;
 }
 
 /*
