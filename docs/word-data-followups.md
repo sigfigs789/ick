@@ -89,7 +89,43 @@ nothing is watching the total. Worth a look if the bundle budget ever tightens �
 both are sorted word lists and compress far better as newline-joined strings than
 as JSON arrays.
 
-## 7. Decisions parked, not bugs
+## 7. Three fold gaps, found by a benchmark that otherwise failed
+
+On 2026-09-22 an LLM "common form" pass was benchmarked against the fold as a
+candidate normalizer, on two seeded 1,000-word samples. **It lost, and the idea is
+dead** — the LLM seeks the lemma rather than the most common form, and it cannot
+tell a mechanical suffix from a semantic drift, so it over-folded words with
+meanings of their own (`agentry`, `betweentimes`, `kissoff`, `funsies`,
+`protolanguages`). Scored on display score, the fold was right on 757 of 1,000.
+Note for anyone tempted again: compare display scores, not base strings — string
+comparison counts `absorbing`→`absorbed` against the LLM's `absorb` as a
+disagreement when it is the same cap and the same score.
+
+Three gaps it did surface survived a semantic check and stand on their own:
+
+- **A plural stops the chain.** The inflectional hop fires and the derivational
+  hop after it never happens, so a plural of a derived noun keeps the derived
+  noun's rarity: `archivists` reaches `archivist` and halts rather than continuing
+  to `archive`. Largest single bucket of missed folds in both samples (66 of 231,
+  62 of 218). Also `accusers`, `allegorists`, `analyzers`, `dissimilarities`.
+- **`-able` is not read.** `makeable` scores 9.67 Mythic against `make` at 2.8.
+  Also `updatable` 9.56, `freezable`, `perforable`, `perfectible`.
+- **The junk `-es` strip wins where the residue is a common word.** `hearses`
+  scores 4.1 Very Common via `hear`: `-es` off gives `hears`, a legal `-es` stem
+  shape that `refusedEsStem` therefore does not block, and `hears` folds on to
+  `hear`. The real reading is `hearse` + `-s` (7.5 Rare). Same shape in
+  `finessed`→`fine`, `petes`→`pet`, `ledes`→`led`, `branes`→`bran`,
+  `orles`→`orl`, `corpses`→`corps`, `lapses`→`lap`. Unlike the other two this one
+  *under*-scores, and it shows the player a common-form note naming the wrong
+  word.
+
+Sizing that last one across the dictionary was attempted and failed: no filter
+separated the mis-strips from correct folds like `churches`→`church` and
+`businesses`→`business`, because the archaic `-e` spellings (`churche`,
+`businesse`) are in the dictionary and attested. A better discriminator is needed
+before any population count means anything.
+
+## 8. Decisions parked, not bugs
 
 - **Archaic words below the gate.** `betwixt` (Zipf 2.39), `quoth` (2.08),
   `prithee` (1.92) and `forsooth` (1.73) are unplayable under the archaic rule.
