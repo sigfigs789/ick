@@ -1,12 +1,14 @@
 name: Bump app version
 
-# Bumps the deploy version in src/version.ts and opens a PR with the change.
+# Bumps the deploy version in src/version.ts and pushes the change straight to
+# main, authored as sigfigs789 so Vercel deploys it (commits authored by anyone
+# else, github-actions[bot] included, are blocked and never build).
 # Runs every Friday on its own, and by hand from the Actions tab.
 #
 # The weekly bump is what paces the native app: its store version is
 # 1.<APP_VERSION>, derived by native/app.config.js, so each Friday moves the
 # target the app has to catch up to. The run checks that the native config
-# resolves to the bumped version before opening the PR.
+# resolves to the bumped version before pushing.
 #
 #   force_reload=false -> APP_VERSION += 1, MIN_VERSION untouched. An ordinary
 #                         deploy: open tabs stay where they are.
@@ -33,15 +35,23 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
+
+# Two runs at once would both read the same APP_VERSION and bump to the same
+# number; queue them instead.
+concurrency:
+  group: bump-version
+  cancel-in-progress: false
 
 jobs:
   bump-version:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out WordInk
+      - name: Check out main
         uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -74,37 +84,35 @@ jobs:
           npm ci
           npm run build
 
-      - name: Open pull request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # Vercel authorizes a deployment by the commit's git author, and the
-          # default (github-actions[bot]) isn't authorized on this project — the
-          # preview build simply never gets created. Author as sigfigs789, which
-          # is how every hand-made bump has landed.
-          author: sigfigs789 <82550419+sigfigs789@users.noreply.github.com>
-          committer: sigfigs789 <82550419+sigfigs789@users.noreply.github.com>
-          branch: automated/bump-version-${{ github.run_id }}
-          delete-branch: true
-          commit-message: "Bump app version to ${{ steps.bump.outputs.app_version }}"
-          title: "Bump app version to ${{ steps.bump.outputs.app_version }}${{ inputs.force_reload && ' (forced reload)' || '' }}"
-          body: |
-            Bumps the version constants in `src/version.ts`.
+      - name: Push the bump to main
+        env:
+          APP_VERSION: ${{ steps.bump.outputs.app_version }}
+          PREVIOUS_APP_VERSION: ${{ steps.bump.outputs.previous_app_version }}
+          MIN_VERSION: ${{ steps.bump.outputs.min_version }}
+          PREVIOUS_MIN_VERSION: ${{ steps.bump.outputs.previous_min_version }}
+          NATIVE_VERSION: ${{ steps.native.outputs.native_version }}
+          FORCE_RELOAD: ${{ inputs.force_reload }}
+          TRIGGER: ${{ github.event_name == 'schedule' && 'the weekly Friday run' || format('a manual run by @{0}', github.actor) }}
+        run: |
+          git config user.name 'sigfigs789'
+          git config user.email '82550419+sigfigs789@users.noreply.github.com'
+          git add src/version.ts
+          if [ "$FORCE_RELOAD" = "true" ]; then
+            title="Bump app version to $APP_VERSION (forced reload)"
+          else
+            title="Bump app version to $APP_VERSION"
+          fi
+          git commit -q -F - <<EOF
+          $title
 
-            | | before | after |
-            | --- | --- | --- |
-            | `APP_VERSION` | `${{ steps.bump.outputs.previous_app_version }}` | `${{ steps.bump.outputs.app_version }}` |
-            | `MIN_VERSION` | `${{ steps.bump.outputs.previous_min_version }}` | `${{ steps.bump.outputs.min_version }}` |
-            | Native store version | `1.${{ steps.bump.outputs.previous_app_version }}` | `${{ steps.native.outputs.native_version }}` |
+          APP_VERSION $PREVIOUS_APP_VERSION -> $APP_VERSION
+          MIN_VERSION $PREVIOUS_MIN_VERSION -> $MIN_VERSION
+          Native store version -> $NATIVE_VERSION
 
-            ${{ inputs.force_reload && 'MIN_VERSION follows APP_VERSION, so this release is **mandatory**: every open tab below the new floor silently reloads onto it once this is deployed. localStorage (game progress, streak) survives the reload.' || 'MIN_VERSION is unchanged, so this is an **optional** deploy — open tabs stay where they are and pick the new bundle up on their next load.' }}
-
-            `npm run build` ran on the bumped constants, which re-checks the
-            `MIN_VERSION <= APP_VERSION` invariant enforced in `vite.config.ts`,
-            and `native/app.config.js` was checked to resolve to
-            `${{ steps.native.outputs.native_version }}`. The next native build
-            picks that version up with no further change.
-
-            ${{ github.event_name == 'schedule' && 'Opened by the weekly Friday run.' || format('Run by hand by @{0}.', github.actor) }}
-          add-paths: |
-            src/version.ts
+          Pushed by $TRIGGER.
+          EOF
+          # main may have moved while the build ran; replay the one-line bump
+          # on top rather than failing. A conflict means someone edited
+          # src/version.ts meanwhile, and the run stops for a human.
+          git pull --rebase -q origin main
+          git push origin HEAD:main
