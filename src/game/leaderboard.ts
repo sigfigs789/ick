@@ -19,13 +19,11 @@ import {
   topRarityScore,
 } from "./dictionary";
 import { todayDateString } from "./date";
-import { DEV_TOOLS } from "../dev/devTools";
 import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { isRanked, modeForDate, type GameMode } from "./mode";
 import { playedOnItsDay } from "./storage";
-import { sampleBoardsResponse, usingSampleData } from "../dev/sampleData";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 import { monthStart } from "./month";
 import { weekStart } from "./week";
@@ -432,13 +430,6 @@ export async function fetchBoards(
   // Nobody has to have joined for the page to work: without an id the boards
   // come back exactly as before, minus a row that would be about nobody.
   const playerId = loadPlayerId();
-  // Development only, and compiled out of a production build entirely: the
-  // fixture stands in for the server so the page can be worked on without one.
-  // Parsed by exactly the same code as a real response, so a change to that
-  // parsing cannot pass here and fail in production.
-  if (DEV_TOOLS && usingSampleData()) {
-    return readBoards(sampleBoardsResponse() as Record<string, unknown>, since);
-  }
   // The player's own date goes up because the puzzle a find belongs to is the
   // player's own local calendar date, not a moment in UTC.
   const response = await fetch(
@@ -470,9 +461,6 @@ export async function fetchFoundWords(
   date: string = todayDateString(),
   options: FetchOptions = {}
 ): Promise<FoundWord[]> {
-  if (DEV_TOOLS && usingSampleData()) {
-    return parseWords((sampleBoardsResponse() as Record<string, unknown>).words, date);
-  }
   // The date is the only thing this request carries, so two players on the same
   // day send byte-identical URLs and share one cached answer. The server bounds
   // it against its own clock either way (see api/leaderboard.ts).

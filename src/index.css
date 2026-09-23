@@ -2383,17 +2383,6 @@ h2 {
     opacity: 0.8;
   }
 }
-/* Development only; never rendered in a production build. */
-.dev-sample-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  margin-top: 1.4rem;
-  color: var(--fg-faint);
-  font-size: 0.75rem;
-  cursor: pointer;
-}
 .found-words__finders {
   flex: none;
   color: var(--fg-faint);

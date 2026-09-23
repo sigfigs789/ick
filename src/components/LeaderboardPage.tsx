@@ -9,7 +9,6 @@ import {
   type Boards,
 } from "../game/leaderboard";
 import { loadPlayerId } from "../game/player";
-import { DEV_TOOLS } from "../dev/devTools";
 import { handleFor } from "../game/handle";
 import { accountName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
@@ -25,7 +24,6 @@ import { weekLabel, weekStart } from "../game/week";
 import { formatScore, formatTotal } from "../game/dictionary";
 import { navigate } from "../routes";
 import { useNarrowLayout } from "../hooks/useNarrowLayout";
-import { setUsingSampleData, usingSampleData } from "../dev/sampleData";
 import { CongratsBubble } from "./CongratsBubble";
 
 type LoadState = "loading" | "ready" | "error";
@@ -591,23 +589,6 @@ export function LeaderboardPage() {
       >
         Back to today's puzzle
       </button>
-
-      {/* Development and preview builds only. `DEV_TOOLS` folds to a constant,
-          so on production this whole branch -- and the fixture it reaches -- is
-          dropped from the bundle. Same trick as the "Reset answers" button. */}
-      {DEV_TOOLS && (
-        <label className="dev-sample-toggle">
-          <input
-            type="checkbox"
-            checked={usingSampleData()}
-            onChange={(e) => {
-              setUsingSampleData(e.target.checked);
-              load();
-            }}
-          />
-          Use sample data
-        </label>
-      )}
     </main>
   );
 }

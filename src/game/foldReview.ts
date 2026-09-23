@@ -6,8 +6,6 @@
 // here changes no score until somebody exports it and ships the deploy (see
 // scripts/export-fold-rejections.mjs).
 
-import { DEV_TOOLS } from "../dev/devTools";
-import { usingSampleData } from "../dev/sampleData";
 
 /** How long a read waits before giving up, matching the review lists'. */
 const FETCH_TIMEOUT_MS = 6000;
@@ -64,14 +62,6 @@ function keyParam(leading: boolean): string {
  * to prevent.
  */
 export async function fetchFoldReviews(): Promise<FoldReview[]> {
-  // `vite dev` serves no edge functions, so there is no ledger to ask unless one
-  // is running. The folds themselves need no server -- they are worked out from
-  // the bundled dictionary and the corpus in public/ -- so the fixture is an
-  // empty ledger rather than a made-up one: every fold unjudged, which is what a
-  // ledger looks like before anybody has used the page. Same switch as the
-  // leaderboard's (see dev/sampleData.ts), and dropped from a production build
-  // with it.
-  if (DEV_TOOLS && usingSampleData()) return [];
   const response = await fetch(`/api/fold-reviews${keyParam(true)}`, {
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     cache: "no-store",
@@ -100,12 +90,6 @@ export async function setFoldReview(
   verdict: FoldVerdict,
   suggestedBase: SuggestedBase = null
 ): Promise<StoredVerdict> {
-  // Nowhere to write to under the fixture, and a control that always failed
-  // would make the fixture worse than nothing: it answers with what was asked
-  // for, and the verdict lives as long as the page does.
-  if (DEV_TOOLS && usingSampleData()) {
-    return { verdict, suggestedBase: verdict === "rejected" ? suggestedBase : null };
-  }
   const response = await fetch(`/api/fold-reviews${keyParam(true)}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
