@@ -56,10 +56,13 @@ function stubFetch(reviews: unknown = [], writeOk = true) {
       const body = JSON.parse(String(init.body)) as Record<string, unknown>;
       stored.push(body);
       if (!writeOk) return new Response("nope", { status: 502 });
-      return new Response(JSON.stringify({ verdict: body.verdict }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ verdict: body.verdict, suggestedBase: body.suggestedBase ?? null }),
+        {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }
+      );
     }
     if (reviews === null) return new Response("nope", { status: 502 });
     return new Response(JSON.stringify({ reviews }), {
@@ -126,7 +129,106 @@ describe("FoldReviewPage", () => {
       baseZipf: 5.4,
       date: "2026-09-27",
       verdict: "approved",
+      suggestedBase: null,
     });
+  });
+
+  it("takes a recommended base under a rejection and stores it", async () => {
+    // The answer two buttons could not give: not "that fold is wrong" but "it
+    // should have been this". Exported, it pins the word to the named base
+    // rather than stopping the fold -- opposite corrections, one control.
+    stubFetch();
+    render(<FoldReviewPage />);
+    await waitFor(() => expect(screen.getByText("timelinesses")).toBeInTheDocument());
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Reject folding timelinesses to time/ })
+    );
+    const box = await screen.findByRole("textbox", {
+      name: /Base timelinesses should fold to instead/,
+    });
+    await userEvent.type(box, "timeliness{Enter}");
+
+    await waitFor(() => expect(stored).toHaveLength(2));
+    expect(stored[0]).toMatchObject({ verdict: "rejected", suggestedBase: null });
+    expect(stored[1]).toMatchObject({
+      word: "timelinesses",
+      verdict: "rejected",
+      suggestedBase: "timeliness",
+    });
+  });
+
+  it("shows what the recommended base would score", async () => {
+    // The point of naming a base is the number it hands the word, so the row
+    // says it rather than leaving the reviewer to guess.
+    stubFetch();
+    render(<FoldReviewPage />);
+    await waitFor(() => expect(screen.getByText("timelinesses")).toBeInTheDocument());
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Reject folding timelinesses to time/ })
+    );
+    await userEvent.type(
+      await screen.findByRole("textbox", { name: /Base timelinesses should fold to instead/ }),
+      "timeliness"
+    );
+
+    expect(screen.getByText(/^scores /)).toBeInTheDocument();
+  });
+
+  it("refuses a base the dictionary does not have rather than storing it", async () => {
+    // `overrideBase` drops a base the lexicon has never heard of, so a typo
+    // stored here would be exported, shipped, and score exactly nothing.
+    stubFetch();
+    render(<FoldReviewPage />);
+    await waitFor(() => expect(screen.getByText("timelinesses")).toBeInTheDocument());
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Reject folding timelinesses to time/ })
+    );
+    await userEvent.type(
+      await screen.findByRole("textbox", { name: /Base timelinesses should fold to instead/ }),
+      "timelinesss{Enter}"
+    );
+
+    expect(screen.getByText("not a word in the dictionary")).toBeInTheDocument();
+    expect(stored).toHaveLength(1);
+    expect(stored[0]).toMatchObject({ verdict: "rejected", suggestedBase: null });
+  });
+
+  it("asks for no base under an approval", async () => {
+    // On an approval the fold's own base is the answer, so there is nothing to
+    // recommend and no box to fill.
+    stubFetch();
+    render(<FoldReviewPage />);
+    await waitFor(() => expect(screen.getByText("timelinesses")).toBeInTheDocument());
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Approve folding timelinesses to time/ })
+    );
+    expect(
+      screen.queryByRole("textbox", { name: /Base timelinesses should fold to instead/ })
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the recommendation the database answered with", async () => {
+    // The row is drawn from what was stored rather than from what was typed, so
+    // a box standing over a base the ledger never took would be the page
+    // reporting its own optimism.
+    stubFetch();
+    render(<FoldReviewPage />);
+    await waitFor(() => expect(screen.getByText("timelinesses")).toBeInTheDocument());
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /Reject folding timelinesses to time/ })
+    );
+    const box = await screen.findByRole("textbox", {
+      name: /Base timelinesses should fold to instead/,
+    });
+    await userEvent.type(box, "timeliness{Enter}");
+
+    await waitFor(() => expect(stored).toHaveLength(2));
+    expect(box).toHaveValue("timeliness");
   });
 
   it("takes an answer back when the same button is pressed again", async () => {

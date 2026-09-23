@@ -3627,6 +3627,58 @@ h2 {
 .fold__drop {
   font-weight: 700;
 }
+/*
+ * The recommendation under a rejected fold: what it should have folded to.
+ *
+ * Indented under the row rather than beside the two buttons, because it is the
+ * second half of one answer and not a third control. It appears only once a
+ * fold has been rejected, so the row grows downward as it is answered and the
+ * rows below keep their order -- the batch is meant to hold still while it is
+ * worked through.
+ */
+.fold__suggest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+.fold__suggest-label {
+  font-size: 0.8rem;
+  color: var(--fg-muted);
+}
+.fold__suggest-input {
+  flex: 1 1 10rem;
+  min-width: 0;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.3rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.fold__suggest-input:focus-visible {
+  outline: 2px solid var(--fg-muted);
+  outline-offset: 1px;
+}
+/* A base the scoring could not use, said while the person who knows the right
+   word is still looking at the row. */
+.fold__suggest-input[aria-invalid="true"] {
+  border-color: var(--danger-fg);
+}
+.fold__suggest-note {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--danger-fg);
+}
+/* The score the recommendation would hand the word, which is the thing the
+   recommendation is actually for. */
+.fold__suggest-note--ok {
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* The two answers, side by side and equally weighted: neither is the default,
    and a page that made one of them easier to press would be a page that
    collected that answer. */

@@ -9,6 +9,7 @@ import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
+import foldReviewVerdictData from "../data/fold-review-verdicts.json";
 import boundResidueData from "../data/bound-residues.json";
 import measurementUnitData from "../data/measurement-units.json";
 import wordRejectionData from "../data/word-rejections.json";
@@ -803,9 +804,16 @@ const SCORE_OVERRIDES: ReadonlyMap<string, ScoreOverride> = new Map(
  */
 function overrideBase(word: string, scoring: Scoring, date?: string): string | undefined {
   const override = SCORE_OVERRIDES.get(word);
-  if (!override) return undefined;
-  if (date !== undefined && date < override.since) return undefined;
-  return lexiconHas(override.base, scoring) ? override.base : undefined;
+  if (override) {
+    if (date !== undefined && date < override.since) return undefined;
+    return lexiconHas(override.base, scoring) ? override.base : undefined;
+  }
+  // Then the review page's file, where a rejection that named a base means the
+  // same thing an override does: score this word as that one. See
+  // FOLD_REVIEW_VERDICTS for why the two are not one file.
+  const verdict = reviewVerdictFor(word, date);
+  if (!verdict || verdict.base === null) return undefined;
+  return lexiconHas(verdict.base, scoring) ? verdict.base : undefined;
 }
 
 // -- Curated fold exemptions (src/data/fold-exemptions.json) -----------------
@@ -887,9 +895,78 @@ function prefixFoldExempt(word: string, date?: string): boolean {
 /** The exemption in force for `word` under `date`, whatever its scope. */
 function exemptionFor(word: string, date?: string): FoldExemption | undefined {
   const exemption = FOLD_EXEMPTIONS.get(word);
-  if (!exemption) return undefined;
-  if (date !== undefined && date < exemption.since) return undefined;
-  return exemption;
+  if (exemption) {
+    if (date !== undefined && date < exemption.since) return undefined;
+    return exemption;
+  }
+  // Then the review page's own file. A verdict naming no base is the same
+  // finding this table holds -- score the word on its own data -- reached by a
+  // different route, so it is answered here rather than given a second code
+  // path that could drift from this one.
+  const verdict = reviewVerdictFor(word, date);
+  if (verdict && verdict.base === null) return { since: verdict.since, reason: verdict.reason };
+  return undefined;
+}
+
+// -- Reviewed folds from /fold (src/data/fold-review-verdicts.json) ----------
+/** One fold judged by hand on the review page and exported by script. */
+interface FoldReviewVerdict {
+  /**
+   * The base the fold should have reached, or null for "this word should not
+   * fold at all". The two are different findings and they land in different
+   * places -- a base behaves like a `score-overrides.json` entry, a null like a
+   * `fold-exemptions.json` one -- which is the whole reason a rejection on the
+   * page asks which one is meant.
+   */
+  base: string | null;
+  since: string;
+  /** Review notes only -- nothing here reads it. */
+  reason?: string;
+}
+
+/**
+ * The verdicts reached at /fold, kept in their own file rather than merged into
+ * the two curated ones.
+ *
+ * Same effect, different provenance, and the provenance is the point. The
+ * curated files are written by hand, one entry at a time, each with a reason
+ * somebody composed; this one is written by a script out of a ledger of clicks
+ * (scripts/export-fold-rejections.mjs). Both are reviewed judgements and both
+ * are shipped the same way, but "who decided this, and how" is the first
+ * question anybody asks of a line in a scoring table, and a merged file cannot
+ * answer it. Kept apart, the answer is which file the word is in.
+ *
+ * Read after the curated tables, never over them: a word in both is a review
+ * error rather than a tie, and a test pins that it does not happen.
+ *
+ * Dated per entry like both of them, so a verdict applies from the puzzle it was
+ * exported for onward and every archived puzzle keeps the score it showed.
+ */
+const FOLD_REVIEW_VERDICTS: ReadonlyMap<string, FoldReviewVerdict> = new Map(
+  Object.entries(foldReviewVerdictData as Record<string, FoldReviewVerdict>)
+);
+
+/** The reviewed verdict in force for `word` under `date`, if any. */
+function reviewVerdictFor(word: string, date?: string): FoldReviewVerdict | undefined {
+  const verdict = FOLD_REVIEW_VERDICTS.get(word);
+  if (!verdict) return undefined;
+  if (date !== undefined && date < verdict.since) return undefined;
+  return verdict;
+}
+
+/**
+ * The base a reviewer named for `word` at /fold, where they named one and the
+ * lexicon has it.
+ *
+ * A base the lexicon cannot price is dropped rather than trusted, the same way
+ * `overrideBase` drops one -- and the export script and a test both refuse to
+ * ship one, so this is a belt on a word the dictionary lost rather than a case
+ * anybody expects.
+ */
+function reviewedFoldBase(word: string, scoring: Scoring, date?: string): string | undefined {
+  const verdict = reviewVerdictFor(word, date);
+  if (!verdict || verdict.base === null) return undefined;
+  return lexiconHas(verdict.base, scoring) ? verdict.base : undefined;
 }
 
 // -- Bound prefix residues (src/data/bound-residues.json) --------------------
@@ -2779,6 +2856,24 @@ function chainedBase(
   for (let depth = 0; depth < MAX_FOLD_DEPTH && frontier.length > 0; depth++) {
     const next: string[] = [];
     for (const current of frontier) {
+      // A base named by hand at /fold ends the chain here.
+      //
+      // Not merely the next hop, which is what an ordinary override is: the walk
+      // carries on from an override's base and keeps the most common word it
+      // reaches, so "timelessly -> timeless" would be read, followed to "time",
+      // and the reviewer's answer thrown away -- the fold they rejected,
+      // restored by the rule that was supposed to have been overruled. A
+      // recommendation is not a hint about where to look next. It is the whole
+      // answer to what this word scores as, so it is taken and the walk stops.
+      const reviewed = reviewedFoldBase(current, scoring, date);
+      if (reviewed) {
+        const zipf = zipfFor(reviewed, scoring);
+        if (trace && !trace.has(reviewed)) {
+          trace.set(reviewed, { from: current, to: reviewed, rule: "base", zipf });
+        }
+        if (!best || zipf > best.zipf) best = { base: reviewed, zipf };
+        continue;
+      }
       for (const candidate of nextBaseForms(current, scoring, date)) {
         if (seen.has(candidate)) continue;
         seen.add(candidate);
