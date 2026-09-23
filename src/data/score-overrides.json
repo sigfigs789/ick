@@ -159,6 +159,11 @@
     "reason": "Plural / third-person form of `counterespionage`; a suffix is not a discovery.",
     "since": "2026-08-21"
   },
+  "densest": {
+    "base": "dense",
+    "reason": "The superlative of `dense`, but the bare -est strip leaves `dens` (the plural of den, Zipf 4.01) which beats `dense` (3.98) on frequency and chains to `den`. Same coincidence as `theses`/`these`: the spelling rules cannot see which of two attested stems is the real one.",
+    "since": "2026-09-02"
+  },
   "eldercares": {
     "base": "eldercare",
     "reason": "Plural / third-person form of `eldercare`; a suffix is not a discovery.",
@@ -309,30 +314,370 @@
     "reason": "-ation noun of `placate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "precognitive": {
+    "base": "precognition",
+    "reason": "Of precognition; `cognitive` is a different word.",
+    "since": "2026-09-29"
+  },
   "predepartures": {
     "base": "predeparture",
     "reason": "Plural / third-person form of `predeparture`; a suffix is not a discovery.",
     "since": "2026-08-21"
+  },
+  "prefacer": {
+    "base": "preface",
+    "reason": "One who prefaces; a `facer` is a blow to the face.",
+    "since": "2026-09-29"
+  },
+  "prefacers": {
+    "base": "preface",
+    "reason": "One who prefaces; a `facer` is a blow to the face.",
+    "since": "2026-09-29"
+  },
+  "prefixation": {
+    "base": "prefix",
+    "reason": "The adding of a prefix; `fixation` is a different word.",
+    "since": "2026-09-29"
+  },
+  "prefixations": {
+    "base": "prefix",
+    "reason": "The adding of a prefix; `fixation` is a different word.",
+    "since": "2026-09-29"
   },
   "premanufactures": {
     "base": "premanufacture",
     "reason": "Plural / third-person form of `premanufacture`; a suffix is not a discovery.",
     "since": "2026-08-21"
   },
+  "premillennial": {
+    "base": "millennium",
+    "reason": "Before the millennium -- the base is `millennium`, not the generation.",
+    "since": "2026-09-29"
+  },
+  "premillennially": {
+    "base": "millennium",
+    "reason": "Before the millennium -- the base is `millennium`, not the generation.",
+    "since": "2026-09-29"
+  },
+  "prepaste": {
+    "base": "paste",
+    "reason": "Paste beforehand -- the base is `paste`, not `past`.",
+    "since": "2026-09-29"
+  },
+  "prepasted": {
+    "base": "paste",
+    "reason": "Paste beforehand -- the base is `paste`, not `past`.",
+    "since": "2026-09-29"
+  },
+  "prepastes": {
+    "base": "paste",
+    "reason": "Paste beforehand -- the base is `paste`, not `past`.",
+    "since": "2026-09-29"
+  },
+  "prepasting": {
+    "base": "paste",
+    "reason": "Paste beforehand -- the base is `paste`, not `past`.",
+    "since": "2026-09-29"
+  },
+  "prepositional": {
+    "base": "preposition",
+    "reason": "Of a preposition; `positional` is a different word.",
+    "since": "2026-09-29"
+  },
+  "prepositionally": {
+    "base": "preposition",
+    "reason": "Of a preposition; `positional` is a different word.",
+    "since": "2026-09-29"
+  },
   "prestorages": {
     "base": "prestorage",
     "reason": "Plural / third-person form of `prestorage`; a suffix is not a discovery.",
     "since": "2026-08-21"
+  },
+  "pretender": {
+    "base": "pretend",
+    "reason": "One who pretends; `tender` is an offer or a tugboat.",
+    "since": "2026-09-29"
+  },
+  "pretenders": {
+    "base": "pretend",
+    "reason": "One who pretends; `tender` is an offer or a tugboat.",
+    "since": "2026-09-29"
+  },
+  "preyers": {
+    "base": "prey",
+    "reason": "Those who prey; `yer` is not a word.",
+    "since": "2026-09-29"
+  },
+  "rebutter": {
+    "base": "rebut",
+    "reason": "A rebutter is a pleading in rebuttal; `butter` is a spread.",
+    "since": "2026-09-29"
+  },
+  "rebutters": {
+    "base": "rebut",
+    "reason": "A rebutter is a pleading in rebuttal; `butter` is a spread.",
+    "since": "2026-09-29"
+  },
+  "recanvass": {
+    "base": "canvass",
+    "reason": "Canvass again -- the base is `canvass` (to solicit), not `canvas` (the cloth).",
+    "since": "2026-09-29"
+  },
+  "recappable": {
+    "base": "recap",
+    "reason": "Able to be recapped; `capps` is not a word.",
+    "since": "2026-09-29"
+  },
+  "recoiler": {
+    "base": "recoil",
+    "reason": "A thing that recoils; `coilers` wind coils.",
+    "since": "2026-09-29"
+  },
+  "recoilers": {
+    "base": "recoil",
+    "reason": "A thing that recoils; `coilers` wind coils.",
+    "since": "2026-09-29"
+  },
+  "recollectively": {
+    "base": "recollect",
+    "reason": "From `recollect`, to remember; `collective` is a different word.",
+    "since": "2026-09-29"
   },
   "reconnaisance": {
     "base": "reconnaissance",
     "reason": "Reviewed demotion to `reconnaissance`.",
     "since": "2026-08-19"
   },
+  "redigest": {
+    "base": "digest",
+    "reason": "Digest again -- the base is `digest`, not `dig`.",
+    "since": "2026-09-29"
+  },
+  "redigested": {
+    "base": "digest",
+    "reason": "Digest again -- the base is `digest`, not `dig`.",
+    "since": "2026-09-29"
+  },
+  "redigesting": {
+    "base": "digest",
+    "reason": "Digest again -- the base is `digest`, not `dig`.",
+    "since": "2026-09-29"
+  },
+  "redigests": {
+    "base": "digest",
+    "reason": "Digest again -- the base is `digest`, not `dig`.",
+    "since": "2026-09-29"
+  },
+  "redirector": {
+    "base": "redirect",
+    "reason": "A thing that redirects; a `director` directs.",
+    "since": "2026-09-29"
+  },
+  "redresser": {
+    "base": "redress",
+    "reason": "One who redresses; a `dresser` is furniture.",
+    "since": "2026-09-29"
+  },
+  "redressers": {
+    "base": "redress",
+    "reason": "One who redresses; a `dresser` is furniture.",
+    "since": "2026-09-29"
+  },
+  "refractional": {
+    "base": "refraction",
+    "reason": "Of refraction; a `fraction` is a part.",
+    "since": "2026-09-29"
+  },
+  "refunder": {
+    "base": "refund",
+    "reason": "One who refunds; `funders` provide money.",
+    "since": "2026-09-29"
+  },
+  "refunders": {
+    "base": "refund",
+    "reason": "One who refunds; `funders` provide money.",
+    "since": "2026-09-29"
+  },
+  "rejigger": {
+    "base": "rejig",
+    "reason": "A form of `rejig`; a `jigger` is a measure or a device.",
+    "since": "2026-09-29"
+  },
+  "rejiggered": {
+    "base": "rejig",
+    "reason": "A form of `rejig`; a `jigger` is a measure or a device.",
+    "since": "2026-09-29"
+  },
+  "rejiggering": {
+    "base": "rejig",
+    "reason": "A form of `rejig`; a `jigger` is a measure or a device.",
+    "since": "2026-09-29"
+  },
+  "rejiggers": {
+    "base": "rejig",
+    "reason": "A form of `rejig`; a `jigger` is a measure or a device.",
+    "since": "2026-09-29"
+  },
+  "relier": {
+    "base": "rely",
+    "reason": "One who relies; `lier` is a different word.",
+    "since": "2026-09-29"
+  },
+  "reliers": {
+    "base": "rely",
+    "reason": "One who relies; `lier` is a different word.",
+    "since": "2026-09-29"
+  },
+  "reoutfit": {
+    "base": "outfit",
+    "reason": "Outfit again -- the strip went one prefix too far and landed on `fit`.",
+    "since": "2026-09-29"
+  },
+  "reoutfits": {
+    "base": "outfit",
+    "reason": "Outfit again -- the strip went one prefix too far and landed on `fit`.",
+    "since": "2026-09-29"
+  },
+  "reoutfitted": {
+    "base": "outfit",
+    "reason": "Outfit again -- the strip went one prefix too far and landed on `fit`.",
+    "since": "2026-09-29"
+  },
+  "reoutfitting": {
+    "base": "outfit",
+    "reason": "Outfit again -- the strip went one prefix too far and landed on `fit`.",
+    "since": "2026-09-29"
+  },
   "reoxygenate": {
     "base": "oxygenate",
     "reason": "`re-` prefixed form of `oxygenate`; a prefix is not a discovery.",
     "since": "2026-08-22"
+  },
+  "replier": {
+    "base": "reply",
+    "reason": "One who replies; `pliers` are a tool.",
+    "since": "2026-09-29"
+  },
+  "repliers": {
+    "base": "reply",
+    "reason": "One who replies; `pliers` are a tool.",
+    "since": "2026-09-29"
+  },
+  "reposer": {
+    "base": "repose",
+    "reason": "One who reposes; a `poser` is a puzzle or a poseur.",
+    "since": "2026-09-29"
+  },
+  "reposers": {
+    "base": "repose",
+    "reason": "One who reposes; a `poser` is a puzzle or a poseur.",
+    "since": "2026-09-29"
+  },
+  "representabilities": {
+    "base": "represent",
+    "reason": "Built on `represent`; `presentable` is a different word.",
+    "since": "2026-09-29"
+  },
+  "representability": {
+    "base": "represent",
+    "reason": "Built on `represent`; `presentable` is a different word.",
+    "since": "2026-09-29"
+  },
+  "reremind": {
+    "base": "remind",
+    "reason": "Remind again: the prefix is real twice over, but the base is `remind`, not `mind`.",
+    "since": "2026-09-29"
+  },
+  "rereminded": {
+    "base": "remind",
+    "reason": "Remind again: the prefix is real twice over, but the base is `remind`, not `mind`.",
+    "since": "2026-09-29"
+  },
+  "rereminding": {
+    "base": "remind",
+    "reason": "Remind again: the prefix is real twice over, but the base is `remind`, not `mind`.",
+    "since": "2026-09-29"
+  },
+  "rereminds": {
+    "base": "remind",
+    "reason": "Remind again: the prefix is real twice over, but the base is `remind`, not `mind`.",
+    "since": "2026-09-29"
+  },
+  "reseed": {
+    "base": "seed",
+    "reason": "Seed again -- the split is right, but the base is `seed`, not `see`.",
+    "since": "2026-09-29"
+  },
+  "reseeded": {
+    "base": "seed",
+    "reason": "Seed again -- the split is right, but the base is `seed`, not `see`.",
+    "since": "2026-09-29"
+  },
+  "reseeding": {
+    "base": "seed",
+    "reason": "Seed again -- the split is right, but the base is `seed`, not `see`.",
+    "since": "2026-09-29"
+  },
+  "reseeds": {
+    "base": "seed",
+    "reason": "Seed again -- the split is right, but the base is `seed`, not `see`.",
+    "since": "2026-09-29"
+  },
+  "reserver": {
+    "base": "reserve",
+    "reason": "One who reserves; a `server` is something else.",
+    "since": "2026-09-29"
+  },
+  "reservers": {
+    "base": "reserve",
+    "reason": "One who reserves; a `server` is something else.",
+    "since": "2026-09-29"
+  },
+  "resider": {
+    "base": "reside",
+    "reason": "One who resides; `sider` is not a word.",
+    "since": "2026-09-29"
+  },
+  "residers": {
+    "base": "reside",
+    "reason": "One who resides; `sider` is not a word.",
+    "since": "2026-09-29"
+  },
+  "retile": {
+    "base": "tile",
+    "reason": "Tile again -- the base is `tile`, not the fragment `til`.",
+    "since": "2026-09-29"
+  },
+  "retiled": {
+    "base": "tile",
+    "reason": "Tile again -- the base is `tile`, not the fragment `til`.",
+    "since": "2026-09-29"
+  },
+  "retiles": {
+    "base": "tile",
+    "reason": "Tile again -- the base is `tile`, not the fragment `til`.",
+    "since": "2026-09-29"
+  },
+  "retiling": {
+    "base": "tile",
+    "reason": "Tile again -- the base is `tile`, not the fragment `til`.",
+    "since": "2026-09-29"
+  },
+  "reversional": {
+    "base": "reversion",
+    "reason": "Of a reversion; `versional` is a different word.",
+    "since": "2026-09-29"
+  },
+  "rewarder": {
+    "base": "reward",
+    "reason": "One who rewards; a `warder` is a guard.",
+    "since": "2026-09-29"
+  },
+  "rewarders": {
+    "base": "reward",
+    "reason": "One who rewards; a `warder` is a guard.",
+    "since": "2026-09-29"
   },
   "shellfires": {
     "base": "shellfire",
@@ -358,6 +703,11 @@
     "base": "subdiaconate",
     "reason": "Plural / third-person form of `subdiaconate`; a suffix is not a discovery.",
     "since": "2026-08-19"
+  },
+  "tensest": {
+    "base": "tense",
+    "reason": "The superlative of `tense`, read as a form of `tens` (5.05) and chained to `ten`. The -e-restored stem is the right one and the frequency vote cannot say so.",
+    "since": "2026-09-02"
   },
   "theses": {
     "base": "thesis",
@@ -393,15 +743,5 @@
     "base": "woodlore",
     "reason": "Plural / third-person form of `woodlore`; a suffix is not a discovery.",
     "since": "2026-08-21"
-  },
-  "densest": {
-    "base": "dense",
-    "reason": "The superlative of `dense`, but the bare -est strip leaves `dens` (the plural of den, Zipf 4.01) which beats `dense` (3.98) on frequency and chains to `den`. Same coincidence as `theses`/`these`: the spelling rules cannot see which of two attested stems is the real one.",
-    "since": "2026-09-02"
-  },
-  "tensest": {
-    "base": "tense",
-    "reason": "The superlative of `tense`, read as a form of `tens` (5.05) and chained to `ten`. The -e-restored stem is the right one and the frequency vote cannot say so.",
-    "since": "2026-09-02"
   }
 }

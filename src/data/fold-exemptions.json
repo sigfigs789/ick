@@ -1,27 +1,122 @@
 {
-  "momser": {
-    "since": "2026-08-21",
-    "reason": "Yiddish loanword (from mamzer), nothing to do with `mom`. Below the floor, the bare -er strip read it as \"more mom\" and demoted it six points. Exempting it also covers `momsers`, which can only fold through it."
+  "antibody": {
+    "since": "2026-09-27",
+    "reason": "A loan-translation of Antikörper: the `body` in it is the 19th-century sense of a material substance, and no reader supplies it -- an antibody is not a body the way a counterattack is an attack. The highest-impact reading the ungated prefix reaches (3.56 -> 5.40, `body`), and the one a player would call a bug.",
+    "scope": "prefix"
   },
-  "limen": {
-    "since": "2026-08-21",
-    "reason": "The psychophysics term for a sensory threshold, not the plural of `liman` (a lagoon). The -men rule is right for 300-odd words and wrong here; a measured word deserves its own number."
+  "antichlor": {
+    "since": "2026-09-27",
+    "reason": "The agent that removes chlorine: anti- + a bound combining form, not the free word `chlor`.",
+    "scope": "prefix"
   },
-  "germen": {
-    "since": "2026-08-21",
-    "reason": "The botanical rudiment (Latin, sprout), not the plural of `german`. Same -men misreading as `limen`, with a 3.7-Zipf coincidence waiting under it."
+  "anticline": {
+    "since": "2026-09-27",
+    "reason": "The geological fold (Greek anti + klinein, to lean), not anti- + `cline` -- a cline is a gradient in a population, an unrelated technical term that happens to be the residue.",
+    "scope": "prefix"
   },
-  "rightsize": {
-    "since": "2026-08-21",
-    "reason": "A verb built on the compound right-size, not \"more right\". The gated -ize strip landed it on `right` at 2.60; its tenses fold through it, so exempting the verb keeps the whole paradigm on its own data."
+  "antidotal": {
+    "since": "2026-09-27",
+    "reason": "Of an antidote, and it needs its own entry: nothing folds an -al adjective back to its noun, so it reaches `dotal` (of a dowry) on its own. Same shape as `televisionally`.",
+    "scope": "prefix"
   },
-  "laterize": {
-    "since": "2026-08-21",
-    "reason": "To form laterite (the soil), not a degree of `later`. Same shape as `rightsize`: exempting the verb carries its tenses with it."
+  "antidotally": {
+    "since": "2026-09-27",
+    "reason": "The adverb of `antidotal`, on its own path to `dotal` for the same reason.",
+    "scope": "prefix"
+  },
+  "antidote": {
+    "since": "2026-09-27",
+    "reason": "From Greek antidoton (given against), not anti- + `dote`. Left to the rules `antidotes` reaches `dot` at 4.05 through its own plural.",
+    "scope": "prefix"
+  },
+  "antigen": {
+    "since": "2026-09-27",
+    "reason": "From antibody + generator, a coinage rather than a bracketing: not anti- + `gen`, and not against genes. `antigens` strips to `gens` (a Roman clan) at 4.33.",
+    "scope": "prefix"
+  },
+  "antigene": {
+    "since": "2026-09-27",
+    "reason": "The older spelling of `antigen`, and the same coinage; the strip reads it as anti- + `gene`, which is the meaning it does not have.",
+    "scope": "prefix"
+  },
+  "antimony": {
+    "since": "2026-09-27",
+    "reason": "The element (Latin antimonium), not anti- + `mony`. The strip lands on the Scots `mony` and the reverse fold carries it to `monies`, so the metal scored 3.15 as money.",
+    "scope": "prefix"
+  },
+  "antipathetic": {
+    "since": "2026-09-27",
+    "reason": "From `antipathy` + -etic, not anti- + `pathetic`. A word about dislike, scored 4.11 as the word for feeble.",
+    "scope": "prefix"
+  },
+  "antiphon": {
+    "since": "2026-09-27",
+    "reason": "The sung response (Greek antiphona), not anti- + `phon` (a unit of loudness). The sibling of `antiphonic`, which has been exempt since 2026-08-26 for the same misreading.",
+    "scope": "prefix"
+  },
+  "antiphonic": {
+    "since": "2026-08-26",
+    "reason": "From `antiphon` (a sung response) + -ic, not anti- + `phonic`. A wrong bracketing rather than a bound residue: `phonic` is a free word, so bound-residues.json cannot catch it and only a reviewed entry can.",
+    "scope": "prefix"
+  },
+  "antiphony": {
+    "since": "2026-09-27",
+    "reason": "The practice of singing antiphons, and its own entry rather than a form of `antiphon`: the strip reads it as anti- + `phony` and scores a liturgical term 3.35 as the word for fake.",
+    "scope": "prefix"
+  },
+  "antipolo": {
+    "since": "2026-09-27",
+    "reason": "The breadfruit tree (Tagalog), not anti- + `polo`.",
+    "scope": "prefix"
+  },
+  "antistat": {
+    "since": "2026-09-27",
+    "reason": "An antistatic agent, clipped from `antistatic` rather than built on `stat`. The strip reaches `stat` and the reverse fold carries it to `stats`, 4.33.",
+    "scope": "prefix"
   },
   "bares": {
     "since": "2026-08-21",
     "reason": "The plural or third-person form of `bare`, not `bar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "blee": {
+    "since": "2026-08-24",
+    "reason": "Archaic for colour or complexion. `bleed` is a strong verb, not `blee` + `-ed`; the -ed strip has nowhere else to land, so the reverse fold made the two one paradigm (8.88 -> 5.90)."
+  },
+  "complices": {
+    "since": "2026-08-21",
+    "reason": "Plural of the archaic `complice` (an accomplice), which the -ices rule misreads as a stem-change plural of `complex`, 2.8 Zipf clear of the truth. `complice` is the rarer word, so an override cannot express this -- the cap ignores a rarer base -- and the word's own measurement is the right score."
+  },
+  "countermand": {
+    "since": "2026-09-27",
+    "reason": "From Latin contramandare, not counter- + `mand` (a term of art in behaviour analysis).",
+    "scope": "prefix"
+  },
+  "counterpane": {
+    "since": "2026-09-27",
+    "reason": "A bedspread, from courtepointe reshaped by folk etymology -- no counter and no pane in it. Its plural strips further still, to `pan` at 4.39.",
+    "scope": "prefix"
+  },
+  "counterpart": {
+    "since": "2026-09-27",
+    "reason": "From French contrepartie, and not a part: the thing that corresponds to another, scored 5.78 as `part`. The `anti-`/`counter-` pair's other flagship misreading beside `antibody`.",
+    "scope": "prefix"
+  },
+  "countervail": {
+    "since": "2026-09-27",
+    "reason": "From contravalere, not counter- + `vail` (an archaic word for a tip or a lowering).",
+    "scope": "prefix"
+  },
+  "doe": {
+    "since": "2026-08-24",
+    "reason": "The female deer. `does` is its spelling-legal plural and also the third person of `do`, which is where all of that form's frequency comes from -- and `do` itself is two letters, so the number rules drop it and leave `doe` as the only candidate `does` can pick. Capping the deer at the auxiliary verb halved its score (5.72 -> 2.93)."
+  },
+  "during": {
+    "since": "2026-09-10",
+    "reason": "The preposition, not a tense of the archaic `dure` (to last) it descends from. It needs no fold of its own -- at 5.72 Zipf nothing caps it -- but the reverse direction reads it as `dure`'s participle and hands the verb a preposition's frequency, which the doubling rule of 2026-09-10 is what made reachable (before it, `during` folded onto the fragment-word `dur` and the round trip failed). `dure` dropped 8.87 -> 3.34 on that link, Elusive to Very Common, and it is the one wrong pairing that cutover creates; the exemption breaks it from the `during` side, where the misreading is."
+  },
+  "earnest": {
+    "since": "2026-09-02",
+    "reason": "Sincere, not \"most earn\". The bare -est fold's paired-degree check passes because `earner` is a word, and nothing in the spelling says the -er is agentive rather than comparative; the word has no base at all, so it is exempted by name."
   },
   "fares": {
     "since": "2026-08-21",
@@ -31,78 +126,13 @@
     "since": "2026-08-21",
     "reason": "The plural or third-person form of `fore`, not `for`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
   },
-  "mares": {
-    "since": "2026-08-21",
-    "reason": "The plural of `mare`, not `mar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "resites": {
-    "since": "2026-08-21",
-    "reason": "The plural or third-person form of `resite`, not `resit`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "sires": {
-    "since": "2026-08-21",
-    "reason": "The plural or third-person form of `sire`, not `sir`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "stares": {
-    "since": "2026-08-21",
-    "reason": "The plural or third-person form of `stare`, not `star`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "tares": {
-    "since": "2026-08-21",
-    "reason": "The plural of `tare`, not `tar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "wares": {
-    "since": "2026-08-21",
-    "reason": "The plural of `ware`, not `war`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "complices": {
-    "since": "2026-08-21",
-    "reason": "Plural of the archaic `complice` (an accomplice), which the -ices rule misreads as a stem-change plural of `complex`, 2.8 Zipf clear of the truth. `complice` is the rarer word, so an override cannot express this -- the cap ignores a rarer base -- and the word's own measurement is the right score."
-  },
-  "doe": {
-    "since": "2026-08-24",
-    "reason": "The female deer. `does` is its spelling-legal plural and also the third person of `do`, which is where all of that form's frequency comes from -- and `do` itself is two letters, so the number rules drop it and leave `doe` as the only candidate `does` can pick. Capping the deer at the auxiliary verb halved its score (5.72 -> 2.93)."
-  },
-  "morn": {
-    "since": "2026-08-24",
-    "reason": "The poetic morning. `morning` is not its progressive -- it is the noun `morn` was displaced by -- but the -ing strip picks `morn` over the non-word `morne`, so the reverse fold read the commoner noun as this word's own form (6.88 -> 3.53)."
-  },
-  "blee": {
-    "since": "2026-08-24",
-    "reason": "Archaic for colour or complexion. `bleed` is a strong verb, not `blee` + `-ed`; the -ed strip has nowhere else to land, so the reverse fold made the two one paradigm (8.88 -> 5.90)."
-  },
-  "specie": {
-    "since": "2026-08-24",
-    "reason": "Coin money, from `in specie`. Not the singular of `species`, which is its own Latin word with no separate singular -- but the -es rules can only read `species` as `specie` + `s`, so the reverse fold scored hard currency as the biology term (7.78 -> 4.24)."
-  },
   "genu": {
     "since": "2026-08-24",
     "reason": "The anatomical bend (Latin, knee); its plural is `genua`. `genus` is an unrelated Latin noun the bare -s strip reads as this word's plural (8.87 -> 5.88)."
   },
-  "politic": {
-    "since": "2026-08-24",
-    "reason": "The adjective (\"a politic decision\"). `politics` is a discipline noun rather than its plural, and carries frequency the adjective never earned (7.27 -> 4.21)."
-  },
-  "physic": {
-    "since": "2026-08-24",
-    "reason": "Archaic for medicine or a purgative. `physics` is a discipline noun, not its plural -- the same shape as `politic`/`politics` (7.69 -> 4.91)."
-  },
-  "tetri": {
-    "since": "2026-08-24",
-    "reason": "The Georgian currency subunit. The bare -s strip reads the video game `tetris` as its plural (9.94 -> 7.06)."
-  },
-  "sacre": {
-    "since": "2026-08-24",
-    "reason": "Not an English inflection of anything: `sacred` is a borrowed past participle, not `sacre` + `-d`. The -ed strip picks this word because the alternatives are non-words (7.90 -> 5.13)."
-  },
-  "microdont": {
-    "since": "2026-08-24",
-    "reason": "Greek micro- + -odont (tooth), a small-toothed animal -- not a form of `dont`. The prefix rule's base floor keeps out the other bound combining forms it lands on (`lith`, `crat`, `phyte`), but `dont` slips through it at Zipf 4.74: it is in the dictionary as the apostrophe-less spelling of \"don't\" and carries that word's frequency. Exempting the word is cheaper than special-casing the base."
-  },
-  "antiphonic": {
-    "since": "2026-08-26",
-    "reason": "From `antiphon` (a sung response) + -ic, not anti- + `phonic`. A wrong bracketing rather than a bound residue: `phonic` is a free word, so bound-residues.json cannot catch it and only a reviewed entry can.",
-    "scope": "prefix"
+  "germen": {
+    "since": "2026-08-21",
+    "reason": "The botanical rudiment (Latin, sprout), not the plural of `german`. Same -men misreading as `limen`, with a 3.7-Zipf coincidence waiting under it."
   },
   "intermissive": {
     "since": "2026-08-26",
@@ -118,20 +148,1579 @@
     "since": "2026-08-26",
     "reason": "The gerund of `lade` (to load). `baseForm` strips the `-ing` to `lad`, a real word and 1.53 Zipf commoner, so frequency preferred it -- and `lades`/`laded` read the same way, so the whole paradigm scored as a boy. Blanket rather than prefix-scoped: the wrong hop here is the `-ing` strip, not a prefix, and `lading` is the commonest member so it has nowhere it needs to fold. The other three are pinned onto it in score-overrides.json."
   },
+  "laterize": {
+    "since": "2026-08-21",
+    "reason": "To form laterite (the soil), not a degree of `later`. Same shape as `rightsize`: exempting the verb carries its tenses with it."
+  },
+  "limen": {
+    "since": "2026-08-21",
+    "reason": "The psychophysics term for a sensory threshold, not the plural of `liman` (a lagoon). The -men rule is right for 300-odd words and wrong here; a measured word deserves its own number."
+  },
+  "listless": {
+    "since": "2026-09-02",
+    "reason": "Without `list` in the archaic sense (desire, inclination), not without a list. The privative fold's strip is decisive and the residue is a word, so nothing but review can tell this reading from `spotless`; scoring \"languid\" as the everyday `list` (Zipf 5.28) would show \"Scored as its common form, 'list'\" on a word that has nothing to do with it. The blanket entry covers `listlessly` and `listlessness`, which fold onto this word and stop here."
+  },
+  "mares": {
+    "since": "2026-08-21",
+    "reason": "The plural of `mare`, not `mar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "microdont": {
+    "since": "2026-08-24",
+    "reason": "Greek micro- + -odont (tooth), a small-toothed animal -- not a form of `dont`. The prefix rule's base floor keeps out the other bound combining forms it lands on (`lith`, `crat`, `phyte`), but `dont` slips through it at Zipf 4.74: it is in the dictionary as the apostrophe-less spelling of \"don't\" and carries that word's frequency. Exempting the word is cheaper than special-casing the base."
+  },
+  "momser": {
+    "since": "2026-08-21",
+    "reason": "Yiddish loanword (from mamzer), nothing to do with `mom`. Below the floor, the bare -er strip read it as \"more mom\" and demoted it six points. Exempting it also covers `momsers`, which can only fold through it."
+  },
+  "morn": {
+    "since": "2026-08-24",
+    "reason": "The poetic morning. `morning` is not its progressive -- it is the noun `morn` was displaced by -- but the -ing strip picks `morn` over the non-word `morne`, so the reverse fold read the commoner noun as this word's own form (6.88 -> 3.53)."
+  },
   "nonagonal": {
     "since": "2026-08-26",
     "reason": "Of a `nonagon`, not non- + `agonal`. `agonal` is a free word meaning `of the death throes`, which is as far from nine-sidedness as the table gets.",
     "scope": "prefix"
+  },
+  "physic": {
+    "since": "2026-08-24",
+    "reason": "Archaic for medicine or a purgative. `physics` is a discipline noun, not its plural -- the same shape as `politic`/`politics` (7.69 -> 4.91)."
+  },
+  "politic": {
+    "since": "2026-08-24",
+    "reason": "The adjective (\"a politic decision\"). `politics` is a discipline noun rather than its plural, and carries frequency the adjective never earned (7.27 -> 4.21)."
+  },
+  "preachier": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The comparative of `preachy`; `achy` is a different word."
+  },
+  "preachiest": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The comparative of `preachy`; `achy` is a different word."
+  },
+  "preachily": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The comparative of `preachy`; `achy` is a different word."
+  },
+  "preachiness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The comparative of `preachy`; `achy` is a different word."
+  },
+  "preachinesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The comparative of `preachy`; `achy` is a different word."
+  },
+  "preapplied": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Apply in advance -- the base is `apply`, not `app`, and this was PRE_PREFIX_END's worst case."
+  },
+  "preapplies": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Apply in advance -- the base is `apply`, not `app`, and this was PRE_PREFIX_END's worst case."
+  },
+  "preapply": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Apply in advance -- the base is `apply`, not `app`, and this was PRE_PREFIX_END's worst case."
+  },
+  "preapplying": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Apply in advance -- the base is `apply`, not `app`, and this was PRE_PREFIX_END's worst case."
+  },
+  "prebend": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A prebend is a cathedral stipend; nothing to do with bending."
+  },
+  "prebends": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A prebend is a cathedral stipend; nothing to do with bending."
+  },
+  "precaution": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A precaution is a safeguard; the split cannot be told from the spelling, and this was PRE_PREFIX_END's own example."
+  },
+  "precautioned": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A precaution is a safeguard; the split cannot be told from the spelling, and this was PRE_PREFIX_END's own example."
+  },
+  "precautioning": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A precaution is a safeguard; the split cannot be told from the spelling, and this was PRE_PREFIX_END's own example."
+  },
+  "precautions": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A precaution is a safeguard; the split cannot be told from the spelling, and this was PRE_PREFIX_END's own example."
+  },
+  "precent": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To precent is to lead the singing; a `cent` is a coin."
+  },
+  "preclinical": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Preclinical means before clinical trials; a `clinic` is a place. The lemma carries `preclinically`."
+  },
+  "preclinically": {
+    "since": "2026-09-29",
+    "reason": "From `preclinical`; a `clinic` is a place.",
+    "scope": "prefix"
+  },
+  "preconcert": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To preconcert is to arrange in advance; a `concert` is a performance."
+  },
+  "preconcerted": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To preconcert is to arrange in advance; a `concert` is a performance."
+  },
+  "preconcerting": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To preconcert is to arrange in advance; a `concert` is a performance."
+  },
+  "preconcerts": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To preconcert is to arrange in advance; a `concert` is a performance."
+  },
+  "predestination": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Predestination is a doctrine of fate, not a destination reached early."
+  },
+  "predestinations": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Predestination is a doctrine of fate, not a destination reached early."
+  },
+  "predial": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Predial means relating to land; a `dial` is a face."
+  },
+  "prefabbed": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `prefab`; `fab` is a different word, and PRE_PREFIX_END's own example."
+  },
+  "prefabbing": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `prefab`; `fab` is a different word, and PRE_PREFIX_END's own example."
+  },
+  "prefabs": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `prefab`; `fab` is a different word, and PRE_PREFIX_END's own example."
+  },
+  "prehearing": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Before the hearing -- the split is right, but the base is `hearing`, not `hear`."
+  },
+  "prehearings": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Before the hearing -- the split is right, but the base is `hearing`, not `hear`."
+  },
+  "prehend": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To prehend is to seize; `hend` is not a word."
+  },
+  "prejudicialness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The quality of being prejudicial; `judicial` is a different word."
+  },
+  "prejudicialnesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The quality of being prejudicial; `judicial` is a different word."
+  },
+  "prelate": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A prelate is a senior cleric; nothing to do with being late."
+  },
+  "prelates": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A prelate is a senior cleric; nothing to do with being late."
+  },
+  "premeditate": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To premeditate is to plan a crime in advance, not to meditate beforehand."
+  },
+  "premeditated": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To premeditate is to plan a crime in advance, not to meditate beforehand."
+  },
+  "premeditatedly": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To premeditate is to plan a crime in advance, not to meditate beforehand."
+  },
+  "premeditates": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To premeditate is to plan a crime in advance, not to meditate beforehand."
+  },
+  "premeditating": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To premeditate is to plan a crime in advance, not to meditate beforehand."
+  },
+  "premeditation": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Premeditation is advance planning of a crime, not meditation beforehand."
+  },
+  "premeditations": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Premeditation is advance planning of a crime, not meditation beforehand."
+  },
+  "premeditative": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Of premeditation, the advance planning of a crime; not meditative beforehand."
+  },
+  "premeditator": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who premeditates a crime; `meditators` are a different thing."
+  },
+  "premeditators": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who premeditates a crime; `meditators` are a different thing."
+  },
+  "premiss": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A variant spelling of `premise`; to `miss` is unrelated."
+  },
+  "premisses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A variant spelling of `premise`; to `miss` is unrelated."
+  },
+  "premonished": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `premonish`, to forewarn -- PRE_PREFIX_END's own example."
+  },
+  "premonishes": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `premonish`, to forewarn -- PRE_PREFIX_END's own example."
+  },
+  "premonishing": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `premonish`, to forewarn -- PRE_PREFIX_END's own example."
+  },
+  "premunition": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Premunition is a state of partial immunity; `munitions` are weapons."
+  },
+  "premunitions": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Premunition is a state of partial immunity; `munitions` are weapons."
+  },
+  "prepositive": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Prepositive means placed in front, a grammatical term; `positive` is a different word."
+  },
+  "prepositively": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Prepositive means placed in front, a grammatical term; `positive` is a different word."
+  },
+  "prepositives": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Prepositive means placed in front, a grammatical term; `positive` is a different word."
+  },
+  "prepossessingly": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "From `prepossessing`, meaning attractive; not about possessing beforehand."
+  },
+  "prepossessingness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "From `prepossessing`, meaning attractive; not about possessing beforehand."
+  },
+  "prepossessingnesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "From `prepossessing`, meaning attractive; not about possessing beforehand."
+  },
+  "prepubes": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Anatomical, from prepubis; `pub` is a coincidence of spelling."
+  },
+  "prepuce": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The prepuce is the foreskin; `puce` is a colour."
+  },
+  "prepuces": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The prepuce is the foreskin; `puce` is a colour."
+  },
+  "presager": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who presages; `sager` is the comparative of sage."
+  },
+  "presagers": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who presages; `sager` is the comparative of sage."
+  },
+  "prescience": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Prescience is foreknowledge; `science` is a coincidence of the Latin stem."
+  },
+  "presciences": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Prescience is foreknowledge; `science` is a coincidence of the Latin stem."
+  },
+  "prescript": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A prescript is a rule laid down; not pre- + `script`."
+  },
+  "prescriptible": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A prescript is a rule laid down; not pre- + `script`."
+  },
+  "prescripts": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A prescript is a rule laid down; not pre- + `script`."
+  },
+  "presentient": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Presentient means having a presentiment; `sentient` means conscious."
+  },
+  "presentimental": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Of a presentiment, a foreboding; `sentimental` is a different word."
+  },
+  "preserving": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To preserve is to keep, not to serve beforehand."
+  },
+  "prest": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A surname and a Latin form, not pre- + `sting`."
+  },
+  "prester": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Prester (as in Prester John) is a title; `ster` is not a word."
+  },
+  "prestes": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A surname and a Latin form, not pre- + `sting`."
+  },
+  "prests": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A surname and a Latin form, not pre- + `sting`."
+  },
+  "presumptuousness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The quality of being presumptuous; `sumptuous` means lavish."
+  },
+  "presumptuousnesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The quality of being presumptuous; `sumptuous` means lavish."
+  },
+  "pretending": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To pretend is to feign, not to tend beforehand."
+  },
+  "pretensionless": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Without pretension -- the base is `pretension`, not `tension`."
+  },
+  "pretext": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A pretext is an excuse, not a text written beforehand."
+  },
+  "pretexted": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A pretext is an excuse, not a text written beforehand."
+  },
+  "pretexting": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A pretext is an excuse, not a text written beforehand."
+  },
+  "pretexts": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A pretext is an excuse, not a text written beforehand."
+  },
+  "pretor": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A pretor is a Roman magistrate; `tore` is the past of tear."
+  },
+  "pretors": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A pretor is a Roman magistrate; `tore` is the past of tear."
+  },
+  "prevert": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Not pre- + `vert`; `vert` is a heraldic tincture."
+  },
+  "prevised": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `previse`, to foresee; `vis` is not a word."
+  },
+  "previses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `previse`, to foresee; `vis` is not a word."
+  },
+  "prevising": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `previse`, to foresee; `vis` is not a word."
+  },
+  "previsional": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Of prevision, foresight; `visional` is a different word."
+  },
+  "previsionary": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Of prevision, foresight; `visionary` is a different word."
   },
   "previsor": {
     "since": "2026-08-26",
     "reason": "From `prevision`, not pre- + `visor`. The headgear is unrelated.",
     "scope": "prefix"
   },
+  "reatas": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Plural of `reata`, a lariat; `atas` is not a word."
+  },
+  "reauthorisation": {
+    "since": "2026-09-29",
+    "reason": "Authorise again -- the base is `authorise`, not `author`.",
+    "scope": "prefix"
+  },
+  "reauthorisations": {
+    "since": "2026-09-29",
+    "reason": "Authorise again -- the base is `authorise`, not `author`.",
+    "scope": "prefix"
+  },
+  "reauthorise": {
+    "since": "2026-09-29",
+    "reason": "Authorise again -- the base is `authorise`, not `author`.",
+    "scope": "prefix"
+  },
+  "reauthorises": {
+    "since": "2026-09-29",
+    "reason": "Authorise again -- the base is `authorise`, not `author`.",
+    "scope": "prefix"
+  },
+  "rebate": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A rebate is a discount; `bat` is a coincidence of spelling. The lemma needs the entry too -- its inflections reach the prefix hop through it."
+  },
+  "rebated": {
+    "since": "2026-09-29",
+    "reason": "A form of `rebate`, the discount; `bat` is a coincidence of spelling.",
+    "scope": "prefix"
+  },
+  "rebater": {
+    "since": "2026-09-29",
+    "reason": "A form of `rebate`, the discount; `bat` is a coincidence of spelling.",
+    "scope": "prefix"
+  },
+  "rebaters": {
+    "since": "2026-09-29",
+    "reason": "A form of `rebate`, the discount; `bat` is a coincidence of spelling.",
+    "scope": "prefix"
+  },
+  "rebates": {
+    "since": "2026-09-29",
+    "reason": "A form of `rebate`, the discount; `bat` is a coincidence of spelling.",
+    "scope": "prefix"
+  },
+  "rebating": {
+    "since": "2026-09-29",
+    "reason": "A form of `rebate`, the discount; `bat` is a coincidence of spelling.",
+    "scope": "prefix"
+  },
+  "rebelling": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `rebel`; a `bell` rings."
+  },
+  "rebooting": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To reboot is to boot again -- the split is right, but the base is `boot`, not the footwear plural."
+  },
+  "rebuffing": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `rebuff`, to snub; to `buff` is to polish."
+  },
+  "rebus": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Plural of `rebus`, a picture puzzle; a `bus` is a vehicle."
+  },
+  "rebuses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Plural of `rebus`, a picture puzzle; a `bus` is a vehicle."
+  },
+  "recalling": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recall is to remember or summon back, not to call again."
+  },
+  "recanter": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who recants; a `canter` is a horse's gait."
+  },
+  "recanters": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who recants; a `canter` is a horse's gait."
+  },
+  "recanting": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recant is to take back a statement, not to cant again."
+  },
+  "recapping": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `recap` (to summarise); `cap` is a different word."
+  },
+  "reciting": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recite is to say aloud, not to cite again."
+  },
+  "recoiling": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recoil is to spring back, not to coil again."
+  },
+  "reconned": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Clipped from reconnaissance; a `con` is a swindle."
+  },
+  "reconning": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Clipped from reconnaissance; a `con` is a swindle."
+  },
+  "recons": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Clipped from reconnaissance; a `con` is a swindle."
+  },
+  "recounter": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who recounts; the split does not reach `singing` by any reading."
+  },
+  "recounters": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who recounts; the split does not reach `singing` by any reading."
+  },
+  "recoup": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recoup is to recover a loss; a `coup` is a seizure of power."
+  },
+  "recouped": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recoup is to recover a loss; a `coup` is a seizure of power."
+  },
+  "recouping": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recoup is to recover a loss; a `coup` is a seizure of power."
+  },
+  "recoups": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recoup is to recover a loss; a `coup` is a seizure of power."
+  },
+  "recourse": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Recourse is a resort or remedy, not a course again."
+  },
+  "recourses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Recourse is a resort or remedy, not a course again."
+  },
+  "recovering": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recover is to get back or get well, not to cover again."
+  },
+  "recur": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recur is to happen again, not to cure again."
+  },
+  "recurred": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recur is to happen again, not to cure again."
+  },
+  "recurring": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recur is to happen again, not to cure again."
+  },
+  "recurs": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To recur is to happen again, not to cure again."
+  },
+  "rede": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Not re- + `deeds`; no English reading supports the split."
+  },
+  "redear": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A redear is a sunfish; `dear` is unrelated."
+  },
+  "redears": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A redear is a sunfish; `dear` is unrelated."
+  },
+  "redeco": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Clipped from redecoration; `deco` is a style."
+  },
+  "reded": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Not re- + `deeds`; no English reading supports the split."
+  },
+  "redeeming": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To redeem is to buy back or make good, not to deem again."
+  },
+  "reding": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Not re- + `deeds`; no English reading supports the split."
+  },
+  "redoubt": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A redoubt is a fortification; nothing to do with doubting again."
+  },
+  "redoubtably": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A redoubt is a fortification; nothing to do with doubting again."
+  },
+  "redoubts": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A redoubt is a fortification; nothing to do with doubting again."
+  },
+  "redout": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A redout is a vision effect under negative g; `dout` is not its base."
+  },
+  "redouts": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A redout is a vision effect under negative g; `dout` is not its base."
+  },
+  "redrum": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Murder read backwards, not re- + `drum`."
+  },
+  "reduct": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reduct is a reduction; a `duct` is a tube."
+  },
+  "reested": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Not re- + `est`; no English reading supports the split."
+  },
+  "reesting": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Not re- + `est`; no English reading supports the split."
+  },
+  "reests": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Not re- + `est`; no English reading supports the split."
+  },
+  "refelled": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To refel is to refute, a fossil of the Latin stem; nothing to do with felling."
+  },
+  "refelling": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To refel is to refute, a fossil of the Latin stem; nothing to do with felling."
+  },
+  "refels": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To refel is to refute, a fossil of the Latin stem; nothing to do with felling."
+  },
+  "refining": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To refine is to purify, not to make fine again."
+  },
+  "refinings": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To refine is to purify, not to make fine again."
+  },
+  "refluence": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Refluence is a flowing back; `fluence` is not its base."
+  },
+  "refluences": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Refluence is a flowing back; `fluence` is not its base."
+  },
+  "reforger": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who reforges; a `forger` is a counterfeiter."
+  },
+  "refunding": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `refund`; a `fund` is a pot of money."
+  },
+  "regelate": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To regelate is to freeze together again; `gelati` are ice creams."
+  },
+  "regelated": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To regelate is to freeze together again; `gelati` are ice creams."
+  },
+  "regelates": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To regelate is to freeze together again; `gelati` are ice creams."
+  },
+  "regelating": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To regelate is to freeze together again; `gelati` are ice creams."
+  },
+  "regen": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Clipped from regeneration; `gen` is a different clipping."
+  },
+  "regens": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Clipped from regeneration; `gen` is a different clipping."
+  },
+  "regrate": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To regrate is to buy up and resell; a `grate` is a grid."
+  },
+  "regrated": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To regrate is to buy up and resell; a `grate` is a grid."
+  },
+  "regrates": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To regrate is to buy up and resell; a `grate` is a grid."
+  },
+  "regrating": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To regrate is to buy up and resell; a `grate` is a grid."
+  },
+  "rejigging": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `rejig`; a `jig` is a dance or a fixture."
+  },
+  "relapser": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who relapses; a `lap` is a circuit."
+  },
+  "relapsers": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who relapses; a `lap` is a circuit."
+  },
+  "relapsing": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who relapses; a `lap` is a circuit."
+  },
+  "relaying": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A relay passes something along; the re- + lay reading is a different word."
+  },
+  "relumed": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `relume`, to rekindle; `lum` is a chimney."
+  },
+  "relumes": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `relume`, to rekindle; `lum` is a chimney."
+  },
+  "relumine": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `relume`, to rekindle; `lumine` is not its base."
+  },
+  "relumined": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `relume`, to rekindle; `lumine` is not its base."
+  },
+  "relumines": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `relume`, to rekindle; `lumine` is not its base."
+  },
+  "reluming": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `relume`, to rekindle; `lum` is a chimney."
+  },
+  "relumining": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `relume`, to rekindle; `lumine` is not its base."
+  },
+  "remedial": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Remedial means corrective; `medial` means middle."
+  },
+  "remedially": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Remedial means corrective; `medial` means middle."
+  },
+  "reminding": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `remind`; to remind is to cause to remember, not to mind again."
+  },
+  "remission": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A remission is an abatement, not a mission again."
+  },
+  "remissions": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A remission is an abatement, not a mission again."
+  },
+  "remontant": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A remontant rose reblooms; a `montant` is an upright in fencing."
+  },
+  "remontants": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A remontant rose reblooms; a `montant` is an upright in fencing."
+  },
+  "remorse": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Remorse is regret; `morse` is a code and a walrus."
+  },
+  "remorseless": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Remorse is regret; `morse` is a code and a walrus."
+  },
+  "remorselessly": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Remorse is regret; `morse` is a code and a walrus."
+  },
+  "remorselessness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Remorse is regret; `morse` is a code and a walrus."
+  },
+  "remorselessnesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Remorse is regret; `morse` is a code and a walrus."
+  },
+  "remorses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Remorse is regret; `morse` is a code and a walrus."
+  },
+  "remotion": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Remotion is removal, an archaism; `motion` is a different word."
+  },
+  "remotions": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Remotion is removal, an archaism; `motion` is a different word."
+  },
+  "removedly": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To remove is to take away, not to move again."
+  },
+  "removedness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To remove is to take away, not to move again."
+  },
+  "removednesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To remove is to take away, not to move again."
+  },
+  "removing": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To remove is to take away, not to move again."
+  },
+  "renate": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A proper name and a Latin participle, not re- + anything."
+  },
+  "renege": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `renege`, to go back on a promise; `neg` is not its base. Pinned to `reneged`, the paradigm's commonest form and the base it folded onto before this cutover, so the correction costs the word nothing."
+  },
+  "reneged": {
+    "since": "2026-09-29",
+    "reason": "A form of `renege`; `neg` is not its base.",
+    "scope": "prefix"
+  },
+  "reneger": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `renege`, to go back on a promise; `neg` is not its base. Pinned to `reneged`, the paradigm's commonest form and the base it folded onto before this cutover, so the correction costs the word nothing."
+  },
+  "renegers": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `renege`, to go back on a promise; `neg` is not its base. Pinned to `reneged`, the paradigm's commonest form and the base it folded onto before this cutover, so the correction costs the word nothing."
+  },
+  "reneges": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `renege`, to go back on a promise; `neg` is not its base. Pinned to `reneged`, the paradigm's commonest form and the base it folded onto before this cutover, so the correction costs the word nothing."
+  },
+  "reneging": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `renege`, to go back on a promise; `neg` is not its base. Pinned to `reneged`, the paradigm's commonest form and the base it folded onto before this cutover, so the correction costs the word nothing."
+  },
+  "repairing": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To repair is to mend, not to pair again."
+  },
+  "repast": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A repast is a meal; `past` is a coincidence of spelling."
+  },
+  "repasted": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A repast is a meal; `past` is a coincidence of spelling."
+  },
+  "repasting": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A repast is a meal; `past` is a coincidence of spelling."
+  },
+  "repasts": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A repast is a meal; `past` is a coincidence of spelling."
+  },
+  "repens": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Latin for creeping, a species epithet (Serenoa repens), not re- + `pen`."
+  },
+  "repercussive": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Of a repercussion; `percussive` is about striking."
+  },
+  "repetition": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A repetition is a recurrence, not a petition again."
+  },
+  "repetitions": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A repetition is a recurrence, not a petition again."
+  },
+  "repin": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `repine`, to fret; a `pin` is a fastener."
+  },
+  "repined": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `repine`, to fret; a `pin` is a fastener."
+  },
+  "repiner": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `repine`, to fret; a `pin` is a fastener."
+  },
+  "repiners": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `repine`, to fret; a `pin` is a fastener."
+  },
+  "repines": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `repine`, to fret; a `pin` is a fastener."
+  },
+  "repining": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `repine`, to fret; a `pin` is a fastener."
+  },
+  "reposit": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To reposit is to put away, not to posit again."
+  },
+  "reposited": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To reposit is to put away, not to posit again."
+  },
+  "repositing": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To reposit is to put away, not to posit again."
+  },
+  "reposits": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To reposit is to put away, not to posit again."
+  },
+  "represser": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who represses; a `presser` presses cloth."
+  },
+  "repressers": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "One who represses; a `presser` presses cloth."
+  },
+  "repressing": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To repress is to suppress, not to press again."
+  },
+  "reprobation": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Reprobation is condemnation, not probation again."
+  },
+  "reprobations": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Reprobation is condemnation, not probation again."
+  },
+  "reprobative": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Reprobative means condemning; `probative` means proving."
+  },
+  "reprobatory": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Reprobatory means condemning; `probatory` means testing."
+  },
+  "reproductiveness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The quality of being reproductive, not of being productive again."
+  },
+  "reproductivenesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The quality of being reproductive, not of being productive again."
+  },
+  "reproof": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reproof is a rebuke, not proof again."
+  },
+  "reproofs": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reproof is a rebuke, not proof again."
+  },
+  "reproving": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To reprove is to rebuke, not to prove again."
+  },
+  "reprovingly": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To reprove is to rebuke, not to prove again."
+  },
+  "res": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Not a pre-/re- derivation of `singing`; the split is nonsense."
+  },
+  "rescript": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A rescript is an official ruling; the split is not re- + `script`."
+  },
+  "rescripts": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A rescript is an official ruling; the split is not re- + `script`."
+  },
+  "resection": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A resection is a surgical excision, not a section again."
+  },
+  "resections": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A resection is a surgical excision, not a section again."
+  },
+  "reserpine": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Reserpine is an alkaloid drug; `serpin` is an unrelated protein family."
+  },
+  "reserpines": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Reserpine is an alkaloid drug; `serpin` is an unrelated protein family."
+  },
+  "reserve": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reserve is not a serve; the word is a single lexeme and the re- is fossilised."
+  },
+  "reserved": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reserve is not a serve; the word is a single lexeme and the re- is fossilised."
+  },
+  "reservedly": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reserve is not a serve; the word is a single lexeme and the re- is fossilised."
+  },
+  "reservedness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reserve is not a serve; the word is a single lexeme and the re- is fossilised."
+  },
+  "reservednesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reserve is not a serve; the word is a single lexeme and the re- is fossilised."
+  },
+  "reserves": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reserve is not a serve; the word is a single lexeme and the re- is fossilised."
+  },
+  "reserving": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reserve is not a serve; the word is a single lexeme and the re- is fossilised."
+  },
+  "resignedness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The state of being resigned; a `sign` is unrelated."
+  },
+  "resignednesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The state of being resigned; a `sign` is unrelated."
+  },
+  "resile": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To resile is to draw back; `sil` is not a word."
+  },
+  "resiled": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To resile is to draw back; `sil` is not a word."
+  },
+  "resiles": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To resile is to draw back; `sil` is not a word."
+  },
+  "resiling": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To resile is to draw back; `sil` is not a word."
+  },
+  "resites": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `resite`, not `resit`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "respirometries": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Respirometry measures respiration; spirometry measures lung volume."
+  },
+  "respirometry": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Respirometry measures respiration; spirometry measures lung volume."
+  },
+  "ressed": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Not a pre-/re- derivation of `singing`; the split is nonsense."
+  },
+  "restraining": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To restrain is to hold back, not to strain again."
+  },
+  "resum": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To resume is to carry on, not to sum again."
+  },
+  "resumed": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To resume is to carry on, not to sum again."
+  },
+  "resumer": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To resume is to carry on, not to sum again."
+  },
+  "resumers": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To resume is to carry on, not to sum again."
+  },
+  "resumes": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To resume is to carry on, not to sum again."
+  },
+  "resuming": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To resume is to carry on, not to sum again."
+  },
+  "retama": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Retama is a broom shrub genus; `tama` is not a word."
+  },
+  "retems": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Not re- + `tems`; the split is nonsense."
+  },
+  "retin": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Plural of `retine`, a cell-growth inhibitor; `tin` is a metal."
+  },
+  "retines": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Plural of `retine`, a cell-growth inhibitor; `tin` is a metal."
+  },
+  "retiredly": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To retire is to withdraw; nothing to do with being tired."
+  },
+  "retiredness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To retire is to withdraw; nothing to do with being tired."
+  },
+  "retirednesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To retire is to withdraw; nothing to do with being tired."
+  },
+  "retiring": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To retire is to withdraw; nothing to do with being tired."
+  },
+  "retiringly": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To retire is to withdraw; nothing to do with being tired."
+  },
+  "retiringness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To retire is to withdraw; nothing to do with being tired."
+  },
+  "retiringnesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To retire is to withdraw; nothing to do with being tired."
+  },
+  "retraction": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A retraction is a withdrawal; `traction` is grip."
+  },
+  "retractions": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A retraction is a withdrawal; `traction` is grip."
+  },
+  "retractiveness": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The quality of being retractive; `tractive` is about pulling."
+  },
+  "retractivenesses": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "The quality of being retractive; `tractive` is about pulling."
+  },
+  "retreating": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To retreat is to withdraw, not to treat again."
+  },
+  "retrenching": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `retrench`, to cut back; a `trench` is a ditch."
+  },
+  "retribute": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To retribute is to repay in kind; a `tribute` is an homage."
+  },
+  "retron": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A retron is a bacterial genetic element; `tron` is not a word."
+  },
+  "returning": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "To return is to come back, not to turn again."
+  },
+  "reverb": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Reverb is an acoustic effect, clipped from reverberation, not a verb again."
+  },
+  "reverbed": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Reverb is an acoustic effect, clipped from reverberation, not a verb again."
+  },
+  "reverbing": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Reverb is an acoustic effect, clipped from reverberation, not a verb again."
+  },
+  "reverbs": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Reverb is an acoustic effect, clipped from reverberation, not a verb again."
+  },
+  "reverso": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reverso is a left-hand page or a reverse; `verso` is the page itself, not the base."
+  },
+  "reversos": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A reverso is a left-hand page or a reverse; `verso` is the page itself, not the base."
+  },
+  "revets": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `revet`, to face a wall; a `vet` is something else."
+  },
+  "revetted": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `revet`, to face a wall; a `vet` is something else."
+  },
+  "revetting": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A form of `revet`, to face a wall; a `vet` is something else."
+  },
+  "revision": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A revision is a reworking, not a vision again."
+  },
+  "revisioning": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A revision is a reworking, not a vision again."
+  },
+  "revisions": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "A revision is a reworking, not a vision again."
+  },
+  "revolute": {
+    "since": "2026-09-29",
+    "scope": "prefix",
+    "reason": "Revolute means rolled backward (of a leaf); a `volute` is a spiral scroll."
+  },
+  "rightsize": {
+    "since": "2026-08-21",
+    "reason": "A verb built on the compound right-size, not \"more right\". The gated -ize strip landed it on `right` at 2.60; its tenses fold through it, so exempting the verb keeps the whole paradigm on its own data."
+  },
+  "sacre": {
+    "since": "2026-08-24",
+    "reason": "Not an English inflection of anything: `sacred` is a borrowed past participle, not `sacre` + `-d`. The -ed strip picks this word because the alternatives are non-words (7.90 -> 5.13)."
+  },
+  "sires": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `sire`, not `sir`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "specie": {
+    "since": "2026-08-24",
+    "reason": "Coin money, from `in specie`. Not the singular of `species`, which is its own Latin word with no separate singular -- but the -es rules can only read `species` as `specie` + `s`, so the reverse fold scored hard currency as the biology term (7.78 -> 4.24)."
+  },
+  "stares": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `stare`, not `star`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
   "suberose": {
     "since": "2026-08-26",
     "reason": "From `suber` (cork) + -ose, not sub- + `erose` (jagged-edged). Both are botanical terms, which is what makes the wrong one plausible enough to need an entry.",
     "scope": "prefix"
+  },
+  "tares": {
+    "since": "2026-08-21",
+    "reason": "The plural of `tare`, not `tar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
   },
   "televisional": {
     "since": "2026-08-26",
@@ -143,6 +1732,14 @@
     "reason": "The adverb of `televisional`, and it needs its own entry: nothing folds an `-ally` adverb back to its `-al` adjective, so it reaches `visionally` on its own.",
     "scope": "prefix"
   },
+  "tempest": {
+    "since": "2026-09-02",
+    "reason": "A storm, not \"most temp\" -- and `temper` is a word, so the paired-degree check the bare -est fold runs on `contest` and `interest` passes here. One of two words in the dictionary that clear the check without being superlatives."
+  },
+  "tetri": {
+    "since": "2026-08-24",
+    "reason": "The Georgian currency subunit. The bare -s strip reads the video game `tetris` as its plural (9.94 -> 7.06)."
+  },
   "transferal": {
     "since": "2026-08-26",
     "reason": "`transfer` + -al, not trans- + `feral`. The residue is a free word and an unrelated one, so no residue table can see it. Scoped to the prefix, which is what lets `transferals` still fold onto this word rather than scoring above it -- and the entry covers the plural without naming it (see prefixFoldExemptParadigm).",
@@ -153,110 +1750,8 @@
     "reason": "From `ungula` (a hoof) + -ar, not un- + `gular` (of the throat).",
     "scope": "prefix"
   },
-  "earnest": {
-    "since": "2026-09-02",
-    "reason": "Sincere, not \"most earn\". The bare -est fold's paired-degree check passes because `earner` is a word, and nothing in the spelling says the -er is agentive rather than comparative; the word has no base at all, so it is exempted by name."
-  },
-  "tempest": {
-    "since": "2026-09-02",
-    "reason": "A storm, not \"most temp\" -- and `temper` is a word, so the paired-degree check the bare -est fold runs on `contest` and `interest` passes here. One of two words in the dictionary that clear the check without being superlatives."
-  },
-  "during": {
-    "since": "2026-09-10",
-    "reason": "The preposition, not a tense of the archaic `dure` (to last) it descends from. It needs no fold of its own -- at 5.72 Zipf nothing caps it -- but the reverse direction reads it as `dure`'s participle and hands the verb a preposition's frequency, which the doubling rule of 2026-09-10 is what made reachable (before it, `during` folded onto the fragment-word `dur` and the round trip failed). `dure` dropped 8.87 -> 3.34 on that link, Elusive to Very Common, and it is the one wrong pairing that cutover creates; the exemption breaks it from the `during` side, where the misreading is."
-  },
-  "listless": {
-    "since": "2026-09-02",
-    "reason": "Without `list` in the archaic sense (desire, inclination), not without a list. The privative fold's strip is decisive and the residue is a word, so nothing but review can tell this reading from `spotless`; scoring \"languid\" as the everyday `list` (Zipf 5.28) would show \"Scored as its common form, 'list'\" on a word that has nothing to do with it. The blanket entry covers `listlessly` and `listlessness`, which fold onto this word and stop here."
-  },
-  "antibody": {
-    "since": "2026-09-27",
-    "reason": "A loan-translation of Antikörper: the `body` in it is the 19th-century sense of a material substance, and no reader supplies it -- an antibody is not a body the way a counterattack is an attack. The highest-impact reading the ungated prefix reaches (3.56 -> 5.40, `body`), and the one a player would call a bug.",
-    "scope": "prefix"
-  },
-  "antigen": {
-    "since": "2026-09-27",
-    "reason": "From antibody + generator, a coinage rather than a bracketing: not anti- + `gen`, and not against genes. `antigens` strips to `gens` (a Roman clan) at 4.33.",
-    "scope": "prefix"
-  },
-  "antigene": {
-    "since": "2026-09-27",
-    "reason": "The older spelling of `antigen`, and the same coinage; the strip reads it as anti- + `gene`, which is the meaning it does not have.",
-    "scope": "prefix"
-  },
-  "antidote": {
-    "since": "2026-09-27",
-    "reason": "From Greek antidoton (given against), not anti- + `dote`. Left to the rules `antidotes` reaches `dot` at 4.05 through its own plural.",
-    "scope": "prefix"
-  },
-  "antidotal": {
-    "since": "2026-09-27",
-    "reason": "Of an antidote, and it needs its own entry: nothing folds an -al adjective back to its noun, so it reaches `dotal` (of a dowry) on its own. Same shape as `televisionally`.",
-    "scope": "prefix"
-  },
-  "antidotally": {
-    "since": "2026-09-27",
-    "reason": "The adverb of `antidotal`, on its own path to `dotal` for the same reason.",
-    "scope": "prefix"
-  },
-  "antipathetic": {
-    "since": "2026-09-27",
-    "reason": "From `antipathy` + -etic, not anti- + `pathetic`. A word about dislike, scored 4.11 as the word for feeble.",
-    "scope": "prefix"
-  },
-  "antimony": {
-    "since": "2026-09-27",
-    "reason": "The element (Latin antimonium), not anti- + `mony`. The strip lands on the Scots `mony` and the reverse fold carries it to `monies`, so the metal scored 3.15 as money.",
-    "scope": "prefix"
-  },
-  "antiphon": {
-    "since": "2026-09-27",
-    "reason": "The sung response (Greek antiphona), not anti- + `phon` (a unit of loudness). The sibling of `antiphonic`, which has been exempt since 2026-08-26 for the same misreading.",
-    "scope": "prefix"
-  },
-  "antiphony": {
-    "since": "2026-09-27",
-    "reason": "The practice of singing antiphons, and its own entry rather than a form of `antiphon`: the strip reads it as anti- + `phony` and scores a liturgical term 3.35 as the word for fake.",
-    "scope": "prefix"
-  },
-  "antipolo": {
-    "since": "2026-09-27",
-    "reason": "The breadfruit tree (Tagalog), not anti- + `polo`.",
-    "scope": "prefix"
-  },
-  "anticline": {
-    "since": "2026-09-27",
-    "reason": "The geological fold (Greek anti + klinein, to lean), not anti- + `cline` -- a cline is a gradient in a population, an unrelated technical term that happens to be the residue.",
-    "scope": "prefix"
-  },
-  "antistat": {
-    "since": "2026-09-27",
-    "reason": "An antistatic agent, clipped from `antistatic` rather than built on `stat`. The strip reaches `stat` and the reverse fold carries it to `stats`, 4.33.",
-    "scope": "prefix"
-  },
-  "antichlor": {
-    "since": "2026-09-27",
-    "reason": "The agent that removes chlorine: anti- + a bound combining form, not the free word `chlor`.",
-    "scope": "prefix"
-  },
-  "counterpart": {
-    "since": "2026-09-27",
-    "reason": "From French contrepartie, and not a part: the thing that corresponds to another, scored 5.78 as `part`. The `anti-`/`counter-` pair's other flagship misreading beside `antibody`.",
-    "scope": "prefix"
-  },
-  "counterpane": {
-    "since": "2026-09-27",
-    "reason": "A bedspread, from courtepointe reshaped by folk etymology -- no counter and no pane in it. Its plural strips further still, to `pan` at 4.39.",
-    "scope": "prefix"
-  },
-  "countermand": {
-    "since": "2026-09-27",
-    "reason": "From Latin contramandare, not counter- + `mand` (a term of art in behaviour analysis).",
-    "scope": "prefix"
-  },
-  "countervail": {
-    "since": "2026-09-27",
-    "reason": "From contravalere, not counter- + `vail` (an archaic word for a tip or a lowering).",
-    "scope": "prefix"
+  "wares": {
+    "since": "2026-08-21",
+    "reason": "The plural of `ware`, not `war`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
   }
 }

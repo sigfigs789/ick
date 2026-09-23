@@ -2349,43 +2349,63 @@ describe('"re-" and "pre-" join the transparent prefixes (from 2026-09-29)', () 
     expect(score(word, BEFORE_PRODUCTIVE)).toBe(before);
   });
 
-  // The Latin fossils, pinned as tests rather than left to the prose, because
-  // they are the thing to look at when this rule is reconsidered: nothing in the
-  // spelling separates them from the readings above. "refel" is to refute, and
-  // the three "pre-" ones are the words PRE_PREFIX_END retired the prefix over.
-  const FOSSILS: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
-    ["refelled", "fell", 9.91, 4.61],
-    ["preapply", "app", 9.92, 4.6],
-    ["prehearing", "hear", 8.07, 4.06],
+  // The review pass (see PRODUCTIVE_PREFIX_START). Every fold the pair reaches
+  // was judged: 1,332 families over the whole corpus, of which 162 landed on a
+  // base that means something else. Where the prefix reading is real but the
+  // residue was wrong, the word is pinned to the base it should have reached.
+  const CORRECTED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    ["reseed", "seed", 9.09, 5.3], // not `see`
+    ["reoutfit", "outfit", 9.95, 5.51], // not `fit` -- the strip went a prefix too far
+    ["redigest", "digest", 9.91, 6.23], // not `dig`
+    ["retile", "tile", 9.91, 6.21], // not the fragment `til`
+    ["recanvass", "canvass", 9.79, 7.47], // not `canvas`, the cloth
   ];
 
-  it.each(FOSSILS)("%s folds onto %s anyway, which is what it costs", (word, base, before, after) => {
+  it.each(CORRECTED)("%s is pinned to %s by review", (word, base, before, after) => {
+    expect(baseFormSubstitution(word, ON_PRODUCTIVE)?.base).toBe(base);
     expect(score(word, BEFORE_PRODUCTIVE)).toBe(before);
     expect(score(word, ON_PRODUCTIVE)).toBe(after);
-    expect(baseFormSubstitution(word, ON_PRODUCTIVE)?.base).toBe(base);
   });
 
-  it("moves 3,005 words and lowers no score", () => {
-    // Two claims, as at every prefix cutover: the change is these two families,
-    // and every move is a fold, which can only ever make a word more common.
-    const moved = (dictionaryWords as string[]).filter(
-      (word) =>
-        rarityFor(word, ON_PRODUCTIVE)!.zipf !== rarityFor(word, BEFORE_PRODUCTIVE)!.zipf
-    );
-    expect(moved).toHaveLength(3005);
-    // The four that do not open with either prefix reach one through a chain:
-    // "overrefine" strips "over-" first and the residue carries the "re-".
-    expect(moved.filter((word) => !/^(pre|re)/.test(word))).toEqual([
-      "overrefine",
-      "overrefined",
-      "overrefines",
-      "overrefining",
-    ]);
-    for (const word of moved) {
-      expect(
-        rarityFor(word, ON_PRODUCTIVE)!.zipf,
-        `${word} is no rarer than it was`
-      ).toBeGreaterThan(rarityFor(word, BEFORE_PRODUCTIVE)!.zipf);
+  // Where no appropriate base exists, the word gets a prefix-scoped entry in
+  // fold-exemptions.json instead: it refuses the hop, leaves the word's ordinary
+  // folds alone, and leaves it on its own measured score rather than naming a
+  // base that means something else.
+  const EXEMPTED: ReadonlyArray<[word: string, unreachable: string, score: number]> = [
+    ["reserve", "serve", 4.97],
+    ["remorse", "morse", 6.53],
+    ["recourse", "course", 6.81],
+    ["prelate", "late", 7.69],
+    ["prescience", "science", 8.43],
+    ["redoubt", "doubt", 8.0],
+    ["prepuce", "puce", 8.94],
+  ];
+
+  it.each(EXEMPTED)("%s never reaches %s", (word, unreachable, expected) => {
+    // Unchanged across the cutover: the prefix rule offers a base and review
+    // refuses it, so the word scores exactly as it did the day before.
+    expect(score(word, BEFORE_PRODUCTIVE)).toBe(expected);
+    expect(score(word, ON_PRODUCTIVE)).toBe(expected);
+    expect(baseFormSubstitution(word, ON_PRODUCTIVE)?.base).not.toBe(unreachable);
+  });
+
+  it("leaves the fossil PRE_PREFIX_END was retired over scoring as itself", () => {
+    // "refel" is to refute; the 2026-09-05 note named it as a reading nothing in
+    // the spelling could separate from the real ones. Review separates it.
+    expect(baseFormSubstitution("refelled", ON_PRODUCTIVE)?.base).toBe("refel");
+    expect(score("refelled", ON_PRODUCTIVE)).toBe(9.91);
+    expect(score("refelled", BEFORE_PRODUCTIVE)).toBe(9.91);
+  });
+
+  it("cannot reach past two folds that predate this rule", () => {
+    // Two of the 162 are pinned to the right base and still end up somewhere
+    // wrong, because the base itself folds on: "preapply" is pinned to `apply`
+    // and "prehearing" to `hearing`, but `apply` -> `app` and `hearing` ->
+    // `hear` are standing folds that ran before this cutover and are not this
+    // rule's to answer for. Pinned here so that fixing either is noticed.
+    for (const date of [BEFORE_PRODUCTIVE, ON_PRODUCTIVE]) {
+      expect(baseFormSubstitution("apply", date)?.base).toBe("app");
+      expect(baseFormSubstitution("hearing", date)?.base).toBe("hear");
     }
   });
 
