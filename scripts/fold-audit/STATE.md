@@ -1,36 +1,46 @@
 # Where the fold audit got to
 
-Last run 2026-09-22. Everything below is reproducible from the scripts in this
-directory; `out/` is gitignored, so a fresh clone regenerates it.
+Last run 2026-09-22; 259 of 302 batches judged, 214 applied.
+
+Everything below is reproducible from the scripts in this directory; `out/` is gitignored, so a fresh clone regenerates it.
 
 ## Done
 
-| | |
-| --- | ---: |
-| batches judged | **214 of 302** |
-| questions judged | 107,000 of 150,972 |
-| folds covered | **175,903 of 229,395 (77%)** |
-| flagged by the detector | 3,443 |
-| confirmed by adversarial review | 1,477 |
-| exempted | 1,466 |
-| fixed by a rule change instead | 54 |
+Two numbers, and they differ. **Judged** is how far the detector got;
+**applied** is what has actually shipped. Batches 215-258 and 261 were judged
+after the last apply, so their verdicts have never been scored, verified or
+turned into exemptions.
+
+| | judged | applied |
+| --- | ---: | ---: |
+| batches | **259 of 302** | 214 |
+| questions | 129,500 | 107,000 |
+| folds covered | 205,403 (90%) | **175,903 (77%)** |
+| flagged by the detector | — | 3,443 |
+| confirmed by adversarial review | — | 1,477 |
+| exempted | — | 1,466 |
+| fixed by a rule change instead | — | 54 |
 
 Shipped in `fold-exemptions.json` (1,670 entries) and one rule change in
 `scoringBaseForm`, all dated 2026-10-01 (`LIQUID_STEM_START`).
 
+**The 45 judged-but-unapplied batches live only in `out/`, which is
+gitignored.** If this worktree is removed they are gone, and re-running them
+costs about twenty minutes at four workers. Nothing else depends on them.
+
 ## Remaining
 
-**Batches 215–302** — 88 batches, 43,972 questions, 53,492 folds (23% of the
-system). They are the lowest-harm end: the population was sorted worst-first, so
-what is left is where a wrong fold costs the least.
+**Batches 259-260 and 262-302** - 43 batches, 21,472 questions, 25,518 folds
+(11% of the system). They are the lowest-harm end: the population was sorted
+worst-first, so what is left is where a wrong fold costs the least.
 
-They failed on a throttle at eight concurrent workers, not on anything about
-their content — a hand-run of batch-300 afterwards returned perfect output. Use
-fewer workers.
+An earlier run lost 88 batches to a throttle at eight concurrent workers, not to
+anything about their content - a hand-run of batch-300 afterwards returned
+perfect output. Four workers ran clean at roughly two batches a minute.
 
 ```
 claude auth status                                       # must be logged in
-python3 scripts/fold-audit/judge.py --workers 4          # resumes; skips the 214
+python3 scripts/fold-audit/judge.py --workers 4          # resumes; skips the 259
 python3 scripts/fold-audit/score2.py
 rm -rf scripts/fold-audit/out/verified                   # see "gotchas"
 python3 scripts/fold-audit/verify.py --workers 4
