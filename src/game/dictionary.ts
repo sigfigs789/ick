@@ -161,7 +161,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     say which register is allowed. Misspellings and non-words stay refused,
  *     which is the line the curation rules already draw (see
  *     FREEFORM_WAIVED_REJECTIONS).
- *   - on/after 2026-09-28 (the latest system): the fold stops reading the
+ *   - on/after 2026-09-27 (the latest system): the fold stops reading the
  *     curated list and reads the expansive corpus instead. The first entry here
  *     that changes the *list* a rule is applied to rather than the rule -- every
  *     fold above is untouched and none is added.
@@ -449,12 +449,12 @@ const DOUBLING_TENSE_START = "2026-09-10";
  * them would fold measured words onto bases no player would accept. See
  * `ungatedPrefixBaseCandidates` in stem.ts.
  *
- * One day later the bases widen under it: from CORPUS_ONLY_START the fold prices
+ * The same day the bases widen under it: from CORPUS_ONLY_START the fold prices
  * against the corpus lexicon rather than the curated list, and this rule inherits
  * that like every other -- "antiabortionism" reaches `abortionism`, a word only
- * the corpus carries, and "antichrist" reaches `christ`. Two cutovers a day
- * apart and deliberately separate: this one is about *when* a strip is allowed,
- * that one about what any strip may land on.
+ * the corpus carries, and "antichrist" reaches `christ`. Two changes on one date
+ * but deliberately separate: this one is about *when* a strip is allowed, that
+ * one about what any strip may land on.
  */
 const UNGATED_PREFIX_START = MODE_CHOICE_START;
 
