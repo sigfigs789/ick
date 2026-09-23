@@ -15,6 +15,7 @@ import { todayDateString } from "./date";
 import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import { FIRST_PUZZLE } from "./drop";
 import type { AcceptedWord, DailyProgress } from "./types";
+import { APP_VERSION } from "../version";
 
 const WORDS: AcceptedWord[] = [
   { word: "inkling", rarity: "Rare", zipf: 2.6 },
@@ -54,6 +55,9 @@ describe("submitting a score", () => {
     const body = posted(fetchMock);
     expect(body).toEqual({
       playerId,
+      // Which release priced these words, so the board can turn away an install
+      // that stopped updating (see MIN_RANKED_VERSION in api/leaderboard.ts).
+      version: APP_VERSION,
       // A one-day batch, the same shape a history import uses. No name: the
       // board derives that from the day's own rarest word.
       scores: [

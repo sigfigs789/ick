@@ -26,6 +26,7 @@ import { isRanked, modeForDate, type GameMode } from "./mode";
 import { playedOnItsDay } from "./storage";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 import { monthStart } from "./month";
+import { APP_VERSION } from "../version";
 import { weekStart } from "./week";
 
 export interface BoardEntry {
@@ -680,7 +681,12 @@ function rarest(words: readonly AcceptedWord[], date: string): AcceptedWord {
  */
 function post(playerId: string, scores: ScorePayload[]): boolean {
   if (scores.length === 0) return false;
-  const body = JSON.stringify({ playerId, scores });
+  // `version` is the release this client's scoring was built from. The server
+  // ranks only clients at or above its floor (see MIN_RANKED_VERSION in
+  // api/leaderboard.ts): a phone app is a frozen copy of these rules, so an
+  // install that never updates would otherwise keep pricing words by a system
+  // the website has since replaced, on the same board.
+  const body = JSON.stringify({ playerId, version: APP_VERSION, scores });
   try {
     void fetch("/api/leaderboard", {
       method: "POST",
