@@ -5,7 +5,8 @@ import {
   MODE_CHOICE_START,
   currentMode,
   freeformForDate,
-  isRanked,
+  boardFor,
+  countsOnBoard,
   loadMode,
   modeForDate,
   modeIsChosen,
@@ -101,28 +102,62 @@ describe("which mode a puzzle is in", () => {
   });
 });
 
-describe("which days the board ranks", () => {
-  it("ranks the trial week, which everybody played the same way", () => {
-    // Those days were freeform for everyone at once, so they ranked against
-    // each other fairly -- and they are on the board already. Taking them off
-    // now would delete two weeks of standings to enforce a rule that did not
-    // exist while they were played.
+describe("which board a day counts on", () => {
+  it("puts everything before the split on both", () => {
+    // Those days were played before there was a choice to make -- the trial week
+    // was freeform for everyone at once, and everything before it was standard
+    // for everyone at once -- so each already ranked everyone who played it.
+    // Splitting them now would halve one board and delete the other's history.
     setMode("freeform");
-    expect(isRanked(IN_TRIAL, "freeform")).toBe(true);
-    expect(isRanked(BEFORE_TRIAL, "standard")).toBe(true);
+    expect(boardFor(IN_TRIAL, "freeform")).toBeNull();
+    expect(boardFor(BEFORE_TRIAL, "standard")).toBeNull();
+    for (const board of ["standard", "freeform"] as const) {
+      expect(countsOnBoard(board, IN_TRIAL, "freeform")).toBe(true);
+      expect(countsOnBoard(board, BEFORE_TRIAL, "standard")).toBe(true);
+    }
   });
 
-  it("leaves a chosen Freeform day off it", () => {
-    expect(isRanked(AFTER_SWITCH, "freeform")).toBe(false);
-    expect(isRanked(AFTER_SWITCH, "standard")).toBe(true);
+  it("sends a chosen day to its own board and no other", () => {
+    expect(boardFor(AFTER_SWITCH, "freeform")).toBe("freeform");
+    expect(boardFor(AFTER_SWITCH, "standard")).toBe("standard");
+    expect(countsOnBoard("standard", AFTER_SWITCH, "freeform")).toBe(false);
+    expect(countsOnBoard("freeform", AFTER_SWITCH, "freeform")).toBe(true);
+    expect(countsOnBoard("freeform", AFTER_SWITCH, "standard")).toBe(false);
+    expect(countsOnBoard("standard", AFTER_SWITCH, "standard")).toBe(true);
   });
 
   it("reads the mode off the record rather than the switch", () => {
     // A live lookup can settle after the player has flipped it, and the day
     // belongs to the game it was submitted to.
     setMode("freeform");
-    expect(isRanked(AFTER_SWITCH, "standard")).toBe(true);
+    expect(boardFor(AFTER_SWITCH, "standard")).toBe("standard");
     setMode("standard");
-    expect(isRanked(AFTER_SWITCH, "freeform")).toBe(false);
+    expect(boardFor(AFTER_SWITCH, "freeform")).toBe("freeform");
+  });
+
+  it("falls back to the switch for a day with no mode on its record", () => {
+    setMode("freeform");
+    expect(boardFor(AFTER_SWITCH)).toBe("freeform");
+    setMode("standard");
+    expect(boardFor(AFTER_SWITCH)).toBe("standard");
+  });
+});
+
+describe("naming a mode rather than reading the switch", () => {
+  it("honours the name for a day the player chose", () => {
+    setMode("freeform");
+    expect(modeForDate(AFTER_SWITCH)).toBe("freeform");
+    expect(modeForDate(AFTER_SWITCH, "standard")).toBe("standard");
+    expect(freeformForDate(AFTER_SWITCH, "standard")).toBe(false);
+  });
+
+  it("ignores it for the trial week, which was nobody's choice", () => {
+    // The override stands in for the switch and only for the switch. The finds
+    // feed prices every word as Standard (see leaderboard.parseWords), and a
+    // trial-week word still has to come back at what that week scored it.
+    setMode("standard");
+    expect(modeForDate(IN_TRIAL, "standard")).toBe("freeform");
+    expect(freeformForDate(IN_TRIAL, "standard")).toBe(true);
+    expect(modeForDate(BEFORE_TRIAL, "freeform")).toBe("standard");
   });
 });

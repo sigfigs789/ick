@@ -2784,6 +2784,49 @@ h2 {
 .leaderboard__board {
   min-width: 0;
 }
+/* The board picker: which of the two games' standings the page is showing.
+
+   The same segmented control as the window picker below it, in two segments
+   instead of three, because it is the same kind of choice -- one of these, not a
+   thing to do -- and two controls a centimetre apart that behave alike should
+   look alike. On every layout, unlike the windows: a wide screen has room for
+   three boards side by side but they are still three windows of one game, so
+   there is nothing here for width to solve.
+
+   Wider than the track under it, and a size up. It is the larger of the two
+   choices -- a window is a slice of one game and this is which game -- and the
+   two read in the wrong order if the one that changes every number on the page
+   is the smaller. Centred and bounded rather than stretched, so a two-segment
+   track on a laptop does not become two very long buttons. */
+.leaderboard__modes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+  max-width: 18rem;
+  margin: 0 auto 0.9rem;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-inset);
+}
+.leaderboard__mode {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: 0.5rem 0.25rem;
+  color: var(--fg-muted);
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.leaderboard__mode[aria-pressed="true"] {
+  background: var(--segment-on);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+  color: var(--fg);
+}
+
 /* The window picker, on the narrow layout only -- the component renders it
    nowhere else (see LeaderboardPage), because a laptop already has all three
    boards on screen and a picker there would only hide two of them.

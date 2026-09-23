@@ -12,7 +12,7 @@ import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard } from "../game/player";
 import { handleFor } from "../game/handle";
 import { todayDateString } from "../game/date";
-import { MODE_CHOICE_START } from "../game/mode";
+import { MODE_CHOICE_START, currentMode, resetModeCache } from "../game/mode";
 import { setDevDateOverride } from "../dev/devDate";
 
 // No names come from the server: the client derives a handle from each player
@@ -139,6 +139,18 @@ function rowMeta(heading: string, index: number): string {
     boardRows(heading)[index].querySelector(".leaderboard__meta")
       ?.textContent ?? ""
   );
+}
+
+/** The last of a list, without `Array.prototype.at` -- see tsconfig's lib. */
+function lastOf(items: readonly string[]): string {
+  return items[items.length - 1] ?? "";
+}
+
+/** The URLs of every board read the page made, in order. */
+function boardUrls(fetchMock: ReturnType<typeof stubFetch>) {
+  return fetchMock.mock.calls
+    .filter(([, init]) => (init as RequestInit | undefined)?.method !== "POST")
+    .map(([url]) => String(url));
 }
 
 /** The bodies of every score submission the page made. */
@@ -1185,33 +1197,75 @@ describe("the leaderboard page on a phone", () => {
   });
 });
 
-describe("naming the mode the boards rank", () => {
+describe("choosing which of the two boards to read", () => {
   afterEach(() => {
     setDevDateOverride(null);
+    resetModeCache();
   });
 
-  it("says nothing while there is only one way to play", async () => {
-    // Before MODE_CHOICE_START everybody is on the same rules. Naming
-    // "Standard" to a player who has never been offered anything else draws a
-    // distinction they do not have -- and calling Freeform unranked in the very
-    // week it is the only way to play is worse than saying nothing.
+  it("offers nothing while there is only one way to play", async () => {
+    // Before MODE_CHOICE_START everybody is on the same rules and there is one
+    // board. A picker naming "Standard" to a player who has never been offered
+    // anything else draws a distinction they do not have.
     setDevDateOverride("2026-09-21");
     stubFetch();
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     expect(screen.getByText(/played on the day they drop/i)).toBeInTheDocument();
-    expect(screen.queryByText(/standard mode only/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /which board to show/i })).toBeNull();
+    expect(screen.queryByText(/each mode has its own board/i)).not.toBeInTheDocument();
   });
 
-  it("says so once both modes are live", async () => {
-    // From the choice date it is the answer to a real question: a Freeform
-    // player wondering where their score went.
+  it("offers both once the modes split, and says what they share", async () => {
     setDevDateOverride(MODE_CHOICE_START);
     stubFetch();
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    expect(screen.getByText(/standard mode only/i)).toBeInTheDocument();
+    const picker = screen.getByRole("group", { name: /which board to show/i });
+    expect(within(picker).getByRole("button", { name: "Standard" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(within(picker).getByRole("button", { name: "Freeform" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    // The one thing about these boards that is not obvious from looking at them.
+    expect(screen.getByText(/each mode has its own board/i)).toBeInTheDocument();
+  });
+
+  it("asks the server for the board that was picked", async () => {
+    setDevDateOverride(MODE_CHOICE_START);
+    const fetchMock = stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(lastOf(boardUrls(fetchMock))).toContain("mode=standard");
+
+    const picker = screen.getByRole("group", { name: /which board to show/i });
+    fireEvent.click(within(picker).getByRole("button", { name: "Freeform" }));
+
+    // A different board is a different set of numbers, so all three windows are
+    // re-read rather than relabelled.
+    await waitFor(() =>
+      expect(lastOf(boardUrls(fetchMock))).toContain("mode=freeform"),
+    );
+  });
+
+  it("switches the game along with the board", async () => {
+    // The board somebody reads and the rules they play under are one choice: a
+    // page that let them drift apart would have a player studying a board they
+    // cannot get onto.
+    setDevDateOverride(MODE_CHOICE_START);
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    const picker = screen.getByRole("group", { name: /which board to show/i });
+    fireEvent.click(within(picker).getByRole("button", { name: "Freeform" }));
+
+    await waitFor(() => expect(currentMode()).toBe("freeform"));
   });
 });

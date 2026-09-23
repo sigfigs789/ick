@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
-import { FREEFORM_STATS_LABEL, buildShareText, type RevealMode } from "../game/share";
+import { buildShareText, type RevealMode } from "../game/share";
 import { RainbowWord } from "./RainbowWord";
+import { MODE_LABELS } from "../game/mode";
 import { windowTotals } from "../game/totals";
 import { ShareButton } from "./ShareButton";
 import { TwitterShareButton } from "./TwitterShareButton";
@@ -33,27 +34,31 @@ interface Props {
 const SPOILER_LABEL_ID = "results-panel-reveal-label";
 
 /**
- * Colour the one "Freeform" a Freeform result puts where its week and month
- * totals would be (see game/share.ts).
+ * Colour the mode a Freeform result names on its heading (see game/share.ts).
  *
  * Done here rather than in `buildShareText` because it is a property of *this*
  * rendering and not of the share: what leaves the app is plain text, which has
  * no colour to carry. So the builder stays a pure string and the preview paints
  * one token of it.
  *
- * Only the stats line can contain the token, and only once -- the heading says
- * the mode too, but it is rendered as its own element above this and never
- * reaches here. A line without it is returned untouched, which is every line of
- * every Standard result.
+ * On the heading, where the mode has ridden since the switch shipped. It used to
+ * be painted on the stats line instead, which is where a Freeform result put its
+ * name in place of the week and month totals it had no board to quote -- it has
+ * one now, so the line is two numbers like everyone else's and the only mention
+ * of the mode is back up here.
+ *
+ * Only Freeform is painted, and a heading without it is returned untouched --
+ * which is every Standard result, and every result from before the switch
+ * existed, where the heading names no mode at all.
  */
-function paintFreeform(line: string) {
-  const at = line.indexOf(FREEFORM_STATS_LABEL);
-  if (at === -1) return line;
+function paintMode(heading: string) {
+  const at = heading.indexOf(MODE_LABELS.freeform);
+  if (at === -1) return heading;
   return (
     <>
-      {line.slice(0, at)}
-      <RainbowWord word={FREEFORM_STATS_LABEL} />
-      {line.slice(at + FREEFORM_STATS_LABEL.length)}
+      {heading.slice(0, at)}
+      <RainbowWord word={MODE_LABELS.freeform} />
+      {heading.slice(at + MODE_LABELS.freeform.length)}
     </>
   );
 }
@@ -138,12 +143,12 @@ export function ResultsPanel({
         </div>
       </div>
       <pre className="results-panel__preview" aria-hidden="true">
-        <strong>{shareHeading}</strong>
+        <strong>{paintMode(shareHeading)}</strong>
         {shareDetailLines.length > 0 && "\n"}
         {shareDetailLines.map((line, index) => (
           <Fragment key={index}>
             {index > 0 && "\n"}
-            {paintFreeform(line)}
+            {line}
           </Fragment>
         ))}
       </pre>

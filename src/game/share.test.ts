@@ -248,7 +248,7 @@ describe("the mode on the share", () => {
     ).toContain("Drop: INK · Standard");
   });
 
-  it("puts its name where the week and month totals go", () => {
+  it("quotes its window totals, and names the mode only on the heading", () => {
     setMode("freeform");
     const text = buildShareText(MODE_CHOICE_START, "ink", WORDS, {
       streak: 3,
@@ -256,12 +256,15 @@ describe("the mode on the share", () => {
       monthTotal: 120,
       isToday: true,
     });
-    // A week total and a month total are board numbers, and Freeform is not on
-    // the board -- quoting them would invite a comparison the game refuses to
-    // make.
-    expect(text).toContain("Today: 5.1 · Freeform");
-    expect(text).not.toContain("Week:");
-    expect(text).not.toContain("Month:");
+    // A week total and a month total are board numbers, and Freeform used to put
+    // its own name here instead because it had no board to quote. It has one
+    // now, and these are its numbers -- a Freeform week ranked against other
+    // Freeform weeks.
+    expect(text).toContain("Today: 5.1 · Week: 40.0 · Month: 120.0");
+    // Which game produced them is still said, and still said once: on the
+    // heading, where the mode has ridden since the switch shipped.
+    expect(text).toContain("Drop: INK · Freeform");
+    expect(text.match(/Freeform/g)).toHaveLength(1);
     // The streak is a count of days rather than a score, and it is still true.
     expect(text).toContain("Streak: 3 days");
   });

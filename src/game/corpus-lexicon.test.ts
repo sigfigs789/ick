@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { corpusAttests, corpusEntry, loadCorpus, sourceBit, tagBit } from "./corpus";
 import { baseFormSubstitution, rarityFor } from "./dictionary";
-import { isRanked, modeForDate, resetModeCache, setMode } from "./mode";
+import { boardFor, modeForDate, resetModeCache, setMode } from "./mode";
 import curated from "../data/dictionary.json";
 
 /**
@@ -194,8 +194,8 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
       try {
         expect(modeForDate(BEFORE)).toBe("standard");
         expect(modeForDate(AFTER)).toBe("standard");
-        expect(isRanked(AFTER, "standard")).toBe(true);
-        expect(isRanked(AFTER, "freeform")).toBe(false);
+        expect(boardFor(AFTER, "standard")).toBe("standard");
+        expect(boardFor(AFTER, "freeform")).toBe("freeform");
       } finally {
         resetModeCache();
       }

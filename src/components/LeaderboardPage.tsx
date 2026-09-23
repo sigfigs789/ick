@@ -13,7 +13,8 @@ import { DEV_TOOLS } from "../dev/devTools";
 import { handleFor } from "../game/handle";
 import { accountName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
-import { modeIsChosen } from "../game/mode";
+import { MODE_CHOICE_START, MODE_LABELS, modeIsChosen, type GameMode } from "../game/mode";
+import { useGameMode } from "../hooks/useGameMode";
 import {
   monthLabel,
   monthResetLabel,
@@ -43,6 +44,16 @@ type BoardWindow = "day" | "week" | "month";
  * heading says which day, week or month it is about, and it is still right after
  * a step back.
  */
+/**
+ * The two boards, in the order they are offered.
+ *
+ * Standard first, and fixed rather than "the one you are on, then the other":
+ * these are two named places, and a pair of buttons that swap positions when
+ * pressed is a pair a reader has to re-read every time. It is the same order the
+ * header's switch uses, for the same reason.
+ */
+const BOARD_MODES: GameMode[] = ["standard", "freeform"];
+
 const BOARD_WINDOWS: { window: BoardWindow; label: string }[] = [
   { window: "day", label: "Day" },
   { window: "week", label: "Week" },
@@ -75,6 +86,23 @@ interface Windows {
   day: string;
   week: string;
   month: string;
+  /** Which of the two boards those windows were counted on. */
+  board: GameMode;
+}
+
+/**
+ * One board's identity while it is loading: its window, and which of the two
+ * boards that window is being counted on.
+ *
+ * The board belongs in the key for the same reason the window does. Switching
+ * from Standard to Freeform re-reads all three, and without it the rows of the
+ * board just left would sit under the heading of the one just asked for, saying
+ * "ready" the whole time -- which is exactly the wrong thing to be confident
+ * about, because the numbers change completely and nothing about them looks
+ * stale.
+ */
+function windowKey(board: GameMode, window: string): string {
+  return `${board}:${window}`;
 }
 
 /**
@@ -158,6 +186,27 @@ export function LeaderboardPage() {
   const [week, setWeek] = useState(thisWeek);
   const [month, setMonth] = useState(thisMonth);
   /**
+   * Which of the two boards all three windows are about.
+   *
+   * The player's own mode, and not a copy of it: this *is* the switch, the same
+   * one the header carries. The board somebody reads and the game they play are
+   * one choice -- a page that let them drift apart would have a player studying
+   * a board they cannot get onto -- so there is one piece of state and both
+   * controls set it. Flipping it in the header repaints this page, and flipping
+   * it here changes the puzzle they go back to.
+   *
+   * One choice for the whole section, not one per board. A page showing this
+   * week's Standard beside this month's Freeform would be comparing two games,
+   * which is the thing having two boards is meant to stop.
+   *
+   * Only offered from the choice date on. Before it there is one board, because
+   * before it there was one way to play -- and every day of that history counts
+   * on both boards afterwards (see mode.boardFor), which is what makes this a
+   * choice about new scoring rather than about which past to look at.
+   */
+  const [board, setBoard] = useGameMode();
+  const boardsSplit = modeIsChosen(today);
+  /**
    * Whether the page is showing one board at a time, and which one.
    *
    * Only ever true on the narrow layout. Three boards side by side is the whole
@@ -199,9 +248,23 @@ export function LeaderboardPage() {
    * board can be waiting on a window the reader stepped to while the other is
    * sitting on rows that never moved.
    */
-  const dayState = boardState(day, shown?.day, failed?.day);
-  const weekState = boardState(week, shown?.week, failed?.week);
-  const monthState = boardState(month, shown?.month, failed?.month);
+  const keyOf = (windows: Windows | null, window: keyof Omit<Windows, "board">) =>
+    windows ? windowKey(windows.board, windows[window]) : undefined;
+  const dayState = boardState(
+    windowKey(board, day),
+    keyOf(shown, "day"),
+    keyOf(failed, "day"),
+  );
+  const weekState = boardState(
+    windowKey(board, week),
+    keyOf(shown, "week"),
+    keyOf(failed, "week"),
+  );
+  const monthState = boardState(
+    windowKey(board, month),
+    keyOf(shown, "month"),
+    keyOf(failed, "month"),
+  );
   /**
    * Who the boards should call "you".
    *
@@ -243,11 +306,11 @@ export function LeaderboardPage() {
     setState((was) => (was === "ready" ? was : "loading"));
     setFailed(null);
     const request = ++boardsRequest.current;
-    fetchBoards(today, { day, week, month })
+    fetchBoards(today, { day, week, month, mode: board })
       .then((loaded) => {
         if (request !== boardsRequest.current) return;
         setBoards(loaded);
-        setShown({ day, week, month });
+        setShown({ day, week, month, board });
         boardsReadAt.current = Date.now();
         setState("ready");
       })
@@ -258,9 +321,9 @@ export function LeaderboardPage() {
       .catch(() => {
         if (request !== boardsRequest.current) return;
         setState((was) => (was === "ready" ? was : "error"));
-        setFailed({ day, week, month });
+        setFailed({ day, week, month, board });
       });
-  }, [today, day, week, month]);
+  }, [today, day, week, month, board]);
 
   /**
    * Re-read the boards without disturbing the page.
@@ -276,16 +339,16 @@ export function LeaderboardPage() {
       // tapped refresh is asking for the board in front of them again, not for
       // this week's.
       const request = ++boardsRequest.current;
-      fetchBoards(today, { ...options, day, week, month })
+      fetchBoards(today, { ...options, day, week, month, mode: board })
         .then((loaded) => {
           if (request !== boardsRequest.current) return;
           setBoards(loaded);
-          setShown({ day, week, month });
+          setShown({ day, week, month, board });
           boardsReadAt.current = Date.now();
         })
         .catch(() => {});
     },
-    [today, day, week, month],
+    [today, day, week, month, board],
   );
 
   /**
@@ -431,19 +494,54 @@ export function LeaderboardPage() {
               rather than a column gap away from it. */}
           <ul className="leaderboard__rules">
             <li>Only puzzles played on the day they drop count</li>
-            {/* Said out loud rather than left to be discovered by a Freeform
-                player wondering where their score went. The boards are
-                Standard's, and there is no second set -- see
-                game/leaderboard.ts, submitScore.
+            {/* What the two boards have in common, said once rather than
+                discovered by a player who switched modes and wondered where
+                their September went. The split is the thing about these boards
+                that is not obvious from looking at them: the day you switched is
+                where they diverge, and everything behind it is on both.
 
-                Only once there are two modes to tell apart. Before
-                MODE_CHOICE_START everybody is on the same rules, so this line
-                would be drawing a distinction the reader does not have yet --
-                naming "Standard" to a player who has never been offered
-                anything else, and "Freeform" as a thing that isn't ranked in
-                the very week it is the only way to play. */}
-            {modeIsChosen(today) && <li>Standard mode only — Freeform isn't ranked</li>}
+                Only once there are two boards to tell apart. Before
+                MODE_CHOICE_START everybody is on the same rules and there is one
+                board, so this line would be drawing a distinction the reader
+                does not have yet. */}
+            {boardsSplit && (
+              <li>
+                Each mode has its own board — everything played before{" "}
+                {formatDateLabel(MODE_CHOICE_START)} counts on both
+              </li>
+            )}
           </ul>
+          {/* Which board. Above the windows rather than beside them, because it
+              is the larger of the two choices: a window is a slice of one game,
+              and this is which game. Named rather than switched -- two buttons
+              that both say what they select, like the window pills under them,
+              instead of a toggle whose label has to be read twice to work out
+              whether it names the state or the action.
+
+              Switching here switches the game too. The board a player is reading
+              and the rules they are playing under are the same choice, and a
+              page that let them drift apart would have somebody studying a board
+              they cannot get onto. So this is the header's switch, in the place
+              a reader of the boards will look for it. */}
+          {boardsSplit && (
+            <div
+              className="leaderboard__modes"
+              role="group"
+              aria-label="Which board to show"
+            >
+              {BOARD_MODES.map((which) => (
+                <button
+                  key={which}
+                  type="button"
+                  className="leaderboard__mode"
+                  aria-pressed={board === which}
+                  onClick={() => setBoard(which)}
+                >
+                  {MODE_LABELS[which]}
+                </button>
+              ))}
+            </div>
+          )}
           {/* Which board, on the layout that only has room for one at a time.
               Above the boards rather than beside each heading, because it is one
               choice about the section and not three controls: a reader picks a
