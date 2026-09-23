@@ -390,7 +390,7 @@ describe("reviewed fold exemptions", () => {
       if ((entry as { scope?: string }).scope !== "prefix") continue;
       // Asked with "pre-" on, the superset: a scoped entry written for an
       // archived puzzle is checked against the residues that puzzle offered.
-      for (const residue of prefixBaseCandidates(word, { pre: true, borrowed: true })) {
+      for (const residue of prefixBaseCandidates(word, { pre: true, borrowed: true, re: false })) {
         expect(residues.has(residue), `${word} could have been a ${residue} table entry`).toBe(
           false
         );
@@ -2324,5 +2324,92 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
     // shared `addPrefixBases` is for: "uncleanest" is the superlative of
     // "unclean", not un- + "cleanest".
     expect(baseFormSubstitution("uncleanest", ON_UNGATED)?.base).toBe("unclean");
+  });
+});
+
+describe('"re-" and "pre-" join the transparent prefixes (from 2026-09-29)', () => {
+  const BEFORE_PRODUCTIVE = "2026-09-28"; // the corpus cutover, the day before
+  const ON_PRODUCTIVE = "2026-09-29"; // first puzzle with the pair in the list
+
+  // The readings the rule is for: a productive prefix on a free-standing English
+  // word, which is most of what the pair reaches.
+  const MOVED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    ["reexplain", "explain", 9.93, 4.55],
+    ["rematch", "match", 6.6, 4.21],
+    ["prewash", "wash", 9.66, 5.17],
+    ["preselect", "selected", 8.12, 4.86],
+  ];
+
+  it.each(MOVED)("%s folds onto %s", (word, base, _before, after) => {
+    expect(score(word, ON_PRODUCTIVE)).toBe(after);
+    expect(baseFormSubstitution(word, ON_PRODUCTIVE)?.base).toBe(base);
+  });
+
+  it.each(MOVED)("%s kept its own score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_PRODUCTIVE)).toBe(before);
+  });
+
+  // The Latin fossils, pinned as tests rather than left to the prose, because
+  // they are the thing to look at when this rule is reconsidered: nothing in the
+  // spelling separates them from the readings above. "refel" is to refute, and
+  // the three "pre-" ones are the words PRE_PREFIX_END retired the prefix over.
+  const FOSSILS: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    ["refelled", "fell", 9.91, 4.61],
+    ["preapply", "app", 9.92, 4.6],
+    ["prehearing", "hear", 8.07, 4.06],
+  ];
+
+  it.each(FOSSILS)("%s folds onto %s anyway, which is what it costs", (word, base, before, after) => {
+    expect(score(word, BEFORE_PRODUCTIVE)).toBe(before);
+    expect(score(word, ON_PRODUCTIVE)).toBe(after);
+    expect(baseFormSubstitution(word, ON_PRODUCTIVE)?.base).toBe(base);
+  });
+
+  it("moves 3,005 words and lowers no score", () => {
+    // Two claims, as at every prefix cutover: the change is these two families,
+    // and every move is a fold, which can only ever make a word more common.
+    const moved = (dictionaryWords as string[]).filter(
+      (word) =>
+        rarityFor(word, ON_PRODUCTIVE)!.zipf !== rarityFor(word, BEFORE_PRODUCTIVE)!.zipf
+    );
+    expect(moved).toHaveLength(3005);
+    // The four that do not open with either prefix reach one through a chain:
+    // "overrefine" strips "over-" first and the residue carries the "re-".
+    expect(moved.filter((word) => !/^(pre|re)/.test(word))).toEqual([
+      "overrefine",
+      "overrefined",
+      "overrefines",
+      "overrefining",
+    ]);
+    for (const word of moved) {
+      expect(
+        rarityFor(word, ON_PRODUCTIVE)!.zipf,
+        `${word} is no rarer than it was`
+      ).toBeGreaterThan(rarityFor(word, BEFORE_PRODUCTIVE)!.zipf);
+    }
+  });
+
+  it('stays behind the frequency gate, unlike "counter-" and "anti-"', () => {
+    // The reason neither is in UNGATED_PREFIXES: these are the openings of
+    // ordinary measured words, and the gate is all that stands between the rule
+    // and a base they were never built on.
+    for (const word of ["release", "report", "reduce", "remain", "region", "present", "preface", "pressure"]) {
+      expect(score(word, ON_PRODUCTIVE), `${word} is unchanged`).toBe(
+        score(word, BEFORE_PRODUCTIVE)
+      );
+      expect(baseFormSubstitution(word, ON_PRODUCTIVE)).toBeUndefined();
+    }
+  });
+
+  it("is off for every puzzle between PRE_PREFIX_END and the cutover", () => {
+    for (const date of [BEFORE_PRODUCTIVE, "2026-09-13", "2026-09-06"]) {
+      expect(baseFormSubstitution("reexplain", date)).toBeUndefined();
+      // Not undefined, because the fold's other direction still caps
+      // "preapply" at its own inflection; it is the prefix strip that is gone.
+      expect(baseFormSubstitution("preapply", date)?.base).toBe("preapplied");
+    }
+    // ...and "pre-" folded before it, which is the answer changing twice.
+    expect(baseFormSubstitution("preapply", "2026-09-04")?.base).toBe("app");
+    expect(baseFormSubstitution("reexplain", "2026-09-04")).toBeUndefined();
   });
 });

@@ -219,7 +219,9 @@ const PREFIX_BASE_MIN_ZIPF = 3;
 
 /*
  * 2026-09-05: "pre-" stops being a foldable prefix, the first of these rules to
- * be taken away rather than added. Everything else about the prefix fold stays
+ * be taken away rather than added -- and, from 2026-09-29, the first put back;
+ * see PRODUCTIVE_PREFIX_START, which reverses this judgement and inherits every
+ * cost counted below. Everything else about the prefix fold stays
  * as it was -- the floor gate, the residue table, the exemptions -- and archived
  * puzzles keep the scores they were played with, so the flag stays on for every
  * system before this date (see `Scoring.prePrefixBases`).
@@ -1071,17 +1073,23 @@ interface Scoring {
   // off for earlier systems so past puzzles' scores stay frozen (see
   // UNGATED_PREFIX_START).
   ungatedPrefixBases: boolean;
+  // Whether "re-" is one of the transparent prefixes. Reads the same way round
+  // as the flags above rather than the other way like `prePrefixBases`: a prefix
+  // added, not one taken away. 2026-09-29; off for earlier systems so past
+  // puzzles' scores stay frozen (see PRODUCTIVE_PREFIX_START).
+  rePrefixBases: boolean;
   // Whether this system folds at all. True for every dated system but the
   // freeform window, which skips the fold wholesale and scores each word on its
   // own frequency (see FREEFORM_START). The one flag here that reads as a
   // master switch rather than a rule: the rules it stands in front of are
   // unchanged and untested by it, so turning it back on restores them exactly.
   folds: boolean;
-  // Whether "pre-" is one of the transparent prefixes. The only flag here that
-  // reads the other way round -- it is *on* for the systems from 2026-08-24 up
-  // to 2026-09-05, when the prefix was retired, and off from there -- because a
-  // rule taken away has to keep working for the puzzles it was played on just as
-  // one added has to stay off for them (see PRE_PREFIX_END).
+  // Whether "pre-" is one of the transparent prefixes. The only flag here whose
+  // answer changes twice: *on* from 2026-08-24 to 2026-09-05, off from there
+  // when the prefix was retired, and on again from 2026-09-29 when it came back
+  // -- because a rule taken away has to keep working for the puzzles it was
+  // played on just as one added has to stay off for them, and that holds in both
+  // directions (see PRE_PREFIX_END and PRODUCTIVE_PREFIX_START).
   prePrefixBases: boolean;
 }
 
@@ -1123,6 +1131,7 @@ interface ScoringFlags {
   borrowedPrefixBases?: boolean;
   doublingTenseBases?: boolean;
   ungatedPrefixBases?: boolean;
+  rePrefixBases?: boolean;
   // Defaults to *true*, the other way round from every flag above it, because a
   // fold is not a rule some past system lacked -- it is what scoring has always
   // done. Only the freeform profile passes false. See FREEFORM_START.
@@ -1160,6 +1169,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     borrowedPrefixBases = false,
     doublingTenseBases = false,
     ungatedPrefixBases = false,
+    rePrefixBases = false,
     folds = true,
     narrowBands = false,
     scoreCurve = false,
@@ -1225,6 +1235,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     borrowedPrefixBases,
     doublingTenseBases,
     ungatedPrefixBases,
+    rePrefixBases,
     // Every dated profile below predates the corpus cutover and reads the
     // curated index; CORPUS_SCORING is built by spreading the latest one and
     // turning this on.
@@ -1529,6 +1540,56 @@ const CORPUS_ONLY_START = "2026-09-28";
  */
 const CORPUS_SCORING: Scoring = { ...LATEST_SCORING, corpusLexicon: true };
 
+/**
+ * The first puzzle on which "re-" and "pre-" are transparent prefixes.
+ *
+ * The two most productive prefixes in the language and the two the fold has
+ * refused, for one reason: English fossilised both onto Latin stems that were
+ * never English words ("refel", "reduce", "region"; "precaution", "predominance",
+ * "pretext"), so the spelling cannot tell a real derivation from a word that
+ * merely opens the same way. The floor gate is no help either, because the
+ * fossils are rare and the gate lets rare words through. "re-" was refused from
+ * the start on that argument and "pre-" was retired on it -- see PRE_PREFIX_END,
+ * which is the judgement this date reverses.
+ *
+ * They fold here on the one thing that has changed since: the prefix rule now
+ * has a reviewed exemption list scoped per prefix (REVIEWED_FOLD_START,
+ * src/data/fold-exemptions.json), which is what "counter-" and "anti-" were
+ * ungated on. Both stay *behind* MEASURED_FLOOR -- neither is in
+ * UNGATED_PREFIXES and neither can be, because "release", "report", "reduce",
+ * "remain", "region", "present", "preface" and "pressure" are all measured well
+ * above the floor and all have the shape -- so what they reach is meant to be
+ * only the below-floor words whose residue is itself a word, which is where the
+ * productive readings live ("reexplain", "rebrand", "prewash", "preselect").
+ *
+ * "Meant to be" because the gate leaks, and the leak is this rule's known cost
+ * rather than a surprise: a measured word reaches a prefix strip through a
+ * deep-tail inflection of itself, which is how "reserve" gets to `serve` and
+ * "preapply" to `app`. PRE_PREFIX_END measured 265 of "pre-"'s 808 that way; the
+ * audit behind this date measures the same leak, larger, for the pair. The
+ * exemption list is scoped per prefix for exactly these.
+ *
+ * `prePrefixBases` comes back on here, which is the first time a flag on this
+ * profile has gone off at one date and on at a later one. It reads as the
+ * question it always asked -- does "pre-" fold -- so the answer simply changes
+ * twice, and the dates in between keep the answer they were played with.
+ *
+ * Dated like every other cutover: archived puzzles keep the scores they were
+ * played with, so both flags are off for every system between PRE_PREFIX_END and
+ * this date (see `Scoring.rePrefixBases` and `Scoring.prePrefixBases`).
+ */
+const PRODUCTIVE_PREFIX_START = "2026-09-29";
+
+/**
+ * The corpus era with "re-" and "pre-" in the transparent list. See
+ * PRODUCTIVE_PREFIX_START.
+ */
+const PRODUCTIVE_PREFIX_SCORING: Scoring = {
+  ...CORPUS_SCORING,
+  rePrefixBases: true,
+  prePrefixBases: true,
+};
+
 const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
 
 /** The corpus era's freeform half: the fold off, the lexicon still the corpus. */
@@ -1574,6 +1635,7 @@ const LEGACY_SCORING: Scoring = {
   prePrefixBases: false,
   borrowedPrefixBases: false,
   ungatedPrefixBases: false,
+  rePrefixBases: false,
 };
 
 /**
@@ -1692,7 +1754,11 @@ function scoringFor(date?: string): Scoring {
   // last so it reads as what it is -- the latest system with one switch thrown --
   // and so a later cutover slots in above it without thinking about the week.
   if (date >= CORPUS_ONLY_START) {
-    return usesFreeformRules(date) ? CORPUS_FREEFORM_SCORING : CORPUS_SCORING;
+    // Freeform first, because it folds nothing at all: which prefixes are in
+    // the transparent list is not a question the profile answers. See
+    // PRODUCTIVE_PREFIX_START.
+    if (usesFreeformRules(date)) return CORPUS_FREEFORM_SCORING;
+    return date < PRODUCTIVE_PREFIX_START ? CORPUS_SCORING : PRODUCTIVE_PREFIX_SCORING;
   }
   if (usesFreeformRules(date)) return FREEFORM_SCORING;
   // Below the freeform fork rather than above it, unlike every rung before it.
@@ -2440,6 +2506,7 @@ export function foldAffixGroups(date?: string): FoldAffixGroup[] {
       affixes: transparentPrefixes({
         pre: scoring.prePrefixBases,
         borrowed: scoring.borrowedPrefixBases,
+        re: scoring.rePrefixBases,
       }).map((prefix) => `${prefix}-`),
       // The chain carries it past "planned" to "plan", which is the fold
       // working as intended and worth showing: a prefix strip is one hop of
@@ -2938,6 +3005,7 @@ function addNonInflectionalBaseForms(
         prefixBaseCandidates(word, {
           pre: scoring.prePrefixBases,
           borrowed: scoring.borrowedPrefixBases,
+          re: scoring.rePrefixBases,
         }),
         scoring,
         date,
