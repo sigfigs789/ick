@@ -1,7 +1,13 @@
 // @ts-expect-error -- Node builtin; no @types/node, available under vitest.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { RARITY_ORDER, baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
+import {
+  LIQUID_STEM_START,
+  RARITY_ORDER,
+  baseFormSubstitution,
+  rarityFor,
+  rarityScore,
+} from "./dictionary";
 import {
   baseForm,
   doublingTenseStem,
@@ -43,6 +49,24 @@ function corpusHeadwords(): Set<string> {
   }
   corpusWordCache = out;
   return out;
+}
+
+/**
+ * Whether `word` came out of a cutover *rarer* than it went in.
+ *
+ * Several reviewed changes now land on MODE_CHOICE_START and they pull opposite
+ * ways: a prefix cutover hands a word a fold it did not have, which makes it
+ * commoner, while the 2026-09-22 semantic audit withdraws folds that were
+ * landing on the wrong word, which makes them rarer. A ledger counting the sum
+ * could state neither.
+ *
+ * Direction separates them rather than spelling, because the two overlap:
+ * thirteen "anti-"/"counter-" words and eleven "pre-" words carry an
+ * exemption of their own. One word's score cannot move one way for both reasons, so
+ * whichever way it moved names the change that owns it.
+ */
+function lostAFold(word: string, before: string, after: string): boolean {
+  return rarityFor(word, after)!.zipf < rarityFor(word, before)!.zipf;
 }
 
 // The 2026-08-21 cutover: a plural or third-person form no longer out-scores the
@@ -410,7 +434,12 @@ describe("reviewed fold exemptions", () => {
       // "airshow", and means a cascade of cosmic-ray particles; before the
       // cutover there was no such fold to overrule, and no such entry to write.
       // See CORPUS_ONLY_START.
-      const known = since >= "2026-09-28" ? words.has(word) || corpusHeadwords().has(word) : words.has(word);
+      // Corpus headwords are nameable from the day the fold can price against
+      // them -- see CORPUS_ONLY_START, which LIQUID_STEM_START shares.
+      const known =
+        since >= LIQUID_STEM_START
+          ? words.has(word) || corpusHeadwords().has(word)
+          : words.has(word);
       expect(known, `${word} is in neither lexicon`).toBe(true);
       expect(since >= "2026-08-21").toBe(true);
       // The only scope the engine knows. A typo would read as a blanket
@@ -2363,7 +2392,7 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
     expect(baseFormSubstitution(word, ON_UNGATED)?.base).not.toBe(unreachable);
   });
 
-  it("moves 510 words, every one of them prefixed, and lowers no score", () => {
+  it("moves 507 words up, every one of them prefixed, alongside the audit's withdrawals", () => {
     // The change stated over the dictionary rather than on the samples above.
     // Two claims: nothing outside the two prefixes moves *for this reason* --
     // this is one family, not a retune -- and every move is a fold, which can
@@ -2374,12 +2403,18 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
     // describe below, and the corpus lexicon -- so a sweep of the whole day
     // would be a claim about all three. Each states its own slice; the corpus
     // states its own in corpus-lexicon.test.ts.
+    //
+    // The 2026-09-22 audit shares this date and pulls the other way, so the two
+    // are separated by direction before either can be stated -- see
+    // `lostAFold`. 507 rather than 510: three of these carry an exemption of
+    // their own, and losing that fold outweighs gaining this one.
     const moved = (dictionaryWords as string[]).filter(
       (word) =>
         /^(anti|counter)/.test(word) &&
-        rarityFor(word, ON_UNGATED)!.zipf !== rarityFor(word, BEFORE_UNGATED)!.zipf
+        rarityFor(word, ON_UNGATED)!.zipf !== rarityFor(word, BEFORE_UNGATED)!.zipf &&
+        !lostAFold(word, BEFORE_UNGATED, ON_UNGATED)
     );
-    expect(moved).toHaveLength(510);
+    expect(moved).toHaveLength(507);
     for (const word of moved) {
       expect(
         rarityFor(word, ON_UNGATED)!.zipf,
@@ -2479,9 +2514,15 @@ describe('"pre-" folds again (from MODE_CHOICE_START)', () => {
     // every move is a fold, which can only ever make a word more common. The
     // review pass holds the second -- an entry that corrected a fold could have
     // raised a score, and none does.
+    //
+    // The 2026-09-22 audit shares this date and pulls the other way -- it
+    // withdraws folds, which makes words rarer -- and it reaches eleven "pre-"
+    // words. Separated by direction so this ledger still states its own change:
+    // 751 either way, once the eleven are counted where they belong.
     const moved = (dictionaryWords as string[])
       .filter((word) => rarityFor(word, ON_RESTORED)!.zipf !== rarityFor(word, BEFORE_RESTORED)!.zipf)
-      .filter((word) => word.startsWith("pre")); // the day's other half is above
+      .filter((word) => word.startsWith("pre")) // the day's other half is above
+      .filter((word) => !lostAFold(word, BEFORE_RESTORED, ON_RESTORED));
     expect(moved).toHaveLength(751);
     for (const word of moved) {
       expect(

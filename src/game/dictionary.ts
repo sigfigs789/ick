@@ -1665,10 +1665,11 @@ const LATEST_SCORING: Scoring = {
 const CORPUS_ONLY_START = MODE_CHOICE_START;
 
 /**
- * 2026-10-01. The day "scowly" stopped being a kind of scow.
+ * The day "scowly" stopped being a kind of scow: MODE_CHOICE_START, with the
+ * mode switch and the corpus cutover.
  *
- * A rung of its own rather than a flag folded into the corpus cutover, even
- * though it is a *consequence* of that cutover: the "-ly" strip has always been
+ * A *consequence* of that cutover rather than a thing of its own: the "-ly"
+ * strip has always been
  * able to misread a "-y" adjective on an l-final stem, and it was harmless while
  * the fold priced against 225k curated words that held neither "scow" nor "jow".
  * The 1.2M-word lexicon holds both, and with them "howly" -> "how" (7.45 points),
@@ -1676,23 +1677,21 @@ const CORPUS_ONLY_START = MODE_CHOICE_START;
  * `scoringBaseForm` for the rule and why it fires only where both readings are
  * words.
  *
- * Its own date because the cutover's ledger is pinned: corpus-lexicon.test.ts
- * asserts that the corpus moves far more words down than up, and that the
- * promotions stay under a fortieth of the demotions. This rule and the 1,612
- * exemptions reviewed with it are *all* promotions -- that is what fixing a
- * wrong fold is -- and shipping them on the cutover's date would have taken that
- * ratio from 1:125 to 1:5 while telling the test they were the cutover's doing.
- * They are not. They get their own day and their own ledger, and the puzzles in
- * between keep the scores they were built with.
+ * It had a date of its own for a while, four days after the cutover, to keep
+ * one number in corpus-lexicon.test.ts clean: that the corpus moves far more
+ * words down than up, with promotions under a fortieth of the demotions. This
+ * rule and the audit's exemptions are *all* promotions -- that is what fixing a
+ * wrong fold is -- so landing them on the cutover's date takes that ratio from
+ * 1:125 to about 1:4.
  *
- * That argument is why this date did *not* follow CORPUS_ONLY_START when it
- * moved to MODE_CHOICE_START: consolidating the two was measured, and it put 818
- * promotions into the corpus's ledger -- 152 of them even after setting aside
- * every word with a reviewed entry of its own, because an exemption carries its
- * inflections with it. The guard would have had to be loosened to fit, which is
- * the one thing a ledger must not do.
+ * The four days were the cost of that tidiness, and they were the wrong thing to
+ * spend: for four puzzles the corpus lexicon was live and the fixes for what it
+ * broke were not, so a player could be shown "howly" scored as "how". A guard
+ * exists to catch a change nobody meant to make. Both of these were meant, both
+ * are reviewed, and both are named in fold-exemptions.json. The guard now
+ * counts the two separately rather than refusing the sum -- see its note.
  */
-const LIQUID_STEM_START = "2026-10-01";
+export const LIQUID_STEM_START = MODE_CHOICE_START;
 
 /**
  * The corpus era: the latest fold, reading the expansive corpus.
@@ -1701,10 +1700,13 @@ const LIQUID_STEM_START = "2026-10-01";
  * call, for the reason `FREEFORM_SCORING` is -- the era changes exactly one
  * thing and must not drift from the system it changes it in.
  */
-const CORPUS_SCORING: Scoring = { ...LATEST_SCORING, corpusLexicon: true };
-
-/** The corpus era from LIQUID_STEM_START: the "-ly" strip keeps a stem's l. */
-const LIQUID_SCORING: Scoring = { ...CORPUS_SCORING, liquidStemAdjectives: true };
+const CORPUS_SCORING: Scoring = {
+  ...LATEST_SCORING,
+  corpusLexicon: true,
+  // See LIQUID_STEM_START, which is this same date: the "-ly" strip keeps a
+  // stem's l from the day the corpus makes it possible to lose one.
+  liquidStemAdjectives: true,
+};
 
 const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
 
@@ -1873,7 +1875,10 @@ function scoringFor(date?: string): Scoring {
     // Freeform folds nothing, so the liquid-stem rule cannot reach it and the
     // era's two profiles collapse to one on that side.
     if (usesFreeformRules(date)) return CORPUS_FREEFORM_SCORING;
-    return date >= LIQUID_STEM_START ? LIQUID_SCORING : CORPUS_SCORING;
+    // One date for the era: LIQUID_STEM_START is this same date, so every
+    // profile this branch can reach carries the "-ly" rule and it needs no rung
+    // of its own.
+    return CORPUS_SCORING;
   }
   if (usesFreeformRules(date)) return FREEFORM_SCORING;
   // Below the freeform fork rather than above it, unlike every rung before it.

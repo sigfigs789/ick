@@ -3,10 +3,12 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { corpusAttests, corpusEntry, loadCorpus, sourceBit, tagBit } from "./corpus";
-import { baseFormSubstitution, rarityFor } from "./dictionary";
+import { baseFormSubstitution, foldTrace, rarityFor } from "./dictionary";
 import { MODE_CHOICE_START, isRanked, modeForDate, resetModeCache, setMode } from "./mode";
+import { sameRootKey } from "./submit";
 import curated from "../data/dictionary.json";
 import rarity from "../data/rarity.json";
+import foldExemptionData from "../data/fold-exemptions.json";
 
 /**
  * The shipped corpus, served to `loadCorpus` off disk.
@@ -129,11 +131,14 @@ describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
       for (const word of curated as string[]) {
         if (rarityFor(word, BEFORE)!.zipf !== rarityFor(word, AFTER)!.zipf) moved++;
       }
-      // 2,910 of 225,483 -- see the PR body for the breakdown. Pinned as a range
-      // so the data can be rebuilt without rewriting the test, and so a change
-      // that suddenly moves ten times as much has to say so out loud.
+      // 4,954 of 225,483. The ceiling was 4,500 while the corpus moved this
+      // list alone; the 2026-09-22 audit's exemptions now land on the same date
+      // and carry their inflections with them, which is the whole of the
+      // difference. Still pinned as a range, for the reason it always was: the
+      // data can be rebuilt without rewriting the test, and a change that
+      // suddenly moves ten times as much has to say so out loud.
       expect(moved).toBeGreaterThan(2_000);
-      expect(moved).toBeLessThan(4_500);
+      expect(moved).toBeLessThan(6_500);
     });
   });
 
@@ -159,21 +164,59 @@ describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
       }
     });
 
-    it("moves far more words down than up", () => {
+    it("moves far more words down than up, once the reviewed fixes are set aside", () => {
+      // Two changes land on this date and they pull opposite ways. The corpus
+      // reaches bases the curated list never held, which makes words commoner.
+      // The 2026-09-22 semantic audit withdraws folds that were landing on the
+      // wrong word, which makes them rarer. Summed, the second swamps the ratio
+      // the first exists to state.
+      //
+      // So they are counted apart. The question this test is for is whether the
+      // *corpus* quietly promoted anything nobody reviewed, and loosening the
+      // ceiling to fit the sum would have destroyed it: a ceiling wide enough
+      // for the audit is wide enough for an unreviewed promotion to hide in,
+      // which is the one thing this refuses.
+      //
+      // Accounted-for two ways, because an entry reaches a word two ways.
+      // Mostly by root: "abasers" does not fold *through* "abaser", it is
+      // another member of its paradigm, and withdrawing the base's fold
+      // withdraws the family's -- `sameRootKey` is what the game already uses
+      // to call two submissions the same word. The rest by chain, for the
+      // handful whose route to a base ran through an entry of another root.
+      const audited = new Set(
+        Object.entries(foldExemptionData)
+          .filter(([, entry]) => (entry as { since: string }).since === AFTER)
+          .map(([word]) => word)
+      );
+      const auditedRoots = new Set([...audited].map((word) => sameRootKey(word, AFTER)));
+
       let down = 0;
-      let up = 0;
+      let unreviewedUp = 0;
+      let reviewedUp = 0;
       for (const word of curated as string[]) {
         const before = rarityFor(word, BEFORE)!.zipf;
         const after = rarityFor(word, AFTER)!.zipf;
         if (after > before) down++;
-        else if (after < before) up++;
+        else if (after < before) {
+          const reached = foldTrace(word, BEFORE)?.path ?? [];
+          if (
+            audited.has(word) ||
+            auditedRoots.has(sameRootKey(word, AFTER)) ||
+            reached.some((hop) => audited.has(hop.to))
+          ) {
+            reviewedUp++;
+          } else {
+            unreviewedUp++;
+          }
+        }
       }
       expect(down).toBeGreaterThan(2_000);
-      // The promotions are named and accounted for in the PR body; what this
-      // pins is that they stay a rounding error against the demotions rather
-      // than becoming the story.
-      expect(up).toBeLessThan(60);
-      expect(up * 40).toBeLessThan(down);
+      // The audit is the larger half of the day, and is meant to be.
+      expect(reviewedUp).toBeGreaterThan(500);
+      // What is left is the corpus's own doing, and it stays a rounding error
+      // against its demotions rather than becoming the story.
+      expect(unreviewedUp).toBeLessThan(60);
+      expect(unreviewedUp * 40).toBeLessThan(down);
     });
 
     it("leaves Freeform alone entirely, because Freeform does not fold", () => {
