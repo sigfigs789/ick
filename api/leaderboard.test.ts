@@ -639,6 +639,24 @@ describe("api/leaderboard recent finds", () => {
     ]);
   });
 
+  it.each([
+    // Past the furthest ahead any local calendar can be, so no puzzle exists
+    // for it. A caller cannot use this to read a drop the game has not reached
+    // -- and must not be handed today's words under that day's heading instead.
+    ["a date beyond any puzzle", "2099-01-01"],
+    ["a date four days ahead", "FOUR_AHEAD"],
+    ["a date before the first puzzle", "2020-01-01"],
+  ])("answers an empty feed for %s, without asking the database", async (_label, day) => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const date = day === "FOUR_AHEAD" ? daysBefore(utcToday(), -4) : day;
+    const response = await handler(get(`?words=1&today=${date}`));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ words: [] });
+    expect(rpcCall(fetchMock)).toBeNull();
+  });
+
   it("includes today for a client whose calendar is ahead of UTC", async () => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -655,10 +673,6 @@ describe("api/leaderboard recent finds", () => {
     ["a missing date", ""],
     ["a date that isn't one", "&today=whenever"],
     ["a malformed date", "&today=2026-13-45"],
-    // Past the furthest ahead any local calendar can be, so no puzzle exists
-    // for it. A caller cannot use this to read a drop the game has not reached.
-    ["a date beyond any puzzle", "&today=2099-01-01"],
-    ["a date before the first puzzle", "&today=2020-01-01"],
   ])("falls back to UTC's today for %s", async (_label, param) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
