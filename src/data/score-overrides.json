@@ -317,12 +317,12 @@
   "preclinically": {
     "base": "preclinical",
     "reason": "From `preclinical`, meaning before clinical trials; a `clinic` is a place. The word sits above MEASURED_FLOOR, where a prefix-scoped exemption does not reach the rung `clinic` arrives on, so it is pinned instead.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "precognitive": {
     "base": "precognition",
     "reason": "Of precognition; `cognitive` is a different word.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "predepartures": {
     "base": "predeparture",
@@ -332,22 +332,22 @@
   "prefacer": {
     "base": "preface",
     "reason": "One who prefaces; a `facer` is a blow to the face.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "prefacers": {
     "base": "preface",
     "reason": "One who prefaces; a `facer` is a blow to the face.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "prefixation": {
     "base": "prefix",
     "reason": "The adding of a prefix; `fixation` is a different word.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "prefixations": {
     "base": "prefix",
     "reason": "The adding of a prefix; `fixation` is a different word.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "premanufactures": {
     "base": "premanufacture",
@@ -357,42 +357,42 @@
   "premillennial": {
     "base": "millennium",
     "reason": "Before the millennium -- the base is `millennium`, not the generation.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "premillennially": {
     "base": "millennium",
     "reason": "Before the millennium -- the base is `millennium`, not the generation.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "prepaste": {
     "base": "paste",
     "reason": "Paste beforehand -- the base is `paste`, not `past`.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "prepasted": {
     "base": "paste",
     "reason": "Paste beforehand -- the base is `paste`, not `past`.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "prepastes": {
     "base": "paste",
     "reason": "Paste beforehand -- the base is `paste`, not `past`.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "prepasting": {
     "base": "paste",
     "reason": "Paste beforehand -- the base is `paste`, not `past`.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "prepositional": {
     "base": "preposition",
     "reason": "Of a preposition; `positional` is a different word.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "prepositionally": {
     "base": "preposition",
     "reason": "Of a preposition; `positional` is a different word.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "prestorages": {
     "base": "prestorage",
@@ -402,17 +402,17 @@
   "pretender": {
     "base": "pretend",
     "reason": "One who pretends; `tender` is an offer or a tugboat.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "pretenders": {
     "base": "pretend",
     "reason": "One who pretends; `tender` is an offer or a tugboat.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "preyers": {
     "base": "prey",
     "reason": "Those who prey; `yer` is not a word.",
-    "since": "2026-09-29"
+    "since": "2026-09-27"
   },
   "reconnaisance": {
     "base": "reconnaissance",

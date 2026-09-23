@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 /**
  * The whole router.
  *
- * Seven pages, no library. `vercel.json` already rewrites every non-`/api/` path
+ * Eight pages, no library. `vercel.json` already rewrites every non-`/api/` path
  * to `index.html`, so a real URL is a matter of reading `location.pathname` and
  * pushing to it -- and both of the pages beside the game want a real URL: they
  * are pages you link someone to, open in a second tab, and reach with the back
@@ -16,8 +16,9 @@ import { useEffect, useState } from "react";
  * that had not moved since breakfast. Two pages, two links to send, and the
  * header says which one you are on.
  *
- * The last three are the word queue, the feedback players have left, and the
- * Freeform week verdict, and they are no longer the same kind of page. The queue is linked: suggest a word and
+ * The last four are the word queue, the feedback players have left, the
+ * Freeform week verdict, and the fold review, and they are no longer the same
+ * kind of page. The queue is linked: suggest a word and
  * the sheet offers you the list it joined, because a queue of words is
  * everybody's. The feedback page is linked from nowhere -- a note is something
  * one player wrote to us, and the pile of them is not a page to hand the next
@@ -25,6 +26,13 @@ import { useEffect, useState } from "react";
  * the same reason plus one of its own: it shows a running vote on a trial the
  * players are still in, and a tally is not a thing to put in front of the
  * people still voting. None has a tab; none is part of the daily round.
+ *
+ * `/fold` is the fourth of them and the furthest from a player: it is where the
+ * scoring's own folds -- "timelinesses" scored as "time" -- are approved or
+ * rejected one at a time, and what it writes eventually changes what a word is
+ * worth (see FoldReviewPage). Unlinked, and unlike the others it is blank
+ * without a key, because it is a page for whoever owns the scoring and nobody
+ * else.
  *
  * `/transfer` is unlinked too, and for a reason of its own rather than an
  * editorial one: it is where a player moves themselves to a new browser, and
@@ -46,6 +54,7 @@ export type Route =
   | "suggested-words"
   | "feedback"
   | "freeform-feedback"
+  | "fold-review"
   | "transfer";
 
 export const LEADERBOARD_PATH = "/leaderboard";
@@ -53,6 +62,7 @@ export const FOUND_WORDS_PATH = "/found-words";
 export const SUGGESTED_WORDS_PATH = "/suggested-words";
 export const FEEDBACK_PATH = "/feedback";
 export const FREEFORM_FEEDBACK_PATH = "/freeform-feedback";
+export const FOLD_REVIEW_PATH = "/fold";
 export const TRANSFER_PATH = "/transfer";
 
 /**
@@ -99,6 +109,7 @@ export function routeFor(pathname: string): Route {
   if (path === SUGGESTED_WORDS_PATH) return "suggested-words";
   if (path === FEEDBACK_PATH) return "feedback";
   if (path === FREEFORM_FEEDBACK_PATH) return "freeform-feedback";
+  if (path === FOLD_REVIEW_PATH) return "fold-review";
   if (path === TRANSFER_PATH) return "transfer";
   return "game";
 }
@@ -110,6 +121,7 @@ export function pathFor(route: Route): string {
   if (route === "suggested-words") return SUGGESTED_WORDS_PATH;
   if (route === "feedback") return FEEDBACK_PATH;
   if (route === "freeform-feedback") return FREEFORM_FEEDBACK_PATH;
+  if (route === "fold-review") return FOLD_REVIEW_PATH;
   if (route === "transfer") return TRANSFER_PATH;
   return "/";
 }

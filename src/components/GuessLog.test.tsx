@@ -82,6 +82,7 @@ describe("GuessLog", () => {
       "counter-,",
       "out-,",
       "over-,",
+      "pre-,",
       "un-,",
       "under-",
     ]);

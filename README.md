@@ -396,6 +396,22 @@ lives in `supabase/migrations/`.
   row of its own with outcome `suggested`, so it can be settled too, and a real
   lookup later overwrites that placeholder while leaving the triage alone.
 
+- **`fold_reviews`** — the fold ledger, written from the page at `/fold`. One
+  row per word: the form its score folded onto, both frequencies as the reviewer
+  saw them, and `approved` or `rejected`. Two things read it.
+  `scripts/export-fold-rejections.mjs` turns the rejections into entries in
+  `src/data/fold-exemptions.json`, which is what actually stops a fold — by way
+  of a script and a deploy rather than live, because scoring is dated and
+  deterministic and an archived puzzle has to score the same next year. And both
+  answers together are a labelled set: the judgement a model would have to learn,
+  written down. Approvals are stored for that second reason alone; nothing in the
+  game reads one.
+
+  The page is gated like `/feedback`: keyed where `REVIEW_TOKEN` is set, open
+  where it is not. Setting the token is what makes the labels *yours*, which is
+  the half of this worth protecting — the rejections reach the scoring only
+  through a script somebody runs and a diff somebody reads.
+
 A review pass also reads `answer_rejected` events, which have no `status` to
 settle — a rejected guess is an event, not a row. `scripts/word-review-log.json`
 is the watermark for those: each pass records the newest `created_at` it saw, so

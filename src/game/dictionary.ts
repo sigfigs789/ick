@@ -218,10 +218,50 @@ const PREFIX_BASE_START = "2026-08-24";
 const PREFIX_BASE_MIN_ZIPF = 3;
 
 /*
+ * MODE_CHOICE_START: "pre-" folds again.
+ *
+ * PRE_PREFIX_END below retired it, on an argument this reversal does not
+ * dispute: English fossilised "pre-" onto Latin stems that were never English
+ * words, nothing in the spelling separates "precaution" from "precooked", and
+ * the floor gate cannot help because the fossils are rare. What has changed is
+ * not the argument but what can be done about it. That note asked for "a vetted
+ * table of which words really carry the prefix" and could not point at one. The
+ * table now exists, built by judging every fold the prefix reaches across the
+ * corpus: 400 families, of which 50 landed on a base that means something else.
+ *
+ * Each of those 50 is either pinned to the base it should have reached
+ * ("prepositional" to `preposition`, not `positional`; "premillennial" to
+ * `millennium`, not the generation; "preachier" to `preachy`, not `achy`) or
+ * refused outright where the word is a single lexeme the prefix only appears to
+ * open ("prelate", "prescience", "prepuce", "premiss", "precaution"). The three
+ * readings the retirement was written about are among them -- "preapply" no
+ * longer reaches `app`, "prehearing" no longer reaches `hear`. 17 overrides and
+ * 90 prefix-scoped exemptions, and after them no family the prefix reaches lands
+ * on a base a reader would reject.
+ *
+ * It stays *behind* MEASURED_FLOOR -- not in UNGATED_PREFIXES and it cannot be,
+ * because "present", "preface" and "pressure" are measured well above the floor
+ * and all have the shape.
+ *
+ * No date constant of its own: it rides MODE_CHOICE_START with the mode switch
+ * and the ungated prefixes, which is the argument UNGATED_PREFIX_START already
+ * makes -- a player meeting the two systems side by side is the moment for the
+ * folding one to be at its best, and one date is one explanation.
+ *
+ * "re-" was measured alongside it and is not here. It reaches three times as far
+ * (932 families) at the same rate of wrong readings, and the corrections would
+ * not hold: above MEASURED_FLOOR a prefix-scoped entry does not reach the rung
+ * the wrong base arrives on, so "reserve" stayed on `serve` and "remorse" on
+ * `morse`, and widening those entries hands "rebater" a 9.93 Legend instead. It
+ * stays out until that is answered, which is the standard this date holds
+ * "pre-" to.
+ */
+
+/*
  * 2026-09-05: "pre-" stops being a foldable prefix, the first of these rules to
- * be taken away rather than added -- and, from 2026-09-29, the first put back;
- * see PRE_PREFIX_RESTORED, which reverses this judgement on the strength of the
- * reviewed table it could not point at, and inherits every cost counted below. Everything else about the prefix fold stays
+ * be taken away rather than added -- and, from MODE_CHOICE_START, the first put
+ * back; see the note above, which reverses this judgement on the strength of the
+ * reviewed table it could not point at, and inherits every cost counted here. Everything else about the prefix fold stays
  * as it was -- the floor gate, the residue table, the exemptions -- and archived
  * puzzles keep the scores they were played with, so the flag stays on for every
  * system before this date (see `Scoring.prePrefixBases`).
@@ -1015,6 +1055,12 @@ interface Scoring {
   // changes where the answer comes from rather than which rule is applied to it
   // -- see CORPUS_ONLY_START.
   corpusLexicon: boolean;
+  /**
+   * Whether a "-y" adjective built on a stem ending in "l" is read as one,
+   * rather than as an adverb the "-ly" rule may strip. Ships with the corpus
+   * cutover; see LIQUID_STEM_START.
+   */
+  liquidStemAdjectives: boolean;
   // Whether a word is also capped at the regular inflections built *on* it --
   // the fold's reverse direction, so the bare lemma of a verb only ever written
   // as a participle stops scoring as a deep-tail find (see
@@ -1081,10 +1127,10 @@ interface Scoring {
   folds: boolean;
   // Whether "pre-" is one of the transparent prefixes. The only flag here whose
   // answer changes twice: *on* from 2026-08-24 to 2026-09-05, off from there
-  // when the prefix was retired, and on again from 2026-09-29 when it came back
-  // -- because a rule taken away has to keep working for the puzzles it was
-  // played on just as one added has to stay off for them, and that holds in both
-  // directions (see PRE_PREFIX_END and PRE_PREFIX_RESTORED).
+  // when the prefix was retired, and on again from MODE_CHOICE_START when it
+  // came back behind a reviewed table -- because a rule taken away has to keep
+  // working for the puzzles it was played on just as one added has to stay off
+  // for them, and that holds in both directions (see PRE_PREFIX_END).
   prePrefixBases: boolean;
 }
 
@@ -1232,6 +1278,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     // curated index; CORPUS_SCORING is built by spreading the latest one and
     // turning this on.
     corpusLexicon: false,
+    liquidStemAdjectives: false,
     folds,
   };
 }
@@ -1484,6 +1531,11 @@ const DOUBLING_SCORING: Scoring = twoBandScoring(9.9, 0, {
 const LATEST_SCORING: Scoring = {
   ...DOUBLING_SCORING,
   ungatedPrefixBases: true,
+  // "pre-" folds again, on the same date `ungatedPrefixBases` rides. No profile
+  // and no rung of its own, because this is the profile MODE_CHOICE_START
+  // already selects, and CORPUS_SCORING is a spread of it. See the note above
+  // PRE_PREFIX_END.
+  prePrefixBases: true,
 };
 
 /**
@@ -1524,6 +1576,29 @@ const LATEST_SCORING: Scoring = {
 const CORPUS_ONLY_START = "2026-09-28";
 
 /**
+ * 2026-10-01. The day "scowly" stopped being a kind of scow.
+ *
+ * A rung of its own rather than a flag folded into the corpus cutover, even
+ * though it is a *consequence* of that cutover: the "-ly" strip has always been
+ * able to misread a "-y" adjective on an l-final stem, and it was harmless while
+ * the fold priced against 225k curated words that held neither "scow" nor "jow".
+ * The 1.2M-word lexicon holds both, and with them "howly" -> "how" (7.45 points),
+ * "growly" -> "grow", "prowly" -> "prow", "jowly" -> "jow". See
+ * `scoringBaseForm` for the rule and why it fires only where both readings are
+ * words.
+ *
+ * Its own date because the cutover's ledger is pinned: corpus-lexicon.test.ts
+ * asserts that 2026-09-28 moves far more words down than up, and that the
+ * promotions stay under a fortieth of the demotions. This rule and the 92
+ * exemptions reviewed with it are *all* promotions -- that is what fixing a
+ * wrong fold is -- and shipping them on the cutover's date would have taken
+ * that ratio from 1:70 to 1:25 while telling the test they were the cutover's
+ * doing. They are not. They get their own day and their own ledger, and the
+ * three puzzles in between keep the scores they were built with.
+ */
+const LIQUID_STEM_START = "2026-10-01";
+
+/**
  * The corpus era: the latest fold, reading the expansive corpus.
  *
  * Spread from `LATEST_SCORING` rather than built by another `twoBandScoring`
@@ -1532,50 +1607,8 @@ const CORPUS_ONLY_START = "2026-09-28";
  */
 const CORPUS_SCORING: Scoring = { ...LATEST_SCORING, corpusLexicon: true };
 
-/**
- * The first puzzle on which "pre-" folds again.
- *
- * PRE_PREFIX_END retired it on 2026-09-05, on an argument this date does not
- * dispute: English fossilised "pre-" onto Latin stems that were never English
- * words, nothing in the spelling separates "precaution" from "precooked", and
- * the floor gate cannot help because the fossils are rare. What has changed is
- * not the argument but what can be done about it. The prefix rule now has a
- * reviewed exemption list scoped per prefix (REVIEWED_FOLD_START,
- * src/data/fold-exemptions.json) and the overrides beside it, which is the
- * "vetted table of which words really carry the prefix" the retirement note
- * asked for and could not point at.
- *
- * That table now exists, built by judging every fold the prefix reaches across
- * the corpus -- 400 families, of which 50 landed on a base that means something
- * else. Each of those 50 is either pinned to the base it should have reached
- * ("prepositional" to `preposition`, not `positional`; "premillennial" to
- * `millennium`, not the generation; "preachier" to `preachy`, not `achy`) or
- * refused outright where the word is a single lexeme the prefix only appears to
- * open ("prelate", "prescience", "prepuce", "premiss", "precaution"). The three
- * readings PRE_PREFIX_END was written about -- "preapply" as `app`,
- * "prehearing" as `hear`, "prelife" as `life` -- are among them.
- *
- * "pre-" stays *behind* MEASURED_FLOOR. It is not in UNGATED_PREFIXES and must
- * not be, because "present", "preface" and "pressure" are measured well above
- * the floor and all have the shape.
- *
- * "re-" was measured alongside it and is not here. It reaches three times as far
- * (932 families) and the review found the same rate of wrong readings without
- * the same confidence in the fixes: the corrections would not hold for the
- * words above the floor, where a scoped entry does not reach the rung the wrong
- * base arrives on, and "reserve" as `serve` or "remorse" as `morse` is the kind
- * of failure a player sees. It stays out until that is answered, which is the
- * same standard this date holds "pre-" to.
- *
- * `prePrefixBases` comes back on here, the first flag on this profile whose
- * answer changes twice. It reads as the question it always asked -- does "pre-"
- * fold -- so the answer simply changes twice, and the dates in between keep the
- * answer they were played with.
- */
-const PRE_PREFIX_RESTORED = "2026-09-29";
-
-/** The corpus era with "pre-" back in the transparent list. See PRE_PREFIX_RESTORED. */
-const PRE_RESTORED_SCORING: Scoring = { ...CORPUS_SCORING, prePrefixBases: true };
+/** The corpus era from LIQUID_STEM_START: the "-ly" strip keeps a stem's l. */
+const LIQUID_SCORING: Scoring = { ...CORPUS_SCORING, liquidStemAdjectives: true };
 
 const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
 
@@ -1585,6 +1618,7 @@ const CORPUS_FREEFORM_SCORING: Scoring = { ...CORPUS_SCORING, folds: false };
 const LEGACY_SCORING: Scoring = {
   folds: true,
   corpusLexicon: false,
+  liquidStemAdjectives: false,
   zipfAt: (i) => legacyZipfTenths[i] / 10,
   // The legacy scale is defined over LEGACY_MIN_ZIPF..LEGACY_MAX_ZIPF and has no
   // clamp of its own, so a Zipf below its floor scores past 10. A live-validated
@@ -1740,11 +1774,10 @@ function scoringFor(date?: string): Scoring {
   // last so it reads as what it is -- the latest system with one switch thrown --
   // and so a later cutover slots in above it without thinking about the week.
   if (date >= CORPUS_ONLY_START) {
-    // Freeform first, because it folds nothing at all: which prefixes are in
-    // the transparent list is not a question the profile answers. See
-    // PRE_PREFIX_RESTORED.
+    // Freeform folds nothing, so the liquid-stem rule cannot reach it and the
+    // era's two profiles collapse to one on that side.
     if (usesFreeformRules(date)) return CORPUS_FREEFORM_SCORING;
-    return date < PRE_PREFIX_RESTORED ? CORPUS_SCORING : PRE_RESTORED_SCORING;
+    return date >= LIQUID_STEM_START ? LIQUID_SCORING : CORPUS_SCORING;
   }
   if (usesFreeformRules(date)) return FREEFORM_SCORING;
   // Below the freeform fork rather than above it, unlike every rung before it.
@@ -2730,7 +2763,12 @@ const MAX_FOLD_DEPTH = 8;
  * "axes"), and no word is visited twice. Revisiting could not raise the maximum
  * anyway, so one shared set across the whole walk is enough.
  */
-function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase | undefined {
+function chainedBase(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+  trace?: Map<string, FoldHop>
+): ChainedBase | undefined {
   const seen = new Set([word]);
   let frontier = [word];
   let best: ChainedBase | undefined;
@@ -2746,6 +2784,7 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
         seen.add(candidate);
         next.push(candidate);
         const zipf = zipfFor(candidate, scoring);
+        trace?.set(candidate, { from: current, to: candidate, rule: "base", zipf });
         if (!best || zipf > best.zipf) best = { base: candidate, zipf };
       }
       // The other direction, and the reason it is applied here rather than as
@@ -2762,6 +2801,9 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
       // `derivedFormCandidates`), so the cap is taken and the walk stops.
       for (const form of derivedFormFolds(current, scoring, date)) {
         const zipf = zipfFor(form, scoring);
+        if (trace && !trace.has(form)) {
+          trace.set(form, { from: current, to: form, rule: "derived-form", zipf });
+        }
         if (!best || zipf > best.zipf) best = { base: form, zipf };
       }
       for (const form of inflectedFormFolds(
@@ -2771,6 +2813,9 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
         Math.max(own, best ? best.zipf : -Infinity)
       )) {
         const zipf = zipfFor(form, scoring);
+        if (trace && !trace.has(form)) {
+          trace.set(form, { from: current, to: form, rule: "inflected-form", zipf });
+        }
         if (!best || zipf > best.zipf) best = { base: form, zipf };
         // Terminal for the *inflectional* hops and transparent to the rest, from
         // REVIEWED_FOLD_START. Reading only the form's raw Zipf is the mistake
@@ -2793,6 +2838,7 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
             seen.add(above);
             next.push(above);
             const aboveZipf = zipfFor(above, scoring);
+            trace?.set(above, { from: form, to: above, rule: "base", zipf: aboveZipf });
             if (!best || aboveZipf > best.zipf) best = { base: above, zipf: aboveZipf };
           }
         }
@@ -2801,6 +2847,84 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
     frontier = next;
   }
   return best;
+}
+
+/** One link of a fold chain: what folded onto what, and which direction did it. */
+export interface FoldHop {
+  from: string;
+  to: string;
+  /**
+   * Which of `chainedBase`'s three directions produced the hop -- a rung above
+   * the word ("base"), or one of the two reverse folds the word is merely capped
+   * at. Deliberately not the *affix*: naming the suffix means re-asking every
+   * generator in stem.ts which of them could have made this pair, and that is an
+   * audit's question, not the walk's. The walk knows the shape; `scripts/
+   * fold-audit` asks stem.ts for the name.
+   */
+  rule: "base" | "derived-form" | "inflected-form";
+  zipf: number;
+}
+
+/** A resolved fold, with the path the walk actually took to its winner. */
+export interface FoldTrace {
+  word: string;
+  /** The word's own frequency, before anything folded. */
+  ownZipf: number;
+  /** The most common word the chain reached -- what the score was taken from. */
+  base: string;
+  baseZipf: number;
+  /** `word` -> ... -> `base`, one entry per link. */
+  path: FoldHop[];
+}
+
+/**
+ * `chainedBase`, with its working shown: the winning base *and* the links that
+ * reached it.
+ *
+ * This exists for auditing rather than for play, which is why it is a second
+ * entry point instead of a richer return from `chainedBase` -- the walk runs on
+ * every submission, and the map it fills here is pure overhead for a player.
+ * Passing `trace` is the only cost the hot path pays, one optional-chain per
+ * candidate.
+ *
+ * Unlike `baseFormSubstitution` it does not require a curated word. A corpus-only
+ * derivation is precisely the case an audit cares about -- since CORPUS_ONLY_START
+ * most folds have a base the curated list never held -- and `zipfFor` already
+ * prices both kinds, so there is nothing to gate on.
+ *
+ * Returns undefined when nothing folds, or when the fold did not beat the word's
+ * own frequency: a fold is a cap, so a base rarer than the word changes no score
+ * and is not worth reporting.
+ */
+export function foldTrace(word: string, date?: string): FoldTrace | undefined {
+  const normalized = word.toLowerCase();
+  const scoring = scoringFor(date);
+  if (!scoring.folds || !scoring.chainedBaseForms) return undefined;
+  if (!lexiconHas(normalized, scoring)) return undefined;
+
+  const ownZipf = zipfFor(normalized, scoring);
+  const trace = new Map<string, FoldHop>();
+  const chained = chainedBase(normalized, scoring, date, trace);
+  if (!chained || chained.zipf <= ownZipf) return undefined;
+
+  // Back to front along the parent edges, then reversed. Each node was recorded
+  // the first time the walk reached it and never again, so the edges form a tree
+  // and this terminates -- but the walk is over data, so the guards are cheap
+  // insurance rather than a claim about the current rules.
+  const path: FoldHop[] = [];
+  const walked = new Set<string>();
+  let cursor = chained.base;
+  while (cursor !== normalized && path.length <= MAX_FOLD_DEPTH * 2) {
+    if (walked.has(cursor)) break;
+    walked.add(cursor);
+    const hop = trace.get(cursor);
+    if (!hop) break;
+    path.push(hop);
+    cursor = hop.from;
+  }
+  path.reverse();
+
+  return { word: normalized, ownZipf, base: chained.base, baseZipf: chained.zipf, path };
 }
 
 /**
@@ -3311,6 +3435,57 @@ function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
     if (!word.endsWith(suffix) || word.length <= suffix.length + 2) continue;
     const stem = word.slice(0, -suffix.length);
     const candidates = [stem, stem.endsWith("i") ? `${stem.slice(0, -1)}y` : ""];
+
+    // "scowly" is "scowl" + "-y", not "scow" + "-ly". A spelling rule cannot see
+    // the difference, and for as long as the fold priced against the curated
+    // list it did not have to: "scow", "jow" and "prow" were not on it, so the
+    // strip found nothing and the word kept its own score. The corpus holds all
+    // three, and the misreading became "howly" -> "how", seven and a half points
+    // of it, plus "growly" -> "grow", "jowly" -> "jow", "scowlily" -> "scow" and
+    // the "-ier"/"-iest"/"-iness" forms that fold through them.
+    //
+    // The test is both readings at once, which is what keeps it off the ordinary
+    // adverbs. It fires only where the "-ly" strip *already* found a word and the
+    // "-y" reading is also one and ends in the l the strip would have eaten:
+    // "really" keeps "real" ("reall" is not a word), "tally" is untouched ("tal"
+    // is not), and "early" moves from "ear" to "earl" without moving its score,
+    // since a fold is a cap and "early" is commoner than either. What it changes
+    // is the family where the l is the whole of the stem's identity.
+    //
+    // Deliberately a *replacement* rather than another candidate: `chainedBase`
+    // takes the most common word it reaches, and "how" beats "howl" every time,
+    // so an addition would have left every one of these folds exactly where it
+    // was. See LIQUID_STEM_START.
+    const liquid = word.slice(0, -1);
+    if (
+      scoring.liquidStemAdjectives &&
+      suffix === "ly" &&
+      // The stem must not already end in the l, or every "-ally" and "-fully"
+      // adverb in the language matches: "generally" minus its y is "generall",
+      // which a 1.2M-word lexicon carrying Wiktionary's archaic spellings duly
+      // attests, and reading it that way cost "generally", "successfully",
+      // "naturally" and fifty more their fold onto the adjective they are built
+      // on. A doubled l is an adverb; a single one is part of the stem.
+      !stem.endsWith("l") &&
+      liquid.endsWith("l") &&
+      lexiconHas(liquid, scoring) &&
+      // The *bare stem* has to be the reading that fired, not the "-i" -> "-y"
+      // rewrite: "daily" is "day" + "-ly" through the rewrite, and its bare stem
+      // "dai" is nobody's word, so the rule has no business preferring "dail".
+      lexiconHas(stem, scoring) &&
+      // And the "-y" adjective has to have a degree paradigm behind it, which is
+      // the only evidence spelling offers that this is an adjective at all. It is
+      // the same paired test `degreeBaseCandidates` and `superlativeBaseCandidates`
+      // already run, and for the same reason: "growly" has "growlier" and
+      // "growliest", while "gravely", "lamely", "duely" and "easely" -- every one
+      // of which has an l-final word hiding one letter back -- have no comparative
+      // because they were never adjectives. Both forms, not either: "graveliest"
+      // is attested on its own and "gravelier" is not.
+      lexiconHas(`${liquid}ier`, scoring) &&
+      lexiconHas(`${liquid}iest`, scoring)
+    ) {
+      return liquid;
+    }
     // The bare stem first and the "-y" rewrite second, and until the corpus era
     // the first of the two that was a word won outright. That order was only
     // ever safe because the curated list did not hold the bare stems: "ugli" and

@@ -1,3 +1,5 @@
+// @ts-expect-error -- Node builtin; no @types/node, available under vitest.
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { RARITY_ORDER, baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
 import {
@@ -8,6 +10,7 @@ import {
   prefixBaseCandidates,
 } from "./stem";
 import { evaluateSubmission, sameRootKey } from "./submit";
+import { MODE_CHOICE_START } from "./mode";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import scoreOverrideData from "../data/score-overrides.json";
@@ -15,6 +18,31 @@ import foldExemptionData from "../data/fold-exemptions.json";
 import boundResidueData from "../data/bound-residues.json";
 import measurementUnitData from "../data/measurement-units.json";
 import type { AcceptedWord } from "./types";
+
+/**
+ * The corpus headword list, decoded straight off disk and cached.
+ *
+ * `corpusAttests` would be the honest question, but it needs `loadCorpus` and a
+ * stubbed fetch, and this suite is deliberately corpus-free everywhere else --
+ * see corpus-lexicon.test.ts, which owns that setup. Membership of words.txt is
+ * enough for what this pin asks: whether the entry names a real headword or a
+ * typo. Front-coded, so it has to be expanded (see `expand` in corpus.ts).
+ */
+let corpusWordCache: Set<string> | undefined;
+function corpusHeadwords(): Set<string> {
+  if (corpusWordCache) return corpusWordCache;
+  const lines = readFileSync("public/corpus/words.txt", "utf8").split("\n");
+  if (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+  const out = new Set<string>();
+  let previous = "";
+  for (const line of lines) {
+    const word = previous.slice(0, line.charCodeAt(0) - 48) + line.slice(1);
+    out.add(word);
+    previous = word;
+  }
+  corpusWordCache = out;
+  return out;
+}
 
 // The 2026-08-21 cutover: a plural or third-person form no longer out-scores the
 // word it came from. Expected values are hardcoded rather than recomputed through
@@ -368,11 +396,21 @@ describe("reviewed fold exemptions", () => {
     }
   });
 
-  it("names only dictionary words, dates every entry, and scopes them legibly", () => {
+  it("names only lexicon words, dates every entry, and scopes them legibly", () => {
     const words = new Set(dictionaryWords as string[]);
     for (const [word, entry] of Object.entries(foldExemptionData)) {
       const { since, scope } = entry as { since: string; scope?: string };
-      expect(words.has(word), `${word} is not a dictionary word`).toBe(true);
+      // Curated for the entries written while the fold priced against the
+      // curated list, and the corpus headwords too from the day it stopped.
+      //
+      // The table has to be able to name whatever the fold can reach, or the
+      // one reviewed way to overrule a bad fold stops working for 1.2M of the
+      // words that have one. "airshower" is a real headword, folds to
+      // "airshow", and means a cascade of cosmic-ray particles; before the
+      // cutover there was no such fold to overrule, and no such entry to write.
+      // See CORPUS_ONLY_START.
+      const known = since >= "2026-09-28" ? words.has(word) || corpusHeadwords().has(word) : words.has(word);
+      expect(known, `${word} is in neither lexicon`).toBe(true);
       expect(since >= "2026-08-21").toBe(true);
       // The only scope the engine knows. A typo would read as a blanket
       // exemption and silently take a word's ordinary folds down with it.
@@ -2291,14 +2329,20 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
 
   it("moves 510 words, every one of them prefixed, and lowers no score", () => {
     // The change stated over the dictionary rather than on the samples above.
-    // Two claims: nothing outside the two prefixes moves at all -- this is one
-    // family, not a retune -- and every move is a fold, which can only ever make
-    // a word more common.
-    const moved = (dictionaryWords as string[]).filter(
+    // Two claims: nothing outside the two prefixes moves *for this reason* --
+    // this is one family, not a retune -- and every move is a fold, which can
+    // only ever make a word more common.
+    //
+    // Scoped to the two prefixes rather than taken over the whole date, because
+    // "pre-" came back on this date too and moves 751 words of its own; the
+    // describe below states that half. Nothing else moves: the two slices are
+    // the whole of the day.
+    const movedAll = (dictionaryWords as string[]).filter(
       (word) => rarityFor(word, ON_UNGATED)!.zipf !== rarityFor(word, BEFORE_UNGATED)!.zipf
     );
+    expect(movedAll.filter((word) => !/^(anti|counter|pre)/.test(word))).toEqual([]);
+    const moved = movedAll.filter((word) => /^(anti|counter)/.test(word));
     expect(moved).toHaveLength(510);
-    expect(moved.filter((word) => !/^(anti|counter)/.test(word))).toEqual([]);
     for (const word of moved) {
       expect(
         rarityFor(word, ON_UNGATED)!.zipf,
@@ -2327,9 +2371,12 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
   });
 });
 
-describe('"pre-" folds again (from 2026-09-29)', () => {
-  const BEFORE_RESTORED = "2026-09-28"; // the corpus cutover, the day before
-  const ON_RESTORED = "2026-09-29"; // the first puzzle with the prefix back
+describe('"pre-" folds again (from MODE_CHOICE_START)', () => {
+  // The day before is inside the freeform trial, where nothing folds at all, so
+  // "before" is the last ordinary folding puzzle -- the system this cutover
+  // changes, exactly as the describe above takes it.
+  const BEFORE_RESTORED = "2026-09-13";
+  const ON_RESTORED = MODE_CHOICE_START;
 
   // What the prefix is for: a productive "pre-" on a free-standing English word.
   const MOVED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
@@ -2395,11 +2442,10 @@ describe('"pre-" folds again (from 2026-09-29)', () => {
     // every move is a fold, which can only ever make a word more common. The
     // review pass holds the second -- an entry that corrected a fold could have
     // raised a score, and none does.
-    const moved = (dictionaryWords as string[]).filter(
-      (word) => rarityFor(word, ON_RESTORED)!.zipf !== rarityFor(word, BEFORE_RESTORED)!.zipf
-    );
+    const moved = (dictionaryWords as string[])
+      .filter((word) => rarityFor(word, ON_RESTORED)!.zipf !== rarityFor(word, BEFORE_RESTORED)!.zipf)
+      .filter((word) => word.startsWith("pre")); // the day's other half is above
     expect(moved).toHaveLength(751);
-    expect(moved.filter((word) => !word.startsWith("pre"))).toEqual([]);
     for (const word of moved) {
       expect(
         rarityFor(word, ON_RESTORED)!.zipf,
@@ -2428,7 +2474,7 @@ describe('"pre-" folds again (from 2026-09-29)', () => {
   });
 
   it("is off for every puzzle between PRE_PREFIX_END and the cutover", () => {
-    for (const date of [BEFORE_RESTORED, "2026-09-13", "2026-09-06"]) {
+    for (const date of [BEFORE_RESTORED, "2026-09-10", "2026-09-06"]) {
       expect(baseFormSubstitution("prewash", date)).toBeUndefined();
     }
     // ...and it folded before that, which is the answer changing twice.
