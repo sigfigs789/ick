@@ -48,7 +48,7 @@
 //   afresh rather than handed a copy the reader has already seen.
 //
 // POST /api/leaderboard
-//   { playerId, scores: [{ date, word, zipf, total, top, words, retried?, unranked?, found? }] }
+//   { playerId, version?, scores: [{ date, word, zipf, total, top, words, retried?, unranked?, found? }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
 //   One score per player per puzzle. An array because it has two callers of the
 //   same shape: the game submitting today after each accepted word, and a player
@@ -71,6 +71,12 @@
 //   words would not fit the body cap, and the feed only ever shows one puzzle.
 //   Each word is written once and never updated, so its place in the feed is
 //   fixed when it lands.
+//
+//   `version` is the client's APP_VERSION (src/version.ts): which release's
+//   scoring priced these words. A submission below MIN_RANKED_VERSION, or one
+//   that carries no version at all, is written as though every day in it were
+//   `unranked` -- its words reach the feed and none of its days reach the board.
+//   See MIN_RANKED_VERSION for why.
 //
 //   No name is sent, and none is stored: what the board calls a player is
 //   derived from their id on the client (src/game/handle.ts). Each day carries
@@ -168,6 +174,32 @@ function monthEnd(start: string): string {
 function weekEnd(start: string): string {
   return daysBefore(start, -6);
 }
+
+/**
+ * The oldest release whose scores the board will rank.
+ *
+ * Every submission's total is priced on the client, and a client prices words
+ * by the rules it was built with. The website cannot fall behind -- a tab below
+ * MIN_VERSION reloads itself -- but the App Store and Play Store apps are frozen
+ * copies of the game that update when their players say so. An install that
+ * never updates keeps pricing words by a system the website has retired, and a
+ * board holding both ranks whoever is on the older rules rather than whoever
+ * found the rarer word.
+ *
+ * So a release that changes how a live or coming puzzle is priced raises this
+ * floor along with APP_VERSION, and a phone app that has not caught up still
+ * plays, still scores, and still puts its finds on the feed -- it just stops
+ * ranking until the store build it needs is out and installed. A submission
+ * with no version is below any floor: that is every client written before the
+ * field existed, including build 7 of the phone app, which folds the
+ * 2026-09-22 to 09-26 trial days the website plays as Freeform.
+ *
+ * Raise it only when scoring actually changed. It unranks every phone that has
+ * not updated, until a store build at or above it ships and is installed, so a
+ * forced reload for any other reason is a MIN_VERSION bump alone. It can never
+ * exceed APP_VERSION (api/leaderboard.test.ts checks), or nobody would rank.
+ */
+export const MIN_RANKED_VERSION = 26;
 
 /**
  * A batch is a browser's whole playing history, so it has to hold a couple of
@@ -543,9 +575,16 @@ function readSubmission(parsed: unknown):
   | { playerId: string; scores: ScoreEntry[] }
   | string {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "malformed-body";
-  const { playerId, scores } = parsed as Record<string, unknown>;
+  const { playerId, version, scores } = parsed as Record<string, unknown>;
 
   if (typeof playerId !== "string" || !UUID_RE.test(playerId)) return "bad-player-id";
+  // Absent is every client from before the field, and is simply below the floor.
+  // Anything present has to be a release number: this decides whether a batch
+  // reaches the board, so a string that looks like one is not close enough.
+  if (version !== undefined && (!Number.isInteger(version) || (version as number) < 1)) {
+    return "bad-version";
+  }
+  const ranked = typeof version === "number" && version >= MIN_RANKED_VERSION;
 
   if (!Array.isArray(scores)) return "bad-scores";
   if (scores.length === 0) return "no-scores";
@@ -557,7 +596,7 @@ function readSubmission(parsed: unknown):
     // One bad day fails the batch rather than being quietly dropped: a partial
     // write would leave the client believing it submitted a history it didn't.
     if (typeof score === "string") return score;
-    checked.push(score);
+    checked.push(ranked ? score : { ...score, unranked: true });
   }
   return { playerId, scores: checked };
 }

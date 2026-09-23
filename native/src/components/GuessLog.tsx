@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { maxGuessesFor } from '../../../src/game/constants';
 import {
-  baseFormRankDrop,
+  baseFormSubstitution,
   formatRarityScore,
   topRarityScore,
   totalRarityScore,
@@ -121,17 +121,17 @@ export function GuessLog({
             const isBest = best !== undefined && word.word === best.word;
             const isCopied = copiedWord === word.word;
             /*
-             * Surfaced only when the fold actually cost the word a rank. A
-             * badge sitting a tier or more below what the word looks like it
-             * deserves reads as broken until the player is shown the word it
-             * was scored from.
+             * Shown for every word scored as another form, whatever it cost --
+             * the website's rule (src/components/GuessLog.tsx). With two modes
+             * one switch apart, the same word reads at two prices, and a
+             * Standard score with no note beside it looks like a bug.
              *
              * "Common form", not "base word": the fold takes the most common
              * word in the family, which is often a sibling or a cousin rather
              * than a base -- calling a plural the base word of its own singular
              * reads as the very bug this is meant to explain.
              */
-            const baseNote = baseFormRankDrop(word.word, date);
+            const baseNote = baseFormSubstitution(word.word, date);
 
             return (
               <Pressable

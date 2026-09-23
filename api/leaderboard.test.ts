@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import handler from "./leaderboard";
+import handler, { MIN_RANKED_VERSION } from "./leaderboard";
+import { APP_VERSION } from "../src/version";
 
 const CONFIGURED = {
   SUPABASE_URL: "https://project.supabase.co",
@@ -19,8 +20,9 @@ function withEnv(env: Record<string, string | undefined> = CONFIGURED) {
 
 /** A valid one-day submission, with any score field overridable per test. */
 function score(overrides: Record<string, unknown> = {}) {
-  const { playerId, ...day } = {
+  const { playerId, version, ...day } = {
     playerId: PLAYER,
+    version: APP_VERSION,
     date: SUNDAY,
     word: "inkling",
     zipf: 2.9,
@@ -29,7 +31,7 @@ function score(overrides: Record<string, unknown> = {}) {
     words: 5,
     ...overrides,
   } as Record<string, unknown>;
-  return { playerId, scores: [day] };
+  return { playerId, version, scores: [day] };
 }
 
 function post(body: unknown, init: RequestInit = {}): Request {
@@ -101,7 +103,7 @@ describe("api/leaderboard submissions", () => {
       top: 6.1,
       words: 3,
     }));
-    const response = await handler(post({ playerId: PLAYER, scores }));
+    const response = await handler(post({ playerId: PLAYER, version: APP_VERSION, scores }));
 
     expect(response.status).toBe(202);
     expect(await response.json()).toEqual({ ok: true, days: 300 });
@@ -117,6 +119,7 @@ describe("api/leaderboard submissions", () => {
     const response = await handler(
       post({
         playerId: PLAYER,
+        version: APP_VERSION,
         scores: [
           { date: SUNDAY, word: "inkling", zipf: 2.9, total: 12, top: 6, words: 3 },
           { date: "2020-01-01", word: "inkling", zipf: 2.9, total: 12, top: 6, words: 3 },
@@ -138,7 +141,7 @@ describe("api/leaderboard submissions", () => {
   ])("refuses %s", async (_label, scores, reason) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
-    const response = await handler(post({ playerId: PLAYER, scores }));
+    const response = await handler(post({ playerId: PLAYER, version: APP_VERSION, scores }));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ ok: false, reason });
@@ -156,7 +159,7 @@ describe("api/leaderboard submissions", () => {
       top: 1,
       words: 1,
     }));
-    const response = await handler(post({ playerId: PLAYER, scores }));
+    const response = await handler(post({ playerId: PLAYER, version: APP_VERSION, scores }));
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ ok: false, reason: "too-many-scores" });
@@ -759,6 +762,79 @@ describe("api/leaderboard unranked days", () => {
         found: [{ word: "inkling", zipf: 2.9 }],
       },
     ]);
+  });
+});
+
+describe("api/leaderboard client versions", () => {
+  it("can never set a floor the current release is below", () => {
+    // Above APP_VERSION, nobody -- not even the website -- would rank.
+    expect(MIN_RANKED_VERSION).toBeLessThanOrEqual(APP_VERSION);
+  });
+
+  it("ranks a client at the floor as it always has", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    await handler(post(score({ version: MIN_RANKED_VERSION })));
+
+    const [day] = rpcCall(fetchMock)?.args.p_scores as Record<string, unknown>[];
+    expect(day).not.toHaveProperty("unranked");
+  });
+
+  it.each([
+    ["one below the floor", { version: MIN_RANKED_VERSION - 1 }],
+    // Every client from before the field, which includes the phone app's build 7.
+    ["no version at all", { version: undefined }],
+  ])("keeps a client with %s off the board, but its words on the feed", async (_label, overrides) => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(
+      post(score({ ...overrides, found: [{ word: "inkling", zipf: 2.9 }] }))
+    );
+
+    expect(response.status).toBe(202);
+    expect(rpcCall(fetchMock)?.args.p_scores).toEqual([
+      {
+        date: SUNDAY,
+        word: "inkling",
+        zipf: 2.9,
+        total: 24.6,
+        top: 9.4,
+        words: 5,
+        unranked: true,
+        found: [{ word: "inkling", zipf: 2.9 }],
+      },
+    ]);
+  });
+
+  it("unranks every day of an old client's history import, not just today", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const days = ["2026-08-23", "2026-08-24"].map((date) => ({
+      date,
+      word: "inkling",
+      zipf: 2.9,
+      total: 12,
+      top: 6,
+      words: 3,
+    }));
+    await handler(post({ playerId: PLAYER, scores: days }));
+
+    const written = rpcCall(fetchMock)?.args.p_scores as Record<string, unknown>[];
+    expect(written.map((day) => day.unranked)).toEqual([true, true]);
+  });
+
+  it.each([
+    ["a string", "26"],
+    ["a fraction", 26.5],
+    ["zero", 0],
+  ])("refuses a version that is %s", async (_label, version) => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(post(score({ version })));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ ok: false, reason: "bad-version" });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
