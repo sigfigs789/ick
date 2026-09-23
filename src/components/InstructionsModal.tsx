@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackFeedbackSubmitted } from "../analytics";
 import { modeIsChosen } from "../game/mode";
 import { todayDateString } from "../game/date";
+import { CommonFormModal } from "./CommonFormModal";
 
 interface Props {
   open: boolean;
@@ -12,21 +13,35 @@ export function InstructionsModal({ open, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [feedback, setFeedback] = useState("");
   const [sent, setSent] = useState(false);
+  const [showFolds, setShowFolds] = useState(false);
 
   useEffect(() => {
-    if (open) closeRef.current?.focus();
-  }, [open]);
+    if (open && !showFolds) closeRef.current?.focus();
+  }, [open, showFolds]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || showFolds) return;
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, showFolds, onClose]);
 
   if (!open) return null;
+
+  // In place of this sheet rather than on top of it: two overlays would both
+  // hear Escape, and closing the explainer should land back here, feedback
+  // draft and all, not dismiss everything.
+  if (showFolds) {
+    return (
+      <CommonFormModal
+        open
+        date={todayDateString()}
+        onClose={() => setShowFolds(false)}
+      />
+    );
+  }
 
   function submitFeedback(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -81,18 +96,20 @@ export function InstructionsModal({ open, onClose }: Props) {
           <div className="modal__modes">
             <h3 className="modal__modes-heading">Two ways to play</h3>
             <p className="modal__copy">
-              <strong>Standard</strong> — a word is scored as the common word
-              it’s a form of: “plays” counts as <em>play</em>. Four words a day.
+              <strong>Standard</strong> — words score as their common form:
+              “plays” counts as <em>play</em>.{" "}
+              <button
+                type="button"
+                className="common-form__link"
+                onClick={() => setShowFolds(true)}
+                aria-label="More info on how common forms are scored"
+              >
+                More info
+              </button>
             </p>
             <p className="modal__copy">
               <strong>Freeform</strong> — every word is scored on its own
-              frequency, so “plays” is worth what “plays” is worth. Rarer
-              scores, its own four words, and no leaderboard.
-            </p>
-            <p className="modal__modes-note">
-              Switch any time with the mode button in the header. Both modes
-              accept exactly the same words — the difference is only what
-              they’re worth.
+              frequency, so “plays” is worth what “plays” is worth.
             </p>
           </div>
         )}

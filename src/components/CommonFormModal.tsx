@@ -5,6 +5,11 @@ import { navigate } from "../routes";
 interface Props {
   /** The word whose note was tapped, and the form it was scored as. */
   word?: { word: string; base: string };
+  /**
+   * Open without a word: the How to play sheet's "More info", where the
+   * question is the rule itself rather than one word's score.
+   */
+  open?: boolean;
   /** The puzzle being played, which decides which affixes folded that day. */
   date?: string;
   onClose: () => void;
@@ -23,23 +28,24 @@ interface Props {
  * tables the scoring does: on an archived August puzzle the prefix list is the
  * longer one that puzzle was actually scored with.
  */
-export function CommonFormModal({ word, date, onClose }: Props) {
+export function CommonFormModal({ word, open = false, date, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const visible = open || word !== undefined;
 
   useEffect(() => {
-    if (word) closeRef.current?.focus();
-  }, [word]);
+    if (visible) closeRef.current?.focus();
+  }, [visible]);
 
   useEffect(() => {
-    if (!word) return;
+    if (!visible) return;
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [word, onClose]);
+  }, [visible, onClose]);
 
-  if (!word) return null;
+  if (!visible) return null;
 
   const groups = foldAffixGroups(date);
 
@@ -68,19 +74,33 @@ export function CommonFormModal({ word, date, onClose }: Props) {
         {/* The player's own word first. The general rule is what the rest of
             the panel is for, but the question that opened it was about one
             word, and answering that one before explaining the rule is the
-            difference between an answer and a reference page. */}
-        <p className="common-form__pair">
-          <span className="common-form__word">{word.word}</span>
-          <span className="common-form__arrow" aria-hidden="true">
-            →
-          </span>
-          <span className="common-form__word">{word.base}</span>
-        </p>
-        <p className="modal__copy">
-          Scores come from how often a word gets used. “{word.word}” is
-          “{word.base}” wearing an affix, so it scores as “{word.base}” — a
-          familiar word in an unfamiliar shape isn’t a rarer word.
-        </p>
+            difference between an answer and a reference page.
+
+            Opened from How to play there is no word yet, so the same claim is
+            made about an example instead. */}
+        {word ? (
+          <>
+            <p className="common-form__pair">
+              <span className="common-form__word">{word.word}</span>
+              <span className="common-form__arrow" aria-hidden="true">
+                →
+              </span>
+              <span className="common-form__word">{word.base}</span>
+            </p>
+            <p className="modal__copy">
+              Scores come from how often a word gets used. “{word.word}” is
+              “{word.base}” wearing an affix, so it scores as “{word.base}” — a
+              familiar word in an unfamiliar shape isn’t a rarer word.
+            </p>
+          </>
+        ) : (
+          <p className="modal__copy">
+            Scores come from how often a word gets used. In Standard, a word
+            that’s a common word wearing an affix scores as that common word:
+            “plays” scores as “play” — a familiar word in an unfamiliar shape
+            isn’t a rarer word.
+          </p>
+        )}
         <p className="modal__copy">
           These are the affixes the scoring reads through. A word only moves if
           the form underneath is a real word <em>and</em> a more common one, so
@@ -121,7 +141,7 @@ export function CommonFormModal({ word, date, onClose }: Props) {
             specific one in mind -- the same argument that puts the word
             suggestion box inside the word rules panel. */}
         <p className="modal__copy modal__signoff">
-          Think this one got the wrong form?{" "}
+          {word ? "Think this one got the wrong form?" : "Think a word got the wrong form?"}{" "}
           <button
             type="button"
             className="common-form__link"
