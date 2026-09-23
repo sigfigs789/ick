@@ -477,7 +477,6 @@ const TRANSPARENT_PREFIXES = [
   "pre", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "sub", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "out",
-  "re", // added 2026-09-29, see `ADDED_PREFIXES`
   "un",
 ];
 
@@ -494,8 +493,6 @@ const TRANSPARENT_PREFIXES = [
 const RETIRED_PREFIXES = {
   // "pre-", which attaches to whole English words and to Latin stems alike, so
   // the reading cannot be told from the spelling ("precaution", "pretext").
-  // Retired 2026-09-05 and restored 2026-09-29, so `era.pre` is the one entry
-  // here that is true again at the far end -- see PRODUCTIVE_PREFIX_START.
   pre: new Set(["pre"]),
   // Everything borrowed: the classical combining forms and the Latinate
   // prefixes alike. What they have in common is that they attach to bound stems
@@ -528,26 +525,6 @@ const RETIRED_PREFIXES = {
   ]),
 };
 
-/**
- * The entries *added* after 2026-08-24, each behind the flag its date turns on.
- * "pre-" is not here although it joins the list on the same date, because it is
- * a restoration rather than an addition: `RETIRED_PREFIXES.pre` already gates
- * it, and the date simply answers that gate's question the other way again.
- *
- * The mirror of `RETIRED_PREFIXES`: a rule added has to stay off for the puzzles
- * played before it exactly as one taken away has to keep working for the ones
- * played with it, so the prefix sits in the list above and is filtered out for
- * every date below its own.
- *
- * "re-", added 2026-09-29 alongside the restoration of "pre-". The one prefix
- * admitted against the argument in the block below rather than alongside it --
- * see PRODUCTIVE_PREFIX_START in dictionary.ts for what the pair reaches and
- * what it costs.
- */
-const ADDED_PREFIXES = {
-  re: new Set(["re"]),
-};
-
 /*
  * What is left folding after those two sets come out: "counter-", "under-",
  * "anti-", "over-", "out-" and "un-". They attach to free-standing English
@@ -558,32 +535,32 @@ const ADDED_PREFIXES = {
  */
 
 /*
- * The prefixes left out, and why. "de-", "co-" and "dis-" are among the most
- * productive prefixes in the language and would be a large part of this rule's
- * reach -- "codriver", "depeople" both want them. They are also English
- * fossilised onto Latin stems that were never English words, and below the floor
- * is exactly where those live: "delate" (to inform against) folds to "late",
- * "cosh" (a bludgeon) to "she", "copious" to "pious" and "delineable" to "line".
- * Nothing in the spelling separates those from the real ones, and unlike the
- * suffix families the frequency gate cannot help -- the fossilised words are
- * rare, so the gate lets them through rather than keeping them out.
+ * The prefixes left out, and why. "de-", "re-", "co-" and "dis-" are the most
+ * productive prefixes in the language and would have been the biggest part of
+ * this rule's reach -- "codriver", "reexplain", "depeople" all want them. They
+ * are also the four English fossilised onto Latin stems that were never English
+ * words, and below the floor is exactly where those live: "delate" (to inform
+ * against) folds to "late", "refel" (to refute) to "fell", "cosh" (a bludgeon)
+ * to "she", "copious" to "pious" and "delineable" to "line". Nothing in the
+ * spelling separates those from the real ones, and unlike the suffix families
+ * the frequency gate cannot help -- the fossilised words are rare, so the gate
+ * lets them through rather than keeping them out.
  *
  * This is the "-en" verbs decision again ("dudeen" -> "dude", "shoneen" ->
  * "shone"): a family right often enough to tempt, wrong in a way no rule can
  * see. Admitting it needs a vetted table of which words really carry the
  * prefix, which is what scripts/fold-disagreements.py exists to build.
  *
- * "re-" and "pre-" are the other two of that group and are *in* the list from
- * 2026-09-29 -- "re-" for the first time, "pre-" for the second, having been in
- * it from 2026-08-24 to 2026-09-05 and retired on exactly the argument above
- * ("preapply" scored 4.60 as `app`, "prehearing" 4.06 as `hear`, "precaution" is
- * not a caution taken early). The audit behind PRODUCTIVE_PREFIX_START is what
- * that judgement now rests on, and it did not clear them: of the 1,332 fold
- * families the pair reaches across the corpus, 162 land on a base that means
- * something else, and the rate is worst -- 29% -- among the hundred-odd families
- * a player is most likely to meet. The vetted table this block asks for is
- * therefore still the missing piece, not a solved problem. See
- * PRODUCTIVE_PREFIX_START in dictionary.ts.
+ * "pre-" was in the list from 2026-08-24 until 2026-09-05 and is now out for the
+ * same reason, one family later: it reaches 808 words and the readings it gets
+ * wrong are the ones a player sees. A wrong prefix fold is not a quietly
+ * generous score but a named base and a rank lost -- "preapply" scored 4.60 as
+ * `app`, "prehearing" 4.06 as `hear`, "prelife" 3.08 as `life` -- and the
+ * spelling cannot tell those from the transparent ones, because "pre-" fossilised
+ * onto Latin stems the way "de-" and "re-" did ("precaution" is not a caution
+ * taken early, "predominance" not a dominance, "prefab" not a fab). See
+ * PRE_PREFIX_END in dictionary.ts for what the removal costs in the other
+ * direction.
  *
  * The borrowed prefixes went with it, on the distinction the rule turns on: a
  * native prefix attaches to a free-standing English word, so its residue is a
@@ -638,12 +615,6 @@ export interface PrefixEra {
    * BORROWED_PREFIX_END.
    */
   borrowed: boolean;
-  /**
-   * Whether "re-" folds. Reads the same way round as `pre` and `borrowed` read
-   * the other way: false before 2026-09-29, true from there. See
-   * RE_PREFIX_START.
-   */
-  re: boolean;
 }
 
 /**
@@ -658,8 +629,7 @@ export function transparentPrefixes(era: PrefixEra): string[] {
   return TRANSPARENT_PREFIXES.filter(
     (prefix) =>
       (era.pre || !RETIRED_PREFIXES.pre.has(prefix)) &&
-      (era.borrowed || !RETIRED_PREFIXES.borrowed.has(prefix)) &&
-      (era.re || !ADDED_PREFIXES.re.has(prefix))
+      (era.borrowed || !RETIRED_PREFIXES.borrowed.has(prefix))
   ).sort();
 }
 
@@ -669,7 +639,6 @@ export function prefixBaseCandidates(word: string, era: PrefixEra): string[] {
   for (const prefix of TRANSPARENT_PREFIXES) {
     if (RETIRED_PREFIXES.pre.has(prefix) && !era.pre) continue;
     if (RETIRED_PREFIXES.borrowed.has(prefix) && !era.borrowed) continue;
-    if (ADDED_PREFIXES.re.has(prefix) && !era.re) continue;
     if (!w.startsWith(prefix)) continue;
     const stem = w.slice(prefix.length);
     if (stem.length < 4 || stem === w || out.includes(stem)) continue;

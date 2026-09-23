@@ -771,10 +771,22 @@ describe("curated base-form score overrides", () => {
   // and `lad` to the "-es"/"-ed" strip and lost the pick to the commoner boy.
   const CORRECTIVE = new Set(["lades", "laded"]);
 
+  // A third shape, and the rarest: an override that *holds* a word where it
+  // already was. The word folds correctly the day before, a rule arriving on the
+  // entry's own date would send it somewhere else, and the entry pins the base it
+  // already had -- so the score does not move at all. Only a rule and an entry
+  // landing on the same date can produce this, which is why it is one word:
+  // PRE_PREFIX_RESTORED would take "preclinically" from `preclinical` to `clinic`.
+  const PROTECTIVE = new Set(["preclinically"]);
+
   it.each(overrides)("%s keeps its own, rarer score the day before", (word, { since }) => {
     const before = addDays(since, -1);
     if (CORRECTIVE.has(word)) {
       expect(rarityFor(word, before)!.zipf).toBeGreaterThan(rarityFor(word, since)!.zipf);
+      return;
+    }
+    if (PROTECTIVE.has(word)) {
+      expect(rarityFor(word, before)!.zipf).toBe(rarityFor(word, since)!.zipf);
       return;
     }
     expect(rarityFor(word, before)!.zipf).toBeLessThan(rarityFor(word, since)!.zipf);
@@ -792,6 +804,14 @@ describe("curated base-form score overrides", () => {
     // its own that the override redirects rather than creates. "convincers" folds
     // to "convincer" (Zipf 1.09, still a Mythic) unaided, and its override sends
     // it the rest of the way to "convince" (4.26) from `since` on.
+    //
+    // A PROTECTIVE entry is the exception, and inevitably so: it pins the base
+    // the word already had, to hold it there against a rule arriving the same
+    // day, so the base is the same on both sides by construction.
+    if (PROTECTIVE.has(word)) {
+      expect(baseFormSubstitution(word, addDays(since, -1))?.base).toBe(base);
+      return;
+    }
     expect(baseFormSubstitution(word, addDays(since, -1))?.base).not.toBe(base);
   });
 });

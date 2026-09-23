@@ -409,8 +409,8 @@ describe("privativeBaseCandidates", () => {
 describe("prefixBaseCandidates", () => {
   // The two sides of the 2026-09-05 retirements: LATEST is the live list,
   // ARCHIVED the one the puzzles from 2026-08-24 to 2026-09-04 folded with.
-  const LATEST = { pre: false, borrowed: false, re: true };
-  const ARCHIVED = { pre: true, borrowed: true, re: false };
+  const LATEST = { pre: false, borrowed: false };
+  const ARCHIVED = { pre: true, borrowed: true };
 
   it("offers the base a transparent prefix was attached to", () => {
     expect(prefixBaseCandidates("overplanned", LATEST)).toContain("planned");
@@ -436,32 +436,17 @@ describe("prefixBaseCandidates", () => {
   });
 
   it("leaves out the prefixes English fossilised onto Latin stems", () => {
-    // "de-", "co-" and "dis-" are among the most productive prefixes there are,
-    // and excluded anyway: nothing in the spelling separates a real derivation
-    // from a borrowing that merely opens the same way, and the frequency gate
-    // cannot help because the fossilised words are rare.
+    // "de-", "re-", "co-" and "dis-" are the most productive prefixes there
+    // are, and excluded anyway: nothing in the spelling separates a real
+    // derivation from a borrowing that merely opens the same way, and the
+    // frequency gate cannot help because the fossilised words are rare.
     expect(prefixBaseCandidates("delates", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("refelled", LATEST)).toEqual([]);
     expect(prefixBaseCandidates("coshes", LATEST)).toEqual([]);
     expect(prefixBaseCandidates("disparts", LATEST)).toEqual([]);
     // The cost is real -- these are correct readings the rule gives up on.
     expect(prefixBaseCandidates("codriver", LATEST)).toEqual([]);
-  });
-
-  it('folds "re-" from 2026-09-29, fossils and all', () => {
-    // The fourth of that group, admitted anyway on the reviewed-exemption
-    // argument -- see RE_PREFIX_START. The readings it gets right are the
-    // productive ones, and they are most of what it reaches.
-    expect(prefixBaseCandidates("reexplain", LATEST)).toEqual(["explain"]);
-    expect(prefixBaseCandidates("rebrand", LATEST)).toEqual(["brand"]);
-    // And the fossil it cannot tell from them, which is the price the block
-    // above spells out: "refel" is to refute, not to fell again.
-    expect(prefixBaseCandidates("refelled", LATEST)).toEqual(["felled"]);
-    // Off for every date before the cutover, so archived puzzles are untouched.
-    expect(prefixBaseCandidates("reexplain", ARCHIVED)).toEqual([]);
-    expect(prefixBaseCandidates("refelled", ARCHIVED)).toEqual([]);
-    // The four-letter residue floor applies to it like the rest of the list:
-    // "rely" offers nothing, so the short junk bases never arise.
-    expect(prefixBaseCandidates("relay", LATEST)).toEqual([]);
+    expect(prefixBaseCandidates("reexplain", LATEST)).toEqual([]);
   });
 
   it("leaves out \"pre-\" too, for the puzzles that come after it", () => {
