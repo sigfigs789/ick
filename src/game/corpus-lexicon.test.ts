@@ -261,7 +261,7 @@ describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
     });
 
     it("carries the ungated prefixes onto bases only the corpus has", () => {
-      // The two cutovers compose, a day apart: 2026-09-27 lets "anti-" strip a
+      // The two cutovers compose on one date: 2026-09-27 lets "anti-" strip a
       // measured word at all (see UNGATED_PREFIX_START), and this one decides
       // what the strip may land on. `christ` is a corpus headword with no tag
       // against it and no curated entry, so the pair of them is what gets
