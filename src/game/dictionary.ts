@@ -1138,6 +1138,14 @@ interface Scoring {
    * cutover; see LIQUID_STEM_START.
    */
   liquidStemAdjectives: boolean;
+  /**
+   * Whether a fold may only land on a form *shorter* than the word played. From
+   * MODE_CHOICE_START: with Freeform one switch away, "titty" scored as the
+   * commoner "titties" read as Standard marking a word down for nothing the
+   * player did. A word is scored as itself unless a shorter common form is
+   * underneath it. See SHORTER_FORMS_START.
+   */
+  shorterFormsOnly: boolean;
   // Whether a word is also capped at the regular inflections built *on* it --
   // the fold's reverse direction, so the bare lemma of a verb only ever written
   // as a participle stops scoring as a deep-tail find (see
@@ -1356,6 +1364,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     // turning this on.
     corpusLexicon: false,
     liquidStemAdjectives: false,
+    shorterFormsOnly: false,
     folds,
   };
 }
@@ -1694,6 +1703,25 @@ const CORPUS_ONLY_START = MODE_CHOICE_START;
 export const LIQUID_STEM_START = MODE_CHOICE_START;
 
 /**
+ * The first puzzle on which Standard only ever rescores a word *down* to a
+ * shorter form: MODE_CHOICE_START, with the mode switch.
+ *
+ * The fold runs in both directions from 2026-08-24 (see `inflectedFormFolds`
+ * and `derivedFormFolds`), so a word could be capped at a longer, commoner
+ * member of its family: "titty" at "titties", "abaci" at "abacus". That was
+ * defensible while everyone played one system. With the mode switch, the same
+ * word reads at two prices a tap apart, and the Standard one is lower because
+ * of a word the player did not play. So from here a word is scored as itself
+ * unless a shorter common form is underneath it.
+ *
+ * The walk itself is unchanged, and still passes through longer forms on the way
+ * to a shorter one ("semiweekly" through "semiweeklies" to "weekly"). Only
+ * the winner is restricted. The freeform trial sits under this date and folds
+ * nothing, so the first puzzle it can reach is one nobody has played yet.
+ */
+export const SHORTER_FORMS_START = MODE_CHOICE_START;
+
+/**
  * The corpus era: the latest fold, reading the expansive corpus.
  *
  * Spread from `LATEST_SCORING` rather than built by another `twoBandScoring`
@@ -1706,6 +1734,8 @@ const CORPUS_SCORING: Scoring = {
   // See LIQUID_STEM_START, which is this same date: the "-ly" strip keeps a
   // stem's l from the day the corpus makes it possible to lose one.
   liquidStemAdjectives: true,
+  // See SHORTER_FORMS_START, also this date.
+  shorterFormsOnly: true,
 };
 
 const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
@@ -1717,6 +1747,7 @@ const LEGACY_SCORING: Scoring = {
   folds: true,
   corpusLexicon: false,
   liquidStemAdjectives: false,
+  shorterFormsOnly: false,
   zipfAt: (i) => legacyZipfTenths[i] / 10,
   // The legacy scale is defined over LEGACY_MIN_ZIPF..LEGACY_MAX_ZIPF and has no
   // clamp of its own, so a Zipf below its floor scores past 10. A live-validated
@@ -2501,6 +2532,15 @@ export interface FoldAffixGroup {
  * Returns nothing when the fold is off entirely (freeform week), where there is
  * no note to explain in the first place.
  */
+/**
+ * Whether `date`'s Standard scoring only ever rescores a word to a form no longer
+ * than it (see SHORTER_FORMS_START), so the explainer can say so.
+ */
+export function foldsOnlyToShorterForms(date?: string): boolean {
+  const scoring = scoringFor(date);
+  return scoring.folds && scoring.shorterFormsOnly;
+}
+
 export function foldAffixGroups(date?: string): FoldAffixGroup[] {
   const scoring = scoringFor(date);
   if (!scoring.folds) return [];
@@ -2814,6 +2854,11 @@ function chainedBase(
   // The word's own frequency, so the reverse fold can skip a form that could not
   // beat it -- see the `floor` argument to `inflectedFormFolds`.
   const own = lexiconHas(word, scoring) ? zipfFor(word, scoring) : -Infinity;
+  // Whether a form the walk reached may be what the word scores as. From
+  // SHORTER_FORMS_START only a shorter one may; the walk still passes through
+  // the rest on its way.
+  const eligible = (form: string) =>
+    !scoring.shorterFormsOnly || form.length <= word.length;
 
   for (let depth = 0; depth < MAX_FOLD_DEPTH && frontier.length > 0; depth++) {
     const next: string[] = [];
@@ -2833,7 +2878,7 @@ function chainedBase(
         if (trace && !trace.has(reviewed)) {
           trace.set(reviewed, { from: current, to: reviewed, rule: "base", zipf });
         }
-        if (!best || zipf > best.zipf) best = { base: reviewed, zipf };
+        if (eligible(reviewed) && (!best || zipf > best.zipf)) best = { base: reviewed, zipf };
         continue;
       }
       for (const candidate of nextBaseForms(current, scoring, date)) {
@@ -2842,7 +2887,7 @@ function chainedBase(
         next.push(candidate);
         const zipf = zipfFor(candidate, scoring);
         trace?.set(candidate, { from: current, to: candidate, rule: "base", zipf });
-        if (!best || zipf > best.zipf) best = { base: candidate, zipf };
+        if (eligible(candidate) && (!best || zipf > best.zipf)) best = { base: candidate, zipf };
       }
       // The other direction, and the reason it is applied here rather than as
       // another entry in `nextBaseForms`: a word is capped at the inflections
@@ -2861,7 +2906,7 @@ function chainedBase(
         if (trace && !trace.has(form)) {
           trace.set(form, { from: current, to: form, rule: "derived-form", zipf });
         }
-        if (!best || zipf > best.zipf) best = { base: form, zipf };
+        if (eligible(form) && (!best || zipf > best.zipf)) best = { base: form, zipf };
       }
       for (const form of inflectedFormFolds(
         current,
@@ -2873,7 +2918,7 @@ function chainedBase(
         if (trace && !trace.has(form)) {
           trace.set(form, { from: current, to: form, rule: "inflected-form", zipf });
         }
-        if (!best || zipf > best.zipf) best = { base: form, zipf };
+        if (eligible(form) && (!best || zipf > best.zipf)) best = { base: form, zipf };
         // Terminal for the *inflectional* hops and transparent to the rest, from
         // REVIEWED_FOLD_START. Reading only the form's raw Zipf is the mistake
         // `chainedBase` was built to fix, still made in this one direction: the
@@ -2896,7 +2941,9 @@ function chainedBase(
             next.push(above);
             const aboveZipf = zipfFor(above, scoring);
             trace?.set(above, { from: form, to: above, rule: "base", zipf: aboveZipf });
-            if (!best || aboveZipf > best.zipf) best = { base: above, zipf: aboveZipf };
+            if (eligible(above) && (!best || aboveZipf > best.zipf)) {
+              best = { base: above, zipf: aboveZipf };
+            }
           }
         }
       }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { foldAffixGroups } from "../game/dictionary";
+import { foldAffixGroups, foldsOnlyToShorterForms } from "../game/dictionary";
 import { navigate } from "../routes";
 
 interface Props {
@@ -122,6 +122,14 @@ export function CommonFormModal({ word, open = false, date, onClose }: Props) {
           a score is only ever pulled toward the common form, never away from
           it.
         </p>
+        {/* Dated like the lists: from SHORTER_FORMS_START only. An archived
+            August puzzle did fold "infatuate" onto "infatuated". */}
+        {foldsOnlyToShorterForms(date) && (
+          <p className="modal__copy">
+            A word is never scored as a longer form, however common: “infatuate”
+            isn’t scored as “infatuated”, it scores as itself.
+          </p>
+        )}
 
         <ul className="common-form__groups">
           {groups.map((group) => (

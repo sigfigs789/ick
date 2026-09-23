@@ -2377,13 +2377,17 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
   // The wrong *bracketings*, which is what a frequency gate never caught either
   // and what fold-exemptions.json is for: the letters are there and the prefix
   // is not. Scoped to the prefix, so the word's ordinary folds still run.
+  //
+  // The four whose numbers moved when this date also stopped capping a word at
+  // a longer form (SHORTER_FORMS_START) were held at their own plurals before:
+  // "antibody" at "antibodies", "counterpane" at "counterpanes".
   const EXEMPT: ReadonlyArray<[word: string, unreachable: string, score: number]> = [
-    ["antibody", "body", 6.43],
-    ["counterpart", "part", 6.17],
+    ["antibody", "body", 6.57],
+    ["counterpart", "part", 6.24],
     ["antimony", "monies", 7.84],
-    ["antiphony", "phony", 9.77],
+    ["antiphony", "phony", 9.79],
     ["antipathetic", "pathetic", 9.42],
-    ["counterpane", "pane", 8.54],
+    ["counterpane", "pane", 9.74],
     ["antidotes", "dot", 6.86],
   ];
 
@@ -2491,21 +2495,27 @@ describe('"pre-" folds again (from MODE_CHOICE_START)', () => {
   // alone, and leaves it on its own measured score. The last three are the
   // readings PRE_PREFIX_END was written about, and the reason it could not keep
   // the prefix without a table like this one.
-  const EXEMPTED: ReadonlyArray<[word: string, unreachable: string, score: number]> = [
+  //
+  // Three carry a second number: they were capped at a longer form the day
+  // before ("precaution" at "precautions"), and SHORTER_FORMS_START withdraws
+  // that on the same date, so they score as themselves.
+  const EXEMPTED: ReadonlyArray<
+    [word: string, unreachable: string, before: number, after?: number]
+  > = [
     ["prelate", "late", 7.69],
     ["prescience", "science", 8.43],
     ["prepuce", "puce", 8.94],
-    ["premiss", "miss", 9.53],
-    ["precaution", "caution", 6.39],
-    ["preapply", "app", 9.92],
+    ["premiss", "miss", 9.53, 9.65],
+    ["precaution", "caution", 6.39, 6.66],
+    ["preapply", "app", 9.92, 10],
     ["prehearing", "hear", 8.07],
   ];
 
-  it.each(EXEMPTED)("%s never reaches %s", (word, unreachable, expected) => {
-    // Unchanged across the cutover: the rule offers a base and review refuses
-    // it, so the word scores exactly as it did the day before.
-    expect(score(word, BEFORE_RESTORED)).toBe(expected);
-    expect(score(word, ON_RESTORED)).toBe(expected);
+  it.each(EXEMPTED)("%s never reaches %s", (word, unreachable, before, after = before) => {
+    // The rule offers a base and review refuses it, so the prefix never moves
+    // the word across the cutover.
+    expect(score(word, BEFORE_RESTORED)).toBe(before);
+    expect(score(word, ON_RESTORED)).toBe(after);
     expect(baseFormSubstitution(word, ON_RESTORED)?.base).not.toBe(unreachable);
   });
 
