@@ -4,8 +4,9 @@ import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { corpusAttests, corpusEntry, loadCorpus, sourceBit, tagBit } from "./corpus";
 import { baseFormSubstitution, rarityFor } from "./dictionary";
-import { isRanked, modeForDate, resetModeCache, setMode } from "./mode";
+import { MODE_CHOICE_START, isRanked, modeForDate, resetModeCache, setMode } from "./mode";
 import curated from "../data/dictionary.json";
+import rarity from "../data/rarity.json";
 
 /**
  * The shipped corpus, served to `loadCorpus` off disk.
@@ -36,13 +37,24 @@ function serveShippedCorpus(): void {
   );
 }
 
-/** The day before the cutover and the day of it -- see CORPUS_ONLY_START. */
-const BEFORE = "2026-09-27";
-const AFTER = "2026-09-28";
+/**
+ * The day of the cutover and the last ordinary folding puzzle before it -- see
+ * CORPUS_ONLY_START. "Before" cannot be the day before, because that is inside
+ * the freeform trial, where nothing folds at all and every comparison would read
+ * as the whole fold arriving at once. 2026-09-13 is the system this cutover
+ * changes, which is the substitution every other cutover's tests make.
+ *
+ * The date now carries the mode switch, the ungated prefixes and the restored
+ * "pre-" as well, so the counts below are the day's, not the corpus's alone: of
+ * the words that move, 530 carry "anti-"/"counter-" and 854 carry "pre-". What
+ * the corpus does on its own is still what the named cases pin.
+ */
+const BEFORE = "2026-09-13";
+const AFTER = MODE_CHOICE_START;
 
 const CURATED = new Set(curated as string[]);
 
-describe("the corpus lexicon (from 2026-09-28)", () => {
+describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
   beforeAll(async () => {
     serveShippedCorpus();
     expect(await loadCorpus()).toBe(true);
@@ -165,12 +177,16 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
     });
 
     it("leaves Freeform alone entirely, because Freeform does not fold", () => {
-      // The mode switch lands on 2026-09-27 and this cutover on the 28th, so the
-      // two are one day apart and it is worth saying which one owns what. The
-      // switch decides whether a word folds; this decides what the fold may
-      // reach. Freeform answers "it does not fold" to the first question, which
-      // makes the second moot -- `lexiconHas` has exactly one consumer and it is
-      // the fold.
+      // The mode switch and this cutover now land on the same date, and it is
+      // still worth saying which one owns what. The switch decides whether a
+      // word folds; this decides what the fold may reach. Freeform answers "it
+      // does not fold" to the first question, which makes the second moot --
+      // `lexiconHas` has exactly one consumer and it is the fold.
+      //
+      // Stated as "every word scores its own measurement" rather than as a
+      // before/after diff, because there is no longer a day between the two
+      // cutovers to take the "before" from: the corpus arrives on the first date
+      // the switch exists. This says the same thing more directly.
       //
       // Swept over the whole list rather than spot-checked, because "no effect"
       // is the kind of claim a handful of words can pass by accident.
@@ -178,11 +194,11 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
       setMode("freeform");
       try {
         expect(modeForDate(AFTER)).toBe("freeform");
-        let moved = 0;
-        for (const word of curated as string[]) {
-          if (rarityFor(word, BEFORE)!.zipf !== rarityFor(word, AFTER)!.zipf) moved++;
-        }
-        expect(moved).toBe(0);
+        let folded = 0;
+        (curated as string[]).forEach((word, i) => {
+          if (rarityFor(word, AFTER)!.zipf !== rarity.zipfHundredths[i] / 100) folded++;
+        });
+        expect(folded).toBe(0);
       } finally {
         resetModeCache();
       }

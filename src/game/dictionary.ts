@@ -1649,8 +1649,20 @@ const LATEST_SCORING: Scoring = {
  * rarity.json carries hundredths) and reaches bases the curated fold never
  * could, so every score it touches would move. An archived puzzle plays as it
  * was played.
+ *
+ * Shares MODE_CHOICE_START with the mode switch, the ungated prefixes and the
+ * restored "pre-". It had a day of its own to begin with, on the argument that
+ * the two questions are separate -- the prefixes are about *when* a strip is
+ * allowed, this is about what any strip may land on -- and that separation is
+ * still worth explaining, just not worth a date. What settled it is that the two
+ * halves of this cutover had already been split across it: `corpusVerdict` makes
+ * a word the curated list never held playable from MODE_CHOICE_START, while the
+ * fold could not price against a corpus base until the day after. For one puzzle
+ * a player could submit "unmasticated" and have it scored as though nothing in
+ * the language were related to it. One date closes that, and one date is one
+ * explanation.
  */
-const CORPUS_ONLY_START = "2026-09-28";
+const CORPUS_ONLY_START = MODE_CHOICE_START;
 
 /**
  * 2026-10-01. The day "scowly" stopped being a kind of scow.
@@ -1665,13 +1677,20 @@ const CORPUS_ONLY_START = "2026-09-28";
  * words.
  *
  * Its own date because the cutover's ledger is pinned: corpus-lexicon.test.ts
- * asserts that 2026-09-28 moves far more words down than up, and that the
- * promotions stay under a fortieth of the demotions. This rule and the 92
+ * asserts that the corpus moves far more words down than up, and that the
+ * promotions stay under a fortieth of the demotions. This rule and the 1,612
  * exemptions reviewed with it are *all* promotions -- that is what fixing a
- * wrong fold is -- and shipping them on the cutover's date would have taken
- * that ratio from 1:70 to 1:25 while telling the test they were the cutover's
- * doing. They are not. They get their own day and their own ledger, and the
- * three puzzles in between keep the scores they were built with.
+ * wrong fold is -- and shipping them on the cutover's date would have taken that
+ * ratio from 1:125 to 1:5 while telling the test they were the cutover's doing.
+ * They are not. They get their own day and their own ledger, and the puzzles in
+ * between keep the scores they were built with.
+ *
+ * That argument is why this date did *not* follow CORPUS_ONLY_START when it
+ * moved to MODE_CHOICE_START: consolidating the two was measured, and it put 818
+ * promotions into the corpus's ledger -- 152 of them even after setting aside
+ * every word with a reviewed entry of its own, because an exemption carries its
+ * inflections with it. The guard would have had to be loosened to fit, which is
+ * the one thing a ledger must not do.
  */
 const LIQUID_STEM_START = "2026-10-01";
 

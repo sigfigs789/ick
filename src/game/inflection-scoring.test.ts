@@ -2369,15 +2369,16 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
     // this is one family, not a retune -- and every move is a fold, which can
     // only ever make a word more common.
     //
-    // Scoped to the two prefixes rather than taken over the whole date, because
-    // "pre-" came back on this date too and moves 751 words of its own; the
-    // describe below states that half. Nothing else moves: the two slices are
-    // the whole of the day.
-    const movedAll = (dictionaryWords as string[]).filter(
-      (word) => rarityFor(word, ON_UNGATED)!.zipf !== rarityFor(word, BEFORE_UNGATED)!.zipf
+    // Scoped to the two prefixes rather than taken over the whole date. The date
+    // carries three changes now -- these prefixes, the restored "pre-" in the
+    // describe below, and the corpus lexicon -- so a sweep of the whole day
+    // would be a claim about all three. Each states its own slice; the corpus
+    // states its own in corpus-lexicon.test.ts.
+    const moved = (dictionaryWords as string[]).filter(
+      (word) =>
+        /^(anti|counter)/.test(word) &&
+        rarityFor(word, ON_UNGATED)!.zipf !== rarityFor(word, BEFORE_UNGATED)!.zipf
     );
-    expect(movedAll.filter((word) => !/^(anti|counter|pre)/.test(word))).toEqual([]);
-    const moved = movedAll.filter((word) => /^(anti|counter)/.test(word));
     expect(moved).toHaveLength(510);
     for (const word of moved) {
       expect(
