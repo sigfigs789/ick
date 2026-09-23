@@ -8,7 +8,7 @@
  * midnight, is to move that one function rather than to thread a date through
  * the app or to change the machine's clock.
  *
- * Guarded by `DEV_TOOLS` the same way src/dev/sampleData.ts is: on the
+ * Guarded by `DEV_TOOLS` like every dev tool (see src/dev/devTools.ts): on the
  * production build the checks fold to `false`, the branches drop out, and
  * `todayDateString()` is the plain wall-clock reading it has always been. A
  * preview deploy keeps the picker, which is where moving the date is most

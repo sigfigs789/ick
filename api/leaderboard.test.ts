@@ -237,6 +237,8 @@ describe("api/leaderboard submissions", () => {
     // value that isn't a boolean is not close enough.
     ["a retry flag that isn't a boolean", { retried: "yes" }, "bad-retried"],
     ["a retry flag sent as a number", { retried: 1 }, "bad-retried"],
+    // Decides whether the day reaches the board at all.
+    ["an unranked flag that isn't a boolean", { unranked: "yes" }, "bad-unranked"],
   ])("refuses %s", async (_label, overrides, reason) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -637,6 +639,24 @@ describe("api/leaderboard recent finds", () => {
     ]);
   });
 
+  it.each([
+    // Past the furthest ahead any local calendar can be, so no puzzle exists
+    // for it. A caller cannot use this to read a drop the game has not reached
+    // -- and must not be handed today's words under that day's heading instead.
+    ["a date beyond any puzzle", "2099-01-01"],
+    ["a date four days ahead", "FOUR_AHEAD"],
+    ["a date before the first puzzle", "2020-01-01"],
+  ])("answers an empty feed for %s, without asking the database", async (_label, day) => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const date = day === "FOUR_AHEAD" ? daysBefore(utcToday(), -4) : day;
+    const response = await handler(get(`?words=1&today=${date}`));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ words: [] });
+    expect(rpcCall(fetchMock)).toBeNull();
+  });
+
   it("includes today for a client whose calendar is ahead of UTC", async () => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -653,10 +673,6 @@ describe("api/leaderboard recent finds", () => {
     ["a missing date", ""],
     ["a date that isn't one", "&today=whenever"],
     ["a malformed date", "&today=2026-13-45"],
-    // Past the furthest ahead any local calendar can be, so no puzzle exists
-    // for it. A caller cannot use this to read a drop the game has not reached.
-    ["a date beyond any puzzle", "&today=2099-01-01"],
-    ["a date before the first puzzle", "&today=2020-01-01"],
   ])("falls back to UTC's today for %s", async (_label, param) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -722,6 +738,30 @@ describe("api/leaderboard recent finds", () => {
   });
 });
 
+describe("api/leaderboard unranked days", () => {
+  it("passes the unranked flag through, so the write keeps the day off the board", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(
+      post(score({ unranked: true, found: [{ word: "inkling", zipf: 2.9 }] }))
+    );
+
+    expect(response.status).toBe(202);
+    expect(rpcCall(fetchMock)?.args.p_scores).toEqual([
+      {
+        date: SUNDAY,
+        word: "inkling",
+        zipf: 2.9,
+        total: 24.6,
+        top: 9.4,
+        words: 5,
+        unranked: true,
+        found: [{ word: "inkling", zipf: 2.9 }],
+      },
+    ]);
+  });
+});
+
 describe("api/leaderboard retried days", () => {
   it("passes the retry flag through to the write", async () => {
     withEnv();
@@ -758,5 +798,35 @@ describe("api/leaderboard retried days", () => {
     expect(rpcCall(fetchMock)?.args.p_scores).toMatchObject([
       { retried: true, total: 12.1, words: 3 },
     ]);
+  });
+});
+
+describe("api/leaderboard on a preview deploy", () => {
+  const fourAhead = new Date(Date.now() + 4 * 86400000).toISOString().slice(0, 10);
+
+  it("takes a score for a day ahead, so a tester can play a cutover", async () => {
+    withEnv({ ...CONFIGURED, VERCEL_ENV: "preview" });
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(post(score({ date: fourAhead })));
+
+    expect(response.status).toBe(202);
+    expect(rpcCall(fetchMock)?.args.p_scores).toMatchObject([{ date: fourAhead }]);
+  });
+
+  it("reads that day's finds rather than an empty feed", async () => {
+    withEnv({ ...CONFIGURED, VERCEL_ENV: "preview" });
+    const fetchMock = stubFetch([[]]);
+    await handler(get(`?words=1&today=${fourAhead}`));
+
+    expect(rpcCall(fetchMock)?.args.p_since).toBe(fourAhead);
+  });
+
+  it("still refuses the same day on production", async () => {
+    withEnv({ ...CONFIGURED, VERCEL_ENV: "production" });
+    stubFetch([[]]);
+    const response = await handler(post(score({ date: fourAhead })));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ ok: false, reason: "bad-date" });
   });
 });

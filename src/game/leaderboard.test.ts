@@ -4,6 +4,7 @@ import {
   feedFloor,
   fetchBoards,
   fetchFoundWords,
+  repriceFoundWords,
   submitScore,
   syncHistory,
 } from "./leaderboard";
@@ -11,7 +12,7 @@ import { rarityScore, rawTotalRarityScore } from "./dictionary";
 import { handleFor } from "./handle";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
-import { MODE_CHOICE_START, resetModeCache } from "./mode";
+import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import { FIRST_PUZZLE } from "./drop";
 import type { AcceptedWord, DailyProgress } from "./types";
 
@@ -651,8 +652,8 @@ describe("the finds feed, fetched on its own", () => {
 
     const words = await fetchFoundWords("2026-08-27");
     expect(words).toEqual([
-      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3, foundOn: "", today: false },
-      { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1, foundOn: "", today: false },
+      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3, foundOn: "", today: false, stored: 7.9 },
+      { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1, foundOn: "", today: false, stored: 2.9 },
     ]);
   });
 
@@ -676,6 +677,7 @@ describe("the finds feed, fetched on its own", () => {
         finders: 1,
         foundOn: "2026-08-27",
         today: true,
+        stored: 2.09,
       },
     ]);
   });
@@ -703,8 +705,27 @@ describe("the finds feed, fetched on its own", () => {
         finders: 1,
         foundOn: "2026-09-15",
         today: true,
+        stored: 5.45,
       },
     ]);
+  });
+
+  it("reprices the feed by the reader's mode once the mode is theirs to choose", async () => {
+    // The feed holds both modes' finds, and a word reads at what the reader
+    // would have been scored for it: folded onto "kind" in Standard, on its own
+    // frequency in Freeform. Nothing is fetched again to switch.
+    resetModeCache();
+    setMode("standard");
+    stubFetch(feed("kindless", 1.08, MODE_CHOICE_START));
+    const words = await fetchFoundWords(MODE_CHOICE_START);
+    const standard = words[0].zipf;
+    setMode("freeform");
+    const [freeform] = repriceFoundWords(words);
+    expect(freeform.zipf).toBe(1.08);
+    expect(freeform.rarity).toBe("Mythic");
+    expect(standard).toBeGreaterThan(freeform.zipf);
+    setMode("standard");
+    expect(repriceFoundWords([freeform])[0].zipf).toBe(standard);
   });
 
   it("leaves a find from outside the week on the system that day ran", async () => {
@@ -988,7 +1009,7 @@ describe("a day that spent its retry", () => {
   });
 });
 
-describe("Freeform stays off the board", () => {
+describe("Freeform stays off the board, and on the feed", () => {
   const CHOSEN = MODE_CHOICE_START;
   const WORDS_HERE: AcceptedWord[] = [{ word: "inkling", rarity: "Rare", zipf: 2.9 }];
 
@@ -996,13 +1017,24 @@ describe("Freeform stays off the board", () => {
     resetModeCache();
   });
 
-  it("sends nothing for a day the player chose to spend in Freeform", () => {
+  it("sends a chosen Freeform day unranked, carrying its finds", () => {
     joinBoard();
     const fetchMock = stubFetch();
     expect(
       submitScore({ date: CHOSEN, isToday: true, words: WORDS_HERE, mode: "freeform" }),
-    ).toBe(false);
-    expect(fetchMock).not.toHaveBeenCalled();
+    ).toBe(true);
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    // The server writes the words to the feed and no row to the board.
+    expect(day.unranked).toBe(true);
+    expect(day.found).toEqual([{ word: "inkling", zipf: expect.any(Number) }]);
+  });
+
+  it("does not mark a Standard day unranked", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+    submitScore({ date: CHOSEN, isToday: true, words: WORDS_HERE, mode: "standard" });
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day).not.toHaveProperty("unranked");
   });
 
   it("still sends a Standard day on the same puzzle", () => {
@@ -1030,7 +1062,7 @@ describe("Freeform stays off the board", () => {
     expect(fetchMock).toHaveBeenCalled();
   });
 
-  it("leaves a Freeform day out of a history import", () => {
+  it("imports today's Freeform day for its finds alone, and no older one", () => {
     const playerId = joinBoard()!;
     const fetchMock = stubFetch();
     const history: DailyProgress[] = [
@@ -1050,13 +1082,24 @@ describe("Freeform stays off the board", () => {
         rejectedAttempts: [],
         completed: false,
       },
+      {
+        date: "2026-09-28",
+        drop: "INK",
+        mode: "freeform",
+        acceptedWords: WORDS_HERE,
+        rejectedAttempts: [],
+        completed: false,
+      },
     ];
     // A browser that has played both ways holds a record of each, and the
     // import is the one path that could quietly put the wrong one on the board.
-    expect(backfillHistory(playerId, history, CHOSEN)).toBe(1);
-    const body = posted(fetchMock);
-    expect((body.scores as Record<string, unknown>[]).map((day) => day.date)).toEqual([
-      CHOSEN,
+    // Today's Freeform day goes up unranked, for the feed; a past one has no
+    // finds to send and is not sent at all.
+    expect(backfillHistory(playerId, history, "2026-09-28")).toBe(2);
+    const scores = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(scores.map((day) => [day.date, day.unranked ?? false])).toEqual([
+      [CHOSEN, false],
+      ["2026-09-28", true],
     ]);
   });
 });
