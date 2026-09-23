@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { sendWordSuggestion } from '../host/submissions';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
@@ -9,9 +9,6 @@ interface Props {
   open: boolean;
   onClose: () => void;
 }
-
-const WIKTIONARY = 'https://en.wiktionary.org/';
-const CC_BY_SA = 'https://creativecommons.org/licenses/by-sa/4.0/';
 
 /**
  * Why a word was turned away, and the way to argue about it.
@@ -37,30 +34,9 @@ export function WordRulesSheet({ open, onClose }: Props) {
   return (
     <Sheet open={open} title="Word rules" onClose={onClose}>
       <Text style={[styles.copy, { color: theme.fg }]}>
-        WordInk's curated word list is sourced from SCOWL and{' '}
-        <Text
-          style={[styles.link, { color: theme.focusRing }]}
-          onPress={() => void Linking.openURL(WIKTIONARY)}
-          accessibilityRole="link"
-        >
-          Wiktionary
-        </Text>{' '}
-        (used under{' '}
-        <Text
-          style={[styles.link, { color: theme.focusRing }]}
-          onPress={() => void Linking.openURL(CC_BY_SA)}
-          accessibilityRole="link"
-        >
-          CC BY-SA 4.0
-        </Text>
-        ) and contains more than 200,000 words. To keep play consistent, proper nouns,
-        abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and
-        words with punctuation aren't eligible for play.
-      </Text>
-
-      <Text style={[styles.copy, { color: theme.fg }]}>
-        I'm continuously expanding the list to include more delightful and interesting words.
-        Know a good one that's missing? Suggest it and everybody gets to play it.
+        To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic,
+        or dated words, hyphenated words, and words with punctuation aren't eligible for play.
+        Know a good word that's missing? Suggest it and everybody gets to play it.
       </Text>
 
       <View style={styles.form}>
@@ -117,9 +93,6 @@ const styles = StyleSheet.create({
   copy: {
     fontSize: 15,
     lineHeight: 22,
-  },
-  link: {
-    textDecorationLine: 'underline',
   },
   form: {
     gap: space.sm,
