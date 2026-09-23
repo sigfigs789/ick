@@ -8,21 +8,18 @@ const analytics = vi.hoisted(() => ({ trackWordSuggestion: vi.fn() }));
 vi.mock("../analytics", () => ({ trackWordSuggestion: analytics.trackWordSuggestion }));
 
 describe("WordRulesModal", () => {
-  it("explains the word list and closes from its controls", async () => {
+  it("explains what's eligible and closes from its controls", async () => {
     const onClose = vi.fn();
     render(<WordRulesModal open onClose={onClose} />);
 
     const dialog = screen.getByRole("dialog", { name: /word rules/i });
     expect(screen.getByRole("heading", { name: "Word rules" })).toBeInTheDocument();
-    expect(dialog).toHaveTextContent(/word list is sourced from scowl and wiktionary .*and contains more than 200,000 words/i);
     expect(dialog).toHaveTextContent(/proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words/i);
     expect(dialog).toHaveTextContent(/to keep play consistent.*aren't eligible for play/i);
-    expect(dialog).toHaveTextContent(/used under.*cc by-sa 4\.0/i);
-    expect(screen.getByRole("link", { name: "Wiktionary" })).toHaveAttribute("href", "https://en.wiktionary.org/");
-    expect(screen.getByRole("link", { name: "CC BY-SA 4.0" })).toHaveAttribute("href", "https://creativecommons.org/licenses/by-sa/4.0/");
-    expect(dialog).not.toHaveTextContent(/built and maintained by a solo developer/i);
-    expect(dialog).toHaveTextContent(/continuously expanding the list to include more delightful and interesting words/i);
-    expect(dialog).toHaveTextContent(/know a good one that's missing\? suggest it and everybody gets to play it/i);
+    // Sourcing, licensing and list size moved to the terms; scoring lives in
+    // How to play. This panel is eligibility and the suggestion box only.
+    expect(dialog).not.toHaveTextContent(/scowl|wiktionary|cc by-sa|more than [0-9]/i);
+    expect(dialog).toHaveTextContent(/know a good word that's missing\? suggest it and everybody gets to play it/i);
     expect(screen.getByRole("button", { name: /close word rules/i })).toHaveFocus();
 
     await userEvent.click(screen.getByRole("button", { name: /close word rules/i }));
@@ -62,9 +59,7 @@ describe("WordRulesModal during freeform week", () => {
   it("stops saying archaic words are unplayable while they are being played", () => {
     render(<WordRulesModal open date="2026-09-15" onClose={vi.fn()} />);
     const dialog = screen.getByRole("dialog");
-    // Sourcing and licensing are true whatever week it is.
-    expect(dialog).toHaveTextContent(/sourced from SCOWL and Wiktionary/i);
-    expect(dialog).toHaveTextContent(/it's freeform week, so almost all of it is in play/i);
+    expect(dialog).toHaveTextContent(/it's freeform week, so proper nouns, abbreviations/i);
     expect(dialog).not.toHaveTextContent(/aren't eligible for play/i);
   });
 
@@ -96,14 +91,6 @@ describe("WordRulesModal from the choice date", () => {
       expect(dialog, mode).not.toHaveTextContent(/it's freeform week/i);
       unmount();
     }
-  });
-
-  it("counts the corpus rather than the curated list", () => {
-    // The undated panel still says 200,000: the curated list is the whole of
-    // what an archived puzzle before the switch could reach.
-    setMode("standard");
-    render(<WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />);
-    expect(screen.getByRole("dialog")).toHaveTextContent(/more than 900,000 words/i);
   });
 
   it("still refuses the age trio in the copy, as the game does", () => {
