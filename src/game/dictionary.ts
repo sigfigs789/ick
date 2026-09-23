@@ -1013,6 +1013,12 @@ interface Scoring {
   // changes where the answer comes from rather than which rule is applied to it
   // -- see CORPUS_ONLY_START.
   corpusLexicon: boolean;
+  /**
+   * Whether a "-y" adjective built on a stem ending in "l" is read as one,
+   * rather than as an adverb the "-ly" rule may strip. Ships with the corpus
+   * cutover; see LIQUID_STEM_START.
+   */
+  liquidStemAdjectives: boolean;
   // Whether a word is also capped at the regular inflections built *on* it --
   // the fold's reverse direction, so the bare lemma of a verb only ever written
   // as a participle stops scoring as a deep-tail find (see
@@ -1229,6 +1235,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     // curated index; CORPUS_SCORING is built by spreading the latest one and
     // turning this on.
     corpusLexicon: false,
+    liquidStemAdjectives: false,
     folds,
   };
 }
@@ -1521,6 +1528,29 @@ const LATEST_SCORING: Scoring = {
 const CORPUS_ONLY_START = "2026-09-28";
 
 /**
+ * 2026-10-01. The day "scowly" stopped being a kind of scow.
+ *
+ * A rung of its own rather than a flag folded into the corpus cutover, even
+ * though it is a *consequence* of that cutover: the "-ly" strip has always been
+ * able to misread a "-y" adjective on an l-final stem, and it was harmless while
+ * the fold priced against 225k curated words that held neither "scow" nor "jow".
+ * The 1.2M-word lexicon holds both, and with them "howly" -> "how" (7.45 points),
+ * "growly" -> "grow", "prowly" -> "prow", "jowly" -> "jow". See
+ * `scoringBaseForm` for the rule and why it fires only where both readings are
+ * words.
+ *
+ * Its own date because the cutover's ledger is pinned: corpus-lexicon.test.ts
+ * asserts that 2026-09-28 moves far more words down than up, and that the
+ * promotions stay under a fortieth of the demotions. This rule and the 92
+ * exemptions reviewed with it are *all* promotions -- that is what fixing a
+ * wrong fold is -- and shipping them on the cutover's date would have taken
+ * that ratio from 1:70 to 1:25 while telling the test they were the cutover's
+ * doing. They are not. They get their own day and their own ledger, and the
+ * three puzzles in between keep the scores they were built with.
+ */
+const LIQUID_STEM_START = "2026-10-01";
+
+/**
  * The corpus era: the latest fold, reading the expansive corpus.
  *
  * Spread from `LATEST_SCORING` rather than built by another `twoBandScoring`
@@ -1528,6 +1558,9 @@ const CORPUS_ONLY_START = "2026-09-28";
  * thing and must not drift from the system it changes it in.
  */
 const CORPUS_SCORING: Scoring = { ...LATEST_SCORING, corpusLexicon: true };
+
+/** The corpus era from LIQUID_STEM_START: the "-ly" strip keeps a stem's l. */
+const LIQUID_SCORING: Scoring = { ...CORPUS_SCORING, liquidStemAdjectives: true };
 
 const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
 
@@ -1537,6 +1570,7 @@ const CORPUS_FREEFORM_SCORING: Scoring = { ...CORPUS_SCORING, folds: false };
 const LEGACY_SCORING: Scoring = {
   folds: true,
   corpusLexicon: false,
+  liquidStemAdjectives: false,
   zipfAt: (i) => legacyZipfTenths[i] / 10,
   // The legacy scale is defined over LEGACY_MIN_ZIPF..LEGACY_MAX_ZIPF and has no
   // clamp of its own, so a Zipf below its floor scores past 10. A live-validated
@@ -1692,7 +1726,10 @@ function scoringFor(date?: string): Scoring {
   // last so it reads as what it is -- the latest system with one switch thrown --
   // and so a later cutover slots in above it without thinking about the week.
   if (date >= CORPUS_ONLY_START) {
-    return usesFreeformRules(date) ? CORPUS_FREEFORM_SCORING : CORPUS_SCORING;
+    // Freeform folds nothing, so the liquid-stem rule cannot reach it and the
+    // era's two profiles collapse to one on that side.
+    if (usesFreeformRules(date)) return CORPUS_FREEFORM_SCORING;
+    return date >= LIQUID_STEM_START ? LIQUID_SCORING : CORPUS_SCORING;
   }
   if (usesFreeformRules(date)) return FREEFORM_SCORING;
   // Below the freeform fork rather than above it, unlike every rung before it.
@@ -2678,7 +2715,12 @@ const MAX_FOLD_DEPTH = 8;
  * "axes"), and no word is visited twice. Revisiting could not raise the maximum
  * anyway, so one shared set across the whole walk is enough.
  */
-function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase | undefined {
+function chainedBase(
+  word: string,
+  scoring: Scoring,
+  date?: string,
+  trace?: Map<string, FoldHop>
+): ChainedBase | undefined {
   const seen = new Set([word]);
   let frontier = [word];
   let best: ChainedBase | undefined;
@@ -2694,6 +2736,7 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
         seen.add(candidate);
         next.push(candidate);
         const zipf = zipfFor(candidate, scoring);
+        trace?.set(candidate, { from: current, to: candidate, rule: "base", zipf });
         if (!best || zipf > best.zipf) best = { base: candidate, zipf };
       }
       // The other direction, and the reason it is applied here rather than as
@@ -2710,6 +2753,9 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
       // `derivedFormCandidates`), so the cap is taken and the walk stops.
       for (const form of derivedFormFolds(current, scoring, date)) {
         const zipf = zipfFor(form, scoring);
+        if (trace && !trace.has(form)) {
+          trace.set(form, { from: current, to: form, rule: "derived-form", zipf });
+        }
         if (!best || zipf > best.zipf) best = { base: form, zipf };
       }
       for (const form of inflectedFormFolds(
@@ -2719,6 +2765,9 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
         Math.max(own, best ? best.zipf : -Infinity)
       )) {
         const zipf = zipfFor(form, scoring);
+        if (trace && !trace.has(form)) {
+          trace.set(form, { from: current, to: form, rule: "inflected-form", zipf });
+        }
         if (!best || zipf > best.zipf) best = { base: form, zipf };
         // Terminal for the *inflectional* hops and transparent to the rest, from
         // REVIEWED_FOLD_START. Reading only the form's raw Zipf is the mistake
@@ -2741,6 +2790,7 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
             seen.add(above);
             next.push(above);
             const aboveZipf = zipfFor(above, scoring);
+            trace?.set(above, { from: form, to: above, rule: "base", zipf: aboveZipf });
             if (!best || aboveZipf > best.zipf) best = { base: above, zipf: aboveZipf };
           }
         }
@@ -2749,6 +2799,84 @@ function chainedBase(word: string, scoring: Scoring, date?: string): ChainedBase
     frontier = next;
   }
   return best;
+}
+
+/** One link of a fold chain: what folded onto what, and which direction did it. */
+export interface FoldHop {
+  from: string;
+  to: string;
+  /**
+   * Which of `chainedBase`'s three directions produced the hop -- a rung above
+   * the word ("base"), or one of the two reverse folds the word is merely capped
+   * at. Deliberately not the *affix*: naming the suffix means re-asking every
+   * generator in stem.ts which of them could have made this pair, and that is an
+   * audit's question, not the walk's. The walk knows the shape; `scripts/
+   * fold-audit` asks stem.ts for the name.
+   */
+  rule: "base" | "derived-form" | "inflected-form";
+  zipf: number;
+}
+
+/** A resolved fold, with the path the walk actually took to its winner. */
+export interface FoldTrace {
+  word: string;
+  /** The word's own frequency, before anything folded. */
+  ownZipf: number;
+  /** The most common word the chain reached -- what the score was taken from. */
+  base: string;
+  baseZipf: number;
+  /** `word` -> ... -> `base`, one entry per link. */
+  path: FoldHop[];
+}
+
+/**
+ * `chainedBase`, with its working shown: the winning base *and* the links that
+ * reached it.
+ *
+ * This exists for auditing rather than for play, which is why it is a second
+ * entry point instead of a richer return from `chainedBase` -- the walk runs on
+ * every submission, and the map it fills here is pure overhead for a player.
+ * Passing `trace` is the only cost the hot path pays, one optional-chain per
+ * candidate.
+ *
+ * Unlike `baseFormSubstitution` it does not require a curated word. A corpus-only
+ * derivation is precisely the case an audit cares about -- since CORPUS_ONLY_START
+ * most folds have a base the curated list never held -- and `zipfFor` already
+ * prices both kinds, so there is nothing to gate on.
+ *
+ * Returns undefined when nothing folds, or when the fold did not beat the word's
+ * own frequency: a fold is a cap, so a base rarer than the word changes no score
+ * and is not worth reporting.
+ */
+export function foldTrace(word: string, date?: string): FoldTrace | undefined {
+  const normalized = word.toLowerCase();
+  const scoring = scoringFor(date);
+  if (!scoring.folds || !scoring.chainedBaseForms) return undefined;
+  if (!lexiconHas(normalized, scoring)) return undefined;
+
+  const ownZipf = zipfFor(normalized, scoring);
+  const trace = new Map<string, FoldHop>();
+  const chained = chainedBase(normalized, scoring, date, trace);
+  if (!chained || chained.zipf <= ownZipf) return undefined;
+
+  // Back to front along the parent edges, then reversed. Each node was recorded
+  // the first time the walk reached it and never again, so the edges form a tree
+  // and this terminates -- but the walk is over data, so the guards are cheap
+  // insurance rather than a claim about the current rules.
+  const path: FoldHop[] = [];
+  const walked = new Set<string>();
+  let cursor = chained.base;
+  while (cursor !== normalized && path.length <= MAX_FOLD_DEPTH * 2) {
+    if (walked.has(cursor)) break;
+    walked.add(cursor);
+    const hop = trace.get(cursor);
+    if (!hop) break;
+    path.push(hop);
+    cursor = hop.from;
+  }
+  path.reverse();
+
+  return { word: normalized, ownZipf, base: chained.base, baseZipf: chained.zipf, path };
 }
 
 /**
@@ -3259,6 +3387,57 @@ function scoringBaseForm(word: string, scoring: Scoring): string | undefined {
     if (!word.endsWith(suffix) || word.length <= suffix.length + 2) continue;
     const stem = word.slice(0, -suffix.length);
     const candidates = [stem, stem.endsWith("i") ? `${stem.slice(0, -1)}y` : ""];
+
+    // "scowly" is "scowl" + "-y", not "scow" + "-ly". A spelling rule cannot see
+    // the difference, and for as long as the fold priced against the curated
+    // list it did not have to: "scow", "jow" and "prow" were not on it, so the
+    // strip found nothing and the word kept its own score. The corpus holds all
+    // three, and the misreading became "howly" -> "how", seven and a half points
+    // of it, plus "growly" -> "grow", "jowly" -> "jow", "scowlily" -> "scow" and
+    // the "-ier"/"-iest"/"-iness" forms that fold through them.
+    //
+    // The test is both readings at once, which is what keeps it off the ordinary
+    // adverbs. It fires only where the "-ly" strip *already* found a word and the
+    // "-y" reading is also one and ends in the l the strip would have eaten:
+    // "really" keeps "real" ("reall" is not a word), "tally" is untouched ("tal"
+    // is not), and "early" moves from "ear" to "earl" without moving its score,
+    // since a fold is a cap and "early" is commoner than either. What it changes
+    // is the family where the l is the whole of the stem's identity.
+    //
+    // Deliberately a *replacement* rather than another candidate: `chainedBase`
+    // takes the most common word it reaches, and "how" beats "howl" every time,
+    // so an addition would have left every one of these folds exactly where it
+    // was. See LIQUID_STEM_START.
+    const liquid = word.slice(0, -1);
+    if (
+      scoring.liquidStemAdjectives &&
+      suffix === "ly" &&
+      // The stem must not already end in the l, or every "-ally" and "-fully"
+      // adverb in the language matches: "generally" minus its y is "generall",
+      // which a 1.2M-word lexicon carrying Wiktionary's archaic spellings duly
+      // attests, and reading it that way cost "generally", "successfully",
+      // "naturally" and fifty more their fold onto the adjective they are built
+      // on. A doubled l is an adverb; a single one is part of the stem.
+      !stem.endsWith("l") &&
+      liquid.endsWith("l") &&
+      lexiconHas(liquid, scoring) &&
+      // The *bare stem* has to be the reading that fired, not the "-i" -> "-y"
+      // rewrite: "daily" is "day" + "-ly" through the rewrite, and its bare stem
+      // "dai" is nobody's word, so the rule has no business preferring "dail".
+      lexiconHas(stem, scoring) &&
+      // And the "-y" adjective has to have a degree paradigm behind it, which is
+      // the only evidence spelling offers that this is an adjective at all. It is
+      // the same paired test `degreeBaseCandidates` and `superlativeBaseCandidates`
+      // already run, and for the same reason: "growly" has "growlier" and
+      // "growliest", while "gravely", "lamely", "duely" and "easely" -- every one
+      // of which has an l-final word hiding one letter back -- have no comparative
+      // because they were never adjectives. Both forms, not either: "graveliest"
+      // is attested on its own and "gravelier" is not.
+      lexiconHas(`${liquid}ier`, scoring) &&
+      lexiconHas(`${liquid}iest`, scoring)
+    ) {
+      return liquid;
+    }
     // The bare stem first and the "-y" rewrite second, and until the corpus era
     // the first of the two that was a word won outright. That order was only
     // ever safe because the curated list did not hold the bare stems: "ugli" and

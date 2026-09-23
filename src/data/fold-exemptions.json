@@ -1,192 +1,25 @@
 {
-  "momser": {
-    "since": "2026-08-21",
-    "reason": "Yiddish loanword (from mamzer), nothing to do with `mom`. Below the floor, the bare -er strip read it as \"more mom\" and demoted it six points. Exempting it also covers `momsers`, which can only fold through it."
+  "airshower": {
+    "since": "2026-10-01",
+    "reason": "A cascade of secondary cosmic-ray particles -- an air shower. Not a form of `airshow`."
   },
-  "limen": {
-    "since": "2026-08-21",
-    "reason": "The psychophysics term for a sensory threshold, not the plural of `liman` (a lagoon). The -men rule is right for 300-odd words and wrong here; a measured word deserves its own number."
-  },
-  "germen": {
-    "since": "2026-08-21",
-    "reason": "The botanical rudiment (Latin, sprout), not the plural of `german`. Same -men misreading as `limen`, with a 3.7-Zipf coincidence waiting under it."
-  },
-  "rightsize": {
-    "since": "2026-08-21",
-    "reason": "A verb built on the compound right-size, not \"more right\". The gated -ize strip landed it on `right` at 2.60; its tenses fold through it, so exempting the verb keeps the whole paradigm on its own data."
-  },
-  "laterize": {
-    "since": "2026-08-21",
-    "reason": "To form laterite (the soil), not a degree of `later`. Same shape as `rightsize`: exempting the verb carries its tenses with it."
-  },
-  "bares": {
-    "since": "2026-08-21",
-    "reason": "The plural or third-person form of `bare`, not `bar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "fares": {
-    "since": "2026-08-21",
-    "reason": "The plural or third-person form of `fare`, not `far`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "fores": {
-    "since": "2026-08-21",
-    "reason": "The plural or third-person form of `fore`, not `for`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "mares": {
-    "since": "2026-08-21",
-    "reason": "The plural of `mare`, not `mar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "resites": {
-    "since": "2026-08-21",
-    "reason": "The plural or third-person form of `resite`, not `resit`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "sires": {
-    "since": "2026-08-21",
-    "reason": "The plural or third-person form of `sire`, not `sir`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "stares": {
-    "since": "2026-08-21",
-    "reason": "The plural or third-person form of `stare`, not `star`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "tares": {
-    "since": "2026-08-21",
-    "reason": "The plural of `tare`, not `tar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "wares": {
-    "since": "2026-08-21",
-    "reason": "The plural of `ware`, not `war`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
-  },
-  "complices": {
-    "since": "2026-08-21",
-    "reason": "Plural of the archaic `complice` (an accomplice), which the -ices rule misreads as a stem-change plural of `complex`, 2.8 Zipf clear of the truth. `complice` is the rarer word, so an override cannot express this -- the cap ignores a rarer base -- and the word's own measurement is the right score."
-  },
-  "doe": {
-    "since": "2026-08-24",
-    "reason": "The female deer. `does` is its spelling-legal plural and also the third person of `do`, which is where all of that form's frequency comes from -- and `do` itself is two letters, so the number rules drop it and leave `doe` as the only candidate `does` can pick. Capping the deer at the auxiliary verb halved its score (5.72 -> 2.93)."
-  },
-  "morn": {
-    "since": "2026-08-24",
-    "reason": "The poetic morning. `morning` is not its progressive -- it is the noun `morn` was displaced by -- but the -ing strip picks `morn` over the non-word `morne`, so the reverse fold read the commoner noun as this word's own form (6.88 -> 3.53)."
-  },
-  "blee": {
-    "since": "2026-08-24",
-    "reason": "Archaic for colour or complexion. `bleed` is a strong verb, not `blee` + `-ed`; the -ed strip has nowhere else to land, so the reverse fold made the two one paradigm (8.88 -> 5.90)."
-  },
-  "specie": {
-    "since": "2026-08-24",
-    "reason": "Coin money, from `in specie`. Not the singular of `species`, which is its own Latin word with no separate singular -- but the -es rules can only read `species` as `specie` + `s`, so the reverse fold scored hard currency as the biology term (7.78 -> 4.24)."
-  },
-  "genu": {
-    "since": "2026-08-24",
-    "reason": "The anatomical bend (Latin, knee); its plural is `genua`. `genus` is an unrelated Latin noun the bare -s strip reads as this word's plural (8.87 -> 5.88)."
-  },
-  "politic": {
-    "since": "2026-08-24",
-    "reason": "The adjective (\"a politic decision\"). `politics` is a discipline noun rather than its plural, and carries frequency the adjective never earned (7.27 -> 4.21)."
-  },
-  "physic": {
-    "since": "2026-08-24",
-    "reason": "Archaic for medicine or a purgative. `physics` is a discipline noun, not its plural -- the same shape as `politic`/`politics` (7.69 -> 4.91)."
-  },
-  "tetri": {
-    "since": "2026-08-24",
-    "reason": "The Georgian currency subunit. The bare -s strip reads the video game `tetris` as its plural (9.94 -> 7.06)."
-  },
-  "sacre": {
-    "since": "2026-08-24",
-    "reason": "Not an English inflection of anything: `sacred` is a borrowed past participle, not `sacre` + `-d`. The -ed strip picks this word because the alternatives are non-words (7.90 -> 5.13)."
-  },
-  "microdont": {
-    "since": "2026-08-24",
-    "reason": "Greek micro- + -odont (tooth), a small-toothed animal -- not a form of `dont`. The prefix rule's base floor keeps out the other bound combining forms it lands on (`lith`, `crat`, `phyte`), but `dont` slips through it at Zipf 4.74: it is in the dictionary as the apostrophe-less spelling of \"don't\" and carries that word's frequency. Exempting the word is cheaper than special-casing the base."
-  },
-  "antiphonic": {
-    "since": "2026-08-26",
-    "reason": "From `antiphon` (a sung response) + -ic, not anti- + `phonic`. A wrong bracketing rather than a bound residue: `phonic` is a free word, so bound-residues.json cannot catch it and only a reviewed entry can.",
-    "scope": "prefix"
-  },
-  "intermissive": {
-    "since": "2026-08-26",
-    "reason": "From `intermission`, not inter- + `missive` (a letter).",
-    "scope": "prefix"
-  },
-  "interregnal": {
-    "since": "2026-08-26",
-    "reason": "From `interregnum` + -al, not inter- + `regnal`. Same shape as `antiphonic`: `regnal` is a free word (a regnal year), so the split is orthographically clean and semantically wrong.",
-    "scope": "prefix"
-  },
-  "lading": {
-    "since": "2026-08-26",
-    "reason": "The gerund of `lade` (to load). `baseForm` strips the `-ing` to `lad`, a real word and 1.53 Zipf commoner, so frequency preferred it -- and `lades`/`laded` read the same way, so the whole paradigm scored as a boy. Blanket rather than prefix-scoped: the wrong hop here is the `-ing` strip, not a prefix, and `lading` is the commonest member so it has nowhere it needs to fold. The other three are pinned onto it in score-overrides.json."
-  },
-  "nonagonal": {
-    "since": "2026-08-26",
-    "reason": "Of a `nonagon`, not non- + `agonal`. `agonal` is a free word meaning `of the death throes`, which is as far from nine-sidedness as the table gets.",
-    "scope": "prefix"
-  },
-  "previsor": {
-    "since": "2026-08-26",
-    "reason": "From `prevision`, not pre- + `visor`. The headgear is unrelated.",
-    "scope": "prefix"
-  },
-  "suberose": {
-    "since": "2026-08-26",
-    "reason": "From `suber` (cork) + -ose, not sub- + `erose` (jagged-edged). Both are botanical terms, which is what makes the wrong one plausible enough to need an entry.",
-    "scope": "prefix"
-  },
-  "televisional": {
-    "since": "2026-08-26",
-    "reason": "`television` + -al, not tele- + `visional`. `visional` (of visions) is a free word and an unrelated one.",
-    "scope": "prefix"
-  },
-  "televisionally": {
-    "since": "2026-08-26",
-    "reason": "The adverb of `televisional`, and it needs its own entry: nothing folds an `-ally` adverb back to its `-al` adjective, so it reaches `visionally` on its own.",
-    "scope": "prefix"
-  },
-  "transferal": {
-    "since": "2026-08-26",
-    "reason": "`transfer` + -al, not trans- + `feral`. The residue is a free word and an unrelated one, so no residue table can see it. Scoped to the prefix, which is what lets `transferals` still fold onto this word rather than scoring above it -- and the entry covers the plural without naming it (see prefixFoldExemptParadigm).",
-    "scope": "prefix"
-  },
-  "ungular": {
-    "since": "2026-08-26",
-    "reason": "From `ungula` (a hoof) + -ar, not un- + `gular` (of the throat).",
-    "scope": "prefix"
-  },
-  "earnest": {
-    "since": "2026-09-02",
-    "reason": "Sincere, not \"most earn\". The bare -est fold's paired-degree check passes because `earner` is a word, and nothing in the spelling says the -er is agentive rather than comparative; the word has no base at all, so it is exempted by name."
-  },
-  "tempest": {
-    "since": "2026-09-02",
-    "reason": "A storm, not \"most temp\" -- and `temper` is a word, so the paired-degree check the bare -est fold runs on `contest` and `interest` passes here. One of two words in the dictionary that clear the check without being superlatives."
-  },
-  "during": {
-    "since": "2026-09-10",
-    "reason": "The preposition, not a tense of the archaic `dure` (to last) it descends from. It needs no fold of its own -- at 5.72 Zipf nothing caps it -- but the reverse direction reads it as `dure`'s participle and hands the verb a preposition's frequency, which the doubling rule of 2026-09-10 is what made reachable (before it, `during` folded onto the fragment-word `dur` and the round trip failed). `dure` dropped 8.87 -> 3.34 on that link, Elusive to Very Common, and it is the one wrong pairing that cutover creates; the exemption breaks it from the `during` side, where the misreading is."
-  },
-  "listless": {
-    "since": "2026-09-02",
-    "reason": "Without `list` in the archaic sense (desire, inclination), not without a list. The privative fold's strip is decisive and the residue is a word, so nothing but review can tell this reading from `spotless`; scoring \"languid\" as the everyday `list` (Zipf 5.28) would show \"Scored as its common form, 'list'\" on a word that has nothing to do with it. The blanket entry covers `listlessly` and `listlessness`, which fold onto this word and stop here."
+  "akinete": {
+    "since": "2026-10-01",
+    "reason": "A thick-walled dormant cell. Not a noun form of `akinetic`."
   },
   "antibody": {
     "since": "2026-09-27",
-    "reason": "A loan-translation of Antikörper: the `body` in it is the 19th-century sense of a material substance, and no reader supplies it -- an antibody is not a body the way a counterattack is an attack. The highest-impact reading the ungated prefix reaches (3.56 -> 5.40, `body`), and the one a player would call a bug.",
+    "reason": "A loan-translation of Antik\u00f6rper: the `body` in it is the 19th-century sense of a material substance, and no reader supplies it -- an antibody is not a body the way a counterattack is an attack. The highest-impact reading the ungated prefix reaches (3.56 -> 5.40, `body`), and the one a player would call a bug.",
     "scope": "prefix"
   },
-  "antigen": {
+  "antichlor": {
     "since": "2026-09-27",
-    "reason": "From antibody + generator, a coinage rather than a bracketing: not anti- + `gen`, and not against genes. `antigens` strips to `gens` (a Roman clan) at 4.33.",
+    "reason": "The agent that removes chlorine: anti- + a bound combining form, not the free word `chlor`.",
     "scope": "prefix"
   },
-  "antigene": {
+  "anticline": {
     "since": "2026-09-27",
-    "reason": "The older spelling of `antigen`, and the same coinage; the strip reads it as anti- + `gene`, which is the meaning it does not have.",
-    "scope": "prefix"
-  },
-  "antidote": {
-    "since": "2026-09-27",
-    "reason": "From Greek antidoton (given against), not anti- + `dote`. Left to the rules `antidotes` reaches `dot` at 4.05 through its own plural.",
+    "reason": "The geological fold (Greek anti + klinein, to lean), not anti- + `cline` -- a cline is a gradient in a population, an unrelated technical term that happens to be the residue.",
     "scope": "prefix"
   },
   "antidotal": {
@@ -199,9 +32,19 @@
     "reason": "The adverb of `antidotal`, on its own path to `dotal` for the same reason.",
     "scope": "prefix"
   },
-  "antipathetic": {
+  "antidote": {
     "since": "2026-09-27",
-    "reason": "From `antipathy` + -etic, not anti- + `pathetic`. A word about dislike, scored 4.11 as the word for feeble.",
+    "reason": "From Greek antidoton (given against), not anti- + `dote`. Left to the rules `antidotes` reaches `dot` at 4.05 through its own plural.",
+    "scope": "prefix"
+  },
+  "antigen": {
+    "since": "2026-09-27",
+    "reason": "From antibody + generator, a coinage rather than a bracketing: not anti- + `gen`, and not against genes. `antigens` strips to `gens` (a Roman clan) at 4.33.",
+    "scope": "prefix"
+  },
+  "antigene": {
+    "since": "2026-09-27",
+    "reason": "The older spelling of `antigen`, and the same coinage; the strip reads it as anti- + `gene`, which is the meaning it does not have.",
     "scope": "prefix"
   },
   "antimony": {
@@ -209,9 +52,19 @@
     "reason": "The element (Latin antimonium), not anti- + `mony`. The strip lands on the Scots `mony` and the reverse fold carries it to `monies`, so the metal scored 3.15 as money.",
     "scope": "prefix"
   },
+  "antipathetic": {
+    "since": "2026-09-27",
+    "reason": "From `antipathy` + -etic, not anti- + `pathetic`. A word about dislike, scored 4.11 as the word for feeble.",
+    "scope": "prefix"
+  },
   "antiphon": {
     "since": "2026-09-27",
     "reason": "The sung response (Greek antiphona), not anti- + `phon` (a unit of loudness). The sibling of `antiphonic`, which has been exempt since 2026-08-26 for the same misreading.",
+    "scope": "prefix"
+  },
+  "antiphonic": {
+    "since": "2026-08-26",
+    "reason": "From `antiphon` (a sung response) + -ic, not anti- + `phonic`. A wrong bracketing rather than a bound residue: `phonic` is a free word, so bound-residues.json cannot catch it and only a reviewed entry can.",
     "scope": "prefix"
   },
   "antiphony": {
@@ -224,24 +77,94 @@
     "reason": "The breadfruit tree (Tagalog), not anti- + `polo`.",
     "scope": "prefix"
   },
-  "anticline": {
-    "since": "2026-09-27",
-    "reason": "The geological fold (Greek anti + klinein, to lean), not anti- + `cline` -- a cline is a gradient in a population, an unrelated technical term that happens to be the residue.",
-    "scope": "prefix"
-  },
   "antistat": {
     "since": "2026-09-27",
     "reason": "An antistatic agent, clipped from `antistatic` rather than built on `stat`. The strip reaches `stat` and the reverse fold carries it to `stats`, 4.33.",
     "scope": "prefix"
   },
-  "antichlor": {
-    "since": "2026-09-27",
-    "reason": "The agent that removes chlorine: anti- + a bound combining form, not the free word `chlor`.",
-    "scope": "prefix"
+  "autodocking": {
+    "since": "2026-10-01",
+    "reason": "Docking automatically. Not built on `autodoc`."
   },
-  "counterpart": {
+  "bares": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `bare`, not `bar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "barracking": {
+    "since": "2026-10-01",
+    "reason": "Jeering at a player. From the verb `barrack`, not the soldiers' `barracks`."
+  },
+  "bellow": {
+    "since": "2026-10-01",
+    "reason": "To roar. `bellows` the airblower is a separate noun, and the reverse fold capped the verb at it."
+  },
+  "blee": {
+    "since": "2026-08-24",
+    "reason": "Archaic for colour or complexion. `bleed` is a strong verb, not `blee` + `-ed`; the -ed strip has nowhere else to land, so the reverse fold made the two one paradigm (8.88 -> 5.90)."
+  },
+  "bloodflower": {
+    "since": "2026-10-01",
+    "reason": "A milkweed, *Asclepias curassavica*. Not a form of `bloodflow`."
+  },
+  "blowsed": {
+    "since": "2026-10-01",
+    "reason": "A form of `blowse`/`blowze`. Not `blow` with a tense ending."
+  },
+  "blowses": {
+    "since": "2026-10-01",
+    "reason": "A form of `blowse`, a ruddy-faced woman. The -es strip reads `blows` and carries on to `blow`."
+  },
+  "bowles": {
+    "since": "2026-10-01",
+    "reason": "Plural of `bowle`. Not `bowl`."
+  },
+  "bowsed": {
+    "since": "2026-10-01",
+    "reason": "A form of `bowse`. The -es strip reads it as `bows` and the chain carries on to a different word. Exempted rather than overridden onto `bowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "bowses": {
+    "since": "2026-10-01",
+    "reason": "A form of `bowse`. The -es strip reads it as `bows` and the chain carries on to a different word. Exempted rather than overridden onto `bowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "bowsing": {
+    "since": "2026-10-01",
+    "reason": "A form of `bowse`. The -es strip reads it as `bowsi` and the chain carries on to a different word. Exempted rather than overridden onto `bowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "broking": {
+    "since": "2026-10-01",
+    "reason": "Brokerage. From `broke` the verb stem of `broker`, not `broke` meaning penniless."
+  },
+  "chacking": {
+    "since": "2026-10-01",
+    "reason": "A bird's call. `chac` is not its base."
+  },
+  "chemokineses": {
+    "since": "2026-10-01",
+    "reason": "Plural of `chemokinesis`, movement in response to a chemical. A `chemokine` is a signalling protein, not its singular."
+  },
+  "chowsed": {
+    "since": "2026-10-01",
+    "reason": "A form of `chowse`, to dupe. Not `chow` with a tense ending."
+  },
+  "chowses": {
+    "since": "2026-10-01",
+    "reason": "A form of `chowse`, to dupe. Not the plural of `chow`."
+  },
+  "chowsing": {
+    "since": "2026-10-01",
+    "reason": "A form of `chowse`, to dupe. Not `chow` with a tense ending."
+  },
+  "complices": {
+    "since": "2026-08-21",
+    "reason": "Plural of the archaic `complice` (an accomplice), which the -ices rule misreads as a stem-change plural of `complex`, 2.8 Zipf clear of the truth. `complice` is the rarer word, so an override cannot express this -- the cap ignores a rarer base -- and the word's own measurement is the right score."
+  },
+  "corking": {
+    "since": "2026-10-01",
+    "reason": "Excellent, splendid. The slang adjective, not the act of sealing a bottle."
+  },
+  "countermand": {
     "since": "2026-09-27",
-    "reason": "From French contrepartie, and not a part: the thing that corresponds to another, scored 5.78 as `part`. The `anti-`/`counter-` pair's other flagship misreading beside `antibody`.",
+    "reason": "From Latin contramandare, not counter- + `mand` (a term of art in behaviour analysis).",
     "scope": "prefix"
   },
   "counterpane": {
@@ -249,14 +172,451 @@
     "reason": "A bedspread, from courtepointe reshaped by folk etymology -- no counter and no pane in it. Its plural strips further still, to `pan` at 4.39.",
     "scope": "prefix"
   },
-  "countermand": {
+  "counterpart": {
     "since": "2026-09-27",
-    "reason": "From Latin contramandare, not counter- + `mand` (a term of art in behaviour analysis).",
+    "reason": "From French contrepartie, and not a part: the thing that corresponds to another, scored 5.78 as `part`. The `anti-`/`counter-` pair's other flagship misreading beside `antibody`.",
     "scope": "prefix"
   },
   "countervail": {
     "since": "2026-09-27",
     "reason": "From contravalere, not counter- + `vail` (an archaic word for a tip or a lowering).",
     "scope": "prefix"
+  },
+  "cytokineses": {
+    "since": "2026-10-01",
+    "reason": "Plural of `cytokinesis`, the division of a cell's cytoplasm. A `cytokine` is a signalling protein -- a different word, not its singular."
+  },
+  "doe": {
+    "since": "2026-08-24",
+    "reason": "The female deer. `does` is its spelling-legal plural and also the third person of `do`, which is where all of that form's frequency comes from -- and `do` itself is two letters, so the number rules drop it and leave `doe` as the only candidate `does` can pick. Capping the deer at the auxiliary verb halved its score (5.72 -> 2.93)."
+  },
+  "dowsed": {
+    "since": "2026-10-01",
+    "reason": "A form of `dowse`. The -es strip reads it as `dows` and the chain carries on to a different word. Exempted rather than overridden onto `dowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "dowses": {
+    "since": "2026-10-01",
+    "reason": "A form of `dowse`. The -es strip reads it as `dows` and the chain carries on to a different word. Exempted rather than overridden onto `dowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "dowsing": {
+    "since": "2026-10-01",
+    "reason": "A form of `dowse`. The -es strip reads it as `dowsi` and the chain carries on to a different word. Exempted rather than overridden onto `dowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "during": {
+    "since": "2026-09-10",
+    "reason": "The preposition, not a tense of the archaic `dure` (to last) it descends from. It needs no fold of its own -- at 5.72 Zipf nothing caps it -- but the reverse direction reads it as `dure`'s participle and hands the verb a preposition's frequency, which the doubling rule of 2026-09-10 is what made reachable (before it, `during` folded onto the fragment-word `dur` and the round trip failed). `dure` dropped 8.87 -> 3.34 on that link, Elusive to Very Common, and it is the one wrong pairing that cutover creates; the exemption breaks it from the `during` side, where the misreading is."
+  },
+  "earnest": {
+    "since": "2026-09-02",
+    "reason": "Sincere, not \"most earn\". The bare -est fold's paired-degree check passes because `earner` is a word, and nothing in the spelling says the -er is agentive rather than comparative; the word has no base at all, so it is exempted by name."
+  },
+  "fares": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `fare`, not `far`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "followees": {
+    "since": "2026-10-01",
+    "reason": "One who is followed. `followe` is not a word."
+  },
+  "fores": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `fore`, not `for`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "fowlest": {
+    "since": "2026-10-01",
+    "reason": "A misspelling of `foulest`. `fowl` is a bird and has no superlative; see its word-rejections entry."
+  },
+  "frowsed": {
+    "since": "2026-10-01",
+    "reason": "A form of `frowse`. The -es strip reads it as `frows` and the chain carries on to a different word. Exempted rather than overridden onto `frowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "frowses": {
+    "since": "2026-10-01",
+    "reason": "A form of `frowse`. The -es strip reads it as `frows` and the chain carries on to a different word. Exempted rather than overridden onto `frowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "frowsing": {
+    "since": "2026-10-01",
+    "reason": "A form of `frowse`. The -es strip reads it as `frowsi` and the chain carries on to a different word. Exempted rather than overridden onto `frowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "gallow": {
+    "since": "2026-10-01",
+    "reason": "To frighten, archaic. `gallows` is the hanging frame, not its plural."
+  },
+  "genu": {
+    "since": "2026-08-24",
+    "reason": "The anatomical bend (Latin, knee); its plural is `genua`. `genus` is an unrelated Latin noun the bare -s strip reads as this word's plural (8.87 -> 5.88)."
+  },
+  "germen": {
+    "since": "2026-08-21",
+    "reason": "The botanical rudiment (Latin, sprout), not the plural of `german`. Same -men misreading as `limen`, with a 3.7-Zipf coincidence waiting under it."
+  },
+  "haymower": {
+    "since": "2026-10-01",
+    "reason": "A machine that mows hay. A `haymow` is the loft the hay is stored in."
+  },
+  "hokiness": {
+    "since": "2026-10-01",
+    "reason": "From `hokey`. `hoki` is a fish."
+  },
+  "howes": {
+    "since": "2026-10-01",
+    "reason": "Plural of `howe`, a hollow or barrow. Not `how`."
+  },
+  "howlable": {
+    "since": "2026-10-01",
+    "reason": "Able to be howled. Reached `how` through `howly`."
+  },
+  "howly": {
+    "since": "2026-10-01",
+    "reason": "From `howl`. The -ly strip read it as `how`, and cost it 7.45 points."
+  },
+  "intermissive": {
+    "since": "2026-08-26",
+    "reason": "From `intermission`, not inter- + `missive` (a letter).",
+    "scope": "prefix"
+  },
+  "interregnal": {
+    "since": "2026-08-26",
+    "reason": "From `interregnum` + -al, not inter- + `regnal`. Same shape as `antiphonic`: `regnal` is a free word (a regnal year), so the split is orthographically clean and semantically wrong.",
+    "scope": "prefix"
+  },
+  "kines": {
+    "since": "2026-10-01",
+    "reason": "`kine` is the archaic plural of cow. Nothing to do with `kin`."
+  },
+  "kineses": {
+    "since": "2026-10-01",
+    "reason": "Plural of `kinesis`, a movement response. Read as `kines` and then `kin`."
+  },
+  "kinkable": {
+    "since": "2026-10-01",
+    "reason": "Able to kink. `kinky` has a sense of its own that this does not carry."
+  },
+  "lading": {
+    "since": "2026-08-26",
+    "reason": "The gerund of `lade` (to load). `baseForm` strips the `-ing` to `lad`, a real word and 1.53 Zipf commoner, so frequency preferred it -- and `lades`/`laded` read the same way, so the whole paradigm scored as a boy. Blanket rather than prefix-scoped: the wrong hop here is the `-ing` strip, not a prefix, and `lading` is the commonest member so it has nowhere it needs to fold. The other three are pinned onto it in score-overrides.json."
+  },
+  "laterize": {
+    "since": "2026-08-21",
+    "reason": "To form laterite (the soil), not a degree of `later`. Same shape as `rightsize`: exempting the verb carries its tenses with it."
+  },
+  "limen": {
+    "since": "2026-08-21",
+    "reason": "The psychophysics term for a sensory threshold, not the plural of `liman` (a lagoon). The -men rule is right for 300-odd words and wrong here; a measured word deserves its own number."
+  },
+  "listless": {
+    "since": "2026-09-02",
+    "reason": "Without `list` in the archaic sense (desire, inclination), not without a list. The privative fold's strip is decisive and the residue is a word, so nothing but review can tell this reading from `spotless`; scoring \"languid\" as the everyday `list` (Zipf 5.28) would show \"Scored as its common form, 'list'\" on a word that has nothing to do with it. The blanket entry covers `listlessly` and `listlessness`, which fold onto this word and stop here."
+  },
+  "lowes": {
+    "since": "2026-10-01",
+    "reason": "Plural of `lowe`, a flame. Not `low`."
+  },
+  "mares": {
+    "since": "2026-08-21",
+    "reason": "The plural of `mare`, not `mar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "microdont": {
+    "since": "2026-08-24",
+    "reason": "Greek micro- + -odont (tooth), a small-toothed animal -- not a form of `dont`. The prefix rule's base floor keeps out the other bound combining forms it lands on (`lith`, `crat`, `phyte`), but `dont` slips through it at Zipf 4.74: it is in the dictionary as the apostrophe-less spelling of \"don't\" and carries that word's frequency. Exempting the word is cheaper than special-casing the base."
+  },
+  "momser": {
+    "since": "2026-08-21",
+    "reason": "Yiddish loanword (from mamzer), nothing to do with `mom`. Below the floor, the bare -er strip read it as \"more mom\" and demoted it six points. Exempting it also covers `momsers`, which can only fold through it."
+  },
+  "monokines": {
+    "since": "2026-10-01",
+    "reason": "Plural of `monokine`, a cytokine from a monocyte. Not the swimsuit `monokini`."
+  },
+  "morn": {
+    "since": "2026-08-24",
+    "reason": "The poetic morning. `morning` is not its progressive -- it is the noun `morn` was displaced by -- but the -ing strip picks `morn` over the non-word `morne`, so the reverse fold read the commoner noun as this word's own form (6.88 -> 3.53)."
+  },
+  "muckinger": {
+    "since": "2026-10-01",
+    "reason": "A handkerchief, in thieves' cant. Not a maker of `muck`."
+  },
+  "nonagonal": {
+    "since": "2026-08-26",
+    "reason": "Of a `nonagon`, not non- + `agonal`. `agonal` is a free word meaning `of the death throes`, which is as far from nine-sidedness as the table gets.",
+    "scope": "prefix"
+  },
+  "nowed": {
+    "since": "2026-10-01",
+    "reason": "Heraldic for knotted. Not `now` with a tense ending."
+  },
+  "outback": {
+    "since": "2026-10-01",
+    "reason": "The Australian interior. Not a kind of `back`, and `outbacking` folded seven points down through it."
+  },
+  "outbellowed": {
+    "since": "2026-10-01",
+    "reason": "An inflection of `outbellow`, built on `bellow` the roar, not the airblower `bellows`."
+  },
+  "outbreak": {
+    "since": "2026-10-01",
+    "reason": "An eruption of disease or war. `break` is its etymology, not its meaning."
+  },
+  "outbreakings": {
+    "since": "2026-10-01",
+    "reason": "An inflection of `outbreak`. Strips its prefix before reaching the exempted lemma."
+  },
+  "outpoliticking": {
+    "since": "2026-10-01",
+    "reason": "Built on `politicking`, which comes from `politics`, not from the adjective `politic`."
+  },
+  "outshowered": {
+    "since": "2026-10-01",
+    "reason": "An inflection of `outshower`, built on `shower` the rainfall."
+  },
+  "outshowers": {
+    "since": "2026-10-01",
+    "reason": "An inflection of `outshower`, built on `shower` the rainfall."
+  },
+  "outwick": {
+    "since": "2026-10-01",
+    "reason": "A curling shot. Its `wick` is the bowls term, and the chain read the residue as `wicked`."
+  },
+  "overflower": {
+    "since": "2026-10-01",
+    "reason": "One who overflows. The -s chain reached `flowers`, the blooms."
+  },
+  "overlock": {
+    "since": "2026-10-01",
+    "reason": "A sewing stitch that encloses a raw edge. Nothing to do with a `lock`."
+  },
+  "overshower": {
+    "since": "2026-10-01",
+    "reason": "A shower passing overhead. `over` + `shower`, which the -er strip read as `overshow` + `-er`."
+  },
+  "overtake": {
+    "since": "2026-10-01",
+    "reason": "To pass something moving. A sense of its own, not a kind of `take`."
+  },
+  "overtakings": {
+    "since": "2026-10-01",
+    "reason": "An inflection of `overtake`, which is to pass rather than to take. Strips its prefix at this form."
+  },
+  "pensionees": {
+    "since": "2026-10-01",
+    "reason": "A pensioner. `pensione` is an Italian guesthouse."
+  },
+  "physic": {
+    "since": "2026-08-24",
+    "reason": "Archaic for medicine or a purgative. `physics` is a discipline noun, not its plural -- the same shape as `politic`/`politics` (7.69 -> 4.91)."
+  },
+  "physiograph": {
+    "since": "2026-10-01",
+    "reason": "A recording instrument. The noun is not a form of the adjective `physiographic`."
+  },
+  "pokiness": {
+    "since": "2026-10-01",
+    "reason": "From `poky`. `pokies` are slot machines."
+  },
+  "politic": {
+    "since": "2026-08-24",
+    "reason": "The adjective (\"a politic decision\"). `politics` is a discipline noun rather than its plural, and carries frequency the adjective never earned (7.27 -> 4.21)."
+  },
+  "politicking": {
+    "since": "2026-10-01",
+    "reason": "Campaigning, built on `politics`. Not the adjective `politic`, which means prudent."
+  },
+  "postshower": {
+    "since": "2026-10-01",
+    "reason": "After a shower. Not a form of `postshow`."
+  },
+  "pretension": {
+    "since": "2026-10-01",
+    "reason": "Also the act of pre-tensioning. Its -ing and -ed forms are that sense, not a claim to importance."
+  },
+  "previsor": {
+    "since": "2026-08-26",
+    "reason": "From `prevision`, not pre- + `visor`. The headgear is unrelated.",
+    "scope": "prefix"
+  },
+  "prowly": {
+    "since": "2026-10-01",
+    "reason": "From `prowl`. The -ly strip read it as `prow`, the front of a ship."
+  },
+  "reflower": {
+    "since": "2026-10-01",
+    "reason": "To flower again. Read as `reflow` plus an agent -er."
+  },
+  "relicking": {
+    "since": "2026-10-01",
+    "reason": "Licking again. Not `relic`, and the chain went on to the plural `relics`."
+  },
+  "reshower": {
+    "since": "2026-10-01",
+    "reason": "To shower again. Not `reshow`, which is to show again."
+  },
+  "resites": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `resite`, not `resit`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "rightsize": {
+    "since": "2026-08-21",
+    "reason": "A verb built on the compound right-size, not \"more right\". The gated -ize strip landed it on `right` at 2.60; its tenses fold through it, so exempting the verb keeps the whole paradigm on its own data."
+  },
+  "rowies": {
+    "since": "2026-10-01",
+    "reason": "Plural of `rowie`, the Aberdeen roll. Not an adjective `rowy`."
+  },
+  "rowsed": {
+    "since": "2026-10-01",
+    "reason": "A form of `rowse`. The -es strip reads it as `rows` and the chain carries on to a different word. Exempted rather than overridden onto `rowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "rowses": {
+    "since": "2026-10-01",
+    "reason": "A form of `rowse`. The -es strip reads it as `rows` and the chain carries on to a different word. Exempted rather than overridden onto `rowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "rowsing": {
+    "since": "2026-10-01",
+    "reason": "A form of `rowse`. The -es strip reads it as `rowsi` and the chain carries on to a different word. Exempted rather than overridden onto `rowse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "sacre": {
+    "since": "2026-08-24",
+    "reason": "Not an English inflection of anything: `sacred` is a borrowed past participle, not `sacre` + `-d`. The -ed strip picks this word because the alternatives are non-words (7.90 -> 5.13)."
+  },
+  "showees": {
+    "since": "2026-10-01",
+    "reason": "One shown something. `showe` is not a word it could be built on."
+  },
+  "showies": {
+    "since": "2026-10-01",
+    "reason": "Plural of `showie`, a showground worker. Not the adjective `showy`."
+  },
+  "sires": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `sire`, not `sir`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "sowsed": {
+    "since": "2026-10-01",
+    "reason": "A form of `sowse`, a variant of `souse`. Not `sow` with a tense ending."
+  },
+  "sowses": {
+    "since": "2026-10-01",
+    "reason": "A form of `sowse`, a variant of `souse`. Not the plural of `sow`."
+  },
+  "sowsing": {
+    "since": "2026-10-01",
+    "reason": "A form of `sowse`, a variant of `souse`. Not `sow` with a tense ending."
+  },
+  "sowssing": {
+    "since": "2026-10-01",
+    "reason": "A doubled-s variant of `souse`. The -s rules strip it to `sows` and then `sow`."
+  },
+  "specie": {
+    "since": "2026-08-24",
+    "reason": "Coin money, from `in specie`. Not the singular of `species`, which is its own Latin word with no separate singular -- but the -es rules can only read `species` as `specie` + `s`, so the reverse fold scored hard currency as the biology term (7.78 -> 4.24)."
+  },
+  "specking": {
+    "since": "2026-10-01",
+    "reason": "From `speck`, a small spot. Not `spec`, short for specification."
+  },
+  "stares": {
+    "since": "2026-08-21",
+    "reason": "The plural or third-person form of `stare`, not `star`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "stocking": {
+    "since": "2026-10-01",
+    "reason": "Hosiery. A noun of its own, not a form of `stock`; `stockings`, `stockinged` and `stockingless` all fold through it."
+  },
+  "suberose": {
+    "since": "2026-08-26",
+    "reason": "From `suber` (cork) + -ose, not sub- + `erose` (jagged-edged). Both are botanical terms, which is what makes the wrong one plausible enough to need an entry.",
+    "scope": "prefix"
+  },
+  "tares": {
+    "since": "2026-08-21",
+    "reason": "The plural of `tare`, not `tar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "televisional": {
+    "since": "2026-08-26",
+    "reason": "`television` + -al, not tele- + `visional`. `visional` (of visions) is a free word and an unrelated one.",
+    "scope": "prefix"
+  },
+  "televisionally": {
+    "since": "2026-08-26",
+    "reason": "The adverb of `televisional`, and it needs its own entry: nothing folds an `-ally` adverb back to its `-al` adjective, so it reaches `visionally` on its own.",
+    "scope": "prefix"
+  },
+  "tempest": {
+    "since": "2026-09-02",
+    "reason": "A storm, not \"most temp\" -- and `temper` is a word, so the paired-degree check the bare -est fold runs on `contest` and `interest` passes here. One of two words in the dictionary that clear the check without being superlatives."
+  },
+  "tetri": {
+    "since": "2026-08-24",
+    "reason": "The Georgian currency subunit. The bare -s strip reads the video game `tetris` as its plural (9.94 -> 7.06)."
+  },
+  "towardly": {
+    "since": "2026-10-01",
+    "reason": "Docile, compliant. An archaic adjective whose sense left `toward` centuries ago."
+  },
+  "towardness": {
+    "since": "2026-10-01",
+    "reason": "The quality of being `towardly` -- docile. Not the preposition `towards`."
+  },
+  "towsed": {
+    "since": "2026-10-01",
+    "reason": "A form of `towse`. The -es strip reads it as `tows` and the chain carries on to a different word. Exempted rather than overridden onto `towse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "towses": {
+    "since": "2026-10-01",
+    "reason": "A form of `towse`. The -es strip reads it as `tows` and the chain carries on to a different word. Exempted rather than overridden onto `towse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "towsing": {
+    "since": "2026-10-01",
+    "reason": "A form of `towse`. The -es strip reads it as `towsi` and the chain carries on to a different word. Exempted rather than overridden onto `towse`: the true base is rarer than the form, so a cap onto it would change nothing."
+  },
+  "transferal": {
+    "since": "2026-08-26",
+    "reason": "`transfer` + -al, not trans- + `feral`. The residue is a free word and an unrelated one, so no residue table can see it. Scoped to the prefix, which is what lets `transferals` still fold onto this word rather than scoring above it -- and the entry covers the plural without naming it (see prefixFoldExemptParadigm).",
+    "scope": "prefix"
+  },
+  "undertake": {
+    "since": "2026-10-01",
+    "reason": "To commit to a task. Not a kind of `take`; `undertaking` reached it through a chain of five hops."
+  },
+  "undertow": {
+    "since": "2026-10-01",
+    "reason": "The seaward current under a breaking wave. A noun in its own right, not a `tow`."
+  },
+  "ungular": {
+    "since": "2026-08-26",
+    "reason": "From `ungula` (a hoof) + -ar, not un- + `gular` (of the throat).",
+    "scope": "prefix"
+  },
+  "unkinkable": {
+    "since": "2026-10-01",
+    "reason": "Not able to kink. Reached `kinky` through `unkinky`."
+  },
+  "unstocking": {
+    "since": "2026-10-01",
+    "reason": "Removing stockings, in this reading. The chain reaches `stock` through `unstock`."
+  },
+  "unstockinged": {
+    "since": "2026-10-01",
+    "reason": "Without stockings. Read as `un` + `stocking` + `-ed` and carried down to `stock`."
+  },
+  "untoward": {
+    "since": "2026-10-01",
+    "reason": "Improper or unlucky. A fixed adjective, not the preposition `toward` negated."
+  },
+  "wares": {
+    "since": "2026-08-21",
+    "reason": "The plural of `ware`, not `war`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "wick": {
+    "since": "2026-10-01",
+    "reason": "A cord in a candle, and the verb for drawing liquid. Not a form of `wicked`."
+  },
+  "woking": {
+    "since": "2026-10-01",
+    "reason": "Cooking in a wok. Read as the past tense `woke`."
+  },
+  "yike": {
+    "since": "2026-10-01",
+    "reason": "A scuffle or argument. `yikes` is an interjection, not its plural."
   }
 }
