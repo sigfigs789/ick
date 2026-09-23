@@ -800,3 +800,33 @@ describe("api/leaderboard retried days", () => {
     ]);
   });
 });
+
+describe("api/leaderboard on a preview deploy", () => {
+  const fourAhead = new Date(Date.now() + 4 * 86400000).toISOString().slice(0, 10);
+
+  it("takes a score for a day ahead, so a tester can play a cutover", async () => {
+    withEnv({ ...CONFIGURED, VERCEL_ENV: "preview" });
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(post(score({ date: fourAhead })));
+
+    expect(response.status).toBe(202);
+    expect(rpcCall(fetchMock)?.args.p_scores).toMatchObject([{ date: fourAhead }]);
+  });
+
+  it("reads that day's finds rather than an empty feed", async () => {
+    withEnv({ ...CONFIGURED, VERCEL_ENV: "preview" });
+    const fetchMock = stubFetch([[]]);
+    await handler(get(`?words=1&today=${fourAhead}`));
+
+    expect(rpcCall(fetchMock)?.args.p_since).toBe(fourAhead);
+  });
+
+  it("still refuses the same day on production", async () => {
+    withEnv({ ...CONFIGURED, VERCEL_ENV: "production" });
+    stubFetch([[]]);
+    const response = await handler(post(score({ date: fourAhead })));
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ ok: false, reason: "bad-date" });
+  });
+});

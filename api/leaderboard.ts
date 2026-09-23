@@ -96,6 +96,9 @@
 
 import { record, rpc, supabaseConfigured, type EdgeContext } from "./_supabase";
 
+// Vercel's Edge runtime exposes `process.env`; see api/_supabase.ts.
+declare const process: { env: Record<string, string | undefined> };
+
 export const config = { runtime: "edge" };
 
 /** The first puzzle. Nothing can be scored before the game existed. */
@@ -363,11 +366,27 @@ function utcToday(): string {
 function validDate(date: string, floor: string): boolean {
   if (!DATE_RE.test(date)) return false;
   if (Number.isNaN(Date.parse(`${date}T00:00:00Z`))) return false;
-  const tomorrow = new Date(Date.parse(`${utcToday()}T00:00:00Z`) + 86400000)
+  const ahead = futureDaysAllowed();
+  const latest = new Date(Date.parse(`${utcToday()}T00:00:00Z`) + ahead * 86400000)
     .toISOString()
     .slice(0, 10);
-  return date >= floor && date <= tomorrow;
+  return date >= floor && date <= latest;
 }
+
+/**
+ * How far past UTC's today a puzzle date may be: one day, for the calendars
+ * already on tomorrow -- except on a Vercel preview deploy, where the dev date
+ * picker lets a tester move ahead to a cutover and play it.
+ *
+ * Previews write to the production tables, so a test post for a future day is
+ * a real row, and that day's feed and board will carry it when the day
+ * arrives. That was accepted deliberately, to test a cutover before it ships.
+ * VERCEL_ENV is Vercel's own runtime variable, "production" on the live site.
+ */
+function futureDaysAllowed(): number {
+  return process.env.VERCEL_ENV === "preview" ? PREVIEW_DAYS_AHEAD : 1;
+}
+const PREVIEW_DAYS_AHEAD = 60;
 
 /** A date a puzzle actually exists for. */
 function validPuzzleDate(date: string): boolean {
