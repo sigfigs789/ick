@@ -76,9 +76,19 @@ describe("evaluateSubmission", () => {
     expect(result).toEqual({ ok: false, reason: "missing-drop" });
   });
 
-  it("rejects the drop itself as an answer", () => {
-    const result = evaluateSubmission("AT", "at", []);
+  it("rejects the drop itself as an answer before the 2026-09-27 cutover", () => {
+    const result = evaluateSubmission("AT", "at", [], "2026-09-13");
     expect(result).toEqual({ ok: false, reason: "same-as-drop" });
+  });
+
+  it("takes the drop itself, two letters and all, from the 2026-09-27 cutover", () => {
+    expect(evaluateSubmission("AT", "at", [], "2026-09-27").ok).toBe(true);
+    expect(evaluateSubmission("the", "THE", []).ok).toBe(true);
+    // The drop still has to clear every other gate.
+    expect(evaluateSubmission("zz", "ZZ", [], "2026-09-27")).toEqual({
+      ok: false,
+      reason: "not-a-word",
+    });
   });
 
   it("rejects a word not in the dictionary", () => {

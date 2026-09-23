@@ -149,10 +149,8 @@ describe("freeform week submissions", () => {
       reason: "same-as-drop",
     });
     expect(evaluateSubmission("acc", "ACC", [], DURING).ok).toBe(true);
-    expect(evaluateSubmission("acc", "ACC", [], AFTER)).toEqual({
-      ok: false,
-      reason: "same-as-drop",
-    });
+    // And from the week's end in Standard too: DROP_PLAYABLE_START is the same date.
+    expect(evaluateSubmission("acc", "ACC", [], AFTER).ok).toBe(true);
   });
 
   it("still refuses a word that does not contain the drop", () => {
