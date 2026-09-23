@@ -15,6 +15,17 @@ const FETCH_TIMEOUT_MS = 6000;
 /** The two answers a fold can get, or null for one nobody has judged. */
 export type FoldVerdict = "approved" | "rejected" | null;
 
+/**
+ * What a rejection recommends instead: the base the fold should have reached, or
+ * null for "this word should not fold at all".
+ *
+ * The distinction is the reason the page asks. Exported, the first becomes an
+ * entry pinning the word to that base and the second one leaving it on its own
+ * frequency -- opposite corrections, and a ledger that could only record the
+ * second turned every "it folds one hop too far" into "it does not fold".
+ */
+export type SuggestedBase = string | null;
+
 /** One judged fold, as the ledger returns it. */
 export interface FoldReview {
   word: string;
@@ -23,6 +34,8 @@ export interface FoldReview {
   ownZipf: number | null;
   baseZipf: number | null;
   verdict: Exclude<FoldVerdict, null>;
+  /** On a rejection, the base recommended in its place. Null means no fold. */
+  suggestedBase: SuggestedBase;
   /** The puzzle the word was up for when it was judged. */
   date: string | null;
   at: string;
@@ -68,8 +81,15 @@ export async function fetchFoldReviews(): Promise<FoldReview[]> {
   return parseReviews(body.reviews);
 }
 
+/** A verdict and, where it is a rejection, what it recommends instead. */
+export interface StoredVerdict {
+  verdict: FoldVerdict;
+  suggestedBase: SuggestedBase;
+}
+
 /**
- * Record one verdict, or take it back, and answer with what is stored.
+ * Record one verdict and its recommendation, or take it back, and answer with
+ * what is stored.
  *
  * The stored value rather than the asked-for one, so the page can correct itself
  * instead of leaving a tick over a fold the database never heard about. Rejects
@@ -77,21 +97,29 @@ export async function fetchFoldReviews(): Promise<FoldReview[]> {
  */
 export async function setFoldReview(
   fold: { word: string; base: string; ownZipf: number; baseZipf: number; date: string },
-  verdict: FoldVerdict
-): Promise<FoldVerdict> {
+  verdict: FoldVerdict,
+  suggestedBase: SuggestedBase = null
+): Promise<StoredVerdict> {
   // Nowhere to write to under the fixture, and a control that always failed
   // would make the fixture worse than nothing: it answers with what was asked
   // for, and the verdict lives as long as the page does.
-  if (DEV_TOOLS && usingSampleData()) return verdict;
+  if (DEV_TOOLS && usingSampleData()) {
+    return { verdict, suggestedBase: verdict === "rejected" ? suggestedBase : null };
+  }
   const response = await fetch(`/api/fold-reviews${keyParam(true)}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ...fold, verdict }),
+    body: JSON.stringify({ ...fold, verdict, suggestedBase }),
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!response.ok) throw new Error(`fold-review ${response.status}`);
   const body = (await response.json()) as Record<string, unknown>;
-  return asVerdict(body.verdict);
+  return { verdict: asVerdict(body.verdict), suggestedBase: asBase(body.suggestedBase) };
+}
+
+/** Anything that is not a word is no recommendation. */
+function asBase(value: unknown): SuggestedBase {
+  return typeof value === "string" && value !== "" ? value : null;
 }
 
 /** Anything that is not one of the two answers is an unjudged fold. */
@@ -118,6 +146,7 @@ function parseReviews(raw: unknown): FoldReview[] {
       ownZipf: typeof row.ownZipf === "number" ? row.ownZipf : null,
       baseZipf: typeof row.baseZipf === "number" ? row.baseZipf : null,
       verdict,
+      suggestedBase: asBase(row.suggestedBase),
       date: typeof row.date === "string" ? row.date : null,
       at: typeof row.at === "string" ? row.at : "",
     });

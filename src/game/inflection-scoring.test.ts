@@ -14,6 +14,7 @@ import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
+import foldReviewVerdictData from "../data/fold-review-verdicts.json";
 import boundResidueData from "../data/bound-residues.json";
 import measurementUnitData from "../data/measurement-units.json";
 import type { AcceptedWord } from "./types";
@@ -432,6 +433,41 @@ describe("reviewed fold exemptions", () => {
           false
         );
       }
+    }
+  });
+});
+
+// src/data/fold-review-verdicts.json is the fold review page's own file: the
+// verdicts reached at /fold and exported by scripts/export-fold-rejections.mjs.
+// A verdict naming a base behaves like an override, one naming none like an
+// exemption -- same effects as the curated tables, kept apart so a scoring line
+// can be traced to who decided it and how.
+describe("reviewed fold verdicts", () => {
+  it("shares no word with either curated table", () => {
+    // The curated tables are read first and win, so a word in both would leave
+    // a dead entry here -- a review error rather than a tie.
+    const overrides = new Set(Object.keys(scoreOverrideData));
+    const exemptions = new Set(Object.keys(foldExemptionData));
+    for (const word of Object.keys(foldReviewVerdictData)) {
+      expect(overrides.has(word), `${word} is also a curated override`).toBe(false);
+      expect(exemptions.has(word), `${word} is also a curated exemption`).toBe(false);
+    }
+  });
+
+  it("names lexicon words on both sides and dates every entry", () => {
+    const words = new Set(dictionaryWords as string[]);
+    const known = (word: string) => words.has(word) || corpusHeadwords().has(word);
+    for (const [word, entry] of Object.entries(foldReviewVerdictData)) {
+      const { base, since } = entry as { base: string | null; since: string };
+      expect(known(word), `${word} is in neither lexicon`).toBe(true);
+      // A base the lexicon does not have is dropped at scoring time, which would
+      // make the entry a silent no-op -- the one failure mode a reviewed
+      // judgement must not have.
+      if (base !== null) {
+        expect(known(base), `${word} recommends ${base}, which is in neither lexicon`).toBe(true);
+        expect(base, `${word} folds to itself`).not.toBe(word);
+      }
+      expect(/^\d{4}-\d{2}-\d{2}$/.test(since), `${word} has no usable since date`).toBe(true);
     }
   });
 });

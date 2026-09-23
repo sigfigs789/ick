@@ -67,6 +67,7 @@ describe("api/fold-reviews", () => {
         own_zipf: "1.20",
         base_zipf: "5.40",
         verdict: "rejected",
+        suggested_base: "timeliness",
         puzzle_date: "2026-09-27",
         reviewed_at: "2026-09-22T09:00:00Z",
       },
@@ -83,6 +84,7 @@ describe("api/fold-reviews", () => {
           ownZipf: 1.2,
           baseZipf: 5.4,
           verdict: "rejected",
+          suggestedBase: "timeliness",
           date: "2026-09-27",
           at: "2026-09-22T09:00:00Z",
         },
@@ -109,7 +111,7 @@ describe("api/fold-reviews", () => {
     withEnv({ ...CONFIGURED, REVIEW_TOKEN: undefined });
     stubFetch([]);
     expect((await handler(get(""))).status).toBe(200);
-    stubFetch("rejected");
+    stubFetch([{ verdict: "rejected", suggested_base: null }]);
     expect((await handler(post(VERDICT, ""))).status).toBe(200);
   });
 
@@ -121,11 +123,14 @@ describe("api/fold-reviews", () => {
 
   it("stores a verdict and answers with what the database kept", async () => {
     withEnv();
-    const fetchMock = stubFetch("rejected");
+    const fetchMock = stubFetch([{ verdict: "rejected", suggested_base: "timeliness" }]);
 
-    const response = await handler(post(VERDICT));
+    const response = await handler(post({ ...VERDICT, suggestedBase: "timeliness" }));
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ verdict: "rejected" });
+    expect(await response.json()).toEqual({
+      verdict: "rejected",
+      suggestedBase: "timeliness",
+    });
     const call = rpcCall(fetchMock);
     expect(call?.url).toContain("/rpc/set_fold_review");
     expect(call?.args).toEqual({
@@ -135,20 +140,40 @@ describe("api/fold-reviews", () => {
       p_base_zipf: 5.4,
       p_puzzle_date: "2026-09-27",
       p_verdict: "rejected",
+      p_suggested_base: "timeliness",
     });
+  });
+
+  it("stores a rejection that recommends nothing as no fold at all", async () => {
+    // The answer a plain rejection has always meant, and the one an empty box
+    // on the page sends: exported, it stops the fold rather than redirecting it.
+    withEnv();
+    const fetchMock = stubFetch([{ verdict: "rejected", suggested_base: null }]);
+    const response = await handler(post(VERDICT));
+    expect(await response.json()).toEqual({ verdict: "rejected", suggestedBase: null });
+    expect(rpcCall(fetchMock)?.args.p_suggested_base).toBe(null);
+  });
+
+  it("refuses a recommendation that is not a word, or is the word itself", async () => {
+    withEnv();
+    stubFetch();
+    expect((await handler(post({ ...VERDICT, suggestedBase: "Timely!" }))).status).toBe(400);
+    // A word folding to itself is not a fold. Refused rather than dropped: it is
+    // the page sending something it should not have sent.
+    expect((await handler(post({ ...VERDICT, suggestedBase: "timelinesses" }))).status).toBe(400);
   });
 
   it("takes a verdict back with a null", async () => {
     withEnv();
-    const fetchMock = stubFetch(null);
+    const fetchMock = stubFetch([{ verdict: null, suggested_base: null }]);
     const response = await handler(post({ ...VERDICT, verdict: null }));
-    expect(await response.json()).toEqual({ verdict: null });
+    expect(await response.json()).toEqual({ verdict: null, suggestedBase: null });
     expect(rpcCall(fetchMock)?.args.p_verdict).toBe(null);
   });
 
   it("stores no frequency for a word no corpus attests", async () => {
     withEnv();
-    const fetchMock = stubFetch("approved");
+    const fetchMock = stubFetch([{ verdict: "approved", suggested_base: null }]);
     await handler(post({ ...VERDICT, ownZipf: null, verdict: "approved" }));
     expect(rpcCall(fetchMock)?.args.p_own_zipf).toBe(null);
   });
