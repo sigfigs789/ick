@@ -13,7 +13,16 @@ import type { FoldCandidate } from "../game/foldCandidates";
  * this page is the queue: which rows it draws, what a click stores, and what
  * "next batch" means. So the batching helpers below stay real.
  */
-vi.mock("../game/corpus", () => ({ loadCorpus: () => Promise.resolve(true) }));
+// Partial, and it has to answer `corpusAttests` too: the page prices a
+// suggested base at the candidate's date, and from MODE_CHOICE_START that date
+// reads the corpus lexicon. A stub missing the export throws inside render
+// rather than failing an assertion, which reads as the page being blank.
+vi.mock("../game/corpus", () => ({
+  loadCorpus: () => Promise.resolve(true),
+  // No corpus is served in jsdom, so the honest answer is "attests nothing":
+  // the fold falls back to the curated list, which is what the fixtures are.
+  corpusAttests: () => false,
+}));
 
 vi.mock("../game/foldCandidates", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../game/foldCandidates")>();
