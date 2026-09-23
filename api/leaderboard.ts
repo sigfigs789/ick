@@ -549,9 +549,17 @@ function readSubmission(parsed: unknown):
  * today's puzzle, and anyone who opens this page mid-play is handed some. The
  * feed is much better live than a day behind, and that is the trade.
  */
-function wordsDay(claimed: string | null): string {
+function wordsDay(claimed: string | null): string | null {
   if (claimed && validPuzzleDate(claimed)) return claimed;
-  // No date, or one no puzzle exists for. UTC's own day is the only guess
+  // A real date that is out of range -- past the furthest ahead any calendar
+  // can be, or before the first puzzle -- has no finds, and says so. It used to
+  // fall through to UTC's today below, so a client whose date was moved ahead
+  // (the dev date picker, most often) was handed today's words under another
+  // day's heading.
+  if (claimed && DATE_RE.test(claimed) && !Number.isNaN(Date.parse(`${claimed}T00:00:00Z`))) {
+    return null;
+  }
+  // No date, or one that isn't a date. UTC's own day is the only guess
   // available and is right for most of the world's clock; a real client always
   // sends its own.
   return utcToday();
@@ -604,6 +612,8 @@ async function handleWordsGet(params: URLSearchParams): Promise<Response> {
   // One puzzle and nothing else: the feed is about the drop the player is
   // looking at, and a week of history behind it made it read as an archive.
   const since = wordsDay(params.get("today"));
+  // A day no puzzle has reached: nothing to ask the database.
+  if (since === null) return reply(200, { words: [] }, WORDS_CACHE_SECONDS);
   const before = daysBefore(since, -1);
 
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
