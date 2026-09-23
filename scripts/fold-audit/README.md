@@ -3,15 +3,26 @@
 Does the fold ever change a word's meaning? `running` -> `run` is the point of it;
 `scowly` -> `scow` is a bug. This is the harness that answers that at scale.
 
-Run order:
+Run order for a whole-lexicon pass:
 
 ```
-npx vite-node scripts/fold-audit/dump-folds.ts -- 2026-10-01 2026-10-02 2026-10-03
-npx vite-node scripts/fold-audit/dump-folds.ts -- 2026-10-01 --all   # whole lexicon
+npx vite-node scripts/fold-audit/funnel.ts                          # what is judgeable
+npx vite-node scripts/fold-audit/dump-folds.ts -- 2026-10-01 --all  # every fold
+npx vite-node scripts/fold-audit/dedupe.ts                          # one row per question
+python3 scripts/fold-audit/make-batches2.py --size 500 --salt 12
+claude auth login                                                   # judge.py needs this
+python3 scripts/fold-audit/judge.py --workers 8
+python3 scripts/fold-audit/score2.py
+npx vite-node scripts/fold-audit/verify-fixes.ts                    # after fixing
+```
+
+Scoped to a few drops instead, judged by hand or by subagent:
+
+```
+npx vite-node scripts/fold-audit/dump-folds.ts -- 2026-10-01 2026-10-02
 python3 scripts/fold-audit/make-batches.py
 #   ... judge each out/batches/batch-NNN.tsv against RUBRIC.md ...
 python3 scripts/fold-audit/score-verdicts.py
-npx vite-node scripts/fold-audit/verify-fixes.ts
 ```
 
 - **dump-folds.ts** enumerates every fold that *lowers* a score, off the TS engine
@@ -28,8 +39,30 @@ npx vite-node scripts/fold-audit/verify-fixes.ts
   writes a blind sample.
 - **verify-fixes.ts** replays every flagged fold either side of a fix date.
 
+- **funnel.ts** prints where the 1,217,270 corpus headwords go. Most have no
+  fold to be wrong about; the judgeable set is the ~229k whose fold costs points.
+- **dedupe.ts** collapses the population by root-and-base through `sameRootKey`:
+  "jowly", "jowlier" and "jowliness" all folding to "jow" is one question. It
+  takes 229,395 folds to 150,972 questions, keeping the highest-harm member of
+  each family as its representative.
+- **make-batches2.py** batches the deduped set highest-harm first, so a pass
+  that runs out of budget has spent it where a wrong fold costs the most.
+- **judge.py** runs the whole thing through `claude -p`, several at a time,
+  resuming where it left off and retrying a batch whose answer does not line up
+  one-to-one with its input.
+
 Helpers: `probe.ts` (fold a few words), `beforeafter.ts` (two dates),
 `promotions.ts` (what a cutover does to the whole curated list).
+
+## What the judge is worth
+
+Measured, not assumed, and the reason every batch carries salt. The verbose
+protocol in RUBRIC.md and judge.py caught 133/140 planted wrong folds on the
+first pass and 20/24 on the second. RUBRIC-EXCEPTIONS.md -- where the judge
+reports only what it thinks is wrong and stays silent otherwise -- is roughly
+half the cost per pair and caught 4/6. It is kept for the record; prefer the
+verbose one. Either way a reported count is a *lower bound* on the real number
+of bad folds.
 
 **Run the scripts from the repo root.** Run one from elsewhere and vite resolves a
 different module graph, the corpus lexicon silently falls back to curated-only,
