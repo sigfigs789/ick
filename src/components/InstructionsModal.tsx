@@ -97,7 +97,7 @@ export function InstructionsModal({ open, onClose }: Props) {
             <h3 className="modal__modes-heading">Two ways to play</h3>
             <p className="modal__copy">
               <strong>Standard</strong> — words score as their common form:
-              “plays” counts as <em>play</em>. Four words a day.{" "}
+              “plays” counts as <em>play</em>.{" "}
               <button
                 type="button"
                 className="common-form__link"
@@ -109,13 +109,7 @@ export function InstructionsModal({ open, onClose }: Props) {
             </p>
             <p className="modal__copy">
               <strong>Freeform</strong> — every word is scored on its own
-              frequency, so “plays” is worth what “plays” is worth. Rarer
-              scores, its own four words, and no leaderboard.
-            </p>
-            <p className="modal__modes-note">
-              Switch any time with the mode button in the header. Both modes
-              accept exactly the same words — the difference is only what
-              they’re worth.
+              frequency, so “plays” is worth what “plays” is worth.
             </p>
           </div>
         )}

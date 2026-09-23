@@ -2015,12 +2015,6 @@ h2 {
   margin: 0 0 0.6rem;
   font-size: 0.95rem;
 }
-.modal__modes-note {
-  margin: 0;
-  color: var(--fg-muted);
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
 
 .modal__signoff {
   margin: 1rem 0 0;
