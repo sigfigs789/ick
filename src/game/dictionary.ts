@@ -2464,68 +2464,6 @@ export function baseFormSubstitution(
 }
 
 /**
- * The smallest drop in the *shown* score worth putting a note under, in points.
- * A rank change alone can be almost nothing on the number: the Legend cutoff
- * sits at 9.9 and Mythic runs to 9.89, so a fold across that line can move the
- * badge while moving the score by a single cent. This floor keeps the note tied
- * to something the player can see in both places.
- */
-export const BASE_FORM_NOTICE_DROP = 0.3;
-
-/**
- * The fold behind `word`'s score, but only when it cost the word a rank --
- * Legend down to Mythic, Mythic down to Rare, and so on -- moved the shown score
- * by at least BASE_FORM_NOTICE_DROP, and reached a form no longer than the word
- * played. Undefined otherwise, including when the word scored on its own data.
- *
- * A rank change rather than a threshold on the number alone, because the ranks
- * are where the scale's own sense of "meaningfully rarer" already lives, and
- * they carry it across both bands. A fixed gap cannot: the measured band spends
- * 9.9 points over six Zipf while the deep tail spends a tenth of a point over
- * one, so any constant that reads as a real loss in the middle of the scale is
- * twenty-odd times too lenient at the top, where the folds are largest and the
- * scores players care most about sit. A demoted badge is also the thing the
- * player actually noticed -- the note answers a question the badge just raised.
- *
- * Both halves are read off what the player sees: the ranks as rendered, and the
- * scores as *formatted* rather than raw, so the drop the floor measures is the
- * one visible on the two badges.
- *
- * Every fold is a cap (see `chainedBase`), so a rank that moved always moved
- * downward; the comparison is written as a rank *drop* anyway, so nothing here
- * quietly starts reporting a promotion if that invariant ever slips.
- *
- * The length condition is about the note, not the score: 8,257 folds reach a
- * longer form, and they keep the score that form gives them -- they just stop
- * announcing it. See the guard below for why.
- */
-export function baseFormRankDrop(
-  word: string,
-  date?: string
-): BaseFormSubstitution | undefined {
-  const substitution = baseFormSubstitution(word, date);
-  if (!substitution) return undefined;
-  // A common form longer than the word played is one the fold reached by
-  // building the word up rather than stripping it down -- "abaci" scored as
-  // "abacus", "infatuate" as "infatuated". Naming it reads as a correction of
-  // the word the player found, as if a shorter word were an incomplete attempt
-  // at a longer one, and the note is meant to explain a badge rather than to
-  // second-guess the find. The score is unchanged; only the explanation is
-  // withheld.
-  if (substitution.base.length > substitution.word.length) return undefined;
-  const scoring = scoringFor(date);
-
-  const own = RARITY_ORDER.indexOf(scoring.rarity(substitution.ownZipf));
-  const base = RARITY_ORDER.indexOf(scoring.rarity(substitution.baseZipf));
-  // RARITY_ORDER runs rarest first, so a larger index is the more common rank.
-  if (base <= own) return undefined;
-
-  const shown = (zipf: number) => Number(scoring.format(scoring.score(zipf)));
-  const drop = roundToCents(shown(substitution.ownZipf) - shown(substitution.baseZipf));
-  return drop >= BASE_FORM_NOTICE_DROP ? substitution : undefined;
-}
-
-/**
  * One family of affixes the fold can read through, as it is shown to a player.
  *
  * `example` is a word that really folds this way today, and the test beside
@@ -2545,7 +2483,7 @@ export interface FoldAffixGroup {
 
 /**
  * The affixes that can rescore a word to its common form on `date`, grouped for
- * the "more info" panel behind the note (see `baseFormRankDrop`).
+ * the "more info" panel behind the note (see components/GuessLog.tsx).
  *
  * Date-scoped like everything else here, because the set has moved twice and
  * archived puzzles still play under the set they had: "pre-" and the borrowed
