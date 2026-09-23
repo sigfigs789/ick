@@ -3575,6 +3575,109 @@ h2 {
   cursor: pointer;
 }
 
+/*
+ * The fold review at /fold.
+ *
+ * Borrows the list, the row and the status lines from the review block above --
+ * it is the same kind of page, a queue read down the left edge -- and adds the
+ * two things that are its own: a row that reads as one sentence (word, arrow,
+ * base; score, arrow, score) and a pair of answers on the right rather than a
+ * single cycling mark. The answers sit on the right because they are the last
+ * thing done to a row here, unlike a tracking tick, which is the first.
+ */
+.fold__item {
+  align-items: center;
+  gap: 0.75rem;
+}
+/* A judged fold, held back so the unanswered ones are what the eye lands on --
+   the same treatment, and the same reasoning, as a marked review row. */
+.fold__item--approved,
+.fold__item--rejected {
+  opacity: 0.6;
+}
+.fold__fold,
+.fold__scores {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0;
+}
+.fold__word {
+  font-weight: 700;
+  /* A 30-letter word wraps rather than pushing the base off the row. */
+  overflow-wrap: anywhere;
+}
+.fold__base {
+  overflow-wrap: anywhere;
+}
+.fold__arrow {
+  color: var(--fg-muted);
+}
+.fold__scores {
+  margin-top: 0.15rem;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.fold__score {
+  color: var(--fg-muted);
+}
+/* What the fold cost, which is the question the row is asking. The one number
+   here that is not grey. */
+.fold__drop {
+  font-weight: 700;
+}
+/* The two answers, side by side and equally weighted: neither is the default,
+   and a page that made one of them easier to press would be a page that
+   collected that answer. */
+.fold__verdict {
+  flex: none;
+  display: flex;
+  gap: 0.35rem;
+}
+.fold__button {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.35rem;
+  background: var(--card-bg);
+  color: var(--fg-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.fold__button:hover {
+  border-color: var(--fg-muted);
+  color: var(--fg);
+}
+.fold__button--approve.fold__button--on {
+  border-color: var(--success-fg);
+  background: var(--success-bg);
+  color: var(--success-fg);
+}
+.fold__button--reject.fold__button--on {
+  border-color: var(--danger-fg);
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+}
+/* The way on through the queue. Full width and under the list, where a reader
+   who has worked down the batch already is. */
+.fold__next {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.5rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fold__next:hover {
+  border-color: var(--fg-muted);
+}
+
 /* The Freeform week report at /freeform-feedback: the vote above, the notes
    below. Its own block rather than more `review__` rules, because this page is
    not a queue -- nothing here is marked, and the thing at the top is a tally

@@ -4,6 +4,7 @@ import { trackLeaderboardJoined } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
 import { FeedbackPage } from "./components/FeedbackPage";
 import { FoundWordsPage } from "./components/FoundWordsPage";
+import { FoldReviewPage } from "./components/FoldReviewPage";
 import { FreeformFeedbackPage } from "./components/FreeformFeedbackPage";
 import { FreeformModal } from "./components/FreeformModal";
 import { InstructionsModal } from "./components/InstructionsModal";
@@ -45,7 +46,7 @@ const SYNC_STALE_MS = 5 * 60_000;
  */
 const FREEFORM_MIN_PUZZLES = 1;
 
-/** Seven pages under one header, picked off the address bar. See src/routes.ts. */
+/** Eight pages under one header, picked off the address bar. See src/routes.ts. */
 export function Root() {
   const route = useRoute();
 
@@ -309,6 +310,8 @@ export function Root() {
         <FeedbackPage />
       ) : route === "freeform-feedback" ? (
         <FreeformFeedbackPage />
+      ) : route === "fold-review" ? (
+        <FoldReviewPage />
       ) : route === "transfer" ? (
         <TransferPage />
       ) : (
