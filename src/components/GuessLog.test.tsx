@@ -106,17 +106,27 @@ describe("GuessLog", () => {
     expect(screen.getByText(/scored as its common form, “play”/i)).toBeInTheDocument();
   });
 
-  it("explains a Standard score that differs from Freeform's on the same puzzle", () => {
-    // From the mode switch, "titty" is 7.19 in Freeform and 6.88 in Standard,
-    // capped at the commoner "titties". The note is what says why.
-    const words: AcceptedWord[] = [{ word: "titty", rarity: "Uncommon", zipf: 3.24 }];
+  it("scores a word as itself in Standard rather than as a longer form", () => {
+    // From SHORTER_FORMS_START "titty" is no longer capped at the commoner
+    // "titties": it scores 7.19 in both modes, so there is nothing to explain.
+    const words: AcceptedWord[] = [{ word: "titty", rarity: "Rare", zipf: 3.01 }];
     render(<GuessLog acceptedWords={words} date="2026-09-27" />);
-    expect(screen.getByText(/scored as its common form, “titties”/i)).toBeInTheDocument();
+    expect(screen.queryByText(/scored as its common form/i)).not.toBeInTheDocument();
+  });
+
+  it("says in the explainer that a longer form is never the one scored, from the cutover", async () => {
+    const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
+    render(<GuessLog acceptedWords={words} date="2026-09-27" />);
+    await userEvent.click(
+      screen.getByRole("button", { name: /why “played” was scored as its common form “play”/i })
+    );
+    const panel = screen.getByRole("dialog", { name: /common forms/i });
+    expect(panel).toHaveTextContent(/“infatuate” isn’t scored as “infatuated”/);
   });
 
   it("names a common form longer than the word played", async () => {
-    // "abaci" scores as "abacus". Once withheld, which left the lost rank
-    // unexplained.
+    // "abaci" scores as "abacus" on the undated system, which still caps a word
+    // at a longer form; so do the archived puzzles from 2026-08-24 to 09-26.
     const words: AcceptedWord[] = [{ word: "abaci", rarity: "Rare", zipf: 2.5 }];
     render(<GuessLog acceptedWords={words} />);
     expect(screen.getByText(/scored as its common form, “abacus”/i)).toBeInTheDocument();

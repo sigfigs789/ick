@@ -56,6 +56,17 @@ const AFTER = MODE_CHOICE_START;
 
 const CURATED = new Set(curated as string[]);
 
+/**
+ * Whether `word` was capped at a longer form before the cutover -- the fold
+ * SHORTER_FORMS_START (the same date) withdraws. Those words move on this date
+ * for a reason that has nothing to do with the corpus, so the guards below count
+ * them apart, the way they count the audit's exemptions apart.
+ */
+function cappedLonger(word: string): boolean {
+  const base = baseFormSubstitution(word, BEFORE)?.base;
+  return base !== undefined && base.length > word.length;
+}
+
 describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
   beforeAll(async () => {
     serveShippedCorpus();
@@ -129,6 +140,8 @@ describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
     it("leaves the overwhelming majority of the curated list where it was", () => {
       let moved = 0;
       for (const word of curated as string[]) {
+        // A longer-form cap withdrawn on the same date; see `cappedLonger`.
+        if (cappedLonger(word)) continue;
         if (rarityFor(word, BEFORE)!.zipf !== rarityFor(word, AFTER)!.zipf) moved++;
       }
       // 4,954 of 225,483. The ceiling was 4,500 while the corpus moved this
@@ -146,7 +159,10 @@ describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
     it("folds onto a base the curated list never held", () => {
       // The ceiling `rarityForUncurated` names: before the cutover every link of
       // the chain had to be one of the 225,483.
-      const reached = (["actinomycetal", "antlion", "aparthotel"] as const).map((word) => ({
+      // Plurals, because from the same date the fold only ever lands on a form
+      // no longer than the word (SHORTER_FORMS_START): the examples this used to
+      // name were all capped at their own plural, "antlion" at "antlions".
+      const reached = (["aminoacids", "amigas", "amors"] as const).map((word) => ({
         word,
         before: baseFormSubstitution(word, BEFORE)?.base,
         after: baseFormSubstitution(word, AFTER)?.base,
@@ -159,7 +175,7 @@ describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
     });
 
     it("only ever makes those words more common, never rarer", () => {
-      for (const word of ["actinomycetal", "antlion", "aparthotel", "acyltransferase"]) {
+      for (const word of ["aminoacids", "amigas", "amors", "addies"]) {
         expect(rarityFor(word, AFTER)!.zipf).toBeGreaterThan(rarityFor(word, BEFORE)!.zipf);
       }
     });
@@ -193,9 +209,16 @@ describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
       let down = 0;
       let unreviewedUp = 0;
       let reviewedUp = 0;
+      let longerCapsWithdrawn = 0;
       for (const word of curated as string[]) {
         const before = rarityFor(word, BEFORE)!.zipf;
         const after = rarityFor(word, AFTER)!.zipf;
+        // The third change on this date, and the one that is all promotions by
+        // design: a word no longer capped at a longer form scores as itself.
+        if (cappedLonger(word)) {
+          if (after !== before) longerCapsWithdrawn++;
+          continue;
+        }
         if (after > before) down++;
         else if (after < before) {
           const reached = foldTrace(word, BEFORE)?.path ?? [];
@@ -217,6 +240,9 @@ describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
       // against its demotions rather than becoming the story.
       expect(unreviewedUp).toBeLessThan(60);
       expect(unreviewedUp * 40).toBeLessThan(down);
+      // Pinned as a range for the same reason as the rest: 16,187 when it landed.
+      expect(longerCapsWithdrawn).toBeGreaterThan(10_000);
+      expect(longerCapsWithdrawn).toBeLessThan(20_000);
     });
 
     it("leaves Freeform alone entirely, because Freeform does not fold", () => {
