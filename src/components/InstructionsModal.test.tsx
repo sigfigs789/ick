@@ -1,10 +1,22 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { MODE_CHOICE_START } from "../game/mode";
 import { InstructionsModal } from "./InstructionsModal";
 
 const trackFeedbackSubmitted = vi.hoisted(() => vi.fn());
 vi.mock("../analytics", () => ({ trackFeedbackSubmitted }));
+
+// The real clock by default, so the single-mode cases keep describing the sheet
+// players see today; the mode cases move it to MODE_CHOICE_START.
+const clock = vi.hoisted(() => ({ today: null as string | null }));
+vi.mock("../game/date", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../game/date")>();
+  return {
+    ...actual,
+    todayDateString: () => clock.today ?? actual.todayDateString(),
+  };
+});
 
 describe("InstructionsModal", () => {
   it("does not render until opened, then focuses its close button", () => {
@@ -126,5 +138,31 @@ describe("InstructionsModal", () => {
     expect(
       screen.queryByText(/thanks for the feedback/i),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps Standard to a line, with More info opening the fold explainer and closing back to the sheet", async () => {
+    clock.today = MODE_CHOICE_START;
+    try {
+      const onClose = vi.fn();
+      render(<InstructionsModal open onClose={onClose} />);
+
+      await userEvent.click(
+        screen.getByRole("button", { name: /more info on how common forms/i }),
+      );
+      expect(
+        screen.getByRole("dialog", { name: /common forms/i }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("dialog", { name: /how to play/i })).toBeNull();
+      expect(screen.getByText(/plurals, tenses and participles/i)).toBeInTheDocument();
+
+      // Escape backs out of the explainer only, not the whole sheet.
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(onClose).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole("dialog", { name: /how to play wordink/i }),
+      ).toBeInTheDocument();
+    } finally {
+      clock.today = null;
+    }
   });
 });
