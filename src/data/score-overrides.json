@@ -159,6 +159,11 @@
     "reason": "Plural / third-person form of `counterespionage`; a suffix is not a discovery.",
     "since": "2026-08-21"
   },
+  "densest": {
+    "base": "dense",
+    "reason": "The superlative of `dense`, but the bare -est strip leaves `dens` (the plural of den, Zipf 4.01) which beats `dense` (3.98) on frequency and chains to `den`. Same coincidence as `theses`/`these`: the spelling rules cannot see which of two attested stems is the real one.",
+    "since": "2026-09-02"
+  },
   "eldercares": {
     "base": "eldercare",
     "reason": "Plural / third-person form of `eldercare`; a suffix is not a discovery.",
@@ -359,6 +364,11 @@
     "reason": "Plural / third-person form of `subdiaconate`; a suffix is not a discovery.",
     "since": "2026-08-19"
   },
+  "tensest": {
+    "base": "tense",
+    "reason": "The superlative of `tense`, read as a form of `tens` (5.05) and chained to `ten`. The -e-restored stem is the right one and the frequency vote cannot say so.",
+    "since": "2026-09-02"
+  },
   "theses": {
     "base": "thesis",
     "reason": "Plural of `thesis`. The number-inflection fold reaches only the coincidental homograph `these`, which is far more common and is not the word's base.",
@@ -393,15 +403,5 @@
     "base": "woodlore",
     "reason": "Plural / third-person form of `woodlore`; a suffix is not a discovery.",
     "since": "2026-08-21"
-  },
-  "densest": {
-    "base": "dense",
-    "reason": "The superlative of `dense`, but the bare -est strip leaves `dens` (the plural of den, Zipf 4.01) which beats `dense` (3.98) on frequency and chains to `den`. Same coincidence as `theses`/`these`: the spelling rules cannot see which of two attested stems is the real one.",
-    "since": "2026-09-02"
-  },
-  "tensest": {
-    "base": "tense",
-    "reason": "The superlative of `tense`, read as a form of `tens` (5.05) and chained to `ten`. The -e-restored stem is the right one and the frequency vote cannot say so.",
-    "since": "2026-09-02"
   }
 }

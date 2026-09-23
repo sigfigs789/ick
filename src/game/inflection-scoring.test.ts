@@ -1,3 +1,5 @@
+// @ts-expect-error -- Node builtin; no @types/node, available under vitest.
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { RARITY_ORDER, baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
 import {
@@ -15,6 +17,31 @@ import foldExemptionData from "../data/fold-exemptions.json";
 import boundResidueData from "../data/bound-residues.json";
 import measurementUnitData from "../data/measurement-units.json";
 import type { AcceptedWord } from "./types";
+
+/**
+ * The corpus headword list, decoded straight off disk and cached.
+ *
+ * `corpusAttests` would be the honest question, but it needs `loadCorpus` and a
+ * stubbed fetch, and this suite is deliberately corpus-free everywhere else --
+ * see corpus-lexicon.test.ts, which owns that setup. Membership of words.txt is
+ * enough for what this pin asks: whether the entry names a real headword or a
+ * typo. Front-coded, so it has to be expanded (see `expand` in corpus.ts).
+ */
+let corpusWordCache: Set<string> | undefined;
+function corpusHeadwords(): Set<string> {
+  if (corpusWordCache) return corpusWordCache;
+  const lines = readFileSync("public/corpus/words.txt", "utf8").split("\n");
+  if (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+  const out = new Set<string>();
+  let previous = "";
+  for (const line of lines) {
+    const word = previous.slice(0, line.charCodeAt(0) - 48) + line.slice(1);
+    out.add(word);
+    previous = word;
+  }
+  corpusWordCache = out;
+  return out;
+}
 
 // The 2026-08-21 cutover: a plural or third-person form no longer out-scores the
 // word it came from. Expected values are hardcoded rather than recomputed through
@@ -368,11 +395,21 @@ describe("reviewed fold exemptions", () => {
     }
   });
 
-  it("names only dictionary words, dates every entry, and scopes them legibly", () => {
+  it("names only lexicon words, dates every entry, and scopes them legibly", () => {
     const words = new Set(dictionaryWords as string[]);
     for (const [word, entry] of Object.entries(foldExemptionData)) {
       const { since, scope } = entry as { since: string; scope?: string };
-      expect(words.has(word), `${word} is not a dictionary word`).toBe(true);
+      // Curated for the entries written while the fold priced against the
+      // curated list, and the corpus headwords too from the day it stopped.
+      //
+      // The table has to be able to name whatever the fold can reach, or the
+      // one reviewed way to overrule a bad fold stops working for 1.2M of the
+      // words that have one. "airshower" is a real headword, folds to
+      // "airshow", and means a cascade of cosmic-ray particles; before the
+      // cutover there was no such fold to overrule, and no such entry to write.
+      // See CORPUS_ONLY_START.
+      const known = since >= "2026-09-28" ? words.has(word) || corpusHeadwords().has(word) : words.has(word);
+      expect(known, `${word} is in neither lexicon`).toBe(true);
       expect(since >= "2026-08-21").toBe(true);
       // The only scope the engine knows. A typo would read as a blanket
       // exemption and silently take a word's ordinary folds down with it.

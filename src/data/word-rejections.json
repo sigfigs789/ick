@@ -312,6 +312,11 @@
     "reason": "proper-noun",
     "since": "2026-09-11"
   },
+  "fowlest": {
+    "reason": "misspelling",
+    "since": "2026-10-01",
+    "note": "A misspelling of `foulest`; `fowl` is a bird and has no superlative."
+  },
   "glicerol": {
     "note": "Misspelling of `glycerol`.",
     "reason": "misspelling",
