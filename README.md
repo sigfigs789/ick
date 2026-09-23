@@ -407,6 +407,11 @@ lives in `supabase/migrations/`.
   written down. Approvals are stored for that second reason alone; nothing in the
   game reads one.
 
+  The page is gated like `/feedback`: keyed where `REVIEW_TOKEN` is set, open
+  where it is not. Setting the token is what makes the labels *yours*, which is
+  the half of this worth protecting — the rejections reach the scoring only
+  through a script somebody runs and a diff somebody reads.
+
 A review pass also reads `answer_rejected` events, which have no `status` to
 settle — a rejected guess is an event, not a row. `scripts/word-review-log.json`
 is the watermark for those: each pass records the newest `created_at` it saw, so

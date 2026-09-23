@@ -10,12 +10,7 @@ import {
   upcomingFoldDates,
   type FoldCandidate,
 } from "../game/foldCandidates";
-import {
-  fetchFoldReviews,
-  hasReviewKey,
-  setFoldReview,
-  type FoldVerdict,
-} from "../game/foldReview";
+import { fetchFoldReviews, setFoldReview, type FoldVerdict } from "../game/foldReview";
 
 /**
  * The fold review at /fold: one fold per row, approved or rejected by hand.
@@ -47,12 +42,15 @@ import {
  *     fold looks like and nothing at all about a good one, which is why an
  *     approval is stored rather than being left as the absence of a rejection.
  *
- * Unlinked, and keyed in both directions -- see api/fold-reviews.ts for why this
- * one fails closed where the feedback page does not.
+ * Unlinked, and gated like the feedback page: keyed where the deployment sets
+ * REVIEW_TOKEN, open where it does not. So nothing here asks whether the reader
+ * brought a key -- the endpoint is what knows, and a page that guessed would
+ * either hide itself from a maintainer whose deployment has no token or draw
+ * controls that can only fail. It reads the ledger and says what came back,
+ * which on a keyed deployment reached without the key is "couldn't load this
+ * list".
  */
 export function FoldReviewPage() {
-  const keyed = hasReviewKey();
-
   const dates = useMemo(() => upcomingFoldDates(), []);
   /** The folds those puzzles reach, or null while they are being worked out. */
   const [candidates, setCandidates] = useState<readonly FoldCandidate[] | null>(null);
@@ -98,7 +96,7 @@ export function FoldReviewPage() {
    * effect -- the "Loading…" the reader is owed has to paint first.
    */
   useEffect(() => {
-    if (!keyed || dates.length === 0) return;
+    if (dates.length === 0) return;
     let cancelled = false;
     loadCorpus().then(() => {
       if (cancelled) return;
@@ -110,10 +108,9 @@ export function FoldReviewPage() {
     return () => {
       cancelled = true;
     };
-  }, [keyed, dates]);
+  }, [dates]);
 
   const readLedger = useCallback(() => {
-    if (!keyed) return;
     fetchFoldReviews()
       .then((reviews) => {
         if (!live.current) return;
@@ -131,7 +128,7 @@ export function FoldReviewPage() {
         if (!live.current) return;
         setFailed("load");
       });
-  }, [keyed]);
+  }, []);
 
   useEffect(() => {
     readLedger();
@@ -206,23 +203,6 @@ export function FoldReviewPage() {
       return next;
     });
   };
-
-  if (!keyed) {
-    return (
-      <ReviewPage
-        title="Fold review"
-        note="Approve or reject the folds the next few puzzles can reach."
-        count={0}
-        state="ready"
-        refreshing={false}
-        onRefresh={() => {}}
-        onRetry={() => {}}
-        empty="This page needs a review key. Open it with ?key= on the URL."
-      >
-        {null}
-      </ReviewPage>
-    );
-  }
 
   if (dates.length === 0) {
     return (

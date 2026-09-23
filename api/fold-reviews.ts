@@ -2,8 +2,8 @@
 //
 // GET /api/fold-reviews?key=…&limit=2000
 //   -> { reviews: [{ word, base, ownZipf, baseZipf, verdict, date, at }] }
-//   400 bad-limit, 401 unauthorised, 405 wrong method, 503 no credentials,
-//   502 upstream unavailable.
+//   400 bad-limit, 401 unauthorised (where REVIEW_TOKEN is set), 405 wrong
+//   method, 503 no credentials, 502 upstream unavailable.
 //
 // POST /api/fold-reviews?key=…
 //   { word, base, ownZipf, baseZipf, date, verdict }  verdict: "approved" |
@@ -20,14 +20,20 @@
 // mark on a queue row has anywhere to put. The two share the token and the
 // same-origin guard and nothing else.
 //
-// Keyed in both directions, and unlike the feedback list this one fails closed
-// with REVIEW_TOKEN unset. The reason is what the rejections become: an exported
-// rejection turns into an entry in fold-exemptions.json and changes what a word
-// scores in the game (see scripts/export-fold-rejections.mjs). A stranger who
-// guessed the URL cannot reach the scoring directly -- the export is a person
-// running a script and reading a diff -- but a ledger anybody can write to is a
-// ledger nobody can read as a record of what was decided, which is the whole
-// value of keeping it. No token, no page.
+// Gated exactly like the feedback list, in both directions: keyed where
+// REVIEW_TOKEN is set, open where none is. Nothing links to this page, and a
+// deployment that configures a token is asking for it to stay that way.
+//
+// It failed closed on an unset token to begin with, on the grounds that a
+// rejection here eventually becomes an entry in fold-exemptions.json and changes
+// what a word scores. What that argument missed is the shape of the path: the
+// export is a person running a script and reading a diff, so nothing written
+// here reaches a player without going past somebody first, and "unset means
+// nobody" is a rule whose only reliable effect is locking the maintainer out of
+// their own page until they go and configure a secret. The real cost of an open
+// ledger is to the labelled set rather than to the scoring -- labels are worth
+// something because of whose judgement they are -- and that is a reason to set
+// REVIEW_TOKEN, not a reason for this file to refuse to work without one.
 //
 // Never CDN-cached. A response that varies by a secret must not be handed to the
 // next caller.
@@ -90,12 +96,18 @@ function num(value: number | string | null): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+/** Whether this deployment asks for a key at all. */
+function keyed(): boolean {
+  return (process.env.REVIEW_TOKEN ?? "") !== "";
+}
+
 /**
  * Whether this request carries the deployment's review token.
  *
  * The same check api/review.ts makes, including the constant-time compare: a
  * timing side channel on a curator's page is not the threat anybody here is
- * facing, but the compare is four lines and removes the question.
+ * facing, but the compare is four lines and removes the question. Asked only
+ * where a token is configured -- see `keyed` above and the two callers.
  */
 function authorised(request: Request): boolean {
   const expected = process.env.REVIEW_TOKEN ?? "";
@@ -119,7 +131,7 @@ export default async function handler(request: Request): Promise<Response> {
 }
 
 async function handleGet(request: Request): Promise<Response> {
-  if (!authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
+  if (keyed() && !authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
 
   // A limit that isn't a number is a caller and this endpoint disagreeing, which
   // is worth saying; an absent one is simply the default.
@@ -174,7 +186,7 @@ async function handlePost(request: Request): Promise<Response> {
     }
   }
 
-  if (!authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
+  if (keyed() && !authorised(request)) return reply(401, { ok: false, reason: "unauthorised" });
 
   const text = await request.text().catch(() => "");
   if (text.length > MAX_BODY_BYTES) return reply(413, { ok: false, reason: "too-large" });

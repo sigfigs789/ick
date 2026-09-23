@@ -8,7 +8,6 @@
 
 import { DEV_TOOLS } from "../dev/devTools";
 import { usingSampleData } from "../dev/sampleData";
-import { hasReviewKey } from "./review";
 
 /** How long a read waits before giving up, matching the review lists'. */
 const FETCH_TIMEOUT_MS = 6000;
@@ -29,9 +28,14 @@ export interface FoldReview {
   at: string;
 }
 
-export { hasReviewKey };
-
-/** The key as a query parameter, taken from the page's own URL. */
+/**
+ * The key as a query parameter, taken from the page's own URL.
+ *
+ * Passed along whether or not the deployment asks for one -- the endpoint is
+ * what knows, and an unkeyed deployment simply ignores it (see
+ * api/fold-reviews.ts). Read from the address bar rather than stored, so nothing
+ * leaves a review key sitting in localStorage.
+ */
 function keyParam(leading: boolean): string {
   const key = new URLSearchParams(window.location.search).get("key");
   if (!key) return "";

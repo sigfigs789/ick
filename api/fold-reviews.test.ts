@@ -103,13 +103,20 @@ describe("api/fold-reviews", () => {
     expect(response.status).toBe(401);
   });
 
-  it("refuses everything when no token is configured", async () => {
-    // Fails closed, unlike the feedback list: a rejection here becomes an
-    // exemption in the shipped scoring data.
+  it("answers anybody when no token is configured, like the feedback list", async () => {
+    // Unlinked is not protected, and a deployment with no token configured is a
+    // maintainer reading their own page rather than an open door anybody found.
     withEnv({ ...CONFIGURED, REVIEW_TOKEN: undefined });
+    stubFetch([]);
+    expect((await handler(get(""))).status).toBe(200);
+    stubFetch("rejected");
+    expect((await handler(post(VERDICT, ""))).status).toBe(200);
+  });
+
+  it("refuses a write without the key where a token is set", async () => {
+    withEnv();
     stubFetch();
-    expect((await handler(get())).status).toBe(401);
-    expect((await handler(post(VERDICT))).status).toBe(401);
+    expect((await handler(post(VERDICT, "?key=wrong"))).status).toBe(401);
   });
 
   it("stores a verdict and answers with what the database kept", async () => {

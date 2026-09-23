@@ -205,13 +205,16 @@ describe("FoldReviewPage", () => {
     expect(screen.queryByText("timelinesses")).not.toBeInTheDocument();
   });
 
-  it("says the queue needs a key rather than drawing an empty one", async () => {
+  it("reads the ledger with no key, and lets the endpoint decide", async () => {
+    // Gated like the feedback page: a deployment with no REVIEW_TOKEN set
+    // answers anybody, so a page that refused to ask would hide itself from its
+    // own maintainer. Where a token *is* set, the read 401s and the page says it
+    // could not load -- covered by the case below.
     window.history.pushState(null, "", "/fold");
-    const fetchMock = stubFetch();
+    stubFetch();
     render(<FoldReviewPage />);
 
-    expect(await screen.findByText(/needs a review key/)).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText("timelinesses")).toBeInTheDocument());
   });
 
   it("says there is nothing to fold rather than drawing an empty queue", async () => {
