@@ -1,7 +1,9 @@
 // Single source of truth for app versioning.
 //
 // APP_VERSION: bump on every deploy you want to track. Baked into the bundle
-//   at build time and written into the served version.json.
+//   at build time and written into the served version.json. The native app's
+//   store version is 1.<APP_VERSION> — native/app.config.js reads this line as
+//   text, so keep it a plain integer literal.
 // MIN_VERSION: the required-version floor. Only bump this when you want to
 //   FORCE every open tab below it to reload. Set it equal to APP_VERSION to
 //   make the current release mandatory; leave it alone for optional deploys.
