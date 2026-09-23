@@ -1,0 +1,87 @@
+name: Native OTA update
+
+# Publish the game to installed phone apps whenever main changes it.
+#
+# The app is a view layer over the repo's own src/ (see native/README.md), and a
+# store build is a frozen copy of that code. Vercel deploys main to the website
+# on every push; this is the same deploy for phones, as an expo-updates bundle
+# on the `production` channel. Builds pick it up on their next launch, or at
+# once when they find themselves below the leaderboard's floor
+# (native/src/hooks/useUpdateCheck.ts).
+#
+# An update only reaches builds with the same native fingerprint
+# (native/fingerprint.config.js), so a change that needs new native code
+# publishes harmlessly to a runtime no installed build has -- those players get
+# the update banner, and the fix is a store build.
+#
+# Needs an EXPO_TOKEN repository secret (an Expo access token for sigfigs789).
+# Without one the job says so and stops rather than failing main.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "native/**"
+      - "package-lock.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Two pushes in quick succession should publish the later one, not race.
+concurrency:
+  group: native-update
+  cancel-in-progress: true
+
+jobs:
+  update:
+    name: Publish update
+    runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    steps:
+      - name: Check for an Expo token
+        id: token
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::warning::No EXPO_TOKEN secret, so no update was published. Add one to ship main to phones."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out repository
+        if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        if: steps.token.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            native/package-lock.json
+
+      # Both installs: the bundle is built from native/ and from the shared src/
+      # above it, whose imports resolve against the root's node_modules.
+      - name: Install dependencies
+        if: steps.token.outputs.present == 'true'
+        run: |
+          npm ci
+          npm ci --prefix native
+
+      - name: Publish to the production channel
+        if: steps.token.outputs.present == 'true'
+        working-directory: native
+        # Through the environment rather than interpolated into the script, so a
+        # commit message is only ever text.
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          message=$(printf '%s' "${COMMIT_MESSAGE:-$GITHUB_SHA}" | head -n 1)
+          npx eas-cli@latest update --channel production --platform ios \
+            --message "$message" --non-interactive
