@@ -193,7 +193,7 @@
   },
   "antibody": {
     "since": "2026-09-27",
-    "reason": "A loan-translation of Antik\u00f6rper: the `body` in it is the 19th-century sense of a material substance, and no reader supplies it -- an antibody is not a body the way a counterattack is an attack. The highest-impact reading the ungated prefix reaches (3.56 -> 5.40, `body`), and the one a player would call a bug.",
+    "reason": "A loan-translation of Antikörper: the `body` in it is the 19th-century sense of a material substance, and no reader supplies it -- an antibody is not a body the way a counterattack is an attack. The highest-impact reading the ungated prefix reaches (3.56 -> 5.40, `body`), and the one a player would call a bug.",
     "scope": "prefix"
   },
   "antibrane": {
@@ -928,7 +928,7 @@
   },
   "champes": {
     "since": "2026-10-01",
-    "reason": "Folded onto `champ`, costing 4.04 points. Flagged in the 2026-09-22 semantic audit (champes from champ? ambiguous\u2014champers/champagne) and confirmed on adversarial re-review (not a valid champ inflection)."
+    "reason": "Folded onto `champ`, costing 4.04 points. Flagged in the 2026-09-22 semantic audit (champes from champ? ambiguous—champers/champagne) and confirmed on adversarial re-review (not a valid champ inflection)."
   },
   "chapes": {
     "since": "2026-10-01",
@@ -948,7 +948,7 @@
   },
   "chassed": {
     "since": "2026-10-01",
-    "reason": "Folded onto `cha`, costing 3.70 points. Flagged in the 2026-09-22 semantic audit (cha not base of chassed) and confirmed on adversarial re-review (from chass\u00e9; \"cha\" is unrelated)."
+    "reason": "Folded onto `cha`, costing 3.70 points. Flagged in the 2026-09-22 semantic audit (cha not base of chassed) and confirmed on adversarial re-review (from chassé; \"cha\" is unrelated)."
   },
   "chasses": {
     "since": "2026-10-01",
@@ -1120,7 +1120,7 @@
   },
   "colones": {
     "since": "2026-10-01",
-    "reason": "Folded onto `colon`, costing 2.83 points. Flagged in the 2026-09-22 semantic audit (col\u00f3n currency plural, not colon) and confirmed on adversarial re-review (colon currency named for person)."
+    "reason": "Folded onto `colon`, costing 2.83 points. Flagged in the 2026-09-22 semantic audit (colón currency plural, not colon) and confirmed on adversarial re-review (colon currency named for person)."
   },
   "combes": {
     "since": "2026-10-01",
@@ -1816,7 +1816,7 @@
   },
   "equipes": {
     "since": "2026-10-01",
-    "reason": "Folded onto `equipped`, costing 4.57 points. Flagged in the 2026-09-22 semantic audit (equipes not form of equipped) and confirmed on adversarial re-review (\u00e9quipe is a team, different word)."
+    "reason": "Folded onto `equipped`, costing 4.57 points. Flagged in the 2026-09-22 semantic audit (equipes not form of equipped) and confirmed on adversarial re-review (équipe is a team, different word)."
   },
   "erasably": {
     "since": "2026-10-01",
@@ -2738,7 +2738,7 @@
   },
   "jetes": {
     "since": "2026-10-01",
-    "reason": "Folded onto `jet`, costing 4.59 points. Flagged in the 2026-09-22 semantic audit (jet\u00e9 is a ballet leap) and confirmed on adversarial re-review (ballet jet\u00e9, not jet)."
+    "reason": "Folded onto `jet`, costing 4.59 points. Flagged in the 2026-09-22 semantic audit (jeté is a ballet leap) and confirmed on adversarial re-review (ballet jeté, not jet)."
   },
   "jettable": {
     "since": "2026-10-01",
@@ -3703,7 +3703,7 @@
   },
   "outreness": {
     "since": "2026-10-01",
-    "reason": "Folded onto `ring`, costing 5.33 points. Flagged in the 2026-09-22 semantic audit (no relation to ring) and confirmed on adversarial re-review (outr\u00e9 has no relation to ring)."
+    "reason": "Folded onto `ring`, costing 5.33 points. Flagged in the 2026-09-22 semantic audit (no relation to ring) and confirmed on adversarial re-review (outré has no relation to ring)."
   },
   "outrives": {
     "since": "2026-10-01",
@@ -4289,6 +4289,86 @@
     "since": "2026-10-01",
     "reason": "Folded onto `prat`, costing 1.76 points. Flagged in the 2026-09-22 semantic audit (from prate, not prat) and confirmed on adversarial re-review (prate chatter unrelated to prat)."
   },
+  "preachier": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The comparative of `preachy`; `achy` is a different word."
+  },
+  "preachiest": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The comparative of `preachy`; `achy` is a different word."
+  },
+  "preachily": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The comparative of `preachy`; `achy` is a different word."
+  },
+  "preachiness": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The comparative of `preachy`; `achy` is a different word."
+  },
+  "preachinesses": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The comparative of `preachy`; `achy` is a different word."
+  },
+  "preapplied": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Apply in advance -- the base is `apply`, not `app`, and this was PRE_PREFIX_END's worst case."
+  },
+  "preapplies": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Apply in advance -- the base is `apply`, not `app`, and this was PRE_PREFIX_END's worst case."
+  },
+  "preapply": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Apply in advance -- the base is `apply`, not `app`, and this was PRE_PREFIX_END's worst case."
+  },
+  "preapplying": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Apply in advance -- the base is `apply`, not `app`, and this was PRE_PREFIX_END's worst case."
+  },
+  "prebend": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A prebend is a cathedral stipend; nothing to do with bending."
+  },
+  "prebends": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A prebend is a cathedral stipend; nothing to do with bending."
+  },
+  "precaution": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A precaution is a safeguard; the split cannot be told from the spelling, and this was PRE_PREFIX_END's own example."
+  },
+  "precautioned": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A precaution is a safeguard; the split cannot be told from the spelling, and this was PRE_PREFIX_END's own example."
+  },
+  "precautioning": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A precaution is a safeguard; the split cannot be told from the spelling, and this was PRE_PREFIX_END's own example."
+  },
+  "precautions": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A precaution is a safeguard; the split cannot be told from the spelling, and this was PRE_PREFIX_END's own example."
+  },
+  "precent": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To precent is to lead the singing; a `cent` is a coin."
+  },
   "preces": {
     "since": "2026-10-01",
     "reason": "Folded onto `precis`, costing 1.06 points. Flagged in the 2026-09-22 semantic audit (preces Latin prayers; precis unrelated) and confirmed on adversarial re-review (Latin prayers versus summary)."
@@ -4297,17 +4377,157 @@
     "since": "2026-10-01",
     "reason": "Folded onto `precis`, costing 1.20 points. Flagged in the 2026-09-22 semantic audit (precess unrelated to precis) and confirmed on adversarial re-review (precess unrelated to precis)."
   },
+  "preclinical": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Preclinical means before clinical trials; a `clinic` is a place. The lemma carries `preclinically`."
+  },
+  "preconcert": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To preconcert is to arrange in advance; a `concert` is a performance."
+  },
+  "preconcerted": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To preconcert is to arrange in advance; a `concert` is a performance."
+  },
+  "preconcerting": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To preconcert is to arrange in advance; a `concert` is a performance."
+  },
+  "preconcerts": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To preconcert is to arrange in advance; a `concert` is a performance."
+  },
+  "predestination": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Predestination is a doctrine of fate, not a destination reached early."
+  },
+  "predestinations": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Predestination is a doctrine of fate, not a destination reached early."
+  },
+  "predial": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Predial means relating to land; a `dial` is a face."
+  },
   "prees": {
     "since": "2026-10-01",
     "reason": "Folded onto `pre`, costing 5.11 points. Flagged in the 2026-09-22 semantic audit (pree/prees unrelated to pre) and confirmed on adversarial re-review (pree means taste; pre unrelated)."
+  },
+  "prefabbed": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A form of `prefab`; `fab` is a different word, and PRE_PREFIX_END's own example."
+  },
+  "prefabbing": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A form of `prefab`; `fab` is a different word, and PRE_PREFIX_END's own example."
+  },
+  "prefabs": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A form of `prefab`; `fab` is a different word, and PRE_PREFIX_END's own example."
+  },
+  "prehearing": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Before the hearing -- the split is right, but the base is `hearing`, not `hear`."
+  },
+  "prehearings": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Before the hearing -- the split is right, but the base is `hearing`, not `hear`."
+  },
+  "prehend": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To prehend is to seize; `hend` is not a word."
   },
   "preing": {
     "since": "2026-10-01",
     "reason": "Folded onto `pre`, costing 5.53 points. Flagged in the 2026-09-22 semantic audit (pre is not a word) and confirmed on adversarial re-review (pre is a prefix)."
   },
+  "prejudicialness": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The quality of being prejudicial; `judicial` is a different word."
+  },
+  "prejudicialnesses": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The quality of being prejudicial; `judicial` is a different word."
+  },
+  "prelate": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A prelate is a senior cleric; nothing to do with being late."
+  },
+  "prelates": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A prelate is a senior cleric; nothing to do with being late."
+  },
   "prelitter": {
     "since": "2026-10-01",
     "reason": "Folded onto `prelit`, costing 1.39 points. Flagged in the 2026-09-22 semantic audit (prelitter is before litter, not prelit) and confirmed on adversarial re-review (prelit unrelated to prelitter)."
+  },
+  "premeditate": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To premeditate is to plan a crime in advance, not to meditate beforehand."
+  },
+  "premeditated": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To premeditate is to plan a crime in advance, not to meditate beforehand."
+  },
+  "premeditatedly": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To premeditate is to plan a crime in advance, not to meditate beforehand."
+  },
+  "premeditates": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To premeditate is to plan a crime in advance, not to meditate beforehand."
+  },
+  "premeditating": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To premeditate is to plan a crime in advance, not to meditate beforehand."
+  },
+  "premeditation": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Premeditation is advance planning of a crime, not meditation beforehand."
+  },
+  "premeditations": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Premeditation is advance planning of a crime, not meditation beforehand."
+  },
+  "premeditative": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Of premeditation, the advance planning of a crime; not meditative beforehand."
+  },
+  "premeditator": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "One who premeditates a crime; `meditators` are a different thing."
+  },
+  "premeditators": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "One who premeditates a crime; `meditators` are a different thing."
   },
   "premeds": {
     "since": "2026-10-01",
@@ -4317,6 +4537,171 @@
     "since": "2026-10-01",
     "reason": "Folded onto `premier`, costing 1.83 points. Flagged in the 2026-09-22 semantic audit (premiere vs premier, different senses) and confirmed on adversarial re-review (premiere distinct sense from premier)."
   },
+  "premiss": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A variant spelling of `premise`; to `miss` is unrelated."
+  },
+  "premisses": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A variant spelling of `premise`; to `miss` is unrelated."
+  },
+  "premonished": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A form of `premonish`, to forewarn -- PRE_PREFIX_END's own example."
+  },
+  "premonishes": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A form of `premonish`, to forewarn -- PRE_PREFIX_END's own example."
+  },
+  "premonishing": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A form of `premonish`, to forewarn -- PRE_PREFIX_END's own example."
+  },
+  "premunition": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Premunition is a state of partial immunity; `munitions` are weapons."
+  },
+  "premunitions": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Premunition is a state of partial immunity; `munitions` are weapons."
+  },
+  "prepositive": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Prepositive means placed in front, a grammatical term; `positive` is a different word."
+  },
+  "prepositively": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Prepositive means placed in front, a grammatical term; `positive` is a different word."
+  },
+  "prepositives": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Prepositive means placed in front, a grammatical term; `positive` is a different word."
+  },
+  "prepossessingly": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "From `prepossessing`, meaning attractive; not about possessing beforehand."
+  },
+  "prepossessingness": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "From `prepossessing`, meaning attractive; not about possessing beforehand."
+  },
+  "prepossessingnesses": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "From `prepossessing`, meaning attractive; not about possessing beforehand."
+  },
+  "prepubes": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Anatomical, from prepubis; `pub` is a coincidence of spelling."
+  },
+  "prepuce": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The prepuce is the foreskin; `puce` is a colour."
+  },
+  "prepuces": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The prepuce is the foreskin; `puce` is a colour."
+  },
+  "presager": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "One who presages; `sager` is the comparative of sage."
+  },
+  "presagers": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "One who presages; `sager` is the comparative of sage."
+  },
+  "prescience": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Prescience is foreknowledge; `science` is a coincidence of the Latin stem."
+  },
+  "presciences": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Prescience is foreknowledge; `science` is a coincidence of the Latin stem."
+  },
+  "prescript": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A prescript is a rule laid down; not pre- + `script`."
+  },
+  "prescriptible": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A prescript is a rule laid down; not pre- + `script`."
+  },
+  "prescripts": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A prescript is a rule laid down; not pre- + `script`."
+  },
+  "presentient": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Presentient means having a presentiment; `sentient` means conscious."
+  },
+  "presentimental": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Of a presentiment, a foreboding; `sentimental` is a different word."
+  },
+  "preserving": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To preserve is to keep, not to serve beforehand."
+  },
+  "prest": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A surname and a Latin form, not pre- + `sting`."
+  },
+  "prester": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Prester (as in Prester John) is a title; `ster` is not a word."
+  },
+  "prestes": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A surname and a Latin form, not pre- + `sting`."
+  },
+  "prests": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A surname and a Latin form, not pre- + `sting`."
+  },
+  "presumptuousness": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The quality of being presumptuous; `sumptuous` means lavish."
+  },
+  "presumptuousnesses": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "The quality of being presumptuous; `sumptuous` means lavish."
+  },
+  "pretending": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "To pretend is to feign, not to tend beforehand."
+  },
   "pretension": {
     "since": "2026-10-01",
     "reason": "Also the act of pre-tensioning. Its -ing and -ed forms are that sense, not a claim to importance."
@@ -4325,9 +4710,74 @@
     "since": "2026-10-01",
     "reason": "Folded onto `pretension`, costing 0.84 points. Flagged in the 2026-09-22 semantic audit (pretension means presumption, not pre-tensioning) and confirmed on adversarial re-review (pretension is presumption, different sense)."
   },
+  "pretensionless": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Without pretension -- the base is `pretension`, not `tension`."
+  },
+  "pretext": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A pretext is an excuse, not a text written beforehand."
+  },
+  "pretexted": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A pretext is an excuse, not a text written beforehand."
+  },
+  "pretexting": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A pretext is an excuse, not a text written beforehand."
+  },
+  "pretexts": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A pretext is an excuse, not a text written beforehand."
+  },
+  "pretor": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A pretor is a Roman magistrate; `tore` is the past of tear."
+  },
+  "pretors": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A pretor is a Roman magistrate; `tore` is the past of tear."
+  },
+  "prevert": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Not pre- + `vert`; `vert` is a heraldic tincture."
+  },
   "previse": {
     "since": "2026-10-01",
     "reason": "Folded onto `prev`, costing 2.58 points. Flagged in the 2026-09-22 semantic audit (previse is foresee, not prev) and confirmed on adversarial re-review (previse unrelated to prev)."
+  },
+  "prevised": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A form of `previse`, to foresee; `vis` is not a word."
+  },
+  "previses": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A form of `previse`, to foresee; `vis` is not a word."
+  },
+  "prevising": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "A form of `previse`, to foresee; `vis` is not a word."
+  },
+  "previsional": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Of prevision, foresight; `visional` is a different word."
+  },
+  "previsionary": {
+    "since": "2026-09-27",
+    "scope": "prefix",
+    "reason": "Of prevision, foresight; `visionary` is a different word."
   },
   "previsor": {
     "since": "2026-08-26",

@@ -10,6 +10,7 @@ import {
   prefixBaseCandidates,
 } from "./stem";
 import { evaluateSubmission, sameRootKey } from "./submit";
+import { MODE_CHOICE_START } from "./mode";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import scoreOverrideData from "../data/score-overrides.json";
@@ -2328,14 +2329,20 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
 
   it("moves 510 words, every one of them prefixed, and lowers no score", () => {
     // The change stated over the dictionary rather than on the samples above.
-    // Two claims: nothing outside the two prefixes moves at all -- this is one
-    // family, not a retune -- and every move is a fold, which can only ever make
-    // a word more common.
-    const moved = (dictionaryWords as string[]).filter(
+    // Two claims: nothing outside the two prefixes moves *for this reason* --
+    // this is one family, not a retune -- and every move is a fold, which can
+    // only ever make a word more common.
+    //
+    // Scoped to the two prefixes rather than taken over the whole date, because
+    // "pre-" came back on this date too and moves 751 words of its own; the
+    // describe below states that half. Nothing else moves: the two slices are
+    // the whole of the day.
+    const movedAll = (dictionaryWords as string[]).filter(
       (word) => rarityFor(word, ON_UNGATED)!.zipf !== rarityFor(word, BEFORE_UNGATED)!.zipf
     );
+    expect(movedAll.filter((word) => !/^(anti|counter|pre)/.test(word))).toEqual([]);
+    const moved = movedAll.filter((word) => /^(anti|counter)/.test(word));
     expect(moved).toHaveLength(510);
-    expect(moved.filter((word) => !/^(anti|counter)/.test(word))).toEqual([]);
     for (const word of moved) {
       expect(
         rarityFor(word, ON_UNGATED)!.zipf,
@@ -2361,5 +2368,116 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
     // shared `addPrefixBases` is for: "uncleanest" is the superlative of
     // "unclean", not un- + "cleanest".
     expect(baseFormSubstitution("uncleanest", ON_UNGATED)?.base).toBe("unclean");
+  });
+});
+
+describe('"pre-" folds again (from MODE_CHOICE_START)', () => {
+  // The day before is inside the freeform trial, where nothing folds at all, so
+  // "before" is the last ordinary folding puzzle -- the system this cutover
+  // changes, exactly as the describe above takes it.
+  const BEFORE_RESTORED = "2026-09-13";
+  const ON_RESTORED = MODE_CHOICE_START;
+
+  // What the prefix is for: a productive "pre-" on a free-standing English word.
+  const MOVED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    ["prewash", "wash", 9.66, 5.17],
+    ["preselect", "selected", 8.12, 4.86],
+    ["pregame", "game", 7.3, 3.34],
+    ["prereview", "review", 9.92, 4.22],
+  ];
+
+  it.each(MOVED)("%s folds onto %s", (word, base, _before, after) => {
+    expect(score(word, ON_RESTORED)).toBe(after);
+    expect(baseFormSubstitution(word, ON_RESTORED)?.base).toBe(base);
+  });
+
+  it.each(MOVED)("%s kept its own score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_RESTORED)).toBe(before);
+  });
+
+  // The review the restoration rests on (see PRE_PREFIX_RESTORED). All 400
+  // families the prefix reaches were judged; the 50 landing on a base that means
+  // something else were sent to one of two files. Where the prefix reading is
+  // real and only the residue was wrong, the word is pinned to the base it
+  // should have reached -- and because these already folded there, the entry
+  // *holds* them against the rule rather than moving them.
+  const CORRECTED: ReadonlyArray<[word: string, base: string, unchanged: number]> = [
+    ["prepositional", "preposition", 7.73], // not `positional`
+    ["premillennial", "millennium", 6.24], // not `millennials`, the generation
+    ["preachier", "preachy", 8.05], // not `achy`
+    ["preclinically", "preclinical", 7.74], // not `clinic`
+    ["prefabs", "prefab", 8.11], // not `fab` -- PRE_PREFIX_END's own example
+  ];
+
+  it.each(CORRECTED)("%s is pinned to %s by review", (word, base, unchanged) => {
+    expect(baseFormSubstitution(word, ON_RESTORED)?.base).toBe(base);
+    expect(score(word, ON_RESTORED)).toBe(unchanged);
+  });
+
+  // Where no appropriate base exists, the word gets a prefix-scoped entry in
+  // fold-exemptions.json: it refuses the hop, leaves the word's ordinary folds
+  // alone, and leaves it on its own measured score. The last three are the
+  // readings PRE_PREFIX_END was written about, and the reason it could not keep
+  // the prefix without a table like this one.
+  const EXEMPTED: ReadonlyArray<[word: string, unreachable: string, score: number]> = [
+    ["prelate", "late", 7.69],
+    ["prescience", "science", 8.43],
+    ["prepuce", "puce", 8.94],
+    ["premiss", "miss", 9.53],
+    ["precaution", "caution", 6.39],
+    ["preapply", "app", 9.92],
+    ["prehearing", "hear", 8.07],
+  ];
+
+  it.each(EXEMPTED)("%s never reaches %s", (word, unreachable, expected) => {
+    // Unchanged across the cutover: the rule offers a base and review refuses
+    // it, so the word scores exactly as it did the day before.
+    expect(score(word, BEFORE_RESTORED)).toBe(expected);
+    expect(score(word, ON_RESTORED)).toBe(expected);
+    expect(baseFormSubstitution(word, ON_RESTORED)?.base).not.toBe(unreachable);
+  });
+
+  it("moves 751 words and lowers no score", () => {
+    // Two claims, as at every prefix cutover: the change is one family, and
+    // every move is a fold, which can only ever make a word more common. The
+    // review pass holds the second -- an entry that corrected a fold could have
+    // raised a score, and none does.
+    const moved = (dictionaryWords as string[])
+      .filter((word) => rarityFor(word, ON_RESTORED)!.zipf !== rarityFor(word, BEFORE_RESTORED)!.zipf)
+      .filter((word) => word.startsWith("pre")); // the day's other half is above
+    expect(moved).toHaveLength(751);
+    for (const word of moved) {
+      expect(
+        rarityFor(word, ON_RESTORED)!.zipf,
+        `${word} is no rarer than it was`
+      ).toBeGreaterThan(rarityFor(word, BEFORE_RESTORED)!.zipf);
+    }
+  });
+
+  it('stays behind the frequency gate, unlike "counter-" and "anti-"', () => {
+    // The reason it is not in UNGATED_PREFIXES: these are the openings of
+    // ordinary measured words, and the gate is all that stands between the rule
+    // and a base they were never built on.
+    for (const word of ["present", "preface", "pressure", "precise", "premium"]) {
+      expect(score(word, ON_RESTORED), `${word} is unchanged`).toBe(score(word, BEFORE_RESTORED));
+      expect(baseFormSubstitution(word, ON_RESTORED)).toBeUndefined();
+    }
+  });
+
+  it('leaves "re-" alone, which was measured alongside it and not shipped', () => {
+    // 932 families against "pre-"'s 400, the same rate of wrong readings, and
+    // corrections that would not hold above the floor -- see PRE_PREFIX_RESTORED.
+    for (const word of ["reexplain", "rematch", "reserve", "remorse", "reschool"]) {
+      expect(score(word, ON_RESTORED), `${word} is unchanged`).toBe(score(word, BEFORE_RESTORED));
+      expect(baseFormSubstitution(word, ON_RESTORED)?.base).not.toBe(word.slice(2));
+    }
+  });
+
+  it("is off for every puzzle between PRE_PREFIX_END and the cutover", () => {
+    for (const date of [BEFORE_RESTORED, "2026-09-10", "2026-09-06"]) {
+      expect(baseFormSubstitution("prewash", date)).toBeUndefined();
+    }
+    // ...and it folded before that, which is the answer changing twice.
+    expect(baseFormSubstitution("prewash", "2026-09-04")?.base).toBe("wash");
   });
 });

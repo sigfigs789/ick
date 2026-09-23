@@ -218,8 +218,50 @@ const PREFIX_BASE_START = "2026-08-24";
 const PREFIX_BASE_MIN_ZIPF = 3;
 
 /*
+ * MODE_CHOICE_START: "pre-" folds again.
+ *
+ * PRE_PREFIX_END below retired it, on an argument this reversal does not
+ * dispute: English fossilised "pre-" onto Latin stems that were never English
+ * words, nothing in the spelling separates "precaution" from "precooked", and
+ * the floor gate cannot help because the fossils are rare. What has changed is
+ * not the argument but what can be done about it. That note asked for "a vetted
+ * table of which words really carry the prefix" and could not point at one. The
+ * table now exists, built by judging every fold the prefix reaches across the
+ * corpus: 400 families, of which 50 landed on a base that means something else.
+ *
+ * Each of those 50 is either pinned to the base it should have reached
+ * ("prepositional" to `preposition`, not `positional`; "premillennial" to
+ * `millennium`, not the generation; "preachier" to `preachy`, not `achy`) or
+ * refused outright where the word is a single lexeme the prefix only appears to
+ * open ("prelate", "prescience", "prepuce", "premiss", "precaution"). The three
+ * readings the retirement was written about are among them -- "preapply" no
+ * longer reaches `app`, "prehearing" no longer reaches `hear`. 17 overrides and
+ * 90 prefix-scoped exemptions, and after them no family the prefix reaches lands
+ * on a base a reader would reject.
+ *
+ * It stays *behind* MEASURED_FLOOR -- not in UNGATED_PREFIXES and it cannot be,
+ * because "present", "preface" and "pressure" are measured well above the floor
+ * and all have the shape.
+ *
+ * No date constant of its own: it rides MODE_CHOICE_START with the mode switch
+ * and the ungated prefixes, which is the argument UNGATED_PREFIX_START already
+ * makes -- a player meeting the two systems side by side is the moment for the
+ * folding one to be at its best, and one date is one explanation.
+ *
+ * "re-" was measured alongside it and is not here. It reaches three times as far
+ * (932 families) at the same rate of wrong readings, and the corrections would
+ * not hold: above MEASURED_FLOOR a prefix-scoped entry does not reach the rung
+ * the wrong base arrives on, so "reserve" stayed on `serve` and "remorse" on
+ * `morse`, and widening those entries hands "rebater" a 9.93 Legend instead. It
+ * stays out until that is answered, which is the standard this date holds
+ * "pre-" to.
+ */
+
+/*
  * 2026-09-05: "pre-" stops being a foldable prefix, the first of these rules to
- * be taken away rather than added. Everything else about the prefix fold stays
+ * be taken away rather than added -- and, from MODE_CHOICE_START, the first put
+ * back; see the note above, which reverses this judgement on the strength of the
+ * reviewed table it could not point at, and inherits every cost counted here. Everything else about the prefix fold stays
  * as it was -- the floor gate, the residue table, the exemptions -- and archived
  * puzzles keep the scores they were played with, so the flag stays on for every
  * system before this date (see `Scoring.prePrefixBases`).
@@ -1083,11 +1125,12 @@ interface Scoring {
   // master switch rather than a rule: the rules it stands in front of are
   // unchanged and untested by it, so turning it back on restores them exactly.
   folds: boolean;
-  // Whether "pre-" is one of the transparent prefixes. The only flag here that
-  // reads the other way round -- it is *on* for the systems from 2026-08-24 up
-  // to 2026-09-05, when the prefix was retired, and off from there -- because a
-  // rule taken away has to keep working for the puzzles it was played on just as
-  // one added has to stay off for them (see PRE_PREFIX_END).
+  // Whether "pre-" is one of the transparent prefixes. The only flag here whose
+  // answer changes twice: *on* from 2026-08-24 to 2026-09-05, off from there
+  // when the prefix was retired, and on again from MODE_CHOICE_START when it
+  // came back behind a reviewed table -- because a rule taken away has to keep
+  // working for the puzzles it was played on just as one added has to stay off
+  // for them, and that holds in both directions (see PRE_PREFIX_END).
   prePrefixBases: boolean;
 }
 
@@ -1488,6 +1531,11 @@ const DOUBLING_SCORING: Scoring = twoBandScoring(9.9, 0, {
 const LATEST_SCORING: Scoring = {
   ...DOUBLING_SCORING,
   ungatedPrefixBases: true,
+  // "pre-" folds again, on the same date `ungatedPrefixBases` rides. No profile
+  // and no rung of its own, because this is the profile MODE_CHOICE_START
+  // already selects, and CORPUS_SCORING is a spread of it. See the note above
+  // PRE_PREFIX_END.
+  prePrefixBases: true,
 };
 
 /**

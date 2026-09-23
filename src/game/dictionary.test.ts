@@ -585,10 +585,11 @@ describe("foldAffixGroups", () => {
     // that scored the day being looked at rather than today's.
     expect(prefixes("2026-09-04")).toContain("pre-");
     expect(prefixes("2026-09-04")).toContain("mono-");
-    expect(prefixes()).not.toContain("pre-");
+    expect(prefixes()).toContain("pre-"); // back from MODE_CHOICE_START
     expect(prefixes()).not.toContain("mono-");
-    // What is left is the native set, which never went anywhere.
-    expect(prefixes()).toEqual(["anti-", "counter-", "out-", "over-", "un-", "under-"]);
+    // What is left is the native set, which never went anywhere, plus "pre-",
+    // which came back on MODE_CHOICE_START behind a reviewed table.
+    expect(prefixes()).toEqual(["anti-", "counter-", "out-", "over-", "pre-", "un-", "under-"]);
 
     // Before the prefix fold existed at all there is no prefix row to show.
     expect(prefixes("2026-08-01")).toEqual([]);
