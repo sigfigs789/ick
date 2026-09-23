@@ -23,6 +23,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `abb`, costing 2.08 points. Flagged in the 2026-09-22 semantic audit (abbes from abbe, not abb) and confirmed on adversarial re-review (abbe not from abb)."
   },
+  "aborn": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `aborning`, costing 0.88 points. Flagged in the 2026-09-22 semantic audit (aborning is not from aborn) and confirmed on adversarial re-review (aborning unrelated to aborn)."
+  },
   "abrasable": {
     "since": "2026-10-01",
     "reason": "Folded onto `abra`, costing 2.35 points. Flagged in the 2026-09-22 semantic audit (abrase from abrade, not abra) and confirmed on adversarial re-review (abra is not a word)."
@@ -63,13 +67,17 @@
     "since": "2026-10-01",
     "reason": "Folded onto `adultery`, costing 3.36 points. Flagged in the 2026-09-22 semantic audit (adulterize from adulterate, not adultery) and confirmed on adversarial re-review (adulterate sense differs from adultery)."
   },
+  "agamies": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `agami`, costing 0.23 points. Flagged in the 2026-09-22 semantic audit (agamies from agamy, not agami) and confirmed on adversarial re-review (agami is a bird)."
+  },
   "agoges": {
     "since": "2026-10-01",
     "reason": "Folded onto `agog`, costing 1.58 points. Flagged in the 2026-09-22 semantic audit (agoge is Spartan training, not agog) and confirmed on adversarial re-review (agoge unrelated to agog)."
   },
-  "aides": {
+  "agonistes": {
     "since": "2026-10-01",
-    "reason": "Folded onto `aid`, costing 1.88 points. Flagged in the 2026-09-22 semantic audit (aides plural of aide, not aid) and confirmed on adversarial re-review (aide distinct from aid)."
+    "reason": "Folded onto `agonist`, costing 1.81 points. Flagged in the 2026-09-22 semantic audit (agonistes Greek epithet, not agonist) and confirmed on adversarial re-review (Greek epithet, not agonist)."
   },
   "airshower": {
     "since": "2026-10-01",
@@ -78,6 +86,10 @@
   "aislings": {
     "since": "2026-10-01",
     "reason": "Folded onto `aisle`, costing 3.79 points. Flagged in the 2026-09-22 semantic audit (Irish vision poem, not aisle) and confirmed on adversarial re-review (aisling is an Irish poem, not aisle)."
+  },
+  "akenes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `aken`, costing 0.01 points. Flagged in the 2026-09-22 semantic audit (akene's base is akene) and confirmed on adversarial re-review (aken overshoots base akene)."
   },
   "akinete": {
     "since": "2026-10-01",
@@ -99,6 +111,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `alle`, costing 2.54 points. Flagged in the 2026-09-22 semantic audit (alle not the base) and confirmed on adversarial re-review (allee walk; alle not base)."
   },
+  "allemandes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `allemand`, costing 0.18 points. Flagged in the 2026-09-22 semantic audit (allemande dance vs allemand) and confirmed on adversarial re-review (overshot; base is allemande)."
+  },
   "alotted": {
     "since": "2026-10-01",
     "reason": "Folded onto `alot`, costing 3.94 points. Flagged in the 2026-09-22 semantic audit (misspelling of allotted) and confirmed on adversarial re-review (misspelling landing on non-word)."
@@ -118,6 +134,10 @@
   "amassing": {
     "since": "2026-10-01",
     "reason": "Folded onto `ama`, costing 0.92 points. Flagged in the 2026-09-22 semantic audit (amass verb, ama unrelated) and confirmed on adversarial re-review (ama unrelated to amass)."
+  },
+  "ambeers": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `ambe`, costing 0.48 points. Flagged in the 2026-09-22 semantic audit (ambeer not built on ambe) and confirmed on adversarial re-review (ambeer unrelated to ambe)."
   },
   "amenably": {
     "since": "2026-10-01",
@@ -147,6 +167,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `amp`, costing 1.64 points. Flagged in the 2026-09-22 semantic audit (from ample, not amp) and confirmed on adversarial re-review (from ample, not amp)."
   },
+  "analogises": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `analog`, costing 3.77 points. Flagged in the 2026-09-22 semantic audit (analogise from analogy, not analog) and confirmed on adversarial re-review (analogise from analogy, not analog)."
+  },
   "angu": {
     "since": "2026-10-01",
     "reason": "Folded onto `angus`, costing 3.23 points. Flagged in the 2026-09-22 semantic audit (angu not built on angus) and confirmed on adversarial re-review (merely shares letters with angus)."
@@ -175,6 +199,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `anti`, costing 3.98 points. Flagged in the 2026-09-22 semantic audit (plural of ante, not anti) and confirmed on adversarial re-review (ante is not anti)."
   },
+  "anthemises": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `anthemis`, costing 0.62 points. Flagged in the 2026-09-22 semantic audit (anthemise verb vs plant genus) and confirmed on adversarial re-review (Anthemis plant genus, unrelated verb)."
+  },
   "antiantidote": {
     "since": "2026-10-01",
     "reason": "Folded onto `dot`, costing 4.25 points. Flagged in the 2026-09-22 semantic audit (antidote is not anti-dot) and confirmed on adversarial re-review (antidote unrelated to dot)."
@@ -193,7 +221,7 @@
   },
   "antibody": {
     "since": "2026-09-27",
-    "reason": "A loan-translation of Antikörper: the `body` in it is the 19th-century sense of a material substance, and no reader supplies it -- an antibody is not a body the way a counterattack is an attack. The highest-impact reading the ungated prefix reaches (3.56 -> 5.40, `body`), and the one a player would call a bug.",
+    "reason": "A loan-translation of Antik\u00f6rper: the `body` in it is the 19th-century sense of a material substance, and no reader supplies it -- an antibody is not a body the way a counterattack is an attack. The highest-impact reading the ungated prefix reaches (3.56 -> 5.40, `body`), and the one a player would call a bug.",
     "scope": "prefix"
   },
   "antibrane": {
@@ -226,6 +254,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `dep`, costing 2.71 points. Flagged in the 2026-09-22 semantic audit (clipped antidepressant, not anti+dep) and confirmed on adversarial re-review (clipped antidepressant, not anti-dep)."
   },
+  "antidiarrhoeal": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `diarrhoeal`, costing 0.86 points. Flagged in the 2026-09-22 semantic audit (anti- reverses the meaning) and confirmed on adversarial re-review (anti- prefix retains diarrhoeal core)."
+  },
   "antidotal": {
     "since": "2026-09-27",
     "reason": "Of an antidote, and it needs its own entry: nothing folds an -al adjective back to its noun, so it reaches `dotal` (of a dowry) on its own. Same shape as `televisionally`.",
@@ -252,6 +284,10 @@
   "antients": {
     "since": "2026-10-01",
     "reason": "Folded onto `ent`, costing 3.23 points. Flagged in the 2026-09-22 semantic audit (antient archaic ancient, not ent) and confirmed on adversarial re-review (archaic ancient, unrelated to ent)."
+  },
+  "antiformin": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `formin`, costing 0.46 points. Flagged in the 2026-09-22 semantic audit (disinfectant, unrelated to formin) and confirmed on adversarial re-review (antiformin disinfectant, not formin)."
   },
   "antigen": {
     "since": "2026-09-27",
@@ -291,6 +327,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `metabolic`, costing 3.65 points. Flagged in the 2026-09-22 semantic audit (metabole is rhetorical figure) and confirmed on adversarial re-review (rhetorical figure, not metabolism)."
   },
+  "antimetry": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `metry`, costing 0.26 points. Flagged in the 2026-09-22 semantic audit (metry is not a word base) and confirmed on adversarial re-review (metry is not a word)."
+  },
   "antimony": {
     "since": "2026-09-27",
     "reason": "The element (Latin antimonium), not anti- + `mony`. The strip lands on the Scots `mony` and the reverse fold carries it to `monies`, so the metal scored 3.15 as money.",
@@ -316,6 +356,14 @@
   "antipathetically": {
     "since": "2026-10-01",
     "reason": "Folded onto `pathetic`, costing 4.27 points. Flagged in the 2026-09-22 semantic audit (antipathetic from antipathy, not pathetic) and confirmed on adversarial re-review (from antipathy, not pathetic)."
+  },
+  "antipathic": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `pathic`, costing 0.11 points. Flagged in the 2026-09-22 semantic audit (anti- prefix reverses meaning) and confirmed on adversarial re-review (antipathy sense, pathic unrelated)."
+  },
+  "antipathically": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `pathic`, costing 0.11 points. Flagged in the 2026-09-22 semantic audit (anti- reverses; pathic unrelated sense) and confirmed on adversarial re-review (antipathy sense, pathic unrelated)."
   },
   "antiphon": {
     "since": "2026-09-27",
@@ -357,6 +405,14 @@
     "since": "2026-10-01",
     "reason": "Folded onto `qua`, costing 2.57 points. Flagged in the 2026-09-22 semantic audit (antiqua is typeface, not qua) and confirmed on adversarial re-review (antiqua typeface, not qua)."
   },
+  "antiqueer": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `antique`, costing 3.98 points. Flagged in the 2026-09-22 semantic audit (anti- plus queer, not antique) and confirmed on adversarial re-review (anti plus queer, not antique)."
+  },
+  "antiquey": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `quey`, costing 0.59 points. Flagged in the 2026-09-22 semantic audit (antiquey from antique, not quey) and confirmed on adversarial re-review (quey is heifer, unrelated)."
+  },
   "antiquists": {
     "since": "2026-10-01",
     "reason": "Folded onto `quist`, costing 1.39 points. Flagged in the 2026-09-22 semantic audit (quist unrelated to antiquist) and confirmed on adversarial re-review (quist unrelated to antique)."
@@ -378,9 +434,29 @@
     "since": "2026-10-01",
     "reason": "Folded onto `tropics`, costing 3.01 points. Flagged in the 2026-09-22 semantic audit (tropic here means turning, not tropics) and confirmed on adversarial re-review (turning sense, not hot regions)."
   },
+  "antitropous": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `tropous`, costing 0.03 points. Flagged in the 2026-09-22 semantic audit (tropous is bound form, not word) and confirmed on adversarial re-review (tropous is bound form, not word)."
+  },
   "antiunionization": {
     "since": "2026-10-01",
     "reason": "Folded onto `ionization`, costing 2.83 points. Flagged in the 2026-09-22 semantic audit (from unionization, not ionization) and confirmed on adversarial re-review (from union, not ion)."
+  },
+  "apioses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `apio`, costing 0.21 points. Flagged in the 2026-09-22 semantic audit (apiose sugar, apio different word) and confirmed on adversarial re-review (apio is a different plant)."
+  },
+  "apodization": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `apod`, costing 0.76 points. Flagged in the 2026-09-22 semantic audit (apod not the base of apodize) and confirmed on adversarial re-review (apod sense drifted)."
+  },
+  "apodize": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `apod`, costing 0.76 points. Flagged in the 2026-09-22 semantic audit (apod not the base of apodize) and confirmed on adversarial re-review (apod sense drifted from apodize)."
+  },
+  "apodizer": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `apod`, costing 0.76 points. Flagged in the 2026-09-22 semantic audit (apod not the base of apodize) and confirmed on adversarial re-review (apod sense drifted)."
   },
   "appliedly": {
     "since": "2026-10-01",
@@ -410,6 +486,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `arch`, costing 3.23 points. Flagged in the 2026-09-22 semantic audit (archly means slyly, not arch) and confirmed on adversarial re-review (sly-arch homograph, not archway)."
   },
+  "arctia": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `arctium`, costing 0.18 points. Flagged in the 2026-09-22 semantic audit (different genus names) and confirmed on adversarial re-review (different genera entirely)."
+  },
   "areed": {
     "since": "2026-10-01",
     "reason": "Folded onto `are`, costing 8.24 points. Flagged in the 2026-09-22 semantic audit (are is verb form; -ed invalid) and confirmed on adversarial re-review (from archaic aread, not are)."
@@ -429,6 +509,10 @@
   "askeses": {
     "since": "2026-10-01",
     "reason": "Folded onto `ask`, costing 6.10 points. Flagged in the 2026-09-22 semantic audit (askesis is asceticism, unrelated) and confirmed on adversarial re-review (askesis is asceticism)."
+  },
+  "asplenia": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `asplenium`, costing 0.63 points. Flagged in the 2026-09-22 semantic audit (asplenia is spleen absence, not fern) and confirmed on adversarial re-review (asplenia not the fern Asplenium)."
   },
   "assessing": {
     "since": "2026-10-01",
@@ -450,29 +534,81 @@
     "since": "2026-10-01",
     "reason": "Folded onto `ate`, costing 3.39 points. Flagged in the 2026-09-22 semantic audit (ates is plural noun, overshot strip) and confirmed on adversarial re-review (overshoots onto eat's past tense)."
   },
+  "athels": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `atheling`, costing 0.43 points. Flagged in the 2026-09-22 semantic audit (athel is a tree, not atheling) and confirmed on adversarial re-review (athel tree vs atheling prince)."
+  },
   "atted": {
     "since": "2026-10-01",
     "reason": "Folded onto `att`, costing 3.09 points. Flagged in the 2026-09-22 semantic audit (att is a currency unit) and confirmed on adversarial re-review (from at; att is currency)."
+  },
+  "auguster": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `august`, costing 5.70 points. Flagged in the 2026-09-22 semantic audit (auguster from august adjective, month unrelated) and confirmed on adversarial re-review (month versus majestic homograph)."
   },
   "autodocking": {
     "since": "2026-10-01",
     "reason": "Docking automatically. Not built on `autodoc`."
   },
+  "automise": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `autom`, costing 0.70 points. Flagged in the 2026-09-22 semantic audit (autom is not a word) and confirmed on adversarial re-review (autom is not a word)."
+  },
+  "automiser": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `autom`, costing 0.70 points. Flagged in the 2026-09-22 semantic audit (autom is not a word) and confirmed on adversarial re-review (autom is not a word)."
+  },
+  "automize": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `autom`, costing 0.70 points. Flagged in the 2026-09-22 semantic audit (autom is not a word) and confirmed on adversarial re-review (autom is not a word)."
+  },
+  "automizer": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `autom`, costing 0.70 points. Flagged in the 2026-09-22 semantic audit (autom is not a word) and confirmed on adversarial re-review (autom is not a word)."
+  },
+  "automs": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `autom`, costing 0.70 points. Flagged in the 2026-09-22 semantic audit (autom is not a word) and confirmed on adversarial re-review (autom is not a word)."
+  },
+  "avocated": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `avocat`, costing 0.70 points. Flagged in the 2026-09-22 semantic audit (avocat is a lawyer; avocate unrelated) and confirmed on adversarial re-review (avocat is lawyer, unrelated)."
+  },
   "awnedness": {
     "since": "2026-10-01",
     "reason": "Folded onto `awning`, costing 2.38 points. Flagged in the 2026-09-22 semantic audit (awn is not awning) and confirmed on adversarial re-review (awn bristle versus awning canopy)."
+  },
+  "awnless": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `awning`, costing 0.38 points. Flagged in the 2026-09-22 semantic audit (awnless from awn, not awning) and confirmed on adversarial re-review (awn unrelated to awning)."
   },
   "awnlessness": {
     "since": "2026-10-01",
     "reason": "Folded onto `awning`, costing 2.38 points. Flagged in the 2026-09-22 semantic audit (awn is not awning) and confirmed on adversarial re-review (awn bristle versus awning canopy)."
   },
+  "ayres": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `ayr`, costing 0.09 points. Flagged in the 2026-09-22 semantic audit (base is ayre, not ayr) and confirmed on adversarial re-review (base is ayre, overshot)."
+  },
+  "baile": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `bailees`, costing 0.24 points. Flagged in the 2026-09-22 semantic audit (baile unrelated to bailee) and confirmed on adversarial re-review (baile unrelated to bailee)."
+  },
   "bailes": {
     "since": "2026-10-01",
     "reason": "Folded onto `bail`, costing 2.84 points. Flagged in the 2026-09-22 semantic audit (plural of baile, not bail) and confirmed on adversarial re-review (baile unrelated to bail)."
   },
+  "balanites": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `balanitis`, costing 0.54 points. Flagged in the 2026-09-22 semantic audit (balanites is plant genus, not balanitis) and confirmed on adversarial re-review (Balanites plant genus, not balanitis)."
+  },
   "balinger": {
     "since": "2026-10-01",
     "reason": "Folded onto `bale`, costing 3.63 points. Flagged in the 2026-09-22 semantic audit (balinger is a ship type) and confirmed on adversarial re-review (balinger is a ship, not from bale)."
+  },
+  "ballades": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `ballad`, costing 2.71 points. Flagged in the 2026-09-22 semantic audit (ballade is a distinct verse form) and confirmed on adversarial re-review (ballade distinct verse form)."
   },
   "ballases": {
     "since": "2026-10-01",
@@ -502,6 +638,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `barium`, costing 1.45 points. Flagged in the 2026-09-22 semantic audit (baria is barium oxide, distinct) and confirmed on adversarial re-review (baria is barium oxide, distinct)."
   },
+  "barnes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `barn`, costing 0.08 points. Flagged in the 2026-09-22 semantic audit (plural of barne, not barn) and confirmed on adversarial re-review (barne is a child)."
+  },
   "barrable": {
     "since": "2026-10-01",
     "reason": "Folded onto `barry`, costing 4.53 points. Flagged in the 2026-09-22 semantic audit (barry is unrelated, likely bar) and confirmed on adversarial re-review (base is bar, not barry)."
@@ -513,6 +653,10 @@
   "barriness": {
     "since": "2026-10-01",
     "reason": "Folded onto `barry`, costing 4.53 points. Flagged in the 2026-09-22 semantic audit (barry unrelated to barriness) and confirmed on adversarial re-review (base is bar, not barry)."
+  },
+  "barytones": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `baryton`, costing 0.67 points. Flagged in the 2026-09-22 semantic audit (baryton instrument, barytone voice) and confirmed on adversarial re-review (baryton instrument versus barytone voice)."
   },
   "basely": {
     "since": "2026-10-01",
@@ -541,6 +685,10 @@
   "batterable": {
     "since": "2026-10-01",
     "reason": "Folded onto `battery`, costing 4.92 points. Flagged in the 2026-09-22 semantic audit (from batter, not battery) and confirmed on adversarial re-review (from batter; battery is a sibling noun)."
+  },
+  "battleplanes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `battleplan`, costing 0.21 points. Flagged in the 2026-09-22 semantic audit (battleplane vs battleplan, different words) and confirmed on adversarial re-review (aircraft, not a plan)."
   },
   "bedlamer": {
     "since": "2026-10-01",
@@ -610,6 +758,14 @@
     "since": "2026-10-01",
     "reason": "Folded onto `bing`, costing 1.90 points. Flagged in the 2026-09-22 semantic audit (plural of binge, not bing) and confirmed on adversarial re-review (binge unrelated to bing)."
   },
+  "biomed": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `biome`, costing 0.61 points. Flagged in the 2026-09-22 semantic audit (biomed from biomedical, not biome) and confirmed on adversarial re-review (biomed from biomedical, not biome)."
+  },
+  "bipartible": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `biparty`, costing 0.08 points. Flagged in the 2026-09-22 semantic audit (from bipartite root, not biparty) and confirmed on adversarial re-review (bipartite root, not party)."
+  },
   "bistably": {
     "since": "2026-10-01",
     "reason": "Folded onto `bist`, costing 1.56 points. Flagged in the 2026-09-22 semantic audit (from bistable, not bist) and confirmed on adversarial re-review (bist is not a word)."
@@ -654,6 +810,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `blend`, costing 3.67 points. Flagged in the 2026-09-22 semantic audit (blende is a mineral, not blend) and confirmed on adversarial re-review (blende is a mineral, not blend)."
   },
+  "blessees": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `blesse`, costing 0.72 points. Flagged in the 2026-09-22 semantic audit (blessee, not blesse) and confirmed on adversarial re-review (blesse is not the base)."
+  },
   "blites": {
     "since": "2026-10-01",
     "reason": "Folded onto `blits`, costing 0.81 points. Flagged in the 2026-09-22 semantic audit (blites is plural of blite) and confirmed on adversarial re-review (blite plant, blit unrelated)."
@@ -674,9 +834,17 @@
     "since": "2026-10-01",
     "reason": "A form of `blowse`, a ruddy-faced woman. The -es strip reads `blows` and carries on to `blow`."
   },
+  "bluester": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `bluest`, costing 1.68 points. Flagged in the 2026-09-22 semantic audit (not built on superlative bluest) and confirmed on adversarial re-review (bluester not built on bluest)."
+  },
   "bocher": {
     "since": "2026-10-01",
     "reason": "Folded onto `boche`, costing 1.23 points. Flagged in the 2026-09-22 semantic audit (Yiddish bocher unrelated to boche) and confirmed on adversarial re-review (Yiddish bocher unrelated to boche)."
+  },
+  "bodes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `bod`, costing 0.64 points. Flagged in the 2026-09-22 semantic audit (bode is verb, bod person) and confirmed on adversarial re-review (bode verb, bod unrelated)."
   },
   "boily": {
     "since": "2026-10-01",
@@ -685,6 +853,10 @@
   "bombes": {
     "since": "2026-10-01",
     "reason": "Folded onto `bomb`, costing 4.80 points. Flagged in the 2026-09-22 semantic audit (bombe is a dessert) and confirmed on adversarial re-review (bombe is a dessert, not bomb)."
+  },
+  "bonesetting": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `boneset`, costing 0.33 points. Flagged in the 2026-09-22 semantic audit (boneset is a plant) and confirmed on adversarial re-review (boneset plant vs bone-setting)."
   },
   "botes": {
     "since": "2026-10-01",
@@ -709,6 +881,10 @@
   "braes": {
     "since": "2026-10-01",
     "reason": "Folded onto `bra`, costing 2.52 points. Flagged in the 2026-09-22 semantic audit (plural of brae, not bra) and confirmed on adversarial re-review (brae hillside, unrelated to bra)."
+  },
+  "brakies": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `braky`, costing 0.03 points. Flagged in the 2026-09-22 semantic audit (from brakie noun, not adjective) and confirmed on adversarial re-review (brakie noun, not adjective braky)."
   },
   "brandises": {
     "since": "2026-10-01",
@@ -757,6 +933,10 @@
   "brutter": {
     "since": "2026-10-01",
     "reason": "Folded onto `brut`, costing 2.22 points. Flagged in the 2026-09-22 semantic audit (brut is wine dryness, unrelated) and confirmed on adversarial re-review (brut wine versus brute)."
+  },
+  "buffes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `buff`, costing 3.61 points. Flagged in the 2026-09-22 semantic audit (plural of buffe/buff overshoot) and confirmed on adversarial re-review (buffe is armor, not buff)."
   },
   "bulles": {
     "since": "2026-10-01",
@@ -826,6 +1006,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `canny`, costing 2.64 points. Flagged in the 2026-09-22 semantic audit (from can, not canny) and confirmed on adversarial re-review (from can; canny is different sense)."
   },
+  "capellines": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `capellini`, costing 0.52 points. Flagged in the 2026-09-22 semantic audit (capelline is not capellini) and confirmed on adversarial re-review (capelline and capellini unrelated)."
+  },
   "capes": {
     "since": "2026-10-01",
     "reason": "Folded onto `cap`, costing 2.11 points. Flagged in the 2026-09-22 semantic audit (plural of cape, overshot) and confirmed on adversarial re-review (cape not from cap)."
@@ -882,6 +1066,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `caval`, costing 0.76 points. Flagged in the 2026-09-22 semantic audit (cavally fish, unrelated to caval) and confirmed on adversarial re-review (cavally fish, unrelated to caval)."
   },
+  "ceil": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `ceiling`, costing 3.18 points. Flagged in the 2026-09-22 semantic audit (ceil is a verb, coincidental) and confirmed on adversarial re-review (Ceil verb, ceiling coincidental overlap)."
+  },
   "centauries": {
     "since": "2026-10-01",
     "reason": "Folded onto `centauri`, costing 2.33 points. Flagged in the 2026-09-22 semantic audit (centaury plural, not centauri) and confirmed on adversarial re-review (centaury plant versus Centauri)."
@@ -898,9 +1086,17 @@
     "since": "2026-10-01",
     "reason": "Folded onto `morgan`, costing 4.48 points. Flagged in the 2026-09-22 semantic audit (unit of map distance, not morgan) and confirmed on adversarial re-review (unit named after T.H. Morgan)."
   },
+  "centipoise": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `poised`, costing 1.91 points. Flagged in the 2026-09-22 semantic audit (poise unit, not poised) and confirmed on adversarial re-review (poise viscosity unit versus poised)."
+  },
   "centisteres": {
     "since": "2026-10-01",
     "reason": "Folded onto `ster`, costing 1.85 points. Flagged in the 2026-09-22 semantic audit (ster not the base; stere is) and confirmed on adversarial re-review (ster not the base; stere)."
+  },
+  "ceratites": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `ceratitis`, costing 0.21 points. Flagged in the 2026-09-22 semantic audit (ceratite ammonite vs ceratitis inflammation) and confirmed on adversarial re-review (ammonite versus inflammation)."
   },
   "cercises": {
     "since": "2026-10-01",
@@ -928,7 +1124,7 @@
   },
   "champes": {
     "since": "2026-10-01",
-    "reason": "Folded onto `champ`, costing 4.04 points. Flagged in the 2026-09-22 semantic audit (champes from champ? ambiguous—champers/champagne) and confirmed on adversarial re-review (not a valid champ inflection)."
+    "reason": "Folded onto `champ`, costing 4.04 points. Flagged in the 2026-09-22 semantic audit (champes from champ? ambiguous\u2014champers/champagne) and confirmed on adversarial re-review (not a valid champ inflection)."
   },
   "chapes": {
     "since": "2026-10-01",
@@ -946,9 +1142,13 @@
     "since": "2026-10-01",
     "reason": "Folded onto `chara`, costing 2.55 points. Flagged in the 2026-09-22 semantic audit (chara not base of charas) and confirmed on adversarial re-review (chara unrelated to charas)."
   },
+  "chares": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `char`, costing 2.93 points. Flagged in the 2026-09-22 semantic audit (plural of chare, not char) and confirmed on adversarial re-review (Chare is chore, not char)."
+  },
   "chassed": {
     "since": "2026-10-01",
-    "reason": "Folded onto `cha`, costing 3.70 points. Flagged in the 2026-09-22 semantic audit (cha not base of chassed) and confirmed on adversarial re-review (from chassé; \"cha\" is unrelated)."
+    "reason": "Folded onto `cha`, costing 3.70 points. Flagged in the 2026-09-22 semantic audit (cha not base of chassed) and confirmed on adversarial re-review (from chass\u00e9; \"cha\" is unrelated)."
   },
   "chasses": {
     "since": "2026-10-01",
@@ -958,6 +1158,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `che`, costing 2.90 points. Flagged in the 2026-09-22 semantic audit (chees unrelated to che) and confirmed on adversarial re-review (unrelated to che)."
   },
+  "cheeter": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `cheet`, costing 0.60 points. Flagged in the 2026-09-22 semantic audit (cheeter from cheat, not cheet) and confirmed on adversarial re-review (cheet not the base)."
+  },
   "chelys": {
     "since": "2026-10-01",
     "reason": "Folded onto `che`, costing 3.44 points. Flagged in the 2026-09-22 semantic audit (chelys is lyre/tortoise, unrelated) and confirmed on adversarial re-review (chelys is lyre, unrelated)."
@@ -965,6 +1169,10 @@
   "chemokineses": {
     "since": "2026-10-01",
     "reason": "Plural of `chemokinesis`, movement in response to a chemical. A `chemokine` is a signalling protein, not its singular."
+  },
+  "cheremes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `cherem`, costing 0.54 points. Flagged in the 2026-09-22 semantic audit (cherem is ban; cheremes are phonology units) and confirmed on adversarial re-review (cherem ban, unrelated to chereme)."
   },
   "chiches": {
     "since": "2026-10-01",
@@ -1006,6 +1214,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `cholecystitis`, costing 0.95 points. Flagged in the 2026-09-22 semantic audit (cholecystites not plural of cholecystitis) and confirmed on adversarial re-review (not a plural of cholecystitis)."
   },
+  "chopes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `chopped`, costing 3.87 points. Flagged in the 2026-09-22 semantic audit (chopes not a form of chop) and confirmed on adversarial re-review (chope unrelated to chopped)."
+  },
   "chopines": {
     "since": "2026-10-01",
     "reason": "Folded onto `chopin`, costing 2.61 points. Flagged in the 2026-09-22 semantic audit (chopine is a shoe, not chopin) and confirmed on adversarial re-review (chopine shoe unrelated to chopin)."
@@ -1017,6 +1229,10 @@
   "choree": {
     "since": "2026-10-01",
     "reason": "Folded onto `choreic`, costing 1.76 points. Flagged in the 2026-09-22 semantic audit (metrical foot, unrelated to chorea) and confirmed on adversarial re-review (choree metrical foot, not chorea)."
+  },
+  "chori": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `chorus`, costing 3.01 points. Flagged in the 2026-09-22 semantic audit (chori not plural of chorus) and confirmed on adversarial re-review (Chori not plural of chorus)."
   },
   "chouses": {
     "since": "2026-10-01",
@@ -1034,6 +1250,14 @@
     "since": "2026-10-01",
     "reason": "A form of `chowse`, to dupe. Not `chow` with a tense ending."
   },
+  "chromised": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `chromis`, costing 0.41 points. Flagged in the 2026-09-22 semantic audit (verb chromise vs fish chromis) and confirmed on adversarial re-review (chromise unrelated to fish Chromis)."
+  },
+  "chromoly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `chromo`, costing 0.49 points. Flagged in the 2026-09-22 semantic audit (chromoly is alloy steel) and confirmed on adversarial re-review (chromoly is chrome-molybdenum, not chromo)."
+  },
   "cister": {
     "since": "2026-10-01",
     "reason": "Folded onto `cist`, costing 1.38 points. Flagged in the 2026-09-22 semantic audit (cister unrelated to cist) and confirmed on adversarial re-review (cist unrelated to cister)."
@@ -1045,6 +1269,18 @@
   "clades": {
     "since": "2026-10-01",
     "reason": "Folded onto `clad`, costing 2.09 points. Flagged in the 2026-09-22 semantic audit (clade plural, not clad) and confirmed on adversarial re-review (clade unrelated to clad)."
+  },
+  "clappable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `clappy`, costing 1.00 points. Flagged in the 2026-09-22 semantic audit (from clap, not clappy) and confirmed on adversarial re-review (clappy unrelated slang, not clap)."
+  },
+  "clapter": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `clapt`, costing 1.54 points. Flagged in the 2026-09-22 semantic audit (clapter unrelated to clapt) and confirmed on adversarial re-review (clapter unrelated to clapt)."
+  },
+  "clippable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `clippy`, costing 1.11 points. Flagged in the 2026-09-22 semantic audit (from clip, not clippy) and confirmed on adversarial re-review (clippy is unrelated slang/name)."
   },
   "clite": {
     "since": "2026-10-01",
@@ -1120,7 +1356,11 @@
   },
   "colones": {
     "since": "2026-10-01",
-    "reason": "Folded onto `colon`, costing 2.83 points. Flagged in the 2026-09-22 semantic audit (colón currency plural, not colon) and confirmed on adversarial re-review (colon currency named for person)."
+    "reason": "Folded onto `colon`, costing 2.83 points. Flagged in the 2026-09-22 semantic audit (col\u00f3n currency plural, not colon) and confirmed on adversarial re-review (colon currency named for person)."
+  },
+  "comates": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `comatic`, costing 0.22 points. Flagged in the 2026-09-22 semantic audit (comate is tufted/companion, unrelated) and confirmed on adversarial re-review (comate is tufted, not coma aberration)."
   },
   "combes": {
     "since": "2026-10-01",
@@ -1145,14 +1385,6 @@
   "comestibly": {
     "since": "2026-10-01",
     "reason": "Folded onto `comest`, costing 0.79 points. Flagged in the 2026-09-22 semantic audit (comest is a form of come) and confirmed on adversarial re-review (comest is from come)."
-  },
-  "comparees": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `compared`, costing 5.49 points. Flagged in the 2026-09-22 semantic audit (compared is wrong base form) and confirmed on adversarial re-review (wrong base form of compare)."
-  },
-  "comparingly": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `compared`, costing 5.49 points. Flagged in the 2026-09-22 semantic audit (compared is wrong base form) and confirmed on adversarial re-review (wrong base form of compare)."
   },
   "compinged": {
     "since": "2026-10-01",
@@ -1198,10 +1430,6 @@
     "since": "2026-10-01",
     "reason": "Folded onto `cong`, costing 2.70 points. Flagged in the 2026-09-22 semantic audit (congest, not cong) and confirmed on adversarial re-review (base is congest, not cong)."
   },
-  "congoer": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `congo`, costing 3.83 points. Flagged in the 2026-09-22 semantic audit (congo not base of congoer) and confirmed on adversarial re-review (con-goer, not the country Congo)."
-  },
   "conies": {
     "since": "2026-10-01",
     "reason": "Folded onto `conus`, costing 1.88 points. Flagged in the 2026-09-22 semantic audit (conies are rabbits, not conus) and confirmed on adversarial re-review (cony unrelated to conus)."
@@ -1213,6 +1441,10 @@
   "continuosly": {
     "since": "2026-10-01",
     "reason": "Folded onto `continuo`, costing 1.35 points. Flagged in the 2026-09-22 semantic audit (misspelled continuously, continuo unrelated) and confirmed on adversarial re-review (misspelling folded onto unrelated continuo)."
+  },
+  "controlees": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `controle`, costing 1.03 points. Flagged in the 2026-09-22 semantic audit (controle not a base form) and confirmed on adversarial re-review (controle is not a word)."
   },
   "conventing": {
     "since": "2026-10-01",
@@ -1229,6 +1461,10 @@
   "copered": {
     "since": "2026-10-01",
     "reason": "Folded onto `copers`, costing 0.95 points. Flagged in the 2026-09-22 semantic audit (copered not from copers; separate word) and confirmed on adversarial re-review (copered unrelated to copers)."
+  },
+  "copernicia": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `copernicium`, costing 0.02 points. Flagged in the 2026-09-22 semantic audit (plant genus versus element) and confirmed on adversarial re-review (palm genus versus chemical element)."
   },
   "copes": {
     "since": "2026-10-01",
@@ -1261,6 +1497,10 @@
   "cottise": {
     "since": "2026-10-01",
     "reason": "Folded onto `cott`, costing 1.72 points. Flagged in the 2026-09-22 semantic audit (cottise unrelated to cott) and confirmed on adversarial re-review (cott unrelated to cottise)."
+  },
+  "countercourant": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `courant`, costing 2.18 points. Flagged in the 2026-09-22 semantic audit (courant unrelated sense) and confirmed on adversarial re-review (courant sense unrelated)."
   },
   "counterculturalisms": {
     "since": "2026-10-01",
@@ -1305,6 +1545,10 @@
     "reason": "From French contrepartie, and not a part: the thing that corresponds to another, scored 5.78 as `part`. The `anti-`/`counter-` pair's other flagship misreading beside `antibody`.",
     "scope": "prefix"
   },
+  "counterphobe": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `phobe`, costing 1.06 points. Flagged in the 2026-09-22 semantic audit (phobe not a standalone base) and confirmed on adversarial re-review (phobe not a standalone base)."
+  },
   "counterpointe": {
     "since": "2026-10-01",
     "reason": "Folded onto `pointe`, costing 2.83 points. Flagged in the 2026-09-22 semantic audit (counterpoint is not pointe) and confirmed on adversarial re-review (counterpoint unrelated to pointe)."
@@ -1334,9 +1578,9 @@
     "since": "2026-10-01",
     "reason": "Folded onto `courteous`, costing 3.07 points. Flagged in the 2026-09-22 semantic audit (courtee from court, not courteous) and confirmed on adversarial re-review (wooing sense, not courteous politeness)."
   },
-  "cracklessly": {
+  "coxites": {
     "since": "2026-10-01",
-    "reason": "Folded onto `crack`, costing 4.76 points. Flagged in the 2026-09-22 semantic audit (from crackless? crackle-based unclear) and confirmed on adversarial re-review (crackle-based, not crack)."
+    "reason": "Folded onto `coxitis`, costing 0.71 points. Flagged in the 2026-09-22 semantic audit (coxites not plural of coxitis) and confirmed on adversarial re-review (coxites plural of coxite, not coxitis)."
   },
   "cracklier": {
     "since": "2026-10-01",
@@ -1349,6 +1593,10 @@
   "crackliness": {
     "since": "2026-10-01",
     "reason": "Folded onto `crack`, costing 4.76 points. Flagged in the 2026-09-22 semantic audit (from crackly/crackle, not crack) and confirmed on adversarial re-review (crackly from crackle, not crack)."
+  },
+  "crackly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `crack`, costing 3.59 points. Flagged in the 2026-09-22 semantic audit (from crackle; -ly overshot) and confirmed on adversarial re-review (from crackle, not crack)."
   },
   "crapes": {
     "since": "2026-10-01",
@@ -1370,6 +1618,14 @@
     "since": "2026-10-01",
     "reason": "Folded onto `croupy`, costing 1.39 points. Flagged in the 2026-09-22 semantic audit (croupiere unrelated to croupy) and confirmed on adversarial re-review (croupiere unrelated to croupy)."
   },
+  "crowly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `crow`, costing 3.90 points. Flagged in the 2026-09-22 semantic audit (from crowl? or crow+ly unclear) and confirmed on adversarial re-review (likely from crawl/crowl, unclear)."
+  },
+  "crumblier": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `crumbs`, costing 3.24 points. Flagged in the 2026-09-22 semantic audit (crumblier from crumbly, not crumbs) and confirmed on adversarial re-review (Crumbly from crumb; crumbs overshoot)."
+  },
   "crumply": {
     "since": "2026-10-01",
     "reason": "Folded onto `crump`, costing 2.37 points. Flagged in the 2026-09-22 semantic audit (crumply from crumple, not crump) and confirmed on adversarial re-review (crumple, not crump)."
@@ -1377,6 +1633,10 @@
   "cruses": {
     "since": "2026-10-01",
     "reason": "Folded onto `cru`, costing 1.52 points. Flagged in the 2026-09-22 semantic audit (plural of cruse, overshot) and confirmed on adversarial re-review (cru is wine vineyard, unrelated)."
+  },
+  "cubes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `cubs`, costing 0.65 points. Flagged in the 2026-09-22 semantic audit (plural of cube, not cub) and confirmed on adversarial re-review (cube unrelated to cub)."
   },
   "cubiclize": {
     "since": "2026-10-01",
@@ -1390,9 +1650,13 @@
     "since": "2026-10-01",
     "reason": "Folded onto `cunning`, costing 3.41 points. Flagged in the 2026-09-22 semantic audit (cunning not from verb cun) and confirmed on adversarial re-review (cunning sense drifted from cun)."
   },
-  "curateless": {
+  "curlable": {
     "since": "2026-10-01",
-    "reason": "Folded onto `curated`, costing 3.40 points. Flagged in the 2026-09-22 semantic audit (curateless not a curated form) and confirmed on adversarial re-review (clergy curate, different sense)."
+    "reason": "Folded onto `curly`, costing 3.62 points. Flagged in the 2026-09-22 semantic audit (from curl, not curly) and confirmed on adversarial re-review (curlable from curl, not curly)."
+  },
+  "curring": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `cur`, costing 1.92 points. Flagged in the 2026-09-22 semantic audit (curring is from cur? unclear verb) and confirmed on adversarial re-review (curr sound versus cur dog)."
   },
   "cuspides": {
     "since": "2026-10-01",
@@ -1434,6 +1698,14 @@
     "since": "2026-10-01",
     "reason": "Folded onto `cut`, costing 5.95 points. Flagged in the 2026-09-22 semantic audit (from cute, not cut) and confirmed on adversarial re-review (from cute, not cut)."
   },
+  "cybernates": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `cybernats`, costing 0.42 points. Flagged in the 2026-09-22 semantic audit (cybernats are nationalists, unrelated) and confirmed on adversarial re-review (cybernate unrelated to cybernats)."
+  },
+  "cybernating": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `cybernats`, costing 0.42 points. Flagged in the 2026-09-22 semantic audit (cybernats are nationalists, unrelated) and confirmed on adversarial re-review (cybernate unrelated to cybernats)."
+  },
   "cypreses": {
     "since": "2026-10-01",
     "reason": "Folded onto `cypris`, costing 1.46 points. Flagged in the 2026-09-22 semantic audit (cypris is an unrelated crustacean) and confirmed on adversarial re-review (cypris crustacean vs cypress tree)."
@@ -1441,6 +1713,14 @@
   "cytokineses": {
     "since": "2026-10-01",
     "reason": "Plural of `cytokinesis`, the division of a cell's cytoplasm. A `cytokine` is a signalling protein -- a different word, not its singular."
+  },
+  "dactyli": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `dactylis`, costing 0.43 points. Flagged in the 2026-09-22 semantic audit (plural of dactylus, not the genus) and confirmed on adversarial re-review (dactylus unrelated to genus Dactylis)."
+  },
+  "dactylies": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `dactylis`, costing 0.43 points. Flagged in the 2026-09-22 semantic audit (dactyly plural, not the genus) and confirmed on adversarial re-review (dactyly unrelated to genus Dactylis)."
   },
   "daffings": {
     "since": "2026-10-01",
@@ -1494,6 +1774,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `dang`, costing 3.69 points. Flagged in the 2026-09-22 semantic audit (from dangly, not dang) and confirmed on adversarial re-review (from dangly/dangle, not dang)."
   },
+  "dashingly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `dash`, costing 3.70 points. Flagged in the 2026-09-22 semantic audit (dashing means stylish, not dash) and confirmed on adversarial re-review (dashing means stylish, drifted)."
+  },
   "daylilies": {
     "since": "2026-10-01",
     "reason": "Folded onto `day`, costing 6.42 points. Flagged in the 2026-09-22 semantic audit (daylily is a flower) and confirmed on adversarial re-review (daylily is a flower)."
@@ -1510,6 +1794,26 @@
     "since": "2026-10-01",
     "reason": "Folded onto `debit`, costing 3.65 points. Flagged in the 2026-09-22 semantic audit (from bitter, not debit) and confirmed on adversarial re-review (from bitter, not debit)."
   },
+  "decanalisation": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decanal`, costing 0.19 points. Flagged in the 2026-09-22 semantic audit (decanal is aldehyde, unrelated) and confirmed on adversarial re-review (decanal is dean/aldehyde)."
+  },
+  "decanalise": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decanal`, costing 0.19 points. Flagged in the 2026-09-22 semantic audit (decanal aldehyde, unrelated sense) and confirmed on adversarial re-review (decanal is dean/aldehyde)."
+  },
+  "decanalization": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decanal`, costing 0.19 points. Flagged in the 2026-09-22 semantic audit (decanal is aldehyde, unrelated) and confirmed on adversarial re-review (decanal is dean/aldehyde)."
+  },
+  "decanalize": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decanal`, costing 0.19 points. Flagged in the 2026-09-22 semantic audit (decanal unrelated to canal/channel sense) and confirmed on adversarial re-review (decanal is dean/aldehyde)."
+  },
+  "decanally": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decanal`, costing 0.19 points. Flagged in the 2026-09-22 semantic audit (decanal aldehyde, unrelated sense) and confirmed on adversarial re-review (decanal is dean/aldehyde)."
+  },
   "decapoise": {
     "since": "2026-10-01",
     "reason": "Folded onto `poised`, costing 3.38 points. Flagged in the 2026-09-22 semantic audit (decapoise from poise unit, not poised) and confirmed on adversarial re-review (viscosity unit versus balanced poise)."
@@ -1522,6 +1826,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `bar`, costing 5.52 points. Flagged in the 2026-09-22 semantic audit (bar is pressure unit) and confirmed on adversarial re-review (pressure unit, not drinking bar)."
   },
+  "decimes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decim`, costing 0.23 points. Flagged in the 2026-09-22 semantic audit (decim is not base) and confirmed on adversarial re-review (decim is not a base)."
+  },
   "decisteres": {
     "since": "2026-10-01",
     "reason": "Folded onto `ster`, costing 1.85 points. Flagged in the 2026-09-22 semantic audit (ster not the base; stere is) and confirmed on adversarial re-review (ster not the base; stere)."
@@ -1533,6 +1841,10 @@
   "deles": {
     "since": "2026-10-01",
     "reason": "Folded onto `del`, costing 4.01 points. Flagged in the 2026-09-22 semantic audit (plural of dele, not del) and confirmed on adversarial re-review (dele is separate word)."
+  },
+  "delineable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `deline`, costing 0.56 points. Flagged in the 2026-09-22 semantic audit (deline not the base of delineable) and confirmed on adversarial re-review (deline is not the base)."
   },
   "demes": {
     "since": "2026-10-01",
@@ -1557,6 +1869,14 @@
   "dentes": {
     "since": "2026-10-01",
     "reason": "Folded onto `dent`, costing 3.35 points. Flagged in the 2026-09-22 semantic audit (dentes is Latin plural of dens/tooth) and confirmed on adversarial re-review (Latin teeth, unrelated to dent)."
+  },
+  "deratization": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `derating`, costing 0.86 points. Flagged in the 2026-09-22 semantic audit (deratization vs derating differ) and confirmed on adversarial re-review (deratization unrelated to derating)."
+  },
+  "deratize": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `derating`, costing 0.86 points. Flagged in the 2026-09-22 semantic audit (deratize vs derating, different words) and confirmed on adversarial re-review (de-rat-ize unrelated to derating)."
   },
   "deringing": {
     "since": "2026-10-01",
@@ -1598,6 +1918,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `digitalis`, costing 1.74 points. Flagged in the 2026-09-22 semantic audit (digitalis plant vs digitalise verb) and confirmed on adversarial re-review (digitalis plant, different sense)."
   },
+  "dimply": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `dimps`, costing 0.29 points. Flagged in the 2026-09-22 semantic audit (from dimple, not dimps) and confirmed on adversarial re-review (dimple unrelated to dimps)."
+  },
   "dinges": {
     "since": "2026-10-01",
     "reason": "Folded onto `ding`, costing 2.75 points. Flagged in the 2026-09-22 semantic audit (dinges likely from dingy/dinge) and confirmed on adversarial re-review (dinge dinginess, not ding)."
@@ -1617,6 +1941,10 @@
   "dippable": {
     "since": "2026-10-01",
     "reason": "Folded onto `dippy`, costing 1.72 points. Flagged in the 2026-09-22 semantic audit (dippable from dip, not dippy) and confirmed on adversarial re-review (dippy means crazy, unrelated)."
+  },
+  "distomer": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `distomes`, costing 0.52 points. Flagged in the 2026-09-22 semantic audit (distomer unrelated to distome) and confirmed on adversarial re-review (distomer stereochemistry, distome fluke)."
   },
   "distyly": {
     "since": "2026-10-01",
@@ -1642,6 +1970,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `dog`, costing 5.75 points. Flagged in the 2026-09-22 semantic audit (dogged means tenacious, not dog) and confirmed on adversarial re-review (dogged means tenacious, drifted)."
   },
+  "doggedly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `dog`, costing 3.80 points. Flagged in the 2026-09-22 semantic audit (dogged means persistent, drifted) and confirmed on adversarial re-review (dogged means persistent, drifted)."
+  },
   "doggednesses": {
     "since": "2026-10-01",
     "reason": "Folded onto `dog`, costing 5.75 points. Flagged in the 2026-09-22 semantic audit (dogged means tenacious, unrelated to dog) and confirmed on adversarial re-review (dogged means tenacious, drifted)."
@@ -1649,6 +1981,10 @@
   "doilied": {
     "since": "2026-10-01",
     "reason": "Folded onto `doy`, costing 1.66 points. Flagged in the 2026-09-22 semantic audit (doy is not the base) and confirmed on adversarial re-review (doy is not the base)."
+  },
+  "dolmens": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `dolman`, costing 0.46 points. Flagged in the 2026-09-22 semantic audit (dolmen is not dolman) and confirmed on adversarial re-review (dolmen unrelated to dolman)."
   },
   "dominability": {
     "since": "2026-10-01",
@@ -1710,6 +2046,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `draconic`, costing 1.09 points. Flagged in the 2026-09-22 semantic audit (barge versus dragon-like, unrelated) and confirmed on adversarial re-review (barge versus dragon-like, unrelated)."
   },
+  "dracones": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `draconis`, costing 1.10 points. Flagged in the 2026-09-22 semantic audit (dracones is plural draco, not draconis) and confirmed on adversarial re-review (draconis is genitive Latin, different form)."
+  },
   "dragonly": {
     "since": "2026-10-01",
     "reason": "Folded onto `dragon`, costing 4.76 points. Flagged in the 2026-09-22 semantic audit (dragonfly-like? not dragon adverb; unclear formation) and confirmed on adversarial re-review (unclear formation, not dragon adverb)."
@@ -1737,6 +2077,10 @@
   "dugs": {
     "since": "2026-10-01",
     "reason": "Folded onto `dug`, costing 2.98 points. Flagged in the 2026-09-22 semantic audit (dugs is udders, unrelated) and confirmed on adversarial re-review (dugs are teats, not dig's past)."
+  },
+  "dumple": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `dumpling`, costing 2.34 points. Flagged in the 2026-09-22 semantic audit (dumple not from dumpling) and confirmed on adversarial re-review (dumple unrelated to dumpling)."
   },
   "dunness": {
     "since": "2026-10-01",
@@ -1774,6 +2118,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `eames`, costing 2.15 points. Flagged in the 2026-09-22 semantic audit (eams unrelated to eames) and confirmed on adversarial re-review (eams unrelated to eames)."
   },
+  "eardropper": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `eardrops`, costing 0.14 points. Flagged in the 2026-09-22 semantic audit (eardropper is eavesdropper-like, not eardrops) and confirmed on adversarial re-review (eavesdropper, not eardrops)."
+  },
   "earnest": {
     "since": "2026-09-02",
     "reason": "Sincere, not \"most earn\". The bare -est fold's paired-degree check passes because `earner` is a word, and nothing in the spelling says the -er is agentive rather than comparative; the word has no base at all, so it is exempted by name."
@@ -1786,6 +2134,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `easter`, costing 4.35 points. Flagged in the 2026-09-22 semantic audit (from east/easterly, not Easter) and confirmed on adversarial re-review (from east; Easter is holiday)."
   },
+  "ecbole": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `ecbolic`, costing 0.39 points. Flagged in the 2026-09-22 semantic audit (rhetorical term vs abortifacient) and confirmed on adversarial re-review (ecbole rhetoric vs ecbolic drug)."
+  },
   "edificable": {
     "since": "2026-10-01",
     "reason": "Folded onto `edifice`, costing 2.70 points. Flagged in the 2026-09-22 semantic audit (edifice building; edify is the verb) and confirmed on adversarial re-review (from edify, not edifice)."
@@ -1797,6 +2149,10 @@
   "egises": {
     "since": "2026-10-01",
     "reason": "Folded onto `egi`, costing 1.13 points. Flagged in the 2026-09-22 semantic audit (egises is plural of aegis) and confirmed on adversarial re-review (egi is not a word)."
+  },
+  "elevenses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `eleven`, costing 3.49 points. Flagged in the 2026-09-22 semantic audit (elevenses is a meal, drifted) and confirmed on adversarial re-review (a snack, not the number)."
   },
   "elitest": {
     "since": "2026-10-01",
@@ -1814,9 +2170,29 @@
     "since": "2026-10-01",
     "reason": "Folded onto `ent`, costing 3.23 points. Flagged in the 2026-09-22 semantic audit (enting from ent? obscure, likely unrelated) and confirmed on adversarial re-review (no ent-based derivation)."
   },
+  "episcopable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `episcope`, costing 0.58 points. Flagged in the 2026-09-22 semantic audit (episcopable from bishop, not episcope) and confirmed on adversarial re-review (episcope projector, not bishop)."
+  },
+  "episcopise": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `episcope`, costing 0.58 points. Flagged in the 2026-09-22 semantic audit (episcopise from bishop, not episcope) and confirmed on adversarial re-review (episcope projector, not bishop)."
+  },
+  "episcopization": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `episcope`, costing 0.58 points. Flagged in the 2026-09-22 semantic audit (episcopization from bishop, not episcope) and confirmed on adversarial re-review (episcope projector, not bishop)."
+  },
+  "episcopize": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `episcope`, costing 0.58 points. Flagged in the 2026-09-22 semantic audit (episcopize from bishop, not episcope) and confirmed on adversarial re-review (episcope projector, not bishop)."
+  },
+  "equi": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `equus`, costing 0.47 points. Flagged in the 2026-09-22 semantic audit (equi is not a word form) and confirmed on adversarial re-review (equi is not equus form)."
+  },
   "equipes": {
     "since": "2026-10-01",
-    "reason": "Folded onto `equipped`, costing 4.57 points. Flagged in the 2026-09-22 semantic audit (equipes not form of equipped) and confirmed on adversarial re-review (équipe is a team, different word)."
+    "reason": "Folded onto `equipped`, costing 4.57 points. Flagged in the 2026-09-22 semantic audit (equipes not form of equipped) and confirmed on adversarial re-review (\u00e9quipe is a team, different word)."
   },
   "erasably": {
     "since": "2026-10-01",
@@ -1854,10 +2230,6 @@
     "since": "2026-10-01",
     "reason": "Folded onto `even`, costing 7.07 points. Flagged in the 2026-09-22 semantic audit (from evening, not even) and confirmed on adversarial re-review (evening, not level even)."
   },
-  "exaflop": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `flop`, costing 3.57 points. Flagged in the 2026-09-22 semantic audit (flop is FLOPS unit, drifted) and confirmed on adversarial re-review (FLOPS unit, not the word flop)."
-  },
   "exceedingly": {
     "since": "2026-10-01",
     "reason": "Folded onto `exceed`, costing 0.80 points. Flagged in the 2026-09-22 semantic audit (means very, not exceeding) and confirmed on adversarial re-review (means very, drifted from exceed)."
@@ -1882,9 +2254,29 @@
     "since": "2026-10-01",
     "reason": "Folded onto `exon`, costing 2.18 points. Flagged in the 2026-09-22 semantic audit (exonerable from exonerate) and confirmed on adversarial re-review (exonerate, not exon)."
   },
+  "expansibly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `expanse`, costing 3.07 points. Flagged in the 2026-09-22 semantic audit (expansible from expand, not expanse) and confirmed on adversarial re-review (Expand, not expanse)."
+  },
+  "exterminable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `extermine`, costing 0.03 points. Flagged in the 2026-09-22 semantic audit (extermine is not the base) and confirmed on adversarial re-review (extermine not a word; from exterminate)."
+  },
+  "eyering": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `eyer`, costing 0.59 points. Flagged in the 2026-09-22 semantic audit (eyering from eye+ring, not eyer) and confirmed on adversarial re-review (eyering from eye+ring, not eyer)."
+  },
   "eying": {
     "since": "2026-10-01",
     "reason": "Folded onto `ey`, costing 1.57 points. Flagged in the 2026-09-22 semantic audit (ey is not base) and confirmed on adversarial re-review (ey is not a word)."
+  },
+  "fabless": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `fab`, costing 2.51 points. Flagged in the 2026-09-22 semantic audit (fab unrelated; fabless is chip term) and confirmed on adversarial re-review (fabless from fabrication, not fab)."
+  },
+  "facies": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `facie`, costing 0.24 points. Flagged in the 2026-09-22 semantic audit (facies is its own word) and confirmed on adversarial re-review (facie is not a word)."
   },
   "famly": {
     "since": "2026-10-01",
@@ -1897,6 +2289,10 @@
   "fares": {
     "since": "2026-08-21",
     "reason": "The plural or third-person form of `fare`, not `far`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
+  },
+  "farfetches": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `farfetched`, costing 1.81 points. Flagged in the 2026-09-22 semantic audit (farfetches not verb of farfetched) and confirmed on adversarial re-review (farfetches not a verb form)."
   },
   "fascisize": {
     "since": "2026-10-01",
@@ -1998,6 +2394,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `flu`, costing 4.12 points. Flagged in the 2026-09-22 semantic audit (flued relates to flue, not flu) and confirmed on adversarial re-review (flue is not flu)."
   },
+  "fluer": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `flueric`, costing 0.17 points. Flagged in the 2026-09-22 semantic audit (fluer is not base of flueric) and confirmed on adversarial re-review (fluer unrelated to flueric)."
+  },
   "flues": {
     "since": "2026-10-01",
     "reason": "Folded onto `flu`, costing 2.85 points. Flagged in the 2026-09-22 semantic audit (flue is a duct, not flu) and confirmed on adversarial re-review (flue duct unrelated to flu)."
@@ -2034,6 +2434,30 @@
     "since": "2026-10-01",
     "reason": "Folded onto `forme`, costing 2.03 points. Flagged in the 2026-09-22 semantic audit (formee heraldic term, not forme) and confirmed on adversarial re-review (formee heraldic, unrelated to forme)."
   },
+  "formulability": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `formules`, costing 0.64 points. Flagged in the 2026-09-22 semantic audit (formules is not the base) and confirmed on adversarial re-review (formules not the base)."
+  },
+  "formulable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `formules`, costing 0.64 points. Flagged in the 2026-09-22 semantic audit (formules is not the base) and confirmed on adversarial re-review (formules not the base)."
+  },
+  "formulisation": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `formules`, costing 0.64 points. Flagged in the 2026-09-22 semantic audit (formules is not the base) and confirmed on adversarial re-review (formules not the base of formula)."
+  },
+  "formuliser": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `formules`, costing 0.64 points. Flagged in the 2026-09-22 semantic audit (formules is not the base) and confirmed on adversarial re-review (formules not the base)."
+  },
+  "formulizations": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `formules`, costing 0.64 points. Flagged in the 2026-09-22 semantic audit (formules is not the base) and confirmed on adversarial re-review (formules not the base)."
+  },
+  "formulizer": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `formules`, costing 0.64 points. Flagged in the 2026-09-22 semantic audit (formules is not the base) and confirmed on adversarial re-review (formules not the base)."
+  },
   "fortes": {
     "since": "2026-10-01",
     "reason": "Folded onto `fort`, costing 3.25 points. Flagged in the 2026-09-22 semantic audit (plural of forte, not fort) and confirmed on adversarial re-review (forte is a separate word)."
@@ -2065,6 +2489,18 @@
   "frassest": {
     "since": "2026-10-01",
     "reason": "Folded onto `fra`, costing 2.92 points. Flagged in the 2026-09-22 semantic audit (from frass, not fra) and confirmed on adversarial re-review (from frass; fra unrelated)."
+  },
+  "freester": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `freest`, costing 1.61 points. Flagged in the 2026-09-22 semantic audit (freester not a word form) and confirmed on adversarial re-review (freester not built on freest)."
+  },
+  "freeter": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `freet`, costing 0.62 points. Flagged in the 2026-09-22 semantic audit (freeter is Japanese term, unrelated) and confirmed on adversarial re-review (freet is superstition, unrelated)."
+  },
+  "friges": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `frigging`, costing 2.19 points. Flagged in the 2026-09-22 semantic audit (friges not from frigging) and confirmed on adversarial re-review (friges unrelated to frigging)."
   },
   "fritless": {
     "since": "2026-10-01",
@@ -2106,9 +2542,21 @@
     "since": "2026-10-01",
     "reason": "Folded onto `fungous`, costing 2.74 points. Flagged in the 2026-09-22 semantic audit (fungible unrelated to fungous) and confirmed on adversarial re-review (fungible unrelated to fungus)."
   },
+  "furriered": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `furry`, costing 3.57 points. Flagged in the 2026-09-22 semantic audit (furrier is fur trader, not furry) and confirmed on adversarial re-review (furrier is fur trader, not furry)."
+  },
   "fusees": {
     "since": "2026-10-01",
     "reason": "Folded onto `fuse`, costing 2.09 points. Flagged in the 2026-09-22 semantic audit (fusee is not fuse plural) and confirmed on adversarial re-review (fusee distinct from fuse)."
+  },
+  "fusileer": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `fusile`, costing 0.15 points. Flagged in the 2026-09-22 semantic audit (soldier vs molten, unrelated) and confirmed on adversarial re-review (fusil musket versus molten)."
+  },
+  "gaffes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `gaff`, costing 0.46 points. Flagged in the 2026-09-22 semantic audit (gaffe blunder, gaff hook) and confirmed on adversarial re-review (gaffe blunder vs gaff hook)."
   },
   "gainlier": {
     "since": "2026-10-01",
@@ -2154,9 +2602,9 @@
     "since": "2026-10-01",
     "reason": "Folded onto `gal`, costing 3.91 points. Flagged in the 2026-09-22 semantic audit (gally/gallying from gall, not gal) and confirmed on adversarial re-review (gally from gall, not gal)."
   },
-  "gamely": {
+  "gambeer": {
     "since": "2026-10-01",
-    "reason": "Folded onto `game`, costing 5.17 points. Flagged in the 2026-09-22 semantic audit (gamely means bravely, drifted meaning) and confirmed on adversarial re-review (gamely means bravely, drifted)."
+    "reason": "Folded onto `gambe`, costing 0.62 points. Flagged in the 2026-09-22 semantic audit (gambeer unrelated to gambe) and confirmed on adversarial re-review (gambe unrelated to gambeer)."
   },
   "ganglier": {
     "since": "2026-10-01",
@@ -2194,6 +2642,10 @@
     "since": "2026-08-24",
     "reason": "The anatomical bend (Latin, knee); its plural is `genua`. `genus` is an unrelated Latin noun the bare -s strip reads as this word's plural (8.87 -> 5.88)."
   },
+  "geraniales": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `geranial`, costing 0.41 points. Flagged in the 2026-09-22 semantic audit (plant order vs aldehyde) and confirmed on adversarial re-review (plant order vs aldehyde)."
+  },
   "germanes": {
     "since": "2026-10-01",
     "reason": "Folded onto `german`, costing 5.53 points. Flagged in the 2026-09-22 semantic audit (germane is unrelated word) and confirmed on adversarial re-review (nationality sense differs from germane)."
@@ -2230,6 +2682,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `glum`, costing 1.42 points. Flagged in the 2026-09-22 semantic audit (glume is botanical, not glum) and confirmed on adversarial re-review (glume botanical, glum unrelated)."
   },
+  "glutes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `glut`, costing 0.41 points. Flagged in the 2026-09-22 semantic audit (from gluteus, not glut) and confirmed on adversarial re-review (gluteus clipping, not glut)."
+  },
   "gnatter": {
     "since": "2026-10-01",
     "reason": "Folded onto `gnat`, costing 2.06 points. Flagged in the 2026-09-22 semantic audit (gnatter unrelated to gnat) and confirmed on adversarial re-review (gnatter unrelated to gnat)."
@@ -2250,6 +2706,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `gourd`, costing 1.96 points. Flagged in the 2026-09-22 semantic audit (gourde is currency, not gourd) and confirmed on adversarial re-review (gourde currency, not gourd)."
   },
+  "graciles": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `gracilis`, costing 1.81 points. Flagged in the 2026-09-22 semantic audit (gracilis muscle, graciles unrelated) and confirmed on adversarial re-review (graciles unrelated to gracilis muscle)."
+  },
   "gracilised": {
     "since": "2026-10-01",
     "reason": "Folded onto `gracilis`, costing 1.81 points. Flagged in the 2026-09-22 semantic audit (gracilis muscle, gracilise unrelated) and confirmed on adversarial re-review (gracilis is the anatomical muscle)."
@@ -2266,6 +2726,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `grade`, costing 5.10 points. Flagged in the 2026-09-22 semantic audit (gradely unrelated to grade) and confirmed on adversarial re-review (gradely is separate dialect word)."
   },
+  "grainering": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `grainers`, costing 0.83 points. Flagged in the 2026-09-22 semantic audit (grainer vs grain verb mismatch) and confirmed on adversarial re-review (anti- prefix; wait, grainer root shared)."
+  },
   "gramine": {
     "since": "2026-10-01",
     "reason": "Folded onto `gramineous`, costing 1.21 points. Flagged in the 2026-09-22 semantic audit (gramine is an alkaloid, unrelated) and confirmed on adversarial re-review (gramine alkaloid unrelated to gramineous)."
@@ -2278,18 +2742,6 @@
     "since": "2026-10-01",
     "reason": "Folded onto `granados`, costing 1.48 points. Flagged in the 2026-09-22 semantic audit (granados unrelated; granado plural) and confirmed on adversarial re-review (granados unrelated to granado)."
   },
-  "grangerisation": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `granger`, costing 3.16 points. Flagged in the 2026-09-22 semantic audit (from grangerize, not granger) and confirmed on adversarial re-review (from surname Granger, not farmer)."
-  },
-  "grangerization": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `granger`, costing 3.16 points. Flagged in the 2026-09-22 semantic audit (from grangerize, not granger) and confirmed on adversarial re-review (from surname Granger, not farmer)."
-  },
-  "grangerizer": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `granger`, costing 3.16 points. Flagged in the 2026-09-22 semantic audit (from grangerize, not granger) and confirmed on adversarial re-review (from surname Granger, not farmer)."
-  },
   "graveliest": {
     "since": "2026-10-01",
     "reason": "Folded onto `grave`, costing 4.62 points. Flagged in the 2026-09-22 semantic audit (graveliest from gravelly, not grave) and confirmed on adversarial re-review (gravelly from gravel, not grave)."
@@ -2297,6 +2749,18 @@
   "graveliness": {
     "since": "2026-10-01",
     "reason": "Folded onto `grave`, costing 4.62 points. Flagged in the 2026-09-22 semantic audit (graveliness from gravelly, not grave) and confirmed on adversarial re-review (gravelly from gravel, not grave)."
+  },
+  "grecise": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `grece`, costing 0.67 points. Flagged in the 2026-09-22 semantic audit (from Greek, not grece steps) and confirmed on adversarial re-review (grece is steps, unrelated to Greek)."
+  },
+  "grecization": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `grece`, costing 0.67 points. Flagged in the 2026-09-22 semantic audit (from Grecize, not grece steps) and confirmed on adversarial re-review (grece is steps, unrelated to Greek)."
+  },
+  "grecize": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `grece`, costing 0.67 points. Flagged in the 2026-09-22 semantic audit (from Greek, not grece steps) and confirmed on adversarial re-review (grece is steps, unrelated to Greek)."
   },
   "greeses": {
     "since": "2026-10-01",
@@ -2314,6 +2778,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `gril`, costing 1.10 points. Flagged in the 2026-09-22 semantic audit (grilses plural of grilse, overshot) and confirmed on adversarial re-review (grilse overstripped to gril)."
   },
+  "grimes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `grim`, costing 0.50 points. Flagged in the 2026-09-22 semantic audit (plural of grime, not grim) and confirmed on adversarial re-review (grime unrelated to grim)."
+  },
   "gripes": {
     "since": "2026-10-01",
     "reason": "Folded onto `grip`, costing 2.18 points. Flagged in the 2026-09-22 semantic audit (plural of gripe, overshot) and confirmed on adversarial re-review (gripe complaint versus grip)."
@@ -2329,10 +2797,6 @@
   "gristliness": {
     "since": "2026-10-01",
     "reason": "Folded onto `grist`, costing 2.35 points. Flagged in the 2026-09-22 semantic audit (from gristly, not grist) and confirmed on adversarial re-review (gristle cartilage versus grist grain)."
-  },
-  "gristly": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `grist`, costing 1.68 points. Flagged in the 2026-09-22 semantic audit (gristly means cartilaginous, not grist) and confirmed on adversarial re-review (gristly from gristle, not grist)."
   },
   "grogger": {
     "since": "2026-10-01",
@@ -2357,6 +2821,10 @@
   "gunging": {
     "since": "2026-10-01",
     "reason": "Folded onto `gung`, costing 2.46 points. Flagged in the 2026-09-22 semantic audit (gunge verb, not gung) and confirmed on adversarial re-review (from gunge; gung not base)."
+  },
+  "gurrier": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `gurry`, costing 0.72 points. Flagged in the 2026-09-22 semantic audit (gurrier from gur, not gurry) and confirmed on adversarial re-review (gurrier unrelated to gurry)."
   },
   "gynes": {
     "since": "2026-10-01",
@@ -2405,6 +2873,10 @@
   "handes": {
     "since": "2026-10-01",
     "reason": "Folded onto `hand`, costing 4.68 points. Flagged in the 2026-09-22 semantic audit (overshot -es on hand) and confirmed on adversarial re-review (overshot -es on hand)."
+  },
+  "haplessnesses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hap`, costing 2.85 points. Flagged in the 2026-09-22 semantic audit (hapless from hap, meaning drifted) and confirmed on adversarial re-review (hapless sense drifted from hap)."
   },
   "hardly": {
     "since": "2026-10-01",
@@ -2478,6 +2950,18 @@
     "since": "2026-10-01",
     "reason": "Folded onto `her`, costing 7.54 points. Flagged in the 2026-09-22 semantic audit (from hearse, not her) and confirmed on adversarial re-review (from hearse, not her)."
   },
+  "heterization": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `heter`, costing 0.37 points. Flagged in the 2026-09-22 semantic audit (heter is not a word) and confirmed on adversarial re-review (heter is not a base)."
+  },
+  "heterize": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `heter`, costing 0.37 points. Flagged in the 2026-09-22 semantic audit (heter is not a word) and confirmed on adversarial re-review (heter is not a base)."
+  },
+  "hinnible": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hinny`, costing 0.67 points. Flagged in the 2026-09-22 semantic audit (from Latin neigh, not hinny) and confirmed on adversarial re-review (hinnible from Latin, not hinny)."
+  },
   "hissingly": {
     "since": "2026-10-01",
     "reason": "Folded onto `his`, costing 7.78 points. Flagged in the 2026-09-22 semantic audit (from hissing, not his) and confirmed on adversarial re-review (from hiss, not his)."
@@ -2526,6 +3010,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `hominy`, costing 1.42 points. Flagged in the 2026-09-22 semantic audit (hominization from hominid, not hominy) and confirmed on adversarial re-review (hominization unrelated to hominy)."
   },
+  "homogen": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `homogenous`, costing 2.56 points. Flagged in the 2026-09-22 semantic audit (homogen not homogenous form) and confirmed on adversarial re-review (homogen not homogenous form)."
+  },
   "hones": {
     "since": "2026-10-01",
     "reason": "Folded onto `hon`, costing 2.25 points. Flagged in the 2026-09-22 semantic audit (hones from hone, not hon) and confirmed on adversarial re-review (hone sharpen versus hon honey)."
@@ -2542,6 +3030,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `hospital`, costing 4.65 points. Flagged in the 2026-09-22 semantic audit (overshot -es on hospital) and confirmed on adversarial re-review (overshot -es on hospital)."
   },
+  "hotelys": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hote`, costing 1.54 points. Flagged in the 2026-09-22 semantic audit (hote not the base) and confirmed on adversarial re-review (hote is not a word)."
+  },
   "housebotes": {
     "since": "2026-10-01",
     "reason": "Folded onto `housebot`, costing 1.06 points. Flagged in the 2026-09-22 semantic audit (housebote is legal wood right) and confirmed on adversarial re-review (housebot is not the base)."
@@ -2549,6 +3041,14 @@
   "houtings": {
     "since": "2026-10-01",
     "reason": "Folded onto `hout`, costing 1.70 points. Flagged in the 2026-09-22 semantic audit (houting is the fish, not hout) and confirmed on adversarial re-review (hout is not a word)."
+  },
+  "hoveler": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hovel`, costing 1.85 points. Flagged in the 2026-09-22 semantic audit (hoveler unclear relation to hovel) and confirmed on adversarial re-review (hoveler boatman, unrelated sense)."
+  },
+  "hoveller": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hovel`, costing 1.85 points. Flagged in the 2026-09-22 semantic audit (hoveller from hovel-dweller? uncertain letters) and confirmed on adversarial re-review (hoveller boatman, unrelated sense)."
   },
   "hoves": {
     "since": "2026-10-01",
@@ -2566,6 +3066,10 @@
     "since": "2026-10-01",
     "reason": "From `howl`. The -ly strip read it as `how`, and cost it 7.45 points."
   },
+  "https": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `http`, costing 0.56 points. Flagged in the 2026-09-22 semantic audit (distinct protocol, not plural) and confirmed on adversarial re-review (https distinct protocol label)."
+  },
   "hyding": {
     "since": "2026-10-01",
     "reason": "Folded onto `hyde`, costing 3.74 points. Flagged in the 2026-09-22 semantic audit (hyde unrelated proper noun) and confirmed on adversarial re-review (from hide; Hyde is a proper noun)."
@@ -2577,6 +3081,14 @@
   "illuster": {
     "since": "2026-10-01",
     "reason": "Folded onto `illusts`, costing 1.14 points. Flagged in the 2026-09-22 semantic audit (unrelated to illustration abbreviation) and confirmed on adversarial re-review (illust abbreviation unrelated to illuster)."
+  },
+  "illustrable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `illustre`, costing 0.56 points. Flagged in the 2026-09-22 semantic audit (from illustrate, not illustre) and confirmed on adversarial re-review (illustre not the base)."
+  },
+  "imbe": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `imbed`, costing 0.68 points. Flagged in the 2026-09-22 semantic audit (imbe is a plant fiber) and confirmed on adversarial re-review (imbe plant fiber, unrelated to imbed)."
   },
   "impassibly": {
     "since": "2026-10-01",
@@ -2622,6 +3134,22 @@
     "since": "2026-10-01",
     "reason": "Folded onto `imp`, costing 3.11 points. Flagged in the 2026-09-22 semantic audit (from impinge, not imp) and confirmed on adversarial re-review (from impinge, not imp)."
   },
+  "imprimes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `imprimis`, costing 0.70 points. Flagged in the 2026-09-22 semantic audit (imprimis unrelated Latin phrase) and confirmed on adversarial re-review (imprimes unrelated to imprimis)."
+  },
+  "impuned": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `impune`, costing 0.31 points. Flagged in the 2026-09-22 semantic audit (impune not a real base) and confirmed on adversarial re-review (impune is not a base)."
+  },
+  "impunible": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `impune`, costing 0.31 points. Flagged in the 2026-09-22 semantic audit (impune not a real base) and confirmed on adversarial re-review (impune is not a base)."
+  },
+  "inbe": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `inbeing`, costing 0.37 points. Flagged in the 2026-09-22 semantic audit (inbe is not a word) and confirmed on adversarial re-review (inbe is not a word)."
+  },
   "incased": {
     "since": "2026-10-01",
     "reason": "Folded onto `inca`, costing 2.58 points. Flagged in the 2026-09-22 semantic audit (incased from encase, not inca) and confirmed on adversarial re-review (encase, not inca)."
@@ -2650,6 +3178,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `indic`, costing 1.69 points. Flagged in the 2026-09-22 semantic audit (not related to Indic) and confirmed on adversarial re-review (indicible unrelated to Indic)."
   },
+  "inexacting": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `inexact`, costing 1.72 points. Flagged in the 2026-09-22 semantic audit (inexact adjective, inexacting different) and confirmed on adversarial re-review (inexacting differs from inexact)."
+  },
   "infantes": {
     "since": "2026-10-01",
     "reason": "Folded onto `infant`, costing 3.76 points. Flagged in the 2026-09-22 semantic audit (infante plural, Spanish prince) and confirmed on adversarial re-review (infante Spanish prince, distinct sense)."
@@ -2657,6 +3189,14 @@
   "ingenu": {
     "since": "2026-10-01",
     "reason": "Folded onto `ingenuous`, costing 1.33 points. Flagged in the 2026-09-22 semantic audit (ingenu noun, distinct word) and confirmed on adversarial re-review (ingenu distinct from ingenuous)."
+  },
+  "inlawing": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `inlaws`, costing 1.38 points. Flagged in the 2026-09-22 semantic audit (in-law noun, not inlaw verb sense) and confirmed on adversarial re-review (inlaw verb versus in-law relative)."
+  },
+  "inlying": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `inly`, costing 0.22 points. Flagged in the 2026-09-22 semantic audit (from inlie/inlying, not inly) and confirmed on adversarial re-review (inly is adverb inwardly)."
   },
   "innes": {
     "since": "2026-10-01",
@@ -2673,6 +3213,10 @@
   "interally": {
     "since": "2026-10-01",
     "reason": "Folded onto `interallied`, costing 1.29 points. Flagged in the 2026-09-22 semantic audit (interally not from interallied) and confirmed on adversarial re-review (interally unrelated to interallied)."
+  },
+  "interion": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `interionic`, costing 1.56 points. Flagged in the 2026-09-22 semantic audit (interion truncation of interionic) and confirmed on adversarial re-review (interion truncation, not a derivative)."
   },
   "intermissive": {
     "since": "2026-08-26",
@@ -2700,9 +3244,21 @@
     "since": "2026-10-01",
     "reason": "Folded onto `ironic`, costing 3.90 points. Flagged in the 2026-09-22 semantic audit (irone not from ironic) and confirmed on adversarial re-review (irone is a compound, unrelated to ironic)."
   },
+  "irrealisable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `irrealis`, costing 0.33 points. Flagged in the 2026-09-22 semantic audit (from realise, not irrealis) and confirmed on adversarial re-review (realise unrelated to irrealis)."
+  },
   "isling": {
     "since": "2026-10-01",
     "reason": "Folded onto `isle`, costing 3.88 points. Flagged in the 2026-09-22 semantic audit (isling from isle is doubtful) and confirmed on adversarial re-review (isling not derived from isle)."
+  },
+  "isocrat": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `isocratic`, costing 0.64 points. Flagged in the 2026-09-22 semantic audit (isocratic is chromatography, not isocrat) and confirmed on adversarial re-review (isocrat ruler versus isocratic chromatography)."
+  },
+  "jadedly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `jade`, costing 3.82 points. Flagged in the 2026-09-22 semantic audit (jaded unrelated to jade stone) and confirmed on adversarial re-review (jaded unrelated to jade stone)."
   },
   "jammable": {
     "since": "2026-10-01",
@@ -2738,7 +3294,7 @@
   },
   "jetes": {
     "since": "2026-10-01",
-    "reason": "Folded onto `jet`, costing 4.59 points. Flagged in the 2026-09-22 semantic audit (jeté is a ballet leap) and confirmed on adversarial re-review (ballet jeté, not jet)."
+    "reason": "Folded onto `jet`, costing 4.59 points. Flagged in the 2026-09-22 semantic audit (jet\u00e9 is a ballet leap) and confirmed on adversarial re-review (ballet jet\u00e9, not jet)."
   },
   "jettable": {
     "since": "2026-10-01",
@@ -2784,6 +3340,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `kay`, costing 4.08 points. Flagged in the 2026-09-22 semantic audit (from kail/kale, not kay) and confirmed on adversarial re-review (from kail, not kay)."
   },
+  "kanates": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `kanat`, costing 0.15 points. Flagged in the 2026-09-22 semantic audit (kanate/khanate, not qanat) and confirmed on adversarial re-review (khanate versus qanat)."
+  },
   "kavases": {
     "since": "2026-10-01",
     "reason": "Folded onto `kava`, costing 2.02 points. Flagged in the 2026-09-22 semantic audit (kavas/kavass not kava) and confirmed on adversarial re-review (kavass unrelated to kava)."
@@ -2800,6 +3360,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `keno`, costing 2.02 points. Flagged in the 2026-09-22 semantic audit (kenosis plural, not keno) and confirmed on adversarial re-review (kenosis unrelated to keno)."
   },
+  "kermi": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `kermis`, costing 0.18 points. Flagged in the 2026-09-22 semantic audit (kermis not pluralized as kermi) and confirmed on adversarial re-review (kermis is the base word)."
+  },
   "ketoses": {
     "since": "2026-10-01",
     "reason": "Folded onto `keto`, costing 1.75 points. Flagged in the 2026-09-22 semantic audit (ketose sugar, not keto diet) and confirmed on adversarial re-review (ketose sugar versus keto diet)."
@@ -2815,10 +3379,6 @@
   "kilobar": {
     "since": "2026-10-01",
     "reason": "Folded onto `bar`, costing 4.88 points. Flagged in the 2026-09-22 semantic audit (kilobar unit, not bar sense) and confirmed on adversarial re-review (pressure unit versus drinking bar)."
-  },
-  "kiloflop": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `flop`, costing 3.57 points. Flagged in the 2026-09-22 semantic audit (flop is FLOPS unit, drifted) and confirmed on adversarial re-review (FLOPS unit, not the word flop)."
   },
   "kilogray": {
     "since": "2026-10-01",
@@ -2863,6 +3423,10 @@
   "kores": {
     "since": "2026-10-01",
     "reason": "Folded onto `kors`, costing 2.28 points. Flagged in the 2026-09-22 semantic audit (kore plural, kors mismatch) and confirmed on adversarial re-review (kore statue versus kors)."
+  },
+  "lache": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `laches`, costing 0.32 points. Flagged in the 2026-09-22 semantic audit (laches is separate legal term) and confirmed on adversarial re-review (laches legal doctrine unrelated)."
   },
   "lading": {
     "since": "2026-08-26",
@@ -2915,6 +3479,10 @@
   "lares": {
     "since": "2026-10-01",
     "reason": "Folded onto `lars`, costing 2.00 points. Flagged in the 2026-09-22 semantic audit (lares are Roman gods, not lars) and confirmed on adversarial re-review (lares unrelated to lars)."
+  },
+  "larves": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `larf`, costing 0.56 points. Flagged in the 2026-09-22 semantic audit (larve is not larf) and confirmed on adversarial re-review (larve not from larf)."
   },
   "lases": {
     "since": "2026-10-01",
@@ -2972,6 +3540,26 @@
     "since": "2026-10-01",
     "reason": "Folded onto `lighter`, costing 4.20 points. Flagged in the 2026-09-22 semantic audit (from lighter/lighten, meaning drift) and confirmed on adversarial re-review (lighter the barge, different word)."
   },
+  "likelier": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `like`, costing 6.11 points. Flagged in the 2026-09-22 semantic audit (likely means probable, drifted) and confirmed on adversarial re-review (likely means probable, drifted)."
+  },
+  "likelies": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `like`, costing 7.71 points. Flagged in the 2026-09-22 semantic audit (from likely, not like) and confirmed on adversarial re-review (likely means probable, drifted)."
+  },
+  "likeliest": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `like`, costing 6.14 points. Flagged in the 2026-09-22 semantic audit (likely means probable, drifted) and confirmed on adversarial re-review (likely means probable, drifted)."
+  },
+  "likelily": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `like`, costing 7.71 points. Flagged in the 2026-09-22 semantic audit (from likely, -ly strip) and confirmed on adversarial re-review (likely means probable, drifted)."
+  },
+  "likelinesses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `like`, costing 7.71 points. Flagged in the 2026-09-22 semantic audit (from likely, not like) and confirmed on adversarial re-review (likely means probable, drifted)."
+  },
   "lillies": {
     "since": "2026-10-01",
     "reason": "Folded onto `lil`, costing 2.71 points. Flagged in the 2026-09-22 semantic audit (lillies is lilies, base lily) and confirmed on adversarial re-review (lil is not the base)."
@@ -2979,6 +3567,10 @@
   "limen": {
     "since": "2026-08-21",
     "reason": "The psychophysics term for a sensory threshold, not the plural of `liman` (a lagoon). The -men rule is right for 300-odd words and wrong here; a measured word deserves its own number."
+  },
+  "linesider": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `lineside`, costing 0.22 points. Flagged in the 2026-09-22 semantic audit (lineside is trackside area; linesider fish) and confirmed on adversarial re-review (fish name, not trackside)."
   },
   "lipases": {
     "since": "2026-10-01",
@@ -2991,6 +3583,14 @@
   "lites": {
     "since": "2026-10-01",
     "reason": "Folded onto `lit`, costing 2.68 points. Flagged in the 2026-09-22 semantic audit (plural of lite, not lit) and confirmed on adversarial re-review (lite plural, not lit)."
+  },
+  "littly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `littlies`, costing 0.27 points. Flagged in the 2026-09-22 semantic audit (adverb-looking; littlies unrelated form) and confirmed on adversarial re-review (little unrelated to littlies)."
+  },
+  "loathest": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `loathing`, costing 2.96 points. Flagged in the 2026-09-22 semantic audit (loath the adjective, not loathing) and confirmed on adversarial re-review (Loath adjective, not loathing)."
   },
   "locales": {
     "since": "2026-10-01",
@@ -3007,6 +3607,10 @@
   "lollies": {
     "since": "2026-10-01",
     "reason": "Folded onto `lol`, costing 3.87 points. Flagged in the 2026-09-22 semantic audit (lollies are candies, not lol) and confirmed on adversarial re-review (lolly is candy; lol unrelated)."
+  },
+  "lopes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `lop`, costing 0.07 points. Flagged in the 2026-09-22 semantic audit (plural of lope, -s overshot) and confirmed on adversarial re-review (lope is not lop)."
   },
   "loues": {
     "since": "2026-10-01",
@@ -3104,10 +3708,6 @@
     "since": "2026-10-01",
     "reason": "Folded onto `marri`, costing 1.54 points. Flagged in the 2026-09-22 semantic audit (marri is not the base) and confirmed on adversarial re-review (marri is an unrelated tree)."
   },
-  "marriers": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `married`, costing 5.56 points. Flagged in the 2026-09-22 semantic audit (marrier from marry, not married) and confirmed on adversarial re-review (marrier from marry, not married)."
-  },
   "marver": {
     "since": "2026-10-01",
     "reason": "Folded onto `marv`, costing 2.62 points. Flagged in the 2026-09-22 semantic audit (marver unrelated to marv) and confirmed on adversarial re-review (marv is not a word)."
@@ -3119,6 +3719,10 @@
   "masticability": {
     "since": "2026-10-01",
     "reason": "Folded onto `mastic`, costing 1.72 points. Flagged in the 2026-09-22 semantic audit (masticate, not mastic resin) and confirmed on adversarial re-review (mastic resin, not masticate)."
+  },
+  "matelotes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `matelots`, costing 0.52 points. Flagged in the 2026-09-22 semantic audit (matelote stew, matelot sailor) and confirmed on adversarial re-review (matelote stew, matelot sailor)."
   },
   "matheses": {
     "since": "2026-10-01",
@@ -3140,9 +3744,17 @@
     "since": "2026-10-01",
     "reason": "Folded onto `matric`, costing 2.02 points. Flagged in the 2026-09-22 semantic audit (matric unrelated to matrix) and confirmed on adversarial re-review (matric is not the base)."
   },
+  "mealies": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `mealy`, costing 0.01 points. Flagged in the 2026-09-22 semantic audit (mealie is maize, not mealy) and confirmed on adversarial re-review (mealie is maize, unrelated)."
+  },
   "megaflop": {
     "since": "2026-10-01",
     "reason": "Folded onto `flop`, costing 3.49 points. Flagged in the 2026-09-22 semantic audit (megaflop from flops/FLOPS or flop? ambiguous) and confirmed on adversarial re-review (FLOPS computing unit, not flop)."
+  },
+  "megaly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `mega`, costing 4.21 points. Flagged in the 2026-09-22 semantic audit (megaly is medical suffix, not mega) and confirmed on adversarial re-review (-ly strip overshot; Greek megas)."
   },
   "melam": {
     "since": "2026-10-01",
@@ -3176,6 +3788,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `metabolic`, costing 3.65 points. Flagged in the 2026-09-22 semantic audit (metabole is rhetorical figure) and confirmed on adversarial re-review (metabole rhetorical figure, unrelated)."
   },
+  "metatable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `metate`, costing 0.34 points. Flagged in the 2026-09-22 semantic audit (metatable unrelated to metate) and confirmed on adversarial re-review (metatable is meta+table, not metate)."
+  },
   "metes": {
     "since": "2026-10-01",
     "reason": "Folded onto `met`, costing 4.67 points. Flagged in the 2026-09-22 semantic audit (mete is to allot) and confirmed on adversarial re-review (mete means allot, not met)."
@@ -3203,6 +3819,10 @@
   "micromolar": {
     "since": "2026-10-01",
     "reason": "Folded onto `molar`, costing 2.07 points. Flagged in the 2026-09-22 semantic audit (micromolar concentration, not tooth molar) and confirmed on adversarial re-review (molar concentration vs tooth molar)."
+  },
+  "microtuber": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `microtubes`, costing 0.14 points. Flagged in the 2026-09-22 semantic audit (microtuber is tuber, not microtube) and confirmed on adversarial re-review (small tuber, not microtube)."
   },
   "milles": {
     "since": "2026-10-01",
@@ -3232,6 +3852,14 @@
     "since": "2026-10-01",
     "reason": "Folded onto `ming`, costing 3.18 points. Flagged in the 2026-09-22 semantic audit (minge unrelated to ming) and confirmed on adversarial re-review (minge unrelated to ming)."
   },
+  "mingily": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `mingi`, costing 0.68 points. Flagged in the 2026-09-22 semantic audit (from mingy; mingi is unrelated) and confirmed on adversarial re-review (mingi unrelated to mingy)."
+  },
+  "minginess": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `mingi`, costing 0.68 points. Flagged in the 2026-09-22 semantic audit (from mingy; mingi is unrelated) and confirmed on adversarial re-review (mingi unrelated to mingy)."
+  },
   "minutest": {
     "since": "2026-10-01",
     "reason": "Folded onto `minutes`, costing 4.95 points. Flagged in the 2026-09-22 semantic audit (superlative of minute, not minutes) and confirmed on adversarial re-review (minute tiny versus minutes of time)."
@@ -3243,6 +3871,14 @@
   "mises": {
     "since": "2026-10-01",
     "reason": "Folded onto `mis`, costing 1.42 points. Flagged in the 2026-09-22 semantic audit (mis is not base) and confirmed on adversarial re-review (mis is not the base)."
+  },
+  "misles": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `misled`, costing 3.18 points. Flagged in the 2026-09-22 semantic audit (misle is back-formation, drifted meaning) and confirmed on adversarial re-review (Misle drifted back-formation)."
+  },
+  "mislest": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `misled`, costing 3.18 points. Flagged in the 2026-09-22 semantic audit (mislest not superlative of misled) and confirmed on adversarial re-review (Not a superlative of misled)."
   },
   "mislies": {
     "since": "2026-10-01",
@@ -3259,6 +3895,10 @@
   "moches": {
     "since": "2026-10-01",
     "reason": "Folded onto `mochi`, costing 2.00 points. Flagged in the 2026-09-22 semantic audit (moche unrelated to mochi) and confirmed on adversarial re-review (moche unrelated to mochi)."
+  },
+  "moider": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `moid`, costing 0.54 points. Flagged in the 2026-09-22 semantic audit (moider unrelated to moid) and confirmed on adversarial re-review (moid is not related)."
   },
   "moilies": {
     "since": "2026-10-01",
@@ -3356,6 +3996,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `multi`, costing 4.94 points. Flagged in the 2026-09-22 semantic audit (head is size, not multi) and confirmed on adversarial re-review (multi is a prefix, head is size)."
   },
+  "multitaper": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `multitap`, costing 0.14 points. Flagged in the 2026-09-22 semantic audit (multitaper is taper, not multitap) and confirmed on adversarial re-review (from taper, not tap)."
+  },
   "mummings": {
     "since": "2026-10-01",
     "reason": "Folded onto `mum`, costing 4.76 points. Flagged in the 2026-09-22 semantic audit (mumming from mummer, not mum) and confirmed on adversarial re-review (mumming from mummer, not mum)."
@@ -3375,6 +4019,10 @@
   "mussing": {
     "since": "2026-10-01",
     "reason": "Folded onto `mus`, costing 2.60 points. Flagged in the 2026-09-22 semantic audit (mussing from muss, not mus) and confirmed on adversarial re-review (base is muss, not mus)."
+  },
+  "musteeses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `muste`, costing 0.70 points. Flagged in the 2026-09-22 semantic audit (\"muste\" is not the base) and confirmed on adversarial re-review (muste is not the base)."
   },
   "nabes": {
     "since": "2026-10-01",
@@ -3448,6 +4096,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `nephritis`, costing 1.47 points. Flagged in the 2026-09-22 semantic audit (nephrite mineral, nephritis disease) and confirmed on adversarial re-review (nephrite mineral vs nephritis disease)."
   },
+  "nerite": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `neritic`, costing 0.43 points. Flagged in the 2026-09-22 semantic audit (snail versus coastal zone) and confirmed on adversarial re-review (nerite snail vs neritic zone)."
+  },
   "nettlier": {
     "since": "2026-10-01",
     "reason": "Folded onto `nett`, costing 1.99 points. Flagged in the 2026-09-22 semantic audit (from nettly/nettle, not nett) and confirmed on adversarial re-review (nett not the base; nettle)."
@@ -3471,6 +4123,10 @@
   "newsness": {
     "since": "2026-10-01",
     "reason": "Folded onto `new`, costing 7.47 points. Flagged in the 2026-09-22 semantic audit (from news, not new) and confirmed on adversarial re-review (news drifted to reports sense)."
+  },
+  "niffered": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `niff`, costing 0.30 points. Flagged in the 2026-09-22 semantic audit (niffer is to barter, not niff) and confirmed on adversarial re-review (niffer barter unrelated to niff)."
   },
   "nimbies": {
     "since": "2026-10-01",
@@ -3508,6 +4164,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `nom`, costing 2.18 points. Flagged in the 2026-09-22 semantic audit (nome not plural of nom) and confirmed on adversarial re-review (nome district versus nom)."
   },
+  "nomo": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `nomos`, costing 0.42 points. Flagged in the 2026-09-22 semantic audit (nomo not form of nomos) and confirmed on adversarial re-review (nomo is not a nomos form)."
+  },
   "nonagonal": {
     "since": "2026-08-26",
     "reason": "Of a `nonagon`, not non- + `agonal`. `agonal` is a free word meaning `of the death throes`, which is as far from nine-sidedness as the table gets.",
@@ -3517,13 +4177,33 @@
     "since": "2026-10-01",
     "reason": "Folded onto `nonce`, costing 2.03 points. Flagged in the 2026-09-22 semantic audit (non-cable, unrelated to nonce) and confirmed on adversarial re-review (noncable unrelated to nonce)."
   },
+  "noncoming": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `noncom`, costing 0.25 points. Flagged in the 2026-09-22 semantic audit (noncoming unrelated to noncom) and confirmed on adversarial re-review (noncom is noncommissioned officer)."
+  },
+  "noncoring": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `noncore`, costing 0.39 points. Flagged in the 2026-09-22 semantic audit (noncoring is about coring, noncore different) and confirmed on adversarial re-review (noncoring vs noncore differ)."
+  },
   "nones": {
     "since": "2026-10-01",
     "reason": "Folded onto `non`, costing 4.81 points. Flagged in the 2026-09-22 semantic audit (nones unrelated to non) and confirmed on adversarial re-review (nones unrelated; non is no word)."
   },
+  "nonhomeless": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `nonhome`, costing 0.52 points. Flagged in the 2026-09-22 semantic audit (nonhome is not the base) and confirmed on adversarial re-review (nonhome is not a base)."
+  },
   "nonjurable": {
     "since": "2026-10-01",
     "reason": "Folded onto `nonjury`, costing 2.04 points. Flagged in the 2026-09-22 semantic audit (nonjurable unrelated to jury trials) and confirmed on adversarial re-review (nonjurable from juror, not nonjury)."
+  },
+  "nonlead": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `nonleaded`, costing 0.48 points. Flagged in the 2026-09-22 semantic audit (non-leader vs non-leaded, different words) and confirmed on adversarial re-review (non-lead metal vs non-leaded)."
+  },
+  "nonleader": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `nonleaded`, costing 0.48 points. Flagged in the 2026-09-22 semantic audit (non-leader vs non-leaded, different words) and confirmed on adversarial re-review (leader unrelated to leaded)."
   },
   "nonliver": {
     "since": "2026-10-01",
@@ -3532,6 +4212,10 @@
   "nonly": {
     "since": "2026-10-01",
     "reason": "Folded onto `non`, costing 6.03 points. Flagged in the 2026-09-22 semantic audit (non is prefix/vote, not base) and confirmed on adversarial re-review (non is a prefix)."
+  },
+  "nonnew": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `nonnews`, costing 0.09 points. Flagged in the 2026-09-22 semantic audit (news is unrelated to new) and confirmed on adversarial re-review (news unrelated to new)."
   },
   "nonpolite": {
     "since": "2026-10-01",
@@ -3548,6 +4232,18 @@
   "nonresponsible": {
     "since": "2026-10-01",
     "reason": "Folded onto `nonresponses`, costing 1.27 points. Flagged in the 2026-09-22 semantic audit (from responsible, not nonresponse) and confirmed on adversarial re-review (nonresponse unrelated to responsible)."
+  },
+  "nonsecretable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `nonsecret`, costing 0.66 points. Flagged in the 2026-09-22 semantic audit (from secrete, not secret) and confirmed on adversarial re-review (secrete unrelated to secret sense)."
+  },
+  "nonsecreted": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `nonsecret`, costing 0.66 points. Flagged in the 2026-09-22 semantic audit (nonsecreted from secrete, not secret) and confirmed on adversarial re-review (secrete unrelated to secret sense)."
+  },
+  "nonsecretories": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `nonsecretory`, costing 0.66 points. Flagged in the 2026-09-22 semantic audit (secretory relates to secrete, not secret) and confirmed on adversarial re-review (secretory from secrete, not secret)."
   },
   "nonstated": {
     "since": "2026-10-01",
@@ -3577,6 +4273,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `octo`, costing 1.85 points. Flagged in the 2026-09-22 semantic audit (octose sugar, not octo) and confirmed on adversarial re-review (octose sugar, octo not base)."
   },
+  "odds": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `odd`, costing 0.20 points. Flagged in the 2026-09-22 semantic audit (plural of odd overshot; odds separate) and confirmed on adversarial re-review (odds is a separate word)."
+  },
   "offring": {
     "since": "2026-10-01",
     "reason": "Folded onto `offres`, costing 2.71 points. Flagged in the 2026-09-22 semantic audit (unrelated fragments, not a form) and confirmed on adversarial re-review (unrelated fragments, not a form)."
@@ -3584,6 +4284,10 @@
   "oncogeneses": {
     "since": "2026-10-01",
     "reason": "Folded onto `oncogene`, costing 1.83 points. Flagged in the 2026-09-22 semantic audit (oncogenesis vs oncogene, different words) and confirmed on adversarial re-review (oncogenesis distinct from oncogene)."
+  },
+  "onslaughter": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `onslaught`, costing 3.07 points. Flagged in the 2026-09-22 semantic audit (onslaught has no agent sense) and confirmed on adversarial re-review (Onslaught has no agent form)."
   },
   "ooped": {
     "since": "2026-10-01",
@@ -3653,9 +4357,25 @@
     "since": "2026-10-01",
     "reason": "Folded onto `cast`, costing 5.15 points. Flagged in the 2026-09-22 semantic audit (from caste, not cast) and confirmed on adversarial re-review (from caste, not cast)."
   },
+  "outcomer": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `come`, costing 6.75 points. Flagged in the 2026-09-22 semantic audit (outcomer from outcome, not come) and confirmed on adversarial re-review (outcome has drifted from come)."
+  },
   "outcuss": {
     "since": "2026-10-01",
     "reason": "Folded onto `cus`, costing 2.82 points. Flagged in the 2026-09-22 semantic audit (from cuss, not cus) and confirmed on adversarial re-review (base is cuss, not cus)."
+  },
+  "outdoored": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `door`, costing 5.72 points. Flagged in the 2026-09-22 semantic audit (outdoor not built on door) and confirmed on adversarial re-review (outdoor has drifted from door)."
+  },
+  "outdoorness": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `door`, costing 5.72 points. Flagged in the 2026-09-22 semantic audit (outdoors not built on door) and confirmed on adversarial re-review (outdoors has drifted from door)."
+  },
+  "outdoorsness": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `door`, costing 5.72 points. Flagged in the 2026-09-22 semantic audit (outdoors is not door-derived meaning) and confirmed on adversarial re-review (outdoors has drifted from door)."
   },
   "outdures": {
     "since": "2026-10-01",
@@ -3677,9 +4397,17 @@
     "since": "2026-10-01",
     "reason": "Folded onto `his`, costing 7.87 points. Flagged in the 2026-09-22 semantic audit (from hiss, not his) and confirmed on adversarial re-review (from hiss, not his)."
   },
+  "outhousey": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `housey`, costing 0.54 points. Flagged in the 2026-09-22 semantic audit (from outhouse, not housey) and confirmed on adversarial re-review (outhousey from outhouse, not housey)."
+  },
   "outlayings": {
     "since": "2026-10-01",
     "reason": "Folded onto `lay`, costing 5.09 points. Flagged in the 2026-09-22 semantic audit (outlay drifted from lay) and confirmed on adversarial re-review (outlay is expenditure, drifted from lay)."
+  },
+  "outlineless": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `line`, costing 6.32 points. Flagged in the 2026-09-22 semantic audit (outline is its own word) and confirmed on adversarial re-review (outline has drifted from line)."
   },
   "outlivers": {
     "since": "2026-10-01",
@@ -3703,7 +4431,7 @@
   },
   "outreness": {
     "since": "2026-10-01",
-    "reason": "Folded onto `ring`, costing 5.33 points. Flagged in the 2026-09-22 semantic audit (no relation to ring) and confirmed on adversarial re-review (outré has no relation to ring)."
+    "reason": "Folded onto `ring`, costing 5.33 points. Flagged in the 2026-09-22 semantic audit (no relation to ring) and confirmed on adversarial re-review (outr\u00e9 has no relation to ring)."
   },
   "outrives": {
     "since": "2026-10-01",
@@ -3712,6 +4440,10 @@
   "outrodes": {
     "since": "2026-10-01",
     "reason": "Folded onto `rod`, costing 4.38 points. Flagged in the 2026-09-22 semantic audit (past of outride, not rod) and confirmed on adversarial re-review (outride past tense, not rod)."
+  },
+  "outrung": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `rung`, costing 3.07 points. Flagged in the 2026-09-22 semantic audit (past of outring, not rung) and confirmed on adversarial re-review (Outring past, not rung noun)."
   },
   "outsetters": {
     "since": "2026-10-01",
@@ -3752,6 +4484,10 @@
   "outvier": {
     "since": "2026-10-01",
     "reason": "Folded onto `vier`, costing 1.45 points. Flagged in the 2026-09-22 semantic audit (outvie plus -r; vier overshot) and confirmed on adversarial re-review (vier overshot; base is outvie)."
+  },
+  "outwardly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `ward`, costing 1.88 points. Flagged in the 2026-09-22 semantic audit (outward not from ward) and confirmed on adversarial re-review (-ward suffix, not noun ward)."
   },
   "outwardnesses": {
     "since": "2026-10-01",
@@ -3897,6 +4633,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `rob`, costing 4.67 points. Flagged in the 2026-09-22 semantic audit (robe, not rob) and confirmed on adversarial re-review (robe, not rob)."
   },
+  "overrung": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `rung`, costing 3.07 points. Flagged in the 2026-09-22 semantic audit (past of overring, not rung) and confirmed on adversarial re-review (Overring past, not rung noun)."
+  },
   "oversecrete": {
     "since": "2026-10-01",
     "reason": "Folded onto `secret`, costing 5.49 points. Flagged in the 2026-09-22 semantic audit (secrete is bodily secretion, not secret) and confirmed on adversarial re-review (secrete is bodily discharge)."
@@ -3944,6 +4684,18 @@
   "paganess": {
     "since": "2026-10-01",
     "reason": "Folded onto `paga`, costing 1.14 points. Flagged in the 2026-09-22 semantic audit (from pagan, strip overshot) and confirmed on adversarial re-review (paga is not a word)."
+  },
+  "palaus": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `palau`, costing 2.37 points. Flagged in the 2026-09-22 semantic audit (palau is a place name) and confirmed on adversarial re-review (proper place name, not derivative)."
+  },
+  "palings": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `pale`, costing 3.71 points. Flagged in the 2026-09-22 semantic audit (paling is a fence stake) and confirmed on adversarial re-review (paling is a fence stake)."
+  },
+  "palladinize": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `palladin`, costing 0.23 points. Flagged in the 2026-09-22 semantic audit (from palladium, palladin not base) and confirmed on adversarial re-review (palladin not the palladium base)."
   },
   "palmares": {
     "since": "2026-10-01",
@@ -3997,6 +4749,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `par`, costing 4.39 points. Flagged in the 2026-09-22 semantic audit (from parley, not par) and confirmed on adversarial re-review (from parley, not par)."
   },
+  "parode": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `parodic`, costing 1.43 points. Flagged in the 2026-09-22 semantic audit (parode unrelated to parodic) and confirmed on adversarial re-review (Greek choral ode, unrelated)."
+  },
   "parsings": {
     "since": "2026-10-01",
     "reason": "Folded onto `par`, costing 4.39 points. Flagged in the 2026-09-22 semantic audit (from parse, not par) and confirmed on adversarial re-review (from parse, not par)."
@@ -4004,6 +4760,10 @@
   "parterred": {
     "since": "2026-10-01",
     "reason": "Folded onto `parter`, costing 1.85 points. Flagged in the 2026-09-22 semantic audit (parterred from parterre, not parter) and confirmed on adversarial re-review (parterre unrelated to parter)."
+  },
+  "partibuses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `partibus`, costing 0.55 points. Flagged in the 2026-09-22 semantic audit (Latin phrase fragment, not plural) and confirmed on adversarial re-review (partibus Latin fragment, not plural)."
   },
   "pases": {
     "since": "2026-10-01",
@@ -4036,6 +4796,10 @@
   "pattable": {
     "since": "2026-10-01",
     "reason": "Folded onto `patty`, costing 3.59 points. Flagged in the 2026-09-22 semantic audit (from pat, not patty) and confirmed on adversarial re-review (from pat; patty is food)."
+  },
+  "paytable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `payt`, costing 0.33 points. Flagged in the 2026-09-22 semantic audit (payt is not a word) and confirmed on adversarial re-review (payt is not a word)."
   },
   "pectines": {
     "since": "2026-10-01",
@@ -4133,6 +4897,14 @@
     "since": "2026-10-01",
     "reason": "Folded onto `molar`, costing 2.78 points. Flagged in the 2026-09-22 semantic audit (prefix on mole, not molar) and confirmed on adversarial re-review (mole prefix, not molar tooth)."
   },
+  "pigger": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `piggs`, costing 1.06 points. Flagged in the 2026-09-22 semantic audit (pigger unrelated to piggs) and confirmed on adversarial re-review (pigger vs piggs, not a base)."
+  },
+  "pilate": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `pilates`, costing 0.21 points. Flagged in the 2026-09-22 semantic audit (Pilates method, not singular pilate) and confirmed on adversarial re-review (Pilates is a person's name)."
+  },
   "pilea": {
     "since": "2026-10-01",
     "reason": "Folded onto `pileum`, costing 1.15 points. Flagged in the 2026-09-22 semantic audit (Pilea plural of pileus/pileum mismatch) and confirmed on adversarial re-review (pilea plural of pileus, not pileum)."
@@ -4156,6 +4928,10 @@
   "pines": {
     "since": "2026-10-01",
     "reason": "Folded onto `pin`, costing 1.17 points. Flagged in the 2026-09-22 semantic audit (plural of pine, overshot) and confirmed on adversarial re-review (pine is base, strip overshot)."
+  },
+  "pinnable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `pinny`, costing 0.91 points. Flagged in the 2026-09-22 semantic audit (from pin, not pinny) and confirmed on adversarial re-review (pinny is an apron, unrelated)."
   },
   "pistoleer": {
     "since": "2026-10-01",
@@ -4184,6 +4960,10 @@
   "plumes": {
     "since": "2026-10-01",
     "reason": "Folded onto `plum`, costing 0.87 points. Flagged in the 2026-09-22 semantic audit (plumes is plural of plume) and confirmed on adversarial re-review (plume overstripped to plum)."
+  },
+  "podes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `pod`, costing 3.77 points. Flagged in the 2026-09-22 semantic audit (not a pod form) and confirmed on adversarial re-review (podes not a pod form)."
   },
   "podlies": {
     "since": "2026-10-01",
@@ -4529,10 +5309,6 @@
     "scope": "prefix",
     "reason": "One who premeditates a crime; `meditators` are a different thing."
   },
-  "premeds": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `prem`, costing 3.09 points. Flagged in the 2026-09-22 semantic audit (pre- + med, not prem) and confirmed on adversarial re-review (\"prem\" is not a base)."
-  },
   "premieres": {
     "since": "2026-10-01",
     "reason": "Folded onto `premier`, costing 1.83 points. Flagged in the 2026-09-22 semantic audit (premiere vs premier, different senses) and confirmed on adversarial re-review (premiere distinct sense from premier)."
@@ -4697,6 +5473,10 @@
     "scope": "prefix",
     "reason": "The quality of being presumptuous; `sumptuous` means lavish."
   },
+  "presurge": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `presurgical`, costing 0.34 points. Flagged in the 2026-09-22 semantic audit (surge vs surgical, unrelated forms) and confirmed on adversarial re-review (surge unrelated to surgical)."
+  },
   "pretending": {
     "since": "2026-09-27",
     "scope": "prefix",
@@ -4784,6 +5564,10 @@
     "reason": "From `prevision`, not pre- + `visor`. The headgear is unrelated.",
     "scope": "prefix"
   },
+  "prewireless": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `prewired`, costing 0.23 points. Flagged in the 2026-09-22 semantic audit (pre-wireless, not prewire) and confirmed on adversarial re-review (wireless, not wired)."
+  },
   "primases": {
     "since": "2026-10-01",
     "reason": "Folded onto `prima`, costing 3.26 points. Flagged in the 2026-09-22 semantic audit (plural of primase, enzyme not prima) and confirmed on adversarial re-review (primase enzyme, unrelated to prima)."
@@ -4816,6 +5600,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `pub`, costing 2.15 points. Flagged in the 2026-09-22 semantic audit (pubes from pubis, not pub) and confirmed on adversarial re-review (pubes from pubis, not pub)."
   },
+  "puds": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `pudding`, costing 2.58 points. Flagged in the 2026-09-22 semantic audit (puds is pudding shortening, drifted) and confirmed on adversarial re-review (puds is not pudding)."
+  },
   "pules": {
     "since": "2026-10-01",
     "reason": "Folded onto `pulis`, costing 1.58 points. Flagged in the 2026-09-22 semantic audit (pulis plural of puli) and confirmed on adversarial re-review (pule unrelated to puli)."
@@ -4827,6 +5615,10 @@
   "punaise": {
     "since": "2026-10-01",
     "reason": "Folded onto `puna`, costing 1.83 points. Flagged in the 2026-09-22 semantic audit (punaise is bug, unrelated to puna) and confirmed on adversarial re-review (punaise unrelated to puna)."
+  },
+  "punding": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `pund`, costing 0.44 points. Flagged in the 2026-09-22 semantic audit (punding is a loanword, not pund) and confirmed on adversarial re-review (punding unrelated to pund)."
   },
   "pupes": {
     "since": "2026-10-01",
@@ -4847,6 +5639,10 @@
   "purpliness": {
     "since": "2026-10-01",
     "reason": "Folded onto `purp`, costing 1.43 points. Flagged in the 2026-09-22 semantic audit (from purple, not purp) and confirmed on adversarial re-review (purp is not the base)."
+  },
+  "purply": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `purp`, costing 1.00 points. Flagged in the 2026-09-22 semantic audit (from purple; -ly ate the le) and confirmed on adversarial re-review (purp is unrelated slang, overshot)."
   },
   "purringly": {
     "since": "2026-10-01",
@@ -4900,6 +5696,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `rageous`, costing 0.76 points. Flagged in the 2026-09-22 semantic audit (ragee is a grain, unrelated) and confirmed on adversarial re-review (ragee is a grain, unrelated)."
   },
+  "raggednesses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `rag`, costing 3.55 points. Flagged in the 2026-09-22 semantic audit (ragged is tattered, not rag verb) and confirmed on adversarial re-review (ragged tattered, drifted from rag)."
+  },
   "raguly": {
     "since": "2026-10-01",
     "reason": "Folded onto `ragu`, costing 1.65 points. Flagged in the 2026-09-22 semantic audit (heraldic raguly, unrelated to ragu) and confirmed on adversarial re-review (heraldic raguly unrelated to ragu)."
@@ -4920,6 +5720,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `rami`, costing 2.64 points. Flagged in the 2026-09-22 semantic audit (rami is plural of ramus) and confirmed on adversarial re-review (ramie plant, not ramus)."
   },
+  "rammable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `rammy`, costing 0.90 points. Flagged in the 2026-09-22 semantic audit (rammable from ram, not rammy) and confirmed on adversarial re-review (rammy is a brawl, unrelated)."
+  },
   "rangs": {
     "since": "2026-10-01",
     "reason": "Folded onto `rang`, costing 3.44 points. Flagged in the 2026-09-22 semantic audit (rangs not form of rang) and confirmed on adversarial re-review (overshoots onto ring's past tense)."
@@ -4927,6 +5731,10 @@
   "rankees": {
     "since": "2026-10-01",
     "reason": "Folded onto `ranke`, costing 1.14 points. Flagged in the 2026-09-22 semantic audit (from rank, ranke not word) and confirmed on adversarial re-review (ranke is not a word)."
+  },
+  "razeed": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `razed`, costing 2.33 points. Flagged in the 2026-09-22 semantic audit (razee is a distinct word) and confirmed on adversarial re-review (razee ship term, not raze)."
   },
   "razees": {
     "since": "2026-10-01",
@@ -4956,6 +5764,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `reb`, costing 2.52 points. Flagged in the 2026-09-22 semantic audit (reb unrelated; re+bless) and confirmed on adversarial re-review (re+bless; reb is Confederate)."
   },
+  "rebuttered": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `rebutter`, costing 0.71 points. Flagged in the 2026-09-22 semantic audit (rebutter is legal term, not rebutter) and confirmed on adversarial re-review (rebutter legal term, unrelated to butter)."
+  },
   "receptibilities": {
     "since": "2026-10-01",
     "reason": "Folded onto `recepts`, costing 1.13 points. Flagged in the 2026-09-22 semantic audit (receptible from receive, not recept) and confirmed on adversarial re-review (recept differs from receptible)."
@@ -4980,13 +5792,29 @@
     "since": "2026-10-01",
     "reason": "Folded onto `red`, costing 5.09 points. Flagged in the 2026-09-22 semantic audit (rede means counsel, not red) and confirmed on adversarial re-review (rede means counsel, not colour red)."
   },
+  "redigests": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `redig`, costing 0.68 points. Flagged in the 2026-09-22 semantic audit (from redigest, not redig) and confirmed on adversarial re-review (redig is not a word)."
+  },
   "redosed": {
     "since": "2026-10-01",
     "reason": "Folded onto `redo`, costing 3.05 points. Flagged in the 2026-09-22 semantic audit (redose is dosing, not redo) and confirmed on adversarial re-review (re-dose, unrelated to redo)."
   },
+  "redoubtably": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `redoubt`, costing 1.94 points. Flagged in the 2026-09-22 semantic audit (from redoubtable, not redoubt) and confirmed on adversarial re-review (redoubt fortification, different sense)."
+  },
+  "redoubted": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `redoubt`, costing 2.00 points. Flagged in the 2026-09-22 semantic audit (redoubt is a fortification) and confirmed on adversarial re-review (redoubt fortification, different sense)."
+  },
   "reely": {
     "since": "2026-10-01",
     "reason": "Folded onto `rees`, costing 2.55 points. Flagged in the 2026-09-22 semantic audit (rees not the base) and confirmed on adversarial re-review (rees is not the base)."
+  },
+  "reeves": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `reef`, costing 0.43 points. Flagged in the 2026-09-22 semantic audit (plural of reeve, not reef) and confirmed on adversarial re-review (reeve official unrelated to reef)."
   },
   "reflies": {
     "since": "2026-10-01",
@@ -5003,6 +5831,10 @@
   "regales": {
     "since": "2026-10-01",
     "reason": "Folded onto `regal`, costing 2.40 points. Flagged in the 2026-09-22 semantic audit (regale unrelated to regal) and confirmed on adversarial re-review (regale entertain versus regal kingly)."
+  },
+  "regardless": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `regarding`, costing 0.27 points. Flagged in the 2026-09-22 semantic audit (regardless unrelated to regarding) and confirmed on adversarial re-review (regardless unrelated to regarding)."
   },
   "rehinges": {
     "since": "2026-10-01",
@@ -5031,6 +5863,14 @@
   "repastes": {
     "since": "2026-10-01",
     "reason": "Folded onto `repasts`, costing 1.92 points. Flagged in the 2026-09-22 semantic audit (repaste vs repasts, overshot strip) and confirmed on adversarial re-review (repaste distinct from repast strip)."
+  },
+  "replicases": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `replica`, costing 3.58 points. Flagged in the 2026-09-22 semantic audit (enzyme from replicate) and confirmed on adversarial re-review (replicase enzyme, not replica)."
+  },
+  "repoing": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `repo`, costing 2.93 points. Flagged in the 2026-09-22 semantic audit (reposing, not repo) and confirmed on adversarial re-review (Repose, not repo)."
   },
   "reposable": {
     "since": "2026-10-01",
@@ -5104,6 +5944,14 @@
     "since": "2026-10-01",
     "reason": "Folded onto `retin`, costing 1.34 points. Flagged in the 2026-09-22 semantic audit (\"retin\" not a word) and confirmed on adversarial re-review (retin is not a word)."
   },
+  "revers": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `rever`, costing 0.14 points. Flagged in the 2026-09-22 semantic audit (revers is lapel, not rever) and confirmed on adversarial re-review (rever is not the base)."
+  },
+  "revoltingness": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `revolt`, costing 3.80 points. Flagged in the 2026-09-22 semantic audit (revolting means disgusting, drifted) and confirmed on adversarial re-review (revolting means disgusting, drifted)."
+  },
   "rewedded": {
     "since": "2026-10-01",
     "reason": "Folded onto `rew`, costing 1.43 points. Flagged in the 2026-09-22 semantic audit (rew is not base) and confirmed on adversarial re-review (rew is not the base)."
@@ -5140,6 +5988,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `rob`, costing 1.34 points. Flagged in the 2026-09-22 semantic audit (plural of robe, overshot) and confirmed on adversarial re-review (robe is base, strip overshot)."
   },
+  "rocheted": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `rochet`, costing 0.75 points. Flagged in the 2026-09-22 semantic audit (rocheted not from rochet vestment) and confirmed on adversarial re-review (rochet vestment unrelated)."
+  },
   "roded": {
     "since": "2026-10-01",
     "reason": "Folded onto `rode`, costing 4.05 points. Flagged in the 2026-09-22 semantic audit (rode is past of ride) and confirmed on adversarial re-review (rode verb distinct from ride past)."
@@ -5175,6 +6027,10 @@
   "rotes": {
     "since": "2026-10-01",
     "reason": "Folded onto `rot`, costing 2.96 points. Flagged in the 2026-09-22 semantic audit (rote the routine, not rot) and confirmed on adversarial re-review (rote is routine, not rot)."
+  },
+  "rottable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `rotte`, costing 0.44 points. Flagged in the 2026-09-22 semantic audit (from rot; rotte is an instrument) and confirmed on adversarial re-review (rotte is an instrument)."
   },
   "rowies": {
     "since": "2026-10-01",
@@ -5264,6 +6120,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `sal`, costing 3.45 points. Flagged in the 2026-09-22 semantic audit (salse unrelated to sal) and confirmed on adversarial re-review (salse unrelated to sal)."
   },
+  "saltiers": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `salty`, costing 3.78 points. Flagged in the 2026-09-22 semantic audit (saltier comparative, not salty plural) and confirmed on adversarial re-review (saltier is comparative of salty)."
+  },
   "samites": {
     "since": "2026-10-01",
     "reason": "Folded onto `samiti`, costing 1.63 points. Flagged in the 2026-09-22 semantic audit (samite fabric vs samiti assembly) and confirmed on adversarial re-review (samite fabric versus samiti assembly)."
@@ -5296,9 +6156,29 @@
     "since": "2026-10-01",
     "reason": "Folded onto `scaup`, costing 1.09 points. Flagged in the 2026-09-22 semantic audit (scauper is a tool, scaup a duck) and confirmed on adversarial re-review (scauper tool versus scaup duck)."
   },
+  "scenarise": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `scenary`, costing 0.30 points. Flagged in the 2026-09-22 semantic audit (scenary not the base word) and confirmed on adversarial re-review (scenary is not a base)."
+  },
+  "scenarization": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `scenary`, costing 0.30 points. Flagged in the 2026-09-22 semantic audit (scenary not the base word) and confirmed on adversarial re-review (scenary is not a base)."
+  },
+  "scenarize": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `scenary`, costing 0.30 points. Flagged in the 2026-09-22 semantic audit (scenary not the base; from scenario) and confirmed on adversarial re-review (scenary is not a base)."
+  },
   "schedes": {
     "since": "2026-10-01",
     "reason": "Folded onto `sch`, costing 2.89 points. Flagged in the 2026-09-22 semantic audit (sch is not base) and confirmed on adversarial re-review (\"sch\" is not a base)."
+  },
+  "schemat": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `schematic`, costing 2.96 points. Flagged in the 2026-09-22 semantic audit (schemat is not a base) and confirmed on adversarial re-review (Schemat is not a base)."
+  },
+  "scholast": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `scholastic`, costing 3.05 points. Flagged in the 2026-09-22 semantic audit (scholast not a base form) and confirmed on adversarial re-review (Scholast is not a base)."
   },
   "scientises": {
     "since": "2026-10-01",
@@ -5312,9 +6192,17 @@
     "since": "2026-10-01",
     "reason": "Folded onto `sci`, costing 4.09 points. Flagged in the 2026-09-22 semantic audit (from scise/scissor, not sci) and confirmed on adversarial re-review (unrelated to sci clipping)."
   },
+  "sclerites": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `scleritis`, costing 0.73 points. Flagged in the 2026-09-22 semantic audit (sclerite is plate, scleritis inflammation) and confirmed on adversarial re-review (sclerite plate versus inflammation)."
+  },
   "sconned": {
     "since": "2026-10-01",
     "reason": "Folded onto `scons`, costing 1.86 points. Flagged in the 2026-09-22 semantic audit (base should be scone, not scons) and confirmed on adversarial re-review (scons is not the base)."
+  },
+  "scouther": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `scouth`, costing 0.01 points. Flagged in the 2026-09-22 semantic audit (scouther is to scorch; scouth is scope) and confirmed on adversarial re-review (scorch versus scope, unrelated)."
   },
   "scrapes": {
     "since": "2026-10-01",
@@ -5324,6 +6212,14 @@
     "since": "2026-10-01",
     "reason": "Folded onto `scrappy`, costing 2.87 points. Flagged in the 2026-09-22 semantic audit (scrap + -able, not scrappy) and confirmed on adversarial re-review (from scrap; scrappy is different sense)."
   },
+  "scutes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `scut`, costing 0.10 points. Flagged in the 2026-09-22 semantic audit (scute is plate; scut is tail) and confirmed on adversarial re-review (scute is plate, scut tail)."
+  },
+  "sealy": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `sea`, costing 3.79 points. Flagged in the 2026-09-22 semantic audit (sealy likely from seal, ambiguous) and confirmed on adversarial re-review (sealy from seal, not sea)."
+  },
   "secretes": {
     "since": "2026-10-01",
     "reason": "Folded onto `secret`, costing 3.66 points. Flagged in the 2026-09-22 semantic audit (secrete means to exude) and confirmed on adversarial re-review (secrete means exude, unrelated to secret)."
@@ -5332,9 +6228,9 @@
     "since": "2026-10-01",
     "reason": "Folded onto `secret`, costing 5.49 points. Flagged in the 2026-09-22 semantic audit (secrete inflection, bodily secretion) and confirmed on adversarial re-review (secrete is bodily discharge)."
   },
-  "seemly": {
+  "seemlinesses": {
     "since": "2026-10-01",
-    "reason": "Folded onto `seems`, costing 4.46 points. Flagged in the 2026-09-22 semantic audit (from seem adjective; seems is verb) and confirmed on adversarial re-review (seemly means proper; sense has drifted)."
+    "reason": "Folded onto `seems`, costing 5.95 points. Flagged in the 2026-09-22 semantic audit (seemly drifted from seem) and confirmed on adversarial re-review (seemly means decorous, drifted)."
   },
   "seisers": {
     "since": "2026-10-01",
@@ -5344,9 +6240,17 @@
     "since": "2026-10-01",
     "reason": "Folded onto `sei`, costing 2.60 points. Flagged in the 2026-09-22 semantic audit (seising from seise, not sei) and confirmed on adversarial re-review (seise, not sei whale)."
   },
+  "sellees": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `selle`, costing 1.18 points. Flagged in the 2026-09-22 semantic audit (sellee from sell, not saddle) and confirmed on adversarial re-review (selle is saddle, unrelated)."
+  },
   "selles": {
     "since": "2026-10-01",
     "reason": "Folded onto `sell`, costing 5.17 points. Flagged in the 2026-09-22 semantic audit (selles is not sell) and confirmed on adversarial re-review (selle is a saddle, not sell)."
+  },
+  "selvagees": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `selvages`, costing 1.72 points. Flagged in the 2026-09-22 semantic audit (selvagee is distinct from selvages) and confirmed on adversarial re-review (selvagee rope distinct from selvage)."
   },
   "semes": {
     "since": "2026-10-01",
@@ -5359,6 +6263,14 @@
   "seres": {
     "since": "2026-10-01",
     "reason": "Folded onto `ser`, costing 2.40 points. Flagged in the 2026-09-22 semantic audit (plural of sere, overshot) and confirmed on adversarial re-review (ser is not the base)."
+  },
+  "serie": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `series`, costing 2.87 points. Flagged in the 2026-09-22 semantic audit (serie not singular of series) and confirmed on adversarial re-review (serie is not series inflection)."
+  },
+  "serpentised": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `serpentis`, costing 0.56 points. Flagged in the 2026-09-22 semantic audit (serpentis is not a base) and confirmed on adversarial re-review (serpentis not a base)."
   },
   "severedly": {
     "since": "2026-10-01",
@@ -5391,6 +6303,10 @@
   "shamblings": {
     "since": "2026-10-01",
     "reason": "Folded onto `shambles`, costing 2.94 points. Flagged in the 2026-09-22 semantic audit (shambling walk, not shambles) and confirmed on adversarial re-review (shamble walk differs from shambles)."
+  },
+  "shides": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `shid`, costing 0.52 points. Flagged in the 2026-09-22 semantic audit (shide is wood, unrelated) and confirmed on adversarial re-review (shid is not a word)."
   },
   "shiester": {
     "since": "2026-10-01",
@@ -5436,6 +6352,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `shut`, costing 5.07 points. Flagged in the 2026-09-22 semantic audit (shute is a chute variant) and confirmed on adversarial re-review (shute is a chute variant)."
   },
+  "sibilities": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `sibility`, costing 0.55 points. Flagged in the 2026-09-22 semantic audit (both nonwords; bogus stem) and confirmed on adversarial re-review (sibility is a nonword stem)."
+  },
   "sices": {
     "since": "2026-10-01",
     "reason": "Folded onto `sic`, costing 3.22 points. Flagged in the 2026-09-22 semantic audit (sice is its own word) and confirmed on adversarial re-review (sice is its own word)."
@@ -5443,6 +6363,10 @@
   "signees": {
     "since": "2026-10-01",
     "reason": "Folded onto `signe`, costing 0.77 points. Flagged in the 2026-09-22 semantic audit (signe is not the base) and confirmed on adversarial re-review (signe is not a word)."
+  },
+  "silicones": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `silicon`, costing 2.54 points. Flagged in the 2026-09-22 semantic audit (silicone differs from silicon) and confirmed on adversarial re-review (silicone differs chemically from silicon)."
   },
   "simonise": {
     "since": "2026-10-01",
@@ -5496,6 +6420,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `skil`, costing 1.30 points. Flagged in the 2026-09-22 semantic audit (skilliest from skilly, not skil) and confirmed on adversarial re-review (skilly lost its l)."
   },
+  "skilly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `skil`, costing 0.54 points. Flagged in the 2026-09-22 semantic audit (skilly is a gruel, unrelated) and confirmed on adversarial re-review (skil not the base of skilly)."
+  },
   "skites": {
     "since": "2026-10-01",
     "reason": "Folded onto `skit`, costing 2.95 points. Flagged in the 2026-09-22 semantic audit (skite, not skit) and confirmed on adversarial re-review (skite is boasting, not skit)."
@@ -5507,6 +6435,10 @@
   "skules": {
     "since": "2026-10-01",
     "reason": "Folded onto `skul`, costing 0.82 points. Flagged in the 2026-09-22 semantic audit (skul is not the base) and confirmed on adversarial re-review (skul is not the base)."
+  },
+  "skyrise": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `skyr`, costing 0.66 points. Flagged in the 2026-09-22 semantic audit (skyrise unrelated to skyr) and confirmed on adversarial re-review (skyr is dairy, unrelated)."
   },
   "slimes": {
     "since": "2026-10-01",
@@ -5524,14 +6456,6 @@
     "since": "2026-10-01",
     "reason": "Folded onto `snickers`, costing 2.79 points. Flagged in the 2026-09-22 semantic audit (snicker agent vs Snickers plural) and confirmed on adversarial re-review (snicker verb vs Snickers brand)."
   },
-  "snickeringly": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `snickers`, costing 2.78 points. Flagged in the 2026-09-22 semantic audit (base is snicker, not snickers) and confirmed on adversarial re-review (snicker verb vs Snickers brand)."
-  },
-  "snickerings": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `snickers`, costing 2.79 points. Flagged in the 2026-09-22 semantic audit (snicker gerund vs Snickers) and confirmed on adversarial re-review (snicker verb vs Snickers brand)."
-  },
   "snippable": {
     "since": "2026-10-01",
     "reason": "Folded onto `snippy`, costing 1.69 points. Flagged in the 2026-09-22 semantic audit (from snip, not snippy) and confirmed on adversarial re-review (snippy means irritable, unrelated)."
@@ -5544,9 +6468,21 @@
     "since": "2026-10-01",
     "reason": "Folded onto `snopes`, costing 1.91 points. Flagged in the 2026-09-22 semantic audit (snopes unrelated to snop) and confirmed on adversarial re-review (snop unrelated to snopes)."
   },
+  "snuffly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `snuff`, costing 2.79 points. Flagged in the 2026-09-22 semantic audit (from snuffle, not snuff) and confirmed on adversarial re-review (from snuffle, not snuff)."
+  },
   "soares": {
     "since": "2026-10-01",
     "reason": "Folded onto `soaring`, costing 1.30 points. Flagged in the 2026-09-22 semantic audit (soares unrelated to soaring) and confirmed on adversarial re-review (soares unrelated to soaring)."
+  },
+  "solanal": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `solanales`, costing 0.56 points. Flagged in the 2026-09-22 semantic audit (unrelated to the plant order) and confirmed on adversarial re-review (solanal unrelated to Solanales)."
+  },
+  "somen": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `soman`, costing 0.40 points. Flagged in the 2026-09-22 semantic audit (noodles vs nerve agent) and confirmed on adversarial re-review (somen noodles vs soman nerve agent)."
   },
   "sones": {
     "since": "2026-10-01",
@@ -5555,6 +6491,10 @@
   "sopes": {
     "since": "2026-10-01",
     "reason": "Folded onto `sop`, costing 2.47 points. Flagged in the 2026-09-22 semantic audit (plural of sope, Mexican dish) and confirmed on adversarial re-review (sope dish versus sop)."
+  },
+  "sordes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `sord`, costing 0.47 points. Flagged in the 2026-09-22 semantic audit (sordes unrelated to sord) and confirmed on adversarial re-review (sordes unrelated to sord)."
   },
   "sortes": {
     "since": "2026-10-01",
@@ -5616,6 +6556,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `spang`, costing 1.22 points. Flagged in the 2026-09-22 semantic audit (from spangly, lost the l) and confirmed on adversarial re-review (spangly lost its l)."
   },
+  "spangly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `spang`, costing 0.58 points. Flagged in the 2026-09-22 semantic audit (spangly from spangle, not spang) and confirmed on adversarial re-review (spang unrelated to spangle)."
+  },
   "sparless": {
     "since": "2026-10-01",
     "reason": "Folded onto `sparring`, costing 2.94 points. Flagged in the 2026-09-22 semantic audit (spar the pole, not sparring) and confirmed on adversarial re-review (spar-pole homograph, not sparring)."
@@ -5644,9 +6588,25 @@
     "since": "2026-10-01",
     "reason": "From `speck`, a small spot. Not `spec`, short for specification."
   },
+  "spicness": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `spic`, costing 1.62 points. Flagged in the 2026-09-22 semantic audit (spic slur vs spicness; ambiguous meaning) and confirmed on adversarial re-review (spic slur versus spicness)."
+  },
+  "spimes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `spim`, costing 0.23 points. Flagged in the 2026-09-22 semantic audit (spime is unrelated coinage) and confirmed on adversarial re-review (spim is instant-message spam)."
+  },
   "spines": {
     "since": "2026-10-01",
     "reason": "Folded onto `spin`, costing 1.58 points. Flagged in the 2026-09-22 semantic audit (plural of spine) and confirmed on adversarial re-review (spine unrelated to spin)."
+  },
+  "spinnabilities": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `spinny`, costing 1.22 points. Flagged in the 2026-09-22 semantic audit (from spin, not spinny) and confirmed on adversarial re-review (spinny sense differs from spin)."
+  },
+  "spinnable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `spinny`, costing 1.22 points. Flagged in the 2026-09-22 semantic audit (from spin, not spinny) and confirmed on adversarial re-review (spinny sense differs from spin)."
   },
   "splenites": {
     "since": "2026-10-01",
@@ -5671,6 +6631,10 @@
   "springes": {
     "since": "2026-10-01",
     "reason": "Folded onto `spring`, costing 4.40 points. Flagged in the 2026-09-22 semantic audit (springe is a snare) and confirmed on adversarial re-review (springe is a snare, distinct word)."
+  },
+  "stainlesses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `stained`, costing 3.83 points. Flagged in the 2026-09-22 semantic audit (plural of stainless, not stained) and confirmed on adversarial re-review (stainless from stain, not stained)."
   },
   "stalklessness": {
     "since": "2026-10-01",
@@ -5712,6 +6676,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `steed`, costing 2.72 points. Flagged in the 2026-09-22 semantic audit (not a form of steed) and confirmed on adversarial re-review (stee unrelated to steed)."
   },
+  "stellae": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `stella`, costing 3.76 points. Flagged in the 2026-09-22 semantic audit (stella proper noun, stellae Latin) and confirmed on adversarial re-review (stellae Latin plural, proper noun)."
+  },
   "stenos": {
     "since": "2026-10-01",
     "reason": "Folded onto `stenosed`, costing 1.10 points. Flagged in the 2026-09-22 semantic audit (plural of steno, not stenosis) and confirmed on adversarial re-review (steno clipping vs stenosis)."
@@ -5724,9 +6692,17 @@
     "since": "2026-10-01",
     "reason": "Folded onto `ster`, costing 1.27 points. Flagged in the 2026-09-22 semantic audit (plural of stere, overshot) and confirmed on adversarial re-review (stere is base, strip overshot)."
   },
+  "sthene": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `sthenic`, costing 1.66 points. Flagged in the 2026-09-22 semantic audit (sthene is a force unit) and confirmed on adversarial re-review (sthene force unit, not sthenic)."
+  },
   "stiltedly": {
     "since": "2026-10-01",
     "reason": "Folded onto `stilts`, costing 1.98 points. Flagged in the 2026-09-22 semantic audit (stilted means pompous, not stilts) and confirmed on adversarial re-review (stilted means pompous, drifted)."
+  },
+  "stiltednesses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `stilts`, costing 2.45 points. Flagged in the 2026-09-22 semantic audit (stilted differs from stilts) and confirmed on adversarial re-review (stilted sense differs from stilts)."
   },
   "stipulable": {
     "since": "2026-10-01",
@@ -5760,6 +6736,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `studie`, costing 1.41 points. Flagged in the 2026-09-22 semantic audit (studie is not a word) and confirmed on adversarial re-review (studie is not a word)."
   },
+  "stumers": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `stum`, costing 0.75 points. Flagged in the 2026-09-22 semantic audit (stumer unrelated to stum) and confirmed on adversarial re-review (stumer unrelated to stum)."
+  },
   "subcountability": {
     "since": "2026-10-01",
     "reason": "Folded onto `subcounty`, costing 1.29 points. Flagged in the 2026-09-22 semantic audit (subcountability not from subcounty) and confirmed on adversarial re-review (subcounty unrelated to countable)."
@@ -5773,6 +6753,10 @@
     "reason": "From `suber` (cork) + -ose, not sub- + `erose` (jagged-edged). Both are botanical terms, which is what makes the wrong one plausible enough to need an entry.",
     "scope": "prefix"
   },
+  "subsensible": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `subsenses`, costing 0.08 points. Flagged in the 2026-09-22 semantic audit (subsense plural, unrelated adjective) and confirmed on adversarial re-review (subsense is a word sense)."
+  },
   "subtrope": {
     "since": "2026-10-01",
     "reason": "Folded onto `subtropical`, costing 2.68 points. Flagged in the 2026-09-22 semantic audit (trope, not subtropical) and confirmed on adversarial re-review (from trope, not subtropical)."
@@ -5784,14 +6768,6 @@
   "sudder": {
     "since": "2026-10-01",
     "reason": "Folded onto `sudd`, costing 0.99 points. Flagged in the 2026-09-22 semantic audit (sudder unrelated to sudd) and confirmed on adversarial re-review (sudder unrelated to sudd)."
-  },
-  "sudsers": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `sud`, costing 2.49 points. Flagged in the 2026-09-22 semantic audit (base is suds, not sud) and confirmed on adversarial re-review (suds is the base, overshot)."
-  },
-  "sudsless": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `sud`, costing 2.49 points. Flagged in the 2026-09-22 semantic audit (base is suds, not sud) and confirmed on adversarial re-review (suds is the base, overshot)."
   },
   "suedes": {
     "since": "2026-10-01",
@@ -5809,6 +6785,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `super`, costing 5.72 points. Flagged in the 2026-09-22 semantic audit (superable means surmountable, not super) and confirmed on adversarial re-review (superable from Latin superare)."
   },
+  "superfices": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `superfix`, costing 0.52 points. Flagged in the 2026-09-22 semantic audit (superficies form, not superfix) and confirmed on adversarial re-review (superfices unrelated to superfix)."
+  },
   "supermodest": {
     "since": "2026-10-01",
     "reason": "Folded onto `supermod`, costing 1.18 points. Flagged in the 2026-09-22 semantic audit (super- plus modest, not supermod) and confirmed on adversarial re-review (supermod unrelated to modest)."
@@ -5816,14 +6796,6 @@
   "supes": {
     "since": "2026-10-01",
     "reason": "Folded onto `sup`, costing 2.11 points. Flagged in the 2026-09-22 semantic audit (plural of supe, overshot) and confirmed on adversarial re-review (supe not from sup)."
-  },
-  "supposingly": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `supposed`, costing 5.47 points. Flagged in the 2026-09-22 semantic audit (supposed is wrong base form) and confirmed on adversarial re-review (wrong base form of suppose)."
-  },
-  "supposings": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `supposed`, costing 5.47 points. Flagged in the 2026-09-22 semantic audit (supposed is wrong base form) and confirmed on adversarial re-review (wrong base form of suppose)."
   },
   "sures": {
     "since": "2026-10-01",
@@ -5853,6 +6825,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `swag`, costing 1.99 points. Flagged in the 2026-09-22 semantic audit (swage is a metalworking tool) and confirmed on adversarial re-review (swage unrelated to swag)."
   },
+  "swaggies": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `swaggy`, costing 1.01 points. Flagged in the 2026-09-22 semantic audit (from swaggie, not swaggy) and confirmed on adversarial re-review (swaggie is a swagman, not swaggy)."
+  },
   "swarees": {
     "since": "2026-10-01",
     "reason": "Folded onto `sware`, costing 1.21 points. Flagged in the 2026-09-22 semantic audit (swaree is a soiree variant, not sware) and confirmed on adversarial re-review (swaree soiree variant, sware unrelated)."
@@ -5865,9 +6841,17 @@
     "since": "2026-10-01",
     "reason": "Folded onto `swath`, costing 2.56 points. Flagged in the 2026-09-22 semantic audit (swathings from swathe) and confirmed on adversarial re-review (swathe to wrap, not swath)."
   },
+  "swithers": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `swith`, costing 0.57 points. Flagged in the 2026-09-22 semantic audit (swither unrelated to swith) and confirmed on adversarial re-review (swith means quickly, unrelated)."
+  },
   "sycees": {
     "since": "2026-10-01",
     "reason": "Folded onto `syce`, costing 1.22 points. Flagged in the 2026-09-22 semantic audit (sycee is silver ingot, not groom) and confirmed on adversarial re-review (sycee ingot, syce groom)."
+  },
+  "symbiot": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `symbiotic`, costing 2.70 points. Flagged in the 2026-09-22 semantic audit (symbiot not a form of symbiotic) and confirmed on adversarial re-review (symbiot not a symbiotic form)."
   },
   "symphyta": {
     "since": "2026-10-01",
@@ -5876,6 +6860,10 @@
   "synapte": {
     "since": "2026-10-01",
     "reason": "Folded onto `synaptic`, costing 2.82 points. Flagged in the 2026-09-22 semantic audit (synapte is a litany) and confirmed on adversarial re-review (synapte is a litany, unrelated)."
+  },
+  "synchrone": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `synchronous`, costing 2.79 points. Flagged in the 2026-09-22 semantic audit (synchrone not form of synchronous) and confirmed on adversarial re-review (synchrone not a synchronous form)."
   },
   "syndet": {
     "since": "2026-10-01",
@@ -5901,6 +6889,14 @@
     "since": "2026-10-01",
     "reason": "Folded onto `tali`, costing 1.04 points. Flagged in the 2026-09-22 semantic audit (tali already plural of talus) and confirmed on adversarial re-review (talis unrelated to tali)."
   },
+  "talkees": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `talke`, costing 1.03 points. Flagged in the 2026-09-22 semantic audit (talkee not a base form) and confirmed on adversarial re-review (talke is not a word)."
+  },
+  "talliable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `tallie`, costing 0.55 points. Flagged in the 2026-09-22 semantic audit (base misspelled; should be tally) and confirmed on adversarial re-review (tallie is not the base)."
+  },
   "tanglier": {
     "since": "2026-10-01",
     "reason": "Folded onto `tang`, costing 3.59 points. Flagged in the 2026-09-22 semantic audit (from tangly/tangle, not tang) and confirmed on adversarial re-review (from tangle, not tang)."
@@ -5916,6 +6912,10 @@
   "tases": {
     "since": "2026-10-01",
     "reason": "Folded onto `tas`, costing 2.52 points. Flagged in the 2026-09-22 semantic audit (tas not base of tases; taser/tase) and confirmed on adversarial re-review (from tase/taser, not tas)."
+  },
+  "tassely": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `tasse`, costing 0.71 points. Flagged in the 2026-09-22 semantic audit (tassely from tassel, not tasse) and confirmed on adversarial re-review (tassely from tassel, not tasse)."
   },
   "tawsed": {
     "since": "2026-10-01",
@@ -5940,6 +6940,14 @@
   "teasably": {
     "since": "2026-10-01",
     "reason": "Folded onto `tea`, costing 5.22 points. Flagged in the 2026-09-22 semantic audit (from tease, not tea) and confirmed on adversarial re-review (from tease, not tea)."
+  },
+  "teaseler": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `teasel`, costing 0.62 points. Flagged in the 2026-09-22 semantic audit (teaseler is seller of tea) and confirmed on adversarial re-review (teasel plant, not tea seller)."
+  },
+  "teaseller": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `teasel`, costing 0.62 points. Flagged in the 2026-09-22 semantic audit (teaseller is seller of tea) and confirmed on adversarial re-review (teasel plant, not tea seller)."
   },
   "teasingly": {
     "since": "2026-10-01",
@@ -5982,6 +6990,10 @@
   "tensings": {
     "since": "2026-10-01",
     "reason": "Folded onto `ten`, costing 5.68 points. Flagged in the 2026-09-22 semantic audit (tensings from tense, not ten) and confirmed on adversarial re-review (from tense, not ten)."
+  },
+  "tepees": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `tepe`, costing 0.71 points. Flagged in the 2026-09-22 semantic audit (tepee plural; tepe is different word) and confirmed on adversarial re-review (tepee unrelated to tepe)."
   },
   "ternes": {
     "since": "2026-10-01",
@@ -6031,6 +7043,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `them`, costing 5.80 points. Flagged in the 2026-09-22 semantic audit (them is not pluralizable noun) and confirmed on adversarial re-review (them not pluralizable noun)."
   },
+  "thermoses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `thermo`, costing 1.95 points. Flagged in the 2026-09-22 semantic audit (thermos not built on thermo) and confirmed on adversarial re-review (thermos flask versus thermo heat)."
+  },
   "threds": {
     "since": "2026-10-01",
     "reason": "Folded onto `thre`, costing 1.66 points. Flagged in the 2026-09-22 semantic audit (thre is not a word) and confirmed on adversarial re-review (thre is not a word)."
@@ -6050,6 +7066,10 @@
   "tikes": {
     "since": "2026-10-01",
     "reason": "Folded onto `tiki`, costing 1.75 points. Flagged in the 2026-09-22 semantic audit (plural of tike, not tiki) and confirmed on adversarial re-review (tike unrelated to tiki)."
+  },
+  "tiles": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `til`, costing 0.45 points. Flagged in the 2026-09-22 semantic audit (tiles from tile, not til) and confirmed on adversarial re-review (tile unrelated to til)."
   },
   "tines": {
     "since": "2026-10-01",
@@ -6152,6 +7172,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `trave`, costing 1.17 points. Flagged in the 2026-09-22 semantic audit (travest not from trave) and confirmed on adversarial re-review (travest unrelated to trave)."
   },
+  "trews": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `trew`, costing 0.24 points. Flagged in the 2026-09-22 semantic audit (trews is plural-only, trew not base) and confirmed on adversarial re-review (trew means true, unrelated)."
+  },
   "triester": {
     "since": "2026-10-01",
     "reason": "Folded onto `try`, costing 6.34 points. Flagged in the 2026-09-22 semantic audit (tri-ester chemical, unrelated) and confirmed on adversarial re-review (chemical tri-ester, unrelated)."
@@ -6180,6 +7204,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `tripoli`, costing 3.19 points. Flagged in the 2026-09-22 semantic audit (tripole not from Tripoli) and confirmed on adversarial re-review (tripole unrelated to Tripoli)."
   },
+  "triptanes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `triptans`, costing 0.75 points. Flagged in the 2026-09-22 semantic audit (triptane hydrocarbon, triptan drug) and confirmed on adversarial re-review (triptane hydrocarbon versus triptan drug)."
+  },
   "tristability": {
     "since": "2026-10-01",
     "reason": "Folded onto `triste`, costing 1.60 points. Flagged in the 2026-09-22 semantic audit (tri-stability, not triste) and confirmed on adversarial re-review (tri-stability unrelated to triste)."
@@ -6187,6 +7215,10 @@
   "tristable": {
     "since": "2026-10-01",
     "reason": "Folded onto `triste`, costing 1.60 points. Flagged in the 2026-09-22 semantic audit (tristable is tri-stable, not triste) and confirmed on adversarial re-review (tri-stable unrelated to triste)."
+  },
+  "tristed": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `triste`, costing 1.60 points. Flagged in the 2026-09-22 semantic audit (triste is adjective, no past) and confirmed on adversarial re-review (tristed not a form of triste)."
   },
   "tritones": {
     "since": "2026-10-01",
@@ -6199,6 +7231,10 @@
   "troche": {
     "since": "2026-10-01",
     "reason": "Folded onto `trochees`, costing 0.97 points. Flagged in the 2026-09-22 semantic audit (troche lozenge, trochee is metrical foot) and confirmed on adversarial re-review (lozenge versus metrical foot)."
+  },
+  "troner": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `tron`, costing 2.89 points. Flagged in the 2026-09-22 semantic audit (tron is not a base word) and confirmed on adversarial re-review (Tron is not a base)."
   },
   "trones": {
     "since": "2026-10-01",
@@ -6247,6 +7283,10 @@
   "twites": {
     "since": "2026-10-01",
     "reason": "Folded onto `twit`, costing 2.37 points. Flagged in the 2026-09-22 semantic audit (plural of twite, a bird) and confirmed on adversarial re-review (twite is a finch, unrelated)."
+  },
+  "twixter": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `twixt`, costing 1.54 points. Flagged in the 2026-09-22 semantic audit (twixter unrelated to twixt) and confirmed on adversarial re-review (twixter unrelated to twixt)."
   },
   "unabased": {
     "since": "2026-10-01",
@@ -6352,6 +7392,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `come`, costing 6.75 points. Flagged in the 2026-09-22 semantic audit (comeliness is beauty, not come) and confirmed on adversarial re-review (comely not from come)."
   },
+  "uncooled": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `uncool`, costing 1.91 points. Flagged in the 2026-09-22 semantic audit (from cool, not uncool) and confirmed on adversarial re-review (not cooled versus unfashionable)."
+  },
   "uncope": {
     "since": "2026-10-01",
     "reason": "Folded onto `cops`, costing 4.77 points. Flagged in the 2026-09-22 semantic audit (cope, not cops) and confirmed on adversarial re-review (cope is not cops)."
@@ -6364,6 +7408,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `cous`, costing 1.76 points. Flagged in the 2026-09-22 semantic audit (from uncus; un- strip wrong) and confirmed on adversarial re-review (uncus base, un- strip overshot)."
   },
+  "uncurlable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `curly`, costing 3.62 points. Flagged in the 2026-09-22 semantic audit (from curl, not curly) and confirmed on adversarial re-review (uncurlable from curl, not curly)."
+  },
   "undallying": {
     "since": "2026-10-01",
     "reason": "Folded onto `dal`, costing 3.14 points. Flagged in the 2026-09-22 semantic audit (from dally, not dal) and confirmed on adversarial re-review (from dally; dal is lentils)."
@@ -6375,6 +7423,34 @@
   "undecagonal": {
     "since": "2026-10-01",
     "reason": "Folded onto `decagonal`, costing 1.23 points. Flagged in the 2026-09-22 semantic audit (undecagon is eleven-sided, not un-decagonal) and confirmed on adversarial re-review (undecagon is eleven-sided, not un-)."
+  },
+  "undecagons": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decagon`, costing 0.33 points. Flagged in the 2026-09-22 semantic audit (un- is eleven, not negation) and confirmed on adversarial re-review (undecagon is eleven-sided, not un-decagon)."
+  },
+  "undecahedra": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decahedra`, costing 0.04 points. Flagged in the 2026-09-22 semantic audit (undecahedra not built on decahedra) and confirmed on adversarial re-review (undeca-+hedron, not deca base)."
+  },
+  "undecahedron": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decahedron`, costing 0.09 points. Flagged in the 2026-09-22 semantic audit (un- not negation here; undecahedron is eleven-sided) and confirmed on adversarial re-review (undec- means eleven)."
+  },
+  "undecanal": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decanal`, costing 0.19 points. Flagged in the 2026-09-22 semantic audit (undecanal is C11 aldehyde, not negation) and confirmed on adversarial re-review (undec- is eleven carbons)."
+  },
+  "undecemvirate": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decemvirate`, costing 0.72 points. Flagged in the 2026-09-22 semantic audit (un- prefix negates) and confirmed on adversarial re-review (undecim means eleven, not un-)."
+  },
+  "undecillions": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `decillion`, costing 0.08 points. Flagged in the 2026-09-22 semantic audit (un- is eleven, not negation) and confirmed on adversarial re-review (undec- means eleven)."
+  },
+  "underacinated": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `deracinated`, costing 0.55 points. Flagged in the 2026-09-22 semantic audit (under- vs de-; different prefix) and confirmed on adversarial re-review (under- and de- different prefixes)."
   },
   "underanged": {
     "since": "2026-10-01",
@@ -6391,6 +7467,30 @@
   "undercrackers": {
     "since": "2026-10-01",
     "reason": "Folded onto `crackers`, costing 3.41 points. Flagged in the 2026-09-22 semantic audit (undercrackers means underpants, not crackers) and confirmed on adversarial re-review (underpants, unrelated to crackers)."
+  },
+  "underhandedly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hand`, costing 6.03 points. Flagged in the 2026-09-22 semantic audit (underhanded is sly, not hand) and confirmed on adversarial re-review (underhanded means sly, drifted)."
+  },
+  "underhandednesses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hand`, costing 6.20 points. Flagged in the 2026-09-22 semantic audit (underhanded drifted from hand) and confirmed on adversarial re-review (underhanded means sly, drifted)."
+  },
+  "underhander": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hand`, costing 6.20 points. Flagged in the 2026-09-22 semantic audit (underhand drifted from hand) and confirmed on adversarial re-review (underhand means secretive, drifted)."
+  },
+  "underhanding": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hand`, costing 6.20 points. Flagged in the 2026-09-22 semantic audit (underhand drifted from hand) and confirmed on adversarial re-review (underhand means secretive, drifted)."
+  },
+  "underhandly": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hand`, costing 6.20 points. Flagged in the 2026-09-22 semantic audit (underhand means secretive, drifted) and confirmed on adversarial re-review (underhand means secretive, drifted)."
+  },
+  "underhandness": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `hand`, costing 6.20 points. Flagged in the 2026-09-22 semantic audit (underhand drifted from hand) and confirmed on adversarial re-review (underhand means secretive, drifted)."
   },
   "underletter": {
     "since": "2026-10-01",
@@ -6432,6 +7532,14 @@
     "since": "2026-10-01",
     "reason": "The seaward current under a breaking wave. A noun in its own right, not a `tow`."
   },
+  "underwearless": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `wear`, costing 5.49 points. Flagged in the 2026-09-22 semantic audit (underwear is a garment, not wear) and confirmed on adversarial re-review (underwear is a garment, drifted)."
+  },
+  "underwearlessness": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `wear`, costing 5.49 points. Flagged in the 2026-09-22 semantic audit (underwear is garment, not wear) and confirmed on adversarial re-review (underwear is a garment, drifted)."
+  },
   "undescript": {
     "since": "2026-10-01",
     "reason": "Folded onto `descript`, costing 1.49 points. Flagged in the 2026-09-22 semantic audit (descript not standard base) and confirmed on adversarial re-review (descript is not a base)."
@@ -6467,6 +7575,10 @@
   "unearnest": {
     "since": "2026-10-01",
     "reason": "Folded onto `earned`, costing 4.96 points. Flagged in the 2026-09-22 semantic audit (from earnest, not earn) and confirmed on adversarial re-review (earnest serious, unrelated to earn)."
+  },
+  "unearthlier": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `earth`, costing 5.69 points. Flagged in the 2026-09-22 semantic audit (unearthly means eerie, not earth) and confirmed on adversarial re-review (mome is a fool)."
   },
   "unearthly": {
     "since": "2026-10-01",
@@ -6523,6 +7635,14 @@
   "unflued": {
     "since": "2026-10-01",
     "reason": "Folded onto `flu`, costing 4.12 points. Flagged in the 2026-09-22 semantic audit (from flue, not flu) and confirmed on adversarial re-review (flue is not flu)."
+  },
+  "unfolders": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `folder`, costing 3.82 points. Flagged in the 2026-09-22 semantic audit (from unfold, not folder) and confirmed on adversarial re-review (from unfold, not folder)."
+  },
+  "unformulable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `formules`, costing 0.64 points. Flagged in the 2026-09-22 semantic audit (from formulable, formules unrelated) and confirmed on adversarial re-review (formules not the base)."
   },
   "unfritted": {
     "since": "2026-10-01",
@@ -6681,6 +7801,22 @@
     "since": "2026-10-01",
     "reason": "Folded onto `lie`, costing 5.37 points. Flagged in the 2026-09-22 semantic audit (liable from bind, not lie) and confirmed on adversarial re-review (liable from Latin ligare, not lie)."
   },
+  "unlikelier": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `like`, costing 7.62 points. Flagged in the 2026-09-22 semantic audit (from unlikely, drifted) and confirmed on adversarial re-review (likely means probable, drifted)."
+  },
+  "unlikelies": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `like`, costing 7.71 points. Flagged in the 2026-09-22 semantic audit (from unlikely, drifted) and confirmed on adversarial re-review (likely means probable, drifted)."
+  },
+  "unlikelily": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `like`, costing 7.71 points. Flagged in the 2026-09-22 semantic audit (from unlikely, drifted) and confirmed on adversarial re-review (unlikely means improbable, drifted)."
+  },
+  "unlikelinesses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `like`, costing 7.71 points. Flagged in the 2026-09-22 semantic audit (from unlikely, drifted) and confirmed on adversarial re-review (likely means probable, drifted)."
+  },
   "unmanly": {
     "since": "2026-10-01",
     "reason": "Folded onto `mane`, costing 1.69 points. Flagged in the 2026-09-22 semantic audit (from man, not mane) and confirmed on adversarial re-review (from man, not mane)."
@@ -6741,6 +7877,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `petty`, costing 4.28 points. Flagged in the 2026-09-22 semantic audit (from pet, not petty) and confirmed on adversarial re-review (from pet, not petty)."
   },
+  "unpinnable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `pinny`, costing 0.91 points. Flagged in the 2026-09-22 semantic audit (from pin, not pinny) and confirmed on adversarial re-review (pinny is an apron, unrelated)."
+  },
   "unplat": {
     "since": "2026-10-01",
     "reason": "Folded onto `plate`, costing 4.96 points. Flagged in the 2026-09-22 semantic audit (plat is not plate) and confirmed on adversarial re-review (plat is a land plot, not plate)."
@@ -6764,10 +7904,6 @@
   "unpraise": {
     "since": "2026-10-01",
     "reason": "Folded onto `pray`, costing 4.74 points. Flagged in the 2026-09-22 semantic audit (from praise, not pray) and confirmed on adversarial re-review (from praise, not pray)."
-  },
-  "unprayable": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `pray`, costing 4.74 points. Flagged in the 2026-09-22 semantic audit (from praise, not pray) and confirmed on adversarial re-review (praise unrelated to pray)."
   },
   "unprim": {
     "since": "2026-10-01",
@@ -6793,6 +7929,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `rob`, costing 4.65 points. Flagged in the 2026-09-22 semantic audit (unrobes from robe, not rob) and confirmed on adversarial re-review (from robe, not rob)."
   },
+  "unrottable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `rotte`, costing 0.44 points. Flagged in the 2026-09-22 semantic audit (from rot; rotte is an instrument) and confirmed on adversarial re-review (rotte is an instrument)."
+  },
   "unrubbable": {
     "since": "2026-10-01",
     "reason": "Folded onto `rubbies`, costing 1.21 points. Flagged in the 2026-09-22 semantic audit (rubbies unrelated plural, not rub form) and confirmed on adversarial re-review (rubbies unrelated to rub)."
@@ -6804,6 +7944,18 @@
   "unsatiably": {
     "since": "2026-10-01",
     "reason": "Folded onto `sati`, costing 2.08 points. Flagged in the 2026-09-22 semantic audit (from satiable, not sati) and confirmed on adversarial re-review (sati unrelated; from satiate)."
+  },
+  "unseemlier": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `seems`, costing 5.94 points. Flagged in the 2026-09-22 semantic audit (seemly drifted from seem) and confirmed on adversarial re-review (seemly means decorous, drifted)."
+  },
+  "unseemliest": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `seems`, costing 5.91 points. Flagged in the 2026-09-22 semantic audit (unseemly means improper, drifted) and confirmed on adversarial re-review (unseemly means improper, drifted)."
+  },
+  "unseemlinesses": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `seems`, costing 5.95 points. Flagged in the 2026-09-22 semantic audit (seemly drifted from seem) and confirmed on adversarial re-review (seemly means decorous, drifted)."
   },
   "unseizable": {
     "since": "2026-10-01",
@@ -6860,6 +8012,10 @@
   "unspecked": {
     "since": "2026-10-01",
     "reason": "Folded onto `spec`, costing 3.61 points. Flagged in the 2026-09-22 semantic audit (from speck, not spec) and confirmed on adversarial re-review (from speck, not spec)."
+  },
+  "unspinnable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `spinny`, costing 1.22 points. Flagged in the 2026-09-22 semantic audit (from spin, not spinny) and confirmed on adversarial re-review (spinny sense differs from spin)."
   },
   "unspit": {
     "since": "2026-10-01",
@@ -6933,9 +8089,17 @@
     "since": "2026-10-01",
     "reason": "Folded onto `trix`, costing 2.06 points. Flagged in the 2026-09-22 semantic audit (untrice unrelated to trix) and confirmed on adversarial re-review (untrice unrelated to trix)."
   },
+  "untriennium": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `triennium`, costing 0.43 points. Flagged in the 2026-09-22 semantic audit (systematic element name, unrelated) and confirmed on adversarial re-review (systematic element name, not triennium)."
+  },
   "untwines": {
     "since": "2026-10-01",
     "reason": "Folded onto `twin`, costing 4.63 points. Flagged in the 2026-09-22 semantic audit (untwines from twine, not twin) and confirmed on adversarial re-review (twine is not twin)."
+  },
+  "unwhippable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `whippy`, costing 1.29 points. Flagged in the 2026-09-22 semantic audit (from whip, not whippy) and confirmed on adversarial re-review (whippy sense differs from whip)."
   },
   "unworsted": {
     "since": "2026-10-01",
@@ -6965,6 +8129,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `van`, costing 3.45 points. Flagged in the 2026-09-22 semantic audit (vane plural, not van) and confirmed on adversarial re-review (vane unrelated to van)."
   },
+  "vastus": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `vastu`, costing 0.11 points. Flagged in the 2026-09-22 semantic audit (vastus muscle vs vastu architecture) and confirmed on adversarial re-review (muscle versus architecture)."
+  },
   "vates": {
     "since": "2026-10-01",
     "reason": "Folded onto `vat`, costing 3.23 points. Flagged in the 2026-09-22 semantic audit (vates is plural of vate/seer, not vat) and confirmed on adversarial re-review (vates is seer, not vat)."
@@ -6973,9 +8141,17 @@
     "since": "2026-10-01",
     "reason": "Folded onto `vegas`, costing 1.40 points. Flagged in the 2026-09-22 semantic audit (vega and vegas distinct words) and confirmed on adversarial re-review (vega and vegas distinct)."
   },
+  "vendues": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `vendus`, costing 0.18 points. Flagged in the 2026-09-22 semantic audit (vendus not the singular base) and confirmed on adversarial re-review (base is vendue, overshot)."
+  },
   "vides": {
     "since": "2026-10-01",
     "reason": "Folded onto `vid`, costing 2.29 points. Flagged in the 2026-09-22 semantic audit (plural of vide/vid unclear) and confirmed on adversarial re-review (vide is not vid)."
+  },
+  "vigilantes": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `vigilant`, costing 0.65 points. Flagged in the 2026-09-22 semantic audit (vigilante is a distinct noun) and confirmed on adversarial re-review (vigilante distinct noun from vigilant)."
   },
   "vike": {
     "since": "2026-10-01",
@@ -7033,6 +8209,10 @@
     "since": "2026-10-01",
     "reason": "Folded onto `want`, costing 7.15 points. Flagged in the 2026-09-22 semantic audit (want+es overshoot) and confirmed on adversarial re-review (nonword inflection of want)."
   },
+  "wapper": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `wapp`, costing 0.27 points. Flagged in the 2026-09-22 semantic audit (wapper unrelated to wapp) and confirmed on adversarial re-review (wapper unrelated to wapp)."
+  },
   "wares": {
     "since": "2026-08-21",
     "reason": "The plural of `ware`, not `war`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
@@ -7073,9 +8253,21 @@
     "since": "2026-10-01",
     "reason": "Folded onto `whig`, costing 2.78 points. Flagged in the 2026-09-22 semantic audit (slur, not form of whig) and confirmed on adversarial re-review (slur, unrelated to whig)."
   },
+  "whippability": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `whippy`, costing 1.29 points. Flagged in the 2026-09-22 semantic audit (from whip, not whippy) and confirmed on adversarial re-review (whippy sense differs from whip)."
+  },
+  "whippable": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `whippy`, costing 1.29 points. Flagged in the 2026-09-22 semantic audit (from whip, not whippy) and confirmed on adversarial re-review (whippy is springy; whippable from whip)."
+  },
   "whister": {
     "since": "2026-10-01",
     "reason": "Folded onto `whist`, costing 1.97 points. Flagged in the 2026-09-22 semantic audit (whister not from whist) and confirmed on adversarial re-review (whister unrelated to whist)."
+  },
+  "whves": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `whf`, costing 0.68 points. Flagged in the 2026-09-22 semantic audit (not a form of that) and confirmed on adversarial re-review (whf is not a base)."
   },
   "wick": {
     "since": "2026-10-01",
@@ -7121,6 +8313,14 @@
     "since": "2026-10-01",
     "reason": "Folded onto `won`, costing 5.85 points. Flagged in the 2026-09-22 semantic audit (winning/won confusion, dialectal dwelling) and confirmed on adversarial re-review (dialectal dwell, not win's past)."
   },
+  "worldbeater": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `worldbeat`, costing 1.14 points. Flagged in the 2026-09-22 semantic audit (worldbeat is music genre) and confirmed on adversarial re-review (worldbeat genre unrelated)."
+  },
+  "worldbeating": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `worldbeat`, costing 1.14 points. Flagged in the 2026-09-22 semantic audit (worldbeat is music genre) and confirmed on adversarial re-review (worldbeat genre unrelated)."
+  },
   "worldes": {
     "since": "2026-10-01",
     "reason": "Folded onto `world`, costing 6.92 points. Flagged in the 2026-09-22 semantic audit (world+es overshoot) and confirmed on adversarial re-review (nonword inflection of world)."
@@ -7128,6 +8328,18 @@
   "wreckless": {
     "since": "2026-10-01",
     "reason": "Folded onto `wreck`, costing 2.79 points. Flagged in the 2026-09-22 semantic audit (from reckless; wreck coincidental) and confirmed on adversarial re-review (from reckless, wreck coincidental)."
+  },
+  "wurlier": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `wur`, costing 0.72 points. Flagged in the 2026-09-22 semantic audit (wur is not base) and confirmed on adversarial re-review (wur is not a word)."
+  },
+  "wurlies": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `wur`, costing 0.72 points. Flagged in the 2026-09-22 semantic audit (wur is not base) and confirmed on adversarial re-review (wur is not a word)."
+  },
+  "wurliest": {
+    "since": "2026-10-01",
+    "reason": "Folded onto `wur`, costing 0.72 points. Flagged in the 2026-09-22 semantic audit (wur is not base) and confirmed on adversarial re-review (wur is not a word)."
   },
   "xemes": {
     "since": "2026-10-01",
@@ -7145,16 +8357,12 @@
     "since": "2026-10-01",
     "reason": "A scuffle or argument. `yikes` is an interjection, not its plural."
   },
-  "yottaflop": {
+  "yives": {
     "since": "2026-10-01",
-    "reason": "Folded onto `flop`, costing 3.57 points. Flagged in the 2026-09-22 semantic audit (flop is FLOPS unit, drifted) and confirmed on adversarial re-review (FLOPS unit, not the word flop)."
+    "reason": "Folded onto `yif`, costing 0.26 points. Flagged in the 2026-09-22 semantic audit (yives not plural of yif) and confirmed on adversarial re-review (yif is if/given, different stem)."
   },
   "zeptomolar": {
     "since": "2026-10-01",
     "reason": "Folded onto `molar`, costing 2.78 points. Flagged in the 2026-09-22 semantic audit (prefix on mole, not molar) and confirmed on adversarial re-review (mole prefix, not molar tooth)."
-  },
-  "zettaflop": {
-    "since": "2026-10-01",
-    "reason": "Folded onto `flop`, costing 3.57 points. Flagged in the 2026-09-22 semantic audit (flop is FLOPS unit, drifted) and confirmed on adversarial re-review (FLOPS unit, not the word flop)."
   }
 }
