@@ -1,5 +1,8 @@
 # fold-audit
 
+**Picking this up again? Read [STATE.md](STATE.md) first** — what has been
+judged, which batches remain, and the gotchas that cost time.
+
 Does the fold ever change a word's meaning? `running` -> `run` is the point of it;
 `scowly` -> `scow` is a bug. This is the harness that answers that at scale.
 
