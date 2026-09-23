@@ -87,10 +87,25 @@ export function CommonFormModal({ word, open = false, date, onClose }: Props) {
               </span>
               <span className="common-form__word">{word.base}</span>
             </p>
+            {/* A longer common form is not the word "wearing an affix" --
+                "titty" is not "titties" plus anything -- so it gets the
+                sentence that is true of both directions: one word, two forms,
+                scored at the commoner. */}
             <p className="modal__copy">
-              Scores come from how often a word gets used. “{word.word}” is
-              “{word.base}” wearing an affix, so it scores as “{word.base}” — a
-              familiar word in an unfamiliar shape isn’t a rarer word.
+              {word.base.length > word.word.length ? (
+                <>
+                  Scores come from how often a word gets used. “{word.word}” and
+                  “{word.base}” are forms of the same word, and “{word.base}” is
+                  the more common one, so “{word.word}” scores as “{word.base}” —
+                  a familiar word in an unfamiliar shape isn’t a rarer word.
+                </>
+              ) : (
+                <>
+                  Scores come from how often a word gets used. “{word.word}” is
+                  “{word.base}” wearing an affix, so it scores as “{word.base}” —
+                  a familiar word in an unfamiliar shape isn’t a rarer word.
+                </>
+              )}
             </p>
           </>
         ) : (

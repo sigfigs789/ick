@@ -91,16 +91,43 @@ describe("GuessLog", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("offers nothing to explain on a word with no note", () => {
-    const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
+  it("offers nothing to explain on a word scored on its own frequency", () => {
+    const words: AcceptedWord[] = [{ word: "organization", rarity: "Common", zipf: 5.1 }];
     render(<GuessLog acceptedWords={words} />);
+    expect(screen.queryByText(/scored as its common form/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /More info/i })).not.toBeInTheDocument();
   });
 
-  it("leaves a word alone when its base barely changed the score", () => {
+  it("names the common form even when the fold barely changed the score", () => {
+    // "played" scores as "play" without leaving Common. With Freeform a switch
+    // away, the two prices sit side by side, so every fold says so.
     const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
     render(<GuessLog acceptedWords={words} />);
-    expect(screen.queryByText(/scored as its common form/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/scored as its common form, “play”/i)).toBeInTheDocument();
+  });
+
+  it("explains a Standard score that differs from Freeform's on the same puzzle", () => {
+    // From the mode switch, "titty" is 7.19 in Freeform and 6.88 in Standard,
+    // capped at the commoner "titties". The note is what says why.
+    const words: AcceptedWord[] = [{ word: "titty", rarity: "Uncommon", zipf: 3.24 }];
+    render(<GuessLog acceptedWords={words} date="2026-09-27" />);
+    expect(screen.getByText(/scored as its common form, “titties”/i)).toBeInTheDocument();
+  });
+
+  it("names a common form longer than the word played", async () => {
+    // "abaci" scores as "abacus". Once withheld, which left the lost rank
+    // unexplained.
+    const words: AcceptedWord[] = [{ word: "abaci", rarity: "Rare", zipf: 2.5 }];
+    render(<GuessLog acceptedWords={words} />);
+    expect(screen.getByText(/scored as its common form, “abacus”/i)).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /why “abaci” was scored as its common form “abacus”/i })
+    );
+    // Not "wearing an affix": the common form is the longer of the two.
+    const panel = screen.getByRole("dialog", { name: /common forms/i });
+    expect(panel).toHaveTextContent(/forms of the same word/);
+    expect(panel).not.toHaveTextContent(/wearing an affix/);
   });
 
   it("crowns the rarest word as the best one", () => {
