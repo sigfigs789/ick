@@ -209,10 +209,19 @@ needs an account rather than a commit:
 
 ### Version numbers
 
-`app.json`'s `version` is the marketing version both stores show. iOS
-`buildNumber` and Android `versionCode` are the build counters, and the
-`production` profile has `autoIncrement` on, so EAS advances them.
+The marketing version both stores show is always `1.X`, where `X` is the
+website's `APP_VERSION` in the repo root's `src/version.ts`. It is not written
+anywhere by hand: `app.config.js` reads that constant and sets `version` on top
+of `app.json`, so a build is stamped with the website release it was cut from.
+Comparing the version in the stores with the one live on wordink.app shows how
+many web releases the app is behind.
 
-These are independent of the repo root's `src/version.ts`, which is the
-website's forced-reload floor for open browser tabs — a mechanism an installed
-app does not have and does not need.
+iOS `buildNumber` and Android `versionCode` are the build counters, and the
+`production` profile has `autoIncrement` on, so EAS advances them. Several
+builds can share one `1.X`; once a `1.X` is live in a store, though, the next
+submission needs a new one, so a native-only fix waits for (or brings about) a
+web bump.
+
+Only `APP_VERSION` feeds the store version. `MIN_VERSION`, the website's
+forced-reload floor for open browser tabs, is a mechanism an installed app does
+not have and does not need.
