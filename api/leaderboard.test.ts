@@ -237,6 +237,8 @@ describe("api/leaderboard submissions", () => {
     // value that isn't a boolean is not close enough.
     ["a retry flag that isn't a boolean", { retried: "yes" }, "bad-retried"],
     ["a retry flag sent as a number", { retried: 1 }, "bad-retried"],
+    // Decides whether the day reaches the board at all.
+    ["an unranked flag that isn't a boolean", { unranked: "yes" }, "bad-unranked"],
   ])("refuses %s", async (_label, overrides, reason) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -719,6 +721,30 @@ describe("api/leaderboard recent finds", () => {
 
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({ ok: false, reason: "unavailable" });
+  });
+});
+
+describe("api/leaderboard unranked days", () => {
+  it("passes the unranked flag through, so the write keeps the day off the board", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    const response = await handler(
+      post(score({ unranked: true, found: [{ word: "inkling", zipf: 2.9 }] }))
+    );
+
+    expect(response.status).toBe(202);
+    expect(rpcCall(fetchMock)?.args.p_scores).toEqual([
+      {
+        date: SUNDAY,
+        word: "inkling",
+        zipf: 2.9,
+        total: 24.6,
+        top: 9.4,
+        words: 5,
+        unranked: true,
+        found: [{ word: "inkling", zipf: 2.9 }],
+      },
+    ]);
   });
 });
 

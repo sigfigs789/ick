@@ -48,7 +48,7 @@
 //   afresh rather than handed a copy the reader has already seen.
 //
 // POST /api/leaderboard
-//   { playerId, scores: [{ date, word, zipf, total, top, words, retried?, found? }] }
+//   { playerId, scores: [{ date, word, zipf, total, top, words, retried?, unranked?, found? }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
 //   One score per player per puzzle. An array because it has two callers of the
 //   same shape: the game submitting today after each accepted word, and a player
@@ -61,6 +61,10 @@
 //   one retry, so the write assigns it rather than keeping the larger of the
 //   two -- and drops a pre-retry submission that arrives afterwards. Absent
 //   means false. See the 20260831 migration for why one boolean is enough.
+//
+//   `unranked` marks a day the player chose to play in Freeform: its `found`
+//   words reach the finds feed and the day itself never reaches the board.
+//   Absent means false.
 //
 //   `found` is that day's whole word list, which is what the finds feed is built
 //   from. Optional, and the backfill omits it for past days on purpose: a year of
@@ -411,6 +415,15 @@ interface ScoreEntry {
    */
   retried?: boolean;
   /**
+   * A day the player chose to play in Freeform (see src/game/mode.ts, isRanked).
+   *
+   * Optional, and absent means false. Its `found` words are written to the finds
+   * feed and the day itself is not written to the board at all: Freeform prices
+   * words on different terms, so one board holding both would rank whoever had
+   * the switch on. See the 20260923 migration.
+   */
+  unranked?: boolean;
+  /**
    * Every word accepted that day, for the finds feed.
    *
    * Optional, and absent is not a degraded submission: the history backfill
@@ -434,7 +447,10 @@ interface ScoreEntry {
  */
 function readScore(raw: unknown): ScoreEntry | string {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return "malformed-score";
-  const { date, word, zipf, total, top, words, retried, found } = raw as Record<string, unknown>;
+  const { date, word, zipf, total, top, words, retried, unranked, found } = raw as Record<
+    string,
+    unknown
+  >;
 
   if (typeof date !== "string" || !validPuzzleDate(date)) return "bad-date";
   if (typeof word !== "string" || !WORD_RE.test(word)) return "bad-word";
@@ -456,6 +472,8 @@ function readScore(raw: unknown): ScoreEntry | string {
   // has to be an actual boolean: this decides whether a submission may lower a
   // day, so a truthy string is not close enough.
   if (retried !== undefined && typeof retried !== "boolean") return "bad-retried";
+  // Held to the same standard: this decides whether a day reaches the board.
+  if (unranked !== undefined && typeof unranked !== "boolean") return "bad-unranked";
 
   const foundWords = readFound(found);
   if (typeof foundWords === "string") return foundWords;
@@ -468,6 +486,7 @@ function readScore(raw: unknown): ScoreEntry | string {
     top: Math.round(topScore * 100) / 100,
     words: wordCount,
     ...(retried === true ? { retried: true } : {}),
+    ...(unranked === true ? { unranked: true } : {}),
     ...(foundWords.length > 0 ? { found: foundWords } : {}),
   };
 }

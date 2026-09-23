@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { RarityBadge } from "./RarityBadge";
 import {
   fetchFoundWords,
   feedFloor,
+  repriceFoundWords,
   type FetchOptions,
   type FoundWord,
 } from "../game/leaderboard";
+import { useGameMode } from "../hooks/useGameMode";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { navigate } from "../routes";
@@ -71,6 +73,20 @@ export function FoundWordsPage() {
   const [floor] = useState(feedFloor);
   const isToday = viewing === today;
   const canGoBack = viewing > floor;
+  /**
+   * The list as the reader would have been scored for it.
+   *
+   * The feed holds both modes' finds, and each word is priced by the rules of
+   * the mode the *reader* is in -- so flipping the switch repaints every badge
+   * here the way it repaints the puzzle, with nothing fetched. `mode` is read
+   * only to re-run this; the pricing itself asks game/mode.ts.
+   */
+  const [mode] = useGameMode();
+  const priced = useMemo(
+    () => repriceFoundWords(words),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `mode` is the trigger
+    [words, mode],
+  );
 
   /**
    * Re-read the finds for the day on screen.
@@ -311,7 +327,8 @@ export function FoundWordsPage() {
             </span>
           </h1>
           <p className="page-head__note">
-            Every word anybody turned up for this drop.
+            Every word anybody turned up for this drop, in either mode, scored
+            by the mode you’re in.
           </p>
         </div>
         {/* A refresh belongs on the two pages whose content is other people's,
@@ -330,7 +347,7 @@ export function FoundWordsPage() {
       </div>
 
       <FoundWords
-        words={words}
+        words={priced}
         heading={heading}
         isToday={isToday}
         state={feedState}
