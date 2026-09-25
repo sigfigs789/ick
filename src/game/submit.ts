@@ -82,6 +82,25 @@ function rejectionReasonFor(word: string, date?: string): RejectionReason | unde
   return metadata;
 }
 
+/**
+ * The first puzzle where the drop itself plays in Standard, as it already did in
+ * Freeform. Words have had no minimum length since 2026-08-12, but the drop
+ * rule kept every two-letter word out of Standard in practice: on a two-letter
+ * drop the only two-letter word that contains it is the drop. A common drop
+ * ("at", "the") scores near nothing, and that is the whole price -- nothing
+ * else refuses it.
+ *
+ * Starts with the weekly reset, on the same date as MODE_CHOICE_START, so no
+ * week is played half under each rule. Archived puzzles keep the refusal.
+ */
+const DROP_PLAYABLE_START = "2026-09-27";
+
+/** Whether `date`'s puzzle takes the drop itself as an answer. Undefined means current rules. */
+export function dropPlayableFor(date?: string): boolean {
+  if (date === undefined || date >= DROP_PLAYABLE_START) return true;
+  return usesFreeformRules(date);
+}
+
 /** True if `drop`'s letters appear contiguously and in order inside `word`. */
 export function containsDropInOrder(word: string, drop: string): boolean {
   return word.toLowerCase().includes(drop.toLowerCase());
@@ -468,12 +487,13 @@ export function evaluateSubmission(
   if (isBlocked(word)) {
     return { ok: false, reason: "not-a-word" };
   }
-  // The drop itself is a word like any other during freeform week. Refusing it
-  // is a rule about what makes an interesting answer rather than about what is
-  // a word, which puts it with the fold and the same-root check rather than
-  // with the gates below -- and "ACC" is only unplayable the rest of the time
-  // because it is also an abbreviation. See FREEFORM_START.
-  if (!usesFreeformRules(date) && word === drop.toLowerCase()) {
+  // The drop itself is a word like any other during freeform week, and in both
+  // modes from DROP_PLAYABLE_START. Refusing it is a rule about what makes an
+  // interesting answer rather than about what is a word, which puts it with the
+  // fold and the same-root check rather than with the gates below -- and "ACC"
+  // is only unplayable the rest of the time because it is also an abbreviation.
+  // See FREEFORM_START.
+  if (!dropPlayableFor(date) && word === drop.toLowerCase()) {
     return { ok: false, reason: "same-as-drop" };
   }
   if (!containsDropInOrder(word, drop)) {
