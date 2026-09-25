@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { buildShareText, type RevealMode } from '../../../src/game/share';
 import { windowTotals } from '../../../src/game/totals';
+import { loadReveal, saveReveal } from '../../../src/game/reveal';
 import type { AcceptedWord, StreakState } from '../../../src/game/types';
 import { signalTap } from '../host/feedback';
 import { shareText as openShareSheet } from '../host/share';
@@ -42,9 +43,13 @@ const REVEAL_OPTIONS: { value: RevealMode; label: string }[] = [
 export function ResultsPanel({ date, drop, words, streak, isToday = false, onLeaderboard }: Props) {
   const theme = useTheme();
 
-  // "Top" by default: name the rarest word as a low-stakes flex and keep the
-  // rest anonymous. "Hide" stays for a fully spoiler-free share.
-  const [reveal, setReveal] = useState<RevealMode>('top');
+  // Starts from the player's last choice, "Top" until they make one (see
+  // src/game/reveal.ts).
+  const [reveal, setRevealState] = useState<RevealMode>(loadReveal);
+  const setReveal = (next: RevealMode) => {
+    setRevealState(next);
+    saveReveal(next);
+  };
   const [shared, setShared] = useState(false);
 
   // Read from this device's own history rather than the board: the numbers are
