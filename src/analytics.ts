@@ -31,11 +31,23 @@ type EventProps = Record<string, string | number | boolean | null>;
  * Skipped under test, where there is no server to post to and a stray request
  * would be noise. `npm run dev` does serve /api/events (see vite.config.ts), so
  * the path is exercisable locally.
+ *
+ * Every row carries `player_id`, the board identity (see game/player.ts), so
+ * the log can be read per player rather than only per event: which mode a player
+ * settles on, whether a switch sticks, whether they come back the next day. None
+ * of that is a count of events. Added here rather than at each call so no event
+ * can be written without it, and only here -- Vercel's dashboard has no way to
+ * group by a UUID, and every property it is sent costs one of the few it keeps.
+ * Null for a browser that has no id yet or cannot store one.
+ *
+ * Checks `reporting` itself as well as through `send`, because a couple of
+ * events address this sink directly and the id must never leave a host that has
+ * reporting off -- inside a Reddit post it is the player's account name.
  */
 function mirror(name: string, props?: EventProps): void {
-  if (import.meta.env.MODE === "test") return;
+  if (import.meta.env.MODE === "test" || !reporting) return;
   try {
-    const body = JSON.stringify(props ? { name, props } : { name });
+    const body = JSON.stringify({ name, props: { ...props, player_id: loadPlayerId() } });
     if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
       navigator.sendBeacon("/api/events", new Blob([body], { type: "application/json" }));
       return;

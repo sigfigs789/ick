@@ -14,6 +14,8 @@ import {
   trackVisitEngaged,
   trackFeedbackSubmitted,
   trackFreeformVote,
+  trackFreeformFeedback,
+  trackModeChanged,
   trackSessionTime,
   setReporting,
   isReporting,
@@ -495,8 +497,38 @@ describe("supabase mirror", () => {
     expect(body.type).toBe("application/json");
     expect(await payload(body)).toEqual({
       name: "word_suggested",
-      props: { word: "quixotic" },
+      props: { word: "quixotic", player_id: null },
     });
+  });
+
+  it("stamps every mirrored event with the player it came from", async () => {
+    vi.stubEnv("MODE", "production");
+    localStorage.setItem("ick:player", JSON.stringify({ id: "player-1" }));
+    const beacon = stubBeacon();
+
+    trackModeChanged("standard", "freeform");
+
+    // The per-player read is the point, so the id rides on the mirror...
+    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
+    expect(await payload(body)).toEqual({
+      name: "mode_changed",
+      props: { from: "standard", to: "freeform", player_id: "player-1" },
+    });
+    // ...and not on Vercel, which cannot group by it.
+    expect(track).toHaveBeenCalledWith("mode_changed", { from: "standard", to: "freeform" });
+    localStorage.clear();
+  });
+
+  it("mirrors nothing from a host with reporting off, even an event sent to it directly", () => {
+    vi.stubEnv("MODE", "production");
+    const beacon = stubBeacon();
+    setReporting(false);
+    try {
+      trackFreeformFeedback("a note", "2026-09-15", null);
+    } finally {
+      setReporting(true);
+    }
+    expect(beacon).not.toHaveBeenCalled();
   });
 
   it("falls back to a keepalive fetch where sendBeacon is missing", async () => {
@@ -509,8 +541,11 @@ describe("supabase mirror", () => {
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("/api/events");
     expect(init.keepalive).toBe(true);
-    // An event with no properties sends none, rather than an empty object.
-    expect(await payload(init.body)).toEqual({ name: "arrived_from_share" });
+    // An event with no properties of its own still says whose it was.
+    expect(await payload(init.body)).toEqual({
+      name: "arrived_from_share",
+      props: { player_id: null },
+    });
     vi.unstubAllGlobals();
   });
 
@@ -531,7 +566,7 @@ describe("supabase mirror", () => {
     const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
     expect(await payload(body)).toEqual({
       name: "freeform_vote",
-      props: { vote: "boo", date: "2026-09-15", voter: "player-1" },
+      props: { vote: "boo", date: "2026-09-15", voter: "player-1", player_id: "player-1" },
     });
     localStorage.clear();
   });
@@ -548,7 +583,7 @@ describe("supabase mirror", () => {
     const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
     expect(await payload(body)).toEqual({
       name: "freeform_vote",
-      props: { vote: "love", date: "2026-09-15", voter: null },
+      props: { vote: "love", date: "2026-09-15", voter: null, player_id: null },
     });
   });
 
