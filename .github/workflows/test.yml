@@ -28,3 +28,34 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+  native:
+    name: Typecheck the native app
+    runs-on: ubuntu-latest
+
+    # The phone app imports the game from src/ rather than copying it, so a
+    # change there can break the native build without touching native/ at all
+    # -- #341 removed a function the app's guess log still called, and nothing
+    # noticed until a store build was due. With over-the-air updates the same
+    # break would ship to phones as a crash, so every PR checks it.
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            native/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm ci --prefix native
+
+      - name: Typecheck
+        working-directory: native
+        run: npx tsc --noEmit

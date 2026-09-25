@@ -74,6 +74,14 @@ jobs:
           npm ci
           npm ci --prefix native
 
+      # The same check the PR ran (test.yml), again here: this is the last step
+      # before the code is on players' phones, and main can differ from any
+      # one PR that passed.
+      - name: Typecheck
+        if: steps.token.outputs.present == 'true'
+        working-directory: native
+        run: npx tsc --noEmit
+
       - name: Publish to the production channel
         if: steps.token.outputs.present == 'true'
         working-directory: native
