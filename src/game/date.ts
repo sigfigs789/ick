@@ -11,8 +11,8 @@ import { DEV_TOOLS } from "../dev/devTools";
  *
  * In a development or preview build a date picked from the dev bar stands in
  * for the wall clock, so the whole app -- puzzle, archive, streak, boards --
- * can be moved through time together. See src/dev/devDate.ts; on production the
- * check folds away and this is the wall clock alone. */
+ * can be moved through time together. See src/dev/devDate.ts; on production,
+ * unless switched on with `?dev=1`, this is the wall clock alone. */
 export function todayDateString(): string {
   if (DEV_TOOLS) {
     const override = devDateOverride();

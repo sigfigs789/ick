@@ -327,8 +327,8 @@ export function Root() {
         date={today.current}
         onClose={closeFreeform}
       />
-      {/* Development and preview builds only: `DEV_TOOLS` folds to a constant, so
-          this and everything under it drops out of a production build. */}
+      {/* Development and preview builds, or production opened with `?dev=1`
+          (see src/dev/devTools.ts). */}
       {DEV_TOOLS && <DevDateBar />}
       <InstructionsModal
         open={showInstructions}
