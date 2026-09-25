@@ -7,7 +7,7 @@
 //        allTime: [...], allTimeSelf }
 //   `mode` picks which of the two boards to read. There is one per game mode
 //   from the choice date on, and a day played before it counts on both -- the
-//   whole of that rule lives in the SQL (see the 20260922 migration), so this
+//   whole of that rule lives in the SQL (see the 20260925 migration), so this
 //   file only has to pass the word along. Absent or unrecognised reads as
 //   Standard, which is the board that existed before there were two.
 //   The daily board counts the single puzzle `day`; the weekly board counts the
@@ -58,8 +58,8 @@
 //   afresh rather than handed a copy the reader has already seen.
 //
 // POST /api/leaderboard
-//   { playerId, scores: [{ date, word, zipf, total, top, words, mode?, retried?,
-//                          found? }] }
+//   { playerId, version?, scores: [{ date, word, zipf, total, top, words, mode?,
+//                                    retried?, unranked?, found? }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
 //   One score per player per puzzle. An array because it has two callers of the
 //   same shape: the game submitting today after each accepted word, and a player
@@ -79,11 +79,24 @@
 //   overrides anything said about an earlier day, because a day played before
 //   there was a choice belongs to both boards and is not the client's to assign.
 //
+//   `unranked` keeps a day off every board while its `found` words still reach
+//   the finds feed: an archive puzzle, the feed's own repair, and -- from a
+//   client that predates the Freeform board -- a day played in Freeform. Absent
+//   means false.
+//
 //   `found` is that day's whole word list, which is what the finds feed is built
-//   from. Optional, and the backfill omits it for past days on purpose: a year of
-//   words would not fit the body cap, and the feed only ever shows one puzzle.
+//   from. Optional: the board's backfill omits it for past days, because a year
+//   of words would not fit the body cap. A past day's words come up instead as
+//   an `unranked` day of their own, once each (src/game/leaderboard.ts,
+//   backfillFinds).
 //   Each word is written once and never updated, so its place in the feed is
 //   fixed when it lands.
+//
+//   `version` is the client's APP_VERSION (src/version.ts): which release's
+//   scoring priced these words. A submission below MIN_RANKED_VERSION, or one
+//   that carries no version at all, is written as though every day in it were
+//   `unranked` -- its words reach the feed and none of its days reach the board.
+//   See MIN_RANKED_VERSION in src/version.ts for why.
 //
 //   No name is sent, and none is stored: what the board calls a player is
 //   derived from their id on the client (src/game/handle.ts). Each day carries
@@ -107,7 +120,11 @@
 // boards are fetched when the page loads and then left alone, and the thing that
 // polls is the finds feed, which carries no player and is shared by everyone.
 
+import { MIN_RANKED_VERSION } from "../src/version";
 import { record, rpc, supabaseConfigured, type EdgeContext } from "./_supabase";
+
+// Vercel's Edge runtime exposes `process.env`; see api/_supabase.ts.
+declare const process: { env: Record<string, string | undefined> };
 
 export const config = { runtime: "edge" };
 
@@ -178,6 +195,11 @@ function monthEnd(start: string): string {
 function weekEnd(start: string): string {
   return daysBefore(start, -6);
 }
+
+// The oldest release whose scores the board will rank. Defined beside
+// APP_VERSION, where it is raised, and published in version.json so a store
+// build below it can tell its player to update. See src/version.ts.
+export { MIN_RANKED_VERSION };
 
 /**
  * A batch is a browser's whole playing history, so it has to hold a couple of
@@ -391,11 +413,27 @@ function utcToday(): string {
 function validDate(date: string, floor: string): boolean {
   if (!DATE_RE.test(date)) return false;
   if (Number.isNaN(Date.parse(`${date}T00:00:00Z`))) return false;
-  const tomorrow = new Date(Date.parse(`${utcToday()}T00:00:00Z`) + 86400000)
+  const ahead = futureDaysAllowed();
+  const latest = new Date(Date.parse(`${utcToday()}T00:00:00Z`) + ahead * 86400000)
     .toISOString()
     .slice(0, 10);
-  return date >= floor && date <= tomorrow;
+  return date >= floor && date <= latest;
 }
+
+/**
+ * How far past UTC's today a puzzle date may be: one day, for the calendars
+ * already on tomorrow -- except on a Vercel preview deploy, where the dev date
+ * picker lets a tester move ahead to a cutover and play it.
+ *
+ * Previews write to the production tables, so a test post for a future day is
+ * a real row, and that day's feed and board will carry it when the day
+ * arrives. That was accepted deliberately, to test a cutover before it ships.
+ * VERCEL_ENV is Vercel's own runtime variable, "production" on the live site.
+ */
+function futureDaysAllowed(): number {
+  return process.env.VERCEL_ENV === "preview" ? PREVIEW_DAYS_AHEAD : 1;
+}
+const PREVIEW_DAYS_AHEAD = 60;
 
 /** A date a puzzle actually exists for. */
 function validPuzzleDate(date: string): boolean {
@@ -438,7 +476,7 @@ interface ScoreEntry {
    * before there were two boards meant, and what a player who has never touched
    * the switch is playing. Passed through to the write, which honours it only
    * for a day on or after the split and writes every earlier day to both boards
-   * regardless. See the 20260922 migration.
+   * regardless. See the 20260925 migration.
    */
   mode?: BoardMode;
   /**
@@ -452,6 +490,16 @@ interface ScoreEntry {
    * migration for the four cases.
    */
   retried?: boolean;
+  /**
+   * A day that reaches no board, only the finds feed: an archive puzzle, the
+   * feed's repair (src/game/leaderboard.ts), or a Freeform day from a client
+   * that predates the Freeform board and so sends one this way.
+   *
+   * Optional, and absent means false. Its `found` words are written to the finds
+   * feed and the day itself is not written to any board. See the 20260923
+   * migration, and the 20260925 one that keeps the flag beside `mode`.
+   */
+  unranked?: boolean;
   /**
    * Every word accepted that day, for the finds feed.
    *
@@ -476,7 +524,7 @@ interface ScoreEntry {
  */
 function readScore(raw: unknown): ScoreEntry | string {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return "malformed-score";
-  const { date, word, zipf, total, top, words, mode, retried, found } = raw as Record<
+  const { date, word, zipf, total, top, words, mode, retried, unranked, found } = raw as Record<
     string,
     unknown
   >;
@@ -501,8 +549,10 @@ function readScore(raw: unknown): ScoreEntry | string {
   // has to be an actual boolean: this decides whether a submission may lower a
   // day, so a truthy string is not close enough.
   if (retried !== undefined && typeof retried !== "boolean") return "bad-retried";
-  // Unlike `retried`, an unreadable mode is not refused. It decides which of two
-  // boards a day lands on rather than whether the day may shrink, and the
+  // Held to the same standard: this decides whether a day reaches a board.
+  if (unranked !== undefined && typeof unranked !== "boolean") return "bad-unranked";
+  // Unlike those two, an unreadable mode is not refused. It decides which of two
+  // boards a day lands on rather than whether it lands or shrinks, and the
   // fallback is the one a client that has never heard of modes means -- so
   // failing a whole batch over it would cost a player their history to enforce a
   // spelling. The write narrows it again anyway.
@@ -523,6 +573,7 @@ function readScore(raw: unknown): ScoreEntry | string {
     // from an absent field is a write with a silent default in it.
     mode: boardMode,
     ...(retried === true ? { retried: true } : {}),
+    ...(unranked === true ? { unranked: true } : {}),
     ...(foundWords.length > 0 ? { found: foundWords } : {}),
   };
 }
@@ -560,9 +611,16 @@ function readSubmission(parsed: unknown):
   | { playerId: string; scores: ScoreEntry[] }
   | string {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "malformed-body";
-  const { playerId, scores } = parsed as Record<string, unknown>;
+  const { playerId, version, scores } = parsed as Record<string, unknown>;
 
   if (typeof playerId !== "string" || !UUID_RE.test(playerId)) return "bad-player-id";
+  // Absent is every client from before the field, and is simply below the floor.
+  // Anything present has to be a release number: this decides whether a batch
+  // reaches the board, so a string that looks like one is not close enough.
+  if (version !== undefined && (!Number.isInteger(version) || (version as number) < 1)) {
+    return "bad-version";
+  }
+  const ranked = typeof version === "number" && version >= MIN_RANKED_VERSION;
 
   if (!Array.isArray(scores)) return "bad-scores";
   if (scores.length === 0) return "no-scores";
@@ -574,7 +632,7 @@ function readSubmission(parsed: unknown):
     // One bad day fails the batch rather than being quietly dropped: a partial
     // write would leave the client believing it submitted a history it didn't.
     if (typeof score === "string") return score;
-    checked.push(score);
+    checked.push(ranked ? score : { ...score, unranked: true });
   }
   return { playerId, scores: checked };
 }
@@ -604,9 +662,17 @@ function readSubmission(parsed: unknown):
  * today's puzzle, and anyone who opens this page mid-play is handed some. The
  * feed is much better live than a day behind, and that is the trade.
  */
-function wordsDay(claimed: string | null): string {
+function wordsDay(claimed: string | null): string | null {
   if (claimed && validPuzzleDate(claimed)) return claimed;
-  // No date, or one no puzzle exists for. UTC's own day is the only guess
+  // A real date that is out of range -- past the furthest ahead any calendar
+  // can be, or before the first puzzle -- has no finds, and says so. It used to
+  // fall through to UTC's today below, so a client whose date was moved ahead
+  // (the dev date picker, most often) was handed today's words under another
+  // day's heading.
+  if (claimed && DATE_RE.test(claimed) && !Number.isNaN(Date.parse(`${claimed}T00:00:00Z`))) {
+    return null;
+  }
+  // No date, or one that isn't a date. UTC's own day is the only guess
   // available and is right for most of the world's clock; a real client always
   // sends its own.
   return utcToday();
@@ -659,6 +725,8 @@ async function handleWordsGet(params: URLSearchParams): Promise<Response> {
   // One puzzle and nothing else: the feed is about the drop the player is
   // looking at, and a week of history behind it made it read as an archive.
   const since = wordsDay(params.get("today"));
+  // A day no puzzle has reached: nothing to ask the database.
+  if (since === null) return reply(200, { words: [] }, WORDS_CACHE_SECONDS);
   const before = daysBefore(since, -1);
 
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });

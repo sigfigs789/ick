@@ -1,7 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
-import { APP_VERSION, MIN_VERSION } from './src/version'
+import { APP_VERSION, MIN_RANKED_VERSION, MIN_VERSION } from './src/version'
 
 // Serves the api/ edge functions during `npm run dev`. In production those files
 // are Vercel Edge Functions, which `vite dev` knows nothing about -- without this
@@ -148,12 +148,20 @@ function emitVersionJson(): Plugin {
             `this would force an infinite reload loop for all users. Fix src/version.ts.`,
         )
       }
+      // Same guard for the ranking floor: above the release, no client ranks.
+      if (MIN_RANKED_VERSION > APP_VERSION) {
+        this.error(
+          `MIN_RANKED_VERSION (${MIN_RANKED_VERSION}) must not exceed APP_VERSION (${APP_VERSION}) — ` +
+            `no client could rank. Fix src/version.ts.`,
+        )
+      }
       this.emitFile({
         type: 'asset',
         fileName: 'version.json',
         source: JSON.stringify({
           version: APP_VERSION,
           minVersion: MIN_VERSION,
+          minRankedVersion: MIN_RANKED_VERSION,
         }),
       })
     },

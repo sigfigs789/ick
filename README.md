@@ -442,15 +442,9 @@ silently and `api/events.ts` answers 503.
 
 ### Running the leaderboard locally
 
-No database needed. In a development build the leaderboard page carries a
-**"Use sample data"** toggle: it swaps a hardcoded fixture
-(`src/dev/sample-leaderboard.json`) in for the server, in the exact shape the
-endpoint answers with — so it is read by the same parsing a real response is, and
-a change there cannot pass against the fixture and fail in production.
-
-The toggle and the fixture both sit behind `import.meta.env.DEV`, a compile-time
-constant, so Vite drops the branch *and* the JSON import from a production
-build. The dev-only "Reset answers" button works the same way.
+There is no fixture: the leaderboard, the finds feed and the review pages
+always read whatever the server holds. `vite dev` serves no edge functions, so
+those pages need one behind them.
 
 To develop against a real database instead, `supabase start` brings up a local
 stack and applies the migrations; point `.env` at the URL and service-role key it

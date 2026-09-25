@@ -125,8 +125,7 @@ export function upcomingFoldDates(
  * meets it: a word that reads as a 9.9 Legend on its own frequency and scores
  * 4.1 because it is a plural is the review's first question, and a fold that
  * moves the number by a hundredth is its last. Reading the formatted score
- * rather than the raw one keeps the ordering tied to what is on screen, the same
- * way `baseFormRankDrop` does.
+ * rather than the raw one keeps the ordering tied to what is on screen.
  *
  * A word two of these puzzles both reach appears once, under the first of them.
  * The fold is a property of the word, not of the drop that reached it, and

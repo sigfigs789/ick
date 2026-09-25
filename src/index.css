@@ -1925,6 +1925,78 @@ h2 {
   }
 }
 
+/* The perfect-month burst (see components/PerfectMonthCelebration.tsx): twice
+   the pieces, packed twice as close, falling slower -- and every other one gold,
+   so it reads as a different occasion from the Rare-word burst rather than the
+   same one again. */
+.confetti--grand .confetti__piece {
+  left: calc((var(--confetti-index) + 1) * 2%);
+  animation-name: confetti-fall-grand;
+  animation-duration: 2.6s;
+  animation-delay: calc(var(--confetti-index) * 22ms);
+}
+.confetti--grand .confetti__piece:nth-child(odd) {
+  background: hsl(calc(38deg + var(--confetti-index) * 0.4deg) 92% 54%);
+}
+@keyframes confetti-fall-grand {
+  to {
+    transform: translate(calc((var(--confetti-index) - 24) * 0.9vw), 108vh)
+      rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.perfect-month {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 21;
+  width: min(22rem, calc(100vw - 2rem));
+}
+.perfect-month__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 2px solid hsl(42 88% 52%);
+  border-radius: 1rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  box-shadow: var(--card-shadow), 0 0 0 6px hsl(42 88% 52% / 0.18);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  animation: perfect-month-in 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.perfect-month__trophy {
+  font-size: 2.25rem;
+  line-height: 1;
+}
+.perfect-month__title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+.perfect-month__body {
+  color: var(--fg-muted);
+  font-size: 0.95rem;
+  text-wrap: balance;
+}
+.perfect-month__tally {
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--fg);
+}
+@keyframes perfect-month-in {
+  from {
+    transform: translateY(-1.5rem) scale(0.85);
+    opacity: 0;
+  }
+}
+
 /* Instructions modal */
 .modal-overlay {
   position: fixed;
@@ -2014,12 +2086,6 @@ h2 {
 .modal__modes-heading {
   margin: 0 0 0.6rem;
   font-size: 0.95rem;
-}
-.modal__modes-note {
-  margin: 0;
-  color: var(--fg-muted);
-  font-size: 0.82rem;
-  line-height: 1.45;
 }
 
 .modal__signoff {
@@ -2388,17 +2454,6 @@ h2 {
   50% {
     opacity: 0.8;
   }
-}
-/* Development only; never rendered in a production build. */
-.dev-sample-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  margin-top: 1.4rem;
-  color: var(--fg-faint);
-  font-size: 0.75rem;
-  cursor: pointer;
 }
 .found-words__finders {
   flex: none;
@@ -3670,6 +3725,58 @@ h2 {
 .fold__drop {
   font-weight: 700;
 }
+/*
+ * The recommendation under a rejected fold: what it should have folded to.
+ *
+ * Indented under the row rather than beside the two buttons, because it is the
+ * second half of one answer and not a third control. It appears only once a
+ * fold has been rejected, so the row grows downward as it is answered and the
+ * rows below keep their order -- the batch is meant to hold still while it is
+ * worked through.
+ */
+.fold__suggest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+.fold__suggest-label {
+  font-size: 0.8rem;
+  color: var(--fg-muted);
+}
+.fold__suggest-input {
+  flex: 1 1 10rem;
+  min-width: 0;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.3rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.fold__suggest-input:focus-visible {
+  outline: 2px solid var(--fg-muted);
+  outline-offset: 1px;
+}
+/* A base the scoring could not use, said while the person who knows the right
+   word is still looking at the row. */
+.fold__suggest-input[aria-invalid="true"] {
+  border-color: var(--danger-fg);
+}
+.fold__suggest-note {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  color: var(--danger-fg);
+}
+/* The score the recommendation would hand the word, which is the thing the
+   recommendation is actually for. */
+.fold__suggest-note--ok {
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* The two answers, side by side and equally weighted: neither is the default,
    and a page that made one of them easier to press would be a page that
    collected that answer. */

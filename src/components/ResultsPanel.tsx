@@ -3,6 +3,7 @@ import { buildShareText, type RevealMode } from "../game/share";
 import { RainbowWord } from "./RainbowWord";
 import { MODE_LABELS } from "../game/mode";
 import { windowTotals } from "../game/totals";
+import { loadReveal, saveReveal } from "../game/reveal";
 import { ShareButton } from "./ShareButton";
 import { TwitterShareButton } from "./TwitterShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -80,10 +81,13 @@ export function ResultsPanel({
   mode,
   onLeaderboard,
 }: Props) {
-  // Default to "top": name the player's rarest word as a low-stakes flex while
-  // keeping the rest anonymous. "Hide" stays available for a fully spoiler-free
-  // share.
-  const [reveal, setReveal] = useState<RevealMode>("top");
+  // Starts from the player's last choice, "Top" until they make one (see
+  // game/reveal.ts).
+  const [reveal, setRevealState] = useState<RevealMode>(loadReveal);
+  const setReveal = (next: RevealMode) => {
+    setRevealState(next);
+    saveReveal(next);
+  };
   // Read once per render from this browser's own history rather than the
   // leaderboard: the numbers are the boards' arithmetic (see game/totals.ts),
   // but a player who never joined a board still gets them, and nothing here has

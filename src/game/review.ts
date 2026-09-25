@@ -6,8 +6,6 @@
 // two pages that have no link in the app, and a failure on either is a page that
 // says it could not load.
 
-import { sampleReviewResponse, usingSampleData } from "../dev/sampleData";
-import { DEV_TOOLS } from "../dev/devTools";
 
 /** How long a read waits before giving up, matching the leaderboard's. */
 const FETCH_TIMEOUT_MS = 6000;
@@ -143,12 +141,6 @@ async function read<T>(
   list: "suggested-words" | "feedback" | "freeform",
   pick: (body: Record<string, unknown>) => T,
 ): Promise<T> {
-  // `vite dev` serves no edge functions, so these lists have no server to ask
-  // unless one is running. Same switch as the leaderboard's (see
-  // dev/sampleData.ts), and dropped from a production build with it.
-  if (DEV_TOOLS && usingSampleData()) {
-    return pick(sampleReviewResponse(list) as Record<string, unknown>);
-  }
   const response = await fetch(`/api/review?list=${list}${keyParam()}`, {
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     cache: "no-store",
@@ -291,10 +283,6 @@ export async function setMark(
   ref: string | number,
   mark: Mark,
 ): Promise<Mark> {
-  // Sample data has no server to write to, and a toggle that always failed
-  // would make the fixture worse than nothing: it answers with what was asked
-  // for, and the mark lives as long as the page does.
-  if (DEV_TOOLS && usingSampleData()) return mark;
   const response = await fetch(`/api/review${keyQuery()}`, {
     method: "POST",
     headers: { "content-type": "application/json" },

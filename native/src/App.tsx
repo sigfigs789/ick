@@ -5,8 +5,10 @@ import { syncHistory } from '../../src/game/leaderboard';
 import { hasJoined, joinBoard } from '../../src/game/player';
 import { hasSeen, markSeen } from '../../src/game/whatsNew';
 import { InstructionsSheet } from './components/InstructionsSheet';
+import { UpdateBanner } from './components/UpdateBanner';
 import { signalTap } from './host/feedback';
 import { useAppState } from './hooks/useAppState';
+import { useUpdateCheck } from './hooks/useUpdateCheck';
 import { FoundWordsScreen } from './screens/FoundWordsScreen';
 import { LeaderboardScreen } from './screens/LeaderboardScreen';
 import { PlayScreen } from './screens/PlayScreen';
@@ -58,6 +60,9 @@ const SYNC_STALE_MS = 5 * 60_000;
 export function App() {
   const theme = useTheme();
   const [route, setRoute] = useState<Route>('game');
+  // Whether this build has fallen below the leaderboard's floor with no
+  // over-the-air update to close the gap -- see useUpdateCheck and UpdateBanner.
+  const { behind } = useUpdateCheck();
 
   // A player who has never tapped "?" never learns that rarer scores higher,
   // which is the whole game -- so the rules open themselves once, on a first
@@ -196,6 +201,7 @@ export function App() {
         </View>
 
         <View style={styles.fill}>
+          {behind && route !== 'found-words' && <UpdateBanner />}
           {route === 'leaderboard' ? (
             <LeaderboardScreen />
           ) : route === 'found-words' ? (

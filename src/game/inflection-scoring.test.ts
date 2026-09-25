@@ -1,7 +1,13 @@
 // @ts-expect-error -- Node builtin; no @types/node, available under vitest.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { RARITY_ORDER, baseFormSubstitution, rarityFor, rarityScore } from "./dictionary";
+import {
+  LIQUID_STEM_START,
+  RARITY_ORDER,
+  baseFormSubstitution,
+  rarityFor,
+  rarityScore,
+} from "./dictionary";
 import {
   baseForm,
   doublingTenseStem,
@@ -10,10 +16,12 @@ import {
   prefixBaseCandidates,
 } from "./stem";
 import { evaluateSubmission, sameRootKey } from "./submit";
+import { MODE_CHOICE_START } from "./mode";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
+import foldReviewVerdictData from "../data/fold-review-verdicts.json";
 import boundResidueData from "../data/bound-residues.json";
 import measurementUnitData from "../data/measurement-units.json";
 import type { AcceptedWord } from "./types";
@@ -41,6 +49,24 @@ function corpusHeadwords(): Set<string> {
   }
   corpusWordCache = out;
   return out;
+}
+
+/**
+ * Whether `word` came out of a cutover *rarer* than it went in.
+ *
+ * Several reviewed changes now land on MODE_CHOICE_START and they pull opposite
+ * ways: a prefix cutover hands a word a fold it did not have, which makes it
+ * commoner, while the 2026-09-22 semantic audit withdraws folds that were
+ * landing on the wrong word, which makes them rarer. A ledger counting the sum
+ * could state neither.
+ *
+ * Direction separates them rather than spelling, because the two overlap:
+ * thirteen "anti-"/"counter-" words and eleven "pre-" words carry an
+ * exemption of their own. One word's score cannot move one way for both reasons, so
+ * whichever way it moved names the change that owns it.
+ */
+function lostAFold(word: string, before: string, after: string): boolean {
+  return rarityFor(word, after)!.zipf < rarityFor(word, before)!.zipf;
 }
 
 // The 2026-08-21 cutover: a plural or third-person form no longer out-scores the
@@ -408,7 +434,12 @@ describe("reviewed fold exemptions", () => {
       // "airshow", and means a cascade of cosmic-ray particles; before the
       // cutover there was no such fold to overrule, and no such entry to write.
       // See CORPUS_ONLY_START.
-      const known = since >= "2026-09-28" ? words.has(word) || corpusHeadwords().has(word) : words.has(word);
+      // Corpus headwords are nameable from the day the fold can price against
+      // them -- see CORPUS_ONLY_START, which LIQUID_STEM_START shares.
+      const known =
+        since >= LIQUID_STEM_START
+          ? words.has(word) || corpusHeadwords().has(word)
+          : words.has(word);
       expect(known, `${word} is in neither lexicon`).toBe(true);
       expect(since >= "2026-08-21").toBe(true);
       // The only scope the engine knows. A typo would read as a blanket
@@ -432,6 +463,41 @@ describe("reviewed fold exemptions", () => {
           false
         );
       }
+    }
+  });
+});
+
+// src/data/fold-review-verdicts.json is the fold review page's own file: the
+// verdicts reached at /fold and exported by scripts/export-fold-rejections.mjs.
+// A verdict naming a base behaves like an override, one naming none like an
+// exemption -- same effects as the curated tables, kept apart so a scoring line
+// can be traced to who decided it and how.
+describe("reviewed fold verdicts", () => {
+  it("shares no word with either curated table", () => {
+    // The curated tables are read first and win, so a word in both would leave
+    // a dead entry here -- a review error rather than a tie.
+    const overrides = new Set(Object.keys(scoreOverrideData));
+    const exemptions = new Set(Object.keys(foldExemptionData));
+    for (const word of Object.keys(foldReviewVerdictData)) {
+      expect(overrides.has(word), `${word} is also a curated override`).toBe(false);
+      expect(exemptions.has(word), `${word} is also a curated exemption`).toBe(false);
+    }
+  });
+
+  it("names lexicon words on both sides and dates every entry", () => {
+    const words = new Set(dictionaryWords as string[]);
+    const known = (word: string) => words.has(word) || corpusHeadwords().has(word);
+    for (const [word, entry] of Object.entries(foldReviewVerdictData)) {
+      const { base, since } = entry as { base: string | null; since: string };
+      expect(known(word), `${word} is in neither lexicon`).toBe(true);
+      // A base the lexicon does not have is dropped at scoring time, which would
+      // make the entry a silent no-op -- the one failure mode a reviewed
+      // judgement must not have.
+      if (base !== null) {
+        expect(known(base), `${word} recommends ${base}, which is in neither lexicon`).toBe(true);
+        expect(base, `${word} folds to itself`).not.toBe(word);
+      }
+      expect(/^\d{4}-\d{2}-\d{2}$/.test(since), `${word} has no usable since date`).toBe(true);
     }
   });
 });
@@ -2311,13 +2377,17 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
   // The wrong *bracketings*, which is what a frequency gate never caught either
   // and what fold-exemptions.json is for: the letters are there and the prefix
   // is not. Scoped to the prefix, so the word's ordinary folds still run.
+  //
+  // The four whose numbers moved when this date also stopped capping a word at
+  // a longer form (SHORTER_FORMS_START) were held at their own plurals before:
+  // "antibody" at "antibodies", "counterpane" at "counterpanes".
   const EXEMPT: ReadonlyArray<[word: string, unreachable: string, score: number]> = [
-    ["antibody", "body", 6.43],
-    ["counterpart", "part", 6.17],
+    ["antibody", "body", 6.57],
+    ["counterpart", "part", 6.24],
     ["antimony", "monies", 7.84],
-    ["antiphony", "phony", 9.77],
+    ["antiphony", "phony", 9.79],
     ["antipathetic", "pathetic", 9.42],
-    ["counterpane", "pane", 8.54],
+    ["counterpane", "pane", 9.74],
     ["antidotes", "dot", 6.86],
   ];
 
@@ -2326,16 +2396,29 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
     expect(baseFormSubstitution(word, ON_UNGATED)?.base).not.toBe(unreachable);
   });
 
-  it("moves 510 words, every one of them prefixed, and lowers no score", () => {
+  it("moves 507 words up, every one of them prefixed, alongside the audit's withdrawals", () => {
     // The change stated over the dictionary rather than on the samples above.
-    // Two claims: nothing outside the two prefixes moves at all -- this is one
-    // family, not a retune -- and every move is a fold, which can only ever make
-    // a word more common.
+    // Two claims: nothing outside the two prefixes moves *for this reason* --
+    // this is one family, not a retune -- and every move is a fold, which can
+    // only ever make a word more common.
+    //
+    // Scoped to the two prefixes rather than taken over the whole date. The date
+    // carries three changes now -- these prefixes, the restored "pre-" in the
+    // describe below, and the corpus lexicon -- so a sweep of the whole day
+    // would be a claim about all three. Each states its own slice; the corpus
+    // states its own in corpus-lexicon.test.ts.
+    //
+    // The 2026-09-22 audit shares this date and pulls the other way, so the two
+    // are separated by direction before either can be stated -- see
+    // `lostAFold`. 507 rather than 510: three of these carry an exemption of
+    // their own, and losing that fold outweighs gaining this one.
     const moved = (dictionaryWords as string[]).filter(
-      (word) => rarityFor(word, ON_UNGATED)!.zipf !== rarityFor(word, BEFORE_UNGATED)!.zipf
+      (word) =>
+        /^(anti|counter)/.test(word) &&
+        rarityFor(word, ON_UNGATED)!.zipf !== rarityFor(word, BEFORE_UNGATED)!.zipf &&
+        !lostAFold(word, BEFORE_UNGATED, ON_UNGATED)
     );
-    expect(moved).toHaveLength(510);
-    expect(moved.filter((word) => !/^(anti|counter)/.test(word))).toEqual([]);
+    expect(moved).toHaveLength(507);
     for (const word of moved) {
       expect(
         rarityFor(word, ON_UNGATED)!.zipf,
@@ -2361,5 +2444,128 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
     // shared `addPrefixBases` is for: "uncleanest" is the superlative of
     // "unclean", not un- + "cleanest".
     expect(baseFormSubstitution("uncleanest", ON_UNGATED)?.base).toBe("unclean");
+  });
+});
+
+describe('"pre-" folds again (from MODE_CHOICE_START)', () => {
+  // The day before is inside the freeform trial, where nothing folds at all, so
+  // "before" is the last ordinary folding puzzle -- the system this cutover
+  // changes, exactly as the describe above takes it.
+  const BEFORE_RESTORED = "2026-09-13";
+  const ON_RESTORED = MODE_CHOICE_START;
+
+  // What the prefix is for: a productive "pre-" on a free-standing English word.
+  const MOVED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    ["prewash", "wash", 9.66, 5.17],
+    ["preselect", "selected", 8.12, 4.86],
+    ["pregame", "game", 7.3, 3.34],
+    ["prereview", "review", 9.92, 4.22],
+  ];
+
+  it.each(MOVED)("%s folds onto %s", (word, base, _before, after) => {
+    expect(score(word, ON_RESTORED)).toBe(after);
+    expect(baseFormSubstitution(word, ON_RESTORED)?.base).toBe(base);
+  });
+
+  it.each(MOVED)("%s kept its own score the day before", (word, _base, before) => {
+    expect(score(word, BEFORE_RESTORED)).toBe(before);
+  });
+
+  // The review the restoration rests on (see PRE_PREFIX_RESTORED). All 400
+  // families the prefix reaches were judged; the 50 landing on a base that means
+  // something else were sent to one of two files. Where the prefix reading is
+  // real and only the residue was wrong, the word is pinned to the base it
+  // should have reached -- and because these already folded there, the entry
+  // *holds* them against the rule rather than moving them.
+  const CORRECTED: ReadonlyArray<[word: string, base: string, unchanged: number]> = [
+    ["prepositional", "preposition", 7.73], // not `positional`
+    ["premillennial", "millennium", 6.24], // not `millennials`, the generation
+    ["preachier", "preachy", 8.05], // not `achy`
+    ["preclinically", "preclinical", 7.74], // not `clinic`
+    ["prefabs", "prefab", 8.11], // not `fab` -- PRE_PREFIX_END's own example
+  ];
+
+  it.each(CORRECTED)("%s is pinned to %s by review", (word, base, unchanged) => {
+    expect(baseFormSubstitution(word, ON_RESTORED)?.base).toBe(base);
+    expect(score(word, ON_RESTORED)).toBe(unchanged);
+  });
+
+  // Where no appropriate base exists, the word gets a prefix-scoped entry in
+  // fold-exemptions.json: it refuses the hop, leaves the word's ordinary folds
+  // alone, and leaves it on its own measured score. The last three are the
+  // readings PRE_PREFIX_END was written about, and the reason it could not keep
+  // the prefix without a table like this one.
+  //
+  // Three carry a second number: they were capped at a longer form the day
+  // before ("precaution" at "precautions"), and SHORTER_FORMS_START withdraws
+  // that on the same date, so they score as themselves.
+  const EXEMPTED: ReadonlyArray<
+    [word: string, unreachable: string, before: number, after?: number]
+  > = [
+    ["prelate", "late", 7.69],
+    ["prescience", "science", 8.43],
+    ["prepuce", "puce", 8.94],
+    ["premiss", "miss", 9.53, 9.65],
+    ["precaution", "caution", 6.39, 6.66],
+    ["preapply", "app", 9.92, 10],
+    ["prehearing", "hear", 8.07],
+  ];
+
+  it.each(EXEMPTED)("%s never reaches %s", (word, unreachable, before, after = before) => {
+    // The rule offers a base and review refuses it, so the prefix never moves
+    // the word across the cutover.
+    expect(score(word, BEFORE_RESTORED)).toBe(before);
+    expect(score(word, ON_RESTORED)).toBe(after);
+    expect(baseFormSubstitution(word, ON_RESTORED)?.base).not.toBe(unreachable);
+  });
+
+  it("moves 751 words and lowers no score", () => {
+    // Two claims, as at every prefix cutover: the change is one family, and
+    // every move is a fold, which can only ever make a word more common. The
+    // review pass holds the second -- an entry that corrected a fold could have
+    // raised a score, and none does.
+    //
+    // The 2026-09-22 audit shares this date and pulls the other way -- it
+    // withdraws folds, which makes words rarer -- and it reaches eleven "pre-"
+    // words. Separated by direction so this ledger still states its own change:
+    // 751 either way, once the eleven are counted where they belong.
+    const moved = (dictionaryWords as string[])
+      .filter((word) => rarityFor(word, ON_RESTORED)!.zipf !== rarityFor(word, BEFORE_RESTORED)!.zipf)
+      .filter((word) => word.startsWith("pre")) // the day's other half is above
+      .filter((word) => !lostAFold(word, BEFORE_RESTORED, ON_RESTORED));
+    expect(moved).toHaveLength(751);
+    for (const word of moved) {
+      expect(
+        rarityFor(word, ON_RESTORED)!.zipf,
+        `${word} is no rarer than it was`
+      ).toBeGreaterThan(rarityFor(word, BEFORE_RESTORED)!.zipf);
+    }
+  });
+
+  it('stays behind the frequency gate, unlike "counter-" and "anti-"', () => {
+    // The reason it is not in UNGATED_PREFIXES: these are the openings of
+    // ordinary measured words, and the gate is all that stands between the rule
+    // and a base they were never built on.
+    for (const word of ["present", "preface", "pressure", "precise", "premium"]) {
+      expect(score(word, ON_RESTORED), `${word} is unchanged`).toBe(score(word, BEFORE_RESTORED));
+      expect(baseFormSubstitution(word, ON_RESTORED)).toBeUndefined();
+    }
+  });
+
+  it('leaves "re-" alone, which was measured alongside it and not shipped', () => {
+    // 932 families against "pre-"'s 400, the same rate of wrong readings, and
+    // corrections that would not hold above the floor -- see PRE_PREFIX_RESTORED.
+    for (const word of ["reexplain", "rematch", "reserve", "remorse", "reschool"]) {
+      expect(score(word, ON_RESTORED), `${word} is unchanged`).toBe(score(word, BEFORE_RESTORED));
+      expect(baseFormSubstitution(word, ON_RESTORED)?.base).not.toBe(word.slice(2));
+    }
+  });
+
+  it("is off for every puzzle between PRE_PREFIX_END and the cutover", () => {
+    for (const date of [BEFORE_RESTORED, "2026-09-10", "2026-09-06"]) {
+      expect(baseFormSubstitution("prewash", date)).toBeUndefined();
+    }
+    // ...and it folded before that, which is the answer changing twice.
+    expect(baseFormSubstitution("prewash", "2026-09-04")?.base).toBe("wash");
   });
 });

@@ -82,6 +82,7 @@ describe("GuessLog", () => {
       "counter-,",
       "out-,",
       "over-,",
+      "pre-,",
       "un-,",
       "under-",
     ]);
@@ -90,16 +91,53 @@ describe("GuessLog", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("offers nothing to explain on a word with no note", () => {
-    const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
+  it("offers nothing to explain on a word scored on its own frequency", () => {
+    const words: AcceptedWord[] = [{ word: "organization", rarity: "Common", zipf: 5.1 }];
     render(<GuessLog acceptedWords={words} />);
+    expect(screen.queryByText(/scored as its common form/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /More info/i })).not.toBeInTheDocument();
   });
 
-  it("leaves a word alone when its base barely changed the score", () => {
+  it("names the common form even when the fold barely changed the score", () => {
+    // "played" scores as "play" without leaving Common. With Freeform a switch
+    // away, the two prices sit side by side, so every fold says so.
     const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
     render(<GuessLog acceptedWords={words} />);
+    expect(screen.getByText(/scored as its common form, “play”/i)).toBeInTheDocument();
+  });
+
+  it("scores a word as itself in Standard rather than as a longer form", () => {
+    // From SHORTER_FORMS_START "titty" is no longer capped at the commoner
+    // "titties": it scores 7.19 in both modes, so there is nothing to explain.
+    const words: AcceptedWord[] = [{ word: "titty", rarity: "Rare", zipf: 3.01 }];
+    render(<GuessLog acceptedWords={words} date="2026-09-27" />);
     expect(screen.queryByText(/scored as its common form/i)).not.toBeInTheDocument();
+  });
+
+  it("says in the explainer that a longer form is never the one scored, from the cutover", async () => {
+    const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
+    render(<GuessLog acceptedWords={words} date="2026-09-27" />);
+    await userEvent.click(
+      screen.getByRole("button", { name: /why “played” was scored as its common form “play”/i })
+    );
+    const panel = screen.getByRole("dialog", { name: /common forms/i });
+    expect(panel).toHaveTextContent(/“infatuate” isn’t scored as “infatuated”/);
+  });
+
+  it("names a common form longer than the word played", async () => {
+    // "abaci" scores as "abacus" on the undated system, which still caps a word
+    // at a longer form; so do the archived puzzles from 2026-08-24 to 09-26.
+    const words: AcceptedWord[] = [{ word: "abaci", rarity: "Rare", zipf: 2.5 }];
+    render(<GuessLog acceptedWords={words} />);
+    expect(screen.getByText(/scored as its common form, “abacus”/i)).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /why “abaci” was scored as its common form “abacus”/i })
+    );
+    // Not "wearing an affix": the common form is the longer of the two.
+    const panel = screen.getByRole("dialog", { name: /common forms/i });
+    expect(panel).toHaveTextContent(/forms of the same word/);
+    expect(panel).not.toHaveTextContent(/wearing an affix/);
   });
 
   it("crowns the rarest word as the best one", () => {

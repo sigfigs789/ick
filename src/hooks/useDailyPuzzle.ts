@@ -457,9 +457,10 @@ export function useDailyPuzzle() {
    * date is a fact about how the puzzle was meant to play -- a day that dropped
    * before the feature existed never had a retry and does not get one now.
    *
-   * What archive play does not get is a board correction. The leaderboard takes
-   * today's puzzle only (see leaderboard.submitScore), so an archive retry
-   * changes what this browser remembers and nothing that is already posted.
+   * What archive play does not get is a board correction. The leaderboard ranks
+   * today's puzzle only (see leaderboard.submitScore) -- an archive day is sent
+   * for the finds feed alone -- so an archive retry changes what this browser
+   * remembers and no board row.
    */
   /**
    * The day's retry is still unspent, whether or not there is a word to
@@ -519,9 +520,9 @@ export function useDailyPuzzle() {
       // Fire-and-forget like every other write here: nothing waits on it, and a
       // correction that never lands costs a board position, never a word.
       //
-      // Archive play passes through untouched: `submitScore` takes today's
-      // puzzle only, so retrying a word on an old day corrects this browser's
-      // record and leaves the posted board alone.
+      // Archive play leaves the board alone: `submitScore` sends an old day
+      // unranked, so retrying a word on it corrects this browser's record and
+      // no board row. (The feed keeps the word -- it was found.)
       submitScore({
         date: viewedDate,
         isToday,

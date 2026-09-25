@@ -271,6 +271,19 @@ describe("the finds feed", () => {
     expect((await readFinds(WED)).map((find) => find.word).sort()).toEqual(["first", "second"]);
   });
 
+  it("records an unranked day's words and leaves the boards alone", async () => {
+    // Freeform by choice, or a puzzle played after its own date.
+    const days = await submitScores("ann", [
+      score({ unranked: true, found: [{ word: "quixotic", zipf: 2.5 }] }),
+    ]);
+
+    expect(days).toBe(0);
+    expect((await readFinds(WED)).map((find) => find.word)).toEqual(["quixotic"]);
+    expect(await readBoard("d", WED)).toEqual([]);
+    expect(await readBoard("w", WEEK)).toEqual([]);
+    expect(await readBoard("m", MONTH)).toEqual([]);
+  });
+
   it("belongs to its own puzzle and no other", async () => {
     await submitScores("ann", [score({ date: WED, found: [{ word: "first", zipf: 3 }] })]);
     expect(await readFinds(SAT)).toEqual([]);

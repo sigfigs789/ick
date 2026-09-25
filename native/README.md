@@ -209,10 +209,59 @@ needs an account rather than a commit:
 
 ### Version numbers
 
-`app.json`'s `version` is the marketing version both stores show. iOS
-`buildNumber` and Android `versionCode` are the build counters, and the
-`production` profile has `autoIncrement` on, so EAS advances them.
+The marketing version both stores show is always `1.X`, where `X` is the
+website's `APP_VERSION` in the repo root's `src/version.ts`. It is not written
+anywhere by hand: `app.config.js` reads that constant and sets `version` on top
+of `app.json`, so a build is stamped with the website release it was cut from.
+Comparing the version in the stores with the one live on wordink.app shows how
+many web releases the app is behind.
 
-These are independent of the repo root's `src/version.ts`, which is the
-website's forced-reload floor for open browser tabs — a mechanism an installed
-app does not have and does not need.
+iOS `buildNumber` and Android `versionCode` are the build counters, and the
+`production` profile has `autoIncrement` on, so EAS advances them. Several
+builds can share one `1.X`; once a `1.X` is live in a store, though, the next
+submission needs a new one, so a native-only fix waits for (or brings about) a
+web bump.
+
+Only `APP_VERSION` feeds the store version. `MIN_VERSION`, the website's
+forced-reload floor for open browser tabs, is a mechanism an installed app does
+not have and does not need. Its counterpart here is `MIN_RANKED_VERSION`, below.
+
+### Staying on the current rules
+
+The leaderboard ranks whatever total a client priced, so an app on old scoring
+rules would rank against the website on different terms. Three things keep that
+from happening:
+
+- **The floor.** Every submission carries the client's `APP_VERSION`, and the
+  server writes anything below `MIN_RANKED_VERSION` (`src/version.ts`) -- or
+  with no version, as builds before 8 send -- as unranked. It still plays, and
+  its finds still reach the feed. Raise the floor with `APP_VERSION` only when a
+  release changes how a live or coming puzzle is priced.
+- **Over-the-air updates.** `expo-updates` ships the JavaScript -- which is the
+  whole game -- without a store review. Updates go out on request only, never
+  on merge: run the "Native OTA update" action
+  (`.github/workflows/native-update.yml`, needs an `EXPO_TOKEN` secret), which
+  typechecks, checks the runtime label, and publishes the chosen branch to the
+  `production` channel. Builds pick it up on launch, and a build that finds
+  itself below the floor pulls it and reloads at once
+  (`src/hooks/useUpdateCheck.ts`) -- so raise `MIN_RANKED_VERSION` and run the
+  action together.
+- **The banner.** When a build is below the floor and no update can close the
+  gap, Play and Leaderboards say so, with a button to the store listing
+  (`src/components/UpdateBanner.tsx`).
+
+An update reaches only builds with the same `runtimeVersion`, a label set by
+hand in `app.json` (currently `"1"`). It is not Expo's `"fingerprint"` policy:
+that hashed the native layer differently on the EAS build machine than locally
+and in CI, so build 10 embedded one runtime while updates were published to
+another, and none could reach it.
+
+The label has to change exactly when the native layer does -- a new Expo
+module, a permission, an SDK bump, a config plugin. `tools/check-native-fingerprint.cjs`
+enforces that: it fingerprints the native layer (`fingerprint.config.js` skips
+the store version) and compares it with `native-fingerprint.json`. CI and the
+update workflow both fail when the fingerprint moved and the label did not.
+The fix is to raise `runtimeVersion`, run
+`node tools/check-native-fingerprint.cjs --write`, and ship a store build.
+Until players install it, the old builds keep their last update and the banner
+covers the gap.

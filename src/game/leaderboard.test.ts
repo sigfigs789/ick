@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  backfillFinds,
   backfillHistory,
+  FINDS_SENT_KEY,
   feedFloor,
   fetchBoards,
   fetchFoundWords,
+  repriceFoundWords,
   submitScore,
   syncHistory,
 } from "./leaderboard";
@@ -14,6 +17,7 @@ import { todayDateString } from "./date";
 import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import { FIRST_PUZZLE } from "./drop";
 import type { AcceptedWord, DailyProgress } from "./types";
+import { APP_VERSION } from "../version";
 
 const WORDS: AcceptedWord[] = [
   { word: "inkling", rarity: "Rare", zipf: 2.6 },
@@ -53,6 +57,9 @@ describe("submitting a score", () => {
     const body = posted(fetchMock);
     expect(body).toEqual({
       playerId,
+      // Which release priced these words, so the board can turn away an install
+      // that stopped updating (see MIN_RANKED_VERSION in src/version.ts).
+      version: APP_VERSION,
       // A one-day batch, the same shape a history import uses. No name: the
       // board derives that from the day's own rarest word.
       scores: [
@@ -147,12 +154,18 @@ describe("submitting a score", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("keeps archive play off the board", () => {
+  it("keeps archive play off the board, and puts its words on the feed", () => {
     joinBoard();
     const fetchMock = stubFetch();
-    // Same reason it stays off the streak: the answers are lookupable.
-    expect(submitScore({ date: "2026-07-04", isToday: false, words: WORDS })).toBe(false);
-    expect(fetchMock).not.toHaveBeenCalled();
+    // Off the board for the reason it stays off the streak -- the answers are
+    // lookupable -- but the words were still found on that drop.
+    expect(submitScore({ date: "2026-07-04", isToday: false, words: WORDS })).toBe(true);
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day.date).toBe("2026-07-04");
+    expect(day.unranked).toBe(true);
+    expect(day.found).toEqual(
+      WORDS.map((word) => ({ word: word.word.toLowerCase(), zipf: expect.any(Number) }))
+    );
   });
 
   it("sends nothing before the first word is accepted", () => {
@@ -663,8 +676,8 @@ describe("the finds feed, fetched on its own", () => {
 
     const words = await fetchFoundWords("2026-08-27");
     expect(words).toEqual([
-      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3, foundOn: "", today: false },
-      { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1, foundOn: "", today: false },
+      { word: "asphyxiate", zipf: 2.09, rarity: "Extremely Rare", finders: 3, foundOn: "", today: false, stored: 7.9 },
+      { word: "inkling", zipf: 2.9, rarity: "Rare", finders: 1, foundOn: "", today: false, stored: 2.9 },
     ]);
   });
 
@@ -688,6 +701,7 @@ describe("the finds feed, fetched on its own", () => {
         finders: 1,
         foundOn: "2026-08-27",
         today: true,
+        stored: 2.09,
       },
     ]);
   });
@@ -715,8 +729,27 @@ describe("the finds feed, fetched on its own", () => {
         finders: 1,
         foundOn: "2026-09-15",
         today: true,
+        stored: 5.45,
       },
     ]);
+  });
+
+  it("reprices the feed by the reader's mode once the mode is theirs to choose", async () => {
+    // The feed holds both modes' finds, and a word reads at what the reader
+    // would have been scored for it: folded onto "kind" in Standard, on its own
+    // frequency in Freeform. Nothing is fetched again to switch.
+    resetModeCache();
+    setMode("standard");
+    stubFetch(feed("kindless", 1.08, MODE_CHOICE_START));
+    const words = await fetchFoundWords(MODE_CHOICE_START);
+    const standard = words[0].zipf;
+    setMode("freeform");
+    const [freeform] = repriceFoundWords(words);
+    expect(freeform.zipf).toBe(1.08);
+    expect(freeform.rarity).toBe("Mythic");
+    expect(standard).toBeGreaterThan(freeform.zipf);
+    setMode("standard");
+    expect(repriceFoundWords([freeform])[0].zipf).toBe(standard);
   });
 
   it("leaves a find from outside the week on the system that day ran", async () => {
@@ -729,29 +762,10 @@ describe("the finds feed, fetched on its own", () => {
     ]);
   });
 
-  it("prices a post-split find as Standard, whatever the reader's switch says", async () => {
-    // The feed holds both modes' finds and prices all of them one way, so that
-    // two people reading the same list side by side read the same numbers. Which
-    // means the reader's own switch must not reach it: "kindless" folds onto
-    // "kind" at 5.45 under Standard and scores 1.08 on its own under Freeform,
-    // and a reader in Freeform must still see the folded number.
-    resetModeCache();
-    setMode("freeform");
-    try {
-      stubFetch(feed("kindless", 5.45, MODE_CHOICE_START));
-
-      expect(await fetchFoundWords(MODE_CHOICE_START)).toMatchObject([
-        { word: "kindless", zipf: 5.45, rarity: "Very Common" },
-      ]);
-    } finally {
-      resetModeCache();
-    }
-  });
-
   it("still leaves the trial week on the rules it was played under", async () => {
-    // The override stands in for the switch and only for the switch. The trial
-    // week was Freeform for everybody by the calendar, so naming Standard does
-    // not reach back and reprice it -- those days really did score this way.
+    // The reader's switch reaches a chosen day and only a chosen day. The trial
+    // week was Freeform for everybody by the calendar, so a reader in Standard
+    // does not reach back and reprice it -- those days really did score this way.
     resetModeCache();
     setMode("standard");
     try {
@@ -1045,8 +1059,9 @@ describe("both modes reach a board", () => {
   });
 
   it("sends a day the player chose to spend in Freeform, labelled Freeform", () => {
-    // Freeform used to stop before the request. It has a board of its own now,
-    // and the label is what puts the day on it rather than on Standard's.
+    // Freeform used to go up `unranked`, for the feed alone. It has a board of
+    // its own now, and the label is what puts the day on it rather than on
+    // Standard's.
     joinBoard();
     const fetchMock = stubFetch();
     expect(
@@ -1054,6 +1069,8 @@ describe("both modes reach a board", () => {
     ).toBe(true);
     const [day] = posted(fetchMock).scores as Record<string, unknown>[];
     expect(day.mode).toBe("freeform");
+    expect(day).not.toHaveProperty("unranked");
+    expect(day.found).toEqual([{ word: "inkling", zipf: expect.any(Number) }]);
   });
 
   it("sends a Standard day on the same puzzle to the other board", () => {
@@ -1095,7 +1112,7 @@ describe("both modes reach a board", () => {
     expect(day.mode).toBe("freeform");
   });
 
-  it("imports both modes of one puzzle, each to its own board", () => {
+  it("imports every mode of every day, each to its own board", () => {
     const playerId = joinBoard()!;
     const fetchMock = stubFetch();
     const history: DailyProgress[] = [
@@ -1115,15 +1132,106 @@ describe("both modes reach a board", () => {
         rejectedAttempts: [],
         completed: false,
       },
+      {
+        date: "2026-09-28",
+        drop: "INK",
+        mode: "freeform",
+        acceptedWords: WORDS_HERE,
+        rejectedAttempts: [],
+        completed: false,
+      },
     ];
-    // A browser that has played both ways holds a record of each, and both are
-    // real days of play. They go up together and the labels are what keep them
-    // apart -- the same date twice is two rows, one per board.
-    expect(backfillHistory(playerId, history, CHOSEN)).toBe(2);
+    // A browser that has played both ways holds a record of each, and all of
+    // them are real days of play. They go up together and the labels are what
+    // keep them apart -- the same date twice is two rows, one per board. None is
+    // unranked: that is for archive play and the feed's repair, not a mode.
+    expect(backfillHistory(playerId, history, "2026-09-28")).toBe(3);
     const scores = posted(fetchMock).scores as Record<string, unknown>[];
-    expect(scores.map((day) => [day.date, day.mode])).toEqual([
-      [CHOSEN, "standard"],
-      [CHOSEN, "freeform"],
+    expect(scores.map((day) => [day.date, day.mode, day.unranked ?? false])).toEqual([
+      [CHOSEN, "standard", false],
+      [CHOSEN, "freeform", false],
+      ["2026-09-28", "freeform", false],
     ]);
+  });
+});
+
+describe("syncing words the feed has not had", () => {
+  const DAY = "2026-09-01";
+  const LATER = "2026-09-02";
+  /** Lets the response's `then` run, which is where the ledger is written. */
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it("sends a past day's words unranked, including one played out of the archive", () => {
+    const playerId = joinBoard()!;
+    const fetchMock = stubFetch();
+    // Played on its day, and played a week late: both were found on their drop.
+    const history = [stored(DAY), stored(LATER, "2026-09-09T20:00:00")];
+
+    expect(backfillFinds(playerId, history)).toBe(2);
+    const scores = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(scores.map((day) => day.date)).toEqual([DAY, LATER]);
+    // The feed's repair, not the board's: nothing here may rank.
+    expect(scores.every((day) => day.unranked === true)).toBe(true);
+    expect((scores[1].found as { word: string }[]).map((f) => f.word)).toEqual([
+      "inkling",
+      "wrinkle",
+    ]);
+  });
+
+  it("sends each word once the server has taken it", async () => {
+    const playerId = joinBoard()!;
+    stubFetch();
+    backfillFinds(playerId, [stored(DAY)]);
+    await settle();
+
+    const fetchMock = stubFetch();
+    expect(backfillFinds(playerId, [stored(DAY)])).toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends only the words a day has gained since", async () => {
+    const playerId = joinBoard()!;
+    stubFetch();
+    backfillFinds(playerId, [{ ...stored(DAY), acceptedWords: WORDS.slice(0, 1) }]);
+    await settle();
+
+    const fetchMock = stubFetch();
+    backfillFinds(playerId, [stored(DAY)]);
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect((day.found as { word: string }[]).map((f) => f.word)).toEqual(["wrinkle"]);
+  });
+
+  it("tries again on the next open when the server did not take it", async () => {
+    const playerId = joinBoard()!;
+    stubFetch(new Response(null, { status: 503 }));
+    backfillFinds(playerId, [stored(DAY)]);
+    await settle();
+    expect(localStorage.getItem(FINDS_SENT_KEY)).toBeNull();
+
+    const fetchMock = stubFetch();
+    expect(backfillFinds(playerId, [stored(DAY)])).toBe(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips days before the feed's floor, which the page cannot show", () => {
+    const playerId = joinBoard()!;
+    const fetchMock = stubFetch();
+    expect(backfillFinds(playerId, [stored("2026-08-20")])).toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("runs on every open, from what this browser remembers", () => {
+    joinBoard();
+    localStorage.setItem(
+      `ick:progress:${DAY}`,
+      JSON.stringify(stored(DAY, "2026-09-09T20:00:00"))
+    );
+    const fetchMock = stubFetch();
+
+    syncHistory(LATER);
+    // The archive day cannot go on the board, so the finds request is the only one.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day).toMatchObject({ date: DAY, unranked: true });
   });
 });

@@ -10,6 +10,7 @@ import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
 import foldExemptionData from "../data/fold-exemptions.json";
+import foldReviewVerdictData from "../data/fold-review-verdicts.json";
 import boundResidueData from "../data/bound-residues.json";
 import measurementUnitData from "../data/measurement-units.json";
 import wordRejectionData from "../data/word-rejections.json";
@@ -161,7 +162,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     say which register is allowed. Misspellings and non-words stay refused,
  *     which is the line the curation rules already draw (see
  *     FREEFORM_WAIVED_REJECTIONS).
- *   - on/after 2026-09-28 (the latest system): the fold stops reading the
+ *   - on/after 2026-09-27 (the latest system): the fold stops reading the
  *     curated list and reads the expansive corpus instead. The first entry here
  *     that changes the *list* a rule is applied to rather than the rule -- every
  *     fold above is untouched and none is added.
@@ -219,8 +220,50 @@ const PREFIX_BASE_START = "2026-08-24";
 const PREFIX_BASE_MIN_ZIPF = 3;
 
 /*
+ * MODE_CHOICE_START: "pre-" folds again.
+ *
+ * PRE_PREFIX_END below retired it, on an argument this reversal does not
+ * dispute: English fossilised "pre-" onto Latin stems that were never English
+ * words, nothing in the spelling separates "precaution" from "precooked", and
+ * the floor gate cannot help because the fossils are rare. What has changed is
+ * not the argument but what can be done about it. That note asked for "a vetted
+ * table of which words really carry the prefix" and could not point at one. The
+ * table now exists, built by judging every fold the prefix reaches across the
+ * corpus: 400 families, of which 50 landed on a base that means something else.
+ *
+ * Each of those 50 is either pinned to the base it should have reached
+ * ("prepositional" to `preposition`, not `positional`; "premillennial" to
+ * `millennium`, not the generation; "preachier" to `preachy`, not `achy`) or
+ * refused outright where the word is a single lexeme the prefix only appears to
+ * open ("prelate", "prescience", "prepuce", "premiss", "precaution"). The three
+ * readings the retirement was written about are among them -- "preapply" no
+ * longer reaches `app`, "prehearing" no longer reaches `hear`. 17 overrides and
+ * 90 prefix-scoped exemptions, and after them no family the prefix reaches lands
+ * on a base a reader would reject.
+ *
+ * It stays *behind* MEASURED_FLOOR -- not in UNGATED_PREFIXES and it cannot be,
+ * because "present", "preface" and "pressure" are measured well above the floor
+ * and all have the shape.
+ *
+ * No date constant of its own: it rides MODE_CHOICE_START with the mode switch
+ * and the ungated prefixes, which is the argument UNGATED_PREFIX_START already
+ * makes -- a player meeting the two systems side by side is the moment for the
+ * folding one to be at its best, and one date is one explanation.
+ *
+ * "re-" was measured alongside it and is not here. It reaches three times as far
+ * (932 families) at the same rate of wrong readings, and the corrections would
+ * not hold: above MEASURED_FLOOR a prefix-scoped entry does not reach the rung
+ * the wrong base arrives on, so "reserve" stayed on `serve` and "remorse" on
+ * `morse`, and widening those entries hands "rebater" a 9.93 Legend instead. It
+ * stays out until that is answered, which is the standard this date holds
+ * "pre-" to.
+ */
+
+/*
  * 2026-09-05: "pre-" stops being a foldable prefix, the first of these rules to
- * be taken away rather than added. Everything else about the prefix fold stays
+ * be taken away rather than added -- and, from MODE_CHOICE_START, the first put
+ * back; see the note above, which reverses this judgement on the strength of the
+ * reviewed table it could not point at, and inherits every cost counted here. Everything else about the prefix fold stays
  * as it was -- the floor gate, the residue table, the exemptions -- and archived
  * puzzles keep the scores they were played with, so the flag stays on for every
  * system before this date (see `Scoring.prePrefixBases`).
@@ -407,12 +450,12 @@ const DOUBLING_TENSE_START = "2026-09-10";
  * them would fold measured words onto bases no player would accept. See
  * `ungatedPrefixBaseCandidates` in stem.ts.
  *
- * One day later the bases widen under it: from CORPUS_ONLY_START the fold prices
+ * The same day the bases widen under it: from CORPUS_ONLY_START the fold prices
  * against the corpus lexicon rather than the curated list, and this rule inherits
  * that like every other -- "antiabortionism" reaches `abortionism`, a word only
- * the corpus carries, and "antichrist" reaches `christ`. Two cutovers a day
- * apart and deliberately separate: this one is about *when* a strip is allowed,
- * that one about what any strip may land on.
+ * the corpus carries, and "antichrist" reaches `christ`. Two changes on one date
+ * but deliberately separate: this one is about *when* a strip is allowed, that
+ * one about what any strip may land on.
  */
 const UNGATED_PREFIX_START = MODE_CHOICE_START;
 
@@ -769,9 +812,16 @@ const SCORE_OVERRIDES: ReadonlyMap<string, ScoreOverride> = new Map(
  */
 function overrideBase(word: string, scoring: Scoring, date?: string): string | undefined {
   const override = SCORE_OVERRIDES.get(word);
-  if (!override) return undefined;
-  if (date !== undefined && date < override.since) return undefined;
-  return lexiconHas(override.base, scoring) ? override.base : undefined;
+  if (override) {
+    if (date !== undefined && date < override.since) return undefined;
+    return lexiconHas(override.base, scoring) ? override.base : undefined;
+  }
+  // Then the review page's file, where a rejection that named a base means the
+  // same thing an override does: score this word as that one. See
+  // FOLD_REVIEW_VERDICTS for why the two are not one file.
+  const verdict = reviewVerdictFor(word, date);
+  if (!verdict || verdict.base === null) return undefined;
+  return lexiconHas(verdict.base, scoring) ? verdict.base : undefined;
 }
 
 // -- Curated fold exemptions (src/data/fold-exemptions.json) -----------------
@@ -853,9 +903,78 @@ function prefixFoldExempt(word: string, date?: string): boolean {
 /** The exemption in force for `word` under `date`, whatever its scope. */
 function exemptionFor(word: string, date?: string): FoldExemption | undefined {
   const exemption = FOLD_EXEMPTIONS.get(word);
-  if (!exemption) return undefined;
-  if (date !== undefined && date < exemption.since) return undefined;
-  return exemption;
+  if (exemption) {
+    if (date !== undefined && date < exemption.since) return undefined;
+    return exemption;
+  }
+  // Then the review page's own file. A verdict naming no base is the same
+  // finding this table holds -- score the word on its own data -- reached by a
+  // different route, so it is answered here rather than given a second code
+  // path that could drift from this one.
+  const verdict = reviewVerdictFor(word, date);
+  if (verdict && verdict.base === null) return { since: verdict.since, reason: verdict.reason };
+  return undefined;
+}
+
+// -- Reviewed folds from /fold (src/data/fold-review-verdicts.json) ----------
+/** One fold judged by hand on the review page and exported by script. */
+interface FoldReviewVerdict {
+  /**
+   * The base the fold should have reached, or null for "this word should not
+   * fold at all". The two are different findings and they land in different
+   * places -- a base behaves like a `score-overrides.json` entry, a null like a
+   * `fold-exemptions.json` one -- which is the whole reason a rejection on the
+   * page asks which one is meant.
+   */
+  base: string | null;
+  since: string;
+  /** Review notes only -- nothing here reads it. */
+  reason?: string;
+}
+
+/**
+ * The verdicts reached at /fold, kept in their own file rather than merged into
+ * the two curated ones.
+ *
+ * Same effect, different provenance, and the provenance is the point. The
+ * curated files are written by hand, one entry at a time, each with a reason
+ * somebody composed; this one is written by a script out of a ledger of clicks
+ * (scripts/export-fold-rejections.mjs). Both are reviewed judgements and both
+ * are shipped the same way, but "who decided this, and how" is the first
+ * question anybody asks of a line in a scoring table, and a merged file cannot
+ * answer it. Kept apart, the answer is which file the word is in.
+ *
+ * Read after the curated tables, never over them: a word in both is a review
+ * error rather than a tie, and a test pins that it does not happen.
+ *
+ * Dated per entry like both of them, so a verdict applies from the puzzle it was
+ * exported for onward and every archived puzzle keeps the score it showed.
+ */
+const FOLD_REVIEW_VERDICTS: ReadonlyMap<string, FoldReviewVerdict> = new Map(
+  Object.entries(foldReviewVerdictData as Record<string, FoldReviewVerdict>)
+);
+
+/** The reviewed verdict in force for `word` under `date`, if any. */
+function reviewVerdictFor(word: string, date?: string): FoldReviewVerdict | undefined {
+  const verdict = FOLD_REVIEW_VERDICTS.get(word);
+  if (!verdict) return undefined;
+  if (date !== undefined && date < verdict.since) return undefined;
+  return verdict;
+}
+
+/**
+ * The base a reviewer named for `word` at /fold, where they named one and the
+ * lexicon has it.
+ *
+ * A base the lexicon cannot price is dropped rather than trusted, the same way
+ * `overrideBase` drops one -- and the export script and a test both refuse to
+ * ship one, so this is a belt on a word the dictionary lost rather than a case
+ * anybody expects.
+ */
+function reviewedFoldBase(word: string, scoring: Scoring, date?: string): string | undefined {
+  const verdict = reviewVerdictFor(word, date);
+  if (!verdict || verdict.base === null) return undefined;
+  return lexiconHas(verdict.base, scoring) ? verdict.base : undefined;
 }
 
 // -- Bound prefix residues (src/data/bound-residues.json) --------------------
@@ -1027,6 +1146,14 @@ interface Scoring {
    * cutover; see LIQUID_STEM_START.
    */
   liquidStemAdjectives: boolean;
+  /**
+   * Whether a fold may only land on a form *shorter* than the word played. From
+   * MODE_CHOICE_START: with Freeform one switch away, "titty" scored as the
+   * commoner "titties" read as Standard marking a word down for nothing the
+   * player did. A word is scored as itself unless a shorter common form is
+   * underneath it. See SHORTER_FORMS_START.
+   */
+  shorterFormsOnly: boolean;
   // Whether a word is also capped at the regular inflections built *on* it --
   // the fold's reverse direction, so the bare lemma of a verb only ever written
   // as a participle stops scoring as a deep-tail find (see
@@ -1091,11 +1218,12 @@ interface Scoring {
   // master switch rather than a rule: the rules it stands in front of are
   // unchanged and untested by it, so turning it back on restores them exactly.
   folds: boolean;
-  // Whether "pre-" is one of the transparent prefixes. The only flag here that
-  // reads the other way round -- it is *on* for the systems from 2026-08-24 up
-  // to 2026-09-05, when the prefix was retired, and off from there -- because a
-  // rule taken away has to keep working for the puzzles it was played on just as
-  // one added has to stay off for them (see PRE_PREFIX_END).
+  // Whether "pre-" is one of the transparent prefixes. The only flag here whose
+  // answer changes twice: *on* from 2026-08-24 to 2026-09-05, off from there
+  // when the prefix was retired, and on again from MODE_CHOICE_START when it
+  // came back behind a reviewed table -- because a rule taken away has to keep
+  // working for the puzzles it was played on just as one added has to stay off
+  // for them, and that holds in both directions (see PRE_PREFIX_END).
   prePrefixBases: boolean;
 }
 
@@ -1244,6 +1372,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     // turning this on.
     corpusLexicon: false,
     liquidStemAdjectives: false,
+    shorterFormsOnly: false,
     folds,
   };
 }
@@ -1496,6 +1625,11 @@ const DOUBLING_SCORING: Scoring = twoBandScoring(9.9, 0, {
 const LATEST_SCORING: Scoring = {
   ...DOUBLING_SCORING,
   ungatedPrefixBases: true,
+  // "pre-" folds again, on the same date `ungatedPrefixBases` rides. No profile
+  // and no rung of its own, because this is the profile MODE_CHOICE_START
+  // already selects, and CORPUS_SCORING is a spread of it. See the note above
+  // PRE_PREFIX_END.
+  prePrefixBases: true,
 };
 
 /**
@@ -1532,14 +1666,27 @@ const LATEST_SCORING: Scoring = {
  * rarity.json carries hundredths) and reaches bases the curated fold never
  * could, so every score it touches would move. An archived puzzle plays as it
  * was played.
+ *
+ * Shares MODE_CHOICE_START with the mode switch, the ungated prefixes and the
+ * restored "pre-". It had a day of its own to begin with, on the argument that
+ * the two questions are separate -- the prefixes are about *when* a strip is
+ * allowed, this is about what any strip may land on -- and that separation is
+ * still worth explaining, just not worth a date. What settled it is that the two
+ * halves of this cutover had already been split across it: `corpusVerdict` makes
+ * a word the curated list never held playable from MODE_CHOICE_START, while the
+ * fold could not price against a corpus base until the day after. For one puzzle
+ * a player could submit "unmasticated" and have it scored as though nothing in
+ * the language were related to it. One date closes that, and one date is one
+ * explanation.
  */
-const CORPUS_ONLY_START = "2026-09-28";
+const CORPUS_ONLY_START = MODE_CHOICE_START;
 
 /**
- * 2026-10-01. The day "scowly" stopped being a kind of scow.
+ * The day "scowly" stopped being a kind of scow: MODE_CHOICE_START, with the
+ * mode switch and the corpus cutover.
  *
- * A rung of its own rather than a flag folded into the corpus cutover, even
- * though it is a *consequence* of that cutover: the "-ly" strip has always been
+ * A *consequence* of that cutover rather than a thing of its own: the "-ly"
+ * strip has always been
  * able to misread a "-y" adjective on an l-final stem, and it was harmless while
  * the fold priced against 225k curated words that held neither "scow" nor "jow".
  * The 1.2M-word lexicon holds both, and with them "howly" -> "how" (7.45 points),
@@ -1547,16 +1694,40 @@ const CORPUS_ONLY_START = "2026-09-28";
  * `scoringBaseForm` for the rule and why it fires only where both readings are
  * words.
  *
- * Its own date because the cutover's ledger is pinned: corpus-lexicon.test.ts
- * asserts that 2026-09-28 moves far more words down than up, and that the
- * promotions stay under a fortieth of the demotions. This rule and the 92
- * exemptions reviewed with it are *all* promotions -- that is what fixing a
- * wrong fold is -- and shipping them on the cutover's date would have taken
- * that ratio from 1:70 to 1:25 while telling the test they were the cutover's
- * doing. They are not. They get their own day and their own ledger, and the
- * three puzzles in between keep the scores they were built with.
+ * It had a date of its own for a while, four days after the cutover, to keep
+ * one number in corpus-lexicon.test.ts clean: that the corpus moves far more
+ * words down than up, with promotions under a fortieth of the demotions. This
+ * rule and the audit's exemptions are *all* promotions -- that is what fixing a
+ * wrong fold is -- so landing them on the cutover's date takes that ratio from
+ * 1:125 to about 1:4.
+ *
+ * The four days were the cost of that tidiness, and they were the wrong thing to
+ * spend: for four puzzles the corpus lexicon was live and the fixes for what it
+ * broke were not, so a player could be shown "howly" scored as "how". A guard
+ * exists to catch a change nobody meant to make. Both of these were meant, both
+ * are reviewed, and both are named in fold-exemptions.json. The guard now
+ * counts the two separately rather than refusing the sum -- see its note.
  */
-const LIQUID_STEM_START = "2026-10-01";
+export const LIQUID_STEM_START = MODE_CHOICE_START;
+
+/**
+ * The first puzzle on which Standard only ever rescores a word *down* to a
+ * shorter form: MODE_CHOICE_START, with the mode switch.
+ *
+ * The fold runs in both directions from 2026-08-24 (see `inflectedFormFolds`
+ * and `derivedFormFolds`), so a word could be capped at a longer, commoner
+ * member of its family: "titty" at "titties", "abaci" at "abacus". That was
+ * defensible while everyone played one system. With the mode switch, the same
+ * word reads at two prices a tap apart, and the Standard one is lower because
+ * of a word the player did not play. So from here a word is scored as itself
+ * unless a shorter common form is underneath it.
+ *
+ * The walk itself is unchanged, and still passes through longer forms on the way
+ * to a shorter one ("semiweekly" through "semiweeklies" to "weekly"). Only
+ * the winner is restricted. The freeform trial sits under this date and folds
+ * nothing, so the first puzzle it can reach is one nobody has played yet.
+ */
+export const SHORTER_FORMS_START = MODE_CHOICE_START;
 
 /**
  * The corpus era: the latest fold, reading the expansive corpus.
@@ -1565,10 +1736,15 @@ const LIQUID_STEM_START = "2026-10-01";
  * call, for the reason `FREEFORM_SCORING` is -- the era changes exactly one
  * thing and must not drift from the system it changes it in.
  */
-const CORPUS_SCORING: Scoring = { ...LATEST_SCORING, corpusLexicon: true };
-
-/** The corpus era from LIQUID_STEM_START: the "-ly" strip keeps a stem's l. */
-const LIQUID_SCORING: Scoring = { ...CORPUS_SCORING, liquidStemAdjectives: true };
+const CORPUS_SCORING: Scoring = {
+  ...LATEST_SCORING,
+  corpusLexicon: true,
+  // See LIQUID_STEM_START, which is this same date: the "-ly" strip keeps a
+  // stem's l from the day the corpus makes it possible to lose one.
+  liquidStemAdjectives: true,
+  // See SHORTER_FORMS_START, also this date.
+  shorterFormsOnly: true,
+};
 
 const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
 
@@ -1579,6 +1755,7 @@ const LEGACY_SCORING: Scoring = {
   folds: true,
   corpusLexicon: false,
   liquidStemAdjectives: false,
+  shorterFormsOnly: false,
   zipfAt: (i) => legacyZipfTenths[i] / 10,
   // The legacy scale is defined over LEGACY_MIN_ZIPF..LEGACY_MAX_ZIPF and has no
   // clamp of its own, so a Zipf below its floor scores past 10. A live-validated
@@ -1737,7 +1914,10 @@ function scoringFor(date?: string, mode?: GameMode): Scoring {
     // Freeform folds nothing, so the liquid-stem rule cannot reach it and the
     // era's two profiles collapse to one on that side.
     if (usesFreeformRules(date, mode)) return CORPUS_FREEFORM_SCORING;
-    return date >= LIQUID_STEM_START ? LIQUID_SCORING : CORPUS_SCORING;
+    // One date for the era: LIQUID_STEM_START is this same date, so every
+    // profile this branch can reach carries the "-ly" rule and it needs no rung
+    // of its own.
+    return CORPUS_SCORING;
   }
   if (usesFreeformRules(date, mode)) return FREEFORM_SCORING;
   // Below the freeform fork rather than above it, unlike every rung before it.
@@ -2327,68 +2507,6 @@ export function baseFormSubstitution(
 }
 
 /**
- * The smallest drop in the *shown* score worth putting a note under, in points.
- * A rank change alone can be almost nothing on the number: the Legend cutoff
- * sits at 9.9 and Mythic runs to 9.89, so a fold across that line can move the
- * badge while moving the score by a single cent. This floor keeps the note tied
- * to something the player can see in both places.
- */
-export const BASE_FORM_NOTICE_DROP = 0.3;
-
-/**
- * The fold behind `word`'s score, but only when it cost the word a rank --
- * Legend down to Mythic, Mythic down to Rare, and so on -- moved the shown score
- * by at least BASE_FORM_NOTICE_DROP, and reached a form no longer than the word
- * played. Undefined otherwise, including when the word scored on its own data.
- *
- * A rank change rather than a threshold on the number alone, because the ranks
- * are where the scale's own sense of "meaningfully rarer" already lives, and
- * they carry it across both bands. A fixed gap cannot: the measured band spends
- * 9.9 points over six Zipf while the deep tail spends a tenth of a point over
- * one, so any constant that reads as a real loss in the middle of the scale is
- * twenty-odd times too lenient at the top, where the folds are largest and the
- * scores players care most about sit. A demoted badge is also the thing the
- * player actually noticed -- the note answers a question the badge just raised.
- *
- * Both halves are read off what the player sees: the ranks as rendered, and the
- * scores as *formatted* rather than raw, so the drop the floor measures is the
- * one visible on the two badges.
- *
- * Every fold is a cap (see `chainedBase`), so a rank that moved always moved
- * downward; the comparison is written as a rank *drop* anyway, so nothing here
- * quietly starts reporting a promotion if that invariant ever slips.
- *
- * The length condition is about the note, not the score: 8,257 folds reach a
- * longer form, and they keep the score that form gives them -- they just stop
- * announcing it. See the guard below for why.
- */
-export function baseFormRankDrop(
-  word: string,
-  date?: string
-): BaseFormSubstitution | undefined {
-  const substitution = baseFormSubstitution(word, date);
-  if (!substitution) return undefined;
-  // A common form longer than the word played is one the fold reached by
-  // building the word up rather than stripping it down -- "abaci" scored as
-  // "abacus", "infatuate" as "infatuated". Naming it reads as a correction of
-  // the word the player found, as if a shorter word were an incomplete attempt
-  // at a longer one, and the note is meant to explain a badge rather than to
-  // second-guess the find. The score is unchanged; only the explanation is
-  // withheld.
-  if (substitution.base.length > substitution.word.length) return undefined;
-  const scoring = scoringFor(date);
-
-  const own = RARITY_ORDER.indexOf(scoring.rarity(substitution.ownZipf));
-  const base = RARITY_ORDER.indexOf(scoring.rarity(substitution.baseZipf));
-  // RARITY_ORDER runs rarest first, so a larger index is the more common rank.
-  if (base <= own) return undefined;
-
-  const shown = (zipf: number) => Number(scoring.format(scoring.score(zipf)));
-  const drop = roundToCents(shown(substitution.ownZipf) - shown(substitution.baseZipf));
-  return drop >= BASE_FORM_NOTICE_DROP ? substitution : undefined;
-}
-
-/**
  * One family of affixes the fold can read through, as it is shown to a player.
  *
  * `example` is a word that really folds this way today, and the test beside
@@ -2408,7 +2526,7 @@ export interface FoldAffixGroup {
 
 /**
  * The affixes that can rescore a word to its common form on `date`, grouped for
- * the "more info" panel behind the note (see `baseFormRankDrop`).
+ * the "more info" panel behind the note (see components/GuessLog.tsx).
  *
  * Date-scoped like everything else here, because the set has moved twice and
  * archived puzzles still play under the set they had: "pre-" and the borrowed
@@ -2426,6 +2544,15 @@ export interface FoldAffixGroup {
  * Returns nothing when the fold is off entirely (freeform week), where there is
  * no note to explain in the first place.
  */
+/**
+ * Whether `date`'s Standard scoring only ever rescores a word to a form no longer
+ * than it (see SHORTER_FORMS_START), so the explainer can say so.
+ */
+export function foldsOnlyToShorterForms(date?: string): boolean {
+  const scoring = scoringFor(date);
+  return scoring.folds && scoring.shorterFormsOnly;
+}
+
 export function foldAffixGroups(date?: string): FoldAffixGroup[] {
   const scoring = scoringFor(date);
   if (!scoring.folds) return [];
@@ -2739,17 +2866,40 @@ function chainedBase(
   // The word's own frequency, so the reverse fold can skip a form that could not
   // beat it -- see the `floor` argument to `inflectedFormFolds`.
   const own = lexiconHas(word, scoring) ? zipfFor(word, scoring) : -Infinity;
+  // Whether a form the walk reached may be what the word scores as. From
+  // SHORTER_FORMS_START only a shorter one may; the walk still passes through
+  // the rest on its way.
+  const eligible = (form: string) =>
+    !scoring.shorterFormsOnly || form.length <= word.length;
 
   for (let depth = 0; depth < MAX_FOLD_DEPTH && frontier.length > 0; depth++) {
     const next: string[] = [];
     for (const current of frontier) {
+      // A base named by hand at /fold ends the chain here.
+      //
+      // Not merely the next hop, which is what an ordinary override is: the walk
+      // carries on from an override's base and keeps the most common word it
+      // reaches, so "timelessly -> timeless" would be read, followed to "time",
+      // and the reviewer's answer thrown away -- the fold they rejected,
+      // restored by the rule that was supposed to have been overruled. A
+      // recommendation is not a hint about where to look next. It is the whole
+      // answer to what this word scores as, so it is taken and the walk stops.
+      const reviewed = reviewedFoldBase(current, scoring, date);
+      if (reviewed) {
+        const zipf = zipfFor(reviewed, scoring);
+        if (trace && !trace.has(reviewed)) {
+          trace.set(reviewed, { from: current, to: reviewed, rule: "base", zipf });
+        }
+        if (eligible(reviewed) && (!best || zipf > best.zipf)) best = { base: reviewed, zipf };
+        continue;
+      }
       for (const candidate of nextBaseForms(current, scoring, date)) {
         if (seen.has(candidate)) continue;
         seen.add(candidate);
         next.push(candidate);
         const zipf = zipfFor(candidate, scoring);
         trace?.set(candidate, { from: current, to: candidate, rule: "base", zipf });
-        if (!best || zipf > best.zipf) best = { base: candidate, zipf };
+        if (eligible(candidate) && (!best || zipf > best.zipf)) best = { base: candidate, zipf };
       }
       // The other direction, and the reason it is applied here rather than as
       // another entry in `nextBaseForms`: a word is capped at the inflections
@@ -2768,7 +2918,7 @@ function chainedBase(
         if (trace && !trace.has(form)) {
           trace.set(form, { from: current, to: form, rule: "derived-form", zipf });
         }
-        if (!best || zipf > best.zipf) best = { base: form, zipf };
+        if (eligible(form) && (!best || zipf > best.zipf)) best = { base: form, zipf };
       }
       for (const form of inflectedFormFolds(
         current,
@@ -2780,7 +2930,7 @@ function chainedBase(
         if (trace && !trace.has(form)) {
           trace.set(form, { from: current, to: form, rule: "inflected-form", zipf });
         }
-        if (!best || zipf > best.zipf) best = { base: form, zipf };
+        if (eligible(form) && (!best || zipf > best.zipf)) best = { base: form, zipf };
         // Terminal for the *inflectional* hops and transparent to the rest, from
         // REVIEWED_FOLD_START. Reading only the form's raw Zipf is the mistake
         // `chainedBase` was built to fix, still made in this one direction: the
@@ -2803,7 +2953,9 @@ function chainedBase(
             next.push(above);
             const aboveZipf = zipfFor(above, scoring);
             trace?.set(above, { from: form, to: above, rule: "base", zipf: aboveZipf });
-            if (!best || aboveZipf > best.zipf) best = { base: above, zipf: aboveZipf };
+            if (eligible(above) && (!best || aboveZipf > best.zipf)) {
+              best = { base: above, zipf: aboveZipf };
+            }
           }
         }
       }

@@ -314,7 +314,7 @@
   },
   "fowlest": {
     "reason": "misspelling",
-    "since": "2026-10-01",
+    "since": "2026-09-27",
     "note": "A misspelling of `foulest`; `fowl` is a bird and has no superlative."
   },
   "glicerol": {
@@ -326,6 +326,11 @@
     "note": "Proper noun: the bacterial genus Gluconobacter.",
     "reason": "proper-noun",
     "since": "2026-08-22"
+  },
+  "goe": {
+    "note": "Archaic spelling of `go` (Wiktionary). From 2026-09-27 Standard no longer caps a word at a longer form, which would have scored it as itself at 8.09 instead of as `goes`.",
+    "reason": "obsolete",
+    "since": "2026-09-27"
   },
   "hatefull": {
     "note": "Misspelling of `hateful`.",
@@ -417,6 +422,11 @@
     "reason": "misspelling",
     "since": "2026-08-22"
   },
+  "perhap": {
+    "note": "Obsolete form of `perhaps` (Wiktionary). From 2026-09-27 Standard no longer caps a word at a longer form, which would have scored it as itself at 9.63 instead of as `perhaps`.",
+    "reason": "obsolete",
+    "since": "2026-09-27"
+  },
   "photoreconnaisance": {
     "note": "Misspelling of `photoreconnaissance`.",
     "reason": "misspelling",
@@ -441,6 +451,11 @@
     "note": "Merriam-Webster has no entry for it (live-lookup verdict `unknown`).",
     "reason": "not-a-word",
     "since": "2026-08-22"
+  },
+  "quizz": {
+    "note": "Archaic form of `quiz` (Wiktionary). From 2026-09-27 Standard no longer caps a word at a longer form, which would have scored it as itself instead of as `quizzes`.",
+    "reason": "obsolete",
+    "since": "2026-09-27"
   },
   "reaccomodate": {
     "note": "Misspelling of `reaccommodate`.",

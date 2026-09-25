@@ -40,8 +40,6 @@ export function WordRulesModal({ open, date, onClose }: Props) {
     setSent(true);
   }
 
-  const listSize = date !== undefined && modeIsChosen(date) ? "900,000" : "200,000";
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
@@ -63,33 +61,25 @@ export function WordRulesModal({ open, date, onClose }: Props) {
             ×
           </button>
         </div>
-        {/* How big the list is moved with the second sentence, once. From
-            MODE_CHOICE_START a submission is checked against the full tagged
-            corpus rather than the curated list alone, which is 975,000 playable
-            words against 220,000 -- a number the panel cannot go on
-            understating by a factor of four. Before that date the curated list
-            really was the whole of it, and the archive still plays that way. */}
-        {/* The second sentence is the half that moves. Sourcing and licensing
-            are true whatever the rules are; which kinds of word are eligible is
-            not, and a rules panel that goes on saying a word is unplayable while
-            the player is scoring it is worse than no rules panel.
+        {/* What's allowed, and the box to argue with it -- nothing else. How
+            words are scored lives in How to play and the common-forms
+            explainer, and where the list comes from lives in the terms, so
+            this panel only answers the question that opened it: why was that
+            word turned away?
 
-            Three sentences, one per era, and the *mode* is not asked: from
-            MODE_CHOICE_START both modes accept the same words and differ only in
-            what they are worth. Before that the trial week waived every register
-            rule there is, and before the trial none of them were waived -- both
-            of those are still reachable from the archive and still play that
-            way. See waivedRejectionsFor in game/dictionary.ts. */}
+            One sentence per era, and the *mode* is not asked: from
+            MODE_CHOICE_START both modes accept the same words and differ only
+            in what they are worth. Before that the trial week waived every
+            register rule there is, and before the trial none of them were
+            waived -- both of those are still reachable from the archive and
+            still play that way. See waivedRejectionsFor in game/dictionary.ts. */}
         <p className="modal__copy">
-          WordInk's word list is sourced from SCOWL and <a href="https://en.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>) and contains more than {listSize} words.{" "}
           {date !== undefined && modeIsChosen(date)
-            ? "Proper nouns and abbreviations count, whether or not the list already carried them. Misspellings, offensive words, obsolete, archaic or dated words, hyphenated words and words with punctuation aren't eligible for play — in either mode."
+            ? "Proper nouns and abbreviations count. Misspellings, offensive words, obsolete, archaic or dated words, hyphenated words and words with punctuation aren't eligible for play — in either mode."
             : usesFreeformRules(date)
-              ? "It's freeform week, so almost all of it is in play: proper nouns, abbreviations, and obsolete, archaic or dated words all count, whether or not the list already carried them. Misspellings, offensive words, hyphenated words and words with punctuation are the only ones left out."
-              : "To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play."}
-        </p>
-        <p className="modal__copy">
-          I'm continuously expanding the list to include more delightful and interesting words. Know a good one that's missing? Suggest it and everybody gets to play it.
+              ? "It's freeform week, so proper nouns, abbreviations, and obsolete, archaic or dated words all count. Misspellings, offensive words, hyphenated words and words with punctuation are the only ones left out."
+              : "To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play."}{" "}
+          Know a good word that's missing? Suggest it and everybody gets to play it.
         </p>
         <form className="word-suggestion" onSubmit={submitSuggestion}>
           <label htmlFor="word-suggestion">Suggest a word</label>

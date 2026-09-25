@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { ResultsPanel } from "./ResultsPanel";
 import { buildShareText } from "../game/share";
 import { windowTotals } from "../game/totals";
@@ -22,6 +22,12 @@ const streak: StreakState = {
 };
 
 describe("ResultsPanel share toggle", () => {
+  // The toggle remembers its last choice, so each test starts from a player who
+  // has never touched it.
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it("defaults to Top: names only the rarest word, keeping the rest anonymous", () => {
     render(
       <ResultsPanel
@@ -56,6 +62,33 @@ describe("ResultsPanel share toggle", () => {
     expect(preview?.textContent).not.toContain("strange");
     expect(preview?.textContent).not.toContain("aardvark");
     expect(preview?.textContent).toMatch(/⬜|🟩|🟦|🟪|🟧/);
+  });
+
+  it("remembers the choice for the next result", async () => {
+    const { unmount } = render(
+      <ResultsPanel
+        date="2025-01-01"
+        drop="str"
+        words={words}
+        streak={streak}
+      />,
+    );
+    await userEvent.click(screen.getByRole("radio", { name: /^all$/i }));
+    unmount();
+
+    // A later puzzle, as a reload or the next day would draw it.
+    render(
+      <ResultsPanel
+        date="2025-01-02"
+        drop="str"
+        words={words}
+        streak={streak}
+      />,
+    );
+    expect(screen.getByRole("radio", { name: /^all$/i })).toBeChecked();
+    const preview = document.querySelector(".results-panel__preview");
+    expect(preview?.textContent).toContain("strange");
+    expect(preview?.textContent).toContain("aardvark");
   });
 
   it("uses the puzzle date in the shared heading", () => {

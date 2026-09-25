@@ -1,14 +1,18 @@
 // The fold review ledger: a Vercel Edge Function behind the page at /fold.
 //
 // GET /api/fold-reviews?key=…&limit=2000
-//   -> { reviews: [{ word, base, ownZipf, baseZipf, verdict, date, at }] }
+//   -> { reviews: [{ word, base, ownZipf, baseZipf, verdict, suggestedBase, date,
+//                    at }] }
 //   400 bad-limit, 401 unauthorised (where REVIEW_TOKEN is set), 405 wrong
 //   method, 503 no credentials, 502 upstream unavailable.
 //
 // POST /api/fold-reviews?key=…
-//   { word, base, ownZipf, baseZipf, date, verdict }  verdict: "approved" |
-//   "rejected" | null
-//   -> 200 { verdict }, 400 malformed, 401 unauthorised, 403 cross-origin,
+//   { word, base, ownZipf, baseZipf, date, verdict, suggestedBase }
+//   verdict: "approved" | "rejected" | null
+//   suggestedBase: the base a rejection says the fold should have reached, or
+//   null for "it should not fold at all". Ignored on an approval, where the
+//   fold's own base is the answer.
+//   -> 200 { verdict, suggestedBase }, 400 malformed, 401 unauthorised, 403 cross-origin,
 //      413 too-large, 503 no credentials, 502 upstream unavailable.
 //   The response says what is stored rather than echoing what was asked, so the
 //   control on the page can draw the database's answer instead of its own
@@ -64,8 +68,15 @@ interface ReviewRow {
   own_zipf: number | string | null;
   base_zipf: number | string | null;
   verdict: string;
+  suggested_base: string | null;
   puzzle_date: string | null;
   reviewed_at: string;
+}
+
+/** What `set_fold_review` answers with: the row as it now stands. */
+interface StoredRow {
+  verdict: string | null;
+  suggested_base: string | null;
 }
 
 /**
@@ -158,6 +169,7 @@ async function handleGet(request: Request): Promise<Response> {
         ownZipf: num(row.own_zipf),
         baseZipf: num(row.base_zipf),
         verdict: row.verdict,
+        suggestedBase: row.suggested_base ?? null,
         date: row.puzzle_date,
         at: row.reviewed_at,
       })),
@@ -200,13 +212,14 @@ async function handlePost(request: Request): Promise<Response> {
     return reply(400, { ok: false, reason: "malformed-review" });
   }
 
-  const { word, base, ownZipf, baseZipf, date, verdict } = parsed as {
+  const { word, base, ownZipf, baseZipf, date, verdict, suggestedBase } = parsed as {
     word?: unknown;
     base?: unknown;
     ownZipf?: unknown;
     baseZipf?: unknown;
     date?: unknown;
     verdict?: unknown;
+    suggestedBase?: unknown;
   };
 
   if (typeof word !== "string" || !WORD_RE.test(word)) {
@@ -223,12 +236,29 @@ async function handlePost(request: Request): Promise<Response> {
   if (date !== null && date !== undefined && (typeof date !== "string" || !DATE_RE.test(date))) {
     return reply(400, { ok: false, reason: "bad-date" });
   }
+  // A recommendation is a word or nothing. Absent and null are the same
+  // request -- "no base recommended" -- which is what a rejection meant before
+  // this field existed and what the empty box on the page still means.
+  if (
+    suggestedBase !== null &&
+    suggestedBase !== undefined &&
+    (typeof suggestedBase !== "string" || !WORD_RE.test(suggestedBase))
+  ) {
+    return reply(400, { ok: false, reason: "bad-suggested-base" });
+  }
+  // A word folding to itself is not a fold. Refused here rather than quietly
+  // dropped, because it is a page sending something it should not have sent.
+  if (typeof suggestedBase === "string" && suggestedBase === word) {
+    return reply(400, { ok: false, reason: "self-fold" });
+  }
   const wanted = (verdict ?? null) as Verdict | null;
 
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
-    const stored = await rpc<string | null>("set_fold_review", {
+    // The function returns a row rather than a scalar, so PostgREST answers
+    // with a single-element array.
+    const stored = await rpc<StoredRow[] | StoredRow | null>("set_fold_review", {
       p_word: word,
       p_base: base,
       // A frequency that isn't a finite number is stored as none rather than
@@ -238,9 +268,12 @@ async function handlePost(request: Request): Promise<Response> {
       p_base_zipf: typeof baseZipf === "number" && Number.isFinite(baseZipf) ? baseZipf : null,
       p_puzzle_date: date ?? null,
       p_verdict: wanted,
+      p_suggested_base: suggestedBase ?? null,
     });
+    const row = Array.isArray(stored) ? (stored[0] ?? null) : stored;
     return reply(200, {
-      verdict: stored === "approved" || stored === "rejected" ? stored : null,
+      verdict: row?.verdict === "approved" || row?.verdict === "rejected" ? row.verdict : null,
+      suggestedBase: row?.suggested_base ?? null,
     });
   } catch (error: unknown) {
     console.error("[fold-reviews] write failed:", error instanceof Error ? error.message : error);

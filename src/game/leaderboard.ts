@@ -19,15 +19,14 @@ import {
   topRarityScore,
 } from "./dictionary";
 import { todayDateString } from "./date";
-import { DEV_TOOLS } from "../dev/devTools";
 import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { currentMode, modeForDate, type GameMode } from "./mode";
-import { playedOnItsDay } from "./storage";
-import { sampleBoardsResponse, usingSampleData } from "../dev/sampleData";
+import { playedHistory, playedOnItsDay } from "./storage";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 import { monthStart } from "./month";
+import { APP_VERSION } from "../version";
 import { weekStart } from "./week";
 
 export interface BoardEntry {
@@ -73,6 +72,12 @@ export interface FoundWord {
   foundOn: string;
   /** Found on the puzzle the player is looking at, rather than an older one. */
   today: boolean;
+  /**
+   * The frequency the finder's game sent, for a word this dictionary does not
+   * carry (a live Merriam-Webster approval, most often). Kept so the feed can be
+   * repriced when the reader flips modes -- see `repriceFoundWords`.
+   */
+  stored?: number;
 }
 
 export interface Boards {
@@ -334,22 +339,52 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
     // the game used in July.
     const playedOn = typeof foundOn === "string" && foundOn ? foundOn : undefined;
     const stored = typeof zipf === "number" && Number.isFinite(zipf) ? zipf : undefined;
-    const current = rarityFor(word, playedOn, "standard")?.zipf ?? stored;
-    if (current === undefined) continue;
-    const rarity = rarityForZipf(current, playedOn, "standard");
+    const price = priceFind(word, playedOn, stored);
+    if (!price) continue;
     // No rarity bar. The feed is what the day's players found, and a Common word
     // is part of what happened -- cutting it would quietly turn a record of the
     // puzzle into a highlight reel, which the boards above already are.
     words.push({
       word,
-      zipf: current,
-      rarity,
+      ...price,
       finders: typeof finders === "number" && Number.isFinite(finders) ? finders : 1,
       foundOn: typeof foundOn === "string" ? foundOn : "",
       today: foundOn === today,
+      ...(stored !== undefined ? { stored } : {}),
     });
   }
   return words;
+}
+
+/**
+ * What one find is worth to the reader, by the rules of the mode they are in.
+ *
+ * The feed holds finds from both modes, and a word is the same word whichever
+ * game it was banked in -- so it is priced the way the reader would have been
+ * scored for it, not the way the finder was. `rarityFor` reads the mode for any
+ * puzzle from MODE_CHOICE_START on, which is what makes that the default.
+ */
+function priceFind(
+  word: string,
+  playedOn: string | undefined,
+  stored: number | undefined
+): { zipf: number; rarity: Rarity } | undefined {
+  const zipf = rarityFor(word, playedOn)?.zipf ?? stored;
+  if (zipf === undefined) return undefined;
+  return { zipf, rarity: rarityForZipf(zipf, playedOn) };
+}
+
+/**
+ * The same feed, priced again under whatever mode the reader is in now.
+ *
+ * Nothing is fetched: the words and dates are already on screen, and flipping
+ * the switch changes only the rules they are scored by.
+ */
+export function repriceFoundWords(words: readonly FoundWord[]): FoundWord[] {
+  return words.map((found) => {
+    const price = priceFind(found.word, found.foundOn || undefined, found.stored);
+    return price ? { ...found, ...price } : found;
+  });
 }
 
 /**
@@ -466,13 +501,6 @@ export async function fetchBoards(
   // Nobody has to have joined for the page to work: without an id the boards
   // come back exactly as before, minus a row that would be about nobody.
   const playerId = loadPlayerId();
-  // Development only, and compiled out of a production build entirely: the
-  // fixture stands in for the server so the page can be worked on without one.
-  // Parsed by exactly the same code as a real response, so a change to that
-  // parsing cannot pass here and fail in production.
-  if (DEV_TOOLS && usingSampleData()) {
-    return readBoards(sampleBoardsResponse() as Record<string, unknown>, since, mode);
-  }
   // The player's own date goes up because the puzzle a find belongs to is the
   // player's own local calendar date, not a moment in UTC.
   const response = await fetch(
@@ -505,9 +533,6 @@ export async function fetchFoundWords(
   date: string = todayDateString(),
   options: FetchOptions = {}
 ): Promise<FoundWord[]> {
-  if (DEV_TOOLS && usingSampleData()) {
-    return parseWords((sampleBoardsResponse() as Record<string, unknown>).words, date);
-  }
   // The date is the only thing this request carries, so two players on the same
   // day send byte-identical URLs and share one cached answer. The server bounds
   // it against its own clock either way (see api/leaderboard.ts).
@@ -592,7 +617,7 @@ interface ScorePayload {
    *
    * The endpoint honours it only for days on or after the split and writes every
    * earlier day to both boards whatever this says -- a day played before there
-   * was a choice is not the client's to assign. See the 20260922 migration.
+   * was a choice is not the client's to assign. See the 20260925 migration.
    */
   mode: GameMode;
   /**
@@ -607,11 +632,16 @@ interface ScorePayload {
    */
   retried?: boolean;
   /**
+   * A day played in Freeform by choice: its words go onto the finds feed, and
+   * nothing goes onto the board. Sent only when true. See `submitScore`.
+   */
+  unranked?: boolean;
+  /**
    * Every word accepted that day, which is what the finds feed is built from.
    *
-   * Sent only for the puzzle being played, never for a backfilled day: the feed
-   * shows one drop at a time, so past words would be rows nobody can ever see,
-   * and a browser with a year of history would not fit the request body.
+   * Sent for the puzzle being played, and by `backfillFinds` for any past day
+   * whose words the server has not yet taken -- never with the board's backfill,
+   * because a browser with a year of history would not fit the request body.
    */
   found?: FoundPayload[];
 }
@@ -636,7 +666,7 @@ interface ScorePayload {
 function scoreFor(
   date: string,
   words: readonly AcceptedWord[],
-  options: { withFound?: boolean; retried?: boolean; mode?: GameMode } = {}
+  options: { withFound?: boolean; retried?: boolean; unranked?: boolean; mode?: GameMode } = {}
 ): ScorePayload {
   // The mode this day was *played* in, which is the one thing that must not be
   // read off the live switch here. A browser holding both modes' records
@@ -666,29 +696,23 @@ function scoreFor(
     // sending it would put a field on every submission ever made to say the
     // ordinary thing.
     ...(options.retried ? { retried: true } : {}),
+    ...(options.unranked ? { unranked: true } : {}),
     ...(options.withFound ? { found: foundFor(date, words) } : {}),
   };
 }
 
 /**
- * A day's word list for the feed, priced by the day it was played and by
- * Standard's rules.
+ * A day's word list for the feed, priced by the day it was played.
  *
- * The sending half of `parseWords`, and it agrees with it on both counts. Dated,
- * because the feed is a record of one drop and the number has to be the one that
- * day's system gave. Standard, because the feed holds finds from both modes and
- * prices all of them one way -- the reader's copy is recomputed as Standard
- * whatever arrives here, so a Freeform day that sent its own unfolded frequency
- * would only ever disagree with the list it lands in.
- *
- * Which matters exactly where the reader cannot recompute: this value is read
- * only for a word their own dictionary does not carry -- a live Merriam-Webster
- * approval, most often -- and that is the case with no second chance to get it
- * right.
+ * The sending half of `parseWords`, and dated for the same reason: this list is
+ * what the feed shows back as a record of the puzzle, so the number that leaves
+ * here has to be the number the player was shown. It is only ever read for a
+ * word the reader's own dictionary does not carry -- a live Merriam-Webster
+ * approval, most often -- but that is exactly the case with no second chance to
+ * get it right.
  *
  * Unlike the rarest word in `scoreFor` above, which is a claim about the player
- * rather than a record of the puzzle, and so is priced under the rules they
- * actually played by.
+ * rather than a record of the puzzle and stays on today's terms.
  *
  * Trimmed to the day's guess limit for the same reason `words` is capped: the
  * endpoint refuses a longer list, and a batch it refuses costs the player the
@@ -697,7 +721,7 @@ function scoreFor(
 function foundFor(date: string, words: readonly AcceptedWord[]): FoundPayload[] {
   return words.slice(0, maxGuessesFor(date)).map((word) => ({
     word: word.word.toLowerCase(),
-    zipf: rarityFor(word.word, date, "standard")?.zipf ?? word.zipf,
+    zipf: rarityFor(word.word, date)?.zipf ?? word.zipf,
   }));
 }
 
@@ -726,29 +750,44 @@ function rarest(
  */
 function post(playerId: string, scores: ScorePayload[]): boolean {
   if (scores.length === 0) return false;
-  const body = JSON.stringify({ playerId, scores });
+  const request = send(playerId, scores);
+  if (!request) return false;
+  void request.catch(() => {});
+  return true;
+}
+
+/** `post`, handing back the request for a caller that wants to see it land. */
+function send(playerId: string, scores: ScorePayload[]): Promise<Response> | null {
+  // `version` is the release this client's scoring was built from. The server
+  // ranks only clients at or above its floor (see MIN_RANKED_VERSION in
+  // api/leaderboard.ts): a phone app is a frozen copy of these rules, so an
+  // install that never updates would otherwise keep pricing words by a system
+  // the website has since replaced, on the same board.
+  const body = JSON.stringify({ playerId, version: APP_VERSION, scores });
   try {
-    void fetch("/api/leaderboard", {
+    return Promise.resolve(fetch("/api/leaderboard", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body,
       keepalive: true,
-    }).catch(() => {});
+    }));
   } catch {
     // Recording a score must never be able to break the move that earned it.
-    return false;
+    return null;
   }
-  return true;
 }
 
 /**
  * Send this puzzle's score up, if there is anything to send.
  *
- * Refuses in three cases, each on purpose:
+ * Refuses in two cases, each on purpose:
  *   - nobody has joined the board on this browser, so there is no name to post;
- *   - the puzzle isn't today's, because archive play is off the board for the
- *     same reason it is off the streak (you can look up the answers);
  *   - no words have been accepted, so there is no score.
+ *
+ * A puzzle that isn't today's is sent, but `unranked`: archive play is off the
+ * board for the same reason it is off the streak (you can look up the answers),
+ * and on the feed because the feed is a record of what was found on each drop,
+ * not a ranking. See below.
  */
 export function submitScore(options: {
   date: string;
@@ -767,20 +806,30 @@ export function submitScore(options: {
   const { date, isToday, words, retried } = options;
   const mode = options.mode ?? modeForDate(date);
   const playerId = options.playerId ?? loadPlayerId();
-  if (!playerId || !isToday || words.length === 0) return false;
+  if (!playerId || words.length === 0) return false;
+  // Played after its own day -- out of the archive, or on a tab left open past
+  // midnight. The words go up to that drop's feed, and the day goes nowhere near
+  // a board: a past puzzle's answers are a page away, so a score earned on it
+  // says nothing about the player. The server writes an `unranked` day's finds
+  // and skips its board row.
+  if (!isToday) {
+    return post(playerId, [
+      scoreFor(date, words, { withFound: true, retried, unranked: true, mode }),
+    ]);
+  }
   // Every mode submits. Which board the day lands on is decided from the mode it
   // was played in -- there is one per mode from the choice date on, and a day
   // played before that counts on both (see `boardFor` in game/mode.ts).
   //
-  // Freeform used to stop here, on the reasoning that the two systems do not
-  // produce comparable numbers and one board holding both would rank whoever had
-  // the switch on. The first half of that is still true and is exactly why there
-  // are two boards; what does not follow from it is that one of the two ways to
-  // play should have nowhere to be ranked at all.
+  // Freeform used to be sent `unranked`, on the reasoning that the two systems
+  // do not produce comparable numbers and one board holding both would rank
+  // whoever had the switch on. The first half of that is still true and is
+  // exactly why there are two boards; what does not follow from it is that one
+  // of the two ways to play should have nowhere to be ranked at all.
   //
   // The words go up either way, and they are not split: `found` is what the
-  // finds feed is built from, and that feed is one list of what the day's
-  // players turned up, priced as Standard for everybody (see `foundFor`).
+  // finds feed is built from, one list of what the day's players turned up,
+  // which every reader reprices by their own mode (see `repriceFoundWords`).
   //
   // The whole running word list goes with it, which is what the finds feed is
   // built from. Re-sent in full after every accepted word: each word is written
@@ -866,5 +915,97 @@ export function backfillHistory(
 export function syncHistory(today: string = todayDateString()): number {
   const playerId = loadPlayerId();
   if (!playerId) return 0;
+  backfillFinds(playerId);
   return backfillHistory(playerId, undefined, today);
+}
+
+/**
+ * Which words this browser has seen the server take, per puzzle date.
+ *
+ * What lets `backfillFinds` send each word once rather than the whole history
+ * on every open, which a long history would not fit in one request. Only ever
+ * written after a 2xx: the play path is fire-and-forget, so a word is not
+ * "sent" until something has watched it land. A ledger that is lost -- another
+ * browser, cleared storage -- costs one re-send, which the server discards.
+ */
+export const FINDS_SENT_KEY = "ick:finds-sent";
+
+/**
+ * The most days one sync sends finds for. A backstop on the request body (see
+ * MAX_BODY_BYTES in api/leaderboard.ts), not a schedule: anything past it goes
+ * on the next open, because the ledger remembers where this one stopped.
+ */
+const FINDS_BATCH_DAYS = 60;
+
+function loadFindsSent(): Record<string, string[]> {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(FINDS_SENT_KEY) ?? "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, string[]>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function markFindsSent(days: readonly ScorePayload[]): void {
+  try {
+    const sent = loadFindsSent();
+    for (const day of days) {
+      const words = new Set(sent[day.date] ?? []);
+      for (const find of day.found ?? []) words.add(find.word);
+      sent[day.date] = [...words];
+    }
+    localStorage.setItem(FINDS_SENT_KEY, JSON.stringify(sent));
+  } catch {
+    // Storage full or disabled: the next sync re-sends, which is harmless.
+  }
+}
+
+/**
+ * Put every word this browser has found onto its drop's feed, if it isn't yet.
+ *
+ * The play path sends each word as it is banked, but it is fire-and-forget: a
+ * word banked offline, or before this browser joined, or on an archive puzzle
+ * by a client from before those were sent at all, never reached the feed and
+ * nothing would ever send it again. This does, on every open.
+ *
+ * Every day goes up `unranked`, whatever it was: this is the feed's repair and
+ * not the board's, and `backfillHistory` is what keeps the board. A day before
+ * the feed's floor is skipped -- the page cannot show it.
+ *
+ * Fire-and-forget like every other write here: nothing waits on it, and the
+ * ledger is only updated once the server has said yes. Returns how many days
+ * were sent, for the tests.
+ */
+export function backfillFinds(
+  playerId: string,
+  history: readonly DailyProgress[] = playedHistory()
+): number {
+  const sent = loadFindsSent();
+  const byDate = new Map<string, AcceptedWord[]>();
+  for (const progress of history) {
+    if (progress.date < FINDS_EPOCH) continue;
+    const already = new Set(sent[progress.date] ?? []);
+    const words = byDate.get(progress.date) ?? [];
+    for (const word of progress.acceptedWords) {
+      const key = word.word.toLowerCase();
+      if (already.has(key) || words.some((w) => w.word.toLowerCase() === key)) continue;
+      words.push(word);
+    }
+    if (words.length > 0) byDate.set(progress.date, words);
+  }
+  const scores = [...byDate]
+    .slice(0, FINDS_BATCH_DAYS)
+    .map(([date, words]) => scoreFor(date, words, { withFound: true, unranked: true }));
+  if (scores.length === 0) return 0;
+  const request = send(playerId, scores);
+  if (!request) return 0;
+  request.then(
+    (response) => {
+      if (response?.ok) markFindsSent(scores);
+    },
+    () => {}
+  );
+  return scores.length;
 }

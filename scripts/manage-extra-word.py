@@ -1121,12 +1121,18 @@ def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float]
     offers both "cleanse", which folds no further, and "cleans", which carries on
     to "clean"). From 2026-08-24 it also caps against the inflections built *on*
     each word it visits (_inflected_form_folds), without walking on from them.
+    From 2026-09-27 (SHORTER_FORMS_START) the winner is never longer than the
+    word itself; the walk still passes through longer forms on the way.
     Returns (base, zipf), or None when nothing folds.
     """
     seen = {word}
     frontier = [word]
     best: tuple[str, float] | None = None
     own = zipf_at(word) if word in index else float("-inf")
+
+    def eligible(form: str) -> bool:
+        return len(form) <= len(word)
+
     for _ in range(MAX_FOLD_DEPTH):
         if not frontier:
             break
@@ -1138,12 +1144,12 @@ def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float]
                 seen.add(candidate)
                 nxt.append(candidate)
                 zipf = zipf_at(candidate)
-                if best is None or zipf > best[1]:
+                if eligible(candidate) and (best is None or zipf > best[1]):
                     best = (candidate, zipf)
             # The same direction one family further out, and fully terminal.
             for form in _derived_form_folds(current, index, zipf_at):
                 zipf = zipf_at(form)
-                if best is None or zipf > best[1]:
+                if eligible(form) and (best is None or zipf > best[1]):
                     best = (form, zipf)
             # The other direction: terminal for the *inflectional* hops and
             # transparent to the rest, so a paradigm reaches the base its own
@@ -1153,7 +1159,7 @@ def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float]
             floor = max(own, best[1] if best is not None else float("-inf"))
             for form in _inflected_form_folds(current, index, zipf_at, floor):
                 zipf = zipf_at(form)
-                if best is None or zipf > best[1]:
+                if eligible(form) and (best is None or zipf > best[1]):
                     best = (form, zipf)
                 for above in _non_inflectional_bases(form, index, zipf_at):
                     if above in seen:
@@ -1161,7 +1167,7 @@ def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float]
                     seen.add(above)
                     nxt.append(above)
                     above_zipf = zipf_at(above)
-                    if best is None or above_zipf > best[1]:
+                    if eligible(above) and (best is None or above_zipf > best[1]):
                         best = (above, above_zipf)
         frontier = nxt
     return best

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { maxGuessesFor } from "../game/constants";
 import { bestWord } from "../game/rank";
 import {
-  baseFormRankDrop,
+  baseFormSubstitution,
   formatRarityScore,
   topRarityScore,
   totalRarityScore,
@@ -119,25 +119,22 @@ export function GuessLog({
           {acceptedWords.map((w, i) => {
             const isBest = best !== undefined && w.word === best.word;
             const isCopied = copiedWord === w.word;
-            // Only surfaced when the fold cost the word a rank (see
-            // baseFormRankDrop): a badge one or more tiers below what the word
-            // itself suggests looks broken until the player is shown the word
-            // it was scored from.
+            // Shown for every word scored as another form, whatever it cost.
+            // With two modes one switch apart, the same word reads at two
+            // prices, and a Standard score with no note beside it looks like a
+            // bug the moment the player has seen it in Freeform. It used to be
+            // kept for a lost rank of at least 0.3 points, and never shown for
+            // a longer form ("titty" as "titties") -- which left exactly those
+            // drops unexplained.
             //
             // "common form" rather than "base word", because the fold does not
             // only run toward bases. It takes the most common word in the
             // family, which may be a sibling ("abandoner" scores as
-            // "abandoned") or a cousin reached through the chain ("precautioned"
-            // as "caution"). 27,220 of the words carrying this note name
-            // something that is not a base of theirs by any reading, and calling
+            // "abandoned"), a cousin reached through the chain ("precautioned"
+            // as "caution"), or a longer form ("abaci" as "abacus"), and calling
             // a plural the base word of its own singular reads as the bug it is
             // meant to explain away.
-            //
-            // Words scored on a *longer* form get no note at all (see
-            // baseFormRankDrop): naming a word the player would have had to
-            // build up to reads as a correction of the find rather than an
-            // explanation of the badge.
-            const baseNote = baseFormRankDrop(w.word, date);
+            const baseNote = baseFormSubstitution(w.word, date);
             return (
               <li
                 key={w.word}

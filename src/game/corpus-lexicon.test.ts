@@ -3,9 +3,12 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { corpusAttests, corpusEntry, loadCorpus, sourceBit, tagBit } from "./corpus";
-import { baseFormSubstitution, rarityFor } from "./dictionary";
-import { boardFor, modeForDate, resetModeCache, setMode } from "./mode";
+import { baseFormSubstitution, foldTrace, rarityFor } from "./dictionary";
+import { MODE_CHOICE_START, boardFor, modeForDate, resetModeCache, setMode } from "./mode";
+import { sameRootKey } from "./submit";
 import curated from "../data/dictionary.json";
+import rarity from "../data/rarity.json";
+import foldExemptionData from "../data/fold-exemptions.json";
 
 /**
  * The shipped corpus, served to `loadCorpus` off disk.
@@ -36,13 +39,35 @@ function serveShippedCorpus(): void {
   );
 }
 
-/** The day before the cutover and the day of it -- see CORPUS_ONLY_START. */
-const BEFORE = "2026-09-27";
-const AFTER = "2026-09-28";
+/**
+ * The day of the cutover and the last ordinary folding puzzle before it -- see
+ * CORPUS_ONLY_START. "Before" cannot be the day before, because that is inside
+ * the freeform trial, where nothing folds at all and every comparison would read
+ * as the whole fold arriving at once. 2026-09-13 is the system this cutover
+ * changes, which is the substitution every other cutover's tests make.
+ *
+ * The date now carries the mode switch, the ungated prefixes and the restored
+ * "pre-" as well, so the counts below are the day's, not the corpus's alone: of
+ * the words that move, 530 carry "anti-"/"counter-" and 854 carry "pre-". What
+ * the corpus does on its own is still what the named cases pin.
+ */
+const BEFORE = "2026-09-13";
+const AFTER = MODE_CHOICE_START;
 
 const CURATED = new Set(curated as string[]);
 
-describe("the corpus lexicon (from 2026-09-28)", () => {
+/**
+ * Whether `word` was capped at a longer form before the cutover -- the fold
+ * SHORTER_FORMS_START (the same date) withdraws. Those words move on this date
+ * for a reason that has nothing to do with the corpus, so the guards below count
+ * them apart, the way they count the audit's exemptions apart.
+ */
+function cappedLonger(word: string): boolean {
+  const base = baseFormSubstitution(word, BEFORE)?.base;
+  return base !== undefined && base.length > word.length;
+}
+
+describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
   beforeAll(async () => {
     serveShippedCorpus();
     expect(await loadCorpus()).toBe(true);
@@ -115,13 +140,18 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
     it("leaves the overwhelming majority of the curated list where it was", () => {
       let moved = 0;
       for (const word of curated as string[]) {
+        // A longer-form cap withdrawn on the same date; see `cappedLonger`.
+        if (cappedLonger(word)) continue;
         if (rarityFor(word, BEFORE)!.zipf !== rarityFor(word, AFTER)!.zipf) moved++;
       }
-      // 2,910 of 225,483 -- see the PR body for the breakdown. Pinned as a range
-      // so the data can be rebuilt without rewriting the test, and so a change
-      // that suddenly moves ten times as much has to say so out loud.
+      // 4,954 of 225,483. The ceiling was 4,500 while the corpus moved this
+      // list alone; the 2026-09-22 audit's exemptions now land on the same date
+      // and carry their inflections with them, which is the whole of the
+      // difference. Still pinned as a range, for the reason it always was: the
+      // data can be rebuilt without rewriting the test, and a change that
+      // suddenly moves ten times as much has to say so out loud.
       expect(moved).toBeGreaterThan(2_000);
-      expect(moved).toBeLessThan(4_500);
+      expect(moved).toBeLessThan(6_500);
     });
   });
 
@@ -129,7 +159,10 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
     it("folds onto a base the curated list never held", () => {
       // The ceiling `rarityForUncurated` names: before the cutover every link of
       // the chain had to be one of the 225,483.
-      const reached = (["actinomycetal", "antlion", "aparthotel"] as const).map((word) => ({
+      // Plurals, because from the same date the fold only ever lands on a form
+      // no longer than the word (SHORTER_FORMS_START): the examples this used to
+      // name were all capped at their own plural, "antlion" at "antlions".
+      const reached = (["aminoacids", "amigas", "amors"] as const).map((word) => ({
         word,
         before: baseFormSubstitution(word, BEFORE)?.base,
         after: baseFormSubstitution(word, AFTER)?.base,
@@ -142,35 +175,87 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
     });
 
     it("only ever makes those words more common, never rarer", () => {
-      for (const word of ["actinomycetal", "antlion", "aparthotel", "acyltransferase"]) {
+      for (const word of ["aminoacids", "amigas", "amors", "addies"]) {
         expect(rarityFor(word, AFTER)!.zipf).toBeGreaterThan(rarityFor(word, BEFORE)!.zipf);
       }
     });
 
-    it("moves far more words down than up", () => {
+    it("moves far more words down than up, once the reviewed fixes are set aside", () => {
+      // Two changes land on this date and they pull opposite ways. The corpus
+      // reaches bases the curated list never held, which makes words commoner.
+      // The 2026-09-22 semantic audit withdraws folds that were landing on the
+      // wrong word, which makes them rarer. Summed, the second swamps the ratio
+      // the first exists to state.
+      //
+      // So they are counted apart. The question this test is for is whether the
+      // *corpus* quietly promoted anything nobody reviewed, and loosening the
+      // ceiling to fit the sum would have destroyed it: a ceiling wide enough
+      // for the audit is wide enough for an unreviewed promotion to hide in,
+      // which is the one thing this refuses.
+      //
+      // Accounted-for two ways, because an entry reaches a word two ways.
+      // Mostly by root: "abasers" does not fold *through* "abaser", it is
+      // another member of its paradigm, and withdrawing the base's fold
+      // withdraws the family's -- `sameRootKey` is what the game already uses
+      // to call two submissions the same word. The rest by chain, for the
+      // handful whose route to a base ran through an entry of another root.
+      const audited = new Set(
+        Object.entries(foldExemptionData)
+          .filter(([, entry]) => (entry as { since: string }).since === AFTER)
+          .map(([word]) => word)
+      );
+      const auditedRoots = new Set([...audited].map((word) => sameRootKey(word, AFTER)));
+
       let down = 0;
-      let up = 0;
+      let unreviewedUp = 0;
+      let reviewedUp = 0;
+      let longerCapsWithdrawn = 0;
       for (const word of curated as string[]) {
         const before = rarityFor(word, BEFORE)!.zipf;
         const after = rarityFor(word, AFTER)!.zipf;
+        // The third change on this date, and the one that is all promotions by
+        // design: a word no longer capped at a longer form scores as itself.
+        if (cappedLonger(word)) {
+          if (after !== before) longerCapsWithdrawn++;
+          continue;
+        }
         if (after > before) down++;
-        else if (after < before) up++;
+        else if (after < before) {
+          const reached = foldTrace(word, BEFORE)?.path ?? [];
+          if (
+            audited.has(word) ||
+            auditedRoots.has(sameRootKey(word, AFTER)) ||
+            reached.some((hop) => audited.has(hop.to))
+          ) {
+            reviewedUp++;
+          } else {
+            unreviewedUp++;
+          }
+        }
       }
       expect(down).toBeGreaterThan(2_000);
-      // The promotions are named and accounted for in the PR body; what this
-      // pins is that they stay a rounding error against the demotions rather
-      // than becoming the story.
-      expect(up).toBeLessThan(60);
-      expect(up * 40).toBeLessThan(down);
+      // The audit is the larger half of the day, and is meant to be.
+      expect(reviewedUp).toBeGreaterThan(500);
+      // What is left is the corpus's own doing, and it stays a rounding error
+      // against its demotions rather than becoming the story.
+      expect(unreviewedUp).toBeLessThan(60);
+      expect(unreviewedUp * 40).toBeLessThan(down);
+      // Pinned as a range for the same reason as the rest: 16,187 when it landed.
+      expect(longerCapsWithdrawn).toBeGreaterThan(10_000);
+      expect(longerCapsWithdrawn).toBeLessThan(20_000);
     });
 
     it("leaves Freeform alone entirely, because Freeform does not fold", () => {
-      // The mode switch lands on 2026-09-27 and this cutover on the 28th, so the
-      // two are one day apart and it is worth saying which one owns what. The
-      // switch decides whether a word folds; this decides what the fold may
-      // reach. Freeform answers "it does not fold" to the first question, which
-      // makes the second moot -- `lexiconHas` has exactly one consumer and it is
-      // the fold.
+      // The mode switch and this cutover now land on the same date, and it is
+      // still worth saying which one owns what. The switch decides whether a
+      // word folds; this decides what the fold may reach. Freeform answers "it
+      // does not fold" to the first question, which makes the second moot --
+      // `lexiconHas` has exactly one consumer and it is the fold.
+      //
+      // Stated as "every word scores its own measurement" rather than as a
+      // before/after diff, because there is no longer a day between the two
+      // cutovers to take the "before" from: the corpus arrives on the first date
+      // the switch exists. This says the same thing more directly.
       //
       // Swept over the whole list rather than spot-checked, because "no effect"
       // is the kind of claim a handful of words can pass by accident.
@@ -178,11 +263,11 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
       setMode("freeform");
       try {
         expect(modeForDate(AFTER)).toBe("freeform");
-        let moved = 0;
-        for (const word of curated as string[]) {
-          if (rarityFor(word, BEFORE)!.zipf !== rarityFor(word, AFTER)!.zipf) moved++;
-        }
-        expect(moved).toBe(0);
+        let folded = 0;
+        (curated as string[]).forEach((word, i) => {
+          if (rarityFor(word, AFTER)!.zipf !== rarity.zipfHundredths[i] / 100) folded++;
+        });
+        expect(folded).toBe(0);
       } finally {
         resetModeCache();
       }
@@ -202,7 +287,7 @@ describe("the corpus lexicon (from 2026-09-28)", () => {
     });
 
     it("carries the ungated prefixes onto bases only the corpus has", () => {
-      // The two cutovers compose, a day apart: 2026-09-27 lets "anti-" strip a
+      // The two cutovers compose on one date: 2026-09-27 lets "anti-" strip a
       // measured word at all (see UNGATED_PREFIX_START), and this one decides
       // what the strip may land on. `christ` is a corpus headword with no tag
       // against it and no curated entry, so the pair of them is what gets

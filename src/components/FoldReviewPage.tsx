@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ReviewPage } from "./ReviewPage";
 import { formatDateLabel } from "../game/date";
+import { formatRarityScore, rarityFor } from "../game/dictionary";
 import { loadCorpus } from "../game/corpus";
 import {
   FOLD_BATCH_SIZE,
@@ -10,7 +11,12 @@ import {
   upcomingFoldDates,
   type FoldCandidate,
 } from "../game/foldCandidates";
-import { fetchFoldReviews, setFoldReview, type FoldVerdict } from "../game/foldReview";
+import {
+  fetchFoldReviews,
+  setFoldReview,
+  type FoldVerdict,
+  type SuggestedBase,
+} from "../game/foldReview";
 
 /**
  * The fold review at /fold: one fold per row, approved or rejected by hand.
@@ -30,13 +36,23 @@ import { fetchFoldReviews, setFoldReview, type FoldVerdict } from "../game/foldR
  * on the way from one to the other is a control built for tracking what has been
  * read rather than for deciding.
  *
+ * A rejection then asks one thing more: what it should have folded to. Two
+ * answers turned out to be one short, because "wrong" covers two opposite
+ * corrections. "timelessly" folds to "time" and should fold to "timeless" --
+ * the chain stopped one hop early, and scoring it on its own near-zero
+ * frequency would make it a Legend, which is as wrong as "time" in the other
+ * direction. "momser" folds to "mom" and is not a form of anything. A ledger
+ * that could only say "wrong" turned the first into the second.
+ *
  * What the answers are for, in order of how soon they matter:
  *
- *   * A rejection becomes an entry in `src/data/fold-exemptions.json`, which is
- *     what stops the fold in the game -- by way of a script and a deploy, never
- *     live. Scoring is dated, deterministic and offline, and a puzzle whose
- *     scores depend on a table somebody can edit mid-day is a puzzle that cannot
- *     be replayed. See scripts/export-fold-rejections.mjs.
+ *   * A rejection becomes an entry in `src/data/fold-review-verdicts.json` --
+ *     this page's own file, so a scoring line can always be traced back to who
+ *     decided it and how -- pinning the word to the recommended base, or
+ *     stopping the fold outright where none was recommended. By way of a script
+ *     and a deploy, never live: scoring is dated, deterministic and offline, and
+ *     a puzzle whose scores depend on a table somebody can edit mid-day is a
+ *     puzzle that cannot be replayed. See scripts/export-fold-rejections.mjs.
  *   * Both answers together are a labelled set: the judgement a model would have
  *     to learn, written down. A file of nothing but rejections says what a bad
  *     fold looks like and nothing at all about a good one, which is why an
@@ -55,6 +71,23 @@ export function FoldReviewPage() {
   /** The folds those puzzles reach, or null while they are being worked out. */
   const [candidates, setCandidates] = useState<readonly FoldCandidate[] | null>(null);
   const [judged, setJudged] = useState<Record<string, FoldVerdict>>({});
+  /**
+   * What each rejection recommends instead, for the rows that carry one.
+   *
+   * Beside `judged` rather than inside it because the two are answered at
+   * different moments: the verdict lands on a click and the recommendation is
+   * typed after it, and a reviewer who rejects twenty rows and comes back to
+   * name the bases should not have the first click wait on the second.
+   */
+  const [suggested, setSuggested] = useState<Record<string, SuggestedBase>>({});
+  /**
+   * What is in each recommendation box right now, which is not yet an answer.
+   *
+   * Held apart from `suggested` so that a half-typed word is never mistaken for
+   * a judgement: the draft becomes a recommendation when the reviewer commits
+   * it, and until then the ledger says what it said before.
+   */
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
   /**
    * The words that were already judged when this batch was drawn.
    *
@@ -115,8 +148,14 @@ export function FoldReviewPage() {
       .then((reviews) => {
         if (!live.current) return;
         const stored: Record<string, FoldVerdict> = {};
-        for (const review of reviews) stored[review.word] = review.verdict;
+        const bases: Record<string, SuggestedBase> = {};
+        for (const review of reviews) {
+          stored[review.word] = review.verdict;
+          bases[review.word] = review.suggestedBase;
+        }
         setJudged(stored);
+        setSuggested(bases);
+        setDrafts({});
         // The snapshot the batch is cut from -- see `frozen` above. A re-read is
         // a fresh start on the queue, so the folds passed over come back with it.
         setFrozen(new Set(Object.keys(stored)));
@@ -150,9 +189,14 @@ export function FoldReviewPage() {
   const answer = useCallback(
     (candidate: FoldCandidate, verdict: Exclude<FoldVerdict, null>) => {
       const was = judged[candidate.word] ?? null;
+      const wasBase = suggested[candidate.word] ?? null;
       const wanted = was === verdict ? null : verdict;
+      // An approval says the fold's own base was right, so any recommendation
+      // under it is withdrawn with the rejection it belonged to.
+      const wantedBase = wanted === "rejected" ? wasBase : null;
       setFailed(null);
       setJudged((all) => ({ ...all, [candidate.word]: wanted }));
+      setSuggested((all) => ({ ...all, [candidate.word]: wantedBase }));
       setFoldReview(
         {
           word: candidate.word,
@@ -161,21 +205,68 @@ export function FoldReviewPage() {
           baseZipf: candidate.baseZipf,
           date: candidate.date,
         },
-        wanted
+        wanted,
+        wantedBase
       )
         // Drawn from the answer rather than left on the guess. They agree in
         // every ordinary case; when they do not, the database is right.
         .then((stored) => {
           if (!live.current) return;
-          setJudged((all) => ({ ...all, [candidate.word]: stored }));
+          setJudged((all) => ({ ...all, [candidate.word]: stored.verdict }));
+          setSuggested((all) => ({ ...all, [candidate.word]: stored.suggestedBase }));
         })
         .catch(() => {
           if (!live.current) return;
           setJudged((all) => ({ ...all, [candidate.word]: was }));
+          setSuggested((all) => ({ ...all, [candidate.word]: wasBase }));
           setFailed("save");
         });
     },
-    [judged]
+    [judged, suggested]
+  );
+
+  /**
+   * Name the base a rejected fold should have reached, or clear it.
+   *
+   * Written on commit rather than on every keystroke -- Enter, or leaving the
+   * box -- because a recommendation typed a letter at a time would write
+   * "t", "ti", "tim" into the ledger, and the ledger is a labelled set somebody
+   * will train on. An empty box is a real answer and the one a plain rejection
+   * has always meant: this word should not fold at all.
+   *
+   * Only ever sent on a rejection; the box is not drawn anywhere else.
+   */
+  const recommend = useCallback(
+    (candidate: FoldCandidate, raw: string) => {
+      const wanted = raw.trim().toLowerCase() || null;
+      const was = suggested[candidate.word] ?? null;
+      if (wanted === was) return;
+      if (wanted !== null && recommendationProblem(candidate, wanted) !== undefined) return;
+      setFailed(null);
+      setSuggested((all) => ({ ...all, [candidate.word]: wanted }));
+      setFoldReview(
+        {
+          word: candidate.word,
+          base: candidate.base,
+          ownZipf: candidate.ownZipf,
+          baseZipf: candidate.baseZipf,
+          date: candidate.date,
+        },
+        "rejected",
+        wanted
+      )
+        .then((stored) => {
+          if (!live.current) return;
+          setJudged((all) => ({ ...all, [candidate.word]: stored.verdict }));
+          setSuggested((all) => ({ ...all, [candidate.word]: stored.suggestedBase }));
+        })
+        .catch(() => {
+          if (!live.current) return;
+          setSuggested((all) => ({ ...all, [candidate.word]: was }));
+          setFailed("save");
+        });
+    },
+    [suggested]
   );
 
   const rows = useMemo(() => {
@@ -183,7 +274,18 @@ export function FoldReviewPage() {
     const done = new Set([...frozen, ...passed]);
     return foldBatch(candidates, done);
   }, [candidates, frozen, passed]);
-  const remaining = candidates ? unjudgedCount(candidates, frozen) : 0;
+  /**
+   * How many folds are left, counted off the answers rather than off the batch's
+   * frozen snapshot.
+   *
+   * The rows hold still while a batch is worked through -- that is what `frozen`
+   * is for -- but the tally should not. A number that sat unchanged through
+   * twenty-five verdicts was the page's loudest claim that pressing the buttons
+   * did nothing.
+   */
+  const remaining = candidates
+    ? unjudgedCount(candidates, new Set(Object.keys(judged).filter((word) => judged[word])))
+    : 0;
   const ready = candidates !== null && ledgerRead;
 
   /**
@@ -252,6 +354,14 @@ export function FoldReviewPage() {
       <ul className="review__list fold__list">
         {rows.map((candidate) => {
           const verdict = judged[candidate.word] ?? null;
+          const base = suggested[candidate.word] ?? null;
+          const draft = drafts[candidate.word] ?? base ?? "";
+          const typed = draft.trim().toLowerCase();
+          const problem = typed ? recommendationProblem(candidate, typed) : undefined;
+          // What the recommendation would score, drawn only once it is a word
+          // the dictionary has: the point of naming a base is the number it
+          // hands the word, and a reviewer should not have to guess it.
+          const preview = !problem && typed ? previewScore(typed, candidate.date) : undefined;
           return (
             <li
               key={candidate.word}
@@ -287,6 +397,52 @@ export function FoldReviewPage() {
                     Zipf {candidate.ownZipf.toFixed(2)} → {candidate.baseZipf.toFixed(2)}
                   </span>
                 </p>
+                {/* Drawn under a rejection and nowhere else. On an approval the
+                    fold's own base is the answer, so there is nothing to ask;
+                    on an unjudged row the question has not been reached yet. */}
+                {verdict === "rejected" && (
+                  <div className="fold__suggest">
+                    <label className="fold__suggest-label" htmlFor={`suggest-${candidate.word}`}>
+                      Should fold to
+                    </label>
+                    <input
+                      id={`suggest-${candidate.word}`}
+                      className="fold__suggest-input"
+                      type="text"
+                      autoComplete="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
+                      // An empty box is the answer a plain rejection has always
+                      // meant, and it says so rather than looking unfinished.
+                      placeholder="nothing — it should not fold"
+                      value={draft}
+                      aria-label={`Base ${candidate.word} should fold to instead`}
+                      aria-invalid={problem !== undefined}
+                      onChange={(event) =>
+                        setDrafts((all) => ({ ...all, [candidate.word]: event.target.value }))
+                      }
+                      // Committed on Enter or on leaving the box -- see
+                      // `recommend`. Escape puts the stored answer back, which
+                      // is the way out of a half-typed word that does not
+                      // involve deciding what it was going to be.
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          recommend(candidate, draft);
+                        } else if (event.key === "Escape") {
+                          setDrafts((all) => ({ ...all, [candidate.word]: base ?? "" }));
+                        }
+                      }}
+                      onBlur={() => recommend(candidate, draft)}
+                    />
+                    {problem !== undefined && <span className="fold__suggest-note">{problem}</span>}
+                    {preview !== undefined && (
+                      <span className="fold__suggest-note fold__suggest-note--ok">
+                        scores {preview}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="fold__verdict">
                 <button
@@ -318,4 +474,30 @@ export function FoldReviewPage() {
       </button>
     </ReviewPage>
   );
+}
+
+/**
+ * Why `base` cannot be what this fold should have reached, or undefined when it
+ * can.
+ *
+ * Checked on the page rather than left to the export, because a recommendation
+ * the scoring cannot use is a verdict that quietly does nothing -- and the
+ * reviewer who could have named the right word is gone by the time a script
+ * reports it. The dictionary check is the load-bearing one: `overrideBase`
+ * drops a base the lexicon has never heard of, so a typo would be stored,
+ * exported, shipped, and score exactly nothing.
+ */
+function recommendationProblem(candidate: FoldCandidate, base: string): string | undefined {
+  if (base === candidate.word) return "a word cannot fold to itself";
+  if (base === candidate.base) return "that is the fold you rejected";
+  if (!/^[a-z]{2,40}$/.test(base)) return "letters only";
+  if (!rarityFor(base, candidate.date)) return "not a word in the dictionary";
+  return undefined;
+}
+
+/** What a recommended base scores on the puzzle being reviewed. */
+function previewScore(base: string, date: string): string | undefined {
+  const info = rarityFor(base, date);
+  if (!info) return undefined;
+  return `${formatRarityScore(info.zipf, date)} ${info.rarity}`;
 }

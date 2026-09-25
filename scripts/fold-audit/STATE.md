@@ -1,36 +1,44 @@
 # Where the fold audit got to
 
-Last run 2026-09-22. Everything below is reproducible from the scripts in this
+Finished 2026-09-23. Everything below is reproducible from the scripts in this
 directory; `out/` is gitignored, so a fresh clone regenerates it.
 
-## Done
+## Done — all of it
 
 | | |
 | --- | ---: |
-| batches judged | **214 of 302** |
-| questions judged | 107,000 of 150,972 |
-| folds covered | **175,903 of 229,395 (77%)** |
-| flagged by the detector | 3,443 |
-| confirmed by adversarial review | 1,477 |
-| exempted | 1,466 |
+| batches judged | **302 of 302** |
+| questions judged | **150,972** |
+| folds covered | **229,395 — every fold that can cost a player points** |
+| flagged by the detector | 4,287 |
+| confirmed by adversarial review | 1,705 |
+| exempted | 1,939 across three applies, less 35 the tiebreaks cleared |
 | fixed by a rule change instead | 54 |
 
-Shipped in `fold-exemptions.json` (1,670 entries) and one rule change in
-`scoringBaseForm`, all dated 2026-10-01 (`LIQUID_STEM_START`).
+Shipped in `fold-exemptions.json` and one rule change in `scoringBaseForm`, all
+dated 2026-10-01 (`LIQUID_STEM_START`).
+
+The 229,395 is the whole judgeable population, not a sample of it. Of the
+1,217,270 corpus headwords, 241,975 are not playable, 743,812 fold nowhere and
+2,088 fold without moving a score -- see `funnel.ts`, which prints the
+derivation.
 
 ## Remaining
 
-**Batches 215–302** — 88 batches, 43,972 questions, 53,492 folds (23% of the
-system). They are the lowest-harm end: the population was sorted worst-first, so
-what is left is where a wrong fold costs the least.
+Nothing of the original pass. Every batch is judged, verified and applied.
 
-They failed on a throttle at eight concurrent workers, not on anything about
-their content — a hand-run of batch-300 afterwards returned perfect output. Use
-fewer workers.
+What would justify running it again is a change underneath it: a new corpus, a
+new fold rule, or a retuned band. Rebuild the batches from scratch when that
+happens -- `key.json` is positional -- and expect the detector to re-flag much
+of what is already exempted, which is harmless because the apply is idempotent.
+
+Two runs were lost along the way to a throttle at eight concurrent `claude -p`
+workers, not to anything about their content: a hand-run of one afterwards
+returned perfect output. Four workers held about two batches a minute.
 
 ```
 claude auth status                                       # must be logged in
-python3 scripts/fold-audit/judge.py --workers 4          # resumes; skips the 214
+python3 scripts/fold-audit/judge.py --workers 4          # resumes; skips what is done
 python3 scripts/fold-audit/score2.py
 rm -rf scripts/fold-audit/out/verified                   # see "gotchas"
 python3 scripts/fold-audit/verify.py --workers 4
@@ -74,8 +82,15 @@ does is right, and retiring it would have broken more than it fixed. The 12 are
 exempted and the rule stays. A rule-level rate computed from unverified flags is
 not a rule-level rate.
 
-**4. The detector misses about 1 in 13.** Salt recall 2,372/2,568 (92.4%) over
-214 batches. Every count here is a lower bound.
+**4. The detector misses about 1 in 17.** Salt recall 3,417/3,624 (94.3%) over
+all 302 batches. Every count here is a lower bound -- the exemptions are what
+two passes agreed on, not everything that is wrong.
+
+**4b. The flip rate is a property, not an accident.** The second back-test
+overturned 144 of 1,612 shipped exemptions (8.9%) against the first one's 56 of
+803 (7.0%). Two independent measurements, same order of magnitude. A third pass
+settled both: 46 of 56 upheld, then 119 of 144. Disputed calls take two of
+three; undisputed ones rest on one detector and one reviewer agreeing.
 
 **5. One real rule bug existed and it was found by pattern, not by volume.** The
 `-ly` strip ate a stem-final l: `howly` → `how` (7.45 points), `growly` → `grow`,

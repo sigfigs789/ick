@@ -41,6 +41,12 @@
 -- rather than a replacement -- which would leave PostgREST two candidates to
 -- choose between. The cost is the usual one: requests in flight during the
 -- migration fail. See 20260829000000, which made the same trade.
+--
+-- Safe to apply before the client that sends `mode`: the client deployed today
+-- sends every Freeform day `unranked` and no mode, so its days either reach
+-- Standard's board (absent reads as Standard) or none. Apply it before that
+-- client, though -- the definition it replaces ignores `mode` and would rank a
+-- labelled Freeform day on Standard's board.
 
 -- Which board a day's score belongs on. 'shared' is a day from before the split,
 -- which belongs on every board; the other two are a day played under that mode.
@@ -101,7 +107,8 @@ grant execute on function public.leaderboard_mode_split() to service_role;
  * this column existed meant and what the default mode is for a player who has
  * never touched the switch.
  *
- * Everything else is unchanged: the monotonic write, the retry's one exception,
+ * Everything else is unchanged from 20260923000000: the monotonic write, the
+ * retry's one exception, the `unranked` flag that keeps a day off every board,
  * and the finds insert that runs beside it. See 20260831010000 for the four
  * retry cases, which now play out per board -- a retry spent in Standard says
  * nothing about the Freeform row beside it, which is right, because they are
@@ -122,6 +129,11 @@ as $$
       (s ->> 'top')::numeric as top_score,
       (s ->> 'words')::smallint as words,
       coalesce((s ->> 'retried')::boolean, false) as retried,
+      -- Kept from 20260923000000, and still meaning "no board at all": archive
+      -- play, the feed's repair, a client below MIN_RANKED_VERSION, and a
+      -- Freeform day from a client that predates this migration and so sends it
+      -- that way. Absent reads as false.
+      coalesce((s ->> 'unranked')::boolean, false) as unranked,
       -- Derived, not trusted. A day before the split is 'shared' however it was
       -- labelled, and a day after it is the mode it was played in -- bounded to
       -- the two real ones, so an unrecognised label reads as Standard rather
@@ -144,6 +156,8 @@ as $$
     select distinct on (puzzle_date, mode)
       puzzle_date, mode, top_word, top_zipf, total_score, top_score, words, retried
     from incoming
+    -- Unranked days go no further than the finds below.
+    where not unranked
     order by puzzle_date, mode, retried desc, total_score desc, top_zipf asc
   ),
   -- The feed, which has no modes: a word is a word whichever rules the finder
