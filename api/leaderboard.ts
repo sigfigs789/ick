@@ -2,9 +2,14 @@
 // boards, and takes the score submissions that fill them.
 //
 // GET /api/leaderboard?since=YYYY-MM-DD&month=YYYY-MM-01&day=YYYY-MM-DD
-//                      &limit=15&player=UUID
+//                      &limit=15&player=UUID&mode=standard|freeform
 //   -> { weekStart, daily: [...], dailySelf, weekly: [...], weeklySelf,
 //        allTime: [...], allTimeSelf }
+//   `mode` picks which of the two boards to read. There is one per game mode
+//   from the choice date on, and a day played before it counts on both -- the
+//   whole of that rule lives in the SQL (see the 20260925 migration), so this
+//   file only has to pass the word along. Absent or unrecognised reads as
+//   Standard, which is the board that existed before there were two.
 //   The daily board counts the single puzzle `day`; the weekly board counts the
 //   seven days from `since`; the third counts the month `month` begins.
 //   `day` is optional: a caller that omits it gets the two boards it always got,
@@ -32,8 +37,13 @@
 //
 // GET /api/leaderboard?words=1&today=YYYY-MM-DD
 //   -> { words: [...] }
-//   Today's finds -- every word anybody has found on one puzzle -- as their own
-//   request rather than a key on the boards. `today` is the puzzle the asking
+//   Today's finds -- every word anybody has found on one puzzle, in either mode
+//   -- as their own request rather than a key on the boards. No `mode`: a word is
+//   a word whichever rules the finder was playing under, and these rows carry a
+//   word and a frequency and no score, so the client prices the whole feed on
+//   Standard's terms for everybody (see `parseWords` in src/game/leaderboard.ts).
+//   Which also keeps this the one URL that is identical for every reader alive,
+//   and so the one the CDN can answer once. `today` is the puzzle the asking
 //   player is looking at, and it is used as given: a find belongs to a drop, not
 //   to a moment in UTC. See `wordsDay` for what publishing a live puzzle's finds
 //   costs and why it was accepted.
@@ -48,7 +58,8 @@
 //   afresh rather than handed a copy the reader has already seen.
 //
 // POST /api/leaderboard
-//   { playerId, version?, scores: [{ date, word, zipf, total, top, words, retried?, unranked?, found? }] }
+//   { playerId, version?, scores: [{ date, word, zipf, total, top, words, mode?,
+//                                    retried?, unranked?, found? }] }
 //   -> 202 { days }, 400 malformed, 503 no credentials
 //   One score per player per puzzle. An array because it has two callers of the
 //   same shape: the game submitting today after each accepted word, and a player
@@ -62,9 +73,16 @@
 //   two -- and drops a pre-retry submission that arrives afterwards. Absent
 //   means false. See the 20260831 migration for why one boolean is enough.
 //
-//   `unranked` marks a day the player chose to play in Freeform: its `found`
-//   words reach the finds feed and the day itself never reaches the board.
-//   Absent means false.
+//   `mode` is which board the day belongs on -- the rules it was played under,
+//   taken from the progress record rather than from the live switch. Absent means
+//   Standard. It is honoured only for days on or after the split: the write
+//   overrides anything said about an earlier day, because a day played before
+//   there was a choice belongs to both boards and is not the client's to assign.
+//
+//   `unranked` keeps a day off every board while its `found` words still reach
+//   the finds feed: an archive puzzle, the feed's own repair, and -- from a
+//   client that predates the Freeform board -- a day played in Freeform. Absent
+//   means false.
 //
 //   `found` is that day's whole word list, which is what the finds feed is built
 //   from. Optional: the board's backfill omits it for past days, because a year
@@ -222,6 +240,21 @@ const WORDS_LIMIT = 500;
  */
 const WORDS_CACHE_SECONDS = 15;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/**
+ * The two boards, as a request names one.
+ *
+ * Anything else -- absent, misspelt, a mode this deployment has never heard of
+ * -- reads as Standard rather than being refused. A board is a page somebody
+ * opened, and the useful answer to an unreadable `mode` is the board that
+ * existed before there were two, not a 400 they cannot act on.
+ */
+const MODES = ["standard", "freeform"] as const;
+type BoardMode = (typeof MODES)[number];
+const DEFAULT_MODE: BoardMode = "standard";
+
+function readMode(claimed: unknown): BoardMode {
+  return MODES.includes(claimed as BoardMode) ? (claimed as BoardMode) : DEFAULT_MODE;
+}
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** One row as `leaderboard_board` returns it. */
@@ -437,6 +470,16 @@ interface ScoreEntry {
   top: number;
   words: number;
   /**
+   * Which board this day belongs on: the rules it was played under.
+   *
+   * Optional, and absent means Standard -- which is what every submission sent
+   * before there were two boards meant, and what a player who has never touched
+   * the switch is playing. Passed through to the write, which honours it only
+   * for a day on or after the split and writes every earlier day to both boards
+   * regardless. See the 20260925 migration.
+   */
+  mode?: BoardMode;
+  /**
    * Whether this day has spent its one retry (see src/game/storage.ts).
    *
    * Optional, and absent means false -- which is what every submission sent
@@ -448,12 +491,13 @@ interface ScoreEntry {
    */
   retried?: boolean;
   /**
-   * A day the player chose to play in Freeform (see src/game/mode.ts, isRanked).
+   * A day that reaches no board, only the finds feed: an archive puzzle, the
+   * feed's repair (src/game/leaderboard.ts), or a Freeform day from a client
+   * that predates the Freeform board and so sends one this way.
    *
    * Optional, and absent means false. Its `found` words are written to the finds
-   * feed and the day itself is not written to the board at all: Freeform prices
-   * words on different terms, so one board holding both would rank whoever had
-   * the switch on. See the 20260923 migration.
+   * feed and the day itself is not written to any board. See the 20260923
+   * migration, and the 20260925 one that keeps the flag beside `mode`.
    */
   unranked?: boolean;
   /**
@@ -480,7 +524,7 @@ interface ScoreEntry {
  */
 function readScore(raw: unknown): ScoreEntry | string {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return "malformed-score";
-  const { date, word, zipf, total, top, words, retried, unranked, found } = raw as Record<
+  const { date, word, zipf, total, top, words, mode, retried, unranked, found } = raw as Record<
     string,
     unknown
   >;
@@ -505,8 +549,14 @@ function readScore(raw: unknown): ScoreEntry | string {
   // has to be an actual boolean: this decides whether a submission may lower a
   // day, so a truthy string is not close enough.
   if (retried !== undefined && typeof retried !== "boolean") return "bad-retried";
-  // Held to the same standard: this decides whether a day reaches the board.
+  // Held to the same standard: this decides whether a day reaches a board.
   if (unranked !== undefined && typeof unranked !== "boolean") return "bad-unranked";
+  // Unlike those two, an unreadable mode is not refused. It decides which of two
+  // boards a day lands on rather than whether it lands or shrinks, and the
+  // fallback is the one a client that has never heard of modes means -- so
+  // failing a whole batch over it would cost a player their history to enforce a
+  // spelling. The write narrows it again anyway.
+  const boardMode = readMode(mode);
 
   const foundWords = readFound(found);
   if (typeof foundWords === "string") return foundWords;
@@ -518,6 +568,10 @@ function readScore(raw: unknown): ScoreEntry | string {
     total: Math.round(totalScore * 100) / 100,
     top: Math.round(topScore * 100) / 100,
     words: wordCount,
+    // Sent always rather than only when Freeform: this is one of two boards, not
+    // a flag on the default one, and a write that has to guess which is which
+    // from an absent field is a write with a silent default in it.
+    mode: boardMode,
     ...(retried === true ? { retried: true } : {}),
     ...(unranked === true ? { unranked: true } : {}),
     ...(foundWords.length > 0 ? { found: foundWords } : {}),
@@ -731,6 +785,9 @@ async function handleGet(request: Request): Promise<Response> {
   // with them than with a 400.
   const claimedDay = params.get("day") ?? "";
   const day = validPuzzleDate(claimedDay) ? claimedDay : null;
+  // Which of the two boards. Read rather than validated, for the reason
+  // `readMode` gives: an unreadable mode gets Standard, not an error page.
+  const mode = readMode(params.get("mode"));
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
@@ -773,6 +830,10 @@ async function handleGet(request: Request): Promise<Response> {
         p_season_until: monthEnd(month),
         p_month_since: lastMonth.since,
         p_month_until: lastMonth.until,
+        // Which board all three windows are about. One value for the whole
+        // request: a page showing this week's Standard beside this month's
+        // Freeform would be comparing two games.
+        p_mode: mode,
       }),
       day
         ? rpc<BoardRow[]>("leaderboard_board", {
@@ -780,6 +841,7 @@ async function handleGet(request: Request): Promise<Response> {
             p_limit: limit,
             p_player: player,
             p_until: day,
+            p_mode: mode,
           })
         : Promise.resolve(null),
     ]);
@@ -790,6 +852,10 @@ async function handleGet(request: Request): Promise<Response> {
       200,
       {
         weekStart: since,
+        // Echoed back for the same reason `weekStart` is: the request may have
+        // asked for a board this deployment does not have, and the page should
+        // label what it got rather than what it asked for.
+        mode,
         // Empty, with no row below the cut, for a caller that sent no day. The
         // page reads that as a board nobody has scored on, which is the same
         // thing it reads an empty answer as -- there is no third state here.

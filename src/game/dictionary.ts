@@ -3,6 +3,7 @@ import {
   FREEFORM_TRIAL_START,
   MODE_CHOICE_START,
   freeformForDate,
+  type GameMode,
 } from "./mode";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
@@ -501,14 +502,21 @@ export const FREEFORM_END = FREEFORM_TRIAL_END;
  * An omitted date reads as *not* freeform, unlike everywhere else in this file
  * where it means "the newest system". The difference is deliberate, and it
  * matters more now than it did during the trial: an undated call is the
- * leaderboard or the finds feed pricing somebody else's word, and those have to
- * keep answering the same thing for every reader -- otherwise a stranger's find
- * would reprice itself the moment *you* flipped your own switch. The puzzle
- * itself always knows its own date and passes it.
+ * leaderboard pricing somebody else's word, and those have to keep answering the
+ * same thing for every reader -- otherwise a stranger's find would reprice
+ * itself the moment *you* flipped your own switch. The puzzle itself always
+ * knows its own date and passes it.
+ *
+ * `mode` is the other half of that guarantee, for a caller that has a date and
+ * still must not read the switch: the finds feed shows words found in either
+ * mode and prices every one of them as Standard (see `parseWords` in
+ * game/leaderboard.ts), so it says which mode it wants rather than being handed
+ * the reader's. It stands in for the switch only -- a trial-week date is
+ * Freeform whatever is passed, because that week was nobody's choice.
  */
-export function usesFreeformRules(date?: string): boolean {
+export function usesFreeformRules(date?: string, mode?: GameMode): boolean {
   if (date === undefined) return false;
-  return freeformForDate(date);
+  return freeformForDate(date, mode);
 }
 
 /**
@@ -1865,7 +1873,7 @@ function decadeRarity(score: number): Rarity {
   return "Very Common";
 }
 
-function scoringFor(date?: string): Scoring {
+function scoringFor(date?: string, mode?: GameMode): Scoring {
   if (date === undefined) return LATEST_SCORING; // newest system
   if (date < NEW_SCORING_START) return LEGACY_SCORING;
   if (date < WIDE_BAND_START) return CURRENT_SCORING;
@@ -1905,13 +1913,13 @@ function scoringFor(date?: string): Scoring {
   if (date >= CORPUS_ONLY_START) {
     // Freeform folds nothing, so the liquid-stem rule cannot reach it and the
     // era's two profiles collapse to one on that side.
-    if (usesFreeformRules(date)) return CORPUS_FREEFORM_SCORING;
+    if (usesFreeformRules(date, mode)) return CORPUS_FREEFORM_SCORING;
     // One date for the era: LIQUID_STEM_START is this same date, so every
     // profile this branch can reach carries the "-ly" rule and it needs no rung
     // of its own.
     return CORPUS_SCORING;
   }
-  if (usesFreeformRules(date)) return FREEFORM_SCORING;
+  if (usesFreeformRules(date, mode)) return FREEFORM_SCORING;
   // Below the freeform fork rather than above it, unlike every rung before it.
   // The fork is a range and this is a threshold, and the trial week sits *under*
   // this date: asked first, the rung would answer DOUBLING_SCORING for the
@@ -2374,11 +2382,15 @@ export function pinnedSameRoot(word: string, date?: string): string | undefined 
   return date === undefined || date >= pin.since ? pin.root : undefined;
 }
 
-export function rarityFor(word: string, date?: string): RarityInfo | undefined {
+export function rarityFor(
+  word: string,
+  date?: string,
+  mode?: GameMode
+): RarityInfo | undefined {
   const normalized = word.toLowerCase();
   const i = WORD_INDEX.get(normalized);
   if (i === undefined) return undefined;
-  const scoring = scoringFor(date);
+  const scoring = scoringFor(date, mode);
   const zipf = adjustedZipf(normalized, scoring.zipfAt(i), scoring, date);
   return { rarity: scoring.rarity(zipf), zipf };
 }
@@ -3838,8 +3850,8 @@ export function usesRetunedTiers(date?: string): boolean {
   return date === undefined || date >= NARROW_BANDS_START;
 }
 
-export function rarityForZipf(zipf: number, date?: string): Rarity {
-  return scoringFor(date).rarity(zipf);
+export function rarityForZipf(zipf: number, date?: string, mode?: GameMode): Rarity {
+  return scoringFor(date, mode).rarity(zipf);
 }
 
 /**

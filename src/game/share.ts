@@ -95,19 +95,6 @@ function rarestWord(words: AcceptedWord[]): AcceptedWord | undefined {
  */
 export type RevealMode = "none" | "top" | "all";
 
-/**
- * The word Freeform puts where the week and month totals go, and the mode that
- * puts it there.
- *
- * Exported because the in-app preview renders this one token in colour (see
- * components/RainbowWord.tsx) and has to find it in a line this file built. A
- * shared constant rather than a literal in both places: the two have to agree
- * exactly or the preview quietly stops colouring anything, which is a failure
- * nothing would catch.
- */
-export const FREEFORM_STATS_LABEL = "Freeform";
-const FREEFORM_STATS_MODE: GameMode = "freeform";
-
 export interface ShareOptions {
   /** How much to reveal in the result lines. Defaults to "none". */
   reveal?: RevealMode;
@@ -208,20 +195,19 @@ export function buildShareText(
     // line the other three are the detail of.
     const streak = options.streak ?? 0;
     lines.push(`Streak: ${streak} day${streak === 1 ? "" : "s"}`);
-    // Freeform says its name where the two window totals go, rather than
-    // quoting them. A week total and a month total are board numbers -- they are
-    // the boards' own arithmetic, computed so a shared result agrees with the
-    // rank it claims (see game/totals.ts) -- and Freeform is not ranked. Two
-    // sums of a window nothing compares would be inviting a comparison the game
-    // does not make.
+    // Both modes quote their windows. A week total and a month total are board
+    // numbers -- the boards' own arithmetic, computed so a shared result agrees
+    // with the rank it claims (see game/totals.ts) -- and Freeform used to put
+    // its own name here instead, because it had no board and two sums of a
+    // window nothing compares would have invited a comparison the game did not
+    // make.
     //
-    // It also earns the space: what a reader most wants to know about an
-    // unfamiliar number is which game produced it, and this is the line their
-    // eye is already on.
+    // It has one now (see mode.boardFor), and these are its numbers: a Freeform
+    // week is ranked against other Freeform weeks. Which game produced them is
+    // still worth saying and is still said -- on the heading above, where the
+    // mode has ridden since the switch shipped, rather than twice.
     lines.push(
-      mode === FREEFORM_STATS_MODE
-        ? `${scoreLabel}: ${score} · ${FREEFORM_STATS_LABEL}`
-        : `${scoreLabel}: ${score} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
+      `${scoreLabel}: ${score} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
     );
   } else {
     lines.push(`${scoreLabel}: ${score}`);

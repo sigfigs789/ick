@@ -87,8 +87,20 @@ describe("api/leaderboard submissions", () => {
     expect(call?.url).toBe("https://project.supabase.co/rest/v1/rpc/submit_leaderboard_scores");
     expect(call?.args).toEqual({
       p_player_id: PLAYER,
-      // No name: the board derives it from the day's own rarest word.
-      p_scores: [{ date: SUNDAY, word: "inkling", zipf: 2.9, total: 24.6, top: 9.4, words: 5 }],
+      // No name: the board derives it from the day's own rarest word. The mode
+      // is filled in on the way through -- absent means Standard, which is what
+      // every submission sent before there were two boards meant.
+      p_scores: [
+        {
+          date: SUNDAY,
+          word: "inkling",
+          zipf: 2.9,
+          total: 24.6,
+          top: 9.4,
+          words: 5,
+          mode: "standard",
+        },
+      ],
     });
   });
 
@@ -298,6 +310,10 @@ describe("api/leaderboard reads", () => {
     expect(response.headers.get("cache-control")).toContain("s-maxage=60");
     expect(await response.json()).toEqual({
       weekStart: SUNDAY,
+      // Which of the two boards these rows are, echoed back rather than left to
+      // the caller to remember -- the request named none, so this is the answer
+      // to a question it did not ask.
+      mode: "standard",
       // No day was asked for, so no day was queried: an empty board rather than
       // a missing key, so the page has one shape to read either way.
       daily: [],
@@ -363,6 +379,7 @@ describe("api/leaderboard reads", () => {
       p_until: "2026-08-25",
       p_limit: 10,
       p_player: null,
+      p_mode: "standard",
     });
   });
 
@@ -758,6 +775,7 @@ describe("api/leaderboard unranked days", () => {
         total: 24.6,
         top: 9.4,
         words: 5,
+        mode: "standard",
         unranked: true,
         found: [{ word: "inkling", zipf: 2.9 }],
       },
@@ -800,6 +818,7 @@ describe("api/leaderboard client versions", () => {
         total: 24.6,
         top: 9.4,
         words: 5,
+        mode: "standard",
         unranked: true,
         found: [{ word: "inkling", zipf: 2.9 }],
       },
@@ -846,7 +865,16 @@ describe("api/leaderboard retried days", () => {
 
     expect(response.status).toBe(202);
     expect(rpcCall(fetchMock)?.args.p_scores).toEqual([
-      { date: SUNDAY, word: "inkling", zipf: 2.9, total: 24.6, top: 9.4, words: 5, retried: true },
+      {
+        date: SUNDAY,
+        word: "inkling",
+        zipf: 2.9,
+        total: 24.6,
+        top: 9.4,
+        words: 5,
+        mode: "standard",
+        retried: true,
+      },
     ]);
   });
 

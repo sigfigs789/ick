@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { corpusAttests, corpusEntry, loadCorpus, sourceBit, tagBit } from "./corpus";
 import { baseFormSubstitution, foldTrace, rarityFor } from "./dictionary";
-import { MODE_CHOICE_START, isRanked, modeForDate, resetModeCache, setMode } from "./mode";
+import { MODE_CHOICE_START, boardFor, modeForDate, resetModeCache, setMode } from "./mode";
 import { sameRootKey } from "./submit";
 import curated from "../data/dictionary.json";
 import rarity from "../data/rarity.json";
@@ -279,8 +279,8 @@ describe("the corpus lexicon (from MODE_CHOICE_START)", () => {
       try {
         expect(modeForDate(BEFORE)).toBe("standard");
         expect(modeForDate(AFTER)).toBe("standard");
-        expect(isRanked(AFTER, "standard")).toBe(true);
-        expect(isRanked(AFTER, "freeform")).toBe(false);
+        expect(boardFor(AFTER, "standard")).toBe("standard");
+        expect(boardFor(AFTER, "freeform")).toBe("freeform");
       } finally {
         resetModeCache();
       }

@@ -22,7 +22,7 @@ import { todayDateString } from "./date";
 import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
-import { isRanked, modeForDate, type GameMode } from "./mode";
+import { currentMode, modeForDate, type GameMode } from "./mode";
 import { playedHistory, playedOnItsDay } from "./storage";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 import { monthStart } from "./month";
@@ -114,6 +114,14 @@ export interface Boards {
   monthlySelf: BoardEntry | null;
   /** The day the weekly board is counting from, echoed back by the server. */
   weekStart: string;
+  /**
+   * Which of the two boards these rows are: the mode they rank.
+   *
+   * Echoed back by the server rather than assumed from what was asked for, for
+   * the same reason `weekStart` is -- a board labelled with the request rather
+   * than the answer is a board that lies the one time it matters.
+   */
+  mode: GameMode;
 }
 
 /**
@@ -301,6 +309,22 @@ function scoreOf(word: string, storedZipf: unknown): number {
  * today's rates for everyone (see `scoreOf`). A board is a comparison between
  * players and has to put two people holding the same word on the same number; a
  * feed is a record of a puzzle and has to agree with the puzzle.
+ *
+ * Priced as Standard, whatever the reader has their own switch set to and
+ * whatever mode the finder was playing in. This feed holds both -- there is one
+ * list of what the day's players turned up, because a word is a word whichever
+ * rules the person who found it was under, and halving it would halve the one
+ * part of this page that reads as live.
+ *
+ * Which leaves one number to choose for a word two people may have found under
+ * two different systems, and Standard is the one to choose. It is the game as it
+ * has been for months and as every archived puzzle scored; Freeform is the
+ * variant. A feed priced on the reader's own switch would be worse than either:
+ * the same list would read differently to two people looking at it side by side,
+ * and a word would reprice itself under somebody who flipped a switch about
+ * their own game. So the mode is named here rather than left to be read off the
+ * session -- see `modeForDate` in game/mode.ts, which honours it for a chosen
+ * day and ignores it for the trial week, which was nobody's choice.
  */
 function parseWords(raw: unknown, today: string): FoundWord[] {
   if (!Array.isArray(raw)) return [];
@@ -393,6 +417,12 @@ export interface BoardOptions extends FetchOptions {
   week?: string;
   /** The first of the month the monthly board counts. */
   month?: string;
+  /**
+   * Which of the two boards to read. Defaults to the mode the player is in,
+   * which is the one they want to see first and the one their own scores are
+   * landing on.
+   */
+  mode?: GameMode;
 }
 
 /**
@@ -463,6 +493,10 @@ export async function fetchBoards(
   // the player's own local puzzle date, so both have to be computed off the same
   // clock. The server bounds the far end of both itself.
   const month = options.month ?? monthStart(date);
+  // Which board. The player's own mode unless the page says otherwise, so
+  // somebody who opens this page sees the board their scores are going onto
+  // rather than one they are not on.
+  const mode = options.mode ?? currentMode();
   // Who is asking, so the server can send their own row back from below the cut.
   // Nobody has to have joined for the page to work: without an id the boards
   // come back exactly as before, minus a row that would be about nobody.
@@ -473,13 +507,14 @@ export async function fetchBoards(
     `/api/leaderboard?since=${encodeURIComponent(since)}&today=${encodeURIComponent(date)}` +
       `&month=${encodeURIComponent(month)}` +
       `&day=${encodeURIComponent(day)}` +
+      `&mode=${encodeURIComponent(mode)}` +
       `&limit=${BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
       freshParam(options),
     { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
   );
   if (!response.ok) throw new Error(`leaderboard ${response.status}`);
-  return readBoards((await response.json()) as Record<string, unknown>, since);
+  return readBoards((await response.json()) as Record<string, unknown>, since, mode);
 }
 
 /**
@@ -516,7 +551,11 @@ export async function fetchFoundWords(
 }
 
 /** Turn one response body -- real or sample -- into the boards the page renders. */
-function readBoards(body: Record<string, unknown>, since: string): Boards {
+function readBoards(
+  body: Record<string, unknown>,
+  since: string,
+  asked: GameMode
+): Boards {
   return {
     daily: parseBoard(body.daily),
     dailySelf: parseSelf(body.dailySelf),
@@ -525,6 +564,9 @@ function readBoards(body: Record<string, unknown>, since: string): Boards {
     monthly: parseBoard(body.allTime),
     monthlySelf: parseSelf(body.allTimeSelf),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,
+    // What came back, falling back to what was asked for -- which covers the
+    // dev fixture and a deployment that predates the second board.
+    mode: body.mode === "freeform" || body.mode === "standard" ? body.mode : asked,
   };
 }
 
@@ -547,8 +589,8 @@ function readBoards(body: Record<string, unknown>, since: string): Boards {
  * puzzle's finds *backwards* -- naming a player with a word the game had scored
  * quite differently an hour earlier.
  */
-function scoreOnItsDay(word: AcceptedWord, date: string): number {
-  return rarityScore(rarityFor(word.word, date)?.zipf ?? word.zipf, date);
+function scoreOnItsDay(word: AcceptedWord, date: string, mode?: GameMode): number {
+  return rarityScore(rarityFor(word.word, date, mode)?.zipf ?? word.zipf, date);
 }
 
 /** One word of a day's list, in the shape the endpoint takes. */
@@ -566,6 +608,18 @@ interface ScorePayload {
   total: number;
   top: number;
   words: number;
+  /**
+   * Which board this day belongs on: the rules it was played under.
+   *
+   * Sent on every submission rather than only on a Freeform one. There are two
+   * boards now, not a default one with a flag, and a server that has to infer
+   * which from an absent field is a server with a silent default in it.
+   *
+   * The endpoint honours it only for days on or after the split and writes every
+   * earlier day to both boards whatever this says -- a day played before there
+   * was a choice is not the client's to assign. See the 20260925 migration.
+   */
+  mode: GameMode;
   /**
    * Whether this day has spent its one retry (see game/storage.ts, retryWord).
    *
@@ -612,21 +666,32 @@ interface ScorePayload {
 function scoreFor(
   date: string,
   words: readonly AcceptedWord[],
-  options: { withFound?: boolean; retried?: boolean; unranked?: boolean } = {}
+  options: { withFound?: boolean; retried?: boolean; unranked?: boolean; mode?: GameMode } = {}
 ): ScorePayload {
-  const best = rarest(words, date);
+  // The mode this day was *played* in, which is the one thing that must not be
+  // read off the live switch here. A browser holding both modes' records
+  // re-sends them together (see `backfillHistory`), so a day has to carry its
+  // own rules or half of them get priced by whichever way the player happens to
+  // be playing this afternoon.
+  const mode = options.mode ?? modeForDate(date);
+  const best = rarest(words, date, mode);
   return {
     date,
     word: best.word.toLowerCase(),
     // The measurement this puzzle gave it. This is the number the board shows
     // back as the player's find (see `scoreOf`), and it is the only place the
     // puzzle's date is still known, so it has to leave carrying that price.
-    zipf: rarityFor(best.word, date)?.zipf ?? best.zipf,
+    zipf: rarityFor(best.word, date, mode)?.zipf ?? best.zipf,
+    // Priced off each word's stored frequency, which was measured under this
+    // day's own rules when the word was banked -- so unlike the two lookups
+    // above, these need no mode: every scoring profile prices a given frequency
+    // the same way, and only the frequency itself forks.
     total: rawTotalRarityScore(words, date),
     top: topRarityScore(words, date),
     // Capped rather than trusted: the endpoint bounds this too, and sending more
     // than the day's guess limit allows would only get the batch rejected.
     words: Math.min(words.length, maxGuessesFor(date)),
+    mode,
     // Only when true. False is what the server assumes of an absent flag, so
     // sending it would put a field on every submission ever made to say the
     // ordinary thing.
@@ -660,10 +725,14 @@ function foundFor(date: string, words: readonly AcceptedWord[]): FoundPayload[] 
   }));
 }
 
-/** The rarest of one day's words, by that day's reckoning. */
-function rarest(words: readonly AcceptedWord[], date: string): AcceptedWord {
+/** The rarest of one day's words, by that day's reckoning and that day's mode. */
+function rarest(
+  words: readonly AcceptedWord[],
+  date: string,
+  mode?: GameMode
+): AcceptedWord {
   return words.reduce((best, word) =>
-    scoreOnItsDay(word, date) > scoreOnItsDay(best, date) ? word : best
+    scoreOnItsDay(word, date, mode) > scoreOnItsDay(best, date, mode) ? word : best
   );
 }
 
@@ -740,37 +809,28 @@ export function submitScore(options: {
   if (!playerId || words.length === 0) return false;
   // Played after its own day -- out of the archive, or on a tab left open past
   // midnight. The words go up to that drop's feed, and the day goes nowhere near
-  // the board: a past puzzle's answers are a page away, so a score earned on it
+  // a board: a past puzzle's answers are a page away, so a score earned on it
   // says nothing about the player. The server writes an `unranked` day's finds
-  // and skips its board row, exactly as it does for Freeform below.
+  // and skips its board row.
   if (!isToday) {
     return post(playerId, [
-      scoreFor(date, words, { withFound: true, retried, unranked: true }),
+      scoreFor(date, words, { withFound: true, retried, unranked: true, mode }),
     ]);
   }
-  // A day the player chose to spend in Freeform is not on the board. The two
-  // systems do not produce comparable numbers -- Freeform prices every word on
-  // its own frequency and hands out a Legend where Standard folds the word onto
-  // its common form -- so one board holding both would rank whoever had the
-  // switch on, and two boards would split a daily game's population in half to
-  // no one's benefit.
+  // Every mode submits. Which board the day lands on is decided from the mode it
+  // was played in -- there is one per mode from the choice date on, and a day
+  // played before that counts on both (see `boardFor` in game/mode.ts).
   //
-  // So Freeform is a way to play rather than a way to compete: you get your
-  // score and you can share it, but the day is sent `unranked` and the server
-  // writes no board row for it. Its words still go up. The finds feed is a
-  // record of what was found on the drop, not a ranking, and every reader
-  // reprices each word by their own mode (see `repriceFoundWords`) -- so a word
-  // banked in Freeform reads at its Standard price to a Standard reader, and the
-  // two modes' finds are one list.
+  // Freeform used to be sent `unranked`, on the reasoning that the two systems
+  // do not produce comparable numbers and one board holding both would rank
+  // whoever had the switch on. The first half of that is still true and is
+  // exactly why there are two boards; what does not follow from it is that one
+  // of the two ways to play should have nowhere to be ranked at all.
   //
-  // The trial week is untouched by this and still ranks: everybody was on the
-  // same rules on those days, so they ranked against each other fairly, and they
-  // are on the board already (see `isRanked`).
-  if (!isRanked(date, mode)) {
-    return post(playerId, [
-      scoreFor(date, words, { withFound: true, retried, unranked: true }),
-    ]);
-  }
+  // The words go up either way, and they are not split: `found` is what the
+  // finds feed is built from, one list of what the day's players turned up,
+  // which every reader reprices by their own mode (see `repriceFoundWords`).
+  //
   // The whole running word list goes with it, which is what the finds feed is
   // built from. Re-sent in full after every accepted word: each word is written
   // once and the repeats are discarded, so this is idempotent rather than
@@ -780,7 +840,7 @@ export function submitScore(options: {
   // comes from the whole stored history -- which already includes the words
   // being submitted, since they were saved before this was called. The fallback
   // covers a record too old to carry the timestamp that makes a day eligible.
-  return post(playerId, [scoreFor(date, words, { withFound: true, retried })]);
+  return post(playerId, [scoreFor(date, words, { withFound: true, retried, mode })]);
 }
 
 /**
@@ -804,13 +864,6 @@ export function backfillHistory(
   const played = history ?? playedOnItsDay();
   const scores = played
     .filter((progress) => progress.acceptedWords.length > 0)
-    // Ranked days, plus today's Freeform day for its finds alone. A chosen
-    // Freeform day is not on the board, for the reason `submitScore` gives, and
-    // a past one's words reach the feed through `backfillFinds` instead -- so it
-    // is not sent here at all.
-    .filter(
-      (progress) => isRanked(progress.date, progress.mode) || progress.date === today
-    )
     // Words with today's puzzle and no other. Somebody who joins after playing
     // gets the finds they already made onto the feed rather than waiting for
     // their next word -- while a browser with a year of history sends a year of
@@ -824,7 +877,12 @@ export function backfillHistory(
         // dropped as a straggler -- so a sync that left this off would quietly
         // stop repairing exactly the days most likely to need it.
         retried: progress.retryUsed === true,
-        unranked: !isRanked(progress.date, progress.mode),
+        // Off the record rather than off the switch, and this is the path that
+        // makes it matter. A browser that has been playing both ways holds a
+        // record of each and sends them in one batch, so a day priced by whoever
+        // is playing this afternoon would put a Freeform afternoon on the
+        // Standard board -- which is the one mistake two boards exist to prevent.
+        mode: progress.mode,
       })
     );
   // Named from exactly the days being submitted, so the name and the scores in
