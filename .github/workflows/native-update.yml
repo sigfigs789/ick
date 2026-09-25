@@ -1,13 +1,20 @@
 name: Native OTA update
 
-# Publish the game to installed phone apps whenever main changes it.
+# Publish the game to installed phone apps -- on request only.
 #
 # The app is a view layer over the repo's own src/ (see native/README.md), and a
-# store build is a frozen copy of that code. Vercel deploys main to the website
-# on every push; this is the same deploy for phones, as an expo-updates bundle
-# on the `production` channel. Builds pick it up on their next launch, or at
+# store build is a frozen copy of that code. This sends the chosen branch
+# (normally main) to phones as an expo-updates bundle on the `production`
+# channel, without a store review. Builds pick it up on their next launch, or at
 # once when they find themselves below the leaderboard's floor
-# (native/src/hooks/useUpdateCheck.ts).
+# (native/src/hooks/useUpdateCheck.ts) -- so raising MIN_RANKED_VERSION is the
+# usual reason to run this.
+#
+# Manual rather than on every merge, deliberately: what reaches players' phones
+# is a release decision, not a side effect of main moving. Run it from the
+# Actions tab, or:
+#
+#   gh workflow run native-update.yml --repo sigfigs789/ick -f message="..."
 #
 # An update only reaches builds with the same runtimeVersion (native/app.json),
 # a label raised by hand when the native layer changes. The fingerprint check
@@ -15,24 +22,24 @@ name: Native OTA update
 # since that update would reach builds missing the native code it needs.
 #
 # Needs an EXPO_TOKEN repository secret (an Expo access token for sigfigs789).
-# Without one the job says so and stops rather than failing main.
+# Without one the job says so and stops.
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "src/**"
-      - "native/**"
-      - "package-lock.json"
   workflow_dispatch:
+    inputs:
+      message:
+        description: What this update changes (shown in the EAS dashboard). Defaults to the commit.
+        required: false
+        type: string
 
 permissions:
   contents: read
 
-# Two pushes in quick succession should publish the later one, not race.
+# One publish at a time, and a second request waits rather than cancelling the
+# first mid-upload.
 concurrency:
   group: native-update
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   update:
@@ -91,10 +98,11 @@ jobs:
         if: steps.token.outputs.present == 'true'
         working-directory: native
         # Through the environment rather than interpolated into the script, so a
-        # commit message is only ever text.
+        # message is only ever text.
         env:
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          UPDATE_MESSAGE: ${{ inputs.message }}
         run: |
-          message=$(printf '%s' "${COMMIT_MESSAGE:-$GITHUB_SHA}" | head -n 1)
+          subject=$(git log -1 --format=%s)
+          message=$(printf '%s' "${UPDATE_MESSAGE:-$GITHUB_SHA $subject}" | head -n 1)
           npx eas-cli@latest update --channel production --platform ios \
             --message "$message" --non-interactive

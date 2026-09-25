@@ -238,12 +238,14 @@ from happening:
   its finds still reach the feed. Raise the floor with `APP_VERSION` only when a
   release changes how a live or coming puzzle is priced.
 - **Over-the-air updates.** `expo-updates` ships the JavaScript -- which is the
-  whole game -- without a store review. `.github/workflows/native-update.yml`
-  publishes main to the `production` channel on every push that touches `src/`
-  or `native/` (it needs an `EXPO_TOKEN` secret). Builds pick it up on launch,
-  and a build that finds itself below the floor pulls it and reloads at once
-  (`src/hooks/useUpdateCheck.ts`). To publish by hand:
-  `npx eas-cli update --channel production --platform ios`.
+  whole game -- without a store review. Updates go out on request only, never
+  on merge: run the "Native OTA update" action
+  (`.github/workflows/native-update.yml`, needs an `EXPO_TOKEN` secret), which
+  typechecks, checks the runtime label, and publishes the chosen branch to the
+  `production` channel. Builds pick it up on launch, and a build that finds
+  itself below the floor pulls it and reloads at once
+  (`src/hooks/useUpdateCheck.ts`) -- so raise `MIN_RANKED_VERSION` and run the
+  action together.
 - **The banner.** When a build is below the floor and no update can close the
   gap, Play and Leaderboards say so, with a button to the store listing
   (`src/components/UpdateBanner.tsx`).
