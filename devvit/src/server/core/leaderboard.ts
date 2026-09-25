@@ -95,6 +95,12 @@ export async function submitScores(
   // word and its numbers always come from the same entry.
   const byDate = new Map<string, ScoreSubmission>();
   for (const score of scores) {
+    // An unranked day -- Freeform by choice, or played after its own date --
+    // puts its words on the feed and goes no further.
+    if (score.unranked) {
+      await recordFinds(user, score);
+      continue;
+    }
     const held = byDate.get(score.date);
     if (!held || score.total > held.total || (score.total === held.total && score.zipf < held.zipf)) {
       byDate.set(score.date, score);

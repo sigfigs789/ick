@@ -704,11 +704,14 @@ function post(playerId: string, scores: ScorePayload[]): boolean {
 /**
  * Send this puzzle's score up, if there is anything to send.
  *
- * Refuses in three cases, each on purpose:
+ * Refuses in two cases, each on purpose:
  *   - nobody has joined the board on this browser, so there is no name to post;
- *   - the puzzle isn't today's, because archive play is off the board for the
- *     same reason it is off the streak (you can look up the answers);
  *   - no words have been accepted, so there is no score.
+ *
+ * A puzzle that isn't today's is sent, but `unranked`: archive play is off the
+ * board for the same reason it is off the streak (you can look up the answers),
+ * and on the feed because the feed is a record of what was found on each drop,
+ * not a ranking. See below.
  */
 export function submitScore(options: {
   date: string;
@@ -727,7 +730,17 @@ export function submitScore(options: {
   const { date, isToday, words, retried } = options;
   const mode = options.mode ?? modeForDate(date);
   const playerId = options.playerId ?? loadPlayerId();
-  if (!playerId || !isToday || words.length === 0) return false;
+  if (!playerId || words.length === 0) return false;
+  // Played after its own day -- out of the archive, or on a tab left open past
+  // midnight. The words go up to that drop's feed, and the day goes nowhere near
+  // the board: a past puzzle's answers are a page away, so a score earned on it
+  // says nothing about the player. The server writes an `unranked` day's finds
+  // and skips its board row, exactly as it does for Freeform below.
+  if (!isToday) {
+    return post(playerId, [
+      scoreFor(date, words, { withFound: true, retried, unranked: true }),
+    ]);
+  }
   // A day the player chose to spend in Freeform is not on the board. The two
   // systems do not produce comparable numbers -- Freeform prices every word on
   // its own frequency and hands out a Legend where Standard folds the word onto

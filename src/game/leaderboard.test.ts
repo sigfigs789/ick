@@ -140,12 +140,18 @@ describe("submitting a score", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("keeps archive play off the board", () => {
+  it("keeps archive play off the board, and puts its words on the feed", () => {
     joinBoard();
     const fetchMock = stubFetch();
-    // Same reason it stays off the streak: the answers are lookupable.
-    expect(submitScore({ date: "2026-07-04", isToday: false, words: WORDS })).toBe(false);
-    expect(fetchMock).not.toHaveBeenCalled();
+    // Off the board for the reason it stays off the streak -- the answers are
+    // lookupable -- but the words were still found on that drop.
+    expect(submitScore({ date: "2026-07-04", isToday: false, words: WORDS })).toBe(true);
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day.date).toBe("2026-07-04");
+    expect(day.unranked).toBe(true);
+    expect(day.found).toEqual(
+      WORDS.map((word) => ({ word: word.word.toLowerCase(), zipf: expect.any(Number) }))
+    );
   });
 
   it("sends nothing before the first word is accepted", () => {
