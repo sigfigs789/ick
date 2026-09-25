@@ -23,7 +23,7 @@ import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { isRanked, modeForDate, type GameMode } from "./mode";
-import { playedOnItsDay } from "./storage";
+import { playedHistory, playedOnItsDay } from "./storage";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 import { monthStart } from "./month";
 import { APP_VERSION } from "../version";
@@ -585,9 +585,9 @@ interface ScorePayload {
   /**
    * Every word accepted that day, which is what the finds feed is built from.
    *
-   * Sent only for the puzzle being played, never for a backfilled day: the feed
-   * shows one drop at a time, so past words would be rows nobody can ever see,
-   * and a browser with a year of history would not fit the request body.
+   * Sent for the puzzle being played, and by `backfillFinds` for any past day
+   * whose words the server has not yet taken -- never with the board's backfill,
+   * because a browser with a year of history would not fit the request body.
    */
   found?: FoundPayload[];
 }
@@ -681,6 +681,14 @@ function rarest(words: readonly AcceptedWord[], date: string): AcceptedWord {
  */
 function post(playerId: string, scores: ScorePayload[]): boolean {
   if (scores.length === 0) return false;
+  const request = send(playerId, scores);
+  if (!request) return false;
+  void request.catch(() => {});
+  return true;
+}
+
+/** `post`, handing back the request for a caller that wants to see it land. */
+function send(playerId: string, scores: ScorePayload[]): Promise<Response> | null {
   // `version` is the release this client's scoring was built from. The server
   // ranks only clients at or above its floor (see MIN_RANKED_VERSION in
   // api/leaderboard.ts): a phone app is a frozen copy of these rules, so an
@@ -688,17 +696,16 @@ function post(playerId: string, scores: ScorePayload[]): boolean {
   // the website has since replaced, on the same board.
   const body = JSON.stringify({ playerId, version: APP_VERSION, scores });
   try {
-    void fetch("/api/leaderboard", {
+    return Promise.resolve(fetch("/api/leaderboard", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body,
       keepalive: true,
-    }).catch(() => {});
+    }));
   } catch {
     // Recording a score must never be able to break the move that earned it.
-    return false;
+    return null;
   }
-  return true;
 }
 
 /**
@@ -799,8 +806,8 @@ export function backfillHistory(
     .filter((progress) => progress.acceptedWords.length > 0)
     // Ranked days, plus today's Freeform day for its finds alone. A chosen
     // Freeform day is not on the board, for the reason `submitScore` gives, and
-    // a past one has nothing to offer the feed either -- the words are only sent
-    // for today -- so it is not sent at all.
+    // a past one's words reach the feed through `backfillFinds` instead -- so it
+    // is not sent here at all.
     .filter(
       (progress) => isRanked(progress.date, progress.mode) || progress.date === today
     )
@@ -850,5 +857,97 @@ export function backfillHistory(
 export function syncHistory(today: string = todayDateString()): number {
   const playerId = loadPlayerId();
   if (!playerId) return 0;
+  backfillFinds(playerId);
   return backfillHistory(playerId, undefined, today);
+}
+
+/**
+ * Which words this browser has seen the server take, per puzzle date.
+ *
+ * What lets `backfillFinds` send each word once rather than the whole history
+ * on every open, which a long history would not fit in one request. Only ever
+ * written after a 2xx: the play path is fire-and-forget, so a word is not
+ * "sent" until something has watched it land. A ledger that is lost -- another
+ * browser, cleared storage -- costs one re-send, which the server discards.
+ */
+export const FINDS_SENT_KEY = "ick:finds-sent";
+
+/**
+ * The most days one sync sends finds for. A backstop on the request body (see
+ * MAX_BODY_BYTES in api/leaderboard.ts), not a schedule: anything past it goes
+ * on the next open, because the ledger remembers where this one stopped.
+ */
+const FINDS_BATCH_DAYS = 60;
+
+function loadFindsSent(): Record<string, string[]> {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(FINDS_SENT_KEY) ?? "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, string[]>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function markFindsSent(days: readonly ScorePayload[]): void {
+  try {
+    const sent = loadFindsSent();
+    for (const day of days) {
+      const words = new Set(sent[day.date] ?? []);
+      for (const find of day.found ?? []) words.add(find.word);
+      sent[day.date] = [...words];
+    }
+    localStorage.setItem(FINDS_SENT_KEY, JSON.stringify(sent));
+  } catch {
+    // Storage full or disabled: the next sync re-sends, which is harmless.
+  }
+}
+
+/**
+ * Put every word this browser has found onto its drop's feed, if it isn't yet.
+ *
+ * The play path sends each word as it is banked, but it is fire-and-forget: a
+ * word banked offline, or before this browser joined, or on an archive puzzle
+ * by a client from before those were sent at all, never reached the feed and
+ * nothing would ever send it again. This does, on every open.
+ *
+ * Every day goes up `unranked`, whatever it was: this is the feed's repair and
+ * not the board's, and `backfillHistory` is what keeps the board. A day before
+ * the feed's floor is skipped -- the page cannot show it.
+ *
+ * Fire-and-forget like every other write here: nothing waits on it, and the
+ * ledger is only updated once the server has said yes. Returns how many days
+ * were sent, for the tests.
+ */
+export function backfillFinds(
+  playerId: string,
+  history: readonly DailyProgress[] = playedHistory()
+): number {
+  const sent = loadFindsSent();
+  const byDate = new Map<string, AcceptedWord[]>();
+  for (const progress of history) {
+    if (progress.date < FINDS_EPOCH) continue;
+    const already = new Set(sent[progress.date] ?? []);
+    const words = byDate.get(progress.date) ?? [];
+    for (const word of progress.acceptedWords) {
+      const key = word.word.toLowerCase();
+      if (already.has(key) || words.some((w) => w.word.toLowerCase() === key)) continue;
+      words.push(word);
+    }
+    if (words.length > 0) byDate.set(progress.date, words);
+  }
+  const scores = [...byDate]
+    .slice(0, FINDS_BATCH_DAYS)
+    .map(([date, words]) => scoreFor(date, words, { withFound: true, unranked: true }));
+  if (scores.length === 0) return 0;
+  const request = send(playerId, scores);
+  if (!request) return 0;
+  request.then(
+    (response) => {
+      if (response?.ok) markFindsSent(scores);
+    },
+    () => {}
+  );
+  return scores.length;
 }

@@ -214,9 +214,8 @@ async function rememberBest(
  * `count(distinct player_id)` does on the other side.
  */
 async function recordFinds(user: string, score: ScoreSubmission): Promise<void> {
-  // Sent only for the puzzle being played. A backfilled day carries no list,
-  // because the feed shows one drop at a time and past words would be rows
-  // nobody can ever see.
+  // Sent for the puzzle being played, and for a past day as an unranked entry
+  // of its own when the client finds words the feed never got.
   const found = score.found ?? [];
   for (const find of found) {
     await redis.hSet(findersKey(score.date, find.word), { [user]: '1' });
