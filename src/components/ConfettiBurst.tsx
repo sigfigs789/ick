@@ -1,11 +1,13 @@
 import type { CSSProperties } from "react";
 
 const PIECES = Array.from({ length: 24 }, (_, index) => index);
+/** Twice the pieces, for the rarer occasion (see PerfectMonthCelebration). */
+const GRAND_PIECES = Array.from({ length: 48 }, (_, index) => index);
 
-export function ConfettiBurst() {
+export function ConfettiBurst({ grand = false }: { grand?: boolean }) {
   return (
-    <div className="confetti" aria-hidden="true">
-      {PIECES.map((index) => (
+    <div className={grand ? "confetti confetti--grand" : "confetti"} aria-hidden="true">
+      {(grand ? GRAND_PIECES : PIECES).map((index) => (
         <span
           className="confetti__piece"
           key={index}

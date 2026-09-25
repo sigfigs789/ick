@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DropDisplay } from "./components/DropDisplay";
 import { GuessLog } from "./components/GuessLog";
 import { DEV_TOOLS } from "./dev/devTools";
@@ -9,10 +9,12 @@ import { ResultsPanel } from "./components/ResultsPanel";
 import { WordRulesModal } from "./components/WordRulesModal";
 import { PuzzleNav } from "./components/PuzzleNav";
 import { ConfettiBurst } from "./components/ConfettiBurst";
+import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
+import { completedWholeMonth } from "./game/perfectMonth";
 import { topRarityScore, totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -60,6 +62,8 @@ export default function App() {
   } = useDailyPuzzle();
   const [showWordRules, setShowWordRules] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showPerfectMonth, setShowPerfectMonth] = useState(false);
+  const endPerfectMonth = useCallback(() => setShowPerfectMonth(false), []);
   const sound = useSound();
 
   // The compact share-link code identifies its origin without exposing a
@@ -140,9 +144,34 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasWinningWord]);
 
+  // A month played without a day missed (see game/perfectMonth.ts), celebrated
+  // on the word that finishes it. Remembered by date rather than as a flag, so
+  // stepping back through the archive and forward to today again does not
+  // throw a second party -- and a reload after the fact, which mounts already
+  // perfect, throws none.
+  const perfectMonth = isToday && completedWholeMonth(streak, date);
+  const celebratedMonth = useRef(perfectMonth ? date : null);
+  useEffect(() => {
+    if (!perfectMonth || celebratedMonth.current === date) return;
+    celebratedMonth.current = date;
+    // The month banks on the day's first word, so the only chime it could
+    // clash with is that same word being Rare -- which has just played one.
+    if (!hasWinningWord) sound.complete();
+    setShowPerfectMonth(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perfectMonth, date]);
+
   return (
     <>
-      {showConfetti && <ConfettiBurst />}
+      {showPerfectMonth ? (
+        <PerfectMonthCelebration
+          date={date}
+          days={Number(date.slice(8, 10))}
+          onDone={endPerfectMonth}
+        />
+      ) : (
+        showConfetti && <ConfettiBurst />
+      )}
 
       {/* Not mounted where reporting is off: inside a Reddit post both scripts
           are blocked by the frame's content policy, and neither should be
