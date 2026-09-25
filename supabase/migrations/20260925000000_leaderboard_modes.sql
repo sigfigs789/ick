@@ -317,7 +317,10 @@ create index if not exists leaderboard_scores_date_mode_idx
  *
  * Otherwise unchanged from 20260830000000.
  */
-drop function if exists public.leaderboard_boards(date, integer, boolean, date, date, uuid, date, date, date, date);
+-- Eleven arguments, the definition 20260830000000 left behind (it added
+-- `p_week_until`). Dropping any other list would leave that one standing beside
+-- the new one as a second overload.
+drop function if exists public.leaderboard_boards(date, integer, boolean, date, date, uuid, date, date, date, date, date);
 
 create function public.leaderboard_boards(
   p_since date,
