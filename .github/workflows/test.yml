@@ -59,3 +59,10 @@ jobs:
       - name: Typecheck
         working-directory: native
         run: npx tsc --noEmit
+
+      # Over-the-air updates reach builds by runtimeVersion, a label set by hand
+      # in native/app.json. This fails when the native layer changed and the
+      # label did not, before an update could reach builds missing that code.
+      - name: Check the runtime version follows the native layer
+        working-directory: native
+        run: node tools/check-native-fingerprint.cjs
