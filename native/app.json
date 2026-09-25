@@ -53,9 +53,7 @@
       "ios",
       "android"
     ],
-    "runtimeVersion": {
-      "policy": "fingerprint"
-    },
+    "runtimeVersion": "1",
     "updates": {
       "url": "https://u.expo.dev/2a165258-630c-4925-98f3-3e33ca6247d7",
       "checkAutomatically": "ON_LOAD",

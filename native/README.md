@@ -248,9 +248,18 @@ from happening:
   gap, Play and Leaderboards say so, with a button to the store listing
   (`src/components/UpdateBanner.tsx`).
 
-An update reaches only builds with the same native fingerprint
-(`runtimeVersion.policy: "fingerprint"`). The store version is skipped from it
-(`fingerprint.config.js`), or every weekly `APP_VERSION` bump would strand every
-installed build. A change that does need new native code -- a new Expo module, a
-permission, an SDK bump -- publishes to a runtime no installed build has, so it
-needs a store build, and until that is installed the banner is what players see.
+An update reaches only builds with the same `runtimeVersion`, a label set by
+hand in `app.json` (currently `"1"`). It is not Expo's `"fingerprint"` policy:
+that hashed the native layer differently on the EAS build machine than locally
+and in CI, so build 10 embedded one runtime while updates were published to
+another, and none could reach it.
+
+The label has to change exactly when the native layer does -- a new Expo
+module, a permission, an SDK bump, a config plugin. `tools/check-native-fingerprint.cjs`
+enforces that: it fingerprints the native layer (`fingerprint.config.js` skips
+the store version) and compares it with `native-fingerprint.json`. CI and the
+update workflow both fail when the fingerprint moved and the label did not.
+The fix is to raise `runtimeVersion`, run
+`node tools/check-native-fingerprint.cjs --write`, and ship a store build.
+Until players install it, the old builds keep their last update and the banner
+covers the gap.

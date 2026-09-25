@@ -9,10 +9,10 @@ name: Native OTA update
 # once when they find themselves below the leaderboard's floor
 # (native/src/hooks/useUpdateCheck.ts).
 #
-# An update only reaches builds with the same native fingerprint
-# (native/fingerprint.config.js), so a change that needs new native code
-# publishes harmlessly to a runtime no installed build has -- those players get
-# the update banner, and the fix is a store build.
+# An update only reaches builds with the same runtimeVersion (native/app.json),
+# a label raised by hand when the native layer changes. The fingerprint check
+# below refuses to publish when the native layer moved and the label did not,
+# since that update would reach builds missing the native code it needs.
 #
 # Needs an EXPO_TOKEN repository secret (an Expo access token for sigfigs789).
 # Without one the job says so and stops rather than failing main.
@@ -81,6 +81,11 @@ jobs:
         if: steps.token.outputs.present == 'true'
         working-directory: native
         run: npx tsc --noEmit
+
+      - name: Check the runtime version follows the native layer
+        if: steps.token.outputs.present == 'true'
+        working-directory: native
+        run: node tools/check-native-fingerprint.cjs
 
       - name: Publish to the production channel
         if: steps.token.outputs.present == 'true'
