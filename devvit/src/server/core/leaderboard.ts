@@ -95,6 +95,12 @@ export async function submitScores(
   // word and its numbers always come from the same entry.
   const byDate = new Map<string, ScoreSubmission>();
   for (const score of scores) {
+    // An unranked day -- Freeform by choice, or played after its own date --
+    // puts its words on the feed and goes no further.
+    if (score.unranked) {
+      await recordFinds(user, score);
+      continue;
+    }
     const held = byDate.get(score.date);
     if (!held || score.total > held.total || (score.total === held.total && score.zipf < held.zipf)) {
       byDate.set(score.date, score);
@@ -208,9 +214,8 @@ async function rememberBest(
  * `count(distinct player_id)` does on the other side.
  */
 async function recordFinds(user: string, score: ScoreSubmission): Promise<void> {
-  // Sent only for the puzzle being played. A backfilled day carries no list,
-  // because the feed shows one drop at a time and past words would be rows
-  // nobody can ever see.
+  // Sent for the puzzle being played, and for a past day as an unranked entry
+  // of its own when the client finds words the feed never got.
   const found = score.found ?? [];
   for (const find of found) {
     await redis.hSet(findersKey(score.date, find.word), { [user]: '1' });

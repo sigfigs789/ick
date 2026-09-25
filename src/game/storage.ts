@@ -211,6 +211,20 @@ export function playedPuzzleCount(): number {
 }
 
 export function playedOnItsDay(): DailyProgress[] {
+  return playedHistory().filter((progress) => {
+    const playedAt = progress.firstWordAt ?? progress.completedAt;
+    return Boolean(playedAt) && playedOnDate(playedAt!, progress.date);
+  });
+}
+
+/**
+ * Every stored day with at least one accepted word, whenever it was played.
+ *
+ * The finds feed's view of the history, where `playedOnItsDay` above is the
+ * board's: a word found out of the archive was still found on that drop, so it
+ * belongs on the drop's feed even though it can never rank.
+ */
+export function playedHistory(): DailyProgress[] {
   let keys: string[];
   try {
     keys = Object.keys(localStorage).filter((key) => key.startsWith(PROGRESS_PREFIX));
@@ -225,9 +239,6 @@ export function playedOnItsDay(): DailyProgress[] {
     const { date, mode } = readProgressKey(key);
     const progress = loadProgress(date, mode);
     if (!progress || progress.acceptedWords.length === 0) continue;
-    const playedAt = progress.firstWordAt ?? progress.completedAt;
-    if (!playedAt) continue;
-    if (!playedOnDate(playedAt, progress.date)) continue;
     // The mode comes off the key rather than out of the record, so a day saved
     // before the field existed still lands on the right board.
     played.push(progress.mode ? progress : { ...progress, mode });

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  backfillFinds,
   backfillHistory,
+  FINDS_SENT_KEY,
   feedFloor,
   fetchBoards,
   fetchFoundWords,
@@ -140,12 +142,18 @@ describe("submitting a score", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("keeps archive play off the board", () => {
+  it("keeps archive play off the board, and puts its words on the feed", () => {
     joinBoard();
     const fetchMock = stubFetch();
-    // Same reason it stays off the streak: the answers are lookupable.
-    expect(submitScore({ date: "2026-07-04", isToday: false, words: WORDS })).toBe(false);
-    expect(fetchMock).not.toHaveBeenCalled();
+    // Off the board for the reason it stays off the streak -- the answers are
+    // lookupable -- but the words were still found on that drop.
+    expect(submitScore({ date: "2026-07-04", isToday: false, words: WORDS })).toBe(true);
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day.date).toBe("2026-07-04");
+    expect(day.unranked).toBe(true);
+    expect(day.found).toEqual(
+      WORDS.map((word) => ({ word: word.word.toLowerCase(), zipf: expect.any(Number) }))
+    );
   });
 
   it("sends nothing before the first word is accepted", () => {
@@ -1105,5 +1113,86 @@ describe("Freeform stays off the board, and on the feed", () => {
       [CHOSEN, false],
       ["2026-09-28", true],
     ]);
+  });
+});
+
+describe("syncing words the feed has not had", () => {
+  const DAY = "2026-09-01";
+  const LATER = "2026-09-02";
+  /** Lets the response's `then` run, which is where the ledger is written. */
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it("sends a past day's words unranked, including one played out of the archive", () => {
+    const playerId = joinBoard()!;
+    const fetchMock = stubFetch();
+    // Played on its day, and played a week late: both were found on their drop.
+    const history = [stored(DAY), stored(LATER, "2026-09-09T20:00:00")];
+
+    expect(backfillFinds(playerId, history)).toBe(2);
+    const scores = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(scores.map((day) => day.date)).toEqual([DAY, LATER]);
+    // The feed's repair, not the board's: nothing here may rank.
+    expect(scores.every((day) => day.unranked === true)).toBe(true);
+    expect((scores[1].found as { word: string }[]).map((f) => f.word)).toEqual([
+      "inkling",
+      "wrinkle",
+    ]);
+  });
+
+  it("sends each word once the server has taken it", async () => {
+    const playerId = joinBoard()!;
+    stubFetch();
+    backfillFinds(playerId, [stored(DAY)]);
+    await settle();
+
+    const fetchMock = stubFetch();
+    expect(backfillFinds(playerId, [stored(DAY)])).toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends only the words a day has gained since", async () => {
+    const playerId = joinBoard()!;
+    stubFetch();
+    backfillFinds(playerId, [{ ...stored(DAY), acceptedWords: WORDS.slice(0, 1) }]);
+    await settle();
+
+    const fetchMock = stubFetch();
+    backfillFinds(playerId, [stored(DAY)]);
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect((day.found as { word: string }[]).map((f) => f.word)).toEqual(["wrinkle"]);
+  });
+
+  it("tries again on the next open when the server did not take it", async () => {
+    const playerId = joinBoard()!;
+    stubFetch(new Response(null, { status: 503 }));
+    backfillFinds(playerId, [stored(DAY)]);
+    await settle();
+    expect(localStorage.getItem(FINDS_SENT_KEY)).toBeNull();
+
+    const fetchMock = stubFetch();
+    expect(backfillFinds(playerId, [stored(DAY)])).toBe(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips days before the feed's floor, which the page cannot show", () => {
+    const playerId = joinBoard()!;
+    const fetchMock = stubFetch();
+    expect(backfillFinds(playerId, [stored("2026-08-20")])).toBe(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("runs on every open, from what this browser remembers", () => {
+    joinBoard();
+    localStorage.setItem(
+      `ick:progress:${DAY}`,
+      JSON.stringify(stored(DAY, "2026-09-09T20:00:00"))
+    );
+    const fetchMock = stubFetch();
+
+    syncHistory(LATER);
+    // The archive day cannot go on the board, so the finds request is the only one.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day).toMatchObject({ date: DAY, unranked: true });
   });
 });

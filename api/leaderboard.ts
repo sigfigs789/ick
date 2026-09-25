@@ -67,8 +67,10 @@
 //   Absent means false.
 //
 //   `found` is that day's whole word list, which is what the finds feed is built
-//   from. Optional, and the backfill omits it for past days on purpose: a year of
-//   words would not fit the body cap, and the feed only ever shows one puzzle.
+//   from. Optional: the board's backfill omits it for past days, because a year
+//   of words would not fit the body cap. A past day's words come up instead as
+//   an `unranked` day of their own, once each (src/game/leaderboard.ts,
+//   backfillFinds).
 //   Each word is written once and never updated, so its place in the feed is
 //   fixed when it lands.
 //

@@ -74,6 +74,12 @@ export interface ScoreSubmission {
   top: number;
   words: number;
   retried?: boolean;
+  /**
+   * A day that goes on the finds feed and not the board: one played in Freeform
+   * by choice, or one played after its own date. See the website's
+   * src/game/leaderboard.ts, submitScore.
+   */
+  unranked?: boolean;
   found?: { word: string; zipf: number }[];
 }
 
@@ -128,7 +134,8 @@ export function validScore(value: unknown): value is ScoreSubmission {
     inRange(s.total, 0, MAX_TOTAL) &&
     inRange(s.top, 0, MAX_TOP) &&
     inRange(s.words, 0, MAX_WORDS) &&
-    (s.retried === undefined || typeof s.retried === 'boolean')
+    (s.retried === undefined || typeof s.retried === 'boolean') &&
+    (s.unranked === undefined || typeof s.unranked === 'boolean')
   );
 }
 

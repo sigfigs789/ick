@@ -171,11 +171,10 @@ export function FoundWordsPage() {
     // that other callers pass, and the options argument is not a thing a timer
     // should ever be able to set.
     const tick = () => refreshWords();
-    // Only today's feed is live. A past day of this week is finished -- the game
-    // refuses a score for a puzzle played after its own date (see
-    // game/leaderboard.ts, submitScore), so no word can ever be added to it --
-    // and polling a list that cannot change would be a request a minute to be
-    // handed the same rows back.
+    // Only today's feed is live. A past day can still gain a word -- archive
+    // play sends its finds, unranked (see game/leaderboard.ts, submitScore) --
+    // but only at a trickle, and stepping back to the day reloads it. Polling it
+    // would be a request a minute to be handed the same rows back.
     let timer = isToday ? window.setInterval(tick, REFRESH_MS) : 0;
     function onVisibilityChange() {
       window.clearInterval(timer);
