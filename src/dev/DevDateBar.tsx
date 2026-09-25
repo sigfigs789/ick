@@ -13,8 +13,8 @@ import { DEV_TOOLS } from "./devTools";
  * has to work around. A reload is the honest version of what changing the date
  * means: the app opened on that day.
  *
- * Rendered only under `DEV_TOOLS` -- dev and preview deploys -- so nothing here reaches a
- * production bundle. See src/dev/devDate.ts.
+ * Rendered only under `DEV_TOOLS` -- dev and preview deploys, or production
+ * switched on with `?dev=1`. See src/dev/devDate.ts.
  */
 export function DevDateBar() {
   if (!DEV_TOOLS) return null;
