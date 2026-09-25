@@ -242,6 +242,8 @@ describe("api/leaderboard submissions", () => {
     ["a retry flag sent as a number", { retried: 1 }, "bad-retried"],
     // Decides whether the day reaches the board at all.
     ["an unranked flag that isn't a boolean", { unranked: "yes" }, "bad-unranked"],
+    // Recorded on every find the day carries.
+    ["a mode that isn't one", { mode: "hard" }, "bad-mode"],
   ])("refuses %s", async (_label, overrides, reason) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -762,6 +764,39 @@ describe("api/leaderboard unranked days", () => {
         found: [{ word: "inkling", zipf: 2.9 }],
       },
     ]);
+  });
+});
+
+describe("api/leaderboard find modes", () => {
+  it("passes a Freeform day's mode through, so its finds are recorded as Freeform", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    await handler(post(score({ mode: "freeform", found: [{ word: "inkling", zipf: 2.9 }] })));
+    expect(rpcCall(fetchMock)?.args.p_scores).toEqual([
+      expect.objectContaining({ mode: "freeform" }),
+    ]);
+  });
+
+  it("sends nothing for Standard, which is what absence already means", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[]]);
+    await handler(post(score({ mode: "standard" })));
+    const [day] = rpcCall(fetchMock)?.args.p_scores as Record<string, unknown>[];
+    expect(day).not.toHaveProperty("mode");
+  });
+
+  it("says when no finder banked a word in Standard, and only then", async () => {
+    withEnv();
+    stubFetch([
+      [
+        { word: "aforetime", zipf: "1.2", finders: 1, found_on: "2026-09-20", standard: false },
+        { word: "inkling", zipf: "2.9", finders: 2, found_on: "2026-09-20", standard: true },
+        { word: "wrinkle", zipf: "3.6", finders: 1, found_on: "2026-09-20" },
+      ],
+    ]);
+    const response = await handler(get("?words=1&today=2026-09-20"));
+    const body = (await response.json()) as { words: Record<string, unknown>[] };
+    expect(body.words.map((word) => word.standard)).toEqual([false, undefined, undefined]);
   });
 });
 

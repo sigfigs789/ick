@@ -257,6 +257,8 @@ interface WordRow {
   zipf: number | string | null;
   finders: number;
   found_on: string;
+  /** Whether any finder banked it in Standard. Absent before the 20260925 migration. */
+  standard?: boolean | null;
 }
 
 /** One word as the client wants it. */
@@ -268,6 +270,12 @@ interface WordEntry {
   finders: number;
   /** The most recent puzzle date it was somebody's best find on. */
   foundOn: string;
+  /**
+   * Whether any finder banked it in Standard. Sent only when false, so a feed
+   * read before the migration -- or a word anybody found in Standard -- says
+   * nothing.
+   */
+  standard?: false;
 }
 
 /** What `leaderboard_boards` answers with. */
@@ -363,6 +371,7 @@ function toWords(rows: WordRow[] | null): WordEntry[] {
     zipf: toNumber(row.zipf),
     finders: Number(row.finders) || 0,
     foundOn: String(row.found_on),
+    ...(row.standard === false ? { standard: false as const } : {}),
   }));
 }
 
@@ -457,6 +466,13 @@ interface ScoreEntry {
    */
   unranked?: boolean;
   /**
+   * Which rules the day was played under, recorded on each of its finds (see
+   * the 20260925 migration). Optional, and absent means Standard; sent only for
+   * Freeform. Not the same question as `unranked`, which also covers archive
+   * play.
+   */
+  mode?: "freeform";
+  /**
    * Every word accepted that day, for the finds feed.
    *
    * Optional, and absent is not a degraded submission: the history backfill
@@ -480,7 +496,7 @@ interface ScoreEntry {
  */
 function readScore(raw: unknown): ScoreEntry | string {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return "malformed-score";
-  const { date, word, zipf, total, top, words, retried, unranked, found } = raw as Record<
+  const { date, word, zipf, total, top, words, retried, unranked, mode, found } = raw as Record<
     string,
     unknown
   >;
@@ -507,6 +523,8 @@ function readScore(raw: unknown): ScoreEntry | string {
   if (retried !== undefined && typeof retried !== "boolean") return "bad-retried";
   // Held to the same standard: this decides whether a day reaches the board.
   if (unranked !== undefined && typeof unranked !== "boolean") return "bad-unranked";
+  // Only the one value: Standard is what absence already says.
+  if (mode !== undefined && mode !== "freeform" && mode !== "standard") return "bad-mode";
 
   const foundWords = readFound(found);
   if (typeof foundWords === "string") return foundWords;
@@ -520,6 +538,7 @@ function readScore(raw: unknown): ScoreEntry | string {
     words: wordCount,
     ...(retried === true ? { retried: true } : {}),
     ...(unranked === true ? { unranked: true } : {}),
+    ...(mode === "freeform" ? { mode: "freeform" as const } : {}),
     ...(foundWords.length > 0 ? { found: foundWords } : {}),
   };
 }

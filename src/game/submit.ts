@@ -556,20 +556,23 @@ const SETTLED_REJECTIONS: ReadonlySet<string> = new Set<string>(
 );
 
 /**
- * Whether `date`'s rules, in the mode the player is in now, refuse `word` for
- * the kind of word it is -- so the finds feed can leave out a word the reader
+ * What `date`'s rules, in the mode the player is in now, make of `word` from
+ * the local lists alone -- so the finds feed can leave out a word the reader
  * could not have played.
  *
  * The feed holds both modes' finds, and from MODE_CHOICE_START Freeform takes
  * the obsolete, archaic and dated words Standard refuses (see
- * waivedRejectionsFor in dictionary.ts). A Standard reader shown "thou" would
- * be shown a word their own game turns away. Only a settled verdict hides a
- * find: a word no local list knows was approved live, and saying nothing about
- * it is the honest answer.
+ * waivedRejectionsFor in dictionary.ts). "refused" is a settled verdict: the
+ * reader's game turns the word away without asking anybody. "unknown" is a bare
+ * "not-a-word" -- no local list vouches for the word, and only the live
+ * Merriam-Webster lookup can say whether it plays, so the feed falls back on
+ * whether anybody found it in Standard.
  */
-export function refusedByRules(word: string, date: string): boolean {
+export function offlineVerdict(word: string, date: string): "playable" | "refused" | "unknown" {
   const result = evaluateSubmission(word, dropForDate(date), [], date);
-  return !result.ok && result.reason !== undefined && SETTLED_REJECTIONS.has(result.reason);
+  if (result.ok) return "playable";
+  if (result.reason === undefined || !SETTLED_REJECTIONS.has(result.reason)) return "unknown";
+  return "refused";
 }
 
 /**
