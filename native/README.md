@@ -224,4 +224,33 @@ web bump.
 
 Only `APP_VERSION` feeds the store version. `MIN_VERSION`, the website's
 forced-reload floor for open browser tabs, is a mechanism an installed app does
-not have and does not need.
+not have and does not need. Its counterpart here is `MIN_RANKED_VERSION`, below.
+
+### Staying on the current rules
+
+The leaderboard ranks whatever total a client priced, so an app on old scoring
+rules would rank against the website on different terms. Three things keep that
+from happening:
+
+- **The floor.** Every submission carries the client's `APP_VERSION`, and the
+  server writes anything below `MIN_RANKED_VERSION` (`src/version.ts`) -- or
+  with no version, as builds before 8 send -- as unranked. It still plays, and
+  its finds still reach the feed. Raise the floor with `APP_VERSION` only when a
+  release changes how a live or coming puzzle is priced.
+- **Over-the-air updates.** `expo-updates` ships the JavaScript -- which is the
+  whole game -- without a store review. `.github/workflows/native-update.yml`
+  publishes main to the `production` channel on every push that touches `src/`
+  or `native/` (it needs an `EXPO_TOKEN` secret). Builds pick it up on launch,
+  and a build that finds itself below the floor pulls it and reloads at once
+  (`src/hooks/useUpdateCheck.ts`). To publish by hand:
+  `npx eas-cli update --channel production --platform ios`.
+- **The banner.** When a build is below the floor and no update can close the
+  gap, Play and Leaderboards say so, with a button to the store listing
+  (`src/components/UpdateBanner.tsx`).
+
+An update reaches only builds with the same native fingerprint
+(`runtimeVersion.policy: "fingerprint"`). The store version is skipped from it
+(`fingerprint.config.js`), or every weekly `APP_VERSION` bump would strand every
+installed build. A change that does need new native code -- a new Expo module, a
+permission, an SDK bump -- publishes to a runtime no installed build has, so it
+needs a store build, and until that is installed the banner is what players see.

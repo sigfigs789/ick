@@ -76,7 +76,7 @@
 //   scoring priced these words. A submission below MIN_RANKED_VERSION, or one
 //   that carries no version at all, is written as though every day in it were
 //   `unranked` -- its words reach the feed and none of its days reach the board.
-//   See MIN_RANKED_VERSION for why.
+//   See MIN_RANKED_VERSION in src/version.ts for why.
 //
 //   No name is sent, and none is stored: what the board calls a player is
 //   derived from their id on the client (src/game/handle.ts). Each day carries
@@ -100,6 +100,7 @@
 // boards are fetched when the page loads and then left alone, and the thing that
 // polls is the finds feed, which carries no player and is shared by everyone.
 
+import { MIN_RANKED_VERSION } from "../src/version";
 import { record, rpc, supabaseConfigured, type EdgeContext } from "./_supabase";
 
 // Vercel's Edge runtime exposes `process.env`; see api/_supabase.ts.
@@ -175,31 +176,10 @@ function weekEnd(start: string): string {
   return daysBefore(start, -6);
 }
 
-/**
- * The oldest release whose scores the board will rank.
- *
- * Every submission's total is priced on the client, and a client prices words
- * by the rules it was built with. The website cannot fall behind -- a tab below
- * MIN_VERSION reloads itself -- but the App Store and Play Store apps are frozen
- * copies of the game that update when their players say so. An install that
- * never updates keeps pricing words by a system the website has retired, and a
- * board holding both ranks whoever is on the older rules rather than whoever
- * found the rarer word.
- *
- * So a release that changes how a live or coming puzzle is priced raises this
- * floor along with APP_VERSION, and a phone app that has not caught up still
- * plays, still scores, and still puts its finds on the feed -- it just stops
- * ranking until the store build it needs is out and installed. A submission
- * with no version is below any floor: that is every client written before the
- * field existed, including build 7 of the phone app, which folds the
- * 2026-09-22 to 09-26 trial days the website plays as Freeform.
- *
- * Raise it only when scoring actually changed. It unranks every phone that has
- * not updated, until a store build at or above it ships and is installed, so a
- * forced reload for any other reason is a MIN_VERSION bump alone. It can never
- * exceed APP_VERSION (api/leaderboard.test.ts checks), or nobody would rank.
- */
-export const MIN_RANKED_VERSION = 26;
+// The oldest release whose scores the board will rank. Defined beside
+// APP_VERSION, where it is raised, and published in version.json so a store
+// build below it can tell its player to update. See src/version.ts.
+export { MIN_RANKED_VERSION };
 
 /**
  * A batch is a browser's whole playing history, so it has to hold a couple of

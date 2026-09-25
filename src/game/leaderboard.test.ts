@@ -56,7 +56,7 @@ describe("submitting a score", () => {
     expect(body).toEqual({
       playerId,
       // Which release priced these words, so the board can turn away an install
-      // that stopped updating (see MIN_RANKED_VERSION in api/leaderboard.ts).
+      // that stopped updating (see MIN_RANKED_VERSION in src/version.ts).
       version: APP_VERSION,
       // A one-day batch, the same shape a history import uses. No name: the
       // board derives that from the day's own rarest word.

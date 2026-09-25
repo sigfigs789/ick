@@ -25,7 +25,7 @@
     },
     "ios": {
       "bundleIdentifier": "app.wordink",
-      "buildNumber": "8",
+      "buildNumber": "9",
       "supportsTablet": true,
       "config": {
         "usesNonExemptEncryption": false
@@ -52,6 +52,14 @@
     "platforms": [
       "ios",
       "android"
-    ]
+    ],
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2a165258-630c-4925-98f3-3e33ca6247d7",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }
