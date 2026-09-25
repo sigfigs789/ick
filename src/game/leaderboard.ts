@@ -24,6 +24,7 @@ import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { isRanked, modeForDate, type GameMode } from "./mode";
 import { playedHistory, playedOnItsDay } from "./storage";
+import { refusedByRules } from "./submit";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 import { monthStart } from "./month";
 import { APP_VERSION } from "../version";
@@ -351,13 +352,20 @@ function priceFind(
 }
 
 /**
- * The same feed, priced again under whatever mode the reader is in now.
+ * The same feed, priced again under whatever mode the reader is in now, and
+ * without the finds that mode would have refused.
  *
  * Nothing is fetched: the words and dates are already on screen, and flipping
- * the switch changes only the rules they are scored by.
+ * the switch changes only the rules they are judged by. A Freeform find of an
+ * archaic word is still a find, so a Freeform reader sees it; a Standard reader
+ * does not, because their game would have turned it away (see
+ * `refusedByRules`).
  */
 export function repriceFoundWords(words: readonly FoundWord[]): FoundWord[] {
-  return words.map((found) => {
+  const playable = words.filter(
+    (found) => !found.foundOn || !refusedByRules(found.word, found.foundOn)
+  );
+  return playable.map((found) => {
     const price = priceFind(found.word, found.foundOn || undefined, found.stored);
     return price ? { ...found, ...price } : found;
   });

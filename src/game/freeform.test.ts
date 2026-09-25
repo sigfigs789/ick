@@ -257,9 +257,9 @@ describe("freeform week rejections", () => {
   });
 
   describe("in Freeform mode, which is not the trial week", () => {
-    // The mode waives less than the week did: the age trio goes back in force,
-    // because the thing Freeform is *for* is the scoring, and handing out the
-    // dictionary's dead words on top of it is a second, unrelated change.
+    // The mode waives what the week did: the age trio stays playable, because
+    // Freeform is unranked and "playing however you want" still means reaching
+    // for "thou". Standard is where those words go back to being refused.
     const IN_MODE = MODE_CHOICE_START;
 
     beforeEach(() => {
@@ -268,14 +268,14 @@ describe("freeform week rejections", () => {
       setMode("freeform");
     });
 
-    it("refuses an obsolete, archaic or dated word, as Standard does", () => {
+    it("lets an obsolete, archaic or dated word play, as the trial did", () => {
       for (const reason of ["obsolete", "archaic", "dated"]) {
         const word = wordRejectedFor(reason);
         if (!word) continue;
-        expect(curatedRejection(word, IN_MODE), `${reason} in mode`).toBe(reason);
-        expect(isValidWord(word, IN_MODE), `${reason} unplayable`).toBe(false);
-        // And nothing to explain, because nothing was let through.
-        expect(waivedRejection(word, IN_MODE), `${reason} silent`).toBeUndefined();
+        expect(curatedRejection(word, IN_MODE), `${reason} in mode`).toBeUndefined();
+        expect(isValidWord(word, IN_MODE), `${reason} plays`).toBe(true);
+        // And the acceptance says which rule it is standing on.
+        expect(waivedRejection(word, IN_MODE), `${reason} noted`).toBe(reason);
       }
     });
 
@@ -291,7 +291,14 @@ describe("freeform week rejections", () => {
       }
     });
 
-    it("names an uncurated word's register again, with no live lookup owed", () => {
+    it("sends an uncurated word's register to the live lookup, as the trial did", () => {
+      // "not-a-word" is the one reason that earns a lookup; naming the register
+      // here would refuse a word the mode lets through.
+      expect(evaluateSubmission("aasvogel", "VOG", [], IN_MODE)).toEqual({
+        ok: false,
+        reason: "not-a-word",
+      });
+      setMode("standard");
       expect(evaluateSubmission("aasvogel", "VOG", [], IN_MODE)).toEqual({
         ok: false,
         reason: "obsolete",
@@ -356,7 +363,7 @@ describe("freeform week rejections", () => {
     }
   });
 
-  it("puts the age trio back in force after the trial, in both modes", () => {
+  it("puts the age trio back in force after the trial, for Standard only", () => {
     for (const reason of ["obsolete", "archaic", "dated"]) {
       const word = wordRejectedFor(reason);
       if (!word) continue;
@@ -365,7 +372,7 @@ describe("freeform week rejections", () => {
       setMode("standard");
       expect(isValidWord(word, AFTER), `${reason} in Standard`).toBe(false);
       setMode("freeform");
-      expect(isValidWord(word, AFTER), `${reason} in Freeform`).toBe(false);
+      expect(isValidWord(word, AFTER), `${reason} in Freeform`).toBe(true);
     }
   });
 });

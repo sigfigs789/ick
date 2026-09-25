@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackWordSuggestion } from "../analytics";
 import { usesFreeformRules } from "../game/dictionary";
 import { modeIsChosen } from "../game/mode";
+import { useGameMode } from "../hooks/useGameMode";
 import { navigate } from "../routes";
 
 interface Props {
@@ -15,6 +16,7 @@ export function WordRulesModal({ open, date, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const [suggestion, setSuggestion] = useState("");
   const [sent, setSent] = useState(false);
+  const [mode] = useGameMode();
 
   useEffect(() => {
     if (open) closeRef.current?.focus();
@@ -67,15 +69,18 @@ export function WordRulesModal({ open, date, onClose }: Props) {
             this panel only answers the question that opened it: why was that
             word turned away?
 
-            One sentence per era, and the *mode* is not asked: from
-            MODE_CHOICE_START both modes accept the same words and differ only
-            in what they are worth. Before that the trial week waived every
-            register rule there is, and before the trial none of them were
-            waived -- both of those are still reachable from the archive and
-            still play that way. See waivedRejectionsFor in game/dictionary.ts. */}
+            One sentence per era, and from MODE_CHOICE_START one per mode:
+            Freeform keeps the trial week's appetite for obsolete, archaic and
+            dated words while Standard refuses them. Before that the trial week
+            waived every register rule there is, and before the trial none of
+            them were waived -- both of those are still reachable from the
+            archive and still play that way. See waivedRejectionsFor in
+            game/dictionary.ts. */}
         <p className="modal__copy">
           {date !== undefined && modeIsChosen(date)
-            ? "Proper nouns and abbreviations count. Misspellings, offensive words, obsolete, archaic or dated words, hyphenated words and words with punctuation aren't eligible for play — in either mode."
+            ? mode === "freeform"
+              ? "In Freeform, proper nouns, abbreviations, and obsolete, archaic or dated words all count. Misspellings, offensive words, hyphenated words and words with punctuation are the only ones left out."
+              : "Proper nouns and abbreviations count. Misspellings, offensive words, obsolete, archaic or dated words, hyphenated words and words with punctuation aren't eligible for play."
             : usesFreeformRules(date)
               ? "It's freeform week, so proper nouns, abbreviations, and obsolete, archaic or dated words all count. Misspellings, offensive words, hyphenated words and words with punctuation are the only ones left out."
               : "To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play."}{" "}

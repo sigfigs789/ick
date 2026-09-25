@@ -75,22 +75,25 @@ describe("WordRulesModal from the choice date", () => {
     resetModeCache();
   });
 
-  it("says the same thing in either mode, because the rules are the same", () => {
-    // The modes differ in what a word is worth, not in which words there are.
-    // A panel that made the eligibility sound mode-dependent would be inviting
-    // players to switch for a word that plays either way.
-    for (const mode of ["standard", "freeform"] as const) {
-      setMode(mode);
-      const { unmount } = render(
-        <WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />,
-      );
-      const dialog = screen.getByRole("dialog");
-      expect(dialog, mode).toHaveTextContent(/proper nouns and abbreviations count/i);
-      expect(dialog, mode).toHaveTextContent(/in either mode/i);
-      // The trial's wider promise is gone with the trial.
-      expect(dialog, mode).not.toHaveTextContent(/it's freeform week/i);
-      unmount();
-    }
+  it("lets Freeform keep the age trio, and Standard refuse it", () => {
+    // The one eligibility rule the modes disagree on. Both keep the trial's
+    // verdict on names; only Freeform keeps its appetite for old words.
+    setMode("freeform");
+    const { unmount } = render(
+      <WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />,
+    );
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent(
+      /in freeform, proper nouns, abbreviations, and obsolete, archaic or dated words all count/i,
+    );
+    // The trial's own wording is gone with the trial.
+    expect(dialog).not.toHaveTextContent(/it's freeform week/i);
+    unmount();
+
+    setMode("standard");
+    render(<WordRulesModal open date={MODE_CHOICE_START} onClose={vi.fn()} />);
+    expect(screen.getByRole("dialog")).toHaveTextContent(/proper nouns and abbreviations count/i);
+    expect(screen.getByRole("dialog")).not.toHaveTextContent(/in freeform/i);
   });
 
   it("still refuses the age trio in the copy, as the game does", () => {
