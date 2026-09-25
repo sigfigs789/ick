@@ -87,8 +87,20 @@ describe("api/leaderboard submissions", () => {
     expect(call?.url).toBe("https://project.supabase.co/rest/v1/rpc/submit_leaderboard_scores");
     expect(call?.args).toEqual({
       p_player_id: PLAYER,
-      // No name: the board derives it from the day's own rarest word.
-      p_scores: [{ date: SUNDAY, word: "inkling", zipf: 2.9, total: 24.6, top: 9.4, words: 5 }],
+      // No name: the board derives it from the day's own rarest word. The mode
+      // is filled in on the way through -- absent means Standard, which is what
+      // every submission sent before there were two boards meant.
+      p_scores: [
+        {
+          date: SUNDAY,
+          word: "inkling",
+          zipf: 2.9,
+          total: 24.6,
+          top: 9.4,
+          words: 5,
+          mode: "standard",
+        },
+      ],
     });
   });
 
@@ -242,8 +254,6 @@ describe("api/leaderboard submissions", () => {
     ["a retry flag sent as a number", { retried: 1 }, "bad-retried"],
     // Decides whether the day reaches the board at all.
     ["an unranked flag that isn't a boolean", { unranked: "yes" }, "bad-unranked"],
-    // Recorded on every find the day carries.
-    ["a mode that isn't one", { mode: "hard" }, "bad-mode"],
   ])("refuses %s", async (_label, overrides, reason) => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -300,6 +310,10 @@ describe("api/leaderboard reads", () => {
     expect(response.headers.get("cache-control")).toContain("s-maxage=60");
     expect(await response.json()).toEqual({
       weekStart: SUNDAY,
+      // Which of the two boards these rows are, echoed back rather than left to
+      // the caller to remember -- the request named none, so this is the answer
+      // to a question it did not ask.
+      mode: "standard",
       // No day was asked for, so no day was queried: an empty board rather than
       // a missing key, so the page has one shape to read either way.
       daily: [],
@@ -365,6 +379,7 @@ describe("api/leaderboard reads", () => {
       p_until: "2026-08-25",
       p_limit: 10,
       p_player: null,
+      p_mode: "standard",
     });
   });
 
@@ -760,6 +775,7 @@ describe("api/leaderboard unranked days", () => {
         total: 24.6,
         top: 9.4,
         words: 5,
+        mode: "standard",
         unranked: true,
         found: [{ word: "inkling", zipf: 2.9 }],
       },
@@ -768,23 +784,6 @@ describe("api/leaderboard unranked days", () => {
 });
 
 describe("api/leaderboard find modes", () => {
-  it("passes a Freeform day's mode through, so its finds are recorded as Freeform", async () => {
-    withEnv();
-    const fetchMock = stubFetch([[]]);
-    await handler(post(score({ mode: "freeform", found: [{ word: "inkling", zipf: 2.9 }] })));
-    expect(rpcCall(fetchMock)?.args.p_scores).toEqual([
-      expect.objectContaining({ mode: "freeform" }),
-    ]);
-  });
-
-  it("sends nothing for Standard, which is what absence already means", async () => {
-    withEnv();
-    const fetchMock = stubFetch([[]]);
-    await handler(post(score({ mode: "standard" })));
-    const [day] = rpcCall(fetchMock)?.args.p_scores as Record<string, unknown>[];
-    expect(day).not.toHaveProperty("mode");
-  });
-
   it("says when no finder banked a word in Standard, and only then", async () => {
     withEnv();
     stubFetch([
@@ -835,6 +834,7 @@ describe("api/leaderboard client versions", () => {
         total: 24.6,
         top: 9.4,
         words: 5,
+        mode: "standard",
         unranked: true,
         found: [{ word: "inkling", zipf: 2.9 }],
       },
@@ -881,7 +881,16 @@ describe("api/leaderboard retried days", () => {
 
     expect(response.status).toBe(202);
     expect(rpcCall(fetchMock)?.args.p_scores).toEqual([
-      { date: SUNDAY, word: "inkling", zipf: 2.9, total: 24.6, top: 9.4, words: 5, retried: true },
+      {
+        date: SUNDAY,
+        word: "inkling",
+        zipf: 2.9,
+        total: 24.6,
+        top: 9.4,
+        words: 5,
+        mode: "standard",
+        retried: true,
+      },
     ]);
   });
 

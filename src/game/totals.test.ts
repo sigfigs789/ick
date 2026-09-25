@@ -97,7 +97,7 @@ describe("windowTotals", () => {
     expect(windowTotals()).toEqual(windowTotals("2026-08-20"));
   });
 
-  it("leaves a chosen Freeform day out, because the board never saw it", () => {
+  it("counts each board's own days and not the other's", () => {
     const day = MODE_CHOICE_START;
     vi.setSystemTime(new Date(`${day}T12:00:00`));
     // The same puzzle played both ways, as a browser that has been switching
@@ -117,11 +117,25 @@ describe("windowTotals", () => {
       })
     );
 
-    // These numbers promise to agree with the board, and a Freeform day never
-    // reaches it -- counting it would inflate the week by exactly the scores
-    // Freeform hands out for skipping the fold.
+    // These numbers promise to agree with a board, and there is one per mode
+    // from this date on. Counting both records would inflate whichever window
+    // was asked for by exactly the other game's scores.
     const one = round(scored(day, words));
-    expect(windowTotals(day)).toEqual({ week: one, month: one });
+    expect(windowTotals(day, "standard")).toEqual({ week: one, month: one });
+    expect(windowTotals(day, "freeform")).toEqual({ week: one, month: one });
+  });
+
+  it("counts a day from before the split on both boards", () => {
+    // Everything before the choice date is on every board (see mode.boardFor),
+    // so a player's month does not shrink because they moved the switch.
+    const before = "2026-09-20";
+    const day = MODE_CHOICE_START;
+    vi.setSystemTime(new Date(`${day}T12:00:00`));
+    store(before, words);
+
+    const both = round(scored(before, words));
+    expect(windowTotals(day, "standard").month).toBe(both);
+    expect(windowTotals(day, "freeform").month).toBe(both);
   });
 });
 

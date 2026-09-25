@@ -14,8 +14,9 @@
  * the trial week keeps the rules it was played with and everything before it
  * keeps the fold.
  *
- * Only Standard is ranked. There is one leaderboard and Freeform does not reach
- * it, because the two do not produce comparable numbers -- see `isRanked`.
+ * Each mode has its own leaderboard from the choice date on, because the two do
+ * not produce comparable numbers -- see `boardFor`. What was played before the
+ * choice existed belongs to both.
  *
  * Held in a module variable as well as in storage, deliberately. Scoring is
  * asked about a word in a hundred places -- `rarityFor`, `rarityScore`,
@@ -168,36 +169,76 @@ export function modeIsChosen(date: string): boolean {
  * one: the leaderboard prices a stranger's find and the finds feed prices a word
  * from an unknown puzzle, and both of those have always answered with the
  * folding system whatever week it happens to be.
+ *
+ * `chosen` stands in for the switch, and *only* for the switch: a caller that
+ * passes one is answering "which mode did this get played in", not overruling
+ * the calendar. So a trial-week date comes back Freeform however hard somebody
+ * asks for Standard -- those days were nobody's choice.
+ *
+ * Two callers need it. A submission carries the mode off the progress record
+ * rather than off the live switch, so a word banked by a lookup that settled
+ * after the player flipped is judged by the game it was played in. And the finds
+ * feed prices a stranger's word as Standard whatever the reader has their own
+ * switch set to (see `parseWords` in game/leaderboard.ts) -- otherwise the same
+ * feed would read differently to two people looking at it side by side.
  */
-export function modeForDate(date: string): GameMode {
-  if (modeIsChosen(date)) return currentMode();
+export function modeForDate(date: string, chosen?: GameMode): GameMode {
+  if (modeIsChosen(date)) return chosen ?? currentMode();
   return date >= FREEFORM_TRIAL_START ? "freeform" : DEFAULT_MODE;
 }
 
 /**
- * Whether a day's play belongs on the leaderboard.
+ * Which board a day's score belongs on -- or `null` for a day that belongs on
+ * every board.
  *
- * There is one board and it is Standard's (see leaderboard.submitScore). The
- * test is about the *choice*, not about the rules: the trial week ran freeform
- * for everybody at once, so those days were ranked against each other fairly and
- * are ranked still -- taking them off now would delete two weeks of standings to
- * enforce a rule that did not exist while they were played.
+ * There are two boards from MODE_CHOICE_START on, one per mode, because the two
+ * modes do not produce comparable numbers: Freeform prices every word on its own
+ * frequency and hands out a Legend where Standard folds the word onto its common
+ * form. One board holding both would rank whoever had the switch on.
  *
- * What is off the board is a day somebody chose to play in Freeform, from
- * MODE_CHOICE_START on, where the alternative was one board ranking whoever had
- * the switch on.
+ * Everything before the choice date is `null`, and that is the whole of what
+ * "the split starts on the choice date" means. Those days were played before
+ * there was a choice to make -- the trial week ran Freeform for everybody at
+ * once, and everything before it ran Standard for everybody at once -- so each
+ * of them was already a fair ranking of everyone who played it. Splitting them
+ * now would not sort them into two fair boards; it would halve one.
+ *
+ * So a pre-split day counts on both boards, and a player's September does not
+ * shrink because they moved the switch on the 27th. What the split governs is
+ * new scoring only: from the choice date on, a day lands on the board for the
+ * mode it was played in and on no other.
+ *
+ * The consequence worth stating, because it is visible: a monthly board
+ * straddling the split -- September 2026, the only one there will ever be --
+ * counts the same pre-split days on both of its versions. The weekly and daily
+ * boards never straddle it, because the choice date is a Sunday.
  *
  * Takes the mode rather than deriving it, because the callers have it on the
  * record being submitted and that is the mode it was played in -- a live lookup
  * can settle after the player has flipped the switch.
  */
-export function isRanked(date: string, mode: GameMode = modeForDate(date)): boolean {
-  return !modeIsChosen(date) || mode === "standard";
+export function boardFor(date: string, mode: GameMode = modeForDate(date)): GameMode | null {
+  return modeIsChosen(date) ? mode : null;
+}
+
+/**
+ * Whether a day's play is counted by `board`.
+ *
+ * The reading half of `boardFor`, and the only place the "belongs to both" rule
+ * is spelt out: a pre-split day answers true to whichever board asks.
+ */
+export function countsOnBoard(
+  board: GameMode,
+  date: string,
+  mode?: GameMode
+): boolean {
+  const own = boardFor(date, mode);
+  return own === null || own === board;
 }
 
 /** Whether `date`'s puzzle skips the scoring fold -- see game/dictionary.ts. */
-export function freeformForDate(date: string): boolean {
-  return modeForDate(date) === "freeform";
+export function freeformForDate(date: string, chosen?: GameMode): boolean {
+  return modeForDate(date, chosen) === "freeform";
 }
 
 /** Reset the cached mode. Tests only -- storage is the source either way. */

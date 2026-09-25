@@ -12,14 +12,17 @@
  * board imports under (see storage.playedOnItsDay) -- an afternoon spent in the
  * archive does not inflate the week.
  *
- * And only days the board actually ranks, for the same reason: these numbers
- * promise to agree with the board, and a day the player chose to spend in
- * Freeform never reaches it (see leaderboard.submitScore). A browser that has
- * played both ways holds a record of each, so without this a shared week would
- * count a Freeform afternoon the board never saw -- inflated by exactly the
- * scores Freeform hands out for skipping the fold. The trial week still counts,
- * because it is still ranked. And a Freeform result says "Freeform" where these
- * two numbers go, rather than quoting totals from a window nothing compares.
+ * And only the days that count on *this result's own board*, for the same
+ * reason: these numbers promise to agree with the board, and there is one board
+ * per mode from the choice date on (see mode.boardFor). A browser that has
+ * played both ways holds a record of each, so without this a shared Standard
+ * week would count a Freeform afternoon the Standard board never saw --
+ * inflated by exactly the scores Freeform hands out for skipping the fold.
+ *
+ * The board is the one the puzzle being shared belongs to, not the one the
+ * switch is set to right now: a result is about a day that was played, and a
+ * player flipping the switch after the fact does not move the week it sat in.
+ * Days from before the split count either way, because they are on both boards.
  *
  * Windowed against the puzzle's date, not the wall clock: the totals belong to
  * the result being shared, so replaying an old puzzle reports that puzzle's week
@@ -29,7 +32,7 @@
 import { todayDateString } from "./date";
 import { totalRarityScore } from "./dictionary";
 import { monthStart } from "./month";
-import { isRanked } from "./mode";
+import { countsOnBoard, modeForDate, type GameMode } from "./mode";
 import { playedOnItsDay } from "./storage";
 import { weekStart } from "./week";
 
@@ -40,9 +43,16 @@ export interface WindowTotals {
   month: number;
 }
 
-export function windowTotals(date: string = todayDateString()): WindowTotals {
+export function windowTotals(
+  date: string = todayDateString(),
+  mode: GameMode = modeForDate(date)
+): WindowTotals {
   const week = weekStart(date);
   const month = monthStart(date);
+  // Which board these two numbers promise to agree with. A pre-split date has no
+  // board of its own -- it is on both -- and `modeForDate` answers it from the
+  // calendar, which is the board those days were actually ranked on.
+  const board = mode;
   let weekTotal = 0;
   let monthTotal = 0;
   for (const progress of playedOnItsDay()) {
@@ -50,7 +60,7 @@ export function windowTotals(date: string = todayDateString()): WindowTotals {
     // this result is concerned, and would read as a total the player cannot
     // account for.
     if (progress.date > date) continue;
-    if (!isRanked(progress.date, progress.mode)) continue;
+    if (!countsOnBoard(board, progress.date, progress.mode)) continue;
     const score = totalRarityScore(progress.acceptedWords, progress.date);
     if (progress.date >= week) weekTotal += score;
     if (progress.date >= month) monthTotal += score;

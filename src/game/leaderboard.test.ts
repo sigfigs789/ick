@@ -14,7 +14,7 @@ import { rarityScore, rawTotalRarityScore } from "./dictionary";
 import { handleFor } from "./handle";
 import { joinBoard } from "./player";
 import { todayDateString } from "./date";
-import { MODE_CHOICE_START, modeForDate, resetModeCache, setMode } from "./mode";
+import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import { FIRST_PUZZLE } from "./drop";
 import type { AcceptedWord, DailyProgress } from "./types";
 import { APP_VERSION } from "../version";
@@ -70,9 +70,18 @@ describe("submitting a score", () => {
           total: expect.any(Number),
           top: expect.any(Number),
           words: 2,
-          // The mode rides along only for a Freeform day -- which, before the
-          // choice date, is whatever the calendar says today is.
-          ...(modeForDate(today) === "freeform" ? { mode: "freeform" } : {}),
+          // Which board the day lands on, on every submission rather than only
+          // on a Freeform one: there are two boards, not a default one with a
+          // flag, and a server inferring which from an absent field is a server
+          // with a silent default in it.
+          //
+          // Matched rather than named, because this day is `todayDateString()`
+          // and the answer therefore depends on when the suite runs -- inside
+          // the trial week the calendar says Freeform, after it the switch does.
+          // Which value lands for which date is asserted on fixed dates further
+          // down ("both modes reach a board"); what belongs here is that the
+          // field is on the wire at all, and is one of the two.
+          mode: expect.stringMatching(/^(standard|freeform)$/),
           // The whole day's list rides along, which is what the finds feed is
           // built from -- every word, not just the one that names the row.
           found: [
@@ -157,26 +166,6 @@ describe("submitting a score", () => {
     expect(day.found).toEqual(
       WORDS.map((word) => ({ word: word.word.toLowerCase(), zipf: expect.any(Number) }))
     );
-  });
-
-  it("records a Freeform day's mode, so the feed knows its finds", () => {
-    joinBoard();
-    resetModeCache();
-    setMode("freeform");
-    const fetchMock = stubFetch();
-    submitScore({ date: MODE_CHOICE_START, isToday: true, words: WORDS });
-    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
-    expect(day.mode).toBe("freeform");
-    expect(day.unranked).toBe(true);
-    setMode("standard");
-  });
-
-  it("sends no mode for a Standard day", () => {
-    joinBoard();
-    const fetchMock = stubFetch();
-    submitScore({ date: MODE_CHOICE_START, isToday: true, words: WORDS, mode: "standard" });
-    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
-    expect(day).not.toHaveProperty("mode");
   });
 
   it("sends nothing before the first word is accepted", () => {
@@ -804,6 +793,23 @@ describe("the finds feed, fetched on its own", () => {
     ]);
   });
 
+  it("still leaves the trial week on the rules it was played under", async () => {
+    // The reader's switch reaches a chosen day and only a chosen day. The trial
+    // week was Freeform for everybody by the calendar, so a reader in Standard
+    // does not reach back and reprice it -- those days really did score this way.
+    resetModeCache();
+    setMode("standard");
+    try {
+      stubFetch(feed("kindless", 5.45, "2026-09-15"));
+
+      expect(await fetchFoundWords("2026-09-15")).toMatchObject([
+        { word: "kindless", zipf: 1.08, rarity: "Mythic" },
+      ]);
+    } finally {
+      resetModeCache();
+    }
+  });
+
   it("reads a missing date as no date, rather than as the dawn of the game", async () => {
     // Every cutover is a string comparison and "" sorts below all of them, so a
     // row that arrives without a date would price on the legacy scale the game
@@ -1075,7 +1081,7 @@ describe("a day that spent its retry", () => {
   });
 });
 
-describe("Freeform stays off the board, and on the feed", () => {
+describe("both modes reach a board", () => {
   const CHOSEN = MODE_CHOICE_START;
   const WORDS_HERE: AcceptedWord[] = [{ word: "inkling", rarity: "Rare", zipf: 2.9 }];
 
@@ -1083,38 +1089,46 @@ describe("Freeform stays off the board, and on the feed", () => {
     resetModeCache();
   });
 
-  it("sends a chosen Freeform day unranked, carrying its finds", () => {
+  it("sends a day the player chose to spend in Freeform, labelled Freeform", () => {
+    // Freeform used to go up `unranked`, for the feed alone. It has a board of
+    // its own now, and the label is what puts the day on it rather than on
+    // Standard's.
     joinBoard();
     const fetchMock = stubFetch();
     expect(
       submitScore({ date: CHOSEN, isToday: true, words: WORDS_HERE, mode: "freeform" }),
     ).toBe(true);
     const [day] = posted(fetchMock).scores as Record<string, unknown>[];
-    // The server writes the words to the feed and no row to the board.
-    expect(day.unranked).toBe(true);
+    expect(day.mode).toBe("freeform");
+    expect(day).not.toHaveProperty("unranked");
     expect(day.found).toEqual([{ word: "inkling", zipf: expect.any(Number) }]);
   });
 
-  it("does not mark a Standard day unranked", () => {
-    joinBoard();
-    const fetchMock = stubFetch();
-    submitScore({ date: CHOSEN, isToday: true, words: WORDS_HERE, mode: "standard" });
-    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
-    expect(day).not.toHaveProperty("unranked");
-  });
-
-  it("still sends a Standard day on the same puzzle", () => {
+  it("sends a Standard day on the same puzzle to the other board", () => {
     joinBoard();
     const fetchMock = stubFetch();
     expect(
       submitScore({ date: CHOSEN, isToday: true, words: WORDS_HERE, mode: "standard" }),
     ).toBe(true);
-    expect(fetchMock).toHaveBeenCalled();
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day.mode).toBe("standard");
   });
 
-  it("keeps the trial week on the board, which everybody played the same way", () => {
-    // Freeform by the calendar rather than by choice: those days ranked against
-    // each other fairly and are ranked still.
+  it("labels the day off the record rather than off the switch", () => {
+    // A live lookup can settle after the player has flipped modes, and the day
+    // belongs to the game it was submitted to.
+    joinBoard();
+    setMode("freeform");
+    const fetchMock = stubFetch();
+    submitScore({ date: CHOSEN, isToday: true, words: WORDS_HERE, mode: "standard" });
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day.mode).toBe("standard");
+  });
+
+  it("sends the trial week as Freeform, which is how everybody played it", () => {
+    // Freeform by the calendar rather than by choice. The endpoint writes every
+    // pre-split day to both boards whatever this says, so the label is a record
+    // of the rules rather than an assignment.
     joinBoard();
     const fetchMock = stubFetch();
     expect(
@@ -1125,10 +1139,11 @@ describe("Freeform stays off the board, and on the feed", () => {
         mode: "freeform",
       }),
     ).toBe(true);
-    expect(fetchMock).toHaveBeenCalled();
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day.mode).toBe("freeform");
   });
 
-  it("imports today's Freeform day for its finds alone, and no older one", () => {
+  it("imports every mode of every day, each to its own board", () => {
     const playerId = joinBoard()!;
     const fetchMock = stubFetch();
     const history: DailyProgress[] = [
@@ -1157,15 +1172,16 @@ describe("Freeform stays off the board, and on the feed", () => {
         completed: false,
       },
     ];
-    // A browser that has played both ways holds a record of each, and the
-    // import is the one path that could quietly put the wrong one on the board.
-    // Today's Freeform day goes up unranked, for the feed; a past one has no
-    // finds to send and is not sent at all.
-    expect(backfillHistory(playerId, history, "2026-09-28")).toBe(2);
+    // A browser that has played both ways holds a record of each, and all of
+    // them are real days of play. They go up together and the labels are what
+    // keep them apart -- the same date twice is two rows, one per board. None is
+    // unranked: that is for archive play and the feed's repair, not a mode.
+    expect(backfillHistory(playerId, history, "2026-09-28")).toBe(3);
     const scores = posted(fetchMock).scores as Record<string, unknown>[];
-    expect(scores.map((day) => [day.date, day.unranked ?? false])).toEqual([
-      [CHOSEN, false],
-      ["2026-09-28", true],
+    expect(scores.map((day) => [day.date, day.mode, day.unranked ?? false])).toEqual([
+      [CHOSEN, "standard", false],
+      [CHOSEN, "freeform", false],
+      ["2026-09-28", "freeform", false],
     ]);
   });
 });
