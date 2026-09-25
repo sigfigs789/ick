@@ -22,8 +22,9 @@ import { todayDateString } from "./date";
 import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
-import { currentMode, modeForDate, type GameMode } from "./mode";
+import { currentMode, freeformForDate, modeForDate, type GameMode } from "./mode";
 import { playedHistory, playedOnItsDay } from "./storage";
+import { offlineVerdict } from "./submit";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 import { monthStart } from "./month";
 import { APP_VERSION } from "../version";
@@ -78,6 +79,11 @@ export interface FoundWord {
    * repriced when the reader flips modes -- see `repriceFoundWords`.
    */
   stored?: number;
+  /**
+   * False when every finder banked it in Freeform. Absent otherwise, and on a
+   * feed read before finds carried a mode. See `repriceFoundWords`.
+   */
+  standard?: false;
 }
 
 export interface Boards {
@@ -331,7 +337,7 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
   const words: FoundWord[] = [];
   for (const item of raw as Record<string, unknown>[]) {
     if (!item || typeof item !== "object") continue;
-    const { word, zipf, finders, foundOn } = item;
+    const { word, zipf, finders, foundOn, standard } = item;
     if (typeof word !== "string" || !word) continue;
     // An absent or malformed date has to read as "no date", not as the empty
     // string: every cutover here is a string comparison, and "" sorts below all
@@ -351,6 +357,7 @@ function parseWords(raw: unknown, today: string): FoundWord[] {
       foundOn: typeof foundOn === "string" ? foundOn : "",
       today: foundOn === today,
       ...(stored !== undefined ? { stored } : {}),
+      ...(standard === false ? { standard: false as const } : {}),
     });
   }
   return words;
@@ -375,13 +382,32 @@ function priceFind(
 }
 
 /**
- * The same feed, priced again under whatever mode the reader is in now.
+ * Whether the reader's own rules would have taken this find.
+ *
+ * The local lists settle most words (see `offlineVerdict`). The rest are words
+ * only Merriam-Webster has judged, and for those the feed's record decides: a
+ * word somebody banked in Standard plays in Standard. A Freeform reader, or a
+ * day before the reader had a choice, takes every find the feed has.
+ */
+function readerCouldPlay(found: FoundWord): boolean {
+  if (!found.foundOn) return true;
+  const verdict = offlineVerdict(found.word, found.foundOn);
+  if (verdict !== "unknown") return verdict === "playable";
+  return found.standard !== false || freeformForDate(found.foundOn);
+}
+
+/**
+ * The same feed, priced again under whatever mode the reader is in now, and
+ * without the finds that mode would have refused.
  *
  * Nothing is fetched: the words and dates are already on screen, and flipping
- * the switch changes only the rules they are scored by.
+ * the switch changes only the rules they are judged by. A Freeform find of an
+ * archaic word is still a find, so a Freeform reader sees it; a Standard reader
+ * does not, because their game would have turned it away.
  */
 export function repriceFoundWords(words: readonly FoundWord[]): FoundWord[] {
-  return words.map((found) => {
+  const playable = words.filter((found) => readerCouldPlay(found));
+  return playable.map((found) => {
     const price = priceFind(found.word, found.foundOn || undefined, found.stored);
     return price ? { ...found, ...price } : found;
   });
@@ -983,21 +1009,28 @@ export function backfillFinds(
   history: readonly DailyProgress[] = playedHistory()
 ): number {
   const sent = loadFindsSent();
-  const byDate = new Map<string, AcceptedWord[]>();
+  // Keyed by day *and* mode, so each batch entry carries the mode its words were
+  // banked in. A day played both ways sends two entries, and the server keeps
+  // the Standard one where they share a word (see the 20260925 migration).
+  const byDay = new Map<string, { date: string; mode: GameMode; words: AcceptedWord[] }>();
   for (const progress of history) {
     if (progress.date < FINDS_EPOCH) continue;
+    const mode = progress.mode ?? modeForDate(progress.date);
+    const key = `${progress.date}:${mode}`;
     const already = new Set(sent[progress.date] ?? []);
-    const words = byDate.get(progress.date) ?? [];
+    const day = byDay.get(key) ?? { date: progress.date, mode, words: [] };
     for (const word of progress.acceptedWords) {
-      const key = word.word.toLowerCase();
-      if (already.has(key) || words.some((w) => w.word.toLowerCase() === key)) continue;
-      words.push(word);
+      const lower = word.word.toLowerCase();
+      if (already.has(lower) || day.words.some((w) => w.word.toLowerCase() === lower)) continue;
+      day.words.push(word);
     }
-    if (words.length > 0) byDate.set(progress.date, words);
+    if (day.words.length > 0) byDay.set(key, day);
   }
-  const scores = [...byDate]
+  const scores = [...byDay.values()]
     .slice(0, FINDS_BATCH_DAYS)
-    .map(([date, words]) => scoreFor(date, words, { withFound: true, unranked: true }));
+    .map(({ date, mode, words }) =>
+      scoreFor(date, words, { withFound: true, unranked: true, mode })
+    );
   if (scores.length === 0) return 0;
   const request = send(playerId, scores);
   if (!request) return 0;

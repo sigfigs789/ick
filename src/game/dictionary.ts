@@ -1958,10 +1958,8 @@ export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
  * The rejection reasons a puzzle waives -- the ones that refuse a real word for
  * the kind of word it is rather than for not being one.
  *
- * Three sets, and which one applies is a question about the *date*, not about
- * the mode. That is the shape worth noticing: from MODE_CHOICE_START the two
- * modes accept exactly the same words and differ only in what they are worth.
- * Freeform is a scoring system, not a permissions system.
+ * Three sets. Before MODE_CHOICE_START the date picks one; from it the mode
+ * does, and this is the one rule the two modes disagree on besides scoring.
  *
  * Before the trial, nothing was waived: a word filed as a proper noun or an
  * abbreviation was refused, full stop.
@@ -1970,13 +1968,15 @@ export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
  * the language as they found it, and a week about playing however you want had
  * no business telling them which register was allowed.
  *
- * From the choice date, both modes waive three. The names and abbreviations stay
- * playable because the trial settled that question: they refuse words that are
- * alive and ordinary and merely filed under a category, which is a rule about
- * paperwork rather than about English. "NASA" is a word people say. The age trio
- * -- obsolete, archaic, dated -- goes back in force, because a word nobody has
- * used since 1650 is a lookup rather than a find, and the trial's appetite for
- * those did not outlast the trial.
+ * From the choice date Freeform keeps all six and Standard waives three. The
+ * names and abbreviations stay playable in both because the trial settled that
+ * question: they refuse words that are alive and ordinary and merely filed
+ * under a category, which is a rule about paperwork rather than about English.
+ * "NASA" is a word people say. The age trio -- obsolete, archaic, dated -- is
+ * back in force for Standard, because on the ranked board a word nobody has
+ * used since 1650 is a lookup rather than a find. Freeform is not ranked (see
+ * `isRanked` in game/mode.ts), so it has nothing to protect by refusing them,
+ * and "playing however you want" still means reaching for "thou".
  *
  * Two reasons were never waived by any of them, and the line between them and
  * these is the one the curation rules already draw: a spelling of *another* word
@@ -1995,7 +1995,7 @@ export type CuratedRejectionReason = (typeof CURATED_REJECTION_REASONS)[number];
  */
 const NO_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>();
 
-const TRIAL_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
+const FREEFORM_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionReason>([
   "proper-noun",
   "abbreviation",
   "name-or-abbreviation",
@@ -2013,14 +2013,16 @@ const NAME_WAIVED_REJECTIONS: ReadonlySet<RejectionReason> = new Set<RejectionRe
 /**
  * Which set `date`'s puzzle is playing under.
  *
- * The mode is not consulted, and an undated call waives nothing. The undated
- * case is the leaderboard and the finds feed pricing somebody else's word, which
- * is not a submission being judged -- there is nothing there to waive.
+ * Freeform -- the trial week, or the player's choice from MODE_CHOICE_START --
+ * waives all six; Standard waives the names from the choice date and nothing
+ * before it. An undated call waives nothing: that is the leaderboard and the
+ * finds feed pricing somebody else's word, which is not a submission being
+ * judged -- there is nothing there to waive.
  */
 function waivedRejectionsFor(date?: string): ReadonlySet<RejectionReason> {
   if (date === undefined) return NO_WAIVED_REJECTIONS;
-  if (date >= MODE_CHOICE_START) return NAME_WAIVED_REJECTIONS;
-  return usesFreeformRules(date) ? TRIAL_WAIVED_REJECTIONS : NO_WAIVED_REJECTIONS;
+  if (freeformForDate(date)) return FREEFORM_WAIVED_REJECTIONS;
+  return date >= MODE_CHOICE_START ? NAME_WAIVED_REJECTIONS : NO_WAIVED_REJECTIONS;
 }
 
 /**

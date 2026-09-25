@@ -1,4 +1,5 @@
 import {
+  CURATED_REJECTION_REASONS,
   boundBaseFormsActive,
   curatedRejection,
   usesFreeformRules,
@@ -18,6 +19,7 @@ import {
 } from "./dictionary";
 import { LEXICON_SOURCES, corpusEntry, reasonsOf } from "./corpus";
 import { isBlocked } from "./blocklist";
+import { dropForDate } from "./drop";
 import { FREEFORM_TRIAL_START, MODE_CHOICE_START } from "./mode";
 import rejectionMetadata from "../data/rejection-metadata.json";
 import {
@@ -390,11 +392,11 @@ const OUT_OF_USE_REASONS: ReadonlySet<RejectionReason> = new Set<RejectionReason
  * the two lists answer to one rule and a word cannot be playable on one and
  * refused on the other for the kind of word it is.
  *
- * That is what makes it safe to consult in both modes. Freeform week reaches it
- * waiving six reasons, an ordinary puzzle from MODE_CHOICE_START waiving three
- * -- names and abbreviations, which the trial settled, while the age trio goes
- * back in force -- and each gets the corpus filtered to its own rules from the
- * same data. Before FREEFORM_TRIAL_START nothing consults it at all: an archived
+ * That is what makes it safe to consult in both modes. Freeform -- the trial
+ * week, or the player's choice from MODE_CHOICE_START -- reaches it waiving six
+ * reasons, Standard from MODE_CHOICE_START waiving three -- names and
+ * abbreviations, which the trial settled, while the age trio goes back in force
+ * -- and each gets the corpus filtered to its own rules from the same data. Before FREEFORM_TRIAL_START nothing consults it at all: an archived
  * puzzle plays as it was played, and a word refused in August is refused there
  * still.
  *
@@ -542,6 +544,35 @@ export function evaluateSubmission(
     ok: true,
     word: { word, rarity: info.rarity, zipf: info.zipf },
   };
+}
+
+/**
+ * The reasons that settle a word offline: every reviewed verdict but the bare
+ * "not-a-word", which only means no local list vouches for the word -- the live
+ * Merriam-Webster lookup may still have approved it.
+ */
+const SETTLED_REJECTIONS: ReadonlySet<string> = new Set<string>(
+  CURATED_REJECTION_REASONS.filter((reason) => reason !== "not-a-word")
+);
+
+/**
+ * What `date`'s rules, in the mode the player is in now, make of `word` from
+ * the local lists alone -- so the finds feed can leave out a word the reader
+ * could not have played.
+ *
+ * The feed holds both modes' finds, and from MODE_CHOICE_START Freeform takes
+ * the obsolete, archaic and dated words Standard refuses (see
+ * waivedRejectionsFor in dictionary.ts). "refused" is a settled verdict: the
+ * reader's game turns the word away without asking anybody. "unknown" is a bare
+ * "not-a-word" -- no local list vouches for the word, and only the live
+ * Merriam-Webster lookup can say whether it plays, so the feed falls back on
+ * whether anybody found it in Standard.
+ */
+export function offlineVerdict(word: string, date: string): "playable" | "refused" | "unknown" {
+  const result = evaluateSubmission(word, dropForDate(date), [], date);
+  if (result.ok) return "playable";
+  if (result.reason === undefined || !SETTLED_REJECTIONS.has(result.reason)) return "unknown";
+  return "refused";
 }
 
 /**

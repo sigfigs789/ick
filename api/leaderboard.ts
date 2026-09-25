@@ -290,6 +290,8 @@ interface WordRow {
   zipf: number | string | null;
   finders: number;
   found_on: string;
+  /** Whether any finder banked it in Standard. Absent before the 20260925 migration. */
+  standard?: boolean | null;
 }
 
 /** One word as the client wants it. */
@@ -301,6 +303,12 @@ interface WordEntry {
   finders: number;
   /** The most recent puzzle date it was somebody's best find on. */
   foundOn: string;
+  /**
+   * Whether any finder banked it in Standard. Sent only when false, so a feed
+   * read before the migration -- or a word anybody found in Standard -- says
+   * nothing.
+   */
+  standard?: false;
 }
 
 /** What `leaderboard_boards` answers with. */
@@ -396,6 +404,7 @@ function toWords(rows: WordRow[] | null): WordEntry[] {
     zipf: toNumber(row.zipf),
     finders: Number(row.finders) || 0,
     foundOn: String(row.found_on),
+    ...(row.standard === false ? { standard: false as const } : {}),
   }));
 }
 

@@ -783,6 +783,22 @@ describe("api/leaderboard unranked days", () => {
   });
 });
 
+describe("api/leaderboard find modes", () => {
+  it("says when no finder banked a word in Standard, and only then", async () => {
+    withEnv();
+    stubFetch([
+      [
+        { word: "aforetime", zipf: "1.2", finders: 1, found_on: "2026-09-20", standard: false },
+        { word: "inkling", zipf: "2.9", finders: 2, found_on: "2026-09-20", standard: true },
+        { word: "wrinkle", zipf: "3.6", finders: 1, found_on: "2026-09-20" },
+      ],
+    ]);
+    const response = await handler(get("?words=1&today=2026-09-20"));
+    const body = (await response.json()) as { words: Record<string, unknown>[] };
+    expect(body.words.map((word) => word.standard)).toEqual([false, undefined, undefined]);
+  });
+});
+
 describe("api/leaderboard client versions", () => {
   it("can never set a floor the current release is below", () => {
     // Above APP_VERSION, nobody -- not even the website -- would rank.

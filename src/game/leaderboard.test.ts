@@ -752,6 +752,37 @@ describe("the finds feed, fetched on its own", () => {
     expect(repriceFoundWords([freeform])[0].zipf).toBe(standard);
   });
 
+  it("leaves out a Freeform find that Standard would have refused", async () => {
+    // "aforetime" is archaic: Freeform plays it and Standard turns it away, so
+    // a Standard reader is not shown a word their own game refuses. A word no
+    // local list knows ("zzqti") was approved live and stays in either mode --
+    // unless every finder banked it in Freeform ("zzqtiz"), where Standard's
+    // rules were never asked.
+    resetModeCache();
+    setMode("freeform");
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          words: [
+            { word: "aforetime", zipf: 1.2, finders: 1, foundOn: MODE_CHOICE_START },
+            { word: "zzqti", zipf: 1.5, finders: 1, foundOn: MODE_CHOICE_START },
+            // Only MW knows this one, and nobody banked it in Standard.
+            { word: "zzqtiz", zipf: 1.5, finders: 1, foundOn: MODE_CHOICE_START, standard: false },
+          ],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      )
+    );
+    const words = await fetchFoundWords(MODE_CHOICE_START);
+    expect(repriceFoundWords(words).map((found) => found.word)).toEqual([
+      "aforetime",
+      "zzqti",
+      "zzqtiz",
+    ]);
+    setMode("standard");
+    expect(repriceFoundWords(words).map((found) => found.word)).toEqual(["zzqti"]);
+  });
+
   it("leaves a find from outside the week on the system that day ran", async () => {
     // The other half of the same rule: dating the feed is not a licence for the
     // week to reprice everything behind it.
