@@ -192,13 +192,13 @@ export function InstructionsModal({ open, onClose }: Props) {
           ) : (
             <>
               <div className="modal__header">
-                <h2 id="instructions-heading">How to play WordInk</h2>
+                <h2 id="instructions-heading">How to play Word<span className="app__wordmark-ink">Ink</span></h2>
                 {closeButton}
               </div>
             <p className="modal__copy">
-              WordInk gives everyone the same daily drop—say, “INK”. Find the rarest
-              English word you can that contains it, like th<strong>INK</strong>, wr
-              <strong>INK</strong>le, or <strong>INK</strong>ling.
+              Word<span className="app__wordmark-ink">Ink</span> gives everyone the same daily drop—say, “INK”. Find the rarest
+              English word you can that contains it, like th<strong className="app__wordmark-ink">INK</strong>, wr
+              <strong className="app__wordmark-ink">INK</strong>le, or <strong className="app__wordmark-ink">INK</strong>ling.
             </p>
             {/* The two modes, once there are two. Short on purpose: this sheet is
                 the first thing a new player sees, and the difference between them is
@@ -213,7 +213,7 @@ export function InstructionsModal({ open, onClose }: Props) {
                 <h3 className="modal__modes-heading">Two ways to play</h3>
                 <p className="modal__copy">
                   <strong>Standard</strong> — words score as their common form:
-                  “plays” counts as <em>play</em>.{" "}
+                  “plays” counts as “play”.{" "}
                   <button
                     ref={moreInfoRef}
                     type="button"

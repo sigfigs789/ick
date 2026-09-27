@@ -293,7 +293,8 @@ h2 {
   line-height: 1.1;
 }
 /* The Mythic dot rather than its text colour: the dot is one value in both
-   themes, which is what the app's wordmark uses too. */
+   themes, which is what the app's wordmark uses too. The rules sheet borrows it
+   wherever it names the game, so the name looks the same everywhere it is. */
 .app__wordmark-ink {
   color: var(--rarity-mythic-dot);
 }

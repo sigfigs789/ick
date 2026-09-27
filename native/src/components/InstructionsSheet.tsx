@@ -25,11 +25,15 @@ export function InstructionsSheet({ open, onClose }: Props) {
   }
 
   return (
-    <Sheet open={open} title="How to play WordInk" onClose={onClose}>
+    <Sheet
+      open={open}
+      title={<>How to play Word<Text style={{ color: theme.rarity.Mythic.dot }}>Ink</Text></>}
+      onClose={onClose}
+    >
       <Text style={[styles.copy, { color: theme.fg }]}>
-        WordInk gives everyone the same daily drop — say, “INK”. Find the rarest English
-        word you can that contains it, like th<Text style={styles.strong}>INK</Text>, wr
-        <Text style={styles.strong}>INK</Text>le, or <Text style={styles.strong}>INK</Text>ling.
+        Word<Text style={{ color: theme.rarity.Mythic.dot }}>Ink</Text> gives everyone the same daily drop — say, “INK”. Find the rarest English
+        word you can that contains it, like th<Text style={[styles.strong, { color: theme.rarity.Mythic.dot }]}>INK</Text>, wr
+        <Text style={[styles.strong, { color: theme.rarity.Mythic.dot }]}>INK</Text>le, or <Text style={[styles.strong, { color: theme.rarity.Mythic.dot }]}>INK</Text>ling.
       </Text>
 
       <Text style={[styles.note, { color: theme.fgMuted, backgroundColor: theme.bgInset }]}>
