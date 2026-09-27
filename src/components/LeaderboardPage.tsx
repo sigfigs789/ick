@@ -12,7 +12,7 @@ import { loadPlayerId } from "../game/player";
 import { handleFor } from "../game/handle";
 import { accountName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
-import { MODE_CHOICE_START, MODE_LABELS, modeIsChosen, type GameMode } from "../game/mode";
+import { type GameMode } from "../game/mode";
 import { useGameMode } from "../hooks/useGameMode";
 import {
   monthLabel,
@@ -42,16 +42,6 @@ type BoardWindow = "day" | "week" | "month";
  * heading says which day, week or month it is about, and it is still right after
  * a step back.
  */
-/**
- * The two boards, in the order they are offered.
- *
- * Standard first, and fixed rather than "the one you are on, then the other":
- * these are two named places, and a pair of buttons that swap positions when
- * pressed is a pair a reader has to re-read every time. It is the same order the
- * header's switch uses, for the same reason.
- */
-const BOARD_MODES: GameMode[] = ["standard", "freeform"];
-
 const BOARD_WINDOWS: { window: BoardWindow; label: string }[] = [
   { window: "day", label: "Day" },
   { window: "week", label: "Week" },
@@ -186,24 +176,15 @@ export function LeaderboardPage() {
   /**
    * Which of the two boards all three windows are about.
    *
-   * The player's own mode, and not a copy of it: this *is* the switch, the same
-   * one the header carries. The board somebody reads and the game they play are
-   * one choice -- a page that let them drift apart would have a player studying
-   * a board they cannot get onto -- so there is one piece of state and both
-   * controls set it. Flipping it in the header repaints this page, and flipping
-   * it here changes the puzzle they go back to.
+   * The player's own mode, and not a copy of it: the board somebody reads and
+   * the game they play are one choice, so the header's switch is the only
+   * control for both. Flipping it there repaints this page.
    *
    * One choice for the whole section, not one per board. A page showing this
    * week's Standard beside this month's Freeform would be comparing two games,
    * which is the thing having two boards is meant to stop.
-   *
-   * Only offered from the choice date on. Before it there is one board, because
-   * before it there was one way to play -- and every day of that history counts
-   * on both boards afterwards (see mode.boardFor), which is what makes this a
-   * choice about new scoring rather than about which past to look at.
    */
-  const [board, setBoard] = useGameMode();
-  const boardsSplit = modeIsChosen(today);
+  const [board] = useGameMode();
   /**
    * Whether the page is showing one board at a time, and which one.
    *
@@ -492,54 +473,7 @@ export function LeaderboardPage() {
               rather than a column gap away from it. */}
           <ul className="leaderboard__rules">
             <li>Only puzzles played on the day they drop count</li>
-            {/* What the two boards have in common, said once rather than
-                discovered by a player who switched modes and wondered where
-                their September went. The split is the thing about these boards
-                that is not obvious from looking at them: the day you switched is
-                where they diverge, and everything behind it is on both.
-
-                Only once there are two boards to tell apart. Before
-                MODE_CHOICE_START everybody is on the same rules and there is one
-                board, so this line would be drawing a distinction the reader
-                does not have yet. */}
-            {boardsSplit && (
-              <li>
-                Each mode has its own board — everything played before{" "}
-                {formatDateLabel(MODE_CHOICE_START)} counts on both
-              </li>
-            )}
           </ul>
-          {/* Which board. Above the windows rather than beside them, because it
-              is the larger of the two choices: a window is a slice of one game,
-              and this is which game. Named rather than switched -- two buttons
-              that both say what they select, like the window pills under them,
-              instead of a toggle whose label has to be read twice to work out
-              whether it names the state or the action.
-
-              Switching here switches the game too. The board a player is reading
-              and the rules they are playing under are the same choice, and a
-              page that let them drift apart would have somebody studying a board
-              they cannot get onto. So this is the header's switch, in the place
-              a reader of the boards will look for it. */}
-          {boardsSplit && (
-            <div
-              className="leaderboard__modes"
-              role="group"
-              aria-label="Which board to show"
-            >
-              {BOARD_MODES.map((which) => (
-                <button
-                  key={which}
-                  type="button"
-                  className="leaderboard__mode"
-                  aria-pressed={board === which}
-                  onClick={() => setBoard(which)}
-                >
-                  {MODE_LABELS[which]}
-                </button>
-              ))}
-            </div>
-          )}
           {/* Which board, on the layout that only has room for one at a time.
               Above the boards rather than beside each heading, because it is one
               choice about the section and not three controls: a reader picks a
