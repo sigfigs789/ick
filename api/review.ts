@@ -10,7 +10,10 @@
 // GET /api/review?list=freeform&limit=200
 //   -> { tally: { love, boo }, byDate: [{ date, love, boo }],
 //        notes: [{ id, text, at, date, vote }] }
-//   400 bad-list / bad-limit, 401 unauthorised, 405 wrong method,
+// GET /api/review?list=analytics&days=60
+//   -> { report: { asOf, totals, daily, retention, cohorts, weekday, modes,
+//                  depth, funnel, sources, sessions, hours } }
+//   400 bad-list / bad-limit / bad-days, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
 // POST /api/review
@@ -45,6 +48,10 @@
 //   suggested-words  anybody. The word rules sheet points whoever just suggested
 //                    a word at the queue it joined, so a keyless reader is the
 //                    ordinary case. A queue of words is everybody's.
+//   analytics        keyed, on the same terms as freeform. Every number in it
+//                    is an aggregate -- nobody can be read out of it -- but a
+//                    running account of how the game is doing is the
+//                    maintainer's, not a page for the players.
 //   freeform         keyed, on the same terms as the feedback below it: the
 //                    notes are the same kind of thing, and the tally beside
 //                    them is a trial's running result, which is not a number to
@@ -72,6 +79,8 @@ export const config = { runtime: "edge" };
 /** Long enough for a triage pass; a bound rather than a page. */
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
+/** How far back the analytics page's time series reach unless asked otherwise. */
+const DEFAULT_ANALYTICS_DAYS = 60;
 
 /** One row as `list_suggested_words` returns it. */
 interface SuggestedRow {
@@ -306,7 +315,12 @@ async function handlePost(request: Request): Promise<Response> {
 async function handleGet(request: Request): Promise<Response> {
   const params = new URL(request.url).searchParams;
   const list = params.get("list");
-  if (list !== "suggested-words" && list !== "feedback" && list !== "freeform") {
+  if (
+    list !== "suggested-words" &&
+    list !== "feedback" &&
+    list !== "freeform" &&
+    list !== "analytics"
+  ) {
     return reply(400, { ok: false, reason: "bad-list" });
   }
 
@@ -337,6 +351,25 @@ async function handleGet(request: Request): Promise<Response> {
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
+    if (list === "analytics") {
+      // A window in days rather than a row limit: the report is one document,
+      // and what a reader varies is how far back its time series reach.
+      const rawDays = params.get("days");
+      let days = DEFAULT_ANALYTICS_DAYS;
+      if (rawDays !== null) {
+        days = Number(rawDays);
+        if (!Number.isInteger(days) || days < 7 || days > 365) {
+          return reply(400, { ok: false, reason: "bad-days" });
+        }
+      }
+      // Passed through as the database built it. The function is the one place
+      // these numbers are defined (see the 2026-09-27 migration), and a second
+      // copy of every field name here would be a second place for them to drift.
+      const report = await rpc<Record<string, unknown> | null>("analytics_report", {
+        p_days: days,
+      });
+      return reply(200, { report: report ?? {} });
+    }
     if (list === "freeform") {
       // Two reads rather than one, because the votes and the notes are two
       // questions -- and together rather than in sequence, since neither

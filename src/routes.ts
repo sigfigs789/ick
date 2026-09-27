@@ -34,6 +34,11 @@ import { useEffect, useState } from "react";
  * without a key, because it is a page for whoever owns the scoring and nobody
  * else.
  *
+ * `/analytics` is the maintainer's dashboard -- who plays, whether they come
+ * back, and what that depends on. Unlinked and keyed like the freeform report,
+ * for the same reason: a running account of how the game is doing is not a
+ * page for the players (see components/AnalyticsPage.tsx).
+ *
  * `/transfer` is unlinked too, and for a reason of its own rather than an
  * editorial one: it is where a player moves themselves to a new browser, and
  * the string it deals in is the player id, which is the whole of an identity
@@ -55,6 +60,7 @@ export type Route =
   | "feedback"
   | "freeform-feedback"
   | "fold-review"
+  | "analytics"
   | "transfer";
 
 export const LEADERBOARD_PATH = "/leaderboard";
@@ -63,6 +69,7 @@ export const SUGGESTED_WORDS_PATH = "/suggested-words";
 export const FEEDBACK_PATH = "/feedback";
 export const FREEFORM_FEEDBACK_PATH = "/freeform-feedback";
 export const FOLD_REVIEW_PATH = "/fold";
+export const ANALYTICS_PATH = "/analytics";
 export const TRANSFER_PATH = "/transfer";
 
 /**
@@ -110,6 +117,7 @@ export function routeFor(pathname: string): Route {
   if (path === FEEDBACK_PATH) return "feedback";
   if (path === FREEFORM_FEEDBACK_PATH) return "freeform-feedback";
   if (path === FOLD_REVIEW_PATH) return "fold-review";
+  if (path === ANALYTICS_PATH) return "analytics";
   if (path === TRANSFER_PATH) return "transfer";
   return "game";
 }
@@ -122,6 +130,7 @@ export function pathFor(route: Route): string {
   if (route === "feedback") return FEEDBACK_PATH;
   if (route === "freeform-feedback") return FREEFORM_FEEDBACK_PATH;
   if (route === "fold-review") return FOLD_REVIEW_PATH;
+  if (route === "analytics") return ANALYTICS_PATH;
   if (route === "transfer") return TRANSFER_PATH;
   return "/";
 }
