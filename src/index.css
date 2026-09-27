@@ -2040,11 +2040,58 @@ h2 {
     transform: translateY(0) scale(1);
   }
 }
+/* A sheet with pages (How to play -> Common forms). overflow-x is clipped so a
+   page sliding in never flashes a horizontal scrollbar, and while the card
+   eases to the next page's height the vertical one stays hidden too. */
+.modal--paged {
+  overflow-x: hidden;
+}
+.modal--resizing {
+  overflow-y: hidden;
+}
+.modal__page--forward {
+  animation: page-forward 0.22s var(--ease-standard);
+}
+.modal__page--back {
+  animation: page-back 0.22s var(--ease-standard);
+}
+@keyframes page-forward {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes page-back {
+  from {
+    opacity: 0;
+    transform: translateX(-1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 .modal__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.9rem;
+}
+.modal__header--paged {
+  gap: 0.75rem;
+}
+.modal__header--paged h2 {
+  flex: 1;
+}
+/* The same round button as close, so the two read as a pair of ways out: one
+   step back, or all the way. */
+.modal__back {
+  font-size: 1.6rem;
+  padding-bottom: 0.15rem;
 }
 .modal__header--close-only {
   justify-content: flex-end;

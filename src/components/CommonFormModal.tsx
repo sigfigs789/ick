@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { foldAffixGroups } from "../game/dictionary";
+import type { GameMode } from "../game/mode";
 import { navigate } from "../routes";
 
 interface Props {
@@ -28,7 +29,12 @@ interface Props {
  * tables the scoring does: on an archived August puzzle the prefix list is the
  * longer one that puzzle was actually scored with.
  */
-export function CommonFormModal({ word, open = false, date, onClose }: Props) {
+export function CommonFormModal({
+  word,
+  open = false,
+  date,
+  onClose,
+}: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const visible = open || word !== undefined;
 
@@ -46,8 +52,6 @@ export function CommonFormModal({ word, open = false, date, onClose }: Props) {
   }, [visible, onClose]);
 
   if (!visible) return null;
-
-  const groups = foldAffixGroups(date);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -71,82 +75,105 @@ export function CommonFormModal({ word, open = false, date, onClose }: Props) {
           </button>
         </div>
 
-        {/* The player's own word first. The general rule is what the rest of
-            the panel is for, but the question that opened it was about one
-            word, and answering that one before explaining the rule is the
-            difference between an answer and a reference page.
-
-            Opened from How to play there is no word yet, so the same claim is
-            made about an example instead. */}
-        {word ? (
-          <>
-            <p className="common-form__pair">
-              <span className="common-form__word">{word.word}</span>
-              <span className="common-form__arrow" aria-hidden="true">
-                →
-              </span>
-              <span className="common-form__word">{word.base}</span>
-            </p>
-            {/* True in both directions: "abaci" folds up to "abacus" on the
-                archived puzzles that still capped at a longer form. */}
-            <p className="modal__copy">
-              “{word.word}” scores as “{word.base}”, its more common form.
-            </p>
-          </>
-        ) : (
-          <p className="modal__copy">
-            In Standard, a familiar word in an unfamiliar shape isn’t scored as
-            a rarer word.
-          </p>
-        )}
-
-        <ul className="common-form__groups">
-          {groups.map((group) => (
-            <li key={group.title} className="common-form__group">
-              <h3 className="common-form__group-title">{group.title}</h3>
-              <p className="common-form__affixes">
-                {/* Commas rather than chips: the measurement row is 29 entries
-                    long, and a grid of 29 pills is a wall where a sentence is
-                    a list you can stop reading.
-
-                    One span each all the same, because a hyphen is a break
-                    opportunity and a phone was splitting "-cked" across two
-                    lines as "-" and "cked" -- an affix broken in half is
-                    unreadable as the thing it is. The comma is inside the
-                    span, so the break lands after it. */}
-                {group.affixes.map((affix, index) => (
-                  <span key={affix} className="common-form__affix">
-                    {affix}
-                    {index < group.affixes.length - 1 ? "," : ""}
-                  </span>
-                ))}
-              </p>
-              <p className="common-form__example">
-                {group.example.word} → {group.example.base}
-              </p>
-            </li>
-          ))}
-        </ul>
-
-        {/* The way out of a fold a player thinks is wrong. Every one of these
-            is reviewable by hand, and the note is the moment someone has a
-            specific one in mind -- the same argument that puts the word
-            suggestion box inside the word rules panel. */}
-        <p className="modal__copy modal__signoff">
-          {word ? "Think this one got the wrong form?" : "Think a word got the wrong form?"}{" "}
-          <button
-            type="button"
-            className="common-form__link"
-            onClick={() => {
-              onClose();
-              navigate("feedback");
-            }}
-          >
-            Tell me about it
-          </button>{" "}
-          — every fold is reviewable.
-        </p>
+        <CommonFormBody word={word} date={date} onLeave={onClose} />
       </div>
     </div>
+  );
+}
+
+interface BodyProps {
+  word?: { word: string; base: string };
+  date?: string;
+  /** Whose lists to show; the player's own mode when left out. */
+  mode?: GameMode;
+  /** Called before the feedback link navigates away, to put the sheet away. */
+  onLeave: () => void;
+}
+
+/**
+ * The explainer without its sheet, so How to play can show it as a page of
+ * its own card rather than a second sheet swapped in over the first.
+ */
+export function CommonFormBody({ word, date, mode, onLeave }: BodyProps) {
+  const groups = foldAffixGroups(date, mode);
+
+  return (
+    <>
+      {/* The player's own word first. The general rule is what the rest of
+          the panel is for, but the question that opened it was about one
+          word, and answering that one before explaining the rule is the
+          difference between an answer and a reference page.
+
+          Opened from How to play there is no word yet, so the same claim is
+          made about an example instead. */}
+      {word ? (
+        <>
+          <p className="common-form__pair">
+            <span className="common-form__word">{word.word}</span>
+            <span className="common-form__arrow" aria-hidden="true">
+              →
+            </span>
+            <span className="common-form__word">{word.base}</span>
+          </p>
+          {/* True in both directions: "abaci" folds up to "abacus" on the
+              archived puzzles that still capped at a longer form. */}
+          <p className="modal__copy">
+            “{word.word}” scores as “{word.base}”, its more common form.
+          </p>
+        </>
+      ) : (
+        <p className="modal__copy">
+          In Standard, a familiar word in an unfamiliar shape isn’t scored as
+          a rarer word.
+        </p>
+      )}
+
+      <ul className="common-form__groups">
+        {groups.map((group) => (
+          <li key={group.title} className="common-form__group">
+            <h3 className="common-form__group-title">{group.title}</h3>
+            <p className="common-form__affixes">
+              {/* Commas rather than chips: the measurement row is 29 entries
+                  long, and a grid of 29 pills is a wall where a sentence is
+                  a list you can stop reading.
+
+                  One span each all the same, because a hyphen is a break
+                  opportunity and a phone was splitting "-cked" across two
+                  lines as "-" and "cked" -- an affix broken in half is
+                  unreadable as the thing it is. The comma is inside the
+                  span, so the break lands after it. */}
+              {group.affixes.map((affix, index) => (
+                <span key={affix} className="common-form__affix">
+                  {affix}
+                  {index < group.affixes.length - 1 ? "," : ""}
+                </span>
+              ))}
+            </p>
+            <p className="common-form__example">
+              {group.example.word} → {group.example.base}
+            </p>
+          </li>
+        ))}
+      </ul>
+
+      {/* The way out of a fold a player thinks is wrong. Every one of these
+          is reviewable by hand, and the note is the moment someone has a
+          specific one in mind -- the same argument that puts the word
+          suggestion box inside the word rules panel. */}
+      <p className="modal__copy modal__signoff">
+        {word ? "Think this one got the wrong form?" : "Think a word got the wrong form?"}{" "}
+        <button
+          type="button"
+          className="common-form__link"
+          onClick={() => {
+            onLeave();
+            navigate("feedback");
+          }}
+        >
+          Tell me about it
+        </button>{" "}
+        — every fold is reviewable.
+      </p>
+    </>
   );
 }
