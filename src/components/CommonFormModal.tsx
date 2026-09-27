@@ -12,6 +12,11 @@ interface Props {
   open?: boolean;
   /** The puzzle being played, which decides which affixes folded that day. */
   date?: string;
+  /**
+   * Swapped in for another sheet rather than opened over the game: the
+   * backdrop is already there, so it holds still instead of fading in again.
+   */
+  swap?: boolean;
   onClose: () => void;
 }
 
@@ -28,7 +33,13 @@ interface Props {
  * tables the scoring does: on an archived August puzzle the prefix list is the
  * longer one that puzzle was actually scored with.
  */
-export function CommonFormModal({ word, open = false, date, onClose }: Props) {
+export function CommonFormModal({
+  word,
+  open = false,
+  date,
+  swap = false,
+  onClose,
+}: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const visible = open || word !== undefined;
 
@@ -50,7 +61,10 @@ export function CommonFormModal({ word, open = false, date, onClose }: Props) {
   const groups = foldAffixGroups(date);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      className={swap ? "modal-overlay modal-overlay--swap" : "modal-overlay"}
+      onClick={onClose}
+    >
       <div
         className="modal"
         role="dialog"

@@ -2040,6 +2040,23 @@ h2 {
     transform: translateY(0) scale(1);
   }
 }
+/* One sheet swapped in place of another (How to play <-> Common forms): the
+   backdrop never went away, so it must not fade in again, and the card only
+   cross-fades rather than rising in like a fresh sheet. */
+.modal-overlay--swap {
+  animation: none;
+}
+.modal-overlay--swap > .modal {
+  animation: modal-swap 0.15s var(--ease-standard);
+}
+@keyframes modal-swap {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .modal__header {
   display: flex;
   align-items: center;

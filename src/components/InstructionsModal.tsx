@@ -11,13 +11,26 @@ interface Props {
 
 export function InstructionsModal({ open, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const moreInfoRef = useRef<HTMLButtonElement>(null);
   const [feedback, setFeedback] = useState("");
   const [sent, setSent] = useState(false);
   const [showFolds, setShowFolds] = useState(false);
+  // Whether this sheet has handed off to the explainer since it opened. Once
+  // it has, each swap between the two keeps the backdrop still and only
+  // cross-fades the card: replaying the open animation made closing the
+  // explainer look like the sheet shutting and popping back up.
+  const [swapped, setSwapped] = useState(false);
 
   useEffect(() => {
-    if (open && !showFolds) closeRef.current?.focus();
-  }, [open, showFolds]);
+    if (!open) setSwapped(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || showFolds) return;
+    // Back from the explainer, focus lands where the player left, not at the
+    // top of the sheet.
+    (swapped ? moreInfoRef : closeRef).current?.focus();
+  }, [open, showFolds, swapped]);
 
   useEffect(() => {
     if (!open || showFolds) return;
@@ -37,6 +50,7 @@ export function InstructionsModal({ open, onClose }: Props) {
     return (
       <CommonFormModal
         open
+        swap
         date={todayDateString()}
         onClose={() => setShowFolds(false)}
       />
@@ -53,7 +67,10 @@ export function InstructionsModal({ open, onClose }: Props) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      className={swapped ? "modal-overlay modal-overlay--swap" : "modal-overlay"}
+      onClick={onClose}
+    >
       <div
         className="modal"
         role="dialog"
@@ -93,9 +110,13 @@ export function InstructionsModal({ open, onClose }: Props) {
               <strong>Standard</strong> — words score as their common form:
               “plays” counts as <em>play</em>.{" "}
               <button
+                ref={moreInfoRef}
                 type="button"
                 className="common-form__link"
-                onClick={() => setShowFolds(true)}
+                onClick={() => {
+                  setSwapped(true);
+                  setShowFolds(true);
+                }}
                 aria-label="More info on how common forms are scored"
               >
                 More info

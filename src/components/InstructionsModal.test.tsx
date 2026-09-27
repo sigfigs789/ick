@@ -161,6 +161,11 @@ describe("InstructionsModal", () => {
       expect(
         screen.getByRole("dialog", { name: /how to play wordink/i }),
       ).toBeInTheDocument();
+      // Back where the player left, and without replaying the open animation.
+      expect(
+        screen.getByRole("button", { name: /more info on how common forms/i }),
+      ).toHaveFocus();
+      expect(document.querySelector(".modal-overlay--swap")).not.toBeNull();
     } finally {
       clock.today = null;
     }
