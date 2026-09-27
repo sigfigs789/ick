@@ -12,7 +12,7 @@ import { LeaderboardPage } from "./LeaderboardPage";
 import { hasJoined, joinBoard } from "../game/player";
 import { handleFor } from "../game/handle";
 import { todayDateString } from "../game/date";
-import { MODE_CHOICE_START, currentMode, resetModeCache } from "../game/mode";
+import { MODE_CHOICE_START, resetModeCache, setMode } from "../game/mode";
 import { setDevDateOverride } from "../dev/devDate";
 
 // No names come from the server: the client derives a handle from each player
@@ -1197,46 +1197,27 @@ describe("the leaderboard page on a phone", () => {
   });
 });
 
-describe("choosing which of the two boards to read", () => {
+describe("which of the two boards it reads", () => {
   afterEach(() => {
     setDevDateOverride(null);
     resetModeCache();
   });
 
-  it("offers nothing while there is only one way to play", async () => {
-    // Before MODE_CHOICE_START everybody is on the same rules and there is one
-    // board. A picker naming "Standard" to a player who has never been offered
-    // anything else draws a distinction they do not have.
-    setDevDateOverride("2026-09-21");
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    expect(screen.getByText(/played on the day they drop/i)).toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: /which board to show/i })).toBeNull();
-    expect(screen.queryByText(/each mode has its own board/i)).not.toBeInTheDocument();
-  });
-
-  it("offers both once the modes split, and says what they share", async () => {
+  it("has no picker of its own, and no line about the split", async () => {
+    // The header's switch is the one control for the mode; a second copy on
+    // this page said the same thing twice.
     setDevDateOverride(MODE_CHOICE_START);
     stubFetch();
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    const picker = screen.getByRole("group", { name: /which board to show/i });
-    expect(within(picker).getByRole("button", { name: "Standard" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    expect(within(picker).getByRole("button", { name: "Freeform" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-    // The one thing about these boards that is not obvious from looking at them.
-    expect(screen.getByText(/each mode has its own board/i)).toBeInTheDocument();
+    expect(screen.getByText(/played on the day they drop/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Standard" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Freeform" })).toBeNull();
+    expect(screen.queryByText(/each mode has its own board/i)).not.toBeInTheDocument();
   });
 
-  it("asks the server for the board that was picked", async () => {
+  it("follows the mode switched elsewhere", async () => {
     setDevDateOverride(MODE_CHOICE_START);
     const fetchMock = stubFetch();
     render(<LeaderboardPage />);
@@ -1244,28 +1225,12 @@ describe("choosing which of the two boards to read", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
     expect(lastOf(boardUrls(fetchMock))).toContain("mode=standard");
 
-    const picker = screen.getByRole("group", { name: /which board to show/i });
-    fireEvent.click(within(picker).getByRole("button", { name: "Freeform" }));
+    act(() => setMode("freeform"));
 
     // A different board is a different set of numbers, so all three windows are
     // re-read rather than relabelled.
     await waitFor(() =>
       expect(lastOf(boardUrls(fetchMock))).toContain("mode=freeform"),
     );
-  });
-
-  it("switches the game along with the board", async () => {
-    // The board somebody reads and the rules they play under are one choice: a
-    // page that let them drift apart would have a player studying a board they
-    // cannot get onto.
-    setDevDateOverride(MODE_CHOICE_START);
-    stubFetch();
-    render(<LeaderboardPage />);
-
-    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    const picker = screen.getByRole("group", { name: /which board to show/i });
-    fireEvent.click(within(picker).getByRole("button", { name: "Freeform" }));
-
-    await waitFor(() => expect(currentMode()).toBe("freeform"));
   });
 });
