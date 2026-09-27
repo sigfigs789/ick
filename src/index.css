@@ -583,6 +583,25 @@ h2 {
   font-size: 0.85em;
   opacity: 0.7;
 }
+/* The header's switch, following the reader down a long board or list once
+   the header has scrolled away (see AppHeader). Sticky with no height of its
+   own, so arriving and leaving moves nothing on the page; the pill hangs below
+   the line, at the column's right edge, clear of the notch. Above the board's
+   docked "you" row, below every sheet. */
+.app__mode-dock {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  height: 0;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+.app__mode-dock .app__mode-button {
+  margin-top: calc(env(safe-area-inset-top, 0px) + 0.6rem);
+  pointer-events: auto;
+  box-shadow: var(--dock-shadow);
+}
 /* Identical to the announcement badge it replaces -- see .app__freeform-badge
    for why it hangs out of the button's bottom edge and grows leftwards. */
 .app__mode-badge {
