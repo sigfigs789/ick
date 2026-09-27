@@ -196,7 +196,7 @@ export function InstructionsModal({ open, onClose }: Props) {
                 {closeButton}
               </div>
             <p className="modal__copy">
-              Word<span className="app__wordmark-ink">Ink</span> gives everyone the same daily drop—say, “INK”. Find the rarest
+              Word<span className="app__wordmark-ink">Ink</span> gives everyone the same daily drop—say, “<span className="app__wordmark-ink">INK</span>”. Find the rarest
               English word you can that contains it, like th<strong className="app__wordmark-ink">INK</strong>, wr
               <strong className="app__wordmark-ink">INK</strong>le, or <strong className="app__wordmark-ink">INK</strong>ling.
             </p>
