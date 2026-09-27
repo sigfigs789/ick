@@ -2546,15 +2546,6 @@ export interface FoldAffixGroup {
  * Returns nothing when the fold is off entirely (freeform week), where there is
  * no note to explain in the first place.
  */
-/**
- * Whether `date`'s Standard scoring only ever rescores a word to a form no longer
- * than it (see SHORTER_FORMS_START), so the explainer can say so.
- */
-export function foldsOnlyToShorterForms(date?: string): boolean {
-  const scoring = scoringFor(date);
-  return scoring.folds && scoring.shorterFormsOnly;
-}
-
 export function foldAffixGroups(date?: string): FoldAffixGroup[] {
   const scoring = scoringFor(date);
   if (!scoring.folds) return [];

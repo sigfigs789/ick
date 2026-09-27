@@ -114,16 +114,6 @@ describe("GuessLog", () => {
     expect(screen.queryByText(/scored as its common form/i)).not.toBeInTheDocument();
   });
 
-  it("says in the explainer that a longer form is never the one scored, from the cutover", async () => {
-    const words: AcceptedWord[] = [{ word: "played", rarity: "Common", zipf: 4.79 }];
-    render(<GuessLog acceptedWords={words} date="2026-09-27" />);
-    await userEvent.click(
-      screen.getByRole("button", { name: /why “played” was scored as its common form “play”/i })
-    );
-    const panel = screen.getByRole("dialog", { name: /common forms/i });
-    expect(panel).toHaveTextContent(/“infatuate” isn’t scored as “infatuated”/);
-  });
-
   it("names a common form longer than the word played", async () => {
     // "abaci" scores as "abacus" on the undated system, which still caps a word
     // at a longer form; so do the archived puzzles from 2026-08-24 to 09-26.
@@ -134,10 +124,8 @@ describe("GuessLog", () => {
     await userEvent.click(
       screen.getByRole("button", { name: /why “abaci” was scored as its common form “abacus”/i })
     );
-    // Not "wearing an affix": the common form is the longer of the two.
     const panel = screen.getByRole("dialog", { name: /common forms/i });
-    expect(panel).toHaveTextContent(/forms of the same word/);
-    expect(panel).not.toHaveTextContent(/wearing an affix/);
+    expect(panel).toHaveTextContent(/“abaci” scores as “abacus”, its more common form/);
   });
 
   it("crowns the rarest word as the best one", () => {
