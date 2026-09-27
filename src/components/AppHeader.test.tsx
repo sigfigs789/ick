@@ -332,3 +332,58 @@ describe("the mode switch", () => {
     }
   });
 });
+
+describe("the docked mode switch", () => {
+  /** A stand-in observer the test drives: `report(false)` is the header's
+   * switch leaving the screen. */
+  let report: (visible: boolean) => void = () => {};
+  beforeEach(() => {
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(callback: (entries: { isIntersecting: boolean }[]) => void) {
+          report = (visible) => callback([{ isIntersecting: visible }]);
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    return () => vi.unstubAllGlobals();
+  });
+
+  const switches = () =>
+    screen.queryAllByRole("button", { name: /switch to/i });
+
+  it("follows the reader down the finds once the header's has scrolled away", async () => {
+    const onModeChange = vi.fn();
+    render(
+      <AppHeader
+        route="found-words"
+        onHowToPlay={howToPlay}
+        mode="standard"
+        onModeChange={onModeChange}
+      />,
+    );
+    // One switch while the header's is on screen -- never two at once.
+    expect(switches()).toHaveLength(1);
+    act(() => report(false));
+    expect(switches()).toHaveLength(2);
+    await userEvent.click(switches()[1]);
+    expect(onModeChange).toHaveBeenCalledWith("freeform");
+    act(() => report(true));
+    expect(switches()).toHaveLength(1);
+  });
+
+  it("stays off the puzzle, which fits a screen", () => {
+    render(
+      <AppHeader
+        route="game"
+        onHowToPlay={howToPlay}
+        mode="standard"
+        onModeChange={vi.fn()}
+      />,
+    );
+    act(() => report(false));
+    expect(switches()).toHaveLength(1);
+  });
+});

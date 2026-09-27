@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
 import { navigate, type Route } from "../routes";
 import { ModeToggle } from "./ModeToggle";
@@ -20,6 +20,15 @@ import type { GameMode } from "../game/mode";
  * later.
  */
 const BADGE_VISIBLE_MS = 10_000;
+
+/**
+ * The pages whose content is a long list read against the mode: the boards and
+ * the finds. Scrolled down either of them, the header's switch is a screen
+ * behind the reader, and flipping between the two games to compare the same
+ * list is exactly what those pages are read for -- so there the switch follows
+ * them down (see `docked` below). The puzzle fits a screen and needs no copy.
+ */
+const DOCKED_SWITCH_ROUTES: readonly Route[] = ["leaderboard", "found-words"];
 
 /** One tab: where it goes and what it is called. */
 interface Tab {
@@ -135,6 +144,35 @@ export function AppHeader({
    * through here when it fires.
    */
   const badgeDone = useRef(onBadgeDone);
+
+  /**
+   * Whether the header's switch has scrolled out of view, which is when its
+   * docked copy appears at the top of the column.
+   *
+   * A copy that exists only while the original is off screen, rather than
+   * sticking the header itself: the header is two rows and the wordmark, a
+   * fifth of a phone's height, to keep one pill in reach. And never both at
+   * once, so there is only ever one "Mode" button to find, by eye or by screen
+   * reader.
+   */
+  const modeNav = useRef<HTMLDivElement>(null);
+  const [docked, setDocked] = useState(false);
+  const dockable =
+    Boolean(mode && onModeChange) && DOCKED_SWITCH_ROUTES.includes(route);
+  useEffect(() => {
+    const target = modeNav.current;
+    // No observer (jsdom, very old browsers) is no dock: the header's switch
+    // is still there, a scroll away.
+    if (!dockable || !target || typeof IntersectionObserver !== "function") {
+      setDocked(false);
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) =>
+      setDocked(!entry.isIntersecting),
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [dockable]);
   useEffect(() => {
     badgeDone.current = onBadgeDone;
   });
@@ -176,6 +214,7 @@ export function AppHeader({
   }
 
   return (
+    <>
     <header className="app__header">
       <div className="app__header-bar">
         {/* The wordmark carries the beta chip rather than a banner: the game
@@ -255,7 +294,7 @@ export function AppHeader({
           </div>
         )}
         {mode && onModeChange && (
-          <div className="app__mode-nav">
+          <div className="app__mode-nav" ref={modeNav}>
             <ModeToggle mode={mode} onChange={changeMode} />
             {/* Decoration: the toggle's own accessible name already says both
                 the mode and where pressing goes, so the badge is not announced
@@ -305,5 +344,14 @@ export function AppHeader({
         })}
       </nav>
     </header>
+    {/* Zero-height and sticky, as a direct child of the page column, so the
+        pill rides at the column's own right edge at every width without this
+        file knowing what that width is. */}
+    {dockable && docked && mode && (
+      <div className="app__mode-dock">
+        <ModeToggle mode={mode} onChange={changeMode} />
+      </div>
+    )}
+    </>
   );
 }
