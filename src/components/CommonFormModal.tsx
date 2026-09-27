@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { foldAffixGroups, foldsOnlyToShorterForms } from "../game/dictionary";
+import { foldAffixGroups } from "../game/dictionary";
 import { navigate } from "../routes";
 
 interface Props {
@@ -87,44 +87,13 @@ export function CommonFormModal({ word, open = false, date, onClose }: Props) {
               </span>
               <span className="common-form__word">{word.base}</span>
             </p>
-            {/* A longer common form is not the word "wearing an affix" --
-                "titty" is not "titties" plus anything -- so it gets the
-                sentence that is true of both directions: one word, two forms,
-                scored at the commoner. */}
+            {/* True in both directions: "abaci" folds up to "abacus" on the
+                archived puzzles that still capped at a longer form. */}
             <p className="modal__copy">
-              {word.base.length > word.word.length ? (
-                <>
-                  Scores come from how often a word gets used. “{word.word}” and
-                  “{word.base}” are forms of the same word, and “{word.base}” is
-                  the more common one, so “{word.word}” scores as “{word.base}” —
-                  a familiar word in an unfamiliar shape isn’t a rarer word.
-                </>
-              ) : (
-                <>
-                  Scores come from how often a word gets used. “{word.word}” is
-                  “{word.base}” wearing an affix, so it scores as “{word.base}” —
-                  a familiar word in an unfamiliar shape isn’t a rarer word.
-                </>
-              )}
+              “{word.word}” scores as “{word.base}”, its more common form.
             </p>
-            <p className="modal__copy">
-              These are the affixes the scoring reads through. A word only moves
-              if the form underneath is a real word <em>and</em> a more common
-              one, so a score is only ever pulled toward the common form, never
-              away from it.
-            </p>
-            {/* Dated like the lists: from SHORTER_FORMS_START only. An archived
-                August puzzle did fold "infatuate" onto "infatuated". */}
-            {foldsOnlyToShorterForms(date) && (
-              <p className="modal__copy">
-                A word is never scored as a longer form, however common:
-                “infatuate” isn’t scored as “infatuated”, it scores as itself.
-              </p>
-            )}
           </>
         ) : (
-          /* From How to play the question is the rule, not one word's score,
-             and the lists below make it better than any paragraph could. */
           <p className="modal__copy">
             In Standard, a familiar word in an unfamiliar shape isn’t scored as
             a rarer word.
