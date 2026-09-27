@@ -78,12 +78,6 @@ export function InstructionsModal({ open, onClose }: Props) {
           English word you can that contains it, like th<strong>INK</strong>, wr
           <strong>INK</strong>le, or <strong>INK</strong>ling.
         </p>
-        <p className="modal__rarity-note">
-          Rarity scores reflect how often a word appears across books, news,
-          movies, websites, and social media—not how complex it is. Values are
-          computed using Zipf’s law. The highest ranks are Mythic at 9.5+ and
-          Legend at 9.9+.
-        </p>
         {/* The two modes, once there are two. Short on purpose: this sheet is
             the first thing a new player sees, and the difference between them is
             one sentence each -- whether a word is priced as itself or as the
@@ -113,6 +107,12 @@ export function InstructionsModal({ open, onClose }: Props) {
             </p>
           </div>
         )}
+        <p className="modal__rarity-note">
+          Rarity scores reflect how often a word appears across books, news,
+          movies, websites, and social media—not how complex it is. Values are
+          computed using Zipf’s law. The highest ranks are Mythic at 9.5+ and
+          Legend at 9.9+.
+        </p>
         <form
           className="word-suggestion feedback-form"
           onSubmit={submitFeedback}
