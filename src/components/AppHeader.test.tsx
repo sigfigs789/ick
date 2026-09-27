@@ -75,7 +75,14 @@ describe("the header", () => {
     window.history.pushState(null, "", "/leaderboard");
     render(<Harness />);
     expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
-    expect(screen.getByText("WordInk")).toBeInTheDocument();
+    // "Ink" is its own span, so the name is found by its paragraph's text.
+    expect(
+      screen.getByText(
+        (_, el) =>
+          el?.className === "app__wordmark" &&
+          el.textContent?.startsWith("WordInk") === true,
+      ),
+    ).toBeInTheDocument();
   });
 
   it("asks for the rules from any page", async () => {
