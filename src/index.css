@@ -292,6 +292,11 @@ h2 {
   text-transform: uppercase;
   line-height: 1.1;
 }
+/* The Mythic dot rather than its text colour: the dot is one value in both
+   themes, which is what the app's wordmark uses too. */
+.app__wordmark-ink {
+  color: var(--rarity-mythic-dot);
+}
 /* On a phone the wordmark, the Freeform pill and the "?" stop fitting on one
    line, and a wrapped wordmark drops the beta chip under it. Stepping the type
    down is cheaper than any of the alternatives -- the row is the app's identity

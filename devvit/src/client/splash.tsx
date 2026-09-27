@@ -17,7 +17,9 @@ import { createRoot } from 'react-dom/client';
 export const Splash = () => (
   <div className="splash">
     <img className="splash__mark" src="/icon.png" alt="" width={84} height={84} />
-    <h1 className="splash__name">WordInk</h1>
+    <h1 className="splash__name">
+      Word<span className="splash__name-ink">Ink</span>
+    </h1>
     <p className="splash__tagline">
       A daily game where you find the rarest word you can that contains
       today&rsquo;s letters.

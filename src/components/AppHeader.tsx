@@ -186,10 +186,14 @@ export function AppHeader({
 
             An h1 on the puzzle and a plain word elsewhere. The other two pages
             have a heading of their own that says what they are, and two h1s on
-            one page is a worse answer to "what is this" than either alone. */}
+            one page is a worse answer to "what is this" than either alone.
+
+            "Ink" wears the Mythic red, as it does in the app: it is the half of
+            the name that makes it this game. No space between the spans, so it
+            still reads -- and is announced -- as the one word. */}
         {route === "game" ? (
           <h1 className="app__wordmark">
-            WordInk
+            Word<span className="app__wordmark-ink">Ink</span>
             <span
               className="app__beta"
               title="Still being built — rules and scoring may change."
@@ -199,7 +203,7 @@ export function AppHeader({
           </h1>
         ) : (
           <p className="app__wordmark">
-            WordInk
+            Word<span className="app__wordmark-ink">Ink</span>
             <span
               className="app__beta"
               title="Still being built — rules and scoring may change."
