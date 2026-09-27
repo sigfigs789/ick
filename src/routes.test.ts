@@ -27,6 +27,9 @@ describe("routes", () => {
     expect(routeFor("/freeform-feedback/")).toBe("freeform-feedback");
     expect(routeFor("/fold")).toBe("fold-review");
     expect(routeFor("/fold/")).toBe("fold-review");
+    expect(routeFor("/analytics")).toBe("analytics");
+    expect(routeFor("/analytics/")).toBe("analytics");
+    expect(pathFor("analytics")).toBe("/analytics");
   });
 
   it("treats anything else as the game, rather than a client-rendered 404", () => {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import App from "./App";
 import { trackLeaderboardJoined } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
+import { AnalyticsPage } from "./components/AnalyticsPage";
 import { FeedbackPage } from "./components/FeedbackPage";
 import { FoundWordsPage } from "./components/FoundWordsPage";
 import { FoldReviewPage } from "./components/FoldReviewPage";
@@ -312,6 +313,8 @@ export function Root() {
         <FreeformFeedbackPage />
       ) : route === "fold-review" ? (
         <FoldReviewPage />
+      ) : route === "analytics" ? (
+        <AnalyticsPage />
       ) : route === "transfer" ? (
         <TransferPage />
       ) : (

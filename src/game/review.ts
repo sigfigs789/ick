@@ -138,10 +138,11 @@ function keyQuery(): string {
 }
 
 async function read<T>(
-  list: "suggested-words" | "feedback" | "freeform",
+  list: "suggested-words" | "feedback" | "freeform" | "analytics",
   pick: (body: Record<string, unknown>) => T,
+  extra = "",
 ): Promise<T> {
-  const response = await fetch(`/api/review?list=${list}${keyParam()}`, {
+  const response = await fetch(`/api/review?list=${list}${extra}${keyParam()}`, {
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     cache: "no-store",
   });
@@ -162,6 +163,11 @@ export function fetchFeedback(): Promise<FeedbackNote[]> {
 /** The Freeform week trial: where the vote stands, and what people wrote. */
 export function fetchFreeform(): Promise<FreeformVerdict> {
   return read("freeform", parseFreeform);
+}
+
+/** How the game is doing: play, retention, and what they depend on. */
+export function fetchAnalytics(days: number): Promise<AnalyticsReport> {
+  return read("analytics", (body) => parseAnalytics(body.report), `&days=${days}`);
 }
 
 /**
@@ -292,4 +298,211 @@ export async function setMark(
   if (!response.ok) throw new Error(`review mark ${response.status}`);
   const body = (await response.json()) as Record<string, unknown>;
   return asMark(body.mark);
+}
+
+/** A count of people and how many of them did the thing, which a rate is made of. */
+export interface Rate {
+  cohort: number;
+  returned: number;
+}
+
+/**
+ * The analytics page's one document, as `analytics_report` builds it (see the
+ * 2026-09-27 migration, which is where every one of these numbers is defined).
+ *
+ * The play half -- totals through depth -- counts players off the board's
+ * table, a row per player per live puzzle they banked a word on. The visit half
+ * -- funnel through hours -- counts events over the last `windowDays` days.
+ */
+export interface AnalyticsReport {
+  /** The latest puzzle anybody played; null when nobody has. */
+  asOf: string | null;
+  windowDays: number;
+  totals: {
+    players: number;
+    plays: number;
+    today: number;
+    last7: number;
+    last30: number;
+    avgDaysPerPlayer: number | null;
+    firstDay: string | null;
+  };
+  daily: Array<{
+    date: string;
+    players: number;
+    newPlayers: number;
+    standard: number;
+    freeform: number;
+  }>;
+  retention: { d1: Rate; d7: Rate; d30: Rate; week1: Rate };
+  /** Sunday-started weeks of first play; `active[k]` is who played in week k. */
+  cohorts: Array<{ week: string; size: number; active: number[] }>;
+  /** 0 is Sunday. */
+  weekday: Array<{
+    dow: number;
+    puzzles: number;
+    avgPlayers: number | null;
+    avgNewPlayers: number | null;
+    avgWords: number | null;
+    avgTotal: number | null;
+    nextDay: Rate;
+  }>;
+  modes: Array<{
+    mode: string;
+    players: number;
+    plays: number;
+    avgWords: number | null;
+    avgTotal: number | null;
+    avgTop: number | null;
+    nextDay: Rate;
+  }>;
+  depth: Array<{ bucket: string; players: number }>;
+  funnel: {
+    visits: number;
+    firstVisits: number;
+    engaged: number;
+    completed: number;
+    won: number;
+    shared: number;
+    sharedOnX: number;
+    toFreeform: number;
+    toStandard: number;
+  };
+  sources: Array<{ source: string; visits: number; firstVisits: number; engaged: number }>;
+  sessions: {
+    sessions: number;
+    medianVisibleMs: number | null;
+    medianPlayingMs: number | null;
+    medianFirstGuessMs: number | null;
+    guessedShare: number | null;
+  };
+  /** Visits by hour of day, Mountain Time. */
+  hours: Array<{ hour: number; visits: number }>;
+}
+
+type Json = Record<string, unknown>;
+
+function obj(raw: unknown): Json {
+  return raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Json) : {};
+}
+
+function list(raw: unknown): Json[] {
+  return Array.isArray(raw) ? raw.map(obj) : [];
+}
+
+/** A number, or null where the database had none (an average of nothing). */
+function maybe(raw: unknown): number | null {
+  const n = typeof raw === "string" ? Number(raw) : raw;
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+}
+
+/** A count, which is zero rather than missing when absent. */
+function count(raw: unknown): number {
+  return maybe(raw) ?? 0;
+}
+
+function text(raw: unknown): string | null {
+  return typeof raw === "string" && raw !== "" ? raw : null;
+}
+
+function rate(raw: unknown): Rate {
+  const r = obj(raw);
+  return { cohort: count(r.cohort), returned: count(r.returned) };
+}
+
+/**
+ * The report as a typed value, every part of it optional in the reading: a
+ * section the database left out renders as empty rather than taking the page
+ * down with it.
+ */
+export function parseAnalytics(raw: unknown): AnalyticsReport {
+  const r = obj(raw);
+  const totals = obj(r.totals);
+  const retention = obj(r.retention);
+  const funnel = obj(r.funnel);
+  const sessions = obj(r.sessions);
+  return {
+    asOf: text(r.asOf),
+    windowDays: count(r.windowDays),
+    totals: {
+      players: count(totals.players),
+      plays: count(totals.plays),
+      today: count(totals.today),
+      last7: count(totals.last7),
+      last30: count(totals.last30),
+      avgDaysPerPlayer: maybe(totals.avgDaysPerPlayer),
+      firstDay: text(totals.firstDay),
+    },
+    daily: list(r.daily)
+      .filter((d) => text(d.date))
+      .map((d) => ({
+        date: d.date as string,
+        players: count(d.players),
+        newPlayers: count(d.newPlayers),
+        standard: count(d.standard),
+        freeform: count(d.freeform),
+      })),
+    retention: {
+      d1: rate(retention.d1),
+      d7: rate(retention.d7),
+      d30: rate(retention.d30),
+      week1: rate(retention.week1),
+    },
+    cohorts: list(r.cohorts)
+      .filter((c) => text(c.week))
+      .map((c) => ({
+        week: c.week as string,
+        size: count(c.size),
+        active: Array.isArray(c.active) ? c.active.map(count) : [],
+      })),
+    weekday: list(r.weekday).map((w) => ({
+      dow: count(w.dow),
+      puzzles: count(w.puzzles),
+      avgPlayers: maybe(w.avgPlayers),
+      avgNewPlayers: maybe(w.avgNewPlayers),
+      avgWords: maybe(w.avgWords),
+      avgTotal: maybe(w.avgTotal),
+      nextDay: { cohort: count(w.nextDayCohort), returned: count(w.nextDayReturned) },
+    })),
+    modes: list(r.modes)
+      .filter((m) => text(m.mode))
+      .map((m) => ({
+        mode: m.mode as string,
+        players: count(m.players),
+        plays: count(m.plays),
+        avgWords: maybe(m.avgWords),
+        avgTotal: maybe(m.avgTotal),
+        avgTop: maybe(m.avgTop),
+        nextDay: { cohort: count(m.nextDayCohort), returned: count(m.nextDayReturned) },
+      })),
+    depth: list(r.depth).map((d) => ({
+      bucket: text(d.bucket) ?? "",
+      players: count(d.players),
+    })),
+    funnel: {
+      visits: count(funnel.visits),
+      firstVisits: count(funnel.firstVisits),
+      engaged: count(funnel.engaged),
+      completed: count(funnel.completed),
+      won: count(funnel.won),
+      shared: count(funnel.shared),
+      sharedOnX: count(funnel.sharedOnX),
+      toFreeform: count(funnel.toFreeform),
+      toStandard: count(funnel.toStandard),
+    },
+    sources: list(r.sources).map((s) => ({
+      source: text(s.source) ?? "direct",
+      visits: count(s.visits),
+      firstVisits: count(s.firstVisits),
+      engaged: count(s.engaged),
+    })),
+    sessions: {
+      sessions: count(sessions.sessions),
+      medianVisibleMs: maybe(sessions.medianVisibleMs),
+      medianPlayingMs: maybe(sessions.medianPlayingMs),
+      medianFirstGuessMs: maybe(sessions.medianFirstGuessMs),
+      guessedShare: maybe(sessions.guessedShare),
+    },
+    hours: list(r.hours).map((h) => ({ hour: count(h.hour), visits: count(h.visits) })),
+  };
 }

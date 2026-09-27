@@ -433,4 +433,37 @@ describe("api/review", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect((await handler(get("?list=freeform&key=sesame"))).status).toBe(200);
   });
+  it("passes the analytics report through for the window asked for", async () => {
+    withEnv();
+    const report = { asOf: "2026-09-27", totals: { players: 3 } };
+    const fetchMock = stubFetch(report);
+
+    const response = await handler(get("?list=analytics&days=30"));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ report });
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(String(url)).toMatch(/rpc\/analytics_report$/);
+    expect(JSON.parse(String(init.body))).toEqual({ p_days: 30 });
+  });
+
+  it("refuses an analytics window outside a week to a year", async () => {
+    withEnv();
+    const fetchMock = stubFetch({});
+    for (const days of ["3", "366", "abc", "7.5"]) {
+      const response = await handler(get(`?list=analytics&days=${days}`));
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ ok: false, reason: "bad-days" });
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the analytics report behind the review token when one is set", async () => {
+    withEnv({ ...CONFIGURED, REVIEW_TOKEN: "sesame" });
+    const fetchMock = stubFetch({});
+
+    expect((await handler(get("?list=analytics"))).status).toBe(401);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect((await handler(get("?list=analytics&key=sesame"))).status).toBe(200);
+  });
 });
