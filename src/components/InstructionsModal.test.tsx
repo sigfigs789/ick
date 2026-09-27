@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { MODE_CHOICE_START } from "../game/mode";
+import { MODE_CHOICE_START, resetModeCache, setMode } from "../game/mode";
 import { InstructionsModal } from "./InstructionsModal";
 
 const trackFeedbackSubmitted = vi.hoisted(() => vi.fn());
@@ -161,13 +161,50 @@ describe("InstructionsModal", () => {
       expect(
         screen.getByRole("dialog", { name: /how to play wordink/i }),
       ).toBeInTheDocument();
-      // Back where the player left, and without replaying the open animation.
+      // Back where the player left, in the same sheet rather than a new one.
       expect(
         screen.getByRole("button", { name: /more info on how common forms/i }),
       ).toHaveFocus();
-      expect(document.querySelector(".modal-overlay--swap")).not.toBeNull();
+      expect(document.querySelectorAll(".modal-overlay")).toHaveLength(1);
+
+      // The explainer's back button is one step; its close is all the way.
+      await userEvent.click(
+        screen.getByRole("button", { name: /more info on how common forms/i }),
+      );
+      await userEvent.click(
+        screen.getByRole("button", { name: /back to how to play/i }),
+      );
+      expect(
+        screen.getByRole("dialog", { name: /how to play wordink/i }),
+      ).toBeInTheDocument();
+      expect(onClose).not.toHaveBeenCalled();
+      await userEvent.click(
+        screen.getByRole("button", { name: /more info on how common forms/i }),
+      );
+      await userEvent.click(
+        screen.getByRole("button", { name: /close instructions/i }),
+      );
+      expect(onClose).toHaveBeenCalledTimes(1);
     } finally {
       clock.today = null;
+    }
+  });
+
+  it("lists Standard's common forms from More info even for a Freeform player", async () => {
+    clock.today = MODE_CHOICE_START;
+    localStorage.clear();
+    resetModeCache();
+    setMode("freeform");
+    try {
+      render(<InstructionsModal open onClose={vi.fn()} />);
+      await userEvent.click(
+        screen.getByRole("button", { name: /more info on how common forms/i }),
+      );
+      expect(screen.getByText(/plurals, tenses and participles/i)).toBeInTheDocument();
+    } finally {
+      clock.today = null;
+      localStorage.clear();
+      resetModeCache();
     }
   });
 });

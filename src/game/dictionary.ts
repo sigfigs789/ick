@@ -2544,10 +2544,15 @@ export interface FoldAffixGroup {
  * scripts/manage-extra-word.py is kept in.
  *
  * Returns nothing when the fold is off entirely (freeform week), where there is
- * no note to explain in the first place.
+ * no note to explain in the first place. `mode` defaults to the player's
+ * setting; How to play passes "standard", since its link is about Standard
+ * whichever mode the player is on.
  */
-export function foldAffixGroups(date?: string): FoldAffixGroup[] {
-  const scoring = scoringFor(date);
+export function foldAffixGroups(
+  date?: string,
+  mode?: GameMode,
+): FoldAffixGroup[] {
+  const scoring = scoringFor(date, mode);
   if (!scoring.folds) return [];
 
   const groups: FoldAffixGroup[] = [];
