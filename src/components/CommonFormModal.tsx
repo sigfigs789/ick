@@ -107,27 +107,27 @@ export function CommonFormModal({ word, open = false, date, onClose }: Props) {
                 </>
               )}
             </p>
+            <p className="modal__copy">
+              These are the affixes the scoring reads through. A word only moves
+              if the form underneath is a real word <em>and</em> a more common
+              one, so a score is only ever pulled toward the common form, never
+              away from it.
+            </p>
+            {/* Dated like the lists: from SHORTER_FORMS_START only. An archived
+                August puzzle did fold "infatuate" onto "infatuated". */}
+            {foldsOnlyToShorterForms(date) && (
+              <p className="modal__copy">
+                A word is never scored as a longer form, however common:
+                “infatuate” isn’t scored as “infatuated”, it scores as itself.
+              </p>
+            )}
           </>
         ) : (
+          /* From How to play the question is the rule, not one word's score,
+             and the lists below make it better than any paragraph could. */
           <p className="modal__copy">
-            Scores come from how often a word gets used. In Standard, a word
-            that’s a common word wearing an affix scores as that common word:
-            “plays” scores as “play” — a familiar word in an unfamiliar shape
-            isn’t a rarer word.
-          </p>
-        )}
-        <p className="modal__copy">
-          These are the affixes the scoring reads through. A word only moves if
-          the form underneath is a real word <em>and</em> a more common one, so
-          a score is only ever pulled toward the common form, never away from
-          it.
-        </p>
-        {/* Dated like the lists: from SHORTER_FORMS_START only. An archived
-            August puzzle did fold "infatuate" onto "infatuated". */}
-        {foldsOnlyToShorterForms(date) && (
-          <p className="modal__copy">
-            A word is never scored as a longer form, however common: “infatuate”
-            isn’t scored as “infatuated”, it scores as itself.
+            In Standard, a familiar word in an unfamiliar shape isn’t scored as
+            a rarer word.
           </p>
         )}
 
