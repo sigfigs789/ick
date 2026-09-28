@@ -1,0 +1,181 @@
+name: Build with Claude
+
+# Hand Claude a prompt and get a draft pull request back. Run it by hand
+# (Actions tab -> "Build with Claude" -> Run workflow), or:
+#
+#   gh workflow run claude-build.yml --repo sigfigs789/ick -f prompt="..."
+#
+# Claude Code checks out the chosen branch (normally main), works the prompt
+# with free rein over the repo -- reading, editing, and running npm/python --
+# and verifies with `npm run build`, `npm run lint`, and the relevant tests.
+# Whatever it changed is then opened as ONE draft pull request against that
+# branch, with Claude's own summary of the work as the body. Nothing is pushed
+# to main; the PR is reviewed and merged like any other.
+#
+# Needs one of these repository secrets (Settings -> Secrets -> Actions):
+#   CLAUDE_CODE_OAUTH_TOKEN -- bills a Claude subscription; make one with
+#                              `claude setup-token`
+#   ANTHROPIC_API_KEY       -- bills the Anthropic API
+# Without either the job says so and stops.
+#
+# The PR is opened with the built-in GITHUB_TOKEN, and GitHub does not start
+# other workflows from that token's events -- so "Test" does not run on it on
+# its own. Claude runs the checks here instead; close and reopen the PR (or
+# push to it) to run "Test" as well.
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: What Claude should build or change
+        required: true
+        type: string
+      base:
+        description: Branch to start from and open the PR against
+        required: false
+        default: main
+        type: string
+      model:
+        description: Claude model to use
+        required: false
+        default: claude-opus-5-5
+        type: choice
+        options:
+          - claude-opus-5-5
+          - claude-sonnet-5
+          - claude-fable-5-1
+      max_turns:
+        description: Cap on Claude's agent turns, a guard against runaway runs
+        required: false
+        default: "100"
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+    steps:
+      - name: Check for a Claude credential
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Add a CLAUDE_CODE_OAUTH_TOKEN (from \`claude setup-token\`) or ANTHROPIC_API_KEY repository secret first."
+            exit 1
+          fi
+
+      - name: Check out WordInk
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          python -m pip install wordfreq==3.1.1
+
+      # The workflow owns the branch, commit, and PR, so Claude is told to leave
+      # git alone and write its summary to a file the PR step reads.
+      - name: Run Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # The run's own token, so the action does not need the Claude GitHub
+          # App installed.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: >-
+            --model ${{ inputs.model }}
+            --max-turns ${{ inputs.max_turns }}
+            --allowedTools "Read,Write,Edit,MultiEdit,Glob,Grep,LS,WebFetch,WebSearch,Bash"
+          prompt: |
+            You are working on WordInk (this repository), in a GitHub Actions
+            run started by the maintainer. Read AGENTS.md and the README for
+            context, but ignore AGENTS.md's worktree, branch, commit, push, and
+            PR steps: this workflow already made a fresh checkout and will
+            commit your changes and open the pull request itself.
+
+            Do not run git commit, git push, or gh. Just leave your changes in
+            the working tree.
+
+            Before you finish:
+            - Run `npm run build`, `npm run lint`, and the tests relevant to
+              what you changed (`npx vitest run <paths>`), and fix what fails.
+              Do not run prettier; the repo is not formatted with it.
+            - Write `.claude-pr/title.txt`: one line, an imperative sentence
+              describing the change, under 72 characters.
+            - Write `.claude-pr/body.md`: what you changed and why, how you
+              verified it, and anything the reviewer should check or that you
+              could not finish.
+
+            The task:
+
+            ${{ inputs.prompt }}
+
+      - name: Read Claude's summary
+        id: summary
+        env:
+          PROMPT: ${{ inputs.prompt }}
+        run: |
+          title="$(head -n 1 .claude-pr/title.txt 2>/dev/null || true)"
+          [ -n "$title" ] || title="Claude: $(printf '%s' "$PROMPT" | head -n 1 | cut -c 1-60)"
+          {
+            echo "title=$title"
+            echo "body<<CLAUDE_PR_EOF"
+            cat .claude-pr/body.md 2>/dev/null || echo "Claude left no summary; see the run log."
+            echo
+            echo "---"
+            echo
+            echo "<details><summary>Prompt</summary>"
+            echo
+            printf '%s\n' "$PROMPT"
+            echo
+            echo "</details>"
+            echo
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            echo "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+            echo "CLAUDE_PR_EOF"
+          } >> "$GITHUB_OUTPUT"
+          rm -rf .claude-pr
+
+      - name: Open draft pull request
+        id: pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ inputs.base }}
+          branch: claude/build-${{ github.run_id }}
+          delete-branch: true
+          draft: true
+          commit-message: ${{ steps.summary.outputs.title }}
+          title: ${{ steps.summary.outputs.title }}
+          body: ${{ steps.summary.outputs.body }}
+
+      - name: Report the result
+        env:
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
+        run: |
+          if [ -n "$PR_URL" ]; then
+            echo "Opened $PR_URL" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Claude made no changes, so no pull request was opened." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
