@@ -16,6 +16,8 @@
   --paper: #fafafa;
   --muted: #5d6066;
   --line: #d3d6da;
+  /* The Mythic dot, which colours "Ink" in the wordmark everywhere else. */
+  --mythic: #e5484d;
 }
 
 * {
@@ -50,6 +52,10 @@
   font-size: 1.75rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+
+.splash__name-ink {
+  color: var(--mythic);
 }
 
 .splash__tagline {

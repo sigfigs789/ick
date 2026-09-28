@@ -6,7 +6,8 @@ import { useTheme } from '../theme/useTheme';
 
 interface Props {
   open: boolean;
-  title: string;
+  /** A node, not a string, so the rules sheet can colour the Ink of its name. */
+  title: ReactNode;
   onClose: () => void;
   children: ReactNode;
   /** A confirmation rather than a reading sheet: no scroll, actions supplied by the caller. */
