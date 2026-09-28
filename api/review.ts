@@ -48,10 +48,9 @@
 //   suggested-words  anybody. The word rules sheet points whoever just suggested
 //                    a word at the queue it joined, so a keyless reader is the
 //                    ordinary case. A queue of words is everybody's.
-//   analytics        keyed, on the same terms as freeform. Every number in it
-//                    is an aggregate -- nobody can be read out of it -- but a
-//                    running account of how the game is doing is the
-//                    maintainer's, not a page for the players.
+//   analytics        anybody. Every number in it is an aggregate -- nobody can
+//                    be read out of it -- and the maintainer wants to open it
+//                    without a key. Still linked from nowhere.
 //   freeform         keyed, on the same terms as the feedback below it: the
 //                    notes are the same kind of thing, and the tally beside
 //                    them is a trial's running result, which is not a number to
@@ -324,13 +323,15 @@ async function handleGet(request: Request): Promise<Response> {
     return reply(400, { ok: false, reason: "bad-list" });
   }
 
-  // The queue is linked from the game and answers anybody. The notes are not
-  // linked from anywhere, and a deployment that sets REVIEW_TOKEN is asking for
+  // The queue is linked from the game and answers anybody, and so does the
+  // analytics report, which is aggregates only. The notes are not linked from
+  // anywhere, and a deployment that sets REVIEW_TOKEN is asking for
   // them to stay that way. Unlike the mark, this does not fail closed on an
   // unset token: that would take the feedback page away from a deployment that
   // has always read it without one, which is a thing to opt into rather than to
   // wake up to.
-  if (list !== "suggested-words" && (process.env.REVIEW_TOKEN ?? "") !== "" && !authorised(request)) {
+  const open = list === "suggested-words" || list === "analytics";
+  if (!open && (process.env.REVIEW_TOKEN ?? "") !== "" && !authorised(request)) {
     return reply(401, { ok: false, reason: "unauthorised" });
   }
 

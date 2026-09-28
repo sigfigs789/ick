@@ -27,10 +27,11 @@ import {
  * live puzzle they banked a word on. The visit half is events, over the chosen
  * window: opens, sessions, shares, sources.
  *
- * Unlinked and keyed like the freeform report (see api/review.ts). Nothing on it
+ * Unlinked, but open without a key (see api/review.ts). Nothing on it
  * identifies anybody -- the smallest group any number is taken over is a day's
- * players -- but it is the maintainer's running account of the game, not a page
- * for the people playing it.
+ * players -- so the maintainer can open it without a password, and it stays
+ * out of the game's navigation because it is not a page for the people
+ * playing it.
  */
 
 const WINDOWS = [30, 60, 90] as const;
