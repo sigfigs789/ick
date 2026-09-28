@@ -35,9 +35,10 @@ import { useEffect, useState } from "react";
  * else.
  *
  * `/analytics` is the maintainer's dashboard -- who plays, whether they come
- * back, and what that depends on. Unlinked and keyed like the freeform report,
- * for the same reason: a running account of how the game is doing is not a
- * page for the players (see components/AnalyticsPage.tsx).
+ * back, and what that depends on. Unlinked, since a running account of how the
+ * game is doing is not a page for the players, but not keyed: every number on
+ * it is an aggregate, and it should open without a password (see
+ * components/AnalyticsPage.tsx).
  *
  * `/transfer` is unlinked too, and for a reason of its own rather than an
  * editorial one: it is where a player moves themselves to a new browser, and

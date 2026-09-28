@@ -458,12 +458,10 @@ describe("api/review", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("keeps the analytics report behind the review token when one is set", async () => {
+  it("serves the analytics report without a key even when a review token is set", async () => {
     withEnv({ ...CONFIGURED, REVIEW_TOKEN: "sesame" });
-    const fetchMock = stubFetch({});
+    stubFetch({});
 
-    expect((await handler(get("?list=analytics"))).status).toBe(401);
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect((await handler(get("?list=analytics&key=sesame"))).status).toBe(200);
+    expect((await handler(get("?list=analytics"))).status).toBe(200);
   });
 });
