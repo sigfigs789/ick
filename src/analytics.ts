@@ -12,8 +12,9 @@ import type {
 } from "./game/types";
 import { loadPlayerId } from "./game/player";
 import { modeForDate, type GameMode } from "./game/mode";
-import { currentVisit, type VisitOutcome } from "./game/visits";
-import { markShare, type SessionTimeReport } from "./game/sessionTime";
+import { currentVisit, markSessionEngaged, type VisitOutcome } from "./game/visits";
+import { markLook, markShare, type SessionTimeReport } from "./game/sessionTime";
+import { todayDateString } from "./game/date";
 import { APP_VERSION } from "./version";
 
 /** The scalar property values both Vercel Analytics and /api/events accept. */
@@ -509,13 +510,20 @@ export function trackVisit(outcome: VisitOutcome) {
   send("site_visit", visitProperties(outcome));
 }
 
+/** What first made a visit more than an open and a close. */
+export type EngagedVia = "guess" | "leaderboard" | "found_words";
+
 /**
- * Record that a visit produced an actual submission rather than just an open
- * and close. Carries the same params as `site_visit`, so comparing the two by
- * source or return count gives the share of visits that convert to play.
+ * Record that a visit did something rather than just open and close: submitted
+ * a guess, or opened the leaderboard or the found words. Carries the same params
+ * as `site_visit`, so comparing the two by source or return count gives the
+ * share of visits that engage, plus `via`, the first of those three things the
+ * visit did -- once per session, so a look followed by a guess is one row with
+ * `via: "leaderboard"`. Rows from before looking counted have no `via`, and
+ * every one of them was a guess.
  */
-export function trackVisitEngaged(outcome: VisitOutcome) {
-  send("visit_engaged", visitProperties(outcome));
+export function trackVisitEngaged(outcome: VisitOutcome, via: EngagedVia = "guess") {
+  send("visit_engaged", { ...visitProperties(outcome), via });
 }
 
 /**
@@ -544,6 +552,7 @@ export function trackSessionTime(report: SessionTimeReport) {
     time_to_share_ms: report.timeToShareMs,
     shared: report.shared,
     guessed: report.guessed,
+    looked: report.looked,
     report_number: report.reportNumber,
     ...visitDimensions(),
   });
@@ -558,7 +567,8 @@ export function trackSessionTime(report: SessionTimeReport) {
  * board was looked at, because all three are on screen at once.
  */
 export function trackLeaderboardOpened(from: "header" | "results") {
-  send("leaderboard_opened", { from });
+  send("leaderboard_opened", { from, puzzle_date: todayDateString() });
+  markLooked("leaderboard");
 }
 
 /**
@@ -571,7 +581,23 @@ export function trackLeaderboardOpened(from: "header" | "results") {
  * question only this can answer.
  */
 export function trackFoundWordsOpened(from: "header" | "results") {
-  send("found_words_opened", { from });
+  send("found_words_opened", { from, puzzle_date: todayDateString() });
+  markLooked("found_words");
+}
+
+/**
+ * Opening either page counts as engaging, for the visit and for the session,
+ * so a player who only checks the boards or reads the finds is no longer
+ * indistinguishable from one who opened the tab and left.
+ *
+ * Both open events carry `puzzle_date` -- the live puzzle, which is the one the
+ * boards and the finds are about -- so the report can count, per puzzle, the
+ * players who looked without banking a word (see analytics_report).
+ */
+function markLooked(via: "leaderboard" | "found_words"): void {
+  markLook();
+  const engaged = markSessionEngaged();
+  if (engaged) trackVisitEngaged(engaged, via);
 }
 
 /**

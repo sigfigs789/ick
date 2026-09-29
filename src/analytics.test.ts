@@ -17,6 +17,8 @@ import {
   trackFreeformFeedback,
   trackModeChanged,
   trackSessionTime,
+  trackLeaderboardOpened,
+  trackFoundWordsOpened,
   setReporting,
   isReporting,
 } from "./analytics";
@@ -68,7 +70,8 @@ describe("visit events", () => {
       new_day: true,
     };
     expect(track).toHaveBeenNthCalledWith(1, "site_visit", expected);
-    expect(track).toHaveBeenNthCalledWith(2, "visit_engaged", expected);
+    // Plus what engaged it, which a guess is unless the caller says otherwise.
+    expect(track).toHaveBeenNthCalledWith(2, "visit_engaged", { ...expected, via: "guess" });
   });
 
   it("stamps the running build on both visit events", () => {
@@ -188,6 +191,7 @@ describe("session_time", () => {
       timeToShareMs: 80_000,
       shared: true,
       guessed: true,
+      looked: true,
       reportNumber: 2,
     });
 
@@ -203,6 +207,7 @@ describe("session_time", () => {
       time_to_share_ms: 80_000,
       shared: true,
       guessed: true,
+      looked: true,
       report_number: 2,
       source: "reddit",
       last_source: "reddit",
@@ -226,6 +231,7 @@ describe("session_time", () => {
       timeToShareMs: null,
       shared: false,
       guessed: false,
+      looked: false,
       reportNumber: 1,
     });
 
@@ -241,6 +247,34 @@ describe("session_time", () => {
         shared: false,
       })
     );
+  });
+});
+
+describe("looking at the boards and the finds", () => {
+  it("names the live puzzle on both open events", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 29, 9, 0));
+    try {
+      trackLeaderboardOpened("header");
+      trackFoundWordsOpened("results");
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(track).toHaveBeenCalledWith("leaderboard_opened", { from: "header", puzzle_date: "2026-09-29" });
+    expect(track).toHaveBeenCalledWith("found_words_opened", { from: "results", puzzle_date: "2026-09-29" });
+  });
+
+  it("engages the visit once, on whichever came first", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    recordVisit("");
+
+    trackFoundWordsOpened("header");
+    trackLeaderboardOpened("header");
+
+    const engaged = track.mock.calls.filter(([name]) => name === "visit_engaged");
+    expect(engaged).toHaveLength(1);
+    expect(engaged[0][1]).toMatchObject({ via: "found_words", visit_type: "first" });
   });
 });
 

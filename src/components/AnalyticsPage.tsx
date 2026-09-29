@@ -25,7 +25,10 @@ import {
  * Two halves, and the page says which is which because they count different
  * things. The play half is players, off the board's table: a row per player per
  * live puzzle they banked a word on. The visit half is events, over the chosen
- * window: opens, sessions, shares, sources.
+ * window: opens, sessions, shares, sources. Beside the players sit the ones who
+ * only looked -- opened the leaderboard or the found words on a puzzle and
+ * banked nothing -- counted off the open events, and kept visibly apart
+ * (their own tile, a grey segment) so they never inflate a count of players.
  *
  * Unlinked, but open without a key (see api/review.ts). Nothing on it
  * identifies anybody -- the smallest group any number is taken over is a day's
@@ -91,6 +94,15 @@ function Report({
 
       <div className="analytics__tiles">
         <Tile label="Players today" value={fmt(totals.today)} sub={report.asOf ? `puzzle ${report.asOf}` : undefined} />
+        <Tile
+          label="Looked, didn't play"
+          value={totals.lookersSince ? fmt(totals.lookersToday) : "—"}
+          sub={
+            totals.lookersSince
+              ? `${fmt(totals.lookersLast7)} over 7 puzzles, ${fmt(totals.lookersNeverPlayed)} never played`
+              : "not recorded yet"
+          }
+        />
         <Tile label="Last 7 puzzles" value={fmt(totals.last7)} sub="distinct players" />
         <Tile label="Last 30 puzzles" value={fmt(totals.last30)} sub="distinct players" />
         <Tile
@@ -134,7 +146,9 @@ function Report({
 
       <Section
         title="Players per puzzle"
-        note={`The last ${report.windowDays} puzzles, split by the rules each was played under. Hover a day for new players.`}
+        note={`The last ${report.windowDays} puzzles, split by the rules each was played under, with the players who only opened the leaderboard or the found words on top in grey${
+          totals.lookersSince ? ` (recorded from ${totals.lookersSince})` : ""
+        }. Hover a day for new players.`}
       >
         <Legend />
         <BarChart
@@ -145,8 +159,11 @@ function Report({
             segments: [
               { value: d.standard, series: "standard" },
               { value: d.freeform, series: "freeform" },
+              { value: d.lookers, series: "looked" },
             ],
-            tip: `${d.date} (${SHORT_WEEKDAYS[dowOf(d.date)]}): ${d.players} players, ${d.newPlayers} new`,
+            tip: `${d.date} (${SHORT_WEEKDAYS[dowOf(d.date)]}): ${d.players} players, ${d.newPlayers} new${
+              d.lookers ? `, ${d.lookers} only looked` : ""
+            }`,
           }))}
         />
       </Section>
@@ -260,14 +277,14 @@ function Report({
 
       <Section
         title="From open to share"
-        note={`Events in the last ${report.windowDays} days. Engaged is a visit that submitted a guess.`}
+        note={`Events in the last ${report.windowDays} days. Engaged is a visit that submitted a guess or opened the leaderboard or the found words.`}
       >
         <Funnel report={report} />
       </Section>
 
       <Section
         title="Where visits come from"
-        note="By the source a visitor first arrived through. Engaged is a session that submitted a guess."
+        note="By the source a visitor first arrived through. Engaged is a session that guessed or opened the leaderboard or the found words."
       >
         {report.sources.length === 0 ? (
           <p className="review__status">No visits in this window.</p>
@@ -308,6 +325,15 @@ function Report({
           <Tile
             label="Sessions with a guess"
             value={report.sessions.guessedShare === null ? "—" : pct(report.sessions.guessedShare)}
+          />
+          <Tile
+            label="Only looked"
+            value={report.sessions.lookedOnlyShare === null ? "—" : pct(report.sessions.lookedOnlyShare)}
+            sub={
+              report.sessions.lookedOnlyShare === null
+                ? "not recorded yet"
+                : `${fmt(report.sessions.lookedOnly)} opened the boards or finds, no guess`
+            }
           />
         </div>
       </Section>
@@ -379,6 +405,10 @@ function Legend() {
         <span className="analytics__swatch analytics__swatch--freeform" aria-hidden="true" />
         Freeform
       </li>
+      <li>
+        <span className="analytics__swatch analytics__swatch--looked" aria-hidden="true" />
+        Only looked
+      </li>
     </ul>
   );
 }
@@ -387,7 +417,7 @@ interface Bar {
   key: string;
   /** The axis label under the bar; empty to leave a gap in a dense axis. */
   axis: string;
-  segments: Array<{ value: number; series: "standard" | "freeform" | "single" }>;
+  segments: Array<{ value: number; series: "standard" | "freeform" | "looked" | "single" }>;
   tip: string;
 }
 
@@ -541,7 +571,8 @@ function Funnel({ report }: { report: AnalyticsReport }) {
         );
       })}
       <li className="review__meta">
-        {fmt(f.firstVisits)} first-ever visits; {f.completed ? pct(f.won / f.completed) : "—"} of finished puzzles
+        {fmt(f.firstVisits)} first-ever visits; {fmt(f.engagedByLooking)} engaged visits began on the
+        leaderboard or the found words; {f.completed ? pct(f.won / f.completed) : "—"} of finished puzzles
         won; {fmt(f.sharedOnX)} shares went to X.
       </li>
     </ol>

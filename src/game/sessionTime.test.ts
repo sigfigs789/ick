@@ -3,6 +3,7 @@ import {
   beginSession,
   endSessionSegment,
   markGuess,
+  markLook,
   markShare,
   resumeSession,
 } from "./sessionTime";
@@ -74,6 +75,17 @@ describe("session timing", () => {
     expect(report?.timeToFirstGuessMs).toBe(30_000);
     expect(report?.timeToLastGuessMs).toBe(30_000);
     expect(report?.timeToShareMs).toBe(50_000);
+  });
+
+  it("reports a look at the boards or the finds, guess or no guess", () => {
+    beginSession();
+    expect(endSessionSegment(START + 5_000)?.looked).toBe(false);
+    resumeSession(START + 10_000);
+    markLook();
+    markLook();
+    const report = endSessionSegment(START + 30_000);
+    expect(report?.looked).toBe(true);
+    expect(report?.guessed).toBe(false);
   });
 
   it("reports no first-guess split for a session that never guessed", () => {
