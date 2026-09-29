@@ -4057,12 +4057,15 @@ h2 {
  * The two series colours are the modes, and only the modes -- Standard blue,
  * Freeform orange, validated as a pair for colour-blind separation in both
  * themes. Everything else is one hue: `--viz-single` for single-series bars and
- * a five-step ramp of it for the cohort grid.
+ * a five-step ramp of it for the cohort grid. The one exception is grey,
+ * `--viz-looked`, for players who looked without playing: not a mode, and not
+ * play, so it is drawn as neither.
  */
 :root {
   --viz-standard: #2a78d6;
   --viz-freeform: #eb6834;
   --viz-single: #2a78d6;
+  --viz-looked: #b9c0ca;
   --viz-step-0: #e8f0fb;
   --viz-step-1: #c4d9f4;
   --viz-step-2: #8db6ea;
@@ -4075,6 +4078,7 @@ h2 {
     --viz-standard: #3987e5;
     --viz-freeform: #d95926;
     --viz-single: #3987e5;
+    --viz-looked: #4d5563;
     --viz-step-0: #1a2433;
     --viz-step-1: #1d3657;
     --viz-step-2: #22508a;
@@ -4181,6 +4185,9 @@ h2 {
 .analytics__swatch--freeform {
   background: var(--viz-freeform);
 }
+.analytics__swatch--looked {
+  background: var(--viz-looked);
+}
 .analytics__chart {
   margin: 0 0 0.8rem;
 }
@@ -4239,6 +4246,9 @@ h2 {
 }
 .analytics__seg--freeform {
   background: var(--viz-freeform);
+}
+.analytics__seg--looked {
+  background: var(--viz-looked);
 }
 .analytics__axis {
   position: absolute;

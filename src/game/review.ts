@@ -326,6 +326,16 @@ export interface AnalyticsReport {
     last30: number;
     avgDaysPerPlayer: number | null;
     firstDay: string | null;
+    /**
+     * Players who opened the leaderboard or the found words for a puzzle and
+     * banked no word on it -- on the latest puzzle, and on any of the last 7.
+     */
+    lookersToday: number;
+    lookersLast7: number;
+    /** Looked at some point, and have never banked a word at all. */
+    lookersNeverPlayed: number;
+    /** The first puzzle a look was recorded against; null before any was. */
+    lookersSince: string | null;
   };
   daily: Array<{
     date: string;
@@ -333,6 +343,8 @@ export interface AnalyticsReport {
     newPlayers: number;
     standard: number;
     freeform: number;
+    /** Opened the leaderboard or the found words, and banked no word. */
+    lookers: number;
   }>;
   retention: { d1: Rate; d7: Rate; d30: Rate; week1: Rate };
   /** Sunday-started weeks of first play; `active[k]` is who played in week k. */
@@ -360,7 +372,10 @@ export interface AnalyticsReport {
   funnel: {
     visits: number;
     firstVisits: number;
+    /** Visits that guessed, or opened the leaderboard or the found words. */
     engaged: number;
+    /** Of those, the ones whose first act was opening one of the two pages. */
+    engagedByLooking: number;
     completed: number;
     won: number;
     shared: number;
@@ -375,6 +390,10 @@ export interface AnalyticsReport {
     medianPlayingMs: number | null;
     medianFirstGuessMs: number | null;
     guessedShare: number | null;
+    /** Sessions that opened the leaderboard or the found words and never guessed. */
+    lookedOnly: number;
+    /** That, as a share of the sessions recent enough to report it. */
+    lookedOnlyShare: number | null;
   };
   /** Visits by hour of day, Mountain Time. */
   hours: Array<{ hour: number; visits: number }>;
@@ -432,6 +451,10 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       last30: count(totals.last30),
       avgDaysPerPlayer: maybe(totals.avgDaysPerPlayer),
       firstDay: text(totals.firstDay),
+      lookersToday: count(totals.lookersToday),
+      lookersLast7: count(totals.lookersLast7),
+      lookersNeverPlayed: count(totals.lookersNeverPlayed),
+      lookersSince: text(totals.lookersSince),
     },
     daily: list(r.daily)
       .filter((d) => text(d.date))
@@ -441,6 +464,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
         newPlayers: count(d.newPlayers),
         standard: count(d.standard),
         freeform: count(d.freeform),
+        lookers: count(d.lookers),
       })),
     retention: {
       d1: rate(retention.d1),
@@ -483,6 +507,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       visits: count(funnel.visits),
       firstVisits: count(funnel.firstVisits),
       engaged: count(funnel.engaged),
+      engagedByLooking: count(funnel.engagedByLooking),
       completed: count(funnel.completed),
       won: count(funnel.won),
       shared: count(funnel.shared),
@@ -502,6 +527,8 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       medianPlayingMs: maybe(sessions.medianPlayingMs),
       medianFirstGuessMs: maybe(sessions.medianFirstGuessMs),
       guessedShare: maybe(sessions.guessedShare),
+      lookedOnly: count(sessions.lookedOnly),
+      lookedOnlyShare: maybe(sessions.lookedOnlyShare),
     },
     hours: list(r.hours).map((h) => ({ hour: count(h.hour), visits: count(h.visits) })),
   };

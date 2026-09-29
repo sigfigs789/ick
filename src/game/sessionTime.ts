@@ -50,6 +50,11 @@ interface SessionTimeState {
   guesses: number;
   /** Visible time at the first share of the session, or null if none. */
   shareVisibleMs: number | null;
+  /**
+   * Whether the leaderboard or the found words were opened this session.
+   * Optional because a session begun on an older build has no such field.
+   */
+  looked?: boolean;
   /** Visible time already reported, so each report's segment is the new part. */
   reportedVisibleMs: number;
   /** How many reports this session has already sent. */
@@ -77,6 +82,8 @@ export interface SessionTimeReport {
   timeToShareMs: number | null;
   shared: boolean;
   guessed: boolean;
+  /** Opened the leaderboard or the found words, guess or no guess. */
+  looked: boolean;
   /** 1 for the first report of a session, 2 for the next, and so on. */
   reportNumber: number;
 }
@@ -196,6 +203,19 @@ export function markShare(now: number = Date.now()): void {
 }
 
 /**
+ * Record that the player opened the leaderboard or the found words. Kept apart
+ * from the guess marks because it is the other way a session can be more than
+ * an open and a close: somebody who checks the boards or reads the day's finds
+ * has come for the game even if they never type a word, and `looked` without
+ * `guessed` is exactly that session.
+ */
+export function markLook(): void {
+  const state = loadState();
+  if (!state || state.looked) return;
+  saveState({ ...state, looked: true });
+}
+
+/**
  * Close the current visible stretch and return what to report, or null when
  * there is nothing worth sending (no session, or less than a second of new time
  * since the last report). Called when the page hides or unloads.
@@ -232,6 +252,7 @@ export function endSessionSegment(now: number = Date.now()): SessionTimeReport |
     timeToShareMs: share === null ? null : Math.round(share),
     shared: share !== null,
     guessed: firstGuess !== null,
+    looked: state.looked === true,
     reportNumber: state.reports + 1,
   };
 }
