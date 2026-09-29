@@ -5,6 +5,13 @@ import { AnalyticsPage } from "./AnalyticsPage";
 import { findHighlights } from "./analyticsFormat";
 import { parseAnalytics } from "../game/review";
 
+/** The viewer's calendar date, which the page's "today" tiles are read off. */
+const clock = vi.hoisted(() => ({ today: "2026-09-27" }));
+vi.mock("../game/date", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../game/date")>()),
+  todayDateString: () => clock.today,
+}));
+
 const weekday = (dow: number, avgPlayers: number, cohort: number, returned: number) => ({
   dow,
   puzzles: 4,
@@ -146,6 +153,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  clock.today = "2026-09-27";
 });
 
 describe("AnalyticsPage", () => {
@@ -160,6 +168,30 @@ describe("AnalyticsPage", () => {
     expect(within(nextDay as HTMLElement).getByText("40%")).toBeInTheDocument();
     // Day 30 has nobody old enough yet, and says so rather than printing 0%.
     expect(screen.getByText("not enough days yet")).toBeInTheDocument();
+  });
+
+  it("counts today by the viewer's calendar date, not the latest puzzle played", async () => {
+    // Behind the latest puzzle: somebody further east is already on the 27th.
+    clock.today = "2026-09-26";
+    stubFetch({ ...REPORT, chat: CHAT });
+    const { unmount } = render(<AnalyticsPage />);
+    let tile = (await screen.findByText("Players today")).closest(".analytics__tile")!;
+    expect(within(tile as HTMLElement).getByText("50")).toBeInTheDocument();
+    expect(within(tile as HTMLElement).getByText("puzzle 2026-09-26")).toBeInTheDocument();
+    const looked = screen.getByText("Looked, didn't play").closest(".analytics__tile")!;
+    expect(within(looked as HTMLElement).getByText("0")).toBeInTheDocument();
+    const chat = screen.getByText("Chat viewers today").closest(".analytics__tile")!;
+    expect(within(chat as HTMLElement).getByText("14")).toBeInTheDocument();
+    expect(within(chat as HTMLElement).getByText("3 sent, 31 messages")).toBeInTheDocument();
+    unmount();
+
+    // Ahead of it: the viewer's day has begun and nobody is on it yet.
+    clock.today = "2026-09-28";
+    stubFetch();
+    render(<AnalyticsPage />);
+    tile = (await screen.findByText("Players today")).closest(".analytics__tile")!;
+    expect(within(tile as HTMLElement).getByText("0")).toBeInTheDocument();
+    expect(within(tile as HTMLElement).getByText("puzzle 2026-09-28")).toBeInTheDocument();
   });
 
   it("counts the players who looked without playing", async () => {
