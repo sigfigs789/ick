@@ -23,7 +23,7 @@
 // There are no accounts, so this is not a defence against somebody determined
 // to be a nuisance: a new browser is a new id. The profanity check and the rate
 // limit take care of the ordinary cases; `hidden = true` on the row takes care
-// of the rest (see the 20260929 migration).
+// of the rest (see the 20260929010000 migration).
 
 import { chatProblem, normaliseMessage } from "../src/game/chat";
 import { handleFor } from "../src/game/handle";
