@@ -1,0 +1,138 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { handleFor } from "../src/game/handle";
+import handler from "./chat";
+
+const CONFIGURED = {
+  SUPABASE_URL: "https://project.supabase.co",
+  SUPABASE_SERVICE_ROLE_KEY: "service-key",
+};
+const PLAYER = "0b3c6c1e-1d0a-4c55-9b5e-2f3a4b5c6d7e";
+
+function withEnv(env: Record<string, string | undefined> = CONFIGURED) {
+  vi.stubGlobal("process", { env });
+}
+
+function stubFetch(reply: unknown = [], status = 200) {
+  const fetchMock = vi.fn(async () =>
+    status === 200
+      ? new Response(JSON.stringify(reply), { status: 200 })
+      : new Response("boom", { status }),
+  );
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+function rpcCall(fetchMock: ReturnType<typeof stubFetch>) {
+  const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+  return { url, args: JSON.parse(String(init.body)) as Record<string, unknown> };
+}
+
+function post(body: unknown, origin?: string): Request {
+  return new Request("https://wordink.app/api/chat", {
+    method: "POST",
+    headers: origin ? { origin } : {},
+    body: typeof body === "string" ? body : JSON.stringify(body),
+  });
+}
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("api/chat GET", () => {
+  it("reads the room after the given id, without player ids", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      { id: "7", handle: "StormyFox47", body: "hi", created_at: "2026-09-29T10:00:00Z" },
+    ]);
+    const response = await handler(new Request("https://wordink.app/api/chat?after=6"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toContain("s-maxage=2");
+    expect(await response.json()).toEqual({
+      messages: [{ id: 7, handle: "StormyFox47", body: "hi", at: "2026-09-29T10:00:00Z" }],
+    });
+    const call = rpcCall(fetchMock);
+    expect(call.url).toContain("/rpc/chat_recent");
+    expect(call.args).toEqual({ p_after: 6, p_limit: 50 });
+  });
+
+  it("refuses a malformed cursor", async () => {
+    withEnv();
+    stubFetch();
+    const response = await handler(new Request("https://wordink.app/api/chat?after=abc"));
+    expect(response.status).toBe(400);
+  });
+
+  it("says so when the database fails", async () => {
+    withEnv();
+    stubFetch(null, 500);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = await handler(new Request("https://wordink.app/api/chat"));
+    expect(response.status).toBe(502);
+  });
+
+  it("answers 503 without credentials", async () => {
+    withEnv({});
+    const response = await handler(new Request("https://wordink.app/api/chat"));
+    expect(response.status).toBe(503);
+  });
+});
+
+describe("api/chat POST", () => {
+  it("posts under the handle computed from the id", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      { status: "ok", id: 8, handle: handleFor(PLAYER), body: "found it", created_at: "2026-09-29T10:01:00Z" },
+    ]);
+    const response = await handler(post({ playerId: PLAYER, body: "  found \n it " }));
+    expect(response.status).toBe(201);
+    const data = (await response.json()) as { message: Record<string, unknown> };
+    expect(data.message).toEqual({
+      id: 8,
+      handle: handleFor(PLAYER),
+      body: "found it",
+      at: "2026-09-29T10:01:00Z",
+    });
+    expect(JSON.stringify(data)).not.toContain(PLAYER);
+    const call = rpcCall(fetchMock);
+    expect(call.url).toContain("/rpc/chat_post");
+    expect(call.args).toEqual({ p_player: PLAYER, p_handle: handleFor(PLAYER), p_body: "found it" });
+  });
+
+  it("refuses profanity before touching the database", async () => {
+    withEnv();
+    const fetchMock = stubFetch();
+    const response = await handler(post({ playerId: PLAYER, body: "oh sh1t" }));
+    expect(response.status).toBe(422);
+    expect(await response.json()).toEqual({ ok: false, reason: "profane" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("passes the database's rate limit through as 429", async () => {
+    withEnv();
+    stubFetch([{ status: "rate-limited", id: null, handle: null, body: null, created_at: null }]);
+    const response = await handler(post({ playerId: PLAYER, body: "again" }));
+    expect(response.status).toBe(429);
+  });
+
+  it("refuses bad players, empty bodies and junk", async () => {
+    withEnv();
+    stubFetch();
+    expect((await handler(post({ playerId: "no spaces", body: "hi" }))).status).toBe(400);
+    expect((await handler(post({ playerId: PLAYER, body: 5 }))).status).toBe(400);
+    expect((await handler(post({ playerId: PLAYER, body: "   " }))).status).toBe(422);
+    expect((await handler(post("not json"))).status).toBe(400);
+  });
+
+  it("refuses cross-origin posts", async () => {
+    withEnv();
+    stubFetch();
+    const response = await handler(post({ playerId: PLAYER, body: "hi" }, "https://evil.example"));
+    expect(response.status).toBe(403);
+  });
+
+  it("rejects other methods", async () => {
+    const response = await handler(new Request("https://wordink.app/api/chat", { method: "DELETE" }));
+    expect(response.status).toBe(405);
+  });
+});

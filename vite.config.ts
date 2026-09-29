@@ -52,6 +52,7 @@ const DEV_API_ROUTES: Record<string, string> = {
   '/api/validate': '/api/validate.ts',
   '/api/events': '/api/events.ts',
   '/api/leaderboard': '/api/leaderboard.ts',
+  '/api/chat': '/api/chat.ts',
 }
 
 /** Collect a request body, which /api/events needs and /api/validate ignores. */

@@ -4333,3 +4333,187 @@ h2 {
   opacity: 0.55;
   font-style: italic;
 }
+
+/* The chat room (components/ChatBubble.tsx): a round button in the bottom-right
+   corner of every page, and the panel it opens just above it. Under the modals
+   (z-index 10) so a sheet opened from the header still covers it, and lifted
+   clear of the dev date bar where that is showing. */
+.chat {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+.chat > * {
+  pointer-events: auto;
+}
+.chat--lifted {
+  bottom: max(3.25rem, env(safe-area-inset-bottom));
+}
+.chat__toggle {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-fg);
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  transition: background 0.15s var(--ease-standard), transform 0.15s var(--ease-standard);
+}
+.chat__toggle:hover {
+  background: var(--accent-hover);
+}
+.chat__toggle:active {
+  transform: scale(0.94);
+}
+.chat__toggle:focus-visible,
+.chat__close:focus-visible,
+.chat__send:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.chat__panel {
+  display: flex;
+  flex-direction: column;
+  width: min(22rem, calc(100vw - 2rem));
+  height: min(28rem, calc(100dvh - 7rem));
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  animation: modal-in 0.2s var(--ease-standard);
+}
+.chat__header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.7rem 0.75rem 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.chat__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.chat__self {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg-faint);
+  font-size: 0.8rem;
+}
+.chat__close {
+  align-self: center;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.chat__close:hover {
+  background: var(--bg-inset);
+  color: var(--fg);
+}
+.chat__list {
+  flex: 1;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.chat__empty {
+  margin: auto;
+  color: var(--fg-faint);
+  font-size: 0.9rem;
+  text-align: center;
+}
+.chat__message {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  overflow-wrap: anywhere;
+}
+.chat__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+}
+.chat__handle {
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+.chat__message--own .chat__handle {
+  color: var(--fg);
+}
+.chat__time {
+  color: var(--fg-faint);
+  font-variant-numeric: tabular-nums;
+}
+.chat__body {
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+.chat__notice {
+  margin: 0;
+  padding: 0.45rem 1rem;
+  background: var(--caution-bg);
+  color: var(--caution-fg);
+  font-size: 0.85rem;
+}
+.chat__form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-top: 1px solid var(--border);
+}
+.chat__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0.6rem;
+  background: var(--bg);
+  color: var(--fg);
+  /* 16px keeps iOS Safari from zooming the page when the field is focused. */
+  font: inherit;
+  font-size: 1rem;
+}
+.chat__input:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+.chat__send {
+  padding: 0.5rem 0.9rem;
+  border: none;
+  border-radius: 0.6rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.chat__send:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

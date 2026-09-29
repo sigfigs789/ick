@@ -3,6 +3,7 @@ import App from "./App";
 import { trackLeaderboardJoined } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
 import { AnalyticsPage } from "./components/AnalyticsPage";
+import { ChatBubble } from "./components/ChatBubble";
 import { FeedbackPage } from "./components/FeedbackPage";
 import { FoundWordsPage } from "./components/FoundWordsPage";
 import { FoldReviewPage } from "./components/FoldReviewPage";
@@ -333,6 +334,8 @@ export function Root() {
       {/* Development and preview builds, or production opened with `?dev=1`
           (see src/dev/devTools.ts). */}
       {DEV_TOOLS && <DevDateBar />}
+      {/* The chat room's corner button, on every page. */}
+      <ChatBubble lifted={DEV_TOOLS} />
       <InstructionsModal
         open={showInstructions}
         onClose={() => {
