@@ -397,6 +397,67 @@ export interface AnalyticsReport {
   };
   /** Visits by hour of day, Mountain Time. */
   hours: Array<{ hour: number; visits: number }>;
+  /**
+   * The chat room, from `chat_report` (the 2026-09-30 migration). Null when that
+   * read failed or predates it -- the page then leaves the section out rather
+   * than showing zeros that would read as "nobody chats".
+   */
+  chat: ChatReport | null;
+}
+
+/** Chat numbers over the same window of puzzles as the rest of the report. */
+export interface ChatReport {
+  totals: {
+    /** Times the panel was opened. */
+    opens: number;
+    /** Distinct players who opened it. */
+    viewers: number;
+    /** Distinct players who sent at least one message. */
+    senders: number;
+    messages: number;
+    /** Sends the room refused: the filter, the rate limit, or a failure. */
+    blocked: number;
+    blockedProfane: number;
+    blockedRateLimited: number;
+    viewersToday: number;
+    sendersToday: number;
+    messagesToday: number;
+    viewersLast7: number;
+    sendersLast7: number;
+    /** Viewers who opened the chat on more than one puzzle. */
+    returningViewers: number;
+    /** Of the players who opened it, the share who ever sent. */
+    senderShare: number | null;
+    avgOpensPerViewer: number | null;
+    avgMessageLength: number | null;
+    /** The first puzzle a chat open was recorded against. */
+    since: string | null;
+  };
+  time: {
+    views: number;
+    medianViewMs: number | null;
+    avgViewMs: number | null;
+    totalMs: number | null;
+    /** Median time open, over the views that sent something. */
+    medianSendingViewMs: number | null;
+    sendingViewShare: number | null;
+  };
+  daily: Array<{
+    date: string;
+    viewers: number;
+    senders: number;
+    opens: number;
+    messages: number;
+    totalMs: number;
+  }>;
+  /** The room itself, all time, off the chat_messages table. */
+  room: {
+    messages: number;
+    hidden: number;
+    senders: number;
+    last24h: number;
+    lastAt: string | null;
+  };
 }
 
 type Json = Record<string, unknown>;
@@ -531,5 +592,59 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       lookedOnlyShare: maybe(sessions.lookedOnlyShare),
     },
     hours: list(r.hours).map((h) => ({ hour: count(h.hour), visits: count(h.visits) })),
+    chat: r.chat && typeof r.chat === "object" ? parseChat(r.chat) : null,
+  };
+}
+
+function parseChat(raw: unknown): ChatReport {
+  const c = obj(raw);
+  const t = obj(c.totals);
+  const time = obj(c.time);
+  const room = obj(c.room);
+  return {
+    totals: {
+      opens: count(t.opens),
+      viewers: count(t.viewers),
+      senders: count(t.senders),
+      messages: count(t.messages),
+      blocked: count(t.blocked),
+      blockedProfane: count(t.blockedProfane),
+      blockedRateLimited: count(t.blockedRateLimited),
+      viewersToday: count(t.viewersToday),
+      sendersToday: count(t.sendersToday),
+      messagesToday: count(t.messagesToday),
+      viewersLast7: count(t.viewersLast7),
+      sendersLast7: count(t.sendersLast7),
+      returningViewers: count(t.returningViewers),
+      senderShare: maybe(t.senderShare),
+      avgOpensPerViewer: maybe(t.avgOpensPerViewer),
+      avgMessageLength: maybe(t.avgMessageLength),
+      since: text(t.since),
+    },
+    time: {
+      views: count(time.views),
+      medianViewMs: maybe(time.medianViewMs),
+      avgViewMs: maybe(time.avgViewMs),
+      totalMs: maybe(time.totalMs),
+      medianSendingViewMs: maybe(time.medianSendingViewMs),
+      sendingViewShare: maybe(time.sendingViewShare),
+    },
+    daily: list(c.daily)
+      .filter((d) => text(d.date))
+      .map((d) => ({
+        date: d.date as string,
+        viewers: count(d.viewers),
+        senders: count(d.senders),
+        opens: count(d.opens),
+        messages: count(d.messages),
+        totalMs: count(d.totalMs),
+      })),
+    room: {
+      messages: count(room.messages),
+      hidden: count(room.hidden),
+      senders: count(room.senders),
+      last24h: count(room.last24h),
+      lastAt: text(room.lastAt),
+    },
   };
 }

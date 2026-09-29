@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as analytics from "../analytics";
 import { handleFor } from "../game/handle";
 import { PLAYER_KEY } from "../game/player";
 import { ChatBubble } from "./ChatBubble";
@@ -12,8 +13,18 @@ function json(body: unknown, status = 200) {
 }
 
 beforeEach(() => {
+  // Here rather than after: a test that ends with the panel open reports its
+  // time when the testing library unmounts it, which is after afterEach.
+  vi.clearAllMocks();
   localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: PLAYER }));
 });
+
+vi.mock("../analytics", () => ({
+  trackChatOpened: vi.fn(),
+  trackChatTime: vi.fn(),
+  trackChatMessageSent: vi.fn(),
+  trackChatMessageBlocked: vi.fn(),
+}));
 
 afterEach(() => {
   localStorage.clear();
@@ -84,6 +95,39 @@ describe("ChatBubble", () => {
     });
     await waitFor(() => expect(screen.getByText("second")).toBeInTheDocument());
     expect(fetchMock).toHaveBeenLastCalledWith("/api/chat?after=1");
+    vi.useRealTimers();
+  });
+
+  it("reports the view, each send, each block, and the time open on close", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === "POST"
+        ? json({ ok: true, message: { id: 5, handle: handleFor(PLAYER), body: "hey all", at: "2026-09-29T10:01:00Z" } }, 201)
+        : json({ messages: [] }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ChatBubble />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    expect(analytics.trackChatOpened).toHaveBeenCalledTimes(1);
+    const view = vi.mocked(analytics.trackChatOpened).mock.calls[0][0];
+
+    await userEvent.type(screen.getByLabelText("Message"), "hey all{Enter}");
+    await screen.findByText("hey all");
+    expect(analytics.trackChatMessageSent).toHaveBeenCalledWith(view, 7);
+
+    await userEvent.type(screen.getByLabelText("Message"), "sh1t{Enter}");
+    expect(analytics.trackChatMessageBlocked).toHaveBeenCalledWith(view, "profane");
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+    await userEvent.click(screen.getByRole("button", { name: "Close chat", expanded: true }));
+    expect(analytics.trackChatTime).toHaveBeenCalledTimes(1);
+    const report = vi.mocked(analytics.trackChatTime).mock.calls[0][0];
+    expect(report).toMatchObject({ viewId: view, sent: 1, closed: true, reportNumber: 1 });
+    expect(report.visibleMs).toBeGreaterThanOrEqual(5000);
+    expect(report.segmentMs).toBe(report.visibleMs);
     vi.useRealTimers();
   });
 });

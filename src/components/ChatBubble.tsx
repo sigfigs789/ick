@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  trackChatMessageBlocked,
+  trackChatMessageSent,
+  trackChatOpened,
+  trackChatTime,
+} from "../analytics";
 import { CHAT_MAX_LENGTH, chatProblem, normaliseMessage, type ChatProblem } from "../game/chat";
 import { handleFor } from "../game/handle";
 import { loadPlayerId } from "../game/player";
@@ -12,6 +18,18 @@ import { loadPlayerId } from "../game/player";
  * Nothing is polled while the bubble is closed or the tab is hidden.
  */
 export const CHAT_POLL_MS = 4000;
+
+/** A hide/show flicker is not time spent; see game/sessionTime.ts. */
+const MIN_SEGMENT_MS = 1000;
+/** A stretch the browser never ended (a slept laptop) is clamped, not counted whole. */
+const MAX_SEGMENT_MS = 30 * 60 * 1000;
+
+function newViewId(): string {
+  const c = globalThis.crypto;
+  return c && typeof c.randomUUID === "function"
+    ? c.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
 
 export interface ChatMessage {
   id: number;
@@ -65,6 +83,10 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const listRef = useRef<HTMLOListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  /** The current opening of the panel, which every chat event is tagged with. */
+  const viewId = useRef("");
+  /** Messages this view has put in the room, for its time reports. */
+  const sentThisView = useRef(0);
 
   const playerId = loadPlayerId();
   const ownHandle = playerId ? handleFor(playerId) : null;
@@ -114,6 +136,64 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     };
   }, [open, poll]);
 
+  // Time with the panel open, counted while the page is visible and reported the
+  // way session_time is: on every hide as well as on close, because a phone
+  // backgrounds a tab far more often than anybody closes a panel. Each report
+  // carries the running total and the part that is new since the last one.
+  useEffect(() => {
+    if (!open) return;
+    const view = newViewId();
+    viewId.current = view;
+    sentThisView.current = 0;
+    trackChatOpened(view);
+
+    let visibleMs = 0;
+    let reportedMs = 0;
+    let reports = 0;
+    let resumedAt: number | null = document.visibilityState === "hidden" ? null : Date.now();
+
+    const bank = () => {
+      if (resumedAt === null) return;
+      visibleMs += Math.min(Date.now() - resumedAt, MAX_SEGMENT_MS);
+      resumedAt = null;
+    };
+    const report = (closed: boolean) => {
+      const segmentMs = visibleMs - reportedMs;
+      if (segmentMs < MIN_SEGMENT_MS && !(closed && reports === 0 && visibleMs > 0)) return;
+      reports += 1;
+      reportedMs = visibleMs;
+      trackChatTime({
+        viewId: view,
+        visibleMs,
+        segmentMs,
+        sent: sentThisView.current,
+        closed,
+        reportNumber: reports,
+      });
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        bank();
+        report(false);
+      } else if (resumedAt === null) {
+        resumedAt = Date.now();
+      }
+    };
+    const onPageHide = () => {
+      bank();
+      report(false);
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pagehide", onPageHide);
+      bank();
+      report(true);
+    };
+  }, [open]);
+
   // Keep the newest message in view as the room grows.
   useEffect(() => {
     const list = listRef.current;
@@ -136,6 +216,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     const problem = chatProblem(body);
     if (problem) {
       setNotice(PROBLEM_TEXT[problem]);
+      if (problem !== "empty") trackChatMessageBlocked(viewId.current, problem);
       return;
     }
     setSending(true);
@@ -153,13 +234,18 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
       if (response.ok && data.message) {
         show([data.message]);
         setDraft("");
+        sentThisView.current += 1;
+        trackChatMessageSent(viewId.current, body.length);
       } else if (data.reason === "profane" || data.reason === "too-long" || data.reason === "rate-limited") {
         setNotice(PROBLEM_TEXT[data.reason]);
+        trackChatMessageBlocked(viewId.current, data.reason);
       } else {
         setNotice(PROBLEM_TEXT.unavailable);
+        trackChatMessageBlocked(viewId.current, "unavailable");
       }
     } catch {
       setNotice(PROBLEM_TEXT.unavailable);
+      trackChatMessageBlocked(viewId.current, "unavailable");
     } finally {
       setSending(false);
       inputRef.current?.focus();

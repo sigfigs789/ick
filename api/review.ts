@@ -366,10 +366,19 @@ async function handleGet(request: Request): Promise<Response> {
       // Passed through as the database built it. The function is the one place
       // these numbers are defined (see the 2026-09-27 migration), and a second
       // copy of every field name here would be a second place for them to drift.
-      const report = await rpc<Record<string, unknown> | null>("analytics_report", {
-        p_days: days,
-      });
-      return reply(200, { report: report ?? {} });
+      //
+      // The chat room's numbers are their own function (see the 20260930010000
+      // migration), read alongside and set on the report as `chat`. A failure
+      // there costs only the chat section: the page renders without it rather
+      // than losing every other number over one it can do without.
+      const [report, chat] = await Promise.all([
+        rpc<Record<string, unknown> | null>("analytics_report", { p_days: days }),
+        rpc<Record<string, unknown> | null>("chat_report", { p_days: days }).catch((error: unknown) => {
+          console.error("[review] chat_report failed:", error instanceof Error ? error.message : error);
+          return null;
+        }),
+      ]);
+      return reply(200, { report: { ...(report ?? {}), chat } });
     }
     if (list === "freeform") {
       // Two reads rather than one, because the votes and the notes are two

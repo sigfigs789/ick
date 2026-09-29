@@ -4185,6 +4185,9 @@ h2 {
 .analytics__swatch--freeform {
   background: var(--viz-freeform);
 }
+.analytics__swatch--single {
+  background: var(--viz-single);
+}
 .analytics__swatch--looked {
   background: var(--viz-looked);
 }

@@ -436,15 +436,41 @@ describe("api/review", () => {
   it("passes the analytics report through for the window asked for", async () => {
     withEnv();
     const report = { asOf: "2026-09-27", totals: { players: 3 } };
-    const fetchMock = stubFetch(report);
+    const chat = { totals: { viewers: 2 } };
+    const fetchMock = vi.fn(async (url: string) =>
+      new Response(JSON.stringify(String(url).endsWith("/chat_report") ? chat : report), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
 
     const response = await handler(get("?list=analytics&days=30"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ report });
-    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(String(url)).toMatch(/rpc\/analytics_report$/);
-    expect(JSON.parse(String(init.body))).toEqual({ p_days: 30 });
+    expect(await response.json()).toEqual({ report: { ...report, chat } });
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(calls.map(([url]) => String(url).split("/").pop()).sort()).toEqual([
+      "analytics_report",
+      "chat_report",
+    ]);
+    for (const [, init] of calls) expect(JSON.parse(String(init.body))).toEqual({ p_days: 30 });
+  });
+
+  it("keeps the rest of the report when the chat numbers fail", async () => {
+    withEnv();
+    const report = { asOf: "2026-09-27", totals: { players: 3 } };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        String(url).endsWith("/chat_report")
+          ? new Response("boom", { status: 500 })
+          : new Response(JSON.stringify(report), { status: 200 }),
+      ),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const response = await handler(get("?list=analytics"));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ report: { ...report, chat: null } });
   });
 
   it("refuses an analytics window outside a week to a year", async () => {
