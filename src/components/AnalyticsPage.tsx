@@ -1,7 +1,7 @@
 import { useCallback, useState, type ReactNode } from "react";
 import { ReviewPage } from "./ReviewPage";
 import { useReviewList } from "./reviewList";
-import { fetchAnalytics, type AnalyticsReport, type Rate } from "../game/review";
+import { fetchAnalytics, type AnalyticsReport, type ChatReport, type Rate } from "../game/review";
 import {
   MODE_NAMES,
   WEEKDAYS,
@@ -338,6 +338,8 @@ function Report({
         </div>
       </Section>
 
+      {report.chat && <ChatSection chat={report.chat} windowDays={report.windowDays} />}
+
       <Section title="When people open it" note="Visits by hour of day, Mountain Time.">
         <BarChart
           label="Visits by hour"
@@ -351,6 +353,107 @@ function Report({
         />
       </Section>
     </div>
+  );
+}
+
+/**
+ * The chat room: who opens it, who talks, and how long they stay. Viewers and
+ * senders are distinct players per puzzle, off the bubble's events; the room's
+ * all-time line underneath is off the messages table itself, which is the one
+ * that knows what was actually posted and taken down.
+ */
+function ChatSection({ chat, windowDays }: { chat: ChatReport; windowDays: number }) {
+  const { totals, time, room } = chat;
+  const roomLine = `${fmt(room.messages)} messages in the room all time, from ${fmt(room.senders)} players, ${fmt(
+    room.last24h,
+  )} in the last 24 hours${room.hidden ? `, ${fmt(room.hidden)} hidden` : ""}.`;
+
+  if (!totals.since) {
+    return (
+      <Section title="Chat" note="Opens, messages and time in the chat room.">
+        <p className="review__status">No chat opens recorded yet.</p>
+        <p className="review__meta">{roomLine}</p>
+      </Section>
+    );
+  }
+
+  return (
+    <Section
+      title="Chat"
+      note={`The last ${windowDays} puzzles, recorded from ${totals.since}. Viewers opened the chat; senders posted in it. Time is visible time with the panel open.`}
+    >
+      <div className="analytics__tiles">
+        <Tile
+          label="Chat viewers today"
+          value={fmt(totals.viewersToday)}
+          sub={`${fmt(totals.sendersToday)} sent, ${fmt(totals.messagesToday)} messages`}
+        />
+        <Tile
+          label="Viewers"
+          value={fmt(totals.viewers)}
+          sub={`${fmt(totals.viewersLast7)} over 7 puzzles, ${fmt(totals.opens)} opens`}
+        />
+        <Tile
+          label="Senders"
+          value={fmt(totals.senders)}
+          sub={totals.senderShare === null ? undefined : `${pct(totals.senderShare)} of viewers`}
+        />
+        <Tile
+          label="Messages"
+          value={fmt(totals.messages)}
+          sub={
+            totals.senders
+              ? `${dec(totals.messages / totals.senders, 1)} per sender${
+                  totals.avgMessageLength === null ? "" : `, ${dec(totals.avgMessageLength, 0)} chars`
+                }`
+              : undefined
+          }
+        />
+        <Tile label="Median time open" value={duration(time.medianViewMs)} sub={`${duration(time.avgViewMs)} average`} />
+        <Tile
+          label="Time open, when they sent"
+          value={duration(time.medianSendingViewMs)}
+          sub={time.sendingViewShare === null ? "median" : `median, ${pct(time.sendingViewShare)} of views`}
+        />
+        <Tile label="Total time in chat" value={duration(time.totalMs)} sub={`over ${fmt(time.views)} views`} />
+        <Tile
+          label="Came back to it"
+          value={fmt(totals.returningViewers)}
+          sub={totals.avgOpensPerViewer === null ? "viewers on 2+ puzzles" : `viewers on 2+ puzzles, ${dec(totals.avgOpensPerViewer, 1)} opens each`}
+        />
+        <Tile
+          label="Blocked sends"
+          value={fmt(totals.blocked)}
+          sub={`${fmt(totals.blockedProfane)} profanity, ${fmt(totals.blockedRateLimited)} too fast`}
+        />
+      </div>
+
+      <ul className="analytics__legend">
+        <li>
+          <span className="analytics__swatch analytics__swatch--single" aria-hidden="true" />
+          Sent a message
+        </li>
+        <li>
+          <span className="analytics__swatch analytics__swatch--looked" aria-hidden="true" />
+          Only read
+        </li>
+      </ul>
+      <BarChart
+        label="Chat viewers per puzzle"
+        bars={chat.daily.map((d) => ({
+          key: d.date,
+          axis: d.date.slice(5),
+          segments: [
+            { value: d.senders, series: "single" },
+            { value: Math.max(0, d.viewers - d.senders), series: "looked" },
+          ],
+          tip: `${d.date} (${SHORT_WEEKDAYS[dowOf(d.date)]}): ${d.viewers} viewers, ${d.senders} sent ${d.messages} messages, ${duration(
+            d.totalMs,
+          )} in chat`,
+        }))}
+      />
+      <p className="review__meta">{roomLine}</p>
+    </Section>
   );
 }
 

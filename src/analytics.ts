@@ -586,6 +586,55 @@ export function trackFoundWordsOpened(from: "header" | "results") {
 }
 
 /**
+ * The chat room, in four events. Every one carries the live `puzzle_date`, so
+ * the report counts chat per puzzle the way it counts everything else, and
+ * `player_id` rides along from `mirror` -- which is what makes distinct viewers
+ * and senders countable at all.
+ *
+ * `view_id` is one opening of the panel, and groups `chat_time`'s reports the
+ * way `session_id` groups `session_time`'s: a view that is backgrounded and
+ * picked up again reports more than once, `visible_ms` is its running total,
+ * `segment_ms` is only the new part, so `max(visible_ms)` per view is its
+ * length. Kept apart from `markLooked`: chatting is its own kind of visit, and
+ * folding it into "engaged" would move every existing number on the page.
+ */
+export function trackChatOpened(viewId: string) {
+  send("chat_opened", { view_id: viewId, puzzle_date: todayDateString() });
+}
+
+export function trackChatTime(report: {
+  viewId: string;
+  visibleMs: number;
+  segmentMs: number;
+  sent: number;
+  closed: boolean;
+  reportNumber: number;
+}) {
+  send("chat_time", {
+    view_id: report.viewId,
+    visible_ms: report.visibleMs,
+    segment_ms: report.segmentMs,
+    sent: report.sent,
+    closed: report.closed,
+    report_number: report.reportNumber,
+    puzzle_date: todayDateString(),
+  });
+}
+
+/** A message that reached the room. Its length, never its text. */
+export function trackChatMessageSent(viewId: string, length: number) {
+  send("chat_message_sent", { view_id: viewId, length, puzzle_date: todayDateString() });
+}
+
+/** A send the room refused, and why -- the bubble's own check or the server's. */
+export function trackChatMessageBlocked(
+  viewId: string,
+  reason: "too-long" | "profane" | "rate-limited" | "unavailable",
+) {
+  send("chat_message_blocked", { view_id: viewId, reason, puzzle_date: todayDateString() });
+}
+
+/**
  * Opening either page counts as engaging, for the visit and for the session,
  * so a player who only checks the boards or reads the finds is no longer
  * indistinguishable from one who opened the tab and left.

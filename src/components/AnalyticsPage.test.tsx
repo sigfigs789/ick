@@ -92,6 +92,42 @@ const REPORT = {
   hours: Array.from({ length: 24 }, (_, hour) => ({ hour, visits: hour })),
 };
 
+/** The shape `chat_report` returns, which api/review.ts sets on the report. */
+const CHAT = {
+  totals: {
+    opens: 60,
+    viewers: 20,
+    senders: 5,
+    messages: 40,
+    blocked: 4,
+    blockedProfane: 3,
+    blockedRateLimited: 1,
+    viewersToday: 6,
+    sendersToday: 2,
+    messagesToday: 9,
+    viewersLast7: 15,
+    sendersLast7: 4,
+    returningViewers: 8,
+    senderShare: 0.25,
+    avgOpensPerViewer: 3,
+    avgMessageLength: 22.4,
+    since: "2026-09-26",
+  },
+  time: {
+    views: 55,
+    medianViewMs: 90000,
+    avgViewMs: 136000,
+    totalMs: 7500000,
+    medianSendingViewMs: 240000,
+    sendingViewShare: 0.2,
+  },
+  daily: [
+    { date: "2026-09-26", viewers: 14, senders: 3, opens: 30, messages: 31, totalMs: 3000000 },
+    { date: "2026-09-27", viewers: 6, senders: 2, opens: 8, messages: 9, totalMs: 720000 },
+  ],
+  room: { messages: 30, hidden: 1, senders: 5, last24h: 4, firstAt: "2026-09-26T01:00:00Z", lastAt: "2026-09-27T20:00:00Z" },
+};
+
 function stubFetch(report: unknown = REPORT) {
   const fetchMock = vi.fn<(url: string) => Promise<Response>>(async () => {
     if (report === null) return new Response("nope", { status: 502 });
@@ -146,6 +182,41 @@ describe("AnalyticsPage", () => {
     const tile = (await screen.findByText("Looked, didn't play")).closest(".analytics__tile")!;
     expect(within(tile as HTMLElement).getByText("—")).toBeInTheDocument();
     expect(within(tile as HTMLElement).getByText("not recorded yet")).toBeInTheDocument();
+  });
+
+  it("shows who opens the chat, who talks and how long they stay", async () => {
+    stubFetch({ ...REPORT, chat: CHAT });
+    render(<AnalyticsPage />);
+
+    const today = (await screen.findByText("Chat viewers today")).closest(".analytics__tile")!;
+    expect(within(today as HTMLElement).getByText("6")).toBeInTheDocument();
+    expect(within(today as HTMLElement).getByText("2 sent, 9 messages")).toBeInTheDocument();
+    const senders = screen.getByText("Senders").closest(".analytics__tile")!;
+    expect(within(senders as HTMLElement).getByText("25% of viewers")).toBeInTheDocument();
+    const median = screen.getByText("Median time open").closest(".analytics__tile")!;
+    expect(within(median as HTMLElement).getByText("1m 30s")).toBeInTheDocument();
+    const total = screen.getByText("Total time in chat").closest(".analytics__tile")!;
+    expect(within(total as HTMLElement).getByText("2h 05m")).toBeInTheDocument();
+    expect(screen.getByText("3 profanity, 1 too fast")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("2026-09-27 (Sun): 6 viewers, 2 sent 9 messages, 12m 00s in chat"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("30 messages in the room all time, from 5 players, 4 in the last 24 hours, 1 hidden."),
+    ).toBeInTheDocument();
+  });
+
+  it("says chat has not been recorded yet, and leaves the section out when it failed", async () => {
+    stubFetch({ ...REPORT, chat: { ...CHAT, totals: { ...CHAT.totals, since: null }, daily: [] } });
+    const { unmount } = render(<AnalyticsPage />);
+    expect(await screen.findByText("No chat opens recorded yet.")).toBeInTheDocument();
+    unmount();
+
+    stubFetch({ ...REPORT, chat: null });
+    render(<AnalyticsPage />);
+    await screen.findByText("Players today");
+    expect(screen.queryByText("Chat viewers today")).not.toBeInTheDocument();
+    expect(screen.queryByText("No chat opens recorded yet.")).not.toBeInTheDocument();
   });
 
   it("tables the weekday and mode numbers", async () => {
