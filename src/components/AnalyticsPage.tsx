@@ -12,6 +12,7 @@ import {
   fmt,
   pct,
 } from "./analyticsFormat";
+import { todayDateString } from "../game/date";
 
 /**
  * How the game is doing, as a page at /analytics.
@@ -74,6 +75,12 @@ function Report({
 }) {
   const { totals, retention } = report;
   const highlights = findHighlights(report);
+  // "Today" is the viewer's own calendar date, read off the per-puzzle rows,
+  // rather than the report's `asOf` -- the latest puzzle anybody has played,
+  // which runs a day ahead of the viewer once a player further east is on
+  // tomorrow's, and a day behind in the minutes before anybody is on today's.
+  const today = todayDateString();
+  const todayRow = report.daily.find((d) => d.date === today);
 
   return (
     <div className="analytics">
@@ -93,10 +100,10 @@ function Report({
       </div>
 
       <div className="analytics__tiles">
-        <Tile label="Players today" value={fmt(totals.today)} sub={report.asOf ? `puzzle ${report.asOf}` : undefined} />
+        <Tile label="Players today" value={fmt(todayRow?.players ?? 0)} sub={`puzzle ${today}`} />
         <Tile
           label="Looked, didn't play"
-          value={totals.lookersSince ? fmt(totals.lookersToday) : "—"}
+          value={totals.lookersSince ? fmt(todayRow?.lookers ?? 0) : "—"}
           sub={
             totals.lookersSince
               ? `${fmt(totals.lookersLast7)} over 7 puzzles, ${fmt(totals.lookersNeverPlayed)} never played`
@@ -364,6 +371,8 @@ function Report({
  */
 function ChatSection({ chat, windowDays }: { chat: ChatReport; windowDays: number }) {
   const { totals, time, room } = chat;
+  // The viewer's calendar date, as the play half's "today" is (see Report).
+  const todayRow = chat.daily.find((d) => d.date === todayDateString());
   const roomLine = `${fmt(room.messages)} messages in the room all time, from ${fmt(room.senders)} players, ${fmt(
     room.last24h,
   )} in the last 24 hours${room.hidden ? `, ${fmt(room.hidden)} hidden` : ""}.`;
@@ -385,8 +394,8 @@ function ChatSection({ chat, windowDays }: { chat: ChatReport; windowDays: numbe
       <div className="analytics__tiles">
         <Tile
           label="Chat viewers today"
-          value={fmt(totals.viewersToday)}
-          sub={`${fmt(totals.sendersToday)} sent, ${fmt(totals.messagesToday)} messages`}
+          value={fmt(todayRow?.viewers ?? 0)}
+          sub={`${fmt(todayRow?.senders ?? 0)} sent, ${fmt(todayRow?.messages ?? 0)} messages`}
         />
         <Tile
           label="Viewers"
