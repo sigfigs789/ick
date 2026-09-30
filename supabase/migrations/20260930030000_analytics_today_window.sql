@@ -1,3 +1,5 @@
+-- (Numbered 20260930030000: 20260930020000 is onboarding_report, #373.)
+--
 -- A "Today" window for /analytics: analytics_report and chat_report take the
 -- viewer's calendar date, and a window of 1 means that one puzzle.
 --
