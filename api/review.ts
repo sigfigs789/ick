@@ -381,15 +381,22 @@ async function handleGet(request: Request): Promise<Response> {
       // The chat room's numbers are their own function (see the 20260930010000
       // migration), read alongside and set on the report as `chat`. A failure
       // there costs only the chat section: the page renders without it rather
-      // than losing every other number over one it can do without.
-      const [report, chat] = await Promise.all([
-        rpc<Record<string, unknown> | null>("analytics_report", args),
-        rpc<Record<string, unknown> | null>("chat_report", args).catch((error: unknown) => {
-          console.error("[review] chat_report failed:", error instanceof Error ? error.message : error);
+      // than losing every other number over one it can do without. The new
+      // players' starting modes (the 20260930020000 migration) are read and set
+      // on it as `onboarding` the same way. That one is cohorts, not a window of
+      // puzzles, so it takes no date and clamps a today window up to its own
+      // shortest.
+      const optional = (name: string, fnArgs: Record<string, unknown>) =>
+        rpc<Record<string, unknown> | null>(name, fnArgs).catch((error: unknown) => {
+          console.error(`[review] ${name} failed:`, error instanceof Error ? error.message : error);
           return null;
-        }),
+        });
+      const [report, chat, onboarding] = await Promise.all([
+        rpc<Record<string, unknown> | null>("analytics_report", args),
+        optional("chat_report", args),
+        optional("onboarding_report", { p_days: days }),
       ]);
-      return reply(200, { report: { ...(report ?? {}), chat } });
+      return reply(200, { report: { ...(report ?? {}), chat, onboarding } });
     }
     if (list === "freeform") {
       // Two reads rather than one, because the votes and the notes are two

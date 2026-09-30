@@ -15,6 +15,7 @@ import { modeForDate, type GameMode } from "./game/mode";
 import { currentVisit, markSessionEngaged, type VisitOutcome } from "./game/visits";
 import { markLook, markShare, type SessionTimeReport } from "./game/sessionTime";
 import { todayDateString } from "./game/date";
+import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { APP_VERSION } from "./version";
 
 /** The scalar property values both Vercel Analytics and /api/events accept. */
@@ -453,26 +454,49 @@ function visitDimensions() {
   };
 }
 
-/** Record a successful copy from the standard Share button. */
-export function trackResultCopied() {
+/**
+ * Record a successful copy from the standard Share button. `mode` is the mode
+ * the shared puzzle was played in, which is also the one its link carries.
+ */
+export function trackResultCopied(mode: GameMode) {
   markShare();
-  send("result_copied", { method: "copy", ...visitDimensions() });
+  send("result_copied", { method: "copy", mode, ...visitDimensions() });
 }
 
 /** Record a click on the X share button. */
-export function trackResultSharedOnX() {
+export function trackResultSharedOnX(mode: GameMode) {
   markShare();
-  send("result_shared_on_x", { method: "x", ...visitDimensions() });
+  send("result_shared_on_x", { method: "x", mode, ...visitDimensions() });
 }
 
-/** Record visitors who arrive through an X share link. */
-export function trackTwitterArrival() {
-  send("arrived_from_twitter");
+/**
+ * Record visitors who arrive through an X share link, with the mode the link
+ * was shared from -- `none` for a link from before links carried one -- and the
+ * puzzle they landed on, so the report counts arrivals per puzzle.
+ */
+export function trackTwitterArrival(mode: GameMode | null) {
+  send("arrived_from_twitter", { mode: mode ?? "none", puzzle_date: todayDateString() });
 }
 
 /** Record visitors who arrive through a copied Share link. */
-export function trackShareArrival() {
-  send("arrived_from_share");
+export function trackShareArrival(mode: GameMode | null) {
+  send("arrived_from_share", { mode: mode ?? "none", puzzle_date: todayDateString() });
+}
+
+/**
+ * The mode a brand-new player was started in, and why (see game/onboarding.ts).
+ *
+ * Sent once per browser, ever. It is the row the starting-mode report joins
+ * every later play and share to by `player_id`, so it has to be sent after the
+ * board id exists -- see Root.tsx.
+ */
+export function trackModeAssigned(assignment: ModeAssignment) {
+  send("mode_assigned", {
+    mode: assignment.mode,
+    reason: assignment.reason,
+    source: visitSource(assignment.source),
+    puzzle_date: assignment.date,
+  });
 }
 
 /** Record visitors who arrive through a tagged Reddit link (`s=r`). */
@@ -677,7 +701,8 @@ export function trackLeaderboardJoined(isRename: boolean) {
 
 /** Convert compact share-link codes into analytics campaign sources. */
 export function campaignSourceFromSearch(search: string): "share" | "twitter" | "reddit" | null {
-  const code = new URLSearchParams(search).get("s");
+  // `sh.f` is a share link with its mode on (see game/onboarding.ts).
+  const code = parseSourceCode(new URLSearchParams(search).get("s")).base;
   if (code === "sh") return "share";
   if (code === "t") return "twitter";
   if (code === "r") return "reddit";

@@ -4,7 +4,8 @@ import {
   totalRarityScore,
   usesRetunedTiers,
 } from "./dictionary";
-import { MODE_LABELS, modeForDate, modeIsChosen, type GameMode } from "./mode";
+import { MODE_LABELS, currentMode, modeForDate, modeIsChosen, type GameMode } from "./mode";
+import { shareCode } from "./onboarding";
 import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
@@ -43,9 +44,14 @@ export function raritySymbol(rarity: Rarity, date?: string): string {
 
 export type ShareSource = "share" | "twitter";
 
-function shareUrl(source: ShareSource | null): string {
-  if (source === "share") return "https://wordink.app/?s=sh";
-  if (source === "twitter") return "wordink.app/?s=t";
+/**
+ * The link under a shared result. A tagged link carries the mode it was shared
+ * from, so a friend who has never played starts in the same game as the result
+ * they were sent (see game/onboarding.ts) -- `?s=sh.f`, `?s=t.s`.
+ */
+function shareUrl(source: ShareSource | null, mode: GameMode): string {
+  if (source === "share") return `https://wordink.app/?s=${shareCode("sh", mode)}`;
+  if (source === "twitter") return `wordink.app/?s=${shareCode("t", mode)}`;
   return "wordink.app";
 }
 
@@ -219,7 +225,9 @@ export function buildShareText(
     const label = reveal === "none" ? "Rarest word" : best.word;
     lines.push(`${label}: ${formatFrequency(best.zipf)}`);
   }
-  lines.push(shareUrl(source));
+  // The link opens today's puzzle, not this one, so an archived day from before
+  // the switch -- whose mode the calendar picked -- sends the sharer's own.
+  lines.push(shareUrl(source, modeIsChosen(dateStr) ? mode : currentMode()));
   return lines.join("\n");
 }
 

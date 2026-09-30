@@ -1,7 +1,7 @@
 import { Fragment, useState } from "react";
 import { buildShareText, type RevealMode } from "../game/share";
 import { RainbowWord } from "./RainbowWord";
-import { MODE_LABELS } from "../game/mode";
+import { MODE_LABELS, modeForDate } from "../game/mode";
 import { windowTotals } from "../game/totals";
 import { loadReveal, saveReveal } from "../game/reveal";
 import { ShareButton } from "./ShareButton";
@@ -114,13 +114,15 @@ export function ResultsPanel({
     mode,
   })}`;
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
+  // The mode the shares report, which is the one buildShareText tags the link with.
+  const sharedMode = mode ?? modeForDate(date);
   return (
     <section className="results-panel" aria-label="Share result">
       <div className="results-panel__share-actions">
-        <ShareButton text={copiedShareText} onShared={trackResultCopied} />
+        <ShareButton text={copiedShareText} onShared={() => trackResultCopied(sharedMode)} />
         <TwitterShareButton
           text={twitterShareText}
-          onShared={trackResultSharedOnX}
+          onShared={() => trackResultSharedOnX(sharedMode)}
         />
       </div>
       {/* A radiogroup rather than a fieldset: the label sits on the same row as

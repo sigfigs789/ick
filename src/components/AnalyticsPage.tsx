@@ -1,7 +1,14 @@
 import { useCallback, useState, type ReactNode } from "react";
 import { ReviewPage } from "./ReviewPage";
 import { useReviewList } from "./reviewList";
-import { fetchAnalytics, type AnalyticsReport, type ChatReport, type Rate } from "../game/review";
+import {
+  fetchAnalytics,
+  type AnalyticsReport,
+  type ChatReport,
+  type OnboardingReason,
+  type OnboardingReport,
+  type Rate,
+} from "../game/review";
 import {
   MODE_NAMES,
   WEEKDAYS,
@@ -360,6 +367,8 @@ function Report({
         </div>
       </Section>
 
+      {report.onboarding && <OnboardingSection onboarding={report.onboarding} isToday={isToday} />}
+
       {report.chat && <ChatSection chat={report.chat} windowDays={report.windowDays} />}
 
       <Section title="When people open it" note="Visits by hour of day, Mountain Time.">
@@ -375,6 +384,89 @@ function Report({
         />
       </Section>
     </div>
+  );
+}
+
+const REASON_NAMES: Record<OnboardingReason, string> = {
+  split: "Random split",
+  shared: "Friend's link",
+  default: "Direct",
+};
+const REASON_ORDER: OnboardingReason[] = ["split", "shared", "default"];
+
+/**
+ * New players, by the mode they were started in (see game/onboarding.ts): a
+ * friend's link starts them in the mode it was shared from, a direct open in
+ * Standard, and every other source half and half. The split rows are the fair
+ * comparison -- the only thing that differs between them is the mode.
+ */
+// Cohorts need days to come back in, so onboarding_report clamps a today window
+// up to its shortest, a week, and the note says so.
+function OnboardingSection({ onboarding, isToday }: { onboarding: OnboardingReport; isToday: boolean }) {
+  const arms = [...onboarding.arms].sort(
+    (a, b) => REASON_ORDER.indexOf(a.reason) - REASON_ORDER.indexOf(b.reason) || a.mode.localeCompare(b.mode),
+  );
+  const arrivals = onboarding.arrivals
+    .map((a) => `${fmt(a.arrivals)} via ${a.link === "twitter" ? "X" : "copied"} ${MODE_NAMES[a.mode] ?? "untagged"} links`)
+    .join(", ");
+
+  return (
+    <Section
+      title="New players by starting mode"
+      note={
+        onboarding.since
+          ? `Players who started ${isToday ? "in the last 7 days" : "in the window"}, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, direct in Standard, anywhere else at random. Retention is a live day played after the one they arrived on, in either mode.`
+          : "Where new players start, and whether they stay."
+      }
+    >
+      {arms.length === 0 ? (
+        <p className="review__status">No starting modes recorded yet.</p>
+      ) : (
+        <div className="analytics__table-wrap">
+          <table className="analytics__table">
+            <thead>
+              <tr>
+                <th scope="col">Started</th>
+                <th scope="col">Players</th>
+                <th scope="col">Played</th>
+                <th scope="col">Next day</th>
+                <th scope="col">Day 7</th>
+                <th scope="col">First week</th>
+                <th scope="col">Days played</th>
+                <th scope="col">Shared</th>
+                <th scope="col">Shares per player</th>
+                <th scope="col">Switched</th>
+              </tr>
+            </thead>
+            <tbody>
+              {arms.map((a) => (
+                <tr key={`${a.reason}-${a.mode}`}>
+                  <th scope="row">
+                    {REASON_NAMES[a.reason]} · {MODE_NAMES[a.mode] ?? a.mode}
+                  </th>
+                  <td>{fmt(a.players)}</td>
+                  <td>{a.players ? pct(a.played / a.players) : "—"}</td>
+                  <td>
+                    <RateCell rate={a.d1} />
+                  </td>
+                  <td>
+                    <RateCell rate={a.d7} />
+                  </td>
+                  <td>
+                    <RateCell rate={a.week1} />
+                  </td>
+                  <td>{a.avgDaysPlayed === null ? "—" : dec(a.avgDaysPlayed, 1)}</td>
+                  <td>{a.players ? pct(a.sharers / a.players) : "—"}</td>
+                  <td>{a.players ? dec(a.shares / a.players, 2) : "—"}</td>
+                  <td>{a.players ? pct(a.switched / a.players) : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {arrivals && <p className="review__meta">Share-link taps in the window: {arrivals}.</p>}
+    </Section>
   );
 }
 

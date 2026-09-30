@@ -437,32 +437,36 @@ describe("api/review", () => {
     withEnv();
     const report = { asOf: "2026-09-27", totals: { players: 3 } };
     const chat = { totals: { viewers: 2 } };
-    const fetchMock = vi.fn(async (url: string) =>
-      new Response(JSON.stringify(String(url).endsWith("/chat_report") ? chat : report), { status: 200 }),
-    );
+    const onboarding = { arms: [] };
+    const fetchMock = vi.fn(async (url: string) => {
+      const name = String(url).split("/").pop();
+      const body = name === "chat_report" ? chat : name === "onboarding_report" ? onboarding : report;
+      return new Response(JSON.stringify(body), { status: 200 });
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     const response = await handler(get("?list=analytics&days=30"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ report: { ...report, chat } });
+    expect(await response.json()).toEqual({ report: { ...report, chat, onboarding } });
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
     expect(calls.map(([url]) => String(url).split("/").pop()).sort()).toEqual([
       "analytics_report",
       "chat_report",
+      "onboarding_report",
     ]);
     for (const [, init] of calls) expect(JSON.parse(String(init.body))).toEqual({ p_days: 30 });
   });
 
-  it("keeps the rest of the report when the chat numbers fail", async () => {
+  it("keeps the rest of the report when the chat or onboarding numbers fail", async () => {
     withEnv();
     const report = { asOf: "2026-09-27", totals: { players: 3 } };
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) =>
-        String(url).endsWith("/chat_report")
-          ? new Response("boom", { status: 500 })
-          : new Response(JSON.stringify(report), { status: 200 }),
+        String(url).endsWith("/analytics_report")
+          ? new Response(JSON.stringify(report), { status: 200 })
+          : new Response("boom", { status: 500 }),
       ),
     );
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -470,7 +474,7 @@ describe("api/review", () => {
     const response = await handler(get("?list=analytics"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ report: { ...report, chat: null } });
+    expect(await response.json()).toEqual({ report: { ...report, chat: null, onboarding: null } });
   });
 
   it("reads the today window for the puzzle the page names", async () => {
@@ -479,10 +483,15 @@ describe("api/review", () => {
 
     expect((await handler(get("?list=analytics&days=1&date=2026-09-30"))).status).toBe(200);
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
-    expect(calls).toHaveLength(2);
-    for (const [, init] of calls) {
-      expect(JSON.parse(String(init.body))).toEqual({ p_days: 1, p_date: "2026-09-30" });
-    }
+    const bodies = Object.fromEntries(
+      calls.map(([url, init]) => [String(url).split("/").pop(), JSON.parse(String(init.body))]),
+    );
+    expect(bodies).toEqual({
+      analytics_report: { p_days: 1, p_date: "2026-09-30" },
+      chat_report: { p_days: 1, p_date: "2026-09-30" },
+      // Cohorts, not a window of puzzles: no date, and it clamps the 1 itself.
+      onboarding_report: { p_days: 1 },
+    });
   });
 
   it("sends no date for a longer window", async () => {
