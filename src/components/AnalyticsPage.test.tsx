@@ -201,10 +201,16 @@ describe("AnalyticsPage", () => {
     const tile = (await screen.findByText("Looked, didn't play")).closest(".analytics__tile")!;
     expect(within(tile as HTMLElement).getByText("7")).toBeInTheDocument();
     expect(within(tile as HTMLElement).getByText("19 over 7 puzzles, 11 never played")).toBeInTheDocument();
-    expect(screen.getByLabelText("2026-09-27 (Sun): 40 players, 3 new, 7 only looked")).toBeInTheDocument();
+    expect(screen.getByLabelText("2026-09-27 (Sun): 40 players (30 Standard, 10 Freeform), 3 new, 7 only looked")).toBeInTheDocument();
     expect(screen.getByText(/60 engaged visits began on the/)).toBeInTheDocument();
     const sessions = screen.getByText("Only looked", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
     expect(within(sessions as HTMLElement).getByText("10%")).toBeInTheDocument();
+  });
+
+  it("names a one-mode day's mode rather than a zero for the other", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    expect(await screen.findByLabelText("2026-09-26 (Sat): 50 players, all Freeform, 5 new")).toBeInTheDocument();
   });
 
   it("says a look has not been recorded rather than printing zero", async () => {

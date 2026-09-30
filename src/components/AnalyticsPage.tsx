@@ -170,7 +170,7 @@ function Report({
         title="Players per puzzle"
         note={`${isToday ? "Today's puzzle" : `The last ${report.windowDays} puzzles`}, split by the rules each was played under, with the players who only opened the leaderboard or the found words on top in grey${
           totals.lookersSince ? ` (recorded from ${totals.lookersSince})` : ""
-        }. Hover a day for new players.`}
+        }. Hover a day for its Standard and Freeform counts and new players.`}
       >
         <Legend />
         <BarChart
@@ -183,7 +183,7 @@ function Report({
               { value: d.freeform, series: "freeform" },
               { value: d.lookers, series: "looked" },
             ],
-            tip: `${d.date} (${SHORT_WEEKDAYS[dowOf(d.date)]}): ${d.players} players, ${d.newPlayers} new${
+            tip: `${d.date} (${SHORT_WEEKDAYS[dowOf(d.date)]}): ${d.players} players${modeSplit(d)}, ${d.newPlayers} new${
               d.lookers ? `, ${d.lookers} only looked` : ""
             }`,
           }))}
@@ -479,6 +479,17 @@ function ChatSection({ chat, windowDays }: { chat: ChatReport; windowDays: numbe
       <p className="review__meta">{roomLine}</p>
     </Section>
   );
+}
+
+/**
+ * How a day's players split between the modes, for its tooltip. A player can
+ * bank words in both on one day, so the two can sum to more than the players.
+ */
+function modeSplit(d: AnalyticsReport["daily"][number]): string {
+  if (d.players === 0) return "";
+  if (d.freeform === 0) return ", all Standard";
+  if (d.standard === 0) return ", all Freeform";
+  return ` (${d.standard} Standard, ${d.freeform} Freeform)`;
 }
 
 function Section({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
