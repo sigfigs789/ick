@@ -27,6 +27,7 @@ const weekday = (dow: number, avgPlayers: number, cohort: number, returned: numb
 const REPORT = {
   asOf: "2026-09-27",
   windowDays: 60,
+  visitorsSince: "2026-09-20",
   totals: {
     players: 200,
     plays: 900,
@@ -81,6 +82,8 @@ const REPORT = {
   ],
   funnel: {
     visits: 1000,
+    visitors: 250,
+    visitsWithId: 900,
     firstVisits: 300,
     engaged: 700,
     engagedByLooking: 60,
@@ -92,8 +95,8 @@ const REPORT = {
     toStandard: 5,
   },
   sources: [
-    { source: "direct", visits: 600, firstVisits: 100, engaged: 400 },
-    { source: "reddit", visits: 100, firstVisits: 80, engaged: 90 },
+    { source: "direct", visits: 600, visitors: 150, firstVisits: 100, engaged: 400 },
+    { source: "reddit", visits: 100, visitors: 90, firstVisits: 80, engaged: 90 },
   ],
   sessions: {
     sessions: 800,
@@ -206,6 +209,29 @@ describe("AnalyticsPage", () => {
     const chat = (await screen.findByText("Chat viewers today")).closest(".analytics__tile")!;
     expect(within(chat as HTMLElement).getByText("14")).toBeInTheDocument();
     expect(within(chat as HTMLElement).getByText("3 sent, 31 messages")).toBeInTheDocument();
+  });
+
+  it("counts distinct visitors and how often each opens the game", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+
+    const visitors = (await screen.findByText("Visitors", { selector: ".analytics__tile-label" })).closest(".analytics__tile")!;
+    expect(within(visitors as HTMLElement).getByText("250")).toBeInTheDocument();
+    expect(within(visitors as HTMLElement).getByText("distinct, recorded from 2026-09-20")).toBeInTheDocument();
+    // 900 visits that carry an id, over 250 visitors -- not the 1,000 visits in all.
+    const perVisitor = screen.getByText("Visits per visitor").closest(".analytics__tile")!;
+    expect(within(perVisitor as HTMLElement).getByText("3.6")).toBeInTheDocument();
+    expect(within(perVisitor as HTMLElement).getByText("average, over 900 opens")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Visitors" })).toBeInTheDocument();
+  });
+
+  it("says visitors have not been recorded rather than printing zero", async () => {
+    stubFetch({ ...REPORT, visitorsSince: null });
+    render(<AnalyticsPage />);
+
+    const visitors = (await screen.findByText("Visitors", { selector: ".analytics__tile-label" })).closest(".analytics__tile")!;
+    expect(within(visitors as HTMLElement).getByText("not recorded yet")).toBeInTheDocument();
+    expect(screen.queryByText("Visits per visitor")).toBeNull();
   });
 
   it("labels the hours on a 12-hour clock", async () => {

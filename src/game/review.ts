@@ -330,6 +330,8 @@ export interface AnalyticsReport {
    * puzzle, so the today window's visit half only counts from here.
    */
   visitsSince: string | null;
+  /** The day the first visit carrying a player id arrived: where visitor counts begin. */
+  visitorsSince: string | null;
   totals: {
     players: number;
     plays: number;
@@ -400,6 +402,10 @@ export interface AnalyticsReport {
   depth: Array<{ bucket: string; players: number }>;
   funnel: {
     visits: number;
+    /** Distinct browsers, by player id, that opened the game in the window. */
+    visitors: number;
+    /** The visits those browsers made: the numerator for visits per visitor. */
+    visitsWithId: number;
     firstVisits: number;
     /** Visits that guessed, or opened the leaderboard or the found words. */
     engaged: number;
@@ -412,7 +418,7 @@ export interface AnalyticsReport {
     toFreeform: number;
     toStandard: number;
   };
-  sources: Array<{ source: string; visits: number; firstVisits: number; engaged: number }>;
+  sources: Array<{ source: string; visits: number; visitors: number; firstVisits: number; engaged: number }>;
   sessions: {
     sessions: number;
     medianVisibleMs: number | null;
@@ -573,6 +579,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     asOf: text(r.asOf),
     windowDays: count(r.windowDays),
     visitsSince: text(r.visitsSince),
+    visitorsSince: text(r.visitorsSince),
     totals: {
       players: count(totals.players),
       plays: count(totals.plays),
@@ -643,6 +650,8 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     })),
     funnel: {
       visits: count(funnel.visits),
+      visitors: count(funnel.visitors),
+      visitsWithId: count(funnel.visitsWithId),
       firstVisits: count(funnel.firstVisits),
       engaged: count(funnel.engaged),
       engagedByLooking: count(funnel.engagedByLooking),
@@ -656,6 +665,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     sources: list(r.sources).map((s) => ({
       source: text(s.source) ?? "direct",
       visits: count(s.visits),
+      visitors: count(s.visitors),
       firstVisits: count(s.firstVisits),
       engaged: count(s.engaged),
     })),

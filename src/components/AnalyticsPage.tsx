@@ -310,6 +310,7 @@ function Report({
         title="From open to share"
         note={`Events ${eventSpan}. Engaged is a visit that submitted a guess or opened the leaderboard or the found words.`}
       >
+        <Visitors report={report} />
         <Funnel report={report} />
       </Section>
 
@@ -326,6 +327,7 @@ function Report({
                 <tr>
                   <th scope="col">Source</th>
                   <th scope="col">Visits</th>
+                  <th scope="col">Visitors</th>
                   <th scope="col">First visits</th>
                   <th scope="col">Engaged</th>
                   <th scope="col">Engaged per visit</th>
@@ -336,6 +338,7 @@ function Report({
                   <tr key={s.source}>
                     <th scope="row">{sourceName(s.source)}</th>
                     <td>{fmt(s.visits)}</td>
+                    <td>{fmt(s.visitors)}</td>
                     <td>{fmt(s.firstVisits)}</td>
                     <td>{fmt(s.engaged)}</td>
                     <td>{s.visits ? pct(s.engaged / s.visits) : "—"}</td>
@@ -773,6 +776,32 @@ function CohortGrid({
       <p className="review__meta">* This week so far — it is not over yet.</p>
     )}
     </>
+  );
+}
+
+/**
+ * The people behind the visits: distinct browsers that opened the game, and how
+ * many times the average one did. Visits from before events carried a player id
+ * cannot be tied to anybody, so the average is over the visits that can be.
+ */
+function Visitors({ report }: { report: AnalyticsReport }) {
+  const f = report.funnel;
+  if (!report.visitorsSince) {
+    return (
+      <div className="analytics__tiles">
+        <Tile label="Visitors" value="—" sub="not recorded yet" />
+      </div>
+    );
+  }
+  return (
+    <div className="analytics__tiles">
+      <Tile label="Visitors" value={fmt(f.visitors)} sub={`distinct, recorded from ${report.visitorsSince}`} />
+      <Tile
+        label="Visits per visitor"
+        value={f.visitors ? dec(f.visitsWithId / f.visitors, 1) : "—"}
+        sub={`average, over ${fmt(f.visitsWithId)} opens`}
+      />
+    </div>
   );
 }
 
