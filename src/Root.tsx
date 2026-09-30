@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import App from "./App";
-import { trackLeaderboardJoined } from "./analytics";
+import { trackLeaderboardJoined, trackModeAssigned } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
 import { AnalyticsPage } from "./components/AnalyticsPage";
 import { ChatBubble } from "./components/ChatBubble";
@@ -19,6 +19,7 @@ import { todayDateString } from "./game/date";
 import { usesFreeformRules } from "./game/dictionary";
 import { modeIsChosen } from "./game/mode";
 import { useGameMode } from "./hooks/useGameMode";
+import { takeFreshAssignment } from "./game/onboarding";
 import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
 import { playedPuzzleCount } from "./game/storage";
@@ -209,6 +210,14 @@ export function Root() {
   const joinedBefore = useRef(hasJoined());
   const playerId = useRef<string | null>(null);
   if (playerId.current === null) playerId.current = joinBoard();
+
+  // A brand-new player's starting mode (see main.tsx), reported now that the
+  // board id above exists to tie it to. Taken once, so StrictMode's second run
+  // sends nothing.
+  useEffect(() => {
+    const assignment = takeFreshAssignment();
+    if (assignment) trackModeAssigned(assignment);
+  }, []);
 
   /**
    * When this browser last sent its history, so a return can tell a tab that

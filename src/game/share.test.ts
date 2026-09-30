@@ -71,13 +71,26 @@ describe("buildShareText", () => {
   it("adds compact share attribution only when explicitly requested", () => {
     expect(
       buildShareText("2024-01-05", "str", words, { source: "share" }),
-    ).toMatch(/https:\/\/wordink\.app\/\?s=sh$/);
+    ).toMatch(/https:\/\/wordink\.app\/\?s=sh\.s$/);
+  });
+
+  it("tags a share link with the mode the puzzle was played in", () => {
+    const date = "2026-09-28";
+    expect(buildShareText(date, "str", words, { source: "share", mode: "freeform" })).toMatch(
+      /\?s=sh\.f$/,
+    );
+    expect(buildShareText(date, "str", words, { source: "share", mode: "standard" })).toMatch(
+      /\?s=sh\.s$/,
+    );
+    expect(buildShareText(date, "str", words, { source: "twitter", mode: "freeform" })).toMatch(
+      /\?s=t\.f$/,
+    );
   });
 
   it("uses a compact X attribution code without a protocol prefix", () => {
     expect(
       buildShareText("2024-01-05", "str", words, { source: "twitter" }),
-    ).toMatch(/wordink\.app\/\?s=t$/);
+    ).toMatch(/wordink\.app\/\?s=t\.s$/);
   });
 
   it("shows the actual words and rarity scores, without rarity labels, when spoilerFree is false", () => {
