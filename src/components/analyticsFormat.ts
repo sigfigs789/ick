@@ -1,4 +1,5 @@
 import type { AnalyticsReport, Rate } from "../game/review";
+import { MAX_RANGE_DAYS, rangeDays } from "../game/review";
 
 /**
  * The analytics page's words and number formats, and the few sentences it
@@ -121,4 +122,31 @@ export function duration(ms: number | null): string {
   if (minutes < 60) return `${minutes}m ${String(seconds % 60).padStart(2, "0")}s`;
   // Totals summed across many sessions (time in chat) run to hours.
   return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
+}
+
+/** Calendar days picked in place of a preset, both ends counted. */
+export interface DateRange {
+  from: string;
+  to: string;
+}
+
+/** A date `n` days from `date`, both YYYY-MM-DD. */
+function addDays(date: string, n: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * The range after one end moves: the other end follows when it would cross,
+ * or when the span would pass a year, so every edit leaves a range the
+ * endpoint takes.
+ */
+export function moveRange(current: DateRange, end: "from" | "to", value: string): DateRange {
+  if (end === "from") {
+    const to = value > current.to ? value : current.to;
+    return { from: value, to: rangeDays(value, to) > MAX_RANGE_DAYS ? addDays(value, MAX_RANGE_DAYS - 1) : to };
+  }
+  const from = value < current.from ? value : current.from;
+  return { from: rangeDays(from, value) > MAX_RANGE_DAYS ? addDays(value, 1 - MAX_RANGE_DAYS) : from, to: value };
 }

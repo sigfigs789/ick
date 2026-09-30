@@ -4119,6 +4119,31 @@ h2 {
   font-size: 0.85rem;
   cursor: pointer;
 }
+.analytics__window-dates {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: 0.4rem;
+}
+.analytics__window-dates label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.analytics__window-date {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.85rem;
+  color-scheme: light dark;
+}
+.analytics__window-date[data-active="true"] {
+  border-color: var(--accent);
+}
 .analytics__window-button[aria-pressed="true"] {
   border-color: var(--accent);
   background: var(--accent);

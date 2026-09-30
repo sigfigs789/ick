@@ -176,6 +176,22 @@ export function fetchAnalytics(days: number, date?: string): Promise<AnalyticsRe
   return read("analytics", (body) => parseAnalytics(body.report), window);
 }
 
+/** The most calendar days a picked range may span, as the endpoint allows. */
+export const MAX_RANGE_DAYS = 365;
+
+/** Days from `from` to `to`, both counted: 2026-09-01 to 2026-09-01 is 1. */
+export function rangeDays(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 1;
+}
+
+/**
+ * A picked calendar range, `from` to `to` inclusive, sent as the window the
+ * report already speaks: its width in days, ending on `to`.
+ */
+export function fetchAnalyticsRange(from: string, to: string): Promise<AnalyticsReport> {
+  return read("analytics", (body) => parseAnalytics(body.report), `&days=${rangeDays(from, to)}&date=${to}`);
+}
+
 /**
  * Rows are read rather than cast.
  *
@@ -367,6 +383,14 @@ export interface AnalyticsReport {
     avgDailyPlayers: number | null;
     /** Looked at a puzzle in the window without banking a word on it. */
     lookers: number;
+    /**
+     * DAU/MAU: each puzzle's players over the 30 puzzles ending on it, averaged
+     * over the window. Null before the report carried it, or when nobody played.
+     */
+    dauMau: number | null;
+    /** The window's first and last puzzle; null before the report carried them. */
+    from: string | null;
+    to: string | null;
   };
   daily: Array<{
     date: string;
@@ -600,6 +624,9 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       avgDaysPerPlayer: maybe(win.avgDaysPerPlayer),
       avgDailyPlayers: maybe(win.avgDailyPlayers),
       lookers: count(win.lookers),
+      dauMau: maybe(win.dauMau),
+      from: text(win.from),
+      to: text(win.to),
     },
     daily: list(r.daily)
       .filter((d) => text(d.date))
