@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   campaignSourceFromSearch,
   trackShareArrival,
+  trackTwitterArrival,
+  trackModeAssigned,
   trackWordSuggestion,
   trackRedditArrival,
   trackResultCopied,
@@ -116,10 +118,43 @@ describe("visit events", () => {
 });
 
 describe("share attribution", () => {
+  it("tags a share with the mode of the puzzle shared", () => {
+    localStorage.clear();
+    trackResultCopied("freeform");
+    trackResultSharedOnX("standard");
+
+    expect(track).toHaveBeenCalledWith("result_copied", expect.objectContaining({ mode: "freeform" }));
+    expect(track).toHaveBeenCalledWith("result_shared_on_x", expect.objectContaining({ mode: "standard" }));
+  });
+
+  it("tags a share-link arrival with the mode the link carried", () => {
+    trackShareArrival("freeform");
+    trackShareArrival(null);
+    trackTwitterArrival("standard");
+
+    const withMode = (mode: string) => expect.objectContaining({ mode, puzzle_date: expect.any(String) });
+    expect(track).toHaveBeenCalledWith("arrived_from_share", withMode("freeform"));
+    expect(track).toHaveBeenCalledWith("arrived_from_share", withMode("none"));
+    expect(track).toHaveBeenCalledWith("arrived_from_twitter", withMode("standard"));
+  });
+
+  it("records a new player's starting mode with a readable source", () => {
+    trackModeAssigned({ mode: "freeform", reason: "split", source: "reddit", date: "2026-09-30" });
+    trackModeAssigned({ mode: "standard", reason: "default", source: null, date: "2026-09-30" });
+
+    expect(track).toHaveBeenCalledWith("mode_assigned", {
+      mode: "freeform",
+      reason: "split",
+      source: "reddit",
+      puzzle_date: "2026-09-30",
+    });
+    expect(track).toHaveBeenCalledWith("mode_assigned", expect.objectContaining({ source: "direct" }));
+  });
+
   it("tracks copied results separately from X shares, tagged by method", () => {
     localStorage.clear();
-    trackResultCopied();
-    trackResultSharedOnX();
+    trackResultCopied("standard");
+    trackResultSharedOnX("freeform");
 
     expect(track).toHaveBeenCalledWith("result_copied", expect.objectContaining({ method: "copy" }));
     expect(track).toHaveBeenCalledWith("result_shared_on_x", expect.objectContaining({ method: "x" }));
@@ -133,10 +168,11 @@ describe("share attribution", () => {
     sessionStorage.clear();
     recordVisit("?s=t");
 
-    trackResultCopied();
+    trackResultCopied("standard");
 
     expect(track).toHaveBeenCalledWith("result_copied", {
       method: "copy",
+      mode: "standard",
       source: "reddit", // first-touch is sticky
       last_source: "twitter", // last-touch follows the most recent link
       visit_type: "returning",
@@ -150,7 +186,7 @@ describe("share attribution", () => {
     sessionStorage.clear();
     recordVisit("?s=t");
 
-    trackResultSharedOnX();
+    trackResultSharedOnX("freeform");
 
     expect(track).toHaveBeenCalledWith(
       "result_shared_on_x",
@@ -160,10 +196,11 @@ describe("share attribution", () => {
 
   it("falls back to a direct first-time cohort when no visit was recorded", () => {
     localStorage.clear();
-    trackResultSharedOnX();
+    trackResultSharedOnX("freeform");
 
     expect(track).toHaveBeenCalledWith("result_shared_on_x", {
       method: "x",
+      mode: "freeform",
       source: "direct",
       last_source: "direct",
       visit_type: "first",
@@ -282,6 +319,8 @@ describe("campaign arrivals", () => {
   it("maps the reddit share-link code to its campaign source", () => {
     expect(campaignSourceFromSearch("?s=r")).toBe("reddit");
     expect(campaignSourceFromSearch("?s=sh")).toBe("share");
+    expect(campaignSourceFromSearch("?s=sh.f")).toBe("share");
+    expect(campaignSourceFromSearch("?s=t.s")).toBe("twitter");
     expect(campaignSourceFromSearch("?s=t")).toBe("twitter");
     expect(campaignSourceFromSearch("?s=other")).toBeNull();
   });
@@ -570,14 +609,14 @@ describe("supabase mirror", () => {
     const fetchMock = vi.fn(async () => new Response(null, { status: 202 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    trackShareArrival();
+    trackRedditArrival();
 
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("/api/events");
     expect(init.keepalive).toBe(true);
     // An event with no properties of its own still says whose it was.
     expect(await payload(init.body)).toEqual({
-      name: "arrived_from_share",
+      name: "arrived_from_reddit",
       props: { player_id: null },
     });
     vi.unstubAllGlobals();
@@ -630,8 +669,8 @@ describe("supabase mirror", () => {
       configurable: true,
     });
 
-    expect(() => trackShareArrival()).not.toThrow();
-    expect(track).toHaveBeenCalledWith("arrived_from_share");
+    expect(() => trackRedditArrival()).not.toThrow();
+    expect(track).toHaveBeenCalledWith("arrived_from_reddit");
   });
 });
 
@@ -675,7 +714,7 @@ describe("a host that reports nothing", () => {
 
   it("sends nothing to Vercel once turned off", () => {
     setReporting(false);
-    trackResultCopied();
+    trackResultCopied("standard");
     expect(track).not.toHaveBeenCalled();
   });
 

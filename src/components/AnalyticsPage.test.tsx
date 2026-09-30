@@ -251,6 +251,53 @@ describe("AnalyticsPage", () => {
     expect(screen.queryByText("No chat opens recorded yet.")).not.toBeInTheDocument();
   });
 
+  it("tables new players by the mode they started in", async () => {
+    const arm = (reason: string, mode: string, extra: object) => ({
+      reason,
+      mode,
+      players: 40,
+      played: 30,
+      playedDays: 60,
+      avgDaysPlayed: 1.5,
+      d1: { cohort: 20, returned: 5 },
+      d7: { cohort: 0, returned: 0 },
+      week1: { cohort: 0, returned: 0 },
+      sharers: 4,
+      shares: 10,
+      switched: 2,
+      ...extra,
+    });
+    stubFetch({
+      ...REPORT,
+      onboarding: {
+        since: "2026-09-30",
+        arms: [
+          arm("split", "standard", {}),
+          arm("split", "freeform", { d1: { cohort: 20, returned: 9 }, sharers: 10 }),
+          arm("shared", "freeform", { players: 8, sharers: 2, shares: 4 }),
+        ],
+        arrivals: [{ link: "share", mode: "freeform", arrivals: 12 }],
+      },
+    });
+    render(<AnalyticsPage />);
+
+    const freeform = (await screen.findByRole("rowheader", { name: "Random split · Freeform" })).closest("tr")!;
+    expect(within(freeform).getByText("45%")).toBeInTheDocument();
+    expect(within(freeform).getByText("25%")).toBeInTheDocument();
+    const standard = screen.getByRole("rowheader", { name: "Random split · Standard" }).closest("tr")!;
+    expect(within(standard).getByText("0.25")).toBeInTheDocument();
+    const shared = screen.getByRole("rowheader", { name: "Friend's link · Freeform" }).closest("tr")!;
+    expect(within(shared).getByText("0.50")).toBeInTheDocument();
+    expect(screen.getByText("Share-link taps in the window: 12 via copied Freeform links.")).toBeInTheDocument();
+  });
+
+  it("leaves the starting-mode section out when it failed", async () => {
+    stubFetch({ ...REPORT, onboarding: null });
+    render(<AnalyticsPage />);
+    await screen.findByText("Players today");
+    expect(screen.queryByText("New players by starting mode")).not.toBeInTheDocument();
+  });
+
   it("tables the weekday and mode numbers", async () => {
     stubFetch();
     render(<AnalyticsPage />);

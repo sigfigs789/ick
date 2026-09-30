@@ -29,6 +29,7 @@ import {
   isReporting,
 } from "./analytics";
 import { recordVisit } from "./game/visits";
+import { sharedModeFromSearch } from "./game/onboarding";
 import { navigate } from "./routes";
 import {
   beginSession,
@@ -70,8 +71,9 @@ export default function App() {
   // long UTM parameter in the result text.
   useEffect(() => {
     const source = campaignSourceFromSearch(window.location.search);
-    if (source === "twitter") trackTwitterArrival();
-    if (source === "share") trackShareArrival();
+    const sharedMode = sharedModeFromSearch(window.location.search);
+    if (source === "twitter") trackTwitterArrival(sharedMode);
+    if (source === "share") trackShareArrival(sharedMode);
     if (source === "reddit") trackRedditArrival();
 
     // Count and report this open once per session (a reload does not recount),

@@ -403,6 +403,44 @@ export interface AnalyticsReport {
    * than showing zeros that would read as "nobody chats".
    */
   chat: ChatReport | null;
+  /**
+   * New players by the mode they were started in, from `onboarding_report` (the
+   * 20260930020000 migration). Null when that read failed or predates it.
+   */
+  onboarding: OnboardingReport | null;
+}
+
+/** Why a new player started in the mode they did -- see game/onboarding.ts. */
+export type OnboardingReason = "shared" | "default" | "split";
+
+/** One starting mode, for one reason, over the window. */
+export interface OnboardingArm {
+  reason: OnboardingReason;
+  mode: string;
+  /** Every player assigned into it, whether or not they banked a word. */
+  players: number;
+  /** Of those, the ones who banked a word on some day. */
+  played: number;
+  /** Live days played, summed over the arm. */
+  playedDays: number;
+  avgDaysPlayed: number | null;
+  d1: Rate;
+  d7: Rate;
+  /** Played again at least once in the seven days after arriving. */
+  week1: Rate;
+  /** Players who shared at least once. */
+  sharers: number;
+  shares: number;
+  /** Players who moved the switch at least once. */
+  switched: number;
+}
+
+export interface OnboardingReport {
+  /** The first puzzle a starting mode was recorded on. */
+  since: string | null;
+  arms: OnboardingArm[];
+  /** Taps on a share link, by link and the mode it carried (`none` before). */
+  arrivals: Array<{ link: string; mode: string; arrivals: number }>;
 }
 
 /** Chat numbers over the same window of puzzles as the rest of the report. */
@@ -593,6 +631,36 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     },
     hours: list(r.hours).map((h) => ({ hour: count(h.hour), visits: count(h.visits) })),
     chat: r.chat && typeof r.chat === "object" ? parseChat(r.chat) : null,
+    onboarding:
+      r.onboarding && typeof r.onboarding === "object" ? parseOnboarding(r.onboarding) : null,
+  };
+}
+
+const REASONS: readonly string[] = ["shared", "default", "split"];
+
+function parseOnboarding(raw: unknown): OnboardingReport {
+  const o = obj(raw);
+  return {
+    since: text(o.since),
+    arms: list(o.arms)
+      .filter((a) => REASONS.includes(text(a.reason) ?? "") && text(a.mode))
+      .map((a) => ({
+        reason: a.reason as OnboardingReason,
+        mode: a.mode as string,
+        players: count(a.players),
+        played: count(a.played),
+        playedDays: count(a.playedDays),
+        avgDaysPlayed: maybe(a.avgDaysPlayed),
+        d1: rate(a.d1),
+        d7: rate(a.d7),
+        week1: rate(a.week1),
+        sharers: count(a.sharers),
+        shares: count(a.shares),
+        switched: count(a.switched),
+      })),
+    arrivals: list(o.arrivals)
+      .filter((a) => text(a.link) && text(a.mode))
+      .map((a) => ({ link: a.link as string, mode: a.mode as string, arrivals: count(a.arrivals) })),
   };
 }
 

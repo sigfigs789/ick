@@ -125,6 +125,10 @@ function sanitizeSource(raw: string | null): string | null {
  * Determines where this visit came from, in priority order: our compact `s=X`
  * campaign code, then a standard `utm_source`, then the referring site — so
  * organic Reddit/Google/etc. traffic is attributed instead of "direct".
+ *
+ * A share code's mode suffix (`sh.f`, see game/onboarding.ts) is not part of
+ * the source: `sh.f` and `sh.s` are both the share link, and counting them as
+ * two sources would split every existing share number in half.
  */
 export function arrivalSource(
   search: string,
@@ -133,7 +137,7 @@ export function arrivalSource(
 ): string | null {
   const params = new URLSearchParams(search);
   return (
-    sanitizeSource(params.get("s")) ??
+    sanitizeSource(params.get("s")?.split(".", 1)[0] ?? null) ??
     sanitizeSource(params.get("utm_source")) ??
     referrerSource(referrer, selfHost)
   );
@@ -203,6 +207,11 @@ export function markSessionEngaged(): VisitOutcome | null {
   } catch {
     return null;
   }
+}
+
+/** Whether this browser has ever recorded a visit. */
+export function hasVisited(): boolean {
+  return safeGet(localStorage, VISITS_KEY) !== null;
 }
 
 /**

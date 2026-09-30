@@ -170,7 +170,7 @@ describe("ResultsPanel share toggle", () => {
       "twitter.com/intent/tweet",
     );
     expect(decodeURIComponent(twitterLink.getAttribute("href") ?? "")).toMatch(
-      /\n\n────\n.*\nwordink\.app\/\?s=t$/s,
+      /\n\n────\n.*\nwordink\.app\/\?s=t\.[fs]$/s,
     );
   });
 
