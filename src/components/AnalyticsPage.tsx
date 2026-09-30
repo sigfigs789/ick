@@ -18,6 +18,7 @@ import {
   findHighlights,
   fmt,
   pct,
+  sourceName,
 } from "./analyticsFormat";
 import { todayDateString } from "../game/date";
 
@@ -317,7 +318,7 @@ function Report({
               <tbody>
                 {report.sources.map((s) => (
                   <tr key={s.source}>
-                    <th scope="row">{s.source}</th>
+                    <th scope="row">{sourceName(s.source)}</th>
                     <td>{fmt(s.visits)}</td>
                     <td>{fmt(s.firstVisits)}</td>
                     <td>{fmt(s.engaged)}</td>
@@ -375,14 +376,15 @@ function Report({
 const REASON_NAMES: Record<OnboardingReason, string> = {
   split: "Random split",
   shared: "Friend's link",
-  default: "Direct",
+  default: "Default",
 };
 const REASON_ORDER: OnboardingReason[] = ["split", "shared", "default"];
 
 /**
  * New players, by the mode they were started in (see game/onboarding.ts): a
- * friend's link starts them in the mode it was shared from, a direct open in
- * Standard, and every other source half and half. The split rows are the fair
+ * friend's link starts them in the mode it was shared from, a share link from
+ * before links carried a mode in Standard, and everyone else -- unattributed
+ * arrivals included -- half and half. The split rows are the fair
  * comparison -- the only thing that differs between them is the mode.
  */
 function OnboardingSection({ onboarding }: { onboarding: OnboardingReport }) {
@@ -398,7 +400,7 @@ function OnboardingSection({ onboarding }: { onboarding: OnboardingReport }) {
       title="New players by starting mode"
       note={
         onboarding.since
-          ? `Players who started in the window, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, direct in Standard, anywhere else at random. Retention is a live day played after the one they arrived on, in either mode.`
+          ? `Players who started in the window, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, a share link from before links carried one in Standard (Default), anyone else, unattributed included, at random. Until the split took unattributed arrivals in, they went to Default too. Retention is a live day played after the one they arrived on, in either mode.`
           : "Where new players start, and whether they stay."
       }
     >

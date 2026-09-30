@@ -18,6 +18,15 @@ export const WEEKDAYS = [
 export const MODE_NAMES: Record<string, string> = { standard: "Standard", freeform: "Freeform" };
 
 /**
+ * The report's `direct` is every visit with no source code, no utm_source and
+ * no outside referrer -- mostly links opened from apps that send no referrer,
+ * not typed URLs -- so it is shown for what it is.
+ */
+export function sourceName(source: string): string {
+  return source === "direct" ? "unattributed" : source;
+}
+
+/**
  * Below this many people a rate is shown but not ranked: two of three is 67%,
  * and a "best day" picked off it is noise wearing a percentage.
  */
@@ -77,7 +86,8 @@ export function findHighlights(report: AnalyticsReport): string[] {
   );
   if (sources.length >= 2) {
     const best = [...sources].sort((a, b) => b.engaged / b.visits - a.engaged / a.visits)[0];
-    lines.push(`Visits from ${best.source} engage the most: ${pct(best.engaged / best.visits)} engaged per visit.`);
+    const who = best.source === "direct" ? "Unattributed visits" : `Visits from ${best.source}`;
+    lines.push(`${who} engage the most: ${pct(best.engaged / best.visits)} engaged per visit.`);
   }
   return lines;
 }

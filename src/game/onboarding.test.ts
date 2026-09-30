@@ -63,15 +63,25 @@ describe("chooseStartingMode", () => {
     });
   });
 
-  it("keeps Standard for a direct open or a share link with no mode", () => {
-    expect(chooseStartingMode("", "", HOST, heads)).toEqual({
+  it("keeps Standard for a share link with no mode", () => {
+    expect(chooseStartingMode("?s=sh", "", HOST, heads)).toEqual({
       mode: "standard",
       reason: "default",
+      source: "sh",
+    });
+    expect(chooseStartingMode("?s=t", "", HOST, heads)).toMatchObject({ reason: "default" });
+  });
+
+  it("splits unattributed arrivals like any other source", () => {
+    expect(chooseStartingMode("", "", HOST, heads)).toEqual({
+      mode: "freeform",
+      reason: "split",
       source: null,
     });
-    expect(chooseStartingMode("?s=sh", "", HOST, heads)).toMatchObject({ reason: "default" });
-    expect(chooseStartingMode("", `https://${HOST}/leaderboard`, HOST, heads)).toMatchObject({
-      reason: "default",
+    expect(chooseStartingMode("", `https://${HOST}/leaderboard`, HOST, tails)).toEqual({
+      mode: "standard",
+      reason: "split",
+      source: null,
     });
   });
 
@@ -107,6 +117,13 @@ describe("assignStartingMode", () => {
   it("leaves a returning player alone", () => {
     recordVisit("", TODAY, "", HOST);
     expect(assignStartingMode("?s=sh.f", TODAY, "", HOST)).toBeNull();
+    expect(currentMode()).toBe("standard");
+  });
+
+  it("leaves a returning unattributed player in the mode they had", () => {
+    recordVisit("", TODAY, "", HOST);
+    setMode("standard");
+    expect(assignStartingMode("", TODAY, "", HOST, heads)).toBeNull();
     expect(currentMode()).toBe("standard");
   });
 

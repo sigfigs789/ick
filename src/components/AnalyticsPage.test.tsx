@@ -170,6 +170,14 @@ describe("AnalyticsPage", () => {
     expect(screen.getByText("not enough days yet")).toBeInTheDocument();
   });
 
+  it("calls visits with no source unattributed, not direct", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+
+    expect(await screen.findByRole("rowheader", { name: "unattributed" })).toBeInTheDocument();
+    expect(screen.queryByRole("rowheader", { name: "direct" })).toBeNull();
+  });
+
   it("counts today by the viewer's calendar date, not the latest puzzle played", async () => {
     // Behind the latest puzzle: somebody further east is already on the 27th.
     clock.today = "2026-09-26";
@@ -337,6 +345,19 @@ describe("findHighlights", () => {
     );
     expect(lines).toContain("30% of everyone who has played has played exactly once.");
     expect(lines).toContain("Visits from reddit engage the most: 90% engaged per visit.");
+  });
+
+  it("names the unattributed visits unattributed when they engage the most", () => {
+    const lines = findHighlights(
+      parseAnalytics({
+        ...REPORT,
+        sources: [
+          { source: "direct", visits: 600, firstVisits: 100, engaged: 580 },
+          { source: "reddit", visits: 100, firstVisits: 80, engaged: 50 },
+        ],
+      }),
+    );
+    expect(lines).toContain("Unattributed visits engage the most: 97% engaged per visit.");
   });
 
   it("ranks nothing off a handful of players", () => {
