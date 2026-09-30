@@ -14,11 +14,12 @@ import { arrivalSource, hasVisited } from "./visits";
  *                shared from (`?s=sh.f`, `?s=t.s` -- see `shareCode`). They
  *                start where their friend is, so the result they were sent is
  *                the game they are about to play.
- *   - `default`  direct, or a share link from before links carried a mode.
- *                Standard, as it has always been.
- *   - `split`    every other identified source -- Reddit, Google, any other
- *                site. Half start in Freeform and half in Standard, at random,
- *                so the two can be compared on players who chose neither.
+ *   - `default`  a share link from before links carried a mode. Standard, as
+ *                it has always been.
+ *   - `split`    everyone else -- Reddit, Google, any other site, and arrivals
+ *                with no source at all (no code, no referrer). Half start in
+ *                Freeform and half in Standard, at random, so the two can be
+ *                compared on players who chose neither.
  *
  * Whatever it picks is only a starting point. The switch in the header works
  * the same as ever, and moving it is recorded like any other switch.
@@ -96,7 +97,7 @@ export function chooseStartingMode(
   const source = arrivalSource(search, referrer, selfHost);
   const shared = sharedModeFromSearch(search);
   if (shared) return { mode: shared, reason: "shared", source };
-  if (source === null || SHARE_CODES.has(source)) {
+  if (source !== null && SHARE_CODES.has(source)) {
     return { mode: DEFAULT_MODE, reason: "default", source };
   }
   return { mode: random() < 0.5 ? "freeform" : "standard", reason: "split", source };
