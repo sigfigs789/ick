@@ -39,12 +39,13 @@ import { DailyChart } from "./DailyChart";
  * playing it.
  */
 
-const WINDOWS = [7, 30, 60, 90] as const;
+/** 1 is today: the viewer's own puzzle, alone. */
+const WINDOWS = [1, 7, 30, 60, 90] as const;
 const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function AnalyticsPage() {
   const [days, setDays] = useState<number>(60);
-  const load = useCallback(async () => [await fetchAnalytics(days)], [days]);
+  const load = useCallback(async () => [await fetchAnalytics(days, todayDateString())], [days]);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const report: AnalyticsReport | undefined = rows[0];
 
@@ -82,6 +83,12 @@ function Report({
   // tomorrow's, and a day behind in the minutes before anybody is on today's.
   const today = todayDateString();
   const todayRow = report.daily.find((d) => d.date === today);
+  const isToday = report.windowDays === 1;
+  // The visit half: receipt time over a span of days, or in the today window the
+  // events stamped with today's puzzle, which only rows from `visitsSince` are.
+  const eventSpan = isToday
+    ? `on today's puzzle${report.visitsSince ? ` (stamped from ${report.visitsSince})` : " (not stamped yet)"}`
+    : `in the last ${report.windowDays} days`;
 
   return (
     <div className="analytics">
@@ -95,7 +102,7 @@ function Report({
             aria-pressed={n === days}
             onClick={() => onDays(n)}
           >
-            {n} days
+            {n === 1 ? "Today" : `${n} days`}
           </button>
         ))}
       </div>
@@ -161,7 +168,7 @@ function Report({
 
       <Section
         title="Players per puzzle"
-        note={`The last ${report.windowDays} puzzles, split by the rules each was played under, with the players who only opened the leaderboard or the found words on top in grey${
+        note={`${isToday ? "Today's puzzle" : `The last ${report.windowDays} puzzles`}, split by the rules each was played under, with the players who only opened the leaderboard or the found words on top in grey${
           totals.lookersSince ? ` (recorded from ${totals.lookersSince})` : ""
         }. Hover a day for new players.`}
       >
@@ -272,7 +279,7 @@ function Report({
           </table>
         </div>
         <p className="review__meta">
-          Switches in the last {report.windowDays} days: {fmt(report.funnel.toFreeform)} to Freeform,{" "}
+          Switches {eventSpan}: {fmt(report.funnel.toFreeform)} to Freeform,{" "}
           {fmt(report.funnel.toStandard)} to Standard.
         </p>
       </Section>
@@ -292,7 +299,7 @@ function Report({
 
       <Section
         title="From open to share"
-        note={`Events in the last ${report.windowDays} days. Engaged is a visit that submitted a guess or opened the leaderboard or the found words.`}
+        note={`Events ${eventSpan}. Engaged is a visit that submitted a guess or opened the leaderboard or the found words.`}
       >
         <Funnel report={report} />
       </Section>
@@ -331,7 +338,7 @@ function Report({
         )}
       </Section>
 
-      <Section title="Sessions" note={`Visible time on the page, per session, in the last ${report.windowDays} days.`}>
+      <Section title="Sessions" note={`Visible time on the page, per session, ${eventSpan}.`}>
         <div className="analytics__tiles">
           <Tile label="Sessions" value={fmt(report.sessions.sessions)} />
           <Tile label="Median session" value={duration(report.sessions.medianVisibleMs)} />
@@ -397,7 +404,7 @@ function ChatSection({ chat, windowDays }: { chat: ChatReport; windowDays: numbe
   return (
     <Section
       title="Chat"
-      note={`The last ${windowDays} puzzles, recorded from ${totals.since}. Viewers opened the chat; senders posted in it. Time is visible time with the panel open.`}
+      note={`${windowDays === 1 ? "Today's puzzle" : `The last ${windowDays} puzzles`}, recorded from ${totals.since}. Viewers opened the chat; senders posted in it. Time is visible time with the panel open.`}
     >
       <div className="analytics__tiles">
         <Tile

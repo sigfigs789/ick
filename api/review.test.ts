@@ -473,10 +473,42 @@ describe("api/review", () => {
     expect(await response.json()).toEqual({ report: { ...report, chat: null } });
   });
 
-  it("refuses an analytics window outside a week to a year", async () => {
+  it("reads the today window for the puzzle the page names", async () => {
     withEnv();
     const fetchMock = stubFetch({});
-    for (const days of ["3", "366", "abc", "7.5"]) {
+
+    expect((await handler(get("?list=analytics&days=1&date=2026-09-30"))).status).toBe(200);
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(calls).toHaveLength(2);
+    for (const [, init] of calls) {
+      expect(JSON.parse(String(init.body))).toEqual({ p_days: 1, p_date: "2026-09-30" });
+    }
+  });
+
+  it("sends no date for a longer window", async () => {
+    withEnv();
+    const fetchMock = stubFetch({});
+
+    expect((await handler(get("?list=analytics&days=30&date=2026-09-30"))).status).toBe(200);
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    for (const [, init] of calls) expect(JSON.parse(String(init.body))).toEqual({ p_days: 30 });
+  });
+
+  it("refuses a date that is not a calendar day", async () => {
+    withEnv();
+    const fetchMock = stubFetch({});
+    for (const date of ["2026-02-30", "yesterday", "2026-9-30"]) {
+      const response = await handler(get(`?list=analytics&days=1&date=${date}`));
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ ok: false, reason: "bad-date" });
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses an analytics window other than today or a week to a year", async () => {
+    withEnv();
+    const fetchMock = stubFetch({});
+    for (const days of ["0", "3", "366", "abc", "7.5"]) {
       const response = await handler(get(`?list=analytics&days=${days}`));
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ ok: false, reason: "bad-days" });

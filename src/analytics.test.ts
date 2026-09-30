@@ -54,6 +54,9 @@ function outcome(overrides: Partial<VisitOutcome["state"]> = {}, rest: Partial<V
   };
 }
 
+/** The live puzzle the visit, session, share and mode events are stamped with. */
+const LIVE_DATE = expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/);
+
 describe("visit events", () => {
   it("site_visit and visit_engaged carry identical params", () => {
     const o = outcome();
@@ -68,6 +71,7 @@ describe("visit events", () => {
       times_returned: 2,
       days_returned: 1,
       new_day: true,
+      puzzle_date: LIVE_DATE,
     };
     expect(track).toHaveBeenNthCalledWith(1, "site_visit", expected);
     // Plus what engaged it, which a guess is unless the caller says otherwise.
@@ -142,6 +146,7 @@ describe("share attribution", () => {
       visit_type: "returning",
       times_returned: 1,
       days_returned: 0,
+      puzzle_date: LIVE_DATE,
     });
   });
 
@@ -169,6 +174,7 @@ describe("share attribution", () => {
       visit_type: "first",
       times_returned: 0,
       days_returned: 0,
+      puzzle_date: LIVE_DATE,
     });
   });
 });
@@ -214,6 +220,7 @@ describe("session_time", () => {
       visit_type: "first",
       times_returned: 0,
       days_returned: 0,
+      puzzle_date: LIVE_DATE,
     });
   });
 
@@ -546,10 +553,10 @@ describe("supabase mirror", () => {
     const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
     expect(await payload(body)).toEqual({
       name: "mode_changed",
-      props: { from: "standard", to: "freeform", player_id: "player-1" },
+      props: { from: "standard", to: "freeform", puzzle_date: LIVE_DATE, player_id: "player-1" },
     });
     // ...and not on Vercel, which cannot group by it.
-    expect(track).toHaveBeenCalledWith("mode_changed", { from: "standard", to: "freeform" });
+    expect(track).toHaveBeenCalledWith("mode_changed", { from: "standard", to: "freeform", puzzle_date: LIVE_DATE });
     localStorage.clear();
   });
 

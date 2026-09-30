@@ -120,122 +120,130 @@ export function DailyChart({ daily, today }: { daily: Day[]; today: string }) {
         })}
       </div>
 
-      <div className="daily__controls">
-        <button
-          type="button"
-          className="daily__step"
-          aria-label="Previous day"
-          disabled={selected === 0}
-          onClick={() => pick(selected - 1)}
-        >
-          ‹
-        </button>
-        <input
-          type="date"
-          className="daily__date"
-          aria-label="Day"
-          value={daily[selected].date}
-          min={daily[0].date}
-          max={daily[n - 1].date}
-          onChange={(e) => {
-            const i = daily.findIndex((d) => d.date === e.target.value);
-            if (i >= 0) pick(i);
-          }}
-        />
-        <button
-          type="button"
-          className="daily__step"
-          aria-label="Next day"
-          disabled={selected === n - 1}
-          onClick={() => pick(selected + 1)}
-        >
-          ›
-        </button>
-        {todayIndex >= 0 && selected !== todayIndex && (
-          <button type="button" className="analytics__window-button" onClick={() => pick(todayIndex)}>
-            Today
-          </button>
-        )}
-        <span className="daily__caption">
-          {longDate(day.date)} · {relative(day.date, today)}
-          {shown > 0 && `, change vs ${shortDate(daily[shown - 1].date)}`}
-        </span>
-      </div>
-
-      <div className="daily__chart">
-        <div className="daily__yaxis" aria-hidden="true">
-          {ticks.map((t) => (
-            <span key={t} style={{ bottom: `${(t / top) * 100}%` }}>
-              {fmt(t)}
-            </span>
-          ))}
-        </div>
-        <div
-          className="daily__plot"
-          role="slider"
-          tabIndex={0}
-          aria-label={`${current.label} per puzzle`}
-          aria-valuemin={0}
-          aria-valuemax={n - 1}
-          aria-valuenow={selected}
-          aria-valuetext={describe(selected)}
-          onPointerMove={(e) => setHover(indexAt(e))}
-          onPointerLeave={() => setHover(null)}
-          onClick={(e) => pick(indexAt(e))}
-          onKeyDown={onKey}
-        >
-          {ticks.map((t) => (
-            <span key={t} className="daily__grid" style={{ bottom: `${(t / top) * 100}%` }} />
-          ))}
-          <svg className="daily__svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path className="daily__area" d={area} />
-            {solid.length > 1 && <path className="daily__line" d={`M ${solid.join(" L ")}`} />}
-            {dashed.length > 1 && (
-              <path className="daily__line daily__line--live" d={`M ${dashed.join(" L ")}`} />
-            )}
-          </svg>
-          {hover !== null && hover !== selected && (
-            <span className="daily__cross daily__cross--pinned" style={{ left: `${x(selected)}%` }} />
-          )}
-          <span className="daily__cross" style={{ left: `${x(shown)}%` }} />
-          <span className="daily__dot" style={{ left: `${x(shown)}%`, top: `${y(values[shown])}%` }} />
-          <div
-            className={`daily__tip${x(shown) > 60 ? " daily__tip--left" : ""}`}
-            style={{ left: `${x(shown)}%` }}
-            aria-hidden="true"
-          >
-            <span className="daily__tip-row">
-              <span className="daily__tip-swatch" />
-              {current.label} <strong>{fmt(values[shown])}</strong>
-            </span>
-            <span className="daily__tip-date">
-              {shortDate(day.date)} · {SHORT_WEEKDAYS[dowOf(day.date)]}
-            </span>
-            {metric === "players" && day.standard > 0 && day.freeform > 0 && (
-              <span className="daily__tip-date">
-                {fmt(day.standard)} Standard · {fmt(day.freeform)} Freeform
-              </span>
-            )}
-            {day.date >= today && <span className="daily__tip-date">still in play</span>}
-          </div>
-        </div>
-        <div className="daily__xaxis" aria-hidden="true">
-          {labels.map((i, k) => (
-            <span
-              key={daily[i].date}
-              className={`daily__xlabel${Math.abs(x(i) - x(shown)) < 12 ? " daily__xlabel--hidden" : ""}${
-                k % 2 === 1 && i !== n - 1 ? " daily__xlabel--minor" : ""
-              }${edge(x(i))}`}
-              style={{ left: `${x(i)}%` }}
+      {n === 1 ? (
+        <p className="review__meta daily__single">
+          {longDate(day.date)} · {relative(day.date, today)}. Pick a longer window to hop between days.
+        </p>
+      ) : (
+        <>
+          <div className="daily__controls">
+            <button
+              type="button"
+              className="daily__step"
+              aria-label="Previous day"
+              disabled={selected === 0}
+              onClick={() => pick(selected - 1)}
             >
-              {shortDate(daily[i].date)}
+              ‹
+            </button>
+            <input
+              type="date"
+              className="daily__date"
+              aria-label="Day"
+              value={daily[selected].date}
+              min={daily[0].date}
+              max={daily[n - 1].date}
+              onChange={(e) => {
+                const i = daily.findIndex((d) => d.date === e.target.value);
+                if (i >= 0) pick(i);
+              }}
+            />
+            <button
+              type="button"
+              className="daily__step"
+              aria-label="Next day"
+              disabled={selected === n - 1}
+              onClick={() => pick(selected + 1)}
+            >
+              ›
+            </button>
+            {todayIndex >= 0 && selected !== todayIndex && (
+              <button type="button" className="analytics__window-button" onClick={() => pick(todayIndex)}>
+                Today
+              </button>
+            )}
+            <span className="daily__caption">
+              {longDate(day.date)} · {relative(day.date, today)}
+              {shown > 0 && `, change vs ${shortDate(daily[shown - 1].date)}`}
             </span>
-          ))}
-          <span className={`daily__pill${edge(x(shown))}`} style={{ left: `${x(shown)}%` }}>
-            {relative(day.date, today)}
-          </span>
-        </div>
-      </div>
+          </div>
+
+          <div className="daily__chart">
+            <div className="daily__yaxis" aria-hidden="true">
+              {ticks.map((t) => (
+                <span key={t} style={{ bottom: `${(t / top) * 100}%` }}>
+                  {fmt(t)}
+                </span>
+              ))}
+            </div>
+            <div
+              className="daily__plot"
+              role="slider"
+              tabIndex={0}
+              aria-label={`${current.label} per puzzle`}
+              aria-valuemin={0}
+              aria-valuemax={n - 1}
+              aria-valuenow={selected}
+              aria-valuetext={describe(selected)}
+              onPointerMove={(e) => setHover(indexAt(e))}
+              onPointerLeave={() => setHover(null)}
+              onClick={(e) => pick(indexAt(e))}
+              onKeyDown={onKey}
+            >
+              {ticks.map((t) => (
+                <span key={t} className="daily__grid" style={{ bottom: `${(t / top) * 100}%` }} />
+              ))}
+              <svg className="daily__svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <path className="daily__area" d={area} />
+                {solid.length > 1 && <path className="daily__line" d={`M ${solid.join(" L ")}`} />}
+                {dashed.length > 1 && (
+                  <path className="daily__line daily__line--live" d={`M ${dashed.join(" L ")}`} />
+                )}
+              </svg>
+              {hover !== null && hover !== selected && (
+                <span className="daily__cross daily__cross--pinned" style={{ left: `${x(selected)}%` }} />
+              )}
+              <span className="daily__cross" style={{ left: `${x(shown)}%` }} />
+              <span className="daily__dot" style={{ left: `${x(shown)}%`, top: `${y(values[shown])}%` }} />
+              <div
+                className={`daily__tip${x(shown) > 60 ? " daily__tip--left" : ""}`}
+                style={{ left: `${x(shown)}%` }}
+                aria-hidden="true"
+              >
+                <span className="daily__tip-row">
+                  <span className="daily__tip-swatch" />
+                  {current.label} <strong>{fmt(values[shown])}</strong>
+                </span>
+                <span className="daily__tip-date">
+                  {shortDate(day.date)} · {SHORT_WEEKDAYS[dowOf(day.date)]}
+                </span>
+                {metric === "players" && day.standard > 0 && day.freeform > 0 && (
+                  <span className="daily__tip-date">
+                    {fmt(day.standard)} Standard · {fmt(day.freeform)} Freeform
+                  </span>
+                )}
+                {day.date >= today && <span className="daily__tip-date">still in play</span>}
+              </div>
+            </div>
+            <div className="daily__xaxis" aria-hidden="true">
+              {labels.map((i, k) => (
+                <span
+                  key={daily[i].date}
+                  className={`daily__xlabel${Math.abs(x(i) - x(shown)) < 12 ? " daily__xlabel--hidden" : ""}${
+                    k % 2 === 1 && i !== n - 1 ? " daily__xlabel--minor" : ""
+                  }${edge(x(i))}`}
+                  style={{ left: `${x(i)}%` }}
+                >
+                  {shortDate(daily[i].date)}
+                </span>
+              ))}
+              <span className={`daily__pill${edge(x(shown))}`} style={{ left: `${x(shown)}%` }}>
+                {relative(day.date, today)}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

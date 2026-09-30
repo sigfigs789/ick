@@ -166,8 +166,14 @@ export function fetchFreeform(): Promise<FreeformVerdict> {
 }
 
 /** How the game is doing: play, retention, and what they depend on. */
-export function fetchAnalytics(days: number): Promise<AnalyticsReport> {
-  return read("analytics", (body) => parseAnalytics(body.report), `&days=${days}`);
+/**
+ * A window of 1 is today: the one puzzle `date` names, which is the viewer's own
+ * calendar date. Longer windows send no date and end at the latest puzzle
+ * anybody played.
+ */
+export function fetchAnalytics(days: number, date?: string): Promise<AnalyticsReport> {
+  const window = days === 1 && date ? `&days=1&date=${date}` : `&days=${days}`;
+  return read("analytics", (body) => parseAnalytics(body.report), window);
 }
 
 /**
@@ -317,7 +323,13 @@ export interface Rate {
 export interface AnalyticsReport {
   /** The latest puzzle anybody played; null when nobody has. */
   asOf: string | null;
+  /** 1 for the today window, otherwise how many puzzles and days it spans. */
   windowDays: number;
+  /**
+   * The first puzzle a visit event is stamped with. Before it, visits carry no
+   * puzzle, so the today window's visit half only counts from here.
+   */
+  visitsSince: string | null;
   totals: {
     players: number;
     plays: number;
@@ -504,6 +516,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
   return {
     asOf: text(r.asOf),
     windowDays: count(r.windowDays),
+    visitsSince: text(r.visitsSince),
     totals: {
       players: count(totals.players),
       plays: count(totals.plays),

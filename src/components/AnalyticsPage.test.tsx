@@ -275,6 +275,26 @@ describe("AnalyticsPage", () => {
     );
   });
 
+  it("reads today's puzzle alone in the today window", async () => {
+    const fetchMock = stubFetch({
+      ...REPORT,
+      windowDays: 1,
+      visitsSince: "2026-09-27",
+      daily: [REPORT.daily[1]],
+    });
+    render(<AnalyticsPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Today" }));
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([url]) => String(url).includes("days=1&date=2026-09-27&")),
+      ).toBe(true),
+    );
+    expect(screen.getByText(/^Events on today's puzzle \(stamped from 2026-09-27\)/)).toBeInTheDocument();
+    expect(screen.getByText(/^Today's puzzle, split by the rules/)).toBeInTheDocument();
+    expect(screen.getByText(/Pick a longer window to hop between days/)).toBeInTheDocument();
+  });
+
   it("says so when the report cannot load", async () => {
     stubFetch(null);
     render(<AnalyticsPage />);

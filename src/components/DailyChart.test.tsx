@@ -96,6 +96,13 @@ describe("DailyChart", () => {
     expect(screen.getByLabelText("Day")).toHaveValue("2026-09-27");
   });
 
+  it("shows a lone day's numbers without a line to hop along", () => {
+    render(<DailyChart daily={[DAILY[2]]} today="2026-09-28" />);
+    expect(within(tab("Players")).getByText("45")).toBeInTheDocument();
+    expect(screen.queryByRole("slider")).not.toBeInTheDocument();
+    expect(screen.getByText(/Mon Sep 28 · Today\. Pick a longer window/)).toBeInTheDocument();
+  });
+
   it("plots the tab that is picked", async () => {
     render(<DailyChart daily={DAILY} today="2026-09-28" />);
     await userEvent.click(tab("New players"));
