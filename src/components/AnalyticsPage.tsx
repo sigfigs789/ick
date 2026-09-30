@@ -13,6 +13,7 @@ import {
   pct,
 } from "./analyticsFormat";
 import { todayDateString } from "../game/date";
+import { DailyChart } from "./DailyChart";
 
 /**
  * How the game is doing, as a page at /analytics.
@@ -38,7 +39,7 @@ import { todayDateString } from "../game/date";
  * playing it.
  */
 
-const WINDOWS = [30, 60, 90] as const;
+const WINDOWS = [7, 30, 60, 90] as const;
 const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function AnalyticsPage() {
@@ -128,6 +129,13 @@ function Report({
           sub="puzzles played, on average"
         />
       </div>
+
+      <Section
+        title="Day by day"
+        note="Hover the line to read any puzzle; click, use the arrow keys or pick a date to pin one. The change beside each number is against the puzzle before."
+      >
+        <DailyChart daily={report.daily} today={today} />
+      </Section>
 
       {highlights.length > 0 && (
         <Section title="Worth noticing">

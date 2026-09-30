@@ -269,6 +269,10 @@ describe("AnalyticsPage", () => {
     await waitFor(() =>
       expect(fetchMock.mock.calls.some(([url]) => String(url).includes("days=90"))).toBe(true),
     );
+    await userEvent.click(screen.getByRole("button", { name: "7 days" }));
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes("days=7&"))).toBe(true),
+    );
   });
 
   it("says so when the report cannot load", async () => {
