@@ -349,6 +349,23 @@ export interface AnalyticsReport {
     /** The first puzzle a look was recorded against; null before any was. */
     lookersSince: string | null;
   };
+  /**
+   * The headline numbers over exactly the puzzles `daily` spans, so they follow
+   * the window the page picked.
+   */
+  window: {
+    puzzles: number;
+    /** Distinct players on any puzzle in the window. */
+    players: number;
+    /** Whose first puzzle ever is in the window. */
+    newPlayers: number;
+    /** Puzzles played per player, over the window's players; null when none. */
+    avgDaysPerPlayer: number | null;
+    /** The average puzzle's players; null when nobody played. */
+    avgDailyPlayers: number | null;
+    /** Looked at a puzzle in the window without banking a word on it. */
+    lookers: number;
+  };
   daily: Array<{
     date: string;
     players: number;
@@ -548,6 +565,7 @@ function rate(raw: unknown): Rate {
 export function parseAnalytics(raw: unknown): AnalyticsReport {
   const r = obj(raw);
   const totals = obj(r.totals);
+  const win = obj(r.window);
   const retention = obj(r.retention);
   const funnel = obj(r.funnel);
   const sessions = obj(r.sessions);
@@ -567,6 +585,14 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       lookersLast7: count(totals.lookersLast7),
       lookersNeverPlayed: count(totals.lookersNeverPlayed),
       lookersSince: text(totals.lookersSince),
+    },
+    window: {
+      puzzles: count(win.puzzles),
+      players: count(win.players),
+      newPlayers: count(win.newPlayers),
+      avgDaysPerPlayer: maybe(win.avgDaysPerPlayer),
+      avgDailyPlayers: maybe(win.avgDailyPlayers),
+      lookers: count(win.lookers),
     },
     daily: list(r.daily)
       .filter((d) => text(d.date))
