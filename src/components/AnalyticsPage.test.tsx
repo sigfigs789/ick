@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AnalyticsPage } from "./AnalyticsPage";
-import { findHighlights } from "./analyticsFormat";
+import { findHighlights, moveRange } from "./analyticsFormat";
 import { parseAnalytics } from "../game/review";
 
 /** The viewer's calendar date, which the page's "today" tiles are read off. */
@@ -48,6 +48,9 @@ const REPORT = {
     avgDaysPerPlayer: 1.13,
     avgDailyPlayers: 45,
     lookers: 7,
+    dauMau: 0.3125,
+    from: "2026-09-26",
+    to: "2026-09-27",
   },
   daily: [
     { date: "2026-09-26", players: 50, newPlayers: 5, standard: 0, freeform: 50, lookers: 0 },
@@ -180,8 +183,10 @@ describe("AnalyticsPage", () => {
     const fresh = screen.getByText("New players", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
     expect(within(fresh as HTMLElement).getByText("8")).toBeInTheDocument();
     expect(within(fresh as HTMLElement).getByText("10% of the players")).toBeInTheDocument();
+    // DAU/MAU as the report computed it, not the window's own players.
     const sticky = screen.getByText("Stickiness").closest(".analytics__tile")!;
-    expect(within(sticky as HTMLElement).getByText("56%")).toBeInTheDocument();
+    expect(within(sticky as HTMLElement).getByText("31%")).toBeInTheDocument();
+    expect(within(sticky as HTMLElement).getByText("DAU ÷ 30-day players, averaged")).toBeInTheDocument();
     const perPlayer = screen.getByText("Days per player").closest(".analytics__tile")!;
     expect(within(perPlayer as HTMLElement).getByText("1.1")).toBeInTheDocument();
     expect(screen.queryByText("Last 7 puzzles")).toBeNull();
@@ -381,7 +386,17 @@ describe("AnalyticsPage", () => {
       ...REPORT,
       windowDays: 1,
       visitsSince: "2026-09-27",
-      window: { ...REPORT.window, puzzles: 1, players: 40, newPlayers: 3, avgDaysPerPlayer: 1, avgDailyPlayers: 40 },
+      window: {
+        ...REPORT.window,
+        puzzles: 1,
+        players: 40,
+        newPlayers: 3,
+        avgDaysPerPlayer: 1,
+        avgDailyPlayers: 40,
+        dauMau: 0.25,
+        from: "2026-09-27",
+        to: "2026-09-27",
+      },
       daily: [REPORT.daily[1]],
     });
     render(<AnalyticsPage />);
@@ -397,8 +412,59 @@ describe("AnalyticsPage", () => {
     expect(screen.getByText(/Pick a longer window to hop between days/)).toBeInTheDocument();
     const players = screen.getByText("Players", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
     expect(within(players as HTMLElement).getByText("puzzle 2026-09-27")).toBeInTheDocument();
-    // One puzzle has no spread to measure, so these say so rather than 100% and 1.0.
-    expect(screen.getAllByText("needs more than one puzzle")).toHaveLength(2);
+    // One puzzle has no spread of days to measure, so this says so rather than
+    // 1.0; DAU/MAU still has its 30-day denominator.
+    expect(screen.getAllByText("needs more than one puzzle")).toHaveLength(1);
+    const sticky = screen.getByText("Stickiness").closest(".analytics__tile")!;
+    expect(within(sticky as HTMLElement).getByText("25%")).toBeInTheDocument();
+  });
+
+  it("reads a picked calendar range, and a preset clears it", async () => {
+    const ranged = {
+      ...REPORT,
+      windowDays: 5,
+      window: { ...REPORT.window, puzzles: 5, from: "2026-09-16", to: "2026-09-20" },
+    };
+    const fetchMock = vi.fn<(url: string) => Promise<Response>>(async (url) =>
+      new Response(JSON.stringify({ report: String(url).includes("date=2026-09-20") ? ranged : REPORT }), { status: 200 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<AnalyticsPage />);
+
+    const from = await screen.findByLabelText("From");
+    // The inputs start on the preset's own days.
+    expect(from).toHaveValue("2026-09-26");
+    expect(screen.getByLabelText("to")).toHaveValue("2026-09-27");
+    // Moving the start alone keeps the end: 2026-09-16 to 2026-09-27.
+    fireEvent.change(from, { target: { value: "2026-09-16" } });
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes("days=12&date=2026-09-27&"))).toBe(true),
+    );
+    fireEvent.change(await screen.findByLabelText("to"), { target: { value: "2026-09-20" } });
+    await screen.findByText("2026-09-16 to 2026-09-20");
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("days=5&date=2026-09-20&"))).toBe(true);
+    const players = screen.getByText("Players", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
+    expect(within(players as HTMLElement).getByText("2026-09-16 to 2026-09-20")).toBeInTheDocument();
+    expect(screen.getByText(/^The puzzles from 2026-09-16 to 2026-09-20, split by the rules/)).toBeInTheDocument();
+    expect(screen.getByText(/^Events from 2026-09-16 to 2026-09-20 \(Mountain Time\)/)).toBeInTheDocument();
+    for (const button of screen.getAllByRole("button", { name: /days|Today/ })) {
+      expect(button).toHaveAttribute("aria-pressed", "false");
+    }
+
+    fetchMock.mockClear();
+    await userEvent.click(screen.getByRole("button", { name: "30 days" }));
+    await waitFor(() => expect(String(fetchMock.mock.calls[fetchMock.mock.calls.length - 1]?.[0])).toContain("days=30&key"));
+  });
+
+  it("keeps a picked range in order and within a year", () => {
+    const range = { from: "2026-09-10", to: "2026-09-20" };
+    expect(moveRange(range, "from", "2026-09-12")).toEqual({ from: "2026-09-12", to: "2026-09-20" });
+    // An end moved past the other drags it along.
+    expect(moveRange(range, "from", "2026-09-25")).toEqual({ from: "2026-09-25", to: "2026-09-25" });
+    expect(moveRange(range, "to", "2026-09-01")).toEqual({ from: "2026-09-01", to: "2026-09-01" });
+    // More than 365 days pulls the other end in to exactly a year.
+    expect(moveRange(range, "from", "2025-01-01")).toEqual({ from: "2025-01-01", to: "2025-12-31" });
+    expect(moveRange(range, "to", "2027-12-31")).toEqual({ from: "2027-01-01", to: "2027-12-31" });
   });
 
   it("says so when the report cannot load", async () => {

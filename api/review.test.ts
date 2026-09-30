@@ -494,11 +494,28 @@ describe("api/review", () => {
     });
   });
 
-  it("sends no date for a longer window", async () => {
+  it("reads a picked range as its width ending on its last day", async () => {
     withEnv();
     const fetchMock = stubFetch({});
 
-    expect((await handler(get("?list=analytics&days=30&date=2026-09-30"))).status).toBe(200);
+    // 2026-09-16 to 2026-09-20: five days, including a width no preset has.
+    expect((await handler(get("?list=analytics&days=5&date=2026-09-20"))).status).toBe(200);
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    const bodies = Object.fromEntries(
+      calls.map(([url, init]) => [String(url).split("/").pop(), JSON.parse(String(init.body))]),
+    );
+    expect(bodies).toEqual({
+      analytics_report: { p_days: 5, p_date: "2026-09-20" },
+      chat_report: { p_days: 5, p_date: "2026-09-20" },
+      onboarding_report: { p_days: 5 },
+    });
+  });
+
+  it("sends no date for a preset window", async () => {
+    withEnv();
+    const fetchMock = stubFetch({});
+
+    expect((await handler(get("?list=analytics&days=30"))).status).toBe(200);
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
     for (const [, init] of calls) expect(JSON.parse(String(init.body))).toEqual({ p_days: 30 });
   });
@@ -519,6 +536,17 @@ describe("api/review", () => {
     const fetchMock = stubFetch({});
     for (const days of ["0", "3", "366", "abc", "7.5"]) {
       const response = await handler(get(`?list=analytics&days=${days}`));
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ ok: false, reason: "bad-days" });
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a picked range under a day or over a year", async () => {
+    withEnv();
+    const fetchMock = stubFetch({});
+    for (const days of ["0", "366", "2.5"]) {
+      const response = await handler(get(`?list=analytics&days=${days}&date=2026-09-20`));
       expect(response.status).toBe(400);
       expect(await response.json()).toEqual({ ok: false, reason: "bad-days" });
     }

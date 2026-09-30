@@ -12,6 +12,7 @@
 //        notes: [{ id, text, at, date, vote }] }
 // GET /api/review?list=analytics&days=60
 // GET /api/review?list=analytics&days=1&date=YYYY-MM-DD   (today: that one puzzle)
+// GET /api/review?list=analytics&days=N&date=YYYY-MM-DD   (a picked range: N days ending on date)
 //   -> { report: { asOf, totals, daily, retention, cohorts, weekday, modes,
 //                  depth, funnel, sources, sessions, hours, chat } }
 //   400 bad-list / bad-limit / bad-days / bad-date, 401 unauthorised, 405 wrong method,
@@ -356,24 +357,27 @@ async function handleGet(request: Request): Promise<Response> {
     if (list === "analytics") {
       // A window in days rather than a row limit: the report is one document,
       // and what a reader varies is how far back its time series reach.
-      const rawDays = params.get("days");
-      let days = DEFAULT_ANALYTICS_DAYS;
-      if (rawDays !== null) {
-        days = Number(rawDays);
-        // 1 is the today window, one puzzle; otherwise a week to a year.
-        if (!Number.isInteger(days) || (days !== 1 && (days < 7 || days > 365))) {
-          return reply(400, { ok: false, reason: "bad-days" });
-        }
-      }
-      // The today window's puzzle is the viewer's calendar date, sent as-is, not
-      // worked out here from a clock: "today" is the puzzle the reader is on.
-      // Checked only for being a real date; the functions take the latest puzzle
-      // anybody played when it is missing.
+      // The window's last puzzle: the viewer's calendar date in the today window,
+      // or the last day of a picked range. Sent as-is, not worked out here from a
+      // clock: "today" is the puzzle the reader is on. Checked only for being a
+      // real date; the functions take the latest puzzle anybody played when it
+      // is missing.
       const date = params.get("date");
       if (date !== null && !isCalendarDate(date)) {
         return reply(400, { ok: false, reason: "bad-date" });
       }
-      const args = days === 1 && date !== null ? { p_days: days, p_date: date } : { p_days: days };
+      const rawDays = params.get("days");
+      let days = DEFAULT_ANALYTICS_DAYS;
+      if (rawDays !== null) {
+        days = Number(rawDays);
+        // 1 is the today window, one puzzle; a preset is a week to a year; a
+        // range, which comes with its last day, is any width up to a year.
+        const ok = date !== null ? days >= 1 && days <= 365 : days === 1 || (days >= 7 && days <= 365);
+        if (!Number.isInteger(days) || !ok) {
+          return reply(400, { ok: false, reason: "bad-days" });
+        }
+      }
+      const args = date !== null ? { p_days: days, p_date: date } : { p_days: days };
       // Passed through as the database built it. The function is the one place
       // these numbers are defined (see the 2026-09-27 migration), and a second
       // copy of every field name here would be a second place for them to drift.

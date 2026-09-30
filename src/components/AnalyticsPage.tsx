@@ -3,6 +3,7 @@ import { ReviewPage } from "./ReviewPage";
 import { useReviewList } from "./reviewList";
 import {
   fetchAnalytics,
+  fetchAnalyticsRange,
   type AnalyticsReport,
   type ChatReport,
   type OnboardingReason,
@@ -17,8 +18,10 @@ import {
   duration,
   findHighlights,
   fmt,
+  moveRange,
   pct,
   sourceName,
+  type DateRange,
 } from "./analyticsFormat";
 import { todayDateString } from "../game/date";
 import { DailyChart } from "./DailyChart";
@@ -53,7 +56,11 @@ const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function AnalyticsPage() {
   const [days, setDays] = useState<number>(60);
-  const load = useCallback(async () => [await fetchAnalytics(days, todayDateString())], [days]);
+  const [range, setRange] = useState<DateRange | null>(null);
+  const load = useCallback(
+    async () => [await (range ? fetchAnalyticsRange(range.from, range.to) : fetchAnalytics(days, todayDateString()))],
+    [days, range],
+  );
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const report: AnalyticsReport | undefined = rows[0];
 
@@ -69,7 +76,18 @@ export function AnalyticsPage() {
       empty="Nobody has played yet."
       isEmpty={!report || report.totals.players === 0}
     >
-      {report && <Report report={report} days={days} onDays={setDays} />}
+      {report && (
+        <Report
+          report={report}
+          days={days}
+          range={range}
+          onDays={(n) => {
+            setRange(null);
+            setDays(n);
+          }}
+          onRange={setRange}
+        />
+      )}
     </ReviewPage>
   );
 }
@@ -82,11 +100,15 @@ function clockHour(hour: number): string {
 function Report({
   report,
   days,
+  range,
   onDays,
+  onRange,
 }: {
   report: AnalyticsReport;
   days: number;
+  range: DateRange | null;
   onDays: (days: number) => void;
+  onRange: (range: DateRange) => void;
 }) {
   const { totals, retention, window: win } = report;
   const highlights = findHighlights(report);
@@ -95,15 +117,33 @@ function Report({
   // which runs a day ahead of the viewer once a player further east is on
   // tomorrow's, and a day behind in the minutes before anybody is on today's.
   const today = todayDateString();
+  // One puzzle: today, or a single day picked. Some tiles need more than one.
   const isToday = report.windowDays === 1;
-  // The headline tiles count over the window: the today window is the viewer's
-  // own puzzle, and the rest are the same puzzles the day-by-day chart spans.
-  const span = isToday ? `puzzle ${today}` : `over the last ${fmt(win.puzzles)} puzzles`;
-  // The visit half: receipt time over a span of days, or in the today window the
-  // events stamped with today's puzzle, which only rows from `visitsSince` are.
+  const lastDay = win.to ?? today;
+  const puzzleName = lastDay === today ? "today's puzzle" : `the ${lastDay} puzzle`;
+  // The dates the inputs show: the picked range, or the preset's own days.
+  const shown: DateRange = range ?? { from: win.from ?? today, to: lastDay };
+  // The headline tiles count over the window: one puzzle, a picked range, or the
+  // same puzzles the day-by-day chart spans.
+  const span = isToday
+    ? `puzzle ${lastDay}`
+    : range
+      ? `${shown.from} to ${shown.to}`
+      : `over the last ${fmt(win.puzzles)} puzzles`;
+  // The same, as the start of a section's note.
+  const windowName = isToday
+    ? puzzleName.charAt(0).toUpperCase() + puzzleName.slice(1)
+    : range
+      ? `The puzzles from ${shown.from} to ${shown.to}`
+      : `The last ${report.windowDays} puzzles`;
+  // The visit half: receipt time over a span of days (a picked range by its
+  // calendar days in Mountain Time), or on one puzzle the events stamped with
+  // it, which only rows from `visitsSince` are.
   const eventSpan = isToday
-    ? `on today's puzzle${report.visitsSince ? ` (stamped from ${report.visitsSince})` : " (not stamped yet)"}`
-    : `in the last ${report.windowDays} days`;
+    ? `on ${puzzleName}${report.visitsSince ? ` (stamped from ${report.visitsSince})` : " (not stamped yet)"}`
+    : range
+      ? `from ${shown.from} to ${shown.to} (Mountain Time)`
+      : `in the last ${report.windowDays} days`;
 
   return (
     <div className="analytics">
@@ -114,12 +154,38 @@ function Report({
             key={n}
             type="button"
             className="analytics__window-button"
-            aria-pressed={n === days}
+            aria-pressed={!range && n === days}
             onClick={() => onDays(n)}
           >
             {n === 1 ? "Today" : `${n} days`}
           </button>
         ))}
+        <span className="analytics__window-dates">
+          <label>
+            <span className="analytics__window-label">From</span>
+            <input
+              type="date"
+              className="analytics__window-date"
+              value={shown.from}
+              min={totals.firstDay ?? undefined}
+              max={today}
+              data-active={range !== null}
+              onChange={(e) => e.target.value && onRange(moveRange(shown, "from", e.target.value))}
+            />
+          </label>
+          <label>
+            <span className="analytics__window-label">to</span>
+            <input
+              type="date"
+              className="analytics__window-date"
+              value={shown.to}
+              min={totals.firstDay ?? undefined}
+              max={today}
+              data-active={range !== null}
+              onChange={(e) => e.target.value && onRange(moveRange(shown, "to", e.target.value))}
+            />
+          </label>
+        </span>
       </div>
 
       <div className="analytics__tiles">
@@ -136,8 +202,8 @@ function Report({
         />
         <Tile
           label="Stickiness"
-          value={!isToday && win.players && win.avgDailyPlayers !== null ? pct(win.avgDailyPlayers / win.players) : "—"}
-          sub={isToday ? "needs more than one puzzle" : "average puzzle's players ÷ all of them"}
+          value={win.dauMau === null ? "—" : pct(win.dauMau)}
+          sub={isToday ? "the puzzle's players ÷ 30-day players" : "DAU ÷ 30-day players, averaged"}
         />
         <Tile
           label="Days per player"
@@ -177,7 +243,7 @@ function Report({
 
       <Section
         title="Players per puzzle"
-        note={`${isToday ? "Today's puzzle" : `The last ${report.windowDays} puzzles`}, split by the rules each was played under, with the players who only opened the leaderboard or the found words on top in grey${
+        note={`${windowName}, split by the rules each was played under, with the players who only opened the leaderboard or the found words on top in grey${
           totals.lookersSince ? ` (recorded from ${totals.lookersSince})` : ""
         }. Hover a day for its Standard and Freeform counts and new players.`}
       >
@@ -372,9 +438,9 @@ function Report({
         </div>
       </Section>
 
-      {report.onboarding && <OnboardingSection onboarding={report.onboarding} isToday={isToday} />}
+      {report.onboarding && <OnboardingSection onboarding={report.onboarding} isToday={isToday} picked={range !== null} />}
 
-      {report.chat && <ChatSection chat={report.chat} windowDays={report.windowDays} />}
+      {report.chat && <ChatSection chat={report.chat} windowName={windowName} />}
 
       <Section title="When people open it" note="Visits by hour of day, Mountain Time.">
         <BarChart
@@ -408,7 +474,17 @@ const REASON_ORDER: OnboardingReason[] = ["split", "shared", "default"];
  */
 // Cohorts need days to come back in, so onboarding_report clamps a today window
 // up to its shortest, a week, and the note says so.
-function OnboardingSection({ onboarding, isToday }: { onboarding: OnboardingReport; isToday: boolean }) {
+// It has no end date either: a picked range is read as that many days up to
+// now, and the note says so.
+function OnboardingSection({
+  onboarding,
+  isToday,
+  picked,
+}: {
+  onboarding: OnboardingReport;
+  isToday: boolean;
+  picked: boolean;
+}) {
   const arms = [...onboarding.arms].sort(
     (a, b) => REASON_ORDER.indexOf(a.reason) - REASON_ORDER.indexOf(b.reason) || a.mode.localeCompare(b.mode),
   );
@@ -421,7 +497,7 @@ function OnboardingSection({ onboarding, isToday }: { onboarding: OnboardingRepo
       title="New players by starting mode"
       note={
         onboarding.since
-          ? `Players who started ${isToday ? "in the last 7 days" : "in the window"}, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, a share link from before links carried one in Standard (Default), anyone else, unattributed included, at random. Until the split took unattributed arrivals in, they went to Default too. Retention is a live day played after the one they arrived on, in either mode.`
+          ? `Players who started ${isToday ? "in the last 7 days" : picked ? "in as many days as the range, up to now" : "in the window"}, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, a share link from before links carried one in Standard (Default), anyone else, unattributed included, at random. Until the split took unattributed arrivals in, they went to Default too. Retention is a live day played after the one they arrived on, in either mode.`
           : "Where new players start, and whether they stay."
       }
     >
@@ -482,7 +558,7 @@ function OnboardingSection({ onboarding, isToday }: { onboarding: OnboardingRepo
  * all-time line underneath is off the messages table itself, which is the one
  * that knows what was actually posted and taken down.
  */
-function ChatSection({ chat, windowDays }: { chat: ChatReport; windowDays: number }) {
+function ChatSection({ chat, windowName }: { chat: ChatReport; windowName: string }) {
   const { totals, time, room } = chat;
   // The viewer's calendar date, as the play half's "today" is (see Report).
   const todayRow = chat.daily.find((d) => d.date === todayDateString());
@@ -502,7 +578,7 @@ function ChatSection({ chat, windowDays }: { chat: ChatReport; windowDays: numbe
   return (
     <Section
       title="Chat"
-      note={`${windowDays === 1 ? "Today's puzzle" : `The last ${windowDays} puzzles`}, recorded from ${totals.since}. Viewers opened the chat; senders posted in it. Time is visible time with the panel open.`}
+      note={`${windowName}, recorded from ${totals.since}. Viewers opened the chat; senders posted in it. Time is visible time with the panel open.`}
     >
       <div className="analytics__tiles">
         <Tile
