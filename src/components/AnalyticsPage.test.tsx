@@ -209,10 +209,16 @@ describe("AnalyticsPage", () => {
     const tile = (await screen.findByText("Looked, didn't play")).closest(".analytics__tile")!;
     expect(within(tile as HTMLElement).getByText("7")).toBeInTheDocument();
     expect(within(tile as HTMLElement).getByText("19 over 7 puzzles, 11 never played")).toBeInTheDocument();
-    expect(screen.getByLabelText("2026-09-27 (Sun): 40 players, 3 new, 7 only looked")).toBeInTheDocument();
+    expect(screen.getByLabelText("2026-09-27 (Sun): 40 players (30 Standard, 10 Freeform), 3 new, 7 only looked")).toBeInTheDocument();
     expect(screen.getByText(/60 engaged visits began on the/)).toBeInTheDocument();
     const sessions = screen.getByText("Only looked", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
     expect(within(sessions as HTMLElement).getByText("10%")).toBeInTheDocument();
+  });
+
+  it("names a one-mode day's mode rather than a zero for the other", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    expect(await screen.findByLabelText("2026-09-26 (Sat): 50 players, all Freeform, 5 new")).toBeInTheDocument();
   });
 
   it("says a look has not been recorded rather than printing zero", async () => {
@@ -324,6 +330,30 @@ describe("AnalyticsPage", () => {
     await waitFor(() =>
       expect(fetchMock.mock.calls.some(([url]) => String(url).includes("days=90"))).toBe(true),
     );
+    await userEvent.click(screen.getByRole("button", { name: "7 days" }));
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes("days=7&"))).toBe(true),
+    );
+  });
+
+  it("reads today's puzzle alone in the today window", async () => {
+    const fetchMock = stubFetch({
+      ...REPORT,
+      windowDays: 1,
+      visitsSince: "2026-09-27",
+      daily: [REPORT.daily[1]],
+    });
+    render(<AnalyticsPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Today" }));
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([url]) => String(url).includes("days=1&date=2026-09-27&")),
+      ).toBe(true),
+    );
+    expect(screen.getByText(/^Events on today's puzzle \(stamped from 2026-09-27\)/)).toBeInTheDocument();
+    expect(screen.getByText(/^Today's puzzle, split by the rules/)).toBeInTheDocument();
+    expect(screen.getByText(/Pick a longer window to hop between days/)).toBeInTheDocument();
   });
 
   it("says so when the report cannot load", async () => {

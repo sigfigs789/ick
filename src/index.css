@@ -4072,6 +4072,11 @@ h2 {
   --viz-step-3: #4f8fdd;
   --viz-step-4: #1f62b5;
   --viz-step-ink-dark: #ffffff;
+  --viz-area: rgba(42, 120, 214, 0.12);
+  --viz-up-bg: #dcf5e3;
+  --viz-up-fg: #157a3a;
+  --viz-down-bg: #fde2e2;
+  --viz-down-fg: #b42323;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -4085,6 +4090,11 @@ h2 {
     --viz-step-3: #2f6fc0;
     --viz-step-4: #5a9bec;
     --viz-step-ink-dark: #0b0b0b;
+    --viz-area: rgba(57, 135, 229, 0.18);
+    --viz-up-bg: #173a24;
+    --viz-up-fg: #6fdc95;
+    --viz-down-bg: #43191b;
+    --viz-down-fg: #f59090;
   }
 }
 .analytics__window {
@@ -4265,6 +4275,284 @@ h2 {
 /* A month and a half of dates cannot all be read; every seventh is enough. */
 .analytics__chart:not(.analytics__chart--compact) .analytics__col:not(:nth-child(7n + 1)) .analytics__axis {
   visibility: hidden;
+}
+/* The day-by-day line: metric tabs over a line you can hop along a day at a time. */
+.daily {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card-bg);
+  overflow: hidden;
+}
+.daily__tabs {
+  display: flex;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+}
+.daily__tab {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 9rem;
+  padding: 0.75rem 1rem 0.65rem;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.daily__tab[aria-selected="true"] {
+  border-bottom-color: var(--fg);
+  color: var(--fg);
+}
+.daily__tab-label {
+  font-size: 0.8rem;
+}
+.daily__tab-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.daily__tab-value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.daily__change {
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  background: var(--border);
+  color: var(--fg-muted);
+}
+.daily__change--up {
+  background: var(--viz-up-bg);
+  color: var(--viz-up-fg);
+}
+.daily__change--down {
+  background: var(--viz-down-bg);
+  color: var(--viz-down-fg);
+}
+.daily__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1rem 0;
+}
+.daily__step {
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.daily__step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.daily__date {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+  background: var(--card-bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.85rem;
+}
+.daily__single {
+  margin: 0;
+  padding: 0.8rem 1rem;
+}
+.daily__caption {
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  margin-left: 0.3rem;
+}
+.daily__chart {
+  position: relative;
+  padding: 1.2rem 1.2rem 2.2rem 3rem;
+}
+.daily__yaxis {
+  position: absolute;
+  top: 1.2rem;
+  bottom: 2.2rem;
+  left: 0;
+  width: 2.4rem;
+}
+.daily__yaxis span {
+  position: absolute;
+  right: 0.5rem;
+  transform: translateY(50%);
+  color: var(--fg-faint);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+.daily__plot {
+  position: relative;
+  height: 14rem;
+  outline: none;
+  cursor: crosshair;
+  touch-action: pan-y;
+}
+.daily__plot:focus-visible {
+  box-shadow: 0 0 0 2px var(--focus-ring);
+  border-radius: 4px;
+}
+.daily__grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border);
+  opacity: 0.6;
+}
+.daily__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.daily__area {
+  fill: var(--viz-area);
+}
+.daily__line {
+  fill: none;
+  stroke: var(--viz-single);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.daily__line--live {
+  stroke-dasharray: 5 5;
+}
+.daily__cross {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1.5px solid var(--fg);
+  pointer-events: none;
+}
+.daily__cross--pinned {
+  border-left: 1px dashed var(--fg-faint);
+}
+.daily__dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--card-bg);
+  border-radius: 50%;
+  background: var(--viz-single);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.daily__tip {
+  position: absolute;
+  top: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-left: 0.7rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
+}
+.daily__tip--left {
+  transform: translateX(-100%);
+  margin-left: -0.7rem;
+}
+.daily__tip-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.daily__tip-row strong {
+  font-variant-numeric: tabular-nums;
+}
+.daily__tip-swatch {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--viz-single);
+}
+.daily__tip-date {
+  color: var(--fg-muted);
+  font-size: 0.78rem;
+}
+.daily__xaxis {
+  position: absolute;
+  left: 3rem;
+  right: 1.2rem;
+  bottom: 0.4rem;
+  height: 1.5rem;
+}
+.daily__xlabel,
+.daily__pill {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-size: 0.72rem;
+}
+.daily__xlabel {
+  color: var(--fg-faint);
+}
+.daily__edge--start {
+  transform: translate(-0.5rem, -50%);
+}
+.daily__edge--end {
+  transform: translate(calc(-100% + 0.5rem), -50%);
+}
+.daily__xlabel--hidden {
+  visibility: hidden;
+}
+.daily__pill {
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-weight: 600;
+  z-index: 1;
+}
+@media (max-width: 520px) {
+  .daily__tab {
+    min-width: 7.5rem;
+    padding: 0.6rem 0.75rem;
+  }
+  .daily__chart {
+    padding: 1rem 0.8rem 2.2rem 2.4rem;
+  }
+  .daily__yaxis {
+    width: 2rem;
+  }
+  .daily__xaxis {
+    left: 2.4rem;
+    right: 0.8rem;
+  }
+  .daily__plot {
+    height: 11rem;
+  }
+  .daily__xlabel--minor {
+    display: none;
+  }
 }
 .analytics__table-wrap {
   overflow-x: auto;

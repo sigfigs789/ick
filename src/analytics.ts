@@ -448,6 +448,9 @@ function visitDimensions() {
     visit_type: state && state.timesReturned > 0 ? "returning" : "first",
     times_returned: state?.timesReturned ?? 0,
     days_returned: state?.daysReturned ?? 0,
+    // The live puzzle, so the analytics page's today window can count a share
+    // or a session by the puzzle it belongs to rather than by the clock.
+    puzzle_date: todayDateString(),
   };
 }
 
@@ -522,6 +525,8 @@ function visitProperties(outcome: VisitOutcome) {
     times_returned: outcome.state.timesReturned,
     days_returned: outcome.state.daysReturned,
     new_day: outcome.isNewDay,
+    // The live puzzle, for the analytics page's today window (see visitDimensions).
+    puzzle_date: todayDateString(),
   };
 }
 
@@ -687,7 +692,7 @@ function markLooked(via: "leaderboard" | "found_words"): void {
  * the more useful half of the two.
  */
 export function trackModeChanged(from: GameMode, to: GameMode) {
-  send("mode_changed", { from, to });
+  send("mode_changed", { from, to, puzzle_date: todayDateString() });
 }
 
 export function trackLeaderboardJoined(isRename: boolean) {

@@ -21,6 +21,7 @@ import {
   sourceName,
 } from "./analyticsFormat";
 import { todayDateString } from "../game/date";
+import { DailyChart } from "./DailyChart";
 
 /**
  * How the game is doing, as a page at /analytics.
@@ -46,12 +47,13 @@ import { todayDateString } from "../game/date";
  * playing it.
  */
 
-const WINDOWS = [30, 60, 90] as const;
+/** 1 is today: the viewer's own puzzle, alone. */
+const WINDOWS = [1, 7, 30, 60, 90] as const;
 const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function AnalyticsPage() {
   const [days, setDays] = useState<number>(60);
-  const load = useCallback(async () => [await fetchAnalytics(days)], [days]);
+  const load = useCallback(async () => [await fetchAnalytics(days, todayDateString())], [days]);
   const { rows, state, refreshing, refresh, retry } = useReviewList(load);
   const report: AnalyticsReport | undefined = rows[0];
 
@@ -89,6 +91,12 @@ function Report({
   // tomorrow's, and a day behind in the minutes before anybody is on today's.
   const today = todayDateString();
   const todayRow = report.daily.find((d) => d.date === today);
+  const isToday = report.windowDays === 1;
+  // The visit half: receipt time over a span of days, or in the today window the
+  // events stamped with today's puzzle, which only rows from `visitsSince` are.
+  const eventSpan = isToday
+    ? `on today's puzzle${report.visitsSince ? ` (stamped from ${report.visitsSince})` : " (not stamped yet)"}`
+    : `in the last ${report.windowDays} days`;
 
   return (
     <div className="analytics">
@@ -102,7 +110,7 @@ function Report({
             aria-pressed={n === days}
             onClick={() => onDays(n)}
           >
-            {n} days
+            {n === 1 ? "Today" : `${n} days`}
           </button>
         ))}
       </div>
@@ -137,6 +145,13 @@ function Report({
         />
       </div>
 
+      <Section
+        title="Day by day"
+        note="Hover the line to read any puzzle; click, use the arrow keys or pick a date to pin one. The change beside each number is against the puzzle before."
+      >
+        <DailyChart daily={report.daily} today={today} />
+      </Section>
+
       {highlights.length > 0 && (
         <Section title="Worth noticing">
           <ul className="analytics__highlights">
@@ -161,9 +176,9 @@ function Report({
 
       <Section
         title="Players per puzzle"
-        note={`The last ${report.windowDays} puzzles, split by the rules each was played under, with the players who only opened the leaderboard or the found words on top in grey${
+        note={`${isToday ? "Today's puzzle" : `The last ${report.windowDays} puzzles`}, split by the rules each was played under, with the players who only opened the leaderboard or the found words on top in grey${
           totals.lookersSince ? ` (recorded from ${totals.lookersSince})` : ""
-        }. Hover a day for new players.`}
+        }. Hover a day for its Standard and Freeform counts and new players.`}
       >
         <Legend />
         <BarChart
@@ -176,7 +191,7 @@ function Report({
               { value: d.freeform, series: "freeform" },
               { value: d.lookers, series: "looked" },
             ],
-            tip: `${d.date} (${SHORT_WEEKDAYS[dowOf(d.date)]}): ${d.players} players, ${d.newPlayers} new${
+            tip: `${d.date} (${SHORT_WEEKDAYS[dowOf(d.date)]}): ${d.players} players${modeSplit(d)}, ${d.newPlayers} new${
               d.lookers ? `, ${d.lookers} only looked` : ""
             }`,
           }))}
@@ -272,7 +287,7 @@ function Report({
           </table>
         </div>
         <p className="review__meta">
-          Switches in the last {report.windowDays} days: {fmt(report.funnel.toFreeform)} to Freeform,{" "}
+          Switches {eventSpan}: {fmt(report.funnel.toFreeform)} to Freeform,{" "}
           {fmt(report.funnel.toStandard)} to Standard.
         </p>
       </Section>
@@ -292,7 +307,7 @@ function Report({
 
       <Section
         title="From open to share"
-        note={`Events in the last ${report.windowDays} days. Engaged is a visit that submitted a guess or opened the leaderboard or the found words.`}
+        note={`Events ${eventSpan}. Engaged is a visit that submitted a guess or opened the leaderboard or the found words.`}
       >
         <Funnel report={report} />
       </Section>
@@ -331,7 +346,7 @@ function Report({
         )}
       </Section>
 
-      <Section title="Sessions" note={`Visible time on the page, per session, in the last ${report.windowDays} days.`}>
+      <Section title="Sessions" note={`Visible time on the page, per session, ${eventSpan}.`}>
         <div className="analytics__tiles">
           <Tile label="Sessions" value={fmt(report.sessions.sessions)} />
           <Tile label="Median session" value={duration(report.sessions.medianVisibleMs)} />
@@ -353,7 +368,7 @@ function Report({
         </div>
       </Section>
 
-      {report.onboarding && <OnboardingSection onboarding={report.onboarding} />}
+      {report.onboarding && <OnboardingSection onboarding={report.onboarding} isToday={isToday} />}
 
       {report.chat && <ChatSection chat={report.chat} windowDays={report.windowDays} />}
 
@@ -387,7 +402,9 @@ const REASON_ORDER: OnboardingReason[] = ["split", "shared", "default"];
  * arrivals included -- half and half. The split rows are the fair
  * comparison -- the only thing that differs between them is the mode.
  */
-function OnboardingSection({ onboarding }: { onboarding: OnboardingReport }) {
+// Cohorts need days to come back in, so onboarding_report clamps a today window
+// up to its shortest, a week, and the note says so.
+function OnboardingSection({ onboarding, isToday }: { onboarding: OnboardingReport; isToday: boolean }) {
   const arms = [...onboarding.arms].sort(
     (a, b) => REASON_ORDER.indexOf(a.reason) - REASON_ORDER.indexOf(b.reason) || a.mode.localeCompare(b.mode),
   );
@@ -400,7 +417,7 @@ function OnboardingSection({ onboarding }: { onboarding: OnboardingReport }) {
       title="New players by starting mode"
       note={
         onboarding.since
-          ? `Players who started in the window, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, a share link from before links carried one in Standard (Default), anyone else, unattributed included, at random. Until the split took unattributed arrivals in, they went to Default too. Retention is a live day played after the one they arrived on, in either mode.`
+          ? `Players who started ${isToday ? "in the last 7 days" : "in the window"}, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, a share link from before links carried one in Standard (Default), anyone else, unattributed included, at random. Until the split took unattributed arrivals in, they went to Default too. Retention is a live day played after the one they arrived on, in either mode.`
           : "Where new players start, and whether they stay."
       }
     >
@@ -481,7 +498,7 @@ function ChatSection({ chat, windowDays }: { chat: ChatReport; windowDays: numbe
   return (
     <Section
       title="Chat"
-      note={`The last ${windowDays} puzzles, recorded from ${totals.since}. Viewers opened the chat; senders posted in it. Time is visible time with the panel open.`}
+      note={`${windowDays === 1 ? "Today's puzzle" : `The last ${windowDays} puzzles`}, recorded from ${totals.since}. Viewers opened the chat; senders posted in it. Time is visible time with the panel open.`}
     >
       <div className="analytics__tiles">
         <Tile
@@ -556,6 +573,17 @@ function ChatSection({ chat, windowDays }: { chat: ChatReport; windowDays: numbe
       <p className="review__meta">{roomLine}</p>
     </Section>
   );
+}
+
+/**
+ * How a day's players split between the modes, for its tooltip. A player can
+ * bank words in both on one day, so the two can sum to more than the players.
+ */
+function modeSplit(d: AnalyticsReport["daily"][number]): string {
+  if (d.players === 0) return "";
+  if (d.freeform === 0) return ", all Standard";
+  if (d.standard === 0) return ", all Freeform";
+  return ` (${d.standard} Standard, ${d.freeform} Freeform)`;
 }
 
 function Section({ title, note, children }: { title: string; note?: string; children: ReactNode }) {

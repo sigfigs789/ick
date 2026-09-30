@@ -11,9 +11,10 @@
 //   -> { tally: { love, boo }, byDate: [{ date, love, boo }],
 //        notes: [{ id, text, at, date, vote }] }
 // GET /api/review?list=analytics&days=60
+// GET /api/review?list=analytics&days=1&date=YYYY-MM-DD   (today: that one puzzle)
 //   -> { report: { asOf, totals, daily, retention, cohorts, weekday, modes,
-//                  depth, funnel, sources, sessions, hours } }
-//   400 bad-list / bad-limit / bad-days, 401 unauthorised, 405 wrong method,
+//                  depth, funnel, sources, sessions, hours, chat } }
+//   400 bad-list / bad-limit / bad-days / bad-date, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
 // POST /api/review
@@ -359,10 +360,20 @@ async function handleGet(request: Request): Promise<Response> {
       let days = DEFAULT_ANALYTICS_DAYS;
       if (rawDays !== null) {
         days = Number(rawDays);
-        if (!Number.isInteger(days) || days < 7 || days > 365) {
+        // 1 is the today window, one puzzle; otherwise a week to a year.
+        if (!Number.isInteger(days) || (days !== 1 && (days < 7 || days > 365))) {
           return reply(400, { ok: false, reason: "bad-days" });
         }
       }
+      // The today window's puzzle is the viewer's calendar date, sent as-is, not
+      // worked out here from a clock: "today" is the puzzle the reader is on.
+      // Checked only for being a real date; the functions take the latest puzzle
+      // anybody played when it is missing.
+      const date = params.get("date");
+      if (date !== null && !isCalendarDate(date)) {
+        return reply(400, { ok: false, reason: "bad-date" });
+      }
+      const args = days === 1 && date !== null ? { p_days: days, p_date: date } : { p_days: days };
       // Passed through as the database built it. The function is the one place
       // these numbers are defined (see the 2026-09-27 migration), and a second
       // copy of every field name here would be a second place for them to drift.
@@ -372,16 +383,18 @@ async function handleGet(request: Request): Promise<Response> {
       // there costs only the chat section: the page renders without it rather
       // than losing every other number over one it can do without. The new
       // players' starting modes (the 20260930020000 migration) are read and set
-      // on it as `onboarding` the same way.
-      const optional = (name: string) =>
-        rpc<Record<string, unknown> | null>(name, { p_days: days }).catch((error: unknown) => {
+      // on it as `onboarding` the same way. That one is cohorts, not a window of
+      // puzzles, so it takes no date and clamps a today window up to its own
+      // shortest.
+      const optional = (name: string, fnArgs: Record<string, unknown>) =>
+        rpc<Record<string, unknown> | null>(name, fnArgs).catch((error: unknown) => {
           console.error(`[review] ${name} failed:`, error instanceof Error ? error.message : error);
           return null;
         });
       const [report, chat, onboarding] = await Promise.all([
-        rpc<Record<string, unknown> | null>("analytics_report", { p_days: days }),
-        optional("chat_report"),
-        optional("onboarding_report"),
+        rpc<Record<string, unknown> | null>("analytics_report", args),
+        optional("chat_report", args),
+        optional("onboarding_report", { p_days: days }),
       ]);
       return reply(200, { report: { ...(report ?? {}), chat, onboarding } });
     }
@@ -484,4 +497,11 @@ function byDate(votes: readonly FreeformVoteRow[]): Array<Tally & { date: string
   return [...days.entries()]
     .map(([date, counts]) => ({ date, ...counts }))
     .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** YYYY-MM-DD naming a day the calendar has (not 2026-02-30). */
+function isCalendarDate(date: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const parsed = new Date(`${date}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
 }
