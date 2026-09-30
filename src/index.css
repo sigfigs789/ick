@@ -4097,12 +4097,22 @@ h2 {
     --viz-down-fg: #f59090;
   }
 }
+/* The window picker stays at the top of the screen for the length of the
+   report, so the window can be changed from any section without scrolling
+   back up. Opaque, so the tiles and charts pass beneath it rather than
+   through it; the hairline says where it ends once it is floating. */
 .analytics__window {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
   margin: 0 0 1rem;
+  padding: calc(env(safe-area-inset-top, 0px) + 0.5rem) 0 0.5rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
 }
 .analytics__window-label {
   color: var(--fg-muted);
