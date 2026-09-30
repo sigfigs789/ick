@@ -40,6 +40,14 @@ const REPORT = {
     lookersNeverPlayed: 11,
     lookersSince: "2026-09-26",
   },
+  window: {
+    puzzles: 2,
+    players: 80,
+    newPlayers: 8,
+    avgDaysPerPlayer: 1.13,
+    avgDailyPlayers: 45,
+    lookers: 7,
+  },
   daily: [
     { date: "2026-09-26", players: 50, newPlayers: 5, standard: 0, freeform: 50, lookers: 0 },
     { date: "2026-09-27", players: 40, newPlayers: 3, standard: 30, freeform: 10, lookers: 7 },
@@ -161,8 +169,20 @@ describe("AnalyticsPage", () => {
     const fetchMock = stubFetch();
     render(<AnalyticsPage />);
 
-    expect(await screen.findByText("Players today")).toBeInTheDocument();
+    const players = (await screen.findByText("Players", { selector: ".analytics__tile-label" })).closest(".analytics__tile")!;
     expect(String(fetchMock.mock.calls[0][0])).toBe("/api/review?list=analytics&days=60&key=sesame");
+    // Every headline tile counts over the window, not a fixed span of puzzles.
+    expect(within(players as HTMLElement).getByText("80")).toBeInTheDocument();
+    expect(within(players as HTMLElement).getByText("over the last 2 puzzles")).toBeInTheDocument();
+    const fresh = screen.getByText("New players", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
+    expect(within(fresh as HTMLElement).getByText("8")).toBeInTheDocument();
+    expect(within(fresh as HTMLElement).getByText("10% of the players")).toBeInTheDocument();
+    const sticky = screen.getByText("Stickiness").closest(".analytics__tile")!;
+    expect(within(sticky as HTMLElement).getByText("56%")).toBeInTheDocument();
+    const perPlayer = screen.getByText("Days per player").closest(".analytics__tile")!;
+    expect(within(perPlayer as HTMLElement).getByText("1.1")).toBeInTheDocument();
+    expect(screen.queryByText("Last 7 puzzles")).toBeNull();
+    expect(screen.queryByText("All time")).toBeNull();
     // Next-day retention: 72 of 180.
     const nextDay = screen.getByText("72 of 180").closest(".analytics__tile")!;
     expect(within(nextDay as HTMLElement).getByText("40%")).toBeInTheDocument();
@@ -178,28 +198,22 @@ describe("AnalyticsPage", () => {
     expect(screen.queryByRole("rowheader", { name: "direct" })).toBeNull();
   });
 
-  it("counts today by the viewer's calendar date, not the latest puzzle played", async () => {
+  it("counts today's chat by the viewer's calendar date, not the latest puzzle played", async () => {
     // Behind the latest puzzle: somebody further east is already on the 27th.
     clock.today = "2026-09-26";
     stubFetch({ ...REPORT, chat: CHAT });
-    const { unmount } = render(<AnalyticsPage />);
-    let tile = (await screen.findByText("Players today")).closest(".analytics__tile")!;
-    expect(within(tile as HTMLElement).getByText("50")).toBeInTheDocument();
-    expect(within(tile as HTMLElement).getByText("puzzle 2026-09-26")).toBeInTheDocument();
-    const looked = screen.getByText("Looked, didn't play").closest(".analytics__tile")!;
-    expect(within(looked as HTMLElement).getByText("0")).toBeInTheDocument();
-    const chat = screen.getByText("Chat viewers today").closest(".analytics__tile")!;
+    render(<AnalyticsPage />);
+    const chat = (await screen.findByText("Chat viewers today")).closest(".analytics__tile")!;
     expect(within(chat as HTMLElement).getByText("14")).toBeInTheDocument();
     expect(within(chat as HTMLElement).getByText("3 sent, 31 messages")).toBeInTheDocument();
-    unmount();
+  });
 
-    // Ahead of it: the viewer's day has begun and nobody is on it yet.
-    clock.today = "2026-09-28";
+  it("labels the hours on a 12-hour clock", async () => {
     stubFetch();
     render(<AnalyticsPage />);
-    tile = (await screen.findByText("Players today")).closest(".analytics__tile")!;
-    expect(within(tile as HTMLElement).getByText("0")).toBeInTheDocument();
-    expect(within(tile as HTMLElement).getByText("puzzle 2026-09-28")).toBeInTheDocument();
+    expect(await screen.findByLabelText("12am–1am MT: 0 visits")).toBeInTheDocument();
+    expect(screen.getByLabelText("11pm–12am MT: 23 visits")).toBeInTheDocument();
+    expect(screen.getByText("3pm")).toBeInTheDocument();
   });
 
   it("counts the players who looked without playing", async () => {
@@ -208,7 +222,7 @@ describe("AnalyticsPage", () => {
 
     const tile = (await screen.findByText("Looked, didn't play")).closest(".analytics__tile")!;
     expect(within(tile as HTMLElement).getByText("7")).toBeInTheDocument();
-    expect(within(tile as HTMLElement).getByText("19 over 7 puzzles, 11 never played")).toBeInTheDocument();
+    expect(within(tile as HTMLElement).getByText("11 have never played")).toBeInTheDocument();
     expect(screen.getByLabelText("2026-09-27 (Sun): 40 players (30 Standard, 10 Freeform), 3 new, 7 only looked")).toBeInTheDocument();
     expect(screen.getByText(/60 engaged visits began on the/)).toBeInTheDocument();
     const sessions = screen.getByText("Only looked", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
@@ -260,7 +274,7 @@ describe("AnalyticsPage", () => {
 
     stubFetch({ ...REPORT, chat: null });
     render(<AnalyticsPage />);
-    await screen.findByText("Players today");
+    await screen.findByText("New players", { selector: ".analytics__tile-label" });
     expect(screen.queryByText("Chat viewers today")).not.toBeInTheDocument();
     expect(screen.queryByText("No chat opens recorded yet.")).not.toBeInTheDocument();
   });
@@ -308,7 +322,7 @@ describe("AnalyticsPage", () => {
   it("leaves the starting-mode section out when it failed", async () => {
     stubFetch({ ...REPORT, onboarding: null });
     render(<AnalyticsPage />);
-    await screen.findByText("Players today");
+    await screen.findByText("New players", { selector: ".analytics__tile-label" });
     expect(screen.queryByText("New players by starting mode")).not.toBeInTheDocument();
   });
 
@@ -341,6 +355,7 @@ describe("AnalyticsPage", () => {
       ...REPORT,
       windowDays: 1,
       visitsSince: "2026-09-27",
+      window: { ...REPORT.window, puzzles: 1, players: 40, newPlayers: 3, avgDaysPerPlayer: 1, avgDailyPlayers: 40 },
       daily: [REPORT.daily[1]],
     });
     render(<AnalyticsPage />);
@@ -354,6 +369,10 @@ describe("AnalyticsPage", () => {
     expect(screen.getByText(/^Events on today's puzzle \(stamped from 2026-09-27\)/)).toBeInTheDocument();
     expect(screen.getByText(/^Today's puzzle, split by the rules/)).toBeInTheDocument();
     expect(screen.getByText(/Pick a longer window to hop between days/)).toBeInTheDocument();
+    const players = screen.getByText("Players", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
+    expect(within(players as HTMLElement).getByText("puzzle 2026-09-27")).toBeInTheDocument();
+    // One puzzle has no spread to measure, so these say so rather than 100% and 1.0.
+    expect(screen.getAllByText("needs more than one puzzle")).toHaveLength(2);
   });
 
   it("says so when the report cannot load", async () => {

@@ -74,6 +74,11 @@ export function AnalyticsPage() {
   );
 }
 
+/** An hour of the day on a 12-hour clock: 12am, 3pm. */
+function clockHour(hour: number): string {
+  return `${hour % 12 || 12}${hour < 12 ? "am" : "pm"}`;
+}
+
 function Report({
   report,
   days,
@@ -83,15 +88,17 @@ function Report({
   days: number;
   onDays: (days: number) => void;
 }) {
-  const { totals, retention } = report;
+  const { totals, retention, window: win } = report;
   const highlights = findHighlights(report);
   // "Today" is the viewer's own calendar date, read off the per-puzzle rows,
   // rather than the report's `asOf` -- the latest puzzle anybody has played,
   // which runs a day ahead of the viewer once a player further east is on
   // tomorrow's, and a day behind in the minutes before anybody is on today's.
   const today = todayDateString();
-  const todayRow = report.daily.find((d) => d.date === today);
   const isToday = report.windowDays === 1;
+  // The headline tiles count over the window: the today window is the viewer's
+  // own puzzle, and the rest are the same puzzles the day-by-day chart spans.
+  const span = isToday ? `puzzle ${today}` : `over the last ${fmt(win.puzzles)} puzzles`;
   // The visit half: receipt time over a span of days, or in the today window the
   // events stamped with today's puzzle, which only rows from `visitsSince` are.
   const eventSpan = isToday
@@ -116,32 +123,26 @@ function Report({
       </div>
 
       <div className="analytics__tiles">
-        <Tile label="Players today" value={fmt(todayRow?.players ?? 0)} sub={`puzzle ${today}`} />
+        <Tile label="Players" value={fmt(win.players)} sub={span} />
+        <Tile
+          label="New players"
+          value={fmt(win.newPlayers)}
+          sub={win.players ? `${pct(win.newPlayers / win.players)} of the players` : "first puzzle ever"}
+        />
         <Tile
           label="Looked, didn't play"
-          value={totals.lookersSince ? fmt(todayRow?.lookers ?? 0) : "—"}
-          sub={
-            totals.lookersSince
-              ? `${fmt(totals.lookersLast7)} over 7 puzzles, ${fmt(totals.lookersNeverPlayed)} never played`
-              : "not recorded yet"
-          }
-        />
-        <Tile label="Last 7 puzzles" value={fmt(totals.last7)} sub="distinct players" />
-        <Tile label="Last 30 puzzles" value={fmt(totals.last30)} sub="distinct players" />
-        <Tile
-          label="All time"
-          value={fmt(totals.players)}
-          sub={totals.firstDay ? `since ${totals.firstDay}` : undefined}
+          value={totals.lookersSince ? fmt(win.lookers) : "—"}
+          sub={totals.lookersSince ? `${fmt(totals.lookersNeverPlayed)} have never played` : "not recorded yet"}
         />
         <Tile
           label="Stickiness"
-          value={totals.last30 ? pct(totals.last7 / totals.last30) : "—"}
-          sub="7-day ÷ 30-day players"
+          value={!isToday && win.players && win.avgDailyPlayers !== null ? pct(win.avgDailyPlayers / win.players) : "—"}
+          sub={isToday ? "needs more than one puzzle" : "average puzzle's players ÷ all of them"}
         />
         <Tile
           label="Days per player"
-          value={totals.avgDaysPerPlayer === null ? "—" : totals.avgDaysPerPlayer.toFixed(1)}
-          sub="puzzles played, on average"
+          value={!isToday && win.avgDaysPerPlayer !== null ? win.avgDaysPerPlayer.toFixed(1) : "—"}
+          sub={isToday ? "needs more than one puzzle" : `of the ${fmt(win.puzzles)} puzzles, on average`}
         />
       </div>
 
@@ -377,9 +378,9 @@ function Report({
           label="Visits by hour"
           bars={report.hours.map((h) => ({
             key: String(h.hour),
-            axis: h.hour % 3 === 0 ? String(h.hour) : "",
+            axis: h.hour % 3 === 0 ? clockHour(h.hour) : "",
             segments: [{ value: h.visits, series: "single" }],
-            tip: `${String(h.hour).padStart(2, "0")}:00–${String(h.hour).padStart(2, "0")}:59 MT: ${h.visits} visits`,
+            tip: `${clockHour(h.hour)}–${clockHour((h.hour + 1) % 24)} MT: ${h.visits} visits`,
           }))}
           compact
         />
