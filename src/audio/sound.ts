@@ -95,3 +95,85 @@ export function playComplete(): void {
   const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
   notes.forEach((freq, i) => tone(c, freq, now + i * 0.1, 0.24, { peakGain: 0.15 }));
 }
+
+/**
+ * A crowd's applause, one size for each window a winner is named for.
+ *
+ * A week's is a room clapping: a handful of hands for a little over a second.
+ * A month's is the bigger thing it marks -- more than twice the crowd, clapping
+ * for twice as long and a little louder, with a fanfare rising under it -- so
+ * the two are told apart by ear before the name is read.
+ */
+const APPLAUSE = {
+  week: { clappers: 6, duration: 1.3, peakGain: 0.12, fanfare: false },
+  month: { clappers: 16, duration: 2.6, peakGain: 0.16, fanfare: true },
+} as const;
+
+let noise: AudioBuffer | null = null;
+
+/**
+ * A tenth of a second of white noise, made once and replayed for every clap --
+ * each one is a different stretch of it through a different filter, which is
+ * enough that no two claps sound alike.
+ */
+function noiseBuffer(c: AudioContext): AudioBuffer {
+  if (noise && noise.sampleRate === c.sampleRate) return noise;
+  const length = Math.floor(c.sampleRate * 0.1);
+  noise = c.createBuffer(1, length, c.sampleRate);
+  const data = noise.getChannelData(0);
+  for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+  return noise;
+}
+
+/** One pair of hands meeting: a burst of noise, band-passed and gone in ~50ms. */
+function clap(c: AudioContext, startTime: number, peak: number, pitch: number) {
+  const src = c.createBufferSource();
+  src.buffer = noiseBuffer(c);
+  const filter = c.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = pitch;
+  filter.Q.value = 1.2;
+  const gain = c.createGain();
+  const decay = 0.035 + Math.random() * 0.03;
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(peak, startTime + 0.002);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + decay);
+  src.connect(filter).connect(gain).connect(c.destination);
+  src.start(startTime, Math.random() * 0.04, decay + 0.01);
+}
+
+/** Applause for the winner of the week or month that just closed. */
+export function playApplause(closed: "week" | "month"): void {
+  const c = getContext();
+  if (!c) return;
+  const now = c.currentTime;
+  const { clappers, duration, peakGain, fanfare } = APPLAUSE[closed];
+  // Each clapper keeps their own pace and pitch, which is what turns a pile of
+  // noise bursts into a crowd rather than a drum machine.
+  for (let i = 0; i < clappers; i++) {
+    const interval = 0.2 + Math.random() * 0.12;
+    const pitch = 900 + Math.random() * 1600;
+    // Somebody always starts first and the room joins in.
+    let t = now + Math.random() * 0.25;
+    while (t < now + duration) {
+      const progress = (t - now) / duration;
+      // Swells in quickly and thins out, the way applause does; the gain is
+      // shared across clappers so a bigger crowd is fuller, not just louder.
+      const swell = Math.min(1, progress * 6) * (1 - progress) ** 1.5;
+      const level = (peakGain * swell * (0.6 + Math.random() * 0.4)) / Math.sqrt(clappers);
+      if (level > 0.001) clap(c, t, level, pitch);
+      t += interval * (0.85 + Math.random() * 0.3);
+    }
+  }
+  if (fanfare) {
+    // A G-major arpeggio held at the top -- a step up from the C the
+    // puzzle-complete chime plays, so it reads as more than finishing a day.
+    const notes = [392.0, 493.88, 587.33, 783.99]; // G4 B4 D5 G5
+    notes.forEach((freq, i) =>
+      tone(c, freq, now + i * 0.11, i === notes.length - 1 ? 0.7 : 0.26, {
+        type: "triangle",
+        peakGain: 0.11,
+      }),
+    );
+  }
+}

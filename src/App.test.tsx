@@ -64,6 +64,7 @@ describe("App", () => {
       accept: vi.fn(),
       reject: vi.fn(),
       complete: vi.fn(),
+      applause: vi.fn(),
     });
   });
 
