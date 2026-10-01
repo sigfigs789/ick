@@ -10,6 +10,7 @@ import {
 import { copyText } from "../clipboard";
 import { raritySymbol } from "../game/share";
 import { CommonFormModal } from "./CommonFormModal";
+import { RainbowWord } from "./RainbowWord";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -120,11 +121,24 @@ export function GuessLog({
       {(!completed || mode) && (
         <div className="guess-log__header">
           <h2 className="guess-log__title">
-            {/* Styled as the header's switch is -- filled for Freeform,
-                outlined for Standard -- so the two read as one signal, and
+            {/* Styled as the header's switch is -- Freeform's name in rainbow
+                letters, Standard's plain -- so the two read as one signal, and
                 named here because this is where the eye is while playing. */}
             {mode && (
-              <span className={`guess-log__mode guess-log__mode--${mode}`}>{MODE_LABELS[mode]}</span>
+              <span className={`guess-log__mode guess-log__mode--${mode}`}>
+                {mode === "freeform" ? (
+                  // The word once for a screen reader, and the rainbow -- one
+                  // span per letter -- kept out of its way.
+                  <>
+                    <span className="sr-only">{MODE_LABELS[mode]}</span>
+                    <span aria-hidden="true">
+                      <RainbowWord word={MODE_LABELS[mode]} />
+                    </span>
+                  </>
+                ) : (
+                  MODE_LABELS[mode]
+                )}
+              </span>
             )}
             {mode ? "guess log" : "Guess log"}
           </h2>

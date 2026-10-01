@@ -1,5 +1,6 @@
 import { trackModeChanged } from "../analytics";
 import { MODE_LABELS, otherMode, type GameMode } from "../game/mode";
+import { RainbowWord } from "./RainbowWord";
 
 /**
  * The switch between Standard and Freeform, in the header.
@@ -38,7 +39,11 @@ export function ModeToggle({
       }}
       aria-label={`Mode: ${MODE_LABELS[mode]}. Switch to ${MODE_LABELS[next]}.`}
     >
-      {MODE_LABELS[mode]}
+      {/* Freeform's name in the same rainbow its share preview uses, so the
+          game announces itself in one colour language everywhere it is named.
+          The button's accessible name above is what a screen reader reads, so
+          the letters are never spelled out one at a time. */}
+      {mode === "freeform" ? <RainbowWord word={MODE_LABELS[mode]} /> : MODE_LABELS[mode]}
       {/* Decoration. The button's accessible name above already says both the
           mode and where pressing goes, so the arrows are not announced again. */}
       <span className="app__mode-swap" aria-hidden="true">

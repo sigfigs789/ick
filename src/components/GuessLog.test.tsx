@@ -342,7 +342,10 @@ describe("GuessLog guess count", () => {
     it("names the game the log belongs to", () => {
       render(<GuessLog acceptedWords={words} date="2026-10-01" mode="freeform" />);
       expect(screen.getByRole("heading", { name: "Freeform guess log" })).toBeInTheDocument();
-      expect(screen.getByText("Freeform")).toHaveClass("guess-log__mode--freeform");
+      const chip = document.querySelector(".guess-log__mode--freeform")!;
+      // Rainbow letters on screen, and the word once for a screen reader.
+      expect(chip.querySelectorAll(".rainbow-word__letter")).toHaveLength("Freeform".length);
+      expect(chip.querySelector(".sr-only")).toHaveTextContent("Freeform");
     });
 
     it("keeps naming it once the puzzle is finished, without the count", () => {

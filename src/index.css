@@ -572,18 +572,13 @@ h2 {
 .app__mode-button:active {
   transform: scale(0.94);
 }
-/* Freeform reads as the away strip: same shape, filled, so a glance at the
-   header answers "which game am I in" without reading the word. The word is
-   still there and still the accessible name -- this is the second signal, not
-   the only one. */
+/* Freeform is told apart by its name, written in the share preview's rainbow
+   (see components/RainbowWord.tsx), rather than by a fill: the rainbow's hues
+   are tuned to read against the page's own background in each theme, and a
+   filled pill would put them on ink they were never tuned for. The border
+   darkens so the pill still holds its edge beside a coloured word. */
 .app__mode-button--freeform {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-fg);
-}
-.app__mode-button--freeform:hover {
-  background: var(--accent);
-  filter: brightness(1.06);
+  border-color: var(--border-strong);
 }
 .app__mode-swap {
   font-size: 0.85em;
@@ -1051,7 +1046,8 @@ h2 {
   font-weight: 800;
 }
 /* The mode, in the log's heading: the header switch's pill in miniature --
-   outlined for Standard, filled for Freeform -- so the two read as one signal. */
+   plain for Standard, rainbow letters for Freeform -- so the two read as one
+   signal. */
 .guess-log__mode {
   display: inline-block;
   margin-right: 0.4rem;
@@ -1065,13 +1061,11 @@ h2 {
   vertical-align: 0.05em;
 }
 .guess-log__mode--freeform {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-fg);
+  border-color: var(--border-strong);
 }
-/* Freeform's game wears the switch's ink: the cards and the input take the
-   accent for their border, so a glance at the board says which game it is
-   without reading a word. Standard keeps the neutral border it always had.
+/* Freeform's game is drawn in ink: the cards and the input take the accent
+   for their border, so a glance at the board says which game it is without
+   reading a word. Standard keeps the neutral border it always had.
    The best word keeps its own colour, and the retry's dashed pick still reads
    as dashed. */
 .play--freeform .guess-log__entry {
