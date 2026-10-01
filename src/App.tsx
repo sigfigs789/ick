@@ -11,6 +11,7 @@ import { PuzzleNav } from "./components/PuzzleNav";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
+import { useGameMode } from "./hooks/useGameMode";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
@@ -71,6 +72,8 @@ export default function App() {
   // the guess log and carried as a class on the column, so the cards and the
   // input wear the mode as the header's switch does (see index.css).
   const playMode = modeChosen ? mode : undefined;
+  // The same setter the header's switch uses, for the guess log's mode chip.
+  const [, chooseMode] = useGameMode();
   const [showWordRules, setShowWordRules] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showPerfectMonth, setShowPerfectMonth] = useState(false);
@@ -229,6 +232,7 @@ export default function App() {
           copying={copying}
           onCopyToOtherMode={copyToOtherMode}
           mode={playMode}
+          onModeChange={playMode ? chooseMode : undefined}
         />
 
         {!progress.completed && (

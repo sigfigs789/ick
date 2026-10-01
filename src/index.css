@@ -1063,6 +1063,21 @@ h2 {
 .guess-log__mode--freeform {
   border-color: var(--border-strong);
 }
+/* As a button: the chip's own look, with the header switch's press feedback. */
+.guess-log__mode--button {
+  font-family: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s var(--ease-standard),
+    transform 0.15s var(--ease-standard);
+}
+.guess-log__mode--button:hover {
+  background: var(--bg-inset);
+}
+.guess-log__mode--button:active {
+  transform: scale(0.94);
+}
 /* Freeform's game wears its name's rainbow on its borders: the cards and the
    input, so a glance at the board says which game it is without reading a
    word. Standard keeps the neutral border it always had.

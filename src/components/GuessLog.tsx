@@ -14,7 +14,8 @@ import { RainbowWord } from "./RainbowWord";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
-import { MODE_LABELS, type GameMode } from "../game/mode";
+import { MODE_LABELS, otherMode as otherOf, type GameMode } from "../game/mode";
+import { trackModeChanged } from "../analytics";
 import type { CrossModePreview } from "../game/crossMode";
 
 /** The clipboard form of a logged word: "<tier square> <word> (<score>)".
@@ -60,6 +61,12 @@ interface Props {
    * switch does not decide (see `modeIsChosen`), which has only the one game.
    */
   mode?: GameMode;
+  /**
+   * Switch to the other mode. When given, the heading's mode chip is a button
+   * that does it -- the same switch as the header's, in the place the eye
+   * already is.
+   */
+  onModeChange?: (mode: GameMode) => void;
 }
 
 export function GuessLog({
@@ -76,6 +83,7 @@ export function GuessLog({
   copying = null,
   onCopyToOtherMode,
   mode,
+  onModeChange,
 }: Props) {
   const best = bestWord(acceptedWords);
   const maxGuesses = maxGuessesFor(date);
@@ -125,20 +133,18 @@ export function GuessLog({
                 letters, Standard's plain -- so the two read as one signal, and
                 named here because this is where the eye is while playing. */}
             {mode && (
-              <span className={`guess-log__mode guess-log__mode--${mode}`}>
-                {mode === "freeform" ? (
-                  // The word once for a screen reader, and the rainbow -- one
-                  // span per letter -- kept out of its way.
-                  <>
-                    <span className="sr-only">{MODE_LABELS[mode]}</span>
-                    <span aria-hidden="true">
-                      <RainbowWord word={MODE_LABELS[mode]} />
-                    </span>
-                  </>
-                ) : (
-                  MODE_LABELS[mode]
-                )}
-              </span>
+              <ModeChip
+                mode={mode}
+                onChange={
+                  onModeChange
+                    ? () => {
+                        const next = otherOf(mode);
+                        trackModeChanged(mode, next, "guess_log");
+                        onModeChange(next);
+                      }
+                    : undefined
+                }
+              />
             )}
             {mode ? "guess log" : "Guess log"}
           </h2>
@@ -422,5 +428,42 @@ function OtherModeRow({
       {preview.state === "refused" && <span>Not playable in {label}</span>}
       {preview.state === "full" && <span>{label} game finished</span>}
     </p>
+  );
+}
+
+/**
+ * The mode named in the log's heading: Freeform in its rainbow letters,
+ * Standard plain. A button when it can switch, with no swap arrow -- it reads
+ * as the label it is, and pressing it is a shortcut for the header's switch.
+ *
+ * Named "Change to <other>" rather than the header's "Switch to <other>" so
+ * the two controls stay distinguishable by name.
+ */
+function ModeChip({ mode, onChange }: { mode: GameMode; onChange?: () => void }) {
+  const label = MODE_LABELS[mode];
+  const face =
+    mode === "freeform" ? (
+      // The word once for a screen reader, and the rainbow -- one span per
+      // letter -- kept out of its way.
+      <>
+        <span className="sr-only">{label}</span>
+        <span aria-hidden="true">
+          <RainbowWord word={label} />
+        </span>
+      </>
+    ) : (
+      label
+    );
+  const className = `guess-log__mode guess-log__mode--${mode}`;
+  if (!onChange) return <span className={className}>{face}</span>;
+  return (
+    <button
+      type="button"
+      className={`${className} guess-log__mode--button`}
+      onClick={onChange}
+      aria-label={`${label}. Change to ${MODE_LABELS[otherOf(mode)]}.`}
+    >
+      {face}
+    </button>
   );
 }

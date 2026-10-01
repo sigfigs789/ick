@@ -691,8 +691,13 @@ function markLooked(via: "leaderboard" | "found_words"): void {
  * looks like is answered by the `mode` dimension on every play event, which is
  * the more useful half of the two.
  */
-export function trackModeChanged(from: GameMode, to: GameMode) {
-  send("mode_changed", { from, to, puzzle_date: todayDateString() });
+export function trackModeChanged(
+  from: GameMode,
+  to: GameMode,
+  /** Which control: the header's switch, or the mode chip on the guess log. */
+  via: "header" | "guess_log" = "header"
+) {
+  send("mode_changed", { from, to, via, puzzle_date: todayDateString() });
 }
 
 /**

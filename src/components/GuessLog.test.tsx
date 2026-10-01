@@ -354,6 +354,23 @@ describe("GuessLog guess count", () => {
       expect(screen.queryByText(/of 4 guesses/)).not.toBeInTheDocument();
     });
 
+    it("switches to the other mode from the chip", async () => {
+      const onModeChange = vi.fn();
+      render(
+        <GuessLog acceptedWords={words} date="2026-10-01" mode="standard" onModeChange={onModeChange} />
+      );
+      const chip = screen.getByRole("button", { name: "Standard. Change to Freeform." });
+      // No swap arrow: it reads as a label.
+      expect(chip).toHaveTextContent(/^Standard$/);
+      await userEvent.click(chip);
+      expect(onModeChange).toHaveBeenCalledWith("freeform");
+    });
+
+    it("is a plain label when nothing can switch", () => {
+      render(<GuessLog acceptedWords={words} date="2026-10-01" mode="freeform" />);
+      expect(screen.queryByRole("button", { name: /Change to/ })).not.toBeInTheDocument();
+    });
+
     it("says only \"Guess log\" on a puzzle with one game", () => {
       render(<GuessLog acceptedWords={words} date="2026-09-20" />);
       expect(screen.getByRole("heading", { name: "Guess log" })).toBeInTheDocument();
