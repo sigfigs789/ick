@@ -302,7 +302,7 @@ describe("GuessLog guess count", () => {
       expect(screen.queryByText(/Legend/)).not.toBeInTheDocument();
       // Submitted: the score, with the tier's square beside its name.
       const submitted = screen.getByText("5.20").parentElement!;
-      expect(submitted).toHaveTextContent("✓ In Freeform · 5.20 🟩 Uncommon");
+      expect(submitted).toHaveTextContent("✓ Its score in Freeform: 5.20 🟩 Uncommon");
       expect(screen.getByText("Not playable in Freeform")).toBeInTheDocument();
       expect(screen.getByText("Freeform game finished")).toBeInTheDocument();
       // Only the one that can go has a control.

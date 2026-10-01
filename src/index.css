@@ -1063,19 +1063,67 @@ h2 {
 .guess-log__mode--freeform {
   border-color: var(--border-strong);
 }
-/* Freeform's game is drawn in ink: the cards and the input take the accent
-   for their border, so a glance at the board says which game it is without
-   reading a word. Standard keeps the neutral border it always had.
-   The best word keeps its own colour, and the retry's dashed pick still reads
-   as dashed. */
-.play--freeform .guess-log__entry {
-  border-color: var(--accent);
+/* Freeform's game wears its name's rainbow on its borders: the cards and the
+   input, so a glance at the board says which game it is without reading a
+   word. Standard keeps the neutral border it always had.
+
+   A gradient cannot be a border colour, so the border goes transparent and the
+   gradient is painted under it on a second background layer, clipped to the
+   border box, with the card's own fill on top clipped to the padding box. Same
+   hues as RainbowWord's sweep (red through magenta), lighter than its letters:
+   a border only has to hold its shape against the page, not carry text.
+
+   Left alone: the best word keeps its gold, the retry's pick keeps its dashed
+   ink (a dash has nothing to show through it), and the input goes back to its
+   ordinary border while focused or while a lookup pulses it -- both of those
+   are signals of their own and need the border colour to carry them. */
+.play--freeform {
+  --rainbow-border: linear-gradient(
+    90deg,
+    hsl(0 85% 58%),
+    hsl(40 95% 52%),
+    hsl(120 60% 45%),
+    hsl(190 85% 45%),
+    hsl(240 80% 64%),
+    hsl(300 70% 58%)
+  );
 }
-.play--freeform .guess-log__entry--best {
-  border-color: var(--best-word-accent);
+@media (prefers-color-scheme: dark) {
+  .play--freeform {
+    --rainbow-border: linear-gradient(
+      90deg,
+      hsl(0 90% 68%),
+      hsl(40 95% 62%),
+      hsl(120 60% 58%),
+      hsl(190 85% 60%),
+      hsl(240 90% 74%),
+      hsl(300 80% 72%)
+    );
+  }
 }
-.play--freeform .submit-form input:not(:focus-visible) {
-  --border-live: var(--accent);
+.play--freeform .guess-log__entry:not(.guess-log__entry--best):not(.guess-log__entry--picking) {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    var(--rainbow-border) border-box;
+}
+.play--freeform .submit-form__row:not(.submit-form__row--checking) input:not(:focus-visible) {
+  --border-live: transparent;
+  background:
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    var(--rainbow-border) border-box;
+}
+/* A reader who has asked for more contrast gets the plain ink border, as the
+   rainbow letters fall back to plain text (see .rainbow-word__letter). */
+@media (prefers-contrast: more) {
+  .play--freeform .guess-log__entry:not(.guess-log__entry--best):not(.guess-log__entry--picking) {
+    border-color: var(--accent);
+    background: var(--card-bg);
+  }
+  .play--freeform .submit-form__row:not(.submit-form__row--checking) input:not(:focus-visible) {
+    --border-live: var(--accent);
+    background: var(--card-bg);
+  }
 }
 .guess-log__empty {
   margin: 0;
