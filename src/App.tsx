@@ -58,6 +58,10 @@ export default function App() {
     retryOffered,
     retrySpent,
     retryAnswer,
+    otherMode,
+    crossMode,
+    copying,
+    copyToOtherMode,
     revealAnswer,
     resetAnswers,
   } = useDailyPuzzle();
@@ -214,6 +218,10 @@ export default function App() {
           retryOffered={retryOffered}
           retrySpent={retrySpent}
           onRetry={retryAnswer}
+          otherMode={otherMode}
+          crossMode={crossMode}
+          copying={copying}
+          onCopyToOtherMode={copyToOtherMode}
         />
 
         {!progress.completed && (

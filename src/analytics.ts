@@ -695,6 +695,48 @@ export function trackModeChanged(from: GameMode, to: GameMode) {
   send("mode_changed", { from, to, puzzle_date: todayDateString() });
 }
 
+/**
+ * What became of a tap on a guess log word's "Copy to <other mode>" control
+ * (see game/crossMode.ts).
+ *
+ * One event per tap, whatever happened, so how often the control is reached
+ * for and how often it lands are both answerable: `copied` is a word banked in
+ * the other mode, `refused` a word that mode would not take, `full` a tap on a
+ * puzzle with no guess left over there, and `lookup_failed` a live check that
+ * could not answer. `copy_report` reads the event for /analytics, and joins it
+ * to the board by `player_id` for the retention of the players who copy.
+ *
+ * Both scores ride along, so the question the feature exists to answer -- does
+ * the same word pay better over there -- is readable straight off the log.
+ */
+export function trackAnswerCopied(details: {
+  date: string;
+  isToday: boolean;
+  from: GameMode;
+  to: GameMode;
+  word: string;
+  outcome: "copied" | "refused" | "full" | "lookup_failed";
+  scoreFrom: number;
+  scoreTo: number | null;
+  /** Words banked in the other mode after the tap. */
+  answerCount: number;
+  reason?: RejectionReason;
+}) {
+  send("answer_copied", {
+    puzzle_date: details.date,
+    puzzle_number: puzzleNumber(details.date),
+    live: details.isToday,
+    from: details.from,
+    to: details.to,
+    word: details.word,
+    outcome: details.outcome,
+    score_from: details.scoreFrom,
+    score_to: details.scoreTo,
+    answer_count: details.answerCount,
+    reason: details.reason ?? null,
+  });
+}
+
 export function trackLeaderboardJoined(isRename: boolean) {
   send("leaderboard_joined", { rename: isRename });
 }

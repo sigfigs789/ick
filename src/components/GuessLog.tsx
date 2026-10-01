@@ -13,6 +13,8 @@ import { CommonFormModal } from "./CommonFormModal";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
+import { MODE_LABELS, type GameMode } from "../game/mode";
+import type { CrossModePreview } from "../game/crossMode";
 
 /** The clipboard form of a logged word: "<tier square> <word> (<score>)".
  * Reuses the share-results palette so a pasted word matches the share text. */
@@ -40,6 +42,17 @@ interface Props {
   retrySpent?: boolean;
   /** Drop a banked word and hand its guess back (see storage.retryWord). */
   onRetry?: (word: string) => void;
+  /** The mode the player is not in, which each word can be copied into. */
+  otherMode?: GameMode;
+  /**
+   * What each word scores and does in `otherMode`, keyed by word (see
+   * game/crossMode.ts). Absent or empty on a puzzle with only one game.
+   */
+  crossMode?: Record<string, CrossModePreview>;
+  /** The word being copied right now, while its lookup or write runs. */
+  copying?: string | null;
+  /** Bank a word in `otherMode` as well. */
+  onCopyToOtherMode?: (word: string) => void;
 }
 
 export function GuessLog({
@@ -51,6 +64,10 @@ export function GuessLog({
   retryOffered = false,
   retrySpent = false,
   onRetry,
+  otherMode,
+  crossMode,
+  copying = null,
+  onCopyToOtherMode,
 }: Props) {
   const best = bestWord(acceptedWords);
   const maxGuesses = maxGuessesFor(date);
@@ -135,6 +152,7 @@ export function GuessLog({
             // a plural the base word of its own singular reads as the bug it is
             // meant to explain away.
             const baseNote = baseFormSubstitution(w.word, date);
+            const elsewhere = otherMode ? crossMode?.[w.word] : undefined;
             return (
               <li
                 key={w.word}
@@ -216,6 +234,21 @@ export function GuessLog({
                     </button>
                   </p>
                 )}
+                {/* The same word's price in the other mode, and the control
+                    that banks it there -- so a player wondering what a find is
+                    worth over there does not have to flip the switch to see.
+                    A sibling of the card for the same reason the note above
+                    is, and hidden while the retry is armed for the same reason
+                    too. */}
+                {elsewhere && otherMode && !picking && (
+                  <OtherModeRow
+                    word={w.word}
+                    mode={otherMode}
+                    preview={elsewhere}
+                    copying={copying}
+                    onCopy={onCopyToOtherMode}
+                  />
+                )}
               </li>
             );
           })}
@@ -295,5 +328,63 @@ export function GuessLog({
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * One word's line about the other mode: what it scores there, and either the
+ * control that copies it across or why it can't go.
+ */
+function OtherModeRow({
+  word,
+  mode,
+  preview,
+  copying,
+  onCopy,
+}: {
+  word: string;
+  mode: GameMode;
+  preview: CrossModePreview;
+  copying: string | null;
+  onCopy?: (word: string) => void;
+}) {
+  const label = MODE_LABELS[mode];
+  const priced = preview.state === "refused" ? undefined : preview.word;
+  const score = preview.state === "refused" ? undefined : preview.score;
+  return (
+    <p className={`guess-log__other-mode guess-log__other-mode--${preview.state}`}>
+      <span className="guess-log__other-mode-score">
+        {label}:{" "}
+        {priced && score ? (
+          <>
+            <strong>{score}</strong> {priced.rarity}
+            {/* Shown as an estimate until the lookup that would bank it has
+                said the stricter mode takes it at all. */}
+            {preview.state === "ready" && preview.needsLiveCheck ? "?" : ""}
+          </>
+        ) : (
+          "not playable"
+        )}
+      </span>
+      {preview.state === "ready" && (
+        <button
+          type="button"
+          className="guess-log__other-mode-copy"
+          disabled={copying !== null || !onCopy}
+          onClick={() => onCopy?.(word)}
+          aria-label={`Copy “${word}” to ${label}, where it scores ${score} (${priced?.rarity}). Uses one ${label} guess.`}
+        >
+          {copying === word ? "Copying…" : `Copy to ${label}`}
+        </button>
+      )}
+      {preview.state === "copied" && (
+        <span className="guess-log__other-mode-done">
+          <span aria-hidden="true">✓</span> In {label}
+        </span>
+      )}
+      {preview.state === "full" && (
+        <span className="guess-log__other-mode-done">{label} game finished</span>
+      )}
+    </p>
   );
 }

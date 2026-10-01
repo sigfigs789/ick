@@ -14,7 +14,8 @@
 // GET /api/review?list=analytics&days=1&date=YYYY-MM-DD   (today: that one puzzle)
 // GET /api/review?list=analytics&days=N&date=YYYY-MM-DD   (a picked range: N days ending on date)
 //   -> { report: { asOf, totals, daily, retention, cohorts, weekday, modes,
-//                  depth, funnel, sources, sessions, hours, chat } }
+//                  depth, funnel, sources, sessions, hours, chat, onboarding,
+//                  copies } }
 //   400 bad-list / bad-limit / bad-days / bad-date, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
@@ -389,18 +390,20 @@ async function handleGet(request: Request): Promise<Response> {
       // players' starting modes (the 20260930020000 migration) are read and set
       // on it as `onboarding` the same way. That one is cohorts, not a window of
       // puzzles, so it takes no date and clamps a today window up to its own
-      // shortest.
+      // shortest. Copies into the other mode (the 20261001000000 migration)
+      // take the window exactly as chat does, and are set on it as `copies`.
       const optional = (name: string, fnArgs: Record<string, unknown>) =>
         rpc<Record<string, unknown> | null>(name, fnArgs).catch((error: unknown) => {
           console.error(`[review] ${name} failed:`, error instanceof Error ? error.message : error);
           return null;
         });
-      const [report, chat, onboarding] = await Promise.all([
+      const [report, chat, onboarding, copies] = await Promise.all([
         rpc<Record<string, unknown> | null>("analytics_report", args),
         optional("chat_report", args),
         optional("onboarding_report", { p_days: days }),
+        optional("copy_report", args),
       ]);
-      return reply(200, { report: { ...(report ?? {}), chat, onboarding } });
+      return reply(200, { report: { ...(report ?? {}), chat, onboarding, copies } });
     }
     if (list === "freeform") {
       // Two reads rather than one, because the votes and the notes are two

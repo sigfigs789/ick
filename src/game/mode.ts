@@ -120,6 +120,31 @@ export function subscribeToMode(listener: Listener): () => void {
   };
 }
 
+/**
+ * Run `fn` as though the player were in `mode`, then put the session back.
+ *
+ * For the one feature that has to answer a question about the mode the player
+ * is *not* in: copying a banked word across (see game/crossMode.ts), which
+ * prices, judges and saves the word under the other mode's rules without
+ * moving the switch. Every one of those reads the module variable, so this
+ * swaps it rather than threading a mode through all of scoring.
+ *
+ * Synchronous only, and that is the whole safety argument: nothing else can run
+ * between the swap and the restore, so no render, lookup or listener ever sees
+ * the borrowed mode. Storage and listeners are not touched -- the player has
+ * not changed modes. Never pass an async function; its awaited half would run
+ * on the real mode.
+ */
+export function asMode<T>(mode: GameMode, fn: () => T): T {
+  const saved = currentMode();
+  current = mode;
+  try {
+    return fn();
+  } finally {
+    current = saved;
+  }
+}
+
 /** The other one, for a control whose whole job is to swap them. */
 export function otherMode(mode: GameMode): GameMode {
   return mode === "standard" ? "freeform" : "standard";

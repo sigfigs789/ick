@@ -1214,6 +1214,48 @@ h2 {
   background: color-mix(in srgb, currentColor 12%, transparent);
   color: var(--fg);
 }
+/* The word's price in the other mode, and the control that copies it there
+ * (see game/crossMode.ts). Same row-two position and size as the common-form
+ * note above, so a card carrying both reads as one footnote block. */
+.guess-log__other-mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.5rem;
+  margin: -0.25rem 0 0;
+  padding: 0 0.9rem 0.5rem;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: var(--fg-muted);
+}
+.guess-log__other-mode-score strong {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+.guess-log__other-mode-copy {
+  padding: 0.1rem 0.25rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.guess-log__other-mode-copy:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: var(--fg);
+}
+.guess-log__other-mode-copy:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.guess-log__other-mode-done {
+  font-weight: 700;
+}
 /* With only four guesses a day, the count carries real weight -- match the
    heading's size and weight and use the muted (not faint) ink so it reads as
    information rather than a footnote. */

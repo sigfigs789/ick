@@ -113,6 +113,30 @@ const REPORT = {
   hours: Array.from({ length: 24 }, (_, hour) => ({ hour, visits: hour })),
 };
 
+/** The shape `copy_report` returns, which api/review.ts sets on the report. */
+const COPIES = {
+  totals: {
+    taps: 14,
+    copies: 10,
+    copiers: 4,
+    toFreeform: 7,
+    toStandard: 3,
+    refused: 2,
+    full: 1,
+    lookupFailed: 1,
+    players: 40,
+    avgCopiesPerCopier: 2.5,
+    avgScoreGain: 0.85,
+    higherThere: 6,
+    since: "2026-10-01",
+  },
+  daily: [{ date: "2026-10-01", copies: 10, copiers: 4, players: 40 }],
+  retention: {
+    nextDay: { copied: { cohort: 8, returned: 6 }, other: { cohort: 100, returned: 40 } },
+    week: { copied: { cohort: 4, returned: 3 }, other: { cohort: 30, returned: 12 } },
+  },
+};
+
 /** The shape `chat_report` returns, which api/review.ts sets on the report. */
 const CHAT = {
   totals: {
@@ -273,6 +297,29 @@ describe("AnalyticsPage", () => {
     const tile = (await screen.findByText("Looked, didn't play")).closest(".analytics__tile")!;
     expect(within(tile as HTMLElement).getByText("—")).toBeInTheDocument();
     expect(within(tile as HTMLElement).getByText("not recorded yet")).toBeInTheDocument();
+  });
+
+  it("shows how often words are copied across, and the copiers' retention", async () => {
+    stubFetch({ ...REPORT, copies: COPIES });
+    render(<AnalyticsPage />);
+
+    const copied = (await screen.findByText("Words copied")).closest(".analytics__tile")!;
+    expect(within(copied as HTMLElement).getByText("10")).toBeInTheDocument();
+    expect(within(copied as HTMLElement).getByText("7 to Freeform, 3 to Standard")).toBeInTheDocument();
+    expect(screen.getByText("10% of 40 players")).toBeInTheDocument();
+    expect(screen.getByText("+0.85")).toBeInTheDocument();
+    expect(screen.getByText("2 refused, 1 game finished, 1 lookup failed")).toBeInTheDocument();
+    const nextDay = screen.getByText("Next day, per player-day").closest("tr")!;
+    expect(nextDay).toHaveTextContent("75%");
+    expect(nextDay).toHaveTextContent("40%");
+    expect(screen.getByLabelText("2026-10-01 (Thu): 4 of 40 players copied 10 words")).toBeInTheDocument();
+  });
+
+  it("leaves the copies section out when its numbers failed", async () => {
+    stubFetch({ ...REPORT, copies: null });
+    render(<AnalyticsPage />);
+    await screen.findByText("Looked, didn't play");
+    expect(screen.queryByText("Copies to the other mode")).not.toBeInTheDocument();
   });
 
   it("shows who opens the chat, who talks and how long they stay", async () => {

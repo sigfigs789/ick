@@ -261,4 +261,91 @@ describe("GuessLog guess count", () => {
     expect(screen.queryByText(/retr(y|ies)$/)).not.toBeInTheDocument();
     expect(screen.queryByText(/\d+ of \d+ retr/i)).not.toBeInTheDocument();
   });
+
+  describe("the other mode", () => {
+    const words: AcceptedWord[] = [
+      { word: "kindless", rarity: "Common", zipf: 4.4 },
+      { word: "kindly", rarity: "Common", zipf: 4.5 },
+      { word: "kinder", rarity: "Common", zipf: 4.2 },
+      { word: "kindest", rarity: "Common", zipf: 3.9 },
+    ];
+
+    it("shows each word's score over there, and copies the ones that can go", async () => {
+      const onCopy = vi.fn();
+      render(
+        <GuessLog
+          acceptedWords={words}
+          date="2026-10-01"
+          otherMode="freeform"
+          onCopyToOtherMode={onCopy}
+          crossMode={{
+            kindless: {
+              state: "ready",
+              word: { word: "kindless", rarity: "Legend", zipf: 0.4 },
+              score: "9.91",
+              needsLiveCheck: false,
+            },
+            kindly: {
+              state: "copied",
+              word: { word: "kindly", rarity: "Uncommon", zipf: 3.9 },
+              score: "5.20",
+            },
+            kinder: { state: "refused", reason: "archaic" },
+            kindest: { state: "full", word: { word: "kindest", rarity: "Rare", zipf: 3 }, score: "6.40" },
+          }}
+        />
+      );
+
+      expect(screen.getByText("9.91")).toBeInTheDocument();
+      expect(screen.getByText(/In Freeform/)).toBeInTheDocument();
+      expect(screen.getByText("Freeform: not playable")).toBeInTheDocument();
+      expect(screen.getByText("Freeform game finished")).toBeInTheDocument();
+      // Only the one that can go has a control.
+      const copy = screen.getAllByRole("button", { name: /^Copy “.*” to Freeform/ });
+      expect(copy).toHaveLength(1);
+      await userEvent.click(copy[0]);
+      expect(onCopy).toHaveBeenCalledWith("kindless");
+    });
+
+    it("marks a price an estimate until Standard's lookup confirms it", () => {
+      render(
+        <GuessLog
+          acceptedWords={[words[0]]}
+          date="2026-10-01"
+          otherMode="standard"
+          crossMode={{
+            kindless: {
+              state: "ready",
+              word: { word: "kindless", rarity: "Mythic", zipf: 1.2 },
+              score: "9.40",
+              needsLiveCheck: true,
+            },
+          }}
+        />
+      );
+      expect(screen.getByText("9.40").parentElement).toHaveTextContent("Standard: 9.40 Mythic?");
+    });
+
+    it("disables every copy while one is running", () => {
+      render(
+        <GuessLog
+          acceptedWords={[words[0]]}
+          date="2026-10-01"
+          otherMode="freeform"
+          copying="kindless"
+          onCopyToOtherMode={vi.fn()}
+          crossMode={{
+            kindless: {
+              state: "ready",
+              word: { word: "kindless", rarity: "Legend", zipf: 0.4 },
+              score: "9.91",
+              needsLiveCheck: false,
+            },
+          }}
+        />
+      );
+      expect(screen.getByRole("button", { name: /to Freeform/ })).toBeDisabled();
+      expect(screen.getByText("Copying…")).toBeInTheDocument();
+    });
+  });
 });
