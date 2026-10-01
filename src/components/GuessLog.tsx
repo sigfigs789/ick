@@ -378,7 +378,7 @@ function OtherModeRow({
               same here as it will when pasted. */}
           <span aria-hidden="true">{raritySymbol(preview.word.rarity, date)}</span> {preview.word.rarity}{" "}
           <span className="guess-log__other-mode-done">
-            <span aria-hidden="true">✓</span> Submitted
+            <span aria-hidden="true">✓</span> In {label}
           </span>
         </span>
       )}
