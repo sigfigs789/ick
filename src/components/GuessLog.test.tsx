@@ -335,4 +335,25 @@ describe("GuessLog guess count", () => {
       expect(screen.getByText("Submitting…")).toBeInTheDocument();
     });
   });
+
+  describe("the mode in the heading", () => {
+    const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
+
+    it("names the game the log belongs to", () => {
+      render(<GuessLog acceptedWords={words} date="2026-10-01" mode="freeform" />);
+      expect(screen.getByRole("heading", { name: "Freeform guess log" })).toBeInTheDocument();
+      expect(screen.getByText("Freeform")).toHaveClass("guess-log__mode--freeform");
+    });
+
+    it("keeps naming it once the puzzle is finished, without the count", () => {
+      render(<GuessLog acceptedWords={words} date="2026-10-01" mode="standard" completed streak={streak} />);
+      expect(screen.getByRole("heading", { name: "Standard guess log" })).toBeInTheDocument();
+      expect(screen.queryByText(/of 4 guesses/)).not.toBeInTheDocument();
+    });
+
+    it("says only \"Guess log\" on a puzzle with one game", () => {
+      render(<GuessLog acceptedWords={words} date="2026-09-20" />);
+      expect(screen.getByRole("heading", { name: "Guess log" })).toBeInTheDocument();
+    });
+  });
 });

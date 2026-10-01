@@ -22,13 +22,17 @@ import type { GameMode } from "../game/mode";
 const BADGE_VISIBLE_MS = 10_000;
 
 /**
- * The pages whose content is a long list read against the mode: the boards and
- * the finds. Scrolled down either of them, the header's switch is a screen
- * behind the reader, and flipping between the two games to compare the same
- * list is exactly what those pages are read for -- so there the switch follows
- * them down (see `docked` below). The puzzle fits a screen and needs no copy.
+ * The pages where the switch follows the reader down (see `docked` below): the
+ * boards and the finds, whose long lists are read against the mode and
+ * compared across it, and the puzzle itself.
+ *
+ * The puzzle was left out once, on the argument that it fits a screen. It
+ * does not on a phone once the guess log fills and the results open under it,
+ * and scrolled past the header, nothing above the input said which of the two
+ * games was being played -- which is the one thing a player switching between
+ * them most needs to see at the moment they guess.
  */
-const DOCKED_SWITCH_ROUTES: readonly Route[] = ["leaderboard", "found-words"];
+const DOCKED_SWITCH_ROUTES: readonly Route[] = ["game", "leaderboard", "found-words"];
 
 /** One tab: where it goes and what it is called. */
 interface Tab {

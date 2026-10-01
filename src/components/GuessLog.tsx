@@ -54,6 +54,11 @@ interface Props {
   copying?: string | null;
   /** Submit a word to `otherMode` as well. */
   onCopyToOtherMode?: (word: string) => void;
+  /**
+   * The mode this log belongs to, named in its heading. Absent on a puzzle the
+   * switch does not decide (see `modeIsChosen`), which has only the one game.
+   */
+  mode?: GameMode;
 }
 
 export function GuessLog({
@@ -69,6 +74,7 @@ export function GuessLog({
   crossMode,
   copying = null,
   onCopyToOtherMode,
+  mode,
 }: Props) {
   const best = bestWord(acceptedWords);
   const maxGuesses = maxGuessesFor(date);
@@ -108,18 +114,31 @@ export function GuessLog({
 
   return (
     <section className={`guess-log${completed ? " guess-log--completed" : ""}`} aria-label="Your guesses">
-      {!completed && (
+      {/* Kept on a finished puzzle when there is a mode to name: the log is
+          still one of two, and the other mode's game is a tap away. The count
+          is what a finished puzzle has no use for. */}
+      {(!completed || mode) && (
         <div className="guess-log__header">
-          <h2 className="guess-log__title">Guess log</h2>
+          <h2 className="guess-log__title">
+            {/* Styled as the header's switch is -- filled for Freeform,
+                outlined for Standard -- so the two read as one signal, and
+                named here because this is where the eye is while playing. */}
+            {mode && (
+              <span className={`guess-log__mode guess-log__mode--${mode}`}>{MODE_LABELS[mode]}</span>
+            )}
+            {mode ? "guess log" : "Guess log"}
+          </h2>
           {/* Guesses only. The retry used to sit here too, as a second "X of
               Y" beside this one -- but it is a single yes/no reserve, not a
               running tally, and pairing it with a real multi-step count made
               it read as the same kind of number when it isn't. That state now
               lives on the retry control itself, below: the button *is* the
               indicator, available or spent, no fraction required. */}
-          <span className="guess-log__count">
-            {acceptedWords.length} of {maxGuesses} guesses
-          </span>
+          {!completed && (
+            <span className="guess-log__count">
+              {acceptedWords.length} of {maxGuesses} guesses
+            </span>
+          )}
         </div>
       )}
 

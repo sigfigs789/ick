@@ -64,7 +64,13 @@ export default function App() {
     copyToOtherMode,
     revealAnswer,
     resetAnswers,
+    mode,
+    modeChosen,
   } = useDailyPuzzle();
+  // Which of the two games this is, when the switch decides it at all. Named in
+  // the guess log and carried as a class on the column, so the cards and the
+  // input wear the mode as the header's switch does (see index.css).
+  const playMode = modeChosen ? mode : undefined;
   const [showWordRules, setShowWordRules] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showPerfectMonth, setShowPerfectMonth] = useState(false);
@@ -188,7 +194,7 @@ export default function App() {
           <SpeedInsights />
         </>
       )}
-      <main>
+      <main className={playMode ? `play play--${playMode}` : undefined}>
         {/* Below the header rather than inside it: which puzzle you are on is
             part of the puzzle, not part of the app's identity -- and the header
             belongs to all three pages now (see src/components/AppHeader.tsx),
@@ -222,6 +228,7 @@ export default function App() {
           crossMode={crossMode}
           copying={copying}
           onCopyToOtherMode={copyToOtherMode}
+          mode={playMode}
         />
 
         {!progress.completed && (

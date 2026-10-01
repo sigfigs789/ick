@@ -1050,6 +1050,39 @@ h2 {
   font-size: 0.95rem;
   font-weight: 800;
 }
+/* The mode, in the log's heading: the header switch's pill in miniature --
+   outlined for Standard, filled for Freeform -- so the two read as one signal. */
+.guess-log__mode {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0.12rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-size: 0.8rem;
+  font-weight: 700;
+  vertical-align: 0.05em;
+}
+.guess-log__mode--freeform {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+/* Freeform's game wears the switch's ink: the cards and the input take the
+   accent for their border, so a glance at the board says which game it is
+   without reading a word. Standard keeps the neutral border it always had.
+   The best word keeps its own colour, and the retry's dashed pick still reads
+   as dashed. */
+.play--freeform .guess-log__entry {
+  border-color: var(--accent);
+}
+.play--freeform .guess-log__entry--best {
+  border-color: var(--best-word-accent);
+}
+.play--freeform .submit-form input:not(:focus-visible) {
+  --border-live: var(--accent);
+}
 .guess-log__empty {
   margin: 0;
   padding: 0.9rem 1.1rem;
