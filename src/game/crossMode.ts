@@ -8,11 +8,11 @@ import type { AcceptedWord, DailyProgress, RejectionReason } from "./types";
  * Copying a banked word into the other mode's game for the same puzzle.
  *
  * Each mode keeps its own progress for a date (see `progressKey` in
- * game/storage.ts), so a player who finds a word in Standard and wonders what
- * it is worth in Freeform has, until now, had to flip the switch, type it again
- * and spend a guess finding out. This answers the first half without moving
- * the switch -- what the word scores over there -- and turns the second half
- * into one tap.
+ * game/storage.ts), so a player who finds a word in Standard and wants it in
+ * Freeform too has, until now, had to flip the switch and type it again. This
+ * makes that one tap from the guess log. The score over there is shown only
+ * after the word has been submitted (see `OtherModeRow` in
+ * components/GuessLog.tsx), so the other game stays a blind guess.
  *
  * A copy is a real submission to the other game. It is judged by that mode's
  * rules, not waved through on the strength of having passed this one's: the two
@@ -29,7 +29,10 @@ import type { AcceptedWord, DailyProgress, RejectionReason } from "./types";
  * with the verdict once it has one.
  */
 
-/** What a word would do in the other mode, for the guess log to show. */
+/**
+ * Where a word stands in the other mode, for the guess log. Priced in every
+ * state that can be, but the log shows the price only once it is `copied`.
+ */
 export type CrossModePreview =
   /** Already banked there. `word` is the copy as it was scored there. */
   | { state: "copied"; word: AcceptedWord; score: string }

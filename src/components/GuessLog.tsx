@@ -45,13 +45,14 @@ interface Props {
   /** The mode the player is not in, which each word can be copied into. */
   otherMode?: GameMode;
   /**
-   * What each word scores and does in `otherMode`, keyed by word (see
-   * game/crossMode.ts). Absent or empty on a puzzle with only one game.
+   * Where each word stands in `otherMode`, keyed by word (see
+   * game/crossMode.ts). Its score there is shown only once it is submitted.
+   * Absent or empty on a puzzle with only one game.
    */
   crossMode?: Record<string, CrossModePreview>;
-  /** The word being copied right now, while its lookup or write runs. */
+  /** The word being submitted right now, while its lookup or write runs. */
   copying?: string | null;
-  /** Bank a word in `otherMode` as well. */
+  /** Submit a word to `otherMode` as well. */
   onCopyToOtherMode?: (word: string) => void;
 }
 
@@ -234,9 +235,9 @@ export function GuessLog({
                     </button>
                   </p>
                 )}
-                {/* The same word's price in the other mode, and the control
-                    that banks it there -- so a player wondering what a find is
-                    worth over there does not have to flip the switch to see.
+                {/* The control that submits the same word to the other mode,
+                    and once it has, what it scored there -- so a player does
+                    not have to flip the switch to find out.
                     A sibling of the card for the same reason the note above
                     is, and hidden while the retry is armed for the same reason
                     too. */}
@@ -247,6 +248,7 @@ export function GuessLog({
                     preview={elsewhere}
                     copying={copying}
                     onCopy={onCopyToOtherMode}
+                    date={date}
                   />
                 )}
               </li>
@@ -332,8 +334,13 @@ export function GuessLog({
 }
 
 /**
- * One word's line about the other mode: what it scores there, and either the
- * control that copies it across or why it can't go.
+ * One word's line about the other mode: the control that submits it there, or
+ * once it has been, what it scored.
+ *
+ * The score over there is held back until the word is submitted. Showing it up
+ * front would turn the other mode into a free price check -- try every word in
+ * one game, then spend the other game's guesses only on the ones that pay --
+ * and a submission should cost the same blind guess it would cost typed.
  */
 function OtherModeRow({
   word,
@@ -341,50 +348,42 @@ function OtherModeRow({
   preview,
   copying,
   onCopy,
+  date,
 }: {
   word: string;
   mode: GameMode;
+  date?: string;
   preview: CrossModePreview;
   copying: string | null;
   onCopy?: (word: string) => void;
 }) {
   const label = MODE_LABELS[mode];
-  const priced = preview.state === "refused" ? undefined : preview.word;
-  const score = preview.state === "refused" ? undefined : preview.score;
   return (
     <p className={`guess-log__other-mode guess-log__other-mode--${preview.state}`}>
-      <span className="guess-log__other-mode-score">
-        {label}:{" "}
-        {priced && score ? (
-          <>
-            <strong>{score}</strong> {priced.rarity}
-            {/* Shown as an estimate until the lookup that would bank it has
-                said the stricter mode takes it at all. */}
-            {preview.state === "ready" && preview.needsLiveCheck ? "?" : ""}
-          </>
-        ) : (
-          "not playable"
-        )}
-      </span>
       {preview.state === "ready" && (
         <button
           type="button"
           className="guess-log__other-mode-copy"
           disabled={copying !== null || !onCopy}
           onClick={() => onCopy?.(word)}
-          aria-label={`Copy “${word}” to ${label}, where it scores ${score} (${priced?.rarity}). Uses one ${label} guess.`}
+          aria-label={`Submit “${word}” to ${label}. Uses one ${label} guess.`}
         >
-          {copying === word ? "Copying…" : `Copy to ${label}`}
+          {copying === word ? "Submitting…" : `Submit to ${label}`}
         </button>
       )}
       {preview.state === "copied" && (
-        <span className="guess-log__other-mode-done">
-          <span aria-hidden="true">✓</span> In {label}
+        <span className="guess-log__other-mode-score">
+          {label}: <strong>{preview.score}</strong>{" "}
+          {/* The tier's square from the share text, so the word reads the
+              same here as it will when pasted. */}
+          <span aria-hidden="true">{raritySymbol(preview.word.rarity, date)}</span> {preview.word.rarity}{" "}
+          <span className="guess-log__other-mode-done">
+            <span aria-hidden="true">✓</span> Submitted
+          </span>
         </span>
       )}
-      {preview.state === "full" && (
-        <span className="guess-log__other-mode-done">{label} game finished</span>
-      )}
+      {preview.state === "refused" && <span>Not playable in {label}</span>}
+      {preview.state === "full" && <span>{label} game finished</span>}
     </p>
   );
 }

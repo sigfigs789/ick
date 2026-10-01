@@ -73,7 +73,7 @@ describe("copying a word into the other mode", () => {
       asMode("freeform", () => evaluateSubmission(WORD, DROP, [], DATE)).word,
     ]);
     expect(result.current.crossMode[WORD].state).toBe("copied");
-    expect(result.current.feedback?.message).toContain("copied to Freeform");
+    expect(result.current.feedback?.message).toContain("submitted to Freeform");
 
     const [event] = copyEvents();
     expect(event).toMatchObject({

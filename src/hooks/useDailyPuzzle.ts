@@ -714,7 +714,7 @@ export function useDailyPuzzle() {
         if (banked.completed) asMode(to, () => trackPuzzleCompleted(banked, updatedStreak));
         showFeedback(
           "accepted",
-          `"${word.word}" copied to ${label} — ${word.rarity}.`,
+          `"${word.word}" submitted to ${label} — ${word.rarity}.`,
           word.rarity
         );
       } finally {

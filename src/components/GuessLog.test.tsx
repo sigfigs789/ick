@@ -270,7 +270,7 @@ describe("GuessLog guess count", () => {
       { word: "kindest", rarity: "Common", zipf: 3.9 },
     ];
 
-    it("shows each word's score over there, and copies the ones that can go", async () => {
+    it("offers to submit each word there, and shows the score only once it has been", async () => {
       const onCopy = vi.fn();
       render(
         <GuessLog
@@ -296,23 +296,31 @@ describe("GuessLog guess count", () => {
         />
       );
 
-      expect(screen.getByText("9.91")).toBeInTheDocument();
-      expect(screen.getByText(/In Freeform/)).toBeInTheDocument();
-      expect(screen.getByText("Freeform: not playable")).toBeInTheDocument();
+      // Not submitted yet: no price, from any state that has one.
+      expect(screen.queryByText("9.91")).not.toBeInTheDocument();
+      expect(screen.queryByText("6.40")).not.toBeInTheDocument();
+      expect(screen.queryByText(/Legend/)).not.toBeInTheDocument();
+      // Submitted: the score, with the tier's square beside its name.
+      const submitted = screen.getByText("5.20").parentElement!;
+      expect(submitted).toHaveTextContent("Freeform: 5.20 🟩 Uncommon ✓ Submitted");
+      expect(screen.getByText("Not playable in Freeform")).toBeInTheDocument();
       expect(screen.getByText("Freeform game finished")).toBeInTheDocument();
       // Only the one that can go has a control.
-      const copy = screen.getAllByRole("button", { name: /^Copy “.*” to Freeform/ });
-      expect(copy).toHaveLength(1);
-      await userEvent.click(copy[0]);
+      const submit = screen.getAllByRole("button", { name: /^Submit “.*” to Freeform/ });
+      expect(submit).toHaveLength(1);
+      expect(submit[0]).toHaveTextContent("Submit to Freeform");
+      await userEvent.click(submit[0]);
       expect(onCopy).toHaveBeenCalledWith("kindless");
     });
 
-    it("marks a price an estimate until Standard's lookup confirms it", () => {
+    it("disables every submit while one is running", () => {
       render(
         <GuessLog
           acceptedWords={[words[0]]}
           date="2026-10-01"
           otherMode="standard"
+          copying="kindless"
+          onCopyToOtherMode={vi.fn()}
           crossMode={{
             kindless: {
               state: "ready",
@@ -323,29 +331,8 @@ describe("GuessLog guess count", () => {
           }}
         />
       );
-      expect(screen.getByText("9.40").parentElement).toHaveTextContent("Standard: 9.40 Mythic?");
-    });
-
-    it("disables every copy while one is running", () => {
-      render(
-        <GuessLog
-          acceptedWords={[words[0]]}
-          date="2026-10-01"
-          otherMode="freeform"
-          copying="kindless"
-          onCopyToOtherMode={vi.fn()}
-          crossMode={{
-            kindless: {
-              state: "ready",
-              word: { word: "kindless", rarity: "Legend", zipf: 0.4 },
-              score: "9.91",
-              needsLiveCheck: false,
-            },
-          }}
-        />
-      );
-      expect(screen.getByRole("button", { name: /to Freeform/ })).toBeDisabled();
-      expect(screen.getByText("Copying…")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /to Standard/ })).toBeDisabled();
+      expect(screen.getByText("Submitting…")).toBeInTheDocument();
     });
   });
 });
