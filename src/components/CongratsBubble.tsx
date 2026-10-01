@@ -5,6 +5,7 @@ import {
   markCongratsPopped,
   pendingCongratsSpot,
 } from "../game/congrats";
+import { useSound } from "../hooks/useSound";
 
 /**
  * How long the splat is on screen before it is taken off the page.
@@ -66,6 +67,7 @@ export function CongratsBubble({ today }: { today: string }) {
   const [splatting, setSplatting] = useState(false);
   /** Taken off the page, once the ink has soaked away. */
   const [gone, setGone] = useState(false);
+  const sound = useSound();
 
   useEffect(() => {
     // Nothing owed today -- either no window is standing or every one that is
@@ -105,6 +107,9 @@ export function CongratsBubble({ today }: { today: string }) {
     // Remembered on the hit rather than when the ink clears, so a reader who
     // navigates away mid-splat has still popped it.
     markCongratsPopped(spot);
+    // Applause as the ink lands -- inside the press, which is the gesture the
+    // browser needs before it will play anything. A month's is the bigger one.
+    sound.applause(spot.window);
     setSplatting(true);
     window.setTimeout(() => setGone(true), SPLAT_MS);
   }
