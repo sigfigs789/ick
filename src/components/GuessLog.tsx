@@ -373,13 +373,15 @@ function OtherModeRow({
       )}
       {preview.state === "copied" && (
         <span className="guess-log__other-mode-score">
-          {label}: <strong>{preview.score}</strong>{" "}
-          {/* The tier's square from the share text, so the word reads the
-              same here as it will when pasted. */}
-          <span aria-hidden="true">{raritySymbol(preview.word.rarity, date)}</span> {preview.word.rarity}{" "}
+          {/* The mode is named once, in the check: a "Freeform:" prefix on the
+              score as well read as the same word twice in one short line. */}
           <span className="guess-log__other-mode-done">
             <span aria-hidden="true">✓</span> In {label}
-          </span>
+          </span>{" "}
+          <span aria-hidden="true">·</span> <strong>{preview.score}</strong>{" "}
+          {/* The tier's square from the share text, so the word reads the
+              same here as it will when pasted. */}
+          <span aria-hidden="true">{raritySymbol(preview.word.rarity, date)}</span> {preview.word.rarity}
         </span>
       )}
       {preview.state === "refused" && <span>Not playable in {label}</span>}
