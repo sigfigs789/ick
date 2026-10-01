@@ -572,18 +572,13 @@ h2 {
 .app__mode-button:active {
   transform: scale(0.94);
 }
-/* Freeform reads as the away strip: same shape, filled, so a glance at the
-   header answers "which game am I in" without reading the word. The word is
-   still there and still the accessible name -- this is the second signal, not
-   the only one. */
+/* Freeform is told apart by its name, written in the share preview's rainbow
+   (see components/RainbowWord.tsx), rather than by a fill: the rainbow's hues
+   are tuned to read against the page's own background in each theme, and a
+   filled pill would put them on ink they were never tuned for. The border
+   darkens so the pill still holds its edge beside a coloured word. */
 .app__mode-button--freeform {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-fg);
-}
-.app__mode-button--freeform:hover {
-  background: var(--accent);
-  filter: brightness(1.06);
+  border-color: var(--border-strong);
 }
 .app__mode-swap {
   font-size: 0.85em;
@@ -1050,6 +1045,101 @@ h2 {
   font-size: 0.95rem;
   font-weight: 800;
 }
+/* The mode, in the log's heading: the header switch's pill in miniature --
+   plain for Standard, rainbow letters for Freeform -- so the two read as one
+   signal. */
+.guess-log__mode {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0.12rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-size: 0.8rem;
+  font-weight: 700;
+  vertical-align: 0.05em;
+}
+.guess-log__mode--freeform {
+  border-color: var(--border-strong);
+}
+/* As a button: the chip's own look, with the header switch's press feedback. */
+.guess-log__mode--button {
+  font-family: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s var(--ease-standard),
+    transform 0.15s var(--ease-standard);
+}
+.guess-log__mode--button:hover {
+  background: var(--bg-inset);
+}
+.guess-log__mode--button:active {
+  transform: scale(0.94);
+}
+/* Freeform's game wears its name's rainbow on its borders: the cards and the
+   input, so a glance at the board says which game it is without reading a
+   word. Standard keeps the neutral border it always had.
+
+   A gradient cannot be a border colour, so the border goes transparent and the
+   gradient is painted under it on a second background layer, clipped to the
+   border box, with the card's own fill on top clipped to the padding box. Same
+   hues as RainbowWord's sweep (red through magenta), lighter than its letters:
+   a border only has to hold its shape against the page, not carry text.
+
+   Left alone: the best word keeps its gold, the retry's pick keeps its dashed
+   ink (a dash has nothing to show through it), and the input goes back to its
+   ordinary border while focused or while a lookup pulses it -- both of those
+   are signals of their own and need the border colour to carry them. */
+.play--freeform {
+  --rainbow-border: linear-gradient(
+    90deg,
+    hsl(0 85% 58%),
+    hsl(40 95% 52%),
+    hsl(120 60% 45%),
+    hsl(190 85% 45%),
+    hsl(240 80% 64%),
+    hsl(300 70% 58%)
+  );
+}
+@media (prefers-color-scheme: dark) {
+  .play--freeform {
+    --rainbow-border: linear-gradient(
+      90deg,
+      hsl(0 90% 68%),
+      hsl(40 95% 62%),
+      hsl(120 60% 58%),
+      hsl(190 85% 60%),
+      hsl(240 90% 74%),
+      hsl(300 80% 72%)
+    );
+  }
+}
+.play--freeform .guess-log__entry:not(.guess-log__entry--best):not(.guess-log__entry--picking) {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    var(--rainbow-border) border-box;
+}
+.play--freeform .submit-form__row:not(.submit-form__row--checking) input:not(:focus-visible) {
+  --border-live: transparent;
+  background:
+    linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+    var(--rainbow-border) border-box;
+}
+/* A reader who has asked for more contrast gets the plain ink border, as the
+   rainbow letters fall back to plain text (see .rainbow-word__letter). */
+@media (prefers-contrast: more) {
+  .play--freeform .guess-log__entry:not(.guess-log__entry--best):not(.guess-log__entry--picking) {
+    border-color: var(--accent);
+    background: var(--card-bg);
+  }
+  .play--freeform .submit-form__row:not(.submit-form__row--checking) input:not(:focus-visible) {
+    --border-live: var(--accent);
+    background: var(--card-bg);
+  }
+}
 .guess-log__empty {
   margin: 0;
   padding: 0.9rem 1.1rem;
@@ -1213,6 +1303,48 @@ h2 {
 .guess-log__base-note-info:hover {
   background: color-mix(in srgb, currentColor 12%, transparent);
   color: var(--fg);
+}
+/* The word's price in the other mode, and the control that copies it there
+ * (see game/crossMode.ts). Same row-two position and size as the common-form
+ * note above, so a card carrying both reads as one footnote block. */
+.guess-log__other-mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.1rem 0.5rem;
+  margin: -0.25rem 0 0;
+  padding: 0 0.9rem 0.5rem;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: var(--fg-muted);
+}
+.guess-log__other-mode-score strong {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+.guess-log__other-mode-copy {
+  padding: 0.1rem 0.25rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.guess-log__other-mode-copy:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: var(--fg);
+}
+.guess-log__other-mode-copy:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.guess-log__other-mode-done {
+  font-weight: 700;
 }
 /* With only four guesses a day, the count carries real weight -- match the
    heading's size and weight and use the muted (not faint) ink so it reads as

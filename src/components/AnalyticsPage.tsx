@@ -6,6 +6,7 @@ import {
   fetchAnalyticsRange,
   type AnalyticsReport,
   type ChatReport,
+  type CopyReport,
   type OnboardingReason,
   type OnboardingReport,
   type Rate,
@@ -440,6 +441,8 @@ function Report({
 
       {report.onboarding && <OnboardingSection onboarding={report.onboarding} isToday={isToday} picked={range !== null} />}
 
+      {report.copies && <CopySection copies={report.copies} windowName={windowName} />}
+
       {report.chat && <ChatSection chat={report.chat} windowName={windowName} />}
 
       <Section title="When people open it" note="Visits by hour of day, Mountain Time.">
@@ -548,6 +551,111 @@ function OnboardingSection({
         </div>
       )}
       {arrivals && <p className="review__meta">Share-link taps in the window: {arrivals}.</p>}
+    </Section>
+  );
+}
+
+/**
+ * Words copied into the other mode from the guess log (see game/crossMode.ts):
+ * how often, by whom, which way, and whether the players who do it come back.
+ * Two retention comparisons, because each answers a different worry -- the
+ * player-day one holds the players roughly fixed, the player one asks about
+ * people -- and copiers are self-selected in both, which the note says.
+ */
+function CopySection({ copies, windowName }: { copies: CopyReport; windowName: string }) {
+  const { totals, retention } = copies;
+  if (!totals.since) {
+    return (
+      <Section title="Copies to the other mode" note="Words copied from one mode's guess log into the other's.">
+        <p className="review__status">No copies recorded yet.</p>
+      </Section>
+    );
+  }
+  const unlanded = totals.refused + totals.full + totals.lookupFailed;
+  return (
+    <Section
+      title="Copies to the other mode"
+      note={`${windowName}, recorded from ${totals.since}. A copy banks a word from one mode's guess log in the other mode's game for the same puzzle. Retention is a live day played afterwards, in either mode. Copiers chose to copy, so a gap here is a correlation, not the feature's effect.`}
+    >
+      <div className="analytics__tiles">
+        <Tile
+          label="Words copied"
+          value={fmt(totals.copies)}
+          sub={`${fmt(totals.toFreeform)} to Freeform, ${fmt(totals.toStandard)} to Standard`}
+        />
+        <Tile
+          label="Players who copied"
+          value={fmt(totals.copiers)}
+          sub={totals.players ? `${pct(totals.copiers / totals.players)} of ${fmt(totals.players)} players` : undefined}
+        />
+        <Tile
+          label="Copies per copier"
+          value={totals.avgCopiesPerCopier === null ? "—" : dec(totals.avgCopiesPerCopier, 1)}
+        />
+        <Tile
+          label="Score change on copy"
+          value={totals.avgScoreGain === null ? "—" : `${totals.avgScoreGain > 0 ? "+" : ""}${dec(totals.avgScoreGain, 2)}`}
+          sub={totals.copies ? `${pct(totals.higherThere / totals.copies)} scored higher over there` : undefined}
+        />
+        <Tile
+          label="Taps that didn't land"
+          value={fmt(unlanded)}
+          sub={`${fmt(totals.refused)} refused, ${fmt(totals.full)} game finished, ${fmt(totals.lookupFailed)} lookup failed`}
+        />
+      </div>
+      <div className="analytics__table-wrap">
+        <table className="analytics__table">
+          <thead>
+            <tr>
+              <th scope="col">Retention</th>
+              <th scope="col">Copied</th>
+              <th scope="col">Didn't copy</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Next day, per player-day</th>
+              <td>
+                <RateCell rate={retention.nextDay.copied} />
+              </td>
+              <td>
+                <RateCell rate={retention.nextDay.other} />
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Within 7 days, per player</th>
+              <td>
+                <RateCell rate={retention.week.copied} />
+              </td>
+              <td>
+                <RateCell rate={retention.week.other} />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ul className="analytics__legend">
+        <li>
+          <span className="analytics__swatch analytics__swatch--single" aria-hidden="true" />
+          Copied a word
+        </li>
+        <li>
+          <span className="analytics__swatch analytics__swatch--looked" aria-hidden="true" />
+          Played, didn't copy
+        </li>
+      </ul>
+      <BarChart
+        label="Players who copied, per puzzle"
+        bars={copies.daily.map((d) => ({
+          key: d.date,
+          axis: d.date.slice(5),
+          segments: [
+            { value: d.copiers, series: "single" },
+            { value: Math.max(0, d.players - d.copiers), series: "looked" },
+          ],
+          tip: `${d.date} (${SHORT_WEEKDAYS[dowOf(d.date)]}): ${d.copiers} of ${d.players} players copied ${d.copies} words`,
+        }))}
+      />
     </Section>
   );
 }

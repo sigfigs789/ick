@@ -438,9 +438,17 @@ describe("api/review", () => {
     const report = { asOf: "2026-09-27", totals: { players: 3 } };
     const chat = { totals: { viewers: 2 } };
     const onboarding = { arms: [] };
+    const copies = { totals: { copies: 4 } };
     const fetchMock = vi.fn(async (url: string) => {
       const name = String(url).split("/").pop();
-      const body = name === "chat_report" ? chat : name === "onboarding_report" ? onboarding : report;
+      const body =
+        name === "chat_report"
+          ? chat
+          : name === "onboarding_report"
+            ? onboarding
+            : name === "copy_report"
+              ? copies
+              : report;
       return new Response(JSON.stringify(body), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -448,11 +456,12 @@ describe("api/review", () => {
     const response = await handler(get("?list=analytics&days=30"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ report: { ...report, chat, onboarding } });
+    expect(await response.json()).toEqual({ report: { ...report, chat, onboarding, copies } });
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
     expect(calls.map(([url]) => String(url).split("/").pop()).sort()).toEqual([
       "analytics_report",
       "chat_report",
+      "copy_report",
       "onboarding_report",
     ]);
     for (const [, init] of calls) expect(JSON.parse(String(init.body))).toEqual({ p_days: 30 });
@@ -474,7 +483,7 @@ describe("api/review", () => {
     const response = await handler(get("?list=analytics"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ report: { ...report, chat: null, onboarding: null } });
+    expect(await response.json()).toEqual({ report: { ...report, chat: null, onboarding: null, copies: null } });
   });
 
   it("reads the today window for the puzzle the page names", async () => {
@@ -489,6 +498,7 @@ describe("api/review", () => {
     expect(bodies).toEqual({
       analytics_report: { p_days: 1, p_date: "2026-09-30" },
       chat_report: { p_days: 1, p_date: "2026-09-30" },
+      copy_report: { p_days: 1, p_date: "2026-09-30" },
       // Cohorts, not a window of puzzles: no date, and it clamps the 1 itself.
       onboarding_report: { p_days: 1 },
     });
@@ -507,6 +517,7 @@ describe("api/review", () => {
     expect(bodies).toEqual({
       analytics_report: { p_days: 5, p_date: "2026-09-20" },
       chat_report: { p_days: 5, p_date: "2026-09-20" },
+      copy_report: { p_days: 5, p_date: "2026-09-20" },
       onboarding_report: { p_days: 5 },
     });
   });

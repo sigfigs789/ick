@@ -467,6 +467,45 @@ export interface AnalyticsReport {
    * 20260930020000 migration). Null when that read failed or predates it.
    */
   onboarding: OnboardingReport | null;
+  /**
+   * Words copied into the other mode, and the retention of the players who
+   * copy, from `copy_report` (the 20261001000000 migration). Null when that read
+   * failed or predates it.
+   */
+  copies: CopyReport | null;
+}
+
+/** Copies of a word into the other mode, over the same window as the report. */
+export interface CopyReport {
+  totals: {
+    /** Taps on a copy control, whatever came of them. */
+    taps: number;
+    /** Words actually banked in the other mode. */
+    copies: number;
+    /** Distinct players with at least one copy. */
+    copiers: number;
+    toFreeform: number;
+    toStandard: number;
+    refused: number;
+    full: number;
+    lookupFailed: number;
+    /** Distinct players who played in the window, for the share who copy. */
+    players: number;
+    avgCopiesPerCopier: number | null;
+    /** Score in the other mode minus score in this one, averaged over copies. */
+    avgScoreGain: number | null;
+    /** Copies that scored higher over there. */
+    higherThere: number;
+    /** The first puzzle a copy tap was recorded against. */
+    since: string | null;
+  };
+  daily: Array<{ date: string; copies: number; copiers: number; players: number }>;
+  retention: {
+    /** Player-days, by whether a word was copied that day; returned the next. */
+    nextDay: { copied: Rate; other: Rate };
+    /** Players, by whether they ever copied; returned within seven puzzles. */
+    week: { copied: Rate; other: Rate };
+  };
 }
 
 /** Why a new player started in the mode they did -- see game/onboarding.ts. */
@@ -709,6 +748,44 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     chat: r.chat && typeof r.chat === "object" ? parseChat(r.chat) : null,
     onboarding:
       r.onboarding && typeof r.onboarding === "object" ? parseOnboarding(r.onboarding) : null,
+    copies: r.copies && typeof r.copies === "object" ? parseCopies(r.copies) : null,
+  };
+}
+
+function parseCopies(raw: unknown): CopyReport {
+  const c = obj(raw);
+  const t = obj(c.totals);
+  const retention = obj(c.retention);
+  const nextDay = obj(retention.nextDay);
+  const week = obj(retention.week);
+  return {
+    totals: {
+      taps: count(t.taps),
+      copies: count(t.copies),
+      copiers: count(t.copiers),
+      toFreeform: count(t.toFreeform),
+      toStandard: count(t.toStandard),
+      refused: count(t.refused),
+      full: count(t.full),
+      lookupFailed: count(t.lookupFailed),
+      players: count(t.players),
+      avgCopiesPerCopier: maybe(t.avgCopiesPerCopier),
+      avgScoreGain: maybe(t.avgScoreGain),
+      higherThere: count(t.higherThere),
+      since: text(t.since),
+    },
+    daily: list(c.daily)
+      .filter((d) => text(d.date))
+      .map((d) => ({
+        date: d.date as string,
+        copies: count(d.copies),
+        copiers: count(d.copiers),
+        players: count(d.players),
+      })),
+    retention: {
+      nextDay: { copied: rate(nextDay.copied), other: rate(nextDay.other) },
+      week: { copied: rate(week.copied), other: rate(week.other) },
+    },
   };
 }
 

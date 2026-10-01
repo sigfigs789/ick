@@ -261,4 +261,119 @@ describe("GuessLog guess count", () => {
     expect(screen.queryByText(/retr(y|ies)$/)).not.toBeInTheDocument();
     expect(screen.queryByText(/\d+ of \d+ retr/i)).not.toBeInTheDocument();
   });
+
+  describe("the other mode", () => {
+    const words: AcceptedWord[] = [
+      { word: "kindless", rarity: "Common", zipf: 4.4 },
+      { word: "kindly", rarity: "Common", zipf: 4.5 },
+      { word: "kinder", rarity: "Common", zipf: 4.2 },
+      { word: "kindest", rarity: "Common", zipf: 3.9 },
+    ];
+
+    it("offers to submit each word there, and shows the score only once it has been", async () => {
+      const onCopy = vi.fn();
+      render(
+        <GuessLog
+          acceptedWords={words}
+          date="2026-10-01"
+          otherMode="freeform"
+          onCopyToOtherMode={onCopy}
+          crossMode={{
+            kindless: {
+              state: "ready",
+              word: { word: "kindless", rarity: "Legend", zipf: 0.4 },
+              score: "9.91",
+              needsLiveCheck: false,
+            },
+            kindly: {
+              state: "copied",
+              word: { word: "kindly", rarity: "Uncommon", zipf: 3.9 },
+              score: "5.20",
+            },
+            kinder: { state: "refused", reason: "archaic" },
+            kindest: { state: "full", word: { word: "kindest", rarity: "Rare", zipf: 3 }, score: "6.40" },
+          }}
+        />
+      );
+
+      // Not submitted yet: no price, from any state that has one.
+      expect(screen.queryByText("9.91")).not.toBeInTheDocument();
+      expect(screen.queryByText("6.40")).not.toBeInTheDocument();
+      expect(screen.queryByText(/Legend/)).not.toBeInTheDocument();
+      // Submitted: the score, with the tier's square beside its name.
+      const submitted = screen.getByText("5.20").parentElement!;
+      expect(submitted).toHaveTextContent("✓ Its score in Freeform: 5.20 🟩 Uncommon");
+      expect(screen.getByText("Not playable in Freeform")).toBeInTheDocument();
+      expect(screen.getByText("Freeform game finished")).toBeInTheDocument();
+      // Only the one that can go has a control.
+      const submit = screen.getAllByRole("button", { name: /^Submit “.*” to Freeform/ });
+      expect(submit).toHaveLength(1);
+      expect(submit[0]).toHaveTextContent("Submit to Freeform");
+      await userEvent.click(submit[0]);
+      expect(onCopy).toHaveBeenCalledWith("kindless");
+    });
+
+    it("disables every submit while one is running", () => {
+      render(
+        <GuessLog
+          acceptedWords={[words[0]]}
+          date="2026-10-01"
+          otherMode="standard"
+          copying="kindless"
+          onCopyToOtherMode={vi.fn()}
+          crossMode={{
+            kindless: {
+              state: "ready",
+              word: { word: "kindless", rarity: "Mythic", zipf: 1.2 },
+              score: "9.40",
+              needsLiveCheck: true,
+            },
+          }}
+        />
+      );
+      expect(screen.getByRole("button", { name: /to Standard/ })).toBeDisabled();
+      expect(screen.getByText("Submitting…")).toBeInTheDocument();
+    });
+  });
+
+  describe("the mode in the heading", () => {
+    const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
+
+    it("names the game the log belongs to", () => {
+      render(<GuessLog acceptedWords={words} date="2026-10-01" mode="freeform" />);
+      expect(screen.getByRole("heading", { name: "Freeform guess log" })).toBeInTheDocument();
+      const chip = document.querySelector(".guess-log__mode--freeform")!;
+      // Rainbow letters on screen, and the word once for a screen reader.
+      expect(chip.querySelectorAll(".rainbow-word__letter")).toHaveLength("Freeform".length);
+      expect(chip.querySelector(".sr-only")).toHaveTextContent("Freeform");
+    });
+
+    it("keeps naming it once the puzzle is finished, without the count", () => {
+      render(<GuessLog acceptedWords={words} date="2026-10-01" mode="standard" completed streak={streak} />);
+      expect(screen.getByRole("heading", { name: "Standard guess log" })).toBeInTheDocument();
+      expect(screen.queryByText(/of 4 guesses/)).not.toBeInTheDocument();
+    });
+
+    it("switches to the other mode from the chip", async () => {
+      const onModeChange = vi.fn();
+      render(
+        <GuessLog acceptedWords={words} date="2026-10-01" mode="standard" onModeChange={onModeChange} />
+      );
+      const chip = screen.getByRole("button", { name: "Standard. Change to Freeform." });
+      // No swap arrow: it reads as a label.
+      expect(chip).toHaveTextContent(/^Standard$/);
+      await userEvent.click(chip);
+      expect(onModeChange).toHaveBeenCalledWith("freeform");
+    });
+
+    it("is a plain label when nothing can switch", () => {
+      render(<GuessLog acceptedWords={words} date="2026-10-01" mode="freeform" />);
+      expect(screen.queryByRole("button", { name: /Change to/ })).not.toBeInTheDocument();
+    });
+
+    it("says only \"Guess log\" on a puzzle with one game", () => {
+      render(<GuessLog acceptedWords={words} date="2026-09-20" />);
+      expect(screen.getByRole("heading", { name: "Guess log" })).toBeInTheDocument();
+    });
+  });
 });

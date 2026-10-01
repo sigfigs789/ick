@@ -10,9 +10,13 @@ import {
 import { copyText } from "../clipboard";
 import { raritySymbol } from "../game/share";
 import { CommonFormModal } from "./CommonFormModal";
+import { RainbowWord } from "./RainbowWord";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
+import { MODE_LABELS, otherMode as otherOf, type GameMode } from "../game/mode";
+import { trackModeChanged } from "../analytics";
+import type { CrossModePreview } from "../game/crossMode";
 
 /** The clipboard form of a logged word: "<tier square> <word> (<score>)".
  * Reuses the share-results palette so a pasted word matches the share text. */
@@ -40,6 +44,29 @@ interface Props {
   retrySpent?: boolean;
   /** Drop a banked word and hand its guess back (see storage.retryWord). */
   onRetry?: (word: string) => void;
+  /** The mode the player is not in, which each word can be copied into. */
+  otherMode?: GameMode;
+  /**
+   * Where each word stands in `otherMode`, keyed by word (see
+   * game/crossMode.ts). Its score there is shown only once it is submitted.
+   * Absent or empty on a puzzle with only one game.
+   */
+  crossMode?: Record<string, CrossModePreview>;
+  /** The word being submitted right now, while its lookup or write runs. */
+  copying?: string | null;
+  /** Submit a word to `otherMode` as well. */
+  onCopyToOtherMode?: (word: string) => void;
+  /**
+   * The mode this log belongs to, named in its heading. Absent on a puzzle the
+   * switch does not decide (see `modeIsChosen`), which has only the one game.
+   */
+  mode?: GameMode;
+  /**
+   * Switch to the other mode. When given, the heading's mode chip is a button
+   * that does it -- the same switch as the header's, in the place the eye
+   * already is.
+   */
+  onModeChange?: (mode: GameMode) => void;
 }
 
 export function GuessLog({
@@ -51,6 +78,12 @@ export function GuessLog({
   retryOffered = false,
   retrySpent = false,
   onRetry,
+  otherMode,
+  crossMode,
+  copying = null,
+  onCopyToOtherMode,
+  mode,
+  onModeChange,
 }: Props) {
   const best = bestWord(acceptedWords);
   const maxGuesses = maxGuessesFor(date);
@@ -90,18 +123,42 @@ export function GuessLog({
 
   return (
     <section className={`guess-log${completed ? " guess-log--completed" : ""}`} aria-label="Your guesses">
-      {!completed && (
+      {/* Kept on a finished puzzle when there is a mode to name: the log is
+          still one of two, and the other mode's game is a tap away. The count
+          is what a finished puzzle has no use for. */}
+      {(!completed || mode) && (
         <div className="guess-log__header">
-          <h2 className="guess-log__title">Guess log</h2>
+          <h2 className="guess-log__title">
+            {/* Styled as the header's switch is -- Freeform's name in rainbow
+                letters, Standard's plain -- so the two read as one signal, and
+                named here because this is where the eye is while playing. */}
+            {mode && (
+              <ModeChip
+                mode={mode}
+                onChange={
+                  onModeChange
+                    ? () => {
+                        const next = otherOf(mode);
+                        trackModeChanged(mode, next, "guess_log");
+                        onModeChange(next);
+                      }
+                    : undefined
+                }
+              />
+            )}
+            {mode ? "guess log" : "Guess log"}
+          </h2>
           {/* Guesses only. The retry used to sit here too, as a second "X of
               Y" beside this one -- but it is a single yes/no reserve, not a
               running tally, and pairing it with a real multi-step count made
               it read as the same kind of number when it isn't. That state now
               lives on the retry control itself, below: the button *is* the
               indicator, available or spent, no fraction required. */}
-          <span className="guess-log__count">
-            {acceptedWords.length} of {maxGuesses} guesses
-          </span>
+          {!completed && (
+            <span className="guess-log__count">
+              {acceptedWords.length} of {maxGuesses} guesses
+            </span>
+          )}
         </div>
       )}
 
@@ -135,6 +192,7 @@ export function GuessLog({
             // a plural the base word of its own singular reads as the bug it is
             // meant to explain away.
             const baseNote = baseFormSubstitution(w.word, date);
+            const elsewhere = otherMode ? crossMode?.[w.word] : undefined;
             return (
               <li
                 key={w.word}
@@ -216,6 +274,22 @@ export function GuessLog({
                     </button>
                   </p>
                 )}
+                {/* The control that submits the same word to the other mode,
+                    and once it has, what it scored there -- so a player does
+                    not have to flip the switch to find out.
+                    A sibling of the card for the same reason the note above
+                    is, and hidden while the retry is armed for the same reason
+                    too. */}
+                {elsewhere && otherMode && !picking && (
+                  <OtherModeRow
+                    word={w.word}
+                    mode={otherMode}
+                    preview={elsewhere}
+                    copying={copying}
+                    onCopy={onCopyToOtherMode}
+                    date={date}
+                  />
+                )}
               </li>
             );
           })}
@@ -295,5 +369,101 @@ export function GuessLog({
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * One word's line about the other mode: the control that submits it there, or
+ * once it has been, what it scored.
+ *
+ * The score over there is held back until the word is submitted. Showing it up
+ * front would turn the other mode into a free price check -- try every word in
+ * one game, then spend the other game's guesses only on the ones that pay --
+ * and a submission should cost the same blind guess it would cost typed.
+ */
+function OtherModeRow({
+  word,
+  mode,
+  preview,
+  copying,
+  onCopy,
+  date,
+}: {
+  word: string;
+  mode: GameMode;
+  date?: string;
+  preview: CrossModePreview;
+  copying: string | null;
+  onCopy?: (word: string) => void;
+}) {
+  const label = MODE_LABELS[mode];
+  return (
+    <p className={`guess-log__other-mode guess-log__other-mode--${preview.state}`}>
+      {preview.state === "ready" && (
+        <button
+          type="button"
+          className="guess-log__other-mode-copy"
+          disabled={copying !== null || !onCopy}
+          onClick={() => onCopy?.(word)}
+          aria-label={`Submit “${word}” to ${label}. Uses one ${label} guess.`}
+        >
+          {copying === word ? "Submitting…" : `Submit to ${label}`}
+        </button>
+      )}
+      {preview.state === "copied" && (
+        <span className="guess-log__other-mode-score">
+          {/* The mode is named once, in the lead-in: a "Freeform:" prefix on
+              the score as well read as the same word twice in one short line.
+              The check says the word is over there; the words say what the
+              number after them is. */}
+          <span className="guess-log__other-mode-done">
+            <span aria-hidden="true">✓</span> Its score in {label}:
+          </span>{" "}
+          <strong>{preview.score}</strong>{" "}
+          {/* The tier's square from the share text, so the word reads the
+              same here as it will when pasted. */}
+          <span aria-hidden="true">{raritySymbol(preview.word.rarity, date)}</span> {preview.word.rarity}
+        </span>
+      )}
+      {preview.state === "refused" && <span>Not playable in {label}</span>}
+      {preview.state === "full" && <span>{label} game finished</span>}
+    </p>
+  );
+}
+
+/**
+ * The mode named in the log's heading: Freeform in its rainbow letters,
+ * Standard plain. A button when it can switch, with no swap arrow -- it reads
+ * as the label it is, and pressing it is a shortcut for the header's switch.
+ *
+ * Named "Change to <other>" rather than the header's "Switch to <other>" so
+ * the two controls stay distinguishable by name.
+ */
+function ModeChip({ mode, onChange }: { mode: GameMode; onChange?: () => void }) {
+  const label = MODE_LABELS[mode];
+  const face =
+    mode === "freeform" ? (
+      // The word once for a screen reader, and the rainbow -- one span per
+      // letter -- kept out of its way.
+      <>
+        <span className="sr-only">{label}</span>
+        <span aria-hidden="true">
+          <RainbowWord word={label} />
+        </span>
+      </>
+    ) : (
+      label
+    );
+  const className = `guess-log__mode guess-log__mode--${mode}`;
+  if (!onChange) return <span className={className}>{face}</span>;
+  return (
+    <button
+      type="button"
+      className={`${className} guess-log__mode--button`}
+      onClick={onChange}
+      aria-label={`${label}. Change to ${MODE_LABELS[otherOf(mode)]}.`}
+    >
+      {face}
+    </button>
   );
 }

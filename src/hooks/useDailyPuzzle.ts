@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { addDays, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
-import { retryAvailableFor } from "../game/constants";
+import { maxGuessesFor, retryAvailableFor } from "../game/constants";
 import { puzzleNumber } from "../game/share";
 import dropData from "../data/drops.json";
 import {
@@ -49,6 +49,7 @@ import type {
 } from "../game/types";
 import {
   trackAcceptedAnswer,
+  trackAnswerCopied,
   trackAnswerRetried,
   trackAnswerRevealed,
   trackBaseFormSubstitution,
@@ -63,7 +64,14 @@ import {
 import { submitScore } from "../game/leaderboard";
 import { markSessionEngaged } from "../game/visits";
 import { markGuess } from "../game/sessionTime";
-import { modeIsChosen } from "../game/mode";
+import { asMode, MODE_LABELS, modeIsChosen, otherMode } from "../game/mode";
+import {
+  crossModeAvailable,
+  loadProgressInMode,
+  previewInMode,
+  scoreInMode,
+  type CrossModePreview,
+} from "../game/crossMode";
 import { useGameMode } from "./useGameMode";
 
 /**
@@ -189,6 +197,18 @@ export function useDailyPuzzle() {
     progressRef.current = progress;
   }, [progress]);
 
+  // The same puzzle's game in the other mode, read so the guess log can show
+  // what each word would score over there and copy it across (see
+  // game/crossMode.ts). Reloaded with this mode's progress, below.
+  const target = otherMode(mode);
+  const [otherProgress, setOtherProgress] = useState<DailyProgress>(() =>
+    loadProgressInMode(viewedDate, drop, target)
+  );
+  // The word being copied right now, so its control can say so and a second
+  // tap during a live lookup cannot bank it twice.
+  const [copying, setCopying] = useState<string | null>(null);
+  const copyingRef = useRef<string | null>(null);
+
   // Words with a live lookup in flight, so re-submitting one mid-flight can't
   // start a second lookup or bank the same word twice.
   const inFlight = useRef<Set<string>>(new Set());
@@ -217,6 +237,7 @@ export function useDailyPuzzle() {
     const loaded = loadOrCreateProgress(viewedDate, drop);
     progressRef.current = loaded;
     setProgress(loaded);
+    setOtherProgress(loadProgressInMode(viewedDate, drop, otherMode(mode)));
     setFeedback(null);
     setLiveNote(null);
     setChecking(false);
@@ -560,6 +581,150 @@ export function useDailyPuzzle() {
     trackAnswerRevealed(viewedDate, before.acceptedWords.length);
   }, [viewedDate]);
 
+  /**
+   * What every banked word would be in the other mode, keyed by word, for the
+   * guess log. Empty on a puzzle from before the choice date, which has only
+   * the one game.
+   */
+  const crossMode = useMemo<Record<string, CrossModePreview>>(() => {
+    if (!crossModeAvailable(viewedDate)) return {};
+    const previews: Record<string, CrossModePreview> = {};
+    for (const word of progress.acceptedWords) {
+      previews[word.word] = previewInMode(word, target, viewedDate, drop, otherProgress);
+    }
+    return previews;
+  }, [progress.acceptedWords, otherProgress, target, viewedDate, drop]);
+
+  /**
+   * Bank one of this game's words in the other mode's game for the same
+   * puzzle, without moving the switch (see game/crossMode.ts).
+   *
+   * A real submission over there: judged by that mode's rules, spending one of
+   * its guesses, and sent to that mode's board -- what typing it there would
+   * have done, minus the trip. The other game's progress is read fresh at the
+   * moment of banking rather than trusted from the preview, because a live
+   * lookup can take seconds and the other tab of this same browser can have
+   * played meanwhile.
+   *
+   * Reported as `answer_copied` and not as `answer_accepted`: a copy is not a
+   * guess, and counting it as one would inflate exactly the per-mode guess
+   * numbers the copy is most likely to be compared against.
+   */
+  const copyToOtherMode = useCallback(
+    async (raw: string) => {
+      if (!crossModeAvailable(viewedDate) || copyingRef.current) return;
+      const source = progressRef.current.acceptedWords.find((w) => w.word === raw);
+      if (!source) return;
+      const to = otherMode(mode);
+      const label = MODE_LABELS[to];
+      const scoreFrom = scoreInMode(source, viewedDate, mode);
+      const report = (
+        outcome: "copied" | "refused" | "full" | "lookup_failed",
+        answerCount: number,
+        scoreTo: number | null,
+        reason?: RejectionReason
+      ) =>
+        trackAnswerCopied({
+          date: viewedDate,
+          isToday,
+          from: mode,
+          to,
+          word: source.word,
+          outcome,
+          scoreFrom,
+          scoreTo,
+          answerCount,
+          reason,
+        });
+
+      let preview = previewInMode(source, to, viewedDate, drop, loadProgressInMode(viewedDate, drop, to));
+      if (preview.state === "copied") return;
+      if (preview.state === "full") {
+        report("full", maxGuessesFor(viewedDate), null);
+        showFeedback("rejected", `Your ${label} game for this puzzle is already finished.`);
+        return;
+      }
+      if (preview.state === "refused") {
+        report("refused", otherProgress.acceptedWords.length, null, preview.reason);
+        showFeedback(
+          "rejected",
+          `${label} won't take "${source.word}": ${REJECTION_MESSAGES[preview.reason]}`,
+          undefined,
+          preview.reason
+        );
+        return;
+      }
+
+      copyingRef.current = source.word;
+      setCopying(source.word);
+      try {
+        let word = preview.word;
+        if (preview.needsLiveCheck) {
+          const check = await checkWordLive(source.word);
+          const waiver = asMode(to, () => waivedLiveRejection(check, viewedDate));
+          if (check.outcome !== "playable" && waiver === undefined) {
+            // "unknown" is an answer about the word; the rest are a lookup that
+            // never got one, which says nothing about whether it would count.
+            const failed = check.outcome !== "rejected" && check.outcome !== "unknown";
+            const reason = rejectionReasonForLive(check);
+            report(failed ? "lookup_failed" : "refused", otherProgress.acceptedWords.length, null, reason);
+            showFeedback(
+              "rejected",
+              failed
+                ? `Couldn't check "${source.word}" for ${label} just now. Try again in a moment.`
+                : `${label} won't take "${source.word}": ${REJECTION_MESSAGES[reason]}`,
+              undefined,
+              reason
+            );
+            return;
+          }
+          word = { word: check.word, ...asMode(to, () => liveRarity(check, viewedDate)) };
+        }
+
+        // Re-read after the await: the other game may have moved meanwhile.
+        const fresh = loadProgressInMode(viewedDate, drop, to);
+        preview = previewInMode(source, to, viewedDate, drop, fresh);
+        if (preview.state === "copied") return;
+        if (preview.state !== "ready") {
+          report(preview.state, fresh.acceptedWords.length, null);
+          return;
+        }
+        const banked = asMode(to, () => recordAcceptedWord(fresh, word));
+        if (banked === fresh) {
+          report("full", fresh.acceptedWords.length, null);
+          return;
+        }
+        setOtherProgress(banked);
+        const updatedStreak = loadStreak();
+        setStreak(updatedStreak);
+        const scoreTo = scoreInMode(word, viewedDate, to);
+        report("copied", banked.acceptedWords.length, scoreTo);
+        // Onto the other mode's board, the same fire-and-forget write a word
+        // typed there makes. Priced under that mode, since the submission
+        // prices the words as it is called.
+        asMode(to, () =>
+          submitScore({
+            date: viewedDate,
+            isToday,
+            words: banked.acceptedWords,
+            mode: to,
+            retried: banked.retryUsed === true,
+          })
+        );
+        if (banked.completed) asMode(to, () => trackPuzzleCompleted(banked, updatedStreak));
+        showFeedback(
+          "accepted",
+          `"${word.word}" submitted to ${label} — ${word.rarity}.`,
+          word.rarity
+        );
+      } finally {
+        copyingRef.current = null;
+        setCopying(null);
+      }
+    },
+    [mode, viewedDate, drop, isToday, otherProgress, showFeedback]
+  );
+
   const resetAnswers = useCallback(() => {
     const fresh = resetProgress(viewedDate, drop);
     progressRef.current = fresh;
@@ -604,6 +769,11 @@ export function useDailyPuzzle() {
     retryAnswer,
     revealAnswer,
     resetAnswers,
+    /** The mode a word would be copied into, and what each word does there. */
+    otherMode: target,
+    crossMode,
+    copying,
+    copyToOtherMode,
     liveNote,
     checking,
   };

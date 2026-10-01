@@ -11,6 +11,7 @@ import { PuzzleNav } from "./components/PuzzleNav";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
+import { useGameMode } from "./hooks/useGameMode";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
@@ -58,9 +59,21 @@ export default function App() {
     retryOffered,
     retrySpent,
     retryAnswer,
+    otherMode,
+    crossMode,
+    copying,
+    copyToOtherMode,
     revealAnswer,
     resetAnswers,
+    mode,
+    modeChosen,
   } = useDailyPuzzle();
+  // Which of the two games this is, when the switch decides it at all. Named in
+  // the guess log and carried as a class on the column, so the cards and the
+  // input wear the mode as the header's switch does (see index.css).
+  const playMode = modeChosen ? mode : undefined;
+  // The same setter the header's switch uses, for the guess log's mode chip.
+  const [, chooseMode] = useGameMode();
   const [showWordRules, setShowWordRules] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showPerfectMonth, setShowPerfectMonth] = useState(false);
@@ -184,7 +197,7 @@ export default function App() {
           <SpeedInsights />
         </>
       )}
-      <main>
+      <main className={playMode ? `play play--${playMode}` : undefined}>
         {/* Below the header rather than inside it: which puzzle you are on is
             part of the puzzle, not part of the app's identity -- and the header
             belongs to all three pages now (see src/components/AppHeader.tsx),
@@ -214,6 +227,12 @@ export default function App() {
           retryOffered={retryOffered}
           retrySpent={retrySpent}
           onRetry={retryAnswer}
+          otherMode={otherMode}
+          crossMode={crossMode}
+          copying={copying}
+          onCopyToOtherMode={copyToOtherMode}
+          mode={playMode}
+          onModeChange={playMode ? chooseMode : undefined}
         />
 
         {!progress.completed && (

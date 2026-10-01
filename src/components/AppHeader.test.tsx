@@ -381,16 +381,17 @@ describe("the docked mode switch", () => {
     expect(switches()).toHaveLength(1);
   });
 
-  it("stays off the puzzle, which fits a screen", () => {
+  it("follows the reader down the puzzle too", () => {
     render(
       <AppHeader
         route="game"
         onHowToPlay={howToPlay}
-        mode="standard"
+        mode="freeform"
         onModeChange={vi.fn()}
       />,
     );
-    act(() => report(false));
     expect(switches()).toHaveLength(1);
+    act(() => report(false));
+    expect(switches()).toHaveLength(2);
   });
 });

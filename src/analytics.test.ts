@@ -592,10 +592,15 @@ describe("supabase mirror", () => {
     const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
     expect(await payload(body)).toEqual({
       name: "mode_changed",
-      props: { from: "standard", to: "freeform", puzzle_date: LIVE_DATE, player_id: "player-1" },
+      props: { from: "standard", to: "freeform", via: "header", puzzle_date: LIVE_DATE, player_id: "player-1" },
     });
     // ...and not on Vercel, which cannot group by it.
-    expect(track).toHaveBeenCalledWith("mode_changed", { from: "standard", to: "freeform", puzzle_date: LIVE_DATE });
+    expect(track).toHaveBeenCalledWith("mode_changed", {
+      from: "standard",
+      to: "freeform",
+      via: "header",
+      puzzle_date: LIVE_DATE,
+    });
     localStorage.clear();
   });
 
