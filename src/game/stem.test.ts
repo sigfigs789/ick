@@ -409,8 +409,8 @@ describe("privativeBaseCandidates", () => {
 describe("prefixBaseCandidates", () => {
   // The two sides of the 2026-09-05 retirements: LATEST is the live list,
   // ARCHIVED the one the puzzles from 2026-08-24 to 2026-09-04 folded with.
-  const LATEST = { pre: false, borrowed: false };
-  const ARCHIVED = { pre: true, borrowed: true };
+  const LATEST = { pre: false, borrowed: false, de: false };
+  const ARCHIVED = { pre: true, borrowed: true, de: false };
 
   it("offers the base a transparent prefix was attached to", () => {
     expect(prefixBaseCandidates("overplanned", LATEST)).toContain("planned");
@@ -447,6 +447,21 @@ describe("prefixBaseCandidates", () => {
     // The cost is real -- these are correct readings the rule gives up on.
     expect(prefixBaseCandidates("codriver", LATEST)).toEqual([]);
     expect(prefixBaseCandidates("reexplain", LATEST)).toEqual([]);
+  });
+
+  it("strips \"de-\" from 2026-10-04 and not before", () => {
+    // The first of the four fossilised prefixes let in, behind a reviewed table
+    // of every strip it reaches. See DE_PREFIX_START.
+    const DE = { ...LATEST, de: true };
+    expect(prefixBaseCandidates("dechunked", DE)).toEqual(["chunked"]);
+    expect(prefixBaseCandidates("dechunked", LATEST)).toEqual([]);
+    // The strip is spelling only; "delates" reaching `lates` is refused by a
+    // prefix-scoped fold exemption, not here.
+    expect(prefixBaseCandidates("delates", DE)).toEqual(["lates"]);
+    // The four-letter residue floor still holds.
+    expect(prefixBaseCandidates("decal", DE)).toEqual([]);
+    // "de-" and "un-" never both match, so the order cannot matter between them.
+    expect(prefixBaseCandidates("undechunked", DE)).toEqual(["dechunked"]);
   });
 
   it("leaves out \"pre-\" too, for the puzzles that come after it", () => {

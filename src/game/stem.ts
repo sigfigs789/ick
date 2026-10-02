@@ -488,6 +488,7 @@ const TRANSPARENT_PREFIXES = [
   "pre", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "sub", // retired 2026-09-05, see `RETIRED_PREFIXES`
   "out",
+  "de", // joined 2026-10-04, see `ADDED_PREFIXES`
   "un",
 ];
 
@@ -536,6 +537,20 @@ const RETIRED_PREFIXES = {
   ]),
 };
 
+/**
+ * The entries added to the list above after it was first written, each behind
+ * the flag its date turned on, so the puzzles before that date keep folding
+ * without them. The mirror image of `RETIRED_PREFIXES`.
+ *
+ * "de-" joined on 2026-10-04 behind a reviewed table, the standard the note
+ * below holds the Latinate prefixes to: every strip it reaches across the corpus
+ * was judged, and the ones that land on an unrelated word are prefix-scoped
+ * fold exemptions. See DE_PREFIX_START in dictionary.ts.
+ */
+const ADDED_PREFIXES = {
+  de: new Set(["de"]),
+};
+
 /*
  * What is left folding after those two sets come out: "counter-", "under-",
  * "anti-", "over-", "out-" and "un-". They attach to free-standing English
@@ -561,6 +576,12 @@ const RETIRED_PREFIXES = {
  * "shone"): a family right often enough to tempt, wrong in a way no rule can
  * see. Admitting it needs a vetted table of which words really carry the
  * prefix, which is what scripts/fold-disagreements.py exists to build.
+ *
+ * "de-" has one from 2026-10-04 (see `ADDED_PREFIXES`): all 2,556 strips it
+ * reaches were judged, and the 337 that land on the wrong word -- "delate" on
+ * `late` among them -- are prefix-scoped fold exemptions, 375 with their
+ * families. "re-", "co-" and
+ * "dis-" are still out.
  *
  * "pre-" was in the list from 2026-08-24 until 2026-09-05 and is now out for the
  * same reason, one family later: it reaches 808 words and the readings it gets
@@ -626,6 +647,8 @@ export interface PrefixEra {
    * BORROWED_PREFIX_END.
    */
   borrowed: boolean;
+  /** Whether "de-" folds. True from 2026-10-04; see DE_PREFIX_START. */
+  de: boolean;
 }
 
 /**
@@ -640,7 +663,8 @@ export function transparentPrefixes(era: PrefixEra): string[] {
   return TRANSPARENT_PREFIXES.filter(
     (prefix) =>
       (era.pre || !RETIRED_PREFIXES.pre.has(prefix)) &&
-      (era.borrowed || !RETIRED_PREFIXES.borrowed.has(prefix))
+      (era.borrowed || !RETIRED_PREFIXES.borrowed.has(prefix)) &&
+      (era.de || !ADDED_PREFIXES.de.has(prefix))
   ).sort();
 }
 
@@ -650,6 +674,7 @@ export function prefixBaseCandidates(word: string, era: PrefixEra): string[] {
   for (const prefix of TRANSPARENT_PREFIXES) {
     if (RETIRED_PREFIXES.pre.has(prefix) && !era.pre) continue;
     if (RETIRED_PREFIXES.borrowed.has(prefix) && !era.borrowed) continue;
+    if (ADDED_PREFIXES.de.has(prefix) && !era.de) continue;
     if (!w.startsWith(prefix)) continue;
     const stem = w.slice(prefix.length);
     if (stem.length < 4 || stem === w || out.includes(stem)) continue;

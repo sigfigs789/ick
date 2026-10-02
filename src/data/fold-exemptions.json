@@ -1782,6 +1782,86 @@
     "since": "2026-09-27",
     "reason": "Folded onto `day`, costing 6.42 points. Flagged in the 2026-09-22 semantic audit (daylily is a flower) and confirmed on adversarial re-review (daylily is a flower)."
   },
+  "deadbot": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `adbot`, costing up to 0.81 points, by stripping de- to `adbot`. Not de- + `adbot`: chatbot imitating a dead person; dead + bot. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deadland": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `adland`, costing up to 0.41 points, by stripping de- to `adland`. Not de- + `adland`: dead + land, barren ground; unrelated to adland. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deapply": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `app`, costing up to 5.40 points, by stripping de- to `apply`. A real de- word, but the residue folds on to the wrong base: un-apply; scored as app instead of apply. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deares": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `are`, costing up to 2.97 points, by stripping de- to `ares`. Not de- + `ares`: archaic forms of dear/dere (harm). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dearish": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `arish`, costing up to 1.49 points, by stripping de- to `arish`. Not de- + `arish`: somewhat dear; dear + -ish. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deases": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ase` by stripping de- to `ases`. Not de- + `ases`: a garbled form, like the exempted \"deasses\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "deassed": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ass`, costing up to 4.21 points, by stripping de- to `assed`. Not de- + `assed`: form of deas (Scots dais/seat); unrelated to ass. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deasses": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ass`, costing up to 5.60 points, by stripping de- to `asses`. Not de- + `asses`: garbled form; no de- + ass sense. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debatey": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `batey`, costing up to 1.25 points, by stripping de- to `batey`. Not de- + `batey`: debate + -y, debate-like; unrelated to batey. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debelled": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bell`, costing up to 5.02 points, by stripping de- to `belled`. Not de- + `belled`: conquered in war (Latin debellare); unrelated to bell. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debelling": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bell`, costing up to 5.02 points, by stripping de- to `belling`. Not de- + `belling`: conquering in war (Latin debellare); unrelated to bell. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debels": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bel`, costing up to 3.37 points, by stripping de- to `bels`. Not de- + `bels`: conquers in war (Latin debellare); unrelated to bel. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debens": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ben`, costing up to 3.97 points, by stripping de- to `bens`. Not de- + `bens`: ancient Egyptian weight units. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debiles": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bile`, costing up to 2.32 points, by stripping de- to `biles`. Not de- + `biles`: weak, feeble (French debile). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debites": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bites`, costing up to 0.24 points, by stripping de- to `bites`. Not de- + `bites`: debits (accounting entries); unrelated to bites. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debitings": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bite`, costing up to 0.97 points, by stripping de- to `bitings`. Not de- + `bitings`: entries recording debits; unrelated to bite. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "debitter": {
     "since": "2026-09-27",
     "reason": "Folded onto `debit`, costing 3.65 points. Flagged in the 2026-09-22 semantic audit (from bitter, not debit) and confirmed on adversarial re-review (from bitter, not debit)."
@@ -1793,6 +1873,116 @@
   "debitterize": {
     "since": "2026-09-27",
     "reason": "Folded onto `debit`, costing 3.65 points. Flagged in the 2026-09-22 semantic audit (from bitter, not debit) and confirmed on adversarial re-review (from bitter, not debit)."
+  },
+  "debole": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bole` by stripping de- to `bole`. Not de- + `bole`, like the exempted \"deboles\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "deboles": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bol`, costing up to 2.68 points, by stripping de- to `boles`. Not de- + `boles`: plural of debole, its own word; unrelated to bol. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deboshed": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bosh`, costing up to 2.71 points, by stripping de- to `boshed`. Not de- + `boshed`: archaic form of debauched; unrelated to bosh. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deboshes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bosh`, costing up to 2.71 points, by stripping de- to `boshes`. Not de- + `boshes`: archaic form of debauches; unrelated to bosh. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deboshing": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bosh`, costing up to 2.71 points, by stripping de- to `boshing`. Not de- + `boshing`: variant of debauching; unrelated to bosh. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debouche": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bouche`, costing up to 1.76 points, by stripping de- to `bouche`. Not de- + `bouche`: to emerge into open ground (French deboucher); unrelated to bouche. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debridal": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bridal`, costing up to 3.48 points, by stripping de- to `bridal`. Not de- + `bridal`: relating to wound debridement. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debrides": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bride`, costing up to 3.99 points, by stripping de- to `brides`. Not de- + `brides`: removes dead tissue from a wound; unrelated to bride. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debriding": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bride`, costing up to 3.81 points, by stripping de- to `briding`. Not de- + `briding`: removing dead tissue (French debrider); unrelated to bride. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debruise": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bruises` by stripping de- to `bruise`. Not de- + `bruise`: an old spelling of an unrelated verb, like the exempted \"debruises\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "debruises": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bruises`, costing up to 3.38 points, by stripping de- to `bruises`. Not de- + `bruises`: heraldry: overlaid by a charge; not de- + bruise. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debusses": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `buss`, costing up to 2.56 points, by stripping de- to `busses`. A real de- word, but the residue folds on to the wrong base: gets off a bus; built on bus, not buss (kiss). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "debyes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `bye`, costing up to 3.28 points, by stripping de- to `byes`. Not de- + `byes`: units of dipole moment (Debye); unrelated to bye. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decadences": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cadence`, costing up to 0.36 points, by stripping de- to `cadences`. Not de- + `cadences`: moral declines; unrelated to cadence. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decadencies": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cadency`, costing up to 0.73 points, by stripping de- to `cadencies`. Not de- + `cadencies`: decline, decadence; unrelated to cadency. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decads": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cad`, costing up to 2.85 points, by stripping de- to `cads`. Not de- + `cads`: groups of ten; unrelated to cad. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decaff": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `caff`, costing up to 1.19 points, by stripping de- to `caff`. Not de- + `caff`: decaffeinated coffee (clipping); unrelated to caff. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decalin": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `calin`, costing up to 1.03 points, by stripping de- to `calin`. Not de- + `calin`: decahydronaphthalene solvent; no base calin. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decalled": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `call,called`, costing up to 3.66 points, by stripping de- to `called`. Not de- + `called`: applied a decal (decalcomania); unrelated to call. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decalling": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `calling` by stripping de- to `calling`. Not de- + `calling`: a form of \"decal\", the transfer picture. Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "decameral": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cameral`, costing up to 0.52 points, by stripping de- to `cameral`. Not de- + `cameral`: having ten chambers (deca-); not de- + cameral. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decan": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `can` by stripping de- to `canned`. An astrological ten-degree division (Greek deka), capped at `can` through \"decanned\"; like the exempted \"decans\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
   },
   "decanalisation": {
     "since": "2026-09-27",
@@ -1814,17 +2004,117 @@
     "since": "2026-09-27",
     "reason": "Folded onto `decanal`, costing 0.19 points. Flagged in the 2026-09-22 semantic audit (decanal aldehyde, unrelated sense) and confirmed on adversarial re-review (decanal is dean/aldehyde)."
   },
+  "decanes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `canes`, costing up to 1.91 points, by stripping de- to `canes`. Not de- + `canes`: C10 alkanes (deca-); unrelated to canes. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decans": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `can`, costing up to 7.33 points, by stripping de- to `cans`. Not de- + `cans`: astrological ten-degree divisions (Greek deka). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decantings": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cant`, costing up to 2.97 points, by stripping de- to `cantings`. Not de- + `cantings`: pourings-off of liquid (decant); unrelated to cant. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decaplet": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `caplets` by stripping de- to `caplet`. Not de- + `caplet`: a group of ten (deca-), like the exempted \"decaplets\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "decaplets": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `caplets`, costing up to 0.84 points, by stripping de- to `caplets`. Not de- + `caplets`: sets of ten; deca- + -plet. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "decapoise": {
     "since": "2026-09-27",
     "reason": "Folded onto `poised`, costing 3.38 points. Flagged in the 2026-09-22 semantic audit (decapoise from poise unit, not poised) and confirmed on adversarial re-review (viscosity unit versus balanced poise)."
+  },
+  "decarb": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `carbs` by stripping de- to `carb`. A clipping of decarboxylate, not de- + `carb`, like the exempted \"decarbs\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "decarbs": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `carbs`, costing up to 3.29 points, by stripping de- to `carbs`. A real de- word, but the residue folds on to the wrong base: decarboxylates/decarbonizes; built on carbon, not carbs (carbohydrates). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
   },
   "decasteres": {
     "since": "2026-09-27",
     "reason": "Folded onto `ster`, costing 1.85 points. Flagged in the 2026-09-22 semantic audit (ster not the base; stere is) and confirmed on adversarial re-review (ster not the base; stere)."
   },
+  "decate": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cate`, costing up to 2.92 points, by stripping de- to `cate`. Not de- + `cate`: to decatize fabric (French decatir). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decater": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cater,catering`, costing up to 3.68 points, by stripping de- to `cater`. Not de- + `cater`: unrelated word; not de- + cater. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deceded": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ceded`, costing up to 2.83 points, by stripping de- to `ceded`. Not de- + `ceded`: obsolete decede: departed; unrelated to cede. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decedes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ceded`, costing up to 2.83 points, by stripping de- to `cedes`. Not de- + `cedes`: dies, departs (decede); unrelated to cede. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deceding": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ceded`, costing up to 2.83 points, by stripping de- to `ceding`. Not de- + `ceding`: obsolete: departing, dying (decede); unrelated to cede. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decels": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cel`, costing up to 2.16 points, by stripping de- to `cels`. Not de- + `cels`: decelerations (clipping); no base cel. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decene": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cene`, costing up to 0.52 points, by stripping de- to `cene`. Not de- + `cene`: C10 alkene (deca-); unrelated to cene. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decentile": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `centiles` by stripping de- to `centile`. A tenth-part statistic (deca-), not de- + `centile`, like the exempted \"decentiles\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "decentiles": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `centiles`, costing up to 1.00 points, by stripping de- to `centiles`. Not de- + `centiles`: variant of decile (tenths); not de- + centile. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deceptor": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ceptor`, costing up to 0.37 points, by stripping de- to `ceptor`. Not de- + `ceptor`: a deceiver; unrelated to ceptor. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decess": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cess`, costing up to 1.88 points, by stripping de- to `cess`. Not de- + `cess`: obsolete: decease, death; unrelated to cess. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decession": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cession`, costing up to 2.00 points, by stripping de- to `cession`. Not de- + `cession`: departure or decrease (Latin decessio); not reverse of cession. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "decibar": {
     "since": "2026-09-27",
     "reason": "Folded onto `bar`, costing 5.52 points. Flagged in the 2026-09-22 semantic audit (bar is pressure unit) and confirmed on adversarial re-review (pressure unit, not drinking bar)."
+  },
+  "deciceronize": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cicerone`, costing up to 1.15 points, by stripping de- to `ciceronize`. A real de- word, but the residue folds on to the wrong base: de- + ciceronize (remove Ciceronian style); scored as cicerone (guide). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
   },
   "decimes": {
     "since": "2026-09-27",
@@ -1834,17 +2124,807 @@
     "since": "2026-09-27",
     "reason": "Folded onto `ster`, costing 1.85 points. Flagged in the 2026-09-22 semantic audit (ster not the base; stere is) and confirmed on adversarial re-review (ster not the base; stere)."
   },
+  "declaimant": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `claimants` by stripping de- to `claimant`. One who declaims, not de- + `claimant`, like the exempted \"declaimants\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "declaimants": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `claimants`, costing up to 3.15 points, by stripping de- to `claimants`. Not de- + `claimants`: those who declaim; from declaim, not claimant. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "declaimings": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `claim`, costing up to 4.67 points, by stripping de- to `claimings`. Not de- + `claimings`: speaking rhetorically; declaim is its own lexeme. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "declinal": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `clinal`, costing up to 0.38 points, by stripping de- to `clinal`. Not de- + `clinal`: relating to a decline or slope; unrelated to clinal. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "declive": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `clive`, costing up to 3.66 points, by stripping de- to `clive`. Not de- + `clive`: sloping downward (Latin declivis). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decodon": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `codon`, costing up to 2.04 points, by stripping de- to `codon`. Not de- + `codon`: plant genus (deca- + odon); unrelated to codon. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decoit": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `coit`, costing up to 1.58 points, by stripping de- to `coit`. Not de- + `coit`: variant of dacoit, armed robber. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decollate": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `collated` by stripping de- to `collate`. To behead (Latin decollare), like the exempted \"decollates\" and \"decollations\"; the printing sense (to separate collated copies) is the rarer one. Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "decollates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `collated`, costing up to 2.10 points, by stripping de- to `collates`. Not de- + `collates`: beheads (Latin decollare); unrelated to collate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decollations": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `collation`, costing up to 1.52 points, by stripping de- to `collations`. Not de- + `collations`: beheadings (Latin decollatio). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decolletes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `collet`, costing up to 1.62 points, by stripping de- to `colletes`. Not de- + `colletes`: low-necked necklines (French decollete); unrelated to collet. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decomped": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `comp`, costing up to 2.92 points, by stripping de- to `comped`. Not de- + `comped`: clipping of decompressed/decompiled; unrelated to comp. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decomping": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `comp`, costing up to 2.92 points, by stripping de- to `comping`. A real de- word, but the residue folds on to the wrong base: decompressing/decompensating; base is not comp. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decomps": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `comp`, costing up to 2.92 points, by stripping de- to `comps`. Not de- + `comps`: decompressions/decompositions (clipping); unrelated to comp. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decongested": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cong`, costing up to 2.26 points, by stripping de- to `congested`. A real de- word, but the residue folds on to the wrong base: relieved of congestion; scored as cong instead of congested. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decongests": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cong`, costing up to 2.26 points, by stripping de- to `congests`. A real de- word, but the residue folds on to the wrong base: relieves congestion; built on congest, not cong. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deconned": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `con`, costing up to 3.34 points, by stripping de- to `conned`. Not de- + `conned`: decontaminated (decon clipping); unrelated to con. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deconning": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `con`, costing up to 3.34 points, by stripping de- to `conning`. A real de- word, but the residue folds on to the wrong base: decontaminating; built on contaminate, not con. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decons": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `con`, costing up to 3.34 points, by stripping de- to `cons`. A real de- word, but the residue folds on to the wrong base: decontaminations; built on contaminate, not con. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deconstructionisms": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `constructionism`, costing up to 0.78 points, by stripping de- to `constructionisms`. Not de- + `constructionisms`: theory of deconstruction; unrelated to constructionism. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decor": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `core` by stripping de- to `coring`. The measured \"decor\" was capped at `core` through \"decoring\", which is not its form. Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "decored": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `core` by stripping de- to `cored`. An old form of \"decore\", to decorate, not de- + `cored`; it was capping the measured \"decor\" at `core`. Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "decores": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `core`, costing up to 1.53 points, by stripping de- to `cores`. Not de- + `cores`: decor-related form; not de- + core. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decorporation": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `corporation`, costing up to 5.02 points, by stripping de- to `corporation`. Not de- + `corporation`: removing radionuclides from the body; not business corporation. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decose": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cose`, costing up to 1.35 points, by stripping de- to `cose`. Not de- + `cose`: not de- + cose; residue unrelated. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decoses": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cos`, costing up to 0.89 points, by stripping de- to `coses`. Not de- + `coses`: plural of deco (decorations); unrelated to cos. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decrying": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cry` by stripping de- to `cryings`. Decry is its own verb (to disparage); like the exempted \"decryingly\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "decryingly": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cry`, costing up to 2.72 points, by stripping de- to `cryingly`. Not de- + `cryingly`: disparagingly (decry); unrelated to cry. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decubital": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cubital`, costing up to 0.84 points, by stripping de- to `cubital`. Not de- + `cubital`: relating to lying down (decubitus); cubital is elbow. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decuria": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `curia`, costing up to 2.19 points, by stripping de- to `curia`. Not de- + `curia`: Roman unit of ten (decem); unrelated to curia. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decurrence": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `currence`, costing up to 0.62 points, by stripping de- to `currence`. Not de- + `currence`: botany: running down a stem. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decurrency": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `currency`, costing up to 4.70 points, by stripping de- to `currency`. Not de- + `currency`: downward extension (botany, decurrent); unrelated to currency. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decurrently": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `current`, costing up to 5.04 points, by stripping de- to `currently`. Not de- + `currently`: botany: running down a stem. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decurring": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `curring`, costing up to 0.76 points, by stripping de- to `curring`. Not de- + `curring`: running down (botany, decurrent); unrelated to curring. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decursive": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cursive`, costing up to 2.66 points, by stripping de- to `cursive`. Not de- + `cursive`: botany: running down; unrelated to cursive. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decursively": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `cursive`, costing up to 2.66 points, by stripping de- to `cursively`. Not de- + `cursively`: in a downward-running way (botany, decursive); not cursive. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dedecorated": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `decorated`, costing up to 4.10 points, by stripping de- to `decorated`. Not de- + `decorated`: obsolete: disgraced (Latin dedecus); not un-decorated. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dedecorating": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `decorated`, costing up to 4.10 points, by stripping de- to `decorating`. Not de- + `decorating`: obsolete: disgracing (Latin dedecus); not un-decorating. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dedecoration": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `decoration`, costing up to 3.93 points, by stripping de- to `decoration`. Not de- + `decoration`: obsolete: disgrace (Latin dedecus); not un-decoration. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dedentation": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `dentations`, costing up to 1.03 points, by stripping de- to `dentation`. Not de- + `dentation`: removing indentation (dedent); unrelated to dentation. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deductor": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ductor`, costing up to 0.93 points, by stripping de- to `ductor`. Not de- + `ductor`: one who deducts; unrelated to ductor. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dedupe": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `duped` by stripping de- to `dupe`. De- + duplicate, not `dupe`, like the exempted \"deduped\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "deduped": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `duped`, costing up to 2.88 points, by stripping de- to `duped`. A real de- word, but the residue folds on to the wrong base: deduplicated; built on dupe (duplicate), not duped (tricked). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deduper": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `duper` by stripping de- to `duper`. De- + duplicate, not `duper`, like the exempted \"deduped\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "deeked": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `eked`, costing up to 0.19 points, by stripping de- to `eked`. Not de- + `eked`: Scots/slang: looked; unrelated to eke. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deepos": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `epos`, costing up to 1.49 points, by stripping de- to `epos`. Not de- + `epos`: not de- + epos; unclear coinage. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deeyas": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `eyas`, costing up to 0.72 points, by stripping de- to `eyas`. Not de- + `eyas`: plural of deeya (oil lamp); unrelated to eyas. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defalcated": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `falcate`, costing up to 0.72 points, by stripping de- to `falcated`. Not de- + `falcated`: embezzled (defalcate); unrelated to falcate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defaultable": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fault`, costing up to 0.50 points, by stripping de- to `faultable`. Not de- + `faultable`: able to default; default is its own lexeme. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defaultings": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fault`, costing up to 0.50 points, by stripping de- to `faultings`. Not de- + `faultings`: failures to meet obligations (default); not de- + fault. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defaultless": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fault`, costing up to 0.50 points, by stripping de- to `faultless`. Not de- + `faultless`: without a default; default + -less. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defeasibilities": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `feasible`, costing up to 2.74 points, by stripping de- to `feasibilities`. Not de- + `feasibilities`: annullabilities (defeasance); unrelated to feasible. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defeasibleness": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `feasible`, costing up to 3.07 points, by stripping de- to `feasibleness`. Not de- + `feasibleness`: annullability (defeasance); unrelated to feasible. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defeasibly": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `feasible`, costing up to 3.07 points, by stripping de- to `feasibly`. Not de- + `feasibly`: in an annullable way (defeasance); unrelated to feasible. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defeds": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fed`, costing up to 4.90 points, by stripping de- to `feds`. A real de- word, but the residue folds on to the wrong base: defederates (fediverse); built on federate, not fed. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defenestrates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fenestrate`, costing up to 1.04 points, by stripping de- to `fenestrates`. Not de- + `fenestrates`: throws out of a window; not reverse of fenestrate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defenestrating": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fenestrate`, costing up to 0.69 points, by stripping de- to `fenestrating`. Not de- + `fenestrating`: throwing out of a window; not reversing fenestrate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defenestrations": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fenestration`, costing up to 0.06 points, by stripping de- to `fenestrations`. Not de- + `fenestrations`: throwings out of windows; not reverse of fenestration. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deferrated": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ferrates`, costing up to 0.51 points, by stripping de- to `ferrated`. A real de- word, but the residue folds on to the wrong base: iron removed (de- + ferrated); scored as ferrate salt. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defibbed": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fib`, costing up to 1.39 points, by stripping de- to `fibbed`. A real de- word, but the residue folds on to the wrong base: defibrillated; built on fibrillate, not fib (lie). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defibbing": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fib`, costing up to 1.39 points, by stripping de- to `fibbing`. A real de- word, but the residue folds on to the wrong base: defibrillating; built on fibrillate, not fib. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defibrate": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fibrates` by stripping de- to `fibrate`. To separate into fibres, not de- + `fibrate` (the drug), like the exempted \"defibrates\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "defibrates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fibrates`, costing up to 0.47 points, by stripping de- to `fibrates`. Not de- + `fibrates`: separates into fibres; fibrates are lipid drugs. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defibration": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fibrations` by stripping de- to `fibration`. Separation into fibres, not de- + `fibration` (the maths term), like the exempted \"defibrations\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "defibrations": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fibrations`, costing up to 1.02 points, by stripping de- to `fibrations`. A real de- word, but the residue folds on to the wrong base: separation of fibres (de- + fibre); scored as math fibration. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defibs": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fib`, costing up to 1.39 points, by stripping de- to `fibs`. Not de- + `fibs`: defibrillators (clipping); unrelated to fib. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "definement": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `finement`, costing up to 0.50 points, by stripping de- to `finement`. Not de- + `finement`: obsolete: definition; unrelated to finement. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "definitization": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `finite`, costing up to 2.81 points, by stripping de- to `finitization`. Not de- + `finitization`: making definite; from definite. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "definitizes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `finite`, costing up to 3.46 points, by stripping de- to `finitizes`. Not de- + `finitizes`: makes definite; from definite, not finite. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "definitizing": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `finite`, costing up to 2.81 points, by stripping de- to `finitizing`. Not de- + `finitizing`: making definite; from definite. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "definitude": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `finitude`, costing up to 0.95 points, by stripping de- to `finitude`. Not de- + `finitude`: definiteness; from definite, not finitude. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deflagrant": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `flagrant`, costing up to 2.81 points, by stripping de- to `flagrant`. Not de- + `flagrant`: burning rapidly (deflagrate); unrelated to flagrant. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defloured": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `flour`, costing up to 4.18 points, by stripping de- to `floured`. A real de- word, but the residue folds on to the wrong base: variant of deflowered (de- + flower); scored as flour. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deflouring": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `flour`, costing up to 4.18 points, by stripping de- to `flouring`. A real de- word, but the residue folds on to the wrong base: deflowering (de- + flower); scored as flour, a different word. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deflours": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `flour`, costing up to 4.18 points, by stripping de- to `flours`. A real de- word, but the residue folds on to the wrong base: deflowers (de- + flower); scored as flour, a different word. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defluent": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fluent`, costing up to 3.51 points, by stripping de- to `fluent`. Not de- + `fluent`: flowing downward (Latin defluere); not the modern sense of fluent. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defrayable": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `fray`, costing up to 1.23 points, by stripping de- to `frayable`. Not de- + `frayable`: able to be paid (defray); unrelated to fray. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "defunctions": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `function`, costing up to 5.29 points, by stripping de- to `functions`. Not de- + `functions`: obsolete: deaths (from defunct); unrelated to function. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "degans": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `gan`, costing up to 1.90 points, by stripping de- to `gans`. Not de- + `gans`: plural of degan, its own word; unrelated to gan. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "degeiko": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `geiko`, costing up to 0.47 points, by stripping de- to `geiko`. Not de- + `geiko`: Japanese term; not de- + geiko. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "degenerational": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `generational`, costing up to 3.18 points, by stripping de- to `generational`. Not de- + `generational`: relating to degeneration; not de- + generational. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deglut": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `glut`, costing up to 2.53 points, by stripping de- to `glut`. Not de- + `glut`: to swallow (Latin deglutire); not de- + glut. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "degradate": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `gradates` by stripping de- to `gradate`. Not de- + `gradate`, like the exempted \"degradates\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "degradates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `gradates`, costing up to 0.47 points, by stripping de- to `gradates`. Not de- + `gradates`: variant of degrade; not de- + gradate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "degrate": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `grate`, costing up to 3.03 points, by stripping de- to `grate`. Not de- + `grate`: variant of degrade; not de- + grate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "degung": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `gung`, costing up to 2.46 points, by stripping de- to `gung`. Not de- + `gung`: Sundanese gamelan ensemble; unrelated to gung. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "degust": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `gusts` by stripping de- to `gust`. To taste (Latin degustare), not de- + `gust`, like the exempted \"degusts\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "degusts": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `gusts`, costing up to 3.00 points, by stripping de- to `gusts`. Not de- + `gusts`: tastes, savours (Latin degustare); unrelated to gusts. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dehacker": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `hackers` by stripping de- to `hacker`. A worker who removes bricks from kiln hacks, not de- + `hacker`, like the exempted \"dehackers\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "dehackers": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `hackers`, costing up to 3.77 points, by stripping de- to `hackers`. A real de- word, but the residue folds on to the wrong base: machines removing bricks from hacks (kiln stacks); not computer hackers. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dehance": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `hance`, costing up to 1.49 points, by stripping de- to `hance`. Not de- + `hance`: coined reverse of enhance; unrelated to hance. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dehydrant": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `hydrant`, costing up to 2.40 points, by stripping de- to `hydrant`. Not de- + `hydrant`: dehydrating agent (dehydrate); not built on hydrant. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dehydron": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `hydron`, costing up to 0.46 points, by stripping de- to `hydron`. Not de- + `hydron`: protein packing defect term; not de- + hydron. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dehydrothermal": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `hydrothermal`, costing up to 2.37 points, by stripping de- to `hydrothermal`. Not de- + `hydrothermal`: dehydration plus heat treatment; not de- + hydrothermal. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deirid": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `irid`, costing up to 1.03 points, by stripping de- to `irid`. Not de- + `irid`: nematode neck papilla (Greek deire). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deisms": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ism`, costing up to 1.11 points, by stripping de- to `isms`. Not de- + `isms`: beliefs in God from reason (Latin deus); not de- + ism. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dekans": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `kan`, costing up to 3.30 points, by stripping de- to `kans`. Not de- + `kans`: deans (German/Dutch Dekan). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dekars": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `kar`, costing up to 2.82 points, by stripping de- to `kars`. Not de- + `kars`: decares, ten ares (deka-). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "dekastere": {
     "since": "2026-09-27",
     "reason": "Folded onto `ster`, costing 1.85 points. Flagged in the 2026-09-22 semantic audit (ster not the base; stere is) and confirmed on adversarial re-review (ster not the base; stere)."
+  },
+  "dekeck": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `keck`, costing up to 2.16 points, by stripping de- to `keck`. A real de- word, but the residue folds on to the wrong base: pull down someone's kecks (trousers); scored as keck (retch). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dekekked": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `kek`, costing up to 2.08 points, by stripping de- to `kekked`. A real de- word, but the residue folds on to the wrong base: variant of dekecked, trousers pulled down; scored as kek (laugh). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dekekking": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `kek`, costing up to 2.08 points, by stripping de- to `kekking`. A real de- word, but the residue folds on to the wrong base: variant of dekecking, pulling trousers down; scored as kek (laugh). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dekeks": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `kek`, costing up to 2.08 points, by stripping de- to `keks`. Not de- + `keks`: unknown coinage; not de- + kek. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deking": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `king`, costing up to 3.83 points, by stripping de- to `king`. Not de- + `king`: hockey feint (deke); unrelated to king. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delamed": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lame`, costing up to 4.11 points, by stripping de- to `lamed`. Not de- + `lamed`: unclear typo; no de- + lame sense. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delaming": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lame`, costing up to 4.11 points, by stripping de- to `laming`. Not de- + `laming`: clipping of delaminating; unrelated to lame. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delammed": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lam`, costing up to 3.40 points, by stripping de- to `lammed`. Not de- + `lammed`: clipping of delaminated; unrelated to lam. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delamming": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lam`, costing up to 3.40 points, by stripping de- to `lamming`. Not de- + `lamming`: delaminating (clipping); unrelated to lam. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delams": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lam`, costing up to 3.40 points, by stripping de- to `lams`. A real de- word, but the residue folds on to the wrong base: delaminations; built on laminate, not lam. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delapidations": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lapidation`, costing up to 0.37 points, by stripping de- to `lapidations`. Not de- + `lapidations`: misspelling of dilapidations. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delapsed": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lap`, costing up to 4.43 points, by stripping de- to `lapsed`. Not de- + `lapsed`: obsolete: fell down; unrelated to lap. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delapses": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lap`, costing up to 4.43 points, by stripping de- to `lapses`. Not de- + `lapses`: obsolete: falls down; unrelated to lap. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delapsing": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lap`, costing up to 4.43 points, by stripping de- to `lapsing`. Not de- + `lapsing`: obsolete: falling or sliding down (delapse); unrelated to lap. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delater": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `later`, costing up to 5.23 points, by stripping de- to `later`. Not de- + `later`: an informer, accuser (delate); unrelated to later. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `late`, costing up to 5.01 points, by stripping de- to `lates`. Not de- + `lates`: informs against, accuses (delate); unrelated to late. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delayings": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lay`, costing up to 0.35 points, by stripping de- to `layings`. Not de- + `layings`: postponements (delay); not de- + lay. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delection": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lections`, costing up to 0.94 points, by stripping de- to `lection`. Not de- + `lection`: obsolete: delight or selection. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delegacies": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `legacy`, costing up to 4.49 points, by stripping de- to `legacies`. Not de- + `legacies`: bodies of delegates; unrelated to legacy. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delegateship": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `legateship`, costing up to 0.46 points, by stripping de- to `legateship`. Not de- + `legateship`: office of a delegate; not de- + legate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
   },
   "deles": {
     "since": "2026-09-27",
     "reason": "Folded onto `del`, costing 4.01 points. Flagged in the 2026-09-22 semantic audit (plural of dele, not del) and confirmed on adversarial re-review (dele is separate word)."
   },
+  "delibations": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `libations`, costing up to 1.78 points, by stripping de- to `libations`. Not de- + `libations`: sips or tastes, samplings; not reverse of libations. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delibers": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `liber`, costing up to 2.55 points, by stripping de- to `libers`. Not de- + `libers`: obsolete form of deliberate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delibrates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `librates`, costing up to 0.66 points, by stripping de- to `librates`. Not de- + `librates`: obsolete variant of deliberates; unrelated to librate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delibrations": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `librations`, costing up to 1.43 points, by stripping de- to `librations`. Not de- + `librations`: obsolete variant of deliberations; unrelated to libration. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deligated": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ligated`, costing up to 1.25 points, by stripping de- to `ligated`. Not de- + `ligated`: misspelling of delegated. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deligating": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ligated`, costing up to 1.25 points, by stripping de- to `ligating`. Not de- + `ligating`: misspelling of delegating. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deligation": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ligation`, costing up to 2.12 points, by stripping de- to `ligation`. Not de- + `ligation`: misspelling of delegation. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delighters": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lighter`, costing up to 4.12 points, by stripping de- to `lighters`. Not de- + `lighters`: those who delight; unrelated to lighter. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delightless": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `light`, costing up to 1.78 points, by stripping de- to `lightless`. Not de- + `lightless`: without delight; unrelated to lightless. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delightly": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `light`, costing up to 1.78 points, by stripping de- to `lightly`. Not de- + `lightly`: obsolete: delightfully; built on delight, not light. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delightsomely": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lightsome`, costing up to 1.58 points, by stripping de- to `lightsomely`. Not de- + `lightsomely`: delightfully (delightsome); built on delight, not lightsome. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delightsomeness": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lightsome`, costing up to 1.58 points, by stripping de- to `lightsomeness`. Not de- + `lightsomeness`: quality of being delightful; not de- + light. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "delineable": {
     "since": "2026-09-27",
     "reason": "Folded onto `deline`, costing 0.56 points. Flagged in the 2026-09-22 semantic audit (deline not the base of delineable) and confirmed on adversarial re-review (deline is not the base)."
+  },
+  "delined": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `line`, costing up to 5.66 points, by stripping de- to `lined`. Not de- + `lined`: obsolete: delineated; not de- + line. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delingo": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lingo`, costing up to 2.81 points, by stripping de- to `lingo`. Not de- + `lingo`: unrelated noun; not de- + lingo. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delings": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ling`, costing up to 3.50 points, by stripping de- to `lings`. Not de- + `lings`: likely misspelling of dealings. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deliquated": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `liquated`, costing up to 0.79 points, by stripping de- to `liquated`. Not de- + `liquated`: obsolete: melted, dissolved (Latin deliquare); unrelated to liquate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deliquations": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `liquation`, costing up to 1.69 points, by stripping de- to `liquations`. Not de- + `liquations`: obsolete: meltings, dissolutions; unrelated to liquation. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deliquescently": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `liquescent`, costing up to 0.15 points, by stripping de- to `liquescently`. Not de- + `liquescently`: melting by absorbing moisture; established Latin lexeme, not productive de- + liquescent. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delivres": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `livres`, costing up to 2.08 points, by stripping de- to `livres`. Not de- + `livres`: French: delivers; unrelated to livres. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delolls": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `loll`, costing up to 1.77 points, by stripping de- to `lolls`. Not de- + `lolls`: spurious form; no de- + loll sense. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deloped": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lope`, costing up to 2.19 points, by stripping de- to `loped`. Not de- + `loped`: fired into the air in a duel (delope); unrelated to lope. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delopes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lopes`, costing up to 2.31 points, by stripping de- to `lopes`. Not de- + `lopes`: fires into the air in a duel (delope); unrelated to lope. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deloping": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lope`, costing up to 2.19 points, by stripping de- to `loping`. Not de- + `loping`: firing into the air in a duel; unrelated to lope. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delubra": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lubra`, costing up to 0.78 points, by stripping de- to `lubra`. Not de- + `lubra`: plural of delubrum, a Roman shrine. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delulu": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `lulu`, costing up to 3.25 points, by stripping de- to `lulu`. Not de- + `lulu`: slang: delusional. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demaines": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `main`, costing up to 4.33 points, by stripping de- to `maines`. Not de- + `maines`: variant of demesnes (estates). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demains": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `main`, costing up to 4.33 points, by stripping de- to `mains`. Not de- + `mains`: archaic for demesnes; unrelated to main. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demarch": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `march`, costing up to 5.98 points, by stripping de- to `march`. Not de- + `march`: Greek municipal mayor (demos + arch); unrelated to march. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demarches": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `march`, costing up to 5.35 points, by stripping de- to `marches`. Not de- + `marches`: diplomatic moves (demarche); unrelated to march. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demarchy": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `marchy`, costing up to 0.27 points, by stripping de- to `marchy`. Not de- + `marchy`: rule by the people (Greek demos); unrelated to marchy. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demarcs": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `marc`, costing up to 4.08 points, by stripping de- to `marcs`. Not de- + `marcs`: demarcation points (clipping). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demat": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `mate` by stripping de- to `mated`. A clipping of dematerialise, capped at `mate` through \"demated\"; like the exempted \"demates\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "demates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `mate`, costing up to 4.55 points, by stripping de- to `mates`. Not de- + `mates`: dematerialised securities accounts (demat clipping); unrelated to mate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dematin": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `matin`, costing up to 1.83 points, by stripping de- to `matin`. Not de- + `matin`: erythrocyte actin-bundling protein; unrelated to matin. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dematting": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `matt`, costing up to 4.55 points, by stripping de- to `matting`. A real de- word, but the residue folds on to the wrong base: removing mats from fur; built on mat, not matt. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demaunded": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `maunds`, costing up to 2.72 points, by stripping de- to `maunded`. Not de- + `maunded`: archaic spelling of demanded. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demaunders": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `maunder`, costing up to 1.39 points, by stripping de- to `maunders`. Not de- + `maunders`: archaic spelling of demanders. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demaunding": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `maunds`, costing up to 2.72 points, by stripping de- to `maunding`. Not de- + `maunding`: archaic spelling of demanding. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demaunds": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `maunds`, costing up to 2.72 points, by stripping de- to `maunds`. Not de- + `maunds`: archaic spelling of demands. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demaynes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `mayne`, costing up to 2.66 points, by stripping de- to `maynes`. Not de- + `maynes`: archaic variant of demesnes/domains. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
   },
   "demes": {
     "since": "2026-09-27",
@@ -1854,13 +2934,203 @@
     "since": "2026-09-27",
     "reason": "Folded onto `demi`, costing 2.71 points. Flagged in the 2026-09-22 semantic audit (demy paper size, not demi) and confirmed on adversarial re-review (demy plural, not demi)."
   },
+  "demiking": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `mike`, costing up to 5.32 points, by stripping de- to `miking`. Not de- + `miking`: demi- + king, a petty king; unrelated to mike. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deminished": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `minished`, costing up to 1.26 points, by stripping de- to `minished`. Not de- + `minished`: misspelling of diminished. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deminishes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `minished`, costing up to 1.26 points, by stripping de- to `minishes`. Not de- + `minishes`: misspelling of diminishes. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deminishing": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `minished`, costing up to 1.26 points, by stripping de- to `minishing`. Not de- + `minishing`: misspelling of diminishing. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demissionary": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `missionary`, costing up to 3.94 points, by stripping de- to `missionary`. Not de- + `missionary`: tending to lower or degrade; unrelated to missionary. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demissions": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `mission`, costing up to 4.35 points, by stripping de- to `missions`. Not de- + `missions`: resignations or abdications; unrelated to mission. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demissive": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `missive`, costing up to 1.93 points, by stripping de- to `missive`. Not de- + `missive`: humble, downcast (Latin demissus); unrelated to missive. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demobbing": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `mob`, costing up to 3.20 points, by stripping de- to `mobbing`. Not de- + `mobbing`: demobilizing (clipping); unrelated to mob. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demobs": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `mob`, costing up to 3.51 points, by stripping de- to `mobs`. Not de- + `mobs`: demobilizations (clipping); unrelated to mob. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demod": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `mode` by stripping de- to `moded`. A clipping of demodulate, capped at `mode` through \"demoded\", which is a different word (d\u00e9mod\u00e9). Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "demoid": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `moid`, costing up to 0.54 points, by stripping de- to `moid`. Not de- + `moid`: obscure; no de- + moid sense. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "demonesses": {
     "since": "2026-09-27",
     "reason": "Folded onto `demo`, costing 4.26 points. Flagged in the 2026-09-22 semantic audit (demoness from demon, not demo) and confirmed on adversarial re-review (demoness from demon, not demo)."
   },
+  "demonish": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monished`, costing up to 0.64 points, by stripping de- to `monish`. Not de- + `monish`: demonlike; demon + -ish. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonisms": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monism`, costing up to 0.40 points, by stripping de- to `monisms`. Not de- + `monisms`: beliefs in demons; unrelated to monism. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonist": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monists` by stripping de- to `monist`. A demon-worshipper, not de- + `monist`, like the exempted \"demonists\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "demonistic": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monistic`, costing up to 1.03 points, by stripping de- to `monistic`. Not de- + `monistic`: relating to demonism; unrelated to monistic. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonists": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monists`, costing up to 1.27 points, by stripping de- to `monists`. Not de- + `monists`: believers in demons; unrelated to monist. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonocracy": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monocracy`, costing up to 0.25 points, by stripping de- to `monocracy`. Not de- + `monocracy`: rule by demons; demon + -ocracy. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonograph": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monograph`, costing up to 3.00 points, by stripping de- to `monograph`. Not de- + `monograph`: treatise on demons; unrelated to monograph. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonographer": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monographer` by stripping de- to `monographer`. One who writes about demons, not de- + `monographer`, like the exempted \"demonograph\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "demonolatries": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monolatry`, costing up to 0.18 points, by stripping de- to `monolatries`. Not de- + `monolatries`: worship of demons; unrelated to monolatry. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonologic": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monologic`, costing up to 1.74 points, by stripping de- to `monologic`. Not de- + `monologic`: relating to demonology; unrelated to monologic. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonologically": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monologic`, costing up to 1.60 points, by stripping de- to `monologically`. Not de- + `monologically`: relating to demonology; unrelated to monologic. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonomania": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monomania`, costing up to 0.92 points, by stripping de- to `monomania`. Not de- + `monomania`: delusion of demonic possession; demon + -omania. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonomaniac": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monomaniacs` by stripping de- to `monomaniac`. One believing themselves possessed by demons, like the exempted \"demonomaniacs\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "demonomaniacs": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monomaniacs`, costing up to 1.06 points, by stripping de- to `monomaniacs`. Not de- + `monomaniacs`: people deluded of demonic possession. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonophobia": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monophobia`, costing up to 0.05 points, by stripping de- to `monophobia`. Not de- + `monophobia`: fear of demons; demono- + phobia. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demonstrances": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `monstrance`, costing up to 0.88 points, by stripping de- to `monstrances`. Not de- + `monstrances`: obsolete: demonstrations; unrelated to monstrance. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demorphism": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `morphisms`, costing up to 1.30 points, by stripping de- to `morphism`. Not de- + `morphism`: geology: disintegration of rocks; not de- + morphism. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "denayed": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `nay`, costing up to 3.38 points, by stripping de- to `nayed`. Not de- + `nayed`: archaic spelling of denied. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "denaying": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `nay`, costing up to 3.38 points, by stripping de- to `naying`. Not de- + `naying`: obsolete form of denying. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "denays": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `nay`, costing up to 3.38 points, by stripping de- to `nays`. Not de- + `nays`: archaic spelling of denies. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dengas": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `nga`, costing up to 2.57 points, by stripping de- to `ngas`. Not de- + `ngas`: old Russian coins (denga); unrelated to nga. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "deniably": {
     "since": "2026-09-27",
     "reason": "Folded onto `denis`, costing 3.58 points. Flagged in the 2026-09-22 semantic audit (from deny; Denis unrelated) and confirmed on adversarial re-review (from deny; Denis is a name)."
+  },
+  "denominatively": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `nominative`, costing up to 0.78 points, by stripping de- to `nominatively`. Not de- + `nominatively`: in a naming way; from denominate, not nominative case. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "denotability": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `notable`, costing up to 4.01 points, by stripping de- to `notability`. Not de- + `notability`: ability to be denoted; unrelated to notable. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "denotated": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `notated`, costing up to 1.53 points, by stripping de- to `notated`. Not de- + `notated`: variant of denoted; not de- + notated. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "denotates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `notated`, costing up to 1.53 points, by stripping de- to `notates`. Not de- + `notates`: variant of denotes; not de- + notate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "denotating": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `notated`, costing up to 1.53 points, by stripping de- to `notating`. Not de- + `notating`: denoting, signifying (denotate); unrelated to notate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "denotationally": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `notational`, costing up to 0.67 points, by stripping de- to `notationally`. Not de- + `notationally`: relating to denotation (meaning); unrelated to notation. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
   },
   "denses": {
     "since": "2026-09-27",
@@ -1870,6 +3140,196 @@
     "since": "2026-09-27",
     "reason": "Folded onto `dent`, costing 3.35 points. Flagged in the 2026-09-22 semantic audit (dentes is Latin plural of dens/tooth) and confirmed on adversarial re-review (Latin teeth, unrelated to dent)."
   },
+  "deontically": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ontically`, costing up to 0.22 points, by stripping de- to `ontically`. Not de- + `ontically`: relating to duty (Greek deon). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deontologically": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ontological`, costing up to 1.15 points, by stripping de- to `ontologically`. Not de- + `ontologically`: relating to ethics of duty (deontology); not de- + ontology. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deontologies": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ontology`, costing up to 1.64 points, by stripping de- to `ontologies`. Not de- + `ontologies`: ethics of duty (Greek deon); unrelated to ontology. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deonym": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `onym`, costing up to 0.46 points, by stripping de- to `onym`. Not de- + `onym`: word derived from a deity name; deo- + -onym. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deopped": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `opp`, costing up to 2.58 points, by stripping de- to `opped`. A real de- word, but the residue folds on to the wrong base: stripped of IRC op status; built on op, not opp. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deopping": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `opp`, costing up to 2.58 points, by stripping de- to `opping`. A real de- word, but the residue folds on to the wrong base: removing IRC operator status; built on op, not opp. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "departedness": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `part`, costing up to 2.88 points, by stripping de- to `partedness`. Not de- + `partedness`: state of having departed or died. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "departings": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `part`, costing up to 2.88 points, by stripping de- to `partings`. Not de- + `partings`: leaving; depart is its own lexeme, not reverse of part. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depass": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `pass`, costing up to 5.68 points, by stripping de- to `pass`. Not de- + `pass`: French depasser: to exceed; not reverse of pass. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depatriates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `patriate`, costing up to 0.78 points, by stripping de- to `patriates`. Not de- + `patriates`: leaves one's homeland; not reverse of patriate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depeached": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `peach`, costing up to 3.86 points, by stripping de- to `peached`. Not de- + `peached`: obsolete depeach: dispatched; unrelated to peach. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depeaches": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `peach`, costing up to 3.86 points, by stripping de- to `peaches`. Not de- + `peaches`: obsolete: dispatches; unrelated to peach. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depeaching": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `peach`, costing up to 3.86 points, by stripping de- to `peaching`. Not de- + `peaching`: obsolete depeach: dispatch; unrelated to peach. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depeter": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `peter`, costing up to 5.43 points, by stripping de- to `peter`. Not de- + `peter`: obscure form; not de- + peter. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dephosphin": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `phosphin`, costing up to 0.06 points, by stripping de- to `phosphin`. Not de- + `phosphin`: neural protein (dynamin I); not de- + phosphine. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depicters": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `picters`, costing up to 1.21 points, by stripping de- to `picters`. Not de- + `picters`: those who depict; unrelated to picters. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depilate": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `pilate` by stripping de- to `pilate`. To remove hair (Latin depilare), not de- + `pilate`, like the exempted \"depilates\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "depilates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `pilates`, costing up to 2.69 points, by stripping de- to `pilates`. Not de- + `pilates`: removes hair; unrelated to pilates. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depolarises": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `polaris`, costing up to 2.65 points, by stripping de- to `polarises`. A real de- word, but the residue folds on to the wrong base: de- + polarises; scored as Polaris instead of polarise. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deportables": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `portable`, costing up to 3.18 points, by stripping de- to `portables`. Not de- + `portables`: things able to be deported; unrelated to portable. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deporters": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `porter`, costing up to 3.59 points, by stripping de- to `porters`. Not de- + `porters`: those who expel people from a country. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depositionally": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `positional`, costing up to 1.07 points, by stripping de- to `positionally`. Not de- + `positionally`: relating to deposition (deposit/depose), not position. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depositive": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `positive`, costing up to 5.59 points, by stripping de- to `positive`. Not de- + `positive`: relating to deposit; unrelated to positive. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deprecatively": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `precative`, costing up to 0.60 points, by stripping de- to `precatively`. Not de- + `precatively`: disapprovingly (deprecate); unrelated to precative. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deprecatorily": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `precatory`, costing up to 1.21 points, by stripping de- to `precatorily`. Not de- + `precatorily`: disapprovingly (deprecate); unrelated to precatory. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depredates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `predates`, costing up to 1.79 points, by stripping de- to `predates`. Not de- + `predates`: plunders (depredate); unrelated to predates. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deprehends": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `prehend`, costing up to 0.14 points, by stripping de- to `prehends`. Not de- + `prehends`: archaic: catches, detects (Latin deprehendere); unrelated to prehend. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depresh": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `presh`, costing up to 0.51 points, by stripping de- to `presh`. Not de- + `presh`: slang for depressed/depressing; unrelated to presh. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depressingness": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `press`, costing up to 1.46 points, by stripping de- to `pressingness`. Not de- + `pressingness`: quality of being depressing; not de- + press. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depreter": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `preter`, costing up to 0.55 points, by stripping de- to `preter`. Not de- + `preter`: unrelated obsolete word; not de- + preter. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depulses": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `pulse`, costing up to 4.26 points, by stripping de- to `pulses`. Not de- + `pulses`: obsolete: drives away (Latin depellere); unrelated to pulse. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depurgatory": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `purgatory`, costing up to 2.93 points, by stripping de- to `purgatory`. Not de- + `purgatory`: serving to purge or cleanse; unrelated to purgatory. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deputative": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `putative`, costing up to 2.74 points, by stripping de- to `putative`. Not de- + `putative`: relating to deputing; unrelated to putative. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deputatively": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `putative`, costing up to 2.74 points, by stripping de- to `putatively`. Not de- + `putatively`: by way of deputing; unrelated to putative. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deques": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `que`, costing up to 3.53 points, by stripping de- to `ques`. Not de- + `ques`: double-ended queues (acronym). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "derangeable": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `range`, costing up to 2.71 points, by stripping de- to `rangeable`. Not de- + `rangeable`: able to be deranged; derange now means make insane. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deranger": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `rangers` by stripping de- to `ranger`. One who deranges, not de- + `ranger`, like the exempted \"derangers\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "derangers": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `rangers`, costing up to 1.43 points, by stripping de- to `rangers`. Not de- + `rangers`: those who derange or disorder; unrelated to rangers. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "deratization": {
     "since": "2026-09-27",
     "reason": "Folded onto `derating`, costing 0.86 points. Flagged in the 2026-09-22 semantic audit (deratization vs derating differ) and confirmed on adversarial re-review (deratization unrelated to derating)."
@@ -1878,9 +3338,89 @@
     "since": "2026-09-27",
     "reason": "Folded onto `derating`, costing 0.86 points. Flagged in the 2026-09-22 semantic audit (deratize vs derating, different words) and confirmed on adversarial re-review (de-rat-ize unrelated to derating)."
   },
+  "derayed": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ray`, costing up to 4.07 points, by stripping de- to `rayed`. Not de- + `rayed`: archaic: disordered, revelled (deray); unrelated to ray. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deraying": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ray`, costing up to 4.07 points, by stripping de- to `raying`. Not de- + `raying`: obsolete: causing disorder, tumult (deray); unrelated to ray. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "derays": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ray`, costing up to 4.07 points, by stripping de- to `rays`. Not de- + `rays`: archaic: disorder, tumult. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deridings": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ride`, costing up to 2.91 points, by stripping de- to `ridings`. Not de- + `ridings`: mockings (deride); unrelated to ride. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deringers": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ringer`, costing up to 2.15 points, by stripping de- to `ringers`. Not de- + `ringers`: derringer pistols (Deringer surname). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "deringing": {
     "since": "2026-09-27",
     "reason": "Folded onto `dere`, costing 2.10 points. Flagged in the 2026-09-22 semantic audit (deringing not from dere) and confirmed on adversarial re-review (deringing unrelated to dere)."
+  },
+  "derival": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `rival`, costing up to 4.43 points, by stripping de- to `rival`. Not de- + `rival`: obsolete: derivation; unrelated to rival. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deriver": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `river`, costing up to 1.06 points, by stripping de- to `river`. Not de- + `river`: one who derives; unrelated to river. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "derout": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `rout`, costing up to 2.92 points, by stripping de- to `rout`. Not de- + `rout`: misspelling of deroute; not de- + rout. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desais": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sai`, costing up to 0.67 points, by stripping de- to `sais`. Not de- + `sais`: Desai: Indian title/surname. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desarts": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sart`, costing up to 0.58 points, by stripping de- to `sarts`. Not de- + `sarts`: archaic spelling of deserts. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desats": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sat`, costing up to 5.09 points, by stripping de- to `sats`. A real de- word, but the residue folds on to the wrong base: desaturations; built on saturate, not sat. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desaye": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `saye` by stripping de- to `saye`. An obscure form unrelated to `saye`, like the exempted \"desayes\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "desayes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `say`, costing up to 6.92 points, by stripping de- to `sayes`. Not de- + `sayes`: obscure/foreign form; unrelated to say. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "descrived": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `scrive`, costing up to 0.71 points, by stripping de- to `scrived`. Not de- + `scrived`: obsolete form of described. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "descrives": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `scrive`, costing up to 0.71 points, by stripping de- to `scrives`. Not de- + `scrives`: obsolete form of describes. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "descriving": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `scrive`, costing up to 0.71 points, by stripping de- to `scriving`. Not de- + `scriving`: obsolete: describing; unrelated to scrive. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
   },
   "deseeder": {
     "since": "2026-09-27",
@@ -1890,9 +3430,254 @@
     "since": "2026-09-27",
     "reason": "Folded onto `dese`, costing 1.37 points. Flagged in the 2026-09-22 semantic audit (deseeds from seed, dese bogus) and confirmed on adversarial re-review (dese is not a word)."
   },
+  "deshis": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `shi`, costing up to 2.55 points, by stripping de- to `shis`. Not de- + `shis`: deshi/desi: native South Asians. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desideration": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sideration`, costing up to 1.25 points, by stripping de- to `sideration`. Not de- + `sideration`: a desire, a wanting (desiderate); unrelated to sideration. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desids": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sid`, costing up to 3.57 points, by stripping de- to `sids`. Not de- + `sids`: plural of desid, unrelated to sid. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desights": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sight`, costing up to 4.94 points, by stripping de- to `sights`. Not de- + `sights`: obsolete: eyesores; not de- + sight. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "designability": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sign`, costing up to 5.10 points, by stripping de- to `signability`. Not de- + `signability`: ability to be designed; from design, not sign. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desister": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sister`, costing up to 2.67 points, by stripping de- to `sister`. Not de- + `sister`: one who desists; unrelated to sister. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deskie": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `skie` by stripping de- to `skie`. Not de- + `skie`, like the exempted \"deskies\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "deskies": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sky`, costing up to 5.20 points, by stripping de- to `skies`. Not de- + `skies`: plural of deskie; not de- + sky. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "despected": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `spect`, costing up to 1.90 points, by stripping de- to `spected`. Not de- + `spected`: obsolete: looked down on (Latin despectus). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "despecting": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `spect`, costing up to 1.90 points, by stripping de- to `specting`. Not de- + `specting`: obsolete: looking down on. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "despects": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `spect`, costing up to 1.90 points, by stripping de- to `spects`. Not de- + `spects`: looks down on, contemns (despect); unrelated to spect. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "despights": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `spight`, costing up to 0.35 points, by stripping de- to `spights`. Not de- + `spights`: obsolete spelling of despites. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desport": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sports` by stripping de- to `sport`. A variant of disport, to amuse oneself, like the exempted \"desports\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "desports": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sports`, costing up to 5.52 points, by stripping de- to `sports`. Not de- + `sports`: variant of disports, amuses oneself; not de- + sport. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desposed": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `spose`, costing up to 1.15 points, by stripping de- to `sposed`. Not de- + `sposed`: obsolete dispose/depose; unrelated to spose. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desposes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `spose`, costing up to 1.15 points, by stripping de- to `sposes`. Not de- + `sposes`: obsolete dispose/depose; unrelated to spose. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desposing": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `spose`, costing up to 1.15 points, by stripping de- to `sposing`. Not de- + `sposing`: obsolete spelling of disposing. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "destour": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `stour`, costing up to 1.70 points, by stripping de- to `stour`. Not de- + `stour`: Tunisian constitution/party (dastur); unrelated to stour. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desunt": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `sunt`, costing up to 1.77 points, by stripping de- to `sunt`. Not de- + `sunt`: Latin: they are missing. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desyred": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `syre`, costing up to 0.64 points, by stripping de- to `syred`. Not de- + `syred`: obsolete spelling of desired. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desyres": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `syre`, costing up to 0.64 points, by stripping de- to `syres`. Not de- + `syres`: archaic spelling of desires. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "desyring": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `syre`, costing up to 0.64 points, by stripping de- to `syring`. Not de- + `syring`: archaic spelling of desiring. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detarrer": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `tarr`, costing up to 1.51 points, by stripping de- to `tarrer`. A real de- word, but the residue folds on to the wrong base: device removing tar; built on tar, not tarr. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detense": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `tense` by stripping de- to `tense`. Obsolete: detention, withholding, like the exempted \"detenses\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "detensed": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ten`, costing up to 5.68 points, by stripping de- to `tensed`. A real de- word, but the residue folds on to the wrong base: de- + tensed (relaxed); scored as ten instead of tense. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detenses": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ten`, costing up to 5.68 points, by stripping de- to `tenses`. Not de- + `tenses`: obsolete: detentions, withholdings; unrelated to ten. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detensing": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ten`, costing up to 5.68 points, by stripping de- to `tensing`. A real de- word, but the residue folds on to the wrong base: removing tense marking; built on tense, not ten. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "detented": {
     "since": "2026-09-27",
     "reason": "Folded onto `detente`, costing 1.73 points. Flagged in the 2026-09-22 semantic audit (detent vs detente, different words) and confirmed on adversarial re-review (detent catch versus detente)."
+  },
+  "detenting": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `tent`, costing up to 2.52 points, by stripping de- to `tenting`. Not de- + `tenting`: detente/detent related; unrelated to tent. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "determinate": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `terminated` by stripping de- to `terminates`. Fixed, definite; its own word, not de- + `terminate`, like the exempted \"determinated\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "determinated": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `terminated`, costing up to 1.95 points, by stripping de- to `terminated`. Not de- + `terminated`: determined (from determinate); not de- + terminated. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "determinating": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `terminated` by stripping de- to `terminating`. A form of \"determinate\", not de- + `terminate`, like the exempted \"determinated\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "detestability": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `testable`, costing up to 0.01 points, by stripping de- to `testability`. Not de- + `testability`: quality of being detestable; from detest. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detestates": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `testate`, costing up to 0.51 points, by stripping de- to `testates`. Not de- + `testates`: obsolete form of detests; unrelated to testate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detester": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `tester`, costing up to 0.51 points, by stripping de- to `tester`. Not de- + `tester`: one who detests. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detorse": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `torse` by stripping de- to `torse`. To untwist (detorsion), not de- + `torse`, like the exempted \"detorses\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "detorses": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `tor`, costing up to 3.58 points, by stripping de- to `torses`. A real de- word, but the residue folds on to the wrong base: untwists (detorsion); scored as tor (hill). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detorts": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `tort`, costing up to 2.93 points, by stripping de- to `torts`. Not de- + `torts`: twists or distorts meaning (Latin detorquere); unrelated to tort. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detourings": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `tour`, costing up to 2.52 points, by stripping de- to `tourings`. Not de- + `tourings`: taking a roundabout route; detour is its own lexeme. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detourn": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `tourn`, costing up to 0.79 points, by stripping de- to `tourn`. Not de- + `tourn`: to hijack or divert (detournement); not de- + tourn. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detractiveness": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `tractive`, costing up to 1.25 points, by stripping de- to `tractiveness`. Not de- + `tractiveness`: tendency to detract; unrelated to tractive. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "detransphobia": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `transphobia`, costing up to 2.23 points, by stripping de- to `transphobia`. Not de- + `transphobia`: prejudice against detransitioners; detrans + phobia. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deturs": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `tur`, costing up to 2.46 points, by stripping de- to `turs`. Not de- + `turs`: Harvard prize books (Latin: let it be given). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deunionise": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ionising` by stripping de- to `unionise`. A real de- word, but the residue folds on to the wrong base (`ionising`, not unionise), like the exempted \"deunionising\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "deunionising": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `ionising`, costing up to 1.30 points, by stripping de- to `unionising`. A real de- word, but the residue folds on to the wrong base: removing union status; built on unionise, not ionising. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deuses": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `use`, costing up to 6.80 points, by stripping de- to `uses`. Not de- + `uses`: plural of deus/deuce variant; not de- + use. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devale": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vale`, costing up to 3.65 points, by stripping de- to `vale`. Not de- + `vale`: obsolete: to descend (French devaler); unrelated to vale. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devaster": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vaster`, costing up to 1.10 points, by stripping de- to `vaster`. Not de- + `vaster`: obsolete: devastate; unrelated to vaster. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devasts": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vast`, costing up to 4.87 points, by stripping de- to `vasts`. Not de- + `vasts`: obsolete: devastates; unrelated to vast. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devergences": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vergence`, costing up to 0.92 points, by stripping de- to `vergences`. Not de- + `vergences`: misspelling of divergences. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
   },
   "deviability": {
     "since": "2026-09-27",
@@ -1902,17 +3687,107 @@
     "since": "2026-09-27",
     "reason": "Folded onto `devi`, costing 2.88 points. Flagged in the 2026-09-22 semantic audit (devi unrelated goddess) and confirmed on adversarial re-review (from deviate; devi unrelated)."
   },
+  "deviceless": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vice`, costing up to 0.06 points, by stripping de- to `viceless`. Not de- + `viceless`: without a device; unrelated to vice. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devides": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vides` by stripping de- to `vides`. A misspelling of divides, like the exempted \"devisions\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "deviding": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vide`, costing up to 1.79 points, by stripping de- to `viding`. Not de- + `viding`: misspelling of dividing. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "deviless": {
     "since": "2026-09-27",
     "reason": "Folded onto `devi`, costing 2.88 points. Flagged in the 2026-09-22 semantic audit (devi unrelated goddess) and confirmed on adversarial re-review (from devil, not devi)."
+  },
+  "devillin": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `villin`, costing up to 0.56 points, by stripping de- to `villin`. Not de- + `villin`: variant of devilling; not de- + villin. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devills": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vill`, costing up to 1.91 points, by stripping de- to `vills`. Not de- + `vills`: obsolete spelling of devils. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
   },
   "devily": {
     "since": "2026-09-27",
     "reason": "Folded onto `devi`, costing 2.88 points. Flagged in the 2026-09-22 semantic audit (devi unrelated goddess) and confirmed on adversarial re-review (from devil, not devi)."
   },
+  "devisions": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vision`, costing up to 4.64 points, by stripping de- to `visions`. Not de- + `visions`: misspelling of divisions/devices. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devive": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vive`, costing up to 2.70 points, by stripping de- to `vive`. Not de- + `vive`: obscure form; not de- + vive. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devlogs": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vlog`, costing up to 1.99 points, by stripping de- to `vlogs`. Not de- + `vlogs`: developer logs; dev + log. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devolutes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `volute`, costing up to 1.15 points, by stripping de- to `volutes`. Not de- + `volutes`: obsolete: devolve; unrelated to volute. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devores": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `vor`, costing up to 0.61 points, by stripping de- to `vores`. Not de- + `vores`: devore: burnout velvet fabric. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "devoter": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `voters` by stripping de- to `voter`. One who devotes, not de- + `voter`, like the exempted \"devoters\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "devoters": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `voters`, costing up to 0.40 points, by stripping de- to `voters`. Not de- + `voters`: those who devote; unrelated to voters. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dewans": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `wan`, costing up to 1.79 points, by stripping de- to `wans`. Not de- + `wans`: plural of dewan (Indian official); unrelated to wan. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dewarra": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `warra`, costing up to 0.66 points, by stripping de- to `warra`. Not de- + `warra`: unrelated loanword; not de- + warra. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
   "dewdropper": {
     "since": "2026-09-27",
     "reason": "Folded onto `dewdrop`, costing 1.13 points. Flagged in the 2026-09-22 semantic audit (dewdropper is idler, unrelated sense) and confirmed on adversarial re-review (dewdropper idler, unrelated sense)."
+  },
+  "dewily": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `wily`, costing up to 0.22 points, by stripping de- to `wily`. Not de- + `wily`: in a dewy way; unrelated to wily. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dewing": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `wing` by stripping de- to `winged`. A form of \"dew\", capped at `wing` through \"dewinged\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
+    "scope": "prefix"
+  },
+  "dewings": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `wing`, costing up to 1.53 points, by stripping de- to `wings`. Not de- + `wings`: formations of dew; unrelated to wing. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dezhes": {
+    "since": "2026-10-04",
+    "reason": "Folded onto `zhe`, costing up to 1.56 points, by stripping de- to `zhes`. Not de- + `zhes`: plural of dezh (the dzh ligature letter); not de- + zhe. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
   },
   "digitalising": {
     "since": "2026-09-27",

@@ -242,6 +242,8 @@ export default function App() {
             feedback={feedback}
             checking={checking}
             onSubmit={submitWord}
+            date={date}
+            mode={playMode}
           />
         )}
         <FeedbackRegion
