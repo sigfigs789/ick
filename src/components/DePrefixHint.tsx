@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { dePrefixFolds } from "../game/dictionary";
+import { DE_PREFIX_START, dePrefixFolds } from "../game/dictionary";
+import { playedBefore } from "../game/storage";
 import type { GameMode } from "../game/mode";
 import { CommonFormModal } from "./CommonFormModal";
 
@@ -31,7 +32,9 @@ interface Props {
 
 /**
  * The notice that "de-" folds from DE_PREFIX_START, shown above the input the
- * first time a Standard player starts typing a word that opens with it.
+ * first time a Standard player starts typing a word that opens with it --
+ * a returning player only, one who banked a word before the cutover. To a new
+ * player "de-" folding is simply how the game scores, not a change.
  *
  * Shown at the moment it applies rather than as an announcement, because the
  * change is invisible until it costs a word points: "dechunked" scoring as
@@ -41,11 +44,16 @@ interface Props {
  * prefix list.
  */
 export function DePrefixHint({ value, date, mode }: Props) {
+  // Read once: a word banked today does not make the player a returning one.
+  const [returning] = useState(() => playedBefore(DE_PREFIX_START));
   const [dismissed, setDismissed] = useState(seen);
   const [explaining, setExplaining] = useState(false);
 
   const show =
-    !dismissed && value.trim().toLowerCase().startsWith("de") && dePrefixFolds(date, mode);
+    returning &&
+    !dismissed &&
+    value.trim().toLowerCase().startsWith("de") &&
+    dePrefixFolds(date, mode);
 
   function dismiss() {
     markSeen();
