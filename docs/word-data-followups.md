@@ -101,29 +101,37 @@ Note for anyone tempted again: compare display scores, not base strings — stri
 comparison counts `absorbing`→`absorbed` against the LLM's `absorb` as a
 disagreement when it is the same cap and the same score.
 
-Three gaps it did surface survived a semantic check and stand on their own:
+Three gaps it did surface survived a semantic check. Re-checked on 2026-10-02:
+two are still open, and both are marked `KNOWN GAP` in the code. All three are
+Standard-only, because Freeform does not fold.
 
-- **A plural stops the chain.** The inflectional hop fires and the derivational
-  hop after it never happens, so a plural of a derived noun keeps the derived
-  noun's rarity: `archivists` reaches `archivist` and halts rather than continuing
-  to `archive`. Largest single bucket of missed folds in both samples (66 of 231,
-  62 of 218). Also `accusers`, `allegorists`, `analyzers`, `dissimilarities`.
-- **`-able` is not read.** `makeable` scores 9.67 Mythic against `make` at 2.8.
-  Also `updatable` 9.56, `freezable`, `perforable`, `perfectible`.
-- **The junk `-es` strip wins where the residue is a common word.** `hearses`
-  scores 4.1 Very Common via `hear`: `-es` off gives `hears`, a legal `-es` stem
-  shape that `refusedEsStem` therefore does not block, and `hears` folds on to
-  `hear`. The real reading is `hearse` + `-s` (7.5 Rare). Same shape in
-  `finessed`→`fine`, `petes`→`pet`, `ledes`→`led`, `branes`→`bran`,
-  `orles`→`orl`, `corpses`→`corps`, `lapses`→`lap`. Unlike the other two this one
-  *under*-scores, and it shows the player a common-form note naming the wrong
-  word.
-
-Sizing that last one across the dictionary was attempted and failed: no filter
-separated the mis-strips from correct folds like `churches`→`church` and
-`businesses`→`business`, because the archaic `-e` spellings (`churche`,
-`businesse`) are in the dictionary and attested. A better discriminator is needed
-before any population count means anything.
+- **A derived noun measured above the floor never reaches its root.** (Logged
+  first as "a plural stops the chain", which is the wrong diagnosis.) The plural
+  folds onto its singular fine. It's the singular that goes nowhere:
+  `archivists` → `archivist` (2.80) and never `archive`. The same goes for
+  `allegorists`, `dissimilarities`, `accusers` and `analyzers`. "-ist" and "-ity"
+  aren't read at all (only "-ologist" and "-ability" are), and agentive "-er"
+  sits behind `MEASURED_FLOOR`. It was the largest bucket of missed folds in both
+  samples (66 of 231, 62 of 218). Comment at the floor gate in
+  `addNonInflectionalBaseForms` (`src/game/dictionary.ts`).
+- **`-able` is only read below the floor.** `makeable` (Zipf 1.16), `updatable`
+  (1.25) and `freezable` (1.19) are measured just above 1.0, so they're never
+  offered the family and score Mythic. The gate exists because ungated, "-able"
+  folds `countable` → `county` and `fallible` → `fall`. A fix needs a checkable
+  reading, as "-ier" has. Separately, `perforable` (0.59, below the floor)
+  misses because the strip never restores "-ate". Comment on the "-able" loop
+  in `unmeasuredBaseCandidates` (`src/game/stem.ts`).
+- **Fixed from 2026-10-04 (`REINFLECTION_START`): the fold read an "-s" form
+  inflected a second time.** `hearses` scored as `hear` via `hears` + "-es", and
+  `finessed` as `fine` via the doubled-consonant trim "finess" → `fines`.
+  `reinflectedResidue` now refuses that residue wherever the silent-"e" reading
+  (`hearse`, `finesse`) is a measured word. It moves 37 curated words, all up
+  except `menseless`. The two arguable moves are `nouses` and `sises`, which
+  lose `nous` and `sis`. Neither "-s" + "-es" spelling is ever touched (`glasses`,
+  `buses`, `yeses`), nor are the Early Modern "-es" spellings `refusedEsStem`
+  would have cut off. `petes` → `pet` and `ledes` → `led` are the plain
+  two-letter strip, which review already owns (see `refusedEsStem`), and are
+  unchanged.
 
 ## 8. Decisions parked, not bugs
 

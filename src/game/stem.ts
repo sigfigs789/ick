@@ -427,6 +427,17 @@ export function unmeasuredBaseCandidates(word: string): string[] {
     const stem = w.slice(0, -suffix.length);
     add(stem, `${stem}e`, `${stem}y`);
   }
+  // KNOWN GAP (open, re-checked 2026-10-02): "-able" words measured just above
+  // the floor keep a deep-tail score for a suffix. "makeable" (Zipf 1.16),
+  // "updatable" (1.25) and "freezable" (1.19) all score Mythic in Standard while
+  // `make`, `update` and `freeze` are everyday words, because the caller never
+  // offers them this family. The gate can't simply come off: ungated, "-able"
+  // folds "countable" -> "county" and "fallible" -> "fall". The fix needs a
+  // checkable reading, as `degreeBaseCandidates` has for "-ier" (for example,
+  // requiring the stem to be an attested verb with attested "-ed"/"-ing" forms).
+  // It is also a separate miss below the floor: "perforable" (0.59) is offered
+  // "perfor"/"perfore", never `perforate`, because "-able" also drops an "-ate".
+  // See docs/word-data-followups.md #7.
   for (const suffix of ["ably", "ibly", "able", "ible"]) {
     if (!w.endsWith(suffix) || w.length <= suffix.length + 3) continue;
     const stem = w.slice(0, -suffix.length);

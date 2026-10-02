@@ -162,7 +162,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     say which register is allowed. Misspellings and non-words stay refused,
  *     which is the line the curation rules already draw (see
  *     FREEFORM_WAIVED_REJECTIONS).
- *   - on/after 2026-09-27 (the latest system): the fold stops reading the
+ *   - on/after 2026-09-27: the fold stops reading the
  *     curated list and reads the expansive corpus instead. The first entry here
  *     that changes the *list* a rule is applied to rather than the rule -- every
  *     fold above is untouched and none is added.
@@ -181,6 +181,11 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     headword can never win `mostCommonBase` and is still a rung the chain walks
  *     through. See `corpusAttests` in corpus.ts and CORPUS_ONLY_START.
  *     No label mapping moves.
+ *   - on/after 2026-10-04 (the latest system): Standard stops reading an "-s"
+ *     form as inflected a second time. "hearses" is `hearse` + "-s", not `hears`
+ *     + "-es", and "finessed" is `finesse` + "-d", not a doubled `fines`. 36
+ *     curated words score rarer and "menseless" commoner. See
+ *     REINFLECTION_START and `reinflectedResidue`.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -1154,6 +1159,12 @@ interface Scoring {
    * underneath it. See SHORTER_FORMS_START.
    */
   shorterFormsOnly: boolean;
+  /**
+   * Whether an "-s" form is refused as the residue of a *second* inflection --
+   * "hears" read out of "hearses", "fines" out of "finessed" -- wherever the
+   * silent-"e" reading of the same spelling is a word. See REINFLECTION_START.
+   */
+  refusesReinflection: boolean;
   // Whether a word is also capped at the regular inflections built *on* it --
   // the fold's reverse direction, so the bare lemma of a verb only ever written
   // as a participle stops scoring as a deep-tail find (see
@@ -1373,6 +1384,7 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     corpusLexicon: false,
     liquidStemAdjectives: false,
     shorterFormsOnly: false,
+    refusesReinflection: false,
     folds,
   };
 }
@@ -1730,6 +1742,23 @@ export const LIQUID_STEM_START = MODE_CHOICE_START;
 export const SHORTER_FORMS_START = MODE_CHOICE_START;
 
 /**
+ * The first puzzle on which Standard stops reading a word as an inflection of
+ * an inflection: 2026-10-04, a Sunday, so it arrives with the weekly reset.
+ *
+ * English inflects a word once. "hearses" is `hearse` + "-s"; read as `hears` +
+ * "-es" it becomes a plural of a third-person verb, and the walk then takes
+ * `hears` on to `hear`, so a Rare word displayed Very Common and the player was
+ * told it scored as "hear". The same misread runs through the doubled-consonant
+ * trim of "-ed"/"-ing": "finessed" lost its "-ed", trimmed "finess" to `fines`,
+ * and scored as `fine`. "lapses" went to `lap`, "cleanses" to `clean`, "corpses"
+ * to `corp`. The corpus lexicon made it worse, because it can reach more of
+ * those bases.
+ *
+ * See `reinflectedResidue` for the rule. Standard only: Freeform folds nothing.
+ */
+export const REINFLECTION_START = "2026-10-04";
+
+/**
  * The corpus era: the latest fold, reading the expansive corpus.
  *
  * Spread from `LATEST_SCORING` rather than built by another `twoBandScoring`
@@ -1746,6 +1775,9 @@ const CORPUS_SCORING: Scoring = {
   shorterFormsOnly: true,
 };
 
+/** The corpus era from REINFLECTION_START: one rule refused, nothing else moved. */
+const REINFLECTION_SCORING: Scoring = { ...CORPUS_SCORING, refusesReinflection: true };
+
 const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
 
 /** The corpus era's freeform half: the fold off, the lexicon still the corpus. */
@@ -1756,6 +1788,7 @@ const LEGACY_SCORING: Scoring = {
   corpusLexicon: false,
   liquidStemAdjectives: false,
   shorterFormsOnly: false,
+  refusesReinflection: false,
   zipfAt: (i) => legacyZipfTenths[i] / 10,
   // The legacy scale is defined over LEGACY_MIN_ZIPF..LEGACY_MAX_ZIPF and has no
   // clamp of its own, so a Zipf below its floor scores past 10. A live-validated
@@ -1916,7 +1949,8 @@ function scoringFor(date?: string, mode?: GameMode): Scoring {
     if (usesFreeformRules(date, mode)) return CORPUS_FREEFORM_SCORING;
     // One date for the era: LIQUID_STEM_START is this same date, so every
     // profile this branch can reach carries the "-ly" rule and it needs no rung
-    // of its own.
+    // of its own. REINFLECTION_START is later and gets one.
+    if (date >= REINFLECTION_START) return REINFLECTION_SCORING;
     return CORPUS_SCORING;
   }
   if (usesFreeformRules(date, mode)) return FREEFORM_SCORING;
@@ -3186,6 +3220,18 @@ function addNonInflectionalBaseForms(
   // reason "specialest" can fold to "special" while "tempest" keeps its own
   // score. See `unmeasuredBaseCandidates` for the families and the words that
   // would break without the gate.
+  //
+  // KNOWN GAP (open, re-checked 2026-10-02): a derived noun measured at or above
+  // the floor never reaches its root, and so neither does its plural. The
+  // plural folds onto the singular as it should, but the singular has no rule
+  // to take it further: "archivists" -> `archivist` (2.80) and stops short of
+  // `archive`, the same for "allegorists" -> `allegorist`, "dissimilarities" ->
+  // `dissimilarity`, "accusers" -> `accuser`, "analyzers" -> `analyzer`. Two
+  // causes, and neither is the plural: "-ist" and "-ity" are not read at all
+  // (only "-ologist" is, in `derivedBaseCandidates`, and "-ability" in
+  // `boundBaseCandidates`), and agentive "-er" sits behind this gate. It was
+  // first logged as "a plural stops the chain", because the plural is where it
+  // shows. See docs/word-data-followups.md #7.
   if (lexiconHas(word, scoring) && zipfFor(word, scoring) < MEASURED_FLOOR) {
     // A tensed "-ize"/"-ise" form is deliberately absent from this set: it
     // folds through its own verb -- already a candidate via the tense and
@@ -3381,11 +3427,12 @@ function candidateAdder(out: string[], word: string, scoring: Scoring): Candidat
   // Computed once per set rather than per candidate: every candidate is a
   // reading of the same word, so the blocked spelling is too.
   const blocked = blockedTenseStem(word, scoring);
+  const reinflected = reinflectedResidue(word, scoring);
   return (candidate) => {
     if (!candidate || candidate === word) return;
-    // The reading the word's own spelling rules out, whichever family offered it
-    // (see `blockedTenseStem`).
-    if (candidate === blocked) return;
+    // The readings the word's own spelling rules out, whichever family offered
+    // them (see `blockedTenseStem` and `reinflectedResidue`).
+    if (candidate === blocked || candidate === reinflected) return;
     if (!lexiconHas(candidate, scoring) || out.includes(candidate)) return;
     out.push(candidate);
   };
@@ -3708,6 +3755,62 @@ export function refusedTenseStem(word: string): string | undefined {
  */
 function blockedTenseStem(word: string, scoring: Scoring): string | undefined {
   return scoring.doublingTenseBases ? refusedTenseStem(word) : undefined;
+}
+
+/**
+ * The "-s" form a spelling would have to be inflected *again* to produce, when
+ * the same letters also read as a silent-"e" word plus one ending -- the reading
+ * to refuse, from REINFLECTION_START.
+ *
+ * Two places offer such a residue:
+ *   - the two-letter "-es" strip: "hearses" -> `hears`, where the one-letter
+ *     strip gives `hearse`;
+ *   - the doubled-consonant trim of "-ed"/"-ing": "finessed" -> "finess" ->
+ *     `fines`, where the silent-"e" reading gives `finesse`.
+ *
+ * A residue counts only when it ends in a single "s" that strips to a word,
+ * which marks it as an inflection of something ("hears" is `hear` + "-s") and
+ * not a word with "s" in its own stem ("glasses" -> `glass`, "dressed" ->
+ * `dress`). The rival reading must also be a word. That is the conservatism
+ * `refusedTenseStem` keeps: a reading moves between two spellings of one ending
+ * and the last one is never removed, so "buses" keeps `bus` because nothing
+ * spells "buse".
+ *
+ * The rival must also be *measured*, because with a 790k-word lexicon a
+ * headword alone is weak evidence. "yeses" is the plural of `yes` and
+ * "metropolises" of `metropolis`, yet the corpus holds a "yese" and a
+ * "metropolise" that no frequency source has ever counted. Measured on
+ * 2026-10-02, an unattested rival marked the wrong reading in every case where
+ * the residue was a real word, and junk on both sides everywhere else
+ * ("cameses", "chopses").
+ *
+ * Narrower than `refusedEsStem` on purpose. That rule refuses every two-letter
+ * strip after a non-sibilant, and on the fold it cut Early Modern spellings off
+ * their everyday words ("yeares" from `year`). This one leaves those alone: no
+ * "-es" spelling of a word whose stem ends in a non-"s" letter is touched.
+ */
+function reinflectedResidue(word: string, scoring: Scoring): string | undefined {
+  if (!scoring.refusesReinflection) return undefined;
+  let residue: string;
+  let rival: string;
+  if (word.length > 4 && word.endsWith("es")) {
+    residue = word.slice(0, -2);
+    rival = word.slice(0, -1);
+  } else {
+    const stem =
+      word.length > 5 && word.endsWith("ing")
+        ? word.slice(0, -3)
+        : word.length > 4 && word.endsWith("ed")
+          ? word.slice(0, -2)
+          : undefined;
+    if (stem === undefined || !stem.endsWith("ss")) return undefined;
+    residue = stem.slice(0, -1);
+    rival = `${stem}e`;
+  }
+  if (!/[^s]s$/.test(residue)) return undefined;
+  if (!lexiconHas(residue.slice(0, -1), scoring) || !lexiconHas(rival, scoring)) return undefined;
+  if (isUnattestedZipf(zipfFor(rival, scoring))) return undefined;
+  return residue;
 }
 
 function tenseBaseForm(word: string, scoring: Scoring): string | undefined {
