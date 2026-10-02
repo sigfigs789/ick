@@ -116,7 +116,7 @@ export function SubmitForm({
         ref={rowRef}
       >
         <DePrefixHint value={value} date={date} mode={mode} />
-        <FoldHint value={value} drop={drop} date={date} mode={mode} />
+        <FoldHint value={value} date={date} mode={mode} />
         {/* Wraps the input alone, and catches the pulse's animation events as
             they bubble up from it. */}
         <span className="submit-form__field" ref={fieldRef}>

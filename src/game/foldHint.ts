@@ -1,3 +1,5 @@
+import { foldAffixGroups } from "./dictionary";
+import type { GameMode } from "./mode";
 import { playedPuzzleCount } from "./storage";
 
 /**
@@ -40,4 +42,42 @@ export function markFoldHintSeen(): void {
  */
 export function foldHintEligible(): boolean {
   return !seen() && playedPuzzleCount() < NEW_PLAYER_PUZZLES;
+}
+
+/**
+ * Letters a suffix needs in front of it before it reads as one. Without a
+ * stem, "-s" would claim "is" and "-er" would claim "her".
+ */
+const MIN_STEM = 2;
+
+/**
+ * The affix in `value` the fold reads through on `date`'s puzzle in `mode`,
+ * written the way the Common forms sheet lists it ("de-", "-ness"). A prefix
+ * counts the moment it is typed, so "de" is caught before "deser..." gets any
+ * further; a suffix once there is a stem in front of it. The longest of each
+ * wins ("-iest" over "-est"). An opening wins over an ending, so the notice
+ * "de" put up stays put through "deser", which ends in "-er" only by the way.
+ *
+ * Read off `foldAffixGroups`, the same date-scoped list the sheet shows, so
+ * the notice never names an affix the sheet it opens leaves out. Empty in
+ * Freeform, which folds nothing.
+ */
+export function typedFoldAffix(value: string, date?: string, mode?: GameMode): string | undefined {
+  const text = value.trim().toLowerCase();
+  if (!text) return undefined;
+  const affixes = foldAffixGroups(date, mode).flatMap((group) => group.affixes);
+  const longest = (matches: string[]) =>
+    matches.sort((a, b) => b.length - a.length)[0] as string | undefined;
+
+  const prefix = longest(
+    affixes.filter((affix) => affix.endsWith("-") && text.startsWith(affix.slice(0, -1)))
+  );
+  if (prefix) return prefix;
+  return longest(
+    affixes.filter((affix) => {
+      if (!affix.startsWith("-")) return false;
+      const ending = affix.slice(1);
+      return text.endsWith(ending) && text.length - ending.length >= MIN_STEM;
+    })
+  );
 }
