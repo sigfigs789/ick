@@ -51,6 +51,11 @@ Fix: record the sense's `alt_of` / `form_of` in the importer and keep the
 ellipsis/clipping senses out of the abbreviation class (they are closer to a
 variant spelling than to an initialism). Needs a fresh Wiktextract dump run.
 
+Status 2026-10-02: this no longer affects current puzzles. From 2026-09-27 both
+modes waive the abbreviation tag, so `condo` and `thymus` play in Standard and
+Freeform. It only matters for puzzles before that date, and for anything that
+still reads the tag (a full `generate-data.py` rebuild).
+
 ## 3. Inflected forms of a rejected word are still playable
 
 The rejections are per headword, because Wiktionary labels headwords. So
@@ -135,9 +140,10 @@ Standard-only, because Freeform does not fold.
 
 ## 8. Decisions parked, not bugs
 
-- **Archaic words below the gate.** `betwixt` (Zipf 2.39), `quoth` (2.08),
-  `prithee` (1.92) and `forsooth` (1.73) are unplayable under the archaic rule.
-  Each is one line in `playable-exemptions.txt` if they should come back.
+- **Archaic words below the gate.** In Standard, words tagged archaic below Zipf
+  2.5 are unplayable unless listed in `playable-exemptions.txt`. `betwixt`,
+  `prithee` and `forsooth` have since been listed and play. `quoth` (2.08) is
+  still refused in Standard. Freeform plays all of them (#355).
 - **Duplicate detection drifts on 8 words.** `rootKey` in `src/game/submit.ts`
   folds bound suffixes through `isValidWord`, so a rejected base stops collapsing
   its derived forms (`anatomization` → `anatomize`, and 7 like it). All 8 still
