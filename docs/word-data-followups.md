@@ -51,6 +51,11 @@ Fix: record the sense's `alt_of` / `form_of` in the importer and keep the
 ellipsis/clipping senses out of the abbreviation class (they are closer to a
 variant spelling than to an initialism). Needs a fresh Wiktextract dump run.
 
+Status 2026-10-02: this no longer affects current puzzles. From 2026-09-27 both
+modes waive the abbreviation tag, so `condo` and `thymus` play in Standard and
+Freeform. It only matters for puzzles before that date, and for anything that
+still reads the tag (a full `generate-data.py` rebuild).
+
 ## 3. Inflected forms of a rejected word are still playable
 
 The rejections are per headword, because Wiktionary labels headwords. So
@@ -101,7 +106,9 @@ Note for anyone tempted again: compare display scores, not base strings — stri
 comparison counts `absorbing`→`absorbed` against the LLM's `absorb` as a
 disagreement when it is the same cap and the same score.
 
-Three gaps it did surface survived a semantic check and stand on their own:
+Three gaps it did surface survived a semantic check and stand on their own. All
+three were re-checked on 2026-10-02 against the current Standard fold and are
+**still open**. They are Standard-only, because Freeform does not fold.
 
 - **A plural stops the chain.** The inflectional hop fires and the derivational
   hop after it never happens, so a plural of a derived noun keeps the derived
@@ -113,7 +120,9 @@ Three gaps it did surface survived a semantic check and stand on their own:
 - **The junk `-es` strip wins where the residue is a common word.** `hearses`
   scores 4.1 Very Common via `hear`: `-es` off gives `hears`, a legal `-es` stem
   shape that `refusedEsStem` therefore does not block, and `hears` folds on to
-  `hear`. The real reading is `hearse` + `-s` (7.5 Rare). Same shape in
+  `hear`. The real reading is `hearse` + `-s` (7.5 Rare). On the corpus lexicon
+  (from 2026-09-27) it has got worse: `hearses` and `finessed` both show Zipf
+  5.23, via `hear` and `fine`. Same shape in
   `finessed`→`fine`, `petes`→`pet`, `ledes`→`led`, `branes`→`bran`,
   `orles`→`orl`, `corpses`→`corps`, `lapses`→`lap`. Unlike the other two this one
   *under*-scores, and it shows the player a common-form note naming the wrong
@@ -127,9 +136,10 @@ before any population count means anything.
 
 ## 8. Decisions parked, not bugs
 
-- **Archaic words below the gate.** `betwixt` (Zipf 2.39), `quoth` (2.08),
-  `prithee` (1.92) and `forsooth` (1.73) are unplayable under the archaic rule.
-  Each is one line in `playable-exemptions.txt` if they should come back.
+- **Archaic words below the gate.** In Standard, words tagged archaic below Zipf
+  2.5 are unplayable unless listed in `playable-exemptions.txt`. `betwixt`,
+  `prithee` and `forsooth` have since been listed and play. `quoth` (2.08) is
+  still refused in Standard. Freeform plays all of them (#355).
 - **Duplicate detection drifts on 8 words.** `rootKey` in `src/game/submit.ts`
   folds bound suffixes through `isValidWord`, so a rejected base stops collapsing
   its derived forms (`anatomization` → `anatomize`, and 7 like it). All 8 still
