@@ -46,9 +46,16 @@ export function foldHintEligible(): boolean {
 
 /**
  * Letters a suffix needs in front of it before it reads as one. Without a
- * stem, "-s" would claim "is" and "-er" would claim "her".
+ * stem, "-less" would claim "less" itself.
  */
 const MIN_STEM = 2;
+
+/**
+ * The shortest ending worth a notice: "-ness", "-less", "-able". The short
+ * ones ("-s", "-ed", "-er", "-ly") close half the words a player types on the
+ * way to the one they mean, and a notice on every other keystroke is noise.
+ */
+const MIN_SUFFIX = 4;
 
 /**
  * The affix in `value` the fold reads through on `date`'s puzzle in `mode`,
@@ -77,6 +84,7 @@ export function typedFoldAffix(value: string, date?: string, mode?: GameMode): s
     affixes.filter((affix) => {
       if (!affix.startsWith("-")) return false;
       const ending = affix.slice(1);
+      if (ending.length < MIN_SUFFIX) return false;
       return text.endsWith(ending) && text.length - ending.length >= MIN_STEM;
     })
   );

@@ -36,11 +36,17 @@ describe("typedFoldAffix", () => {
     expect(typedFoldAffix("overpl", "2026-10-04", "standard")).toBe("over-");
   });
 
-  it("catches a suffix once there is a stem in front of it, longest first", () => {
-    expect(typedFoldAffix("is", "2026-10-04", "standard")).toBeUndefined();
+  it("catches a longer suffix once there is a stem in front of it, longest first", () => {
+    expect(typedFoldAffix("less", "2026-10-04", "standard")).toBeUndefined();
     expect(typedFoldAffix("kindness", "2026-10-04", "standard")).toBe("-ness");
-    expect(typedFoldAffix("sparsest", "2026-10-04", "standard")).toBe("-est");
     expect(typedFoldAffix("happiest", "2026-10-04", "standard")).toBe("-iest");
+    expect(typedFoldAffix("readability", "2026-10-04", "standard")).toBe("-ability");
+  });
+
+  it("leaves the short suffixes alone", () => {
+    for (const word of ["curves", "curved", "curving", "curvy", "nervely", "server", "sparsest"]) {
+      expect(typedFoldAffix(word, "2026-10-04", "standard")).toBeUndefined();
+    }
   });
 
   it("keeps the prefix it caught first, rather than whatever the word ends in so far", () => {
