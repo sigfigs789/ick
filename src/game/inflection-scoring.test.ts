@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   LIQUID_STEM_START,
   RARITY_ORDER,
+  REINFLECTION_START,
   baseFormSubstitution,
   rarityFor,
   rarityScore,
@@ -16,7 +17,7 @@ import {
   prefixBaseCandidates,
 } from "./stem";
 import { evaluateSubmission, sameRootKey } from "./submit";
-import { MODE_CHOICE_START } from "./mode";
+import { MODE_CHOICE_START, asMode } from "./mode";
 import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import scoreOverrideData from "../data/score-overrides.json";
@@ -2467,14 +2468,21 @@ describe('"de-" folds (from 2026-10-04)', () => {
     // Every move carries the prefix, bar "antidesegregation", which reaches it
     // one strip further in. A fold can only make a word more common, and the
     // exemptions only withhold folds the rule would have made, so none rises.
+    // REINFLECTION_START shares the date and pulls the other way: it raises 36
+    // words and lowers only "menseless". Separated by direction so this ledger
+    // states its own change.
     const moved = (dictionaryWords as string[]).filter(
-      (word) => rarityFor(word, ON_DE)!.zipf !== rarityFor(word, BEFORE_DE)!.zipf
+      (word) =>
+        rarityFor(word, ON_DE)!.zipf > rarityFor(word, BEFORE_DE)!.zipf && word !== "menseless"
     );
     expect(moved).toHaveLength(1001);
     expect(moved.filter((word) => !word.startsWith("de"))).toEqual(["antidesegregation"]);
-    for (const word of moved) {
-      expect(lostAFold(word, BEFORE_DE, ON_DE), `${word} is no rarer than it was`).toBe(false);
-    }
+    // ...and nothing rises but the 36 REINFLECTION_START raises, so the prefix
+    // and its exemptions raise none.
+    const raised = (dictionaryWords as string[]).filter((word) =>
+      lostAFold(word, BEFORE_DE, ON_DE)
+    );
+    expect(raised).toHaveLength(36);
   });
 
   it("leaves every word its review refused where it was", () => {
@@ -2625,5 +2633,89 @@ describe('"pre-" folds again (from MODE_CHOICE_START)', () => {
     }
     // ...and it folded before that, which is the answer changing twice.
     expect(baseFormSubstitution("prewash", "2026-09-04")?.base).toBe("wash");
+  });
+});
+
+describe("an \"-s\" form is not inflected again (from 2026-10-04)", () => {
+  const BEFORE = "2026-10-03";
+  const ON = REINFLECTION_START;
+
+  // word, the base it was scored as, the base it scores as now (undefined: its
+  // own frequency), and the two scores.
+  const FIXED: ReadonlyArray<
+    [word: string, was: string, now: string | undefined, before: number, after: number]
+  > = [
+    // The two-letter "-es" strip, landing on an "-s" form that folds again.
+    ["hearses", "hear", "hearse", 4.06, 7.48],
+    ["lapses", "lap", "lapse", 5.57, 6.53],
+    ["cleanses", "clean", "cleanse", 4.44, 6.56],
+    ["teases", "tea", "tease", 4.78, 6.39],
+    ["tenses", "ten", "tense", 4.32, 5.89],
+    ["parses", "par", "parse", 5.61, 7.24],
+    ["copses", "cops", "copse", 5.23, 8.11],
+    ["manses", "man", "manse", 3.19, 7.94],
+    ["menses", "men", undefined, 3.65, 8.31],
+    // The doubled-consonant trim of "-ed"/"-ing": "finess" -> "fines".
+    ["finessed", "fine", undefined, 4.06, 8.53],
+    ["finessing", "fine", undefined, 4.06, 8.7],
+  ];
+
+  it.each(FIXED)("%s no longer scores as %s", (word, was, now, before, after) => {
+    expect(baseFormSubstitution(word, BEFORE)?.base).toBe(was);
+    expect(score(word, BEFORE)).toBe(before);
+    expect(baseFormSubstitution(word, ON)?.base).toBe(now);
+    expect(score(word, ON)).toBe(after);
+  });
+
+  it("keeps an \"-s\" stem that is the word's own", () => {
+    // The residue ends in "ss", or nothing spells the silent-"e" reading, or
+    // the rival is a headword nobody has measured ("yese", "metropolise").
+    for (const [word, base] of [
+      ["glasses", "glass"],
+      ["dressed", "dress"],
+      ["buses", "bus"],
+      ["churches", "church"],
+      ["yeses", "yes"],
+      ["metropolises", "metropolis"],
+    ] as const) {
+      expect(baseFormSubstitution(word, ON)?.base, word).toBe(base);
+      expect(score(word, ON), word).toBe(score(word, BEFORE));
+    }
+  });
+
+  it("leaves Early Modern \"-es\" spellings alone, unlike refusedEsStem would", () => {
+    // The reason this is not refusedEsStem on the fold: that rule cut "yeares"
+    // and "breakes" off their everyday words. Neither residue ends in "s".
+    for (const word of ["yeares", "breakes", "workes"]) {
+      if (!rarityFor(word, ON)) continue;
+      expect(score(word, ON), word).toBe(score(word, BEFORE));
+    }
+  });
+
+  it("moves 37 curated words, and lowers only menseless", () => {
+    // A rule that removes a reading can only raise the word it reads. The one
+    // that falls is a paradigm closing: "menses" now round-trips to "mense"
+    // rather than to "men", so "mense", and "menseless" through it, cap at
+    // "menses" (2.19) instead of their own 1.53.
+    const raised: string[] = [];
+    const lowered: string[] = [];
+    for (const word of dictionaryWords as string[]) {
+      const before = score(word, BEFORE);
+      const after = score(word, ON);
+      if (after > before) raised.push(word);
+      else if (after < before) lowered.push(word);
+    }
+    expect(raised).toHaveLength(36);
+    // "de-" folds from the same date and only ever lowers, every word it reaches
+    // carrying the letters -- see the describe for it above.
+    expect(lowered.filter((word) => !word.includes("de"))).toEqual(["menseless"]);
+  });
+
+  it("changes nothing in Freeform, which folds nothing", () => {
+    asMode("freeform", () => {
+      for (const word of ["hearses", "finessed", "lapses"]) {
+        expect(score(word, ON), word).toBe(score(word, BEFORE));
+      }
+    });
   });
 });

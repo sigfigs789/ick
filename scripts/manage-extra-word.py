@@ -617,6 +617,45 @@ def _blocked_tense_stem(word: str, index: dict[str, int]) -> str | None:
     return stem if (stem + "e") in index else None
 
 
+_UNATTESTED_ZIPF: float | None = None
+
+
+def _unattested_zipf() -> float:
+    """The unattested sentinel: the lowest Zipf rarity.json carries."""
+    global _UNATTESTED_ZIPF
+    if _UNATTESTED_ZIPF is None:
+        _UNATTESTED_ZIPF = min(json.loads(RARITY_PATH.read_text())["zipfHundredths"]) / 100
+    return _UNATTESTED_ZIPF
+
+
+def _reinflected_residue(word: str, index: dict[str, int], zipf_at) -> str | None:
+    """Mirror of reinflectedResidue() in dictionary.ts (2026-10-04 on).
+
+    The "-s" form a spelling would have to be inflected again to produce
+    ("hearses" -> "hears", "finessed" -> "fines"), refused where the silent-"e"
+    reading of the same letters ("hearse", "finesse") is a measured word.
+    """
+    if len(word) > 4 and word.endswith("es"):
+        residue, rival = word[:-2], word[:-1]
+    else:
+        if len(word) > 5 and word.endswith("ing"):
+            stem = word[:-3]
+        elif len(word) > 4 and word.endswith("ed"):
+            stem = word[:-2]
+        else:
+            return None
+        if not stem.endswith("ss"):
+            return None
+        residue, rival = stem[:-1], stem + "e"
+    if not re.search(r"[^s]s$", residue):
+        return None
+    if residue[:-1] not in index or rival not in index:
+        return None
+    if zipf_at(rival) == _unattested_zipf():
+        return None
+    return residue
+
+
 def _tense_base(word: str, index: dict[str, int], zipf_at) -> str | None:
     """Mirror of tenseBaseForm(): -ed/-ing pick the most common valid base.
 
@@ -904,9 +943,10 @@ def _inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[str]:
     # The reading the word's own spelling rules out, whichever family offers it:
     # _inflectional_stem() reaches the bare stem too (see _blocked_tense_stem).
     blocked = _blocked_tense_stem(word, index)
+    reinflected = _reinflected_residue(word, index, zipf_at)
 
     def add(candidate: str | None) -> None:
-        if not candidate or candidate == word or candidate == blocked:
+        if not candidate or candidate == word or candidate in (blocked, reinflected):
             return
         if candidate not in index or candidate in out:
             return
@@ -943,9 +983,10 @@ def _non_inflectional_bases(word: str, index: dict[str, int], zipf_at) -> list[s
     # _inflectional_stem(), so the blocked reading has to be refused here too --
     # in the TS this file mirrors, one candidateAdder covers both sets.
     blocked = _blocked_tense_stem(word, index)
+    reinflected = _reinflected_residue(word, index, zipf_at)
 
     def add(candidate: str | None) -> None:
-        if not candidate or candidate == word or candidate == blocked:
+        if not candidate or candidate == word or candidate in (blocked, reinflected):
             return
         if candidate not in index or candidate in out:
             return

@@ -51,6 +51,11 @@ Fix: record the sense's `alt_of` / `form_of` in the importer and keep the
 ellipsis/clipping senses out of the abbreviation class (they are closer to a
 variant spelling than to an initialism). Needs a fresh Wiktextract dump run.
 
+Status 2026-10-02: this no longer affects current puzzles. From 2026-09-27 both
+modes waive the abbreviation tag, so `condo` and `thymus` play in Standard and
+Freeform. It only matters for puzzles before that date, and for anything that
+still reads the tag (a full `generate-data.py` rebuild).
+
 ## 3. Inflected forms of a rejected word are still playable
 
 The rejections are per headword, because Wiktionary labels headwords. So
@@ -101,35 +106,44 @@ Note for anyone tempted again: compare display scores, not base strings — stri
 comparison counts `absorbing`→`absorbed` against the LLM's `absorb` as a
 disagreement when it is the same cap and the same score.
 
-Three gaps it did surface survived a semantic check and stand on their own:
+Three gaps it did surface survived a semantic check. Re-checked on 2026-10-02:
+two are still open, and both are marked `KNOWN GAP` in the code. All three are
+Standard-only, because Freeform does not fold.
 
-- **A plural stops the chain.** The inflectional hop fires and the derivational
-  hop after it never happens, so a plural of a derived noun keeps the derived
-  noun's rarity: `archivists` reaches `archivist` and halts rather than continuing
-  to `archive`. Largest single bucket of missed folds in both samples (66 of 231,
-  62 of 218). Also `accusers`, `allegorists`, `analyzers`, `dissimilarities`.
-- **`-able` is not read.** `makeable` scores 9.67 Mythic against `make` at 2.8.
-  Also `updatable` 9.56, `freezable`, `perforable`, `perfectible`.
-- **The junk `-es` strip wins where the residue is a common word.** `hearses`
-  scores 4.1 Very Common via `hear`: `-es` off gives `hears`, a legal `-es` stem
-  shape that `refusedEsStem` therefore does not block, and `hears` folds on to
-  `hear`. The real reading is `hearse` + `-s` (7.5 Rare). Same shape in
-  `finessed`→`fine`, `petes`→`pet`, `ledes`→`led`, `branes`→`bran`,
-  `orles`→`orl`, `corpses`→`corps`, `lapses`→`lap`. Unlike the other two this one
-  *under*-scores, and it shows the player a common-form note naming the wrong
-  word.
-
-Sizing that last one across the dictionary was attempted and failed: no filter
-separated the mis-strips from correct folds like `churches`→`church` and
-`businesses`→`business`, because the archaic `-e` spellings (`churche`,
-`businesse`) are in the dictionary and attested. A better discriminator is needed
-before any population count means anything.
+- **A derived noun measured above the floor never reaches its root.** (Logged
+  first as "a plural stops the chain", which is the wrong diagnosis.) The plural
+  folds onto its singular fine. It's the singular that goes nowhere:
+  `archivists` → `archivist` (2.80) and never `archive`. The same goes for
+  `allegorists`, `dissimilarities`, `accusers` and `analyzers`. "-ist" and "-ity"
+  aren't read at all (only "-ologist" and "-ability" are), and agentive "-er"
+  sits behind `MEASURED_FLOOR`. It was the largest bucket of missed folds in both
+  samples (66 of 231, 62 of 218). Comment at the floor gate in
+  `addNonInflectionalBaseForms` (`src/game/dictionary.ts`).
+- **`-able` is only read below the floor.** `makeable` (Zipf 1.16), `updatable`
+  (1.25) and `freezable` (1.19) are measured just above 1.0, so they're never
+  offered the family and score Mythic. The gate exists because ungated, "-able"
+  folds `countable` → `county` and `fallible` → `fall`. A fix needs a checkable
+  reading, as "-ier" has. Separately, `perforable` (0.59, below the floor)
+  misses because the strip never restores "-ate". Comment on the "-able" loop
+  in `unmeasuredBaseCandidates` (`src/game/stem.ts`).
+- **Fixed from 2026-10-04 (`REINFLECTION_START`): the fold read an "-s" form
+  inflected a second time.** `hearses` scored as `hear` via `hears` + "-es", and
+  `finessed` as `fine` via the doubled-consonant trim "finess" → `fines`.
+  `reinflectedResidue` now refuses that residue wherever the silent-"e" reading
+  (`hearse`, `finesse`) is a measured word. It moves 37 curated words, all up
+  except `menseless`. The two arguable moves are `nouses` and `sises`, which
+  lose `nous` and `sis`. Neither "-s" + "-es" spelling is ever touched (`glasses`,
+  `buses`, `yeses`), nor are the Early Modern "-es" spellings `refusedEsStem`
+  would have cut off. `petes` → `pet` and `ledes` → `led` are the plain
+  two-letter strip, which review already owns (see `refusedEsStem`), and are
+  unchanged.
 
 ## 8. Decisions parked, not bugs
 
-- **Archaic words below the gate.** `betwixt` (Zipf 2.39), `quoth` (2.08),
-  `prithee` (1.92) and `forsooth` (1.73) are unplayable under the archaic rule.
-  Each is one line in `playable-exemptions.txt` if they should come back.
+- **Archaic words below the gate.** In Standard, words tagged archaic below Zipf
+  2.5 are unplayable unless listed in `playable-exemptions.txt`. `betwixt`,
+  `prithee` and `forsooth` have since been listed and play. `quoth` (2.08) is
+  still refused in Standard. Freeform plays all of them (#355).
 - **Duplicate detection drifts on 8 words.** `rootKey` in `src/game/submit.ts`
   folds bound suffixes through `isValidWord`, so a rejected base stops collapsing
   its derived forms (`anatomization` → `anatomize`, and 7 like it). All 8 still
