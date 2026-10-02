@@ -1585,8 +1585,9 @@ h2 {
   display: flex;
   gap: 0.5rem;
 }
-/* The "de-" notice (DePrefixHint): a bubble over the input, pointing down at
-   it, so it appears where the player is looking without pushing the row. */
+/* The "de-" notice (DePrefixHint), and the common-form notice new players get
+   instead (FoldHint): a bubble over the input, pointing down at it, so it
+   appears where the player is looking without pushing the row. */
 .de-prefix-hint {
   position: absolute;
   left: 0;

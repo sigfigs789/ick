@@ -2,6 +2,7 @@ import { useState } from "react";
 import { dePrefixFolds } from "../game/dictionary";
 import type { GameMode } from "../game/mode";
 import { CommonFormModal } from "./CommonFormModal";
+import { foldHintEligible } from "../game/foldHint";
 
 /** Remembered once the player has closed the notice or opened its More info. */
 const SEEN_KEY = "ick:de-prefix-hint";
@@ -41,7 +42,9 @@ interface Props {
  * prefix list.
  */
 export function DePrefixHint({ value, date, mode }: Props) {
-  const [dismissed, setDismissed] = useState(seen);
+  // A new player gets FoldHint instead: the change is news only to someone who
+  // saw these words score the old way, and the two bubbles share one spot.
+  const [dismissed, setDismissed] = useState(() => seen() || foldHintEligible());
   const [explaining, setExplaining] = useState(false);
 
   const show =
