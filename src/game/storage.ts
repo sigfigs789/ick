@@ -210,6 +210,24 @@ export function playedPuzzleCount(): number {
   return played;
 }
 
+/**
+ * Whether the player banked a word on any puzzle dated before `date`, in either
+ * mode -- a returning player, who has seen the scoring a cutover on `date`
+ * changes. Raw JSON like `playedPuzzleCount`, for the same reason.
+ */
+export function playedBefore(date: string): boolean {
+  let keys: string[];
+  try {
+    keys = Object.keys(localStorage).filter((key) => key.startsWith(PROGRESS_PREFIX));
+  } catch {
+    return false;
+  }
+  return keys.some((key) => {
+    if (readProgressKey(key).date >= date) return false;
+    return Boolean(safeParse<DailyProgress>(localStorage.getItem(key))?.acceptedWords?.length);
+  });
+}
+
 export function playedOnItsDay(): DailyProgress[] {
   return playedHistory().filter((progress) => {
     const playedAt = progress.firstWordAt ?? progress.completedAt;
