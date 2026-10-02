@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Feedback } from "../hooks/useDailyPuzzle";
 import type { SubmissionResult } from "../game/types";
+import type { GameMode } from "../game/mode";
+import { DePrefixHint } from "./DePrefixHint";
 
 /** One breath of the border pulse, matching input-checking-pulse in index.css. */
 const PULSE_MS = 1200;
@@ -16,9 +18,20 @@ interface Props {
    * (see handleSubmit), so anything that can reject must say so.
    */
   onSubmit: (word: string) => void | SubmissionResult | Promise<SubmissionResult | void>;
+  /** The puzzle and mode being played, for the "de-" notice (see DePrefixHint). */
+  date?: string;
+  mode?: GameMode;
 }
 
-export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmit }: Props) {
+export function SubmitForm({
+  drop,
+  disabled,
+  feedback,
+  checking = false,
+  onSubmit,
+  date,
+  mode,
+}: Props) {
   const [value, setValue] = useState("");
   const rowRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -98,6 +111,7 @@ export function SubmitForm({ drop, disabled, feedback, checking = false, onSubmi
         className={`submit-form__row${checking || pulsing ? " submit-form__row--checking" : ""}`}
         ref={rowRef}
       >
+        <DePrefixHint value={value} date={date} mode={mode} />
         {/* Wraps the input alone, and catches the pulse's animation events as
             they bubble up from it. */}
         <span className="submit-form__field" ref={fieldRef}>

@@ -456,9 +456,9 @@ describe("reviewed fold exemptions", () => {
     const residues = new Set(Object.keys(boundResidueData));
     for (const [word, entry] of Object.entries(foldExemptionData)) {
       if ((entry as { scope?: string }).scope !== "prefix") continue;
-      // Asked with "pre-" on, the superset: a scoped entry written for an
+      // Asked with "pre-" and "de-" on, the superset: a scoped entry written for an
       // archived puzzle is checked against the residues that puzzle offered.
-      for (const residue of prefixBaseCandidates(word, { pre: true, borrowed: true })) {
+      for (const residue of prefixBaseCandidates(word, { pre: true, borrowed: true, de: true })) {
         expect(residues.has(residue), `${word} could have been a ${residue} table entry`).toBe(
           false
         );
@@ -2444,6 +2444,64 @@ describe('"counter-" and "anti-" fold off the frequency gate (from 2026-09-27)',
     // shared `addPrefixBases` is for: "uncleanest" is the superlative of
     // "unclean", not un- + "cleanest".
     expect(baseFormSubstitution("uncleanest", ON_UNGATED)?.base).toBe("unclean");
+  });
+});
+
+describe('"de-" folds (from 2026-10-04)', () => {
+  const BEFORE_DE = "2026-10-03";
+  const ON_DE = "2026-10-04";
+
+  // What the prefix is for: de- on a free-standing English word.
+  const MOVED: ReadonlyArray<[word: string, base: string, before: number, after: number]> = [
+    ["debone", "bone", 9.45, 5.16],
+    ["deforest", "forest", 8.4, 4.83],
+  ];
+
+  it.each(MOVED)("%s folds onto %s", (word, base, before, after) => {
+    expect(score(word, BEFORE_DE)).toBe(before);
+    expect(score(word, ON_DE)).toBe(after);
+    expect(baseFormSubstitution(word, ON_DE)?.base).toBe(base);
+  });
+
+  it("lowers 1,001 curated words and raises none", () => {
+    // Every move carries the prefix, bar "antidesegregation", which reaches it
+    // one strip further in. A fold can only make a word more common, and the
+    // exemptions only withhold folds the rule would have made, so none rises.
+    const moved = (dictionaryWords as string[]).filter(
+      (word) => rarityFor(word, ON_DE)!.zipf !== rarityFor(word, BEFORE_DE)!.zipf
+    );
+    expect(moved).toHaveLength(1001);
+    expect(moved.filter((word) => !word.startsWith("de"))).toEqual(["antidesegregation"]);
+    for (const word of moved) {
+      expect(lostAFold(word, BEFORE_DE, ON_DE), `${word} is no rarer than it was`).toBe(false);
+    }
+  });
+
+  it("leaves every word its review refused where it was", () => {
+    // The 375 prefix-scoped entries dated with the rule: words that only open
+    // with "de" ("delates" is to inform against, not a lateness), and real de-
+    // words whose residue folds on to another word ("deapply" onto `app`).
+    const refused = Object.entries(foldExemptionData)
+      .filter(([, entry]) => entry.since === ON_DE && (entry as { scope?: string }).scope === "prefix")
+      .map(([word]) => word);
+    expect(refused).toHaveLength(375);
+    for (const word of refused.filter((w) => rarityFor(w, ON_DE))) {
+      expect(score(word, ON_DE), `${word} is unchanged`).toBe(score(word, BEFORE_DE));
+    }
+  });
+
+  it("stays behind the frequency gate", () => {
+    // Ordinary measured words that merely open with the letters.
+    for (const word of ["deliver", "denote", "decide", "depart", "dear", "decor", "debit", "decal"]) {
+      expect(score(word, ON_DE), `${word} is unchanged`).toBe(score(word, BEFORE_DE));
+      expect(baseFormSubstitution(word, ON_DE)).toBeUndefined();
+    }
+  });
+
+  it("is a Standard rule: Freeform still folds nothing", () => {
+    expect(rarityFor("debone", ON_DE, "freeform")!.zipf).toBe(
+      rarityFor("debone", BEFORE_DE, "freeform")!.zipf
+    );
   });
 });
 

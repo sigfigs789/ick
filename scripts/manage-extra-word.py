@@ -426,11 +426,14 @@ def _unmeasured_candidates(word: str) -> list[str]:
 
 
 # Mirror of TRANSPARENT_PREFIXES in src/game/stem.ts.
-TRANSPARENT_PREFIXES = ("counter", "under", "anti", "over", "out", "un")
-# Left out: "de", "re", "co", "dis" -- productive, but the four English
-# fossilised onto Latin stems ("delate" -> "late", "refel" -> "fell", "cosh" ->
-# "she", "copious" -> "pious"). The full reasoning is the block comment above
-# TRANSPARENT_PREFIXES in src/game/stem.ts.
+TRANSPARENT_PREFIXES = ("counter", "under", "anti", "over", "out", "de", "un")
+# Left out: "re", "co", "dis" -- productive, but English fossilised them onto
+# Latin stems ("refel" -> "fell", "cosh" -> "she", "copious" -> "pious"). The
+# full reasoning is the block comment above TRANSPARENT_PREFIXES in
+# src/game/stem.ts. "de" was the fourth until 2026-10-04, when it joined behind
+# a reviewed table: the readings it gets wrong ("delate" -> "late") are
+# prefix-scoped entries in fold-exemptions.json, which
+# load_prefix_fold_exemptions() reads. See DE_PREFIX_START in dictionary.ts.
 #
 # On 2026-09-05 "pre" went the same way ("precaution" is not a caution, "prefab"
 # not a fab), and with it every borrowed prefix -- the classical combining forms
@@ -449,8 +452,8 @@ def _prefix_candidates(word: str) -> list[str]:
     The base a prefixed word was built on ("nonplaying" -> "playing"). Admitted
     only below MEASURED_FLOOR: ungated these fold "mistake" -> "take" and
     "understand" -> "stand", both measured far above the floor. (Examples have
-    to come from the prefixes actually listed -- "depart", "coward" and, since
-    2026-09-05, "preface" cannot reach this function at all, because "de", "co"
+    to come from the prefixes actually listed -- "coward" and, since
+    2026-09-05, "preface" cannot reach this function at all, because "co"
     and "pre" are not in TRANSPARENT_PREFIXES.)
     """
     w = word.lower()

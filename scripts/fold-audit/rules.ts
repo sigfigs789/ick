@@ -31,7 +31,7 @@ import {
 import type { FoldHop } from "../../src/game/dictionary";
 
 /** Every date this audit runs on is past both retirements; see PRE_PREFIX_END. */
-const ERA: PrefixEra = { pre: false, borrowed: false };
+const ERA: PrefixEra = { pre: false, borrowed: false, de: true };
 
 const PROBES: [string, (word: string) => string[]][] = [
   ["number", decisiveNumberCandidates],

@@ -1225,6 +1225,11 @@ interface Scoring {
   // working for the puzzles it was played on just as one added has to stay off
   // for them, and that holds in both directions (see PRE_PREFIX_END).
   prePrefixBases: boolean;
+  // Whether "de-" is one of the transparent prefixes, behind MEASURED_FLOOR like
+  // "pre-" and with its wrong readings answered by prefix-scoped fold
+  // exemptions. 2026-10-04; off for earlier systems so past puzzles' scores stay
+  // frozen (see DE_PREFIX_START).
+  dePrefixBases: boolean;
 }
 
 // The two-band system. `ceiling` is where the measured band tops out and the
@@ -1373,6 +1378,9 @@ function twoBandScoring(ceiling: number, tailFloor: number, flags: ScoringFlags)
     corpusLexicon: false,
     liquidStemAdjectives: false,
     shorterFormsOnly: false,
+    // Later than the corpus cutover too; DE_PREFIX_SCORING spreads the corpus
+    // profile and turns it on.
+    dePrefixBases: false,
     folds,
   };
 }
@@ -1751,6 +1759,61 @@ const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
 /** The corpus era's freeform half: the fold off, the lexicon still the corpus. */
 const CORPUS_FREEFORM_SCORING: Scoring = { ...CORPUS_SCORING, folds: false };
 
+/*
+ * 2026-10-04: "de-" joins the transparent prefixes, the first of the four
+ * Latinate ones the note in stem.ts kept out ("de-", "re-", "co-", "dis-") to be
+ * let in, and on the terms that note set: not on a reviewer's eye but on a
+ * table of every strip the prefix reaches.
+ *
+ * It sits behind MEASURED_FLOOR with the rest of the gated list, because "de-"
+ * opens a great many ordinary words ("deliver", "denote", "decide") that are no
+ * de- plus anything. Below the floor it reaches 6,728 corpus words through 2,556
+ * distinct "de-X -> X" strips, and the folds are mostly the prefix's own:
+ * "dechunk" is a chunk, "detax" a tax, "deabbreviate" abbreviated, "dewetted"
+ * wet. Before it they scored on the fact that nobody writes them -- 4,996 of the
+ * 6,728 were 10.00 Legends for growing two letters.
+ *
+ * Every one of the 2,556 was judged for whether the word really is de- plus
+ * what is left, and each "wrong" was put to a second pass told to defend the
+ * fold. 337 held: 304 where the word is not built on the residue at all --
+ * "delate" (to inform against) on `late`, "decans" on `can`, "demarch" (a Greek
+ * mayor) on `march`, "desport" (to disport) on `sports`, "deriding" on `ride` --
+ * and 33 real de- words whose residue folds on to a different word ("deapply"
+ * reaching `app`, "detensed" `ten`, "depolarises" `polaris`). Both kinds are
+ * prefix-scoped entries in fold-exemptions.json, keyed on the word the strip is
+ * taken from and dated here, so the word keeps its ordinary inflectional folds
+ * and loses only the prefix hop.
+ *
+ * An entry covers the forms *of* the word it names but not the word they are
+ * forms of, so exempting "desports" left "desport" reaching `sport`. 38 more
+ * entries close those: the lemmas of exempted forms, judged with their family,
+ * and the measured words below. 375 in all, and with them 6,086 corpus words
+ * fold, every one through a strip the review passed.
+ *
+ * The floor does not keep the prefix off measured words on its own. A measured
+ * word reaches the strip through a deep-tail form of itself and is then capped
+ * at that form by the reverse fold -- "dear" went dear -> "deares" -> "ares" ->
+ * `are`, and "decor", "debit", "decal" and "departing" the same way -- the leak
+ * PRE_PREFIX_END describes. 718 measured words fold that way; 615 are right
+ * ("degrade" is a grade, "devoid" void, "debugging" a bug), and the 97 that are
+ * not are among the exemptions, which close the leak at the deep-tail form
+ * ("deares" for "dear", "decored" and "decor" itself for "decor").
+ */
+const DE_PREFIX_START = "2026-10-04";
+
+/** The corpus era with "de-" folding. See DE_PREFIX_START. */
+const DE_PREFIX_SCORING: Scoring = { ...CORPUS_SCORING, dePrefixBases: true };
+
+/**
+ * Whether a word opening "de" can be scored through that prefix on `date`'s
+ * puzzle in `mode` -- the question the input's "de-" notice asks before it
+ * says so. False in Freeform, which folds nothing. See DE_PREFIX_START.
+ */
+export function dePrefixFolds(date?: string, mode?: GameMode): boolean {
+  const scoring = scoringFor(date, mode);
+  return scoring.folds && scoring.dePrefixBases;
+}
+
 const LEGACY_SCORING: Scoring = {
   folds: true,
   corpusLexicon: false,
@@ -1793,6 +1856,7 @@ const LEGACY_SCORING: Scoring = {
   prePrefixBases: false,
   borrowedPrefixBases: false,
   ungatedPrefixBases: false,
+  dePrefixBases: false,
 };
 
 /**
@@ -1916,7 +1980,9 @@ function scoringFor(date?: string, mode?: GameMode): Scoring {
     if (usesFreeformRules(date, mode)) return CORPUS_FREEFORM_SCORING;
     // One date for the era: LIQUID_STEM_START is this same date, so every
     // profile this branch can reach carries the "-ly" rule and it needs no rung
-    // of its own.
+    // of its own. "de-" is the era's one later rung, and Freeform above has no
+    // need of it because it folds nothing.
+    if (date >= DE_PREFIX_START) return DE_PREFIX_SCORING;
     return CORPUS_SCORING;
   }
   if (usesFreeformRules(date, mode)) return FREEFORM_SCORING;
@@ -2614,6 +2680,7 @@ export function foldAffixGroups(
       affixes: transparentPrefixes({
         pre: scoring.prePrefixBases,
         borrowed: scoring.borrowedPrefixBases,
+        de: scoring.dePrefixBases,
       }).map((prefix) => `${prefix}-`),
       // The chain carries it past "planned" to "plan", which is the fold
       // working as intended and worth showing: a prefix strip is one hop of
@@ -3228,6 +3295,7 @@ function addNonInflectionalBaseForms(
         prefixBaseCandidates(word, {
           pre: scoring.prePrefixBases,
           borrowed: scoring.borrowedPrefixBases,
+          de: scoring.dePrefixBases,
         }),
         scoring,
         date,
