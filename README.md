@@ -4,9 +4,11 @@ A daily game where you find the rarest word you can, inspired by Wordle
 and BombParty. Every player gets the same 2- or 3-letter drop each day
 (like `STR`, `OU`, or `MP`) and enters valid English words that contain
 it, in order, for up to 4 distinct guesses. The goal is rarity — your best
-one is crowned in the log. No timer, no login, no traditional score, just
-a friendly rarity reveal (Very Common → Extremely Rare) on every accepted
-word. Stop anytime with "Lock in my result," or use all 4 guesses.
+one is crowned in the log. No timer, no login, just a 0–10 rarity score and
+tier (Very Common → Legend) on every accepted word. Stop anytime with "Lock
+in my result," or use all 4 guesses. Every puzzle can be played in
+**Standard** or **Freeform** mode (see below), and each mode has its own
+progress and its own leaderboard.
 
 Built in React + TypeScript (Vite). Game logic in `src/game/` is plain
 TypeScript with no DOM or React dependencies.
@@ -41,18 +43,42 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
   the day's drop is picked deterministically from a curated list, keyed
   off the number of days since a fixed epoch — every player on the same
   calendar date gets the same drop, no server required.
+- **Modes** (`src/game/mode.ts`): from `MODE_CHOICE_START` (2026-09-27) the
+  player picks Standard (the default) or Freeform, and the choice is
+  remembered. 2026-09-14 to 2026-09-26 was the Freeform trial, when the calendar
+  set the mode. Earlier puzzles are Standard only. Every rule is dated by
+  puzzle, so an archived puzzle always plays under its original rules.
 - **Word validation** (`src/game/submit.ts`): a submission must contain the
-  drop as a contiguous, in-order substring, be in the curated
-  dictionary, and not be the same word (or an obvious inflection of the
-  same word — see `src/game/stem.ts`) as one already accepted that day.
-- **Rarity** (`src/game/dictionary.ts`, `src/data/rarity.json`): precomputed
-  offline from [wordfreq](https://github.com/rspeer/wordfreq)'s Zipf
-  frequency values (exact value kept, not just the label — see
-  `src/game/rank.ts`), bucketed into five friendly labels for display.
-  Gameplay never makes a live frequency lookup.
-- **Guesses** (`src/game/constants.ts`): up to `MAX_GUESSES` (6) distinct
-  words per day. Only accepted words consume a guess — rejected submissions
-  are free and unlimited. The puzzle auto-completes at 6, or the player can
+  drop as a contiguous, in-order substring, be a known word, and not be the
+  same word (or an obvious inflection of the same word — see
+  `src/game/stem.ts`) as one already accepted that day. A word is known if
+  it is in the curated `src/data/dictionary.json` (~225k words) or in the
+  runtime word corpus (`public/corpus/`, ~1.2M words, fetched lazily by
+  `src/game/corpus.ts` and built by `scripts/build-word-corpus.py`). A corpus
+  word must come from a *lexicon*: Wiktionary (every English headword is
+  included), the curated list or the macOS dictionary. Words that only a
+  frequency list has seen are refused. Frequency never decides whether a word
+  is playable. Merriam-Webster (`api/validate.ts`) is the live fallback for
+  words no local list knows.
+- **Refusals by tag**: corpus words carry Wiktionary's tags. Misspellings are
+  refused in both modes. Standard waives proper nouns and abbreviations, and
+  refuses obsolete, archaic or dated words only below Zipf 2.5. Freeform waives
+  all of these and refuses only misspellings and non-words. Hand-reviewed
+  verdicts live in `src/data/word-rejections.json`.
+- **Rarity** (`src/game/dictionary.ts`, `src/data/rarity.json`, the corpus's
+  `zipf.bin`): a waterfall Zipf frequency, precomputed offline. It uses
+  [wordfreq](https://github.com/rspeer/wordfreq) first, then Norvig's web
+  counts, then Google Books, then Datamuse (`scripts/frequency.py`). A
+  wordfreq `0.0` is not a measurement and falls through to the next source. A
+  word no source measures is *unattested* and gets the sentinel Zipf (one notch
+  below the rarest measured word), which scores a flat **10.00 / Legend**.
+  Tiers run Very Common … Mythic (9.5+) … Legend (9.9+). Freeform scores every
+  word on its own frequency. Standard folds a derived form onto its common base
+  first (next section). Gameplay never makes a live frequency lookup.
+- **Guesses** (`src/game/constants.ts`): up to `MAX_GUESSES` (4) distinct
+  words per day, date-gated (6 before 2026-08-20, then 5 until 2026-08-30).
+  Only accepted words consume a guess — rejected submissions are free and
+  unlimited. The puzzle auto-completes at the limit, or the player can
   call it early via "Lock in my result" (`src/game/storage.ts`'s
   `lockInResult`) once they've got at least one word.
 - **Persistence** (`src/game/storage.ts`): today's progress and the
@@ -73,6 +99,9 @@ Tests are colocated as `*.test.ts`/`*.test.tsx` next to the code they cover.
     call) -- rarity badges are a sibling element and stay legible either way.
 
 ## How rarity folds onto a base word
+
+Folding applies to **Standard only**. Freeform, including the 2026-09-14..26
+trial, scores every word as itself.
 
 A word's score comes from its measured Zipf frequency, but frequency corpora
 undercount derived forms badly: `asphyxiates` was measured at Zipf 1.09 and
@@ -97,7 +126,7 @@ it isn't — does the word have a real measurement worth protecting?
 | five-letter `-ing` | **no** | Every such word is measured above the floor, so the gate leaves none to fold — which is what keeps `thing` from scoring as `the` (a flat 0.00). The price is that `iring` and `hoing` keep an unearned Mythic. |
 | `-en` verbs | **no** | Right often enough to tempt (`harshen` → `harsh`) and wrong often enough to disqualify: `dudeen` → `dude`, `shoneen` → `shone`, `torten` → `tort`. 51 words, ~6 of them wrong. |
 | Latin `-a` → `-on` plurals | **no** | The dirty sibling of `-a` → `-um`: folds `comma` → `common`, `silica` → `silicon`, `squadra` → `squadron` — about 19 wrong in 280. |
-| prefixes (`un-`, `re-`, `non-`, `over-`) | **no** | Not analysed; a large family (thousands of Mythic/Legend words) and a riskier one, since `release` → `lease` and `report` → `port` are the same shape as a real prefix. |
+| prefixes | **some** | `counter-` and `anti-` fold whatever the word's frequency (`UNGATED_PREFIXES`). `under-`, `over-`, `out-` and `un-` fold only below `MEASURED_FLOOR` (`TRANSPARENT_PREFIXES` in `src/game/stem.ts`). The borrowed prefixes (`super-`, `micro-`, `semi-` and the rest) were retired on 2026-09-05 because they attach to Latin stems as readily as to words. `pre-` was retired on 2026-09-05 and came back from 2026-09-27 with every family it reaches reviewed (#329). `re-` does not fold: `release` → `lease` and `report` → `port` are the same shape as a real prefix, and above the floor the corrections cannot reach the wrong base. |
 
 The `-ize`/`-ise` rule also un-sticks a fold that already existed: `-ization` →
 `-ize` used to dead-end on an unattested verb, so `winterisation` folded to
@@ -138,10 +167,20 @@ through their verb and stay with it. Both files are dated, and a word must never
 appear in both (the exemption would silently win; a test pins the disjointness).
 
 Every widening is date-gated, so no past puzzle re-scores: `scoringFor` picks a
-`Scoring` profile from the puzzle date, and the four cutovers to date are
-`2026-08-15`, `2026-08-16`, `2026-08-19` (folds became caps, resolved through the
-whole chain) and `2026-08-21` (every plausible base spelling at once, plus the
-gated families).
+`Scoring` profile from the puzzle date. The first cutovers were `2026-08-15`,
+`2026-08-16`, `2026-08-19` (folds became caps, resolved through the whole chain)
+and `2026-08-21` (every plausible base spelling at once, plus the gated
+families). The full dated list is in the header comment of
+`src/game/dictionary.ts`. The latest, all on `MODE_CHOICE_START` (2026-09-27),
+are these:
+
+- **Corpus lexicon** (`CORPUS_ONLY_START`): the fold can land on any untagged
+  lexicon word in the corpus (790k headwords), not just the curated 225k.
+- **Shorter forms only** (`SHORTER_FORMS_START`): Standard never scores a word
+  as a *longer* form ("titty" is no longer capped at "titties"). The walk can
+  still pass through longer forms on the way to a shorter one.
+- **The fold audit**: 1,939 reviewed exemptions in `fold-exemptions.json`, plus
+  a fix to the `-ly` strip (`LIQUID_STEM_START`). See `scripts/fold-audit/STATE.md`.
 
 `2026-08-21` carries two independent changes that happened to ship the same day,
 and it is worth keeping them apart when reading the code. The retuned Zipf bands
@@ -182,11 +221,17 @@ Asserted over the entire dictionary in `src/game/inflection-scoring.test.ts`:
 - no folded word scores rarer than the base it folded onto;
 - `baseFormSubstitution` never reports a promotion, so analytics cannot either.
 
+"Only ever demote" holds *within* one scoring profile. Crossing a cutover can
+raise scores on purpose: the 2026-09-27 shorter-forms rule and the fold-audit
+exemptions both did. Those promotions were reviewed word by word.
+
 `scripts/manage-extra-word.py` carries a Python mirror of this whole fold path
 (`_next_bases`, `chained_base`, `adjusted_zipf`) *and* of `measuredRarity`, used
 by the audit skills in `.claude/skills/` to score candidate words. **It has to
 change in lockstep with `dictionary.ts`** or the skills will report scores and
-tiers the app does not show.
+tiers the app does not show. Known drift: the mirror still folds against the
+curated `dictionary.json` only, not the corpus lexicon the game has used since
+2026-09-27. For a current puzzle, check a score in the game itself.
 
 ## Regenerating the word/rarity data
 
@@ -204,6 +249,15 @@ npm run generate-data -- --word-list /tmp/scowl-regional-80.txt --esdb-db /tmp/e
 npm run select-drops  # writes scripts/drop-candidates.json (diagnostic)
 ```
 
+The runtime corpus in `public/corpus/` is built separately, from the full
+English Wiktionary extract plus every word list above. It applies no filter: each
+word is tagged with what might make it ineligible, and each mode decides what to
+do with the tags.
+
+```bash
+python3 scripts/build-word-corpus.py   # downloads the kaikki.org extract (~3.2GB)
+```
+
 `scripts/generate-data.py` accepts a newline-delimited source list via
 `--word-list`; the checked-in data is generated from an ESDB/SCOWL size-80
 list with American, British, Canadian, and Australian spellings, with
@@ -215,8 +269,9 @@ ESDB flags as abbreviations, proper nouns, or names are dropped from the
 supplement at merge time so lowercase spellings (e.g. `paris`) do not slip
 into play. The script also keeps only pure lowercase a-z entries (which drops
 proper nouns, possessives, contractions, and hyphenated compounds), scores each word's Zipf
-frequency via `wordfreq`, treats words without a frequency estimate (`0.0`) as
-Zipf `1.4` and Extremely Rare rather than Mythic, and removes anything in
+frequency through the waterfall in `scripts/frequency.py`, keeps words no source
+measures at the unattested sentinel (a flat 10.00 / Legend) rather than dropping
+them, and removes anything in
 `scripts/blocklist.txt` (hand-curated slurs, profanity, and stray
 abbreviations). Rarity bands are tuned in the `RARITY_BANDS` constant at the
 top of the script — adjust and rerun as playtesting suggests.
