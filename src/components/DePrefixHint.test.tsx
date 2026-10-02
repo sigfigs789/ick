@@ -1,7 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
+import { PROGRESS_PREFIX } from "../game/storage";
 import { SubmitForm } from "./SubmitForm";
+
+/** A word banked on a puzzle before the cutover: a returning player. */
+function playedOn(date: string) {
+  localStorage.setItem(
+    `${PROGRESS_PREFIX}${date}`,
+    JSON.stringify({ date, drop: "ou", acceptedWords: [{ word: "tour" }] })
+  );
+}
 
 const NOTICE = /as a prefix will now rescore words to their common form/i;
 
@@ -20,9 +29,11 @@ function renderForm(date: string, mode: "standard" | "freeform" = "standard") {
 }
 
 describe("DePrefixHint", () => {
-  // A returning player: a new one gets FoldHint instead (see FoldHint.test).
+  // A returning player who has put FoldHint away: one still due it gets that
+  // instead (see FoldHint.test).
   beforeEach(() => {
     localStorage.clear();
+    playedOn("2026-10-01");
     localStorage.setItem("ick:fold-hint", "1");
   });
 
@@ -61,7 +72,7 @@ describe("DePrefixHint", () => {
     expect(screen.getByText("de-", { exact: false })).toBeInTheDocument();
   });
 
-  it("stands down for a new player, who gets the common-form notice instead", async () => {
+  it("stands down for a player still due the common-form notice", async () => {
     localStorage.removeItem("ick:fold-hint");
     const input = renderForm("2026-10-04");
     await userEvent.type(input, "detour");
@@ -74,6 +85,21 @@ describe("DePrefixHint", () => {
     await userEvent.click(screen.getByRole("button", { name: /dismiss/i }));
     expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
     await userEvent.clear(input);
+    await userEvent.type(input, "detour");
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+  });
+
+  it("is for returning players only: a new one never sees it", async () => {
+    localStorage.clear();
+    const input = renderForm("2026-10-04");
+    await userEvent.type(input, "detour");
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+  });
+
+  it("does not count a word banked on or after the cutover as returning", async () => {
+    localStorage.clear();
+    playedOn("2026-10-04");
+    const input = renderForm("2026-10-05");
     await userEvent.type(input, "detour");
     expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
   });

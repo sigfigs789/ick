@@ -1837,7 +1837,7 @@ const CORPUS_FREEFORM_SCORING: Scoring = { ...CORPUS_SCORING, folds: false };
  * not are among the exemptions, which close the leak at the deep-tail form
  * ("deares" for "dear", "decored" and "decor" itself for "decor").
  */
-const DE_PREFIX_START = "2026-10-04";
+export const DE_PREFIX_START = "2026-10-04";
 
 
 
