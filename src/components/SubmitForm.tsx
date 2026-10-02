@@ -3,6 +3,7 @@ import type { Feedback } from "../hooks/useDailyPuzzle";
 import type { SubmissionResult } from "../game/types";
 import type { GameMode } from "../game/mode";
 import { DePrefixHint } from "./DePrefixHint";
+import { FoldHint } from "./FoldHint";
 
 /** One breath of the border pulse, matching input-checking-pulse in index.css. */
 const PULSE_MS = 1200;
@@ -18,7 +19,10 @@ interface Props {
    * (see handleSubmit), so anything that can reject must say so.
    */
   onSubmit: (word: string) => void | SubmissionResult | Promise<SubmissionResult | void>;
-  /** The puzzle and mode being played, for the "de-" notice (see DePrefixHint). */
+  /**
+   * The puzzle and mode being played, for the notices over the input (see
+   * DePrefixHint and FoldHint).
+   */
   date?: string;
   mode?: GameMode;
 }
@@ -112,6 +116,7 @@ export function SubmitForm({
         ref={rowRef}
       >
         <DePrefixHint value={value} date={date} mode={mode} />
+        <FoldHint value={value} date={date} mode={mode} />
         {/* Wraps the input alone, and catches the pulse's animation events as
             they bubble up from it. */}
         <span className="submit-form__field" ref={fieldRef}>

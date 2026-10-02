@@ -29,9 +29,12 @@ function renderForm(date: string, mode: "standard" | "freeform" = "standard") {
 }
 
 describe("DePrefixHint", () => {
+  // A returning player who has put FoldHint away: one still due it gets that
+  // instead (see FoldHint.test).
   beforeEach(() => {
     localStorage.clear();
     playedOn("2026-10-01");
+    localStorage.setItem("ick:fold-hint", "1");
   });
 
   it("appears once a Standard player starts a word with de, from 2026-10-04", async () => {
@@ -67,6 +70,13 @@ describe("DePrefixHint", () => {
     await userEvent.click(screen.getByRole("button", { name: /more info/i }));
     expect(screen.getByRole("dialog", { name: /common forms/i })).toBeInTheDocument();
     expect(screen.getByText("de-", { exact: false })).toBeInTheDocument();
+  });
+
+  it("stands down for a player still due the common-form notice", async () => {
+    localStorage.removeItem("ick:fold-hint");
+    const input = renderForm("2026-10-04");
+    await userEvent.type(input, "detour");
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
   });
 
   it("does not come back once dismissed", async () => {

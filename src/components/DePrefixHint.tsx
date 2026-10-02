@@ -2,6 +2,7 @@ import { useState } from "react";
 import { DE_PREFIX_START, dePrefixFolds } from "../game/dictionary";
 import { playedBefore } from "../game/storage";
 import type { GameMode } from "../game/mode";
+import { foldHintEligible } from "../game/foldHint";
 import { CommonFormModal } from "./CommonFormModal";
 
 /** Remembered once the player has closed the notice or opened its More info. */
@@ -46,7 +47,9 @@ interface Props {
 export function DePrefixHint({ value, date, mode }: Props) {
   // Read once: a word banked today does not make the player a returning one.
   const [returning] = useState(() => playedBefore(DE_PREFIX_START));
-  const [dismissed, setDismissed] = useState(seen);
+  // A player still due FoldHint gets that instead: the two bubbles share one
+  // spot, and FoldHint names "de-" too.
+  const [dismissed, setDismissed] = useState(() => seen() || foldHintEligible());
   const [explaining, setExplaining] = useState(false);
 
   const show =
