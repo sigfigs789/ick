@@ -433,6 +433,31 @@ describe("streak continuation", () => {
   });
 });
 
+describe("streak freezes", () => {
+  function play(date: string) {
+    setToday(date);
+    recordAcceptedWord(newProgress(date, "str"), word(`w-${date}`));
+  }
+
+  it("earns a freeze on day seven and spends it on a missed day", () => {
+    for (let d = 1; d <= 7; d++) play(`2024-01-0${d}`);
+    expect(loadStreak()).toMatchObject({ currentStreak: 7, freezes: 1 });
+
+    play("2024-01-09"); // skipped 01-08
+    expect(loadStreak()).toMatchObject({
+      currentStreak: 8,
+      freezes: 0,
+      frozenDates: ["2024-01-08"],
+    });
+  });
+
+  it("still resets a streak with no freeze to spend", () => {
+    for (let d = 1; d <= 3; d++) play(`2024-01-0${d}`);
+    play("2024-01-05");
+    expect(loadStreak().currentStreak).toBe(1);
+  });
+});
+
 describe("live-validated words", () => {
   beforeEach(() => {
     localStorage.clear();

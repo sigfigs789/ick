@@ -1974,6 +1974,31 @@ h2 {
   color: var(--fg);
 }
 
+.streak-display__saved {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}
+
+/* Next drop */
+.next-drop {
+  margin-top: 0.9rem;
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+}
+.next-drop p {
+  margin: 0.25rem 0 0;
+}
+.next-drop__countdown strong {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--fg);
+}
+.next-drop__line {
+  color: var(--fg);
+}
+
 /* Results */
 .results-panel {
   /* Close under the score line: the panel is what the score line leads into,

@@ -22,6 +22,14 @@ describe("completedWholeMonth", () => {
     expect(completedWholeMonth(streakOf(31, "2026-10-31"), "2026-10-31")).toBe(true);
   });
 
+  it("is not earned when a streak freeze covered a day of the month", () => {
+    const frozen = { ...streakOf(60, "2026-09-30"), frozenDates: ["2026-09-10"] };
+    expect(completedWholeMonth(frozen, "2026-09-30")).toBe(false);
+    // A freeze spent last month does not spoil this one.
+    const lastMonth = { ...streakOf(60, "2026-09-30"), frozenDates: ["2026-08-20"] };
+    expect(completedWholeMonth(lastMonth, "2026-09-30")).toBe(true);
+  });
+
   it("is not earned with a day missing", () => {
     expect(completedWholeMonth(streakOf(29, "2026-09-30"), "2026-09-30")).toBe(false);
   });

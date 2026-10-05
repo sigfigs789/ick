@@ -4,6 +4,7 @@ import { maxGuessesFor } from "./constants";
 import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
+import { applyFreezes, coveredThrough, earnFreeze } from "./streakFreeze";
 
 /**
  * The two key families a player's record lives under.
@@ -320,15 +321,11 @@ export function resetProgress(date: string, drop: string): DailyProgress {
 
 export function loadStreak(): StreakState {
   const streak = { ...EMPTY_STREAK, ...safeParse<StreakState>(localStorage.getItem(STREAK_KEY)) };
-  const yesterday = addDays(todayDateString(), -1);
-
-  if (streak.currentStreak > 0 && streak.lastCompletedDate && streak.lastCompletedDate < yesterday) {
-    const reset = { ...streak, currentStreak: 0 };
-    saveStreak(reset);
-    return reset;
-  }
-
-  return streak;
+  // A missed day spends a freeze if there is one to spend, and resets the
+  // streak if there is not (see game/streakFreeze.ts).
+  const current = applyFreezes(streak, todayDateString());
+  if (current !== streak) saveStreak(current);
+  return current;
 }
 
 function saveStreak(streak: StreakState): void {
@@ -405,7 +402,8 @@ function updateStreakOnValidAnswer(date: string): void {
   if (streak.lastCompletedDate === date) return; // already counted
 
   const yesterday = addDays(date, -1);
-  const continuesStreak = streak.lastCompletedDate === yesterday;
+  // Yesterday may have been covered by a freeze rather than played.
+  const continuesStreak = coveredThrough(streak) === yesterday;
   const currentStreak = continuesStreak ? streak.currentStreak + 1 : 1;
 
   const updated: StreakState = {
@@ -416,7 +414,7 @@ function updateStreakOnValidAnswer(date: string): void {
     crushedIt: streak.crushedIt,
     elite: streak.elite,
   };
-  saveStreak(updated);
+  saveStreak(earnFreeze(updated, date));
 }
 
 function incrementCompletionTotal(): void {

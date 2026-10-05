@@ -6,6 +6,7 @@ import { SubmitForm } from "./components/SubmitForm";
 import { FeedbackRegion } from "./components/FeedbackRegion";
 import { StreakDisplay } from "./components/StreakDisplay";
 import { ResultsPanel } from "./components/ResultsPanel";
+import { NextDrop } from "./components/NextDrop";
 import { WordRulesModal } from "./components/WordRulesModal";
 import { PuzzleNav } from "./components/PuzzleNav";
 import { ConfettiBurst } from "./components/ConfettiBurst";
@@ -276,6 +277,7 @@ export default function App() {
             totalRarity={totalRarityScore(progress.acceptedWords, date)}
             topRarity={topRarityScore(progress.acceptedWords, date)}
             date={date}
+            isToday={isToday}
           />
         )}
 
@@ -302,6 +304,10 @@ export default function App() {
             onLeaderboard={openLeaderboard}
           />
         )}
+
+        {/* Only once today's puzzle is over: while guesses remain, tomorrow is
+            a distraction, and an archive puzzle has no tomorrow. */}
+        {isToday && progress.completed && <NextDrop date={date} streak={streak} />}
       </main>
 
       <WordRulesModal
