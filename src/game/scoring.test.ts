@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   rarityFor,
   rarityScore,
+  rarityForZipf,
   formatRarityScore,
   formatScore,
   formatTotal,
@@ -145,5 +146,58 @@ describe("a puzzle's total", () => {
     expect(totalRarityScore([{ zipf: 0.53 }, { zipf: 0.53 }, { zipf: 0.53 }, { zipf: 0.53 }], WIDE)).toBe(
       39.8
     );
+  });
+});
+
+describe("the 0.3 lift (from 2026-10-11)", () => {
+  const BEFORE_LIFT = "2026-10-10";
+  const LIFT = "2026-10-11";
+  // The Zipf that showed exactly 8.7 the day before the lift.
+  const zipfAt87 = (() => {
+    let lo = 1;
+    let hi = 3;
+    for (let i = 0; i < 60; i++) {
+      const mid = (lo + hi) / 2;
+      if (rarityScore(mid, BEFORE_LIFT) >= 8.7) lo = mid;
+      else hi = mid;
+    }
+    return lo;
+  })();
+
+  it("shows a word that was 8.7 as 9.0 Elusive", () => {
+    expect(rarityScore(zipfAt87, BEFORE_LIFT)).toBe(8.7);
+    expect(rarityScore(zipfAt87, LIFT)).toBe(9);
+    expect(rarityForZipf(zipfAt87, BEFORE_LIFT)).toBe("Extremely Rare");
+    expect(rarityForZipf(zipfAt87, LIFT)).toBe("Elusive");
+  });
+
+  it("adds 0.3 below the knee", () => {
+    for (const zipf of [2.5, 3.5, 4.5]) {
+      expect(rarityScore(zipf, LIFT)).toBeCloseTo(rarityScore(zipf, BEFORE_LIFT) + 0.3, 5);
+    }
+  });
+
+  it("lifts Freeform's labels as well as Standard's", () => {
+    for (const mode of ["standard", "freeform"] as const) {
+      expect(rarityForZipf(zipfAt87, BEFORE_LIFT, mode)).toBe("Extremely Rare");
+      expect(rarityForZipf(zipfAt87, LIFT, mode)).toBe("Elusive");
+    }
+  });
+
+  it("never lowers a score, keeps the top pinned, and makes no measured Legend", () => {
+    for (let z = 1; z <= 7.5; z += 0.01) {
+      const before = rarityScore(z, BEFORE_LIFT);
+      const after = rarityScore(z, LIFT);
+      expect(after).toBeGreaterThanOrEqual(before);
+      expect(after).toBeLessThanOrEqual(9.9);
+      if (before < 9.9) expect(rarityForZipf(z, LIFT)).not.toBe("Legend");
+    }
+    // The deep tail and the unattested sentinel do not move.
+    expect(rarityScore(0.5, LIFT)).toBe(rarityScore(0.5, BEFORE_LIFT));
+    expect(rarityScore(unattestedZipf(), LIFT)).toBe(10);
+  });
+
+  it("leaves puzzles before the lift as they were played", () => {
+    expect(rarityScore(zipfAt87, "2026-10-04")).toBe(8.7);
   });
 });

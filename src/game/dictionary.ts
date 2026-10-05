@@ -181,11 +181,14 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     headword can never win `mostCommonBase` and is still a rung the chain walks
  *     through. See `corpusAttests` in corpus.ts and CORPUS_ONLY_START.
  *     No label mapping moves.
- *   - on/after 2026-10-04 (the latest system): Standard stops reading an "-s"
+ *   - on/after 2026-10-04: Standard stops reading an "-s"
  *     form as inflected a second time. "hearses" is `hearse` + "-s", not `hears`
  *     + "-es", and "finessed" is `finesse` + "-d", not a doubled `fines`. 36
  *     curated words score rarer and "menseless" commoner. See
  *     REINFLECTION_START and `reinflectedResidue`.
+ *   - on/after 2026-10-11 (the latest system): every measured score rises 0.3,
+ *     the top of the band pressed under the 9.9 ceiling, so a word that showed
+ *     8.7 shows 9.0 Elusive. Both modes. See SCORE_LIFT_START.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
  * the newest system.
  */
@@ -1797,6 +1800,61 @@ const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
 /** The corpus era's freeform half: the fold off, the lexicon still the corpus. */
 const CORPUS_FREEFORM_SCORING: Scoring = { ...CORPUS_SCORING, folds: false };
 
+/**
+ * The first puzzle whose measured scores are lifted by three tenths: 2026-10-11,
+ * a Sunday, so it arrives with the weekly reset. Both modes; scores only, no
+ * fold moves.
+ *
+ * Elusive (9.0+) is where a find starts to feel like a find, and too few words
+ * reached it: a measured word showing 8.7 was three tenths off and read as one
+ * more Extremely Rare. So every measured score rises by 0.3 up to that point --
+ * 8.7 now shows 9.0, a 6.4 shows 6.7 -- and the band above it is pressed into
+ * what is left under the ceiling, so 9.9 still means the deep tail and no
+ * measured word becomes a Legend. Nothing scores lower than it did, and the
+ * deep tail (9.9..10, unattested 10.00) is untouched. See `liftedScore`.
+ *
+ * Labels read off the shown score (see `decadeRarity`), so they follow the lift
+ * with no change of their own: more words land Elusive and Mythic.
+ */
+export const SCORE_LIFT_START = "2026-10-11";
+// How far the lift raises a measured score, and the shown score (before it)
+// that the flat lift stops at. 8.7 + 0.3 lands exactly on Elusive's floor.
+const SCORE_LIFT = 0.3;
+const SCORE_LIFT_KNEE = 8.7;
+// The measured band's ceiling, which the lift keeps pinned. See twoBandScoring.
+const MEASURED_CEILING = 9.9;
+
+/**
+ * A measured score under SCORE_LIFT_START: +0.3 up to the knee, then the old
+ * 8.7..9.9 squeezed linearly into 9.0..9.9, so the top stays where it was and
+ * the map never crosses itself (old 9.5 -> 9.6, old 9.8 -> 9.83).
+ */
+function liftedScore(score: number): number {
+  if (score >= MEASURED_CEILING) return score;
+  if (score < SCORE_LIFT_KNEE) return roundToCents(score + SCORE_LIFT);
+  const top = SCORE_LIFT_KNEE + SCORE_LIFT;
+  return roundToCents(
+    top + ((score - SCORE_LIFT_KNEE) * (MEASURED_CEILING - top)) / (MEASURED_CEILING - SCORE_LIFT_KNEE)
+  );
+}
+
+/**
+ * A profile with the lift on top. Spread so it changes exactly the score and the
+ * label that reads it; every fold flag rides through untouched.
+ */
+function lifted(base: Scoring): Scoring {
+  const score = (zipf: number): number =>
+    zipf >= MEASURED_FLOOR ? liftedScore(base.score(zipf)) : base.score(zipf);
+  return {
+    ...base,
+    score,
+    rarity: (zipf) => topRankForScore(score(zipf)) ?? decadeRarity(score(zipf)),
+  };
+}
+
+const LIFTED_SCORING: Scoring = lifted(DE_PREFIX_SCORING);
+const LIFTED_FREEFORM_SCORING: Scoring = lifted(CORPUS_FREEFORM_SCORING);
+
 /*
  * 2026-10-04: "de-" joins the transparent prefixes, the first of the four
  * Latinate ones the note in stem.ts kept out ("de-", "re-", "co-", "dis-") to be
@@ -2015,7 +2073,10 @@ function scoringFor(date?: string, mode?: GameMode): Scoring {
   if (date >= CORPUS_ONLY_START) {
     // Freeform folds nothing, so the liquid-stem rule cannot reach it and the
     // era's two profiles collapse to one on that side.
-    if (usesFreeformRules(date, mode)) return CORPUS_FREEFORM_SCORING;
+    if (usesFreeformRules(date, mode)) {
+      return date >= SCORE_LIFT_START ? LIFTED_FREEFORM_SCORING : CORPUS_FREEFORM_SCORING;
+    }
+    if (date >= SCORE_LIFT_START) return LIFTED_SCORING;
     // One date for the era: LIQUID_STEM_START is this same date, so every
     // profile this branch can reach carries the "-ly" rule and it needs no rung
     // of its own. REINFLECTION_START is later and gets one, and so does
