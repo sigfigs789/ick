@@ -2860,7 +2860,9 @@ h2 {
      width of the screen. */
   width: max-content;
   max-width: min(27rem, 84vw);
-  animation: congrats-bubble-drift 26s ease-in-out infinite;
+  /* The path and pace are each bubble's own, drawn when it arrives (see
+     CongratsBubble), so several owed at once spawn in different places. */
+  animation: congrats-bubble-drift var(--wander-duration, 26s) ease-in-out infinite;
 }
 .congrats-bubble__drift[data-splatting] {
   /* Ink does not wander. The path stops where it was hit, and the blot below
@@ -2868,55 +2870,59 @@ h2 {
   animation-play-state: paused;
 }
 /*
- * The path: five turns around the boards and back to where it started.
- *
- * Kept off the edges, so the bubble never hangs half outside the box it is
- * about, and away from dead centre for long -- the standings are what the
- * reader is here for, and a notice parked over the middle of them is in the
- * way rather than on the loose.
+ * The path: five random stops around the boards and back to the first, which
+ * is where the bubble spawns. Each stop is set on the bubble itself (see
+ * CongratsBubble), already kept off the edges so it never hangs half outside
+ * the box it is about.
  */
 @keyframes congrats-bubble-drift {
-  0% {
-    left: 50%;
-    top: 16%;
+  0%,
+  100% {
+    left: var(--wander-x0, 50%);
+    top: var(--wander-y0, 16%);
   }
   20% {
-    left: 74%;
-    top: 38%;
+    left: var(--wander-x1, 50%);
+    top: var(--wander-y1, 16%);
   }
   40% {
-    left: 60%;
-    top: 76%;
+    left: var(--wander-x2, 50%);
+    top: var(--wander-y2, 16%);
   }
   60% {
-    left: 28%;
-    top: 62%;
+    left: var(--wander-x3, 50%);
+    top: var(--wander-y3, 16%);
   }
   80% {
-    left: 34%;
-    top: 24%;
-  }
-  100% {
-    left: 50%;
-    top: 16%;
+    left: var(--wander-x4, 50%);
+    top: var(--wander-y4, 16%);
   }
 }
 /* On a phone the bubble is most of the width of the screen, so a path that
-   moved sideways would hang it off both edges in turn. It keeps the same walk
+   moved sideways would hang it off both edges in turn. It keeps its own walk
    up and down the one column instead. */
 @media (max-width: 40rem) {
   @keyframes congrats-bubble-drift {
-    0% {
-      left: 50%;
-      top: 12%;
-    }
-    50% {
-      left: 50%;
-      top: 82%;
-    }
+    0%,
     100% {
       left: 50%;
-      top: 12%;
+      top: var(--wander-y0, 16%);
+    }
+    20% {
+      left: 50%;
+      top: var(--wander-y1, 16%);
+    }
+    40% {
+      left: 50%;
+      top: var(--wander-y2, 16%);
+    }
+    60% {
+      left: 50%;
+      top: var(--wander-y3, 16%);
+    }
+    80% {
+      left: 50%;
+      top: var(--wander-y4, 16%);
     }
   }
 }

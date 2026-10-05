@@ -25,10 +25,17 @@
  * What retires it is being popped, which is permanent -- one splat and that
  * window's bubble is gone for good on this device, whatever is left of its four
  * days.
+ *
+ * Each mode is its own board (see `boardFor` in game/mode.ts), so each closed
+ * window has two winners to name, Standard's and Freeform's -- and both are
+ * named whichever mode the reader happens to be playing, because a result is
+ * news to the whole game, not only to the half of it on the same switch.
  */
 
 import { addDays, todayDateString } from "./date";
-import { previousMonthStart } from "./month";
+import { MODE_CHOICE_START, MODE_LABELS, type GameMode } from "./mode";
+import { nextMonthStart, previousMonthStart } from "./month";
+import { playedBefore } from "./storage";
 import { weekStart } from "./week";
 
 /** A window that has closed and is worth naming a winner for. */
@@ -40,6 +47,8 @@ export interface CongratsSpot {
    * so it goes straight into a request.
    */
   start: string;
+  /** Which board's winner -- each mode keeps its own (see game/mode.ts). */
+  mode: GameMode;
 }
 
 const POPPED_PREFIX = "ick:congrats:";
@@ -54,26 +63,35 @@ const POPPED_PREFIX = "ick:congrats:";
  * outlives its four days: a congratulation arriving on the Friday is a result
  * said late, over a board that is half a new week old.
  *
- * Both can be owed at once, which is what the order is for: of the pair the
- * month is the larger result, so it is offered first and the week is what is
- * left when the month has been popped. Two bubbles at the same time is two
- * things to press and a page shouting.
+ * Several can be owed at once, and they all float at once. The order is the
+ * month before the week, the larger result, and within a window Standard --
+ * the game as most people play it -- before Freeform.
+ *
+ * Freeform only for a window that reached the split: one that closed before
+ * MODE_CHOICE_START had a single board, and its Freeform "winner" would be the
+ * Standard one named twice.
  */
 export function congratsSpots(date: string = todayDateString()): CongratsSpot[] {
-  const spots: CongratsSpot[] = [];
+  const windows: { window: CongratsSpot["window"]; start: string; end: string }[] = [];
   // The day of the month, which is a string the date is already written in.
   const day = Number(date.slice(8, 10));
   if (day >= 2 && day <= 5) {
-    spots.push({ window: "month", start: previousMonthStart(date) });
+    const start = previousMonthStart(date);
+    windows.push({ window: "month", start, end: addDays(nextMonthStart(start), -1) });
   }
   const weekdayOf = weekday(date);
   if (weekdayOf >= 1 && weekdayOf <= 4) {
     // The Sunday *before* this week's: weeks run Sunday to Saturday (see
     // game/week.ts), so on any of these days the week that closed is the one
     // that started eight days before this week's Monday.
-    spots.push({ window: "week", start: addDays(weekStart(date), -7) });
+    const start = addDays(weekStart(date), -7);
+    windows.push({ window: "week", start, end: addDays(start, 6) });
   }
-  return spots;
+  return windows.flatMap(({ window, start, end }) => {
+    const spots: CongratsSpot[] = [{ window, start, mode: "standard" }];
+    if (end >= MODE_CHOICE_START) spots.push({ window, start, mode: "freeform" });
+    return spots;
+  });
 }
 
 /**
@@ -81,12 +99,56 @@ export function congratsSpots(date: string = todayDateString()): CongratsSpot[] 
  * been popped on this browser, or nothing.
  *
  * The popped check belongs *here* rather than at the call site, because it is
- * what decides between the two. A player who popped the month's bubble on the
+ * what decides between them. A player who popped the month's bubble on the
  * second is owed the week's for the rest of the week, and a rule that picked
  * the month and then went quiet when it found it popped would swallow it.
  */
 export function pendingCongratsSpot(date: string = todayDateString()): CongratsSpot | null {
-  return congratsSpots(date).find((spot) => !congratsPopped(spot)) ?? null;
+  return pendingCongratsSpots(date)[0] ?? null;
+}
+
+/**
+ * Every win still owed a congratulation on this browser, in the order offered.
+ *
+ * A month's win only for a player who was around for that month -- one who
+ * banked a word on a puzzle dated in it or before it. To somebody who arrived
+ * on the second, last month's champion is a stranger's result from before they
+ * knew the game, and four bubbles over the boards on a first look is a page
+ * shouting about nothing they took part in. The week's is short enough to be
+ * news to anybody, so it is not held back.
+ */
+export function pendingCongratsSpots(date: string = todayDateString()): CongratsSpot[] {
+  return congratsSpots(date).filter(
+    (spot) =>
+      !congratsPopped(spot) &&
+      (spot.window !== "month" || playedBefore(nextMonthStart(spot.start))),
+  );
+}
+
+/** One stop on a bubble's wander, as shares of the room it has. */
+export interface WanderStop {
+  /** -1 is the far left the bubble fits at, 1 the far right, 0 the middle. */
+  x: number;
+  /** 0 is the top of the boards, 1 as far down as the bubble fits. */
+  y: number;
+}
+
+/** How many stops a wander makes before it comes back round to the first. */
+const WANDER_STOPS = 5;
+
+/**
+ * A fresh wander for one bubble: where it spawns, then where it drifts.
+ *
+ * Random per bubble, so the ones owed together spawn in different places and
+ * drift on different paths rather than stacked on one spot walking in step.
+ * Each stop is a share of the room rather than a position, so both front-ends
+ * can spend it against their own layout and no stop can be off the board.
+ */
+export function wanderPath(random: () => number = Math.random): WanderStop[] {
+  return Array.from({ length: WANDER_STOPS }, () => ({
+    x: random() * 2 - 1,
+    y: random(),
+  }));
 }
 
 /**
@@ -106,11 +168,13 @@ function weekday(date: string): number {
  * is scanning for -- their own handle, or the one they have been racing. The
  * window comes second and is named the way the reader already thinks of it:
  * "last week's", which needs no dates, and the month by name, which needs no
- * "last" because a month has one.
+ * "last" because a month has one. The mode goes on the win itself, since a
+ * reader playing the other mode would otherwise take it for their own board.
  */
 export function congratsMessage(name: string, spot: CongratsSpot): string {
-  if (spot.window === "week") return `Congrats ${name} for last week's win`;
-  return `Congrats ${name} on ${monthName(spot.start)}'s win`;
+  const mode = MODE_LABELS[spot.mode];
+  if (spot.window === "week") return `Congrats ${name} for last week's ${mode} win`;
+  return `Congrats ${name} on ${monthName(spot.start)}'s ${mode} win`;
 }
 
 /** `September`, for the month a closed monthly window covers. */
@@ -150,6 +214,11 @@ export function markCongratsPopped(spot: CongratsSpot): void {
   }
 }
 
+/**
+ * Standard keeps the key it had before there were two boards, so a week a player
+ * already popped stays popped; Freeform's is namespaced beside it.
+ */
 function poppedKey(spot: CongratsSpot): string {
-  return `${POPPED_PREFIX}${spot.window}:${spot.start}`;
+  const mode = spot.mode === "standard" ? "" : `${spot.mode}:`;
+  return `${POPPED_PREFIX}${mode}${spot.window}:${spot.start}`;
 }

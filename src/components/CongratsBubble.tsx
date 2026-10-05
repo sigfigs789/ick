@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { fetchBoards } from "../game/leaderboard";
 import {
+  type CongratsSpot,
   congratsMessage,
   markCongratsPopped,
-  pendingCongratsSpot,
+  pendingCongratsSpots,
+  wanderPath,
 } from "../game/congrats";
 import { useSound } from "../hooks/useSound";
 
@@ -48,7 +50,9 @@ const DROPLETS = 7;
  *
  * Popping it is final: the window it named is remembered in this browser, so
  * one splat ends that congratulation for good, whatever is left of its four
- * days.
+ * days. When more than one is owed -- each window has a Standard and a Freeform
+ * winner, and a month and a week can close together -- they all float at once,
+ * each spawning somewhere different on a wander of its own.
  *
  * Deliberately not part of the boards' own loading: this is a second, small
  * request for a window nothing else on the page is showing, and if it fails or
@@ -57,11 +61,37 @@ const DROPLETS = 7;
  */
 export function CongratsBubble({ today }: { today: string }) {
   /**
-   * The window being congratulated, fixed for as long as the page is open --
-   * `today` is itself frozen at mount by the page above (see LeaderboardPage),
-   * so a tab left open across midnight does not grow a bubble.
+   * The wins owed, fixed for as long as the page is open -- `today` is itself
+   * frozen at mount by the page above (see LeaderboardPage), so a tab left open
+   * across midnight does not grow a bubble.
    */
-  const spot = useMemo(() => pendingCongratsSpot(today), [today]);
+  const owed = useMemo(() => pendingCongratsSpots(today), [today]);
+  return (
+    <>
+      {owed.map((spot) => (
+        <Bubble key={`${spot.mode}:${spot.window}:${spot.start}`} today={today} spot={spot} />
+      ))}
+    </>
+  );
+}
+
+/** One congratulation: the name, the drift, and the ink it leaves when hit. */
+function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
+  /**
+   * Where this bubble spawns and wanders, drawn once for its life on the page
+   * and handed to the drift's keyframes (see index.css). Its own pace too, a
+   * little off the others', so bubbles owed together never move in step.
+   */
+  const [wander] = useState(() => {
+    const style: Record<string, string> = {
+      "--wander-duration": `${22 + Math.random() * 8}s`,
+    };
+    wanderPath().forEach((stop, index) => {
+      style[`--wander-x${index}`] = `${50 + stop.x * 26}%`;
+      style[`--wander-y${index}`] = `${12 + stop.y * 66}%`;
+    });
+    return style as CSSProperties;
+  });
   const [winner, setWinner] = useState<string | null>(null);
   /** Hit: the bubble is gone and the ink is landing where it was. */
   const [splatting, setSplatting] = useState(false);
@@ -70,17 +100,18 @@ export function CongratsBubble({ today }: { today: string }) {
   const sound = useSound();
 
   useEffect(() => {
-    // Nothing owed today -- either no window is standing or every one that is
-    // has been popped here already. Settled before the fetch rather than after
-    // it, so a player who popped it on the Monday costs the server nothing on
-    // the Tuesday.
-    if (!spot) return;
+    // Nothing owed today never gets this far -- either no window is standing or
+    // every one that is has been popped here already, which the queue above
+    // settles before any fetch, so a player who popped it on the Monday costs
+    // the server nothing on the Tuesday.
     let live = true;
     // The same endpoint the boards come from, asked for the closed window
-    // instead of the live one. It answers with all three boards and only one of
-    // them is read, which is the price of not adding an endpoint for a sentence
-    // that appears twice a month.
-    fetchBoards(today, spot.window === "week" ? { week: spot.start } : { month: spot.start })
+    // instead of the live one, and for this win's mode rather than the reader's:
+    // both winners are named whichever switch the reader is on. It answers with
+    // all three boards and only one of them is read, which is the price of not
+    // adding an endpoint for a sentence that appears a few times a month.
+    const closed = spot.window === "week" ? { week: spot.start } : { month: spot.start };
+    fetchBoards(today, { ...closed, mode: spot.mode })
       .then((boards) => {
         if (!live) return;
         const board = spot.window === "week" ? boards.weekly : boards.monthly;
@@ -100,10 +131,10 @@ export function CongratsBubble({ today }: { today: string }) {
   // The live region goes up with the page and fills when the name lands, rather
   // than arriving already full: a region that appears with its content in it is
   // one plenty of screen readers never announce.
-  if (!spot || gone) return null;
+  if (gone) return null;
 
   function splat() {
-    if (!spot || splatting) return;
+    if (splatting) return;
     // Remembered on the hit rather than when the ink clears, so a reader who
     // navigates away mid-splat has still popped it.
     markCongratsPopped(spot);
@@ -125,6 +156,7 @@ export function CongratsBubble({ today }: { today: string }) {
         // hit -- the drift is held still for the splat rather than restarted.
         <div
           className="congrats-bubble__drift"
+          style={wander}
           data-splatting={splatting ? "" : undefined}
         >
           {splatting ? (

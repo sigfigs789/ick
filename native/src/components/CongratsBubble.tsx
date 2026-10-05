@@ -9,9 +9,11 @@ import {
   View,
 } from 'react-native';
 import {
+  type CongratsSpot,
   congratsMessage,
   markCongratsPopped,
-  pendingCongratsSpot,
+  pendingCongratsSpots,
+  wanderPath,
 } from '../../../src/game/congrats';
 import { fetchBoards } from '../../../src/game/leaderboard';
 import { radius, space } from '../theme/tokens';
@@ -19,29 +21,8 @@ import { useTheme } from '../theme/useTheme';
 
 /** How long the ink is on screen after a hit, before the blot is dropped. */
 const SPLAT_MS = 900;
-/** One leg of the wander: the bubble drifts to a new spot this often. */
+/** One leg of the wander: the bubble drifts to a new spot about this often. */
 const DRIFT_MS = 5200;
-
-/**
- * Where the bubble wanders, as a share of the room it has.
- *
- * `x` is a share of the slack either side of the bubble and `y` a share of the
- * board's height, so the same five turns are the same walk on a small phone and
- * on a tablet -- and the bubble can never travel off the side of the screen,
- * because full deflection is exactly the edge of the space it fits in.
- *
- * A written path rather than random destinations: five turns is already
- * unpredictable to look at, and a path written down cannot wander somewhere it
- * should not be. Kept off dead centre for long, because the standings are what
- * the reader came for.
- */
-const PATH = [
-  { x: 0, y: 0.08 },
-  { x: 0.72, y: 0.34 },
-  { x: -0.18, y: 0.66 },
-  { x: -0.76, y: 0.4 },
-  { x: 0.34, y: 0.15 },
-] as const;
 
 /**
  * The spray thrown off the blot, as offsets in points from where it landed.
@@ -82,15 +63,38 @@ const DROPS = [
  * WordInk, so what a tap leaves behind is ink. It asks for the closed window
  * itself and answers nothing if that fails; the board underneath never waits
  * on it.
+ *
+ * Each window has a Standard and a Freeform winner, both named whichever mode
+ * the reader is playing. When more than one is owed they all float at once,
+ * each spawning somewhere different on a wander of its own.
  */
 export function CongratsBubble({ today }: { today: string }) {
+  /*
+   * The wins owed, fixed for the life of the screen: `today` is itself fixed
+   * when the screen mounts (see LeaderboardScreen), so an app left open across
+   * midnight does not grow a bubble.
+   */
+  const owed = useMemo(() => pendingCongratsSpots(today), [today]);
+  return (
+    <>
+      {owed.map((spot) => (
+        <Bubble key={`${spot.mode}:${spot.window}:${spot.start}`} today={today} spot={spot} />
+      ))}
+    </>
+  );
+}
+
+/** One congratulation: the name, the wander, and the ink it leaves when hit. */
+function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
   const theme = useTheme();
   /*
-   * The window being congratulated, fixed for the life of the screen: `today`
-   * is itself fixed when the screen mounts (see LeaderboardScreen), so an app
-   * left open across midnight does not grow a bubble.
+   * Where this bubble spawns and wanders, as shares of the room it has (see
+   * `wanderPath`), drawn once for its life on screen -- random per bubble, so
+   * the ones owed together start in different places. Its pace is its own too,
+   * a little off the others', so they never move in step.
    */
-  const spot = useMemo(() => pendingCongratsSpot(today), [today]);
+  const [path] = useState(() => wanderPath());
+  const [legMs] = useState(() => DRIFT_MS * (0.85 + Math.random() * 0.3));
   const [winner, setWinner] = useState<string | null>(null);
   /** Hit: the bubble is gone and the ink is landing where it was. */
   const [splatting, setSplatting] = useState(false);
@@ -135,19 +139,17 @@ export function CongratsBubble({ today }: { today: string }) {
   }, []);
 
   useEffect(() => {
-    // Nothing owed today -- either no window is standing or every one that is
-    // has been popped here already. Settled before the request, so a player who
-    // popped it on the Monday costs the server nothing on the Tuesday.
-    if (!spot) return;
+    // Nothing owed today never gets this far: the queue above drops popped wins
+    // before any request, so a player who popped it on the Monday costs the
+    // server nothing on the Tuesday.
     let live = true;
     // The same endpoint the board comes from, asked for the window that closed
-    // rather than the one being played.
+    // rather than the one being played, and for this win's mode rather than
+    // the reader's.
     void (async () => {
       try {
-        const boards = await fetchBoards(
-          today,
-          spot.window === 'week' ? { week: spot.start } : { month: spot.start },
-        );
+        const closed = spot.window === 'week' ? { week: spot.start } : { month: spot.start };
+        const boards = await fetchBoards(today, { ...closed, mode: spot.mode });
         if (!live) return;
         const board = spot.window === 'week' ? boards.weekly : boards.monthly;
         // A window nobody scored in has no winner to name.
@@ -181,10 +183,10 @@ export function CongratsBubble({ today }: { today: string }) {
     // left off instead of snapping across the board.
     const walk = Animated.loop(
       Animated.sequence(
-        PATH.map((_, index) =>
+        path.map((_, index) =>
           Animated.timing(leg, {
             toValue: index + 1,
-            duration: DRIFT_MS,
+            duration: legMs,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
@@ -193,12 +195,12 @@ export function CongratsBubble({ today }: { today: string }) {
     );
     walk.start();
     return () => walk.stop();
-  }, [winner, stillness, enter, leg]);
+  }, [winner, stillness, enter, leg, path, legMs]);
 
-  if (!spot || !winner || gone) return null;
+  if (!winner || gone) return null;
 
   function hit() {
-    if (!spot || splatting) return;
+    if (splatting) return;
     // Remembered on the tap rather than when the ink clears, so leaving the
     // screen mid-splat has still popped it.
     markCongratsPopped(spot);
@@ -226,7 +228,7 @@ export function CongratsBubble({ today }: { today: string }) {
    */
   const slackX = Math.max(0, (area.width - bubble.width) / 2);
   const slackY = Math.max(0, area.height - bubble.height - space.xxl);
-  const stops = [...PATH, PATH[0]].map((point) => ({
+  const stops = [...path, path[0]].map((point) => ({
     x: point.x * slackX,
     y: point.y * slackY,
   }));
