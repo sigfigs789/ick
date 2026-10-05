@@ -149,9 +149,9 @@ describe("a puzzle's total", () => {
   });
 });
 
-describe("the 0.3 lift (from 2026-10-11)", () => {
-  const BEFORE_LIFT = "2026-10-10";
-  const LIFT = "2026-10-11";
+describe("the 0.3 lift (from 2026-10-07)", () => {
+  const BEFORE_LIFT = "2026-10-06";
+  const LIFT = "2026-10-07";
   // The Zipf that showed exactly 8.7 the day before the lift.
   const zipfAt87 = (() => {
     let lo = 1;
