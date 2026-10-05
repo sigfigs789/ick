@@ -65,14 +65,14 @@ export function applyFreezes(streak: StreakState, today: string): StreakState {
 }
 
 /**
- * A freeze for reaching a multiple of FREEZE_EVERY on `date`, if the player has
- * room for one. Called with the streak already advanced to `date`.
+ * A freeze for reaching a multiple of FREEZE_EVERY, if the player has room for
+ * one. Called with the streak already advanced to today.
  */
-export function earnFreeze(streak: StreakState, date: string): StreakState {
+export function earnFreeze(streak: StreakState): StreakState {
   const freezes = streak.freezes ?? 0;
   if (streak.currentStreak === 0 || streak.currentStreak % FREEZE_EVERY !== 0) return streak;
   if (freezes >= MAX_FREEZES) return streak;
-  return { ...streak, freezes: freezes + 1, freezeEarnedOn: date };
+  return { ...streak, freezes: freezes + 1 };
 }
 
 /** Whether a freeze covered `date`. */

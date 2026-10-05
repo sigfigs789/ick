@@ -414,7 +414,7 @@ function updateStreakOnValidAnswer(date: string): void {
     crushedIt: streak.crushedIt,
     elite: streak.elite,
   };
-  saveStreak(earnFreeze(updated, date));
+  saveStreak(earnFreeze(updated));
 }
 
 function incrementCompletionTotal(): void {

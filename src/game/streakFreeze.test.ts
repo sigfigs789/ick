@@ -56,16 +56,13 @@ describe("applyFreezes", () => {
 
 describe("earnFreeze", () => {
   it("earns one every seventh day", () => {
-    expect(earnFreeze(streakOf({ currentStreak: 7 }), "2026-10-01")).toMatchObject({
-      freezes: 1,
-      freezeEarnedOn: "2026-10-01",
-    });
-    expect(earnFreeze(streakOf({ currentStreak: 14, freezes: 1 }), "2026-10-01").freezes).toBe(2);
-    expect(earnFreeze(streakOf({ currentStreak: 8 }), "2026-10-01").freezes).toBeUndefined();
+    expect(earnFreeze(streakOf({ currentStreak: 7 })).freezes).toBe(1);
+    expect(earnFreeze(streakOf({ currentStreak: 14, freezes: 1 })).freezes).toBe(2);
+    expect(earnFreeze(streakOf({ currentStreak: 8 })).freezes).toBeUndefined();
   });
 
   it("holds no more than the cap", () => {
     const full = streakOf({ currentStreak: 21, freezes: MAX_FREEZES });
-    expect(earnFreeze(full, "2026-10-01")).toBe(full);
+    expect(earnFreeze(full)).toBe(full);
   });
 });

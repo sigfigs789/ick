@@ -113,6 +113,4 @@ export interface StreakState {
   freezes?: number;
   /** Recent days a freeze covered, so a covered day is never counted as played. */
   frozenDates?: string[];
-  /** The day the most recent freeze was earned, for saying so on that day. */
-  freezeEarnedOn?: string;
 }
