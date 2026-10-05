@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AnalyticsPage } from "./AnalyticsPage";
-import { findHighlights, moveRange } from "./analyticsFormat";
-import { parseAnalytics } from "../game/review";
+import { moveRange } from "./analyticsFormat";
 
 /** The viewer's calendar date, which the page's "today" tiles are read off. */
 const clock = vi.hoisted(() => ({ today: "2026-09-27" }));
@@ -319,7 +318,7 @@ describe("AnalyticsPage", () => {
     stubFetch({ ...REPORT, copies: null });
     render(<AnalyticsPage />);
     await screen.findByText("Looked, didn't play");
-    expect(screen.queryByText("Copies to the other mode")).not.toBeInTheDocument();
+    expect(screen.queryByText("Standard vs Freeform: words copied across")).not.toBeInTheDocument();
   });
 
   it("shows who opens the chat, who talks and how long they stay", async () => {
@@ -394,14 +393,14 @@ describe("AnalyticsPage", () => {
     expect(within(standard).getByText("0.25")).toBeInTheDocument();
     const shared = screen.getByRole("rowheader", { name: "Friend's link · Freeform" }).closest("tr")!;
     expect(within(shared).getByText("0.50")).toBeInTheDocument();
-    expect(screen.getByText("Share-link taps in the window: 12 via copied Freeform links.")).toBeInTheDocument();
+    expect(screen.getByText("Share-link taps in the window: 12 on Freeform links copied with the Share button and pasted elsewhere.")).toBeInTheDocument();
   });
 
   it("leaves the starting-mode section out when it failed", async () => {
     stubFetch({ ...REPORT, onboarding: null });
     render(<AnalyticsPage />);
     await screen.findByText("New players", { selector: ".analytics__tile-label" });
-    expect(screen.queryByText("New players by starting mode")).not.toBeInTheDocument();
+    expect(screen.queryByText("Standard vs Freeform: new players by starting mode")).not.toBeInTheDocument();
   });
 
   it("tables the weekday and mode numbers", async () => {
@@ -518,44 +517,5 @@ describe("AnalyticsPage", () => {
     stubFetch(null);
     render(<AnalyticsPage />);
     expect(await screen.findByText(/Couldn.t load this list/)).toBeInTheDocument();
-  });
-});
-
-describe("findHighlights", () => {
-  it("names the best and worst days to come back, and the stronger mode", () => {
-    const lines = findHighlights(parseAnalytics(REPORT));
-    expect(lines).toContain(
-      "Monday players come back the next day most often (70%); Sunday players least (40%).",
-    );
-    expect(lines).toContain("Monday is the busiest puzzle (50 players on average), Sunday the quietest (30).");
-    expect(lines).toContain(
-      "A Freeform day is followed by another play 64% of the time, against 55% for Standard.",
-    );
-    expect(lines).toContain("30% of everyone who has played has played exactly once.");
-    expect(lines).toContain("Visits from reddit engage the most: 90% engaged per visit.");
-  });
-
-  it("names the unattributed visits unattributed when they engage the most", () => {
-    const lines = findHighlights(
-      parseAnalytics({
-        ...REPORT,
-        sources: [
-          { source: "direct", visits: 600, firstVisits: 100, engaged: 580 },
-          { source: "reddit", visits: 100, firstVisits: 80, engaged: 50 },
-        ],
-      }),
-    );
-    expect(lines).toContain("Unattributed visits engage the most: 97% engaged per visit.");
-  });
-
-  it("ranks nothing off a handful of players", () => {
-    const small = parseAnalytics({
-      ...REPORT,
-      weekday: REPORT.weekday.map((w) => ({ ...w, nextDayCohort: 3, nextDayReturned: w.dow === 1 ? 3 : 0 })),
-      modes: REPORT.modes.map((m) => ({ ...m, nextDayCohort: 4 })),
-    });
-    const lines = findHighlights(small);
-    expect(lines.some((l) => l.includes("come back the next day most often"))).toBe(false);
-    expect(lines.some((l) => l.includes("is followed by another play"))).toBe(false);
   });
 });

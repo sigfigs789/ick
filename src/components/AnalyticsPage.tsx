@@ -17,7 +17,6 @@ import {
   dec,
   dowOf,
   duration,
-  findHighlights,
   fmt,
   moveRange,
   pct,
@@ -112,7 +111,6 @@ function Report({
   onRange: (range: DateRange) => void;
 }) {
   const { totals, retention, window: win } = report;
-  const highlights = findHighlights(report);
   // "Today" is the viewer's own calendar date, read off the per-puzzle rows,
   // rather than the report's `asOf` -- the latest puzzle anybody has played,
   // which runs a day ahead of the viewer once a player further east is on
@@ -220,16 +218,6 @@ function Report({
         <DailyChart daily={report.daily} today={today} />
       </Section>
 
-      {highlights.length > 0 && (
-        <Section title="Worth noticing">
-          <ul className="analytics__highlights">
-            {highlights.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
       <Section
         title="Coming back"
         note="Of the players whose first puzzle was long enough ago to tell, how many played again. Day N is exactly N days after their first."
@@ -242,11 +230,24 @@ function Report({
         </div>
       </Section>
 
+      <Section title="How many days people play" note="Every player, by the number of puzzles they have played.">
+        <BarChart
+          label="Players by days played"
+          bars={report.depth.map((d) => ({
+            key: d.bucket,
+            axis: d.bucket,
+            segments: [{ value: d.players, series: "single" }],
+            tip: `${d.bucket}: ${d.players} players (${pct(d.players / Math.max(1, totals.players))})`,
+          }))}
+          compact
+        />
+      </Section>
+
       <Section
-        title="Players per puzzle"
+        title="Standard vs Freeform"
         note={`${windowName}, split by the rules each was played under, with the players who only opened the leaderboard or the found words on top in grey${
           totals.lookersSince ? ` (recorded from ${totals.lookersSince})` : ""
-        }. Hover a day for its Standard and Freeform counts and new players.`}
+        }. A player who banked words in both modes on one day counts in both. Hover a day for its Standard and Freeform counts and new players.`}
       >
         <Legend />
         <BarChart
@@ -264,14 +265,53 @@ function Report({
             }`,
           }))}
         />
+        <p className="review__meta analytics__note">
+          All time, per mode. Before Sep 27 a day’s mode was the one everybody played: the Freeform trial week (Sep
+          14–26) against every Standard week around it. From Sep 27 each player chooses. Next day is the share of a
+          mode’s plays followed by a play on the next puzzle, in either mode.
+        </p>
+        <div className="analytics__table-wrap">
+          <table className="analytics__table">
+            <thead>
+              <tr>
+                <th scope="col">Mode</th>
+                <th scope="col">Players</th>
+                <th scope="col">Plays</th>
+                <th scope="col">Words</th>
+                <th scope="col">Score</th>
+                <th scope="col">Best word</th>
+                <th scope="col">Next day</th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.modes.map((m) => (
+                <tr key={m.mode}>
+                  <th scope="row">
+                    <span className={`analytics__swatch analytics__swatch--${m.mode}`} aria-hidden="true" />
+                    {MODE_NAMES[m.mode] ?? m.mode}
+                  </th>
+                  <td>{fmt(m.players)}</td>
+                  <td>{fmt(m.plays)}</td>
+                  <td>{dec(m.avgWords, 2)}</td>
+                  <td>{dec(m.avgTotal, 1)}</td>
+                  <td>{dec(m.avgTop, 2)}</td>
+                  <td>
+                    <RateCell rate={m.nextDay} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="review__meta">
+          Switches {eventSpan}: {fmt(report.funnel.toFreeform)} to Freeform,{" "}
+          {fmt(report.funnel.toStandard)} to Standard.
+        </p>
       </Section>
 
-      <Section
-        title="Weekly cohorts"
-        note="Players grouped by the week (Sunday start) of their first puzzle, and the share who played some day in each week after."
-      >
-        <CohortGrid cohorts={report.cohorts} asOf={report.asOf} />
-      </Section>
+      {report.onboarding && <OnboardingSection onboarding={report.onboarding} isToday={isToday} picked={range !== null} />}
+
+      {report.copies && <CopySection copies={report.copies} windowName={windowName} />}
 
       <Section
         title="By day of the week"
@@ -317,57 +357,14 @@ function Report({
         </div>
       </Section>
 
-      <Section
-        title="By game mode"
-        note="Before the switch, a day's mode is the one everybody played: the Freeform trial week (Sep 14–26) against every Standard week around it. From Sep 27, it is each player's choice."
-      >
-        <div className="analytics__table-wrap">
-          <table className="analytics__table">
-            <thead>
-              <tr>
-                <th scope="col">Mode</th>
-                <th scope="col">Players</th>
-                <th scope="col">Plays</th>
-                <th scope="col">Words</th>
-                <th scope="col">Score</th>
-                <th scope="col">Best word</th>
-                <th scope="col">Next day</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.modes.map((m) => (
-                <tr key={m.mode}>
-                  <th scope="row">
-                    <span className={`analytics__swatch analytics__swatch--${m.mode}`} aria-hidden="true" />
-                    {MODE_NAMES[m.mode] ?? m.mode}
-                  </th>
-                  <td>{fmt(m.players)}</td>
-                  <td>{fmt(m.plays)}</td>
-                  <td>{dec(m.avgWords, 2)}</td>
-                  <td>{dec(m.avgTotal, 1)}</td>
-                  <td>{dec(m.avgTop, 2)}</td>
-                  <td>
-                    <RateCell rate={m.nextDay} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="review__meta">
-          Switches {eventSpan}: {fmt(report.funnel.toFreeform)} to Freeform,{" "}
-          {fmt(report.funnel.toStandard)} to Standard.
-        </p>
-      </Section>
-
-      <Section title="How many days people play" note="Every player, by the number of puzzles they have played.">
+      <Section title="When people open it" note="Visits by hour of day, Mountain Time.">
         <BarChart
-          label="Players by days played"
-          bars={report.depth.map((d) => ({
-            key: d.bucket,
-            axis: d.bucket,
-            segments: [{ value: d.players, series: "single" }],
-            tip: `${d.bucket}: ${d.players} players (${pct(d.players / Math.max(1, totals.players))})`,
+          label="Visits by hour"
+          bars={report.hours.map((h) => ({
+            key: String(h.hour),
+            axis: h.hour % 3 === 0 ? clockHour(h.hour) : "",
+            segments: [{ value: h.visits, series: "single" }],
+            tip: `${clockHour(h.hour)}–${clockHour((h.hour + 1) % 24)} MT: ${h.visits} visits`,
           }))}
           compact
         />
@@ -439,24 +436,9 @@ function Report({
         </div>
       </Section>
 
-      {report.onboarding && <OnboardingSection onboarding={report.onboarding} isToday={isToday} picked={range !== null} />}
-
-      {report.copies && <CopySection copies={report.copies} windowName={windowName} />}
-
       {report.chat && <ChatSection chat={report.chat} windowName={windowName} />}
 
-      <Section title="When people open it" note="Visits by hour of day, Mountain Time.">
-        <BarChart
-          label="Visits by hour"
-          bars={report.hours.map((h) => ({
-            key: String(h.hour),
-            axis: h.hour % 3 === 0 ? clockHour(h.hour) : "",
-            segments: [{ value: h.visits, series: "single" }],
-            tip: `${clockHour(h.hour)}–${clockHour((h.hour + 1) % 24)} MT: ${h.visits} visits`,
-          }))}
-          compact
-        />
-      </Section>
+      <MissingSection />
     </div>
   );
 }
@@ -492,12 +474,17 @@ function OnboardingSection({
     (a, b) => REASON_ORDER.indexOf(a.reason) - REASON_ORDER.indexOf(b.reason) || a.mode.localeCompare(b.mode),
   );
   const arrivals = onboarding.arrivals
-    .map((a) => `${fmt(a.arrivals)} via ${a.link === "twitter" ? "X" : "copied"} ${MODE_NAMES[a.mode] ?? "untagged"} links`)
+    .map(
+      (a) =>
+        `${fmt(a.arrivals)} on ${MODE_NAMES[a.mode] ?? "untagged"} links ${
+          a.link === "twitter" ? "posted to X" : "copied with the Share button and pasted elsewhere"
+        }`,
+    )
     .join(", ");
 
   return (
     <Section
-      title="New players by starting mode"
+      title="Standard vs Freeform: new players by starting mode"
       note={
         onboarding.since
           ? `Players who started ${isToday ? "in the last 7 days" : picked ? "in as many days as the range, up to now" : "in the window"}, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, a share link from before links carried one in Standard (Default), anyone else, unattributed included, at random. Until the split took unattributed arrivals in, they went to Default too. Retention is a live day played after the one they arrived on, in either mode.`
@@ -562,11 +549,14 @@ function OnboardingSection({
  * player-day one holds the players roughly fixed, the player one asks about
  * people -- and copiers are self-selected in both, which the note says.
  */
+const COPY_MEANING =
+  "A copy is a tap on a word in the guess log that banks the same word in the other mode’s game for the same puzzle, so a word found in Standard counts in Freeform too without retyping it. It spends one of that mode’s guesses and is judged by that mode’s rules.";
+
 function CopySection({ copies, windowName }: { copies: CopyReport; windowName: string }) {
   const { totals, retention } = copies;
   if (!totals.since) {
     return (
-      <Section title="Copies to the other mode" note="Words copied from one mode's guess log into the other's.">
+      <Section title="Standard vs Freeform: words copied across" note={COPY_MEANING}>
         <p className="review__status">No copies recorded yet.</p>
       </Section>
     );
@@ -574,8 +564,8 @@ function CopySection({ copies, windowName }: { copies: CopyReport; windowName: s
   const unlanded = totals.refused + totals.full + totals.lookupFailed;
   return (
     <Section
-      title="Copies to the other mode"
-      note={`${windowName}, recorded from ${totals.since}. A copy banks a word from one mode's guess log in the other mode's game for the same puzzle. Retention is a live day played afterwards, in either mode. Copiers chose to copy, so a gap here is a correlation, not the feature's effect.`}
+      title="Standard vs Freeform: words copied across"
+      note={`${windowName}, recorded from ${totals.since}. ${COPY_MEANING} Retention is a live day played afterwards, in either mode. Copiers chose to copy, so a gap here is a correlation, not the feature's effect.`}
     >
       <div className="analytics__tiles">
         <Tile
@@ -764,6 +754,67 @@ function ChatSection({ chat, windowName }: { chat: ChatReport; windowName: strin
 }
 
 /**
+ * What the page cannot answer yet about which mode to start new players in,
+ * and what would answer it. Fixed copy, not numbers: a to-do list for the
+ * report, kept on the page so it is read beside the gaps it describes.
+ */
+const MISSING: Array<{ title: string; detail: string }> = [
+  {
+    title: "Is the split’s gap real?",
+    detail:
+      "The Random split rows are the only fair Standard-vs-Freeform comparison, but they print bare rates. A confidence interval or a minimum-sample flag on Next day, Day 7 and Days played would say when one arm has actually won.",
+  },
+  {
+    title: "Funnel by mode",
+    detail:
+      "Finished, won and shared are counted across both modes. The share events already carry the mode, so splitting the funnel is a report-query change.",
+  },
+  {
+    title: "Time spent by mode",
+    detail: "Session length and time to first guess, split by the mode played, to see which one holds attention.",
+  },
+  {
+    title: "Where split players settle",
+    detail:
+      "The mode each split player is on after 7 days, and whether they switched on their first day or later. A mode people leave on day one is a poor default.",
+  },
+  {
+    title: "Players who play both",
+    detail: "Retention and days played for players who bank words in both modes on one puzzle, against single-mode players.",
+  },
+  {
+    title: "Abandoned puzzles",
+    detail: "Puzzles started but left before the guesses ran out, per mode: which rules people give up on.",
+  },
+  {
+    title: "Trial week vs choice era",
+    detail: "The by-mode table mixes Sep 14–26 (one mode for everybody) with Sep 27 on (each player’s choice). Split at Sep 27.",
+  },
+  {
+    title: "New players per share, by mode",
+    detail:
+      "Shares and share-link arrivals are both recorded with a mode; joining them gives the new players each mode’s shares bring in.",
+  },
+];
+
+function MissingSection() {
+  return (
+    <Section
+      title="Not measured yet: picking a default mode"
+      note="Gaps that keep this page from saying which mode to start players in, or which one drives the most play."
+    >
+      <ul className="analytics__missing">
+        {MISSING.map((m) => (
+          <li key={m.title}>
+            <strong>{m.title}.</strong> {m.detail}
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+/**
  * How a day's players split between the modes, for its tooltip. A player can
  * bank words in both on one day, so the two can sum to more than the players.
  */
@@ -890,76 +941,6 @@ function BarChart({ label, bars, compact }: { label: string; bars: Bar[]; compac
         })}
       </div>
     </figure>
-  );
-}
-
-/**
- * The cohort grid: a row per first-play week, a column per week since, each
- * cell shaded by the share still playing. Week 0 is always 100% and is shown as
- * the cohort's size instead, which is the number a reader needs to weigh the
- * rest of its row.
- */
-function CohortGrid({
-  cohorts,
-  asOf,
-}: {
-  cohorts: AnalyticsReport["cohorts"];
-  asOf: string | null;
-}) {
-  const width = Math.max(1, ...cohorts.map((c) => c.active.length));
-  // Each row's last week is the current one, and unless the latest puzzle is a
-  // Saturday it is not over: its share is a few days' worth, and drawn at full
-  // strength it reads as everyone leaving at once.
-  const inProgress = asOf !== null && dowOf(asOf) !== 6;
-  if (cohorts.length === 0) return <p className="review__status">No cohorts yet.</p>;
-  return (
-    <>
-    <div className="analytics__table-wrap">
-      <table className="analytics__table analytics__cohorts">
-        <thead>
-          <tr>
-            <th scope="col">First week</th>
-            <th scope="col">Players</th>
-            {Array.from({ length: width - 1 }, (_, k) => (
-              <th scope="col" key={k}>
-                Wk {k + 1}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {cohorts.map((c) => (
-            <tr key={c.week}>
-              <th scope="row">{c.week}</th>
-              <td>{fmt(c.size)}</td>
-              {Array.from({ length: width - 1 }, (_, k) => {
-                const active = c.active[k + 1];
-                if (active === undefined) return <td key={k} className="analytics__cell--empty" />;
-                const share = c.size ? active / c.size : 0;
-                const partial = inProgress && k + 1 === c.active.length - 1;
-                return (
-                  <td
-                    key={k}
-                    className={`analytics__cell${partial ? " analytics__cell--partial" : ""}`}
-                    // Five steps of one hue, light to dark, so a cell's shade
-                    // and its printed share can only agree.
-                    data-step={Math.min(4, Math.floor(share * 5))}
-                    title={`${active} of ${c.size}${partial ? ", week in progress" : ""}`}
-                  >
-                    {pct(share)}
-                    {partial && "*"}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-    {inProgress && (
-      <p className="review__meta">* This week so far — it is not over yet.</p>
-    )}
-    </>
   );
 }
 
