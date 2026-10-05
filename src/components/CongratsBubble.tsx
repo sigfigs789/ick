@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { fetchBoards } from "../game/leaderboard";
 import {
   type CongratsSpot,
   congratsMessage,
   markCongratsPopped,
   pendingCongratsSpots,
+  wanderPath,
 } from "../game/congrats";
 import { useSound } from "../hooks/useSound";
 
@@ -50,8 +51,8 @@ const DROPLETS = 7;
  * Popping it is final: the window it named is remembered in this browser, so
  * one splat ends that congratulation for good, whatever is left of its four
  * days. When more than one is owed -- each window has a Standard and a Freeform
- * winner, and a month and a week can close together -- the next floats in once
- * the ink has soaked away, so there is never more than one on the board.
+ * winner, and a month and a week can close together -- they all float at once,
+ * each spawning somewhere different on a wander of its own.
  *
  * Deliberately not part of the boards' own loading: this is a second, small
  * request for a window nothing else on the page is showing, and if it fails or
@@ -64,34 +65,33 @@ export function CongratsBubble({ today }: { today: string }) {
    * frozen at mount by the page above (see LeaderboardPage), so a tab left open
    * across midnight does not grow a bubble.
    */
-  const queue = useMemo(() => pendingCongratsSpots(today), [today]);
-  /** How far down the queue: popped, or skipped for having no winner. */
-  const [index, setIndex] = useState(0);
-  const advance = useCallback(() => setIndex((at) => at + 1), []);
-  const spot = queue[index];
-  if (!spot) return null;
+  const owed = useMemo(() => pendingCongratsSpots(today), [today]);
   return (
-    <Bubble
-      // A fresh bubble per win, so nothing of the last one's splat carries over.
-      key={`${spot.mode}:${spot.window}:${spot.start}`}
-      today={today}
-      spot={spot}
-      onDone={advance}
-    />
+    <>
+      {owed.map((spot) => (
+        <Bubble key={`${spot.mode}:${spot.window}:${spot.start}`} today={today} spot={spot} />
+      ))}
+    </>
   );
 }
 
 /** One congratulation: the name, the drift, and the ink it leaves when hit. */
-function Bubble({
-  today,
-  spot,
-  onDone,
-}: {
-  today: string;
-  spot: CongratsSpot;
-  /** Gone -- popped, or never had a winner -- so the next one can come. */
-  onDone: () => void;
-}) {
+function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
+  /**
+   * Where this bubble spawns and wanders, drawn once for its life on the page
+   * and handed to the drift's keyframes (see index.css). Its own pace too, a
+   * little off the others', so bubbles owed together never move in step.
+   */
+  const [wander] = useState(() => {
+    const style: Record<string, string> = {
+      "--wander-duration": `${22 + Math.random() * 8}s`,
+    };
+    wanderPath().forEach((stop, index) => {
+      style[`--wander-x${index}`] = `${50 + stop.x * 26}%`;
+      style[`--wander-y${index}`] = `${12 + stop.y * 66}%`;
+    });
+    return style as CSSProperties;
+  });
   const [winner, setWinner] = useState<string | null>(null);
   /** Hit: the bubble is gone and the ink is landing where it was. */
   const [splatting, setSplatting] = useState(false);
@@ -116,25 +116,17 @@ function Bubble({
         if (!live) return;
         const board = spot.window === "week" ? boards.weekly : boards.monthly;
         // A window nobody scored in has no winner to name, and a bubble reading
-        // "Congrats undefined" is worse than no bubble -- the next one owed, if
-        // any, gets the board instead.
+        // "Congrats undefined" is worse than no bubble.
         const champion = board.find((entry) => entry.rank === 1) ?? board[0];
         if (champion) setWinner(champion.name);
-        else onDone();
       })
       // A congratulation that couldn't load is not something to tell anybody
       // about -- it is a nicety, and the boards under it are the page.
-      .catch(() => {
-        if (live) onDone();
-      });
+      .catch(() => {});
     return () => {
       live = false;
     };
-  }, [spot, today, onDone]);
-
-  useEffect(() => {
-    if (gone) onDone();
-  }, [gone, onDone]);
+  }, [spot, today]);
 
   // The live region goes up with the page and fills when the name lands, rather
   // than arriving already full: a region that appears with its content in it is
@@ -164,6 +156,7 @@ function Bubble({
         // hit -- the drift is held still for the splat rather than restarted.
         <div
           className="congrats-bubble__drift"
+          style={wander}
           data-splatting={splatting ? "" : undefined}
         >
           {splatting ? (

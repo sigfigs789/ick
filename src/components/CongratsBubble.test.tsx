@@ -55,7 +55,14 @@ function params(url: string) {
   return new URL(url, "https://wordink.app").searchParams;
 }
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  // A player who has been around since the summer, so is owed the month's.
+  localStorage.setItem(
+    "ick:progress:2026-07-15",
+    JSON.stringify({ date: "2026-07-15", acceptedWords: [{ word: "quixotic" }] }),
+  );
+});
 afterEach(() => vi.unstubAllGlobals());
 
 describe("the congratulation bubble", () => {
@@ -74,7 +81,7 @@ describe("the congratulation bubble", () => {
     expect(params(asked[0]).get("mode")).toBe("standard");
   });
 
-  it("names the Freeform winner once the Standard one is popped, whatever mode is on", async () => {
+  it("floats the Standard and Freeform winners at once, whatever mode is on", async () => {
     // A Monday after the split, so last week has a winner on each board -- and
     // the reader is on Standard, which does not keep Freeform's from them.
     localStorage.setItem("ick:mode", "standard");
@@ -82,23 +89,37 @@ describe("the congratulation bubble", () => {
     const { asked } = stubFetch((mode) => ({
       weekly: [{ ...WINNER, playerId: mode === "freeform" ? BOB : ALICE }],
     }));
-    render(<CongratsBubble today={SPLIT_MONDAY} />);
+    const { container } = render(<CongratsBubble today={SPLIT_MONDAY} />);
 
-    await userEvent.click(
-      await screen.findByRole("button", {
-        name: `Congrats ${handleFor(ALICE)} for last week's Standard win`,
-      }),
+    const standard = await screen.findByRole("button", {
+      name: `Congrats ${handleFor(ALICE)} for last week's Standard win`,
+    });
+    const freeform = await screen.findByRole("button", {
+      name: `Congrats ${handleFor(BOB)} for last week's Freeform win`,
+    });
+    expect(asked.map((url) => params(url).get("mode")).sort()).toEqual(["freeform", "standard"]);
+    expect(asked.every((url) => params(url).get("since") === "2026-10-04")).toBe(true);
+
+    // Each spawns at a point of its own.
+    const spawns = [...container.querySelectorAll<HTMLElement>(".congrats-bubble__drift")].map(
+      (drift) => `${drift.style.getPropertyValue("--wander-x0")} ${drift.style.getPropertyValue("--wander-y0")}`,
     );
-    // Once the ink from the first has soaked away, the next one floats in.
-    expect(
-      await screen.findByRole(
-        "button",
-        { name: `Congrats ${handleFor(BOB)} for last week's Freeform win` },
-        { timeout: 3000 },
-      ),
-    ).toBeInTheDocument();
-    expect(asked.map((url) => params(url).get("mode"))).toEqual(["standard", "freeform"]);
-    expect(params(asked[1]).get("since")).toBe("2026-10-04");
+    expect(new Set(spawns).size).toBe(2);
+
+    // Popping one leaves the other floating.
+    await userEvent.click(standard);
+    expect(freeform).toBeInTheDocument();
+  });
+
+  it("names no month's winner to a player who was not around for it", async () => {
+    localStorage.clear();
+    const { asked } = stubFetch({ allTime: [WINNER] });
+    render(<CongratsBubble today={SECOND} />);
+
+    // 2026-09-02 is a Wednesday, so last week's is still owed -- only the month
+    // is held back.
+    await waitFor(() => expect(asked).toHaveLength(1));
+    expect(params(asked[0]).get("since")).toBe("2026-08-23");
   });
 
   it("skips straight to the Freeform winner when nobody played Standard", async () => {

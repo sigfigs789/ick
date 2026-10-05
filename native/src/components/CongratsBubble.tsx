@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -13,6 +13,7 @@ import {
   congratsMessage,
   markCongratsPopped,
   pendingCongratsSpots,
+  wanderPath,
 } from '../../../src/game/congrats';
 import { fetchBoards } from '../../../src/game/leaderboard';
 import { radius, space } from '../theme/tokens';
@@ -20,29 +21,8 @@ import { useTheme } from '../theme/useTheme';
 
 /** How long the ink is on screen after a hit, before the blot is dropped. */
 const SPLAT_MS = 900;
-/** One leg of the wander: the bubble drifts to a new spot this often. */
+/** One leg of the wander: the bubble drifts to a new spot about this often. */
 const DRIFT_MS = 5200;
-
-/**
- * Where the bubble wanders, as a share of the room it has.
- *
- * `x` is a share of the slack either side of the bubble and `y` a share of the
- * board's height, so the same five turns are the same walk on a small phone and
- * on a tablet -- and the bubble can never travel off the side of the screen,
- * because full deflection is exactly the edge of the space it fits in.
- *
- * A written path rather than random destinations: five turns is already
- * unpredictable to look at, and a path written down cannot wander somewhere it
- * should not be. Kept off dead centre for long, because the standings are what
- * the reader came for.
- */
-const PATH = [
-  { x: 0, y: 0.08 },
-  { x: 0.72, y: 0.34 },
-  { x: -0.18, y: 0.66 },
-  { x: -0.76, y: 0.4 },
-  { x: 0.34, y: 0.15 },
-] as const;
 
 /**
  * The spray thrown off the blot, as offsets in points from where it landed.
@@ -85,8 +65,8 @@ const DROPS = [
  * on it.
  *
  * Each window has a Standard and a Freeform winner, both named whichever mode
- * the reader is playing. When more than one is owed they come one at a time,
- * the next floating in once the last one's ink has soaked away.
+ * the reader is playing. When more than one is owed they all float at once,
+ * each spawning somewhere different on a wander of its own.
  */
 export function CongratsBubble({ today }: { today: string }) {
   /*
@@ -94,35 +74,27 @@ export function CongratsBubble({ today }: { today: string }) {
    * when the screen mounts (see LeaderboardScreen), so an app left open across
    * midnight does not grow a bubble.
    */
-  const queue = useMemo(() => pendingCongratsSpots(today), [today]);
-  /** How far down the queue: popped, or skipped for having no winner. */
-  const [index, setIndex] = useState(0);
-  const advance = useCallback(() => setIndex((at) => at + 1), []);
-  const spot = queue[index];
-  if (!spot) return null;
+  const owed = useMemo(() => pendingCongratsSpots(today), [today]);
   return (
-    // A fresh bubble per win, so none of the last one's animation carries over.
-    <Bubble
-      key={`${spot.mode}:${spot.window}:${spot.start}`}
-      today={today}
-      spot={spot}
-      onDone={advance}
-    />
+    <>
+      {owed.map((spot) => (
+        <Bubble key={`${spot.mode}:${spot.window}:${spot.start}`} today={today} spot={spot} />
+      ))}
+    </>
   );
 }
 
 /** One congratulation: the name, the wander, and the ink it leaves when hit. */
-function Bubble({
-  today,
-  spot,
-  onDone,
-}: {
-  today: string;
-  spot: CongratsSpot;
-  /** Gone -- popped, or never had a winner -- so the next one can come. */
-  onDone: () => void;
-}) {
+function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
   const theme = useTheme();
+  /*
+   * Where this bubble spawns and wanders, as shares of the room it has (see
+   * `wanderPath`), drawn once for its life on screen -- random per bubble, so
+   * the ones owed together start in different places. Its pace is its own too,
+   * a little off the others', so they never move in step.
+   */
+  const [path] = useState(() => wanderPath());
+  const [legMs] = useState(() => DRIFT_MS * (0.85 + Math.random() * 0.3));
   const [winner, setWinner] = useState<string | null>(null);
   /** Hit: the bubble is gone and the ink is landing where it was. */
   const [splatting, setSplatting] = useState(false);
@@ -180,25 +152,18 @@ function Bubble({
         const boards = await fetchBoards(today, { ...closed, mode: spot.mode });
         if (!live) return;
         const board = spot.window === 'week' ? boards.weekly : boards.monthly;
-        // A window nobody scored in has no winner to name; the next one owed,
-        // if any, gets the board instead.
+        // A window nobody scored in has no winner to name.
         const champion = board.find((entry) => entry.rank === 1) ?? board[0];
         if (champion) setWinner(champion.name);
-        else onDone();
       } catch {
         // A congratulation that would not load is not worth telling anybody
         // about: the board under it is the screen.
-        if (live) onDone();
       }
     })();
     return () => {
       live = false;
     };
-  }, [spot, today, onDone]);
-
-  useEffect(() => {
-    if (gone) onDone();
-  }, [gone, onDone]);
+  }, [spot, today]);
 
   /* Arrive, then wander. Both on the native driver, so neither costs a frame on
      the JS thread while somebody is scrolling the board behind it. */
@@ -218,10 +183,10 @@ function Bubble({
     // left off instead of snapping across the board.
     const walk = Animated.loop(
       Animated.sequence(
-        PATH.map((_, index) =>
+        path.map((_, index) =>
           Animated.timing(leg, {
             toValue: index + 1,
-            duration: DRIFT_MS,
+            duration: legMs,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
@@ -230,7 +195,7 @@ function Bubble({
     );
     walk.start();
     return () => walk.stop();
-  }, [winner, stillness, enter, leg]);
+  }, [winner, stillness, enter, leg, path, legMs]);
 
   if (!winner || gone) return null;
 
@@ -263,7 +228,7 @@ function Bubble({
    */
   const slackX = Math.max(0, (area.width - bubble.width) / 2);
   const slackY = Math.max(0, area.height - bubble.height - space.xxl);
-  const stops = [...PATH, PATH[0]].map((point) => ({
+  const stops = [...path, path[0]].map((point) => ({
     x: point.x * slackX,
     y: point.y * slackY,
   }));

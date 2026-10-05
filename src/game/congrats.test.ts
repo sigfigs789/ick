@@ -6,10 +6,23 @@ import {
   markCongratsPopped,
   pendingCongratsSpot,
   pendingCongratsSpots,
+  wanderPath,
 } from "./congrats";
 
+/** A word banked on `date`'s puzzle, which is what makes a player not new. */
+function playedOn(date: string) {
+  localStorage.setItem(
+    `ick:progress:${date}`,
+    JSON.stringify({ date, acceptedWords: [{ word: "quixotic" }] }),
+  );
+}
+
 describe("which win a day congratulates", () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    // Around since the summer, so every month in these tests is one they saw.
+    playedOn("2026-07-15");
+  });
 
   it("names last week's winner from the Monday to the Thursday", () => {
     // The week of the 13th: its Monday is the 14th, so the week that closed is
@@ -89,6 +102,25 @@ describe("which win a day congratulates", () => {
     ]);
   });
 
+  it("keeps a month's win from a player who was not around for it", () => {
+    localStorage.clear();
+    // 2026-11-02 owes October's month and the last week of it. A player whose
+    // first puzzle was today's is told about the week only.
+    playedOn("2026-11-02");
+    expect(pendingCongratsSpots("2026-11-02").map((s) => s.window)).toEqual([
+      "week",
+      "week",
+    ]);
+    // One word banked in October is enough to have been there for it.
+    playedOn("2026-10-30");
+    expect(pendingCongratsSpots("2026-11-02").map((s) => s.window)).toEqual([
+      "month",
+      "month",
+      "week",
+      "week",
+    ]);
+  });
+
   it("names only one winner for a window that closed before the split", () => {
     // One board then, so a Freeform winner would be the Standard one twice.
     expect(congratsSpots("2026-09-21")).toEqual([
@@ -121,6 +153,26 @@ describe("what the bubble says", () => {
     expect(
       congratsMessage("StormyFox47", { window: "month", start: "2026-09-01", mode: "freeform" }),
     ).toBe("Congrats StormyFox47 on September's Freeform win");
+  });
+});
+
+describe("where a bubble wanders", () => {
+  it("draws five stops inside the room the bubble has", () => {
+    const path = wanderPath();
+    expect(path).toHaveLength(5);
+    for (const stop of path) {
+      expect(stop.x).toBeGreaterThanOrEqual(-1);
+      expect(stop.x).toBeLessThanOrEqual(1);
+      expect(stop.y).toBeGreaterThanOrEqual(0);
+      expect(stop.y).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("spawns each bubble somewhere of its own", () => {
+    const values = [0.1, 0.9, 0.4, 0.6];
+    let at = 0;
+    const random = () => values[at++ % values.length];
+    expect(wanderPath(random)[0]).not.toEqual(wanderPath(random)[0]);
   });
 });
 
