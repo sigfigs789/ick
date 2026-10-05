@@ -2356,6 +2356,13 @@ const SAME_ROOT_INFLECTION_START = "2026-08-24";
 // separately every time so far. Gated on the puzzle date like the widening
 // above, so an archived drop keeps the verdicts it was played with.
 const SAME_ROOT_DOUBLING_START = "2026-09-10";
+// The date Standard stopped refusing a word for sharing a root with one the
+// player already found, so "play", "plays" and "played" are three answers in
+// both modes. A relative of an accepted word is still a real word, and the fold
+// already prices it as its base; turning it away as a near-duplicate only took
+// a legitimate answer off the player. Gated on the puzzle date like the rules
+// above, so an archived drop keeps the refusals it was played with.
+const SAME_ROOT_REFUSAL_END = "2026-10-05";
 
 /**
  * Whether the curated dictionary has `word` at all, playable or not. Duplicate
@@ -2436,6 +2443,14 @@ export function refusedEsStem(word: string): string | undefined {
 /** Whether the widened same-root inflections apply to `date`'s puzzle. */
 export function sameRootInflectionsActive(date?: string): boolean {
   return date === undefined || date >= SAME_ROOT_INFLECTION_START;
+}
+
+/**
+ * Whether `date`'s puzzle refuses a word that shares a root with one already
+ * accepted (see SAME_ROOT_REFUSAL_END). Freeform never has.
+ */
+export function sameRootRefusalActive(date?: string): boolean {
+  return date !== undefined && date < SAME_ROOT_REFUSAL_END && !usesFreeformRules(date);
 }
 
 /**

@@ -1,5 +1,11 @@
 # Same-root duplicate detection — cases, gaps, and open items
 
+> **Retired from the 2026-10-05 puzzle.** Standard no longer refuses a word for
+> sharing a root with one already found (`SAME_ROOT_REFUSAL_END` in
+> `dictionary.ts`); Freeform never did. The refusal below still applies to
+> archived Standard drops before that date, and `sameRootKey` is still used by
+> the fold audit tooling.
+
 A WordInk puzzle refuses a word that shares a root with one already found, so a
 player can't bank `indicate`, `indicates`, `indicated` and `indicating` as four
 separate finds. Every submission is reduced to a **same-root key** and compared

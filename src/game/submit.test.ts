@@ -172,10 +172,20 @@ describe("evaluateSubmission", () => {
     expect(result).toEqual({ ok: false, reason: "already-used" });
   });
 
-  it("rejects a word sharing a root with an already-accepted word", () => {
+  it("accepts a word sharing a root with an already-accepted word", () => {
     const already: AcceptedWord[] = [{ word: "start", rarity: "Common", zipf: 5 }];
     const result = evaluateSubmission("starting", "art", already);
-    expect(result).toEqual({ ok: false, reason: "same-root-as-used" });
+    expect(result.ok).toBe(true);
+    expect(result.word?.word).toBe("starting");
+  });
+
+  it("still refuses a shared root in a Standard drop archived before the cutover", () => {
+    const already: AcceptedWord[] = [{ word: "start", rarity: "Common", zipf: 5 }];
+    expect(evaluateSubmission("starting", "art", already, "2026-10-04")).toEqual({
+      ok: false,
+      reason: "same-root-as-used",
+    });
+    expect(evaluateSubmission("starting", "art", already, "2026-10-05").ok).toBe(true);
   });
 
   it("accepts a second word with a genuinely different root", () => {
@@ -188,7 +198,7 @@ describe("evaluateSubmission", () => {
   it("folds a bound derivational form onto its base for same-root detection", () => {
     // From the wide-band era, "organization" shares a root with "organize".
     const already: AcceptedWord[] = [{ word: "organize", rarity: "Common", zipf: 3.98 }];
-    const result = evaluateSubmission("organization", "gan", already);
+    const result = evaluateSubmission("organization", "gan", already, "2026-10-04");
     expect(result).toEqual({ ok: false, reason: "same-root-as-used" });
   });
 
@@ -307,15 +317,15 @@ describe("spellingNearMiss", () => {
 
   it("never points at a word this puzzle has already taken", () => {
     const used: AcceptedWord[] = [{ word: "abatement", rarity: "Rare", zipf: 3 }];
-    // Only that one word is within reach of this guess, so removing it from the
-    // pool leaves nothing to nudge toward.
+    // "abatement" and "abatements" are the two words within reach of this guess.
     expect(spellingNearMiss("abatemant", "ate", [])).toBe("abatement");
-    expect(spellingNearMiss("abatemant", "ate", used)).toBeUndefined();
+    // Its plural is still a fair suggestion now that relatives are playable.
+    expect(spellingNearMiss("abatemant", "ate", used)).toBe("abatements");
   });
 
-  it("never points at a word the same-root rule would refuse", () => {
+  it("never points at a word an archived drop's same-root rule would refuse", () => {
     const used: AcceptedWord[] = [{ word: "abatements", rarity: "Rare", zipf: 3 }];
-    expect(spellingNearMiss("abatemant", "ate", used)).toBeUndefined();
+    expect(spellingNearMiss("abatemant", "ate", used, "2026-10-04")).toBeUndefined();
   });
 
   it("ignores a guess that isn't letters at all", () => {
