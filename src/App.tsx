@@ -276,6 +276,7 @@ export default function App() {
             totalRarity={totalRarityScore(progress.acceptedWords, date)}
             topRarity={topRarityScore(progress.acceptedWords, date)}
             date={date}
+            isToday={isToday}
           />
         )}
 

@@ -1974,6 +1974,12 @@ h2 {
   color: var(--fg);
 }
 
+.streak-display__saved {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}
+
 /* Results */
 .results-panel {
   /* Close under the score line: the panel is what the score line leads into,

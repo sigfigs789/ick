@@ -6,7 +6,9 @@
  * `lastCompletedDate`, and it only ever advances on today's puzzle (see
  * storage.updateStreakOnValidAnswer), never out of the archive. So on the last
  * day of a month, a streak that reaches back to the first is a month with no
- * day missing, and nothing new has to be stored, migrated or transferred.
+ * day missing. The one exception is a day a streak freeze covered, which keeps
+ * the streak going without being played (see game/streakFreeze.ts), so those
+ * are checked against the month too.
  *
  * "Played" means what it means everywhere else in this game: the day's first
  * accepted word, which is the moment the streak banks. A player does not have
@@ -18,13 +20,17 @@
  */
 
 import { addDays } from "./date";
-import { nextMonthStart } from "./month";
+import { monthStart, nextMonthStart } from "./month";
 import type { StreakState } from "./types";
 
 /** Whether `date`'s puzzle is the one that closed a month with no day missed. */
 export function completedWholeMonth(streak: StreakState, date: string): boolean {
   if (streak.lastCompletedDate !== date) return false;
   if (addDays(date, 1) !== nextMonthStart(date)) return false;
+  // A day a streak freeze covered kept the streak but was not played.
+  if ((streak.frozenDates ?? []).some((frozen) => frozen >= monthStart(date) && frozen <= date)) {
+    return false;
+  }
   // The day of the month is the month's length on its last day.
   return streak.currentStreak >= Number(date.slice(8, 10));
 }
