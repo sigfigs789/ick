@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -9,9 +9,10 @@ import {
   View,
 } from 'react-native';
 import {
+  type CongratsSpot,
   congratsMessage,
   markCongratsPopped,
-  pendingCongratsSpot,
+  pendingCongratsSpots,
 } from '../../../src/game/congrats';
 import { fetchBoards } from '../../../src/game/leaderboard';
 import { radius, space } from '../theme/tokens';
@@ -82,15 +83,46 @@ const DROPS = [
  * WordInk, so what a tap leaves behind is ink. It asks for the closed window
  * itself and answers nothing if that fails; the board underneath never waits
  * on it.
+ *
+ * Each window has a Standard and a Freeform winner, both named whichever mode
+ * the reader is playing. When more than one is owed they come one at a time,
+ * the next floating in once the last one's ink has soaked away.
  */
 export function CongratsBubble({ today }: { today: string }) {
-  const theme = useTheme();
   /*
-   * The window being congratulated, fixed for the life of the screen: `today`
-   * is itself fixed when the screen mounts (see LeaderboardScreen), so an app
-   * left open across midnight does not grow a bubble.
+   * The wins owed, fixed for the life of the screen: `today` is itself fixed
+   * when the screen mounts (see LeaderboardScreen), so an app left open across
+   * midnight does not grow a bubble.
    */
-  const spot = useMemo(() => pendingCongratsSpot(today), [today]);
+  const queue = useMemo(() => pendingCongratsSpots(today), [today]);
+  /** How far down the queue: popped, or skipped for having no winner. */
+  const [index, setIndex] = useState(0);
+  const advance = useCallback(() => setIndex((at) => at + 1), []);
+  const spot = queue[index];
+  if (!spot) return null;
+  return (
+    // A fresh bubble per win, so none of the last one's animation carries over.
+    <Bubble
+      key={`${spot.mode}:${spot.window}:${spot.start}`}
+      today={today}
+      spot={spot}
+      onDone={advance}
+    />
+  );
+}
+
+/** One congratulation: the name, the wander, and the ink it leaves when hit. */
+function Bubble({
+  today,
+  spot,
+  onDone,
+}: {
+  today: string;
+  spot: CongratsSpot;
+  /** Gone -- popped, or never had a winner -- so the next one can come. */
+  onDone: () => void;
+}) {
+  const theme = useTheme();
   const [winner, setWinner] = useState<string | null>(null);
   /** Hit: the bubble is gone and the ink is landing where it was. */
   const [splatting, setSplatting] = useState(false);
@@ -135,33 +167,38 @@ export function CongratsBubble({ today }: { today: string }) {
   }, []);
 
   useEffect(() => {
-    // Nothing owed today -- either no window is standing or every one that is
-    // has been popped here already. Settled before the request, so a player who
-    // popped it on the Monday costs the server nothing on the Tuesday.
-    if (!spot) return;
+    // Nothing owed today never gets this far: the queue above drops popped wins
+    // before any request, so a player who popped it on the Monday costs the
+    // server nothing on the Tuesday.
     let live = true;
     // The same endpoint the board comes from, asked for the window that closed
-    // rather than the one being played.
+    // rather than the one being played, and for this win's mode rather than
+    // the reader's.
     void (async () => {
       try {
-        const boards = await fetchBoards(
-          today,
-          spot.window === 'week' ? { week: spot.start } : { month: spot.start },
-        );
+        const closed = spot.window === 'week' ? { week: spot.start } : { month: spot.start };
+        const boards = await fetchBoards(today, { ...closed, mode: spot.mode });
         if (!live) return;
         const board = spot.window === 'week' ? boards.weekly : boards.monthly;
-        // A window nobody scored in has no winner to name.
+        // A window nobody scored in has no winner to name; the next one owed,
+        // if any, gets the board instead.
         const champion = board.find((entry) => entry.rank === 1) ?? board[0];
         if (champion) setWinner(champion.name);
+        else onDone();
       } catch {
         // A congratulation that would not load is not worth telling anybody
         // about: the board under it is the screen.
+        if (live) onDone();
       }
     })();
     return () => {
       live = false;
     };
-  }, [spot, today]);
+  }, [spot, today, onDone]);
+
+  useEffect(() => {
+    if (gone) onDone();
+  }, [gone, onDone]);
 
   /* Arrive, then wander. Both on the native driver, so neither costs a frame on
      the JS thread while somebody is scrolling the board behind it. */
@@ -195,10 +232,10 @@ export function CongratsBubble({ today }: { today: string }) {
     return () => walk.stop();
   }, [winner, stillness, enter, leg]);
 
-  if (!spot || !winner || gone) return null;
+  if (!winner || gone) return null;
 
   function hit() {
-    if (!spot || splatting) return;
+    if (splatting) return;
     // Remembered on the tap rather than when the ink clears, so leaving the
     // screen mid-splat has still popped it.
     markCongratsPopped(spot);
