@@ -21,7 +21,7 @@ import {
   nextMonthStart,
   previousMonthStart,
 } from "../game/month";
-import { weekLabel, weekStart } from "../game/week";
+import { WEEK_BEST_DAYS, weekLabel, weekStart } from "../game/week";
 import { formatScore, formatTotal } from "../game/dictionary";
 import { navigate } from "../routes";
 import { useNarrowLayout } from "../hooks/useNarrowLayout";
@@ -465,14 +465,17 @@ export function LeaderboardPage() {
 
       {state === "ready" && boards && (
         <>
-          {/* The one rule all three boards run on, stated before them rather
+          {/* The rules the boards run on, stated before them rather
               than after: it is the condition a score has to meet to be on any
               of the lists, so a reader wants it on the way in. Underneath them
               it had nothing to sit against -- a bullet adrift under the last
               row. Outside the grid below, so it sits against the first board
-              rather than a column gap away from it. */}
+              rather than a column gap away from it. The week's best-five rule
+              sits beside it for the same reason: it decides what a weekly total
+              is before anybody reads one (see WEEK_BEST_DAYS). */}
           <ul className="leaderboard__rules">
             <li>Only puzzles played on the day they drop count</li>
+            <li>A week counts your best {WEEK_BEST_DAYS} days of 7</li>
           </ul>
           {/* Which board, on the layout that only has room for one at a time.
               Above the boards rather than beside each heading, because it is one

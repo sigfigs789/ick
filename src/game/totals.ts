@@ -5,7 +5,8 @@
  * is what keeps a shared result synchronous and available to somebody who never
  * joined a board. The arithmetic is the boards': a window total is the sum of
  * each day's `totalRarityScore`, scored at that day's own date, over the days
- * inside the window (see leaderboard.scoreFor). So a player who has been
+ * inside the window (see leaderboard.scoreFor) -- for the week, only the best
+ * WEEK_BEST_DAYS of them, as the weekly board counts. So a player who has been
  * submitting all along reads the same number here that the board shows them.
  *
  * Only days played on their own calendar date count, the same eligibility the
@@ -34,10 +35,10 @@ import { totalRarityScore } from "./dictionary";
 import { monthStart } from "./month";
 import { countsOnBoard, modeForDate, type GameMode } from "./mode";
 import { playedOnItsDay } from "./storage";
-import { weekStart } from "./week";
+import { WEEK_BEST_DAYS, weekStart } from "./week";
 
 export interface WindowTotals {
-  /** Summed rarity score across the puzzle's week, Sunday onward. */
+  /** Summed rarity score across the puzzle's week, Sunday onward, best five days. */
   week: number;
   /** Summed rarity score across the puzzle's calendar month. */
   month: number;
@@ -53,7 +54,7 @@ export function windowTotals(
   // board of its own -- it is on both -- and `modeForDate` answers it from the
   // calendar, which is the board those days were actually ranked on.
   const board = mode;
-  let weekTotal = 0;
+  const weekDays: number[] = [];
   let monthTotal = 0;
   for (const progress of playedOnItsDay()) {
     // Days after the puzzle being shared are somebody else's window as far as
@@ -62,9 +63,13 @@ export function windowTotals(
     if (progress.date > date) continue;
     if (!countsOnBoard(board, progress.date, progress.mode)) continue;
     const score = totalRarityScore(progress.acceptedWords, progress.date);
-    if (progress.date >= week) weekTotal += score;
+    if (progress.date >= week) weekDays.push(score);
     if (progress.date >= month) monthTotal += score;
   }
+  const weekTotal = weekDays
+    .sort((a, b) => b - a)
+    .slice(0, WEEK_BEST_DAYS)
+    .reduce((sum, score) => sum + score, 0);
   return { week: round(weekTotal), month: round(monthTotal) };
 }
 
