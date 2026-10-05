@@ -29,6 +29,18 @@
 
 import { addDays, formatDateLabel, todayDateString } from "./date";
 
+/**
+ * How many of a week's seven days its total counts: each player's best five.
+ *
+ * Summing every day made the weekly board a test of attendance first -- one
+ * missed day was a whole puzzle down on everybody who played it. Five leaves
+ * room for two days off, and a sixth or seventh day still helps by replacing a
+ * worse one. The board's own copy of this number is in the database
+ * (20261005010000_leaderboard_week_best_five.sql), which cannot import it; the
+ * client reads this one so a shared week total agrees with the board.
+ */
+export const WEEK_BEST_DAYS = 5;
+
 /** The Sunday on or before `date`, as YYYY-MM-DD. */
 export function weekStart(date: string = todayDateString()): string {
   // getUTCDay on a UTC-midnight date reads the weekday of the calendar date
