@@ -473,6 +473,64 @@ export interface AnalyticsReport {
    * failed or predates it.
    */
   copies: CopyReport | null;
+  /**
+   * What the players who come back went through, from `retention_report` (the
+   * 20261005000000 migration). Null when that read failed or predates it.
+   */
+  returners: ReturnersReport | null;
+}
+
+/**
+ * Who comes back, split by what happened to them rather than by the calendar.
+ * Event splits cover only tracked days: the iOS app and the Reddit post send no
+ * events. A group of fewer than five players never leaves the database.
+ */
+export interface ReturnersReport {
+  from: string | null;
+  to: string | null;
+  /** The first puzzle any event named a player on. */
+  trackedSince: string | null;
+  firstPuzzle: {
+    totals: { players: number; tracked: number; nextDay: Rate; week: Rate };
+    /** One row per group of one split, e.g. split "outcome", group "Won". */
+    groups: Array<{ split: string; group: string; players: number; nextDay: Rate; week: Rate }>;
+  };
+  /** Newest first. */
+  puzzles: Array<{
+    date: string;
+    players: number;
+    nextDay: Rate;
+    newPlayers: number;
+    /** Null when the puzzle had fewer than five new players. */
+    newNextDay: Rate | null;
+    avgWords: number | null;
+    avgTop: number | null;
+    tracked: number;
+    completed: number;
+    won: number;
+    refusalsPerPlayer: number | null;
+    foldsPerPlayer: number | null;
+  }>;
+  /** Players who stopped: their last day against their own earlier days. */
+  lastDay: { players: number; last: StopStats | null; usual: StopStats | null };
+  /** Newest build first. */
+  versions: Array<{ version: number; players: number; firstDay: string; lastDay: string; nextDay: Rate }>;
+}
+
+export interface StopStats {
+  days: number;
+  avgWords: number | null;
+  avgTop: number | null;
+  tracked: number;
+  finishShare: number | null;
+  winShare: number | null;
+  refusalsPerDay: number | null;
+  foldsPerDay: number | null;
+  revealedShare: number | null;
+  lookedShare: number | null;
+  sharedShare: number | null;
+  afterGapShare: number | null;
+  freeformShare: number | null;
 }
 
 /** Copies of a word into the other mode, over the same window as the report. */
@@ -749,6 +807,86 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     onboarding:
       r.onboarding && typeof r.onboarding === "object" ? parseOnboarding(r.onboarding) : null,
     copies: r.copies && typeof r.copies === "object" ? parseCopies(r.copies) : null,
+    returners: r.returners && typeof r.returners === "object" ? parseReturners(r.returners) : null,
+  };
+}
+
+function parseStop(raw: unknown): StopStats | null {
+  if (!raw || typeof raw !== "object") return null;
+  const s = obj(raw);
+  return {
+    days: count(s.days),
+    avgWords: maybe(s.avgWords),
+    avgTop: maybe(s.avgTop),
+    tracked: count(s.tracked),
+    finishShare: maybe(s.finishShare),
+    winShare: maybe(s.winShare),
+    refusalsPerDay: maybe(s.refusalsPerDay),
+    foldsPerDay: maybe(s.foldsPerDay),
+    revealedShare: maybe(s.revealedShare),
+    lookedShare: maybe(s.lookedShare),
+    sharedShare: maybe(s.sharedShare),
+    afterGapShare: maybe(s.afterGapShare),
+    freeformShare: maybe(s.freeformShare),
+  };
+}
+
+function parseReturners(raw: unknown): ReturnersReport {
+  const r = obj(raw);
+  const first = obj(r.firstPuzzle);
+  const totals = obj(first.totals);
+  const lastDay = obj(r.lastDay);
+  return {
+    from: text(r.from),
+    to: text(r.to),
+    trackedSince: text(r.trackedSince),
+    firstPuzzle: {
+      totals: {
+        players: count(totals.players),
+        tracked: count(totals.tracked),
+        nextDay: rate(totals.nextDay),
+        week: rate(totals.week),
+      },
+      groups: list(first.groups)
+        .filter((g) => text(g.split) && text(g.group))
+        .map((g) => ({
+          split: g.split as string,
+          group: g.group as string,
+          players: count(g.players),
+          nextDay: rate(g.nextDay),
+          week: rate(g.week),
+        })),
+    },
+    puzzles: list(r.puzzles)
+      .filter((p) => text(p.date))
+      .map((p) => ({
+        date: p.date as string,
+        players: count(p.players),
+        nextDay: rate(p.nextDay),
+        newPlayers: count(p.newPlayers),
+        newNextDay: p.newNextDay && typeof p.newNextDay === "object" ? rate(p.newNextDay) : null,
+        avgWords: maybe(p.avgWords),
+        avgTop: maybe(p.avgTop),
+        tracked: count(p.tracked),
+        completed: count(p.completed),
+        won: count(p.won),
+        refusalsPerPlayer: maybe(p.refusalsPerPlayer),
+        foldsPerPlayer: maybe(p.foldsPerPlayer),
+      })),
+    lastDay: {
+      players: count(lastDay.players),
+      last: parseStop(lastDay.last),
+      usual: parseStop(lastDay.usual),
+    },
+    versions: list(r.versions)
+      .filter((v) => maybe(v.version) !== null && text(v.firstDay) && text(v.lastDay))
+      .map((v) => ({
+        version: count(v.version),
+        players: count(v.players),
+        firstDay: v.firstDay as string,
+        lastDay: v.lastDay as string,
+        nextDay: rate(v.nextDay),
+      })),
   };
 }
 

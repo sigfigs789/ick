@@ -4807,6 +4807,18 @@ h2 {
   color: var(--fg-faint);
   font-size: 0.75rem;
 }
+/* A split's heading row inside a table of several splits. */
+.analytics__table-group th {
+  padding-top: 0.8rem;
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+.analytics__delta--up {
+  color: var(--success-fg);
+}
+.analytics__delta--down {
+  color: var(--danger-fg);
+}
 .analytics__funnel {
   display: grid;
   gap: 0.5rem;

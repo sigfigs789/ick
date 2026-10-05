@@ -439,6 +439,7 @@ describe("api/review", () => {
     const chat = { totals: { viewers: 2 } };
     const onboarding = { arms: [] };
     const copies = { totals: { copies: 4 } };
+    const returners = { puzzles: [] };
     const fetchMock = vi.fn(async (url: string) => {
       const name = String(url).split("/").pop();
       const body =
@@ -448,7 +449,9 @@ describe("api/review", () => {
             ? onboarding
             : name === "copy_report"
               ? copies
-              : report;
+              : name === "retention_report"
+                ? returners
+                : report;
       return new Response(JSON.stringify(body), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -456,13 +459,14 @@ describe("api/review", () => {
     const response = await handler(get("?list=analytics&days=30"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ report: { ...report, chat, onboarding, copies } });
+    expect(await response.json()).toEqual({ report: { ...report, chat, onboarding, copies, returners } });
     const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
     expect(calls.map(([url]) => String(url).split("/").pop()).sort()).toEqual([
       "analytics_report",
       "chat_report",
       "copy_report",
       "onboarding_report",
+      "retention_report",
     ]);
     for (const [, init] of calls) expect(JSON.parse(String(init.body))).toEqual({ p_days: 30 });
   });
@@ -483,7 +487,7 @@ describe("api/review", () => {
     const response = await handler(get("?list=analytics"));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ report: { ...report, chat: null, onboarding: null, copies: null } });
+    expect(await response.json()).toEqual({ report: { ...report, chat: null, onboarding: null, copies: null, returners: null } });
   });
 
   it("reads the today window for the puzzle the page names", async () => {
@@ -499,6 +503,7 @@ describe("api/review", () => {
       analytics_report: { p_days: 1, p_date: "2026-09-30" },
       chat_report: { p_days: 1, p_date: "2026-09-30" },
       copy_report: { p_days: 1, p_date: "2026-09-30" },
+      retention_report: { p_days: 1, p_date: "2026-09-30" },
       // Cohorts, not a window of puzzles: no date, and it clamps the 1 itself.
       onboarding_report: { p_days: 1 },
     });
@@ -518,6 +523,7 @@ describe("api/review", () => {
       analytics_report: { p_days: 5, p_date: "2026-09-20" },
       chat_report: { p_days: 5, p_date: "2026-09-20" },
       copy_report: { p_days: 5, p_date: "2026-09-20" },
+      retention_report: { p_days: 5, p_date: "2026-09-20" },
       onboarding_report: { p_days: 5 },
     });
   });
