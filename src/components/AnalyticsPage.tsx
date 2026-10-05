@@ -10,6 +10,8 @@ import {
   type OnboardingReason,
   type OnboardingReport,
   type Rate,
+  type ReturnersReport,
+  type StopStats,
 } from "../game/review";
 import {
   MODE_NAMES,
@@ -439,6 +441,8 @@ function Report({
       {report.chat && <ChatSection chat={report.chat} windowName={windowName} />}
 
       <MissingSection />
+
+      {report.returners && <ReturnersSections returners={report.returners} isToday={isToday} windowName={windowName} />}
     </div>
   );
 }
@@ -810,6 +814,306 @@ function MissingSection() {
           </li>
         ))}
       </ul>
+    </Section>
+  );
+}
+
+/**
+ * Who comes back, split by what happened to them, from `retention_report` (the
+ * 20261005000000 migration). The sections above split retention by the calendar
+ * and by mode; these split it by the player's own puzzle -- the first one, every
+ * one, and the last one before they stopped -- and by the build they ran.
+ *
+ * Every event split is web-only, because the iOS app and the Reddit post report
+ * nothing, and the notes say so beside the numbers rather than once at the top.
+ */
+const SPLITS: Array<{ key: string; title: string }> = [
+  { key: "outcome", title: "How the first puzzle ended" },
+  { key: "score", title: "Best word's score" },
+  { key: "words", title: "Words banked" },
+  { key: "refusals", title: "Guesses refused" },
+  { key: "reason", title: "Refused for (a player can be in more than one row)" },
+  { key: "fold", title: "Standard's common-form scoring (Standard-only first days)" },
+  { key: "retry", title: "The retry" },
+  { key: "looked", title: "Leaderboard and found words" },
+  { key: "shared", title: "Sharing" },
+  { key: "chat", title: "Chat" },
+  { key: "source", title: "Arrived from" },
+  { key: "mode", title: "Mode" },
+  { key: "firstGuess", title: "Time to first guess" },
+  { key: "time", title: "Time on the page that day" },
+];
+
+const CAVEAT =
+  "Groups of fewer than five players are left out. These are correlations: players who were going to stay anyway also win more and look around more, so treat a gap as something to test, not a cause.";
+
+function ReturnersSections({
+  returners,
+  isToday,
+  windowName,
+}: {
+  returners: ReturnersReport;
+  isToday: boolean;
+  windowName: string;
+}) {
+  if (isToday) {
+    return (
+      <Section title="Who comes back">
+        <p className="review__status">Needs more than one puzzle: pick a longer window to see who came back.</p>
+      </Section>
+    );
+  }
+  return (
+    <>
+      <FirstPuzzleSection returners={returners} windowName={windowName} />
+      <PuzzleReturnSection returners={returners} windowName={windowName} />
+      <LastDaySection returners={returners} windowName={windowName} />
+      <VersionSection returners={returners} windowName={windowName} />
+    </>
+  );
+}
+
+/** A rate as a share, or null when nobody was eligible. */
+function share(rate: Rate): number | null {
+  return rate.cohort ? rate.returned / rate.cohort : null;
+}
+
+/** A group's rate against everybody's, in percentage points. */
+function Delta({ rate, base }: { rate: Rate; base: Rate }) {
+  const a = share(rate);
+  const b = share(base);
+  if (a === null || b === null) return <>—</>;
+  const points = Math.round((a - b) * 100);
+  // Under five points either way is noise at these sizes, so it is left uncoloured.
+  const tone = points >= 5 ? " analytics__delta--up" : points <= -5 ? " analytics__delta--down" : "";
+  return <span className={`analytics__delta${tone}`}>{`${points > 0 ? "+" : points < 0 ? "−" : "±"}${Math.abs(points)} pts`}</span>;
+}
+
+function FirstPuzzleSection({ returners, windowName }: { returners: ReturnersReport; windowName: string }) {
+  const { totals, groups } = returners.firstPuzzle;
+  const untracked = totals.players - totals.tracked;
+  return (
+    <Section
+      title="Who comes back: their first puzzle"
+      note={`New players whose first puzzle is in the window (${windowName.toLowerCase()}), split by what happened on it, against whether they played the next puzzle and any puzzle in the week after. Next day vs all is the group's next-day rate minus everybody's. Mode, score and words cover every player; the rest come from events, which the iOS app and the Reddit post do not send${returners.trackedSince ? ` and which name a player from ${returners.trackedSince}` : ""}. ${CAVEAT}`}
+    >
+      <div className="analytics__tiles">
+        <Tile label="New players" value={fmt(totals.players)} sub={windowName} />
+        <Tile
+          label="With events"
+          value={fmt(totals.tracked)}
+          sub={untracked ? `${fmt(untracked)} untracked (iOS app, Reddit, or older)` : "every one of them"}
+        />
+        <RateTile label="Next day, all" rate={totals.nextDay} />
+        <RateTile label="Within a week, all" rate={totals.week} />
+      </div>
+      {groups.length === 0 ? (
+        <p className="review__status">No group has five players yet.</p>
+      ) : (
+        <div className="analytics__table-wrap">
+          <table className="analytics__table">
+            <thead>
+              <tr>
+                <th scope="col">First puzzle</th>
+                <th scope="col">Players</th>
+                <th scope="col">Next day</th>
+                <th scope="col">Next day vs all</th>
+                <th scope="col">Within a week</th>
+              </tr>
+            </thead>
+            {SPLITS.map(({ key, title }) => {
+              const rows = groups.filter((g) => g.split === key);
+              if (rows.length === 0) return null;
+              return (
+                <tbody key={key}>
+                  <tr className="analytics__table-group">
+                    <th scope="colgroup" colSpan={5}>
+                      {title}
+                    </th>
+                  </tr>
+                  {rows.map((g) => (
+                    <tr key={g.group}>
+                      <th scope="row">{key === "source" ? sourceName(g.group) : g.group}</th>
+                      <td>{fmt(g.players)}</td>
+                      <td>
+                        <RateCell rate={g.nextDay} />
+                      </td>
+                      <td>
+                        <Delta rate={g.nextDay} base={totals.nextDay} />
+                      </td>
+                      <td>
+                        <RateCell rate={g.week} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              );
+            })}
+          </table>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function PuzzleReturnSection({ returners, windowName }: { returners: ReturnersReport; windowName: string }) {
+  const puzzles = returners.puzzles;
+  // The window's own next-day rate, for the colour on each puzzle's.
+  const base = puzzles.reduce(
+    (sum, p) => ({ cohort: sum.cohort + p.nextDay.cohort, returned: sum.returned + p.nextDay.returned }),
+    { cohort: 0, returned: 0 },
+  );
+  return (
+    <Section
+      title="Who comes back: puzzle by puzzle"
+      note={`${windowName}, newest first: how many of each puzzle's players played the next one, beside how the puzzle played. A puzzle followed by a low return may be the puzzle's doing. Won is of the players who finished it; refused and scored down are per player with events, scored down on Standard only. New players' next day is left out under five.`}
+    >
+      {puzzles.length === 0 ? (
+        <p className="review__status">No puzzle in the window had five players.</p>
+      ) : (
+        <div className="analytics__table-wrap">
+          <table className="analytics__table">
+            <thead>
+              <tr>
+                <th scope="col">Puzzle</th>
+                <th scope="col">Players</th>
+                <th scope="col">Next day</th>
+                <th scope="col">vs window</th>
+                <th scope="col">New</th>
+                <th scope="col">New, next day</th>
+                <th scope="col">Words</th>
+                <th scope="col">Best word</th>
+                <th scope="col">Won</th>
+                <th scope="col">Refused</th>
+                <th scope="col">Scored down</th>
+              </tr>
+            </thead>
+            <tbody>
+              {puzzles.map((p) => (
+                <tr key={p.date}>
+                  <th scope="row">
+                    {p.date.slice(5)} {SHORT_WEEKDAYS[dowOf(p.date)]}
+                  </th>
+                  <td>{fmt(p.players)}</td>
+                  <td>{p.nextDay.cohort ? <RateCell rate={p.nextDay} /> : "still live"}</td>
+                  <td>
+                    <Delta rate={p.nextDay} base={base} />
+                  </td>
+                  <td>{fmt(p.newPlayers)}</td>
+                  <td>{p.newNextDay ? <RateCell rate={p.newNextDay} /> : "—"}</td>
+                  <td>{dec(p.avgWords, 1)}</td>
+                  <td>{dec(p.avgTop, 2)}</td>
+                  <td>{p.completed ? pct(p.won / p.completed) : "—"}</td>
+                  <td>{dec(p.refusalsPerPlayer, 2)}</td>
+                  <td>{dec(p.foldsPerPlayer, 2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+/** One measure of a day, for the stopped players' table. */
+const STOP_ROWS: Array<{ label: string; show: (s: StopStats) => string }> = [
+  { label: "Days counted", show: (s) => fmt(s.days) },
+  { label: "Words banked", show: (s) => dec(s.avgWords, 2) },
+  { label: "Best word's score", show: (s) => dec(s.avgTop, 2) },
+  { label: "Finished the puzzle", show: (s) => maybePct(s.finishShare) },
+  { label: "Won, of finished", show: (s) => maybePct(s.winShare) },
+  { label: "Guesses refused", show: (s) => dec(s.refusalsPerDay, 2) },
+  { label: "Words scored down (Standard)", show: (s) => dec(s.foldsPerDay, 2) },
+  { label: "Revealed the word", show: (s) => maybePct(s.revealedShare) },
+  { label: "Opened the leaderboard or found words", show: (s) => maybePct(s.lookedShare) },
+  { label: "Shared their result", show: (s) => maybePct(s.sharedShare) },
+  { label: "Came back after missing a puzzle", show: (s) => maybePct(s.afterGapShare) },
+  { label: "Played Freeform only", show: (s) => maybePct(s.freeformShare) },
+];
+
+function maybePct(share: number | null): string {
+  return share === null ? "—" : pct(share);
+}
+
+function LastDaySection({ returners, windowName }: { returners: ReturnersReport; windowName: string }) {
+  const { players, last, usual } = returners.lastDay;
+  return (
+    <Section
+      title="Who stops: their last day"
+      note={`Players who played three or more puzzles, the last of them in the window (${windowName.toLowerCase()}), and have missed at least the two after it. Their last day against their own earlier days, so the same players are on both sides. "Came back after missing a puzzle" means any streak had already broken. Per-day measures past the score come from events, so they leave out the iOS app and the Reddit post. ${CAVEAT}`}
+    >
+      {!last || !usual ? (
+        <p className="review__status">
+          {players === 0 ? "Nobody has stopped in this window yet." : `${fmt(players)} stopped, fewer than five: not shown.`}
+        </p>
+      ) : (
+        <>
+          <div className="analytics__tiles">
+            <Tile label="Players who stopped" value={fmt(players)} sub="after 3+ puzzles" />
+          </div>
+          <div className="analytics__table-wrap">
+            <table className="analytics__table">
+              <thead>
+                <tr>
+                  <th scope="col">Per day</th>
+                  <th scope="col">Last day</th>
+                  <th scope="col">Their earlier days</th>
+                </tr>
+              </thead>
+              <tbody>
+                {STOP_ROWS.map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row">{row.label}</th>
+                    <td>{row.show(last)}</td>
+                    <td>{row.show(usual)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </Section>
+  );
+}
+
+function VersionSection({ returners, windowName }: { returners: ReturnersReport; windowName: string }) {
+  return (
+    <Section
+      title="Who comes back: by app version"
+      note={`${windowName}: the share of each build's player-days followed by a play the next puzzle. Web only, by the build the tab ran when it opened. A drop after a release is worth a look; a build that ran over different weekdays or a launch spike is not a fair comparison on its own.`}
+    >
+      {returners.versions.length === 0 ? (
+        <p className="review__status">No build in the window had five players with events.</p>
+      ) : (
+        <div className="analytics__table-wrap">
+          <table className="analytics__table">
+            <thead>
+              <tr>
+                <th scope="col">Version</th>
+                <th scope="col">Players</th>
+                <th scope="col">Puzzles</th>
+                <th scope="col">Next day</th>
+              </tr>
+            </thead>
+            <tbody>
+              {returners.versions.map((v) => (
+                <tr key={v.version}>
+                  <th scope="row">{v.version}</th>
+                  <td>{fmt(v.players)}</td>
+                  <td>
+                    {v.firstDay} to {v.lastDay}
+                  </td>
+                  <td>
+                    <RateCell rate={v.nextDay} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Section>
   );
 }

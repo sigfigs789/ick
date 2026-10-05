@@ -136,6 +136,48 @@ const COPIES = {
   },
 };
 
+/** The shape `retention_report` returns, which api/review.ts sets on the report. */
+const RETURNERS = {
+  from: "2026-08-29",
+  to: "2026-09-27",
+  trackedSince: "2026-09-01",
+  firstPuzzle: {
+    totals: { players: 50, tracked: 40, nextDay: { cohort: 48, returned: 24 }, week: { cohort: 40, returned: 28 } },
+    groups: [
+      { split: "outcome", group: "Won", players: 20, nextDay: { cohort: 20, returned: 14 }, week: { cohort: 18, returned: 15 } },
+      { split: "outcome", group: "Left before finishing", players: 8, nextDay: { cohort: 8, returned: 2 }, week: { cohort: 6, returned: 2 } },
+      { split: "source", group: "direct", players: 12, nextDay: { cohort: 12, returned: 6 }, week: { cohort: 10, returned: 6 } },
+      // A split the page does not know is not drawn.
+      { split: "mystery", group: "Odd", players: 9, nextDay: { cohort: 9, returned: 9 }, week: { cohort: 9, returned: 9 } },
+    ],
+  },
+  puzzles: [
+    {
+      date: "2026-09-27", players: 30, nextDay: { cohort: 0, returned: 0 }, newPlayers: 3, newNextDay: null,
+      avgWords: 3.2, avgTop: 7.5, tracked: 25, completed: 20, won: 10, refusalsPerPlayer: 0.4, foldsPerPlayer: 0.2,
+    },
+    {
+      date: "2026-09-26", players: 40, nextDay: { cohort: 40, returned: 10 }, newPlayers: 6,
+      newNextDay: { cohort: 6, returned: 1 }, avgWords: 3, avgTop: 7, tracked: 30, completed: 25, won: 5,
+      refusalsPerPlayer: 1.25, foldsPerPlayer: 0.5,
+    },
+  ],
+  lastDay: {
+    players: 12,
+    last: {
+      days: 12, avgWords: 2.5, avgTop: 6.1, tracked: 10, finishShare: 0.6, winShare: 0.25, refusalsPerDay: 1.5,
+      foldsPerDay: 0.6, revealedShare: 0.1, lookedShare: 0.2, sharedShare: 0, afterGapShare: 0.5, freeformShare: 0.25,
+    },
+    usual: {
+      days: 60, avgWords: 3.1, avgTop: 7.4, tracked: 50, finishShare: 0.9, winShare: 0.55, refusalsPerDay: 0.6,
+      foldsPerDay: 0.3, revealedShare: 0.05, lookedShare: 0.4, sharedShare: 0.1, afterGapShare: 0.2, freeformShare: 0.25,
+    },
+  },
+  versions: [
+    { version: 33, players: 30, firstDay: "2026-09-20", lastDay: "2026-09-27", nextDay: { cohort: 80, returned: 30 } },
+  ],
+};
+
 /** The shape `chat_report` returns, which api/review.ts sets on the report. */
 const CHAT = {
   totals: {
@@ -319,6 +361,53 @@ describe("AnalyticsPage", () => {
     render(<AnalyticsPage />);
     await screen.findByText("Looked, didn't play");
     expect(screen.queryByText("Standard vs Freeform: words copied across")).not.toBeInTheDocument();
+  });
+
+  it("splits who comes back by their first puzzle, each puzzle, their last day and the build", async () => {
+    stubFetch({ ...REPORT, returners: RETURNERS });
+    render(<AnalyticsPage />);
+
+    const first = within(
+      (await screen.findByText("Who comes back: their first puzzle")).closest("section")!,
+    );
+    expect(first.getByText("10 untracked (iOS app, Reddit, or older)")).toBeInTheDocument();
+    const won = first.getByRole("rowheader", { name: "Won" }).closest("tr")!;
+    expect(won).toHaveTextContent("70%");
+    // 70% against everybody's 50%.
+    expect(within(won).getByText("+20 pts")).toHaveClass("analytics__delta--up");
+    expect(within(first.getByText("Left before finishing").closest("tr")!).getByText("−25 pts")).toHaveClass(
+      "analytics__delta--down",
+    );
+    expect(screen.getByText("How the first puzzle ended")).toBeInTheDocument();
+    expect(first.getByRole("rowheader", { name: "unattributed" }).closest("tr")).toHaveTextContent("50%");
+    expect(screen.queryByText("Odd")).not.toBeInTheDocument();
+
+    const live = screen.getByText("09-27 Sun").closest("tr")!;
+    expect(live).toHaveTextContent("still live");
+    const yesterday = screen.getByText("09-26 Sat").closest("tr")!;
+    expect(yesterday).toHaveTextContent("25%");
+    expect(yesterday).toHaveTextContent("17%");
+    expect(yesterday).toHaveTextContent("1.25");
+
+    const refused = screen.getByRole("rowheader", { name: "Guesses refused" }).closest("tr")!;
+    expect(refused).toHaveTextContent("1.50");
+    expect(refused).toHaveTextContent("0.60");
+    expect(screen.getByText("Came back after missing a puzzle").closest("tr")).toHaveTextContent("50%");
+
+    expect(screen.getByText("2026-09-20 to 2026-09-27").closest("tr")).toHaveTextContent("38%");
+  });
+
+  it("says who stopped is too few to show rather than printing a table", async () => {
+    stubFetch({ ...REPORT, returners: { ...RETURNERS, lastDay: { players: 3, last: null, usual: null } } });
+    render(<AnalyticsPage />);
+    expect(await screen.findByText("3 stopped, fewer than five: not shown.")).toBeInTheDocument();
+  });
+
+  it("leaves the comeback sections out when their numbers failed", async () => {
+    stubFetch({ ...REPORT, returners: null });
+    render(<AnalyticsPage />);
+    await screen.findByText("Looked, didn't play");
+    expect(screen.queryByText("Who comes back: their first puzzle")).not.toBeInTheDocument();
   });
 
   it("shows who opens the chat, who talks and how long they stay", async () => {
