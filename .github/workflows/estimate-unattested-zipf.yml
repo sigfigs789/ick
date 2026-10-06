@@ -8,29 +8,34 @@ name: Estimate unattested Zipf
 #   1. scripts/unattested-candidates.mts runs every curated and corpus word that
 #      contains the drop through the game's own evaluateSubmission, in both
 #      modes, and keeps the ones accepted on a sentinel Zipf of their own. It
-#      also picks measured words with the same drop as calibration anchors.
-#   2. `scripts/estimate-zipf.py prepare` picks at most 200 of them (the
-#      likeliest to be played first; see `priority`) and writes Claude's request.
-#   3. Claude Code, through the same action "Build with Claude" uses, reads the
-#      request and writes its estimates to .tmp/estimates.json.
-#   4. `scripts/estimate-zipf.py record` keeps only well-formed estimates for the
-#      words asked about that Claude gave a confidence of 0.3 or more, and appends
-#      them as one batch: the model, this run's URL, the drop, and the puzzle
-#      date as `since`. Nothing marks an estimate as anything but a guess, and
-#      nothing re-prices an earlier puzzle. The rest keep the flat 10.00.
+#      also picks measured words with the same drops as calibration anchors.
+#   2. `scripts/estimate-zipf.py prepare` picks at most `limit` of them (the
+#      likeliest to be played first; see `priority`) and writes Claude's
+#      requests, 200 words each.
+#   3. Claude Code, on the CLI, answers each request in turn, writing its
+#      estimates and a one-line reason per word to .tmp/answers/.
+#   4. `scripts/estimate-zipf.py record` keeps the well-formed estimates for the
+#      words asked about and appends them as one batch: the model, this run's
+#      URL, the drops, and the puzzle date as `since`. Nothing marks an estimate
+#      as anything but a guess, and nothing re-prices an earlier puzzle.
 #   5. scripts/estimated-scores.mts scores every estimated word through the
-#      game's own code with its estimate applied, recorded or not, and `estimate-zipf.py summary`
-#      writes the PR body: every word with its Zipf, the score Standard and
-#      Freeform will show, and Claude's confidence and reasoning.
+#      game's own code with the batch applied, and `estimate-zipf.py summary`
+#      writes the PR: every word with its Zipf, the score Standard and Freeform
+#      will show and Claude's reasoning -- in the body when they fit, otherwise a
+#      sample of 100 in the body and the full list in comments.
 #
 # Two days ahead so the PR has a day to merge: the batch applies from its
 # puzzle's date on, and a puzzle two days out by UTC has not started anywhere
 # yet. Merge it before that date, or it re-prices a puzzle being played.
 #
-# Run it by hand for another date (Actions tab -> "Estimate unattested Zipf" ->
-# Run workflow), or:
+# A sweep is the same run, wider: `days` covers the drops of that many puzzles
+# from `date` on, `words_file` adds a committed list of words players have
+# already banked at 10.00 (word, a tab, anything), and a higher `limit` lets
+# more of them through. Everything it records still applies from `date` on.
 #
 #   gh workflow run estimate-unattested-zipf.yml --repo sigfigs789/ick -f date=2026-10-12
+#   gh workflow run estimate-unattested-zipf.yml --repo sigfigs789/ick \
+#     -f date=2026-10-09 -f days=14 -f limit=3000 -f words_file=scripts/played-unattested-words.txt
 #
 # Runs on the Claude subscription, as sigfigs789/krausen's Claude workflows do:
 # it needs a CLAUDE_CODE_OAUTH_TOKEN repository secret (Settings -> Secrets ->
@@ -62,6 +67,15 @@ on:
         required: false
         default: "200"
         type: string
+      days:
+        description: Sweep the drops of this many puzzles from the date on
+        required: false
+        default: "1"
+        type: string
+      words_file:
+        description: Also estimate the words in this committed file (one per line), e.g. scripts/played-unattested-words.txt
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -75,7 +89,8 @@ concurrency:
 jobs:
   estimate:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # A sweep runs one Claude request per 200 words, one after another.
+    timeout-minutes: 330
     env:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       MODEL: ${{ inputs.model || 'claude-opus-5-5' }}
@@ -126,69 +141,98 @@ jobs:
           fi
           echo "date=$date" >> "$GITHUB_OUTPUT"
 
-      - name: Find the unattested words the puzzle accepts
+      - name: Find the unattested words the puzzles accept
         id: find
+        env:
+          DAYS: ${{ inputs.days || '1' }}
+          WORDS_FILE: ${{ inputs.words_file }}
         run: |
           set -euo pipefail
           mkdir -p .tmp
+          words=()
+          if [ -n "$WORDS_FILE" ]; then
+            [ -f "$WORDS_FILE" ] || { echo "::error::words_file $WORDS_FILE is not in the repo"; exit 1; }
+            words=(--words "$WORDS_FILE")
+          fi
           ./node_modules/.bin/vite-node scripts/unattested-candidates.mts -- \
-            --date "${{ steps.puzzle.outputs.date }}" --out .tmp/candidates.json
+            --date "${{ steps.puzzle.outputs.date }}" --days "$DAYS" "${words[@]}" --out .tmp/candidates.json
           echo "drop=$(jq -r .drop .tmp/candidates.json)" >> "$GITHUB_OUTPUT"
           echo "count=$(jq -r .count .tmp/candidates.json)" >> "$GITHUB_OUTPUT"
+          if [ "$DAYS" = "1" ] && [ -z "$WORDS_FILE" ]; then
+            echo "sweep=" >> "$GITHUB_OUTPUT"
+          else
+            echo "sweep=-sweep" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Pick the words and write Claude's request
+      - name: Pick the words and write Claude's requests
         if: steps.find.outputs.count != '0'
         run: |
           python scripts/estimate-zipf.py prepare \
             --candidates .tmp/candidates.json \
             --limit "${{ inputs.limit || '200' }}" \
             --asked-out .tmp/asked.json \
-            --request-out .tmp/estimate-request.md \
-            --estimates-path .tmp/estimates.json
+            --requests-dir .tmp/requests \
+            --answers-dir .tmp/answers
+
+      - name: Install Claude Code
+        if: steps.find.outputs.count != '0'
+        run: npm install -g @anthropic-ai/claude-code
 
       - name: Estimate their Zipf with Claude
         if: steps.find.outputs.count != '0'
-        uses: anthropics/claude-code-action@v1
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # The run's own token, so the action does not need the Claude GitHub
-          # App installed.
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          claude_args: >-
-            --model ${{ env.MODEL }}
-            --max-turns 40
-            --allowedTools "Read,Write,WebSearch,WebFetch"
-          prompt: |
-            Read .tmp/estimate-request.md and do exactly what it asks: write
-            your Zipf estimates for every word it lists to .tmp/estimates.json.
-            Do not change any other file and do not run git or gh.
+        run: |
+          set -uo pipefail
+          mkdir -p .tmp/answers .tmp/logs
+          # One request at a time. A request that fails is skipped -- its words
+          # come out as having no estimate -- but three failures in a row (a
+          # usage limit, an outage) stop the loop rather than burn the rest.
+          failures=0
+          for request in .tmp/requests/request-*.md; do
+            n=$(basename "$request" .md)
+            echo "::group::$n"
+            if claude -p "Read $request and do exactly what it asks. Do not change any other file and do not run git or gh." \
+                --model "$MODEL" --max-turns 40 \
+                --allowedTools "Read,Write,WebSearch,WebFetch" \
+                > ".tmp/logs/$n.log" 2>&1; then
+              failures=0
+            else
+              failures=$((failures + 1))
+              echo "::warning::$n failed: $(tail -c 500 ".tmp/logs/$n.log")"
+            fi
+            echo "::endgroup::"
+            if [ "$failures" -ge 3 ]; then
+              echo "::warning::Three requests failed in a row; recording what came back."
+              break
+            fi
+          done
+          ls .tmp/answers
 
       - name: Record the estimates
         if: steps.find.outputs.count != '0'
         run: |
           python scripts/estimate-zipf.py record \
             --asked .tmp/asked.json \
-            --estimates .tmp/estimates.json \
+            --estimates .tmp/answers/*.json \
             --model "$MODEL" \
-            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            --validated-out .tmp/validated.json
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Score the estimated words as the game will show them
         if: steps.find.outputs.count != '0'
         run: |
           ./node_modules/.bin/vite-node scripts/estimated-scores.mts -- \
-            --asked .tmp/asked.json --estimates .tmp/validated.json --out .tmp/scores.json
+            --asked .tmp/asked.json --out .tmp/scores.json
 
       - name: Write the summary
         if: steps.find.outputs.count != '0'
         run: |
           python scripts/estimate-zipf.py summary \
             --asked .tmp/asked.json \
-            --estimates .tmp/estimates.json \
+            --estimates .tmp/answers/*.json \
             --scores .tmp/scores.json \
             --model "$MODEL" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            --summary-out .tmp/summary.md
+            --summary-out .tmp/summary.md \
+            --comments-dir .tmp/comments
           cat .tmp/summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify the estimates load and score
@@ -216,13 +260,24 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           base: main
-          branch: automated/estimate-zipf-${{ steps.puzzle.outputs.date }}
+          branch: automated/estimate-zipf-${{ steps.puzzle.outputs.date }}${{ steps.find.outputs.sweep }}
           delete-branch: true
-          commit-message: "Estimate Zipf for the ${{ steps.find.outputs.drop }} drop's unattested words (${{ steps.puzzle.outputs.date }})"
-          title: "Estimate Zipf for the ${{ steps.find.outputs.drop }} drop's unattested words (${{ steps.puzzle.outputs.date }})"
+          commit-message: "Estimate Zipf for unattested words from ${{ steps.puzzle.outputs.date }} (${{ steps.find.outputs.drop }})"
+          title: "Estimate Zipf for unattested words from ${{ steps.puzzle.outputs.date }} (${{ steps.find.outputs.drop }})"
           body: ${{ steps.summary.outputs.body }}
           add-paths: |
             src/data/estimated-zipf.json
+
+      - name: Post the full list
+        if: steps.pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pr.outputs.pull-request-number }}
+        run: |
+          shopt -s nullglob
+          for comment in .tmp/comments/comment-*.md; do
+            gh pr comment "$PR" --repo "${{ github.repository }}" --body-file "$comment"
+          done
 
       - name: Report the result
         env:
@@ -231,5 +286,5 @@ jobs:
           if [ -n "$PR_URL" ]; then
             echo "Opened $PR_URL" | tee -a "$GITHUB_STEP_SUMMARY"
           else
-            echo "No PR for ${{ steps.puzzle.outputs.date }}: nothing unattested left to estimate, or no estimate had confidence of 0.3 or more (the table above lists them)." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "No PR for ${{ steps.puzzle.outputs.date }}: nothing unattested left to estimate, or no estimate came back." | tee -a "$GITHUB_STEP_SUMMARY"
           fi
