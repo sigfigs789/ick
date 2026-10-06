@@ -1,4 +1,5 @@
 import { todayDateString } from "./date";
+import { newId } from "./player";
 
 /**
  * Tracks whether a player is a first-timer or a returning visitor, where they
@@ -40,6 +41,11 @@ export interface VisitOutcome {
   isFirstVisit: boolean;
   /** True when this visit falls on a different calendar day than the last. */
   isNewDay: boolean;
+  /**
+   * This session's own id, shared by every visit event it sends. Missing on a
+   * session recorded before visits carried one.
+   */
+  visitId?: string;
 }
 
 function safeGet(storage: Storage, key: string): string | null {
@@ -172,7 +178,7 @@ export function recordVisit(
       timesReturned: 0,
       daysReturned: 0,
     };
-    outcome = { state, isFirstVisit: true, isNewDay: true };
+    outcome = { state, isFirstVisit: true, isNewDay: true, visitId: newId() };
   } else {
     const isNewDay = existing.lastVisitDate !== today;
     const state: VisitState = {
@@ -183,7 +189,7 @@ export function recordVisit(
       timesReturned: existing.timesReturned + 1,
       daysReturned: existing.daysReturned + (isNewDay ? 1 : 0),
     };
-    outcome = { state, isFirstVisit: false, isNewDay };
+    outcome = { state, isFirstVisit: false, isNewDay, visitId: newId() };
   }
 
   saveState(outcome.state);

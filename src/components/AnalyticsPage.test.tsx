@@ -44,6 +44,8 @@ const REPORT = {
   window: {
     puzzles: 2,
     players: 80,
+    engagedPlayers: 90,
+    visitors: 120,
     newPlayers: 8,
     avgDaysPerPlayer: 1.13,
     avgDailyPlayers: 45,
@@ -89,6 +91,8 @@ const REPORT = {
     visitsWithId: 900,
     engagedVisitors: 200,
     idleVisitors: 50,
+    engagedVisits: 420,
+    engagedFunnelVisitors: 180,
     firstVisits: 300,
     engaged: 700,
     engagedByLooking: 60,
@@ -313,12 +317,22 @@ describe("AnalyticsPage", () => {
 
     const players = (await screen.findByText("Players", { selector: ".analytics__tile-label" })).closest(".analytics__tile")!;
     expect(String(fetchMock.mock.calls[0][0])).toBe("/api/review?list=analytics&days=60&key=sesame");
+    // Players is everybody who did anything, split into what they did.
+    expect(within(players as HTMLElement).getByText("90")).toBeInTheDocument();
+    expect(
+      within(players as HTMLElement).getByText("did anything: 80 played a word, 7 only looked, 3 pressed something else"),
+    ).toBeInTheDocument();
     // Every headline tile counts over the window, not a fixed span of puzzles.
-    expect(within(players as HTMLElement).getByText("80")).toBeInTheDocument();
-    expect(within(players as HTMLElement).getByText("over the last 2 puzzles")).toBeInTheDocument();
+    const visitors = screen.getByText("Visitors", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
+    expect(within(visitors as HTMLElement).getByText("120")).toBeInTheDocument();
+    expect(within(visitors as HTMLElement).getByText("everyone who turned up, over the last 2 puzzles")).toBeInTheDocument();
+    // Visitors = Players + the ones who did nothing.
+    const idle = screen.getByText("Opened, did nothing").closest(".analytics__tile")!;
+    expect(within(idle as HTMLElement).getByText("30")).toBeInTheDocument();
+    expect(within(idle as HTMLElement).getByText("25% of visitors")).toBeInTheDocument();
     const fresh = screen.getByText("New players", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
     expect(within(fresh as HTMLElement).getByText("8")).toBeInTheDocument();
-    expect(within(fresh as HTMLElement).getByText("10% of the players")).toBeInTheDocument();
+    expect(within(fresh as HTMLElement).getByText("first word ever; 10% of the 80 who played one")).toBeInTheDocument();
     // DAU/MAU as the report computed it, not the window's own players.
     const sticky = screen.getByText("Stickiness").closest(".analytics__tile")!;
     expect(within(sticky as HTMLElement).getByText("31%")).toBeInTheDocument();
@@ -356,7 +370,7 @@ describe("AnalyticsPage", () => {
     stubFetch();
     render(<AnalyticsPage />);
 
-    const visitors = (await screen.findByText("Visitors", { selector: ".analytics__tile-label" })).closest(".analytics__tile")!;
+    const visitors = (await screen.findByText("Web visitors", { selector: ".analytics__tile-label" })).closest(".analytics__tile")!;
     expect(within(visitors as HTMLElement).getByText("250")).toBeInTheDocument();
     expect(within(visitors as HTMLElement).getByText("distinct, recorded from 2026-09-20")).toBeInTheDocument();
     // 900 visits that carry an id, over 250 visitors -- not the 1,000 visits in all.
@@ -366,32 +380,38 @@ describe("AnalyticsPage", () => {
     expect(screen.getByRole("columnheader", { name: "Visitors" })).toBeInTheDocument();
   });
 
-  it("puts engaged and idle web visitors in the headline", async () => {
+  it("counts engaged visits on the web in the headline", async () => {
     stubFetch();
     render(<AnalyticsPage />);
 
-    const engaged = (await screen.findByText("Engaged visitors")).closest(".analytics__tile")!;
-    expect(within(engaged as HTMLElement).getByText("200")).toBeInTheDocument();
-    expect(within(engaged as HTMLElement).getByText("80% of them, pressed anything")).toBeInTheDocument();
-    const idle = screen.getByText("Opened, did nothing").closest(".analytics__tile")!;
-    expect(within(idle as HTMLElement).getByText("50")).toBeInTheDocument();
-    expect(within(idle as HTMLElement).getByText("20% of them")).toBeInTheDocument();
-    expect(screen.getByText("Web visitors")).toBeInTheDocument();
+    const visits = (await screen.findByText("Engaged visits", { selector: ".analytics__tile-label" })).closest(".analytics__tile")!;
+    expect(within(visits as HTMLElement).getByText("420")).toBeInTheDocument();
+    expect(within(visits as HTMLElement).getByText("on the web, each visit once")).toBeInTheDocument();
+  });
+
+  it("shows the funnel's engaged visits as people too", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+
+    const people = (await screen.findByText("Engaged visitors")).closest(".analytics__tile")!;
+    expect(within(people as HTMLElement).getByText("180")).toBeInTheDocument();
+    expect(within(people as HTMLElement).getByText("guessed or looked, over 700 engaged visits")).toBeInTheDocument();
+    expect(screen.getByText("Engaged visits", { selector: ".analytics__funnel-label" })).toBeInTheDocument();
   });
 
   it("says when presses began counting, for a window that starts before them", async () => {
     stubFetch({ ...REPORT, interactedSince: "2026-09-27" });
     render(<AnalyticsPage />);
 
-    const engaged = (await screen.findByText("Engaged visitors")).closest(".analytics__tile")!;
-    expect(within(engaged as HTMLElement).getByText("80% of them; any press counted from 2026-09-27")).toBeInTheDocument();
+    const idle = (await screen.findByText("Opened, did nothing")).closest(".analytics__tile")!;
+    expect(within(idle as HTMLElement).getByText("25% of visitors; any press counted from 2026-09-27")).toBeInTheDocument();
   });
 
   it("says visitors have not been recorded rather than printing zero", async () => {
     stubFetch({ ...REPORT, visitorsSince: null });
     render(<AnalyticsPage />);
 
-    const visitors = (await screen.findByText("Visitors", { selector: ".analytics__tile-label" })).closest(".analytics__tile")!;
+    const visitors = (await screen.findByText("Web visitors", { selector: ".analytics__tile-label" })).closest(".analytics__tile")!;
     expect(within(visitors as HTMLElement).getByText("not recorded yet")).toBeInTheDocument();
     expect(screen.queryByText("Visits per visitor")).toBeNull();
   });
@@ -408,9 +428,7 @@ describe("AnalyticsPage", () => {
     stubFetch();
     render(<AnalyticsPage />);
 
-    const tile = (await screen.findByText("Looked, didn't play")).closest(".analytics__tile")!;
-    expect(within(tile as HTMLElement).getByText("7")).toBeInTheDocument();
-    expect(within(tile as HTMLElement).getByText("11 have never played")).toBeInTheDocument();
+    expect(await screen.findByText(/7 only looked/)).toBeInTheDocument();
     expect(screen.getByLabelText("2026-09-27 (Sun): 40 players (30 Standard, 10 Freeform), 3 new, 7 only looked")).toBeInTheDocument();
     expect(screen.getByText(/60 engaged visits began on the/)).toBeInTheDocument();
     const sessions = screen.getByText("Only looked", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
@@ -427,9 +445,8 @@ describe("AnalyticsPage", () => {
     stubFetch({ ...REPORT, totals: { ...REPORT.totals, lookersSince: null } });
     render(<AnalyticsPage />);
 
-    const tile = (await screen.findByText("Looked, didn't play")).closest(".analytics__tile")!;
-    expect(within(tile as HTMLElement).getByText("—")).toBeInTheDocument();
-    expect(within(tile as HTMLElement).getByText("not recorded yet")).toBeInTheDocument();
+    const players = (await screen.findByText("Players", { selector: ".analytics__tile-label" })).closest(".analytics__tile")!;
+    expect(within(players as HTMLElement).getByText("did anything: 80 played a word, 10 pressed something else")).toBeInTheDocument();
   });
 
   it("shows how often words are copied across, and the copiers' retention", async () => {
@@ -451,7 +468,7 @@ describe("AnalyticsPage", () => {
   it("leaves the copies section out when its numbers failed", async () => {
     stubFetch({ ...REPORT, copies: null });
     render(<AnalyticsPage />);
-    await screen.findByText("Looked, didn't play");
+    await screen.findByText("Opened, did nothing");
     expect(screen.queryByText("Standard vs Freeform: words copied across")).not.toBeInTheDocument();
   });
 
@@ -566,7 +583,7 @@ describe("AnalyticsPage", () => {
   it("leaves the perfect-score section out when its numbers failed", async () => {
     stubFetch({ ...REPORT, perfects: null });
     render(<AnalyticsPage />);
-    await screen.findByText("Looked, didn't play");
+    await screen.findByText("Opened, did nothing");
     expect(screen.queryByText("Perfect scores and who comes back")).not.toBeInTheDocument();
   });
 
@@ -579,7 +596,7 @@ describe("AnalyticsPage", () => {
   it("leaves the comeback sections out when their numbers failed", async () => {
     stubFetch({ ...REPORT, returners: null });
     render(<AnalyticsPage />);
-    await screen.findByText("Looked, didn't play");
+    await screen.findByText("Opened, did nothing");
     expect(screen.queryByText("Who comes back: their first puzzle")).not.toBeInTheDocument();
   });
 
@@ -718,8 +735,8 @@ describe("AnalyticsPage", () => {
     expect(screen.getByText(/^Events on today's puzzle \(stamped from 2026-09-27\)/)).toBeInTheDocument();
     expect(screen.getByText(/^Today's puzzle, split by the rules/)).toBeInTheDocument();
     expect(screen.getByText(/Pick a longer window to hop between days/)).toBeInTheDocument();
-    const players = screen.getByText("Players", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
-    expect(within(players as HTMLElement).getByText("puzzle 2026-09-27")).toBeInTheDocument();
+    const visitors = screen.getByText("Visitors", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
+    expect(within(visitors as HTMLElement).getByText("everyone who turned up, puzzle 2026-09-27")).toBeInTheDocument();
     // One puzzle has no spread of days to measure, so this says so rather than
     // 1.0; DAU/MAU still has its 30-day denominator.
     expect(screen.getAllByText("needs more than one puzzle")).toHaveLength(1);
@@ -749,10 +766,8 @@ describe("AnalyticsPage", () => {
       expect(fetchMock.mock.calls.some(([url]) => String(url).includes("days=12&date=2026-09-27&"))).toBe(true),
     );
     fireEvent.change(await screen.findByLabelText("to"), { target: { value: "2026-09-20" } });
-    await screen.findByText("2026-09-16 to 2026-09-20");
+    await screen.findByText("everyone who turned up, 2026-09-16 to 2026-09-20");
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("days=5&date=2026-09-20&"))).toBe(true);
-    const players = screen.getByText("Players", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
-    expect(within(players as HTMLElement).getByText("2026-09-16 to 2026-09-20")).toBeInTheDocument();
     expect(screen.getByText(/^The puzzles from 2026-09-16 to 2026-09-20, split by the rules/)).toBeInTheDocument();
     expect(screen.getByText(/^Events from 2026-09-16 to 2026-09-20 \(Mountain Time\)/)).toBeInTheDocument();
     for (const button of screen.getAllByRole("button", { name: /days|Today/ })) {

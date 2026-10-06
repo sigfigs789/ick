@@ -378,8 +378,18 @@ export interface AnalyticsReport {
    */
   window: {
     puzzles: number;
-    /** Distinct players on any puzzle in the window. */
+    /** Distinct players who banked a word on any puzzle in the window. */
     players: number;
+    /**
+     * Everybody who did anything with the window's puzzles: banked a word on any
+     * platform, opened the boards or the finds, or pressed anything on the web.
+     */
+    engagedPlayers: number;
+    /**
+     * Everybody who turned up: `engagedPlayers` plus the web visitors who did
+     * nothing. The app and Reddit report no opens, so they count once they play.
+     */
+    visitors: number;
     /** Whose first puzzle ever is in the window. */
     newPlayers: number;
     /** Puzzles played per player, over the window's players; null when none. */
@@ -439,6 +449,10 @@ export interface AnalyticsReport {
     engagedVisitors: number;
     /** The rest: opened the game and did nothing. Adds up to `visitors` with the above. */
     idleVisitors: number;
+    /** The visits behind `engagedVisitors`, each counted once. */
+    engagedVisits: number;
+    /** The distinct browsers behind `engaged`: people who guessed or looked. */
+    engagedFunnelVisitors: number;
     firstVisits: number;
     /** Visits that guessed, or opened the leaderboard or the found words. */
     engaged: number;
@@ -856,6 +870,8 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     window: {
       puzzles: count(win.puzzles),
       players: count(win.players),
+      engagedPlayers: count(win.engagedPlayers),
+      visitors: count(win.visitors),
       newPlayers: count(win.newPlayers),
       avgDaysPerPlayer: maybe(win.avgDaysPerPlayer),
       avgDailyPlayers: maybe(win.avgDailyPlayers),
@@ -917,6 +933,8 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       visitsWithId: count(funnel.visitsWithId),
       engagedVisitors: count(funnel.engagedVisitors),
       idleVisitors: count(funnel.idleVisitors),
+      engagedVisits: count(funnel.engagedVisits),
+      engagedFunnelVisitors: count(funnel.engagedFunnelVisitors),
       firstVisits: count(funnel.firstVisits),
       engaged: count(funnel.engaged),
       engagedByLooking: count(funnel.engagedByLooking),
