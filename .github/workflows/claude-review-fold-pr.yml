@@ -1,0 +1,281 @@
+name: Review fold check PR
+
+# Claude reviews a pull request the daily fold check opened and says "approve"
+# or "decline": a comment on the PR with its reasoning, and a label --
+# `claude: approve` or `claude: decline` -- that a later merge step can key on.
+# It does not merge, approve through GitHub's review UI, or change the branch.
+#
+# The daily fold check calls this as its second job right after it opens a PR.
+# (A PR opened with GITHUB_TOKEN starts no `pull_request` workflows, so this
+# cannot simply listen for one.) Re-review a PR by hand -- after an `@claude`
+# change, say -- from the Actions tab, or:
+#
+#   gh workflow run claude-review-fold-pr.yml --repo sigfigs789/ick -f pr=412
+#
+# Only branches named codex/fold-check-YYYY-MM-DD are reviewed.
+#
+#   1. The workflow diffs src/data/fold-exemptions.json between main and the PR
+#      and checks the change's shape itself: only that file changed, no existing
+#      entry was edited or removed, and every new entry is dated from the
+#      puzzle. Any failure here is a decline whatever Claude says.
+#   2. Claude judges every new exemption against scripts/fold-audit/RUBRIC.md
+#      as a third, independent reader -- the check already ran a flag pass and
+#      a defend pass -- and writes its verdict to .tmp/review/verdict.json.
+#   3. The workflow posts the verdict and sets the label.
+#
+# Runs on the Claude subscription: it needs the CLAUDE_CODE_OAUTH_TOKEN
+# repository secret, as the daily fold check does.
+
+on:
+  workflow_call:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+        type: number
+      model:
+        required: false
+        default: claude-opus-5-5
+        type: string
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: true
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+        type: number
+      model:
+        description: Claude model to review with
+        required: false
+        default: claude-opus-5-5
+        type: choice
+        options:
+          - claude-opus-5-5
+          - claude-sonnet-5-5
+          - claude-fable-5-1
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+concurrency:
+  group: review-fold-pr-${{ inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR: ${{ inputs.pr }}
+
+    steps:
+      - name: Check for the Claude subscription token
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+            echo "::error::Add a CLAUDE_CODE_OAUTH_TOKEN repository secret (from \`claude setup-token\`) first."
+            exit 1
+          fi
+
+      - name: Check out WordInk
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Read the pull request
+        id: pr
+        run: |
+          set -euo pipefail
+          gh pr view "$PR" --json headRefName,state,body,files > /tmp/pr.json
+          branch="$(jq -r .headRefName /tmp/pr.json)"
+          state="$(jq -r .state /tmp/pr.json)"
+          if ! [[ "$branch" =~ ^codex/fold-check-([0-9]{4}-[0-9]{2}-[0-9]{2})$ ]]; then
+            echo "::error::#$PR is on '$branch', not a codex/fold-check-<date> branch; this only reviews daily fold check PRs."
+            exit 1
+          fi
+          if [ "$state" != "OPEN" ]; then
+            echo "::error::#$PR is $state."
+            exit 1
+          fi
+          date="${BASH_REMATCH[1]}"
+          git fetch -q origin "refs/pull/$PR/head:refs/remotes/pr/head"
+          mkdir -p .tmp/review
+          jq -r .body /tmp/pr.json > .tmp/review/pr-body.md
+          jq -r '.files[].path' /tmp/pr.json > .tmp/review/changed-files.txt
+          git show "pr/head:src/data/fold-exemptions.json" > .tmp/review/exemptions-pr.json
+          git diff "origin/main...pr/head" > .tmp/review/pr.diff
+          echo "date=$date" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse pr/head)" >> "$GITHUB_OUTPUT"
+
+      # The mechanical half of the review. Claude is told what this found, and a
+      # problem here declines the PR even if Claude would approve it.
+      - name: Check the change's shape
+        id: shape
+        env:
+          DATE: ${{ steps.pr.outputs.date }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib
+
+          review = pathlib.Path(".tmp/review")
+          date = os.environ["DATE"]
+          main = json.loads(pathlib.Path("src/data/fold-exemptions.json").read_text())
+          pr = json.loads((review / "exemptions-pr.json").read_text())
+          files = [f for f in (review / "changed-files.txt").read_text().split("\n") if f]
+
+          problems = []
+          extra = [f for f in files if f != "src/data/fold-exemptions.json"]
+          if extra:
+              problems.append("changes files besides src/data/fold-exemptions.json: " + ", ".join(extra))
+          removed = sorted(set(main) - set(pr))
+          if removed:
+              problems.append("removes existing exemptions: " + ", ".join(removed))
+          edited = sorted(w for w in set(main) & set(pr) if main[w] != pr[w])
+          if edited:
+              problems.append("edits existing exemptions: " + ", ".join(edited))
+          added = {w: pr[w] for w in sorted(set(pr) - set(main))}
+          if not added:
+              problems.append("adds no exemptions")
+          misdated = sorted(w for w, e in added.items() if e.get("since") != date)
+          if misdated:
+              problems.append(f"new exemptions not dated from the {date} puzzle: " + ", ".join(misdated))
+
+          (review / "added.json").write_text(json.dumps(added, indent=2) + "\n")
+          (review / "problems.txt").write_text("".join(f"- {p}\n" for p in problems))
+          print(f"{len(added)} new exemptions, {len(problems)} structural problems")
+          for p in problems:
+              print(f"::warning::{p}")
+          PY
+          echo "problems=$(grep -c . .tmp/review/problems.txt || true)" >> "$GITHUB_OUTPUT"
+          echo "added=$(jq length .tmp/review/added.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Review with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: >-
+            --model ${{ inputs.model || 'claude-opus-5-5' }}
+            --max-turns 80
+            --allowedTools "Read,Write,Glob,Grep,LS,Task,Agent"
+          prompt: |
+            You are reviewing pull request #${{ inputs.pr }} on WordInk, opened by
+            the daily fold check for the ${{ steps.pr.outputs.date }} puzzle.
+            Decide whether it should be merged: "approve" or "decline".
+
+            Background: WordInk scores a word by how rare it is, but first
+            folds it onto a base form and prices it as the base. The daily
+            check (.github/workflows/daily-fold-check.yml, procedure in
+            scripts/fold-audit/DAILY.md) finds folds that land on a word of a
+            different meaning and exempts them in src/data/fold-exemptions.json,
+            so the word scores on its own rarity. An exemption that is wrong
+            hands a real derivative a rare-word score it did not earn; that is
+            the mistake to catch.
+
+            The working tree is main. In .tmp/review/:
+            - added.json -- the exemptions this PR adds. Each `reason` names
+              the base the fold landed on.
+            - pr-body.md -- the PR description: each word, its fold path, and
+              its score with and without the fold. A WARNING at the top means
+              the build or tests failed on this change.
+            - pr.diff, changed-files.txt -- the full change.
+            - problems.txt -- structural problems the workflow already found
+              (empty if none). Any problem there means "decline".
+
+            For every word in added.json, judge the fold against
+            scripts/fold-audit/RUBRIC.md: does the base mean what the word
+            means? If it does, the exemption is wrong. Read verify.py's PROMPT
+            in scripts/fold-audit/ for the failure the check is prone to --
+            flagging real derivatives (`picometer` -> `meters`) as wrong. Judge
+            each word yourself; the PR's own reasons are claims to check, not
+            evidence. For more than about 30 words, split them across
+            subagents.
+
+            Approve only if every new exemption is a genuinely wrong fold,
+            problems.txt is empty, and the PR body has no build or test
+            WARNING. Otherwise decline. When unsure about a word, say so in
+            its note; decline only for exemptions you believe are wrong.
+
+            Write .tmp/review/verdict.json and nothing else:
+
+            {
+              "verdict": "approve" | "decline",
+              "summary": "one or two sentences: why",
+              "words": [
+                {"word": "...", "ok": true | false, "note": "at most 12 words"}
+              ]
+            }
+
+            `words` has one entry per word in added.json. Do not edit any
+            other file, and do not run git or gh -- the workflow posts your
+            verdict.
+
+      - name: Post the verdict
+        env:
+          PROBLEMS: ${{ steps.shape.outputs.problems }}
+          DATE: ${{ steps.pr.outputs.date }}
+          SHA: ${{ steps.pr.outputs.sha }}
+          MODEL: ${{ inputs.model || 'claude-opus-5-5' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib
+
+          review = pathlib.Path(".tmp/review")
+          added = json.loads((review / "added.json").read_text())
+          problems = (review / "problems.txt").read_text().strip()
+          try:
+              v = json.loads((review / "verdict.json").read_text())
+          except (OSError, ValueError) as e:
+              raise SystemExit(f"::error::Claude wrote no readable verdict.json: {e}")
+          if v.get("verdict") not in ("approve", "decline"):
+              raise SystemExit(f"::error::verdict must be approve or decline, got {v.get('verdict')!r}")
+
+          verdict = v["verdict"]
+          notes = {str(w.get("word", "")).lower(): w for w in v.get("words", [])}
+          missing = [w for w in added if w not in notes]
+          if verdict == "approve" and (problems or missing or any(not notes[w].get("ok") for w in added if w in notes)):
+              verdict = "decline"  # Claude's approve does not outrank the facts.
+
+          lines = [
+              f"## Claude review: **{verdict}**",
+              "",
+              str(v.get("summary", "")).strip(),
+              "",
+          ]
+          if problems:
+              lines += ["**Structural problems**", "", problems, ""]
+          if missing:
+              lines += ["Claude gave no judgment for: " + ", ".join(f"`{w}`" for w in missing), ""]
+          lines += ["| Word | OK | Note |", "|---|---|---|"]
+          for w in added:
+              n = notes.get(w, {})
+              ok = "✅" if n.get("ok") else ("❌" if n else "—")
+              note = str(n.get("note", "")).replace("|", "\\|").replace("\n", " ")
+              lines.append(f"| `{w}` | {ok} | {note} |")
+          sha = os.environ["SHA"]
+          lines += [
+              "",
+              f"<sub>{os.environ['MODEL']} on {sha[:7]} for the {os.environ['DATE']} puzzle · [run]({os.environ['RUN_URL']})</sub>",
+              "<!-- claude-fold-review -->",
+          ]
+          (review / "comment.md").write_text("\n".join(lines) + "\n")
+          with open(os.environ["GITHUB_ENV"], "a") as f:
+              f.write(f"VERDICT={verdict}\n")
+          PY
+
+          gh label create "claude: approve" --color 2da44e --description "Claude's fold review would merge this" --force
+          gh label create "claude: decline" --color d73a4a --description "Claude's fold review would not merge this" --force
+          other=$([ "$VERDICT" = approve ] && echo decline || echo approve)
+          gh pr edit "$PR" --add-label "claude: $VERDICT" --remove-label "claude: $other"
+          gh pr comment "$PR" --body-file .tmp/review/comment.md
+          cat .tmp/review/comment.md >> "$GITHUB_STEP_SUMMARY"
