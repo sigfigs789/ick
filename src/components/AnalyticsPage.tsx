@@ -454,7 +454,12 @@ function Report({
 
       {report.perfects && !isToday && <SeenPerfectsSection perfects={report.perfects} windowName={windowName} />}
 
-      {report.perfects?.casual && !isToday && <CasualPerfectsSection casual={report.perfects.casual} windowName={windowName} />}
+      {report.perfects?.casual && !isToday && (
+        <CasualPerfectsSection
+          casual={report.perfects.casual}
+          windowName={`${windowName}${sinceNote(report.perfects.perfectSince)}`}
+        />
+      )}
     </div>
   );
 }
@@ -1409,6 +1414,17 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
 const QUARTILE_NAMES = ["Fewest 10.00s", "Second", "Third", "Most 10.00s"];
 
 /**
+ * The puzzle comparisons start at the first puzzle anybody hit a 10.00 on:
+ * before it a puzzle had none because it was older, not because it played
+ * differently. Tied puzzles share a quartile, so there can be fewer than four.
+ */
+function sinceNote(since: string | null): string {
+  return since
+    ? `, comparing puzzles from ${since}, the first anybody hit a 10.00 on (tied puzzles share a quartile)`
+    : "";
+}
+
+/**
  * Whether other players' 10.00s cheapen the score: from the same `perfect_report`.
  * It leads with everybody, by how often anybody hit a 10.00 on the puzzle --
  * friends share their results, so that is the exposure every player has, on
@@ -1437,7 +1453,7 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
   return (
     <Section
       title="Do other players' 10.00s drive players off?"
-      note={`${windowName}. The first table is everybody, on every device: puzzles in quartiles by how often anybody hit a 10.00 on them, against whether all of that puzzle's players came back the next day. Friends share their results, so a puzzle full of 10.00s is one every player is likely to have seen some of; if that cheapens the score, the puzzles with the most come back worst and the correlation is negative. The weekday, the drop and the mode mix move a puzzle's return too. The second table is a narrower check: only days the player did not hit one themselves, split by whether they opened the leaderboard or found words and whether 10.00s were "common" (more of the puzzle's players hit one than on the median puzzle${
+      note={`${windowName}${sinceNote(perfects.perfectSince)}. The first table is everybody, on every device: puzzles in quartiles by how often anybody hit a 10.00 on them, against whether all of that puzzle's players came back the next day. Friends share their results, so a puzzle full of 10.00s is one every player is likely to have seen some of; if that cheapens the score, the puzzles with the most come back worst and the correlation is negative. The weekday, the drop and the mode mix move a puzzle's return too. The second table is a narrower check: only days the player did not hit one themselves, split by whether they opened the leaderboard or found words and whether 10.00s were "common" (more of the puzzle's players hit one than on the median puzzle${
         missed?.medianShare != null ? `, ${pct(missed.medianShare)}` : ""
       }). Looks come from events, so it is web only. ${CAVEAT}`}
     >
