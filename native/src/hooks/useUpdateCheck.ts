@@ -76,19 +76,31 @@ async function resolveBehind(): Promise<boolean | null> {
 
   if (APP_VERSION >= floor) return false;
 
-  if (Updates.isEnabled) {
-    try {
-      const { isAvailable } = await Updates.checkForUpdateAsync();
-      if (isAvailable) {
-        const { isNew } = await Updates.fetchUpdateAsync();
-        if (isNew) {
-          await Updates.reloadAsync();
-          return null;
-        }
-      }
-    } catch {
-      // Fall through to the banner: the store is the other way to update.
-    }
-  }
+  if (await pullUpdate()) return null;
+  // Fall through to the banner: the store is the other way to update.
   return true;
+}
+
+/**
+ * Download the over-the-air update, if there is one, and reload into it.
+ *
+ * True when the app is reloading; false when there was nothing to pull or the
+ * pull failed -- updates off, offline, or no update published for this
+ * runtime -- and the store is the way left. Shared by the check above and the
+ * banner's button, which is the retry for a check that came up empty or failed
+ * on a bad connection.
+ */
+export async function pullUpdate(): Promise<boolean> {
+  if (!Updates.isEnabled) return false;
+  try {
+    const { isAvailable } = await Updates.checkForUpdateAsync();
+    if (!isAvailable) return false;
+    // Reload whether or not the fetch calls it new: an update the launch-time
+    // check already downloaded is still one this copy is not running.
+    await Updates.fetchUpdateAsync();
+    await Updates.reloadAsync();
+    return true;
+  } catch {
+    return false;
+  }
 }
