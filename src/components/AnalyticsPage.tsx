@@ -7,6 +7,8 @@ import {
   type AnalyticsReport,
   type ChatReport,
   type CopyReport,
+  type EstimatesReport,
+  type EstimatesSpan,
   type OnboardingReason,
   type OnboardingReport,
   type PerfectPopulation,
@@ -316,6 +318,8 @@ function Report({
       {report.onboarding && <OnboardingSection onboarding={report.onboarding} isToday={isToday} picked={range !== null} />}
 
       {report.copies && <CopySection copies={report.copies} windowName={windowName} />}
+
+      {report.estimates && <EstimatesSection estimates={report.estimates} windowName={windowName} />}
 
       <Section
         title="By day of the week"
@@ -656,6 +660,127 @@ function CopySection({ copies, windowName }: { copies: CopyReport; windowName: s
             { value: Math.max(0, d.players - d.copiers), series: "looked" },
           ],
           tip: `${d.date} (${SHORT_WEEKDAYS[dowOf(d.date)]}): ${d.copiers} of ${d.players} players copied ${d.copies} words`,
+        }))}
+      />
+    </Section>
+  );
+}
+
+const ESTIMATES_MEANING =
+  "Words no frequency corpus measures used to score a flat 10.00 Legend. From the first puzzle below, Claude guesses a frequency for them two days ahead (src/data/estimated-zipf.json) and the guess is scored instead; Standard still folds on top. Each answer is tagged with where its score came from: a measurement, Claude's estimate, or the 10.00 stand-in.";
+
+/** A share as a percentage, or a dash when there is nothing to divide by. */
+function shareOf(part: number, whole: number): string {
+  return whole ? pct(part / whole) : "—";
+}
+
+/**
+ * Claude's estimated scores: how many answers they priced, where they landed,
+ * and the game either side of the first one.
+ */
+function EstimatesSection({ estimates, windowName }: { estimates: EstimatesReport; windowName: string }) {
+  const { totals, compare, retention } = estimates;
+  if (!totals.since) {
+    return (
+      <Section title="Claude-estimated scores" note={ESTIMATES_MEANING}>
+        <p className="review__status">No answer has been scored from an estimate yet.</p>
+      </Section>
+    );
+  }
+  const rows: Array<{ label: string; cell: (s: EstimatesSpan) => ReactNode }> = [
+    { label: "Puzzles", cell: (s) => `${s.from} to ${s.to}` },
+    { label: "Player-days", cell: (s) => fmt(s.playerDays) },
+    { label: "Answers per player-day", cell: (s) => (s.playerDays ? dec(s.answers / s.playerDays, 1) : "—") },
+    { label: "Answers scored Legend", cell: (s) => shareOf(s.legends, s.answers) },
+    { label: "Answers on the 10.00 stand-in", cell: (s) => shareOf(s.unattested, s.answers) },
+    { label: "Average answer score", cell: (s) => dec(s.avgScore, 2) },
+    { label: "Finished the puzzle", cell: (s) => shareOf(s.completions, s.playerDays) },
+    { label: "Played the next puzzle", cell: (s) => <RateCell rate={s.nextDay} /> },
+  ];
+  return (
+    <Section
+      title="Claude-estimated scores"
+      note={`${windowName}, recorded from ${totals.since}. ${ESTIMATES_MEANING} Before and after compares the same number of puzzles either side of the first estimated one, so anything else that changed in those weeks is in it too.`}
+    >
+      <div className="analytics__tiles">
+        <Tile
+          label="Answers scored by estimate"
+          value={fmt(totals.estimated)}
+          sub={`${shareOf(totals.estimated, totals.answers)} of ${fmt(totals.answers)} answers`}
+        />
+        <Tile
+          label="Still on the 10.00 stand-in"
+          value={fmt(totals.unattested)}
+          sub={`${shareOf(totals.unattested, totals.answers)} of answers`}
+        />
+        <Tile
+          label="Players who banked one"
+          value={fmt(totals.finders)}
+          sub={`${shareOf(totals.finders, totals.players)} of ${fmt(totals.players)} players`}
+        />
+        <Tile
+          label="Average estimated score"
+          value={dec(totals.avgScoreEstimated, 2)}
+          sub={`measured ${dec(totals.avgScoreMeasured, 2)}, stand-in ${dec(totals.avgScoreUnattested, 2)}`}
+        />
+        <Tile
+          label="Estimated Legends"
+          value={fmt(totals.estimatedLegends)}
+          sub={`${shareOf(totals.estimatedLegends, totals.estimated)} of estimated answers`}
+        />
+      </div>
+      {compare && (
+        <div className="analytics__table-wrap">
+          <table className="analytics__table">
+            <thead>
+              <tr>
+                <th scope="col">The game</th>
+                <th scope="col">Before</th>
+                <th scope="col">After</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.label}>
+                  <th scope="row">{r.label}</th>
+                  <td>{r.cell(compare.before)}</td>
+                  <td>{r.cell(compare.after)}</td>
+                </tr>
+              ))}
+              <tr>
+                <th scope="row">Next puzzle, after banking an estimated word</th>
+                <td>—</td>
+                <td>
+                  <RateCell rate={retention.nextDay.found} />
+                  {" vs "}
+                  <RateCell rate={retention.nextDay.other} />
+                  <span className="analytics__n"> without</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+      <ul className="analytics__legend">
+        <li>
+          <span className="analytics__swatch analytics__swatch--single" aria-hidden="true" />
+          Scored by Claude's estimate
+        </li>
+        <li>
+          <span className="analytics__swatch analytics__swatch--looked" aria-hidden="true" />
+          Scored on the 10.00 stand-in
+        </li>
+      </ul>
+      <BarChart
+        label="Unmeasured answers, per puzzle"
+        bars={estimates.daily.map((d) => ({
+          key: d.date,
+          axis: d.date.slice(5),
+          segments: [
+            { value: d.estimated, series: "single" },
+            { value: d.unattested, series: "looked" },
+          ],
+          tip: `${d.date} (${SHORT_WEEKDAYS[dowOf(d.date)]}): ${d.estimated} estimated and ${d.unattested} stand-in of ${d.answers} answers; ${d.finders} of ${d.players} players banked an estimated word`,
         }))}
       />
     </Section>

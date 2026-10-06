@@ -43,6 +43,7 @@ RARITY_PATH = ROOT / "src" / "data" / "rarity.json"
 LEGACY_RARITY_PATH = ROOT / "src" / "data" / "rarity-legacy.json"
 SCORE_OVERRIDES_PATH = ROOT / "src" / "data" / "score-overrides.json"
 FOLD_EXEMPTIONS_PATH = ROOT / "src" / "data" / "fold-exemptions.json"
+ESTIMATED_ZIPF_PATH = ROOT / "src" / "data" / "estimated-zipf.json"
 BOUND_RESIDUES_PATH = ROOT / "src" / "data" / "bound-residues.json"
 MEASUREMENT_UNITS_PATH = ROOT / "src" / "data" / "measurement-units.json"
 DICTIONARY_TEST_PATH = ROOT / "src" / "game" / "dictionary.test.ts"
@@ -1217,9 +1218,35 @@ def chained_base(word: str, index: dict[str, int], zipf_at) -> tuple[str, float]
     return best
 
 
+_ESTIMATED_ZIPF: dict[str, float] | None = None
+
+
+def estimated_zipf(word: str) -> float | None:
+    """Claude's estimated Zipf for `word`, mirroring `withEstimate` in
+    src/game/dictionary.ts for the newest system, where every estimate is live.
+    A word estimated twice keeps its earliest batch, as the game does."""
+    global _ESTIMATED_ZIPF
+    if _ESTIMATED_ZIPF is None:
+        _ESTIMATED_ZIPF = {}
+        since: dict[str, str] = {}
+        if ESTIMATED_ZIPF_PATH.exists():
+            for batch in json.loads(ESTIMATED_ZIPF_PATH.read_text())["batches"]:
+                for w, z in batch["zipf"].items():
+                    if w in since and since[w] <= batch["since"]:
+                        continue
+                    since[w] = batch["since"]
+                    _ESTIMATED_ZIPF[w] = z
+    return _ESTIMATED_ZIPF.get(word)
+
+
 def adjusted_zipf(word: str, index: dict[str, int], zipf_at) -> float:
     """Mirror of adjustedZipf() in src/game/dictionary.ts (newest system)."""
     own = zipf_at(word)
+    # Claude's estimate stands in for the sentinel, as `withEstimate` does.
+    if own == _unattested_zipf():
+        estimate = estimated_zipf(word)
+        if estimate is not None:
+            own = max(estimate, own)
     chained = chained_base(word, index, zipf_at)
     return max(own, chained[1]) if chained is not None else own
 
