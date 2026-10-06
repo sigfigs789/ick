@@ -19,6 +19,7 @@ const VISITS_KEY = "ick:visits";
 // engagement event report identical params, and reloads don't recount.
 const VISIT_SESSION_KEY = "ick:visit-counted";
 const ENGAGED_SESSION_KEY = "ick:visit-engaged";
+const INTERACTED_SESSION_KEY = "ick:visit-interacted";
 
 export interface VisitState {
   /** First-touch: the origin the player *originally* arrived from (sticky). */
@@ -198,10 +199,25 @@ export function recordVisit(
  * (or if no visit was recorded first).
  */
 export function markSessionEngaged(): VisitOutcome | null {
-  if (safeGet(sessionStorage, ENGAGED_SESSION_KEY)) return null;
+  return markSessionOnce(ENGAGED_SESSION_KEY);
+}
+
+/**
+ * Marks that the player did anything at all this session -- pressed any button,
+ * link, field or key -- as opposed to opening the game and leaving. Broader than
+ * `markSessionEngaged`, and kept apart from it so the engaged-visit funnel keeps
+ * meaning what it has always meant. Same contract: the visit outcome the first
+ * time, `null` after that or before any visit is recorded.
+ */
+export function markSessionInteracted(): VisitOutcome | null {
+  return markSessionOnce(INTERACTED_SESSION_KEY);
+}
+
+function markSessionOnce(key: string): VisitOutcome | null {
+  if (safeGet(sessionStorage, key)) return null;
   const raw = safeGet(sessionStorage, VISIT_SESSION_KEY);
   if (!raw) return null;
-  safeSet(sessionStorage, ENGAGED_SESSION_KEY, "1");
+  safeSet(sessionStorage, key, "1");
   try {
     return JSON.parse(raw) as VisitOutcome;
   } catch {

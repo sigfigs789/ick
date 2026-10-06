@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { arrivalSource, markSessionEngaged, recordVisit } from "./visits";
+import { arrivalSource, markSessionEngaged, markSessionInteracted, recordVisit } from "./visits";
 
 /** A page load in a fresh session: clear only the per-session dedupe flags. */
 function newSession() {
@@ -193,5 +193,15 @@ describe("markSessionEngaged", () => {
   it("returns null when engaged before any visit was recorded", () => {
     // No recordVisit call: nothing stashed for this session yet.
     expect(markSessionEngaged()).toBeNull();
+  });
+});
+
+describe("markSessionInteracted", () => {
+  it("returns the visit once per session, apart from markSessionEngaged", () => {
+    expect(markSessionInteracted()).toBeNull(); // no visit yet
+    recordVisit("");
+    expect(markSessionEngaged()).not.toBeNull();
+    expect(markSessionInteracted()).toMatchObject({ isFirstVisit: true });
+    expect(markSessionInteracted()).toBeNull();
   });
 });
