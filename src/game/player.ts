@@ -54,7 +54,7 @@ function safeGet(key: string): string | null {
  * any insecure-origin context), so fall back to filling the bytes by hand
  * rather than letting an unsupported browser fail to join.
  */
-function newId(): string {
+export function newId(): string {
   const c = globalThis.crypto;
   if (c && typeof c.randomUUID === "function") return c.randomUUID();
   const bytes = new Uint8Array(16);

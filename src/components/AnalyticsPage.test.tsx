@@ -89,6 +89,8 @@ const REPORT = {
     visitsWithId: 900,
     engagedVisitors: 200,
     idleVisitors: 50,
+    engagedVisits: 420,
+    engagedFunnelVisitors: 180,
     firstVisits: 300,
     engaged: 700,
     engagedByLooking: 60,
@@ -370,20 +372,33 @@ describe("AnalyticsPage", () => {
     stubFetch();
     render(<AnalyticsPage />);
 
-    const engaged = (await screen.findByText("Engaged visitors")).closest(".analytics__tile")!;
+    const engaged = (await screen.findAllByText("Engaged visitors"))[0].closest(".analytics__tile")!;
     expect(within(engaged as HTMLElement).getByText("200")).toBeInTheDocument();
     expect(within(engaged as HTMLElement).getByText("80% of them, pressed anything")).toBeInTheDocument();
     const idle = screen.getByText("Opened, did nothing").closest(".analytics__tile")!;
     expect(within(idle as HTMLElement).getByText("50")).toBeInTheDocument();
     expect(within(idle as HTMLElement).getByText("20% of them")).toBeInTheDocument();
     expect(screen.getByText("Web visitors")).toBeInTheDocument();
+    const visits = screen.getByText("Engaged visits", { selector: ".analytics__tile-label" }).closest(".analytics__tile")!;
+    expect(within(visits as HTMLElement).getByText("420")).toBeInTheDocument();
+    expect(within(visits as HTMLElement).getByText("2.1 per engaged visitor")).toBeInTheDocument();
+  });
+
+  it("shows the funnel's engaged visits as people too", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+
+    const people = (await screen.findAllByText("Engaged visitors"))[1].closest(".analytics__tile")!;
+    expect(within(people as HTMLElement).getByText("180")).toBeInTheDocument();
+    expect(within(people as HTMLElement).getByText("guessed or looked, over 700 engaged visits")).toBeInTheDocument();
+    expect(screen.getByText("Engaged visits", { selector: ".analytics__funnel-label" })).toBeInTheDocument();
   });
 
   it("says when presses began counting, for a window that starts before them", async () => {
     stubFetch({ ...REPORT, interactedSince: "2026-09-27" });
     render(<AnalyticsPage />);
 
-    const engaged = (await screen.findByText("Engaged visitors")).closest(".analytics__tile")!;
+    const engaged = (await screen.findAllByText("Engaged visitors"))[0].closest(".analytics__tile")!;
     expect(within(engaged as HTMLElement).getByText("80% of them; any press counted from 2026-09-27")).toBeInTheDocument();
   });
 

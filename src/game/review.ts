@@ -439,6 +439,10 @@ export interface AnalyticsReport {
     engagedVisitors: number;
     /** The rest: opened the game and did nothing. Adds up to `visitors` with the above. */
     idleVisitors: number;
+    /** The visits behind `engagedVisitors`, each counted once. */
+    engagedVisits: number;
+    /** The distinct browsers behind `engaged`: people who guessed or looked. */
+    engagedFunnelVisitors: number;
     firstVisits: number;
     /** Visits that guessed, or opened the leaderboard or the found words. */
     engaged: number;
@@ -917,6 +921,8 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       visitsWithId: count(funnel.visitsWithId),
       engagedVisitors: count(funnel.engagedVisitors),
       idleVisitors: count(funnel.idleVisitors),
+      engagedVisits: count(funnel.engagedVisits),
+      engagedFunnelVisitors: count(funnel.engagedFunnelVisitors),
       firstVisits: count(funnel.firstVisits),
       engaged: count(funnel.engaged),
       engagedByLooking: count(funnel.engagedByLooking),

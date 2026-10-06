@@ -102,13 +102,18 @@ export function isReporting(): boolean {
   return reporting;
 }
 
-function send(name: string, props?: EventProps): void {
+/**
+ * `mirrorOnly` rides along to Supabase alone: ids that join rows to each other,
+ * which Vercel can do nothing with and would spend one of its few kept
+ * properties on (see `mirror`).
+ */
+function send(name: string, props?: EventProps, mirrorOnly?: EventProps): void {
   if (!reporting) return;
   // Called with one argument when there are no properties, exactly as before, so
   // an event with no dimensions still reaches Vercel as a bare event name.
   if (props) track(name, props);
   else track(name);
-  mirror(name, props);
+  mirror(name, mirrorOnly ? { ...props, ...mirrorOnly } : props);
 }
 
 /**
@@ -568,12 +573,21 @@ function visitProperties(outcome: VisitOutcome) {
 }
 
 /**
+ * The id of the visit itself, the same on its open, its engagement and its first
+ * press, so the report can count engaged visits once each however many of those
+ * events a visit sent. Null for a session recorded before visits had one.
+ */
+function visitId(outcome: VisitOutcome) {
+  return { visit_id: outcome.visitId ?? null };
+}
+
+/**
  * Record each first-of-session app open, tagged as a first-ever visit or a
  * return. Carries the arrival source and both retention counters so returning
  * visitors can be measured by count, by distinct days, and by origin.
  */
 export function trackVisit(outcome: VisitOutcome) {
-  send("site_visit", visitProperties(outcome));
+  send("site_visit", visitProperties(outcome), visitId(outcome));
 }
 
 /** What first made a visit more than an open and a close. */
@@ -589,7 +603,7 @@ export type EngagedVia = "guess" | "leaderboard" | "found_words";
  * every one of them was a guess.
  */
 export function trackVisitEngaged(outcome: VisitOutcome, via: EngagedVia = "guess") {
-  send("visit_engaged", { ...visitProperties(outcome), via });
+  send("visit_engaged", { ...visitProperties(outcome), via }, visitId(outcome));
 }
 
 /** What can be pressed: a click anywhere else on the page is not a decision. */
@@ -616,7 +630,7 @@ export function watchFirstInteraction(): () => void {
   const report = () => {
     stop();
     const outcome = markSessionInteracted();
-    if (outcome) send("visit_interacted", visitProperties(outcome));
+    if (outcome) send("visit_interacted", visitProperties(outcome), visitId(outcome));
   };
   const onClick = (e: MouseEvent) => {
     if (e.target instanceof Element && e.target.closest(PRESSABLE)) report();

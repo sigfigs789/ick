@@ -1863,6 +1863,11 @@ function Visitors({ report }: { report: AnalyticsReport }) {
         value={f.visitors ? dec(f.visitsWithId / f.visitors, 1) : "—"}
         sub={`average, over ${fmt(f.visitsWithId)} opens`}
       />
+      <Tile
+        label="Engaged visitors"
+        value={fmt(f.engagedFunnelVisitors)}
+        sub={`guessed or looked, over ${fmt(f.engaged)} engaged visits`}
+      />
     </div>
   );
 }
@@ -1873,7 +1878,8 @@ function Visitors({ report }: { report: AnalyticsReport }) {
  * against how many opened it and left. Read off the event log, so the app and
  * the Reddit post, which send no visits, are not in it; the Players tile is.
  * Before presses were recorded, engaged only knows guesses, looks, mode switches,
- * finishes and shares, so a window that starts earlier says so.
+ * finishes and shares, so a window that starts earlier says so. Engaged is shown
+ * twice, as people and as visits, since one person can engage in many visits.
  */
 function VisitorTiles({ report, from, eventSpan }: { report: AnalyticsReport; from: string; eventSpan: string }) {
   const f = report.funnel;
@@ -1892,6 +1898,11 @@ function VisitorTiles({ report, from, eventSpan }: { report: AnalyticsReport; fr
             : `${share(f.engagedVisitors)}, pressed anything`
         }
       />
+      <Tile
+        label="Engaged visits"
+        value={fmt(f.engagedVisits)}
+        sub={f.engagedVisitors ? `${dec(f.engagedVisits / f.engagedVisitors, 1)} per engaged visitor` : "none yet"}
+      />
       <Tile label="Opened, did nothing" value={fmt(f.idleVisitors)} sub={share(f.idleVisitors)} />
     </div>
   );
@@ -1902,7 +1913,7 @@ function Funnel({ report }: { report: AnalyticsReport }) {
   const f = report.funnel;
   const steps = [
     { label: "Visits", value: f.visits },
-    { label: "Engaged", value: f.engaged },
+    { label: "Engaged visits", value: f.engaged },
     { label: "Finished a puzzle", value: f.completed },
     { label: "Shared a result", value: f.shared },
   ];

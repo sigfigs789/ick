@@ -365,6 +365,18 @@ describe("pressing anything", () => {
   });
 });
 
+describe("visit id", () => {
+  it("is shared by a visit's events and kept out of Vercel", async () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    const visit = recordVisit("")!;
+    expect(visit.visitId).toMatch(/^[0-9a-f-]{36}$/);
+    trackVisit(visit);
+    trackVisitEngaged(visit);
+    for (const [, props] of track.mock.calls) expect(props).not.toHaveProperty("visit_id");
+  });
+});
+
 describe("campaign arrivals", () => {
   it("maps the reddit share-link code to its campaign source", () => {
     expect(campaignSourceFromSearch("?s=r")).toBe("reddit");
@@ -622,6 +634,20 @@ describe("supabase mirror", () => {
       name: "word_suggested",
       props: { word: "quixotic", player_id: null },
     });
+  });
+
+  it("mirrors a visit's id to Supabase only", async () => {
+    vi.stubEnv("MODE", "production");
+    const beacon = stubBeacon();
+    localStorage.clear();
+    sessionStorage.clear();
+    const visit = recordVisit("")!;
+
+    trackVisitEngaged(visit);
+
+    expect(track.mock.calls[0][1]).not.toHaveProperty("visit_id");
+    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
+    expect(await payload(body)).toMatchObject({ name: "visit_engaged", props: { visit_id: visit.visitId } });
   });
 
   it("stamps every mirrored event with the player it came from", async () => {
