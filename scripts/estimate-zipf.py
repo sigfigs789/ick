@@ -95,7 +95,9 @@ one, and never add one. A guess is expected; do not refuse a word for being \
 obscure or for being a name."""
 
 OUTPUT_INSTRUCTIONS = """\
-Write your answer to `{out}` as JSON and nothing else, in this shape:
+Write your answer to `{out}` as JSON and nothing else, in this shape. If it \
+is too long to write in one go, split it across several files in the same \
+folder, each in the same shape, named like `{stem}-2.json`, `{stem}-3.json`:
 
 {{"estimates": [{{"word": "chatchke", "zipf": 0.42, \
 "reason": "Rare variant spelling of tchotchke (~Zipf 2); variants run 1-2 lower."}}, ...]}}
@@ -157,7 +159,7 @@ def prepare(args: argparse.Namespace) -> None:
     chunks = [asked[i : i + args.chunk_size] for i in range(0, len(asked), args.chunk_size)]
     for n, chunk in enumerate(chunks, 1):
         out = args.answers_dir / f"answer-{n:03d}.json"
-        instructions = OUTPUT_INSTRUCTIONS.format(out=out)
+        instructions = OUTPUT_INSTRUCTIONS.format(out=out, stem=out.stem)
         request = "\n\n".join([SYSTEM_PROMPT, calibration(report), instructions, word_list(chunk)])
         (args.requests_dir / f"request-{n:03d}.md").write_text(request + "\n")
     print(
