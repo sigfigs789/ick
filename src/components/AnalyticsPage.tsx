@@ -1282,8 +1282,10 @@ const QUARTILE_NAMES = ["Fewest 10.00s", "Second", "Third", "Most 10.00s"];
 
 /**
  * Whether other players' 10.00s cheapen the score: from the same `perfect_report`.
- * The look split is the direct test (a player can only be put off by 10.00s
- * they saw); the puzzle quartiles are the effect on everybody at once.
+ * It leads with everybody, by how often anybody hit a 10.00 on the puzzle --
+ * friends share their results, so that is the exposure every player has, on
+ * any device. The look split is a narrower check under it: web only, and only
+ * the players who opened the boards.
  */
 function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsReport; windowName: string }) {
   const { seen, population, missed } = perfects;
@@ -1303,28 +1305,38 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
   const controlGap = gap(false);
   const lookingEffect = lookedGap !== null && controlGap !== null ? Math.round((lookedGap - controlGap) * 100) : null;
   const lowest = population?.quartiles[0]?.nextDay;
+  const highest = population && population.quartiles.length > 1 ? population.quartiles[population.quartiles.length - 1].nextDay : undefined;
   const range = (q: { minShare: number | null; maxShare: number | null }) =>
     q.minShare === null || q.maxShare === null ? "" : ` (${pct(q.minShare)} to ${pct(q.maxShare)} hit one)`;
   return (
     <Section
       title="Do other players' 10.00s drive players off?"
-      note={`${windowName}. A puzzle's 10.00s are "common" when more of its players hit one than on the window's median puzzle${
-        missed?.medianShare != null ? ` (${pct(missed.medianShare)})` : ""
-      }. The first table keeps only days the player did not hit one, so their own 10.00 is not in it, and splits them by whether they opened the leaderboard or found words, where other players' 10.00s show. If seeing them cheapens the score, the players who looked on a common puzzle come back worst; those who did not look are the control. Looks come from events, so that table is web only. The second table is everybody: puzzles in quartiles by how many of their players hit a 10.00. The weekday, the drop and the mode mix move a puzzle's return too. ${CAVEAT}`}
+      note={`${windowName}. The first table is everybody, on every device: puzzles in quartiles by how often anybody hit a 10.00 on them, against whether all of that puzzle's players came back the next day. Friends share their results, so a puzzle full of 10.00s is one every player is likely to have seen some of; if that cheapens the score, the puzzles with the most come back worst and the correlation is negative. The weekday, the drop and the mode mix move a puzzle's return too. The second table is a narrower check: only days the player did not hit one themselves, split by whether they opened the leaderboard or found words and whether 10.00s were "common" (more of the puzzle's players hit one than on the median puzzle${
+        missed?.medianShare != null ? `, ${pct(missed.medianShare)}` : ""
+      }). Looks come from events, so it is web only. ${CAVEAT}`}
     >
       <div className="analytics__tiles">
-        <Tile
-          label="Looking, on a common day"
-          value={lookingEffect === null ? "—" : `${lookingEffect > 0 ? "+" : lookingEffect < 0 ? "−" : "±"}${Math.abs(lookingEffect)} pts`}
-          sub="common-vs-rare gap for lookers, minus the same gap for non-lookers"
-        />
         {population && (
           <Tile
             label="Correlation, all players"
             value={population.correlation === null ? "—" : population.correlation.toFixed(2)}
-            sub={`share hitting 10.00 vs next-day return, over ${fmt(population.puzzles)} puzzles`}
+            sub={`how often anybody hit 10.00 vs next-day return, over ${fmt(population.puzzles)} puzzles`}
           />
         )}
+        {population && lowest && highest && (
+          <div className="analytics__tile">
+            <span className="analytics__tile-label">Most 10.00s against fewest</span>
+            <span className="analytics__tile-value">
+              <Delta rate={highest} base={lowest} />
+            </span>
+            <span className="analytics__tile-sub">next-day return, every player</span>
+          </div>
+        )}
+        <Tile
+          label="Looked, on a common day (web)"
+          value={lookingEffect === null ? "—" : `${lookingEffect > 0 ? "+" : lookingEffect < 0 ? "−" : "±"}${Math.abs(lookingEffect)} pts`}
+          sub="common-vs-rare gap for lookers, minus the same gap for non-lookers"
+        />
       </div>
       <div className="analytics__table-wrap">
         <table className="analytics__table">
@@ -1337,11 +1349,31 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
               <th scope="col">Gap</th>
             </tr>
           </thead>
+          {population && population.quartiles.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  Every player, by how often anybody hit a 10.00 on the puzzle; gap is against the fewest
+                </th>
+              </tr>
+              {population.quartiles.map((q) => (
+                <tr key={q.quartile}>
+                  <th scope="row">{`${QUARTILE_NAMES[q.quartile - 1] ?? q.quartile}${range(q)}`}</th>
+                  <td>{fmt(q.players)}</td>
+                  <td>{fmt(q.puzzles)}</td>
+                  <td>
+                    <RateCell rate={q.nextDay} />
+                  </td>
+                  <td>{lowest && q.quartile > 1 ? <Delta rate={q.nextDay} base={lowest} /> : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          )}
           {seen && seen.length > 0 && (
             <tbody>
               <tr className="analytics__table-group">
                 <th scope="colgroup" colSpan={5}>
-                  Missed a 10.00 themselves; gap is common against rare, for the same look
+                  Web only: missed a 10.00 themselves; gap is common against rare, for the same look
                 </th>
               </tr>
               {seen.map((g) => {
@@ -1360,26 +1392,6 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
                   </tr>
                 );
               })}
-            </tbody>
-          )}
-          {population && population.quartiles.length > 0 && (
-            <tbody>
-              <tr className="analytics__table-group">
-                <th scope="colgroup" colSpan={5}>
-                  Every player, by how many of the puzzle's players hit a 10.00; gap is against the fewest
-                </th>
-              </tr>
-              {population.quartiles.map((q) => (
-                <tr key={q.quartile}>
-                  <th scope="row">{`${QUARTILE_NAMES[q.quartile - 1] ?? q.quartile}${range(q)}`}</th>
-                  <td>{fmt(q.players)}</td>
-                  <td>{fmt(q.puzzles)}</td>
-                  <td>
-                    <RateCell rate={q.nextDay} />
-                  </td>
-                  <td>{lowest && q.quartile > 1 ? <Delta rate={q.nextDay} base={lowest} /> : "—"}</td>
-                </tr>
-              ))}
             </tbody>
           )}
         </table>

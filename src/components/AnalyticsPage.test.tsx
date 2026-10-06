@@ -475,7 +475,9 @@ describe("AnalyticsPage", () => {
 
     const section = within((await screen.findByText("Do other players' 10.00s drive players off?")).closest("section")!);
     // Lookers: 30% common vs 50% rare (−20); non-lookers 45% vs 50% (−5): looking costs 15.
-    expect(section.getByText("Looking, on a common day").closest("div")).toHaveTextContent("−15 pts");
+    expect(section.getByText("Looked, on a common day (web)").closest("div")).toHaveTextContent("−15 pts");
+    // Everybody: 44% on the puzzles with the most 10.00s against 55% on the fewest.
+    expect(section.getByText("Most 10.00s against fewest").closest("div")).toHaveTextContent("−11 pts");
     expect(section.getByText("Correlation, all players").closest("div")).toHaveTextContent("-0.31");
     const lookedCommon = section.getByRole("rowheader", { name: "Looked at the boards, 10.00s common" });
     expect(lookedCommon.closest("tr")).toHaveTextContent("−20 pts");
