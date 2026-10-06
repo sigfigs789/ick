@@ -1,5 +1,10 @@
 import { track } from "@vercel/analytics";
-import { rarityScore, type BaseFormSubstitution } from "./game/dictionary";
+import {
+  isUnattestedZipf,
+  rarityScore,
+  scoredFromEstimate,
+  type BaseFormSubstitution,
+} from "./game/dictionary";
 import { bestWord } from "./game/rank";
 import { puzzleNumber } from "./game/share";
 import { LIVE_HANDOFF_MS, type LiveCheck } from "./game/liveValidate";
@@ -155,6 +160,38 @@ export function trackAcceptedAnswer(
     total_score: totalScore,
     rarity: word.rarity,
     streak_days: streakDays,
+    score_source: scoreSource(date, word),
+  });
+}
+
+/**
+ * Where an accepted word's score came from: a corpus measurement, Claude's
+ * estimate (src/data/estimated-zipf.json), or the unattested sentinel's flat
+ * 10.00. Rides on `answer_accepted` so every play number the report already
+ * draws from that event can be split by it -- the estimates are a guess, and
+ * the point of recording this is to see what the guesses did to the game.
+ */
+export function scoreSource(date: string, word: AcceptedWord): "measured" | "estimated" | "unattested" {
+  if (scoredFromEstimate(word.word, word.zipf, date)) return "estimated";
+  return isUnattestedZipf(word.zipf) ? "unattested" : "measured";
+}
+
+/**
+ * Record an accepted word scored from Claude's estimated Zipf, the counterpart
+ * of `unattested_score_used` for the words that no longer fall to the sentinel.
+ * Its own event for the same reason that one is: the count is the thing being
+ * watched. Carries the score the estimate earned so the report can show where
+ * the guesses landed on the scale.
+ */
+export function trackEstimatedScore(date: string, word: AcceptedWord) {
+  send("estimated_score_used", {
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    mode: modeOf(date),
+    word: word.word,
+    zipf: word.zipf,
+    score: rarityScore(word.zipf, date),
+    rarity: word.rarity,
   });
 }
 

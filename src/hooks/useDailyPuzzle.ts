@@ -59,6 +59,8 @@ import {
   trackRejectedAnswer,
   trackRejectionMessage,
   trackUnattestedScore,
+  trackEstimatedScore,
+  scoreSource,
   trackVisitEngaged,
 } from "../analytics";
 import { submitScore } from "../game/leaderboard";
@@ -297,6 +299,7 @@ export function useDailyPuzzle() {
         retried: updated.retryUsed === true,
       });
       if (isUnattestedZipf(word.zipf)) trackUnattestedScore(viewedDate, word, source);
+      if (scoreSource(viewedDate, word) === "estimated") trackEstimatedScore(viewedDate, word);
       const substitution = baseFormSubstitution(word.word, viewedDate);
       if (substitution) trackBaseFormSubstitution(viewedDate, substitution);
       if (updated.completed) {

@@ -9,6 +9,7 @@ import dictionaryWords from "../data/dictionary.json";
 import rarityData from "../data/rarity.json";
 import legacyRarityData from "../data/rarity-legacy.json";
 import scoreOverrideData from "../data/score-overrides.json";
+import estimatedZipfData from "../data/estimated-zipf.json";
 import foldExemptionData from "../data/fold-exemptions.json";
 import foldReviewVerdictData from "../data/fold-review-verdicts.json";
 import boundResidueData from "../data/bound-residues.json";
@@ -830,6 +831,105 @@ function overrideBase(word: string, scoring: Scoring, date?: string): string | u
   const verdict = reviewVerdictFor(word, date);
   if (!verdict || verdict.base === null) return undefined;
   return lexiconHas(verdict.base, scoring) ? verdict.base : undefined;
+}
+
+// -- Claude's estimated Zipf (src/data/estimated-zipf.json) ------------------
+/**
+ * One run of the "Estimate unattested Zipf" workflow: the frequencies Claude
+ * guessed for the words one puzzle can accept that no corpus measures.
+ *
+ * Kept as batches rather than a flat word map so every estimate carries where
+ * it came from -- which model, which run, for which drop -- and so nothing can
+ * mistake one for a measurement. `zipf` is in the same units as rarity.json.
+ */
+interface EstimatedZipfBatch {
+  /** The puzzle the batch was made for; its estimates apply from here on. */
+  since: string;
+  drop: string;
+  model: string;
+  /** Always "claude": who made the guess, so no reader takes it for data. */
+  source?: string;
+  /** The Actions run that produced it. */
+  run?: string;
+  estimatedAt?: string;
+  zipf: Record<string, number>;
+}
+
+/** A word's estimate, flattened out of its batch. */
+export interface EstimatedZipf {
+  zipf: number;
+  since: string;
+  model: string;
+}
+
+/**
+ * Index the batches by word. A word estimated twice keeps the batch with the
+ * earliest `since`, so a later run can never re-price a puzzle an earlier
+ * estimate already reached. Exported for the tests, which feed it batches of
+ * their own rather than depending on what the data file holds today.
+ */
+export function indexEstimatedZipf(
+  batches: readonly EstimatedZipfBatch[]
+): ReadonlyMap<string, EstimatedZipf> {
+  const index = new Map<string, EstimatedZipf>();
+  for (const batch of batches) {
+    for (const [word, zipf] of Object.entries(batch.zipf)) {
+      if (!Number.isFinite(zipf)) continue;
+      const known = index.get(word);
+      if (known && known.since <= batch.since) continue;
+      index.set(word, { zipf, since: batch.since, model: batch.model });
+    }
+  }
+  return index;
+}
+
+let ESTIMATED_ZIPF = indexEstimatedZipf(
+  (estimatedZipfData as { batches: EstimatedZipfBatch[] }).batches
+);
+
+/** Swap the estimates for a test's own. Tests only. */
+export function setEstimatedZipfForTests(batches: readonly EstimatedZipfBatch[]): void {
+  ESTIMATED_ZIPF = indexEstimatedZipf(batches);
+}
+
+/** The estimate recorded for `word`, whatever its date. */
+export function estimatedZipfEntry(word: string): EstimatedZipf | undefined {
+  return ESTIMATED_ZIPF.get(word.toLowerCase());
+}
+
+/**
+ * A word's own Zipf with Claude's estimate standing in for the unattested
+ * sentinel, from the estimate's `since` on. An omitted date means the newest
+ * system, where every estimate is live.
+ *
+ * Only ever replaces the sentinel: a word some corpus has since measured scores
+ * on the measurement, and the estimate is left in the file as a record of what
+ * was guessed. It is the word's *own* frequency, so Standard's fold still caps
+ * it against every measured base exactly as it would any other word -- an
+ * estimate can make an unmeasured word more common than 10.00, never rarer than
+ * its base. It is not used to price a fold base for some other word (see
+ * `zipfFor`), which keeps every estimate's reach to the one word it was made for.
+ *
+ * Floored at the sentinel, so a guess below the rarest measured word still
+ * scores the 10.00 it would have scored without one.
+ */
+function withEstimate(word: string, ownZipf: number, date?: string): number {
+  if (ownZipf !== MIN_ZIPF) return ownZipf;
+  const estimate = ESTIMATED_ZIPF.get(word);
+  if (!estimate || (date !== undefined && date < estimate.since)) return ownZipf;
+  return Math.max(estimate.zipf, MIN_ZIPF);
+}
+
+/**
+ * Whether `word`'s score under `date` came from Claude's estimate rather than a
+ * corpus -- its own Zipf was the sentinel, an estimate was live for the puzzle,
+ * and the fold did not replace it with a measured base. `zipf` is the scored
+ * value `rarityFor` (or the corpus path) returned for it.
+ */
+export function scoredFromEstimate(word: string, zipf: number, date?: string): boolean {
+  const estimate = ESTIMATED_ZIPF.get(word.toLowerCase());
+  if (!estimate || (date !== undefined && date < estimate.since)) return false;
+  return zipf === Math.max(estimate.zipf, MIN_ZIPF);
 }
 
 // -- Curated fold exemptions (src/data/fold-exemptions.json) -----------------
@@ -2576,7 +2676,7 @@ export function rarityFor(
   const i = WORD_INDEX.get(normalized);
   if (i === undefined) return undefined;
   const scoring = scoringFor(date, mode);
-  const zipf = adjustedZipf(normalized, scoring.zipfAt(i), scoring, date);
+  const zipf = adjustedZipf(normalized, withEstimate(normalized, scoring.zipfAt(i), date), scoring, date);
   return { rarity: scoring.rarity(zipf), zipf };
 }
 
@@ -2606,7 +2706,7 @@ export function rarityFor(
 export function rarityForUncurated(word: string, ownZipf: number, date?: string): RarityInfo {
   const normalized = word.toLowerCase();
   const scoring = scoringFor(date);
-  const zipf = adjustedZipf(normalized, ownZipf, scoring, date);
+  const zipf = adjustedZipf(normalized, withEstimate(normalized, ownZipf, date), scoring, date);
   return { rarity: scoring.rarity(zipf), zipf };
 }
 
@@ -2639,7 +2739,7 @@ export function baseFormSubstitution(
   const i = WORD_INDEX.get(normalized);
   if (i === undefined) return undefined;
   const scoring = scoringFor(date);
-  const ownZipf = scoring.zipfAt(i);
+  const ownZipf = withEstimate(normalized, scoring.zipfAt(i), date);
 
   // Nothing folded, so there is no substitution to report and the "Scored as its
   // common form" note stays off for the week -- the score on screen really is
@@ -3200,7 +3300,7 @@ export function foldTrace(word: string, date?: string): FoldTrace | undefined {
   if (!scoring.folds || !scoring.chainedBaseForms) return undefined;
   if (!lexiconHas(normalized, scoring)) return undefined;
 
-  const ownZipf = zipfFor(normalized, scoring);
+  const ownZipf = withEstimate(normalized, zipfFor(normalized, scoring), date);
   const trace = new Map<string, FoldHop>();
   const chained = chainedBase(normalized, scoring, date, trace);
   if (!chained || chained.zipf <= ownZipf) return undefined;

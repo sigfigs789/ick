@@ -399,14 +399,17 @@ async function handleGet(request: Request): Promise<Response> {
           console.error(`[review] ${name} failed:`, error instanceof Error ? error.message : error);
           return null;
         });
-      const [report, chat, onboarding, copies, returners] = await Promise.all([
+      const [report, chat, onboarding, copies, returners, estimates] = await Promise.all([
         rpc<Record<string, unknown> | null>("analytics_report", args),
         optional("chat_report", args),
         optional("onboarding_report", { p_days: days }),
         optional("copy_report", args),
         optional("retention_report", args),
+        optional("estimated_score_report", args),
       ]);
-      return reply(200, { report: { ...(report ?? {}), chat, onboarding, copies, returners } });
+      return reply(200, {
+        report: { ...(report ?? {}), chat, onboarding, copies, returners, estimates },
+      });
     }
     if (list === "freeform") {
       // Two reads rather than one, because the votes and the notes are two

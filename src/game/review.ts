@@ -478,6 +478,12 @@ export interface AnalyticsReport {
    * 20261005000000 migration). Null when that read failed or predates it.
    */
   returners: ReturnersReport | null;
+  /**
+   * Answers scored from Claude's estimated Zipf, and the game before and after
+   * the first one, from `estimated_score_report` (the 20261006000000
+   * migration). Null when that read failed or predates it.
+   */
+  estimates: EstimatesReport | null;
 }
 
 /**
@@ -564,6 +570,52 @@ export interface CopyReport {
     /** Players, by whether they ever copied; returned within seven puzzles. */
     week: { copied: Rate; other: Rate };
   };
+}
+
+/** One side of the before/after comparison in `EstimatesReport`. */
+export interface EstimatesSpan {
+  from: string;
+  to: string;
+  playerDays: number;
+  answers: number;
+  /** Answers scored Legend. */
+  legends: number;
+  /** Answers scored on the unattested sentinel. */
+  unattested: number;
+  /** Player-days that finished the puzzle. */
+  completions: number;
+  avgScore: number | null;
+  nextDay: Rate;
+}
+
+/** What Claude's estimated Zipf did to the game -- see estimated_score_report. */
+export interface EstimatesReport {
+  totals: {
+    /** The first puzzle a player banked an estimated word on. */
+    since: string | null;
+    answers: number;
+    estimated: number;
+    unattested: number;
+    measured: number;
+    players: number;
+    /** Distinct players who banked at least one estimated word. */
+    finders: number;
+    avgScoreEstimated: number | null;
+    avgScoreUnattested: number | null;
+    avgScoreMeasured: number | null;
+    estimatedLegends: number;
+  };
+  daily: Array<{
+    date: string;
+    answers: number;
+    estimated: number;
+    unattested: number;
+    players: number;
+    finders: number;
+  }>;
+  /** Equal spans either side of `since`; null before any estimate was banked. */
+  compare: { before: EstimatesSpan; after: EstimatesSpan } | null;
+  retention: { nextDay: { found: Rate; other: Rate } };
 }
 
 /** Why a new player started in the mode they did -- see game/onboarding.ts. */
@@ -808,6 +860,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       r.onboarding && typeof r.onboarding === "object" ? parseOnboarding(r.onboarding) : null,
     copies: r.copies && typeof r.copies === "object" ? parseCopies(r.copies) : null,
     returners: r.returners && typeof r.returners === "object" ? parseReturners(r.returners) : null,
+    estimates: r.estimates && typeof r.estimates === "object" ? parseEstimates(r.estimates) : null,
   };
 }
 
@@ -924,6 +977,60 @@ function parseCopies(raw: unknown): CopyReport {
       nextDay: { copied: rate(nextDay.copied), other: rate(nextDay.other) },
       week: { copied: rate(week.copied), other: rate(week.other) },
     },
+  };
+}
+
+function parseSpan(raw: unknown): EstimatesSpan | null {
+  const s = obj(raw);
+  const from = text(s.from);
+  const to = text(s.to);
+  if (!from || !to) return null;
+  return {
+    from,
+    to,
+    playerDays: count(s.playerDays),
+    answers: count(s.answers),
+    legends: count(s.legends),
+    unattested: count(s.unattested),
+    completions: count(s.completions),
+    avgScore: maybe(s.avgScore),
+    nextDay: rate(s.nextDay),
+  };
+}
+
+function parseEstimates(raw: unknown): EstimatesReport {
+  const e = obj(raw);
+  const t = obj(e.totals);
+  const compare = obj(e.compare);
+  const before = parseSpan(compare.before);
+  const after = parseSpan(compare.after);
+  const nextDay = obj(obj(e.retention).nextDay);
+  return {
+    totals: {
+      since: text(t.since),
+      answers: count(t.answers),
+      estimated: count(t.estimated),
+      unattested: count(t.unattested),
+      measured: count(t.measured),
+      players: count(t.players),
+      finders: count(t.finders),
+      avgScoreEstimated: maybe(t.avgScoreEstimated),
+      avgScoreUnattested: maybe(t.avgScoreUnattested),
+      avgScoreMeasured: maybe(t.avgScoreMeasured),
+      estimatedLegends: count(t.estimatedLegends),
+    },
+    daily: list(e.daily)
+      .filter((d) => text(d.date))
+      .map((d) => ({
+        date: d.date as string,
+        answers: count(d.answers),
+        estimated: count(d.estimated),
+        unattested: count(d.unattested),
+        players: count(d.players),
+        finders: count(d.finders),
+      })),
+    compare: before && after ? { before, after } : null,
+    retention: { nextDay: { found: rate(nextDay.found), other: rate(nextDay.other) } },
   };
 }
 
