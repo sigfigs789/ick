@@ -396,7 +396,7 @@ async function handleGet(request: Request): Promise<Response> {
       // migration) takes it the same way, and is set on it as `returners`, and
       // whether players who hit a 10.00 come back more (the 20261006000000
       // migration) as `perfects`. Answers scored from Claude's estimated Zipf
-      // (the 20261006030000 migration) take it the same way too, and are set on
+      // (the 20261006100000 migration) take it the same way too, and are set on
       // it as `estimates`.
       const optional = (name: string, fnArgs: Record<string, unknown>) =>
         rpc<Record<string, unknown> | null>(name, fnArgs).catch((error: unknown) => {

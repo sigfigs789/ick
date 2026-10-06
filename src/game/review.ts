@@ -485,7 +485,7 @@ export interface AnalyticsReport {
   perfects: PerfectsReport | null;
   /**
    * Answers scored from Claude's estimated Zipf, and the game before and after
-   * the first one, from `estimated_score_report` (the 20261006030000
+   * the first one, from `estimated_score_report` (the 20261006100000
    * migration). Null when that read failed or predates it.
    */
   estimates: EstimatesReport | null;
