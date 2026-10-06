@@ -9,6 +9,7 @@ import {
   type CopyReport,
   type OnboardingReason,
   type OnboardingReport,
+  type PerfectPopulation,
   type PerfectsReport,
   type Rate,
   type ReturnersReport,
@@ -448,6 +449,8 @@ function Report({
       {report.perfects && !isToday && <PerfectSection perfects={report.perfects} windowName={windowName} />}
 
       {report.perfects && !isToday && <SeenPerfectsSection perfects={report.perfects} windowName={windowName} />}
+
+      {report.perfects?.casual && !isToday && <CasualPerfectsSection casual={report.perfects.casual} windowName={windowName} />}
     </div>
   );
 }
@@ -1306,8 +1309,6 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
   const lookingEffect = lookedGap !== null && controlGap !== null ? Math.round((lookedGap - controlGap) * 100) : null;
   const lowest = population?.quartiles[0]?.nextDay;
   const highest = population && population.quartiles.length > 1 ? population.quartiles[population.quartiles.length - 1].nextDay : undefined;
-  const range = (q: { minShare: number | null; maxShare: number | null }) =>
-    q.minShare === null || q.maxShare === null ? "" : ` (${pct(q.minShare)} to ${pct(q.maxShare)} hit one)`;
   return (
     <Section
       title="Do other players' 10.00s drive players off?"
@@ -1356,17 +1357,7 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
                   Every player, by how often anybody hit a 10.00 on the puzzle; gap is against the fewest
                 </th>
               </tr>
-              {population.quartiles.map((q) => (
-                <tr key={q.quartile}>
-                  <th scope="row">{`${QUARTILE_NAMES[q.quartile - 1] ?? q.quartile}${range(q)}`}</th>
-                  <td>{fmt(q.players)}</td>
-                  <td>{fmt(q.puzzles)}</td>
-                  <td>
-                    <RateCell rate={q.nextDay} />
-                  </td>
-                  <td>{lowest && q.quartile > 1 ? <Delta rate={q.nextDay} base={lowest} /> : "—"}</td>
-                </tr>
-              ))}
+              <QuartileRows population={population} />
             </tbody>
           )}
           {seen && seen.length > 0 && (
@@ -1396,6 +1387,128 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
           )}
         </table>
       </div>
+    </Section>
+  );
+}
+
+/** Puzzles in quartiles by how often anybody hit a 10.00, gap against the fewest. */
+function QuartileRows({ population }: { population: PerfectPopulation }) {
+  const lowest = population.quartiles[0]?.nextDay;
+  return (
+    <>
+      {population.quartiles.map((q) => (
+        <tr key={q.quartile}>
+          <th scope="row">
+            {`${QUARTILE_NAMES[q.quartile - 1] ?? q.quartile}${
+              q.minShare === null || q.maxShare === null ? "" : ` (${pct(q.minShare)} to ${pct(q.maxShare)} hit one)`
+            }`}
+          </th>
+          <td>{fmt(q.players)}</td>
+          <td>{fmt(q.puzzles)}</td>
+          <td>
+            <RateCell rate={q.nextDay} />
+          </td>
+          <td>{lowest && q.quartile > 1 ? <Delta rate={q.nextDay} base={lowest} /> : "—"}</td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
+/**
+ * The 10.00 questions without the power users, from `perfect_report`'s
+ * `casual` (the 20261006020000 migration): only days that were a player's
+ * first six puzzles, so the regulars who come back whatever happens do not
+ * carry the rates.
+ */
+function CasualPerfectsSection({
+  casual,
+  windowName,
+}: {
+  casual: NonNullable<PerfectsReport["casual"]>;
+  windowName: string;
+}) {
+  const lowest = casual.quartiles[0]?.nextDay;
+  const highest = casual.quartiles.length > 1 ? casual.quartiles[casual.quartiles.length - 1].nextDay : undefined;
+  const hit = casual.days.find((d) => d.perfect)?.nextDay;
+  const missed = casual.days.find((d) => !d.perfect)?.nextDay;
+  return (
+    <Section
+      title="10.00s without the power users"
+      note={`${windowName}, counting only the days that were one of a player's first six puzzles, so nobody's 7th puzzle or later is in it. That is cut by where the player was that day, not by how many they went on to play: reaching seven is itself coming back, and cutting on it would take the returns out with it. Puzzles stay in the quartiles of the section above, by how often anybody (power users too) hit a 10.00, since that is what these players saw. Every device counts. ${CAVEAT}`}
+    >
+      <div className="analytics__tiles">
+        <Tile
+          label="Correlation, casual players"
+          value={casual.correlation === null ? "—" : casual.correlation.toFixed(2)}
+          sub={`how often anybody hit 10.00 vs their next-day return, over ${fmt(casual.puzzles)} puzzles`}
+        />
+        {lowest && highest && (
+          <div className="analytics__tile">
+            <span className="analytics__tile-label">Most 10.00s against fewest</span>
+            <span className="analytics__tile-value">
+              <Delta rate={highest} base={lowest} />
+            </span>
+            <span className="analytics__tile-sub">next-day return, casual players</span>
+          </div>
+        )}
+        {hit && missed && (
+          <div className="analytics__tile">
+            <span className="analytics__tile-label">Their own 10.00</span>
+            <span className="analytics__tile-value">
+              <Delta rate={hit} base={missed} />
+            </span>
+            <span className="analytics__tile-sub">next day after hitting one, against not</span>
+          </div>
+        )}
+      </div>
+      {casual.quartiles.length === 0 && casual.days.length === 0 ? (
+        <p className="review__status">Not enough casual players in this window yet.</p>
+      ) : (
+        <div className="analytics__table-wrap">
+          <table className="analytics__table">
+            <thead>
+              <tr>
+                <th scope="col">Day</th>
+                <th scope="col">Players</th>
+                <th scope="col">Puzzles</th>
+                <th scope="col">Next day</th>
+                <th scope="col">Gap</th>
+              </tr>
+            </thead>
+            {casual.quartiles.length > 0 && (
+              <tbody>
+                <tr className="analytics__table-group">
+                  <th scope="colgroup" colSpan={5}>
+                    By how often anybody hit a 10.00 on the puzzle; gap is against the fewest
+                  </th>
+                </tr>
+                <QuartileRows population={casual} />
+              </tbody>
+            )}
+            {casual.days.length > 0 && (
+              <tbody>
+                <tr className="analytics__table-group">
+                  <th scope="colgroup" colSpan={5}>
+                    By their own best word; gap is against under 10
+                  </th>
+                </tr>
+                {casual.days.map((d) => (
+                  <tr key={String(d.perfect)}>
+                    <th scope="row">{d.perfect ? "Best word 10.00" : "Best word under 10"}</th>
+                    <td>{fmt(d.players)}</td>
+                    <td>{fmt(d.days)}</td>
+                    <td>
+                      <RateCell rate={d.nextDay} />
+                    </td>
+                    <td>{d.perfect && missed ? <Delta rate={d.nextDay} base={missed} /> : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            )}
+          </table>
+        </div>
+      )}
     </Section>
   );
 }

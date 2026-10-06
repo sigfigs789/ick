@@ -224,6 +224,18 @@ const PERFECTS = {
       { quartile: 4, puzzles: 5, minShare: 0.3, maxShare: 0.5, players: 90, nextDay: { cohort: 90, returned: 40 } },
     ],
   },
+  casual: {
+    puzzles: 18,
+    correlation: -0.42,
+    quartiles: [
+      { quartile: 1, puzzles: 5, minShare: 0.05, maxShare: 0.1, players: 40, nextDay: { cohort: 40, returned: 20 } },
+      { quartile: 4, puzzles: 5, minShare: 0.3, maxShare: 0.5, players: 40, nextDay: { cohort: 40, returned: 12 } },
+    ],
+    days: [
+      { perfect: true, players: 10, days: 15, nextDay: { cohort: 15, returned: 6 } },
+      { perfect: false, players: 30, days: 60, nextDay: { cohort: 60, returned: 30 } },
+    ],
+  },
 };
 
 /** The shape `chat_report` returns, which api/review.ts sets on the report. */
@@ -485,12 +497,28 @@ describe("AnalyticsPage", () => {
     expect(within(most.closest("tr")!).getByText("−11 pts")).toHaveClass("analytics__delta--down");
   });
 
+  it("shows the 10.00 numbers without the power users", async () => {
+    stubFetch({ ...REPORT, perfects: PERFECTS });
+    render(<AnalyticsPage />);
+
+    const section = within((await screen.findByText("10.00s without the power users")).closest("section")!);
+    expect(section.getByText("Correlation, casual players").closest("div")).toHaveTextContent("-0.42");
+    // 30% on the puzzles with the most 10.00s against 50% on the fewest.
+    expect(section.getByText("Most 10.00s against fewest").closest("div")).toHaveTextContent("−20 pts");
+    // 40% after their own 10.00 against 50% after any other day.
+    expect(section.getByText("Their own 10.00").closest("div")).toHaveTextContent("−10 pts");
+    expect(section.getByRole("rowheader", { name: "Most 10.00s (30% to 50% hit one)" }).closest("tr")).toHaveTextContent(
+      "30%",
+    );
+  });
+
   it("draws the first perfect_report, from before the missed split, without it", async () => {
-    stubFetch({ ...REPORT, perfects: { ...PERFECTS, missed: undefined, seen: undefined, population: undefined } });
+    stubFetch({ ...REPORT, perfects: { ...PERFECTS, missed: undefined, seen: undefined, population: undefined, casual: undefined } });
     render(<AnalyticsPage />);
     await screen.findByText("Perfect scores and who comes back");
     expect(screen.queryByText("Hit a 10.00")).not.toBeInTheDocument();
     expect(screen.queryByText("Do other players' 10.00s drive players off?")).not.toBeInTheDocument();
+    expect(screen.queryByText("10.00s without the power users")).not.toBeInTheDocument();
   });
 
   it("leaves the perfect-score section out when its numbers failed", async () => {

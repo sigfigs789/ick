@@ -517,19 +517,30 @@ export interface PerfectsReport {
    */
   seen: Array<{ looked: boolean; common: boolean; players: number; days: number; nextDay: Rate }> | null;
   /** Every player, puzzle by puzzle. Null before the 20261006010000 migration. */
-  population: {
+  population: PerfectPopulation | null;
+  /**
+   * Without the power users: only days that were a player's first six puzzles.
+   * Quartiles keep the whole puzzle's 10.00 share. Null before 20261006020000.
+   */
+  casual:
+    | (PerfectPopulation & {
+        days: Array<{ perfect: boolean; players: number; days: number; nextDay: Rate }>;
+      })
+    | null;
+}
+
+export interface PerfectPopulation {
+  puzzles: number;
+  /** Across puzzles: share hitting 10.00 against the puzzle's next-day return. */
+  correlation: number | null;
+  quartiles: Array<{
+    quartile: number;
     puzzles: number;
-    /** Across puzzles: share hitting 10.00 against the puzzle's next-day return. */
-    correlation: number | null;
-    quartiles: Array<{
-      quartile: number;
-      puzzles: number;
-      minShare: number | null;
-      maxShare: number | null;
-      players: number;
-      nextDay: Rate;
-    }>;
-  } | null;
+    minShare: number | null;
+    maxShare: number | null;
+    players: number;
+    nextDay: Rate;
+  }>;
 }
 
 /**
@@ -998,21 +1009,35 @@ function parsePerfects(raw: unknown): PerfectsReport {
           nextDay: rate(g.nextDay),
         }))
       : null,
-    population:
-      r.population && typeof r.population === "object"
+    population: r.population && typeof r.population === "object" ? parsePopulation(r.population) : null,
+    casual:
+      r.casual && typeof r.casual === "object"
         ? {
-            puzzles: count(obj(r.population).puzzles),
-            correlation: maybe(obj(r.population).correlation),
-            quartiles: list(obj(r.population).quartiles).map((q) => ({
-              quartile: count(q.quartile),
-              puzzles: count(q.puzzles),
-              minShare: maybe(q.minShare),
-              maxShare: maybe(q.maxShare),
-              players: count(q.players),
-              nextDay: rate(q.nextDay),
+            ...parsePopulation(r.casual),
+            days: list(obj(r.casual).days).map((d) => ({
+              perfect: d.perfect === true,
+              players: count(d.players),
+              days: count(d.days),
+              nextDay: rate(d.nextDay),
             })),
           }
         : null,
+  };
+}
+
+function parsePopulation(raw: unknown): PerfectPopulation {
+  const p = obj(raw);
+  return {
+    puzzles: count(p.puzzles),
+    correlation: maybe(p.correlation),
+    quartiles: list(p.quartiles).map((q) => ({
+      quartile: count(q.quartile),
+      puzzles: count(q.puzzles),
+      minShare: maybe(q.minShare),
+      maxShare: maybe(q.maxShare),
+      players: count(q.players),
+      nextDay: rate(q.nextDay),
+    })),
   };
 }
 
