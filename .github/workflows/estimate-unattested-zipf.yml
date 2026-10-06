@@ -9,7 +9,8 @@ name: Estimate unattested Zipf
 #      contains the drop through the game's own evaluateSubmission, in both
 #      modes, and keeps the ones accepted on a sentinel Zipf of their own. It
 #      also picks measured words with the same drop as calibration anchors.
-#   2. scripts/estimate-zipf.py hands them to Claude in batches and appends one
+#   2. scripts/estimate-zipf.py hands at most 200 of them (the likeliest to be
+#      played first; see `priority`) to Claude in batches and appends one
 #      batch to the data file: the model, this run's URL, the drop, and the
 #      puzzle date as `since`. Nothing marks an estimate as anything but a guess,
 #      and nothing re-prices an earlier puzzle.
@@ -47,10 +48,10 @@ on:
           - claude-opus-5-5
           - claude-sonnet-5-5
           - claude-haiku-4-5
-      max_words:
-        description: Stop without spending if a drop reaches more words than this
+      limit:
+        description: Most words to estimate (the likeliest to be played go first)
         required: false
-        default: "12000"
+        default: "200"
         type: string
 
 permissions:
@@ -132,7 +133,7 @@ jobs:
           python scripts/estimate-zipf.py \
             --candidates .tmp/candidates.json \
             --model "${{ inputs.model || 'claude-opus-5-5' }}" \
-            --max-words "${{ inputs.max_words || '12000' }}" \
+            --limit "${{ inputs.limit || '200' }}" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --summary-out .tmp/summary.md
           cat .tmp/summary.md >> "$GITHUB_STEP_SUMMARY"

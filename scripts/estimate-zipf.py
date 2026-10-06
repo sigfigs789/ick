@@ -85,6 +85,26 @@ SCHEMA = {
 }
 
 
+def priority(candidate: dict) -> tuple:
+    """Sort key for which words get an estimate when a drop reaches more than
+    the daily cap: the ones a player is likeliest to type and to see at 10.00.
+
+    1. Still 10.00 in Standard, the default mode (Standard's fold did not move it).
+    2. In the curated dictionary, the list the game shipped with.
+    3. Vouched for by more lexicons (Wiktionary, macOS, the curated extras).
+    4. Shorter, since a short word is more often a word somebody knows.
+    """
+    sources = candidate["sources"]
+    lexicons = sum(1 for s in ("wiktionary", "dictionary", "macos_dict", "curated") if s in sources)
+    return (
+        0 if "standard" in candidate["modes"] and candidate["standardZipf"] is None else 1,
+        0 if "dictionary" in sources else 1,
+        -lexicons,
+        len(candidate["word"]),
+        candidate["word"],
+    )
+
+
 def calibration(report: dict) -> str:
     lines = [f"Measured words containing today's drop {report['drop']}, for calibration:"]
     for anchor in report.get("anchors", []):
@@ -137,7 +157,7 @@ def estimate_all(report: dict, model: str, effort: str, batch_size: int, workers
         {"type": "text", "text": SYSTEM_PROMPT},
         {"type": "text", "text": calibration(report), "cache_control": {"type": "ephemeral"}},
     ]
-    candidates = report["candidates"]
+    candidates = report["asked"]
     batches = [candidates[i : i + batch_size] for i in range(0, len(candidates), batch_size)]
     results: dict[str, float] = {}
 
@@ -161,11 +181,16 @@ BANDS = [(-math.inf, -1), (-1, 0), (0, 1), (1, 2), (2, 3), (3, math.inf)]
 
 def summary(report: dict, estimates: dict[str, float], model: str, run_url: str | None) -> str:
     candidates = [c["word"] for c in report["candidates"]]
-    missing = [w for w in candidates if w not in estimates]
+    asked = [c["word"] for c in report.get("asked", report["candidates"])]
+    missing = [w for w in asked if w not in estimates]
     lines = [
         f"Claude ({model}) estimated a Zipf frequency for **{len(estimates)}** of the "
         f"**{len(candidates)}** words the **{report['drop']}** drop on **{report['date']}** "
         "can accept that no frequency corpus measures.",
+        "",
+        f"The run is capped at {len(asked)} word(s) a day, taken in order: still 10.00 in "
+        "Standard, in the curated dictionary, vouched for by more lexicons, shorter. The "
+        f"other {len(candidates) - len(asked)} keep the flat 10.00 until the drop comes round again.",
         "",
         "These are guesses, not measurements. They are recorded in `src/data/estimated-zipf.json` "
         "as one batch carrying the model, run and puzzle date, and they apply from that "
@@ -203,7 +228,7 @@ def main() -> None:
     parser.add_argument("--effort", default="low", choices=["low", "medium", "high"])
     parser.add_argument("--batch-size", type=int, default=150)
     parser.add_argument("--workers", type=int, default=4)
-    parser.add_argument("--max-words", type=int, default=12000, help="refuse to run past this many words")
+    parser.add_argument("--limit", type=int, default=200, help="estimate at most this many words, by priority()")
     parser.add_argument("--run-url")
     parser.add_argument("--summary-out", type=Path)
     parser.add_argument("--dry-run", action="store_true")
@@ -214,13 +239,12 @@ def main() -> None:
     if count == 0:
         print(f"Nothing to estimate for {report['date']} ({report['drop']}).")
         return
-    if count > args.max_words:
-        sys.exit(f"{count} candidates is over --max-words {args.max_words}; raise it to spend that much.")
+    report["asked"] = sorted(report["candidates"], key=priority)[: args.limit]
     if args.dry_run:
-        print(SYSTEM_PROMPT, calibration(report), "", user_prompt(report["candidates"][: args.batch_size]), sep="\n")
+        print(SYSTEM_PROMPT, calibration(report), "", user_prompt(report["asked"][: args.batch_size]), sep="\n")
         return
 
-    print(f"Estimating {count} word(s) for {report['date']} ({report['drop']}) with {args.model}", file=sys.stderr)
+    print(f"Estimating {len(report['asked'])} of {count} word(s) for {report['date']} ({report['drop']}) with {args.model}", file=sys.stderr)
     estimates = estimate_all(report, args.model, args.effort, args.batch_size, args.workers)
 
     data = json.loads(ESTIMATES_PATH.read_text())
@@ -239,7 +263,7 @@ def main() -> None:
         ESTIMATES_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
     if args.summary_out:
         args.summary_out.write_text(summary(report, estimates, args.model, args.run_url))
-    print(f"Recorded {len(estimates)} estimate(s) of {count}.")
+    print(f"Recorded {len(estimates)} estimate(s) of {len(report['asked'])} asked ({count} candidates).")
 
 
 if __name__ == "__main__":
