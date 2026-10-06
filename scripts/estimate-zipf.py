@@ -15,9 +15,9 @@ Steps around Claude Code runs, so the workflow takes the same credentials as
              their provenance -- the model, the Actions run, the drops and the
              puzzle date -- so an estimate can never be mistaken for a
              measurement.
-    summary  writes the PR body: what was estimated, a sample of 25 of the
-             words players have already banked at 10.00 and a sample of 100 of
-             the rest -- each with the score Standard and Freeform will show (from
+    summary  writes the PR body: what was estimated, every estimate for a word
+             players have already banked at 10.00, and a sample of 100 of the
+             rest -- each with the score Standard and Freeform will show (from
              scripts/estimated-scores.mts, run after `record`) and Claude's
              one-line reasoning. The full list is the batch, in the diff.
 
@@ -61,9 +61,6 @@ BODY_MAX = 60_000
 # furthest from 10.00, then an even spread across the Zipf bands.
 SAMPLE_SIZE = 100
 SAMPLE_TOP = 20
-# The same, for the words players have already banked at 10.00.
-PLAYED_SAMPLE_SIZE = 25
-PLAYED_SAMPLE_TOP = 5
 
 SYSTEM_PROMPT = """\
 You estimate how often English words are used, for WordInk, a daily word game. \
@@ -275,10 +272,8 @@ def _table(rows: list[tuple[str, Estimate]], scores: dict, reason_max: int) -> l
     return lines
 
 
-def sample(
-    estimates: dict[str, Estimate], seed: str, size: int = SAMPLE_SIZE, top: int = SAMPLE_TOP
-) -> list[tuple[str, Estimate]]:
-    """The words to review: the `top` that fall furthest from 10.00, then
+def sample(estimates: dict[str, Estimate], seed: str, size: int = SAMPLE_SIZE) -> list[tuple[str, Estimate]]:
+    """The words to review: the SAMPLE_TOP that fall furthest from 10.00, then
     the rest of `size` spread evenly across the Zipf bands -- a band too small
     for its share gives the rest to the others. Every word when there are no
     more than `size`. Seeded by the batch, so the same run always samples the
@@ -286,9 +281,9 @@ def sample(
     ranked = _ranked(estimates)
     if len(ranked) <= size:
         return ranked
-    picked = ranked[:top]
+    picked = ranked[:SAMPLE_TOP]
     rng = random.Random(seed)
-    pools = [[kv for kv in ranked[top:] if _band(kv[1].zipf) == i] for i in range(len(BANDS))]
+    pools = [[kv for kv in ranked[SAMPLE_TOP:] if _band(kv[1].zipf) == i] for i in range(len(BANDS))]
     for pool in pools:
         rng.shuffle(pool)
     while len(picked) < size and any(pools):
@@ -299,9 +294,9 @@ def sample(
 
 
 def summary(report: dict, estimates: dict[str, Estimate], scores: dict, model: str, run_url: str | None) -> str:
-    """The PR body: the batch at a glance, then a sample to review of the words
-    players have already banked at 10.00 and another of the rest. No word is
-    listed beyond the samples; the full list is the batch itself, in the diff."""
+    """The PR body: the batch at a glance, every estimate for a word players
+    have already banked at 10.00, and a sample of the rest to review. The full
+    list is not reproduced; it is the batch itself, in the diff."""
     candidates = report["candidates"]
     asked = [c["word"] for c in report.get("asked", candidates)]
     missing = [w for w in asked if w not in estimates]
@@ -354,9 +349,7 @@ def summary(report: dict, estimates: dict[str, Estimate], scores: dict, model: s
         "fold is included; — means that mode does not accept the word. **Why** is Claude's "
         "reasoning, which is not stored in the data file.",
     ]
-    seed = f"{report['date']}:{report['drop']}"
-    picked_played = sample(played, seed, PLAYED_SAMPLE_SIZE, PLAYED_SAMPLE_TOP)
-    picked = sample(rest, seed)
+    picked = sample(rest, f"{report['date']}:{report['drop']}")
     tail = []
     if missing:
         listed = ", ".join(missing) if len(missing) <= 200 else f"{len(missing)} words"
@@ -367,23 +360,15 @@ def summary(report: dict, estimates: dict[str, Estimate], scores: dict, model: s
     def body(reason_max: int) -> str:
         lines = list(head)
         if played:
-            some = len(picked_played) < len(played)
             lines += [
                 "",
-                f"### Already played at 10.00: {'a sample of ' if some else 'all '}{len(picked_played)}"
-                f"{f' of {len(played)}' if some else ''}",
+                f"### Already played at 10.00 ({len(played)})",
                 "",
                 "Words players have banked at the flat 10.00, so the ones whose scores they "
-                "will notice changing."
-                + (
-                    f" The {PLAYED_SAMPLE_TOP} highest estimates, then the rest spread evenly "
-                    "across the bands above."
-                    if some
-                    else ""
-                ),
+                "will notice changing. Every one is listed.",
                 "",
             ]
-            lines += _table(picked_played, scores, reason_max)
+            lines += _table(_ranked(played), scores, reason_max)
         if picked:
             lines += [
                 "",
@@ -394,11 +379,10 @@ def summary(report: dict, estimates: dict[str, Estimate], scores: dict, model: s
             if len(picked) < len(rest):
                 lines += [
                     f"Of {len(rest)}: the {SAMPLE_TOP} highest estimates, then the rest spread "
-                    "evenly across the bands above.",
+                    "evenly across the bands above. The rest are in the diff.",
                     "",
                 ]
             lines += _table(picked, scores, reason_max)
-        lines += ["", "Every estimate is in the diff, in `src/data/estimated-zipf.json`."]
         return "\n".join(lines + tail) + "\n"
 
     # If the body would pass GitHub's limit, the reasons are what give way.

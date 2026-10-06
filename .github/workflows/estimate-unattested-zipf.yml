@@ -20,10 +20,9 @@ name: Estimate unattested Zipf
 #      as anything but a guess, and nothing re-prices an earlier puzzle.
 #   5. scripts/estimated-scores.mts scores every estimated word through the
 #      game's own code with the batch applied, and `estimate-zipf.py summary`
-#      writes the PR body: a sample of 25 of the words players have already
-#      banked at 10.00 and a sample of 100 of the rest, each with its Zipf, the
-#      score Standard and Freeform will show and Claude's reasoning. Every
-#      estimate is in the diff.
+#      writes the PR body: every word players have already banked at 10.00,
+#      then a sample of 100 of the rest, each with its Zipf, the score Standard
+#      and Freeform will show and Claude's reasoning. The full list is the diff.
 #
 # Two days ahead so the PR has a day to merge: the batch applies from its
 # puzzle's date on, and a puzzle two days out by UTC has not started anywhere
