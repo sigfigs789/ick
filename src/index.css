@@ -3392,18 +3392,19 @@ h2 {
     margin-inline: 0;
   }
 }
-/* Rank and score are fixed columns; the name takes what is left and the meta
-   line tucks under it, so a long name truncates instead of shoving the score
-   off the row. The second line runs the same three columns as the first, so the
-   best find lands under the total and the count under the name. */
+/* Rank and score are fixed columns; the name takes what is left and the detail
+   line tucks under it, so a long name wraps instead of shoving the score off the
+   row. The second line spans the name and score columns as one strip -- the count
+   at its left, the best find hanging off its right edge under the total -- so a
+   long find word cannot widen the score column the way a cell of its own would. */
 .leaderboard__row {
   display: grid;
   /* Wide enough for three digits: the row below the cut carries a real rank, and
      a player can be 148th. */
   grid-template-columns: 2.1rem minmax(0, 1fr) auto;
   grid-template-areas:
-    "rank name score"
-    ".    meta best";
+    "rank name   score"
+    ".    detail detail";
   align-items: baseline;
   column-gap: 0.5rem;
   padding: 0.45rem 0.4rem;
@@ -3588,13 +3589,20 @@ h2 {
      the row that must not be broken across two lines mid-word. */
   white-space: nowrap;
 }
-.leaderboard__meta {
-  grid-area: meta;
+.leaderboard__detail {
+  grid-area: detail;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
   color: var(--fg-faint);
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
-  min-width: 0;
-  overflow-wrap: anywhere;
+}
+.leaderboard__meta {
+  flex: none;
+  white-space: nowrap;
 }
 .leaderboard__score {
   grid-area: score;
@@ -3603,24 +3611,33 @@ h2 {
   font-variant-numeric: tabular-nums;
 }
 /*
- * Their best single find in the window, tucked under the total.
+ * Their best single find in the window, as "word · score" under the total.
  *
  * The count's own weight and colour -- the two second-line entries are the same
  * kind of thing, a detail about the row rather than its headline, and setting
  * one louder than the other would make the reader work out which. Right-aligned
- * so it hangs off the total's last digit and the eye reads one column of
+ * so the score hangs off the total's last digit and the eye reads one column of
  * numbers down the board, tabular for the same reason.
  *
- * It never widens the column: this tops out at `10.0` and is set smaller than
- * the total above it, which is already three or four digits by the time a board
- * has a week in it. So nothing here can squeeze the name.
+ * The word is the one thing on the row allowed to give way: it shrinks to an
+ * ellipsis before the count beside it or the score after it lose a character,
+ * and the full word is in its tooltip.
  */
 .leaderboard__best {
-  grid-area: best;
-  justify-self: end;
-  color: var(--fg-faint);
-  font-size: 0.72rem;
-  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  min-width: 0;
+  white-space: nowrap;
+}
+.leaderboard__best-word {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.leaderboard__best-score {
+  flex: none;
+  white-space: pre;
 }
 .leaderboard__note {
   margin: 0.55rem 0 0;
