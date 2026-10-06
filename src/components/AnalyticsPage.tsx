@@ -193,17 +193,17 @@ function Report({
         </span>
       </div>
 
+      <PeopleTiles report={report} span={span} from={shown.from} />
+
       <div className="analytics__tiles">
-        <Tile label="Players" value={fmt(win.players)} sub={span} />
         <Tile
           label="New players"
           value={fmt(win.newPlayers)}
-          sub={win.players ? `${pct(win.newPlayers / win.players)} of the players` : "first puzzle ever"}
-        />
-        <Tile
-          label="Looked, didn't play"
-          value={totals.lookersSince ? fmt(win.lookers) : "—"}
-          sub={totals.lookersSince ? `${fmt(totals.lookersNeverPlayed)} have never played` : "not recorded yet"}
+          sub={
+            win.players
+              ? `first word ever; ${pct(win.newPlayers / win.players)} of the ${fmt(win.players)} who played one`
+              : "first word ever"
+          }
         />
         <Tile
           label="Stickiness"
@@ -215,9 +215,12 @@ function Report({
           value={!isToday && win.avgDaysPerPlayer !== null ? win.avgDaysPerPlayer.toFixed(1) : "—"}
           sub={isToday ? "needs more than one puzzle" : `of the ${fmt(win.puzzles)} puzzles, on average`}
         />
+        <Tile
+          label="Engaged visits"
+          value={report.visitorsSince ? fmt(report.funnel.engagedVisits) : "—"}
+          sub={report.visitorsSince ? "on the web, each visit once" : "not recorded yet"}
+        />
       </div>
-
-      <VisitorTiles report={report} from={shown.from} eventSpan={eventSpan} />
 
       <Section
         title="Day by day"
@@ -1851,13 +1854,13 @@ function Visitors({ report }: { report: AnalyticsReport }) {
   if (!report.visitorsSince) {
     return (
       <div className="analytics__tiles">
-        <Tile label="Visitors" value="—" sub="not recorded yet" />
+        <Tile label="Web visitors" value="—" sub="not recorded yet" />
       </div>
     );
   }
   return (
     <div className="analytics__tiles">
-      <Tile label="Visitors" value={fmt(f.visitors)} sub={`distinct, recorded from ${report.visitorsSince}`} />
+      <Tile label="Web visitors" value={fmt(f.visitors)} sub={`distinct, recorded from ${report.visitorsSince}`} />
       <Tile
         label="Visits per visitor"
         value={f.visitors ? dec(f.visitsWithId / f.visitors, 1) : "—"}
@@ -1873,37 +1876,41 @@ function Visitors({ report }: { report: AnalyticsReport }) {
 }
 
 /**
- * The web half of the headline: the distinct browsers that opened the game, and
- * how many of them did anything once there -- pressed any button, link or key --
- * against how many opened it and left. Read off the event log, so the app and
- * the Reddit post, which send no visits, are not in it; the Players tile is.
- * Before presses were recorded, engaged only knows guesses, looks, mode switches,
- * finishes and shares, so a window that starts earlier says so. Engaged is shown
- * twice, as people and as visits, since one person can engage in many visits.
+ * Who turned up, split so it adds up: Visitors is Players plus the ones who
+ * opened the game and did nothing. Players is everybody who did anything --
+ * played a word on any platform, looked at the boards or the finds, or pressed
+ * anything on the web -- and says how many of each. The app and the Reddit post
+ * report no opens, so their players count as visitors only once they play, and
+ * their idle opens cannot be counted at all. Before presses were recorded, the
+ * web's engagement only knows guesses, looks, mode switches, finishes and
+ * shares, so a window that starts earlier says when that changed.
  */
-function VisitorTiles({ report, from, eventSpan }: { report: AnalyticsReport; from: string; eventSpan: string }) {
-  const f = report.funnel;
-  if (!report.visitorsSince) return null;
-  const share = (n: number) => (f.visitors ? `${pct(n / f.visitors)} of them` : "no visitors");
+function PeopleTiles({ report, span, from }: { report: AnalyticsReport; span: string; from: string }) {
+  const win = report.window;
+  const visitors = win.visitors;
+  const idle = Math.max(0, visitors - win.engagedPlayers);
+  const looked = report.totals.lookersSince ? win.lookers : 0;
+  // Over more than one puzzle a player can look on one and play on another, so
+  // the parts can overlap; anything left is a press that was neither.
+  const other = win.engagedPlayers - win.players - looked;
+  const parts = [`${fmt(win.players)} played a word`];
+  if (report.totals.lookersSince) parts.push(`${fmt(looked)} only looked`);
+  if (other > 0) parts.push(`${fmt(other)} pressed something else`);
   const partial = !report.interactedSince || report.interactedSince > from;
+  const share = visitors ? `${pct(idle / visitors)} of visitors` : "no visitors";
   return (
     <div className="analytics__tiles">
-      <Tile label="Web visitors" value={fmt(f.visitors)} sub={`distinct browsers, ${eventSpan}`} />
+      <Tile label="Visitors" value={fmt(visitors)} sub={`everyone who turned up, ${span}`} />
+      <Tile label="Players" value={fmt(win.engagedPlayers)} sub={`did anything: ${parts.join(", ")}`} />
       <Tile
-        label="Engaged visitors"
-        value={fmt(f.engagedVisitors)}
+        label="Opened, did nothing"
+        value={fmt(idle)}
         sub={
           partial
-            ? `${share(f.engagedVisitors)}; any press counted ${report.interactedSince ? `from ${report.interactedSince}` : "once it ships"}`
-            : `${share(f.engagedVisitors)}, pressed anything`
+            ? `${share}; any press counted ${report.interactedSince ? `from ${report.interactedSince}` : "once it ships"}`
+            : share
         }
       />
-      <Tile
-        label="Engaged visits"
-        value={fmt(f.engagedVisits)}
-        sub={f.engagedVisitors ? `${dec(f.engagedVisits / f.engagedVisitors, 1)} per engaged visitor` : "none yet"}
-      />
-      <Tile label="Opened, did nothing" value={fmt(f.idleVisitors)} sub={share(f.idleVisitors)} />
     </div>
   );
 }
