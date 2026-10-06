@@ -1,25 +1,33 @@
 #!/usr/bin/env python3
-"""Ask Claude to guess a Zipf frequency for every word a puzzle can accept that
-no frequency corpus measures, and record the guesses in
+"""Have Claude guess a Zipf frequency for the words a puzzle can accept that no
+frequency corpus measures, and record the guesses in
 src/data/estimated-zipf.json as one batch.
 
-Input is the report scripts/unattested-candidates.mts writes. Every guess is
-stored with its provenance -- the model, the Actions run, the drop and the
-puzzle date it was made for -- so an estimate can never be mistaken for a
-measurement. The game reads the file through `withEstimate` in
-src/game/dictionary.ts: from the batch's `since` date on, an estimate stands in
-for the unattested sentinel (a flat 10.00 Legend) as the word's own Zipf.
+Two steps around a Claude Code run, so the workflow takes the same credentials
+as "Build with Claude" (a CLAUDE_CODE_OAUTH_TOKEN or an ANTHROPIC_API_KEY):
 
-Needs the `anthropic` package and an ANTHROPIC_API_KEY. --dry-run prints the
-first request's prompt instead of calling the API.
+    prepare  picks at most --limit words from scripts/unattested-candidates.mts's
+             report (the likeliest to be played first; see `priority`) and
+             writes the request Claude reads: instructions, calibration anchors
+             and the words.
+    record   reads the JSON Claude wrote, keeps only well-formed estimates for
+             words it was asked about, and appends them as one batch with their
+             provenance -- the model, the Actions run, the drop and the puzzle
+             date -- so an estimate can never be mistaken for a measurement.
 
-    python scripts/estimate-zipf.py --candidates .tmp/candidates.json \\
-        --run-url https://github.com/... --summary-out .tmp/summary.md
+The game reads the file through `withEstimate` in src/game/dictionary.ts: from
+the batch's `since` date on, an estimate stands in for the unattested sentinel
+(a flat 10.00 Legend) as the word's own Zipf.
+
+    python scripts/estimate-zipf.py prepare --candidates .tmp/candidates.json \
+        --asked-out .tmp/asked.json --request-out .tmp/estimate-request.md
+    python scripts/estimate-zipf.py record --asked .tmp/asked.json \
+        --estimates .tmp/estimates.json --model claude-opus-5-5 --run-url ... \
+        --summary-out .tmp/summary.md
 """
 from __future__ import annotations
 
 import argparse
-import concurrent.futures
 import json
 import math
 import sys
@@ -64,26 +72,6 @@ decimals for every word you are given, spelled exactly as given -- never skip \
 one, and never add one. A guess is expected; do not refuse a word for being \
 obscure or for being a name."""
 
-SCHEMA = {
-    "type": "object",
-    "properties": {
-        "estimates": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "word": {"type": "string"},
-                    "zipf": {"type": "number"},
-                },
-                "required": ["word", "zipf"],
-                "additionalProperties": False,
-            },
-        }
-    },
-    "required": ["estimates"],
-    "additionalProperties": False,
-}
-
 
 def priority(candidate: dict) -> tuple:
     """Sort key for which words get an estimate when a drop reaches more than
@@ -112,68 +100,14 @@ def calibration(report: dict) -> str:
     return "\n".join(lines)
 
 
-def user_prompt(words: list[dict]) -> str:
+def word_list(words: list[dict]) -> str:
     # The lexicons that vouch for each word are context, not a verdict: a word
     # only Wiktionary lists is a different kind of rare from one the curated
     # dictionary has always carried.
-    lines = [f"Estimate the Zipf frequency of each of these {len(words)} words:"]
+    lines = [f"Estimate the Zipf frequency of each of these {len(words)} words:", ""]
     for c in words:
         lines.append(f"{c['word']} ({', '.join(c['sources'])})")
     return "\n".join(lines)
-
-
-def ask(client, model: str, effort: str, system: list[dict], words: list[dict]) -> dict[str, float]:
-    response = client.messages.create(
-        model=model,
-        max_tokens=16000,
-        system=system,
-        output_config={"effort": effort, "format": {"type": "json_schema", "schema": SCHEMA}},
-        messages=[{"role": "user", "content": user_prompt(words)}],
-    )
-    if response.stop_reason == "refusal":
-        print(f"  refused a batch of {len(words)} (starting {words[0]['word']})", file=sys.stderr)
-        return {}
-    if response.stop_reason == "max_tokens":
-        print(f"  batch starting {words[0]['word']} hit max_tokens", file=sys.stderr)
-        return {}
-    text = next(b.text for b in response.content if b.type == "text")
-    wanted = {c["word"] for c in words}
-    out: dict[str, float] = {}
-    for item in json.loads(text)["estimates"]:
-        word, zipf = item["word"].strip().lower(), item["zipf"]
-        if word in wanted and isinstance(zipf, (int, float)) and math.isfinite(zipf):
-            if ZIPF_MIN <= zipf <= ZIPF_MAX:
-                out[word] = round(float(zipf), 2)
-    return out
-
-
-def estimate_all(report: dict, model: str, effort: str, batch_size: int, workers: int) -> dict[str, float]:
-    import anthropic
-
-    client = anthropic.Anthropic(max_retries=5)
-    # The instructions and the day's anchors are the same for every batch, so
-    # they are cached once and read back by the rest.
-    system = [
-        {"type": "text", "text": SYSTEM_PROMPT},
-        {"type": "text", "text": calibration(report), "cache_control": {"type": "ephemeral"}},
-    ]
-    candidates = report["asked"]
-    batches = [candidates[i : i + batch_size] for i in range(0, len(candidates), batch_size)]
-    results: dict[str, float] = {}
-
-    def run(batch: list[dict]) -> dict[str, float]:
-        got = ask(client, model, effort, system, batch)
-        # One retry for whatever the first answer left out, on its own.
-        missing = [c for c in batch if c["word"] not in got]
-        if missing and len(missing) < len(batch):
-            got.update(ask(client, model, effort, system, missing))
-        return got
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-        for n, got in enumerate(pool.map(run, batches), 1):
-            results.update(got)
-            print(f"  batch {n}/{len(batches)}: {len(got)} estimate(s)", file=sys.stderr)
-    return results
 
 
 BANDS = [(-math.inf, -1), (-1, 0), (0, 1), (1, 2), (2, 3), (3, math.inf)]
@@ -221,34 +155,52 @@ def summary(report: dict, estimates: dict[str, float], model: str, run_url: str 
     return "\n".join(lines) + "\n"
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--candidates", required=True, type=Path)
-    parser.add_argument("--model", default="claude-opus-5-5")
-    parser.add_argument("--effort", default="low", choices=["low", "medium", "high"])
-    parser.add_argument("--batch-size", type=int, default=150)
-    parser.add_argument("--workers", type=int, default=4)
-    parser.add_argument("--limit", type=int, default=200, help="estimate at most this many words, by priority()")
-    parser.add_argument("--run-url")
-    parser.add_argument("--summary-out", type=Path)
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
+OUTPUT_INSTRUCTIONS = """\
+Write your answer to `{out}` as JSON and nothing else, in this shape:
 
+{{"estimates": [{{"word": "chatchke", "zipf": 0.42}}, ...]}}
+
+One entry per word below, spelled exactly as given, each with a number. Work \
+from what you know; look a word up on the web only when you cannot place it at \
+all, and keep that to a handful of words. Do not edit any other file."""
+
+
+def prepare(args: argparse.Namespace) -> None:
     report = json.loads(args.candidates.read_text())
-    count = len(report["candidates"])
-    if count == 0:
-        print(f"Nothing to estimate for {report['date']} ({report['drop']}).")
-        return
-    report["asked"] = sorted(report["candidates"], key=priority)[: args.limit]
-    if args.dry_run:
-        print(SYSTEM_PROMPT, calibration(report), "", user_prompt(report["asked"][: args.batch_size]), sep="\n")
-        return
+    asked = sorted(report["candidates"], key=priority)[: args.limit]
+    args.asked_out.write_text(json.dumps({**report, "asked": asked}, indent=2) + "\n")
+    request = "\n\n".join(
+        [SYSTEM_PROMPT, calibration(report), OUTPUT_INSTRUCTIONS.format(out=args.estimates_path), word_list(asked)]
+    )
+    args.request_out.write_text(request + "\n")
+    print(f"Asking for {len(asked)} of {report['count']} word(s) for {report['date']} ({report['drop']}).")
 
-    print(f"Estimating {len(report['asked'])} of {count} word(s) for {report['date']} ({report['drop']}) with {args.model}", file=sys.stderr)
-    estimates = estimate_all(report, args.model, args.effort, args.batch_size, args.workers)
 
-    data = json.loads(ESTIMATES_PATH.read_text())
+def parse_estimates(raw: str, asked: list[dict]) -> dict[str, float]:
+    """The estimates Claude wrote, kept only where they are a finite number in
+    range for a word it was asked about. Anything else is dropped, not fixed."""
+    wanted = {c["word"] for c in asked}
+    out: dict[str, float] = {}
+    for item in json.loads(raw).get("estimates", []):
+        if not isinstance(item, dict):
+            continue
+        word, zipf = str(item.get("word", "")).strip().lower(), item.get("zipf")
+        if word not in wanted or isinstance(zipf, bool) or not isinstance(zipf, (int, float)):
+            continue
+        if math.isfinite(zipf) and ZIPF_MIN <= zipf <= ZIPF_MAX:
+            out[word] = round(float(zipf), 2)
+    return out
+
+
+def record(args: argparse.Namespace) -> None:
+    report = json.loads(args.asked.read_text())
+    try:
+        estimates = parse_estimates(args.estimates.read_text(), report["asked"])
+    except (OSError, json.JSONDecodeError) as error:
+        sys.exit(f"Could not read Claude's estimates from {args.estimates}: {error}")
+
     if estimates:
+        data = json.loads(ESTIMATES_PATH.read_text())
         data["batches"].append(
             {
                 "since": report["date"],
@@ -263,7 +215,29 @@ def main() -> None:
         ESTIMATES_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
     if args.summary_out:
         args.summary_out.write_text(summary(report, estimates, args.model, args.run_url))
-    print(f"Recorded {len(estimates)} estimate(s) of {len(report['asked'])} asked ({count} candidates).")
+    print(f"Recorded {len(estimates)} estimate(s) of {len(report['asked'])} asked ({report['count']} candidates).")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    sub = parser.add_subparsers(dest="step", required=True)
+
+    p = sub.add_parser("prepare", help="pick the words and write Claude's request")
+    p.add_argument("--candidates", required=True, type=Path)
+    p.add_argument("--limit", type=int, default=200, help="estimate at most this many words, by priority()")
+    p.add_argument("--asked-out", required=True, type=Path)
+    p.add_argument("--request-out", required=True, type=Path)
+    p.add_argument("--estimates-path", default=".tmp/estimates.json", help="where Claude is told to write")
+
+    r = sub.add_parser("record", help="validate Claude's answer and append it as a batch")
+    r.add_argument("--asked", required=True, type=Path)
+    r.add_argument("--estimates", required=True, type=Path)
+    r.add_argument("--model", required=True)
+    r.add_argument("--run-url")
+    r.add_argument("--summary-out", type=Path)
+
+    args = parser.parse_args()
+    prepare(args) if args.step == "prepare" else record(args)
 
 
 if __name__ == "__main__":

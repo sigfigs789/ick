@@ -9,11 +9,14 @@ name: Estimate unattested Zipf
 #      contains the drop through the game's own evaluateSubmission, in both
 #      modes, and keeps the ones accepted on a sentinel Zipf of their own. It
 #      also picks measured words with the same drop as calibration anchors.
-#   2. scripts/estimate-zipf.py hands at most 200 of them (the likeliest to be
-#      played first; see `priority`) to Claude in batches and appends one
-#      batch to the data file: the model, this run's URL, the drop, and the
-#      puzzle date as `since`. Nothing marks an estimate as anything but a guess,
-#      and nothing re-prices an earlier puzzle.
+#   2. `scripts/estimate-zipf.py prepare` picks at most 200 of them (the
+#      likeliest to be played first; see `priority`) and writes Claude's request.
+#   3. Claude Code, through the same action "Build with Claude" uses, reads the
+#      request and writes its estimates to .tmp/estimates.json.
+#   4. `scripts/estimate-zipf.py record` keeps only well-formed estimates for the
+#      words asked about and appends them as one batch: the model, this run's
+#      URL, the drop, and the puzzle date as `since`. Nothing marks an estimate
+#      as anything but a guess, and nothing re-prices an earlier puzzle.
 #
 # Two days ahead so the PR has a day to merge: the batch applies from its
 # puzzle's date on, and a puzzle two days out by UTC has not started anywhere
@@ -24,8 +27,12 @@ name: Estimate unattested Zipf
 #
 #   gh workflow run estimate-unattested-zipf.yml --repo sigfigs789/ick -f date=2026-10-12
 #
-# Needs an ANTHROPIC_API_KEY repository secret (Settings -> Secrets -> Actions);
-# it calls the Messages API directly, so a Claude Code OAuth token will not do.
+# Credentials are the same as "Build with Claude": one of these repository
+# secrets (Settings -> Secrets -> Actions):
+#   CLAUDE_CODE_OAUTH_TOKEN -- bills a Claude subscription; make one with
+#                              `claude setup-token`
+#   ANTHROPIC_API_KEY       -- bills the Anthropic API
+# Without either the job says so and stops.
 #
 # The PR is opened with the built-in GITHUB_TOKEN, so "Test" does not run on it
 # on its own; this job runs the checks itself.
@@ -46,8 +53,8 @@ on:
         type: choice
         options:
           - claude-opus-5-5
-          - claude-sonnet-5-5
-          - claude-haiku-4-5
+          - claude-sonnet-5
+          - claude-fable-5-1
       limit:
         description: Most words to estimate (the likeliest to be played go first)
         required: false
@@ -57,6 +64,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 concurrency:
   group: estimate-unattested-zipf
@@ -67,13 +75,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      MODEL: ${{ inputs.model || 'claude-opus-5-5' }}
 
     steps:
-      - name: Check for an Anthropic API key
+      - name: Check for a Claude credential
         run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::Add an ANTHROPIC_API_KEY repository secret first."
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Add a CLAUDE_CODE_OAUTH_TOKEN (from \`claude setup-token\`) or ANTHROPIC_API_KEY repository secret first."
             exit 1
           fi
 
@@ -94,9 +104,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: |
-          npm ci
-          python -m pip install anthropic==1.11.0
+        run: npm ci
 
       - name: Pick the puzzle
         id: puzzle
@@ -127,13 +135,41 @@ jobs:
           echo "drop=$(jq -r .drop .tmp/candidates.json)" >> "$GITHUB_OUTPUT"
           echo "count=$(jq -r .count .tmp/candidates.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Estimate their Zipf with Claude
+      - name: Pick the words and write Claude's request
         if: steps.find.outputs.count != '0'
         run: |
-          python scripts/estimate-zipf.py \
+          python scripts/estimate-zipf.py prepare \
             --candidates .tmp/candidates.json \
-            --model "${{ inputs.model || 'claude-opus-5-5' }}" \
             --limit "${{ inputs.limit || '200' }}" \
+            --asked-out .tmp/asked.json \
+            --request-out .tmp/estimate-request.md \
+            --estimates-path .tmp/estimates.json
+
+      - name: Estimate their Zipf with Claude
+        if: steps.find.outputs.count != '0'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # The run's own token, so the action does not need the Claude GitHub
+          # App installed.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: >-
+            --model ${{ env.MODEL }}
+            --max-turns 40
+            --allowedTools "Read,Write,WebSearch,WebFetch"
+          prompt: |
+            Read .tmp/estimate-request.md and do exactly what it asks: write
+            your Zipf estimates for every word it lists to .tmp/estimates.json.
+            Do not change any other file and do not run git or gh.
+
+      - name: Record the estimates
+        if: steps.find.outputs.count != '0'
+        run: |
+          python scripts/estimate-zipf.py record \
+            --asked .tmp/asked.json \
+            --estimates .tmp/estimates.json \
+            --model "$MODEL" \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --summary-out .tmp/summary.md
           cat .tmp/summary.md >> "$GITHUB_STEP_SUMMARY"
