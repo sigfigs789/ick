@@ -1,0 +1,218 @@
+-- (Numbered 20261006000000: 20261005010000 is leaderboard_week_best_five, the last on main.)
+--
+-- Do the players who keep hitting a perfect 10.00 stay longer? For the bottom
+-- of /analytics, beside retention_report. A day is "perfect" when the player's
+-- best word that puzzle scored 10.00 in either mode (the leaderboard's
+-- top_score, capped at 10). Three views, each controlling for a little more:
+--
+--   firstPuzzle  new players: a 10.00 on their first puzzle or not, against
+--                next-day and first-week return.
+--   days         every player-day: was a 10.00 day followed by a play the next
+--                puzzle more often than a day without one? Overall and per
+--                mode, since Freeform does not fold and hands out more 10.00s.
+--   samePlayers  the same comparison over only the players who have both kinds
+--                of day, so who the player is cancels out.
+--   players      players with three or more puzzles in the window, by how
+--                often they hit a 10.00, against how many puzzles they played
+--                and how often a puzzle was followed by the next one.
+--
+-- Plays are the leaderboard's rows, as in retention_report, so this covers the
+-- iOS app and the Reddit post too. The window is retention_report's, and so is
+-- the floor: no group of fewer than five players leaves the database.
+
+create or replace function public.perfect_report(p_days integer default 60, p_date date default null)
+returns jsonb
+language sql
+stable
+as $$
+  with
+  days as (
+    select case when p_date is not null and p_days between 1 and 365 then p_days
+      when p_days = 1 then 1 else greatest(7, least(coalesce(p_days, 60), 365)) end as n
+  ),
+  github_players as (
+    select distinct e.props ->> 'player_id' as player_id
+    from public.analytics_events e
+    where e.props ->> 'player_id' is not null
+      and (e.props ->> 'source' ~ '(^|\.)github(\.com|\.io)?$'
+        or e.props ->> 'last_source' ~ '(^|\.)github(\.com|\.io)?$')
+  ),
+  plays as (
+    select
+      s.player_id::text as player_id,
+      s.puzzle_date,
+      s.top_score::numeric as top_score,
+      case
+        when s.mode in ('standard', 'freeform') then s.mode
+        when s.puzzle_date >= date '2026-09-14' and s.puzzle_date < date '2026-09-27' then 'freeform'
+        else 'standard'
+      end as mode
+    from public.leaderboard_scores s
+    where not exists (select 1 from github_players g where g.player_id = s.player_id::text)
+  ),
+  player_days as (
+    select
+      player_id,
+      puzzle_date,
+      max(top_score) >= 10 as perfect,
+      case when count(distinct mode) > 1 then 'both' else min(mode) end as mode
+    from plays
+    group by player_id, puzzle_date
+  ),
+  bounds as (
+    select max(puzzle_date) as as_of, coalesce(p_date, max(puzzle_date)) as win_end
+    from player_days
+  ),
+  win as (
+    select
+      greatest(b.win_end - (days.n - 1), (select min(puzzle_date) from player_days)) as win_start,
+      b.win_end,
+      b.as_of
+    from bounds b, days
+  ),
+  facts as (
+    select
+      d.*,
+      min(d.puzzle_date) over (partition by d.player_id) as first_day,
+      coalesce(lead(d.puzzle_date) over (partition by d.player_id order by d.puzzle_date) = d.puzzle_date + 1,
+        false) as returned_next,
+      coalesce(lead(d.puzzle_date) over (partition by d.player_id order by d.puzzle_date) <= d.puzzle_date + 7,
+        false) as returned_week
+    from player_days d
+  ),
+  -- Days in the window, with whether their next puzzle is over: the latest
+  -- puzzle is still being played and cannot say whether anybody came back.
+  win_days as (
+    select x.*, x.puzzle_date < w.as_of as eligible
+    from facts x, win w
+    where x.puzzle_date between w.win_start and w.win_end
+  ),
+
+  -- Part 1. New players at their first puzzle.
+  first_puzzle as (
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'perfect', f.perfect,
+      'players', f.players,
+      'nextDay', jsonb_build_object('cohort', f.d1_cohort, 'returned', f.d1_returned),
+      'week', jsonb_build_object('cohort', f.wk_cohort, 'returned', f.wk_returned)
+    ) order by f.perfect desc), '[]'::jsonb) as v
+    from (
+      select
+        x.perfect,
+        count(*) as players,
+        count(*) filter (where x.first_day < w.as_of) as d1_cohort,
+        count(*) filter (where x.first_day < w.as_of and x.returned_next) as d1_returned,
+        count(*) filter (where x.first_day + 7 < w.as_of) as wk_cohort,
+        count(*) filter (where x.first_day + 7 < w.as_of and x.returned_week) as wk_returned
+      from win_days x, win w
+      where x.puzzle_date = x.first_day
+      group by x.perfect
+      having count(*) >= 5
+    ) f
+  ),
+
+  -- Part 2. Every player-day, overall and per mode. A day played in both
+  -- modes counts under "all" only.
+  day_groups as (
+    select 'all' as split, * from win_days
+    union all
+    select mode, * from win_days where mode in ('standard', 'freeform')
+  ),
+  day_split as (
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'mode', g.mode,
+      'perfect', g.perfect,
+      'players', g.players,
+      'days', g.days,
+      'nextDay', jsonb_build_object('cohort', g.cohort, 'returned', g.returned)
+    ) order by case g.mode when 'all' then 1 when 'standard' then 2 else 3 end, g.perfect desc), '[]'::jsonb) as v
+    from (
+      select
+        split as mode,
+        perfect,
+        count(distinct player_id) as players,
+        count(*) as days,
+        count(*) filter (where eligible) as cohort,
+        count(*) filter (where eligible and returned_next) as returned
+      from day_groups
+      group by split, perfect
+      having count(distinct player_id) >= 5
+    ) g
+  ),
+
+  -- Part 3. Only the players with both a 10.00 day and another day whose next
+  -- puzzle is over, each side pooled over their days.
+  mixed as (
+    select player_id
+    from win_days
+    where eligible
+    group by player_id
+    having bool_or(perfect) and bool_or(not perfect)
+  ),
+  same_players as (
+    select jsonb_build_object(
+      'players', (select count(*) from mixed),
+      'perfect', case when (select count(*) from mixed) >= 5 then jsonb_build_object(
+        'cohort', count(*) filter (where x.perfect),
+        'returned', count(*) filter (where x.perfect and x.returned_next)) end,
+      'other', case when (select count(*) from mixed) >= 5 then jsonb_build_object(
+        'cohort', count(*) filter (where not x.perfect),
+        'returned', count(*) filter (where not x.perfect and x.returned_next)) end
+    ) as v
+    from win_days x
+    join mixed m on m.player_id = x.player_id
+    where x.eligible
+  ),
+
+  -- Part 4. Players with three or more puzzles in the window, by the share of
+  -- them with a 10.00. Three, so that one lucky day is not "every time".
+  regulars as (
+    select
+      player_id,
+      count(*) as puzzles,
+      avg(case when perfect then 1 else 0 end) as perfect_share,
+      count(*) filter (where eligible) as cohort,
+      count(*) filter (where eligible and returned_next) as returned
+    from win_days
+    group by player_id
+    having count(*) >= 3
+  ),
+  player_split as (
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'group', r.grp,
+      'players', r.players,
+      'avgPuzzles', r.avg_puzzles,
+      'nextDay', jsonb_build_object('cohort', r.cohort, 'returned', r.returned)
+    ) order by r.ord), '[]'::jsonb) as v
+    from (
+      select
+        case when perfect_share = 0 then 1 when perfect_share < 1.0 / 3 then 2
+             when perfect_share < 2.0 / 3 then 3 else 4 end as ord,
+        case when perfect_share = 0 then 'Never' when perfect_share < 1.0 / 3 then 'Under a third of puzzles'
+             when perfect_share < 2.0 / 3 then 'A third to two thirds' else 'Two thirds or more' end as grp,
+        count(*) as players,
+        round(avg(puzzles), 1) as avg_puzzles,
+        sum(cohort) as cohort,
+        sum(returned) as returned
+      from regulars
+      group by 1, 2
+      having count(*) >= 5
+    ) r
+  )
+
+  select jsonb_build_object(
+    'from', (select win_start from win),
+    'to', (select win_end from win),
+    'firstPuzzle', (select v from first_puzzle),
+    'days', (select v from day_split),
+    'samePlayers', (select v from same_players),
+    'players', (select v from player_split)
+  );
+$$;
+
+comment on function public.perfect_report(integer, date) is
+  'Whether players who hit a 10.00 come back more, for the bottom of the /analytics page. Read by api/review.ts alongside analytics_report.';
+
+-- service_role does not inherit what public is given; grant it explicitly.
+revoke all on function public.perfect_report(integer, date) from public, anon, authenticated;
+grant execute on function public.perfect_report(integer, date) to service_role;
