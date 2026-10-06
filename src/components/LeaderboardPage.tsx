@@ -470,7 +470,7 @@ export function LeaderboardPage() {
               of the lists, so a reader wants it on the way in. Underneath them
               it had nothing to sit against -- a bullet adrift under the last
               row. Outside the grid below, so it sits against the first board
-              rather than a column gap away from it. The week's best-five rule
+              rather than a column gap away from it. The week's best-days rule
               sits beside it for the same reason: it decides what a weekly total
               is before anybody reads one (see WEEK_BEST_DAYS). */}
           <ul className="leaderboard__rules">

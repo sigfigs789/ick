@@ -66,18 +66,18 @@ describe("windowTotals", () => {
     );
   });
 
-  it("counts the week's best five days, as the weekly board does, and every day of the month", () => {
-    // Sunday the 16th to Saturday the 22nd, read from the Saturday. The two
-    // one-word days are the worst, so they are the two the week drops.
+  it("counts the week's best four days, as the weekly board does, and every day of the month", () => {
+    // Sunday the 16th to Saturday the 22nd, read from the Saturday. The three
+    // one-word days are the worst, so they are the three the week drops.
     vi.setSystemTime(new Date("2026-08-22T12:00:00"));
-    const dates = ["2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20"];
+    const dates = ["2026-08-16", "2026-08-17", "2026-08-18", "2026-08-19"];
+    const thinDates = ["2026-08-20", "2026-08-21", "2026-08-22"];
     const thin = [word("strange", 4.1)];
     for (const date of dates) store(date, words);
-    store("2026-08-21", thin);
-    store("2026-08-22", thin);
+    for (const date of thinDates) store(date, thin);
 
     const best = dates.reduce((sum, date) => sum + scored(date, words), 0);
-    const all = best + scored("2026-08-21", thin) + scored("2026-08-22", thin);
+    const all = thinDates.reduce((sum, date) => sum + scored(date, thin), best);
     expect(windowTotals("2026-08-22")).toEqual({ week: round(best), month: round(all) });
   });
 
