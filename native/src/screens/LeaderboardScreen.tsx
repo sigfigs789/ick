@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { addDays, formatDateLabel, todayDateString } from '../../../src/game/date';
 import { formatScore, formatTotal } from '../../../src/game/dictionary';
+import { handleFor } from '../../../src/game/handle';
 import {
   BOARD_LIMIT,
   dayFloor,
@@ -189,7 +190,23 @@ export function LeaderboardScreen() {
 
   return (
     <View style={styles.fill}>
-      <View style={[styles.tabs, { borderColor: theme.border, backgroundColor: theme.bgInset }]}>
+      {/* Your own handle, stated before the boards rather than left to be
+          found in them -- the website's "Playing as" line (see LeaderboardPage),
+          in the same words. The handle is derived from the player id and never
+          typed, so this is the only place a player is told it; without it the
+          only way to learn it is to spot your own row, which is circular. */}
+      {playerId && (
+        <Text style={[styles.handle, { color: theme.fgFaint }]}>
+          Playing as <Text style={[styles.handleName, { color: theme.fgMuted }]}>{handleFor(playerId)}</Text>
+        </Text>
+      )}
+      <View
+        style={[
+          styles.tabs,
+          playerId && styles.tabsUnderHandle,
+          { borderColor: theme.border, backgroundColor: theme.bgInset },
+        ]}
+      >
         {TABS.map((tab) => {
           const current = tab.key === window;
           return (
@@ -357,6 +374,19 @@ const styles = StyleSheet.create({
     padding: 3,
     borderRadius: radius.pill,
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  /* Sized and coloured as the website's `.leaderboard-page__handle`: faint
+     line, with the handle lifted a step so the name is the part that is read. */
+  handle: {
+    fontSize: 12,
+    paddingHorizontal: space.lg,
+    paddingTop: space.md,
+  },
+  handleName: {
+    fontWeight: '800',
+  },
+  tabsUnderHandle: {
+    marginTop: space.sm,
   },
   tab: {
     flex: 1,
