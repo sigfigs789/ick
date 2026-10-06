@@ -501,6 +501,35 @@ export interface PerfectsReport {
   samePlayers: { players: number; perfect: Rate | null; other: Rate | null };
   /** Players with 3+ puzzles in the window, by how often they hit a 10.00. */
   players: Array<{ group: string; players: number; avgPuzzles: number | null; nextDay: Rate }>;
+  /**
+   * Days without a 10.00, by whether 10.00s were common on that puzzle (above
+   * the window's median share of players hitting one) or rare. Null before the
+   * 20261006010000 migration.
+   */
+  missed: {
+    medianShare: number | null;
+    groups: Array<{ group: string; players: number; days: number; puzzles: number; nextDay: Rate }>;
+  } | null;
+  /**
+   * The same missed days, by whether the player opened the leaderboard or
+   * found words that day and whether 10.00s were common. Web only. Null before
+   * the 20261006010000 migration.
+   */
+  seen: Array<{ looked: boolean; common: boolean; players: number; days: number; nextDay: Rate }> | null;
+  /** Every player, puzzle by puzzle. Null before the 20261006010000 migration. */
+  population: {
+    puzzles: number;
+    /** Across puzzles: share hitting 10.00 against the puzzle's next-day return. */
+    correlation: number | null;
+    quartiles: Array<{
+      quartile: number;
+      puzzles: number;
+      minShare: number | null;
+      maxShare: number | null;
+      players: number;
+      nextDay: Rate;
+    }>;
+  } | null;
 }
 
 /**
@@ -945,6 +974,45 @@ function parsePerfects(raw: unknown): PerfectsReport {
         avgPuzzles: maybe(p.avgPuzzles),
         nextDay: rate(p.nextDay),
       })),
+    missed:
+      r.missed && typeof r.missed === "object"
+        ? {
+            medianShare: maybe(obj(r.missed).medianShare),
+            groups: list(obj(r.missed).groups)
+              .filter((g) => text(g.group))
+              .map((g) => ({
+                group: g.group as string,
+                players: count(g.players),
+                days: count(g.days),
+                puzzles: count(g.puzzles),
+                nextDay: rate(g.nextDay),
+              })),
+          }
+        : null,
+    seen: Array.isArray(r.seen)
+      ? list(r.seen).map((g) => ({
+          looked: g.looked === true,
+          common: g.common === true,
+          players: count(g.players),
+          days: count(g.days),
+          nextDay: rate(g.nextDay),
+        }))
+      : null,
+    population:
+      r.population && typeof r.population === "object"
+        ? {
+            puzzles: count(obj(r.population).puzzles),
+            correlation: maybe(obj(r.population).correlation),
+            quartiles: list(obj(r.population).quartiles).map((q) => ({
+              quartile: count(q.quartile),
+              puzzles: count(q.puzzles),
+              minShare: maybe(q.minShare),
+              maxShare: maybe(q.maxShare),
+              players: count(q.players),
+              nextDay: rate(q.nextDay),
+            })),
+          }
+        : null,
   };
 }
 

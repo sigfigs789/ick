@@ -446,6 +446,8 @@ function Report({
       {report.returners && <ReturnersSections returners={report.returners} isToday={isToday} windowName={windowName} />}
 
       {report.perfects && !isToday && <PerfectSection perfects={report.perfects} windowName={windowName} />}
+
+      {report.perfects && !isToday && <SeenPerfectsSection perfects={report.perfects} windowName={windowName} />}
     </div>
   );
 }
@@ -1134,12 +1136,14 @@ const PERFECT_MODES: Array<{ key: string; title: string }> = [
  * Plays are the leaderboard's, so every device is in it.
  */
 function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; windowName: string }) {
-  const { firstPuzzle, days, samePlayers, players } = perfects;
+  const { firstPuzzle, days, samePlayers, players, missed } = perfects;
   const label = (perfect: boolean) => (perfect ? "Best word 10.00" : "Best word under 10");
   // Each 10.00 row is measured against the other row of its own group.
   const against = <T extends { perfect: boolean; nextDay: Rate }>(rows: T[], row: T) =>
     row.perfect ? rows.find((r) => !r.perfect)?.nextDay : undefined;
   const regularsBase = players.find((p) => p.group === "Never")?.nextDay;
+  // Missing on a 10.00-heavy puzzle, measured against missing on a quiet one.
+  const missedBase = missed?.groups.find((g) => g.group.endsWith("were rare"))?.nextDay;
   return (
     <Section
       title="Perfect scores and who comes back"
@@ -1240,6 +1244,140 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
                     <RateCell rate={p.nextDay} />
                   </td>
                   <td>{regularsBase && p.group !== "Never" ? <Delta rate={p.nextDay} base={regularsBase} /> : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          )}
+          {missed && missed.groups.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  {`Puzzles where 10.00s were common (more than ${
+                    missed.medianShare === null ? "the median" : pct(missed.medianShare)
+                  } of players hit one, the window's median puzzle) or rare, for the players who missed; gap is against missing on a rare one`}
+                </th>
+              </tr>
+              {missed.groups.map((g) => (
+                <tr key={g.group}>
+                  <th scope="row">{g.group}</th>
+                  <td>{fmt(g.players)}</td>
+                  <td title={`${fmt(g.puzzles)} different puzzles`}>{fmt(g.days)}</td>
+                  <td>
+                    <RateCell rate={g.nextDay} />
+                  </td>
+                  <td>
+                    {missedBase && !g.group.endsWith("were rare") ? <Delta rate={g.nextDay} base={missedBase} /> : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          )}
+        </table>
+      </div>
+    </Section>
+  );
+}
+
+const QUARTILE_NAMES = ["Fewest 10.00s", "Second", "Third", "Most 10.00s"];
+
+/**
+ * Whether other players' 10.00s cheapen the score: from the same `perfect_report`.
+ * The look split is the direct test (a player can only be put off by 10.00s
+ * they saw); the puzzle quartiles are the effect on everybody at once.
+ */
+function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsReport; windowName: string }) {
+  const { seen, population, missed } = perfects;
+  if (!seen && !population) return null;
+  const find = (looked: boolean, common: boolean) =>
+    seen?.find((g) => g.looked === looked && g.common === common)?.nextDay;
+  // How much worse a common day is for those who looked than for those who
+  // did not: the part of the gap that looking explains.
+  const gap = (looked: boolean) => {
+    const a = find(looked, true);
+    const b = find(looked, false);
+    const sa = a && share(a);
+    const sb = b && share(b);
+    return sa != null && sb != null ? sa - sb : null;
+  };
+  const lookedGap = gap(true);
+  const controlGap = gap(false);
+  const lookingEffect = lookedGap !== null && controlGap !== null ? Math.round((lookedGap - controlGap) * 100) : null;
+  const lowest = population?.quartiles[0]?.nextDay;
+  const range = (q: { minShare: number | null; maxShare: number | null }) =>
+    q.minShare === null || q.maxShare === null ? "" : ` (${pct(q.minShare)} to ${pct(q.maxShare)} hit one)`;
+  return (
+    <Section
+      title="Do other players' 10.00s drive players off?"
+      note={`${windowName}. A puzzle's 10.00s are "common" when more of its players hit one than on the window's median puzzle${
+        missed?.medianShare != null ? ` (${pct(missed.medianShare)})` : ""
+      }. The first table keeps only days the player did not hit one, so their own 10.00 is not in it, and splits them by whether they opened the leaderboard or found words, where other players' 10.00s show. If seeing them cheapens the score, the players who looked on a common puzzle come back worst; those who did not look are the control. Looks come from events, so that table is web only. The second table is everybody: puzzles in quartiles by how many of their players hit a 10.00. The weekday, the drop and the mode mix move a puzzle's return too. ${CAVEAT}`}
+    >
+      <div className="analytics__tiles">
+        <Tile
+          label="Looking, on a common day"
+          value={lookingEffect === null ? "—" : `${lookingEffect > 0 ? "+" : lookingEffect < 0 ? "−" : "±"}${Math.abs(lookingEffect)} pts`}
+          sub="common-vs-rare gap for lookers, minus the same gap for non-lookers"
+        />
+        {population && (
+          <Tile
+            label="Correlation, all players"
+            value={population.correlation === null ? "—" : population.correlation.toFixed(2)}
+            sub={`share hitting 10.00 vs next-day return, over ${fmt(population.puzzles)} puzzles`}
+          />
+        )}
+      </div>
+      <div className="analytics__table-wrap">
+        <table className="analytics__table">
+          <thead>
+            <tr>
+              <th scope="col">Day</th>
+              <th scope="col">Players</th>
+              <th scope="col">Puzzles</th>
+              <th scope="col">Next day</th>
+              <th scope="col">Gap</th>
+            </tr>
+          </thead>
+          {seen && seen.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  Missed a 10.00 themselves; gap is common against rare, for the same look
+                </th>
+              </tr>
+              {seen.map((g) => {
+                const base = g.common ? find(g.looked, false) : undefined;
+                return (
+                  <tr key={`${g.looked}-${g.common}`}>
+                    <th scope="row">
+                      {`${g.looked ? "Looked at the boards" : "Did not look"}, 10.00s ${g.common ? "common" : "rare"}`}
+                    </th>
+                    <td>{fmt(g.players)}</td>
+                    <td>{fmt(g.days)}</td>
+                    <td>
+                      <RateCell rate={g.nextDay} />
+                    </td>
+                    <td>{base ? <Delta rate={g.nextDay} base={base} /> : "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          )}
+          {population && population.quartiles.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  Every player, by how many of the puzzle's players hit a 10.00; gap is against the fewest
+                </th>
+              </tr>
+              {population.quartiles.map((q) => (
+                <tr key={q.quartile}>
+                  <th scope="row">{`${QUARTILE_NAMES[q.quartile - 1] ?? q.quartile}${range(q)}`}</th>
+                  <td>{fmt(q.players)}</td>
+                  <td>{fmt(q.puzzles)}</td>
+                  <td>
+                    <RateCell rate={q.nextDay} />
+                  </td>
+                  <td>{lowest && q.quartile > 1 ? <Delta rate={q.nextDay} base={lowest} /> : "—"}</td>
                 </tr>
               ))}
             </tbody>

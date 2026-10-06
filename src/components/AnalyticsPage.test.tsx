@@ -196,6 +196,34 @@ const PERFECTS = {
     { group: "Never", players: 20, avgPuzzles: 5.5, nextDay: { cohort: 100, returned: 50 } },
     { group: "Two thirds or more", players: 6, avgPuzzles: 9.2, nextDay: { cohort: 50, returned: 40 } },
   ],
+  missed: {
+    medianShare: 0.25,
+    groups: [
+      { group: "Hit a 10.00", players: 30, days: 90, puzzles: 20, nextDay: { cohort: 80, returned: 48 } },
+      {
+        group: "Missed, on a puzzle where 10.00s were common",
+        players: 25, days: 100, puzzles: 10, nextDay: { cohort: 100, returned: 35 },
+      },
+      {
+        group: "Missed, on a puzzle where 10.00s were rare",
+        players: 40, days: 200, puzzles: 10, nextDay: { cohort: 150, returned: 75 },
+      },
+    ],
+  },
+  seen: [
+    { looked: true, common: true, players: 10, days: 40, nextDay: { cohort: 40, returned: 12 } },
+    { looked: true, common: false, players: 12, days: 50, nextDay: { cohort: 50, returned: 25 } },
+    { looked: false, common: true, players: 15, days: 60, nextDay: { cohort: 60, returned: 27 } },
+    { looked: false, common: false, players: 20, days: 100, nextDay: { cohort: 100, returned: 50 } },
+  ],
+  population: {
+    puzzles: 20,
+    correlation: -0.31,
+    quartiles: [
+      { quartile: 1, puzzles: 5, minShare: 0.05, maxShare: 0.1, players: 100, nextDay: { cohort: 100, returned: 55 } },
+      { quartile: 4, puzzles: 5, minShare: 0.3, maxShare: 0.5, players: 90, nextDay: { cohort: 90, returned: 40 } },
+    ],
+  },
 };
 
 /** The shape `chat_report` returns, which api/review.ts sets on the report. */
@@ -435,6 +463,32 @@ describe("AnalyticsPage", () => {
     const often = section.getByRole("rowheader", { name: "Two thirds or more" }).closest("tr")!;
     expect(often).toHaveTextContent("9.2");
     expect(often).toHaveTextContent("+30 pts");
+    // 35% missing on a 10.00-heavy puzzle against 50% missing on a quiet one.
+    expect(section.getByText(/more than 25% of players hit one/)).toBeInTheDocument();
+    const common = section.getByRole("rowheader", { name: "Missed, on a puzzle where 10.00s were common" });
+    expect(within(common.closest("tr")!).getByText("−15 pts")).toHaveClass("analytics__delta--down");
+  });
+
+  it("tests whether seeing other players' 10.00s drives players off, and across everybody", async () => {
+    stubFetch({ ...REPORT, perfects: PERFECTS });
+    render(<AnalyticsPage />);
+
+    const section = within((await screen.findByText("Do other players' 10.00s drive players off?")).closest("section")!);
+    // Lookers: 30% common vs 50% rare (−20); non-lookers 45% vs 50% (−5): looking costs 15.
+    expect(section.getByText("Looking, on a common day").closest("div")).toHaveTextContent("−15 pts");
+    expect(section.getByText("Correlation, all players").closest("div")).toHaveTextContent("-0.31");
+    const lookedCommon = section.getByRole("rowheader", { name: "Looked at the boards, 10.00s common" });
+    expect(lookedCommon.closest("tr")).toHaveTextContent("−20 pts");
+    const most = section.getByRole("rowheader", { name: "Most 10.00s (30% to 50% hit one)" });
+    expect(within(most.closest("tr")!).getByText("−11 pts")).toHaveClass("analytics__delta--down");
+  });
+
+  it("draws the first perfect_report, from before the missed split, without it", async () => {
+    stubFetch({ ...REPORT, perfects: { ...PERFECTS, missed: undefined, seen: undefined, population: undefined } });
+    render(<AnalyticsPage />);
+    await screen.findByText("Perfect scores and who comes back");
+    expect(screen.queryByText("Hit a 10.00")).not.toBeInTheDocument();
+    expect(screen.queryByText("Do other players' 10.00s drive players off?")).not.toBeInTheDocument();
   });
 
   it("leaves the perfect-score section out when its numbers failed", async () => {
