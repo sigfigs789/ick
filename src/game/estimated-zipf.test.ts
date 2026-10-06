@@ -96,16 +96,18 @@ describe("the shipped estimates", () => {
   it("say who made every batch and for which puzzle", () => {
     for (const b of batches) {
       expect(b.since).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(b.drop).toMatch(/^[A-Z]+$/);
+      // One drop for a daily batch; a sweep lists every drop it covered.
+      expect(b.drop).toMatch(/^[A-Z]+(, [A-Z]+)*$/);
       expect(b.model).toMatch(/^claude-/);
     }
   });
 
-  it("hold only real frequencies for lowercase words containing the drop", () => {
+  // Not "containing the drop": a sweep also estimates words players have
+  // already banked at 10.00, whichever drop they were played on.
+  it("hold only real frequencies for lowercase words", () => {
     for (const b of batches) {
       for (const [word, zipf] of Object.entries(b.zipf)) {
         expect(word).toMatch(/^[a-z]+$/);
-        expect(word).toContain(b.drop.toLowerCase());
         expect(Number.isFinite(zipf) && zipf >= -3 && zipf <= 8).toBe(true);
         expect(estimatedZipfEntry(word)).toBeDefined();
       }
