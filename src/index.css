@@ -101,6 +101,8 @@
      orange so it never clashes with Legend. */
   --best-word-accent: #eab308;
   --best-word-bg: #fbf3d6;
+  /* The halo round the crowned word's card, in place of a tinted fill. */
+  --best-word-glow: 0 0 0 3px color-mix(in srgb, var(--best-word-accent) 22%, transparent);
 
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* Slow, then quick, then slow again -- an S-curve, where --ease-standard is a
@@ -1165,7 +1167,9 @@ h2 {
 }
 .guess-log__entry--best {
   border-color: var(--best-word-accent);
-  background: color-mix(in srgb, var(--best-word-bg) 55%, var(--card-bg));
+  /* A gold halo rather than a gold fill: a tinted card washed out the pale gold
+     Elusive badge sitting on it, and the glow marks the best word just as well. */
+  box-shadow: var(--best-word-glow), var(--card-shadow);
 }
 @keyframes slot-fill {
   0% {
@@ -2019,8 +2023,9 @@ h2 {
   padding: 1rem 1.5rem;
   margin: 0 0 1.25rem;
   border-radius: 0.85rem;
-  background: color-mix(in srgb, var(--best-word-bg) 65%, transparent);
+  background: var(--card-bg);
   border: 1px solid var(--best-word-accent);
+  box-shadow: var(--best-word-glow);
 }
 .results-panel__best-label {
   margin: 0;
