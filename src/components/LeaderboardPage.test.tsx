@@ -264,10 +264,12 @@ describe("the leaderboard page", () => {
     // boards do not simply repeat one number.
     expect(boardRows(MONTH_BOARD)[1]).toHaveTextContent("8.4");
 
-    // The word itself stays off the row. It is on the page under Today's finds,
-    // where it belongs to the day rather than standing as a claim about a
-    // player -- and unlabelled numbers are what the column is.
-    expect(boardRows("This week")[0]).not.toHaveTextContent("quixotic");
+    // The word goes with its score, as it does on the app's board: the find a
+    // player is proudest of is the word, not the number.
+    expect(boardRows("This week")[0]).toHaveTextContent("quixotic · 8.1");
+    expect(
+      boardRows("This week")[0].querySelector(".leaderboard__best-word"),
+    ).toHaveAttribute("title", "quixotic");
   });
 
   it("shows a Mythic-or-better find to two decimals, and the total to one", async () => {
@@ -331,7 +333,7 @@ describe("the leaderboard page", () => {
     expect(boardRows("Today")[0]).toHaveTextContent("39.95");
   });
 
-  it("leaves the line off a find today's dictionary cannot price", async () => {
+  it("leaves the score off a find today's dictionary cannot price", async () => {
     stubFetch({
       ...OPEN,
       weekly: [
@@ -352,6 +354,8 @@ describe("the leaderboard page", () => {
     await waitFor(() => expect(boardRows("This week")).toHaveLength(1));
     expect(boardRows("This week")[0]).toHaveTextContent("41.2");
     expect(boardRows("This week")[0]).not.toHaveTextContent("0.0");
+    // The word itself is still a find worth showing; only its number is gone.
+    expect(boardRows("This week")[0]).toHaveTextContent("zzzzzzzz");
   });
 
   it("says when the monthly board resets, and names no dates", async () => {
@@ -468,19 +472,21 @@ describe("the leaderboard page", () => {
     expect(boardRows(MONTH_BOARD)[1]).toHaveTextContent(handleFor(ALICE));
   });
 
-  it("keeps every player's find off both boards", async () => {
+  it("shows each board's own best find for every player", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    // A find is shown with what it scored, and the scoring system is still being
-    // corrected -- so the words stay under Today's finds and the boards say only
-    // what somebody played and what it added up to.
+    // The word a player is proudest of is on their row, as it is on the app's
+    // board -- and it is the find inside *this* board's window, so the same
+    // player can carry a different word on the week and on the month.
     await waitFor(() =>
       expect(boardRows(MONTH_BOARD)[0]).toHaveTextContent(handleFor(BOB)),
     );
     expect(rowMeta(MONTH_BOARD, 0)).toBe("40 puzzles");
-    expect(boardRows(MONTH_BOARD)[0]).not.toHaveTextContent("inkling");
-    expect(boardRows("This week")[0]).not.toHaveTextContent("quixotic");
+    expect(boardRows(MONTH_BOARD)[0]).toHaveTextContent("inkling");
+    expect(boardRows("This week")[0]).toHaveTextContent("quixotic");
+    expect(boardRows(MONTH_BOARD)[1]).toHaveTextContent("asphyxiate");
+    expect(boardRows(MONTH_BOARD)[1]).not.toHaveTextContent("quixotic");
   });
 
   it("counts the puzzles behind each score", async () => {

@@ -825,33 +825,6 @@ function Board({
 }
 
 /**
- * One player's row: who they are, how much they played, and what it added up to.
- *
- * Under the total sits their best single find inside the board's window -- a
- * bare number, no word and no label. The total says how much a week of playing
- * came to, which rewards turning up every day; the number under it says how good
- * the best day *was*, which is the other thing a player wants to be measured on,
- * and the two read as one column of scores rather than as a score and a caption.
- *
- * The word itself is not here on purpose. It is the day's find under Today's
- * finds, where it belongs to the day; on a row it would be a claim about a
- * player, and it would need its own name-length column in a row that already
- * wraps long names.
- *
- * Zero means the find is a word today's dictionary no longer prices and the row
- * arrived without a stored frequency (see `scoreOf`). That is a gap rather than
- * a result, so the line is left off instead of reading "0.0".
- *
- * Formatted by `formatScore` and not by hand. A single word's score carries two
- * decimals from Mythic up (9.5+), where the top ranks are decided on hundredths
- * and one decimal would print two different finds as the same number -- and it
- * is the fixed cutoffs the shown value keys off, so rounding it here would put
- * the number out of step with the rank the same word wears everywhere else in
- * the app. The total above it carries two decimals as well, through
- * `formatTotal` -- a total is a sum of numbers priced to the cent, so a tenth
- * of it is a digit the player cannot account for.
- */
-/**
  * What to call the player reading the page.
  *
  * The same rule the board's own rows follow (see `nameFor` in
@@ -864,6 +837,33 @@ function selfName(playerId: string): string {
   return account ? `u/${account}` : handleFor(playerId);
 }
 
+/**
+ * One player's row: who they are, how much they played, and what it added up to.
+ *
+ * Under the total sits their best single find inside the board's window, as the
+ * word and its score -- the same "word · score" line the app's board carries
+ * under each name. The total says how much a week of playing came to, which
+ * rewards turning up every day; the find says how good the best day *was*, which
+ * is the other thing a player wants to be measured on, and the word is the part
+ * of that they will recognise and want to show off.
+ *
+ * The word gives way before anything else on the row: it is cut with an ellipsis
+ * rather than allowed to widen the score column and squeeze the name (see
+ * `.leaderboard__best-word`), with the whole word kept in its tooltip.
+ *
+ * A score of zero means the find is a word today's dictionary no longer prices
+ * and the row arrived without a stored frequency (see `scoreOf`). That is a gap
+ * rather than a result, so the word stands alone instead of reading "0.0".
+ *
+ * Formatted by `formatScore` and not by hand. A single word's score carries two
+ * decimals from Mythic up (9.5+), where the top ranks are decided on hundredths
+ * and one decimal would print two different finds as the same number -- and it
+ * is the fixed cutoffs the shown value keys off, so rounding it here would put
+ * the number out of step with the rank the same word wears everywhere else in
+ * the app. The total above it carries two decimals as well, through
+ * `formatTotal` -- a total is a sum of numbers priced to the cent, so a tenth
+ * of it is a digit the player cannot account for.
+ */
 function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
   /**
    * Whoever is top of this board, dressed as the winner they are.
@@ -904,20 +904,33 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
         {entry.name}
         {isYou && <span className="leaderboard__you">you</span>}
       </span>
-      <span className="leaderboard__meta">
-        {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"}
-      </span>
       <span className="leaderboard__score">{formatTotal(entry.score)}</span>
-      {entry.windowScore > 0 && (
-        <span className="leaderboard__best">
-          {/* Two numbers stacked in one column are told apart by their size and
-              their position, which says nothing to a reader who gets the row as
-              a sentence -- so the second one is named to them and to nobody
-              else. */}
-          <span className="sr-only">best find </span>
-          {formatScore(entry.windowScore)}
+      {/* One strip under the name and the total, so the find's word can take
+          the width the name column has rather than widening the score column
+          it hangs under. */}
+      <span className="leaderboard__detail">
+        <span className="leaderboard__meta">
+          {entry.puzzles} {entry.puzzles === 1 ? "puzzle" : "puzzles"}
         </span>
-      )}
+        {entry.windowWord && (
+          <span className="leaderboard__best">
+            {/* The total above and the find below are told apart by their size
+                and their position, which says nothing to a reader who gets the
+                row as a sentence -- so the find is named to them and to nobody
+                else. */}
+            <span className="sr-only">best find </span>
+            <span className="leaderboard__best-word" title={entry.windowWord}>
+              {entry.windowWord}
+            </span>
+            {entry.windowScore > 0 && (
+              <span className="leaderboard__best-score">
+                {" · "}
+                {formatScore(entry.windowScore)}
+              </span>
+            )}
+          </span>
+        )}
+      </span>
     </li>
   );
 }
