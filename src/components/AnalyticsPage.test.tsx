@@ -182,6 +182,7 @@ const RETURNERS = {
 const PERFECTS = {
   from: "2026-08-29",
   to: "2026-09-27",
+  perfectSince: "2026-09-05",
   firstPuzzle: [
     { perfect: true, players: 10, nextDay: { cohort: 10, returned: 6 }, week: { cohort: 8, returned: 6 } },
     { perfect: false, players: 40, nextDay: { cohort: 40, returned: 16 }, week: { cohort: 30, returned: 15 } },
@@ -486,6 +487,7 @@ describe("AnalyticsPage", () => {
     render(<AnalyticsPage />);
 
     const section = within((await screen.findByText("Do other players' 10.00s drive players off?")).closest("section")!);
+    expect(section.getByText(/comparing puzzles from 2026-09-05, the first anybody hit a 10\.00 on/)).toBeInTheDocument();
     // Lookers: 30% common vs 50% rare (−20); non-lookers 45% vs 50% (−5): looking costs 15.
     expect(section.getByText("Looked, on a common day (web)").closest("div")).toHaveTextContent("−15 pts");
     // Everybody: 44% on the puzzles with the most 10.00s against 55% on the fewest.

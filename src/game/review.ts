@@ -493,6 +493,11 @@ export interface AnalyticsReport {
 export interface PerfectsReport {
   from: string | null;
   to: string | null;
+  /**
+   * The first puzzle anybody hit a 10.00 on: the puzzle comparisons (missed,
+   * seen, population, casual) start there. Null before 20261006030000.
+   */
+  perfectSince: string | null;
   /** New players, by whether their first puzzle had a 10.00. */
   firstPuzzle: Array<{ perfect: boolean; players: number; nextDay: Rate; week: Rate }>;
   /** Every player-day; mode "all" first, then "standard" and "freeform". */
@@ -961,6 +966,7 @@ function parsePerfects(raw: unknown): PerfectsReport {
   return {
     from: text(r.from),
     to: text(r.to),
+    perfectSince: text(r.perfectSince),
     firstPuzzle: list(r.firstPuzzle).map((f) => ({
       perfect: f.perfect === true,
       players: count(f.players),
