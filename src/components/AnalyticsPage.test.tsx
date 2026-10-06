@@ -228,9 +228,16 @@ const PERFECTS = {
   casual: {
     puzzles: 18,
     correlation: -0.42,
+    weekCorrelation: -0.18,
     quartiles: [
-      { quartile: 1, puzzles: 5, minShare: 0.05, maxShare: 0.1, players: 40, nextDay: { cohort: 40, returned: 20 } },
-      { quartile: 4, puzzles: 5, minShare: 0.3, maxShare: 0.5, players: 40, nextDay: { cohort: 40, returned: 12 } },
+      {
+        quartile: 1, puzzles: 5, minShare: 0.05, maxShare: 0.1, players: 40,
+        nextDay: { cohort: 40, returned: 20 }, week: { cohort: 30, returned: 24 },
+      },
+      {
+        quartile: 4, puzzles: 5, minShare: 0.3, maxShare: 0.5, players: 40,
+        nextDay: { cohort: 40, returned: 12 }, week: { cohort: 20, returned: 12 },
+      },
     ],
     days: [
       { perfect: true, players: 10, days: 15, nextDay: { cohort: 15, returned: 6 } },
@@ -504,9 +511,18 @@ describe("AnalyticsPage", () => {
     render(<AnalyticsPage />);
 
     const section = within((await screen.findByText("10.00s without the power users")).closest("section")!);
-    expect(section.getByText("Correlation, casual players").closest("div")).toHaveTextContent("-0.42");
-    // 30% on the puzzles with the most 10.00s against 50% on the fewest.
-    expect(section.getByText("Most 10.00s against fewest").closest("div")).toHaveTextContent("−20 pts");
+    expect(section.getByText("Correlation, casual players").closest("div")).toHaveTextContent(
+      "-0.42 next day · -0.18 week",
+    );
+    // 30% on the puzzles with the most 10.00s against 50% on the fewest; within
+    // a week, 60% against 80%.
+    expect(section.getByText("Most 10.00s against fewest").closest("div")).toHaveTextContent(
+      "−20 pts next day · −20 pts week",
+    );
+    const most = section.getByRole("rowheader", { name: "Most 10.00s (30% to 50% hit one)" }).closest("tr")!;
+    expect(most).toHaveTextContent("60%");
+    // Their own 10.00 has no week numbers yet: the days are too recent.
+    expect(section.getByRole("rowheader", { name: "Best word under 10" }).closest("tr")).toHaveTextContent("too recent");
     // 40% after their own 10.00 against 50% after any other day.
     expect(section.getByText("Their own 10.00").closest("div")).toHaveTextContent("−10 pts");
     expect(section.getByRole("rowheader", { name: "Most 10.00s (30% to 50% hit one)" }).closest("tr")).toHaveTextContent(

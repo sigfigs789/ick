@@ -1256,6 +1256,77 @@ function VersionSection({ returners, windowName }: { returners: ReturnersReport;
   );
 }
 
+/** The two return measures every 10.00 table shows. */
+interface Returns {
+  nextDay: Rate;
+  week: Rate;
+}
+
+/**
+ * A row's next-day and within-a-week returns, each with its gap against `base`
+ * (none for the row that is the base). Four cells.
+ */
+function Rates({ row, base }: { row: Returns; base?: Returns }) {
+  return (
+    <>
+      <td>
+        <RateCell rate={row.nextDay} />
+      </td>
+      <td>{base ? <Delta rate={row.nextDay} base={base.nextDay} /> : "—"}</td>
+      <td>{row.week.cohort ? <RateCell rate={row.week} /> : "too recent"}</td>
+      <td>{base ? <Delta rate={row.week} base={base.week} /> : "—"}</td>
+    </>
+  );
+}
+
+/** Two gaps in one tile, next day then within a week, each [rate, base]. */
+function GapTile({
+  label,
+  next,
+  week,
+  sub,
+}: {
+  label: string;
+  next: [Rate, Rate];
+  week?: [Rate, Rate];
+  sub: string;
+}) {
+  return (
+    <div className="analytics__tile">
+      <span className="analytics__tile-label">{label}</span>
+      <span className="analytics__tile-value">
+        <Delta rate={next[0]} base={next[1]} /> <span className="analytics__n">next day</span>
+        {week && (
+          <>
+            {" · "}
+            <Delta rate={week[0]} base={week[1]} /> <span className="analytics__n">week</span>
+          </>
+        )}
+      </span>
+      <span className="analytics__tile-sub">{sub}</span>
+    </div>
+  );
+}
+
+function CorrelationTile({ label, population, sub }: { label: string; population: PerfectPopulation; sub: string }) {
+  const show = (r: number | null) => (r === null ? "—" : r.toFixed(2));
+  return (
+    <div className="analytics__tile">
+      <span className="analytics__tile-label">{label}</span>
+      <span className="analytics__tile-value">
+        {show(population.correlation)} <span className="analytics__n">next day</span> ·{" "}
+        {show(population.weekCorrelation)} <span className="analytics__n">week</span>
+      </span>
+      <span className="analytics__tile-sub">{`${sub}, over ${fmt(population.puzzles)} puzzles`}</span>
+    </div>
+  );
+}
+
+/** A difference already in points, signed as Delta signs one. */
+function points(p: number | null): string {
+  return p === null ? "—" : `${p > 0 ? "+" : p < 0 ? "−" : "±"}${Math.abs(p)} pts`;
+}
+
 const PERFECT_MODES: Array<{ key: string; title: string }> = [
   { key: "all", title: "Every puzzle played, both modes" },
   { key: "standard", title: "Standard only (common-form scoring makes 10.00 rarer)" },
@@ -1272,11 +1343,11 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
   const { firstPuzzle, days, samePlayers, players, missed } = perfects;
   const label = (perfect: boolean) => (perfect ? "Best word 10.00" : "Best word under 10");
   // Each 10.00 row is measured against the other row of its own group.
-  const against = <T extends { perfect: boolean; nextDay: Rate }>(rows: T[], row: T) =>
-    row.perfect ? rows.find((r) => !r.perfect)?.nextDay : undefined;
-  const regularsBase = players.find((p) => p.group === "Never")?.nextDay;
+  const against = <T extends { perfect: boolean }>(rows: T[], row: T) =>
+    row.perfect ? rows.find((r) => !r.perfect) : undefined;
+  const regularsBase = players.find((p) => p.group === "Never");
   // Missing on a 10.00-heavy puzzle, measured against missing on a quiet one.
-  const missedBase = missed?.groups.find((g) => g.group.endsWith("were rare"))?.nextDay;
+  const missedBase = missed?.groups.find((g) => g.group.endsWith("were rare"));
   return (
     <Section
       title="Perfect scores and who comes back"
@@ -1288,12 +1359,12 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
           <>
             <RateTile label="Next day after a 10.00" rate={samePlayers.perfect} />
             <RateTile label="Next day after any other" rate={samePlayers.other} />
-            <div className="analytics__tile">
-              <span className="analytics__tile-label">Gap</span>
-              <span className="analytics__tile-value">
-                <Delta rate={samePlayers.perfect} base={samePlayers.other} />
-              </span>
-            </div>
+            <GapTile
+              label="Gap"
+              next={[samePlayers.perfect, samePlayers.other]}
+              week={samePlayers.week ? [samePlayers.week.perfect, samePlayers.week.other] : undefined}
+              sub="after a 10.00, against after any other"
+            />
           </>
         ) : (
           <Tile label="Next day after a 10.00" value="—" sub="fewer than five such players" />
@@ -1308,6 +1379,8 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
               <th scope="col">Puzzles</th>
               <th scope="col">Next day</th>
               <th scope="col">Gap</th>
+              <th scope="col">Within a week</th>
+              <th scope="col">Gap</th>
             </tr>
           </thead>
           {PERFECT_MODES.map(({ key, title }) => {
@@ -1316,7 +1389,7 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
             return (
               <tbody key={key}>
                 <tr className="analytics__table-group">
-                  <th scope="colgroup" colSpan={5}>
+                  <th scope="colgroup" colSpan={7}>
                     {title}
                   </th>
                 </tr>
@@ -1327,10 +1400,7 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
                       <th scope="row">{label(d.perfect)}</th>
                       <td>{fmt(d.players)}</td>
                       <td>{fmt(d.days)}</td>
-                      <td>
-                        <RateCell rate={d.nextDay} />
-                      </td>
-                      <td>{base ? <Delta rate={d.nextDay} base={base} /> : "—"}</td>
+                      <Rates row={d} base={base} />
                     </tr>
                   );
                 })}
@@ -1340,8 +1410,8 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
           {firstPuzzle.length > 0 && (
             <tbody>
               <tr className="analytics__table-group">
-                <th scope="colgroup" colSpan={5}>
-                  New players' first puzzle (next day; within a week in brackets)
+                <th scope="colgroup" colSpan={7}>
+                  New players' first puzzle
                 </th>
               </tr>
               {firstPuzzle.map((f) => {
@@ -1351,10 +1421,7 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
                     <th scope="row">{label(f.perfect)}</th>
                     <td>{fmt(f.players)}</td>
                     <td>{fmt(f.players)}</td>
-                    <td>
-                      <RateCell rate={f.nextDay} /> (<RateCell rate={f.week} />)
-                    </td>
-                    <td>{base ? <Delta rate={f.nextDay} base={base} /> : "—"}</td>
+                    <Rates row={f} base={base} />
                   </tr>
                 );
               })}
@@ -1363,7 +1430,7 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
           {players.length > 0 && (
             <tbody>
               <tr className="analytics__table-group">
-                <th scope="colgroup" colSpan={5}>
+                <th scope="colgroup" colSpan={7}>
                   Players with 3+ puzzles in the window, by how often their best word was 10.00 (puzzles is the
                   average each played)
                 </th>
@@ -1373,10 +1440,7 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
                   <th scope="row">{p.group}</th>
                   <td>{fmt(p.players)}</td>
                   <td>{dec(p.avgPuzzles, 1)}</td>
-                  <td>
-                    <RateCell rate={p.nextDay} />
-                  </td>
-                  <td>{regularsBase && p.group !== "Never" ? <Delta rate={p.nextDay} base={regularsBase} /> : "—"}</td>
+                  <Rates row={p} base={p.group !== "Never" ? regularsBase : undefined} />
                 </tr>
               ))}
             </tbody>
@@ -1384,7 +1448,7 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
           {missed && missed.groups.length > 0 && (
             <tbody>
               <tr className="analytics__table-group">
-                <th scope="colgroup" colSpan={5}>
+                <th scope="colgroup" colSpan={7}>
                   {`Puzzles where 10.00s were common (more than ${
                     missed.medianShare === null ? "the median" : pct(missed.medianShare)
                   } of players hit one, the window's median puzzle) or rare, for the players who missed; gap is against missing on a rare one`}
@@ -1395,12 +1459,7 @@ function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; wi
                   <th scope="row">{g.group}</th>
                   <td>{fmt(g.players)}</td>
                   <td title={`${fmt(g.puzzles)} different puzzles`}>{fmt(g.days)}</td>
-                  <td>
-                    <RateCell rate={g.nextDay} />
-                  </td>
-                  <td>
-                    {missedBase && !g.group.endsWith("were rare") ? <Delta rate={g.nextDay} base={missedBase} /> : "—"}
-                  </td>
+                  <Rates row={g} base={!g.group.endsWith("were rare") ? missedBase : undefined} />
                 </tr>
               ))}
             </tbody>
@@ -1434,22 +1493,23 @@ function sinceNote(since: string | null): string {
 function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsReport; windowName: string }) {
   const { seen, population, missed } = perfects;
   if (!seen && !population) return null;
-  const find = (looked: boolean, common: boolean) =>
-    seen?.find((g) => g.looked === looked && g.common === common)?.nextDay;
+  const find = (looked: boolean, common: boolean) => seen?.find((g) => g.looked === looked && g.common === common);
   // How much worse a common day is for those who looked than for those who
-  // did not: the part of the gap that looking explains.
-  const gap = (looked: boolean) => {
-    const a = find(looked, true);
-    const b = find(looked, false);
-    const sa = a && share(a);
-    const sb = b && share(b);
-    return sa != null && sb != null ? sa - sb : null;
+  // did not: the part of the gap that looking explains, in points.
+  const lookingEffect = (key: "nextDay" | "week") => {
+    const gap = (looked: boolean) => {
+      const a = find(looked, true)?.[key];
+      const b = find(looked, false)?.[key];
+      const sa = a && share(a);
+      const sb = b && share(b);
+      return sa != null && sb != null ? sa - sb : null;
+    };
+    const looked = gap(true);
+    const control = gap(false);
+    return looked !== null && control !== null ? Math.round((looked - control) * 100) : null;
   };
-  const lookedGap = gap(true);
-  const controlGap = gap(false);
-  const lookingEffect = lookedGap !== null && controlGap !== null ? Math.round((lookedGap - controlGap) * 100) : null;
-  const lowest = population?.quartiles[0]?.nextDay;
-  const highest = population && population.quartiles.length > 1 ? population.quartiles[population.quartiles.length - 1].nextDay : undefined;
+  const lowest = population?.quartiles[0];
+  const highest = population && population.quartiles.length > 1 ? population.quartiles[population.quartiles.length - 1] : undefined;
   return (
     <Section
       title="Do other players' 10.00s drive players off?"
@@ -1459,26 +1519,28 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
     >
       <div className="analytics__tiles">
         {population && (
-          <Tile
+          <CorrelationTile
             label="Correlation, all players"
-            value={population.correlation === null ? "—" : population.correlation.toFixed(2)}
-            sub={`how often anybody hit 10.00 vs next-day return, over ${fmt(population.puzzles)} puzzles`}
+            population={population}
+            sub="how often anybody hit 10.00 vs return"
           />
         )}
         {population && lowest && highest && (
-          <div className="analytics__tile">
-            <span className="analytics__tile-label">Most 10.00s against fewest</span>
-            <span className="analytics__tile-value">
-              <Delta rate={highest} base={lowest} />
-            </span>
-            <span className="analytics__tile-sub">next-day return, every player</span>
-          </div>
+          <GapTile
+            label="Most 10.00s against fewest"
+            next={[highest.nextDay, lowest.nextDay]}
+            week={[highest.week, lowest.week]}
+            sub="every player"
+          />
         )}
-        <Tile
-          label="Looked, on a common day (web)"
-          value={lookingEffect === null ? "—" : `${lookingEffect > 0 ? "+" : lookingEffect < 0 ? "−" : "±"}${Math.abs(lookingEffect)} pts`}
-          sub="common-vs-rare gap for lookers, minus the same gap for non-lookers"
-        />
+        <div className="analytics__tile">
+          <span className="analytics__tile-label">Looked, on a common day (web)</span>
+          <span className="analytics__tile-value">
+            {points(lookingEffect("nextDay"))} <span className="analytics__n">next day</span> ·{" "}
+            {points(lookingEffect("week"))} <span className="analytics__n">week</span>
+          </span>
+          <span className="analytics__tile-sub">common-vs-rare gap for lookers, minus the same gap for non-lookers</span>
+        </div>
       </div>
       <div className="analytics__table-wrap">
         <table className="analytics__table">
@@ -1489,12 +1551,14 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
               <th scope="col">Puzzles</th>
               <th scope="col">Next day</th>
               <th scope="col">Gap</th>
+              <th scope="col">Within a week</th>
+              <th scope="col">Gap</th>
             </tr>
           </thead>
           {population && population.quartiles.length > 0 && (
             <tbody>
               <tr className="analytics__table-group">
-                <th scope="colgroup" colSpan={5}>
+                <th scope="colgroup" colSpan={7}>
                   Every player, by how often anybody hit a 10.00 on the puzzle; gap is against the fewest
                 </th>
               </tr>
@@ -1504,7 +1568,7 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
           {seen && seen.length > 0 && (
             <tbody>
               <tr className="analytics__table-group">
-                <th scope="colgroup" colSpan={5}>
+                <th scope="colgroup" colSpan={7}>
                   Web only: missed a 10.00 themselves; gap is common against rare, for the same look
                 </th>
               </tr>
@@ -1517,10 +1581,7 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
                     </th>
                     <td>{fmt(g.players)}</td>
                     <td>{fmt(g.days)}</td>
-                    <td>
-                      <RateCell rate={g.nextDay} />
-                    </td>
-                    <td>{base ? <Delta rate={g.nextDay} base={base} /> : "—"}</td>
+                    <Rates row={g} base={base} />
                   </tr>
                 );
               })}
@@ -1534,7 +1595,7 @@ function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsRepor
 
 /** Puzzles in quartiles by how often anybody hit a 10.00, gap against the fewest. */
 function QuartileRows({ population }: { population: PerfectPopulation }) {
-  const lowest = population.quartiles[0]?.nextDay;
+  const lowest = population.quartiles[0];
   return (
     <>
       {population.quartiles.map((q) => (
@@ -1546,10 +1607,7 @@ function QuartileRows({ population }: { population: PerfectPopulation }) {
           </th>
           <td>{fmt(q.players)}</td>
           <td>{fmt(q.puzzles)}</td>
-          <td>
-            <RateCell rate={q.nextDay} />
-          </td>
-          <td>{lowest && q.quartile > 1 ? <Delta rate={q.nextDay} base={lowest} /> : "—"}</td>
+          <Rates row={q} base={lowest && q !== lowest ? lowest : undefined} />
         </tr>
       ))}
     </>
@@ -1569,38 +1627,36 @@ function CasualPerfectsSection({
   casual: NonNullable<PerfectsReport["casual"]>;
   windowName: string;
 }) {
-  const lowest = casual.quartiles[0]?.nextDay;
-  const highest = casual.quartiles.length > 1 ? casual.quartiles[casual.quartiles.length - 1].nextDay : undefined;
-  const hit = casual.days.find((d) => d.perfect)?.nextDay;
-  const missed = casual.days.find((d) => !d.perfect)?.nextDay;
+  const lowest = casual.quartiles[0];
+  const highest = casual.quartiles.length > 1 ? casual.quartiles[casual.quartiles.length - 1] : undefined;
+  const hit = casual.days.find((d) => d.perfect);
+  const missed = casual.days.find((d) => !d.perfect);
   return (
     <Section
       title="10.00s without the power users"
       note={`${windowName}, counting only the days that were one of a player's first six puzzles, so nobody's 7th puzzle or later is in it. That is cut by where the player was that day, not by how many they went on to play: reaching seven is itself coming back, and cutting on it would take the returns out with it. Puzzles stay in the quartiles of the section above, by how often anybody (power users too) hit a 10.00, since that is what these players saw. Every device counts. ${CAVEAT}`}
     >
       <div className="analytics__tiles">
-        <Tile
+        <CorrelationTile
           label="Correlation, casual players"
-          value={casual.correlation === null ? "—" : casual.correlation.toFixed(2)}
-          sub={`how often anybody hit 10.00 vs their next-day return, over ${fmt(casual.puzzles)} puzzles`}
+          population={casual}
+          sub="how often anybody hit 10.00 vs their return"
         />
         {lowest && highest && (
-          <div className="analytics__tile">
-            <span className="analytics__tile-label">Most 10.00s against fewest</span>
-            <span className="analytics__tile-value">
-              <Delta rate={highest} base={lowest} />
-            </span>
-            <span className="analytics__tile-sub">next-day return, casual players</span>
-          </div>
+          <GapTile
+            label="Most 10.00s against fewest"
+            next={[highest.nextDay, lowest.nextDay]}
+            week={[highest.week, lowest.week]}
+            sub="casual players"
+          />
         )}
         {hit && missed && (
-          <div className="analytics__tile">
-            <span className="analytics__tile-label">Their own 10.00</span>
-            <span className="analytics__tile-value">
-              <Delta rate={hit} base={missed} />
-            </span>
-            <span className="analytics__tile-sub">next day after hitting one, against not</span>
-          </div>
+          <GapTile
+            label="Their own 10.00"
+            next={[hit.nextDay, missed.nextDay]}
+            week={[hit.week, missed.week]}
+            sub="after hitting one, against not"
+          />
         )}
       </div>
       {casual.quartiles.length === 0 && casual.days.length === 0 ? (
@@ -1615,12 +1671,14 @@ function CasualPerfectsSection({
                 <th scope="col">Puzzles</th>
                 <th scope="col">Next day</th>
                 <th scope="col">Gap</th>
+                <th scope="col">Within a week</th>
+                <th scope="col">Gap</th>
               </tr>
             </thead>
             {casual.quartiles.length > 0 && (
               <tbody>
                 <tr className="analytics__table-group">
-                  <th scope="colgroup" colSpan={5}>
+                  <th scope="colgroup" colSpan={7}>
                     By how often anybody hit a 10.00 on the puzzle; gap is against the fewest
                   </th>
                 </tr>
@@ -1630,7 +1688,7 @@ function CasualPerfectsSection({
             {casual.days.length > 0 && (
               <tbody>
                 <tr className="analytics__table-group">
-                  <th scope="colgroup" colSpan={5}>
+                  <th scope="colgroup" colSpan={7}>
                     By their own best word; gap is against under 10
                   </th>
                 </tr>
@@ -1639,10 +1697,7 @@ function CasualPerfectsSection({
                     <th scope="row">{d.perfect ? "Best word 10.00" : "Best word under 10"}</th>
                     <td>{fmt(d.players)}</td>
                     <td>{fmt(d.days)}</td>
-                    <td>
-                      <RateCell rate={d.nextDay} />
-                    </td>
-                    <td>{d.perfect && missed ? <Delta rate={d.nextDay} base={missed} /> : "—"}</td>
+                    <Rates row={d} base={d.perfect ? missed : undefined} />
                   </tr>
                 ))}
               </tbody>

@@ -507,11 +507,17 @@ export interface PerfectsReport {
   /** New players, by whether their first puzzle had a 10.00. */
   firstPuzzle: Array<{ perfect: boolean; players: number; nextDay: Rate; week: Rate }>;
   /** Every player-day; mode "all" first, then "standard" and "freeform". */
-  days: Array<{ mode: string; perfect: boolean; players: number; days: number; nextDay: Rate }>;
+  days: Array<{ mode: string; perfect: boolean; players: number; days: number; nextDay: Rate; week: Rate }>;
   /** Only the players with both kinds of day. Rates are null under five players. */
-  samePlayers: { players: number; perfect: Rate | null; other: Rate | null };
+  samePlayers: {
+    players: number;
+    perfect: Rate | null;
+    other: Rate | null;
+    /** Within a week rather than the next day. Null under five players, or before 20261006110000. */
+    week: { perfect: Rate; other: Rate } | null;
+  };
   /** Players with 3+ puzzles in the window, by how often they hit a 10.00. */
-  players: Array<{ group: string; players: number; avgPuzzles: number | null; nextDay: Rate }>;
+  players: Array<{ group: string; players: number; avgPuzzles: number | null; nextDay: Rate; week: Rate }>;
   /**
    * Days without a 10.00, by whether 10.00s were common on that puzzle (above
    * the window's median share of players hitting one) or rare. Null before the
@@ -519,14 +525,14 @@ export interface PerfectsReport {
    */
   missed: {
     medianShare: number | null;
-    groups: Array<{ group: string; players: number; days: number; puzzles: number; nextDay: Rate }>;
+    groups: Array<{ group: string; players: number; days: number; puzzles: number; nextDay: Rate; week: Rate }>;
   } | null;
   /**
    * The same missed days, by whether the player opened the leaderboard or
    * found words that day and whether 10.00s were common. Web only. Null before
    * the 20261006010000 migration.
    */
-  seen: Array<{ looked: boolean; common: boolean; players: number; days: number; nextDay: Rate }> | null;
+  seen: Array<{ looked: boolean; common: boolean; players: number; days: number; nextDay: Rate; week: Rate }> | null;
   /** Every player, puzzle by puzzle. Null before the 20261006010000 migration. */
   population: PerfectPopulation | null;
   /**
@@ -535,7 +541,7 @@ export interface PerfectsReport {
    */
   casual:
     | (PerfectPopulation & {
-        days: Array<{ perfect: boolean; players: number; days: number; nextDay: Rate }>;
+        days: Array<{ perfect: boolean; players: number; days: number; nextDay: Rate; week: Rate }>;
       })
     | null;
 }
@@ -544,6 +550,8 @@ export interface PerfectPopulation {
   puzzles: number;
   /** Across puzzles: share hitting 10.00 against the puzzle's next-day return. */
   correlation: number | null;
+  /** The same over within-a-week return. Null before 20261006110000. */
+  weekCorrelation: number | null;
   quartiles: Array<{
     quartile: number;
     puzzles: number;
@@ -551,6 +559,7 @@ export interface PerfectPopulation {
     maxShare: number | null;
     players: number;
     nextDay: Rate;
+    week: Rate;
   }>;
 }
 
@@ -1034,8 +1043,17 @@ function parsePerfects(raw: unknown): PerfectsReport {
         players: count(d.players),
         days: count(d.days),
         nextDay: rate(d.nextDay),
+        week: rate(d.week),
       })),
-    samePlayers: { players: count(same.players), perfect: maybeRate(same.perfect), other: maybeRate(same.other) },
+    samePlayers: {
+      players: count(same.players),
+      perfect: maybeRate(same.perfect),
+      other: maybeRate(same.other),
+      week:
+        same.week && typeof same.week === "object"
+          ? { perfect: rate(obj(same.week).perfect), other: rate(obj(same.week).other) }
+          : null,
+    },
     players: list(r.players)
       .filter((p) => text(p.group))
       .map((p) => ({
@@ -1043,6 +1061,7 @@ function parsePerfects(raw: unknown): PerfectsReport {
         players: count(p.players),
         avgPuzzles: maybe(p.avgPuzzles),
         nextDay: rate(p.nextDay),
+        week: rate(p.week),
       })),
     missed:
       r.missed && typeof r.missed === "object"
@@ -1056,6 +1075,7 @@ function parsePerfects(raw: unknown): PerfectsReport {
                 days: count(g.days),
                 puzzles: count(g.puzzles),
                 nextDay: rate(g.nextDay),
+                week: rate(g.week),
               })),
           }
         : null,
@@ -1066,6 +1086,7 @@ function parsePerfects(raw: unknown): PerfectsReport {
           players: count(g.players),
           days: count(g.days),
           nextDay: rate(g.nextDay),
+          week: rate(g.week),
         }))
       : null,
     population: r.population && typeof r.population === "object" ? parsePopulation(r.population) : null,
@@ -1078,6 +1099,7 @@ function parsePerfects(raw: unknown): PerfectsReport {
               players: count(d.players),
               days: count(d.days),
               nextDay: rate(d.nextDay),
+              week: rate(d.week),
             })),
           }
         : null,
@@ -1089,6 +1111,7 @@ function parsePopulation(raw: unknown): PerfectPopulation {
   return {
     puzzles: count(p.puzzles),
     correlation: maybe(p.correlation),
+    weekCorrelation: maybe(p.weekCorrelation),
     quartiles: list(p.quartiles).map((q) => ({
       quartile: count(q.quartile),
       puzzles: count(q.puzzles),
@@ -1096,6 +1119,7 @@ function parsePopulation(raw: unknown): PerfectPopulation {
       maxShare: maybe(q.maxShare),
       players: count(q.players),
       nextDay: rate(q.nextDay),
+      week: rate(q.week),
     })),
   };
 }
