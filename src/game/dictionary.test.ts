@@ -238,7 +238,8 @@ describe("curated additions from rejected-word analytics", () => {
     ["astroturf", "Rare", 2.46],
     ["brobdingnagian", "Elusive", 1.55],
     ["stromboli", "Extremely Rare", 2.18],
-    ["carcinisation", "Legend", -1.57],
+    // Unattested, so Claude's 2026-10-09 estimate prices it in the newest system.
+    ["carcinisation", "Mythic", 1.2],
     ["carcinization", "Legend", -1.57],
     ["dendrimeric", "Legend", -1.57],
   ];
