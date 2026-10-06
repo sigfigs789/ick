@@ -44,7 +44,7 @@ export function RarityBadge({ rarity, zipf, date }: Props) {
         zipf === undefined ? rarity : `${rarity}, score ${formatRarityScore(zipf, date)}`
       }
     >
-      <View style={[styles.dot, { backgroundColor: palette.pip ?? palette.dot }]} />
+      <View style={[styles.dot, { backgroundColor: palette.dot }]} />
       <Text style={[styles.tag, { color: palette.fg }]}>{RARITY_TAG[rarity]}</Text>
       {zipf !== undefined && (
         <Text style={[styles.score, { color: palette.fg }]}>{formatRarityScore(zipf, date)}</Text>

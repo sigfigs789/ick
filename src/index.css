@@ -69,21 +69,14 @@
   --rarity-extremely-rare-fg: #7222c2;
   --rarity-extremely-rare-dot: #9b4fe0;
 
-  /* The top three ranks are solid fills rather than pastel pills -- gold, red,
-     black -- so each step up the ladder is louder than the last, and a badge
-     still reads on a tinted row (the crowned best word's pale gold swallowed a
-     pastel gold badge whole). On these, -dot stays the rank's signature colour
-     (confetti, the "Ink" in the wordmark) and -pip is the dot drawn on the
-     badge, light so it shows against the fill.
-
-     Elusive sits between Extremely Rare and Mythic, and wears gold: the one
+  /* Elusive sits between Extremely Rare and Mythic, and wears gold: the one
      share square no other rank uses, as far from Common's brown as a warm hue
-     gets, and the colour games use for "you found treasure". Backed by the
-     yellow square in shared results. */
-  --rarity-elusive-bg: #eab308;
-  --rarity-elusive-fg: #3f2a04;
+     gets, and the colour games use for "you found treasure". The text is a dark
+     amber because yellow on cream is unreadable; the dot carries the gold.
+     Backed by the yellow square in shared results. */
+  --rarity-elusive-bg: #fdf3c4;
+  --rarity-elusive-fg: #854d0e;
   --rarity-elusive-dot: #eab308;
-  --rarity-elusive-pip: #fff7d6;
 
   /* Frozen copy of the bright orange Legend wore before the tiers were retuned.
      Archived puzzles render from these, so retinting Elusive above cannot reach
@@ -92,10 +85,9 @@
   --rarity-legend-legacy-fg: #9a4300;
   --rarity-legend-legacy-dot: #ff8000;
 
-  --rarity-mythic-bg: #dc2626;
-  --rarity-mythic-fg: #ffffff;
+  --rarity-mythic-bg: #fdeae8;
+  --rarity-mythic-fg: #b42318;
   --rarity-mythic-dot: #e5484d;
-  --rarity-mythic-pip: #ffffff;
 
   /* Legend is the top rank, and the only one that is not a hue: black reads as
      absence next to a ladder of colors, which is what makes it land. The dot's
@@ -177,20 +169,17 @@
     --rarity-extremely-rare-fg: #cd9bf7;
     --rarity-extremely-rare-dot: #ab5ff0;
 
-    /* Solid fills read the same on either page, so only the signature dot lifts. */
-    --rarity-elusive-bg: #eab308;
-    --rarity-elusive-fg: #2b1d03;
+    --rarity-elusive-bg: #2b2205;
+    --rarity-elusive-fg: #fcd34d;
     --rarity-elusive-dot: #facc15;
-    --rarity-elusive-pip: #fff7d6;
 
     --rarity-legend-legacy-bg: #2e1a08;
     --rarity-legend-legacy-fg: #fdba74;
     --rarity-legend-legacy-dot: #ff8000;
 
-    --rarity-mythic-bg: #dc2626;
-    --rarity-mythic-fg: #ffffff;
+    --rarity-mythic-bg: #3a1414;
+    --rarity-mythic-fg: #f7a19a;
     --rarity-mythic-dot: #e5484d;
-    --rarity-mythic-pip: #ffffff;
 
     /* Pure black against the #121213 page, so the badge reads as a void and the
        dot's white halo does the separating. */
@@ -1541,33 +1530,22 @@ h2 {
     color-mix(in srgb, var(--rarity-extremely-rare-dot) 25%, transparent);
 }
 .rarity--elusive {
-  /* A shallow sheen across the fill, so the gold reads as metal, not paint. */
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--rarity-elusive-bg) 70%, #fff) 0%,
-    var(--rarity-elusive-bg) 55%,
-    color-mix(in srgb, var(--rarity-elusive-bg) 85%, #000) 100%
-  );
+  background: var(--rarity-elusive-bg);
   color: var(--rarity-elusive-fg);
 }
 .rarity--elusive .rarity-badge__dot {
-  background: var(--rarity-elusive-pip);
+  background: var(--rarity-elusive-dot);
   box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--rarity-elusive-pip) 35%, transparent);
+    color-mix(in srgb, var(--rarity-elusive-dot) 28%, transparent);
 }
 .rarity--mythic {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--rarity-mythic-bg) 80%, #fff) 0%,
-    var(--rarity-mythic-bg) 55%,
-    color-mix(in srgb, var(--rarity-mythic-bg) 85%, #000) 100%
-  );
+  background: var(--rarity-mythic-bg);
   color: var(--rarity-mythic-fg);
 }
 .rarity--mythic .rarity-badge__dot {
-  background: var(--rarity-mythic-pip);
+  background: var(--rarity-mythic-dot);
   box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--rarity-mythic-pip) 32%, transparent);
+    color-mix(in srgb, var(--rarity-mythic-dot) 28%, transparent);
 }
 /* Legend as it looked before the tiers were retuned. Archived puzzles keep it,
    so a replayed drop looks like it did that day -- on its own frozen tokens
