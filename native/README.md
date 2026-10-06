@@ -247,7 +247,8 @@ from happening:
   (`src/hooks/useUpdateCheck.ts`) -- so raise `MIN_RANKED_VERSION` and run the
   action together.
 - **The banner.** When a build is below the floor and no update can close the
-  gap, Play and Leaderboards say so, with a button to the store listing
+  gap, Play and Leaderboards say so, with a button that tries the
+  over-the-air update again and falls back to the store listing
   (`src/components/UpdateBanner.tsx`).
 
 An update reaches only builds with the same `runtimeVersion`, a label set by

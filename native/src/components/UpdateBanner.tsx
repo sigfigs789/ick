@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { pullUpdate } from '../hooks/useUpdateCheck';
 import { signalTap } from '../host/feedback';
 import { radius, space } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 
 /**
- * Where "Update" goes. The store app's own scheme first, so the tap lands on the
+ * Where "Update" goes when there is no over-the-air update to pull. The store
+ * app's own scheme first, so the tap lands on the
  * listing rather than in a browser, and the web listing if the scheme will not
  * open.
  */
@@ -18,6 +21,16 @@ const STORE = Platform.select({
     web: 'https://play.google.com/store/apps/details?id=app.wordink',
   },
 });
+
+/**
+ * The over-the-air update first -- the game is JavaScript, so that is almost
+ * always what closes the gap, and it takes seconds rather than a store trip --
+ * and the store only when there is none to pull.
+ */
+async function update(): Promise<void> {
+  if (await pullUpdate()) return;
+  await openStore();
+}
 
 async function openStore(): Promise<void> {
   try {
@@ -42,6 +55,10 @@ async function openStore(): Promise<void> {
  */
 export function UpdateBanner() {
   const theme = useTheme();
+  // While the update downloads: the button says so and ignores further taps.
+  // A successful pull reloads the app, so this only ever resets on the way to
+  // the store.
+  const [updating, setUpdating] = useState(false);
   return (
     <View
       style={[styles.banner, { backgroundColor: theme.cautionBg }]}
@@ -53,17 +70,22 @@ export function UpdateBanner() {
       <Pressable
         onPress={() => {
           signalTap();
-          void openStore();
+          setUpdating(true);
+          void update().finally(() => setUpdating(false));
         }}
+        disabled={updating}
         accessibilityRole="button"
         accessibilityLabel="Update WordInk"
+        accessibilityState={{ busy: updating, disabled: updating }}
         hitSlop={space.sm}
         style={({ pressed }) => [
           styles.button,
-          { backgroundColor: theme.accent, opacity: pressed ? 0.7 : 1 },
+          { backgroundColor: theme.accent, opacity: pressed || updating ? 0.7 : 1 },
         ]}
       >
-        <Text style={[styles.buttonLabel, { color: theme.accentFg }]}>Update</Text>
+        <Text style={[styles.buttonLabel, { color: theme.accentFg }]}>
+          {updating ? 'Updating…' : 'Update'}
+        </Text>
       </Pressable>
     </View>
   );
