@@ -11,9 +11,11 @@ name: Estimate unattested Zipf
 #      also picks measured words with the same drops as calibration anchors.
 #   2. `scripts/estimate-zipf.py prepare` picks at most `limit` of them (1,000
 #      unless a manual run says otherwise; the likeliest to be played first, see
-#      `priority`) and writes Claude's requests, 200 words each.
+#      `priority`) and writes Claude's request -- one for up to 1,000 words, so
+#      the daily run is a single request and only a bigger manual sweep is more.
 #   3. Claude Code, on the CLI, answers each request in turn, writing its
-#      estimates and a one-line reason per word to .tmp/answers/.
+#      estimates and a one-line reason per word to .tmp/answers/ (in several
+#      files if one answer is too long to write at once).
 #   4. `scripts/estimate-zipf.py record` keeps the well-formed estimates for the
 #      words asked about and appends them as one batch: the model, this run's
 #      URL, the drops, and the puzzle date as `since`. Nothing marks an estimate
@@ -89,7 +91,7 @@ concurrency:
 jobs:
   estimate:
     runs-on: ubuntu-latest
-    # A sweep runs one Claude request per 200 words, one after another.
+    # A sweep runs one Claude request per 1,000 words, one after another.
     timeout-minutes: 330
     env:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -170,6 +172,7 @@ jobs:
           python scripts/estimate-zipf.py prepare \
             --candidates .tmp/candidates.json \
             --limit "${{ inputs.limit || '1000' }}" \
+            --chunk-size 1000 \
             --asked-out .tmp/asked.json \
             --requests-dir .tmp/requests \
             --answers-dir .tmp/answers
