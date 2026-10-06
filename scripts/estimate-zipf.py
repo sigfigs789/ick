@@ -18,8 +18,8 @@ as "Build with Claude" (a CLAUDE_CODE_OAUTH_TOKEN or an ANTHROPIC_API_KEY):
              show (from scripts/estimated-scores.mts, run after `record`),
              Claude's confidence and its one-line reasoning.
 
-`record` keeps only the estimates Claude gave a confidence above MIN_CONFIDENCE
-(0.9); the rest appear in the PR but leave the word at the sentinel.
+`record` keeps only the estimates Claude gave a confidence of at least
+MIN_CONFIDENCE (0.3); the rest appear in the PR but leave the word at the sentinel.
 
 The game reads the file through `withEstimate` in src/game/dictionary.ts: from
 the batch's `since` date on, an estimate stands in for the unattested sentinel
@@ -57,10 +57,10 @@ ZIPF_MIN, ZIPF_MAX = -3.0, 8.0
 REASON_MAX = 200
 BODY_MAX = 60_000
 
-# Claude rates each estimate from 0 to 1. Only those above this are recorded;
+# Claude rates each estimate from 0 to 1. Only those at or above this are recorded;
 # the rest are shown in the PR and left at the sentinel, to be asked again the
 # next time the drop comes round.
-MIN_CONFIDENCE = 0.9
+MIN_CONFIDENCE = 0.3
 
 SYSTEM_PROMPT = """\
 You estimate how often English words are used, for WordInk, a daily word game. \
@@ -175,7 +175,7 @@ def summary(
         f"Claude ({model}) estimated a Zipf frequency for **{len(estimates)}** of the "
         f"**{len(candidates)}** words the **{report['drop']}** drop on **{report['date']}** "
         "can accept that no frequency corpus measures, and rated its confidence in each. "
-        f"Only the **{len(applied)}** with confidence above {MIN_CONFIDENCE} are recorded; the "
+        f"Only the **{len(applied)}** with confidence of at least {MIN_CONFIDENCE} are recorded; the "
         f"other **{len(held)}** are listed below for review and keep the flat 10.00.",
         "",
         f"The run is capped at {len(asked)} word(s) a day, taken in order: still 10.00 in "
@@ -218,11 +218,11 @@ def summary(
 
     def body(reason_max: int) -> str:
         lines = list(head)
-        lines += ["", f"### Recorded: confidence above {MIN_CONFIDENCE} ({len(applied)})", ""]
+        lines += ["", f"### Recorded: confidence of at least {MIN_CONFIDENCE} ({len(applied)})", ""]
         lines += TABLE_HEAD + _rows(applied, scores, reason_max) if applied else ["None."]
         lines += [
             "",
-            f"### Not recorded: confidence {MIN_CONFIDENCE} or below, or none given ({len(held)})",
+            f"### Not recorded: confidence below {MIN_CONFIDENCE}, or none given ({len(held)})",
             "",
             "Not written to the data file, so these keep their 10.00. The scores shown are "
             "what they would be if the estimate were recorded.",
@@ -248,7 +248,7 @@ Write your answer to `{out}` as JSON and nothing else, in this shape:
 One entry per word below, spelled exactly as given, each with:
 - `zipf`: your estimate, a number with two decimals.
 - `confidence`: how likely it is, from 0 to 1, that the word's true Zipf is \
-within 0.5 of your estimate. Only estimates above {min_confidence} are used; the \
+within 0.5 of your estimate. Only estimates of at least {min_confidence} are used; the \
 rest are shown to a reviewer and the word keeps its 10.00, so be honest rather \
 than generous -- a word you cannot place is 0.2, not 0.7.
 - `reason`: one sentence, at most 25 words, on what set the number -- the base \
@@ -279,7 +279,7 @@ class Estimate:
 
     @property
     def applied(self) -> bool:
-        return self.confidence is not None and self.confidence > MIN_CONFIDENCE
+        return self.confidence is not None and self.confidence >= MIN_CONFIDENCE
 
 
 def _number(value: object) -> float | None:
@@ -343,7 +343,7 @@ def record(args: argparse.Namespace) -> None:
         validated = {w: e.zipf for w, e in sorted(all_estimates.items())}
         args.validated_out.write_text(json.dumps(validated, indent=2) + "\n")
     print(
-        f"Recorded {len(estimates)} estimate(s) with confidence above {MIN_CONFIDENCE} of {len(all_estimates)} returned, "
+        f"Recorded {len(estimates)} estimate(s) with confidence of at least {MIN_CONFIDENCE} of {len(all_estimates)} returned, "
         f"{len(report['asked'])} asked ({report['count']} candidates)."
     )
 
