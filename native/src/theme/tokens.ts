@@ -21,7 +21,13 @@ import type { Rarity } from '../../../src/game/types';
 export interface RarityPalette {
   bg: string;
   fg: string;
+  /** The rank's signature colour -- confetti, the wordmark's "Ink". */
   dot: string;
+  /**
+   * The dot drawn on the badge, when it differs from `dot`. The solid-fill ranks
+   * (Elusive, Mythic) need a light one to show against their own colour.
+   */
+  pip?: string;
 }
 
 export interface Theme {
@@ -88,8 +94,8 @@ export const lightTheme: Theme = {
     Uncommon: { bg: '#e3f6e8', fg: '#1c7a3d', dot: '#2fa457' },
     Rare: { bg: '#e2eefd', fg: '#1450b8', dot: '#2f78e0' },
     'Extremely Rare': { bg: '#f1e6fc', fg: '#7222c2', dot: '#9b4fe0' },
-    Elusive: { bg: '#fdf3c4', fg: '#854d0e', dot: '#eab308' },
-    Mythic: { bg: '#fdeae8', fg: '#b42318', dot: '#e5484d' },
+    Elusive: { bg: '#eab308', fg: '#3f2a04', dot: '#eab308', pip: '#fff7d6' },
+    Mythic: { bg: '#dc2626', fg: '#ffffff', dot: '#e5484d', pip: '#ffffff' },
     Legend: { bg: '#1b1b1f', fg: '#f7f7f9', dot: '#f7f7f9' },
   },
   legendLegacy: { bg: '#fde6d0', fg: '#9a4300', dot: '#ff8000' },
@@ -128,8 +134,8 @@ export const darkTheme: Theme = {
     Uncommon: { bg: '#0f2b19', fg: '#7fe0a3', dot: '#3bbf6c' },
     Rare: { bg: '#0f2140', fg: '#8bb6fb', dot: '#4a8ff2' },
     'Extremely Rare': { bg: '#2a1440', fg: '#cd9bf7', dot: '#ab5ff0' },
-    Elusive: { bg: '#2b2205', fg: '#fcd34d', dot: '#facc15' },
-    Mythic: { bg: '#3a1414', fg: '#f7a19a', dot: '#e5484d' },
+    Elusive: { bg: '#eab308', fg: '#2b1d03', dot: '#facc15', pip: '#fff7d6' },
+    Mythic: { bg: '#dc2626', fg: '#ffffff', dot: '#e5484d', pip: '#ffffff' },
     Legend: { bg: '#000000', fg: '#f7f7f9', dot: '#ffffff' },
   },
   legendLegacy: { bg: '#2e1a08', fg: '#fdba74', dot: '#ff8000' },
