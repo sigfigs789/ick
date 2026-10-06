@@ -12,6 +12,13 @@
  *   ./node_modules/.bin/vite-node scripts/unattested-candidates.mts -- --date 2026-10-08
  *   ./node_modules/.bin/vite-node scripts/unattested-candidates.mts -- --date 2026-10-08 --out .tmp/candidates.json
  *
+ * A sweep widens it two ways. `--days N` covers the drops of the N puzzles from
+ * `--date` on, each word checked on the puzzle whose drop it contains.
+ * `--words file` adds a list of words (one per line, a tab and anything after
+ * it ignored) -- the ones players have already played at the sentinel, from
+ * scripts/played-unattested-words.sh -- each checked on `--date` against a drop
+ * it contains, and marked `played`. Every estimate still applies from `--date`.
+ *
  * Words that already carry an estimate live for this date are left out, so a
  * re-run only reports what is still unscored. Also writes `anchors`: measured
  * words containing the same drop across the deep tail, with their real Zipf,
@@ -35,6 +42,7 @@ const { loadCorpus, corpusEntry, LEXICON_SOURCES } = await import("../src/game/c
 const { evaluateSubmission } = await import("../src/game/submit.ts");
 const { asMode } = await import("../src/game/mode.ts");
 const { dropForDate } = await import("../src/game/drop.ts");
+const { addDays } = await import("../src/game/date.ts");
 const { unattestedZipf, estimatedZipfEntry } = await import("../src/game/dictionary.ts");
 const dictionary = (await import("../src/data/dictionary.json")).default as string[];
 
@@ -44,11 +52,26 @@ function arg(name: string): string | undefined {
 }
 
 const date = arg("date");
-if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-  console.error("usage: unattested-candidates.mts --date YYYY-MM-DD [--drop XY] [--out file.json]");
+const days = Number(arg("days") ?? 1);
+if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isInteger(days) || days < 1) {
+  console.error(
+    "usage: unattested-candidates.mts --date YYYY-MM-DD [--days N] [--words file] [--drop XY] [--out file.json]"
+  );
   process.exit(2);
 }
-const drop = (arg("drop") ?? dropForDate(date)).toLowerCase();
+// The puzzles the sweep covers, each with its drop. `--drop` overrides the
+// first, for checking a drop by hand.
+const puzzles = Array.from({ length: days }, (_, i) => {
+  const day = addDays(date, i);
+  return { date: day, drop: (i === 0 && arg("drop") ? arg("drop")! : dropForDate(day)).toLowerCase() };
+});
+const wordsFile = arg("words");
+const played = wordsFile
+  ? readFileSync(wordsFile, "utf8")
+      .split("\n")
+      .map((line) => line.split("\t")[0].trim().toLowerCase())
+      .filter((word) => /^[a-z]+$/.test(word))
+  : [];
 
 if (!(await loadCorpus())) {
   console.error("could not load public/corpus");
@@ -71,26 +94,32 @@ function corpusWords(): string[] {
 
 const sentinel = unattestedZipf();
 const seen = new Set<string>();
+const checked = new Set<string>();
 const candidates: {
   word: string;
+  /** The drop and puzzle it was checked on, which estimated-scores.mts reuses. */
+  drop: string;
+  date: string;
   /** Which modes accept it on a sentinel Zipf of its own. */
   modes: ("standard" | "freeform")[];
   /** The score Standard shows after the fold, when the fold moves it. */
   standardZipf: number | null;
   /** Lexicons that vouch for it, for Claude's context. */
   sources: string[];
+  /** In the --words list: players have already played it at the sentinel. */
+  played: boolean;
 }[] = [];
 
-for (const word of [...dictionary, ...corpusWords()]) {
-  if (seen.has(word) || !word.includes(drop)) continue;
-  seen.add(word);
+function consider(word: string, drop: string, day: string, isPlayed: boolean): void {
+  if (checked.has(word)) return;
+  checked.add(word);
   const estimate = estimatedZipfEntry(word);
-  if (estimate && estimate.since <= date) continue;
+  if (estimate && estimate.since <= date!) return;
 
   const modes: ("standard" | "freeform")[] = [];
   let standardZipf: number | null = null;
   for (const mode of ["standard", "freeform"] as const) {
-    const result = asMode(mode, () => evaluateSubmission(word, drop, [], date));
+    const result = asMode(mode, () => evaluateSubmission(word, drop, [], day));
     if (!result.ok || !result.word) continue;
     // Freeform does not fold, so its Zipf is the word's own. Standard can only
     // raise it; a fold that lands on a measured base is reported, not hidden.
@@ -102,15 +131,30 @@ for (const word of [...dictionary, ...corpusWords()]) {
   // Zipf is unmeasured -- check the word itself, not the fold.
   if (modes.length === 1 && modes[0] === "standard") {
     const own = corpusEntry(word)?.zipf;
-    if (own != null) continue;
+    if (own != null) return;
   }
-  if (modes.length === 0) continue;
+  if (modes.length === 0) return;
 
   const entry = corpusEntry(word);
   const sources = entry
     ? CORPUS_SOURCES.filter((_, bit) => entry.sources & (1 << bit))
     : ["dictionary"];
-  candidates.push({ word, modes, standardZipf, sources });
+  candidates.push({ word, drop: drop.toUpperCase(), date: day, modes, standardZipf, sources, played: isPlayed });
+}
+
+// Played words first, so a word both played and in a coming drop is marked
+// played. Any two letters of the word serve as its drop: its own Zipf, which is
+// what an estimate stands in for, does not depend on the drop.
+for (const word of played) {
+  if (word.length > 2) consider(word, word.slice(0, 2), date, true);
+}
+const lexicon = [...new Set([...dictionary, ...corpusWords()])];
+for (const puzzle of puzzles) {
+  for (const word of lexicon) {
+    if (!word.includes(puzzle.drop)) continue;
+    seen.add(word);
+    consider(word, puzzle.drop, puzzle.date, false);
+  }
 }
 
 // Calibration: measured words with the same drop, a few per Zipf band from the
@@ -133,8 +177,21 @@ const anchors = byBand.flatMap((band) => {
   return band.filter((_, i) => i % step === 0).slice(0, PER_BAND);
 });
 
-const report = { date, drop: drop.toUpperCase(), count: candidates.length, anchors, candidates };
+const drops = puzzles.map((p) => p.drop.toUpperCase());
+const report = {
+  date,
+  days,
+  drops,
+  drop: drops.join(", "),
+  played: candidates.filter((c) => c.played).length,
+  count: candidates.length,
+  anchors,
+  candidates,
+};
 const out = arg("out");
 if (out) writeFileSync(out, JSON.stringify(report, null, 2) + "\n");
-console.log(`${date} drop ${drop.toUpperCase()}: ${candidates.length} unattested candidate(s)`);
-if (!out) for (const c of candidates) console.log(`${c.word}\t${c.modes.join(",")}\t${c.standardZipf ?? "-"}`);
+console.log(
+  `${date} (${days} puzzle(s), drops ${report.drop}): ${candidates.length} unattested candidate(s), ` +
+    `${report.played} of ${played.length} played word(s)`
+);
+if (!out) for (const c of candidates) console.log(`${c.word}\t${c.drop}\t${c.modes.join(",")}\t${c.standardZipf ?? "-"}`);
