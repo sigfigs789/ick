@@ -178,6 +178,26 @@ const RETURNERS = {
   ],
 };
 
+/** The shape `perfect_report` returns, which api/review.ts sets on the report. */
+const PERFECTS = {
+  from: "2026-08-29",
+  to: "2026-09-27",
+  firstPuzzle: [
+    { perfect: true, players: 10, nextDay: { cohort: 10, returned: 6 }, week: { cohort: 8, returned: 6 } },
+    { perfect: false, players: 40, nextDay: { cohort: 40, returned: 16 }, week: { cohort: 30, returned: 15 } },
+  ],
+  days: [
+    { mode: "all", perfect: true, players: 30, days: 90, nextDay: { cohort: 80, returned: 48 } },
+    { mode: "all", perfect: false, players: 60, days: 300, nextDay: { cohort: 250, returned: 125 } },
+    { mode: "freeform", perfect: true, players: 12, days: 40, nextDay: { cohort: 40, returned: 20 } },
+  ],
+  samePlayers: { players: 25, perfect: { cohort: 70, returned: 42 }, other: { cohort: 200, returned: 110 } },
+  players: [
+    { group: "Never", players: 20, avgPuzzles: 5.5, nextDay: { cohort: 100, returned: 50 } },
+    { group: "Two thirds or more", players: 6, avgPuzzles: 9.2, nextDay: { cohort: 50, returned: 40 } },
+  ],
+};
+
 /** The shape `chat_report` returns, which api/review.ts sets on the report. */
 const CHAT = {
   totals: {
@@ -395,6 +415,33 @@ describe("AnalyticsPage", () => {
     expect(screen.getByText("Came back after missing a puzzle").closest("tr")).toHaveTextContent("50%");
 
     expect(screen.getByText("2026-09-20 to 2026-09-27").closest("tr")).toHaveTextContent("38%");
+  });
+
+  it("compares next-day return after a 10.00 with after any other day", async () => {
+    stubFetch({ ...REPORT, perfects: PERFECTS });
+    render(<AnalyticsPage />);
+
+    const section = within((await screen.findByText("Perfect scores and who comes back")).closest("section")!);
+    // The same players: 60% after a 10.00 against 55% after any other day.
+    expect(section.getByText("Next day after a 10.00").closest("div")).toHaveTextContent("60%");
+    expect(section.getByText("+5 pts")).toHaveClass("analytics__delta--up");
+    const [allPerfect, freeformPerfect, firstPerfect] = section.getAllByRole("rowheader", { name: "Best word 10.00" });
+    // 60% against the other row of its group, 50%.
+    expect(allPerfect.closest("tr")).toHaveTextContent("+10 pts");
+    // Freeform has no under-10 row to measure against.
+    expect(freeformPerfect.closest("tr")).toHaveTextContent("—");
+    expect(firstPerfect.closest("tr")).toHaveTextContent("+20 pts");
+    expect(section.queryByText("Standard only (common-form scoring makes 10.00 rarer)")).not.toBeInTheDocument();
+    const often = section.getByRole("rowheader", { name: "Two thirds or more" }).closest("tr")!;
+    expect(often).toHaveTextContent("9.2");
+    expect(often).toHaveTextContent("+30 pts");
+  });
+
+  it("leaves the perfect-score section out when its numbers failed", async () => {
+    stubFetch({ ...REPORT, perfects: null });
+    render(<AnalyticsPage />);
+    await screen.findByText("Looked, didn't play");
+    expect(screen.queryByText("Perfect scores and who comes back")).not.toBeInTheDocument();
   });
 
   it("says who stopped is too few to show rather than printing a table", async () => {

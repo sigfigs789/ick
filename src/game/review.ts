@@ -478,6 +478,29 @@ export interface AnalyticsReport {
    * 20261005000000 migration). Null when that read failed or predates it.
    */
   returners: ReturnersReport | null;
+  /**
+   * Whether the players who hit a 10.00 come back more, from `perfect_report`
+   * (the 20261006000000 migration). Null when that read failed or predates it.
+   */
+  perfects: PerfectsReport | null;
+}
+
+/**
+ * A perfect day is one whose best word scored 10.00, in either mode. Plays are
+ * the leaderboard's, so every device is counted. A group of fewer than five
+ * players never leaves the database.
+ */
+export interface PerfectsReport {
+  from: string | null;
+  to: string | null;
+  /** New players, by whether their first puzzle had a 10.00. */
+  firstPuzzle: Array<{ perfect: boolean; players: number; nextDay: Rate; week: Rate }>;
+  /** Every player-day; mode "all" first, then "standard" and "freeform". */
+  days: Array<{ mode: string; perfect: boolean; players: number; days: number; nextDay: Rate }>;
+  /** Only the players with both kinds of day. Rates are null under five players. */
+  samePlayers: { players: number; perfect: Rate | null; other: Rate | null };
+  /** Players with 3+ puzzles in the window, by how often they hit a 10.00. */
+  players: Array<{ group: string; players: number; avgPuzzles: number | null; nextDay: Rate }>;
 }
 
 /**
@@ -808,6 +831,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       r.onboarding && typeof r.onboarding === "object" ? parseOnboarding(r.onboarding) : null,
     copies: r.copies && typeof r.copies === "object" ? parseCopies(r.copies) : null,
     returners: r.returners && typeof r.returners === "object" ? parseReturners(r.returners) : null,
+    perfects: r.perfects && typeof r.perfects === "object" ? parsePerfects(r.perfects) : null,
   };
 }
 
@@ -886,6 +910,40 @@ function parseReturners(raw: unknown): ReturnersReport {
         firstDay: v.firstDay as string,
         lastDay: v.lastDay as string,
         nextDay: rate(v.nextDay),
+      })),
+  };
+}
+
+function parsePerfects(raw: unknown): PerfectsReport {
+  const r = obj(raw);
+  const same = obj(r.samePlayers);
+  const maybeRate = (v: unknown) => (v && typeof v === "object" ? rate(v) : null);
+  return {
+    from: text(r.from),
+    to: text(r.to),
+    firstPuzzle: list(r.firstPuzzle).map((f) => ({
+      perfect: f.perfect === true,
+      players: count(f.players),
+      nextDay: rate(f.nextDay),
+      week: rate(f.week),
+    })),
+    days: list(r.days)
+      .filter((d) => text(d.mode))
+      .map((d) => ({
+        mode: d.mode as string,
+        perfect: d.perfect === true,
+        players: count(d.players),
+        days: count(d.days),
+        nextDay: rate(d.nextDay),
+      })),
+    samePlayers: { players: count(same.players), perfect: maybeRate(same.perfect), other: maybeRate(same.other) },
+    players: list(r.players)
+      .filter((p) => text(p.group))
+      .map((p) => ({
+        group: p.group as string,
+        players: count(p.players),
+        avgPuzzles: maybe(p.avgPuzzles),
+        nextDay: rate(p.nextDay),
       })),
   };
 }

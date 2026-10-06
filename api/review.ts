@@ -393,20 +393,23 @@ async function handleGet(request: Request): Promise<Response> {
       // shortest. Copies into the other mode (the 20261001000000 migration)
       // take the window exactly as chat does, and are set on it as `copies`.
       // What the players who come back went through (the 20261005000000
-      // migration) takes it the same way, and is set on it as `returners`.
+      // migration) takes it the same way, and is set on it as `returners`, and
+      // whether players who hit a 10.00 come back more (the 20261006000000
+      // migration) as `perfects`.
       const optional = (name: string, fnArgs: Record<string, unknown>) =>
         rpc<Record<string, unknown> | null>(name, fnArgs).catch((error: unknown) => {
           console.error(`[review] ${name} failed:`, error instanceof Error ? error.message : error);
           return null;
         });
-      const [report, chat, onboarding, copies, returners] = await Promise.all([
+      const [report, chat, onboarding, copies, returners, perfects] = await Promise.all([
         rpc<Record<string, unknown> | null>("analytics_report", args),
         optional("chat_report", args),
         optional("onboarding_report", { p_days: days }),
         optional("copy_report", args),
         optional("retention_report", args),
+        optional("perfect_report", args),
       ]);
-      return reply(200, { report: { ...(report ?? {}), chat, onboarding, copies, returners } });
+      return reply(200, { report: { ...(report ?? {}), chat, onboarding, copies, returners, perfects } });
     }
     if (list === "freeform") {
       // Two reads rather than one, because the votes and the notes are two

@@ -9,6 +9,7 @@ import {
   type CopyReport,
   type OnboardingReason,
   type OnboardingReport,
+  type PerfectsReport,
   type Rate,
   type ReturnersReport,
   type StopStats,
@@ -443,6 +444,8 @@ function Report({
       <MissingSection />
 
       {report.returners && <ReturnersSections returners={report.returners} isToday={isToday} windowName={windowName} />}
+
+      {report.perfects && !isToday && <PerfectSection perfects={report.perfects} windowName={windowName} />}
     </div>
   );
 }
@@ -1114,6 +1117,135 @@ function VersionSection({ returners, windowName }: { returners: ReturnersReport;
           </table>
         </div>
       )}
+    </Section>
+  );
+}
+
+const PERFECT_MODES: Array<{ key: string; title: string }> = [
+  { key: "all", title: "Every puzzle played, both modes" },
+  { key: "standard", title: "Standard only (common-form scoring makes 10.00 rarer)" },
+  { key: "freeform", title: "Freeform only" },
+];
+
+/**
+ * Whether the players who hit a 10.00 come back more, from `perfect_report` (the
+ * 20261006000000 migration). Each table controls for a little more than the
+ * last: any day, then the same players' own days, then players by how often.
+ * Plays are the leaderboard's, so every device is in it.
+ */
+function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; windowName: string }) {
+  const { firstPuzzle, days, samePlayers, players } = perfects;
+  const label = (perfect: boolean) => (perfect ? "Best word 10.00" : "Best word under 10");
+  // Each 10.00 row is measured against the other row of its own group.
+  const against = <T extends { perfect: boolean; nextDay: Rate }>(rows: T[], row: T) =>
+    row.perfect ? rows.find((r) => !r.perfect)?.nextDay : undefined;
+  const regularsBase = players.find((p) => p.group === "Never")?.nextDay;
+  return (
+    <Section
+      title="Perfect scores and who comes back"
+      note={`${windowName}: whether a puzzle whose best word scored a perfect 10.00 (either mode) is followed by a play the next puzzle more often than one that was not. Every device counts. "Same players" keeps only the players who have had both kinds of day, so who they are cancels out; the gap is in percentage points. ${CAVEAT}`}
+    >
+      <div className="analytics__tiles">
+        <Tile label="Same players" value={fmt(samePlayers.players)} sub="with both kinds of day" />
+        {samePlayers.perfect && samePlayers.other ? (
+          <>
+            <RateTile label="Next day after a 10.00" rate={samePlayers.perfect} />
+            <RateTile label="Next day after any other" rate={samePlayers.other} />
+            <div className="analytics__tile">
+              <span className="analytics__tile-label">Gap</span>
+              <span className="analytics__tile-value">
+                <Delta rate={samePlayers.perfect} base={samePlayers.other} />
+              </span>
+            </div>
+          </>
+        ) : (
+          <Tile label="Next day after a 10.00" value="—" sub="fewer than five such players" />
+        )}
+      </div>
+      <div className="analytics__table-wrap">
+        <table className="analytics__table">
+          <thead>
+            <tr>
+              <th scope="col">Day</th>
+              <th scope="col">Players</th>
+              <th scope="col">Puzzles</th>
+              <th scope="col">Next day</th>
+              <th scope="col">Gap</th>
+            </tr>
+          </thead>
+          {PERFECT_MODES.map(({ key, title }) => {
+            const rows = days.filter((d) => d.mode === key);
+            if (rows.length === 0) return null;
+            return (
+              <tbody key={key}>
+                <tr className="analytics__table-group">
+                  <th scope="colgroup" colSpan={5}>
+                    {title}
+                  </th>
+                </tr>
+                {rows.map((d) => {
+                  const base = against(rows, d);
+                  return (
+                    <tr key={String(d.perfect)}>
+                      <th scope="row">{label(d.perfect)}</th>
+                      <td>{fmt(d.players)}</td>
+                      <td>{fmt(d.days)}</td>
+                      <td>
+                        <RateCell rate={d.nextDay} />
+                      </td>
+                      <td>{base ? <Delta rate={d.nextDay} base={base} /> : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            );
+          })}
+          {firstPuzzle.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  New players' first puzzle (next day; within a week in brackets)
+                </th>
+              </tr>
+              {firstPuzzle.map((f) => {
+                const base = against(firstPuzzle, f);
+                return (
+                  <tr key={String(f.perfect)}>
+                    <th scope="row">{label(f.perfect)}</th>
+                    <td>{fmt(f.players)}</td>
+                    <td>{fmt(f.players)}</td>
+                    <td>
+                      <RateCell rate={f.nextDay} /> (<RateCell rate={f.week} />)
+                    </td>
+                    <td>{base ? <Delta rate={f.nextDay} base={base} /> : "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          )}
+          {players.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  Players with 3+ puzzles in the window, by how often their best word was 10.00 (puzzles is the
+                  average each played)
+                </th>
+              </tr>
+              {players.map((p) => (
+                <tr key={p.group}>
+                  <th scope="row">{p.group}</th>
+                  <td>{fmt(p.players)}</td>
+                  <td>{dec(p.avgPuzzles, 1)}</td>
+                  <td>
+                    <RateCell rate={p.nextDay} />
+                  </td>
+                  <td>{regularsBase && p.group !== "Never" ? <Delta rate={p.nextDay} base={regularsBase} /> : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          )}
+        </table>
+      </div>
     </Section>
   );
 }
