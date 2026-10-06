@@ -157,7 +157,16 @@ export function GuessLog({
                 style={({ pressed }) => [
                   styles.entry,
                   {
-                    backgroundColor: isBest ? theme.bestWordBg : theme.cardBg,
+                    // A gold halo rather than a gold fill, which washed out a
+                    // pale gold Elusive badge on it. iOS draws the halo;
+                    // Android has no coloured shadow and keeps the border.
+                    backgroundColor: theme.cardBg,
+                    ...(isBest && {
+                      shadowColor: theme.bestWordAccent,
+                      shadowOpacity: 0.45,
+                      shadowRadius: 6,
+                      shadowOffset: { width: 0, height: 0 },
+                    }),
                     borderColor: picking
                       ? theme.focusRing
                       : isBest
