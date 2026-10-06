@@ -1,3 +1,6 @@
+-- (Numbered 20261006100000: 20261006000000 through 030000 are the perfect_report
+-- series, applied 2026-10-06 from other branches.)
+--
 -- What Claude's estimated Zipf did to the game, for the /analytics page.
 --
 -- From the "Estimate unattested Zipf" workflow on, a word no frequency corpus
