@@ -11,6 +11,8 @@ import {
   type EstimatesSpan,
   type OnboardingReason,
   type OnboardingReport,
+  type PerfectPopulation,
+  type PerfectsReport,
   type Rate,
   type ReturnersReport,
   type StopStats,
@@ -447,6 +449,12 @@ function Report({
       <MissingSection />
 
       {report.returners && <ReturnersSections returners={report.returners} isToday={isToday} windowName={windowName} />}
+
+      {report.perfects && !isToday && <PerfectSection perfects={report.perfects} windowName={windowName} />}
+
+      {report.perfects && !isToday && <SeenPerfectsSection perfects={report.perfects} windowName={windowName} />}
+
+      {report.perfects?.casual && !isToday && <CasualPerfectsSection casual={report.perfects.casual} windowName={windowName} />}
     </div>
   );
 }
@@ -1236,6 +1244,393 @@ function VersionSection({ returners, windowName }: { returners: ReturnersReport;
                 </tr>
               ))}
             </tbody>
+          </table>
+        </div>
+      )}
+    </Section>
+  );
+}
+
+const PERFECT_MODES: Array<{ key: string; title: string }> = [
+  { key: "all", title: "Every puzzle played, both modes" },
+  { key: "standard", title: "Standard only (common-form scoring makes 10.00 rarer)" },
+  { key: "freeform", title: "Freeform only" },
+];
+
+/**
+ * Whether the players who hit a 10.00 come back more, from `perfect_report` (the
+ * 20261006000000 migration). Each table controls for a little more than the
+ * last: any day, then the same players' own days, then players by how often.
+ * Plays are the leaderboard's, so every device is in it.
+ */
+function PerfectSection({ perfects, windowName }: { perfects: PerfectsReport; windowName: string }) {
+  const { firstPuzzle, days, samePlayers, players, missed } = perfects;
+  const label = (perfect: boolean) => (perfect ? "Best word 10.00" : "Best word under 10");
+  // Each 10.00 row is measured against the other row of its own group.
+  const against = <T extends { perfect: boolean; nextDay: Rate }>(rows: T[], row: T) =>
+    row.perfect ? rows.find((r) => !r.perfect)?.nextDay : undefined;
+  const regularsBase = players.find((p) => p.group === "Never")?.nextDay;
+  // Missing on a 10.00-heavy puzzle, measured against missing on a quiet one.
+  const missedBase = missed?.groups.find((g) => g.group.endsWith("were rare"))?.nextDay;
+  return (
+    <Section
+      title="Perfect scores and who comes back"
+      note={`${windowName}: whether a puzzle whose best word scored a perfect 10.00 (either mode) is followed by a play the next puzzle more often than one that was not. Every device counts. "Same players" keeps only the players who have had both kinds of day, so who they are cancels out; the gap is in percentage points. ${CAVEAT}`}
+    >
+      <div className="analytics__tiles">
+        <Tile label="Same players" value={fmt(samePlayers.players)} sub="with both kinds of day" />
+        {samePlayers.perfect && samePlayers.other ? (
+          <>
+            <RateTile label="Next day after a 10.00" rate={samePlayers.perfect} />
+            <RateTile label="Next day after any other" rate={samePlayers.other} />
+            <div className="analytics__tile">
+              <span className="analytics__tile-label">Gap</span>
+              <span className="analytics__tile-value">
+                <Delta rate={samePlayers.perfect} base={samePlayers.other} />
+              </span>
+            </div>
+          </>
+        ) : (
+          <Tile label="Next day after a 10.00" value="—" sub="fewer than five such players" />
+        )}
+      </div>
+      <div className="analytics__table-wrap">
+        <table className="analytics__table">
+          <thead>
+            <tr>
+              <th scope="col">Day</th>
+              <th scope="col">Players</th>
+              <th scope="col">Puzzles</th>
+              <th scope="col">Next day</th>
+              <th scope="col">Gap</th>
+            </tr>
+          </thead>
+          {PERFECT_MODES.map(({ key, title }) => {
+            const rows = days.filter((d) => d.mode === key);
+            if (rows.length === 0) return null;
+            return (
+              <tbody key={key}>
+                <tr className="analytics__table-group">
+                  <th scope="colgroup" colSpan={5}>
+                    {title}
+                  </th>
+                </tr>
+                {rows.map((d) => {
+                  const base = against(rows, d);
+                  return (
+                    <tr key={String(d.perfect)}>
+                      <th scope="row">{label(d.perfect)}</th>
+                      <td>{fmt(d.players)}</td>
+                      <td>{fmt(d.days)}</td>
+                      <td>
+                        <RateCell rate={d.nextDay} />
+                      </td>
+                      <td>{base ? <Delta rate={d.nextDay} base={base} /> : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            );
+          })}
+          {firstPuzzle.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  New players' first puzzle (next day; within a week in brackets)
+                </th>
+              </tr>
+              {firstPuzzle.map((f) => {
+                const base = against(firstPuzzle, f);
+                return (
+                  <tr key={String(f.perfect)}>
+                    <th scope="row">{label(f.perfect)}</th>
+                    <td>{fmt(f.players)}</td>
+                    <td>{fmt(f.players)}</td>
+                    <td>
+                      <RateCell rate={f.nextDay} /> (<RateCell rate={f.week} />)
+                    </td>
+                    <td>{base ? <Delta rate={f.nextDay} base={base} /> : "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          )}
+          {players.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  Players with 3+ puzzles in the window, by how often their best word was 10.00 (puzzles is the
+                  average each played)
+                </th>
+              </tr>
+              {players.map((p) => (
+                <tr key={p.group}>
+                  <th scope="row">{p.group}</th>
+                  <td>{fmt(p.players)}</td>
+                  <td>{dec(p.avgPuzzles, 1)}</td>
+                  <td>
+                    <RateCell rate={p.nextDay} />
+                  </td>
+                  <td>{regularsBase && p.group !== "Never" ? <Delta rate={p.nextDay} base={regularsBase} /> : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          )}
+          {missed && missed.groups.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  {`Puzzles where 10.00s were common (more than ${
+                    missed.medianShare === null ? "the median" : pct(missed.medianShare)
+                  } of players hit one, the window's median puzzle) or rare, for the players who missed; gap is against missing on a rare one`}
+                </th>
+              </tr>
+              {missed.groups.map((g) => (
+                <tr key={g.group}>
+                  <th scope="row">{g.group}</th>
+                  <td>{fmt(g.players)}</td>
+                  <td title={`${fmt(g.puzzles)} different puzzles`}>{fmt(g.days)}</td>
+                  <td>
+                    <RateCell rate={g.nextDay} />
+                  </td>
+                  <td>
+                    {missedBase && !g.group.endsWith("were rare") ? <Delta rate={g.nextDay} base={missedBase} /> : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          )}
+        </table>
+      </div>
+    </Section>
+  );
+}
+
+const QUARTILE_NAMES = ["Fewest 10.00s", "Second", "Third", "Most 10.00s"];
+
+/**
+ * Whether other players' 10.00s cheapen the score: from the same `perfect_report`.
+ * It leads with everybody, by how often anybody hit a 10.00 on the puzzle --
+ * friends share their results, so that is the exposure every player has, on
+ * any device. The look split is a narrower check under it: web only, and only
+ * the players who opened the boards.
+ */
+function SeenPerfectsSection({ perfects, windowName }: { perfects: PerfectsReport; windowName: string }) {
+  const { seen, population, missed } = perfects;
+  if (!seen && !population) return null;
+  const find = (looked: boolean, common: boolean) =>
+    seen?.find((g) => g.looked === looked && g.common === common)?.nextDay;
+  // How much worse a common day is for those who looked than for those who
+  // did not: the part of the gap that looking explains.
+  const gap = (looked: boolean) => {
+    const a = find(looked, true);
+    const b = find(looked, false);
+    const sa = a && share(a);
+    const sb = b && share(b);
+    return sa != null && sb != null ? sa - sb : null;
+  };
+  const lookedGap = gap(true);
+  const controlGap = gap(false);
+  const lookingEffect = lookedGap !== null && controlGap !== null ? Math.round((lookedGap - controlGap) * 100) : null;
+  const lowest = population?.quartiles[0]?.nextDay;
+  const highest = population && population.quartiles.length > 1 ? population.quartiles[population.quartiles.length - 1].nextDay : undefined;
+  return (
+    <Section
+      title="Do other players' 10.00s drive players off?"
+      note={`${windowName}. The first table is everybody, on every device: puzzles in quartiles by how often anybody hit a 10.00 on them, against whether all of that puzzle's players came back the next day. Friends share their results, so a puzzle full of 10.00s is one every player is likely to have seen some of; if that cheapens the score, the puzzles with the most come back worst and the correlation is negative. The weekday, the drop and the mode mix move a puzzle's return too. The second table is a narrower check: only days the player did not hit one themselves, split by whether they opened the leaderboard or found words and whether 10.00s were "common" (more of the puzzle's players hit one than on the median puzzle${
+        missed?.medianShare != null ? `, ${pct(missed.medianShare)}` : ""
+      }). Looks come from events, so it is web only. ${CAVEAT}`}
+    >
+      <div className="analytics__tiles">
+        {population && (
+          <Tile
+            label="Correlation, all players"
+            value={population.correlation === null ? "—" : population.correlation.toFixed(2)}
+            sub={`how often anybody hit 10.00 vs next-day return, over ${fmt(population.puzzles)} puzzles`}
+          />
+        )}
+        {population && lowest && highest && (
+          <div className="analytics__tile">
+            <span className="analytics__tile-label">Most 10.00s against fewest</span>
+            <span className="analytics__tile-value">
+              <Delta rate={highest} base={lowest} />
+            </span>
+            <span className="analytics__tile-sub">next-day return, every player</span>
+          </div>
+        )}
+        <Tile
+          label="Looked, on a common day (web)"
+          value={lookingEffect === null ? "—" : `${lookingEffect > 0 ? "+" : lookingEffect < 0 ? "−" : "±"}${Math.abs(lookingEffect)} pts`}
+          sub="common-vs-rare gap for lookers, minus the same gap for non-lookers"
+        />
+      </div>
+      <div className="analytics__table-wrap">
+        <table className="analytics__table">
+          <thead>
+            <tr>
+              <th scope="col">Day</th>
+              <th scope="col">Players</th>
+              <th scope="col">Puzzles</th>
+              <th scope="col">Next day</th>
+              <th scope="col">Gap</th>
+            </tr>
+          </thead>
+          {population && population.quartiles.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  Every player, by how often anybody hit a 10.00 on the puzzle; gap is against the fewest
+                </th>
+              </tr>
+              <QuartileRows population={population} />
+            </tbody>
+          )}
+          {seen && seen.length > 0 && (
+            <tbody>
+              <tr className="analytics__table-group">
+                <th scope="colgroup" colSpan={5}>
+                  Web only: missed a 10.00 themselves; gap is common against rare, for the same look
+                </th>
+              </tr>
+              {seen.map((g) => {
+                const base = g.common ? find(g.looked, false) : undefined;
+                return (
+                  <tr key={`${g.looked}-${g.common}`}>
+                    <th scope="row">
+                      {`${g.looked ? "Looked at the boards" : "Did not look"}, 10.00s ${g.common ? "common" : "rare"}`}
+                    </th>
+                    <td>{fmt(g.players)}</td>
+                    <td>{fmt(g.days)}</td>
+                    <td>
+                      <RateCell rate={g.nextDay} />
+                    </td>
+                    <td>{base ? <Delta rate={g.nextDay} base={base} /> : "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          )}
+        </table>
+      </div>
+    </Section>
+  );
+}
+
+/** Puzzles in quartiles by how often anybody hit a 10.00, gap against the fewest. */
+function QuartileRows({ population }: { population: PerfectPopulation }) {
+  const lowest = population.quartiles[0]?.nextDay;
+  return (
+    <>
+      {population.quartiles.map((q) => (
+        <tr key={q.quartile}>
+          <th scope="row">
+            {`${QUARTILE_NAMES[q.quartile - 1] ?? q.quartile}${
+              q.minShare === null || q.maxShare === null ? "" : ` (${pct(q.minShare)} to ${pct(q.maxShare)} hit one)`
+            }`}
+          </th>
+          <td>{fmt(q.players)}</td>
+          <td>{fmt(q.puzzles)}</td>
+          <td>
+            <RateCell rate={q.nextDay} />
+          </td>
+          <td>{lowest && q.quartile > 1 ? <Delta rate={q.nextDay} base={lowest} /> : "—"}</td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
+/**
+ * The 10.00 questions without the power users, from `perfect_report`'s
+ * `casual` (the 20261006020000 migration): only days that were a player's
+ * first six puzzles, so the regulars who come back whatever happens do not
+ * carry the rates.
+ */
+function CasualPerfectsSection({
+  casual,
+  windowName,
+}: {
+  casual: NonNullable<PerfectsReport["casual"]>;
+  windowName: string;
+}) {
+  const lowest = casual.quartiles[0]?.nextDay;
+  const highest = casual.quartiles.length > 1 ? casual.quartiles[casual.quartiles.length - 1].nextDay : undefined;
+  const hit = casual.days.find((d) => d.perfect)?.nextDay;
+  const missed = casual.days.find((d) => !d.perfect)?.nextDay;
+  return (
+    <Section
+      title="10.00s without the power users"
+      note={`${windowName}, counting only the days that were one of a player's first six puzzles, so nobody's 7th puzzle or later is in it. That is cut by where the player was that day, not by how many they went on to play: reaching seven is itself coming back, and cutting on it would take the returns out with it. Puzzles stay in the quartiles of the section above, by how often anybody (power users too) hit a 10.00, since that is what these players saw. Every device counts. ${CAVEAT}`}
+    >
+      <div className="analytics__tiles">
+        <Tile
+          label="Correlation, casual players"
+          value={casual.correlation === null ? "—" : casual.correlation.toFixed(2)}
+          sub={`how often anybody hit 10.00 vs their next-day return, over ${fmt(casual.puzzles)} puzzles`}
+        />
+        {lowest && highest && (
+          <div className="analytics__tile">
+            <span className="analytics__tile-label">Most 10.00s against fewest</span>
+            <span className="analytics__tile-value">
+              <Delta rate={highest} base={lowest} />
+            </span>
+            <span className="analytics__tile-sub">next-day return, casual players</span>
+          </div>
+        )}
+        {hit && missed && (
+          <div className="analytics__tile">
+            <span className="analytics__tile-label">Their own 10.00</span>
+            <span className="analytics__tile-value">
+              <Delta rate={hit} base={missed} />
+            </span>
+            <span className="analytics__tile-sub">next day after hitting one, against not</span>
+          </div>
+        )}
+      </div>
+      {casual.quartiles.length === 0 && casual.days.length === 0 ? (
+        <p className="review__status">Not enough casual players in this window yet.</p>
+      ) : (
+        <div className="analytics__table-wrap">
+          <table className="analytics__table">
+            <thead>
+              <tr>
+                <th scope="col">Day</th>
+                <th scope="col">Players</th>
+                <th scope="col">Puzzles</th>
+                <th scope="col">Next day</th>
+                <th scope="col">Gap</th>
+              </tr>
+            </thead>
+            {casual.quartiles.length > 0 && (
+              <tbody>
+                <tr className="analytics__table-group">
+                  <th scope="colgroup" colSpan={5}>
+                    By how often anybody hit a 10.00 on the puzzle; gap is against the fewest
+                  </th>
+                </tr>
+                <QuartileRows population={casual} />
+              </tbody>
+            )}
+            {casual.days.length > 0 && (
+              <tbody>
+                <tr className="analytics__table-group">
+                  <th scope="colgroup" colSpan={5}>
+                    By their own best word; gap is against under 10
+                  </th>
+                </tr>
+                {casual.days.map((d) => (
+                  <tr key={String(d.perfect)}>
+                    <th scope="row">{d.perfect ? "Best word 10.00" : "Best word under 10"}</th>
+                    <td>{fmt(d.players)}</td>
+                    <td>{fmt(d.days)}</td>
+                    <td>
+                      <RateCell rate={d.nextDay} />
+                    </td>
+                    <td>{d.perfect && missed ? <Delta rate={d.nextDay} base={missed} /> : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            )}
           </table>
         </div>
       )}

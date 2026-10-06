@@ -178,6 +178,66 @@ const RETURNERS = {
   ],
 };
 
+/** The shape `perfect_report` returns, which api/review.ts sets on the report. */
+const PERFECTS = {
+  from: "2026-08-29",
+  to: "2026-09-27",
+  firstPuzzle: [
+    { perfect: true, players: 10, nextDay: { cohort: 10, returned: 6 }, week: { cohort: 8, returned: 6 } },
+    { perfect: false, players: 40, nextDay: { cohort: 40, returned: 16 }, week: { cohort: 30, returned: 15 } },
+  ],
+  days: [
+    { mode: "all", perfect: true, players: 30, days: 90, nextDay: { cohort: 80, returned: 48 } },
+    { mode: "all", perfect: false, players: 60, days: 300, nextDay: { cohort: 250, returned: 125 } },
+    { mode: "freeform", perfect: true, players: 12, days: 40, nextDay: { cohort: 40, returned: 20 } },
+  ],
+  samePlayers: { players: 25, perfect: { cohort: 70, returned: 42 }, other: { cohort: 200, returned: 110 } },
+  players: [
+    { group: "Never", players: 20, avgPuzzles: 5.5, nextDay: { cohort: 100, returned: 50 } },
+    { group: "Two thirds or more", players: 6, avgPuzzles: 9.2, nextDay: { cohort: 50, returned: 40 } },
+  ],
+  missed: {
+    medianShare: 0.25,
+    groups: [
+      { group: "Hit a 10.00", players: 30, days: 90, puzzles: 20, nextDay: { cohort: 80, returned: 48 } },
+      {
+        group: "Missed, on a puzzle where 10.00s were common",
+        players: 25, days: 100, puzzles: 10, nextDay: { cohort: 100, returned: 35 },
+      },
+      {
+        group: "Missed, on a puzzle where 10.00s were rare",
+        players: 40, days: 200, puzzles: 10, nextDay: { cohort: 150, returned: 75 },
+      },
+    ],
+  },
+  seen: [
+    { looked: true, common: true, players: 10, days: 40, nextDay: { cohort: 40, returned: 12 } },
+    { looked: true, common: false, players: 12, days: 50, nextDay: { cohort: 50, returned: 25 } },
+    { looked: false, common: true, players: 15, days: 60, nextDay: { cohort: 60, returned: 27 } },
+    { looked: false, common: false, players: 20, days: 100, nextDay: { cohort: 100, returned: 50 } },
+  ],
+  population: {
+    puzzles: 20,
+    correlation: -0.31,
+    quartiles: [
+      { quartile: 1, puzzles: 5, minShare: 0.05, maxShare: 0.1, players: 100, nextDay: { cohort: 100, returned: 55 } },
+      { quartile: 4, puzzles: 5, minShare: 0.3, maxShare: 0.5, players: 90, nextDay: { cohort: 90, returned: 40 } },
+    ],
+  },
+  casual: {
+    puzzles: 18,
+    correlation: -0.42,
+    quartiles: [
+      { quartile: 1, puzzles: 5, minShare: 0.05, maxShare: 0.1, players: 40, nextDay: { cohort: 40, returned: 20 } },
+      { quartile: 4, puzzles: 5, minShare: 0.3, maxShare: 0.5, players: 40, nextDay: { cohort: 40, returned: 12 } },
+    ],
+    days: [
+      { perfect: true, players: 10, days: 15, nextDay: { cohort: 15, returned: 6 } },
+      { perfect: false, players: 30, days: 60, nextDay: { cohort: 60, returned: 30 } },
+    ],
+  },
+};
+
 /** The shape `chat_report` returns, which api/review.ts sets on the report. */
 const CHAT = {
   totals: {
@@ -395,6 +455,77 @@ describe("AnalyticsPage", () => {
     expect(screen.getByText("Came back after missing a puzzle").closest("tr")).toHaveTextContent("50%");
 
     expect(screen.getByText("2026-09-20 to 2026-09-27").closest("tr")).toHaveTextContent("38%");
+  });
+
+  it("compares next-day return after a 10.00 with after any other day", async () => {
+    stubFetch({ ...REPORT, perfects: PERFECTS });
+    render(<AnalyticsPage />);
+
+    const section = within((await screen.findByText("Perfect scores and who comes back")).closest("section")!);
+    // The same players: 60% after a 10.00 against 55% after any other day.
+    expect(section.getByText("Next day after a 10.00").closest("div")).toHaveTextContent("60%");
+    expect(section.getByText("+5 pts")).toHaveClass("analytics__delta--up");
+    const [allPerfect, freeformPerfect, firstPerfect] = section.getAllByRole("rowheader", { name: "Best word 10.00" });
+    // 60% against the other row of its group, 50%.
+    expect(allPerfect.closest("tr")).toHaveTextContent("+10 pts");
+    // Freeform has no under-10 row to measure against.
+    expect(freeformPerfect.closest("tr")).toHaveTextContent("—");
+    expect(firstPerfect.closest("tr")).toHaveTextContent("+20 pts");
+    expect(section.queryByText("Standard only (common-form scoring makes 10.00 rarer)")).not.toBeInTheDocument();
+    const often = section.getByRole("rowheader", { name: "Two thirds or more" }).closest("tr")!;
+    expect(often).toHaveTextContent("9.2");
+    expect(often).toHaveTextContent("+30 pts");
+    // 35% missing on a 10.00-heavy puzzle against 50% missing on a quiet one.
+    expect(section.getByText(/more than 25% of players hit one/)).toBeInTheDocument();
+    const common = section.getByRole("rowheader", { name: "Missed, on a puzzle where 10.00s were common" });
+    expect(within(common.closest("tr")!).getByText("−15 pts")).toHaveClass("analytics__delta--down");
+  });
+
+  it("tests whether seeing other players' 10.00s drives players off, and across everybody", async () => {
+    stubFetch({ ...REPORT, perfects: PERFECTS });
+    render(<AnalyticsPage />);
+
+    const section = within((await screen.findByText("Do other players' 10.00s drive players off?")).closest("section")!);
+    // Lookers: 30% common vs 50% rare (−20); non-lookers 45% vs 50% (−5): looking costs 15.
+    expect(section.getByText("Looked, on a common day (web)").closest("div")).toHaveTextContent("−15 pts");
+    // Everybody: 44% on the puzzles with the most 10.00s against 55% on the fewest.
+    expect(section.getByText("Most 10.00s against fewest").closest("div")).toHaveTextContent("−11 pts");
+    expect(section.getByText("Correlation, all players").closest("div")).toHaveTextContent("-0.31");
+    const lookedCommon = section.getByRole("rowheader", { name: "Looked at the boards, 10.00s common" });
+    expect(lookedCommon.closest("tr")).toHaveTextContent("−20 pts");
+    const most = section.getByRole("rowheader", { name: "Most 10.00s (30% to 50% hit one)" });
+    expect(within(most.closest("tr")!).getByText("−11 pts")).toHaveClass("analytics__delta--down");
+  });
+
+  it("shows the 10.00 numbers without the power users", async () => {
+    stubFetch({ ...REPORT, perfects: PERFECTS });
+    render(<AnalyticsPage />);
+
+    const section = within((await screen.findByText("10.00s without the power users")).closest("section")!);
+    expect(section.getByText("Correlation, casual players").closest("div")).toHaveTextContent("-0.42");
+    // 30% on the puzzles with the most 10.00s against 50% on the fewest.
+    expect(section.getByText("Most 10.00s against fewest").closest("div")).toHaveTextContent("−20 pts");
+    // 40% after their own 10.00 against 50% after any other day.
+    expect(section.getByText("Their own 10.00").closest("div")).toHaveTextContent("−10 pts");
+    expect(section.getByRole("rowheader", { name: "Most 10.00s (30% to 50% hit one)" }).closest("tr")).toHaveTextContent(
+      "30%",
+    );
+  });
+
+  it("draws the first perfect_report, from before the missed split, without it", async () => {
+    stubFetch({ ...REPORT, perfects: { ...PERFECTS, missed: undefined, seen: undefined, population: undefined, casual: undefined } });
+    render(<AnalyticsPage />);
+    await screen.findByText("Perfect scores and who comes back");
+    expect(screen.queryByText("Hit a 10.00")).not.toBeInTheDocument();
+    expect(screen.queryByText("Do other players' 10.00s drive players off?")).not.toBeInTheDocument();
+    expect(screen.queryByText("10.00s without the power users")).not.toBeInTheDocument();
+  });
+
+  it("leaves the perfect-score section out when its numbers failed", async () => {
+    stubFetch({ ...REPORT, perfects: null });
+    render(<AnalyticsPage />);
+    await screen.findByText("Looked, didn't play");
+    expect(screen.queryByText("Perfect scores and who comes back")).not.toBeInTheDocument();
   });
 
   it("says who stopped is too few to show rather than printing a table", async () => {

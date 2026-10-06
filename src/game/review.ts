@@ -479,11 +479,74 @@ export interface AnalyticsReport {
    */
   returners: ReturnersReport | null;
   /**
+   * Whether the players who hit a 10.00 come back more, from `perfect_report`
+   * (the 20261006000000 migration). Null when that read failed or predates it.
+   */
+  perfects: PerfectsReport | null;
+  /**
    * Answers scored from Claude's estimated Zipf, and the game before and after
-   * the first one, from `estimated_score_report` (the 20261006000000
+   * the first one, from `estimated_score_report` (the 20261006030000
    * migration). Null when that read failed or predates it.
    */
   estimates: EstimatesReport | null;
+}
+
+/**
+ * A perfect day is one whose best word scored 10.00, in either mode. Plays are
+ * the leaderboard's, so every device is counted. A group of fewer than five
+ * players never leaves the database.
+ */
+export interface PerfectsReport {
+  from: string | null;
+  to: string | null;
+  /** New players, by whether their first puzzle had a 10.00. */
+  firstPuzzle: Array<{ perfect: boolean; players: number; nextDay: Rate; week: Rate }>;
+  /** Every player-day; mode "all" first, then "standard" and "freeform". */
+  days: Array<{ mode: string; perfect: boolean; players: number; days: number; nextDay: Rate }>;
+  /** Only the players with both kinds of day. Rates are null under five players. */
+  samePlayers: { players: number; perfect: Rate | null; other: Rate | null };
+  /** Players with 3+ puzzles in the window, by how often they hit a 10.00. */
+  players: Array<{ group: string; players: number; avgPuzzles: number | null; nextDay: Rate }>;
+  /**
+   * Days without a 10.00, by whether 10.00s were common on that puzzle (above
+   * the window's median share of players hitting one) or rare. Null before the
+   * 20261006010000 migration.
+   */
+  missed: {
+    medianShare: number | null;
+    groups: Array<{ group: string; players: number; days: number; puzzles: number; nextDay: Rate }>;
+  } | null;
+  /**
+   * The same missed days, by whether the player opened the leaderboard or
+   * found words that day and whether 10.00s were common. Web only. Null before
+   * the 20261006010000 migration.
+   */
+  seen: Array<{ looked: boolean; common: boolean; players: number; days: number; nextDay: Rate }> | null;
+  /** Every player, puzzle by puzzle. Null before the 20261006010000 migration. */
+  population: PerfectPopulation | null;
+  /**
+   * Without the power users: only days that were a player's first six puzzles.
+   * Quartiles keep the whole puzzle's 10.00 share. Null before 20261006020000.
+   */
+  casual:
+    | (PerfectPopulation & {
+        days: Array<{ perfect: boolean; players: number; days: number; nextDay: Rate }>;
+      })
+    | null;
+}
+
+export interface PerfectPopulation {
+  puzzles: number;
+  /** Across puzzles: share hitting 10.00 against the puzzle's next-day return. */
+  correlation: number | null;
+  quartiles: Array<{
+    quartile: number;
+    puzzles: number;
+    minShare: number | null;
+    maxShare: number | null;
+    players: number;
+    nextDay: Rate;
+  }>;
 }
 
 /**
@@ -860,6 +923,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       r.onboarding && typeof r.onboarding === "object" ? parseOnboarding(r.onboarding) : null,
     copies: r.copies && typeof r.copies === "object" ? parseCopies(r.copies) : null,
     returners: r.returners && typeof r.returners === "object" ? parseReturners(r.returners) : null,
+    perfects: r.perfects && typeof r.perfects === "object" ? parsePerfects(r.perfects) : null,
     estimates: r.estimates && typeof r.estimates === "object" ? parseEstimates(r.estimates) : null,
   };
 }
@@ -940,6 +1004,93 @@ function parseReturners(raw: unknown): ReturnersReport {
         lastDay: v.lastDay as string,
         nextDay: rate(v.nextDay),
       })),
+  };
+}
+
+function parsePerfects(raw: unknown): PerfectsReport {
+  const r = obj(raw);
+  const same = obj(r.samePlayers);
+  const maybeRate = (v: unknown) => (v && typeof v === "object" ? rate(v) : null);
+  return {
+    from: text(r.from),
+    to: text(r.to),
+    firstPuzzle: list(r.firstPuzzle).map((f) => ({
+      perfect: f.perfect === true,
+      players: count(f.players),
+      nextDay: rate(f.nextDay),
+      week: rate(f.week),
+    })),
+    days: list(r.days)
+      .filter((d) => text(d.mode))
+      .map((d) => ({
+        mode: d.mode as string,
+        perfect: d.perfect === true,
+        players: count(d.players),
+        days: count(d.days),
+        nextDay: rate(d.nextDay),
+      })),
+    samePlayers: { players: count(same.players), perfect: maybeRate(same.perfect), other: maybeRate(same.other) },
+    players: list(r.players)
+      .filter((p) => text(p.group))
+      .map((p) => ({
+        group: p.group as string,
+        players: count(p.players),
+        avgPuzzles: maybe(p.avgPuzzles),
+        nextDay: rate(p.nextDay),
+      })),
+    missed:
+      r.missed && typeof r.missed === "object"
+        ? {
+            medianShare: maybe(obj(r.missed).medianShare),
+            groups: list(obj(r.missed).groups)
+              .filter((g) => text(g.group))
+              .map((g) => ({
+                group: g.group as string,
+                players: count(g.players),
+                days: count(g.days),
+                puzzles: count(g.puzzles),
+                nextDay: rate(g.nextDay),
+              })),
+          }
+        : null,
+    seen: Array.isArray(r.seen)
+      ? list(r.seen).map((g) => ({
+          looked: g.looked === true,
+          common: g.common === true,
+          players: count(g.players),
+          days: count(g.days),
+          nextDay: rate(g.nextDay),
+        }))
+      : null,
+    population: r.population && typeof r.population === "object" ? parsePopulation(r.population) : null,
+    casual:
+      r.casual && typeof r.casual === "object"
+        ? {
+            ...parsePopulation(r.casual),
+            days: list(obj(r.casual).days).map((d) => ({
+              perfect: d.perfect === true,
+              players: count(d.players),
+              days: count(d.days),
+              nextDay: rate(d.nextDay),
+            })),
+          }
+        : null,
+  };
+}
+
+function parsePopulation(raw: unknown): PerfectPopulation {
+  const p = obj(raw);
+  return {
+    puzzles: count(p.puzzles),
+    correlation: maybe(p.correlation),
+    quartiles: list(p.quartiles).map((q) => ({
+      quartile: count(q.quartile),
+      puzzles: count(q.puzzles),
+      minShare: maybe(q.minShare),
+      maxShare: maybe(q.maxShare),
+      players: count(q.players),
+      nextDay: rate(q.nextDay),
+    })),
   };
 }
 

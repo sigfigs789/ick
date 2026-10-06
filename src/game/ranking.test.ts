@@ -363,8 +363,8 @@ describe("display precision by score", () => {
 
 describe("ranking colors", () => {
   // Share squares double as the per-ranking color key, so lock each one -- most
-  // notably Elusive's orange square, matching World of Warcraft's legendary hue,
-  // and Legend's black one above it.
+  // notably Elusive's gold square, the one no other rank uses, and Legend's
+  // black one above it.
   it("maps every ranking to its color square", () => {
     expect(RARITY_SYMBOL).toEqual({
       Quotidian: "🥚",
@@ -373,7 +373,7 @@ describe("ranking colors", () => {
       Uncommon: "🟩",
       Rare: "🟦",
       "Extremely Rare": "🟪",
-      Elusive: "🟧",
+      Elusive: "🟨",
       Mythic: "🟥",
       Legend: "⬛",
     });
@@ -396,8 +396,8 @@ describe("ranking colors", () => {
     }
   });
 
-  it("gives Elusive a burnt amber, distinct from Mythic's red", () => {
-    expect(css).toContain("--rarity-elusive-dot: #c2410c;");
+  it("gives Elusive gold, distinct from Common's brown and Mythic's red", () => {
+    expect(css).toContain("--rarity-elusive-dot: #eab308;");
   });
 
   it("keeps the pre-retune Legend orange on its own frozen tokens", () => {
