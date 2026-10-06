@@ -4102,6 +4102,19 @@ export function usesRetunedTiers(date?: string): boolean {
   return date === undefined || date >= NARROW_BANDS_START;
 }
 
+/**
+ * The first puzzle whose Elusive wears gold rather than burnt amber. The amber
+ * sat too close to Common's brown to tell apart at a glance, and was too muted
+ * for a 9.0+ find; gold is the one share square no other rank uses. Earlier
+ * puzzles keep the amber (badge and share square) they were played with.
+ */
+export const GOLD_ELUSIVE_START = "2026-10-07";
+
+/** Whether `date`'s puzzle shows Elusive in gold. An omitted date means the newest system. */
+export function usesGoldElusive(date?: string): boolean {
+  return date === undefined || date >= GOLD_ELUSIVE_START;
+}
+
 export function rarityForZipf(zipf: number, date?: string, mode?: GameMode): Rarity {
   return scoringFor(date, mode).rarity(zipf);
 }

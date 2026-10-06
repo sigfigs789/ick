@@ -1,4 +1,4 @@
-import { usesRetunedTiers } from "../game/dictionary";
+import { usesGoldElusive, usesRetunedTiers } from "../game/dictionary";
 import type { Rarity } from "../game/types";
 
 /**
@@ -21,10 +21,11 @@ const RARITY_CLASS: Record<Rarity, string> = {
 /**
  * The palette class for a rarity under `date`'s puzzle, so anything showing a
  * tier's colours matches the badge -- including the Legend that wore orange
- * before the tiers were retuned, which archived puzzles keep.
+ * before the tiers were retuned, and the amber Elusive wore before it turned
+ * gold, both of which archived puzzles keep.
  */
 export function rarityClassName(rarity: Rarity, date?: string): string {
-  return rarity === "Legend" && !usesRetunedTiers(date)
-    ? "rarity--legend-legacy"
-    : RARITY_CLASS[rarity];
+  if (rarity === "Legend" && !usesRetunedTiers(date)) return "rarity--legend-legacy";
+  if (rarity === "Elusive" && !usesGoldElusive(date)) return "rarity--elusive-amber";
+  return RARITY_CLASS[rarity];
 }

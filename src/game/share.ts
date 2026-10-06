@@ -2,6 +2,7 @@ import { daysSinceEpoch, formatDateLabel, toDateString } from "./date";
 import {
   formatRarityScore,
   totalRarityScore,
+  usesGoldElusive,
   usesRetunedTiers,
 } from "./dictionary";
 import { MODE_LABELS, currentMode, modeForDate, modeIsChosen, type GameMode } from "./mode";
@@ -10,7 +11,7 @@ import dropData from "../data/drops.json";
 import type { AcceptedWord, Rarity } from "./types";
 
 // Mirrors the in-app "loot tier" rarity palette (white -> brown -> green ->
-// blue -> purple -> orange -> red -> black, see index.css) so the shared result
+// blue -> purple -> gold -> red -> black, see index.css) so the shared result
 // matches what showed up in-game. Legend, the top rank, is black -- the one
 // square that reads as absence rather than a hue, which is what makes it land.
 // Quotidian is reachable only on puzzles predating the retuned tiers; its egg
@@ -26,12 +27,13 @@ export const RARITY_SYMBOL: Record<Rarity, string> = {
   Uncommon: "🟩",
   Rare: "🟦",
   "Extremely Rare": "🟪",
-  Elusive: "🟧",
+  Elusive: "🟨",
   Mythic: "🟥",
   Legend: "⬛",
 };
 
-// Before the tiers were retuned, Legend wore the orange that Elusive wears now.
+// Before the tiers were retuned, Legend wore orange (as Elusive later did, until
+// it turned gold -- see raritySymbol).
 // An archived result has to share the square it was played with, so the top
 // rank is looked up through the puzzle's own date.
 const PRE_RETUNE_SYMBOL: Partial<Record<Rarity, string>> = { Legend: "🟧" };
@@ -39,6 +41,7 @@ const PRE_RETUNE_SYMBOL: Partial<Record<Rarity, string>> = { Legend: "🟧" };
 /** The share square for `rarity` on `date`'s puzzle. */
 export function raritySymbol(rarity: Rarity, date?: string): string {
   if (!usesRetunedTiers(date)) return PRE_RETUNE_SYMBOL[rarity] ?? RARITY_SYMBOL[rarity];
+  if (rarity === "Elusive" && !usesGoldElusive(date)) return "🟧";
   return RARITY_SYMBOL[rarity];
 }
 

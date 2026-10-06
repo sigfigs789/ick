@@ -161,7 +161,7 @@ export function GuessLog({
                     borderColor: picking
                       ? theme.focusRing
                       : isBest
-                        ? theme.bestWordAccent
+                        ? theme.bestWordBorder
                         : theme.border,
                     borderWidth: picking || isBest ? 1.5 : StyleSheet.hairlineWidth,
                     opacity: pressed ? 0.7 : 1,

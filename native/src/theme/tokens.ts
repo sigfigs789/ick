@@ -49,10 +49,14 @@ export interface Theme {
 
   bestWordAccent: string;
   bestWordBg: string;
+  /** The crowned word's card outline: orange, so it stands apart from a gold Elusive badge. */
+  bestWordBorder: string;
 
   rarity: Record<Rarity, RarityPalette>;
   /** Legend as it was before the tiers were retuned; archived puzzles keep it. */
   legendLegacy: RarityPalette;
+  /** Elusive's burnt amber before GOLD_ELUSIVE_START; archived puzzles keep it. */
+  elusiveAmber: RarityPalette;
 }
 
 export const lightTheme: Theme = {
@@ -80,6 +84,7 @@ export const lightTheme: Theme = {
 
   bestWordAccent: '#eab308',
   bestWordBg: '#fbf3d6',
+  bestWordBorder: '#f97316',
 
   rarity: {
     Quotidian: { bg: '#000000', fg: '#ffffff', dot: '#ffffff' },
@@ -88,11 +93,12 @@ export const lightTheme: Theme = {
     Uncommon: { bg: '#e3f6e8', fg: '#1c7a3d', dot: '#2fa457' },
     Rare: { bg: '#e2eefd', fg: '#1450b8', dot: '#2f78e0' },
     'Extremely Rare': { bg: '#f1e6fc', fg: '#7222c2', dot: '#9b4fe0' },
-    Elusive: { bg: '#fbe6da', fg: '#7c2d12', dot: '#c2410c' },
+    Elusive: { bg: '#fdf3c4', fg: '#854d0e', dot: '#eab308' },
     Mythic: { bg: '#fdeae8', fg: '#b42318', dot: '#e5484d' },
     Legend: { bg: '#1b1b1f', fg: '#f7f7f9', dot: '#f7f7f9' },
   },
   legendLegacy: { bg: '#fde6d0', fg: '#9a4300', dot: '#ff8000' },
+  elusiveAmber: { bg: '#fbe6da', fg: '#7c2d12', dot: '#c2410c' },
 };
 
 export const darkTheme: Theme = {
@@ -120,6 +126,7 @@ export const darkTheme: Theme = {
 
   bestWordAccent: '#facc15',
   bestWordBg: '#2e2607',
+  bestWordBorder: '#fb923c',
 
   rarity: {
     Quotidian: { bg: '#000000', fg: '#ffffff', dot: '#ffffff' },
@@ -128,11 +135,12 @@ export const darkTheme: Theme = {
     Uncommon: { bg: '#0f2b19', fg: '#7fe0a3', dot: '#3bbf6c' },
     Rare: { bg: '#0f2140', fg: '#8bb6fb', dot: '#4a8ff2' },
     'Extremely Rare': { bg: '#2a1440', fg: '#cd9bf7', dot: '#ab5ff0' },
-    Elusive: { bg: '#2b1409', fg: '#f4a97c', dot: '#ea580c' },
+    Elusive: { bg: '#2b2205', fg: '#fcd34d', dot: '#facc15' },
     Mythic: { bg: '#3a1414', fg: '#f7a19a', dot: '#e5484d' },
     Legend: { bg: '#000000', fg: '#f7f7f9', dot: '#ffffff' },
   },
   legendLegacy: { bg: '#2e1a08', fg: '#fdba74', dot: '#ff8000' },
+  elusiveAmber: { bg: '#2b1409', fg: '#f4a97c', dot: '#ea580c' },
 };
 
 /** The spacing step everything is laid out on, so a screen is not a pile of magic numbers. */

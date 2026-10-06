@@ -61,7 +61,7 @@ describe("ResultsPanel share toggle", () => {
     const preview = document.querySelector(".results-panel__preview");
     expect(preview?.textContent).not.toContain("strange");
     expect(preview?.textContent).not.toContain("aardvark");
-    expect(preview?.textContent).toMatch(/⬜|🟩|🟦|🟪|🟧/);
+    expect(preview?.textContent).toMatch(/⬜|🟩|🟦|🟪|🟨|🟧/);
   });
 
   it("remembers the choice for the next result", async () => {
