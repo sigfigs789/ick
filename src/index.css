@@ -78,13 +78,6 @@
   --rarity-elusive-fg: #854d0e;
   --rarity-elusive-dot: #eab308;
 
-  /* Frozen copy of the burnt amber Elusive wore until GOLD_ELUSIVE_START. It
-     read as brown beside Common, which is why it went. Archived puzzles render
-     from these, backed by the orange square. */
-  --rarity-elusive-amber-bg: #fbe6da;
-  --rarity-elusive-amber-fg: #7c2d12;
-  --rarity-elusive-amber-dot: #c2410c;
-
   /* Frozen copy of the bright orange Legend wore before the tiers were retuned.
      Archived puzzles render from these, so retinting Elusive above cannot reach
      back and restyle a drop that was played that day. */
@@ -108,9 +101,6 @@
      orange so it never clashes with Legend. */
   --best-word-accent: #eab308;
   --best-word-bg: #fbf3d6;
-  /* The crowned word's card outline is orange rather than the gold above, so the
-     top score stands out from a gold Elusive badge sitting inside it. */
-  --best-word-border: #f97316;
 
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* Slow, then quick, then slow again -- an S-curve, where --ease-standard is a
@@ -183,11 +173,6 @@
     --rarity-elusive-fg: #fcd34d;
     --rarity-elusive-dot: #facc15;
 
-    --rarity-elusive-amber-bg: #2b1409;
-    --rarity-elusive-amber-fg: #f4a97c;
-    /* Lifted off the light theme's #c2410c so the dot still reads on a dark bg. */
-    --rarity-elusive-amber-dot: #ea580c;
-
     --rarity-legend-legacy-bg: #2e1a08;
     --rarity-legend-legacy-fg: #fdba74;
     --rarity-legend-legacy-dot: #ff8000;
@@ -204,7 +189,6 @@
 
     --best-word-accent: #facc15;
     --best-word-bg: #2e2607;
-    --best-word-border: #fb923c;
   }
 }
 
@@ -1180,7 +1164,7 @@ h2 {
   transform-origin: center;
 }
 .guess-log__entry--best {
-  border-color: var(--best-word-border);
+  border-color: var(--best-word-accent);
   background: color-mix(in srgb, var(--best-word-bg) 55%, var(--card-bg));
 }
 @keyframes slot-fill {
@@ -1563,19 +1547,9 @@ h2 {
   box-shadow: 0 0 0 3px
     color-mix(in srgb, var(--rarity-mythic-dot) 28%, transparent);
 }
-/* Elusive as it looked before it turned gold. Archived puzzles keep it. */
-.rarity--elusive-amber {
-  background: var(--rarity-elusive-amber-bg);
-  color: var(--rarity-elusive-amber-fg);
-}
-.rarity--elusive-amber .rarity-badge__dot {
-  background: var(--rarity-elusive-amber-dot);
-  box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--rarity-elusive-amber-dot) 28%, transparent);
-}
 /* Legend as it looked before the tiers were retuned. Archived puzzles keep it,
    so a replayed drop looks like it did that day -- on its own frozen tokens
-   rather than Elusive's, which have since moved twice. */
+   rather than Elusive's, which have since moved. */
 .rarity--legend-legacy {
   background: var(--rarity-legend-legacy-bg);
   color: var(--rarity-legend-legacy-fg);
@@ -2046,7 +2020,7 @@ h2 {
   margin: 0 0 1.25rem;
   border-radius: 0.85rem;
   background: color-mix(in srgb, var(--best-word-bg) 65%, transparent);
-  border: 1px solid var(--best-word-border);
+  border: 1px solid var(--best-word-accent);
 }
 .results-panel__best-label {
   margin: 0;

@@ -5,7 +5,6 @@ import { readFileSync } from "node:fs";
 import {
   formatRarityScore,
   formatScore,
-  GOLD_ELUSIVE_START,
   rarityFor,
   rarityForZipf,
   rarityScore,
@@ -14,7 +13,6 @@ import {
   usesRetunedTiers,
 } from "./dictionary";
 import { RARITY_SYMBOL, raritySymbol } from "./share";
-import { rarityClassName } from "../components/rarityStyles";
 import type { Rarity } from "./types";
 
 // Minimal ambient for the Node global (this app doesn't depend on @types/node).
@@ -177,9 +175,8 @@ describe("narrow measured bands (from 2026-08-21)", () => {
     expect(raritySymbol("Legend", BEFORE)).toBe("🟧");
     expect(raritySymbol("Legend", ON)).toBe("⬛");
     expect(raritySymbol("Legend")).toBe("⬛");
-    // Every other rank's square is the same on both sides of the line (Elusive
-    // has its own later cutover, checked below).
-    for (const rarity of RARITY_ORDER.filter((r) => r !== "Legend" && r !== "Elusive")) {
+    // Every other rank's square is the same on both sides of the line.
+    for (const rarity of RARITY_ORDER.filter((r) => r !== "Legend")) {
       expect(raritySymbol(rarity, BEFORE)).toBe(raritySymbol(rarity, ON));
     }
   });
@@ -401,26 +398,6 @@ describe("ranking colors", () => {
 
   it("gives Elusive gold, distinct from Common's brown and Mythic's red", () => {
     expect(css).toContain("--rarity-elusive-dot: #eab308;");
-  });
-
-  it("keeps Elusive's pre-gold amber on its own frozen tokens", () => {
-    expect(css).toContain("--rarity-elusive-amber-dot: #c2410c;");
-    expect(css).not.toContain("--rarity-elusive-amber-dot: var(");
-  });
-
-  it("turns Elusive gold from GOLD_ELUSIVE_START, and keeps amber before it", () => {
-    expect(GOLD_ELUSIVE_START).toBe("2026-10-07");
-    expect(raritySymbol("Elusive", "2026-10-06")).toBe("🟧");
-    expect(raritySymbol("Elusive", "2026-10-07")).toBe("🟨");
-    expect(raritySymbol("Elusive")).toBe("🟨");
-    expect(rarityClassName("Elusive", "2026-10-06")).toBe("rarity--elusive-amber");
-    expect(rarityClassName("Elusive", "2026-10-07")).toBe("rarity--elusive");
-    expect(rarityClassName("Elusive")).toBe("rarity--elusive");
-    // Only Elusive moves on that date.
-    for (const rarity of RARITY_ORDER.filter((r) => r !== "Elusive")) {
-      expect(raritySymbol(rarity, "2026-10-06")).toBe(raritySymbol(rarity, "2026-10-07"));
-      expect(rarityClassName(rarity, "2026-10-06")).toBe(rarityClassName(rarity, "2026-10-07"));
-    }
   });
 
   it("keeps the pre-retune Legend orange on its own frozen tokens", () => {

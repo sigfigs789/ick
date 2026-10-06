@@ -49,14 +49,10 @@ export interface Theme {
 
   bestWordAccent: string;
   bestWordBg: string;
-  /** The crowned word's card outline: orange, so it stands apart from a gold Elusive badge. */
-  bestWordBorder: string;
 
   rarity: Record<Rarity, RarityPalette>;
   /** Legend as it was before the tiers were retuned; archived puzzles keep it. */
   legendLegacy: RarityPalette;
-  /** Elusive's burnt amber before GOLD_ELUSIVE_START; archived puzzles keep it. */
-  elusiveAmber: RarityPalette;
 }
 
 export const lightTheme: Theme = {
@@ -84,7 +80,6 @@ export const lightTheme: Theme = {
 
   bestWordAccent: '#eab308',
   bestWordBg: '#fbf3d6',
-  bestWordBorder: '#f97316',
 
   rarity: {
     Quotidian: { bg: '#000000', fg: '#ffffff', dot: '#ffffff' },
@@ -98,7 +93,6 @@ export const lightTheme: Theme = {
     Legend: { bg: '#1b1b1f', fg: '#f7f7f9', dot: '#f7f7f9' },
   },
   legendLegacy: { bg: '#fde6d0', fg: '#9a4300', dot: '#ff8000' },
-  elusiveAmber: { bg: '#fbe6da', fg: '#7c2d12', dot: '#c2410c' },
 };
 
 export const darkTheme: Theme = {
@@ -126,7 +120,6 @@ export const darkTheme: Theme = {
 
   bestWordAccent: '#facc15',
   bestWordBg: '#2e2607',
-  bestWordBorder: '#fb923c',
 
   rarity: {
     Quotidian: { bg: '#000000', fg: '#ffffff', dot: '#ffffff' },
@@ -140,7 +133,6 @@ export const darkTheme: Theme = {
     Legend: { bg: '#000000', fg: '#f7f7f9', dot: '#ffffff' },
   },
   legendLegacy: { bg: '#2e1a08', fg: '#fdba74', dot: '#ff8000' },
-  elusiveAmber: { bg: '#2b1409', fg: '#f4a97c', dot: '#ea580c' },
 };
 
 /** The spacing step everything is laid out on, so a screen is not a pile of magic numbers. */

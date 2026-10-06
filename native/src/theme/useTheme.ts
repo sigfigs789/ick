@@ -1,5 +1,5 @@
 import { useColorScheme } from 'react-native';
-import { usesGoldElusive, usesRetunedTiers } from '../../../src/game/dictionary';
+import { usesRetunedTiers } from '../../../src/game/dictionary';
 import type { Rarity } from '../../../src/game/types';
 import { darkTheme, lightTheme, type RarityPalette, type Theme } from './tokens';
 
@@ -22,11 +22,9 @@ export function useTheme(): Theme {
  * and archived puzzles still render from that frozen palette, so a badge drawn
  * without knowing which day it belongs to can silently restyle a result the
  * player already shared. The rule lives in `rarityStyles.ts` on the website;
- * this is the same rule, reading the same `usesRetunedTiers` (and
- * `usesGoldElusive`, for the amber Elusive wore before it turned gold).
+ * this is the same rule, reading the same `usesRetunedTiers`.
  */
 export function rarityPalette(theme: Theme, rarity: Rarity, date?: string): RarityPalette {
   if (rarity === 'Legend' && !usesRetunedTiers(date)) return theme.legendLegacy;
-  if (rarity === 'Elusive' && !usesGoldElusive(date)) return theme.elusiveAmber;
   return theme.rarity[rarity];
 }
