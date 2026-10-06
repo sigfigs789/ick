@@ -28,9 +28,10 @@ the batch's `since` date on, an estimate stands in for the unattested sentinel
     python scripts/estimate-zipf.py prepare --candidates .tmp/candidates.json \
         --asked-out .tmp/asked.json --request-out .tmp/estimate-request.md
     python scripts/estimate-zipf.py record --asked .tmp/asked.json \
-        --estimates .tmp/estimates.json --model claude-opus-5-5 --run-url ...
+        --estimates .tmp/estimates.json --model claude-opus-5-5 --run-url ... \
+        --validated-out .tmp/validated.json
     ./node_modules/.bin/vite-node scripts/estimated-scores.mts -- \
-        --asked .tmp/asked.json --out .tmp/scores.json
+        --asked .tmp/asked.json --estimates .tmp/validated.json --out .tmp/scores.json
     python scripts/estimate-zipf.py summary --asked .tmp/asked.json \
         --estimates .tmp/estimates.json --scores .tmp/scores.json \
         --model claude-opus-5-5 --run-url ... --summary-out .tmp/summary.md
@@ -193,9 +194,12 @@ def summary(
         f"**Merge before {report['date']}**, or the batch re-prices a puzzle that is "
         "already being played.",
         "",
-        f"**Standard** and **Freeform** below are the score each mode will show on "
-        f"{report['date']} once this merges, computed by the game's own code, so Standard's "
-        "fold is included; — means that mode does not accept the word. **Confidence** is "
+        f"**Standard** and **Freeform** below are the score each mode would show on "
+        f"{report['date']} with Claude's estimate applied -- for a recorded word, what players "
+        "will see once this merges; for the rest, what they would see if it were recorded. "
+        "Every one of these words scores 10.00 today, and an estimate at or below the "
+        "rarest measured word still does. Computed by the game's own code, so "
+        "Standard's fold is included; — means that mode does not accept the word. **Confidence** is "
         "Claude's own probability that the true Zipf is within 0.5 of its estimate, and **Why** "
         "is its reasoning; neither is stored in the data file.",
         "",
@@ -220,7 +224,8 @@ def summary(
             "",
             f"### Not recorded: confidence {MIN_CONFIDENCE} or below, or none given ({len(held)})",
             "",
-            "Left at the unattested sentinel, so the scores shown are the ones they keep.",
+            "Not written to the data file, so these keep their 10.00. The scores shown are "
+            "what they would be if the estimate were recorded.",
             "",
         ]
         lines += TABLE_HEAD + _rows(held, scores, reason_max) if held else ["None."]
@@ -332,6 +337,11 @@ def record(args: argparse.Namespace) -> None:
             }
         )
         ESTIMATES_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    if args.validated_out:
+        # Every well-formed estimate, recorded or not, so estimated-scores.mts can
+        # show what each word would score with its estimate applied.
+        validated = {w: e.zipf for w, e in sorted(all_estimates.items())}
+        args.validated_out.write_text(json.dumps(validated, indent=2) + "\n")
     print(
         f"Recorded {len(estimates)} estimate(s) with confidence above {MIN_CONFIDENCE} of {len(all_estimates)} returned, "
         f"{len(report['asked'])} asked ({report['count']} candidates)."
@@ -358,6 +368,7 @@ def main() -> None:
     r = sub.add_parser("record", help="validate Claude's answer and append it as a batch")
     r.add_argument("--asked", required=True, type=Path)
     r.add_argument("--estimates", required=True, type=Path)
+    r.add_argument("--validated-out", type=Path, help="write every well-formed estimate as {word: zipf}")
     r.add_argument("--model", required=True)
     r.add_argument("--run-url")
 

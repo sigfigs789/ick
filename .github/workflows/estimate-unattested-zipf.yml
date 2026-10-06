@@ -19,7 +19,7 @@ name: Estimate unattested Zipf
 #      date as `since`. Nothing marks an estimate as anything but a guess, and
 #      nothing re-prices an earlier puzzle. The rest keep the flat 10.00.
 #   5. scripts/estimated-scores.mts scores every estimated word through the
-#      game's own code with the batch applied, and `estimate-zipf.py summary`
+#      game's own code with its estimate applied, recorded or not, and `estimate-zipf.py summary`
 #      writes the PR body: every word with its Zipf, the score Standard and
 #      Freeform will show, and Claude's confidence and reasoning.
 #
@@ -170,13 +170,14 @@ jobs:
             --asked .tmp/asked.json \
             --estimates .tmp/estimates.json \
             --model "$MODEL" \
-            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --validated-out .tmp/validated.json
 
       - name: Score the estimated words as the game will show them
         if: steps.find.outputs.count != '0'
         run: |
           ./node_modules/.bin/vite-node scripts/estimated-scores.mts -- \
-            --asked .tmp/asked.json --out .tmp/scores.json
+            --asked .tmp/asked.json --estimates .tmp/validated.json --out .tmp/scores.json
 
       - name: Write the summary
         if: steps.find.outputs.count != '0'
