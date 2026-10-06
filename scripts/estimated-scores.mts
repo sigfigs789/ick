@@ -1,13 +1,19 @@
 /**
- * The score a player will see for each word Claude just estimated, so the
- * "Estimate unattested Zipf" PR can show it beside the Zipf. Run after
- * `estimate-zipf.py record` has written the batch to src/data/estimated-zipf.json:
- * every asked word goes back through the game's own `evaluateSubmission` for the
- * batch's puzzle, in both modes, so Standard's fold is applied exactly as it
- * will be in play.
+ * The score a player would see for each word Claude just estimated, with its
+ * estimate applied, so the "Estimate unattested Zipf" PR can show it beside the
+ * Zipf. Every one of these words scores 10.00 without an estimate, so the
+ * estimated score is the only one worth showing -- including for the words
+ * `estimate-zipf.py record` held back for low confidence, which a reviewer may
+ * want to judge.
+ *
+ * `--estimates` is record's `--validated-out`: every well-formed estimate as
+ * `{ word: zipf }`. They are laid over src/data/estimated-zipf.json as one
+ * batch for the puzzle, and every asked word goes back through the game's own
+ * `evaluateSubmission` for that puzzle, in both modes, so Standard's fold is
+ * applied exactly as it would be in play.
  *
  *   ./node_modules/.bin/vite-node scripts/estimated-scores.mts -- \
- *     --asked .tmp/asked.json --out .tmp/scores.json
+ *     --asked .tmp/asked.json --estimates .tmp/validated.json --out .tmp/scores.json
  *
  * Writes `{ word: { standard, freeform } }`, each mode either null (that mode
  * does not accept the word) or `{ zipf, score, rarity }` with `score` formatted
@@ -28,7 +34,8 @@ globalThis.fetch = (async (input: string | URL) => {
 const { loadCorpus } = await import("../src/game/corpus.ts");
 const { evaluateSubmission } = await import("../src/game/submit.ts");
 const { asMode } = await import("../src/game/mode.ts");
-const { formatRarityScore } = await import("../src/game/dictionary.ts");
+const { formatRarityScore, setEstimatedZipfForTests } = await import("../src/game/dictionary.ts");
+const estimatedZipfData = (await import("../src/data/estimated-zipf.json")).default;
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -36,9 +43,12 @@ function arg(name: string): string | undefined {
 }
 
 const askedPath = arg("asked");
+const estimatesPath = arg("estimates");
 const out = arg("out");
-if (!askedPath || !out) {
-  console.error("usage: estimated-scores.mts --asked .tmp/asked.json --out .tmp/scores.json");
+if (!askedPath || !estimatesPath || !out) {
+  console.error(
+    "usage: estimated-scores.mts --asked .tmp/asked.json --estimates .tmp/validated.json --out .tmp/scores.json"
+  );
   process.exit(2);
 }
 
@@ -53,6 +63,14 @@ const report = JSON.parse(readFileSync(askedPath, "utf8")) as {
   asked: { word: string }[];
 };
 const drop = report.drop.toLowerCase();
+
+// Apply every estimate, recorded or not. The hook is the tests' way of swapping
+// the batches; this script is a one-shot process, so nothing else sees it.
+const estimates = JSON.parse(readFileSync(estimatesPath, "utf8")) as Record<string, number>;
+setEstimatedZipfForTests([
+  ...(estimatedZipfData as { batches: Parameters<typeof setEstimatedZipfForTests>[0] }).batches,
+  { since: report.date, drop: report.drop, model: "claude", zipf: estimates },
+]);
 
 type Shown = { zipf: number; score: string; rarity: string } | null;
 const scores: Record<string, { standard: Shown; freeform: Shown }> = {};
