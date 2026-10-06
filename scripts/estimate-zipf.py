@@ -15,12 +15,11 @@ Steps around Claude Code runs, so the workflow takes the same credentials as
              their provenance -- the model, the Actions run, the drops and the
              puzzle date -- so an estimate can never be mistaken for a
              measurement.
-    summary  writes the PR body: what was estimated, then the words to review --
-             every one when they fit, otherwise a sample of 100 -- each with the
-             score Standard and Freeform will show (from
+    summary  writes the PR body: what was estimated, every estimate for a word
+             players have already banked at 10.00, and a sample of 100 of the
+             rest -- each with the score Standard and Freeform will show (from
              scripts/estimated-scores.mts, run after `record`) and Claude's
-             one-line reasoning. When the body cannot hold every word, the full
-             list goes to --comments-dir, one file per PR comment.
+             one-line reasoning. The full list is the batch, in the diff.
 
 The game reads the file through `withEstimate` in src/game/dictionary.ts: from
 the batch's `since` date on, an estimate stands in for the unattested sentinel
@@ -34,8 +33,7 @@ the batch's `since` date on, an estimate stands in for the unattested sentinel
         --asked .tmp/asked.json --out .tmp/scores.json
     python scripts/estimate-zipf.py summary --asked .tmp/asked.json \
         --estimates .tmp/answers/*.json --scores .tmp/scores.json \
-        --model claude-opus-5-5 --run-url ... --summary-out .tmp/summary.md \
-        --comments-dir .tmp/comments
+        --model claude-opus-5-5 --run-url ... --summary-out .tmp/summary.md
 """
 from __future__ import annotations
 
@@ -55,11 +53,11 @@ ESTIMATES_PATH = ROOT / "src" / "data" / "estimated-zipf.json"
 ZIPF_MIN, ZIPF_MAX = -3.0, 8.0
 
 # Claude is asked for 25 words; this keeps a runaway answer from swamping the
-# PR, whose body and comments GitHub caps at 65,536 characters each.
+# PR body, which GitHub caps at 65,536 characters.
 REASON_MAX = 200
 BODY_MAX = 60_000
 
-# What the PR body shows when every word will not fit: the words that fall
+# The words the PR body shows besides the played ones: those that fall
 # furthest from 10.00, then an even spread across the Zipf bands.
 SAMPLE_SIZE = 100
 SAMPLE_TOP = 20
@@ -259,7 +257,7 @@ def _ranked(estimates: dict[str, Estimate]) -> list[tuple[str, Estimate]]:
     return sorted(estimates.items(), key=lambda kv: (-kv[1].zipf, kv[0]))
 
 
-def _table(rows: list[tuple[str, Estimate]], scores: dict, played: set[str], reason_max: int) -> list[str]:
+def _table(rows: list[tuple[str, Estimate]], scores: dict, reason_max: int) -> list[str]:
     lines = [
         "| Word | Zipf | Standard | Freeform | Why |",
         "| --- | ---: | ---: | ---: | --- |",
@@ -267,19 +265,19 @@ def _table(rows: list[tuple[str, Estimate]], scores: dict, played: set[str], rea
     for word, e in rows:
         shown = scores.get(word, {})
         reason = e.reason if len(e.reason) <= reason_max else e.reason[: reason_max - 1].rstrip() + "…"
-        mark = " ★" if word in played else ""
         lines.append(
-            f"| {word}{mark} | {e.zipf:.2f} | {_shown(shown.get('standard'))} | "
+            f"| {word} | {e.zipf:.2f} | {_shown(shown.get('standard'))} | "
             f"{_shown(shown.get('freeform'))} | {_cell(reason) or '—'} |"
         )
     return lines
 
 
 def sample(estimates: dict[str, Estimate], seed: str, size: int = SAMPLE_SIZE) -> list[tuple[str, Estimate]]:
-    """The words to review when there are too many to read: the SAMPLE_TOP that
-    fall furthest from 10.00, then the rest of `size` spread evenly across the
-    Zipf bands -- a band too small for its share gives the rest to the others.
-    Seeded by the batch, so the same run always samples the same words."""
+    """The words to review: the SAMPLE_TOP that fall furthest from 10.00, then
+    the rest of `size` spread evenly across the Zipf bands -- a band too small
+    for its share gives the rest to the others. Every word when there are no
+    more than `size`. Seeded by the batch, so the same run always samples the
+    same words."""
     ranked = _ranked(estimates)
     if len(ranked) <= size:
         return ranked
@@ -295,15 +293,16 @@ def sample(estimates: dict[str, Estimate], seed: str, size: int = SAMPLE_SIZE) -
     return sorted(picked, key=lambda kv: (-kv[1].zipf, kv[0]))
 
 
-def summary(
-    report: dict, estimates: dict[str, Estimate], scores: dict, model: str, run_url: str | None
-) -> tuple[str, list[str]]:
-    """The PR body and the comments that carry the full list when the body
-    cannot (none when it can)."""
+def summary(report: dict, estimates: dict[str, Estimate], scores: dict, model: str, run_url: str | None) -> str:
+    """The PR body: the batch at a glance, every estimate for a word players
+    have already banked at 10.00, and a sample of the rest to review. The full
+    list is not reproduced; it is the batch itself, in the diff."""
     candidates = report["candidates"]
     asked = [c["word"] for c in report.get("asked", candidates)]
     missing = [w for w in asked if w not in estimates]
-    played = {c["word"] for c in report.get("asked", candidates) if c.get("played")}
+    played_words = {c["word"] for c in report.get("asked", candidates) if c.get("played")}
+    played = {w: e for w, e in estimates.items() if w in played_words}
+    rest = {w: e for w, e in estimates.items() if w not in played_words}
     days = report.get("days", 1)
     scope = (
         f"the **{report['drop']}** drop on **{report['date']}**"
@@ -337,72 +336,67 @@ def summary(
     for low, high in BANDS:
         n = sum(1 for e in estimates.values() if low <= e.zipf < high)
         head.append(f"| {_band_label(low, high)} | {n} |")
-    columns = (
-        f"**Standard** and **Freeform** are the score each mode will show on {report['date']} "
-        "once this merges, computed by the game's own code, so Standard's fold is included; "
-        "— means that mode does not accept the word. Every one of these words scores 10.00 "
-        "today, and an estimate at or below the rarest measured word still does. **Why** is "
-        "Claude's reasoning, which is not stored in the data file."
-        + (" ★ marks a word players have already banked at 10.00." if played else "")
+    still = sum(
+        1 for w in estimates if (scores.get(w, {}).get("standard") or {}).get("score") == "10.00"
     )
+    head += [
+        "",
+        f"**{len(estimates) - still}** of them change score in Standard; the other {still} "
+        "are estimated at or below the rarest measured word and still score 10.00.",
+        "",
+        f"**Standard** and **Freeform** below are the score each mode will show on "
+        f"{report['date']} once this merges, computed by the game's own code, so Standard's "
+        "fold is included; — means that mode does not accept the word. **Why** is Claude's "
+        "reasoning, which is not stored in the data file.",
+    ]
+    picked = sample(rest, f"{report['date']}:{report['drop']}")
     tail = []
     if missing:
-        tail += ["", f"No estimate came back for {len(missing)} word(s); they keep the sentinel: {', '.join(missing)}"]
+        listed = ", ".join(missing) if len(missing) <= 200 else f"{len(missing)} words"
+        tail += ["", f"No estimate came back for {len(missing)} word(s); they keep the sentinel: {listed}"]
     if run_url:
         tail += ["", f"Run: {run_url}"]
 
-    ranked = _ranked(estimates)
-    full = "\n".join(head + ["", columns, ""] + _table(ranked, scores, played, REASON_MAX) + tail) + "\n"
-    if len(full) <= BODY_MAX:
-        return full, []
+    def body(reason_max: int) -> str:
+        lines = list(head)
+        if played:
+            lines += [
+                "",
+                f"### Already played at 10.00 ({len(played)})",
+                "",
+                "Words players have banked at the flat 10.00, so the ones whose scores they "
+                "will notice changing. Every one is listed.",
+                "",
+            ]
+            lines += _table(_ranked(played), scores, reason_max)
+        if picked:
+            lines += [
+                "",
+                f"### {'A sample of' if len(picked) < len(rest) else 'All'} {len(picked)} "
+                f"{'other ' if played else ''}word(s) to review",
+                "",
+            ]
+            if len(picked) < len(rest):
+                lines += [
+                    f"Of {len(rest)}: the {SAMPLE_TOP} highest estimates, then the rest spread "
+                    "evenly across the bands above. The rest are in the diff.",
+                    "",
+                ]
+            lines += _table(picked, scores, reason_max)
+        return "\n".join(lines + tail) + "\n"
 
-    # Too many words for one body: review a sample here, read the rest below.
-    picked = sample(estimates, f"{report['date']}:{report['drop']}")
-    if len(missing) > 200:
-        tail[1:2] = [f"No estimate came back for {len(missing)} word(s); they keep the sentinel."]
-    body = "\n".join(
-        head
-        + [
-            "",
-            f"### A sample of {len(picked)} to review",
-            "",
-            f"The {SAMPLE_TOP} highest estimates, then the rest spread evenly across the bands "
-            "above. Every word is in the comments below, highest first.",
-            "",
-            columns,
-            "",
-        ]
-        + _table(picked, scores, played, REASON_MAX)
-        + tail
-    ) + "\n"
-    rows = _table(ranked, scores, played, REASON_MAX)
-    header, rows = rows[:2], rows[2:]
-    parts: list[list[str]] = []
-    part: list[str] = []
-    for row in rows:
-        if part and len("\n".join(header + part + [row])) > BODY_MAX - 200:
-            parts.append(part)
-            part = []
-        part.append(row)
-    if part:
-        parts.append(part)
-    comments = [
-        f"**Every estimate, part {i} of {len(parts)}**\n\n" + "\n".join(header + p) + "\n"
-        for i, p in enumerate(parts, 1)
-    ]
-    return body, comments
+    # If the body would pass GitHub's limit, the reasons are what give way.
+    reason_max = REASON_MAX
+    while len(text := body(reason_max)) > BODY_MAX and reason_max > 20:
+        reason_max -= 20
+    return text
 
 
 def write_summary(args: argparse.Namespace) -> None:
     report, estimates = read_estimates(args)
     scores = json.loads(args.scores.read_text())
-    body, comments = summary(report, estimates, scores, args.model, args.run_url)
-    args.summary_out.write_text(body)
-    if args.comments_dir:
-        args.comments_dir.mkdir(parents=True, exist_ok=True)
-        for n, comment in enumerate(comments, 1):
-            (args.comments_dir / f"comment-{n:03d}.md").write_text(comment)
-    print(f"Wrote the summary and {len(comments)} comment(s) for {len(estimates)} estimate(s).")
+    args.summary_out.write_text(summary(report, estimates, scores, args.model, args.run_url))
+    print(f"Wrote the summary for {len(estimates)} estimate(s).")
 
 
 def main() -> None:
@@ -423,14 +417,13 @@ def main() -> None:
     r.add_argument("--model", required=True)
     r.add_argument("--run-url")
 
-    m = sub.add_parser("summary", help="write the PR body and comments")
+    m = sub.add_parser("summary", help="write the PR body")
     m.add_argument("--asked", required=True, type=Path)
     m.add_argument("--estimates", required=True, type=Path, nargs="+")
     m.add_argument("--scores", required=True, type=Path, help="scripts/estimated-scores.mts's output")
     m.add_argument("--model", required=True)
     m.add_argument("--run-url")
     m.add_argument("--summary-out", required=True, type=Path)
-    m.add_argument("--comments-dir", type=Path)
 
     args = parser.parse_args()
     {"prepare": prepare, "record": record, "summary": write_summary}[args.step](args)
