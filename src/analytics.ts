@@ -17,7 +17,7 @@ import type {
 } from "./game/types";
 import { loadPlayerId } from "./game/player";
 import { modeForDate, type GameMode } from "./game/mode";
-import { currentVisit, markSessionEngaged, type VisitOutcome } from "./game/visits";
+import { currentVisit, markSessionEngaged, markSessionInteracted, type VisitOutcome } from "./game/visits";
 import { markLook, markShare, type SessionTimeReport } from "./game/sessionTime";
 import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
@@ -590,6 +590,47 @@ export type EngagedVia = "guess" | "leaderboard" | "found_words";
  */
 export function trackVisitEngaged(outcome: VisitOutcome, via: EngagedVia = "guess") {
   send("visit_engaged", { ...visitProperties(outcome), via });
+}
+
+/** What can be pressed: a click anywhere else on the page is not a decision. */
+const PRESSABLE =
+  'button, a, input, select, textarea, label, summary, [role="button"], [role="link"], [role="tab"], [role="switch"], [role="menuitem"], [role="checkbox"]';
+
+/** Keys that only change what the next key means. */
+const MODIFIER_KEYS = new Set(["Shift", "Control", "Alt", "Meta", "CapsLock", "Fn"]);
+
+/**
+ * Record, once per session, that the visit did anything at all: the first press
+ * of any button, link, field or key. The engaged-visit funnel counts only a
+ * guess or a look; this is the broader "not an open-and-close", which is what
+ * the analytics page's engaged and idle visitor counts read. Carries the same
+ * params as `site_visit`, `puzzle_date` among them, so the today window can
+ * count it by puzzle.
+ *
+ * Listens in the capture phase so a control that stops propagation still
+ * counts, and stops listening after the first press or once the session has
+ * already reported one. Returns the cleanup for a React effect.
+ */
+export function watchFirstInteraction(): () => void {
+  if (typeof document === "undefined") return () => {};
+  const report = () => {
+    stop();
+    const outcome = markSessionInteracted();
+    if (outcome) send("visit_interacted", visitProperties(outcome));
+  };
+  const onClick = (e: MouseEvent) => {
+    if (e.target instanceof Element && e.target.closest(PRESSABLE)) report();
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (!MODIFIER_KEYS.has(e.key)) report();
+  };
+  function stop() {
+    document.removeEventListener("click", onClick, true);
+    document.removeEventListener("keydown", onKey, true);
+  }
+  document.addEventListener("click", onClick, true);
+  document.addEventListener("keydown", onKey, true);
+  return stop;
 }
 
 /**

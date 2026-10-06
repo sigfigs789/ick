@@ -27,6 +27,7 @@ const REPORT = {
   asOf: "2026-09-27",
   windowDays: 60,
   visitorsSince: "2026-09-20",
+  interactedSince: "2026-09-25",
   totals: {
     players: 200,
     plays: 900,
@@ -86,6 +87,8 @@ const REPORT = {
     visits: 1000,
     visitors: 250,
     visitsWithId: 900,
+    engagedVisitors: 200,
+    idleVisitors: 50,
     firstVisits: 300,
     engaged: 700,
     engagedByLooking: 60,
@@ -361,6 +364,27 @@ describe("AnalyticsPage", () => {
     expect(within(perVisitor as HTMLElement).getByText("3.6")).toBeInTheDocument();
     expect(within(perVisitor as HTMLElement).getByText("average, over 900 opens")).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Visitors" })).toBeInTheDocument();
+  });
+
+  it("puts engaged and idle web visitors in the headline", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+
+    const engaged = (await screen.findByText("Engaged visitors")).closest(".analytics__tile")!;
+    expect(within(engaged as HTMLElement).getByText("200")).toBeInTheDocument();
+    expect(within(engaged as HTMLElement).getByText("80% of them, pressed anything")).toBeInTheDocument();
+    const idle = screen.getByText("Opened, did nothing").closest(".analytics__tile")!;
+    expect(within(idle as HTMLElement).getByText("50")).toBeInTheDocument();
+    expect(within(idle as HTMLElement).getByText("20% of them")).toBeInTheDocument();
+    expect(screen.getByText("Web visitors")).toBeInTheDocument();
+  });
+
+  it("says when presses began counting, for a window that starts before them", async () => {
+    stubFetch({ ...REPORT, interactedSince: "2026-09-27" });
+    render(<AnalyticsPage />);
+
+    const engaged = (await screen.findByText("Engaged visitors")).closest(".analytics__tile")!;
+    expect(within(engaged as HTMLElement).getByText("80% of them; any press counted from 2026-09-27")).toBeInTheDocument();
   });
 
   it("says visitors have not been recorded rather than printing zero", async () => {

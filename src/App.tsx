@@ -27,6 +27,7 @@ import {
   trackLeaderboardOpened,
   trackSessionTime,
   trackVisit,
+  watchFirstInteraction,
   isReporting,
 } from "./analytics";
 import { recordVisit } from "./game/visits";
@@ -93,6 +94,8 @@ export default function App() {
     // recording whether the player is new or returning and where they came from.
     const visit = recordVisit(window.location.search);
     if (visit) trackVisit(visit);
+    // And whether the visit goes on to press anything at all, once per session.
+    return watchFirstInteraction();
   }, []);
 
   // Measure how long this session lasts, and how much of it comes after the

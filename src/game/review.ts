@@ -348,6 +348,11 @@ export interface AnalyticsReport {
   visitsSince: string | null;
   /** The day the first visit carrying a player id arrived: where visitor counts begin. */
   visitorsSince: string | null;
+  /**
+   * The first puzzle a press of any button or key is stamped with. Before it,
+   * engaged visitors only know guesses, looks, mode switches, finishes and shares.
+   */
+  interactedSince: string | null;
   totals: {
     players: number;
     plays: number;
@@ -430,6 +435,10 @@ export interface AnalyticsReport {
     visitors: number;
     /** The visits those browsers made: the numerator for visits per visitor. */
     visitsWithId: number;
+    /** Of those browsers, the ones that pressed anything at all once there. */
+    engagedVisitors: number;
+    /** The rest: opened the game and did nothing. Adds up to `visitors` with the above. */
+    idleVisitors: number;
     firstVisits: number;
     /** Visits that guessed, or opened the leaderboard or the found words. */
     engaged: number;
@@ -830,6 +839,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     windowDays: count(r.windowDays),
     visitsSince: text(r.visitsSince),
     visitorsSince: text(r.visitorsSince),
+    interactedSince: text(r.interactedSince),
     totals: {
       players: count(totals.players),
       plays: count(totals.plays),
@@ -905,6 +915,8 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       visits: count(funnel.visits),
       visitors: count(funnel.visitors),
       visitsWithId: count(funnel.visitsWithId),
+      engagedVisitors: count(funnel.engagedVisitors),
+      idleVisitors: count(funnel.idleVisitors),
       firstVisits: count(funnel.firstVisits),
       engaged: count(funnel.engaged),
       engagedByLooking: count(funnel.engagedByLooking),

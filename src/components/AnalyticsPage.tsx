@@ -217,6 +217,8 @@ function Report({
         />
       </div>
 
+      <VisitorTiles report={report} from={shown.from} eventSpan={eventSpan} />
+
       <Section
         title="Day by day"
         note="Hover the line to read any puzzle; click, use the arrow keys or pick a date to pin one. The change beside each number is against the puzzle before."
@@ -1861,6 +1863,36 @@ function Visitors({ report }: { report: AnalyticsReport }) {
         value={f.visitors ? dec(f.visitsWithId / f.visitors, 1) : "—"}
         sub={`average, over ${fmt(f.visitsWithId)} opens`}
       />
+    </div>
+  );
+}
+
+/**
+ * The web half of the headline: the distinct browsers that opened the game, and
+ * how many of them did anything once there -- pressed any button, link or key --
+ * against how many opened it and left. Read off the event log, so the app and
+ * the Reddit post, which send no visits, are not in it; the Players tile is.
+ * Before presses were recorded, engaged only knows guesses, looks, mode switches,
+ * finishes and shares, so a window that starts earlier says so.
+ */
+function VisitorTiles({ report, from, eventSpan }: { report: AnalyticsReport; from: string; eventSpan: string }) {
+  const f = report.funnel;
+  if (!report.visitorsSince) return null;
+  const share = (n: number) => (f.visitors ? `${pct(n / f.visitors)} of them` : "no visitors");
+  const partial = !report.interactedSince || report.interactedSince > from;
+  return (
+    <div className="analytics__tiles">
+      <Tile label="Web visitors" value={fmt(f.visitors)} sub={`distinct browsers, ${eventSpan}`} />
+      <Tile
+        label="Engaged visitors"
+        value={fmt(f.engagedVisitors)}
+        sub={
+          partial
+            ? `${share(f.engagedVisitors)}; any press counted ${report.interactedSince ? `from ${report.interactedSince}` : "once it ships"}`
+            : `${share(f.engagedVisitors)}, pressed anything`
+        }
+      />
+      <Tile label="Opened, did nothing" value={fmt(f.idleVisitors)} sub={share(f.idleVisitors)} />
     </div>
   );
 }

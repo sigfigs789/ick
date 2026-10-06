@@ -21,6 +21,7 @@ import {
   trackSessionTime,
   trackLeaderboardOpened,
   trackFoundWordsOpened,
+  watchFirstInteraction,
   setReporting,
   isReporting,
 } from "./analytics";
@@ -319,6 +320,48 @@ describe("looking at the boards and the finds", () => {
     const engaged = track.mock.calls.filter(([name]) => name === "visit_engaged");
     expect(engaged).toHaveLength(1);
     expect(engaged[0][1]).toMatchObject({ via: "found_words", visit_type: "first" });
+  });
+});
+
+describe("pressing anything", () => {
+  const interacted = () => track.mock.calls.filter(([name]) => name === "visit_interacted");
+
+  it("reports the first press of a button or key once per session", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    recordVisit("?s=reddit");
+    document.body.innerHTML = '<p id="text">words</p><button id="b"><span id="inner">Help</span></button>';
+    const stop = watchFirstInteraction();
+    try {
+      // A click on plain text is not a press.
+      document.getElementById("text")!.click();
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Shift" }));
+      expect(interacted()).toHaveLength(0);
+
+      document.getElementById("inner")!.click();
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+      expect(interacted()).toHaveLength(1);
+      expect(interacted()[0][1]).toMatchObject({ source: "reddit", visit_type: "first" });
+
+      // A reload in the same session does not report it again.
+      const again = watchFirstInteraction();
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "b" }));
+      again();
+      expect(interacted()).toHaveLength(1);
+    } finally {
+      stop();
+      document.body.innerHTML = "";
+    }
+  });
+
+  it("counts a key press", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    recordVisit("");
+    const stop = watchFirstInteraction();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+    stop();
+    expect(interacted()).toHaveLength(1);
   });
 });
 
