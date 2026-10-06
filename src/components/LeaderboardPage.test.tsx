@@ -409,12 +409,12 @@ describe("the leaderboard page", () => {
     );
   });
 
-  it("says a week counts each player's best five days", async () => {
+  it("says a week counts each player's best four days", async () => {
     stubFetch();
     render(<LeaderboardPage />);
 
     await waitFor(() =>
-      expect(screen.getByText("A week counts your best 5 days of 7")).toBeInTheDocument(),
+      expect(screen.getByText("A week counts your best 4 days of 7")).toBeInTheDocument(),
     );
   });
 
