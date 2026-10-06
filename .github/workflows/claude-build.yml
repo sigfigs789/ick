@@ -12,11 +12,9 @@ name: Build with Claude
 # branch, with Claude's own summary of the work as the body. Nothing is pushed
 # to main; the PR is reviewed and merged like any other.
 #
-# Needs one of these repository secrets (Settings -> Secrets -> Actions):
-#   CLAUDE_CODE_OAUTH_TOKEN -- bills a Claude subscription; make one with
-#                              `claude setup-token`
-#   ANTHROPIC_API_KEY       -- bills the Anthropic API
-# Without either the job says so and stops.
+# Runs on the Claude subscription, as sigfigs789/krausen's Claude workflows do:
+# it needs a CLAUDE_CODE_OAUTH_TOKEN repository secret (Settings -> Secrets ->
+# Actions), made with `claude setup-token`. Without it the job says so and stops.
 #
 # The PR is opened with the built-in GITHUB_TOKEN, and GitHub does not start
 # other workflows from that token's events -- so "Test" does not run on it on
@@ -61,13 +59,12 @@ jobs:
     timeout-minutes: 60
     env:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
     steps:
-      - name: Check for a Claude credential
+      - name: Check for the Claude subscription token
         run: |
-          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::Add a CLAUDE_CODE_OAUTH_TOKEN (from \`claude setup-token\`) or ANTHROPIC_API_KEY repository secret first."
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+            echo "::error::Add a CLAUDE_CODE_OAUTH_TOKEN repository secret (from \`claude setup-token\`) first."
             exit 1
           fi
 
@@ -98,7 +95,6 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           # The run's own token, so the action does not need the Claude GitHub
           # App installed.
           github_token: ${{ secrets.GITHUB_TOKEN }}
