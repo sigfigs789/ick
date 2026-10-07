@@ -48,7 +48,9 @@ name: Estimate unattested Zipf
 
 on:
   schedule:
-    - cron: "0 14 * * *"
+    # Off the hour, and a few minutes after the fold check: GitHub drops :00
+    # schedules under load (the first one, 2026-10-07, never fired).
+    - cron: "23 14 * * *"
   workflow_dispatch:
     inputs:
       date:

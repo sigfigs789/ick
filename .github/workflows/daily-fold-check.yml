@@ -29,9 +29,10 @@ name: Daily fold check
 
 on:
   schedule:
-    # 14:00 UTC is 7-8am in Denver, so "two days out" is the same puzzle
-    # whichever side of DST it is.
-    - cron: "0 14 * * *"
+    # 14:17 UTC is 7-8am in Denver, so "two days out" is the same puzzle
+    # whichever side of DST it is. Off the hour because GitHub drops :00
+    # schedules under load (the first one, 2026-10-07, never fired).
+    - cron: "17 14 * * *"
   workflow_dispatch:
     inputs:
       date:
