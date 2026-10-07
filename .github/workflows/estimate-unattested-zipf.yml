@@ -181,12 +181,20 @@ jobs:
 
       - name: Install Claude Code
         if: steps.find.outputs.count != '0'
-        run: npm install -g @anthropic-ai/claude-code
+        # The runner image ships an older `claude` ahead of npm's global bin on
+        # PATH (2.1.197, which the API refuses for Opus 5.5), so put the fresh
+        # install first and print what the next step will actually run.
+        run: |
+          npm install -g @anthropic-ai/claude-code@latest
+          echo "$(npm prefix -g)/bin" >> "$GITHUB_PATH"
+          which -a claude
+          "$(npm prefix -g)/bin/claude" --version
 
       - name: Estimate their Zipf with Claude
         if: steps.find.outputs.count != '0'
         run: |
           set -uo pipefail
+          claude --version
           mkdir -p .tmp/answers .tmp/logs
           # One request at a time. A request that fails is skipped -- its words
           # come out as having no estimate -- but three failures in a row (a
