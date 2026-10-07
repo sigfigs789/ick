@@ -15,8 +15,8 @@ name: Find rare words found online
 #      original word, the folded word, the original display score, the folded
 #      display score and, when unattested, Claude's estimate.
 #
-# The scheduled run only reports. A manual run with `add` checked also opens ONE
-# pull request adding the attested words to the dictionary with the "online"
+# Then it opens ONE pull request adding the attested words to the dictionary,
+# with that table in its body, under the "online"
 # provenance (scripts/online-words.txt) -- the same pipeline as the "Add a word"
 # action: scripts/manage-extra-word.py add --list online, a rarity refresh,
 # legacy re-alignment and score pinning. Unattested words are never added (they
@@ -24,7 +24,7 @@ name: Find rare words found online
 # note in add-word.yml).
 #
 #   gh workflow run find-online-words.yml --repo sigfigs789/ick -f date=2026-10-12
-#   gh workflow run find-online-words.yml --repo sigfigs789/ick -f add=true
+#   gh workflow run find-online-words.yml --repo sigfigs789/ick -f add=false   # report only
 #
 # Runs on the Claude subscription, as the other Claude workflows do: it needs the
 # CLAUDE_CODE_OAUTH_TOKEN repository secret, made with `claude setup-token`.
@@ -53,9 +53,9 @@ on:
           - claude-sonnet-5-5
           - claude-fable-5-1
       add:
-        description: Also open a PR adding the attested words to the dictionary
+        description: Open a PR adding the attested words to the dictionary (uncheck for a report only)
         required: false
-        default: false
+        default: true
         type: boolean
 
 permissions:
@@ -187,7 +187,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Add words and regenerate dictionary data
-        if: inputs.add && steps.find.outputs.count != '0'
+        if: (github.event_name == 'schedule' || inputs.add) && steps.find.outputs.count != '0'
         env:
           WORDS: ${{ steps.find.outputs.words }}
         run: |
@@ -217,12 +217,12 @@ jobs:
           done <<< "$WORDS"
 
       - name: Verify the added words are valid inputs
-        if: inputs.add && steps.find.outputs.count != '0'
+        if: (github.event_name == 'schedule' || inputs.add) && steps.find.outputs.count != '0'
         run: npm test -- --run src/game/dictionary.test.ts
 
       - name: Read the report for the PR
         id: body
-        if: inputs.add && steps.find.outputs.count != '0'
+        if: (github.event_name == 'schedule' || inputs.add) && steps.find.outputs.count != '0'
         run: |
           {
             echo "body<<BODY_EOF"
@@ -247,7 +247,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Open pull request
-        if: inputs.add && steps.find.outputs.count != '0'
+        if: (github.event_name == 'schedule' || inputs.add) && steps.find.outputs.count != '0'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
