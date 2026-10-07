@@ -187,7 +187,7 @@ const WORD_INDEX: ReadonlyMap<string, number> = new Map(WORDS.map((w, i) => [w, 
  *     + "-es", and "finessed" is `finesse` + "-d", not a doubled `fines`. 36
  *     curated words score rarer and "menseless" commoner. See
  *     REINFLECTION_START and `reinflectedResidue`.
- *   - on/after 2026-10-07 (the latest system): every measured score rises 0.3,
+ *   - on/after 2026-10-09 (the latest system): every measured score rises 0.3,
  *     the top of the band pressed under the 9.9 ceiling, so a word that showed
  *     8.7 shows 9.0 Elusive. Both modes. See SCORE_LIFT_START.
  * The puzzle date selects the `Scoring` profile; callers that omit a date get
@@ -1904,8 +1904,8 @@ const FREEFORM_SCORING: Scoring = { ...LATEST_SCORING, folds: false };
 const CORPUS_FREEFORM_SCORING: Scoring = { ...CORPUS_SCORING, folds: false };
 
 /**
- * The first puzzle whose measured scores are lifted by three tenths: 2026-10-07,
- * a Wednesday, so the week of 2026-10-04 mixes days before and after it. Both
+ * The first puzzle whose measured scores are lifted by three tenths: 2026-10-09,
+ * a Friday, so the week of 2026-10-04 mixes days before and after it. Both
  * modes; scores only, no fold moves.
  *
  * Elusive (9.0+) is where a find starts to feel like a find, and too few words
@@ -1919,7 +1919,7 @@ const CORPUS_FREEFORM_SCORING: Scoring = { ...CORPUS_SCORING, folds: false };
  * Labels read off the shown score (see `decadeRarity`), so they follow the lift
  * with no change of their own: more words land Elusive and Mythic.
  */
-export const SCORE_LIFT_START = "2026-10-07";
+export const SCORE_LIFT_START = "2026-10-09";
 // How far the lift raises a measured score, and the shown score (before it)
 // that the flat lift stops at. 8.7 + 0.3 lands exactly on Elusive's floor.
 const SCORE_LIFT = 0.3;

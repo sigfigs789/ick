@@ -187,6 +187,8 @@ interface RawEntry {
   playerId?: unknown;
   windowWord?: unknown;
   windowZipf?: unknown;
+  /** The puzzle the window word was found on; absent from an older server. */
+  windowDate?: unknown;
   score?: unknown;
   puzzles?: unknown;
   /**
@@ -225,7 +227,7 @@ function parseBoard(raw: unknown): BoardEntry[] {
  */
 function parseEntry(item: RawEntry | null, fallbackRank?: number): BoardEntry | null {
   if (!item || typeof item !== "object") return null;
-  const { rank, playerId, windowWord, windowZipf, score, puzzles } = item;
+  const { rank, playerId, windowWord, windowZipf, windowDate, score, puzzles } = item;
   if (typeof playerId !== "string" || typeof windowWord !== "string") return null;
   if (typeof score !== "number" || !Number.isFinite(score)) return null;
   const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
@@ -238,7 +240,11 @@ function parseEntry(item: RawEntry | null, fallbackRank?: number): BoardEntry | 
     playerId,
     name: nameFor(playerId, item.source),
     windowWord,
-    windowScore: scoreOf(windowWord, windowZipf),
+    windowScore: scoreOf(
+      windowWord,
+      windowZipf,
+      typeof windowDate === "string" && windowDate ? windowDate : undefined
+    ),
     score,
     puzzles: typeof puzzles === "number" && Number.isFinite(puzzles) ? puzzles : 0,
   };
@@ -286,11 +292,19 @@ function parseSelf(raw: unknown): BoardEntry | null {
  * different numbers if they found it under different systems. Both follow from
  * pricing by the puzzle, and the score this sits next to has always worked this
  * way: `total_score` is computed once, on the day, and never re-derived.
+ *
+ * The stored number is a Zipf, though, not a score, so turning it back into the
+ * number the finder saw needs the puzzle's rules as well: `foundOn`. Priced
+ * undated, the 0.3 lift went missing here -- "morus" read 8.9 on the board
+ * beside the 9.2 the game and the finds page showed. Undated only for a server
+ * older than the column.
  */
-function scoreOf(word: string, storedZipf: unknown): number {
-  if (typeof storedZipf === "number" && Number.isFinite(storedZipf)) return rarityScore(storedZipf);
+function scoreOf(word: string, storedZipf: unknown, foundOn: string | undefined): number {
+  if (typeof storedZipf === "number" && Number.isFinite(storedZipf)) {
+    return rarityScore(storedZipf, foundOn);
+  }
   const zipf = rarityFor(word)?.zipf;
-  return zipf === undefined ? 0 : rarityScore(zipf);
+  return zipf === undefined ? 0 : rarityScore(zipf, foundOn);
 }
 
 /**

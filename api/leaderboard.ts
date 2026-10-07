@@ -265,6 +265,8 @@ interface BoardRow {
   window_zipf: number | string | null;
   total_score: number | string;
   puzzles: number;
+  /** The puzzle `window_word` was found on. Absent before 20261007120000. */
+  window_date?: string | null;
 }
 
 /**
@@ -280,6 +282,8 @@ interface BoardEntry {
   /** The rarest word inside this board's window -- this week's find, weekly. */
   windowWord: string;
   windowZipf: number;
+  /** The puzzle the window word was found on, so the client prices it by that day's rules. */
+  windowDate?: string;
   score: number;
   puzzles: number;
 }
@@ -371,6 +375,9 @@ function toEntry(row: BoardRow, index: number): BoardEntry {
     playerId: String(row.player_id),
     windowWord: String(row.window_word),
     windowZipf: toNumber(row.window_zipf),
+    ...(typeof row.window_date === "string" && row.window_date
+      ? { windowDate: row.window_date.slice(0, 10) }
+      : {}),
     score: toNumber(row.total_score),
     puzzles: Number(row.puzzles) || 0,
   };
