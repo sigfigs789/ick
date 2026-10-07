@@ -26,6 +26,11 @@ mean what the word means? Hand each chunk to its own subagent and run them in
 parallel; give each one RUBRIC.md and its chunk, and have it return
 `word|same|different|unsure|reason` for every row.
 
+Run every subagent in the foreground (`run_in_background: false`), several in
+one message for parallelism, and keep going until both output files are
+written. This runs headless: the moment your turn ends the run is over, and a
+background subagent still working is killed with its verdicts.
+
 Collect every `different` into `scripts/fold-audit/out/daily/flagged.tsv`, tab
 separated, with the header `word	reason`. A `same` or `unsure` stays folding.
 

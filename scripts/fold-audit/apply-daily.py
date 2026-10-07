@@ -40,7 +40,11 @@ def main() -> None:
 
     folds = {r["word"]: r for r in read_tsv(pathlib.Path(args.folds)) if r["date"] == args.date}
     confirmed_path = pathlib.Path(args.confirmed)
-    confirmed = read_tsv(confirmed_path) if confirmed_path.exists() else []
+    # Claude writes confirmed.tsv even when it is empty, so a missing file means
+    # the judging never finished -- not that every fold was right.
+    if not confirmed_path.exists():
+        raise SystemExit(f"{confirmed_path} is missing: the judge did not finish, so nothing was checked.")
+    confirmed = read_tsv(confirmed_path)
 
     data = json.loads(EXEMPTIONS.read_text())
     taken = set(json.loads(OVERRIDES.read_text())) | set(json.loads(REVIEW_VERDICTS.read_text()))
