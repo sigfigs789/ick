@@ -883,8 +883,11 @@ export function indexEstimatedZipf(
   return index;
 }
 
+// Through `unknown`: once two batches estimate different words, the JSON's
+// inferred type gives each batch the other's words as `?: undefined`, and a
+// direct cast to Record<string, number> no longer type-checks.
 let ESTIMATED_ZIPF = indexEstimatedZipf(
-  (estimatedZipfData as { batches: EstimatedZipfBatch[] }).batches
+  (estimatedZipfData as unknown as { batches: EstimatedZipfBatch[] }).batches
 );
 
 /** Swap the estimates for a test's own. Tests only. */
