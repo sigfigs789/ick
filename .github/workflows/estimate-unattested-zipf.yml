@@ -181,14 +181,12 @@ jobs:
 
       - name: Install Claude Code
         if: steps.find.outputs.count != '0'
-        # The runner image ships an older `claude` ahead of npm's global bin on
-        # PATH (2.1.197, which the API refuses for Opus 5.5), so put the fresh
-        # install first and print what the next step will actually run.
+        # @latest, not the bare name: unpinned, the runner installed 2.1.197
+        # (npm's cached metadata, restored by setup-node's npm cache), which the
+        # API refuses for Opus 5.5, so every request failed.
         run: |
           npm install -g @anthropic-ai/claude-code@latest
-          echo "$(npm prefix -g)/bin" >> "$GITHUB_PATH"
-          which -a claude
-          "$(npm prefix -g)/bin/claude" --version
+          claude --version
 
       - name: Estimate their Zipf with Claude
         if: steps.find.outputs.count != '0'
