@@ -43,6 +43,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `ache`, costing 3.38 points. Flagged in the 2026-09-22 semantic audit (achees not an ache form) and confirmed on adversarial re-review (not a form of ache)."
   },
+  "achillize": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `achill` (achillize > achill), costing 0.94 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (achill is not a real base word) and confirmed on adversarial re-review (Achill is an Irish island, not a base)."
+  },
   "acquisible": {
     "since": "2026-09-27",
     "reason": "Folded onto `acquis`, costing 1.06 points. Flagged in the 2026-09-22 semantic audit (acquis unrelated to acquisible) and confirmed on adversarial re-review (acquis unrelated to acquire)."
@@ -901,6 +905,10 @@
   "bredes": {
     "since": "2026-09-27",
     "reason": "Folded onto `bred`, costing 3.82 points. Flagged in the 2026-09-22 semantic audit (brede is embroidery, unrelated) and confirmed on adversarial re-review (brede is embroidery, unrelated to bred)."
+  },
+  "brilles": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `brill` (brilles > brill), costing 2.57 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (brille is snake eye-scale, brill is fish) and confirmed on adversarial re-review (brille eye-scale is unrelated to brill fish)."
   },
   "broking": {
     "since": "2026-09-27",
@@ -4213,6 +4221,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `fil`, costing 0.82 points. Flagged in the 2026-09-22 semantic audit (fillies plural of filly, not fil) and confirmed on adversarial re-review (plural of filly, not fil)."
   },
+  "filly": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `fil` (filly > fil), costing 0.23 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (young female horse, not fil) and confirmed on adversarial re-review (filly is not fil plus -y)."
+  },
   "finaly": {
     "since": "2026-09-27",
     "reason": "Folded onto `fina`, costing 0.96 points. Flagged in the 2026-09-22 semantic audit (fina not a base word) and confirmed on adversarial re-review (fina is not a word)."
@@ -4648,6 +4660,10 @@
   "grilles": {
     "since": "2026-09-27",
     "reason": "Folded onto `grill`, costing 2.08 points. Flagged in the 2026-09-22 semantic audit (grille not plural of grill) and confirmed on adversarial re-review (grille distinct from grill)."
+  },
+  "grillest": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `grill` (grillest > grill), costing 3.66 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (grill isn't an adjective) and confirmed on adversarial re-review (grill has no adjective sense to compare)."
   },
   "grilses": {
     "since": "2026-09-27",
@@ -5435,9 +5451,21 @@
     "since": "2026-09-27",
     "reason": "Folded onto `like`, costing 7.71 points. Flagged in the 2026-09-22 semantic audit (from likely, not like) and confirmed on adversarial re-review (likely means probable, drifted)."
   },
+  "lilled": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `lil` (lilled > lil), costing 3.71 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (from verb lill, not lil) and confirmed on adversarial re-review (past tense of lill, not lil)."
+  },
   "lillies": {
     "since": "2026-09-27",
     "reason": "Folded onto `lil`, costing 2.71 points. Flagged in the 2026-09-22 semantic audit (lillies is lilies, base lily) and confirmed on adversarial re-review (lil is not the base)."
+  },
+  "lilling": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `lil` (lilling > lil), costing 3.71 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (from verb lill, not lil) and confirmed on adversarial re-review (present participle of lill, not lil)."
+  },
+  "lilly": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `lil` (lilly > lil), costing 0.47 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (variant of lily, not lil) and confirmed on adversarial re-review (lily variant, unrelated to lil)."
   },
   "limen": {
     "since": "2026-08-21",
@@ -5543,6 +5571,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `mam`, costing 3.11 points. Flagged in the 2026-09-22 semantic audit (Yiddish loanword, not mam) and confirmed on adversarial re-review (Yiddish loanword, unrelated to mam)."
   },
+  "mandrilled": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `mandrill` (mandrilled > mandrill), costing 0.80 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (from mandril (mandrel), not the baboon) and confirmed on adversarial re-review (mandril means mandrel, not the baboon)."
+  },
+  "mandrilling": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `mandrill` (mandrilling > mandrill), costing 0.80 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (from mandril (mandrel), not the baboon) and confirmed on adversarial re-review (mandril means mandrel, not the baboon)."
+  },
   "manes": {
     "since": "2026-09-27",
     "reason": "Folded onto `man`, costing 4.79 points. Flagged in the 2026-09-22 semantic audit (plural of mane, not man) and confirmed on adversarial re-review (plural of mane, not man)."
@@ -5582,6 +5618,10 @@
   "marriable": {
     "since": "2026-09-27",
     "reason": "Folded onto `marri`, costing 1.54 points. Flagged in the 2026-09-22 semantic audit (marri is not the base) and confirmed on adversarial re-review (marri is an unrelated tree)."
+  },
+  "marseilles": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `marseille` (marseilles > marseille), costing 0.48 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (cotton fabric, not plural of city) and confirmed on adversarial re-review (fabric sense, not the city name)."
   },
   "marver": {
     "since": "2026-09-27",
@@ -5711,9 +5751,21 @@
     "since": "2026-09-27",
     "reason": "Folded onto `poised`, costing 3.38 points. Flagged in the 2026-09-22 semantic audit (millipoise viscosity unit, not poised) and confirmed on adversarial re-review (viscosity unit versus balanced poise)."
   },
+  "millipoises": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `poised` (millipoises > poises > poise > poised), costing 3.08 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (final hop poised means composed) and confirmed on adversarial re-review (poise viscosity unit is unrelated to poised)."
+  },
   "millisteres": {
     "since": "2026-09-27",
     "reason": "Folded onto `ster`, costing 1.85 points. Flagged in the 2026-09-22 semantic audit (ster not the base; stere is) and confirmed on adversarial re-review (ster not the base; stere)."
+  },
+  "millworker": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `millwork` (millworker > millwork), costing 1.39 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (mill worker, not wood millwork) and confirmed on adversarial re-review (mill worker, not woodwork millwork)."
+  },
+  "millworkers": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `millwork` (millworkers > millworker > millwork), costing 1.23 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (mill worker, not wood millwork) and confirmed on adversarial re-review (mill worker, not woodwork millwork)."
   },
   "milly": {
     "since": "2026-09-27",
@@ -6002,6 +6054,14 @@
   "niffered": {
     "since": "2026-09-27",
     "reason": "Folded onto `niff`, costing 0.30 points. Flagged in the 2026-09-22 semantic audit (niffer is to barter, not niff) and confirmed on adversarial re-review (niffer barter unrelated to niff)."
+  },
+  "nilled": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `nil` (nilled > nil), costing 2.88 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (from verb nill, not nil) and confirmed on adversarial re-review (past tense of nill, not nil)."
+  },
+  "nilling": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `nil` (nilling > nil), costing 2.87 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (from verb nill, not nil) and confirmed on adversarial re-review (present participle of nill, not nil)."
   },
   "nimbies": {
     "since": "2026-09-27",
@@ -6459,6 +6519,10 @@
   "overingest": {
     "since": "2026-09-27",
     "reason": "Folded onto `over`, costing 7.21 points. Flagged in the 2026-09-22 semantic audit (from overing? dubious over-est) and confirmed on adversarial re-review (core is ingest, not over)."
+  },
+  "overkill": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `killed` (overkill > overkilled > killed), costing 3.16 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (now means excess, not killing) and confirmed on adversarial re-review (meaning drifted to excess, not killing)."
   },
   "overlent": {
     "since": "2026-09-27",
@@ -7843,6 +7907,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `rilled`, costing 1.10 points. Flagged in the 2026-09-22 semantic audit (plural of rille, not rill) and confirmed on adversarial re-review (rille overstripped to rill)."
   },
+  "rillest": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `rilled` (rillest > rill > rilled), costing 1.89 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (rill is noun, superlative nonsensical) and confirmed on adversarial re-review (rill noun has no superlative; rilled unrelated)."
+  },
   "rimes": {
     "since": "2026-09-27",
     "reason": "Folded onto `rim`, costing 2.00 points. Flagged in the 2026-09-22 semantic audit (rime is frost, not rim) and confirmed on adversarial re-review (rime is frost, not rim)."
@@ -8194,6 +8262,10 @@
   "shillalies": {
     "since": "2026-09-27",
     "reason": "Folded onto `shilla`, costing 1.10 points. Flagged in the 2026-09-22 semantic audit (base is shillaly, strip overshot) and confirmed on adversarial re-review (shilla overstripped from shillaly)."
+  },
+  "shillaly": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `shilla` (shillaly > shilla), costing 0.85 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (variant of shillelagh, not shilla) and confirmed on adversarial re-review (shillelagh variant, unrelated to shilla)."
   },
   "shimmable": {
     "since": "2026-09-27",
@@ -8946,6 +9018,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `til`, costing 0.45 points. Flagged in the 2026-09-22 semantic audit (tiles from tile, not til) and confirmed on adversarial re-review (tile unrelated to til)."
   },
+  "tillies": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `til` (tillies > tilly > til), costing 3.92 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (tilly unrelated to til sesame) and confirmed on adversarial re-review (tilly unrelated to til sesame)."
+  },
+  "tilly": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `til` (tilly > til), costing 1.51 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (not til plus -y) and confirmed on adversarial re-review (tilly is not til plus -y)."
+  },
   "tines": {
     "since": "2026-09-27",
     "reason": "Folded onto `tin`, costing 2.34 points. Flagged in the 2026-09-22 semantic audit (plural of tine, not tin) and confirmed on adversarial re-review (tine prong versus tin metal)."
@@ -9058,6 +9138,10 @@
   "trigones": {
     "since": "2026-09-27",
     "reason": "Folded onto `trigon`, costing 1.23 points. Flagged in the 2026-09-22 semantic audit (plural of trigone, not trigon) and confirmed on adversarial re-review (trigone differs from trigon)."
+  },
+  "trillest": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `trill` (trillest > trill), costing 2.12 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (slang trill (true/real), not sound) and confirmed on adversarial re-review (slang trill sense, not the sound)."
   },
   "trioles": {
     "since": "2026-09-27",
@@ -9319,9 +9403,24 @@
     "since": "2026-09-27",
     "reason": "Folded onto `decemvirate`, costing 0.72 points. Flagged in the 2026-09-22 semantic audit (un- prefix negates) and confirmed on adversarial re-review (undecim means eleven, not un-)."
   },
+  "undecillion": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `decillion` (undecillion > decillion), costing 0.05 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (10^36, not negated decillion) and confirmed on adversarial re-review (a distinct number, not a decillion form).",
+    "scope": "prefix"
+  },
   "undecillions": {
     "since": "2026-09-27",
     "reason": "Folded onto `decillion`, costing 0.08 points. Flagged in the 2026-09-22 semantic audit (un- is eleven, not negation) and confirmed on adversarial re-review (undec- means eleven)."
+  },
+  "undecillionth": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `decillionth` (undecillionth > decillionth), costing 0.10 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (un- means eleven, different number) and confirmed on adversarial re-review (un- means eleven, so a different number).",
+    "scope": "prefix"
+  },
+  "undecillionths": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `decillionth` (undecillionths > undecillionth > decillionth), costing 0.10 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (un- means eleven, different number) and confirmed on adversarial re-review (un- means eleven, so a different number).",
+    "scope": "prefix"
   },
   "underacinated": {
     "since": "2026-09-27",
@@ -9952,6 +10051,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `until`, costing 6.50 points. Flagged in the 2026-09-22 semantic audit (until is not tile-based) and confirmed on adversarial re-review (from tile; until unrelated)."
   },
+  "untilled": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `until` (untilled > until), costing 5.94 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (not tilled, not until) and confirmed on adversarial re-review (untilled comes from till, not until)."
+  },
+  "untilling": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `until` (untilling > until), costing 6.20 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (from till, not until) and confirmed on adversarial re-review (untilling comes from till, not until)."
+  },
   "untoed": {
     "since": "2026-09-27",
     "reason": "Folded onto `unto`, costing 4.12 points. Flagged in the 2026-09-22 semantic audit (un-toe-ed, not unto) and confirmed on adversarial re-review (from toe, not unto)."
@@ -9971,6 +10078,16 @@
   "untwines": {
     "since": "2026-09-27",
     "reason": "Folded onto `twin`, costing 4.63 points. Flagged in the 2026-09-22 semantic audit (untwines from twine, not twin) and confirmed on adversarial re-review (twine is not twin)."
+  },
+  "unvigintillion": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `vigintillion` (unvigintillion > vigintillion), costing 0.02 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (un- means one; distinct number) and confirmed on adversarial re-review (un- means one, so a distinct number).",
+    "scope": "prefix"
+  },
+  "unvigintillions": {
+    "since": "2026-10-09",
+    "reason": "Folded onto `vigintillion` (unvigintillions > unvigintillion > vigintillion), costing 0.02 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (un- means one; distinct number) and confirmed on adversarial re-review (un- means one, so a distinct number).",
+    "scope": "prefix"
   },
   "unwhippable": {
     "since": "2026-09-27",
