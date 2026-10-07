@@ -24,7 +24,7 @@ const batch = (since: string, zipf: Record<string, number>, model = "claude-opus
 
 afterEach(() => {
   setEstimatedZipfForTests(
-    (estimatedZipfData as { batches: Parameters<typeof setEstimatedZipfForTests>[0] }).batches
+    (estimatedZipfData as unknown as { batches: Parameters<typeof setEstimatedZipfForTests>[0] }).batches
   );
 });
 
@@ -89,7 +89,7 @@ describe("Claude's estimates in scoring", () => {
 });
 
 describe("the shipped estimates", () => {
-  const { batches } = estimatedZipfData as {
+  const { batches } = estimatedZipfData as unknown as {
     batches: { since: string; drop: string; model: string; zipf: Record<string, number> }[];
   };
 
