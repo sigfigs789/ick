@@ -10,18 +10,22 @@ whose spelling contains the drop substring, and keeps only the ones that are:
   - not blocklisted,
   - not already playable (absent from dictionary.json and every provenance list),
   - attested by the frequency waterfall (wordfreq -> Norvig -> Google Books), so
-    their rarity is measured rather than a guess -- no --forced needed, and
+    their rarity is measured rather than a guess -- no --forced needed -- unless
+    --include-unattested keeps the ones nothing measures too, and
   - very rare: waterfall Zipf at or below --max-zipf.
 
 Every surviving candidate is printed to stdout (rarest first), one per line, for
-the "Add rare words found online" workflow to feed into
+the "Find rare words found online" workflow (with `add`) to feed into
 scripts/manage-extra-word.py -- exactly like a maintainer running the "Add a
 word" action once per word. Diagnostics go to stderr so stdout stays a clean
-word list. Pass --drop-out PATH to also write the resolved drop to a file.
+word list. Pass --drop-out PATH to also write the resolved drop to a file, and
+--json-out PATH to write every candidate with its Zipf (null when unattested)
+for scripts/online-word-folds.mts to score.
 
 Run:
     python3 scripts/find-online-words.py                    # tomorrow's drop
     python3 scripts/find-online-words.py --date 2026-08-20 --max-zipf 2.5
+    python3 scripts/find-online-words.py --include-unattested --json-out .tmp/online.json
 """
 import argparse
 import json
@@ -121,6 +125,17 @@ def main() -> None:
         type=Path,
         help="also write the resolved drop to this file",
     )
+    parser.add_argument(
+        "--include-unattested",
+        action="store_true",
+        help="also keep words no frequency corpus measures (for the scoring report; "
+        "they would need --forced to be added, so stdout still leaves them out)",
+    )
+    parser.add_argument(
+        "--json-out",
+        type=Path,
+        help="also write the candidates, with their Zipf, to this JSON file",
+    )
     args = parser.parse_args()
 
     if args.target_date:
@@ -146,6 +161,7 @@ def main() -> None:
 
     waterfall = FrequencyWaterfall()
     candidates: list[tuple[float, str]] = []
+    unattested: list[str] = []
     seen: set[str] = set()
     skipped = {
         "malformed": 0,
@@ -179,6 +195,8 @@ def main() -> None:
         # Unattested words would need --forced (a guessed rarity); skip them.
         if zipf is None:
             skipped["unattested"] += 1
+            if args.include_unattested:
+                unattested.append(word)
             continue
         # Words above the threshold are not rare enough.
         if zipf > args.max_zipf:
@@ -198,6 +216,16 @@ def main() -> None:
     for zipf, word in candidates:
         log(f"  {word} (Zipf {zipf:.2f})")
         print(word)
+    if args.include_unattested:
+        log(f"{len(unattested)} unattested word(s) kept for the report: {', '.join(sorted(unattested))}")
+    if args.json_out:
+        report = {
+            "date": target.isoformat(),
+            "drop": drop,
+            "words": [{"word": word, "zipf": round(zipf, 2)} for zipf, word in candidates]
+            + [{"word": word, "zipf": None} for word in sorted(unattested)],
+        }
+        args.json_out.write_text(json.dumps(report, indent=2) + "\n")
 
 
 if __name__ == "__main__":

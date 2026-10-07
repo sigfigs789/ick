@@ -3,9 +3,9 @@ name: Add a word
 # One workflow to hand-add a single word to any provenance list, chosen below:
 #   list=curated   -> a maintainer-curated word (scripts/extra-words.txt)
 #   list=suggested -> an accepted player suggestion (scripts/suggested-words.txt)
-#   list=online    -> a rare word found online (scripts/online-words.txt); the
-#                     scheduled "Add rare words found online" workflow adds these
-#                     automatically, but this lets a maintainer add one by hand.
+#   list=online    -> a rare word found online (scripts/online-words.txt); a
+#                     manual "Find rare words found online" run with `add` adds
+#                     these in bulk, but this lets a maintainer add one by hand.
 # For each, forced=false requires the word to be scored; forced=true adds it even
 # if no corpus scores it (it lands at the reserved 10.0 / Legend).
 #

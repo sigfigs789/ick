@@ -1,23 +1,41 @@
 name: Find rare words found online
 
-# Read-only preview for the upcoming drop. Run this by hand (Actions tab ->
-# "Find rare words found online" -> Run workflow). It resolves the drop coming
-# up the following day, searches online (Datamuse) for very rare words that
-# contain it, and REPORTS them in the run log (and run summary).
+# Every day, looks at the drop of the puzzle two days out (UTC), searches online
+# (Datamuse) for very rare words that contain it, and reports how each one would
+# score in Standard:
 #
-# Unlike "Add rare words found online", this workflow only *finds* the words --
-# nothing is written, no data is regenerated, and no pull request is opened. Use
-# it to preview what that action would add. To actually add them, run
-# "Add rare words found online".
+#   1. scripts/find-online-words.py lists the Datamuse words containing the drop
+#      that the dictionary does not already hold, at or below `max_zipf`,
+#      including the ones no frequency corpus measures (unattested).
+#   2. `scripts/online-word-folds.mts prepare` runs each through the game's own
+#      fold (Standard) and writes Claude's request.
+#   3. Claude confirms or corrects the base each word should score as, and
+#      estimates a Zipf for every unattested word.
+#   4. `scripts/online-word-folds.mts report` tables, in the run summary, the
+#      original word, the folded word, the original display score, the folded
+#      display score and, when unattested, Claude's estimate.
 #
-# Only words a frequency corpus attests are reported (their rarity is measured,
-# not guessed), matching the add action's gate.
+# The scheduled run only reports. A manual run with `add` checked also opens ONE
+# pull request adding the attested words to the dictionary with the "online"
+# provenance (scripts/online-words.txt) -- the same pipeline as the "Add a word"
+# action: scripts/manage-extra-word.py add --list online, a rarity refresh,
+# legacy re-alignment and score pinning. Unattested words are never added (they
+# would need --forced); it does not rebuild from the ESDB/SCOWL source (see the
+# note in add-word.yml).
+#
+#   gh workflow run find-online-words.yml --repo sigfigs789/ick -f date=2026-10-12
+#   gh workflow run find-online-words.yml --repo sigfigs789/ick -f add=true
+#
+# Runs on the Claude subscription, as the other Claude workflows do: it needs the
+# CLAUDE_CODE_OAUTH_TOKEN repository secret, made with `claude setup-token`.
 
 on:
+  schedule:
+    - cron: "0 14 * * *"
   workflow_dispatch:
     inputs:
       date:
-        description: Target drop date (YYYY-MM-DD). Defaults to tomorrow (UTC).
+        description: Puzzle date (YYYY-MM-DD). Defaults to two days from today (UTC).
         required: false
         type: string
       max_zipf:
@@ -25,61 +43,224 @@ on:
         required: false
         default: "2.5"
         type: string
+      model:
+        description: Claude model to judge folds and estimate with
+        required: false
+        default: claude-opus-5-5
+        type: choice
+        options:
+          - claude-opus-5-5
+          - claude-sonnet-5-5
+          - claude-fable-5-1
+      add:
+        description: Also open a PR adding the attested words to the dictionary
+        required: false
+        default: false
+        type: boolean
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: find-online-words
+  cancel-in-progress: false
 
 jobs:
   find-online-words:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      MODEL: ${{ inputs.model || 'claude-opus-5-5' }}
+
     steps:
+      - name: Check for the Claude subscription token
+        run: |
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+            echo "::error::Add a CLAUDE_CODE_OAUTH_TOKEN repository secret (from \`claude setup-token\`) first."
+            exit 1
+          fi
+
       - name: Check out WordInk
         uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install frequency dependency
-        run: python -m pip install wordfreq==3.1.1
+      - name: Install dependencies
+        run: |
+          python -m pip install wordfreq==3.1.1
+          npm ci
 
-      - name: Find rare words for the upcoming drop
+      - name: Pick the puzzle
+        id: puzzle
         env:
-          TARGET_DATE: ${{ inputs.date }}
-          MAX_ZIPF: ${{ inputs.max_zipf }}
+          INPUT_DATE: ${{ inputs.date }}
+        run: |
+          date="${INPUT_DATE:-$(date -u -d '+2 days' +%F)}"
+          if ! [[ "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+            echo "::error::date must be YYYY-MM-DD, got '$date'"
+            exit 1
+          fi
+          echo "date=$date" >> "$GITHUB_OUTPUT"
+
+      - name: Find rare words for the drop
+        id: find
+        env:
+          DATE: ${{ steps.puzzle.outputs.date }}
+          MAX_ZIPF: ${{ inputs.max_zipf || '2.5' }}
         run: |
           set -euo pipefail
           mkdir -p .tmp
-          DATE_FLAG=""
-          if [ -n "$TARGET_DATE" ]; then DATE_FLAG="--date $TARGET_DATE"; fi
-          # find-online-words.py prints one word per line to stdout and its
-          # per-word Zipf diagnostics to stderr; capture stdout so we can both
-          # log the words and count them.
-          python scripts/find-online-words.py $DATE_FLAG \
-            --max-zipf "${MAX_ZIPF:-2.5}" \
+          # stdout is the attested words alone (what `add` may add); the JSON
+          # holds every word, unattested ones included, for the report.
+          python scripts/find-online-words.py --date "$DATE" \
+            --max-zipf "$MAX_ZIPF" \
+            --include-unattested --json-out .tmp/online.json \
             --drop-out .tmp/drop.txt > .tmp/online-words.txt
-          DROP="$(cat .tmp/drop.txt)"
-          COUNT="$(grep -c . .tmp/online-words.txt || true)"
-
+          echo "drop=$(cat .tmp/drop.txt)" >> "$GITHUB_OUTPUT"
+          echo "count=$(grep -c . .tmp/online-words.txt || true)" >> "$GITHUB_OUTPUT"
+          echo "total=$(jq '.words | length' .tmp/online.json)" >> "$GITHUB_OUTPUT"
           {
-            echo "## Rare online words for the \`$DROP\` drop"
-            echo
-            if [ "$COUNT" -eq 0 ]; then
-              echo "No new rare words found for drop \`$DROP\`; nothing to add."
-            else
-              echo "Found **$COUNT** new rare word(s). \"Add rare words found online\" would add these:"
-              echo
-              echo '```'
-              cat .tmp/online-words.txt
-              echo '```'
-            fi
-          } | tee -a "$GITHUB_STEP_SUMMARY"
-
-          echo "----------------------------------------"
-          if [ "$COUNT" -eq 0 ]; then
-            echo "No new rare words found for drop '$DROP'."
-          else
-            echo "Found $COUNT new rare word(s) for drop '$DROP':"
+            echo "words<<WORDS_EOF"
             cat .tmp/online-words.txt
+            echo "WORDS_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Fold the words and write Claude's request
+        if: steps.find.outputs.total != '0'
+        run: |
+          ./node_modules/.bin/vite-node scripts/online-word-folds.mts -- prepare \
+            --words .tmp/online.json --out .tmp/folds.json \
+            --request .tmp/request.md --answer .tmp/answer.json
+
+      - name: Install Claude Code
+        if: steps.find.outputs.total != '0'
+        run: npm install -g @anthropic-ai/claude-code
+
+      # A failed answer still leaves a report -- the rules' folds, with every
+      # word marked as having no answer from Claude -- so it does not stop the job.
+      - name: Judge the folds and estimate the unattested words with Claude
+        if: steps.find.outputs.total != '0'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          claude -p "Read .tmp/request.md and do exactly what it asks. Do not change any other file and do not run git or gh." \
+            --model "$MODEL" --max-turns 40 \
+            --allowedTools "Read,Write,WebSearch,WebFetch" \
+            > .tmp/claude.log 2>&1 || { echo "::warning::Claude failed: $(tail -c 500 .tmp/claude.log)"; exit 1; }
+
+      - name: Report
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.find.outputs.total }}" = "0" ]; then
+            echo "No new rare words found online for the \`${{ steps.find.outputs.drop }}\` drop (${{ steps.puzzle.outputs.date }})." \
+              | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
+          ./node_modules/.bin/vite-node scripts/online-word-folds.mts -- report \
+            --folds .tmp/folds.json --answer .tmp/answer.json --out .tmp/report.md
+          cat .tmp/report.md >> "$GITHUB_STEP_SUMMARY"
+          cat .tmp/report.md
+
+      - name: Keep the report
+        if: steps.find.outputs.total != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: online-words-${{ steps.puzzle.outputs.date }}
+          path: |
+            .tmp/online.json
+            .tmp/folds.json
+            .tmp/answer.json
+            .tmp/report.md
+          if-no-files-found: ignore
+
+      - name: Add words and regenerate dictionary data
+        if: inputs.add && steps.find.outputs.count != '0'
+        env:
+          WORDS: ${{ steps.find.outputs.words }}
+        run: |
+          set -euo pipefail
+          # Add each attested word through the same path as the "Add a word"
+          # action. No --forced: unattested words never reach this list.
+          while IFS= read -r word; do
+            [ -z "$word" ] && continue
+            python scripts/manage-extra-word.py add "$word" --list online
+          done <<< "$WORDS"
+
+          # Grow the dictionary by exactly the added words (manage-extra-word.py
+          # inserts each into dictionary.json in place); we deliberately do NOT
+          # rebuild the whole list from the ESDB/SCOWL source, whose unpinned
+          # upstream made every run silently re-size and re-score the entire
+          # dictionary and broke align-legacy. Grade the deep tail (wordfreq ->
+          # Norvig -> Google Books waterfall; no ESDB needed), then keep the frozen
+          # legacy rarity arrays index-aligned with the grown dictionary -- one
+          # align-legacy call inserts a placeholder for every added word.
+          python scripts/generate-data.py --refresh-rarity
+          python scripts/manage-extra-word.py align-legacy $WORDS
+          python scripts/manage-extra-word.py update-size-test
+          # Log each word's Zipf + rarity score and pin them in a test.
+          while IFS= read -r word; do
+            [ -z "$word" ] && continue
+            python scripts/manage-extra-word.py record-word "$word" --list online
+          done <<< "$WORDS"
+
+      - name: Verify the added words are valid inputs
+        if: inputs.add && steps.find.outputs.count != '0'
+        run: npm test -- --run src/game/dictionary.test.ts
+
+      - name: Read the report for the PR
+        id: body
+        if: inputs.add && steps.find.outputs.count != '0'
+        run: |
+          {
+            echo "body<<BODY_EOF"
+            echo "Adds the rare words found online (via the Datamuse API) that contain the"
+            echo "**${{ steps.find.outputs.drop }}** drop of the ${{ steps.puzzle.outputs.date }} puzzle to the"
+            echo "**online** provenance list (\`scripts/online-words.txt\`), and regenerates the"
+            echo "dictionary and rarity mappings. Only the attested words are added:"
+            echo
+            echo '```'
+            cat .tmp/online-words.txt
+            echo '```'
+            echo
+            echo "Each word's Zipf and rarity score are pinned in a test; the dictionary-size"
+            echo "test and \`rarity-legacy.json\` were updated to match."
+            echo
+            cat .tmp/report.md
+            echo
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            echo "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+            echo "BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open pull request
+        if: inputs.add && steps.find.outputs.count != '0'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
+          branch: automated/add-online-words-${{ github.run_id }}
+          delete-branch: true
+          commit-message: "Add ${{ steps.find.outputs.count }} online rare word(s) for the ${{ steps.find.outputs.drop }} drop"
+          title: "Add online rare words for the ${{ steps.find.outputs.drop }} drop"
+          body: ${{ steps.body.outputs.body }}
+          add-paths: |
+            scripts/online-words.txt
+            src/data/dictionary.json
+            src/data/rarity.json
+            src/data/rarity-legacy.json
+            src/data/rejection-metadata.json
+            src/game/dictionary.test.ts
