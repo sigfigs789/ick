@@ -584,7 +584,7 @@ function FoundWords({
               <span className="found-words__word">{found.word}</span>
               {/* Dated like the label is (see priceFind), or the number falls back
                   to the newest undated profile while the rank reads the
-                  puzzle's: a 9.3 badged Mythic under the 2026-10-07 lift. */}
+                  puzzle's: a 9.3 badged Mythic under the 0.3 lift. */}
               <RarityBadge
                 rarity={found.rarity}
                 zipf={found.zipf}

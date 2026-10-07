@@ -117,13 +117,13 @@ describe("recent finds", () => {
 
   it("prices the badge's number by the puzzle the word was found on, like its rank", async () => {
     // The rank came from the find's own puzzle and the number from the newest
-    // undated profile, so on the day measured scores were lifted the two
-    // disagreed: "drudging" showed 7.7 under an Extremely Rare badge (8.0 is
-    // its lifted score), and a 9.3 in Freeform wore Mythic.
+    // undated profile, so once measured scores were lifted the two disagreed:
+    // "drudging" showed 7.7 under an Extremely Rare badge (8.0 is its lifted
+    // score), and a 9.3 in Freeform wore Mythic.
     vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-10-07T18:00:00Z"));
+    vi.setSystemTime(new Date("2026-10-09T18:00:00Z"));
     stubFetch([
-      { word: "drudging", zipf: 2.61, finders: 1, foundOn: "2026-10-07" },
+      { word: "drudging", zipf: 2.61, finders: 1, foundOn: "2026-10-09" },
     ]);
     render(<FoundWordsPage />);
 
