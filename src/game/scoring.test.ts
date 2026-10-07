@@ -201,3 +201,38 @@ describe("the 0.3 lift (from 2026-10-07)", () => {
     expect(rarityScore(zipfAt87, "2026-10-04")).toBe(8.7);
   });
 });
+
+describe("the badge agrees with the number beside it", () => {
+  // The rank is read off the shown score, so a word is Mythic only when it shows
+  // 9.5 or more and Elusive only from 9.0. Every lift or rescale has to move the
+  // number and the label together; on 2026-10-07 the found-words page showed the
+  // unlifted number under the lifted label ("drudging" 9.3 Mythic, "rup" 8.7
+  // Elusive), which reads as a lowered threshold.
+  function rankForShown(shown: number): string {
+    if (shown >= 9.9) return "Legend";
+    if (shown >= 9.5) return "Mythic";
+    if (shown >= 9) return "Elusive";
+    if (shown >= 8) return "Extremely Rare";
+    if (shown >= 7) return "Rare";
+    if (shown >= 6) return "Uncommon";
+    if (shown >= 5) return "Common";
+    return "Very Common";
+  }
+
+  // From DECADE_BANDS_START, when every label began keying off the shown score.
+  const DATES = ["2026-08-27", "2026-09-20", "2026-10-04", "2026-10-06", "2026-10-07", "2027-03-01"];
+
+  for (const date of DATES) {
+    for (const mode of ["standard", "freeform"] as const) {
+      it(`on ${date} in ${mode}`, () => {
+        for (let z = -1; z <= 8; z += 0.005) {
+          const shown = Number(formatRarityScore(z, date));
+          expect(
+            rarityForZipf(z, date, mode),
+            `Zipf ${z.toFixed(3)} shows ${shown}`
+          ).toBe(rankForShown(shown));
+        }
+      });
+    }
+  }
+});
