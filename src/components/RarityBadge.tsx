@@ -22,8 +22,13 @@ interface Props {
   rarity: Rarity;
   /** Precomputed Zipf frequency -- converted to a rarity score (higher = rarer) for display. */
   zipf?: number;
-  /** Puzzle date, so the score uses the scoring system in effect that day. */
-  date?: string;
+  /**
+   * Puzzle date, so the score uses the scoring system in effect that day.
+   * Required, though it may be undefined: the label beside the number was
+   * priced by some puzzle's system, and a badge that silently fell back to the
+   * undated one showed the pre-lift 9.3 under a Mythic label (2026-10-07).
+   */
+  date: string | undefined;
 }
 
 export function RarityBadge({ rarity, zipf, date }: Props) {

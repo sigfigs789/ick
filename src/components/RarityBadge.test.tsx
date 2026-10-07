@@ -24,14 +24,14 @@ const BADGES: ReadonlyArray<[rarity: Rarity, className: string, tag: RegExp]> = 
 
 describe("RarityBadge", () => {
   it("renders Legend as the distinct black badge tier", () => {
-    render(<RarityBadge rarity="Legend" zipf={0.4} />);
+    render(<RarityBadge rarity="Legend" zipf={0.4} date={undefined} />);
 
     const badge = screen.getByText(/legend/i);
     expect(badge).toHaveClass("rarity--legend");
   });
 
   it.each(BADGES)("renders %s with its own color class and label", (rarity, className, tag) => {
-    const { container } = render(<RarityBadge rarity={rarity} />);
+    const { container } = render(<RarityBadge rarity={rarity} date={undefined} />);
     const badge = container.querySelector(".rarity-badge")!;
     expect(badge).toHaveClass(className);
     expect(badge.textContent).toMatch(tag);
