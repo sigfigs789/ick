@@ -399,6 +399,32 @@ describe("reading the boards", () => {
     expect(boards.daily[0].windowScore).not.toBe(rarityScore(5.45));
   });
 
+  it("prices the find by the puzzle it was found on, so the board shows the game's number", async () => {
+    // The row's Zipf alone is not the number the finder saw: from the 0.3 lift
+    // on, the same Zipf scores higher. Priced undated, a word shown 9.5 Mythic
+    // in the game and on the finds page read 9.3 here (and "morus", 9.2, read
+    // 8.9).
+    stubFetch(
+      boardsResponse({
+        daily: [
+          {
+            rank: 1,
+            playerId: "11111111-1111-4111-8111-111111111111",
+            windowWord: "drudging",
+            windowZipf: 1.44,
+            windowDate: "2026-10-09",
+            score: 9.47,
+            puzzles: 1,
+          },
+        ],
+      }),
+    );
+
+    const boards = await fetchBoards("2026-10-09");
+    expect(boards.daily[0].windowScore).toBe(9.47);
+    expect(rarityScore(1.44)).toBe(9.32);
+  });
+
   it("prices a row that arrived without a frequency from the dictionary", async () => {
     // The one case left for a fresh lookup: a row with no stored number at all.
     stubFetch(

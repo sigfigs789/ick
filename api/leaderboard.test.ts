@@ -288,7 +288,9 @@ describe("api/leaderboard submissions", () => {
 describe("api/leaderboard reads", () => {
   const OPEN = {
     weekly: [
-      { rank: 1, player_id: PLAYER, window_word: "inkling", window_zipf: "2.9", total_score: "24.6", puzzles: 1 },
+      // window_date is the puzzle the window word came from, so the client can
+      // price it by that day's rules; the allTime rows below predate the column.
+      { rank: 1, player_id: PLAYER, window_word: "inkling", window_zipf: "2.9", total_score: "24.6", puzzles: 1, window_date: "2026-08-25" },
     ],
     allTime: [
       { rank: 1, player_id: PLAYER, window_word: "asphyxiate", window_zipf: "2.09", total_score: "180.2", puzzles: 9 },
@@ -322,7 +324,7 @@ describe("api/leaderboard reads", () => {
       // the rarest word inside this board's window -- this week's find on the
       // weekly board. Scores are absent on purpose; the client prices words.
       weekly: [
-        { rank: 1, playerId: PLAYER, windowWord: "inkling", windowZipf: 2.9, score: 24.6, puzzles: 1 },
+        { rank: 1, playerId: PLAYER, windowWord: "inkling", windowZipf: 2.9, windowDate: "2026-08-25", score: 24.6, puzzles: 1 },
       ],
       // Nobody asked who they were, so there is no row from below the cut.
       weeklySelf: null,
