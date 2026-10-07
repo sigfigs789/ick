@@ -30,6 +30,9 @@ describe("routes", () => {
     expect(routeFor("/analytics")).toBe("analytics");
     expect(routeFor("/analytics/")).toBe("analytics");
     expect(pathFor("analytics")).toBe("/analytics");
+    expect(routeFor("/help")).toBe("help");
+    expect(routeFor("/help/")).toBe("help");
+    expect(pathFor("help")).toBe("/help");
   });
 
   it("treats anything else as the game, rather than a client-rendered 404", () => {

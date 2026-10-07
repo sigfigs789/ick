@@ -5069,3 +5069,42 @@ h2 {
   opacity: 0.45;
   cursor: default;
 }
+
+/* /help: every page, one per row. */
+.help__section {
+  margin-bottom: 1.6rem;
+}
+.help__heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.help__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.help__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.help__link {
+  font-weight: 700;
+  color: inherit;
+}
+.help__path {
+  font-size: 0.8rem;
+  color: var(--fg-muted);
+}
+.help__note {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+}

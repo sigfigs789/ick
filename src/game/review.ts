@@ -132,7 +132,7 @@ function keyParam(): string {
 }
 
 /** The key as a whole query string, for a URL that has none. */
-function keyQuery(): string {
+export function keyQuery(): string {
   const key = reviewKey();
   return key ? `?key=${encodeURIComponent(key)}` : "";
 }
