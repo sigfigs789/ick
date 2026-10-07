@@ -149,9 +149,9 @@ describe("a puzzle's total", () => {
   });
 });
 
-describe("the 0.3 lift (from 2026-10-09)", () => {
-  const BEFORE_LIFT = "2026-10-08";
-  const LIFT = "2026-10-09";
+describe("the 0.3 lift (from 2026-10-07)", () => {
+  const BEFORE_LIFT = "2026-10-06";
+  const LIFT = "2026-10-07";
   // The Zipf that showed exactly 8.7 the day before the lift.
   const zipfAt87 = (() => {
     let lo = 1;
@@ -199,7 +199,6 @@ describe("the 0.3 lift (from 2026-10-09)", () => {
 
   it("leaves puzzles before the lift as they were played", () => {
     expect(rarityScore(zipfAt87, "2026-10-04")).toBe(8.7);
-    expect(rarityScore(zipfAt87, "2026-10-07")).toBe(8.7);
   });
 });
 
