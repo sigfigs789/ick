@@ -9,6 +9,7 @@ import { FoundWordsPage } from "./components/FoundWordsPage";
 import { FoldReviewPage } from "./components/FoldReviewPage";
 import { FreeformFeedbackPage } from "./components/FreeformFeedbackPage";
 import { FreeformModal } from "./components/FreeformModal";
+import { HelpPage } from "./components/HelpPage";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
 import { SuggestedWordsPage } from "./components/SuggestedWordsPage";
@@ -49,7 +50,7 @@ const SYNC_STALE_MS = 5 * 60_000;
  */
 const FREEFORM_MIN_PUZZLES = 1;
 
-/** Eight pages under one header, picked off the address bar. See src/routes.ts. */
+/** Ten pages under one header, picked off the address bar. See src/routes.ts. */
 export function Root() {
   const route = useRoute();
 
@@ -327,6 +328,8 @@ export function Root() {
         <AnalyticsPage />
       ) : route === "transfer" ? (
         <TransferPage />
+      ) : route === "help" ? (
+        <HelpPage />
       ) : (
         <App />
       )}
