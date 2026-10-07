@@ -3293,14 +3293,18 @@ export interface FoldTrace {
  * Returns undefined when nothing folds, or when the fold did not beat the word's
  * own frequency: a fold is a cap, so a base rarer than the word changes no score
  * and is not worth reporting.
+ *
+ * `ownZipf` traces a word no lexicon holds yet -- a find from the web that has
+ * not been added -- from a frequency the caller measured, as
+ * `rarityForUncurated` scores one.
  */
-export function foldTrace(word: string, date?: string): FoldTrace | undefined {
+export function foldTrace(word: string, date?: string, ownZipf?: number): FoldTrace | undefined {
   const normalized = word.toLowerCase();
   const scoring = scoringFor(date);
   if (!scoring.folds || !scoring.chainedBaseForms) return undefined;
-  if (!lexiconHas(normalized, scoring)) return undefined;
+  if (ownZipf === undefined && !lexiconHas(normalized, scoring)) return undefined;
 
-  const ownZipf = withEstimate(normalized, zipfFor(normalized, scoring), date);
+  ownZipf = withEstimate(normalized, ownZipf ?? zipfFor(normalized, scoring), date);
   const trace = new Map<string, FoldHop>();
   const chained = chainedBase(normalized, scoring, date, trace);
   if (!chained || chained.zipf <= ownZipf) return undefined;
