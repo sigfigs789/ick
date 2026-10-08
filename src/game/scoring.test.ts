@@ -202,6 +202,49 @@ describe("the 0.3 lift (from 2026-10-07)", () => {
   });
 });
 
+describe("the deep tail spread to the sentinel (from 2026-10-10)", () => {
+  const BEFORE_SPREAD = "2026-10-09";
+  const SPREAD = "2026-10-10";
+
+  it("stops flattening everything below Zipf 0 to 10.00", () => {
+    expect(rarityScore(0, BEFORE_SPREAD)).toBe(10);
+    expect(rarityScore(-0.8, BEFORE_SPREAD)).toBe(10);
+    expect(rarityScore(0, SPREAD)).toBe(9.94);
+    expect(rarityScore(-0.8, SPREAD)).toBe(9.97);
+  });
+
+  it("has the sentinel at or under the fixed floor, so it always scores 10.00", () => {
+    // If a regen raises the sentinel above -1.57, unattested words would stop
+    // being a perfect 10: date a new profile rather than moving this floor.
+    expect(unattestedZipf()).toBeLessThanOrEqual(-1.57);
+  });
+
+  it("keeps 9.9 at the floor and 10.00 for the sentinel, in both modes", () => {
+    for (const mode of ["standard", "freeform"] as const) {
+      expect(rarityForZipf(unattestedZipf(), SPREAD, mode)).toBe("Legend");
+    }
+    expect(rarityScore(unattestedZipf(), SPREAD)).toBe(10);
+    expect(rarityScore(0.999, SPREAD)).toBe(9.9);
+  });
+
+  it("only moves the hundredths: every deep-tail word stays a Legend", () => {
+    let last = 0;
+    for (let z = 0.99; z >= unattestedZipf(); z -= 0.01) {
+      const score = rarityScore(z, SPREAD);
+      expect(score).toBeGreaterThanOrEqual(last);
+      expect(rarityForZipf(z, SPREAD)).toBe("Legend");
+      last = score;
+    }
+  });
+
+  it("leaves the measured band and earlier puzzles alone", () => {
+    for (const zipf of [1, 2.5, 4.5]) {
+      expect(rarityScore(zipf, SPREAD)).toBe(rarityScore(zipf, BEFORE_SPREAD));
+    }
+    expect(rarityScore(0.5, BEFORE_SPREAD)).toBe(9.95);
+  });
+});
+
 describe("the badge agrees with the number beside it", () => {
   // The rank is read off the shown score, so a word is Mythic only when it shows
   // 9.5 or more and Elusive only from 9.0. Every lift or rescale has to move the

@@ -215,7 +215,9 @@ def update_size_test() -> None:
 # bound (-ization/-ability) suffixes are capped at their base.
 MEASURED_FLOOR = 1.0
 BAND_CEILING = 9.9
-TAIL_FLOOR = 0.0
+# Mirrors SPREAD_TAIL_FLOOR: the Zipf that scores a perfect 10 (the sentinel on
+# 2026-10-10, fixed so a regen cannot re-price played puzzles).
+TAIL_FLOOR = -1.57
 # Mirrors SCORE_GAMMA in src/game/dictionary.ts: how far the measured band bends.
 # 1 is the straight line every system before DECADE_BANDS_START used.
 SCORE_GAMMA = 0.9
@@ -756,7 +758,8 @@ def current_score(zipf: float, max_zipf: float) -> float:
     Both bands round to two decimals with the same upward nudge the app uses
     (roundToCents), so the elite top of the scale has the resolution its Legend/
     Mythic cutoffs key off. The measured band fills 0..BAND_CEILING; the deep tail
-    (Zipf < MEASURED_FLOOR) fills BAND_CEILING..10, clamped at TAIL_FLOOR -> 10.
+    (Zipf < MEASURED_FLOOR) fills BAND_CEILING..10 down to TAIL_FLOOR, the sentinel,
+    which scores 10 (TAIL_SPREAD_START; before it the tail was pinned at Zipf 0).
     """
     if zipf >= MEASURED_FLOOR:
         x = (max_zipf - zipf) / (max_zipf - MEASURED_FLOOR)
