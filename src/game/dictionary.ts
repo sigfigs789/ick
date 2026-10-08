@@ -1958,6 +1958,61 @@ function lifted(base: Scoring): Scoring {
 const LIFTED_SCORING: Scoring = lifted(DE_PREFIX_SCORING);
 const LIFTED_FREEFORM_SCORING: Scoring = lifted(CORPUS_FREEFORM_SCORING);
 
+/**
+ * The first puzzle whose deep tail runs all the way down to the unattested
+ * sentinel: 2026-10-10. Both modes; scores only, no fold moves.
+ *
+ * Before it the deep-tail band (9.9..10) was pinned to Zipf 0, so everything
+ * below 0 scored a flat 10.00: the rarest measured words, the unattested
+ * sentinel, and Claude's estimates alike. 3,416 of the first 4,000 estimates
+ * were below 0 and changed nothing. Now Zipf 1 still maps to 9.9 and the
+ * sentinel (MIN_ZIPF, the rarest Zipf in the data) maps to 10.00, so 10.00 is
+ * left for words nothing measures or estimates, and a measured or estimated deep-
+ * tail word shows where it sits: an estimate of -0.8 is 9.97, Zipf 0 is 9.94.
+ *
+ * The old pin at 0 was there so new rarer words could not shift scores already
+ * shown; the dated profiles do that job, provided the profile reads a fixed
+ * number rather than the data's live minimum. So the floor is today's sentinel
+ * as a constant (SPREAD_TAIL_FLOOR). Estimates are floored at the sentinel (see
+ * withEstimate), which sits at or under it. Every score in the band is still
+ * >= 9.9, so no word changes rank -- only the hundredths move.
+ */
+export const TAIL_SPREAD_START = "2026-10-10";
+
+// The Zipf a perfect 10 sits at from TAIL_SPREAD_START: the unattested sentinel
+// on that date. A fixed number, not MIN_ZIPF, so a later regen that adds rarer
+// words (and so lowers the sentinel) cannot re-price a puzzle already played --
+// the new sentinel clamps here and still scores 10.00.
+const SPREAD_TAIL_FLOOR = -1.57;
+
+/** A deep-tail score under TAIL_SPREAD_START: 9.9 at Zipf 1, 10 at the floor. */
+function spreadTailScore(zipf: number): number {
+  const clamped = Math.max(zipf, SPREAD_TAIL_FLOOR);
+  const s =
+    MEASURED_CEILING +
+    ((10 - MEASURED_CEILING) * (MEASURED_FLOOR - clamped)) /
+      (MEASURED_FLOOR - SPREAD_TAIL_FLOOR);
+  return roundToCents(Math.min(s, 10));
+}
+
+/**
+ * A profile with the spread tail. Like `lifted`, it changes exactly the score
+ * and the label that reads it; the measured band and every fold flag ride
+ * through untouched.
+ */
+function spreadTail(base: Scoring): Scoring {
+  const score = (zipf: number): number =>
+    zipf < MEASURED_FLOOR ? spreadTailScore(zipf) : base.score(zipf);
+  return {
+    ...base,
+    score,
+    rarity: (zipf) => topRankForScore(score(zipf)) ?? decadeRarity(score(zipf)),
+  };
+}
+
+const SPREAD_TAIL_SCORING: Scoring = spreadTail(LIFTED_SCORING);
+const SPREAD_TAIL_FREEFORM_SCORING: Scoring = spreadTail(LIFTED_FREEFORM_SCORING);
+
 /*
  * 2026-10-04: "de-" joins the transparent prefixes, the first of the four
  * Latinate ones the note in stem.ts kept out ("de-", "re-", "co-", "dis-") to be
@@ -2177,8 +2232,10 @@ function scoringFor(date?: string, mode?: GameMode): Scoring {
     // Freeform folds nothing, so the liquid-stem rule cannot reach it and the
     // era's two profiles collapse to one on that side.
     if (usesFreeformRules(date, mode)) {
+      if (date >= TAIL_SPREAD_START) return SPREAD_TAIL_FREEFORM_SCORING;
       return date >= SCORE_LIFT_START ? LIFTED_FREEFORM_SCORING : CORPUS_FREEFORM_SCORING;
     }
+    if (date >= TAIL_SPREAD_START) return SPREAD_TAIL_SCORING;
     if (date >= SCORE_LIFT_START) return LIFTED_SCORING;
     // One date for the era: LIQUID_STEM_START is this same date, so every
     // profile this branch can reach carries the "-ly" rule and it needs no rung
