@@ -25,6 +25,8 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
+  checks: read
+  statuses: read
   id-token: write
 
 concurrency:
@@ -63,7 +65,9 @@ jobs:
 
             Review this pull request on WordInk, a daily word game. The working
             tree is the PR merged into main. Read AGENTS.md and README.md for
-            context, then `gh pr view` and `gh pr diff` for the change.
+            context only -- ignore AGENTS.md's worktree, branch, commit, and
+            PR steps. Then read the change with
+            `gh pr view --json title,body,files` and `gh pr diff`.
 
             Look for real problems, most important first:
             - correctness bugs and regressions, including edge cases the change
