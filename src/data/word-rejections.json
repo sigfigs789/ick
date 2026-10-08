@@ -24,6 +24,11 @@
     "reason": "misspelling",
     "since": "2026-08-22"
   },
+  "antichambers": {
+    "note": "Obsolete spelling of `antechambers`; a player typing it means `antechambers`. The singular `antichamber` is already tagged obsolete in the corpus.",
+    "reason": "misspelling",
+    "since": "2026-10-10"
+  },
   "anticlimatical": {
     "note": "Misspelling of `anticlimactic`.",
     "reason": "misspelling",
@@ -127,6 +132,11 @@
     "note": "Misspelling of `chalice`.",
     "reason": "misspelling",
     "since": "2026-08-22"
+  },
+  "chastizements": {
+    "note": "Misspelling of `chastisements`; `chastise` has no -ize form in current dictionaries.",
+    "reason": "misspelling",
+    "since": "2026-10-10"
   },
   "cno": {
     "note": "Abbreviation: an acronym.",
@@ -431,6 +441,11 @@
     "note": "Misspelling of `photoreconnaissance`.",
     "reason": "misspelling",
     "since": "2026-08-19"
+  },
+  "pistacchio": {
+    "note": "Italian spelling, a misspelling of `pistachio` in English.",
+    "reason": "misspelling",
+    "since": "2026-10-10"
   },
   "prescipitation": {
     "note": "Misspelling of `precipitation`.",
