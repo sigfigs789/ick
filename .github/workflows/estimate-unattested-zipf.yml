@@ -9,10 +9,10 @@ name: Estimate unattested Zipf
 #      contains the drop through the game's own evaluateSubmission, in both
 #      modes, and keeps the ones accepted on a sentinel Zipf of their own. It
 #      also picks measured words with the same drops as calibration anchors.
-#   2. `scripts/estimate-zipf.py prepare` picks at most `limit` of them (1,000
+#   2. `scripts/estimate-zipf.py prepare` picks at most `limit` of them (3,000
 #      unless a manual run says otherwise; the likeliest to be played first, see
-#      `priority`) and writes Claude's request -- one for up to 1,000 words, so
-#      the daily run is a single request and only a bigger manual sweep is more.
+#      `priority`) and writes Claude's requests -- one per 1,000 words, so the
+#      daily run is three requests and only a bigger manual sweep is more.
 #   3. Claude Code, on the CLI, answers each request in turn, writing its
 #      estimates and a one-line reason per word to .tmp/answers/ (in several
 #      files if one answer is too long to write at once).
@@ -69,7 +69,7 @@ on:
       limit:
         description: Most words to estimate (the likeliest to be played go first)
         required: false
-        default: "1000"
+        default: "3000"
         type: string
       days:
         description: Sweep the drops of this many puzzles from the date on
@@ -173,7 +173,7 @@ jobs:
         run: |
           python scripts/estimate-zipf.py prepare \
             --candidates .tmp/candidates.json \
-            --limit "${{ inputs.limit || '1000' }}" \
+            --limit "${{ inputs.limit || '3000' }}" \
             --chunk-size 1000 \
             --asked-out .tmp/asked.json \
             --requests-dir .tmp/requests \
