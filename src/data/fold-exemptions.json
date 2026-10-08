@@ -4661,10 +4661,6 @@
     "since": "2026-09-27",
     "reason": "Folded onto `grill`, costing 2.08 points. Flagged in the 2026-09-22 semantic audit (grille not plural of grill) and confirmed on adversarial re-review (grille distinct from grill)."
   },
-  "grillest": {
-    "since": "2026-10-09",
-    "reason": "Folded onto `grill` (grillest > grill), costing 3.66 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (grill isn't an adjective) and confirmed on adversarial re-review (grill has no adjective sense to compare)."
-  },
   "grilses": {
     "since": "2026-09-27",
     "reason": "Folded onto `gril`, costing 1.10 points. Flagged in the 2026-09-22 semantic audit (grilses plural of grilse, overshot) and confirmed on adversarial re-review (grilse overstripped to gril)."
@@ -7906,10 +7902,6 @@
   "rilles": {
     "since": "2026-09-27",
     "reason": "Folded onto `rilled`, costing 1.10 points. Flagged in the 2026-09-22 semantic audit (plural of rille, not rill) and confirmed on adversarial re-review (rille overstripped to rill)."
-  },
-  "rillest": {
-    "since": "2026-10-09",
-    "reason": "Folded onto `rilled` (rillest > rill > rilled), costing 1.89 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (rill is noun, superlative nonsensical) and confirmed on adversarial re-review (rill noun has no superlative; rilled unrelated)."
   },
   "rimes": {
     "since": "2026-09-27",
