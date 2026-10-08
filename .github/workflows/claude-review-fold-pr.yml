@@ -269,10 +269,11 @@ jobs:
               "<!-- claude-fold-review -->",
           ]
           (review / "comment.md").write_text("\n".join(lines) + "\n")
-          with open(os.environ["GITHUB_ENV"], "a") as f:
-              f.write(f"VERDICT={verdict}\n")
+          # A file, not GITHUB_ENV: GITHUB_ENV reaches later steps, not this one.
+          (review / "verdict").write_text(verdict)
           PY
 
+          VERDICT=$(cat .tmp/review/verdict)
           gh label create "claude: approve" --color 2da44e --description "Claude's fold review would merge this" --force
           gh label create "claude: decline" --color d73a4a --description "Claude's fold review would not merge this" --force
           other=$([ "$VERDICT" = approve ] && echo decline || echo approve)

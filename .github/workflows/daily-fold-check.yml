@@ -134,12 +134,16 @@ jobs:
           prompt: |
             You are running WordInk's daily fold check for the
             ${{ steps.puzzle.outputs.date }} puzzle, drop
-            `${{ steps.puzzle.outputs.drop }}`, in GitHub Actions.
+            `${{ steps.dump.outputs.drop }}`, in GitHub Actions.
 
             Follow scripts/fold-audit/DAILY.md exactly. The chunks are in
             scripts/fold-audit/out/daily/chunks/. Judge every row, then write
             scripts/fold-audit/out/daily/flagged.tsv and
             scripts/fold-audit/out/daily/confirmed.tsv.
+
+            Run every subagent in the foreground (run_in_background: false)
+            and do not end your turn until both files are written: this is a
+            headless run, so ending the turn kills any subagent still working.
 
             Do not edit any other file, and do not run git or gh -- the
             workflow applies your verdicts and opens the pull request.
@@ -206,7 +210,7 @@ jobs:
           draft: true
           add-paths: src/data/fold-exemptions.json
           commit-message: Exempt ${{ steps.apply.outputs.applied }} wrong folds from the ${{ steps.puzzle.outputs.date }} puzzle
-          title: Exempt ${{ steps.apply.outputs.applied }} wrong folds from the ${{ steps.puzzle.outputs.date }} puzzle (${{ steps.puzzle.outputs.drop }})
+          title: Exempt ${{ steps.apply.outputs.applied }} wrong folds from the ${{ steps.puzzle.outputs.date }} puzzle (${{ steps.dump.outputs.drop }})
           body: ${{ steps.report.outputs.body }}
 
       - name: Report the result
