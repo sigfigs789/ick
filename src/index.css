@@ -4908,6 +4908,7 @@ h2 {
   bottom: max(3.25rem, env(safe-area-inset-bottom));
 }
 .chat__toggle {
+  position: relative;
   display: grid;
   place-items: center;
   width: 3.25rem;
@@ -4919,6 +4920,17 @@ h2 {
   box-shadow: var(--card-shadow);
   cursor: pointer;
   transition: background 0.15s var(--ease-standard), transform 0.15s var(--ease-standard);
+}
+/* Somebody posted since this browser last had the room open. */
+.chat__dot {
+  position: absolute;
+  top: 0.1rem;
+  right: 0.1rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: #e5484d;
+  box-shadow: 0 0 0 2px var(--bg);
 }
 .chat__toggle:hover {
   background: var(--accent-hover);

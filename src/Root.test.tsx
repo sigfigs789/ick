@@ -24,6 +24,8 @@ vi.mock("./components/SuggestedWordsPage", () => ({
 vi.mock("./components/FeedbackPage", () => ({
   FeedbackPage: () => <div>feedback</div>,
 }));
+// The chat bubble checks for new posts on its own fetch, which is not the board's.
+vi.mock("./components/ChatBubble", () => ({ ChatBubble: () => null }));
 vi.mock("./analytics", () => ({
   trackLeaderboardJoined: vi.fn(),
   trackLeaderboardOpened: vi.fn(),

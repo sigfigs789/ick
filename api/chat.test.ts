@@ -56,6 +56,25 @@ describe("api/chat GET", () => {
     expect(call.args).toEqual({ p_after: 6, p_limit: 50 });
   });
 
+  it("answers just the newest id for ?latest", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      { id: "12", handle: "StormyFox47", body: "hi", created_at: "2026-09-29T10:00:00Z" },
+    ]);
+    const response = await handler(new Request("https://wordink.app/api/chat?latest=1"));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toContain("s-maxage=15");
+    expect(await response.json()).toEqual({ latest: 12 });
+    expect(rpcCall(fetchMock).args).toEqual({ p_after: 0, p_limit: 1 });
+  });
+
+  it("answers latest 0 for an empty room", async () => {
+    withEnv();
+    stubFetch([]);
+    const response = await handler(new Request("https://wordink.app/api/chat?latest=1"));
+    expect(await response.json()).toEqual({ latest: 0 });
+  });
+
   it("refuses a malformed cursor", async () => {
     withEnv();
     stubFetch();

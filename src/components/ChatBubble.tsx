@@ -19,6 +19,35 @@ import { loadPlayerId } from "../game/player";
  */
 export const CHAT_POLL_MS = 4000;
 
+/**
+ * How often a closed bubble checks whether anything new was posted. It asks
+ * only for the newest id, a URL every closed bubble shares and the CDN holds for
+ * fifteen seconds, so this costs next to nothing. Not polled while hidden.
+ */
+export const CHAT_CHECK_MS = 30_000;
+
+/** The newest message id this browser has had on screen in the open room. */
+export const CHAT_SEEN_KEY = "ick:chat-seen";
+
+function loadSeen(): number | null {
+  try {
+    const raw = localStorage.getItem(CHAT_SEEN_KEY);
+    if (raw === null) return null;
+    const id = Number(raw);
+    return Number.isFinite(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSeen(id: number): void {
+  try {
+    if ((loadSeen() ?? 0) < id) localStorage.setItem(CHAT_SEEN_KEY, String(id));
+  } catch {
+    // Private mode: the dot falls back to this page's memory of what was seen.
+  }
+}
+
 /** A hide/show flicker is not time spent; see game/sessionTime.ts. */
 const MIN_SEGMENT_MS = 1000;
 /** A stretch the browser never ended (a slept laptop) is clamped, not counted whole. */
@@ -68,6 +97,10 @@ function merge(shown: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
  * Players appear under the same handle the leaderboard gives them, computed
  * from their id -- nobody types a name. The room is read only while it is open.
  *
+ * While closed, the button carries a dot when somebody has posted since this
+ * browser last had the room open. A browser that has never opened it takes the
+ * room as it first finds it as read, so the dot means a new post, not a backlog.
+ *
  * `lifted` raises it clear of the dev date bar, which shares the corner.
  */
 export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
@@ -78,8 +111,13 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const [draft, setDraft] = useState("");
   const [notice, setNotice] = useState("");
   const [sending, setSending] = useState(false);
+  const [unread, setUnread] = useState(false);
 
   const lastId = useRef(0);
+  /** What this page knows was seen, for when storage is unavailable. */
+  const seenHere = useRef<number | null>(null);
+  /** The newest id the last check found, to re-judge the dot against. */
+  const latestKnown = useRef(0);
   const listRef = useRef<HTMLOListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -135,6 +173,70 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [open, poll]);
+
+  // Opening the room reads it: everything shown counts as seen.
+  useEffect(() => {
+    if (!open) return;
+    setUnread(false);
+    if (lastId.current > 0) {
+      seenHere.current = Math.max(seenHere.current ?? 0, lastId.current);
+      saveSeen(lastId.current);
+    }
+  }, [open, messages]);
+
+  // While closed, check now and then for a post this browser has not seen. A
+  // failed check changes nothing: the dot is a nicety, never an error.
+  useEffect(() => {
+    if (open) return;
+    const judge = () => {
+      const stored = loadSeen();
+      const seen = stored === null ? seenHere.current : Math.max(stored, seenHere.current ?? 0);
+      if (seen === null) {
+        seenHere.current = latestKnown.current;
+        saveSeen(latestKnown.current);
+        setUnread(false);
+      } else {
+        setUnread(latestKnown.current > seen);
+      }
+    };
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const response = await fetch("/api/chat?latest=1");
+        if (!response.ok) return;
+        const data = (await response.json()) as { latest?: unknown };
+        if (cancelled || typeof data.latest !== "number") return;
+        latestKnown.current = data.latest;
+        judge();
+      } catch {
+        // Offline or no endpoint (vite dev): leave the dot as it is.
+      }
+    };
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const start = () => {
+      if (timer !== undefined) return;
+      void check();
+      timer = setInterval(() => void check(), CHAT_CHECK_MS);
+    };
+    const stop = () => {
+      if (timer !== undefined) clearInterval(timer);
+      timer = undefined;
+    };
+    const onVisibility = () => (document.visibilityState === "visible" ? start() : stop());
+    // Another tab opening the room clears the dot here too.
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === CHAT_SEEN_KEY && latestKnown.current > 0) judge();
+    };
+    if (document.visibilityState !== "hidden") start();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      cancelled = true;
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [open]);
 
   // Time with the panel open, counted while the page is visible and reported the
   // way session_time is: on every hide as well as on close, because a phone
@@ -328,7 +430,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
         ref={buttonRef}
         type="button"
         className="chat__toggle"
-        aria-label={open ? "Close chat" : "Open chat"}
+        aria-label={open ? "Close chat" : unread ? "Open chat, new messages" : "Open chat"}
         aria-expanded={open}
         onClick={() => (open ? close() : setOpen(true))}
       >
@@ -338,6 +440,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
             fill="currentColor"
           />
         </svg>
+        {unread && !open && <span className="chat__dot" aria-hidden="true" />}
       </button>
     </div>
   );

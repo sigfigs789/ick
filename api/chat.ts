@@ -8,6 +8,13 @@
 //   so it is CDN-cached for a couple of seconds: every open bubble asks for
 //   nearly the same `after`, and one query can answer all of them.
 //
+// GET /api/chat?latest=1
+//   -> 200 { latest: ID }
+//   Just the id of the newest message (0 for an empty room), so a closed
+//   bubble can tell its player something new was posted without reading the
+//   room. Every closed bubble asks the same URL, so the CDN answers nearly all
+//   of them; the longer cache only delays the unread dot by a few seconds.
+//
 // POST /api/chat   { playerId, body }
 //   -> 201 { message }, 400 malformed, 422 { reason: "profane" | ... },
 //      429 rate-limited, 503 no credentials
@@ -72,7 +79,9 @@ export default async function handler(request: Request): Promise<Response> {
 }
 
 async function handleGet(request: Request): Promise<Response> {
-  const raw = new URL(request.url).searchParams.get("after") ?? "0";
+  const params = new URL(request.url).searchParams;
+  if (params.has("latest")) return handleLatest();
+  const raw = params.get("after") ?? "0";
   if (!AFTER_RE.test(raw)) return reply(400, { ok: false, reason: "bad-after" });
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
@@ -88,6 +97,23 @@ async function handleGet(request: Request): Promise<Response> {
     );
   } catch (error: unknown) {
     console.error("[chat] read failed:", error instanceof Error ? error.message : error);
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
+async function handleLatest(): Promise<Response> {
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+  try {
+    // A fresh open of one message is the newest visible one.
+    const rows = await rpc<MessageRow[] | null>("chat_recent", { p_after: 0, p_limit: 1 });
+    const newest = rows?.[rows.length - 1];
+    return reply(
+      200,
+      { latest: newest ? Number(newest.id) : 0 },
+      "public, max-age=0, s-maxage=15, stale-while-revalidate=15",
+    );
+  } catch (error: unknown) {
+    console.error("[chat] latest failed:", error instanceof Error ? error.message : error);
     return reply(502, { ok: false, reason: "unavailable" });
   }
 }
