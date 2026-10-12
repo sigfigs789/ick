@@ -6548,6 +6548,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `over`, costing 7.21 points. Flagged in the 2026-09-22 semantic audit (from overlying, not over) and confirmed on adversarial re-review (overlie is from lie)."
   },
+  "overpromptly": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `prompted` (overpromptly > overprompt > overprompted > prompted), costing 3.71 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (adjective prompt, not verb prompted) and confirmed on adversarial re-review (adjective prompt (quick), not verb prompted)."
+  },
+  "overpromptness": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `prompted` (overpromptness > overprompt > overprompted > prompted), costing 3.71 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (adjective prompt, not verb prompted) and confirmed on adversarial re-review (adjective prompt (quick), not verb prompted)."
+  },
   "overrang": {
     "since": "2026-09-27",
     "reason": "Folded onto `range`, costing 5.78 points. Flagged in the 2026-09-22 semantic audit (past of overring, not range) and confirmed on adversarial re-review (from ring, not range)."
@@ -7515,6 +7523,22 @@
     "since": "2026-09-27",
     "reason": "Folded onto `prolonged`, costing 3.83 points. Flagged in the 2026-09-22 semantic audit (prolonge is a rope, unrelated) and confirmed on adversarial re-review (prolonge is a rope, unrelated)."
   },
+  "promptest": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `prompted` (promptest > prompt > prompted), costing 2.67 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (superlative of adjective, not prompted) and confirmed on adversarial re-review (superlative of adjective prompt, not prompted)."
+  },
+  "promptly": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `prompted` (promptly > prompt > prompted), costing 0.05 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (quickly; adjective sense, not prompted) and confirmed on adversarial re-review (means quickly, unrelated to being prompted)."
+  },
+  "promptness": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `prompted` (promptness > prompt > prompted), costing 2.67 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (quickness; adjective sense, not prompted) and confirmed on adversarial re-review (quickness sense, not verb prompted)."
+  },
+  "promptnesses": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `prompted` (promptnesses > promptness > prompt > prompted), costing 3.69 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (quickness; adjective sense, not prompted) and confirmed on adversarial re-review (quickness sense, not verb prompted)."
+  },
   "prooves": {
     "since": "2026-09-27",
     "reason": "Folded onto `proof`, costing 5.17 points. Flagged in the 2026-09-22 semantic audit (prooves is verb prove, not proof) and confirmed on adversarial re-review (prove verb, not proof)."
@@ -7714,6 +7738,18 @@
   "recomplied": {
     "since": "2026-09-27",
     "reason": "Folded onto `recomp`, costing 0.76 points. Flagged in the 2026-09-22 semantic audit (recomply and recomp are unrelated) and confirmed on adversarial re-review (recomply unrelated to recomp)."
+  },
+  "recomplies": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `recomp` (recomplies > recomply > recomp), costing 0.58 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (comply again, not recomp) and confirmed on adversarial re-review (comply again; recomp is unrelated)."
+  },
+  "recomply": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `recomp` (recomply > recomp), costing 0.54 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (comply again, not recomp) and confirmed on adversarial re-review (comply again; recomp is unrelated)."
+  },
+  "recomplying": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `recomp` (recomplying > recomply > recomp), costing 0.56 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (comply again, not recomp) and confirmed on adversarial re-review (comply again; recomp is unrelated)."
   },
   "recured": {
     "since": "2026-09-27",
@@ -8651,6 +8687,10 @@
     "since": "2026-09-27",
     "reason": "Hosiery. A noun of its own, not a form of `stock`; `stockings`, `stockinged` and `stockingless` all fold through it."
   },
+  "stompies": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `stompy` (stompies > stompy), costing 0.56 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (SA slang cigarette butts, not stompy) and confirmed on adversarial re-review (stompie cigarette butts, not stompy adjective)."
+  },
   "stonkering": {
     "since": "2026-09-27",
     "reason": "Folded onto `stonking`, costing 1.03 points. Flagged in the 2026-09-22 semantic audit (stonker vs stonking, different words) and confirmed on adversarial re-review (stonker versus stonking, different words)."
@@ -9182,6 +9222,14 @@
   "troche": {
     "since": "2026-09-27",
     "reason": "Folded onto `trochees`, costing 0.97 points. Flagged in the 2026-09-22 semantic audit (troche lozenge, trochee is metrical foot) and confirmed on adversarial re-review (lozenge versus metrical foot)."
+  },
+  "tromped": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `trompe` (tromped > trompe), costing 0.96 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (from tromp (tramp), not trompe device) and confirmed on adversarial re-review (past of tromp, not trompe device)."
+  },
+  "tromping": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `trompe` (tromping > trompe), costing 0.71 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (from tromp (tramp), not trompe device) and confirmed on adversarial re-review (participle of tromp, not trompe device)."
   },
   "troner": {
     "since": "2026-09-27",
