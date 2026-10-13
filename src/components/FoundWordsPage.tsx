@@ -7,6 +7,7 @@ import {
   type FetchOptions,
   type FoundWord,
 } from "../game/leaderboard";
+import { pageCache } from "../game/pageCache";
 import { useGameMode } from "../hooks/useGameMode";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
@@ -37,8 +38,22 @@ const REFRESH_MS = 15_000;
  * Its own page, its own URL to send somebody, and its own tab in the header. The
  * boards lost nothing: everything they said, they still say.
  */
+/**
+ * Every day's finds read this visit, so stepping back to one is instant -- and
+ * so is coming back to the page from the puzzle (see game/pageCache.ts).
+ *
+ * Only ever shown while the day is re-read underneath (see `showDay`): a past
+ * day still gains the odd word from archive play, and today's gains them all
+ * day.
+ */
+const wordsCache = pageCache<readonly FoundWord[]>();
+
 export function FoundWordsPage() {
-  const [words, setWords] = useState<readonly FoundWord[]>([]);
+  // Today's finds, if this visit has read them: the page opens on them rather
+  // than on a skeleton, and the first read below brings them up to date.
+  const [words, setWords] = useState<readonly FoundWord[]>(
+    () => wordsCache.get(todayDateString()) ?? [],
+  );
   /**
    * The feed's load state.
    *
@@ -47,7 +62,9 @@ export function FoundWordsPage() {
    * empty list and a list still in flight are different answers to a question
    * the reader just asked, and each has to be said out loud.
    */
-  const [feedState, setFeedState] = useState<LoadState>("loading");
+  const [feedState, setFeedState] = useState<LoadState>(() =>
+    wordsCache.has(todayDateString()) ? "ready" : "loading",
+  );
   /**
    * The puzzle this page opened on, fixed at mount.
    *
@@ -88,14 +105,6 @@ export function FoundWordsPage() {
     [words, mode],
   );
 
-  /**
-   * Every day's finds read so far, so stepping back to one is instant.
-   *
-   * Held for the life of the page and no longer, and only ever shown while the
-   * day is re-read underneath (see `showDay`): a past day still gains the odd
-   * word from archive play, and today's gains them all day.
-   */
-  const wordsCache = useRef(new Map<string, readonly FoundWord[]>());
   /** The day on screen, for a response to check it is still wanted. */
   const viewingRef = useRef(viewing);
   viewingRef.current = viewing;
@@ -114,7 +123,7 @@ export function FoundWordsPage() {
       const date = viewing;
       fetchFoundWords(date, options)
         .then((found) => {
-          wordsCache.current.set(date, found);
+          wordsCache.set(date, found);
           // A reader who stepped on while this was in flight is looking at
           // another drop now, and these rows are not its rows.
           if (viewingRef.current !== date) return;
@@ -146,7 +155,7 @@ export function FoundWordsPage() {
    * collapse and spring back under the button that was just pressed.
    */
   const showDay = useCallback((date: string) => {
-    const cached = wordsCache.current.get(date);
+    const cached = wordsCache.get(date);
     setViewing(date);
     setWords(cached ?? []);
     setFeedState(cached ? "ready" : "loading");

@@ -10,6 +10,7 @@ import {
   LiveFoldError,
   setLiveFoldRejection,
 } from "../game/liveFoldRejections";
+import { pageCache } from "../game/pageCache";
 import { puzzleNumber } from "../game/share";
 import { navigate } from "../routes";
 
@@ -20,6 +21,21 @@ type LoadState = "loading" | "ready" | "error";
  * worth seeing even when the rejections behind them are not reachable.
  */
 type LiveState = "ok" | "unavailable" | "not-migrated";
+
+/** One puzzle's page as last read: its rows, its rejections, and whether those could be read. */
+interface FoldedDay {
+  rows: FoldedRow[];
+  rejected: Map<string, string>;
+  liveState: LiveState;
+}
+
+/**
+ * Every puzzle read this visit, so stepping back to one -- or coming back to the
+ * page -- shows it straight away while it is re-read (see game/pageCache.ts).
+ * A rejection made here is written into it as it is made, so the remembered
+ * page never shows a fold the reader has just taken back.
+ */
+const foldedCache = pageCache<FoldedDay>();
 
 /**
  * The words folded on one puzzle, at /folded-live: step through the puzzles,
@@ -39,11 +55,14 @@ export function FoldedLivePage() {
   const today = useRef(todayDateString()).current;
   const floor = feedFloor();
   const [date, setDate] = useState(today);
-  const [rows, setRows] = useState<FoldedRow[]>([]);
+  const [opening] = useState(() => foldedCache.get(today));
+  const [rows, setRows] = useState<FoldedRow[]>(opening?.rows ?? []);
   /** Rejected words on this puzzle, word -> the base it had folded to. */
-  const [rejected, setRejected] = useState<Map<string, string>>(new Map());
-  const [state, setState] = useState<LoadState>("loading");
-  const [liveState, setLiveState] = useState<LiveState>("ok");
+  const [rejected, setRejected] = useState<Map<string, string>>(
+    opening?.rejected ?? new Map(),
+  );
+  const [state, setState] = useState<LoadState>(opening ? "ready" : "loading");
+  const [liveState, setLiveState] = useState<LiveState>(opening?.liveState ?? "ok");
   const [saveFailed, setSaveFailed] = useState(false);
   const [reload, setReload] = useState(0);
   const live = useRef(true);
@@ -59,11 +78,22 @@ export function FoldedLivePage() {
 
   useEffect(() => {
     let cancelled = false;
-    setState("loading");
     setSaveFailed(false);
-    setRows([]);
-    setRejected(new Map());
-    setLiveState("ok");
+    // A puzzle already read goes straight back up and the read below only
+    // checks it; one not read yet starts empty, so no other puzzle's rows sit
+    // under this one's heading while it loads.
+    const cached = foldedCache.get(date);
+    if (cached) {
+      setRows(cached.rows);
+      setRejected(cached.rejected);
+      setLiveState(cached.liveState);
+      setState("ready");
+    } else {
+      setState("loading");
+      setRows([]);
+      setRejected(new Map());
+      setLiveState("ok");
+    }
     if (freeformOnly) {
       setState("ready");
       return;
@@ -79,13 +109,12 @@ export function FoldedLivePage() {
         if (cancelled) return;
         const traced = foldedRows(date, finds);
         const rejections = Array.isArray(read) ? read : [];
-        if (!Array.isArray(read)) {
-          setLiveState(
-            read instanceof LiveFoldError && read.reason === "not-migrated"
-              ? "not-migrated"
-              : "unavailable"
-          );
-        }
+        const liveRead: LiveState = Array.isArray(read)
+          ? "ok"
+          : read instanceof LiveFoldError && read.reason === "not-migrated"
+            ? "not-migrated"
+            : "unavailable";
+        setLiveState(liveRead);
         // A rejected word the feed no longer carries still gets a row, so a
         // rejection can always be taken back from here.
         const shown = new Set(traced.map((row) => row.word));
@@ -93,12 +122,16 @@ export function FoldedLivePage() {
           if (shown.has(r.word)) continue;
           traced.push({ word: r.word, base: r.base, ownZipf: NaN, baseZipf: NaN, finders: 0 });
         }
+        const rejectedNow = new Map(rejections.map((r) => [r.word, r.base]));
+        foldedCache.set(date, { rows: traced, rejected: rejectedNow, liveState: liveRead });
         setRows(traced);
-        setRejected(new Map(rejections.map((r) => [r.word, r.base])));
+        setRejected(rejectedNow);
         setState("ready");
       })
       .catch(() => {
-        if (!cancelled) setState("error");
+        // A remembered puzzle stays up: a failed check is not news about rows
+        // the reader can already see.
+        if (!cancelled && !cached) setState("error");
       });
     return () => {
       cancelled = true;
@@ -118,6 +151,8 @@ export function FoldedLivePage() {
           const next = new Map(all);
           if (on) next.set(row.word, row.base);
           else next.delete(row.word);
+          const kept = foldedCache.get(date);
+          if (kept) foldedCache.set(date, { ...kept, rejected: next });
           return next;
         });
       setSaveFailed(false);

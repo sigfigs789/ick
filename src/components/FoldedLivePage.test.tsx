@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { FoldedLivePage } from "./FoldedLivePage";
 
 /**
@@ -64,5 +64,28 @@ describe("FoldedLivePage", () => {
       expect(screen.getByText(/rejections, so they can.t be changed/)).toBeTruthy()
     );
     expect(screen.getByRole("button", { name: "Reject" })).toHaveProperty("disabled", true);
+  });
+
+  it("puts a puzzle already read straight back on the way back to it", async () => {
+    stubFetch({ status: 200, body: { rejections: [] } });
+    render(<FoldedLivePage />);
+    expect(await screen.findByText("timelessly")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Previous puzzle" }));
+    await waitFor(() => expect(screen.queryByText("Loading…")).toBeNull());
+
+    fireEvent.click(screen.getByRole("button", { name: "Next puzzle" }));
+    expect(screen.getByText("timelessly")).toBeTruthy();
+    expect(screen.queryByText("Loading…")).toBeNull();
+  });
+
+  it("opens on the puzzle it showed last time, coming back to the page", async () => {
+    stubFetch({ status: 200, body: { rejections: [] } });
+    const { unmount } = render(<FoldedLivePage />);
+    expect(await screen.findByText("timelessly")).toBeTruthy();
+    unmount();
+
+    render(<FoldedLivePage />);
+    expect(screen.getByText("timelessly")).toBeTruthy();
+    expect(screen.queryByText("Loading…")).toBeNull();
   });
 });

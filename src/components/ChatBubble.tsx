@@ -9,6 +9,7 @@ import { CHAT_MAX_LENGTH, chatProblem, normaliseMessage, type ChatProblem } from
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate, FIRST_PUZZLE } from "../game/drop";
 import { handleFor } from "../game/handle";
+import { pageCache } from "../game/pageCache";
 import { loadPlayerId } from "../game/player";
 import { onViewedPuzzle, viewedPuzzle } from "../game/viewedPuzzle";
 
@@ -109,6 +110,16 @@ function timeOf(at: string): string {
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 }
 
+/**
+ * Every room read this visit: its messages and the newest id among them.
+ *
+ * Stepping back to a room shows it straight away and asks only for what came
+ * after it (see game/pageCache.ts) -- a room is the one view here that can be
+ * read incrementally, so a return costs a request for nothing new rather than
+ * the whole room again.
+ */
+const roomCache = pageCache<{ messages: ChatMessage[]; lastId: number }>();
+
 /** Merge a page of messages into what is shown, in id order, without repeats. */
 function merge(shown: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
   if (incoming.length === 0) return shown;
@@ -176,13 +187,15 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     if (open) setDate(viewedPuzzle());
   }, [open]);
 
-  // Another puzzle is another room: start it empty.
+  // Another puzzle is another room: start it from what this visit has read of
+  // it, or empty if nothing yet.
   useEffect(() => {
     if (shownDate.current === date) return;
     shownDate.current = date;
-    lastId.current = 0;
-    setMessages([]);
-    setLoaded(false);
+    const kept = roomCache.get(date);
+    lastId.current = kept?.lastId ?? 0;
+    setMessages(kept?.messages ?? []);
+    setLoaded(kept !== undefined);
     setLoadFailed(false);
   }, [date]);
 
@@ -191,6 +204,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     setMessages((shown) => {
       const next = merge(shown, incoming);
       if (next.length > 0) lastId.current = next[next.length - 1].id;
+      roomCache.set(room, { messages: next, lastId: lastId.current });
       return next;
     });
   }, []);

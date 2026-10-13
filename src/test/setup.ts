@@ -1,4 +1,6 @@
 import "@testing-library/jest-dom/vitest";
+import { beforeEach } from "vitest";
+import { forgetPageCaches } from "../game/pageCache";
 
 // jsdom doesn't implement the Clipboard API's image-write pieces
 // (ClipboardItem itself is missing entirely). A minimal stub is enough for
@@ -13,3 +15,7 @@ if (!("ClipboardItem" in globalThis)) {
   // @ts-expect-error -- test-only polyfill, not a full spec implementation
   globalThis.ClipboardItem = ClipboardItemStub;
 }
+
+// The paged views remember what they read for the life of the module (see
+// game/pageCache.ts); a test must not open on rows another test put there.
+beforeEach(() => forgetPageCaches());
