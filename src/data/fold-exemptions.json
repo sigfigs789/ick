@@ -5203,9 +5203,49 @@
     "since": "2026-09-27",
     "reason": "Folded onto `jinks`, costing 2.00 points. Flagged in the 2026-09-22 semantic audit (jinker unrelated to jinks) and confirmed on adversarial re-review (jinker unrelated to jinks)."
   },
+  "jobes": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `job` (jobes > job), costing 5.72 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (inflection of jobe, not job) and confirmed on adversarial re-review (jobe means to scold, unrelated to job)."
+  },
+  "jocker": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `jock` (jocker > jock), costing 2.87 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (hobo slang term, not jock+er) and confirmed on adversarial re-review (hobo slang term, not jock plus -er)."
+  },
+  "jockers": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `jock` (jockers > jocker > jock), costing 2.92 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (hobo slang term, not jock+er) and confirmed on adversarial re-review (hobo slang term, not jock plus -er)."
+  },
+  "joller": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `joll` (joller > joll), costing 0.45 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (SA partygoer, from jol not joll) and confirmed on adversarial re-review (derives from SA jol, not joll)."
+  },
+  "jollers": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `joll` (jollers > joller > joll), costing 0.46 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (SA partygoers, from jol not joll) and confirmed on adversarial re-review (derives from SA jol, not joll)."
+  },
+  "joned": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `jones` (joned > jone > jones), costing 4.89 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (jones is not plural of jone) and confirmed on adversarial re-review (jones is not the plural of jone)."
+  },
+  "joning": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `jones` (joning > jone > jones), costing 4.89 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (jones is not plural of jone) and confirmed on adversarial re-review (jones is not the plural of jone)."
+  },
+  "joshiness": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `joshi` (joshiness > joshi), costing 2.19 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (from joshy, not joshi astrologer) and confirmed on adversarial re-review (from joshy, not the joshi astrologer)."
+  },
   "josser": {
     "since": "2026-09-27",
     "reason": "Folded onto `joss`, costing 2.92 points. Flagged in the 2026-09-22 semantic audit (josser unrelated to joss sense) and confirmed on adversarial re-review (josser unrelated to joss sense)."
+  },
+  "jouled": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `joules` (jouled > joule > joules), costing 1.75 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (joule verb means jowl, not unit) and confirmed on adversarial re-review (verb joule means jowl, not the unit)."
+  },
+  "jouling": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `joules` (jouling > joule > joules), costing 1.77 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (joule verb means jowl, not unit) and confirmed on adversarial re-review (verb joule means jowl, not the unit)."
   },
   "junglier": {
     "since": "2026-09-27",
@@ -8650,6 +8690,10 @@
   "stocking": {
     "since": "2026-09-27",
     "reason": "Hosiery. A noun of its own, not a form of `stock`; `stockings`, `stockinged` and `stockingless` all fold through it."
+  },
+  "stompies": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `stompy` (stompies > stompy), costing 0.56 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (SA slang cigarette butts, not stompy) and confirmed on adversarial re-review (stompie cigarette butts, not stompy adjective)."
   },
   "stonkering": {
     "since": "2026-09-27",

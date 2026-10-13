@@ -27,6 +27,7 @@ describe("routes", () => {
     expect(routeFor("/freeform-feedback/")).toBe("freeform-feedback");
     expect(routeFor("/fold")).toBe("fold-review");
     expect(routeFor("/fold/")).toBe("fold-review");
+    expect(routeFor("/folded-live")).toBe("folded-live");
     expect(routeFor("/analytics")).toBe("analytics");
     expect(routeFor("/analytics/")).toBe("analytics");
     expect(pathFor("analytics")).toBe("/analytics");
@@ -49,6 +50,7 @@ describe("routes", () => {
     expect(pathFor("feedback")).toBe("/feedback");
     expect(pathFor("freeform-feedback")).toBe("/freeform-feedback");
     expect(pathFor("fold-review")).toBe("/fold");
+    expect(pathFor("folded-live")).toBe("/folded-live");
     expect(pathFor("game")).toBe("/");
   });
 
