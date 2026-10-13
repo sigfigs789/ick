@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as analytics from "../analytics";
 import { handleFor } from "../game/handle";
 import { PLAYER_KEY } from "../game/player";
-import { ChatBubble } from "./ChatBubble";
+import { CHAT_SEEN_KEY, ChatBubble } from "./ChatBubble";
 
 const PLAYER = "0b3c6c1e-1d0a-4c55-9b5e-2f3a4b5c6d7e";
 
@@ -32,19 +32,57 @@ afterEach(() => {
 });
 
 describe("ChatBubble", () => {
-  it("reads nothing until opened, then shows the room", async () => {
-    const fetchMock = vi.fn(async () =>
-      json({ messages: [{ id: 1, handle: "CalmOtter3", body: "hello all", at: "2026-09-29T10:00:00Z" }] }),
+  it("reads the room only once opened, then shows it", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.includes("latest")
+        ? json({ latest: 1 })
+        : json({ messages: [{ id: 1, handle: "CalmOtter3", body: "hello all", at: "2026-09-29T10:00:00Z" }] }),
     );
     vi.stubGlobal("fetch", fetchMock);
     render(<ChatBubble />);
-    expect(fetchMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/chat?latest=1"));
+    expect(fetchMock.mock.calls.every(([url]) => !url.includes("after"))).toBe(true);
 
     await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
     expect(await screen.findByText("hello all")).toBeInTheDocument();
     expect(screen.getByText("CalmOtter3")).toBeInTheDocument();
     expect(screen.getByText(`You're ${handleFor(PLAYER)}`)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/api/chat?after=0");
+  });
+
+  it("takes the room as read on a first visit, then dots a new post", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let latest = 4;
+    vi.stubGlobal("fetch", vi.fn(async () => json({ latest })));
+    render(<ChatBubble />);
+    await waitFor(() => expect(localStorage.getItem(CHAT_SEEN_KEY)).toBe("4"));
+    expect(screen.getByRole("button", { name: "Open chat" })).toBeInTheDocument();
+
+    latest = 5;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(await screen.findByRole("button", { name: "Open chat, new messages" })).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it("clears the dot once the room is opened", async () => {
+    localStorage.setItem(CHAT_SEEN_KEY, "3");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("latest")
+          ? json({ latest: 5 })
+          : json({ messages: [{ id: 5, handle: "B2", body: "new one", at: "2026-09-29T10:00:05Z" }] }),
+      ),
+    );
+    render(<ChatBubble />);
+    await userEvent.click(await screen.findByRole("button", { name: "Open chat, new messages" }));
+    await screen.findByText("new one");
+    expect(localStorage.getItem(CHAT_SEEN_KEY)).toBe("5");
+
+    await userEvent.click(screen.getAllByRole("button", { name: "Close chat" })[0]);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Open chat" })).toBeInTheDocument());
   });
 
   it("shows a notice as a line of its own, without a handle above it", async () => {
@@ -99,7 +137,9 @@ describe("ChatBubble", () => {
       { messages: [{ id: 1, handle: "A1", body: "first", at: "2026-09-29T10:00:00Z" }] },
       { messages: [{ id: 2, handle: "B2", body: "second", at: "2026-09-29T10:00:05Z" }] },
     ];
-    const fetchMock = vi.fn(async () => json(pages.shift() ?? { messages: [] }));
+    const fetchMock = vi.fn(async (url: string) =>
+      json(url.includes("latest") ? { latest: 0 } : (pages.shift() ?? { messages: [] })),
+    );
     vi.stubGlobal("fetch", fetchMock);
     render(<ChatBubble />);
     await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
