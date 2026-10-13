@@ -718,8 +718,11 @@ export interface EstimatesReport {
   retention: { nextDay: { found: Rate; other: Rate } };
 }
 
-/** Why a new player started in the mode they did -- see game/onboarding.ts. */
-export type OnboardingReason = "shared" | "default" | "split";
+/**
+ * Why a new player started in the mode they did -- see game/onboarding.ts -- or
+ * `returning`: a player from before the window, by the mode they came back to.
+ */
+export type OnboardingReason = "shared" | "default" | "split" | "returning";
 
 /** One starting mode, for one reason, over the window. */
 export interface OnboardingArm {
@@ -733,9 +736,10 @@ export interface OnboardingArm {
   playedDays: number;
   avgDaysPlayed: number | null;
   d1: Rate;
-  d7: Rate;
   /** Played again at least once in the seven days after arriving. */
   week1: Rate;
+  /** Played again at least once in the thirty days after arriving. */
+  month1: Rate;
   /** Players who shared at least once. */
   sharers: number;
   shares: number;
@@ -1245,7 +1249,7 @@ function parseEstimates(raw: unknown): EstimatesReport {
   };
 }
 
-const REASONS: readonly string[] = ["shared", "default", "split"];
+const REASONS: readonly string[] = ["shared", "default", "split", "returning"];
 
 function parseOnboarding(raw: unknown): OnboardingReport {
   const o = obj(raw);
@@ -1261,8 +1265,8 @@ function parseOnboarding(raw: unknown): OnboardingReport {
         playedDays: count(a.playedDays),
         avgDaysPlayed: maybe(a.avgDaysPlayed),
         d1: rate(a.d1),
-        d7: rate(a.d7),
         week1: rate(a.week1),
+        month1: rate(a.month1),
         sharers: count(a.sharers),
         shares: count(a.shares),
         switched: count(a.switched),
