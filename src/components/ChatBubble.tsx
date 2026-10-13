@@ -6,8 +6,11 @@ import {
   trackChatTime,
 } from "../analytics";
 import { CHAT_MAX_LENGTH, chatProblem, normaliseMessage, type ChatProblem } from "../game/chat";
+import { addDays, formatDateLabel, todayDateString } from "../game/date";
+import { dropForDate, FIRST_PUZZLE } from "../game/drop";
 import { handleFor } from "../game/handle";
 import { loadPlayerId } from "../game/player";
+import { onViewedPuzzle, viewedPuzzle } from "../game/viewedPuzzle";
 
 /**
  * How often an open room asks for new messages.
@@ -26,23 +29,37 @@ export const CHAT_POLL_MS = 4000;
  */
 export const CHAT_CHECK_MS = 30_000;
 
-/** The newest message id this browser has had on screen in the open room. */
-export const CHAT_SEEN_KEY = "ick:chat-seen";
+/**
+ * The newest message id this browser has had on screen in each puzzle's room,
+ * as `{ "2026-10-13": 812, ... }`. A puzzle missing from it has been read not
+ * at all, so anything in its room is unread -- a new player included.
+ */
+export const CHAT_SEEN_KEY = "ick:chat-seen-by-puzzle";
 
-function loadSeen(): number | null {
+/** How many puzzles' read marks are kept; the oldest go first. */
+const SEEN_KEPT = 30;
+
+type Seen = Record<string, number>;
+
+function loadSeen(): Seen {
   try {
-    const raw = localStorage.getItem(CHAT_SEEN_KEY);
-    if (raw === null) return null;
-    const id = Number(raw);
-    return Number.isFinite(id) ? id : null;
+    const parsed: unknown = JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) ?? "{}");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return Object.fromEntries(
+      Object.entries(parsed).filter(([, id]) => typeof id === "number" && Number.isFinite(id)),
+    ) as Seen;
   } catch {
-    return null;
+    return {};
   }
 }
 
-function saveSeen(id: number): void {
+function saveSeen(date: string, id: number): void {
   try {
-    if ((loadSeen() ?? 0) < id) localStorage.setItem(CHAT_SEEN_KEY, String(id));
+    const seen = loadSeen();
+    if ((seen[date] ?? 0) >= id) return;
+    seen[date] = id;
+    const kept = Object.keys(seen).sort().slice(-SEEN_KEPT);
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify(Object.fromEntries(kept.map((d) => [d, seen[d]]))));
   } catch {
     // Private mode: the dot falls back to this page's memory of what was seen.
   }
@@ -102,20 +119,26 @@ function merge(shown: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
 }
 
 /**
- * The chat room: a small button in the corner of every page that opens one
- * shared room of short messages.
+ * The chat: a small button in the corner of every page that opens a room of
+ * short messages. There is a room per puzzle; the panel opens on the puzzle the
+ * game is showing, names it by its drop, and steps back and forward through the
+ * puzzles the way the game does.
  *
  * Players appear under the same handle the leaderboard gives them, computed
- * from their id -- nobody types a name. The room is read only while it is open.
+ * from their id -- nobody types a name. A room is read only while it is open.
  *
- * While closed, the button carries a dot when somebody has posted since this
- * browser last had the room open. A browser that has never opened it takes the
- * room as it first finds it as read, so the dot means a new post, not a backlog.
+ * While closed, the button carries a dot when the room of the puzzle the game
+ * is on has a message this browser has not had on screen -- for everybody,
+ * a player who has never opened the chat included.
  *
  * `lifted` raises it clear of the dev date bar, which shares the corner.
  */
 export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const [open, setOpen] = useState(false);
+  /** The puzzle whose room the panel shows. */
+  const [date, setDate] = useState(viewedPuzzle);
+  /** The puzzle the game is on, which the dot is about. */
+  const [gameDate, setGameDate] = useState(viewedPuzzle);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -125,8 +148,10 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const [unread, setUnread] = useState(false);
 
   const lastId = useRef(0);
+  /** The room `messages` and `lastId` belong to, so a late answer for another is dropped. */
+  const shownDate = useRef(date);
   /** What this page knows was seen, for when storage is unavailable. */
-  const seenHere = useRef<number | null>(null);
+  const seenHere = useRef<Seen>({});
   /** The newest id the last check found, to re-judge the dot against. */
   const latestKnown = useRef(0);
   const listRef = useRef<HTMLOListElement>(null);
@@ -140,7 +165,29 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const playerId = loadPlayerId();
   const ownHandle = playerId ? handleFor(playerId) : null;
 
-  const show = useCallback((incoming: ChatMessage[]) => {
+  const today = todayDateString();
+  const canGoBack = date > FIRST_PUZZLE;
+  const canGoForward = date < today;
+
+  useEffect(() => onViewedPuzzle(setGameDate), []);
+
+  // Opening the chat goes to the puzzle the game is on.
+  useEffect(() => {
+    if (open) setDate(viewedPuzzle());
+  }, [open]);
+
+  // Another puzzle is another room: start it empty.
+  useEffect(() => {
+    if (shownDate.current === date) return;
+    shownDate.current = date;
+    lastId.current = 0;
+    setMessages([]);
+    setLoaded(false);
+    setLoadFailed(false);
+  }, [date]);
+
+  const show = useCallback((room: string, incoming: ChatMessage[]) => {
+    if (room !== shownDate.current) return;
     setMessages((shown) => {
       const next = merge(shown, incoming);
       if (next.length > 0) lastId.current = next[next.length - 1].id;
@@ -149,18 +196,20 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   }, []);
 
   const poll = useCallback(async () => {
+    const room = date;
     try {
-      const response = await fetch(`/api/chat?after=${lastId.current}`);
+      const response = await fetch(`/api/chat?date=${room}&after=${lastId.current}`);
       if (!response.ok) throw new Error(String(response.status));
       const data = (await response.json()) as { messages?: ChatMessage[] };
-      show(data.messages ?? []);
+      if (room !== shownDate.current) return;
+      show(room, data.messages ?? []);
       setLoadFailed(false);
     } catch {
-      setLoadFailed(true);
+      if (room === shownDate.current) setLoadFailed(true);
     } finally {
-      setLoaded(true);
+      if (room === shownDate.current) setLoaded(true);
     }
-  }, [show]);
+  }, [date, show]);
 
   // Poll while open and visible. Reopening starts from where the room was left,
   // so a closed-and-reopened bubble picks up only what it missed.
@@ -185,35 +234,31 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     };
   }, [open, poll]);
 
-  // Opening the room reads it: everything shown counts as seen.
+  // Having a room open reads it: everything shown counts as seen.
   useEffect(() => {
-    if (!open) return;
-    setUnread(false);
+    if (!open || shownDate.current !== date) return;
+    if (date === gameDate) setUnread(false);
     if (lastId.current > 0) {
-      seenHere.current = Math.max(seenHere.current ?? 0, lastId.current);
-      saveSeen(lastId.current);
+      seenHere.current[date] = Math.max(seenHere.current[date] ?? 0, lastId.current);
+      saveSeen(date, lastId.current);
     }
-  }, [open, messages]);
+  }, [open, messages, date, gameDate]);
 
-  // While closed, check now and then for a post this browser has not seen. A
-  // failed check changes nothing: the dot is a nicety, never an error.
+  // While closed, check now and then for a post in the game's puzzle's room that
+  // this browser has not seen. A failed check changes nothing: the dot is a
+  // nicety, never an error.
   useEffect(() => {
     if (open) return;
+    const room = gameDate;
+    latestKnown.current = 0;
     const judge = () => {
-      const stored = loadSeen();
-      const seen = stored === null ? seenHere.current : Math.max(stored, seenHere.current ?? 0);
-      if (seen === null) {
-        seenHere.current = latestKnown.current;
-        saveSeen(latestKnown.current);
-        setUnread(false);
-      } else {
-        setUnread(latestKnown.current > seen);
-      }
+      const seen = Math.max(loadSeen()[room] ?? 0, seenHere.current[room] ?? 0);
+      setUnread(latestKnown.current > seen);
     };
     let cancelled = false;
     const check = async () => {
       try {
-        const response = await fetch("/api/chat?latest=1");
+        const response = await fetch(`/api/chat?date=${room}&latest=1`);
         if (!response.ok) return;
         const data = (await response.json()) as { latest?: unknown };
         if (cancelled || typeof data.latest !== "number") return;
@@ -247,7 +292,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("storage", onStorage);
     };
-  }, [open]);
+  }, [open, gameDate]);
 
   // Time with the panel open, counted while the page is visible and reported the
   // way session_time is: on every hide as well as on close, because a phone
@@ -338,14 +383,14 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ playerId, body }),
+        body: JSON.stringify({ playerId, body, date }),
       });
       const data = (await response.json().catch(() => ({}))) as {
         message?: ChatMessage;
         reason?: string;
       };
       if (response.ok && data.message) {
-        show([data.message]);
+        show(date, [data.message]);
         setDraft("");
         sentThisView.current += 1;
         trackChatMessageSent(viewId.current, body.length);
@@ -377,8 +422,27 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
           }}
         >
           <header className="chat__header">
-            <h2 className="chat__title">Chat</h2>
-            {ownHandle && <span className="chat__self">You're {ownHandle}</span>}
+            <button
+              type="button"
+              className="chat__step"
+              aria-label="Previous puzzle's chat"
+              disabled={!canGoBack}
+              onClick={() => setDate(addDays(date, -1))}
+            >
+              ‹
+            </button>
+            <h2 className="chat__title" aria-label={`Chat for ${formatDateLabel(date)}'s drop`}>
+              {dropForDate(date)}
+            </h2>
+            <button
+              type="button"
+              className="chat__step"
+              aria-label="Next puzzle's chat"
+              disabled={!canGoForward}
+              onClick={() => setDate(addDays(date, 1))}
+            >
+              ›
+            </button>
             <button type="button" className="chat__close" aria-label="Close chat" onClick={close}>
               ×
             </button>
@@ -436,7 +500,9 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
               type="text"
               value={draft}
               maxLength={CHAT_MAX_LENGTH}
-              placeholder={playerId ? "Say something…" : "Chat needs browser storage turned on"}
+              placeholder={
+                playerId ? `Say something as ${ownHandle}…` : "Chat needs browser storage turned on"
+              }
               aria-label="Message"
               disabled={!playerId}
               onChange={(event) => {

@@ -2,11 +2,16 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as analytics from "../analytics";
+import { addDays, todayDateString } from "../game/date";
+import { dropForDate } from "../game/drop";
 import { handleFor } from "../game/handle";
 import { PLAYER_KEY } from "../game/player";
+import { setViewedPuzzle } from "../game/viewedPuzzle";
 import { CHAT_SEEN_KEY, ChatBubble } from "./ChatBubble";
 
 const PLAYER = "0b3c6c1e-1d0a-4c55-9b5e-2f3a4b5c6d7e";
+/** The puzzle the game is on in these tests: an archive day, so both arrows work. */
+const DAY = "2026-10-12";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status });
@@ -17,6 +22,7 @@ beforeEach(() => {
   // time when the testing library unmounts it, which is after afterEach.
   vi.clearAllMocks();
   localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: PLAYER }));
+  setViewedPuzzle(DAY);
 });
 
 vi.mock("../analytics", () => ({
@@ -32,7 +38,7 @@ afterEach(() => {
 });
 
 describe("ChatBubble", () => {
-  it("reads the room only once opened, then shows it", async () => {
+  it("reads the game's puzzle's room only once opened, headed by its drop", async () => {
     const fetchMock = vi.fn(async (url: string) =>
       url.includes("latest")
         ? json({ latest: 1 })
@@ -40,22 +46,72 @@ describe("ChatBubble", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
     render(<ChatBubble />);
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/chat?latest=1"));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(`/api/chat?date=${DAY}&latest=1`));
     expect(fetchMock.mock.calls.every(([url]) => !url.includes("after"))).toBe(true);
 
-    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Open chat, new messages" }));
     expect(await screen.findByText("hello all")).toBeInTheDocument();
     expect(screen.getByText("CalmOtter3")).toBeInTheDocument();
-    expect(screen.getByText(`You're ${handleFor(PLAYER)}`)).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith("/api/chat?after=0");
+    expect(screen.getByRole("heading")).toHaveTextContent(dropForDate(DAY));
+    expect(screen.getByLabelText("Message")).toHaveAttribute(
+      "placeholder",
+      `Say something as ${handleFor(PLAYER)}…`,
+    );
+    expect(fetchMock).toHaveBeenCalledWith(`/api/chat?date=${DAY}&after=0`);
   });
 
-  it("takes the room as read on a first visit, then dots a new post", async () => {
+  it("steps back and forward through the puzzles' rooms", async () => {
+    const before = addDays(DAY, -1);
+    const fetchMock = vi.fn(async (url: string) =>
+      url.includes("latest")
+        ? json({ latest: 0 })
+        : url.includes(`date=${before}`)
+          ? json({ messages: [{ id: 1, handle: "A1", body: "older room", at: "2026-10-11T10:00:00Z" }] })
+          : json({ messages: [{ id: 2, handle: "B2", body: "this room", at: "2026-10-12T10:00:00Z" }] }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    await screen.findByText("this room");
+
+    await userEvent.click(screen.getByRole("button", { name: "Previous puzzle's chat" }));
+    expect(await screen.findByText("older room")).toBeInTheDocument();
+    expect(screen.queryByText("this room")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading")).toHaveTextContent(dropForDate(before));
+
+    await userEvent.click(screen.getByRole("button", { name: "Next puzzle's chat" }));
+    expect(await screen.findByText("this room")).toBeInTheDocument();
+    expect(screen.queryByText("older room")).not.toBeInTheDocument();
+  });
+
+  it("can't step past today's puzzle or before the first", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json({ messages: [], latest: 0 })));
+    setViewedPuzzle("2026-07-01");
+    const { unmount } = render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    expect(screen.getByRole("button", { name: "Previous puzzle's chat" })).toBeDisabled();
+    unmount();
+
+    setViewedPuzzle(todayDateString());
+    render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    expect(screen.getByRole("button", { name: "Next puzzle's chat" })).toBeDisabled();
+  });
+
+  it("dots a room with messages for a player who has never opened the chat", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json({ latest: 4 })));
+    render(<ChatBubble />);
+    expect(await screen.findByRole("button", { name: "Open chat, new messages" })).toBeInTheDocument();
+    expect(localStorage.getItem(CHAT_SEEN_KEY)).toBeNull();
+  });
+
+  it("dots a new post in a room already read", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 4 }));
     let latest = 4;
     vi.stubGlobal("fetch", vi.fn(async () => json({ latest })));
     render(<ChatBubble />);
-    await waitFor(() => expect(localStorage.getItem(CHAT_SEEN_KEY)).toBe("4"));
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(screen.getByRole("button", { name: "Open chat" })).toBeInTheDocument();
 
     latest = 5;
@@ -67,7 +123,7 @@ describe("ChatBubble", () => {
   });
 
   it("clears the dot once the room is opened", async () => {
-    localStorage.setItem(CHAT_SEEN_KEY, "3");
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 3 }));
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url: string) =>
@@ -79,7 +135,7 @@ describe("ChatBubble", () => {
     render(<ChatBubble />);
     await userEvent.click(await screen.findByRole("button", { name: "Open chat, new messages" }));
     await screen.findByText("new one");
-    expect(localStorage.getItem(CHAT_SEEN_KEY)).toBe("5");
+    expect(JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) ?? "{}")).toEqual({ [DAY]: 5 });
 
     await userEvent.click(screen.getAllByRole("button", { name: "Close chat" })[0]);
     await waitFor(() => expect(screen.getByRole("button", { name: "Open chat" })).toBeInTheDocument());
@@ -118,7 +174,7 @@ describe("ChatBubble", () => {
     expect(await screen.findByText("my find")).toBeInTheDocument();
     expect(screen.getByLabelText("Message")).toHaveValue("");
     const postCall = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
-    expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({ playerId: PLAYER, body: "my find" });
+    expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({ playerId: PLAYER, body: "my find", date: DAY });
   });
 
   it("stops a profane message in the browser", async () => {
@@ -149,7 +205,7 @@ describe("ChatBubble", () => {
       await vi.advanceTimersByTimeAsync(4000);
     });
     await waitFor(() => expect(screen.getByText("second")).toBeInTheDocument());
-    expect(fetchMock).toHaveBeenLastCalledWith("/api/chat?after=1");
+    expect(fetchMock).toHaveBeenLastCalledWith(`/api/chat?date=${DAY}&after=1`);
     vi.useRealTimers();
   });
 

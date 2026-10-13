@@ -60,17 +60,37 @@ export interface BankedWord {
   mode: "standard" | "freeform";
 }
 
+/**
+ * What a notice says the player did with the word. Rotated so a room with a few
+ * notices in it does not read as one line pasted over and over.
+ */
+export const NOTICE_VERBS: readonly string[] = [
+  "banked", "found", "unearthed", "dug up", "struck", "landed", "spotted", "nabbed",
+];
+
+/**
+ * The verb for one player's word: picked from the handle and the word rather
+ * than at random, so the same notice always reads the same way.
+ */
+export function noticeVerb(handle: string, word: string): string {
+  let hash = 0;
+  for (const ch of `${handle}:${word}`) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return NOTICE_VERBS[hash % NOTICE_VERBS.length];
+}
+
 /** The line posted when `word` beats everything banked on its puzzle so far. */
 export function topNoticeBody(handle: string, banked: BankedWord): string {
   const where = banked.mode === "freeform" ? " in Freeform" : "";
-  return `${handle} banked top scoring word ${banked.word} (${banked.tier}, ${banked.score})${where}`;
+  const verb = noticeVerb(handle, banked.word);
+  return `${handle} ${verb} top scoring word ${banked.word} (${banked.tier}, ${banked.score})${where}`;
 }
 
 /** The line posted for a 9.5+ word, or null for one that scores less. */
 export function tierNoticeBody(handle: string, banked: BankedWord): string | null {
   if (!(Number(banked.score) >= NOTICE_MIN_SCORE)) return null;
   const where = banked.mode === "freeform" ? " in Freeform" : "";
-  return `${handle} banked ${banked.tier} word ${banked.word} (${banked.score})${where}`;
+  const verb = noticeVerb(handle, banked.word);
+  return `${handle} ${verb} ${banked.tier} word ${banked.word} (${banked.score})${where}`;
 }
 
 /** Check a message that has already been through `normaliseMessage`. */
