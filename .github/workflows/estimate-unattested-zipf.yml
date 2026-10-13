@@ -1,7 +1,7 @@
 name: Estimate unattested Zipf
 
-# Every day, Claude guesses a frequency for the words the puzzle two days out can
-# accept that no frequency corpus measures -- the words that would otherwise
+# Every day, Claude guesses a frequency for the words the puzzle three days out
+# can accept that no frequency corpus measures -- the words that would otherwise
 # score the unattested sentinel, a flat 10.00 Legend -- and opens ONE pull
 # request recording the guesses in src/data/estimated-zipf.json.
 #
@@ -29,9 +29,11 @@ name: Estimate unattested Zipf
 #      unattested words, overall and per swept drop, into
 #      src/data/zipf-coverage.json, so the PR shows how far the sweep got.
 #
-# Two days ahead so the PR has a day to merge: the batch applies from its
-# puzzle's date on, and a puzzle two days out by UTC has not started anywhere
-# yet. Merge it before that date, or it re-prices a puzzle being played.
+# Three days ahead, like the daily fold check, so the PR has two days to merge
+# and the fold check sees the same puzzle: the batch applies from its puzzle's
+# date on. Two days out by UTC is the soonest a run may target -- that puzzle has
+# not started anywhere yet. Merge it before that date, or it re-prices a puzzle
+# being played.
 #
 # A sweep is the same run, wider: `days` covers the drops of that many puzzles
 # from `date` on, `words_file` adds a committed list of words players have
@@ -57,7 +59,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: Puzzle date (YYYY-MM-DD). Defaults to two days from today (UTC).
+        description: Puzzle date (YYYY-MM-DD). Defaults to three days from today (UTC).
         required: false
         type: string
       model:
@@ -135,7 +137,7 @@ jobs:
           INPUT_DATE: ${{ inputs.date }}
         run: |
           set -euo pipefail
-          date="${INPUT_DATE:-$(date -u -d '+2 days' +%F)}"
+          date="${INPUT_DATE:-$(date -u -d '+3 days' +%F)}"
           if ! [[ "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
             echo "::error::date must be YYYY-MM-DD, got '$date'"
             exit 1
