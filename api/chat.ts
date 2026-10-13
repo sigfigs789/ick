@@ -22,6 +22,17 @@
 //   the id is never sent back out -- so the only way to post as somebody is to
 //   know their id, which only their browser holds.
 //
+// POST /api/chat   { playerId, banked: { date, mode, word, tier, score } }
+//   -> 201 { message } when the word earned a notice, 202 { message: null }
+//      when it did not, 400 malformed, 503 no credentials
+//   The game reports every word it banks on the live puzzle (see
+//   src/game/chatNotices.ts), and the room posts a notice of its own when the
+//   word is the puzzle's new top score or scores 9.5 or more. The scoring lives
+//   in the browser, so the score arrives as the game displayed it; whether it is
+//   a record is decided by the database (see the 20261013000000 migration).
+//   Messages carry `kind`: absent for a player's message, "top" or "tier" for a
+//   notice.
+//
 // Polling rather than Supabase Realtime, deliberately: Realtime needs a Supabase
 // key in the browser and a row-level policy to go with it, and this app keeps
 // every key server-side (see api/_supabase.ts). A room refreshed every few
@@ -32,7 +43,13 @@
 // limit take care of the ordinary cases; `hidden = true` on the row takes care
 // of the rest (see the 20260929010000 migration).
 
-import { chatProblem, normaliseMessage } from "../src/game/chat";
+import {
+  chatProblem,
+  normaliseMessage,
+  tierNoticeBody,
+  topNoticeBody,
+  type BankedWord,
+} from "../src/game/chat";
 import { handleFor } from "../src/game/handle";
 import { rpc, supabaseConfigured } from "./_supabase";
 
@@ -43,12 +60,24 @@ const PAGE = 50;
 /** A board id: the browser's UUID, or a Reddit username inside a post. */
 const PLAYER_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const AFTER_RE = /^\d{1,15}$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/** Lowercase letters only, as the leaderboard holds a word to. */
+const WORD_RE = /^[a-z]{2,30}$/;
+/** A displayed score: 0 to 10, one or two decimals at most. */
+const SCORE_RE = /^(?:10(?:\.0{1,2})?|\d(?:\.\d{1,2})?)$/;
+const TIERS: ReadonlySet<string> = new Set([
+  "Quotidian", "Very Common", "Common", "Uncommon", "Rare", "Extremely Rare",
+  "Elusive", "Mythic", "Legend",
+]);
+const DAY_MS = 86400000;
 
 interface MessageRow {
   id: number | string;
   handle: string;
   body: string;
   created_at: string;
+  /** "message" for a player's message, "top" or "tier" for a notice. */
+  kind?: string | null;
 }
 
 interface PostRow extends Partial<MessageRow> {
@@ -66,7 +95,8 @@ function reply(status: number, body?: unknown, cache = "no-store"): Response {
 }
 
 function toMessage(row: MessageRow) {
-  return { id: Number(row.id), handle: row.handle, body: row.body, at: row.created_at };
+  const message = { id: Number(row.id), handle: row.handle, body: row.body, at: row.created_at };
+  return row.kind === "top" || row.kind === "tier" ? { ...message, kind: row.kind } : message;
 }
 
 export default async function handler(request: Request): Promise<Response> {
@@ -146,10 +176,15 @@ async function handlePost(request: Request): Promise<Response> {
     return reply(400, { ok: false, reason: "malformed" });
   }
 
-  const { playerId, body } = parsed as { playerId?: unknown; body?: unknown };
+  const { playerId, body, banked } = parsed as {
+    playerId?: unknown;
+    body?: unknown;
+    banked?: unknown;
+  };
   if (typeof playerId !== "string" || !PLAYER_RE.test(playerId)) {
     return reply(400, { ok: false, reason: "bad-player" });
   }
+  if (banked !== undefined) return handleBanked(playerId, banked);
   if (typeof body !== "string") return reply(400, { ok: false, reason: "bad-body" });
 
   const message = normaliseMessage(body);
@@ -170,6 +205,64 @@ async function handlePost(request: Request): Promise<Response> {
     return reply(201, { ok: true, message: toMessage(row as MessageRow) });
   } catch (error: unknown) {
     console.error("[chat] post failed:", error instanceof Error ? error.message : error);
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
+/**
+ * Whether `date` is a puzzle somebody could be playing live right now. Local
+ * calendars run from a day behind UTC to a day ahead of it, and nothing outside
+ * that is a live puzzle -- an archive day earns no notice.
+ */
+function livePuzzleDate(date: string): boolean {
+  if (!DATE_RE.test(date)) return false;
+  const at = Date.parse(`${date}T00:00:00Z`);
+  if (Number.isNaN(at)) return false;
+  const today = Date.parse(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`);
+  return Math.abs(at - today) <= DAY_MS;
+}
+
+/** A banked word as the game reports it, or the reason it is not one. */
+function readBanked(raw: unknown): BankedWord | string {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return "bad-banked";
+  const { date, mode, word, tier, score } = raw as Record<string, unknown>;
+  if (typeof date !== "string" || !livePuzzleDate(date)) return "bad-date";
+  if (mode !== "standard" && mode !== "freeform") return "bad-mode";
+  if (typeof word !== "string" || !WORD_RE.test(word)) return "bad-word";
+  if (typeof tier !== "string" || !TIERS.has(tier)) return "bad-tier";
+  if (typeof score !== "string" || !SCORE_RE.test(score)) return "bad-score";
+  return { date, mode, word, tier, score };
+}
+
+async function handleBanked(playerId: string, raw: unknown): Promise<Response> {
+  const banked = readBanked(raw);
+  if (typeof banked === "string") return reply(400, { ok: false, reason: banked });
+  const handle = handleFor(playerId);
+  const top = topNoticeBody(handle, banked);
+  // A word the room would refuse from a player is not announced by the room
+  // either -- the puzzle has its own blocklist, but this is the room's rule.
+  if (chatProblem(normaliseMessage(top))) return reply(202, { ok: true, message: null });
+
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    const rows = await rpc<PostRow[] | null>("chat_bank", {
+      p_player: playerId,
+      p_handle: handle,
+      p_date: banked.date,
+      p_mode: banked.mode,
+      p_word: banked.word,
+      p_score: Number(banked.score),
+      p_top_body: top,
+      p_tier_body: tierNoticeBody(handle, banked),
+    });
+    const row = rows?.[0];
+    if ((row?.status === "top" || row?.status === "tier") && row.id != null) {
+      return reply(201, { ok: true, message: toMessage(row as MessageRow) });
+    }
+    return reply(202, { ok: true, message: null });
+  } catch (error: unknown) {
+    console.error("[chat] bank failed:", error instanceof Error ? error.message : error);
     return reply(502, { ok: false, reason: "unavailable" });
   }
 }

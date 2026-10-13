@@ -155,3 +155,74 @@ describe("api/chat POST", () => {
     expect(response.status).toBe(405);
   });
 });
+
+describe("api/chat POST banked", () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const banked = (overrides: Record<string, unknown> = {}) =>
+    post({
+      playerId: PLAYER,
+      banked: { date: today, mode: "standard", word: "abaci", tier: "Mythic", score: "9.62", ...overrides },
+    });
+
+  it("hands both notice lines to the database and returns the one it posted", async () => {
+    withEnv();
+    const handle = handleFor(PLAYER);
+    const fetchMock = stubFetch([
+      {
+        status: "top",
+        id: 9,
+        handle,
+        body: `${handle} banked top scoring word abaci (Mythic, 9.62)`,
+        kind: "top",
+        created_at: "2026-10-13T10:00:00Z",
+      },
+    ]);
+    const response = await handler(banked());
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({
+      ok: true,
+      message: {
+        id: 9,
+        handle,
+        body: `${handle} banked top scoring word abaci (Mythic, 9.62)`,
+        at: "2026-10-13T10:00:00Z",
+        kind: "top",
+      },
+    });
+    const call = rpcCall(fetchMock);
+    expect(call.url).toContain("/rpc/chat_bank");
+    expect(call.args).toEqual({
+      p_player: PLAYER,
+      p_handle: handle,
+      p_date: today,
+      p_mode: "standard",
+      p_word: "abaci",
+      p_score: 9.62,
+      p_top_body: `${handle} banked top scoring word abaci (Mythic, 9.62)`,
+      p_tier_body: `${handle} banked Mythic word abaci (9.62)`,
+    });
+  });
+
+  it("sends no tier line for a word under 9.5, and answers 202 when nothing is posted", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      { status: "none", id: null, handle: null, body: null, kind: null, created_at: null },
+    ]);
+    const response = await handler(banked({ word: "cat", tier: "Very Common", score: "0.4" }));
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ ok: true, message: null });
+    expect(rpcCall(fetchMock).args.p_tier_body).toBeNull();
+  });
+
+  it("refuses an archive day, a bad tier and a malformed score before touching the database", async () => {
+    withEnv();
+    const fetchMock = stubFetch();
+    expect((await handler(banked({ date: "2026-07-01" }))).status).toBe(400);
+    expect((await handler(banked({ tier: "Godlike" }))).status).toBe(400);
+    expect((await handler(banked({ score: "11" }))).status).toBe(400);
+    expect((await handler(banked({ score: 9.6 }))).status).toBe(400);
+    expect((await handler(banked({ word: "Abaci" }))).status).toBe(400);
+    expect((await handler(banked({ mode: "hard" }))).status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
