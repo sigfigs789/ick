@@ -416,7 +416,7 @@ export interface AnalyticsReport {
     /** Opened the leaderboard or the found words, and banked no word. */
     lookers: number;
   }>;
-  retention: { d1: Rate; d7: Rate; d30: Rate; week1: Rate };
+  retention: { d1: Rate; week1: Rate; month1: Rate };
   /** Sunday-started weeks of first play; `active[k]` is who played in week k. */
   cohorts: Array<{ week: string; size: number; active: number[] }>;
   /** 0 is Sunday. */
@@ -896,9 +896,8 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       })),
     retention: {
       d1: rate(retention.d1),
-      d7: rate(retention.d7),
-      d30: rate(retention.d30),
       week1: rate(retention.week1),
+      month1: rate(retention.month1),
     },
     cohorts: list(r.cohorts)
       .filter((c) => text(c.week))

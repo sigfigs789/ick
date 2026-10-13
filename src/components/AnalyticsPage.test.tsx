@@ -60,9 +60,8 @@ const REPORT = {
   ],
   retention: {
     d1: { cohort: 180, returned: 72 },
-    d7: { cohort: 120, returned: 30 },
-    d30: { cohort: 0, returned: 0 },
     week1: { cohort: 120, returned: 84 },
+    month1: { cohort: 0, returned: 0 },
   },
   cohorts: [
     { week: "2026-09-13", size: 50, active: [50, 25, 10] },
@@ -687,6 +686,15 @@ describe("AnalyticsPage", () => {
     expect(headers).toContain("Within first month");
     expect(headers).not.toContain("Day 7");
     expect(screen.getByText("Share-link taps in the window: 12 on Freeform links copied with the Share button and pasted elsewhere.")).toBeInTheDocument();
+  });
+
+  it("shows coming back within the first week and month, not on day 7 or 30", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    const month = await screen.findByText("Within the first month", { selector: ".analytics__tile-label" });
+    expect(within(month.parentElement!).getByText("not enough days yet")).toBeInTheDocument();
+    expect(screen.queryByText("Day 7", { selector: ".analytics__tile-label" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Day 30", { selector: ".analytics__tile-label" })).not.toBeInTheDocument();
   });
 
   it("leaves the starting-mode section out when it failed", async () => {
