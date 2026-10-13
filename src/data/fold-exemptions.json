@@ -378,6 +378,10 @@
     "reason": "The sung response (Greek antiphona), not anti- + `phon` (a unit of loudness). The sibling of `antiphonic`, which has been exempt since 2026-08-26 for the same misreading.",
     "scope": "prefix"
   },
+  "antiphones": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `antiphon` (antiphones > antiphon), costing 1.19 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (antiphon's plural is antiphons; antiphone differs) and confirmed on adversarial re-review (antiphone is a noise blocker, not antiphon)."
+  },
   "antiphonic": {
     "since": "2026-08-26",
     "reason": "From `antiphon` (a sung response) + -ic, not anti- + `phonic`. A wrong bracketing rather than a bound residue: `phonic` is a free word, so bound-residues.json cannot catch it and only a reviewed entry can.",
@@ -548,6 +552,10 @@
   "arenize": {
     "since": "2026-09-27",
     "reason": "Folded onto `aren`, costing 2.53 points. Flagged in the 2026-09-22 semantic audit (aren is not a word) and confirmed on adversarial re-review (aren is not a word)."
+  },
+  "arseholed": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `arsehole` (arseholed > arsehole), costing 2.22 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (slang for very drunk) and confirmed on adversarial re-review (very drunk sense has drifted from arsehole)."
   },
   "askeses": {
     "since": "2026-09-27",
@@ -745,6 +753,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `beets`, costing 2.89 points. Flagged in the 2026-09-22 semantic audit (from beetle, -ly ate le) and confirmed on adversarial re-review (from beetle; beet unrelated)."
   },
+  "behooves": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `behoof` (behooves > behoof), costing 0.92 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (verb behoove, not plural of behoof) and confirmed on adversarial re-review (form of verb behoove, not noun behoof)."
+  },
   "beinges": {
     "since": "2026-09-27",
     "reason": "Folded onto `being`, costing 7.01 points. Flagged in the 2026-09-22 semantic audit (being+es overshoot) and confirmed on adversarial re-review (nonword inflection of being)."
@@ -752,6 +764,14 @@
   "belles": {
     "since": "2026-09-27",
     "reason": "Folded onto `bell`, costing 2.61 points. Flagged in the 2026-09-22 semantic audit (belles plural of belle) and confirmed on adversarial re-review (belle woman, not bell)."
+  },
+  "bellhousing": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `bellhouse` (bellhousing > bellhouse), costing 0.29 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (transmission housing, not bell tower) and confirmed on adversarial re-review (bell plus housing, not bellhouse plus -ing)."
+  },
+  "bellhousings": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `bellhouse` (bellhousings > bellhousing > bellhouse), costing 0.53 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (transmission housing, not bell tower) and confirmed on adversarial re-review (bell plus housing, not bellhouse plus -ing)."
   },
   "bellow": {
     "since": "2026-09-27",
@@ -1257,9 +1277,25 @@
     "since": "2026-09-27",
     "reason": "Folded onto `chin`, costing 2.76 points. Flagged in the 2026-09-22 semantic audit (chines is plural of chine) and confirmed on adversarial re-review (chine backbone unrelated to chin)."
   },
+  "chocolatieres": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chocolatier` (chocolatieres > chocolatier), costing 1.32 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (chocolati\u00e8re is a chocolate pot) and confirmed on adversarial re-review (a chocolate pot, not a chocolate maker)."
+  },
   "cholecystites": {
     "since": "2026-09-27",
     "reason": "Folded onto `cholecystitis`, costing 0.95 points. Flagged in the 2026-09-22 semantic audit (cholecystites not plural of cholecystitis) and confirmed on adversarial re-review (not a plural of cholecystitis)."
+  },
+  "choles": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chol` (choles > chol), costing 1.12 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (chole is chickpea curry, not chol) and confirmed on adversarial re-review (chole is a curry; chol is unrelated)."
+  },
+  "choly": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `cho` (choly > cho), costing 3.17 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (not cho plus -y) and confirmed on adversarial re-review (unrelated to cho)."
+  },
+  "chones": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chon` (chones > chon), costing 1.60 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (Spanish slang underwear, not chon plural) and confirmed on adversarial re-review (Spanish slang for underwear, unrelated to chon)."
   },
   "chopes": {
     "since": "2026-09-27",
@@ -1269,6 +1305,22 @@
     "since": "2026-09-27",
     "reason": "Folded onto `chopin`, costing 2.61 points. Flagged in the 2026-09-22 semantic audit (chopine is a shoe, not chopin) and confirmed on adversarial re-review (chopine shoe unrelated to chopin)."
   },
+  "choppable": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `choppy` (choppable > choppy), costing 2.37 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (from chop, not choppy) and confirmed on adversarial re-review (from chop; the rule overshot to choppy)."
+  },
+  "chopsed": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chopped` (chopsed > chops > chop > chopped), costing 3.57 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (slang chops (mouthing off), not cutting) and confirmed on adversarial re-review (chops means mouth; chopped is wrong sense)."
+  },
+  "chopses": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chopped` (chopses > chops > chop > chopped), costing 3.57 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (slang chops (mouth), not cutting) and confirmed on adversarial re-review (chops means mouth; chopped is wrong sense)."
+  },
+  "chopsing": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chopped` (chopsing > chops > chop > chopped), costing 3.57 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (slang mouthing off, not cutting) and confirmed on adversarial re-review (chops means mouth; chopped is wrong sense)."
+  },
   "chorales": {
     "since": "2026-09-27",
     "reason": "Folded onto `choral`, costing 2.03 points. Flagged in the 2026-09-22 semantic audit (chorale is a distinct noun) and confirmed on adversarial re-review (chorale distinct noun from choral)."
@@ -1277,13 +1329,37 @@
     "since": "2026-09-27",
     "reason": "Folded onto `choreic`, costing 1.76 points. Flagged in the 2026-09-22 semantic audit (metrical foot, unrelated to chorea) and confirmed on adversarial re-review (choree metrical foot, not chorea)."
   },
+  "chorees": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chores` (chorees > chore > chores), costing 3.24 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (choree is a metrical foot) and confirmed on adversarial re-review (choree is a metrical foot, not a chore)."
+  },
   "chori": {
     "since": "2026-09-27",
     "reason": "Folded onto `chorus`, costing 3.01 points. Flagged in the 2026-09-22 semantic audit (chori not plural of chorus) and confirmed on adversarial re-review (Chori not plural of chorus)."
   },
+  "choses": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chose` (choses > chose), costing 3.16 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (legal chose (thing), not past tense) and confirmed on adversarial re-review (legal noun chose, not past of choose)."
+  },
+  "choused": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chou` (choused > chous > chou), costing 2.09 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (chouse means swindle, not cabbage) and confirmed on adversarial re-review (chouse means swindle; chou is cabbage)."
+  },
+  "chouser": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chou` (chouser > chous > chou), costing 2.42 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (swindler, not cabbage) and confirmed on adversarial re-review (chouse means swindle; chou is cabbage)."
+  },
+  "chousers": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chou` (chousers > chouser > chous > chou), costing 2.44 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (swindlers, not cabbage) and confirmed on adversarial re-review (chouse means swindle; chou is cabbage)."
+  },
   "chouses": {
     "since": "2026-09-27",
     "reason": "Folded onto `chou`, costing 2.71 points. Flagged in the 2026-09-22 semantic audit (chouse is to cheat, not chou) and confirmed on adversarial re-review (chouse to cheat, not chou)."
+  },
+  "chousing": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `chou` (chousing > chous > chou), costing 2.37 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (chouse means swindle) and confirmed on adversarial re-review (chouse means swindle; chou is cabbage)."
   },
   "chowsed": {
     "since": "2026-09-27",
@@ -1404,6 +1480,10 @@
   "colones": {
     "since": "2026-09-27",
     "reason": "Folded onto `colon`, costing 2.83 points. Flagged in the 2026-09-22 semantic audit (col\u00f3n currency plural, not colon) and confirmed on adversarial re-review (colon currency named for person)."
+  },
+  "colophones": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `colophon` (colophones > colophon), costing 1.34 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (colophone is rosin, not colophon) and confirmed on adversarial re-review (colophone means rosin; colophon is unrelated)."
   },
   "comates": {
     "since": "2026-09-27",
@@ -3706,6 +3786,11 @@
     "reason": "Folded onto `transphobia`, costing up to 2.23 points, by stripping de- to `transphobia`. Not de- + `transphobia`: prejudice against detransitioners; detrans + phobia. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
   },
+  "detransphobic": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `transphobic` (detransphobic > transphobic), costing 2.12 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (detrans+phobic, not de+transphobic) and confirmed on adversarial re-review (detrans plus phobic; the sense differs).",
+    "scope": "prefix"
+  },
   "deturs": {
     "since": "2026-10-04",
     "reason": "Folded onto `tur`, costing up to 2.46 points, by stripping de- to `turs`. Not de- + `turs`: Harvard prize books (Latin: let it be given). Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
@@ -3855,6 +3940,10 @@
     "since": "2026-10-04",
     "reason": "Folded onto `zhe`, costing up to 1.56 points, by stripping de- to `zhes`. Not de- + `zhes`: plural of dezh (the dzh ligature letter); not de- + zhe. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
+  },
+  "dholes": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `dhol` (dholes > dhol), costing 0.81 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (dhole is wild dog, dhol drum) and confirmed on adversarial re-review (dhole is a wild dog; dhol a drum)."
   },
   "digitalising": {
     "since": "2026-09-27",
@@ -4359,6 +4448,14 @@
   "followees": {
     "since": "2026-09-27",
     "reason": "One who is followed. `followe` is not a word."
+  },
+  "footholder": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `foothold` (footholder > foothold), costing 2.59 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (foot+holder, not foothold+er) and confirmed on adversarial re-review (foot plus holder, not foothold plus -er)."
+  },
+  "footholders": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `foothold` (footholders > footholder > foothold), costing 2.59 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (foot+holder, not foothold+er) and confirmed on adversarial re-review (foot plus holder, not foothold plus -er)."
   },
   "fores": {
     "since": "2026-08-21",
@@ -4916,6 +5013,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `his`, costing 6.92 points. Flagged in the 2026-09-22 semantic audit (from hissing, not his) and confirmed on adversarial re-review (from hiss, not his)."
   },
+  "hoardings": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hoard` (hoardings > hoarding > hoard), costing 1.49 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (usually billboards/fences, unrelated hoarding sense) and confirmed on adversarial re-review (main sense is billboards, a different word)."
+  },
   "hokily": {
     "since": "2026-09-27",
     "reason": "Folded onto `hoki`, costing 0.83 points. Flagged in the 2026-09-22 semantic audit (hoki is a fish; from hokey) and confirmed on adversarial re-review (hoki is a fish)."
@@ -4944,6 +5045,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `home`, costing 6.80 points. Flagged in the 2026-09-22 semantic audit (from homely, not home) and confirmed on adversarial re-review (homely means plain, drifted)."
   },
+  "homeworking": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `homework` (homeworking > homework), costing 3.75 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (working from home, not doing homework) and confirmed on adversarial re-review (working from home, not doing school homework)."
+  },
   "hominess": {
     "since": "2026-09-27",
     "reason": "Folded onto `homi`, costing 1.49 points. Flagged in the 2026-09-22 semantic audit (homey/home, not \"homi\") and confirmed on adversarial re-review (homi is not a word)."
@@ -4952,9 +5057,45 @@
     "since": "2026-09-27",
     "reason": "Folded onto `hominy`, costing 1.33 points. Flagged in the 2026-09-22 semantic audit (hominisation from human, not hominy) and confirmed on adversarial re-review (hominy unrelated to hominisation)."
   },
+  "hominise": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hominy` (hominise > hominy), costing 1.12 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (make human; hominy is corn) and confirmed on adversarial re-review (from Latin homo; hominy is corn)."
+  },
+  "hominised": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hominy` (hominised > hominise > hominy), costing 1.12 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (make human; hominy is corn) and confirmed on adversarial re-review (from Latin homo; hominy is corn)."
+  },
+  "hominises": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hominy` (hominises > hominise > hominy), costing 1.12 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (make human; hominy is corn) and confirmed on adversarial re-review (from Latin homo; hominy is corn)."
+  },
+  "hominising": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hominy` (hominising > hominise > hominy), costing 1.12 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (make human; hominy is corn) and confirmed on adversarial re-review (from Latin homo; hominy is corn)."
+  },
+  "hominization": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hominy` (hominization > hominize > hominy), costing 0.51 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (becoming human; hominy is corn) and confirmed on adversarial re-review (from Latin homo; hominy is corn)."
+  },
   "hominizations": {
     "since": "2026-09-27",
     "reason": "Folded onto `hominy`, costing 1.42 points. Flagged in the 2026-09-22 semantic audit (hominization from hominid, not hominy) and confirmed on adversarial re-review (hominization unrelated to hominy)."
+  },
+  "hominize": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hominy` (hominize > hominy), costing 1.08 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (make human; hominy is corn) and confirmed on adversarial re-review (from Latin homo; hominy is corn)."
+  },
+  "hominized": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hominy` (hominized > hominize > hominy), costing 1.04 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (make human; hominy is corn) and confirmed on adversarial re-review (from Latin homo; hominy is corn)."
+  },
+  "hominizes": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hominy` (hominizes > hominize > hominy), costing 1.11 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (make human; hominy is corn) and confirmed on adversarial re-review (from Latin homo; hominy is corn)."
+  },
+  "hominizing": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hominy` (hominizing > hominize > hominy), costing 1.06 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (make human; hominy is corn) and confirmed on adversarial re-review (from Latin homo; hominy is corn)."
   },
   "homogen": {
     "since": "2026-09-27",
@@ -4964,6 +5105,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `hon`, costing 2.25 points. Flagged in the 2026-09-22 semantic audit (hones from hone, not hon) and confirmed on adversarial re-review (hone sharpen versus hon honey)."
   },
+  "honested": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `honest` (honested > honest), costing 4.92 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (archaic verb, to honour) and confirmed on adversarial re-review (archaic verb to honour drifted from truthful)."
+  },
+  "honesting": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `honest` (honesting > honest), costing 4.92 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (archaic verb, to honour) and confirmed on adversarial re-review (archaic verb to honour drifted from truthful)."
+  },
   "hoolies": {
     "since": "2026-09-27",
     "reason": "Folded onto `hoo`, costing 3.32 points. Flagged in the 2026-09-22 semantic audit (hoolie unrelated to hoo) and confirmed on adversarial re-review (hoolie unrelated to hoo)."
@@ -4972,6 +5121,42 @@
     "since": "2026-09-27",
     "reason": "Folded onto `hoo`, costing 3.32 points. Flagged in the 2026-09-22 semantic audit (hoose unrelated to hoo) and confirmed on adversarial re-review (hoose unrelated to hoo)."
   },
+  "hooverise": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hoover` (hooverise > hoover), costing 3.27 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (Hooverize means economize food (Herbert Hoover)) and confirmed on adversarial re-review (from Herbert Hoover, not the vacuum)."
+  },
+  "hooverised": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hoover` (hooverised > hooverise > hoover), costing 3.27 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (Herbert Hoover food-economizing sense) and confirmed on adversarial re-review (from Herbert Hoover, not the vacuum)."
+  },
+  "hooverises": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hoover` (hooverises > hooverise > hoover), costing 3.27 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (Herbert Hoover food-economizing sense) and confirmed on adversarial re-review (from Herbert Hoover, not the vacuum)."
+  },
+  "hooverising": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hoover` (hooverising > hooverise > hoover), costing 3.27 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (Herbert Hoover food-economizing sense) and confirmed on adversarial re-review (from Herbert Hoover, not the vacuum)."
+  },
+  "hooverisings": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hoover` (hooverisings > hooverising > hooverise > hoover), costing 3.27 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (Herbert Hoover food-economizing sense) and confirmed on adversarial re-review (from Herbert Hoover, not the vacuum)."
+  },
+  "hooverize": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hoover` (hooverize > hoover), costing 3.27 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (economize food, not vacuum) and confirmed on adversarial re-review (from Herbert Hoover, not the vacuum)."
+  },
+  "hooverized": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hoover` (hooverized > hooverize > hoover), costing 3.27 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (economize food, not vacuum) and confirmed on adversarial re-review (from Herbert Hoover, not the vacuum)."
+  },
+  "hooverizes": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hoover` (hooverizes > hooverize > hoover), costing 3.27 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (economize food, not vacuum) and confirmed on adversarial re-review (from Herbert Hoover, not the vacuum)."
+  },
+  "hooverizing": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hoover` (hooverizing > hooverize > hoover), costing 3.27 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (economize food, not vacuum) and confirmed on adversarial re-review (from Herbert Hoover, not the vacuum)."
+  },
   "hospitales": {
     "since": "2026-09-27",
     "reason": "Folded onto `hospital`, costing 4.65 points. Flagged in the 2026-09-22 semantic audit (overshot -es on hospital) and confirmed on adversarial re-review (overshot -es on hospital)."
@@ -4979,6 +5164,18 @@
   "hotelys": {
     "since": "2026-09-27",
     "reason": "Folded onto `hote`, costing 1.54 points. Flagged in the 2026-09-22 semantic audit (hote not the base) and confirmed on adversarial re-review (hote is not a word)."
+  },
+  "hottered": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hotter` (hottered > hotter), costing 3.32 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (dialect verb hotter, not comparative) and confirmed on adversarial re-review (dialect verb, not the comparative of hot)."
+  },
+  "hottering": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hotter` (hottering > hotter), costing 3.32 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (dialect verb hotter, not comparative) and confirmed on adversarial re-review (dialect verb, not the comparative of hot)."
+  },
+  "hotters": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hotter` (hotters > hotter), costing 3.32 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (dialect verb hotter, not comparative) and confirmed on adversarial re-review (dialect verb, not the comparative of hot)."
   },
   "housebotes": {
     "since": "2026-09-27",
@@ -5155,6 +5352,10 @@
   "inserviceable": {
     "since": "2026-09-27",
     "reason": "Folded onto `inservices`, costing 1.10 points. Flagged in the 2026-09-22 semantic audit (inservices unrelated to serviceable) and confirmed on adversarial re-review (inservice unrelated to serviceable)."
+  },
+  "inshoring": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `inshore` (inshoring > inshore), costing 2.08 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (relocating jobs domestically, not near-shore) and confirmed on adversarial re-review (in- plus shoring as in offshoring)."
   },
   "interally": {
     "since": "2026-09-27",
@@ -5966,6 +6167,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `morn`, costing 2.86 points. Flagged in the 2026-09-22 semantic audit (morne heraldic term, not morn) and confirmed on adversarial re-review (morne is not morn)."
   },
+  "morphoses": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `morpho` (morphoses > morphos > morpho), costing 1.02 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (plural of morphosis, not morpho butterfly) and confirmed on adversarial re-review (plural of morphosis, not the butterfly)."
+  },
   "motes": {
     "since": "2026-09-27",
     "reason": "Folded onto `mot`, costing 0.98 points. Flagged in the 2026-09-22 semantic audit (motes plural of mote) and confirmed on adversarial re-review (mote overstripped to mot)."
@@ -6339,9 +6544,21 @@
     "since": "2026-09-27",
     "reason": "Folded onto `orl`, costing 1.58 points. Flagged in the 2026-09-22 semantic audit (orles plural of orle) and confirmed on adversarial re-review (orle is not orl)."
   },
+  "orthoses": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `ortho` (orthoses > orthos > ortho), costing 1.61 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (plural of orthosis, not ortho) and confirmed on adversarial re-review (plural of orthosis, not ortho)."
+  },
+  "orthostates": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `orthostatic` (orthostates > orthostat > orthostatic), costing 1.24 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (upright stone vs posture-related adjective) and confirmed on adversarial re-review (the base should be the noun orthostat)."
+  },
   "orthotope": {
     "since": "2026-09-27",
     "reason": "Folded onto `orthotopic`, costing 0.79 points. Flagged in the 2026-09-22 semantic audit (polytope versus anatomical site) and confirmed on adversarial re-review (polytope versus anatomical site)."
+  },
+  "orthotropics": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `orthotropic` (orthotropics > orthotropic), costing 0.49 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (dental practice, not material property) and confirmed on adversarial re-review (names a dental discipline, a different sense)."
   },
   "ossifer": {
     "since": "2026-09-27",
@@ -6831,6 +7048,14 @@
   "pates": {
     "since": "2026-09-27",
     "reason": "Folded onto `pat`, costing 3.56 points. Flagged in the 2026-09-22 semantic audit (plural of pate, not pat) and confirmed on adversarial re-review (pate is the head, not pat)."
+  },
+  "pathogeneses": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `pathogens` (pathogeneses > pathogenes > pathogen > pathogens), costing 2.55 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (plural of pathogenesis, not pathogen) and confirmed on adversarial re-review (pathogenesis is disease development, not a pathogen)."
+  },
+  "pathoses": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `pathos` (pathoses > pathos), costing 2.16 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (plural of pathosis, not pathos) and confirmed on adversarial re-review (plural of pathosis, not pathos)."
   },
   "pattable": {
     "since": "2026-09-27",
@@ -7779,6 +8004,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `pyro`, costing 2.31 points. Flagged in the 2026-09-22 semantic audit (plural of pyrosis, not pyro) and confirmed on adversarial re-review (pyrosis heartburn versus pyro)."
   },
+  "pythonize": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `python` (pythonize > python), costing 3.57 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (prophesy or make Pythonic, not snake) and confirmed on adversarial re-review (Pythian or Pythonic sense, not the snake)."
+  },
   "qualies": {
     "since": "2026-09-27",
     "reason": "Folded onto `qua`, costing 2.39 points. Flagged in the 2026-09-22 semantic audit (qualifiers, not Latin qua) and confirmed on adversarial re-review (qualifier, not Latin qua)."
@@ -8455,9 +8684,69 @@
     "since": "2026-09-27",
     "reason": "Folded onto `shiv`, costing 2.13 points. Flagged in the 2026-09-22 semantic audit (plural of shive, overshot) and confirmed on adversarial re-review (shive not from shiv)."
   },
+  "shoded": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shod` (shoded > shod), costing 1.59 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (shode (hair parting) unrelated to shod) and confirmed on adversarial re-review (shode is a separate noun from shod)."
+  },
   "shoder": {
     "since": "2026-09-27",
     "reason": "Folded onto `shod`, costing 1.89 points. Flagged in the 2026-09-22 semantic audit (shoder unrelated to shod) and confirmed on adversarial re-review (shoder unrelated to shod)."
+  },
+  "shodes": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shod` (shodes > shod), costing 1.59 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (shode is a separate noun) and confirmed on adversarial re-review (shode is a separate noun from shod)."
+  },
+  "shoding": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shod` (shoding > shod), costing 1.59 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (not a form of shod) and confirmed on adversarial re-review (shode is a separate noun from shod)."
+  },
+  "shooked": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shook` (shooked > shook), costing 3.95 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (shook (barrel staves) not shake's past) and confirmed on adversarial re-review (shook here means barrel staves, not shake)."
+  },
+  "shooking": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shook` (shooking > shook), costing 3.95 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (shook (staves) not shake's past) and confirmed on adversarial re-review (shook here means barrel staves, not shake)."
+  },
+  "shooks": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shook` (shooks > shook), costing 2.18 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (staves noun, not past of shake) and confirmed on adversarial re-review (shook here means barrel staves, not shake)."
+  },
+  "shooties": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shooty` (shooties > shooty), costing 0.62 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (shoe-booties, not shooty) and confirmed on adversarial re-review (shoe-booties, unrelated to shooty)."
+  },
+  "shored": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shore` (shored > shore), costing 3.07 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (shore prop up, not coast) and confirmed on adversarial re-review (shore meaning prop up is different word)."
+  },
+  "shorer": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shore` (shorer > shore), costing 4.35 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (one who props, not coast) and confirmed on adversarial re-review (shore meaning prop up is different word)."
+  },
+  "shorers": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shore` (shorers > shorer > shore), costing 4.35 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (one who props, not coast) and confirmed on adversarial re-review (shore meaning prop up is different word)."
+  },
+  "shoring": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shore` (shoring > shore), costing 2.55 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (propping support, not coast) and confirmed on adversarial re-review (shore meaning prop up is different word)."
+  },
+  "shorings": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shore` (shorings > shoring > shore), costing 4.26 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (propping supports, not coast) and confirmed on adversarial re-review (shore meaning prop up is different word)."
+  },
+  "shorthanded": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shorthand` (shorthanded > shorthand), costing 1.02 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (understaffed, not abbreviated writing) and confirmed on adversarial re-review (means understaffed; unrelated to shorthand writing)."
+  },
+  "shorthandedly": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shorthand` (shorthandedly > shorthanded > shorthand), costing 2.71 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (understaffed sense, not shorthand) and confirmed on adversarial re-review (means understaffed; unrelated to shorthand writing)."
+  },
+  "shorthandedness": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `shorthand` (shorthandedness > shorthanded > shorthand), costing 2.71 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (understaffed sense, not shorthand) and confirmed on adversarial re-review (means understaffed; unrelated to shorthand writing)."
   },
   "shotes": {
     "since": "2026-09-27",
@@ -8522,6 +8811,10 @@
   "sipes": {
     "since": "2026-09-27",
     "reason": "Folded onto `sip`, costing 2.70 points. Flagged in the 2026-09-22 semantic audit (sipe is seepage/tread slit, not sip) and confirmed on adversarial re-review (sipe seepage unrelated to sip)."
+  },
+  "siphonales": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `siphonal` (siphonales > siphonal), costing 0.53 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (algae order, not plural of siphonal) and confirmed on adversarial re-review (an order of algae, not a plural)."
   },
   "sires": {
     "since": "2026-08-21",
@@ -9194,6 +9487,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `thermo`, costing 1.95 points. Flagged in the 2026-09-22 semantic audit (thermos not built on thermo) and confirmed on adversarial re-review (thermos flask versus thermo heat)."
   },
+  "thos": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `tho` (thos > tho), costing 2.48 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (Thos is abbreviation of Thomas) and confirmed on adversarial re-review (abbreviation of Thomas, not tho)."
+  },
+  "thowless": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `thow` (thowless > thow), costing 0.87 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (from thew (vigor), not thow) and confirmed on adversarial re-review (from thew (vigour); thow is unrelated)."
+  },
   "threds": {
     "since": "2026-09-27",
     "reason": "Folded onto `thre`, costing 1.66 points. Flagged in the 2026-09-22 semantic audit (thre is not a word) and confirmed on adversarial re-review (thre is not a word)."
@@ -9534,6 +9835,10 @@
   "unches": {
     "since": "2026-09-27",
     "reason": "Folded onto `che`, costing 3.44 points. Flagged in the 2026-09-22 semantic audit (unch/unches unrelated to che) and confirmed on adversarial re-review (unrelated letters only)."
+  },
+  "unchoppable": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `choppy` (unchoppable > choppable > choppy), costing 2.37 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (choppable is from chop, not choppy) and confirmed on adversarial re-review (from chop; the rule overshot to choppy)."
   },
   "uncomelier": {
     "since": "2026-09-27",
@@ -9882,6 +10187,16 @@
   "unhomely": {
     "since": "2026-09-27",
     "reason": "Folded onto `home`, costing 6.80 points. Flagged in the 2026-09-22 semantic audit (from homely, not home) and confirmed on adversarial re-review (homely means plain, drifted)."
+  },
+  "unhooker": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hooker` (unhooker > hooker), costing 3.47 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (one who unhooks, not prostitute) and confirmed on adversarial re-review (one who unhooks; the base sense differs).",
+    "scope": "prefix"
+  },
+  "unhookers": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `hooker` (unhookers > unhooker > hooker), costing 3.47 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (one who unhooks, not prostitute) and confirmed on adversarial re-review (one who unhooks; the base sense differs).",
+    "scope": "prefix"
   },
   "unimped": {
     "since": "2026-09-27",
@@ -10456,6 +10771,22 @@
   "whister": {
     "since": "2026-09-27",
     "reason": "Folded onto `whist`, costing 1.97 points. Flagged in the 2026-09-22 semantic audit (whister not from whist) and confirmed on adversarial re-review (whister unrelated to whist)."
+  },
+  "whooped": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `whoops` (whooped > whoop > whoops), costing 1.23 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (final base whoops is mistake exclamation) and confirmed on adversarial re-review (chain overshoots to the exclamation whoops)."
+  },
+  "whooping": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `whoops` (whooping > whoop > whoops), costing 0.38 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (final base whoops differs from whoop) and confirmed on adversarial re-review (chain overshoots to the exclamation whoops)."
+  },
+  "whoopingly": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `whoops` (whoopingly > whooping > whoop > whoops), costing 3.08 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (final base whoops differs from whoop) and confirmed on adversarial re-review (chain overshoots to the exclamation whoops)."
+  },
+  "whoopings": {
+    "since": "2026-10-11",
+    "reason": "Folded onto `whoops` (whoopings > whooping > whoop > whoops), costing 2.96 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (final base whoops differs from whoop) and confirmed on adversarial re-review (chain overshoots to the exclamation whoops)."
   },
   "whves": {
     "since": "2026-09-27",
