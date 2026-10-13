@@ -718,8 +718,11 @@ export interface EstimatesReport {
   retention: { nextDay: { found: Rate; other: Rate } };
 }
 
-/** Why a new player started in the mode they did -- see game/onboarding.ts. */
-export type OnboardingReason = "shared" | "default" | "split";
+/**
+ * Why a new player started in the mode they did -- see game/onboarding.ts -- or
+ * `returning`: a player from before the window, by the mode they came back to.
+ */
+export type OnboardingReason = "shared" | "default" | "split" | "returning";
 
 /** One starting mode, for one reason, over the window. */
 export interface OnboardingArm {
@@ -1245,7 +1248,7 @@ function parseEstimates(raw: unknown): EstimatesReport {
   };
 }
 
-const REASONS: readonly string[] = ["shared", "default", "split"];
+const REASONS: readonly string[] = ["shared", "default", "split", "returning"];
 
 function parseOnboarding(raw: unknown): OnboardingReport {
   const o = obj(raw);

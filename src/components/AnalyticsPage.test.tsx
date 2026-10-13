@@ -659,6 +659,8 @@ describe("AnalyticsPage", () => {
           arm("split", "standard", {}),
           arm("split", "freeform", { d1: { cohort: 20, returned: 9 }, sharers: 10 }),
           arm("shared", "freeform", { players: 8, sharers: 2, shares: 4 }),
+          arm("returning", "standard", { players: 50, played: 50 }),
+          arm("returning", "freeform", { players: 30, played: 30 }),
         ],
         arrivals: [{ link: "share", mode: "freeform", arrivals: 12 }],
       },
@@ -672,6 +674,12 @@ describe("AnalyticsPage", () => {
     expect(within(standard).getByText("0.25")).toBeInTheDocument();
     const shared = screen.getByRole("rowheader", { name: "Friend's link · Freeform" }).closest("tr")!;
     expect(within(shared).getByText("0.50")).toBeInTheDocument();
+    const rows = within(freeform.closest("tbody")!)
+      .getAllByRole("rowheader")
+      .map((r) => r.textContent);
+    expect(rows.slice(-2)).toEqual(["Returning player · Freeform", "Returning player · Standard"]);
+    const returning = screen.getByRole("rowheader", { name: "Returning player · Standard" }).closest("tr")!;
+    expect(within(returning).getByText("100%")).toBeInTheDocument();
     expect(screen.getByText("Share-link taps in the window: 12 on Freeform links copied with the Share button and pasted elsewhere.")).toBeInTheDocument();
   });
 
@@ -679,7 +687,7 @@ describe("AnalyticsPage", () => {
     stubFetch({ ...REPORT, onboarding: null });
     render(<AnalyticsPage />);
     await screen.findByText("New players", { selector: ".analytics__tile-label" });
-    expect(screen.queryByText("Standard vs Freeform: new players by starting mode")).not.toBeInTheDocument();
+    expect(screen.queryByText("Standard vs Freeform: new and returning players by mode")).not.toBeInTheDocument();
   });
 
   it("tables the weekday and mode numbers", async () => {

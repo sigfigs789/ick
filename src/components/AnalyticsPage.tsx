@@ -473,15 +473,17 @@ const REASON_NAMES: Record<OnboardingReason, string> = {
   split: "Random split",
   shared: "Friend's link",
   default: "Default",
+  returning: "Returning player",
 };
-const REASON_ORDER: OnboardingReason[] = ["split", "shared", "default"];
+const REASON_ORDER: OnboardingReason[] = ["split", "shared", "default", "returning"];
 
 /**
  * New players, by the mode they were started in (see game/onboarding.ts): a
  * friend's link starts them in the mode it was shared from, a share link from
  * before links carried a mode in Standard, and everyone else -- unattributed
  * arrivals included -- half and half. The split rows are the fair
- * comparison -- the only thing that differs between them is the mode.
+ * comparison -- the only thing that differs between them is the mode. Below
+ * them, returning players by the mode they came back to, for a baseline.
  */
 // Cohorts need days to come back in, so onboarding_report clamps a today window
 // up to its shortest, a week, and the note says so.
@@ -510,10 +512,10 @@ function OnboardingSection({
 
   return (
     <Section
-      title="Standard vs Freeform: new players by starting mode"
+      title="Standard vs Freeform: new and returning players by mode"
       note={
         onboarding.since
-          ? `Players who started ${isToday ? "in the last 7 days" : picked ? "in as many days as the range, up to now" : "in the window"}, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, a share link from before links carried one in Standard (Default), anyone else, unattributed included, at random. Until the split took unattributed arrivals in, they went to Default too. Retention is a live day played after the one they arrived on, in either mode.`
+          ? `Players who started ${isToday ? "in the last 7 days" : picked ? "in as many days as the range, up to now" : "in the window"}, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, a share link from before links carried one in Standard (Default), anyone else, unattributed included, at random. Until the split took unattributed arrivals in, they went to Default too. Returning players played before the window and again in it, in each mode they played, so one who played both is in both rows; their days, and their retention, are that mode's only, counted from their first play in it; shares and switches from then on. A new player's retention is a live day played after the one they arrived on, in either mode.`
           : "Where new players start, and whether they stay."
       }
     >
