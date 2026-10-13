@@ -515,7 +515,7 @@ function OnboardingSection({
       title="Standard vs Freeform: new and returning players by mode"
       note={
         onboarding.since
-          ? `Players who started ${isToday ? "in the last 7 days" : picked ? "in as many days as the range, up to now" : "in the window"}, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, a share link from before links carried one in Standard (Default), anyone else, unattributed included, at random. Until the split took unattributed arrivals in, they went to Default too. A returning player is anyone who has played before, new players who came back included, in each mode they played on a day after their first, so one who played both is in both rows; their days, and their retention, are that mode's only, counted from their first returning play in it; shares and switches from then on. A new player's retention is a live day played after the one they arrived on, in either mode.`
+          ? `Players who started ${isToday ? "in the last 7 days" : picked ? "in as many days as the range, up to now" : "in the window"}, recorded from ${onboarding.since}. A friend's link starts them in the link's mode, a share link from before links carried one in Standard (Default), anyone else, unattributed included, at random. Until the split took unattributed arrivals in, they went to Default too. A returning player's first day was before the window; they are in each mode they played in it, so one who played both is in both rows, and their days and retention are that mode's only, counted from their first play in it; shares and switches from then on. A new player's retention is a live day played after the one they arrived on, in either mode.`
           : "Where new players start, and whether they stay."
       }
     >
@@ -530,8 +530,8 @@ function OnboardingSection({
                 <th scope="col">Players</th>
                 <th scope="col">Played</th>
                 <th scope="col">Next day</th>
-                <th scope="col">Day 7</th>
-                <th scope="col">First week</th>
+                <th scope="col">Within first week</th>
+                <th scope="col">Within first month</th>
                 <th scope="col">Days played</th>
                 <th scope="col">Shared</th>
                 <th scope="col">Shares per player</th>
@@ -550,10 +550,10 @@ function OnboardingSection({
                     <RateCell rate={a.d1} />
                   </td>
                   <td>
-                    <RateCell rate={a.d7} />
+                    <RateCell rate={a.week1} />
                   </td>
                   <td>
-                    <RateCell rate={a.week1} />
+                    <RateCell rate={a.month1} />
                   </td>
                   <td>{a.avgDaysPlayed === null ? "—" : dec(a.avgDaysPlayed, 1)}</td>
                   <td>{a.players ? pct(a.sharers / a.players) : "—"}</td>

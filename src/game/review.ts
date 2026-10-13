@@ -736,9 +736,10 @@ export interface OnboardingArm {
   playedDays: number;
   avgDaysPlayed: number | null;
   d1: Rate;
-  d7: Rate;
   /** Played again at least once in the seven days after arriving. */
   week1: Rate;
+  /** Played again at least once in the thirty days after arriving. */
+  month1: Rate;
   /** Players who shared at least once. */
   sharers: number;
   shares: number;
@@ -1264,8 +1265,8 @@ function parseOnboarding(raw: unknown): OnboardingReport {
         playedDays: count(a.playedDays),
         avgDaysPlayed: maybe(a.avgDaysPlayed),
         d1: rate(a.d1),
-        d7: rate(a.d7),
         week1: rate(a.week1),
+        month1: rate(a.month1),
         sharers: count(a.sharers),
         shares: count(a.shares),
         switched: count(a.switched),

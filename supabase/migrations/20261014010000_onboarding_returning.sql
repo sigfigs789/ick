@@ -2,21 +2,21 @@
 -- beside the new-player arms, so the page can set how the people already here
 -- do in each mode against how new arrivals do.
 --
--- A returning player is anyone who has played the game before: every play in
--- the window on a day after the player's first ever counts, so a new player
--- who started inside the window and came back is a returner from that second
--- day on, as well as everyone from before it. Returning is not a start, so
--- there is no `mode_assigned` to place them by; they are counted in each mode
--- they played on a returning day in the window, and a player who played both
--- is in both rows. Assigning each to
+-- A returning player is one whose first day was before the window began and
+-- who played inside it; a player whose first day is inside the window is a new
+-- player, and is in the arms above instead. Returning is not a start, so there
+-- is no `mode_assigned` to place them by; they are counted in each mode they
+-- played in the window, and a player who played both is in both rows. Assigning each to
 -- one mode hid Freeform entirely: every returner who plays it plays Standard
 -- too, and came back on Standard first. A day from before the split is
 -- 'shared' and says nothing about a choice, so it counts toward neither row.
--- Day N counts from their first returning play in that mode in the window, the
--- way it counts from the arrival day for new players, with the same cohort
--- rule, but only a later day in that same mode is retention -- in either
+-- Their days count from their first play in that mode in the window, the way
+-- they count from the arrival day for new players, with the same cohort rule, but only a later day in that same mode is retention -- in either
 -- mode, the Freeform row would mostly be the Standard play of the same people.
 -- Played is everyone by construction.
+--
+-- Day 7 is gone from every row, and a first month joins the first week: played
+-- again within 30 days of the first day, once that month is over.
 --
 -- Their shares and switches are only the ones from that day on: a returner may
 -- have moved the switch in August, and that is not something this window did.
@@ -89,7 +89,7 @@ as $$
       join cohort c on c.player_id = e.props ->> 'player_id'
     where e.name = 'mode_changed'
   ),
-  -- Returning players: a play in the window on a day after their first ever.
+  -- Returning players: a first day before the window, and a play inside it.
   returner_firsts as (
     select s.player_id::text as player_id, min(s.puzzle_date) as first_day
     from public.leaderboard_scores s
@@ -108,7 +108,7 @@ as $$
       bounds b, days
     where s.mode in ('standard', 'freeform')
       and s.puzzle_date > b.as_of - days.n
-      and s.puzzle_date > f.first_day
+      and f.first_day <= b.as_of - days.n
     group by 1, 2
   ),
   returning_plays as (
@@ -140,7 +140,8 @@ as $$
       exists (select 1 from returning_plays p
               where p.player_id = r.player_id and p.mode = r.mode and p.puzzle_date = r.day + 1) as d1,
       exists (select 1 from returning_plays p
-              where p.player_id = r.player_id and p.mode = r.mode and p.puzzle_date = r.day + 7) as d7,
+              where p.player_id = r.player_id and p.mode = r.mode
+                and p.puzzle_date > r.day and p.puzzle_date <= r.day + 30) as month1,
       exists (select 1 from returning_plays p
               where p.player_id = r.player_id and p.mode = r.mode
                 and p.puzzle_date > r.day and p.puzzle_date <= r.day + 7) as week1,
@@ -159,7 +160,8 @@ as $$
       exists (select 1 from plays p
               where p.player_id = c.player_id and p.puzzle_date = c.day + 1) as d1,
       exists (select 1 from plays p
-              where p.player_id = c.player_id and p.puzzle_date = c.day + 7) as d7,
+              where p.player_id = c.player_id
+                and p.puzzle_date > c.day and p.puzzle_date <= c.day + 30) as month1,
       exists (select 1 from plays p
               where p.player_id = c.player_id
                 and p.puzzle_date > c.day and p.puzzle_date <= c.day + 7) as week1,
@@ -188,12 +190,12 @@ as $$
           'd1', jsonb_build_object(
             'cohort', count(*) filter (where p.day + 1 < b.as_of),
             'returned', count(*) filter (where p.day + 1 < b.as_of and p.d1)),
-          'd7', jsonb_build_object(
-            'cohort', count(*) filter (where p.day + 7 < b.as_of),
-            'returned', count(*) filter (where p.day + 7 < b.as_of and p.d7)),
           'week1', jsonb_build_object(
             'cohort', count(*) filter (where p.day + 7 < b.as_of),
             'returned', count(*) filter (where p.day + 7 < b.as_of and p.week1)),
+          'month1', jsonb_build_object(
+            'cohort', count(*) filter (where p.day + 30 < b.as_of),
+            'returned', count(*) filter (where p.day + 30 < b.as_of and p.month1)),
           'sharers', count(*) filter (where p.shares > 0),
           'shares', sum(p.shares),
           'switched', count(*) filter (where p.switched)

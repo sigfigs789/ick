@@ -644,8 +644,8 @@ describe("AnalyticsPage", () => {
       playedDays: 60,
       avgDaysPlayed: 1.5,
       d1: { cohort: 20, returned: 5 },
-      d7: { cohort: 0, returned: 0 },
       week1: { cohort: 0, returned: 0 },
+      month1: { cohort: 0, returned: 0 },
       sharers: 4,
       shares: 10,
       switched: 2,
@@ -659,7 +659,7 @@ describe("AnalyticsPage", () => {
           arm("split", "standard", {}),
           arm("split", "freeform", { d1: { cohort: 20, returned: 9 }, sharers: 10 }),
           arm("shared", "freeform", { players: 8, sharers: 2, shares: 4 }),
-          arm("returning", "standard", { players: 50, played: 50 }),
+          arm("returning", "standard", { players: 50, played: 50, month1: { cohort: 10, returned: 7 } }),
           arm("returning", "freeform", { players: 30, played: 30 }),
         ],
         arrivals: [{ link: "share", mode: "freeform", arrivals: 12 }],
@@ -680,6 +680,12 @@ describe("AnalyticsPage", () => {
     expect(rows.slice(-2)).toEqual(["Returning player · Freeform", "Returning player · Standard"]);
     const returning = screen.getByRole("rowheader", { name: "Returning player · Standard" }).closest("tr")!;
     expect(within(returning).getByText("100%")).toBeInTheDocument();
+    expect(within(returning).getByText("70%")).toBeInTheDocument();
+    const headers = within(freeform.closest("table")!)
+      .getAllByRole("columnheader")
+      .map((h) => h.textContent);
+    expect(headers).toContain("Within first month");
+    expect(headers).not.toContain("Day 7");
     expect(screen.getByText("Share-link taps in the window: 12 on Freeform links copied with the Share button and pasted elsewhere.")).toBeInTheDocument();
   });
 
