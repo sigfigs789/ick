@@ -2,18 +2,21 @@
 -- beside the new-player arms, so the page can set how the people already here
 -- do in each mode against how new arrivals do.
 --
--- A returning player is anyone who played a live day before the window began
--- and played again inside it. They have no `mode_assigned` -- that fires once,
--- for a brand-new browser -- so they are counted in each mode they played in
--- the window, and a player who played both is in both rows. Assigning each to
+-- A returning player is anyone who has played the game before: every play in
+-- the window on a day after the player's first ever counts, so a new player
+-- who started inside the window and came back is a returner from that second
+-- day on, as well as everyone from before it. Returning is not a start, so
+-- there is no `mode_assigned` to place them by; they are counted in each mode
+-- they played on a returning day in the window, and a player who played both
+-- is in both rows. Assigning each to
 -- one mode hid Freeform entirely: every returner who plays it plays Standard
 -- too, and came back on Standard first. A day from before the split is
 -- 'shared' and says nothing about a choice, so it counts toward neither row.
--- Day N counts from their first play in that mode in the window, the way it
--- counts from the arrival day for new players, with the same cohort rule, but
--- only a later day in that same mode is retention -- in either mode, the
--- Freeform row would mostly be the Standard play of the same people. Played is
--- everyone by construction.
+-- Day N counts from their first returning play in that mode in the window, the
+-- way it counts from the arrival day for new players, with the same cohort
+-- rule, but only a later day in that same mode is retention -- in either
+-- mode, the Freeform row would mostly be the Standard play of the same people.
+-- Played is everyone by construction.
 --
 -- Their shares and switches are only the ones from that day on: a returner may
 -- have moved the switch in August, and that is not something this window did.
@@ -86,7 +89,7 @@ as $$
       join cohort c on c.player_id = e.props ->> 'player_id'
     where e.name = 'mode_changed'
   ),
-  -- Returning players: a live day before the window, and one inside it.
+  -- Returning players: a play in the window on a day after their first ever.
   returner_firsts as (
     select s.player_id::text as player_id, min(s.puzzle_date) as first_day
     from public.leaderboard_scores s
@@ -105,7 +108,7 @@ as $$
       bounds b, days
     where s.mode in ('standard', 'freeform')
       and s.puzzle_date > b.as_of - days.n
-      and f.first_day <= b.as_of - days.n
+      and s.puzzle_date > f.first_day
     group by 1, 2
   ),
   returning_plays as (
