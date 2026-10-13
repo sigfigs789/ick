@@ -89,6 +89,18 @@ export function FoundWordsPage() {
   );
 
   /**
+   * Every day's finds read so far, so stepping back to one is instant.
+   *
+   * Held for the life of the page and no longer, and only ever shown while the
+   * day is re-read underneath (see `showDay`): a past day still gains the odd
+   * word from archive play, and today's gains them all day.
+   */
+  const wordsCache = useRef(new Map<string, readonly FoundWord[]>());
+  /** The day on screen, for a response to check it is still wanted. */
+  const viewingRef = useRef(viewing);
+  viewingRef.current = viewing;
+
+  /**
    * Re-read the finds for the day on screen.
    *
    * A failure is swallowed once there is a list to keep: the last good one is a
@@ -99,14 +111,20 @@ export function FoundWordsPage() {
    */
   const refreshWords = useCallback(
     (options: FetchOptions = {}) => {
-      fetchFoundWords(viewing, options)
+      const date = viewing;
+      fetchFoundWords(date, options)
         .then((found) => {
+          wordsCache.current.set(date, found);
+          // A reader who stepped on while this was in flight is looking at
+          // another drop now, and these rows are not its rows.
+          if (viewingRef.current !== date) return;
           setWords(found);
           setFeedState("ready");
         })
-        .catch(() =>
-          setFeedState((was) => (was === "loading" ? "error" : was)),
-        );
+        .catch(() => {
+          if (viewingRef.current !== date) return;
+          setFeedState((was) => (was === "loading" ? "error" : was));
+        });
     },
     [viewing],
   );
@@ -115,19 +133,23 @@ export function FoundWordsPage() {
    * Step the feed to another day of the week.
    *
    * Sets the day and nothing else; the effect that follows `viewing` does the
-   * fetching. Nothing is prefetched and no day is held in memory, so a reader
-   * who never presses back costs exactly what they cost before -- one request,
-   * for today. The list is cleared on the way, because the heading names a drop
-   * and the rows under it have to be that drop's; leaving yesterday's words
-   * under today's heading for the length of a request would be the one wrong
-   * thing this could show. The empty list keeps its height while it is in flight
-   * (see .found-words__list), so the page does not collapse and spring back
-   * under the button that was just pressed.
+   * fetching. Nothing is prefetched, so a reader who never presses back costs
+   * exactly what they cost before -- one request, for today.
+   *
+   * A day already read this visit goes straight back on screen and the request
+   * only checks it -- a reader stepping back and forward is looking for
+   * something they have just seen. A day not read yet clears the list, because
+   * the heading names a drop and the rows under it have to be that drop's;
+   * leaving yesterday's words under today's heading for the length of a request
+   * would be the one wrong thing this could show. The empty list keeps its
+   * height while it is in flight (see .found-words__list), so the page does not
+   * collapse and spring back under the button that was just pressed.
    */
   const showDay = useCallback((date: string) => {
+    const cached = wordsCache.current.get(date);
     setViewing(date);
-    setWords([]);
-    setFeedState("loading");
+    setWords(cached ?? []);
+    setFeedState(cached ? "ready" : "loading");
   }, []);
 
   /**

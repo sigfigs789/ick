@@ -94,6 +94,52 @@ function windowKey(board: GameMode, window: string): string {
 }
 
 /**
+ * Every window this page has read, so stepping back to one is instant.
+ *
+ * Kept per window rather than per request: the three boards step separately,
+ * so the day a reader returns to is very often paired with a week they have
+ * never had on screen beside it, and only the board that moved needs anything.
+ * Keyed like `windowKey`, so a window on one board is never served as the same
+ * window on the other.
+ *
+ * Held for the life of the page and no longer. It is a few kilobytes, and a
+ * remembered window is only ever shown while it is re-read underneath (see
+ * `load`) -- a past day's board can still move, as players backfill old puzzles.
+ */
+interface BoardCache {
+  day: Map<string, Pick<Boards, "daily" | "dailySelf">>;
+  week: Map<string, Pick<Boards, "weekly" | "weeklySelf" | "weekStart">>;
+  month: Map<string, Pick<Boards, "monthly" | "monthlySelf">>;
+}
+
+function remember(cache: BoardCache, windows: Windows, loaded: Boards) {
+  const { board } = windows;
+  cache.day.set(windowKey(board, windows.day), {
+    daily: loaded.daily,
+    dailySelf: loaded.dailySelf,
+  });
+  cache.week.set(windowKey(board, windows.week), {
+    weekly: loaded.weekly,
+    weeklySelf: loaded.weeklySelf,
+    weekStart: loaded.weekStart,
+  });
+  cache.month.set(windowKey(board, windows.month), {
+    monthly: loaded.monthly,
+    monthlySelf: loaded.monthlySelf,
+  });
+}
+
+/** All three boards for these windows, if every one of them has been read. */
+function recall(cache: BoardCache, windows: Windows): Boards | null {
+  const { board } = windows;
+  const day = cache.day.get(windowKey(board, windows.day));
+  const week = cache.week.get(windowKey(board, windows.week));
+  const month = cache.month.get(windowKey(board, windows.month));
+  if (!day || !week || !month) return null;
+  return { ...day, ...week, ...month, mode: board };
+}
+
+/**
  * What one board is doing: showing the window asked for, waiting for it, or
  * unable to load it.
  *
@@ -267,6 +313,12 @@ export function LeaderboardPage() {
    * refresh of the same window is also correctly the newer of the two.
    */
   const boardsRequest = useRef(0);
+  /** The windows read so far (see BoardCache). */
+  const boardCache = useRef<BoardCache>({
+    day: new Map(),
+    week: new Map(),
+    month: new Map(),
+  });
 
   /**
    * Fetch all three boards.
@@ -282,14 +334,27 @@ export function LeaderboardPage() {
     // fetch it would be a worse page than the one the reader is looking at. From
     // then on each board says for itself whether it is waiting (see
     // `boardState`).
-    setState((was) => (was === "ready" ? was : "loading"));
+    const windows: Windows = { day, week, month, board };
+    // A window already read this visit goes straight back on screen, and the
+    // request below only checks it: a reader stepping back and forward is
+    // looking for something they have just seen, and a skeleton in its place
+    // says it has gone. The answer swaps in when it lands, as a refresh does.
+    const cached = recall(boardCache.current, windows);
+    if (cached) {
+      setBoards(cached);
+      setShown(windows);
+      setState("ready");
+    } else {
+      setState((was) => (was === "ready" ? was : "loading"));
+    }
     setFailed(null);
     const request = ++boardsRequest.current;
     fetchBoards(today, { day, week, month, mode: board })
       .then((loaded) => {
+        remember(boardCache.current, windows, loaded);
         if (request !== boardsRequest.current) return;
         setBoards(loaded);
-        setShown({ day, week, month, board });
+        setShown(windows);
         boardsReadAt.current = Date.now();
         setState("ready");
       })
@@ -298,7 +363,9 @@ export function LeaderboardPage() {
       // Recorded against the windows that were asked for, so the board that was
       // waiting is the one that reports it.
       .catch(() => {
-        if (request !== boardsRequest.current) return;
+        // A remembered window stays up: a failed check is not news about rows
+        // the reader can already see.
+        if (cached || request !== boardsRequest.current) return;
         setState((was) => (was === "ready" ? was : "error"));
         setFailed({ day, week, month, board });
       });
@@ -320,6 +387,7 @@ export function LeaderboardPage() {
       const request = ++boardsRequest.current;
       fetchBoards(today, { ...options, day, week, month, mode: board })
         .then((loaded) => {
+          remember(boardCache.current, { day, week, month, board }, loaded);
           if (request !== boardsRequest.current) return;
           setBoards(loaded);
           setShown({ day, week, month, board });

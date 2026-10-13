@@ -1096,6 +1096,49 @@ describe("stepping the boards through past windows", () => {
     });
   });
 
+  it("puts a window already read straight back, and re-reads it underneath", async () => {
+    let release: (() => void) | null = null;
+    const { fetchMock, asked } = stubWindows({
+      [`${THIS_WEEK}/${THIS_MONTH}`]: { weekly: rowFor(ALICE, 41.2) },
+      [`${LAST_WEEK}/${THIS_MONTH}`]: { weekly: rowFor(BOB, 38.0) },
+    });
+    render(<LeaderboardPage />);
+    await waitFor(() =>
+      expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE)),
+    );
+    await userEvent.click(step("Previous week"));
+    await waitFor(() => expect(asked).toHaveLength(2));
+    await waitFor(() =>
+      expect(document.querySelectorAll(".leaderboard__row--placeholder")).toHaveLength(0),
+    );
+
+    // The check on the way back hangs, so what is on screen before it lands is
+    // only what the page remembered.
+    const answered = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation(async (url: unknown, init?: RequestInit) => {
+      if (String(url).includes("words=1") || init?.method === "POST")
+        return answered(url, init);
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      return answered(url, init);
+    });
+    const callsBefore = fetchMock.mock.calls.length;
+    fireEvent.click(step("Next week"));
+
+    expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE));
+    expect(
+      document.querySelectorAll(".leaderboard__row--placeholder"),
+    ).toHaveLength(0);
+    // Still asked: a past window can move, and this is how it would show.
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(callsBefore),
+    );
+    await act(async () => {
+      release?.();
+    });
+  });
+
   it("offers a retry on the board whose window would not load", async () => {
     stubWindows(
       {
