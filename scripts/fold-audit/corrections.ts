@@ -7,11 +7,22 @@ function serve(): void {
   const base = "public/corpus";
   const meta = JSON.parse(readFileSync(`${base}/meta.json`, "utf8"));
   const words = readFileSync(`${base}/words.txt`, "utf8");
-  const bin = (n: string) => { const b: any = readFileSync(`${base}/${n}`); return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength); };
-  globalThis.fetch = ((url: string) => Promise.resolve({ ok: true,
-    ...(url.includes("meta.json") ? { json: () => Promise.resolve(meta) }
-      : url.includes("words.txt") ? { text: () => Promise.resolve(words) }
-      : { arrayBuffer: () => Promise.resolve(bin(url.split("/").pop()!.split("?")[0])) }) } as any)) as any;
+  const bin = (n: string) => {
+    const b = readFileSync(`${base}/${n}`) as {
+      buffer: ArrayBuffer;
+      byteOffset: number;
+      byteLength: number;
+    };
+    return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+  };
+  globalThis.fetch = ((url: string) => {
+    const body = url.includes("meta.json")
+      ? { json: () => Promise.resolve(meta) }
+      : url.includes("words.txt")
+        ? { text: () => Promise.resolve(words) }
+        : { arrayBuffer: () => Promise.resolve(bin(url.split("/").pop()!.split("?")[0])) };
+    return Promise.resolve({ ok: true, ...body } as unknown as Response);
+  }) as typeof fetch;
 }
 const BEFORE = "2026-09-30";
 const AFTER = "2026-10-01";
