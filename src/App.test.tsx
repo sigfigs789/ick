@@ -52,6 +52,8 @@ function puzzle(overrides: Record<string, unknown> = {}) {
     copyToOtherMode: vi.fn(),
     liveNote: null,
     checking: false,
+    foldNotices: [],
+    dismissFoldNotices: vi.fn(),
     ...overrides,
   };
 }

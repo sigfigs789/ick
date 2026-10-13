@@ -7,6 +7,7 @@ import { ChatBubble } from "./components/ChatBubble";
 import { FeedbackPage } from "./components/FeedbackPage";
 import { FoundWordsPage } from "./components/FoundWordsPage";
 import { FoldReviewPage } from "./components/FoldReviewPage";
+import { FoldedLivePage } from "./components/FoldedLivePage";
 import { FreeformFeedbackPage } from "./components/FreeformFeedbackPage";
 import { FreeformModal } from "./components/FreeformModal";
 import { HelpPage } from "./components/HelpPage";
@@ -324,6 +325,8 @@ export function Root() {
         <FreeformFeedbackPage />
       ) : route === "fold-review" ? (
         <FoldReviewPage />
+      ) : route === "folded-live" ? (
+        <FoldedLivePage />
       ) : route === "analytics" ? (
         <AnalyticsPage />
       ) : route === "transfer" ? (

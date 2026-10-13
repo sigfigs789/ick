@@ -557,6 +557,51 @@ export function retryWord(progress: DailyProgress, word: string): DailyProgress 
 }
 
 /**
+ * Put new scores on words already banked, keeping everything else about them.
+ *
+ * The one caller is a fold rejected live at /folded-live (see
+ * game/liveFoldRejections.ts): the word stays where it was and only its price
+ * moves. Allowed on a finished puzzle too, unlike banking a word -- the puzzle
+ * is not being played further, it is being corrected. A rejected fold can only
+ * make a word rarer, so the counters that move are the ones a better word earns.
+ *
+ * Returns `progress` unchanged when no word's score moved.
+ */
+export function rescoreAcceptedWords(
+  progress: DailyProgress,
+  rescored: ReadonlyMap<string, AcceptedWord>
+): DailyProgress {
+  let changed = false;
+  const acceptedWords = progress.acceptedWords.map((word) => {
+    const next = rescored.get(word.word);
+    if (!next || (next.zipf === word.zipf && next.rarity === word.rarity)) return word;
+    changed = true;
+    return { ...word, zipf: next.zipf, rarity: next.rarity };
+  });
+  if (!changed) return progress;
+
+  const hadWinning = progress.acceptedWords.some((w) => isWinningRarity(w.rarity));
+  const hadElite = progress.acceptedWords.some((w) => isEliteRarity(w.rarity));
+  const hasWinning = acceptedWords.some((w) => isWinningRarity(w.rarity));
+  const hasElite = acceptedWords.some((w) => isEliteRarity(w.rarity));
+  const updated: DailyProgress = {
+    ...progress,
+    acceptedWords,
+    won: progress.completed ? hasWinning : progress.won,
+  };
+  saveProgress(updated);
+
+  for (const word of acceptedWords) updateHighScore(word.zipf, progress.date);
+  updateRarityScore({
+    shouldIncrementCrushedIt: hasWinning && !hadWinning,
+    shouldIncrementElite: hasElite && !hadElite,
+  });
+  if (progress.completed && hasWinning && progress.won !== true) incrementCompletionTotal();
+
+  return updated;
+}
+
+/**
  * Give up this puzzle's retry without spending it on a word.
  *
  * The one caller is the reveal under the drop (see DropDisplay): a finished

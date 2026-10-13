@@ -2,6 +2,7 @@ import {
   ANALYTICS_PATH,
   FEEDBACK_PATH,
   FOLD_REVIEW_PATH,
+  FOLDED_LIVE_PATH,
   FOUND_WORDS_PATH,
   FREEFORM_FEEDBACK_PATH,
   LEADERBOARD_PATH,
@@ -31,6 +32,7 @@ const CURATOR_PAGES: PageLink[] = [
   { path: FEEDBACK_PATH, label: "Feedback", note: "Notes players have left.", keyed: true },
   { path: FREEFORM_FEEDBACK_PATH, label: "Freeform feedback", note: "The Freeform week verdict.", keyed: true },
   { path: FOLD_REVIEW_PATH, label: "Fold review", note: "Approve or reject the scoring’s folds.", keyed: true },
+  { path: FOLDED_LIVE_PATH, label: "Words folded", note: "Reject a puzzle’s folds live, one day at a time." },
 ];
 
 const STATIC_PAGES: PageLink[] = [

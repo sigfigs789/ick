@@ -8651,6 +8651,10 @@
     "since": "2026-09-27",
     "reason": "Hosiery. A noun of its own, not a form of `stock`; `stockings`, `stockinged` and `stockingless` all fold through it."
   },
+  "stompies": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `stompy` (stompies > stompy), costing 0.56 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (SA slang cigarette butts, not stompy) and confirmed on adversarial re-review (stompie cigarette butts, not stompy adjective)."
+  },
   "stonkering": {
     "since": "2026-09-27",
     "reason": "Folded onto `stonking`, costing 1.03 points. Flagged in the 2026-09-22 semantic audit (stonker vs stonking, different words) and confirmed on adversarial re-review (stonker versus stonking, different words)."
