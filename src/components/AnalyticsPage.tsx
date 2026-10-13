@@ -231,13 +231,12 @@ function Report({
 
       <Section
         title="Coming back"
-        note="Of the players whose first puzzle was long enough ago to tell, how many played again. Day N is exactly N days after their first."
+        note="Of the players whose first puzzle was long enough ago to tell, how many played again: the day after their first, or on any day within the week or the month after it."
       >
         <div className="analytics__tiles">
           <RateTile label="Next day" rate={retention.d1} />
           <RateTile label="Within the first week" rate={retention.week1} />
-          <RateTile label="Day 7" rate={retention.d7} />
-          <RateTile label="Day 30" rate={retention.d30} />
+          <RateTile label="Within the first month" rate={retention.month1} />
         </div>
       </Section>
 
