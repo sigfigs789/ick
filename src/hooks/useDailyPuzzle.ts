@@ -75,6 +75,7 @@ import {
   type LiveFoldNotice,
 } from "../game/liveFoldRescore";
 import { loadPlayerId } from "../game/player";
+import { reportBankedWord } from "../game/chatNotices";
 import { markSessionEngaged } from "../game/visits";
 import { markGuess } from "../game/sessionTime";
 import { asMode, MODE_LABELS, modeIsChosen, otherMode } from "../game/mode";
@@ -365,6 +366,14 @@ export function useDailyPuzzle() {
         // is monotonic per day, so this is what lets the first word banked after
         // a retry bring the day down to what the player actually holds.
         retried: updated.retryUsed === true,
+      });
+      // And to the chat room, which announces a puzzle's new top score and any
+      // 9.5+ word. The same fire-and-forget write, for the live puzzle only.
+      reportBankedWord({
+        date: viewedDate,
+        isToday: viewedDate === today,
+        word,
+        mode: updated.mode,
       });
       if (isUnattestedZipf(word.zipf)) trackUnattestedScore(viewedDate, word, source);
       if (scoreSource(viewedDate, word) === "estimated") trackEstimatedScore(viewedDate, word);

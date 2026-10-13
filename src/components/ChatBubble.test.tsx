@@ -47,6 +47,21 @@ describe("ChatBubble", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/chat?after=0");
   });
 
+  it("shows a notice as a line of its own, without a handle above it", async () => {
+    const body = "CalmOtter3 banked top scoring word abaci (Mythic, 9.62)";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        json({ messages: [{ id: 2, handle: "CalmOtter3", body, at: "2026-10-13T10:00:00Z", kind: "top" }] }),
+      ),
+    );
+    render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    const line = (await screen.findByText(body)).closest("li");
+    expect(line).toHaveClass("chat__message--notice", "chat__message--top");
+    expect(screen.queryByText("CalmOtter3", { exact: true })).not.toBeInTheDocument();
+  });
+
   it("sends a message and shows it", async () => {
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
       init?.method === "POST"

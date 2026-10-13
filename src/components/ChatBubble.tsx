@@ -36,7 +36,18 @@ export interface ChatMessage {
   handle: string;
   body: string;
   at: string;
+  /**
+   * Absent for a player's message. A notice the room posted itself: "top" when
+   * somebody banked the puzzle's new top score, "tier" for a 9.5+ word. Its body
+   * already names the player, so it is shown as one line of its own.
+   */
+  kind?: "top" | "tier";
 }
+
+const NOTICE_ICONS: Record<NonNullable<ChatMessage["kind"]>, string> = {
+  top: "🏆",
+  tier: "✨",
+};
 
 const PROBLEM_TEXT: Record<ChatProblem | "rate-limited" | "unavailable", string> = {
   empty: "",
@@ -278,7 +289,23 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
                 {loadFailed ? "Couldn't load the chat." : "No messages yet. Say hello!"}
               </li>
             ) : (
-              messages.map((message) => (
+              messages.map((message) =>
+                message.kind ? (
+                  <li
+                    key={message.id}
+                    className={`chat__message chat__message--notice chat__message--${message.kind}`}
+                  >
+                    <span className="chat__body">
+                      <span className="chat__notice-icon" aria-hidden="true">
+                        {NOTICE_ICONS[message.kind]}
+                      </span>{" "}
+                      {message.body}
+                    </span>
+                    <time className="chat__time" dateTime={message.at}>
+                      {timeOf(message.at)}
+                    </time>
+                  </li>
+                ) : (
                 <li
                   key={message.id}
                   className={`chat__message${message.handle === ownHandle ? " chat__message--own" : ""}`}
@@ -291,7 +318,8 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
                   </span>
                   <span className="chat__body">{message.body}</span>
                 </li>
-              ))
+                )
+              )
             )}
           </ol>
           {notice && (

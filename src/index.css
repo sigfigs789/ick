@@ -5082,6 +5082,20 @@ h2 {
   font-size: 0.95rem;
   line-height: 1.35;
 }
+/* A line the room posts itself: a puzzle's new top score, or a 9.5+ word. */
+.chat__message--notice {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  background: var(--caution-bg);
+  color: var(--caution-fg);
+}
+.chat__message--notice .chat__body {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.chat__message--notice .chat__time {
+  font-size: 0.72rem;
+}
 .chat__notice {
   margin: 0;
   padding: 0.45rem 1rem;
