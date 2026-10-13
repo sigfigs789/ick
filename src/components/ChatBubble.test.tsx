@@ -60,6 +60,17 @@ describe("ChatBubble", () => {
     expect(fetchMock).toHaveBeenCalledWith(`/api/chat?date=${DAY}&after=0`);
   });
 
+  it("opens without focusing the message box, so no keyboard covers the chat", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json({ messages: [], latest: 0 })));
+    render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+
+    expect(screen.getByRole("dialog", { name: "Chat" })).toHaveFocus();
+    expect(screen.getByRole("textbox", { name: "Message" })).not.toHaveFocus();
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("steps back and forward through the puzzles' rooms", async () => {
     const before = addDays(DAY, -1);
     const fetchMock = vi.fn(async (url: string) =>

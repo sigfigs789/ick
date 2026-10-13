@@ -5013,6 +5013,9 @@ h2 {
   overflow: hidden;
   animation: modal-in 0.2s var(--ease-standard);
 }
+.chat__panel:focus {
+  outline: none;
+}
 /* The header is the puzzle the room is about: its drop, between the arrows that
    step to the puzzles either side of it. */
 .chat__header {
