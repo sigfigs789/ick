@@ -1139,6 +1139,25 @@ describe("stepping the boards through past windows", () => {
     });
   });
 
+  it("opens on the boards it showed last time, coming back to the page", async () => {
+    const { fetchMock } = stubWindows({
+      [`${THIS_WEEK}/${THIS_MONTH}`]: { weekly: rowFor(ALICE, 41.2) },
+    });
+    const { unmount } = render(<LeaderboardPage />);
+    await waitFor(() =>
+      expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE)),
+    );
+    unmount();
+    const callsBefore = fetchMock.mock.calls.length;
+
+    render(<LeaderboardPage />);
+    expect(boardRows("This week")[0]).toHaveTextContent(handleFor(ALICE));
+    expect(screen.queryByText("Loading the boards…")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(callsBefore),
+    );
+  });
+
   it("offers a retry on the board whose window would not load", async () => {
     stubWindows(
       {

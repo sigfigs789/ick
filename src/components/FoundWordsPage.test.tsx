@@ -626,6 +626,20 @@ describe("earlier days of the week", () => {
     await vi.waitFor(() => expect(asked).toEqual([TODAY, TUESDAY, TODAY]));
   });
 
+  it("opens on the finds it showed last time, coming back to the page", async () => {
+    const { asked } = stubDays({ [TODAY]: WORDS });
+    const { unmount } = render(<FoundWordsPage />);
+    await vi.waitFor(() => expect(screen.getByText("asphyxiate")).toBeTruthy());
+    unmount();
+
+    render(<FoundWordsPage />);
+    expect(screen.getByText("asphyxiate")).toBeTruthy();
+    expect(
+      document.querySelectorAll(".found-words__item--placeholder"),
+    ).toHaveLength(0);
+    await vi.waitFor(() => expect(asked).toEqual([TODAY, TODAY]));
+  });
+
   it("leaves a finished day alone rather than polling it", async () => {
     const { asked } = stubDays({ [TUESDAY]: YESTERDAY_WORDS });
     render(<FoundWordsPage />);

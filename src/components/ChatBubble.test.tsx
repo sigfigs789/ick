@@ -84,6 +84,32 @@ describe("ChatBubble", () => {
     expect(screen.queryByText("older room")).not.toBeInTheDocument();
   });
 
+  it("puts a room already read straight back, and asks only for what came after", async () => {
+    const before = addDays(DAY, -1);
+    const fetchMock = vi.fn(async (url: string) =>
+      url.includes("latest")
+        ? json({ latest: 0 })
+        : url.includes(`date=${before}`)
+          ? json({ messages: [{ id: 1, handle: "A1", body: "older room", at: "2026-10-11T10:00:00Z" }] })
+          : url.includes("after=0")
+            ? json({ messages: [{ id: 2, handle: "B2", body: "this room", at: "2026-10-12T10:00:00Z" }] })
+            : json({ messages: [] }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    await screen.findByText("this room");
+    await userEvent.click(screen.getByRole("button", { name: "Previous puzzle's chat" }));
+    await screen.findByText("older room");
+
+    await userEvent.click(screen.getByRole("button", { name: "Next puzzle's chat" }));
+    expect(screen.getByText("this room")).toBeInTheDocument();
+    expect(screen.queryByText("Loading…")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenLastCalledWith(`/api/chat?date=${DAY}&after=2`),
+    );
+  });
+
   it("can't step past today's puzzle or before the first", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => json({ messages: [], latest: 0 })));
     setViewedPuzzle("2026-07-01");

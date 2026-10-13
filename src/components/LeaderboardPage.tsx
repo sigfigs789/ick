@@ -12,7 +12,8 @@ import { loadPlayerId } from "../game/player";
 import { handleFor } from "../game/handle";
 import { accountName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
-import { type GameMode } from "../game/mode";
+import { currentMode, type GameMode } from "../game/mode";
+import { pageCache } from "../game/pageCache";
 import { useGameMode } from "../hooks/useGameMode";
 import {
   monthLabel,
@@ -94,49 +95,66 @@ function windowKey(board: GameMode, window: string): string {
 }
 
 /**
- * Every window this page has read, so stepping back to one is instant.
+ * Every window this page has read, so stepping back to one is instant -- and so
+ * is coming back to the page from the puzzle (see game/pageCache.ts).
  *
  * Kept per window rather than per request: the three boards step separately,
  * so the day a reader returns to is very often paired with a week they have
  * never had on screen beside it, and only the board that moved needs anything.
  * Keyed like `windowKey`, so a window on one board is never served as the same
- * window on the other.
+ * window on the other, and by the player asking, because the response carries
+ * their own row from below the cut.
  *
- * Held for the life of the page and no longer. It is a few kilobytes, and a
- * remembered window is only ever shown while it is re-read underneath (see
+ * A remembered window is only ever shown while it is re-read underneath (see
  * `load`) -- a past day's board can still move, as players backfill old puzzles.
  */
-interface BoardCache {
-  day: Map<string, Pick<Boards, "daily" | "dailySelf">>;
-  week: Map<string, Pick<Boards, "weekly" | "weeklySelf" | "weekStart">>;
-  month: Map<string, Pick<Boards, "monthly" | "monthlySelf">>;
+const boardCache = {
+  day: pageCache<Pick<Boards, "daily" | "dailySelf">>(),
+  week: pageCache<Pick<Boards, "weekly" | "weeklySelf" | "weekStart">>(),
+  month: pageCache<Pick<Boards, "monthly" | "monthlySelf">>(),
+};
+
+function cacheKey(board: GameMode, window: string): string {
+  return `${loadPlayerId() ?? ""}:${windowKey(board, window)}`;
 }
 
-function remember(cache: BoardCache, windows: Windows, loaded: Boards) {
+function remember(windows: Windows, loaded: Boards) {
   const { board } = windows;
-  cache.day.set(windowKey(board, windows.day), {
+  boardCache.day.set(cacheKey(board, windows.day), {
     daily: loaded.daily,
     dailySelf: loaded.dailySelf,
   });
-  cache.week.set(windowKey(board, windows.week), {
+  boardCache.week.set(cacheKey(board, windows.week), {
     weekly: loaded.weekly,
     weeklySelf: loaded.weeklySelf,
     weekStart: loaded.weekStart,
   });
-  cache.month.set(windowKey(board, windows.month), {
+  boardCache.month.set(cacheKey(board, windows.month), {
     monthly: loaded.monthly,
     monthlySelf: loaded.monthlySelf,
   });
 }
 
 /** All three boards for these windows, if every one of them has been read. */
-function recall(cache: BoardCache, windows: Windows): Boards | null {
+function recall(windows: Windows): Boards | null {
   const { board } = windows;
-  const day = cache.day.get(windowKey(board, windows.day));
-  const week = cache.week.get(windowKey(board, windows.week));
-  const month = cache.month.get(windowKey(board, windows.month));
+  const day = boardCache.day.get(cacheKey(board, windows.day));
+  const week = boardCache.week.get(cacheKey(board, windows.week));
+  const month = boardCache.month.get(cacheKey(board, windows.month));
   if (!day || !week || !month) return null;
   return { ...day, ...week, ...month, mode: board };
+}
+
+/** The windows a page opens on, and their boards if this visit has read them. */
+function openingBoards(): { windows: Windows; boards: Boards | null } {
+  const day = todayDateString();
+  const windows = {
+    day,
+    week: weekStart(day),
+    month: monthStart(day),
+    board: currentMode(),
+  };
+  return { windows, boards: recall(windows) };
 }
 
 /**
@@ -180,8 +198,15 @@ function boardState(
  * other half had not moved since breakfast.
  */
 export function LeaderboardPage() {
-  const [boards, setBoards] = useState<Boards | null>(null);
-  const [state, setState] = useState<LoadState>("loading");
+  /**
+   * What the page opens on: today's windows, already on screen if this visit
+   * has read them -- so coming back from the puzzle is not a skeleton.
+   */
+  const [opening] = useState(openingBoards);
+  const [boards, setBoards] = useState<Boards | null>(opening.boards);
+  const [state, setState] = useState<LoadState>(
+    opening.boards ? "ready" : "loading",
+  );
   /**
    * The puzzle this page is about, fixed when the page opened.
    *
@@ -193,7 +218,7 @@ export function LeaderboardPage() {
    * Read on every render instead, a tab left open would cross midnight and swap
    * every window under a reader who never asked for it.
    */
-  const [today] = useState(todayDateString);
+  const today = opening.windows.day;
   /**
    * The live windows: the day, the week and the month the player is playing in.
    *
@@ -266,7 +291,9 @@ export function LeaderboardPage() {
    * each board's own loading state, and it needs no timer and no request id --
    * the last response to land says what it was about.
    */
-  const [shown, setShown] = useState<Windows | null>(null);
+  const [shown, setShown] = useState<Windows | null>(
+    opening.boards ? opening.windows : null,
+  );
   const [failed, setFailed] = useState<Windows | null>(null);
   /**
    * Each board's state, which after the first load is no longer the page's: one
@@ -313,12 +340,6 @@ export function LeaderboardPage() {
    * refresh of the same window is also correctly the newer of the two.
    */
   const boardsRequest = useRef(0);
-  /** The windows read so far (see BoardCache). */
-  const boardCache = useRef<BoardCache>({
-    day: new Map(),
-    week: new Map(),
-    month: new Map(),
-  });
 
   /**
    * Fetch all three boards.
@@ -339,7 +360,7 @@ export function LeaderboardPage() {
     // request below only checks it: a reader stepping back and forward is
     // looking for something they have just seen, and a skeleton in its place
     // says it has gone. The answer swaps in when it lands, as a refresh does.
-    const cached = recall(boardCache.current, windows);
+    const cached = recall(windows);
     if (cached) {
       setBoards(cached);
       setShown(windows);
@@ -351,7 +372,7 @@ export function LeaderboardPage() {
     const request = ++boardsRequest.current;
     fetchBoards(today, { day, week, month, mode: board })
       .then((loaded) => {
-        remember(boardCache.current, windows, loaded);
+        remember(windows, loaded);
         if (request !== boardsRequest.current) return;
         setBoards(loaded);
         setShown(windows);
@@ -387,7 +408,7 @@ export function LeaderboardPage() {
       const request = ++boardsRequest.current;
       fetchBoards(today, { ...options, day, week, month, mode: board })
         .then((loaded) => {
-          remember(boardCache.current, { day, week, month, board }, loaded);
+          remember({ day, week, month, board }, loaded);
           if (request !== boardsRequest.current) return;
           setBoards(loaded);
           setShown({ day, week, month, board });
