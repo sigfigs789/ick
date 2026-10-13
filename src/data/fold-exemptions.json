@@ -669,6 +669,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `barb`, costing 2.75 points. Flagged in the 2026-09-22 semantic audit (barbes is form of barbe) and confirmed on adversarial re-review (barbe unrelated to barb)."
   },
+  "bareable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bare` (bareable > bare), costing 4.12 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (likely misspelling of bearable, not bare) and confirmed on adversarial re-review (misspelling of bearable, not bare)."
+  },
   "bares": {
     "since": "2026-08-21",
     "reason": "The plural or third-person form of `bare`, not `bar`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
@@ -732,6 +736,42 @@
   "battleplanes": {
     "since": "2026-09-27",
     "reason": "Folded onto `battleplan`, costing 0.21 points. Flagged in the 2026-09-22 semantic audit (battleplane vs battleplan, different words) and confirmed on adversarial re-review (aircraft, not a plan)."
+  },
+  "beachies": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `beachy` (beachies > beachy), costing 1.84 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (noun plural, not form of adjective) and confirmed on adversarial re-review (plural of noun beachie, not beachy)."
+  },
+  "beadies": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `beady` (beadies > beady), costing 1.77 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (not a plural of adjective beady) and confirmed on adversarial re-review (not an inflection of adjective beady)."
+  },
+  "bearingless": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bear` (bearingless > bearing > bear), costing 4.88 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (machine-bearing sense, not bear) and confirmed on adversarial re-review (machine bearing sense drifted from bear)."
+  },
+  "bearings": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bear` (bearings > bearing > bear), costing 1.65 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (noun senses drifted from bear) and confirmed on adversarial re-review (bearings noun senses drifted from bear)."
+  },
+  "bearly": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bear` (bearly > bear), costing 4.01 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (pun/misspelling of barely) and confirmed on adversarial re-review (pun on barely, not bear)."
+  },
+  "beatize": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `beat` (beatize > beat), costing 5.31 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Latin beatus root, not beat) and confirmed on adversarial re-review (from Latin beatus, unrelated to beat)."
+  },
+  "beatized": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `beat` (beatized > beatize > beat), costing 5.31 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Latin beatus root, not beat) and confirmed on adversarial re-review (from Latin beatus, unrelated to beat)."
+  },
+  "beatizes": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `beat` (beatizes > beatize > beat), costing 5.31 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Latin beatus root, not beat) and confirmed on adversarial re-review (from Latin beatus, unrelated to beat)."
+  },
+  "beatizing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `beat` (beatizing > beatize > beat), costing 5.32 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Latin beatus root, not beat) and confirmed on adversarial re-review (from Latin beatus, unrelated to beat)."
   },
   "bedlamer": {
     "since": "2026-09-27",
@@ -825,6 +865,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `bivi`, costing 0.89 points. Flagged in the 2026-09-22 semantic audit (bivisible from bi+visible, not bivi) and confirmed on adversarial re-review (bivi overstripped, unrelated)."
   },
+  "blackheaded": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `blackheads` (blackheaded > blackhead > blackheads), costing 1.64 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (having black head, not skin blackheads) and confirmed on adversarial re-review (having black head, not skin blackheads)."
+  },
   "blae": {
     "since": "2026-09-27",
     "reason": "Folded onto `bla`, costing 2.81 points. Flagged in the 2026-09-22 semantic audit (blae is Scots bluish) and confirmed on adversarial re-review (bla is not a word)."
@@ -844,6 +888,10 @@
   "blatest": {
     "since": "2026-09-27",
     "reason": "Folded onto `blat`, costing 1.35 points. Flagged in the 2026-09-22 semantic audit (superlative of blate, not blat) and confirmed on adversarial re-review (blate is base, not blat)."
+  },
+  "bleaks": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bleak` (bleaks > bleak), costing 2.99 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (plural of bleak, the fish) and confirmed on adversarial re-review (fish name, not adjective bleak)."
   },
   "blee": {
     "since": "2026-08-24",
@@ -941,6 +989,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `brassy`, costing 0.88 points. Flagged in the 2026-09-22 semantic audit (from brassiere, not brassy) and confirmed on adversarial re-review (brassiere unrelated to brassy)."
   },
+  "breamed": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bream` (breamed > bream), costing 1.99 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (verb bream (clean a hull), not the fish) and confirmed on adversarial re-review (hull-cleaning verb, not the fish)."
+  },
+  "breaming": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bream` (breaming > bream), costing 1.97 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (verb bream (clean a hull), not the fish) and confirmed on adversarial re-review (hull-cleaning verb, not the fish)."
+  },
   "bredes": {
     "since": "2026-09-27",
     "reason": "Folded onto `bred`, costing 3.82 points. Flagged in the 2026-09-22 semantic audit (brede is embroidery, unrelated) and confirmed on adversarial re-review (brede is embroidery, unrelated to bred)."
@@ -988,6 +1044,22 @@
   "bulles": {
     "since": "2026-09-27",
     "reason": "Folded onto `bull`, costing 4.48 points. Flagged in the 2026-09-22 semantic audit (plural of bull? bulles misspelling; unsure) and confirmed on adversarial re-review (plural of bulle, strip overshot)."
+  },
+  "bullheaded": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bullhead` (bullheaded > bullhead), costing 0.61 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (means stubborn; bullhead is a fish) and confirmed on adversarial re-review (stubborn sense, unrelated to fish)."
+  },
+  "bullheadedly": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bullhead` (bullheadedly > bullheaded > bullhead), costing 1.26 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (stubbornly; bullhead is a fish) and confirmed on adversarial re-review (stubborn sense, unrelated to fish)."
+  },
+  "bullheadedness": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bullhead` (bullheadedness > bullheaded > bullhead), costing 0.96 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (stubbornness; bullhead is a fish) and confirmed on adversarial re-review (stubborn sense, unrelated to fish)."
+  },
+  "bullheadednesses": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bullhead` (bullheadednesses > bullheadedness > bullheaded > bullhead), costing 1.34 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (stubbornness; bullhead is a fish) and confirmed on adversarial re-review (stubborn sense, unrelated to fish)."
   },
   "burblier": {
     "since": "2026-09-27",
@@ -1357,6 +1429,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `coat`, costing 1.73 points. Flagged in the 2026-09-22 semantic audit (coate/coates not coat plural) and confirmed on adversarial re-review (coate is not coat)."
   },
+  "cochleares": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `cochlear` (cochleares > cochlear), costing 2.14 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (plural of cochleare (spoon), not cochlear) and confirmed on adversarial re-review (plural of cochleare spoon, not cochlear)."
+  },
   "codlines": {
     "since": "2026-09-27",
     "reason": "Folded onto `codlin`, costing 1.46 points. Flagged in the 2026-09-22 semantic audit (codlin is an apple, unrelated) and confirmed on adversarial re-review (codlin apple, unrelated to codline)."
@@ -1448,6 +1524,10 @@
   "confidentes": {
     "since": "2026-09-27",
     "reason": "Folded onto `confident`, costing 4.79 points. Flagged in the 2026-09-22 semantic audit (confidante, a person, not confident) and confirmed on adversarial re-review (confidante is a person, different word)."
+  },
+  "congeable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `congee` (congeable > congee), costing 1.15 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (legal permissible sense; congee is rice porridge) and confirmed on adversarial re-review (legal permission sense, not rice porridge)."
   },
   "conged": {
     "since": "2026-09-27",
@@ -1649,6 +1729,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `crap`, costing 3.67 points. Flagged in the 2026-09-22 semantic audit (plural of crape, not crap) and confirmed on adversarial re-review (crape is crepe fabric, not crap)."
   },
+  "creamies": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `creamy` (creamies > creamy), costing 3.07 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (plural of creamie (soft-serve), not creamy) and confirmed on adversarial re-review (plural of noun creamie, not creamy)."
+  },
   "crimini": {
     "since": "2026-09-27",
     "reason": "Folded onto `criminis`, costing 1.45 points. Flagged in the 2026-09-22 semantic audit (crimini interjection, not criminis) and confirmed on adversarial re-review (criminis unrelated Latin genitive)."
@@ -1829,6 +1913,11 @@
     "since": "2026-09-27",
     "reason": "Folded onto `day`, costing 6.42 points. Flagged in the 2026-09-22 semantic audit (daylily is a flower) and confirmed on adversarial re-review (daylily is a flower)."
   },
+  "deaccessing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `access` (deaccessing > deaccess > access), costing 5.38 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (deaccess comes from accession, not access) and confirmed on adversarial re-review (deaccession sense, not access as entry).",
+    "scope": "prefix"
+  },
   "deadbot": {
     "since": "2026-10-04",
     "reason": "Folded onto `adbot`, costing up to 0.81 points, by stripping de- to `adbot`. Not de- + `adbot`: chatbot imitating a dead person; dead + bot. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
@@ -1838,6 +1927,30 @@
     "since": "2026-10-04",
     "reason": "Folded onto `adland`, costing up to 0.41 points, by stripping de- to `adland`. Not de- + `adland`: dead + land, barren ground; unrelated to adland. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
+  },
+  "deaminization": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `amin` (deaminization > deaminize > aminize > amin), costing 2.40 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (base should be amine, not amin) and confirmed on adversarial re-review (lands on amin, not amine)."
+  },
+  "deaminizations": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `amin` (deaminizations > deaminization > deaminize > aminize > amin), costing 2.70 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (base should be amine, not amin) and confirmed on adversarial re-review (lands on amin, not amine)."
+  },
+  "deaminize": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `amin` (deaminize > aminize > amin), costing 2.64 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (base should be amine, not amin) and confirmed on adversarial re-review (lands on amin, not amine)."
+  },
+  "deaminized": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `amin` (deaminized > deaminize > aminize > amin), costing 2.25 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (base should be amine, not amin) and confirmed on adversarial re-review (lands on amin, not amine)."
+  },
+  "deaminizes": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `amin` (deaminizes > deaminize > aminize > amin), costing 2.66 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (base should be amine, not amin) and confirmed on adversarial re-review (lands on amin, not amine)."
+  },
+  "deaminizing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `amin` (deaminizing > deaminize > aminize > amin), costing 2.62 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (base should be amine, not amin) and confirmed on adversarial re-review (lands on amin, not amine)."
   },
   "deapply": {
     "since": "2026-10-04",
@@ -1854,6 +1967,46 @@
     "reason": "Folded onto `arish`, costing up to 1.49 points, by stripping de- to `arish`. Not de- + `arish`: somewhat dear; dear + -ish. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
   },
+  "dearomatisation": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `aromat` (dearomatisation > aromatisation > aromatise > aromat), costing 0.86 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (aromat is wrong base; aromatic intended) and confirmed on adversarial re-review (aromat is not the real base)."
+  },
+  "dearomatisations": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `aromat` (dearomatisations > dearomatisation > aromatisation > aromatise > aromat), costing 0.87 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (aromat is wrong base; aromatic intended) and confirmed on adversarial re-review (aromat is not the real base)."
+  },
+  "dearomatise": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `aromat` (dearomatise > aromatise > aromat), costing 0.88 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (aromat is wrong base; aromatic intended) and confirmed on adversarial re-review (aromat is not the real base)."
+  },
+  "dearomatised": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `aromat` (dearomatised > dearomatise > aromatise > aromat), costing 0.85 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (aromat is wrong base; aromatic intended) and confirmed on adversarial re-review (aromat is not the real base)."
+  },
+  "dearomatises": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `aromat` (dearomatises > dearomatise > aromatise > aromat), costing 0.87 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (aromat is wrong base; aromatic intended) and confirmed on adversarial re-review (aromat is not the real base)."
+  },
+  "dearomatising": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `aromat` (dearomatising > dearomatise > aromatise > aromat), costing 0.88 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (aromat is wrong base; aromatic intended) and confirmed on adversarial re-review (aromat is not the real base)."
+  },
+  "dearrest": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `dear` (dearrest > dear), costing 4.96 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (de-arrest, not superlative of dear) and confirmed on adversarial re-review (de-arrest, unrelated to dear)."
+  },
+  "dearrested": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `dear` (dearrested > dearrest > dear), costing 4.96 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (de-arrest, not superlative of dear) and confirmed on adversarial re-review (de-arrest, unrelated to dear)."
+  },
+  "dearresting": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `dear` (dearresting > dearrest > dear), costing 4.97 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (de-arrest, not superlative of dear) and confirmed on adversarial re-review (de-arrest, unrelated to dear)."
+  },
+  "dearrests": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `dear` (dearrests > dearrest > dear), costing 4.97 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (de-arrest, not superlative of dear) and confirmed on adversarial re-review (de-arrest, unrelated to dear)."
+  },
   "deases": {
     "since": "2026-10-04",
     "reason": "Folded onto `ase` by stripping de- to `ases`. Not de- + `ases`: a garbled form, like the exempted \"deasses\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
@@ -1868,6 +2021,10 @@
     "since": "2026-10-04",
     "reason": "Folded onto `ass`, costing up to 5.60 points, by stripping de- to `asses`. Not de- + `asses`: garbled form; no de- + ass sense. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
+  },
+  "deassing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `deas` (deassing > deas), costing 1.08 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (not built on deas) and confirmed on adversarial re-review (not built on deas)."
   },
   "debatey": {
     "since": "2026-10-04",
@@ -2406,6 +2563,11 @@
     "reason": "Folded onto `eyas`, costing up to 0.72 points, by stripping de- to `eyas`. Not de- + `eyas`: plural of deeya (oil lamp); unrelated to eyas. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
   },
+  "defaceable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `face` (defaceable > faceable > face), costing 5.92 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (deface means mar, not face) and confirmed on adversarial re-review (deface means mar, drifted from face).",
+    "scope": "prefix"
+  },
   "defalcated": {
     "since": "2026-10-04",
     "reason": "Folded onto `falcate`, costing up to 0.72 points, by stripping de- to `falcated`. Not de- + `falcated`: embezzled (defalcate); unrelated to falcate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
@@ -2750,6 +2912,26 @@
     "reason": "Folded onto `lay`, costing up to 0.35 points, by stripping de- to `layings`. Not de- + `layings`: postponements (delay); not de- + lay. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
   },
+  "deleave": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (deleave > leave), costing 5.79 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (means remove leaves, not leave) and confirmed on adversarial re-review (from leaf, not leave).",
+    "scope": "prefix"
+  },
+  "deleaved": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (deleaved > deleave > leave), costing 5.79 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (means remove leaves, not leave) and confirmed on adversarial re-review (from leaf, not leave).",
+    "scope": "prefix"
+  },
+  "deleaves": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (deleaves > deleave > leave), costing 5.79 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (means remove leaves, not leave) and confirmed on adversarial re-review (from leaf, not leave).",
+    "scope": "prefix"
+  },
+  "deleaving": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (deleaving > deleave > leave), costing 5.80 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (means remove leaves, not leave) and confirmed on adversarial re-review (from leaf, not leave).",
+    "scope": "prefix"
+  },
   "delection": {
     "since": "2026-10-04",
     "reason": "Folded onto `lections`, costing up to 0.94 points, by stripping de- to `lection`. Not de- + `lection`: obsolete: delight or selection. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
@@ -2832,6 +3014,16 @@
   "delineable": {
     "since": "2026-09-27",
     "reason": "Folded onto `deline`, costing 0.56 points. Flagged in the 2026-09-22 semantic audit (deline not the base of delineable) and confirmed on adversarial re-review (deline is not the base)."
+  },
+  "delineament": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `lineaments` (delineament > delineaments > lineaments), costing 0.78 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (built on delineate, not lineament) and confirmed on adversarial re-review (depiction sense, from delineate not lineaments).",
+    "scope": "prefix"
+  },
+  "delineaments": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `lineaments` (delineaments > lineaments), costing 0.78 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (built on delineate, not lineaments) and confirmed on adversarial re-review (depiction sense, from delineate not lineaments).",
+    "scope": "prefix"
   },
   "delined": {
     "since": "2026-10-04",
@@ -2971,6 +3163,51 @@
   "demaynes": {
     "since": "2026-10-04",
     "reason": "Folded onto `mayne`, costing up to 2.66 points, by stripping de- to `maynes`. Not de- + `maynes`: archaic variant of demesnes/domains. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "demean": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (demean > demeanes > meanes > mean), costing 4.16 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (demean means degrade, not mean) and confirmed on adversarial re-review (degrade sense drifted from mean).",
+    "scope": "prefix"
+  },
+  "demeaned": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (demeaned > demean > demeanes > meanes > mean), costing 4.72 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (demean means degrade, not mean) and confirmed on adversarial re-review (degrade sense drifted from mean).",
+    "scope": "prefix"
+  },
+  "demeaner": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (demeaner > demean > demeanes > meanes > mean), costing 6.07 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (demean means degrade, not mean) and confirmed on adversarial re-review (degrade sense drifted from mean).",
+    "scope": "prefix"
+  },
+  "demeaners": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (demeaners > demeaner > demean > demeanes > meanes > mean), costing 6.08 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (demean means degrade, not mean) and confirmed on adversarial re-review (degrade sense drifted from mean).",
+    "scope": "prefix"
+  },
+  "demeanes": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (demeanes > meanes > mean), costing 6.07 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (bogus form; not mean) and confirmed on adversarial re-review (bogus form, not mean).",
+    "scope": "prefix"
+  },
+  "demeaning": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (demeaning > demean > demeanes > meanes > mean), costing 3.68 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (demeaning means degrading, not meaning) and confirmed on adversarial re-review (degrading, not meaning or mean).",
+    "scope": "prefix"
+  },
+  "demeaningly": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (demeaningly > meaningly > meaning > mean), costing 6.07 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (demeaningly is not meaningly or mean) and confirmed on adversarial re-review (bogus path through meaningly).",
+    "scope": "prefix"
+  },
+  "demeaningness": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (demeaningness > meaningness > meaning > mean), costing 6.08 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (not related to meaning) and confirmed on adversarial re-review (bogus path through meaning).",
+    "scope": "prefix"
+  },
+  "demeans": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (demeans > demean > demeanes > meanes > mean), costing 4.84 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (demean means degrade, not mean) and confirmed on adversarial re-review (degrade sense drifted from mean).",
     "scope": "prefix"
   },
   "demes": {
@@ -3398,6 +3635,66 @@
   "derays": {
     "since": "2026-10-04",
     "reason": "Folded onto `ray`, costing up to 4.07 points, by stripping de- to `rays`. Not de- + `rays`: archaic: disorder, tumult. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "derealisation": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realise` (derealisation > derealise > realise), costing 4.10 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (feeling of unreality, not realising) and confirmed on adversarial re-review (unreality sense, not everyday realise).",
+    "scope": "prefix"
+  },
+  "derealisations": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realise` (derealisations > derealisation > derealise > realise), costing 4.25 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (feeling of unreality, not realising) and confirmed on adversarial re-review (unreality sense, not everyday realise).",
+    "scope": "prefix"
+  },
+  "derealise": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realise` (derealise > realise), costing 4.25 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (make seem unreal, not realise) and confirmed on adversarial re-review (make seem unreal, not realise).",
+    "scope": "prefix"
+  },
+  "derealised": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realise` (derealised > derealise > realise), costing 4.22 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (make seem unreal, not realise) and confirmed on adversarial re-review (make seem unreal, not realise).",
+    "scope": "prefix"
+  },
+  "derealises": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realise` (derealises > derealise > realise), costing 4.24 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (make seem unreal, not realise) and confirmed on adversarial re-review (make seem unreal, not realise).",
+    "scope": "prefix"
+  },
+  "derealising": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realise` (derealising > derealise > realise), costing 4.25 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (make seem unreal, not realise) and confirmed on adversarial re-review (make seem unreal, not realise).",
+    "scope": "prefix"
+  },
+  "derealization": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realize` (derealization > derealize > realize), costing 4.36 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (feeling of unreality, not realizing) and confirmed on adversarial re-review (unreality sense, not everyday realize).",
+    "scope": "prefix"
+  },
+  "derealizations": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realize` (derealizations > derealization > derealize > realize), costing 4.99 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (feeling of unreality, not realizing) and confirmed on adversarial re-review (unreality sense, not everyday realize).",
+    "scope": "prefix"
+  },
+  "derealize": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realize` (derealize > realize), costing 5.05 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (make seem unreal, not realize) and confirmed on adversarial re-review (make seem unreal, not realize).",
+    "scope": "prefix"
+  },
+  "derealized": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realize` (derealized > derealize > realize), costing 5.01 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (make seem unreal, not realize) and confirmed on adversarial re-review (make seem unreal, not realize).",
+    "scope": "prefix"
+  },
+  "derealizes": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realize` (derealizes > derealize > realize), costing 5.05 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (make seem unreal, not realize) and confirmed on adversarial re-review (make seem unreal, not realize).",
+    "scope": "prefix"
+  },
+  "derealizing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `realize` (derealizing > derealize > realize), costing 5.06 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (make seem unreal, not realize) and confirmed on adversarial re-review (make seem unreal, not realize).",
     "scope": "prefix"
   },
   "deridings": {
@@ -4068,6 +4365,42 @@
     "since": "2026-09-02",
     "reason": "Sincere, not \"most earn\". The bare -est fold's paired-degree check passes because `earner` is a word, and nothing in the spelling says the -er is agentive rather than comparative; the word has no base at all, so it is exempted by name."
   },
+  "earring": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ear` (earring > ear), costing 1.89 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (jewelry, not the ear itself) and confirmed on adversarial re-review (jewelry compound, not the ear)."
+  },
+  "earringed": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ear` (earringed > earring > ear), costing 4.44 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (base should be earring, not ear) and confirmed on adversarial re-review (should stop at earring, not ear)."
+  },
+  "earringless": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ear` (earringless > earring > ear), costing 4.49 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (base should be earring, not ear) and confirmed on adversarial re-review (should stop at earring, not ear)."
+  },
+  "earrings": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ear` (earrings > earring > ear), costing 1.14 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (plural of earring, not ear) and confirmed on adversarial re-review (plural of earring, not ear)."
+  },
+  "earwigged": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `earwig` (earwigged > earwig), costing 1.15 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (verb means eavesdrop or pester, not insect) and confirmed on adversarial re-review (eavesdrop verb, drifted from insect)."
+  },
+  "earwigger": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `earwig` (earwigger > earwig), costing 1.20 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (eavesdropper, not the insect) and confirmed on adversarial re-review (eavesdropper, drifted from insect)."
+  },
+  "earwiggers": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `earwig` (earwiggers > earwigger > earwig), costing 1.22 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (eavesdroppers, not the insect) and confirmed on adversarial re-review (eavesdroppers, drifted from insect)."
+  },
+  "earwigging": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `earwig` (earwigging > earwig), costing 1.14 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (eavesdropping or scolding, not the insect) and confirmed on adversarial re-review (eavesdropping, drifted from insect)."
+  },
+  "earwiggings": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `earwig` (earwiggings > earwigging > earwig), costing 1.23 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (scoldings or eavesdroppings, not the insect) and confirmed on adversarial re-review (scoldings, drifted from insect)."
+  },
   "easterlies": {
     "since": "2026-09-27",
     "reason": "Folded onto `easter`, costing 3.67 points. Flagged in the 2026-09-22 semantic audit (easterly winds, not Easter) and confirmed on adversarial re-review (easterly is from east, not Easter)."
@@ -4075,6 +4408,10 @@
   "easterliness": {
     "since": "2026-09-27",
     "reason": "Folded onto `easter`, costing 4.35 points. Flagged in the 2026-09-22 semantic audit (from east/easterly, not Easter) and confirmed on adversarial re-review (from east; Easter is holiday)."
+  },
+  "easterly": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `easter` (easterly > easter), costing 1.63 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (base easter scored as the holiday) and confirmed on adversarial re-review (from east, not the holiday)."
   },
   "ecbole": {
     "since": "2026-09-27",
@@ -4244,6 +4581,34 @@
     "since": "2026-09-27",
     "reason": "Folded onto `fat`, costing 2.35 points. Flagged in the 2026-09-22 semantic audit (plural of fate, overshot) and confirmed on adversarial re-review (fate destiny versus fat)."
   },
+  "feated": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `feat` (feated > feat), costing 3.85 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (archaic verb fashion, not achievement) and confirmed on adversarial re-review (archaic verb fashion, not achievement)."
+  },
+  "feater": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `feat` (feater > feat), costing 3.77 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (comparative of adjective feat, neat) and confirmed on adversarial re-review (adjective feat meaning neat)."
+  },
+  "featest": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `feat` (featest > feat), costing 3.79 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (superlative of adjective feat, neat) and confirmed on adversarial re-review (adjective feat meaning neat)."
+  },
+  "feating": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `feat` (feating > feat), costing 3.86 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (archaic verb fashion, not achievement) and confirmed on adversarial re-review (archaic verb fashion, not achievement)."
+  },
+  "featlier": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `feat` (featlier > featly > feat), costing 3.82 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (featly means neatly, not achievement) and confirmed on adversarial re-review (featly means neatly, not achievement)."
+  },
+  "featliest": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `feat` (featliest > featly > feat), costing 3.83 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (featly means neatly, not achievement) and confirmed on adversarial re-review (featly means neatly, not achievement)."
+  },
+  "featliness": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `feat` (featliness > featly > feat), costing 3.86 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (featly means neatly, not achievement) and confirmed on adversarial re-review (featly means neatly, not achievement)."
+  },
   "feelies": {
     "since": "2026-09-27",
     "reason": "Folded onto `fees`, costing 3.91 points. Flagged in the 2026-09-22 semantic audit (feelies from feel, not fees) and confirmed on adversarial re-review (feelie from feel, not fees)."
@@ -4359,6 +4724,18 @@
   "followees": {
     "since": "2026-09-27",
     "reason": "One who is followed. `followe` is not a word."
+  },
+  "forearmed": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `forearm` (forearmed > forearm), costing 2.06 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (prepared in advance, not body part) and confirmed on adversarial re-review (arm in advance, not body part)."
+  },
+  "forearming": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `forearm` (forearming > forearm), costing 2.79 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (preparing in advance, not body part) and confirmed on adversarial re-review (arm in advance, not body part)."
+  },
+  "forebearing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `forebears` (forebearing > forebear > forebears), costing 1.91 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (misspelling of forbearing, not ancestor) and confirmed on adversarial re-review (misspelling of forbearing, not ancestors)."
   },
   "fores": {
     "since": "2026-08-21",
@@ -4519,6 +4896,10 @@
   "gainly": {
     "since": "2026-09-27",
     "reason": "Folded onto `gain`, costing 5.23 points. Flagged in the 2026-09-22 semantic audit (gainly means graceful, drifted) and confirmed on adversarial re-review (gainly graceful, different root entirely)."
+  },
+  "galeases": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `galea` (galeases > galeas > galea), costing 1.14 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (plural of galeas ship, not galea) and confirmed on adversarial re-review (plural of galeas ship, not galea)."
   },
   "gales": {
     "since": "2026-09-27",
@@ -4708,6 +5089,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `grece`, costing 0.67 points. Flagged in the 2026-09-22 semantic audit (from Greek, not grece steps) and confirmed on adversarial re-review (grece is steps, unrelated to Greek)."
   },
+  "greenhearted": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `greenheart` (greenhearted > greenheart), costing 0.35 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (greenheart is a tree, unrelated) and confirmed on adversarial re-review (greenheart tree unrelated to green-hearted)."
+  },
   "greeses": {
     "since": "2026-09-27",
     "reason": "Folded onto `greed`, costing 3.80 points. Flagged in the 2026-09-22 semantic audit (not formed from greed) and confirmed on adversarial re-review (greese is grease/step, not greed)."
@@ -4828,6 +5213,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `hard`, costing 1.45 points. Flagged in the 2026-09-22 semantic audit (hardly means barely, not hard) and confirmed on adversarial re-review (hardly means barely, drifted)."
   },
+  "hardwearing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `hardwear` (hardwearing > hardwear), costing 0.31 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (hard-wearing means durable, not hardwear) and confirmed on adversarial re-review (durable sense; hardwear not real base)."
+  },
   "hases": {
     "since": "2026-09-27",
     "reason": "Folded onto `has`, costing 7.65 points. Flagged in the 2026-09-22 semantic audit (has+es overshoot) and confirmed on adversarial re-review (nonword inflection of has)."
@@ -4839,6 +5228,26 @@
   "haymower": {
     "since": "2026-09-27",
     "reason": "A machine that mows hay. A `haymow` is the loft the hay is stored in."
+  },
+  "headcovering": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `headcovers` (headcovering > headcover > headcovers), costing 1.68 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (head covering is hat; headcovers golf covers) and confirmed on adversarial re-review (hat sense, not golf headcovers)."
+  },
+  "headcoverings": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `headcovers` (headcoverings > headcovering > headcover > headcovers), costing 1.70 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (head covering is hat; headcovers golf covers) and confirmed on adversarial re-review (hat sense, not golf headcovers)."
+  },
+  "headworking": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `headworks` (headworking > headwork > headworks), costing 0.52 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (mental work, not water-intake headworks) and confirmed on adversarial re-review (mental work, not water headworks)."
+  },
+  "heards": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `heard` (heards > heard), costing 5.48 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (archaic herds, not plural of heard) and confirmed on adversarial re-review (archaic herds, not heard)."
+  },
+  "hearsed": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `hear` (hearsed > hears > hear), costing 5.11 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (past of hearse, not hear) and confirmed on adversarial re-review (past of hearse, not hear)."
   },
   "hearsing": {
     "since": "2026-09-27",
@@ -5498,6 +5907,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `lav`, costing 1.55 points. Flagged in the 2026-09-22 semantic audit (laves is inflection of lave) and confirmed on adversarial re-review (lave unrelated to lav)."
   },
+  "leaved": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (leaved > leave), costing 3.72 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (having leaves; from leaf, not leave) and confirmed on adversarial re-review (from leaf, not leave)."
+  },
+  "leaveless": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (leaveless > leave), costing 5.76 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (means leafless, not about leave) and confirmed on adversarial re-review (means leafless, not leave)."
+  },
   "leesed": {
     "since": "2026-09-27",
     "reason": "Folded onto `lee`, costing 5.22 points. Flagged in the 2026-09-22 semantic audit (not from lee) and confirmed on adversarial re-review (leese means lose, unrelated to lee)."
@@ -5757,6 +6174,10 @@
   "mealies": {
     "since": "2026-09-27",
     "reason": "Folded onto `mealy`, costing 0.01 points. Flagged in the 2026-09-22 semantic audit (mealie is maize, not mealy) and confirmed on adversarial re-review (mealie is maize, unrelated)."
+  },
+  "meantes": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `meant` (meantes > meant), costing 5.21 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Meant is a past tense, cannot pluralize) and confirmed on adversarial re-review (bogus form; meant cannot pluralize)."
   },
   "megaflop": {
     "since": "2026-09-27",
@@ -6098,6 +6519,18 @@
     "since": "2026-09-27",
     "reason": "Folded onto `nazi`, costing 4.57 points. Flagged in the 2026-09-22 semantic audit (nazes not form of nazi) and confirmed on adversarial re-review (naze is a headland, not nazi)."
   },
+  "nearring": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `near` (nearring > near), costing 5.73 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Math near-ring, not near plus -ing) and confirmed on adversarial re-review (math near-ring, not near+ing)."
+  },
+  "nearrings": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `near` (nearrings > nearring > near), costing 5.73 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Math near-rings, not from near) and confirmed on adversarial re-review (math near-rings, not near)."
+  },
+  "neats": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `neat` (neats > neat), costing 3.74 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (noun neat means cattle, not tidy) and confirmed on adversarial re-review (cattle noun, not tidy)."
+  },
   "nebule": {
     "since": "2026-09-27",
     "reason": "Folded onto `nebulous`, costing 2.45 points. Flagged in the 2026-09-22 semantic audit (nebule is distinct, not nebulous base) and confirmed on adversarial re-review (nebule not from nebulous)."
@@ -6197,6 +6630,10 @@
   "nomo": {
     "since": "2026-09-27",
     "reason": "Folded onto `nomos`, costing 0.42 points. Flagged in the 2026-09-22 semantic audit (nomo not form of nomos) and confirmed on adversarial re-review (nomo is not a nomos form)."
+  },
+  "nonageable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `nonage` (nonageable > nonage), costing 1.57 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (non-ageable, not nonage (minority)) and confirmed on adversarial re-review (non-ageable, not nonage)."
   },
   "nonagonal": {
     "since": "2026-08-26",
@@ -6435,6 +6872,11 @@
     "since": "2026-09-27",
     "reason": "Folded onto `lay`, costing 5.09 points. Flagged in the 2026-09-22 semantic audit (outlay drifted from lay) and confirmed on adversarial re-review (outlay is expenditure, drifted from lay)."
   },
+  "outlinear": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `linear` (outlinear > linear), costing 4.01 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (relates to outline, not out+linear) and confirmed on adversarial re-review (relates to outline, not linear).",
+    "scope": "prefix"
+  },
   "outlineless": {
     "since": "2026-09-27",
     "reason": "Folded onto `line`, costing 6.32 points. Flagged in the 2026-09-22 semantic audit (outline is its own word) and confirmed on adversarial re-review (outline has drifted from line)."
@@ -6572,6 +7014,16 @@
     "since": "2026-09-27",
     "reason": "Folded onto `awning`, costing 2.38 points. Flagged in the 2026-09-22 semantic audit (from awn, not awning) and confirmed on adversarial re-review (awn bristle versus awning canopy)."
   },
+  "overbearer": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bearer` (overbearer > bearer), costing 3.06 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (overbear means domineer, not bear) and confirmed on adversarial re-review (overbear means domineer, drifted from bear).",
+    "scope": "prefix"
+  },
+  "overbearers": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `bearer` (overbearers > overbearer > bearer), costing 3.08 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (overbear means domineer, not bear) and confirmed on adversarial re-review (overbear means domineer, drifted from bear).",
+    "scope": "prefix"
+  },
   "overcone": {
     "since": "2026-09-27",
     "reason": "Folded onto `con`, costing 4.57 points. Flagged in the 2026-09-22 semantic audit (cone, not con) and confirmed on adversarial re-review (cone, not con)."
@@ -6579,6 +7031,11 @@
   "overdoss": {
     "since": "2026-09-27",
     "reason": "Folded onto `dos`, costing 3.75 points. Flagged in the 2026-09-22 semantic audit (dos unrelated; doss is different word) and confirmed on adversarial re-review (doss is a separate word from dos)."
+  },
+  "overeasy": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `easy` (overeasy > easy), costing 5.66 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (egg-cooking term, not too easy) and confirmed on adversarial re-review (egg-cooking term, drifted from easy).",
+    "scope": "prefix"
   },
   "overeying": {
     "since": "2026-09-27",
@@ -6839,6 +7296,38 @@
   "paytable": {
     "since": "2026-09-27",
     "reason": "Folded onto `payt`, costing 0.33 points. Flagged in the 2026-09-22 semantic audit (payt is not a word) and confirmed on adversarial re-review (payt is not a word)."
+  },
+  "peached": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `peach` (peached > peach), costing 3.34 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (peach verb means inform on) and confirmed on adversarial re-review (inform-on verb, not the fruit)."
+  },
+  "peachers": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `peach` (peachers > peacher > peach), costing 3.50 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (informers, not fruit sense) and confirmed on adversarial re-review (informers, not the fruit)."
+  },
+  "peaching": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `peach` (peaching > peach), costing 3.18 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (informing on someone, not fruit) and confirmed on adversarial re-review (informing, not the fruit)."
+  },
+  "peakedly": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `peak` (peakedly > peaked > peak), costing 4.59 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (from peaked meaning sickly, pale) and confirmed on adversarial re-review (sickly peaked, a different word)."
+  },
+  "peakedness": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `peak` (peakedness > peaked > peak), costing 3.71 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (means sickliness, not peak) and confirmed on adversarial re-review (sickliness, not peak)."
+  },
+  "peakednesses": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `peak` (peakednesses > peakedness > peaked > peak), costing 4.63 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (means sickliness, not peak) and confirmed on adversarial re-review (sickliness, not peak)."
+  },
+  "peased": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `peas` (peased > peas), costing 3.37 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (from verb pease (appease), not peas) and confirmed on adversarial re-review (appease verb, not peas)."
+  },
+  "peasing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `peas` (peasing > peas), costing 3.38 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (from verb pease, not noun peas) and confirmed on adversarial re-review (appease verb, not peas)."
   },
   "pectines": {
     "since": "2026-09-27",
@@ -7217,6 +7706,10 @@
     "scope": "prefix",
     "reason": "The comparative of `preachy`; `achy` is a different word."
   },
+  "preagonic": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `agonic` (preagonic > agonic), costing 0.68 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (agonic means angle-less, not agony-related) and confirmed on adversarial re-review (agonic means angle-less, not death agony)."
+  },
   "preapplied": {
     "since": "2026-09-27",
     "scope": "prefix",
@@ -7236,6 +7729,42 @@
     "since": "2026-09-27",
     "scope": "prefix",
     "reason": "Apply in advance -- the base is `apply`, not `app`, and this was PRE_PREFIX_END's worst case."
+  },
+  "preased": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ase` (preased > prease > preases > ases > ase), costing 1.95 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (prease is archaic press, not ase) and confirmed on adversarial re-review (archaic press, unrelated to ase)."
+  },
+  "preases": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ase` (preases > ases > ase), costing 1.95 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (prease is archaic press, not ase) and confirmed on adversarial re-review (archaic press, unrelated to ase)."
+  },
+  "preasing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ase` (preasing > prease > preases > ases > ase), costing 1.97 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (prease is archaic press, not ase) and confirmed on adversarial re-review (archaic press, unrelated to ase)."
+  },
+  "preassed": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ass` (preassed > assed > ass), costing 5.30 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (not built on ass) and confirmed on adversarial re-review (not built on ass)."
+  },
+  "preasses": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ass` (preasses > asses > ass), costing 5.30 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (not built on ass) and confirmed on adversarial re-review (not built on ass)."
+  },
+  "preassess": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ass` (preassess > preassessed > assessed > asses > ass), costing 5.29 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (pre-assess, wrongly folded to ass) and confirmed on adversarial re-review (pre-assess, unrelated to ass)."
+  },
+  "preassessed": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ass` (preassessed > preasses > asses > ass), costing 5.29 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (pre-assessed, wrongly folded to ass) and confirmed on adversarial re-review (pre-assess, unrelated to ass)."
+  },
+  "preassesses": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ass` (preassesses > preassess > preassessed > assessed > asses > ass), costing 5.30 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (pre-assess, wrongly folded to ass) and confirmed on adversarial re-review (pre-assess, unrelated to ass)."
+  },
+  "preassessing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `ass` (preassessing > preasses > asses > ass), costing 5.30 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (pre-assess, wrongly folded to ass) and confirmed on adversarial re-review (pre-assess, unrelated to ass)."
   },
   "prebend": {
     "since": "2026-09-27",
@@ -7320,6 +7849,10 @@
     "scope": "prefix",
     "reason": "Predial means relating to land; a `dial` is a face."
   },
+  "predisagreeable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `disagree` (predisagreeable > predisagree > disagree), costing 4.01 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (disagreeable means unpleasant, not disagreeing) and confirmed on adversarial re-review (disagreeable means unpleasant, drifted)."
+  },
   "prees": {
     "since": "2026-09-27",
     "reason": "Folded onto `pre`, costing 5.11 points. Flagged in the 2026-09-22 semantic audit (pree/prees unrelated to pre) and confirmed on adversarial re-review (pree means taste; pre unrelated)."
@@ -7338,6 +7871,18 @@
     "since": "2026-09-27",
     "scope": "prefix",
     "reason": "A form of `prefab`; `fab` is a different word, and PRE_PREFIX_END's own example."
+  },
+  "prefaceable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `face` (prefaceable > faceable > face), costing 5.96 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (preface, not pre plus face) and confirmed on adversarial re-review (from preface, not face)."
+  },
+  "preheader": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `head` (preheader > prehead > head), costing 6.02 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (email preview text, not head) and confirmed on adversarial re-review (email preview text, not head)."
+  },
+  "preheaders": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `head` (preheaders > preheader > prehead > head), costing 6.02 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (email preview text, not head) and confirmed on adversarial re-review (email preview text, not head)."
   },
   "prehearing": {
     "since": "2026-09-27",
@@ -7863,9 +8408,21 @@
     "since": "2026-09-27",
     "reason": "Folded onto `razed`, costing 2.46 points. Flagged in the 2026-09-22 semantic audit (razee is a ship term, not raze) and confirmed on adversarial re-review (razee ship term, not raze)."
   },
+  "reactivable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `reactive` (reactivable > reactive), costing 3.24 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (means re-activatable, not reactive) and confirmed on adversarial re-review (re-activatable, not reactive)."
+  },
+  "readded": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `read` (readded > read), costing 5.60 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (re-added, from add, not read) and confirmed on adversarial re-review (re-added from add, not read)."
+  },
   "readding": {
     "since": "2026-09-27",
     "reason": "Folded onto `read`, costing 6.40 points. Flagged in the 2026-09-22 semantic audit (re-adding, coincidental letters) and confirmed on adversarial re-review (re-adding, coincidental letters)."
+  },
+  "reales": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `real` (reales > real), costing 4.98 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (plural of real coin, not adjective) and confirmed on adversarial re-review (plural of real coin, not adjective)."
   },
   "reallied": {
     "since": "2026-09-27",
@@ -7874,6 +8431,22 @@
   "realy": {
     "since": "2026-09-27",
     "reason": "Folded onto `rea`, costing 0.76 points. Flagged in the 2026-09-22 semantic audit (realy not derived from rea) and confirmed on adversarial re-review (rea is not a word)."
+  },
+  "reamed": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `reams` (reamed > ream > reams), costing 0.61 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (verb ream (bore), not paper reams) and confirmed on adversarial re-review (boring verb, not paper reams)."
+  },
+  "reames": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `reams` (reames > ream > reams), costing 1.57 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (archaic realms, not paper reams) and confirmed on adversarial re-review (archaic realms, not paper reams)."
+  },
+  "reaming": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `reams` (reaming > ream > reams), costing 0.83 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (verb ream (bore), not paper reams) and confirmed on adversarial re-review (boring verb, not paper reams)."
+  },
+  "reamings": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `reams` (reamings > reaming > ream > reams), costing 1.91 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (boring sense, not paper reams) and confirmed on adversarial re-review (boring sense, not paper reams)."
   },
   "rearise": {
     "since": "2026-09-27",
@@ -8139,6 +8712,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `root`, costing 3.88 points. Flagged in the 2026-09-22 semantic audit (rootes not a form of root) and confirmed on adversarial re-review (rootes not a root form)."
   },
+  "ropeable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `rope` (ropeable > rope), costing 3.88 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Australian slang meaning furious, angry) and confirmed on adversarial re-review (slang furious, drifted from rope)."
+  },
   "rosaceae": {
     "since": "2026-09-27",
     "reason": "Folded onto `rosacea`, costing 0.90 points. Flagged in the 2026-09-22 semantic audit (rosaceae plant family, rosacea skin) and confirmed on adversarial re-review (plant family versus skin condition)."
@@ -8339,9 +8916,37 @@
     "since": "2026-09-27",
     "reason": "Folded onto `scut`, costing 0.10 points. Flagged in the 2026-09-22 semantic audit (scute is plate; scut is tail) and confirmed on adversarial re-review (scute is plate, scut tail)."
   },
+  "seales": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `seal` (seales > seal), costing 3.47 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (not a valid plural of seal) and confirmed on adversarial re-review (not a valid form of seal)."
+  },
+  "sealioned": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `sealion` (sealioned > sealion), costing 0.91 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (trolling sense, not the animal) and confirmed on adversarial re-review (trolling sense, not the animal)."
+  },
+  "sealioner": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `sealion` (sealioner > sealion), costing 0.91 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (internet troll, not sea lion) and confirmed on adversarial re-review (internet troll, not the animal)."
+  },
+  "sealioners": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `sealion` (sealioners > sealioner > sealion), costing 0.95 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (internet trolls, not sea lion) and confirmed on adversarial re-review (internet trolls, not the animal)."
+  },
+  "sealioning": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `sealion` (sealioning > sealion), costing 0.92 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (trolling behavior, not the animal) and confirmed on adversarial re-review (trolling sense, not the animal)."
+  },
   "sealy": {
     "since": "2026-09-27",
     "reason": "Folded onto `sea`, costing 3.79 points. Flagged in the 2026-09-22 semantic audit (sealy likely from seal, ambiguous) and confirmed on adversarial re-review (sealy from seal, not sea)."
+  },
+  "seased": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `sea` (seased > seas > sea), costing 5.37 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (seas is not a verb) and confirmed on adversarial re-review (seas is not a verb)."
+  },
+  "seasing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `sea` (seasing > seas > sea), costing 5.38 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (seas is not a verb) and confirmed on adversarial re-review (seas is not a verb)."
   },
   "secretes": {
     "since": "2026-09-27",
@@ -8799,6 +9404,18 @@
     "since": "2026-09-27",
     "reason": "Folded onto `stati`, costing 1.02 points. Flagged in the 2026-09-22 semantic audit (from statie, not stati) and confirmed on adversarial re-review (statie overstripped to stati)."
   },
+  "steading": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `stead` (steading > stead), costing 1.98 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (farmstead noun, not stead inflection) and confirmed on adversarial re-review (farmstead sense, drifted from stead)."
+  },
+  "steadings": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `stead` (steadings > steading > stead), costing 1.83 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (plural of steading, a farmstead) and confirmed on adversarial re-review (farmsteads, drifted from stead)."
+  },
+  "steamies": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `steamy` (steamies > steamy), costing 2.61 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Scottish steamie washhouse, not steamy) and confirmed on adversarial re-review (Scottish washhouse, not steamy)."
+  },
   "stees": {
     "since": "2026-09-27",
     "reason": "Folded onto `steed`, costing 2.72 points. Flagged in the 2026-09-22 semantic audit (not a form of steed) and confirmed on adversarial re-review (stee unrelated to steed)."
@@ -8980,6 +9597,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `swath`, costing 2.56 points. Flagged in the 2026-09-22 semantic audit (swathings from swathe) and confirmed on adversarial re-review (swathe to wrap, not swath)."
   },
+  "sweetheartedly": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `sweetheart` (sweetheartedly > sweethearted > sweetheart), costing 3.51 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (sweet-hearted means kind, not sweetheart) and confirmed on adversarial re-review (kind-hearted, not sweetheart)."
+  },
+  "sweetheartedness": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `sweetheart` (sweetheartedness > sweethearted > sweetheart), costing 3.52 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (sweet-hearted kindness, not sweetheart) and confirmed on adversarial re-review (kind-heartedness, not sweetheart)."
+  },
   "swithers": {
     "since": "2026-09-27",
     "reason": "Folded onto `swith`, costing 0.57 points. Flagged in the 2026-09-22 semantic audit (swither unrelated to swith) and confirmed on adversarial re-review (swith means quickly, unrelated)."
@@ -9080,6 +9705,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `tea`, costing 5.22 points. Flagged in the 2026-09-22 semantic audit (from tease, not tea) and confirmed on adversarial re-review (from tease, not tea)."
   },
+  "teased": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `tea` (teased > teas > tea), costing 1.99 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (past of tease, not tea) and confirmed on adversarial re-review (past of tease, not tea)."
+  },
   "teaseler": {
     "since": "2026-09-27",
     "reason": "Folded onto `teasel`, costing 0.62 points. Flagged in the 2026-09-22 semantic audit (teaseler is seller of tea) and confirmed on adversarial re-review (teasel plant, not tea seller)."
@@ -9087,6 +9716,10 @@
   "teaseller": {
     "since": "2026-09-27",
     "reason": "Folded onto `teasel`, costing 0.62 points. Flagged in the 2026-09-22 semantic audit (teaseller is seller of tea) and confirmed on adversarial re-review (teasel plant, not tea seller)."
+  },
+  "teasing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `tea` (teasing > teas > tea), costing 1.67 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (form of tease, not tea) and confirmed on adversarial re-review (form of tease, not tea)."
   },
   "teasingly": {
     "since": "2026-09-27",
@@ -9535,6 +10168,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `che`, costing 3.44 points. Flagged in the 2026-09-22 semantic audit (unch/unches unrelated to che) and confirmed on adversarial re-review (unrelated letters only)."
   },
+  "uncloseable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `unclose` (uncloseable > unclose), costing 1.20 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (cannot be closed vs unclose means open) and confirmed on adversarial re-review (un+closeable, not unclose)."
+  },
   "uncomelier": {
     "since": "2026-09-27",
     "reason": "Folded onto `come`, costing 6.75 points. Flagged in the 2026-09-22 semantic audit (comely means attractive, not come) and confirmed on adversarial re-review (comely not from come)."
@@ -9579,6 +10216,16 @@
     "since": "2026-09-27",
     "reason": "Folded onto `damme`, costing 2.10 points. Flagged in the 2026-09-22 semantic audit (damme is not dam) and confirmed on adversarial re-review (damme unrelated to dam)."
   },
+  "undead": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `dead` (undead > undeads > deads > dead), costing 2.72 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (lexicalized: zombies, not simply dead) and confirmed on adversarial re-review (lexicalized zombie sense, not dead).",
+    "scope": "prefix"
+  },
+  "undeads": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `dead` (undeads > deads > dead), costing 5.54 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (plural of undead (zombies), not dead) and confirmed on adversarial re-review (zombies, not dead).",
+    "scope": "prefix"
+  },
   "undecagonal": {
     "since": "2026-09-27",
     "reason": "Folded onto `decagonal`, costing 1.23 points. Flagged in the 2026-09-22 semantic audit (undecagon is eleven-sided, not un-decagonal) and confirmed on adversarial re-review (undecagon is eleven-sided, not un-)."
@@ -9620,6 +10267,21 @@
   "undecillionths": {
     "since": "2026-10-09",
     "reason": "Folded onto `decillionth` (undecillionths > undecillionth > decillionth), costing 0.10 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (un- means eleven, different number) and confirmed on adversarial re-review (un- means eleven, so a different number).",
+    "scope": "prefix"
+  },
+  "undefaceable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `face` (undefaceable > defaceable > faceable > face), costing 5.96 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (deface does not mean face) and confirmed on adversarial re-review (deface means mar, drifted from face).",
+    "scope": "prefix"
+  },
+  "undemeaned": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (undemeaned > demeaned > demean > demeanes > meanes > mean), costing 6.07 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (demean is not mean; bogus hops) and confirmed on adversarial re-review (demean drifted from mean; bogus hops).",
+    "scope": "prefix"
+  },
+  "undemeaning": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `mean` (undemeaning > demeaning > demean > demeanes > meanes > mean), costing 6.08 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (demean is not mean; bogus hops) and confirmed on adversarial re-review (demean drifted from mean; bogus hops).",
     "scope": "prefix"
   },
   "underacinated": {
@@ -9666,6 +10328,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `hand`, costing 6.20 points. Flagged in the 2026-09-22 semantic audit (underhand drifted from hand) and confirmed on adversarial re-review (underhand means secretive, drifted)."
   },
+  "underleaves": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (underleaves > leaves > leave), costing 5.80 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (plural of leaf, not leave) and confirmed on adversarial re-review (plural of leaf, not leave)."
+  },
   "underletter": {
     "since": "2026-09-27",
     "reason": "Folded onto `let`, costing 6.48 points. Flagged in the 2026-09-22 semantic audit (letter is not let + -er) and confirmed on adversarial re-review (letter is not let + er)."
@@ -9685,6 +10351,14 @@
   "undernote": {
     "since": "2026-09-27",
     "reason": "Folded onto `not`, costing 8.16 points. Flagged in the 2026-09-22 semantic audit (from note, not not) and confirmed on adversarial re-review (from note; not is unrelated)."
+  },
+  "underream": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `reams` (underream > ream > reams), costing 1.91 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (drilling ream, not paper reams) and confirmed on adversarial re-review (drilling ream, not paper reams)."
+  },
+  "underreamer": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `reams` (underreamer > underream > ream > reams), costing 1.91 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (drilling tool, not paper reams) and confirmed on adversarial re-review (drilling tool, not paper reams)."
   },
   "underring": {
     "since": "2026-09-27",
@@ -9749,6 +10423,16 @@
   "unearnest": {
     "since": "2026-09-27",
     "reason": "Folded onto `earned`, costing 4.96 points. Flagged in the 2026-09-22 semantic audit (from earnest, not earn) and confirmed on adversarial re-review (earnest serious, unrelated to earn)."
+  },
+  "unearthing": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `earth` (unearthing > unearthings > earthings > earthing > earth), costing 3.73 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (unearth means dig up, not earth) and confirmed on adversarial re-review (unearth means discover; bogus path).",
+    "scope": "prefix"
+  },
+  "unearthings": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `earth` (unearthings > earthings > earthing > earth), costing 5.38 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (unearth means dig up, not earth) and confirmed on adversarial re-review (unearth means discover; bogus path).",
+    "scope": "prefix"
   },
   "unearthlier": {
     "since": "2026-09-27",
@@ -9867,6 +10551,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `hear`, costing 5.94 points. Flagged in the 2026-09-22 semantic audit (from hearse, not hear) and confirmed on adversarial re-review (from hearse, not hear)."
   },
+  "unhearsed": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `hear` (unhearsed > unhears > hears > hear), costing 5.63 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (from hearse, not hear) and confirmed on adversarial re-review (from hearse, not hear)."
+  },
   "unheles": {
     "since": "2026-09-27",
     "reason": "Folded onto `heli`, costing 2.33 points. Flagged in the 2026-09-22 semantic audit (heli is helicopter, unrelated) and confirmed on adversarial re-review (hele heal versus heli helicopter)."
@@ -9963,6 +10651,26 @@
     "since": "2026-09-27",
     "reason": "Folded onto `lathe`, costing 2.67 points. Flagged in the 2026-09-22 semantic audit (lath, not lathe) and confirmed on adversarial re-review (lath strip, not lathe)."
   },
+  "unleave": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (unleave > leave), costing 5.75 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (strip of leaves, not leave) and confirmed on adversarial re-review (from leaf, not leave).",
+    "scope": "prefix"
+  },
+  "unleaved": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (unleaved > unleave > leave), costing 5.75 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (leafless, from leaf not leave) and confirmed on adversarial re-review (from leaf, not leave).",
+    "scope": "prefix"
+  },
+  "unleaves": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (unleaves > unleave > leave), costing 5.79 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Unleave means shed leaves, not depart) and confirmed on adversarial re-review (from leaf, not leave).",
+    "scope": "prefix"
+  },
+  "unleaving": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `leave` (unleaving > unleave > leave), costing 5.78 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Shedding foliage, not leave as in depart) and confirmed on adversarial re-review (from leaf, not leave).",
+    "scope": "prefix"
+  },
   "unlent": {
     "since": "2026-09-27",
     "reason": "Folded onto `lent`, costing 3.83 points. Flagged in the 2026-09-22 semantic audit (lent is past of lend) and confirmed on adversarial re-review (Lent/lent past of lend, unrelated)."
@@ -9990,6 +10698,10 @@
   "unlikelinesses": {
     "since": "2026-09-27",
     "reason": "Folded onto `like`, costing 7.71 points. Flagged in the 2026-09-22 semantic audit (from unlikely, drifted) and confirmed on adversarial re-review (likely means probable, drifted)."
+  },
+  "unmakeable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `unmaking` (unmakeable > unmake > unmaking), costing 0.96 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Not makeable, not about unmaking/destroying) and confirmed on adversarial re-review (un+makeable, not unmaking)."
   },
   "unmanly": {
     "since": "2026-09-27",
@@ -10051,6 +10763,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `petty`, costing 4.28 points. Flagged in the 2026-09-22 semantic audit (from pet, not petty) and confirmed on adversarial re-review (from pet, not petty)."
   },
+  "unphaseable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `phase` (unphaseable > phaseable > phase), costing 4.79 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Likely misspelling of unfazeable, not phase) and confirmed on adversarial re-review (misspelling of unfazeable, not phase)."
+  },
   "unpinnable": {
     "since": "2026-09-27",
     "reason": "Folded onto `pinny`, costing 0.91 points. Flagged in the 2026-09-22 semantic audit (from pin, not pinny) and confirmed on adversarial re-review (pinny is an apron, unrelated)."
@@ -10091,6 +10807,25 @@
     "since": "2026-09-27",
     "reason": "Folded onto `quant`, costing 2.21 points. Flagged in the 2026-09-22 semantic audit (quantised from quantum, not quant) and confirmed on adversarial re-review (quantum, not quant)."
   },
+  "unreally": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `really` (unreally > really), costing 6.64 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Adverb of unreal, not un+really) and confirmed on adversarial re-review (adverb of unreal, not really).",
+    "scope": "prefix"
+  },
+  "unreamed": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `reams` (unreamed > reamed > ream > reams), costing 1.91 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Ream (drill) is not reams of paper) and confirmed on adversarial re-review (drilling ream, not paper reams)."
+  },
+  "unreaves": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `reaves` (unreaves > reaves), costing 1.68 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Unreave means unravel, not reave (plunder)) and confirmed on adversarial re-review (unravel sense, not plunder).",
+    "scope": "prefix"
+  },
+  "unreaving": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `reaves` (unreaving > reaving > reave > reaves), costing 1.67 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (Unreave means unravel, not reave (plunder)) and confirmed on adversarial re-review (unravel sense, not plunder).",
+    "scope": "prefix"
+  },
   "unreeves": {
     "since": "2026-09-27",
     "reason": "Folded onto `reef`, costing 3.94 points. Flagged in the 2026-09-22 semantic audit (unreeve, not reef) and confirmed on adversarial re-review (reeve unrelated to reef)."
@@ -10119,6 +10854,16 @@
     "since": "2026-09-27",
     "reason": "Folded onto `sati`, costing 2.08 points. Flagged in the 2026-09-22 semantic audit (from satiable, not sati) and confirmed on adversarial re-review (sati unrelated; from satiate)."
   },
+  "unseater": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `seater` (unseater > seater), costing 2.62 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (one who unseats, not seater) and confirmed on adversarial re-review (one who unseats, not seater).",
+    "scope": "prefix"
+  },
+  "unseaters": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `seater` (unseaters > unseater > seater), costing 2.63 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (one who unseats, not seater) and confirmed on adversarial re-review (ones who unseat, not seater).",
+    "scope": "prefix"
+  },
   "unseemlier": {
     "since": "2026-09-27",
     "reason": "Folded onto `seems`, costing 5.94 points. Flagged in the 2026-09-22 semantic audit (seemly drifted from seem) and confirmed on adversarial re-review (seemly means decorous, drifted)."
@@ -10142,6 +10887,14 @@
   "unseize": {
     "since": "2026-09-27",
     "reason": "Folded onto `see`, costing 7.24 points. Flagged in the 2026-09-22 semantic audit (from seize, not see) and confirmed on adversarial re-review (from seize, not see)."
+  },
+  "unsettleability": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `unsettling` (unsettleability > unsettleable > unsettle > unsettling), costing 2.88 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (un+settleable, not disturbing unsettling) and confirmed on adversarial re-review (un+settleable, not unsettling)."
+  },
+  "unsettleable": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `unsettling` (unsettleable > unsettle > unsettling), costing 2.89 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (cannot be settled, not disturbing) and confirmed on adversarial re-review (cannot be settled, not unsettling)."
   },
   "unseverable": {
     "since": "2026-09-27",
@@ -10288,6 +11041,10 @@
     "since": "2026-10-09",
     "reason": "Folded onto `vigintillion` (unvigintillions > unvigintillion > vigintillion), costing 0.02 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (un- means one; distinct number) and confirmed on adversarial re-review (un- means one, so a distinct number).",
     "scope": "prefix"
+  },
+  "unwearably": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `weary` (unwearably > unweary > weary), costing 3.32 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (from unwearable (wear), not weary) and confirmed on adversarial re-review (from wear, not weary)."
   },
   "unwhippable": {
     "since": "2026-09-27",
@@ -10437,6 +11194,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `wel`, costing 1.18 points. Flagged in the 2026-09-22 semantic audit (wels is singular; strip overshot) and confirmed on adversarial re-review (wel not base of wels)."
   },
+  "wheateared": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `wheatear` (wheateared > wheatear), costing 0.74 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (wheatear is a bird, not verb) and confirmed on adversarial re-review (wheatear is a bird)."
+  },
   "wheaty": {
     "since": "2026-09-27",
     "reason": "Folded onto `wheaties`, costing 1.27 points. Flagged in the 2026-09-22 semantic audit (from wheat, not wheaties) and confirmed on adversarial re-review (wheaties is unrelated plural/brand)."
@@ -10456,6 +11217,10 @@
   "whister": {
     "since": "2026-09-27",
     "reason": "Folded onto `whist`, costing 1.97 points. Flagged in the 2026-09-22 semantic audit (whister not from whist) and confirmed on adversarial re-review (whister unrelated to whist)."
+  },
+  "whiteheaded": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `whitehead` (whiteheaded > whitehead), costing 2.67 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (white-haired, not whitehead pimple) and confirmed on adversarial re-review (white-haired, not whitehead pimple)."
   },
   "whves": {
     "since": "2026-09-27",
@@ -10484,6 +11249,10 @@
   "williest": {
     "since": "2026-09-27",
     "reason": "Folded onto `willy`, costing 3.63 points. Flagged in the 2026-09-22 semantic audit (superlative of wily, not willy) and confirmed on adversarial re-review (from wily, not willy)."
+  },
+  "windbreaking": {
+    "since": "2026-10-15",
+    "reason": "Folded onto `windbreak` (windbreaking > windbreak), costing 0.95 points. Flagged by the daily fold check for the 2026-10-15 `EA` drop (breaking wind, not a windbreak) and confirmed on adversarial re-review (breaking wind, not a windbreak)."
   },
   "wines": {
     "since": "2026-09-27",
