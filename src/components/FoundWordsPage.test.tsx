@@ -609,6 +609,23 @@ describe("earlier days of the week", () => {
     expect(placeholders.length).toBeGreaterThanOrEqual(WORDS.length);
   });
 
+  it("puts a day already read straight back, and re-reads it underneath", async () => {
+    const { asked } = stubDays({ [TODAY]: WORDS, [TUESDAY]: YESTERDAY_WORDS });
+    render(<FoundWordsPage />);
+    await vi.waitFor(() => expect(screen.getByText("asphyxiate")).toBeTruthy());
+
+    fireEvent.click(back());
+    await vi.waitFor(() => expect(screen.getByText("linkboy")).toBeTruthy());
+    fireEvent.click(forward());
+
+    // On screen in the same render as the press, with no rows held open for it.
+    expect(screen.getByText("asphyxiate")).toBeTruthy();
+    expect(
+      document.querySelectorAll(".found-words__item--placeholder"),
+    ).toHaveLength(0);
+    await vi.waitFor(() => expect(asked).toEqual([TODAY, TUESDAY, TODAY]));
+  });
+
   it("leaves a finished day alone rather than polling it", async () => {
     const { asked } = stubDays({ [TUESDAY]: YESTERDAY_WORDS });
     render(<FoundWordsPage />);
