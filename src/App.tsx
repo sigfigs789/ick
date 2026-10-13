@@ -8,6 +8,7 @@ import { StreakDisplay } from "./components/StreakDisplay";
 import { ResultsPanel } from "./components/ResultsPanel";
 import { WordRulesModal } from "./components/WordRulesModal";
 import { PuzzleNav } from "./components/PuzzleNav";
+import { FoldedLiveNotice } from "./components/FoldedLiveNotice";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
@@ -68,6 +69,8 @@ export default function App() {
     resetAnswers,
     mode,
     modeChosen,
+    foldNotices,
+    dismissFoldNotices,
   } = useDailyPuzzle();
   // Which of the two games this is, when the switch decides it at all. Named in
   // the guess log and carried as a class on the column, so the cards and the
@@ -220,6 +223,13 @@ export default function App() {
           completed={progress.completed}
           retryOffered={retryOffered}
           onReveal={revealAnswer}
+        />
+        {/* Over the words it is about: a fold rejected live on this puzzle
+            moved one of them (see game/liveFoldRescore.ts). */}
+        <FoldedLiveNotice
+          date={date}
+          notices={foldNotices}
+          onDismiss={dismissFoldNotices}
         />
         <GuessLog
           acceptedWords={progress.acceptedWords}

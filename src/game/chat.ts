@@ -42,6 +42,37 @@ export function normaliseMessage(raw: string): string {
   return raw.replace(/\s+/g, " ").trim();
 }
 
+/**
+ * A word scoring this much or more is announced in the room even when it is not
+ * the puzzle's record: Mythic and above, as the score is displayed.
+ */
+export const NOTICE_MIN_SCORE = 9.5;
+
+/** What a room notice says about one banked word. See the 20261013 migration. */
+export interface BankedWord {
+  /** The puzzle it was banked on, YYYY-MM-DD. */
+  date: string;
+  word: string;
+  /** The tier the game showed, e.g. "Mythic". */
+  tier: string;
+  /** The score as the game displayed it, e.g. "9.62". */
+  score: string;
+  mode: "standard" | "freeform";
+}
+
+/** The line posted when `word` beats everything banked on its puzzle so far. */
+export function topNoticeBody(handle: string, banked: BankedWord): string {
+  const where = banked.mode === "freeform" ? " in Freeform" : "";
+  return `${handle} banked top scoring word ${banked.word} (${banked.tier}, ${banked.score})${where}`;
+}
+
+/** The line posted for a 9.5+ word, or null for one that scores less. */
+export function tierNoticeBody(handle: string, banked: BankedWord): string | null {
+  if (!(Number(banked.score) >= NOTICE_MIN_SCORE)) return null;
+  const where = banked.mode === "freeform" ? " in Freeform" : "";
+  return `${handle} banked ${banked.tier} word ${banked.word} (${banked.score})${where}`;
+}
+
 /** Check a message that has already been through `normaliseMessage`. */
 export function chatProblem(body: string): ChatProblem | null {
   if (body.length === 0) return "empty";

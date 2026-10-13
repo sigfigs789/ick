@@ -1646,6 +1646,21 @@ h2 {
 .de-prefix-hint .de-prefix-hint__close:hover {
   opacity: 1;
 }
+/* The same bubble, in the page's flow above the guess log rather than floating
+   over the input: it is about words already on screen, not one being typed. */
+.de-prefix-hint.folded-live-notice {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0 0 0.9rem;
+}
+.folded-live-notice__line {
+  margin: 0;
+}
+.folded-live-notice__line + .folded-live-notice__line {
+  margin-top: 0.35rem;
+}
 @keyframes de-prefix-hint-in {
   from {
     opacity: 0;
@@ -4090,6 +4105,47 @@ h2 {
   border-color: var(--fg-muted);
 }
 
+/* /folded-live: one Reject per row, which becomes Undo once pressed. A rejected
+   row stays put and greys back, with its old base struck through, so the list
+   holds still while it is worked through. */
+.folded-live__item--rejected .review__body {
+  opacity: 0.6;
+}
+.folded-live__struck {
+  text-decoration: line-through;
+}
+.folded-live__reject {
+  flex: none;
+  min-width: 4.5rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--danger-fg);
+  border-radius: 0.4rem;
+  background: var(--card-bg);
+  color: var(--danger-fg);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.folded-live__reject:hover {
+  background: var(--danger-bg);
+}
+.folded-live__reject--on {
+  border-color: var(--border-strong);
+  color: var(--fg-muted);
+}
+.folded-live__reject--on:hover {
+  background: var(--card-bg);
+  color: var(--fg);
+}
+/* The rejections could not be read, so there is nothing safe to toggle. */
+.folded-live__reject:disabled {
+  border-color: var(--border);
+  background: var(--card-bg);
+  color: var(--fg-muted);
+  cursor: not-allowed;
+}
+
 /* The Freeform week report at /freeform-feedback: the vote above, the notes
    below. Its own block rather than more `review__` rules, because this page is
    not a queue -- nothing here is marked, and the thing at the top is a tally
@@ -5025,6 +5081,20 @@ h2 {
 .chat__body {
   font-size: 0.95rem;
   line-height: 1.35;
+}
+/* A line the room posts itself: a puzzle's new top score, or a 9.5+ word. */
+.chat__message--notice {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  background: var(--caution-bg);
+  color: var(--caution-fg);
+}
+.chat__message--notice .chat__body {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.chat__message--notice .chat__time {
+  font-size: 0.72rem;
 }
 .chat__notice {
   margin: 0;

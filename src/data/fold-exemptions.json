@@ -83,6 +83,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `agonist`, costing 1.81 points. Flagged in the 2026-09-22 semantic audit (agonistes Greek epithet, not agonist) and confirmed on adversarial re-review (Greek epithet, not agonist)."
   },
+  "airportable": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `airport` (airportable > airport), costing 5.06 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (air-portable, not airport plus -able) and confirmed on adversarial re-review (air-portable, unrelated to airport)."
+  },
   "airshower": {
     "since": "2026-09-27",
     "reason": "A cascade of secondary cosmic-ray particles -- an air shower. Not a form of `airshow`."
@@ -404,6 +408,41 @@
   "antipopes": {
     "since": "2026-09-27",
     "reason": "Folded onto `pop`, costing 4.79 points. Flagged in the 2026-09-22 semantic audit (from pope, not pop) and confirmed on adversarial re-review (from pope, not pop)."
+  },
+  "antiport": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `port` (antiport > port), costing 4.87 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (membrane cotransport mechanism, not anti plus port) and confirmed on adversarial re-review (transport mechanism, not harbour or opening port).",
+    "scope": "prefix"
+  },
+  "antiportable": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `port` (antiportable > antiport > port), costing 4.92 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (not built on port) and confirmed on adversarial re-review (antiport sense, not everyday port).",
+    "scope": "prefix"
+  },
+  "antiported": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `port` (antiported > antiport > port), costing 4.91 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (biology antiport sense, not port) and confirmed on adversarial re-review (antiport sense, not everyday port).",
+    "scope": "prefix"
+  },
+  "antiporter": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porter` (antiporter > porter), costing 3.68 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (membrane protein, not a porter) and confirmed on adversarial re-review (membrane transporter protein, not baggage porter).",
+    "scope": "prefix"
+  },
+  "antiporters": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porter` (antiporters > antiporter > porter), costing 3.78 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (membrane proteins, not porters) and confirmed on adversarial re-review (membrane transporter proteins, not baggage porters).",
+    "scope": "prefix"
+  },
+  "antiporting": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `port` (antiporting > antiport > port), costing 4.92 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (biology antiport sense, not port) and confirmed on adversarial re-review (antiport sense, not everyday port).",
+    "scope": "prefix"
+  },
+  "antiports": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `port` (antiports > antiport > port), costing 4.89 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (biology antiport sense, not port) and confirmed on adversarial re-review (antiport sense, not everyday port).",
+    "scope": "prefix"
   },
   "antiquas": {
     "since": "2026-09-27",
@@ -3553,6 +3592,26 @@
     "reason": "Folded onto `tarr`, costing up to 1.51 points, by stripping de- to `tarrer`. A real de- word, but the residue folds on to the wrong base: device removing tar; built on tar, not tarr. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
   },
+  "detemporize": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `temporizing` (detemporize > detemporizing > temporizing), costing 0.46 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (remove from time, not stalling) and confirmed on adversarial re-review (different sense from temporizing (stalling)).",
+    "scope": "prefix"
+  },
+  "detemporized": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `temporizing` (detemporized > detemporize > detemporizing > temporizing), costing 0.46 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (remove from time, not stalling) and confirmed on adversarial re-review (different sense from temporizing (stalling)).",
+    "scope": "prefix"
+  },
+  "detemporizes": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `temporizing` (detemporizes > detemporize > detemporizing > temporizing), costing 0.46 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (remove from time, not stalling) and confirmed on adversarial re-review (different sense from temporizing (stalling)).",
+    "scope": "prefix"
+  },
+  "detemporizing": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `temporizing` (detemporizing > temporizing), costing 0.46 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (remove from time, not stalling) and confirmed on adversarial re-review (different sense from temporizing (stalling)).",
+    "scope": "prefix"
+  },
   "detense": {
     "since": "2026-10-04",
     "reason": "Folded onto `tense` by stripping de- to `tense`. Obsolete: detention, withholding, like the exempted \"detenses\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
@@ -5203,9 +5262,49 @@
     "since": "2026-09-27",
     "reason": "Folded onto `jinks`, costing 2.00 points. Flagged in the 2026-09-22 semantic audit (jinker unrelated to jinks) and confirmed on adversarial re-review (jinker unrelated to jinks)."
   },
+  "jobes": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `job` (jobes > job), costing 5.72 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (inflection of jobe, not job) and confirmed on adversarial re-review (jobe means to scold, unrelated to job)."
+  },
+  "jocker": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `jock` (jocker > jock), costing 2.87 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (hobo slang term, not jock+er) and confirmed on adversarial re-review (hobo slang term, not jock plus -er)."
+  },
+  "jockers": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `jock` (jockers > jocker > jock), costing 2.92 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (hobo slang term, not jock+er) and confirmed on adversarial re-review (hobo slang term, not jock plus -er)."
+  },
+  "joller": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `joll` (joller > joll), costing 0.45 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (SA partygoer, from jol not joll) and confirmed on adversarial re-review (derives from SA jol, not joll)."
+  },
+  "jollers": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `joll` (jollers > joller > joll), costing 0.46 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (SA partygoers, from jol not joll) and confirmed on adversarial re-review (derives from SA jol, not joll)."
+  },
+  "joned": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `jones` (joned > jone > jones), costing 4.89 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (jones is not plural of jone) and confirmed on adversarial re-review (jones is not the plural of jone)."
+  },
+  "joning": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `jones` (joning > jone > jones), costing 4.89 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (jones is not plural of jone) and confirmed on adversarial re-review (jones is not the plural of jone)."
+  },
+  "joshiness": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `joshi` (joshiness > joshi), costing 2.19 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (from joshy, not joshi astrologer) and confirmed on adversarial re-review (from joshy, not the joshi astrologer)."
+  },
   "josser": {
     "since": "2026-09-27",
     "reason": "Folded onto `joss`, costing 2.92 points. Flagged in the 2026-09-22 semantic audit (josser unrelated to joss sense) and confirmed on adversarial re-review (josser unrelated to joss sense)."
+  },
+  "jouled": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `joules` (jouled > joule > joules), costing 1.75 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (joule verb means jowl, not unit) and confirmed on adversarial re-review (verb joule means jowl, not the unit)."
+  },
+  "jouling": {
+    "since": "2026-10-13",
+    "reason": "Folded onto `joules` (jouling > joule > joules), costing 1.77 points. Flagged by the daily fold check for the 2026-10-13 `JO` drop (joule verb means jowl, not unit) and confirmed on adversarial re-review (verb joule means jowl, not the unit)."
   },
   "junglier": {
     "since": "2026-09-27",
@@ -6348,6 +6447,11 @@
     "since": "2026-09-27",
     "reason": "Built on `politicking`, which comes from `politics`, not from the adjective `politic`."
   },
+  "outporter": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porter` (outporter > porter), costing 3.85 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (outport resident, not out+porter) and confirmed on adversarial re-review (outport resident, unrelated to porter).",
+    "scope": "prefix"
+  },
   "outpraise": {
     "since": "2026-09-27",
     "reason": "Folded onto `pray`, costing 4.74 points. Flagged in the 2026-09-22 semantic audit (from praise, not pray) and confirmed on adversarial re-review (praise and pray are distinct words)."
@@ -6956,6 +7060,82 @@
     "since": "2026-09-27",
     "reason": "Folded onto `poppy`, costing 3.61 points. Flagged in the 2026-09-22 semantic audit (from pop, not poppy) and confirmed on adversarial re-review (from pop; poppy is a flower)."
   },
+  "pored": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `pores` (pored > pore > pores), costing 1.64 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (verb pore over, base is skin pores) and confirmed on adversarial re-review (pore over is distinct from skin pores)."
+  },
+  "poring": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `pores` (poring > pore > pores), costing 1.34 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (verb pore over, base is skin pores) and confirmed on adversarial re-review (pore over is distinct from skin pores)."
+  },
+  "poringly": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `pores` (poringly > poring > pore > pores), costing 3.02 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (verb pore over, base is skin pores) and confirmed on adversarial re-review (pore over is distinct from skin pores)."
+  },
+  "porings": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `pores` (porings > poring > pore > pores), costing 2.99 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (verb pore over, base is skin pores) and confirmed on adversarial re-review (pore over is distinct from skin pores)."
+  },
+  "porked": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `pork` (porked > pork), costing 3.55 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (slang verb, not the meat) and confirmed on adversarial re-review (slang verb sense, not the meat)."
+  },
+  "porking": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `pork` (porking > pork), costing 3.39 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (slang verb, not the meat) and confirmed on adversarial re-review (slang verb sense, not the meat)."
+  },
+  "poroses": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `poros` (poroses > poros), costing 0.85 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (plural of porosis, not poros) and confirmed on adversarial re-review (plural of porosis, unrelated to poros)."
+  },
+  "porphyrise": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyries` (porphyrise > porphyry > porphyries), costing 2.17 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (means pulverize, not the rock porphyry) and confirmed on adversarial re-review (meaning drifted to pulverize)."
+  },
+  "porphyrised": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyries` (porphyrised > porphyrise > porphyry > porphyries), costing 2.18 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (means pulverized, not the rock porphyry) and confirmed on adversarial re-review (meaning drifted to pulverized)."
+  },
+  "porphyrises": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyries` (porphyrises > porphyrise > porphyry > porphyries), costing 2.18 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (means pulverizes, not the rock porphyry) and confirmed on adversarial re-review (meaning drifted to pulverizes)."
+  },
+  "porphyrising": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyries` (porphyrising > porphyrise > porphyry > porphyries), costing 2.18 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (means pulverizing, not the rock porphyry) and confirmed on adversarial re-review (meaning drifted to pulverizing)."
+  },
+  "porphyrites": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyritic` (porphyrites > porphyrite > porphyritic), costing 0.74 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (rock-type noun, not adjective porphyritic) and confirmed on adversarial re-review (sibling of porphyry, not derived from porphyritic)."
+  },
+  "porphyrization": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyries` (porphyrization > porphyrize > porphyry > porphyries), costing 2.18 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (means pulverization, not the rock porphyry) and confirmed on adversarial re-review (meaning drifted to pulverization)."
+  },
+  "porphyrizations": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyries` (porphyrizations > porphyrization > porphyrize > porphyry > porphyries), costing 2.18 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (means pulverization, not the rock porphyry) and confirmed on adversarial re-review (meaning drifted to pulverization)."
+  },
+  "porphyrize": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyries` (porphyrize > porphyry > porphyries), costing 2.17 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (means pulverize, not the rock porphyry) and confirmed on adversarial re-review (meaning drifted to pulverize)."
+  },
+  "porphyrized": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyries` (porphyrized > porphyrize > porphyry > porphyries), costing 2.18 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (means pulverized, not the rock porphyry) and confirmed on adversarial re-review (meaning drifted to pulverized)."
+  },
+  "porphyrizes": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyries` (porphyrizes > porphyrize > porphyry > porphyries), costing 2.18 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (means pulverizes, not the rock porphyry) and confirmed on adversarial re-review (meaning drifted to pulverizes)."
+  },
+  "porphyrizing": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porphyries` (porphyrizing > porphyrize > porphyry > porphyries), costing 2.18 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (means pulverizing, not the rock porphyry) and confirmed on adversarial re-review (meaning drifted to pulverizing)."
+  },
+  "portases": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porta` (portases > portas > porta), costing 2.38 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (portas means breviary, not porta) and confirmed on adversarial re-review (portas means breviary, unrelated to porta)."
+  },
   "portlier": {
     "since": "2026-09-27",
     "reason": "Folded onto `port`, costing 5.16 points. Flagged in the 2026-09-22 semantic audit (portly, not from port) and confirmed on adversarial re-review (portly stout, unrelated to port)."
@@ -6975,6 +7155,14 @@
   "portly": {
     "since": "2026-09-27",
     "reason": "Folded onto `port`, costing 3.22 points. Flagged in the 2026-09-22 semantic audit (portly means stout, unrelated) and confirmed on adversarial re-review (bearing sense, not harbour port)."
+  },
+  "portoise": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porto` (portoise > porto), costing 3.14 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (nautical term (gunwale), unrelated to porto) and confirmed on adversarial re-review (gunwale term, unrelated to porto)."
+  },
+  "portoises": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `porto` (portoises > portoise > porto), costing 3.18 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (nautical term (gunwale), unrelated to porto) and confirmed on adversarial re-review (gunwale term, unrelated to porto)."
   },
   "possa": {
     "since": "2026-09-27",
@@ -8651,6 +8839,10 @@
     "since": "2026-09-27",
     "reason": "Hosiery. A noun of its own, not a form of `stock`; `stockings`, `stockinged` and `stockingless` all fold through it."
   },
+  "stompies": {
+    "since": "2026-10-14",
+    "reason": "Folded onto `stompy` (stompies > stompy), costing 0.56 points. Flagged by the daily fold check for the 2026-10-14 `OMP` drop (SA slang cigarette butts, not stompy) and confirmed on adversarial re-review (stompie cigarette butts, not stompy adjective)."
+  },
   "stonkering": {
     "since": "2026-09-27",
     "reason": "Folded onto `stonking`, costing 1.03 points. Flagged in the 2026-09-22 semantic audit (stonker vs stonking, different words) and confirmed on adversarial re-review (stonker versus stonking, different words)."
@@ -8731,6 +8923,14 @@
   "supermodest": {
     "since": "2026-09-27",
     "reason": "Folded onto `supermod`, costing 1.18 points. Flagged in the 2026-09-22 semantic audit (super- plus modest, not supermod) and confirmed on adversarial re-review (supermod unrelated to modest)."
+  },
+  "superportable": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `superport` (superportable > superport), costing 0.71 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (super plus portable, not superport) and confirmed on adversarial re-review (super plus portable, not superport)."
+  },
+  "superportables": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `superport` (superportables > superportable > superport), costing 0.68 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (super plus portable, not superport) and confirmed on adversarial re-review (super plus portable, not superport)."
   },
   "supes": {
     "since": "2026-09-27",
@@ -8917,6 +9117,14 @@
   "tempest": {
     "since": "2026-09-02",
     "reason": "A storm, not \"most temp\" -- and `temper` is a word, so the paired-degree check the bare -est fold runs on `contest` and `interest` passes here. One of two words in the dictionary that clear the check without being superlatives."
+  },
+  "temporales": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `temporal` (temporales > temporal), costing 3.35 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (plural of temporalis muscle, not temporal) and confirmed on adversarial re-review (muscle plural, not everyday temporal)."
+  },
+  "temporalised": {
+    "since": "2026-10-12",
+    "reason": "Folded onto `temporalis` (temporalised > temporalis), costing 0.53 points. Flagged by the daily fold check for the 2026-10-12 `POR` drop (from temporalise, not temporalis muscle) and confirmed on adversarial re-review (from temporalise, not temporalis muscle)."
   },
   "temporalising": {
     "since": "2026-09-27",
