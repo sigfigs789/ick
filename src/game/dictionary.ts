@@ -1056,6 +1056,13 @@ interface FoldReviewVerdict {
  * question anybody asks of a line in a scoring table, and a merged file cannot
  * answer it. Kept apart, the answer is which file the word is in.
  *
+ * The daily fold check (.github/workflows/daily-fold-check.yml) writes here
+ * too, for the same reason: it is a script, not a hand. A wrong fold its judge
+ * can name the real base for -- one that already has a measured score -- lands
+ * here as a base, because only this table ends the chain at that base; an
+ * override's base would carry on folding and could reach the wrong word again.
+ * Its entries say so in their `reason`. The rest of its findings are exemptions.
+ *
  * Read after the curated tables, never over them: a word in both is a review
  * error rather than a tie, and a test pins that it does not happen.
  *
@@ -3406,6 +3413,25 @@ export function foldTrace(
   path.reverse();
 
   return { word: normalized, ownZipf, base: chained.base, baseZipf: chained.zipf, path };
+}
+
+/**
+ * The Zipf `word` would lend a word folded onto it under `date`'s Standard
+ * rules, or undefined when the lexicon does not hold it or no corpus measures
+ * it.
+ *
+ * For the daily fold check, which redirects a wrong fold to the base its judge
+ * names only when that base already carries a real score: a base priced at the
+ * unattested sentinel would hand the word a 10.00 it never earned, so that case
+ * stays an exemption. Claude's estimates are not consulted -- they never price a
+ * fold base (see `withEstimate`), so they cannot vouch for one here either.
+ */
+export function measuredBaseZipf(word: string, date?: string): number | undefined {
+  const normalized = word.toLowerCase();
+  const scoring = scoringFor(date, "standard");
+  if (!lexiconHas(normalized, scoring)) return undefined;
+  const zipf = zipfFor(normalized, scoring);
+  return isUnattestedZipf(zipf) ? undefined : zipf;
 }
 
 /**

@@ -14,13 +14,15 @@ name: Review fold check PR
 #
 # Only branches named codex/fold-check-YYYY-MM-DD are reviewed.
 #
-#   1. The workflow diffs src/data/fold-exemptions.json between main and the PR
-#      and checks the change's shape itself: only that file changed, no existing
-#      entry was edited or removed, and every new entry is dated from the
-#      puzzle. Any failure here is a decline whatever Claude says.
-#   2. Claude judges every new exemption against scripts/fold-audit/RUBRIC.md
-#      as a third, independent reader -- the check already ran a flag pass and
-#      a defend pass -- and writes its verdict to .tmp/review/verdict.json.
+#   1. The workflow diffs src/data/fold-exemptions.json and
+#      src/data/fold-review-verdicts.json between main and the PR and checks the
+#      change's shape itself: only those files changed, no existing entry was
+#      edited or removed, every new entry is dated from the puzzle, and no word
+#      is in both. Any failure here is a decline whatever Claude says.
+#   2. Claude judges every new entry against scripts/fold-audit/RUBRIC.md as a
+#      third, independent reader -- the check already ran a flag pass and a
+#      defend pass -- and, for a redirect, whether the word really is a form of
+#      its new base. It writes its verdict to .tmp/review/verdict.json.
 #   3. The workflow posts the verdict and sets the label.
 #
 # Runs on the Claude subscription: it needs the CLAUDE_CODE_OAUTH_TOKEN
@@ -110,6 +112,7 @@ jobs:
           jq -r .body /tmp/pr.json > .tmp/review/pr-body.md
           jq -r '.files[].path' /tmp/pr.json > .tmp/review/changed-files.txt
           git show "pr/head:src/data/fold-exemptions.json" > .tmp/review/exemptions-pr.json
+          git show "pr/head:src/data/fold-review-verdicts.json" > .tmp/review/verdicts-pr.json
           git diff "origin/main...pr/head" > .tmp/review/pr.diff
           echo "date=$date" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse pr/head)" >> "$GITHUB_OUTPUT"
@@ -127,30 +130,47 @@ jobs:
 
           review = pathlib.Path(".tmp/review")
           date = os.environ["DATE"]
-          main = json.loads(pathlib.Path("src/data/fold-exemptions.json").read_text())
-          pr = json.loads((review / "exemptions-pr.json").read_text())
+          tables = {
+              # name in messages, file on main, file on the PR
+              "exemptions": ("src/data/fold-exemptions.json", review / "exemptions-pr.json"),
+              "redirects": ("src/data/fold-review-verdicts.json", review / "verdicts-pr.json"),
+          }
           files = [f for f in (review / "changed-files.txt").read_text().split("\n") if f]
 
           problems = []
-          extra = [f for f in files if f != "src/data/fold-exemptions.json"]
+          extra = [f for f in files if f not in {path for path, _ in tables.values()}]
           if extra:
-              problems.append("changes files besides src/data/fold-exemptions.json: " + ", ".join(extra))
-          removed = sorted(set(main) - set(pr))
-          if removed:
-              problems.append("removes existing exemptions: " + ", ".join(removed))
-          edited = sorted(w for w in set(main) & set(pr) if main[w] != pr[w])
-          if edited:
-              problems.append("edits existing exemptions: " + ", ".join(edited))
-          added = {w: pr[w] for w in sorted(set(pr) - set(main))}
+              problems.append("changes files besides the two fold tables: " + ", ".join(extra))
+          added = {}
+          for name, (path, pr_path) in tables.items():
+              main = json.loads(pathlib.Path(path).read_text())
+              pr = json.loads(pr_path.read_text())
+              removed = sorted(set(main) - set(pr))
+              if removed:
+                  problems.append(f"removes existing {name}: " + ", ".join(removed))
+              edited = sorted(w for w in set(main) & set(pr) if main[w] != pr[w])
+              if edited:
+                  problems.append(f"edits existing {name}: " + ", ".join(edited))
+              new = {w: pr[w] for w in sorted(set(pr) - set(main))}
+              misdated = sorted(w for w, e in new.items() if e.get("since") != date)
+              if misdated:
+                  problems.append(f"new {name} not dated from the {date} puzzle: " + ", ".join(misdated))
+              if name == "redirects":
+                  baseless = sorted(w for w, e in new.items() if not e.get("base"))
+                  if baseless:
+                      problems.append("new redirects with no base: " + ", ".join(baseless))
+              both = sorted(set(new) & set(added))
+              if both:
+                  problems.append("words in both tables: " + ", ".join(both))
+              for w, e in new.items():
+                  added[w] = {"fix": "redirect" if name == "redirects" else "exempt", **e}
           if not added:
-              problems.append("adds no exemptions")
-          misdated = sorted(w for w, e in added.items() if e.get("since") != date)
-          if misdated:
-              problems.append(f"new exemptions not dated from the {date} puzzle: " + ", ".join(misdated))
+              problems.append("adds no exemptions or redirects")
+          added = {w: added[w] for w in sorted(added)}
 
           (review / "added.json").write_text(json.dumps(added, indent=2) + "\n")
           (review / "problems.txt").write_text("".join(f"- {p}\n" for p in problems))
-          print(f"{len(added)} new exemptions, {len(problems)} structural problems")
+          print(f"{len(added)} new entries, {len(problems)} structural problems")
           for p in problems:
               print(f"::warning::{p}")
           PY
@@ -175,14 +195,19 @@ jobs:
             folds it onto a base form and prices it as the base. The daily
             check (.github/workflows/daily-fold-check.yml, procedure in
             scripts/fold-audit/DAILY.md) finds folds that land on a word of a
-            different meaning and exempts them in src/data/fold-exemptions.json,
-            so the word scores on its own rarity. An exemption that is wrong
-            hands a real derivative a rare-word score it did not earn; that is
-            the mistake to catch.
+            different meaning and fixes them one of two ways:
+            - a redirect, in src/data/fold-review-verdicts.json: the word is
+              scored as the base it really comes from (`scowly` -> `scowl`),
+              which already has a measured score;
+            - an exemption, in src/data/fold-exemptions.json, where no such
+              base was named or measured: the word scores on its own rarity.
+            Either one that is wrong hands a word a rarer score than it
+            earned; that is the mistake to catch.
 
             The working tree is main. In .tmp/review/:
-            - added.json -- the exemptions this PR adds. Each `reason` names
-              the base the fold landed on.
+            - added.json -- the entries this PR adds. `fix` is "redirect" or
+              "exempt"; a redirect's `base` is its new base. Each `reason`
+              names the base the fold landed on.
             - pr-body.md -- the PR description: each word, its fold path, and
               its score with and without the fold. A WARNING at the top means
               the build or tests failed on this change.
@@ -191,18 +216,21 @@ jobs:
               (empty if none). Any problem there means "decline".
 
             For every word in added.json, judge the fold against
-            scripts/fold-audit/RUBRIC.md: does the base mean what the word
-            means? If it does, the exemption is wrong. Read verify.py's PROMPT
+            scripts/fold-audit/RUBRIC.md: does the base the fold landed on
+            mean what the word means? If it does, the entry is wrong. For a
+            redirect, also check the word really is a form of its new `base`;
+            if it is not, the entry is wrong. Read verify.py's PROMPT
             in scripts/fold-audit/ for the failure the check is prone to --
             flagging real derivatives (`picometer` -> `meters`) as wrong. Judge
             each word yourself; the PR's own reasons are claims to check, not
             evidence. For more than about 30 words, split them across
             subagents.
 
-            Approve only if every new exemption is a genuinely wrong fold,
+            Approve only if every new entry is a genuinely wrong fold (and
+            every redirect names the right base),
             problems.txt is empty, and the PR body has no build or test
             WARNING. Otherwise decline. When unsure about a word, say so in
-            its note; decline only for exemptions you believe are wrong.
+            its note; decline only for entries you believe are wrong.
 
             Write .tmp/review/verdict.json and nothing else:
 
@@ -256,12 +284,13 @@ jobs:
               lines += ["**Structural problems**", "", problems, ""]
           if missing:
               lines += ["Claude gave no judgment for: " + ", ".join(f"`{w}`" for w in missing), ""]
-          lines += ["| Word | OK | Note |", "|---|---|---|"]
-          for w in added:
+          lines += ["| Word | Fix | OK | Note |", "|---|---|---|---|"]
+          for w, e in added.items():
               n = notes.get(w, {})
               ok = "✅" if n.get("ok") else ("❌" if n else "—")
               note = str(n.get("note", "")).replace("|", "\\|").replace("\n", " ")
-              lines.append(f"| `{w}` | {ok} | {note} |")
+              fix = f"→ `{e['base']}`" if e.get("fix") == "redirect" else "exempt"
+              lines.append(f"| `{w}` | {fix} | {ok} | {note} |")
           sha = os.environ["SHA"]
           lines += [
               "",

@@ -54,9 +54,11 @@ python3 scripts/fold-audit/score-verdicts.py
   resuming where it left off and retrying a batch whose answer does not line up
   one-to-one with its input.
 
-Daily, in CI: `.github/workflows/daily-fold-check.yml` dumps the puzzle two days
-out, has Claude judge and then defend each fold ([DAILY.md](DAILY.md)), and opens a
-draft PR through `apply-daily.py` and `daily-report.ts`.
+Daily, in CI: `.github/workflows/daily-fold-check.yml` dumps the puzzle three
+days out, has Claude judge and then defend each fold ([DAILY.md](DAILY.md)), and
+opens a draft PR through `price-bases.ts`, `apply-daily.py` and
+`daily-report.ts`. A confirmed wrong fold whose real base Claude names and the
+corpus measures is redirected to that base; any other is exempted.
 
 Helpers: `probe.ts` (fold a few words), `beforeafter.ts` (two dates),
 `promotions.ts` (what a cutover does to the whole curated list).

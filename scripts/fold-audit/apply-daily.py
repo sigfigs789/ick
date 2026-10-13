@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
-"""Exempt the folds the daily check confirmed wrong, from that puzzle on.
+"""Fix the folds the daily check confirmed wrong, from that puzzle on.
 
 The daily fold check (.github/workflows/daily-fold-check.yml, procedure in
 DAILY.md) dumps every score-lowering fold a player can reach on one puzzle's
 drop, has Claude flag the ones that land on a word of a different meaning, and
-has a second, adversarial pass defend each flag. This writes what survived both
-into fold-exemptions.json, dated from that puzzle, so every earlier puzzle keeps
-the score its players saw.
+has a second, adversarial pass defend each flag. This writes what survived both,
+dated from that puzzle, so every earlier puzzle keeps the score its players saw:
+
+  - where the judge named the base the word really comes from, both passes
+    agreed on it, and that base already carries a measured score (price-bases.ts
+    wrote it to bases.tsv), into fold-review-verdicts.json with that base: the
+    word scores as `abase`, not `aba`, rather than as a rare word of its own;
+  - otherwise into fold-exemptions.json, so the word scores on its own data.
+
+A prefix-scoped verdict is always an exemption: it says the word's other folds
+are right, so there is nothing to redirect.
 
 Only words the dump actually holds are applied -- a verdict naming a word the
 dump never surfaced is a judge error, not a finding -- and a word already in
@@ -20,8 +28,8 @@ import argparse, csv, json, pathlib, sys
 
 OUT = pathlib.Path("scripts/fold-audit/out")
 EXEMPTIONS = pathlib.Path("src/data/fold-exemptions.json")
+VERDICTS = pathlib.Path("src/data/fold-review-verdicts.json")
 OVERRIDES = pathlib.Path("src/data/score-overrides.json")
-REVIEW_VERDICTS = pathlib.Path("src/data/fold-review-verdicts.json")
 
 
 def read_tsv(path: pathlib.Path) -> list[dict]:
@@ -34,6 +42,7 @@ def main() -> None:
     ap.add_argument("--date", required=True, help="the puzzle date the dump was made for")
     ap.add_argument("--folds", default=str(OUT / "folds.tsv"))
     ap.add_argument("--confirmed", default=str(OUT / "daily" / "confirmed.tsv"))
+    ap.add_argument("--bases", default=str(OUT / "daily" / "bases.tsv"))
     ap.add_argument("--applied-out", default=str(OUT / "daily" / "applied.txt"))
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
@@ -46,10 +55,21 @@ def main() -> None:
         raise SystemExit(f"{confirmed_path} is missing: the judge did not finish, so nothing was checked.")
     confirmed = read_tsv(confirmed_path)
 
+    # Only a base price-bases.ts found a measured score for. A missing file means
+    # nothing was priced, so every confirmed fold falls back to an exemption.
+    bases_path = pathlib.Path(args.bases)
+    bases = {
+        r["word"]: (r["base"], float(r["baseZipf"]))
+        for r in (read_tsv(bases_path) if bases_path.exists() else [])
+        if r.get("baseZipf", "").strip()
+    }
+
     data = json.loads(EXEMPTIONS.read_text())
-    taken = set(json.loads(OVERRIDES.read_text())) | set(json.loads(REVIEW_VERDICTS.read_text()))
+    verdicts = json.loads(VERDICTS.read_text())
+    taken = set(json.loads(OVERRIDES.read_text())) | set(verdicts)
 
     applied: list[str] = []
+    redirected: list[str] = []
     skipped: list[str] = []
     for row in confirmed:
         word = row["word"].strip().lower()
@@ -65,14 +85,28 @@ def main() -> None:
             skipped.append(f"{word}: unknown scope {scope!r}")
             continue
         path = " > ".join(fold["path"].split(">"))
+        found = (
+            f"Flagged by the daily fold check for the {args.date} `{fold['drop']}` drop "
+            f"({row['reason'].strip().rstrip('. ')}) and confirmed on adversarial re-review "
+            f"({row['verify'].strip().rstrip('. ')})."
+        )
+        priced = bases.get(word)
+        if scope != "prefix" and priced is not None:
+            base, base_zipf = priced
+            verdicts[word] = {
+                "base": base,
+                "since": args.date,
+                "reason": (
+                    f"Folded onto `{fold['base']}` ({path}), costing {float(fold['delta']):.2f} points; "
+                    f"it is a form of `{base}` (Zipf {base_zipf:.2f}). {found}"
+                ),
+            }
+            applied.append(word)
+            redirected.append(word)
+            continue
         entry = {
             "since": args.date,
-            "reason": (
-                f"Folded onto `{fold['base']}` ({path}), costing {float(fold['delta']):.2f} points. "
-                f"Flagged by the daily fold check for the {args.date} `{fold['drop']}` drop "
-                f"({row['reason'].strip().rstrip('. ')}) and confirmed on adversarial re-review "
-                f"({row['verify'].strip().rstrip('. ')})."
-            ),
+            "reason": f"Folded onto `{fold['base']}` ({path}), costing {float(fold['delta']):.2f} points. {found}",
         }
         if scope == "prefix":
             entry["scope"] = "prefix"
@@ -81,11 +115,14 @@ def main() -> None:
 
     if not args.dry_run:
         EXEMPTIONS.write_text(json.dumps({k: data[k] for k in sorted(data)}, indent=2) + "\n")
+        VERDICTS.write_text(json.dumps({k: verdicts[k] for k in sorted(verdicts)}, indent=2) + "\n")
         out = pathlib.Path(args.applied_out)
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text("".join(f"{w}\n" for w in applied))
+        (out.parent / "redirected.txt").write_text("".join(f"{w}\n" for w in redirected))
 
-    print(f"exemptions +{len(applied)} (now {len(data)})")
+    print(f"exemptions +{len(applied) - len(redirected)} (now {len(data)})")
+    print(f"redirects +{len(redirected)} (now {len(verdicts)})")
     for line in skipped:
         print(f"  skipped {line}", file=sys.stderr)
 
