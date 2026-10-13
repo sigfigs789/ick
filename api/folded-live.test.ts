@@ -82,4 +82,15 @@ describe("api/folded-live", () => {
     vi.stubGlobal("process", { env: {} });
     expect((await handler(post(REJECT))).status).toBe(503);
   });
+
+  it("says when the migration has not been applied", async () => {
+    vi.stubGlobal("process", { env: CONFIGURED });
+    stubFetch(404);
+    const read = await handler(new Request("https://wordink.app/api/folded-live?date=2026-10-12"));
+    expect(read.status).toBe(503);
+    expect(await read.json()).toEqual({ ok: false, reason: "not-migrated" });
+    const write = await handler(post(REJECT));
+    expect(write.status).toBe(503);
+    expect(await write.json()).toEqual({ ok: false, reason: "not-migrated" });
+  });
 });

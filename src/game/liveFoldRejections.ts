@@ -18,6 +18,25 @@ export interface LiveFoldRejection {
   base: string;
 }
 
+/**
+ * A failed read or write, with the server's reason when it gave one --
+ * "not-migrated" when the table is not on the database yet.
+ */
+export class LiveFoldError extends Error {
+  constructor(
+    readonly status: number,
+    readonly reason?: string
+  ) {
+    super(`folded-live ${status}${reason ? ` ${reason}` : ""}`);
+  }
+}
+
+async function failure(response: Response): Promise<LiveFoldError> {
+  const body = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+  const reason = typeof body?.reason === "string" ? body.reason : undefined;
+  return new LiveFoldError(response.status, reason);
+}
+
 /** What has been read, per puzzle date: word -> the base it had folded to. */
 const registry = new Map<string, Map<string, string>>();
 
@@ -60,7 +79,7 @@ export async function fetchLiveFoldRejections(
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`folded-live ${response.status}`);
+  if (!response.ok) throw await failure(response);
   const body = (await response.json()) as Record<string, unknown>;
   const rejections = parseRejections(body.rejections);
   setLiveFoldRejections(date, rejections);
@@ -82,7 +101,7 @@ export async function setLiveFoldRejection(
     body: JSON.stringify({ date, ...rejection, rejected }),
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
-  if (!response.ok) throw new Error(`folded-live ${response.status}`);
+  if (!response.ok) throw await failure(response);
   const body = (await response.json()) as Record<string, unknown>;
   const stored = body.rejected === true;
   const day = registry.get(date) ?? new Map<string, string>();

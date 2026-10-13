@@ -4138,6 +4138,13 @@ h2 {
   background: var(--card-bg);
   color: var(--fg);
 }
+/* The rejections could not be read, so there is nothing safe to toggle. */
+.folded-live__reject:disabled {
+  border-color: var(--border);
+  background: var(--card-bg);
+  color: var(--fg-muted);
+  cursor: not-allowed;
+}
 
 /* The Freeform week report at /freeform-feedback: the vote above, the notes
    below. Its own block rather than more `review__` rules, because this page is
