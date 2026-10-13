@@ -12,6 +12,8 @@ import {
   resetProgress,
   retryWord,
   forfeitRetry,
+  playedOnItsDay,
+  rescoreAcceptedWords,
 } from "../game/storage";
 import {
   consultsCorpus,
@@ -25,6 +27,7 @@ import {
   rarityForZipf,
   totalRarityScore,
   unattestedZipf,
+  usesFreeformRules,
   waivedRejection,
 } from "../game/dictionary";
 import { loadCorpus } from "../game/corpus";
@@ -63,7 +66,15 @@ import {
   scoreSource,
   trackVisitEngaged,
 } from "../analytics";
-import { submitScore } from "../game/leaderboard";
+import { backfillHistory, submitScore } from "../game/leaderboard";
+import { fetchLiveFoldRejections } from "../game/liveFoldRejections";
+import {
+  liveFoldRescore,
+  markNoticesSeen,
+  unseenNotices,
+  type LiveFoldNotice,
+} from "../game/liveFoldRescore";
+import { loadPlayerId } from "../game/player";
 import { markSessionEngaged } from "../game/visits";
 import { markGuess } from "../game/sessionTime";
 import { asMode, MODE_LABELS, modeIsChosen, otherMode } from "../game/mode";
@@ -244,6 +255,63 @@ export function useDailyPuzzle() {
     setLiveNote(null);
     setChecking(false);
   }, [viewedDate, drop, mode]);
+
+  // Folds rejected live at /folded-live on this puzzle (see
+  // game/liveFoldRejections.ts). Asked for on every open of a puzzle, and never
+  // waited on: until the answer lands the game plays exactly as it did, and a
+  // failed read leaves the scores the player already had. When it lands, any
+  // word of theirs it names is priced again on its own frequency, saved, sent
+  // to the board, and owed a bubble saying why it moved.
+  const [foldNotices, setFoldNotices] = useState<LiveFoldNotice[]>([]);
+  useEffect(() => {
+    setFoldNotices([]);
+    if (usesFreeformRules(viewedDate, mode)) return;
+    let cancelled = false;
+    fetchLiveFoldRejections(viewedDate)
+      .then(async (rejections) => {
+        if (rejections.length === 0) return;
+        // A corpus word is priced off the corpus, so it has to be there first.
+        if (consultsCorpus(viewedDate)) await loadCorpus();
+        const before = progressRef.current;
+        if (cancelled || before.date !== viewedDate) return;
+        const { rescored, notices } = liveFoldRescore(before);
+        const updated = rescoreAcceptedWords(before, rescored);
+        if (updated !== before) {
+          progressRef.current = updated;
+          setProgress(updated);
+          setStreak(loadStreak());
+          // A rejected fold only ever raises a word, and the board keeps the
+          // higher score, so re-sending the day is all it takes. Today's goes
+          // the usual way; an earlier day only if it was played on its own day,
+          // which is the only kind of day the board ever counted.
+          const playerId = loadPlayerId();
+          if (viewedDate === today) {
+            submitScore({
+              date: viewedDate,
+              isToday: true,
+              words: updated.acceptedWords,
+              mode: updated.mode,
+              retried: updated.retryUsed === true,
+            });
+          } else if (
+            playerId &&
+            playedOnItsDay().some((p) => p.date === viewedDate && p.mode === updated.mode)
+          ) {
+            backfillHistory(playerId, [updated], today);
+          }
+        }
+        setFoldNotices(unseenNotices(viewedDate, notices));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [viewedDate, mode, today]);
+
+  const dismissFoldNotices = useCallback(() => {
+    markNoticesSeen(viewedDate, foldNotices);
+    setFoldNotices([]);
+  }, [viewedDate, foldNotices]);
 
   const showFeedback = useCallback(
     (kind: Feedback["kind"], message: string, rarity?: Rarity, reason?: RejectionReason) => {
@@ -779,5 +847,8 @@ export function useDailyPuzzle() {
     copyToOtherMode,
     liveNote,
     checking,
+    /** The player's words whose fold was rejected live, not yet acknowledged. */
+    foldNotices,
+    dismissFoldNotices,
   };
 }

@@ -99,7 +99,10 @@ describe("submitting a score", () => {
   it("posts the total unrounded, and leaves the precision to the endpoint", () => {
     joinBoard();
     const fetchMock = stubFetch();
-    const today = todayDateString();
+    // Pinned before TAIL_SPREAD_START (2026-10-10), which reprices the deep tail
+    // and moves this sum off the half the test is about. The date is only a
+    // pricing input here; nothing below depends on it being the real today.
+    const today = "2026-10-09";
     // Three perfect deep-tail finds and one priced a nickel under: 39.95, which
     // this file used to round to tenths before posting -- landing on the half,
     // rounding up, and storing a 40 no player could add their finds up to.

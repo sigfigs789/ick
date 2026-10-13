@@ -38,6 +38,7 @@ import {
   unmeasuredBaseCandidates,
 } from "./stem";
 import { corpusAttests, corpusEntry } from "./corpus";
+import { liveFoldRejected } from "./liveFoldRejections";
 import { nearMissEditBudget, withinEditDistance } from "./nearMiss";
 import type { AcceptedWord, Rarity, RarityInfo, RejectionReason } from "./types";
 
@@ -2805,6 +2806,8 @@ export function baseFormSubstitution(
   // common form" note stays off for the week -- the score on screen really is
   // the word's own (see FREEFORM_START).
   if (!scoring.folds) return undefined;
+  // Nor for a fold rejected live on this puzzle, which no longer happens.
+  if (liveFoldRejected(normalized, date)) return undefined;
 
   // Under the chained system every fold is a cap, so a substitution happened
   // only where the chain actually beat the word's own frequency. The base
@@ -3136,6 +3139,12 @@ function adjustedZipf(word: string, zipf: number, scoring: Scoring, date?: strin
   // change (see FREEFORM_START).
   if (!scoring.folds) return zipf;
 
+  // A fold rejected live at /folded-live, on this puzzle only: the word scores
+  // on its own frequency, exactly as Freeform would score it. Ahead of every
+  // rule below because it is a decision about this word on this day, made after
+  // all of them had their say (see game/liveFoldRejections.ts).
+  if (liveFoldRejected(word, date)) return zipf;
+
   // The latest system resolves the whole fold chain and caps against every link,
   // so no rule can leave a word rarer than its own measurement.
   if (scoring.chainedBaseForms) {
@@ -3357,10 +3366,20 @@ export interface FoldTrace {
  * `ownZipf` traces a word no lexicon holds yet -- a find from the web that has
  * not been added -- from a frequency the caller measured, as
  * `rarityForUncurated` scores one.
+ *
+ * `mode` pins the rules, for an audit that has to read Standard's fold
+ * whatever the reader's own switch says. A live rejection does not hide the
+ * fold from here: this reports what the rules do, which is what /folded-live
+ * shows beside the switch that overrules them.
  */
-export function foldTrace(word: string, date?: string, ownZipf?: number): FoldTrace | undefined {
+export function foldTrace(
+  word: string,
+  date?: string,
+  ownZipf?: number,
+  mode?: GameMode
+): FoldTrace | undefined {
   const normalized = word.toLowerCase();
-  const scoring = scoringFor(date);
+  const scoring = scoringFor(date, mode);
   if (!scoring.folds || !scoring.chainedBaseForms) return undefined;
   if (ownZipf === undefined && !lexiconHas(normalized, scoring)) return undefined;
 
