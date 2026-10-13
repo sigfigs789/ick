@@ -3,7 +3,8 @@
 //
 // GET /api/folded-live?date=YYYY-MM-DD
 //   -> { rejections: [{ word, base, at }] }
-//   400 bad-date, 405 wrong method, 503 no credentials, 502 upstream unavailable.
+//   400 bad-date, 405 wrong method, 503 no credentials or no table (the
+//   20261013100000 migration not applied yet), 502 upstream unavailable.
 //   Cached at the CDN for a few seconds: every player opening the same puzzle
 //   sends the same URL, and a rejection reaching them a quarter-minute late is
 //   no cost at all. The page sends a cache-buster so its own reads are fresh.
@@ -11,7 +12,7 @@
 // POST /api/folded-live
 //   { date, word, base, rejected }
 //   -> 200 { rejected }, 400 malformed, 403 cross-origin, 413 too-large,
-//      503 no credentials, 502 upstream unavailable.
+//      503 no credentials or no table, 502 upstream unavailable.
 //   The response says what is stored rather than echoing what was asked, the
 //   same contract api/fold-reviews.ts has.
 //
@@ -24,7 +25,7 @@
 // changes what one puzzle scores the moment it is written (see the
 // 20261013100000 migration).
 
-import { rpc, supabaseConfigured } from "./_supabase";
+import { rpc, rpcMissing, supabaseConfigured } from "./_supabase";
 
 export const config = { runtime: "edge" };
 
@@ -54,6 +55,16 @@ function reply(status: number, body?: unknown, cacheSeconds = 0): Response {
       ...(body === undefined ? {} : { "content-type": "application/json" }),
     },
   });
+}
+
+/**
+ * A failed database call. A function PostgREST has never heard of means the
+ * migration has not been pushed, which is a step somebody has to take rather
+ * than an outage to wait out, so it gets its own answer.
+ */
+function unavailable(error: unknown): Response {
+  if (rpcMissing(error)) return reply(503, { ok: false, reason: "not-migrated" });
+  return reply(502, { ok: false, reason: "unavailable" });
 }
 
 function validDate(date: unknown): date is string {
@@ -93,7 +104,7 @@ async function handleGet(request: Request): Promise<Response> {
     );
   } catch (error: unknown) {
     console.error("[folded-live] read failed:", error instanceof Error ? error.message : error);
-    return reply(502, { ok: false, reason: "unavailable" });
+    return unavailable(error);
   }
 }
 
@@ -152,6 +163,6 @@ async function handlePost(request: Request): Promise<Response> {
     return reply(200, { rejected: stored === true });
   } catch (error: unknown) {
     console.error("[folded-live] write failed:", error instanceof Error ? error.message : error);
-    return reply(502, { ok: false, reason: "unavailable" });
+    return unavailable(error);
   }
 }

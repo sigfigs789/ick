@@ -7,12 +7,19 @@ import { foldedRows, type FoldedRow } from "../game/foldedRows";
 import { feedFloor, fetchFoundWords } from "../game/leaderboard";
 import {
   fetchLiveFoldRejections,
+  LiveFoldError,
   setLiveFoldRejection,
 } from "../game/liveFoldRejections";
 import { puzzleNumber } from "../game/share";
 import { navigate } from "../routes";
 
 type LoadState = "loading" | "ready" | "error";
+/**
+ * Whether the live rejections could be read. Apart from the rows on purpose:
+ * the folds come from the finds feed and the corpus, and a puzzle's folds are
+ * worth seeing even when the rejections behind them are not reachable.
+ */
+type LiveState = "ok" | "unavailable" | "not-migrated";
 
 /**
  * The words folded on one puzzle, at /folded-live: step through the puzzles,
@@ -36,6 +43,7 @@ export function FoldedLivePage() {
   /** Rejected words on this puzzle, word -> the base it had folded to. */
   const [rejected, setRejected] = useState<Map<string, string>>(new Map());
   const [state, setState] = useState<LoadState>("loading");
+  const [liveState, setLiveState] = useState<LiveState>("ok");
   const [saveFailed, setSaveFailed] = useState(false);
   const [reload, setReload] = useState(0);
   const live = useRef(true);
@@ -55,6 +63,7 @@ export function FoldedLivePage() {
     setSaveFailed(false);
     setRows([]);
     setRejected(new Map());
+    setLiveState("ok");
     if (freeformOnly) {
       setState("ready");
       return;
@@ -64,11 +73,19 @@ export function FoldedLivePage() {
     Promise.all([
       loadCorpus(),
       fetchFoundWords(date, { fresh: true }),
-      fetchLiveFoldRejections(date, { fresh: true }),
+      fetchLiveFoldRejections(date, { fresh: true }).catch((error: unknown) => error),
     ])
-      .then(([, finds, rejections]) => {
+      .then(([, finds, read]) => {
         if (cancelled) return;
         const traced = foldedRows(date, finds);
+        const rejections = Array.isArray(read) ? read : [];
+        if (!Array.isArray(read)) {
+          setLiveState(
+            read instanceof LiveFoldError && read.reason === "not-migrated"
+              ? "not-migrated"
+              : "unavailable"
+          );
+        }
         // A rejected word the feed no longer carries still gets a row, so a
         // rejection can always be taken back from here.
         const shown = new Set(traced.map((row) => row.word));
@@ -173,6 +190,28 @@ export function FoldedLivePage() {
             : "No banked word on this puzzle was scored as a common form."}
         </p>
       )}
+      {state === "ready" && liveState !== "ok" && (
+        <p className="review__failed" role="status">
+          {liveState === "not-migrated" ? (
+            <>
+              Rejecting isn{"’"}t set up yet: the database has no live_fold_rejections
+              table. Apply the migrations (supabase db push) and refresh.
+            </>
+          ) : (
+            <>
+              Couldn{"’"}t load this puzzle{"’"}s rejections, so they can{"’"}t be
+              changed right now.{" "}
+              <button
+                type="button"
+                className="review__retry"
+                onClick={() => setReload((n) => n + 1)}
+              >
+                Try again
+              </button>
+            </>
+          )}
+        </p>
+      )}
       {saveFailed && (
         <p className="review__failed" role="status">
           Couldn{"’"}t save that — it{"’"}s been put back.
@@ -224,6 +263,7 @@ export function FoldedLivePage() {
                   type="button"
                   className={`folded-live__reject${isRejected ? " folded-live__reject--on" : ""}`}
                   aria-pressed={isRejected}
+                  disabled={liveState !== "ok"}
                   onClick={() => toggle(row)}
                 >
                   {isRejected ? "Undo" : "Reject"}

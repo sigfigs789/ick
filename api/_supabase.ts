@@ -53,6 +53,24 @@ async function post(path: string, body: unknown): Promise<void> {
   }
 }
 
+/** A failed `rpc`, carrying PostgREST's status so a caller can tell why. */
+export class RpcError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message);
+  }
+}
+
+/**
+ * Whether an `rpc` failed because the function is not on the project at all --
+ * PostgREST's 404, which is what an unapplied migration looks like.
+ */
+export function rpcMissing(error: unknown): boolean {
+  return error instanceof RpcError && error.status === 404;
+}
+
 /**
  * Call a Postgres function and read its result.
  *
@@ -83,7 +101,7 @@ export async function rpc<T>(fn: string, args: Record<string, unknown>): Promise
   });
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(`supabase ${fn} ${response.status}: ${detail.slice(0, 200)}`);
+    throw new RpcError(`supabase ${fn} ${response.status}: ${detail.slice(0, 200)}`, response.status);
   }
   return (await response.json()) as T;
 }
