@@ -1,9 +1,11 @@
 /**
- * The pull-request body for the daily fold check: every fold it exempted, with
- * the score the fold gave the word and the score the word gets now.
+ * The pull-request body for the daily fold check: every fold it fixed --
+ * redirected to the word's real base, or exempted -- with the score the fold
+ * gave the word and the score the word gets now.
  *
- * Run after apply-daily.py has written fold-exemptions.json, in a fresh process
- * so the engine reads the new entries:
+ * Run after apply-daily.py has written fold-exemptions.json and
+ * fold-review-verdicts.json, in a fresh process so the engine reads the new
+ * entries:
  *
  *   npx vite-node scripts/fold-audit/daily-report.ts -- 2026-10-08
  *
@@ -87,9 +89,10 @@ async function main(): Promise<void> {
       .filter((r) => folds.has(r.word))
       .map((r) => [r.word, r])
   );
-  const applied = existsSync(`${OUT}/daily/applied.txt`)
-    ? readFileSync(`${OUT}/daily/applied.txt`, "utf8").split("\n").filter(Boolean)
-    : [];
+  const lines = (path: string): string[] =>
+    existsSync(path) ? readFileSync(path, "utf8").split("\n").filter(Boolean) : [];
+  const applied = lines(`${OUT}/daily/applied.txt`);
+  const redirected = new Set(lines(`${OUT}/daily/redirected.txt`));
 
   const rows: string[] = [];
   const unmoved: string[] = [];
@@ -97,16 +100,25 @@ async function main(): Promise<void> {
     const fold = folds.get(word)!;
     const verdict = evaluateSubmission(word, drop, [], date);
     const after = verdict.word ? rarityScore(verdict.word.zipf, date) : NaN;
-    // The score the fold gave it, which the exemption exists to lift.
     const folded = Number(fold.scoreAfter);
-    if (!(after > folded + 0.005)) unmoved.push(word);
     const still = foldTrace(word, date);
+    const named = confirmed.get(word)?.base;
+    // An exemption exists to lift the score the fold gave it. A redirect can move
+    // it either way -- `choping` scored as `chope` is rarer than as `chop` -- so
+    // what it must do is land on the base it named.
+    if (redirected.has(word) ? still?.base !== named : !(after > folded + 0.005)) {
+      unmoved.push(word);
+    }
     const path = fold.path.split(">").map((w: string) => `\`${w}\``).join(" → ");
     const scope = confirmed.get(word)?.scope === "prefix" ? " (prefix hop only)" : "";
+    const fix = redirected.has(word) ? `scored as \`${named}\`` : "exempt";
+    const where =
+      still && !(redirected.has(word) && still.base === named)
+        ? ` (still folds to \`${still.base}\`)`
+        : "";
     rows.push(
-      `| \`${word}\` | ${path}${scope} | ${folded.toFixed(2)} ${fold.rankAfter} | ` +
-        `**${after.toFixed(2)}** ${verdict.word?.rarity ?? "?"}` +
-        `${still ? ` (still folds to \`${still.base}\`)` : ""} | ` +
+      `| \`${word}\` | ${path}${scope} | ${fix} | ${folded.toFixed(2)} ${fold.rankAfter} | ` +
+        `**${after.toFixed(2)}** ${verdict.word?.rarity ?? "?"}${where} | ` +
         `${cell(confirmed.get(word)?.reason ?? "")} |`
     );
   }
@@ -118,18 +130,21 @@ async function main(): Promise<void> {
     `Every playable answer containing \`${drop}\` whose fold lowers its score was judged: ` +
       `does the base the fold lands on mean what the word means? ` +
       `${folds.size} folds judged, ${flagged.length} flagged, ${confirmed.size} confirmed on ` +
-      `adversarial re-review, ${applied.length} exempted in \`src/data/fold-exemptions.json\` ` +
-      `from ${date} on. Earlier puzzles keep their scores.`,
+      `adversarial re-review. ${redirected.size} redirected to the word's real base in ` +
+      `\`src/data/fold-review-verdicts.json\` (the base already has a measured score), ` +
+      `${applied.length - redirected.size} exempted in \`src/data/fold-exemptions.json\` ` +
+      `(no base named, or none measured), from ${date} on. Earlier puzzles keep their scores.`,
     "",
-    "| word | fold | score with the fold | score without it | why the fold is wrong |",
-    "| --- | --- | --- | --- | --- |",
+    "| word | fold | fix | score with the fold | score now | why the fold is wrong |",
+    "| --- | --- | --- | --- | --- | --- |",
     ...rows,
     "",
     ...(unmoved.length
       ? [
-          `**Check these:** the exemption did not raise the score of ${unmoved
+          `**Check these:** ${unmoved
             .map((w) => `\`${w}\``)
-            .join(", ")} -- another fold still caps it, so the entry may be dead weight.`,
+            .join(", ")} did not end up where the fix meant -- an exemption that raised ` +
+            "no score, or a redirect that does not score as its base -- so the entry may be dead weight.",
           "",
         ]
       : []),
@@ -148,12 +163,16 @@ async function main(): Promise<void> {
           "",
         ]
       : []),
-    "Each exemption is a promotion -- the word scores rarer -- and the judge disagrees with " +
-      "itself on roughly 7% of folds, so read the table before merging.",
+    "Each exemption is a promotion -- the word scores rarer -- a redirect moves it to its " +
+      "real base's score, and the judge disagrees with itself on roughly 7% of folds, so " +
+      "read the table before merging.",
   ].join("\n");
 
   writeFileSync(`${OUT}/daily/pr-body.md`, body + "\n");
-  stderr.write(`${applied.length} exempted, ${unmoved.length} unmoved; wrote ${OUT}/daily/pr-body.md\n`);
+  stderr.write(
+    `${redirected.size} redirected, ${applied.length - redirected.size} exempted, ` +
+      `${unmoved.length} unmoved; wrote ${OUT}/daily/pr-body.md\n`
+  );
 }
 
 main();

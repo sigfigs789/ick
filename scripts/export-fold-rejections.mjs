@@ -17,7 +17,8 @@
 // by hand an entry at a time and this one is written by a script out of a ledger
 // of clicks. Same effect, different provenance -- and provenance is the first
 // question anybody asks of a line in a scoring table. Kept apart, the answer is
-// which file the word is in.
+// which file the word is in. The daily fold check also adds the bases its judge
+// names there (see scripts/fold-audit/apply-daily.py); their reasons say so.
 //
 // A road rather than a wire, deliberately. Scoring is dated, deterministic and
 // offline: a puzzle played today has to score the same when it is replayed from
