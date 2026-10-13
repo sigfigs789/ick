@@ -167,6 +167,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const latestKnown = useRef(0);
   const listRef = useRef<HTMLOListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   /** The current opening of the panel, which every chat event is tagged with. */
   const viewId = useRef("");
@@ -372,8 +373,10 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     if (list) list.scrollTop = list.scrollHeight;
   }, [messages, open]);
 
+  // Focus the panel, not the input: focusing the input would raise the
+  // on-screen keyboard and cover the chat before the player chooses to type.
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (open) panelRef.current?.focus();
   }, [open]);
 
   function close() {
@@ -428,6 +431,8 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     <div className={`chat${lifted ? " chat--lifted" : ""}`}>
       {open && (
         <section
+          ref={panelRef}
+          tabIndex={-1}
           className="chat__panel"
           role="dialog"
           aria-label="Chat"
