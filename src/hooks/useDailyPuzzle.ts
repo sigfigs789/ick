@@ -76,6 +76,7 @@ import {
 } from "../game/liveFoldRescore";
 import { loadPlayerId } from "../game/player";
 import { reportBankedWord } from "../game/chatNotices";
+import { setViewedPuzzle } from "../game/viewedPuzzle";
 import { markSessionEngaged } from "../game/visits";
 import { markGuess } from "../game/sessionTime";
 import { asMode, MODE_LABELS, modeIsChosen, otherMode } from "../game/mode";
@@ -179,6 +180,8 @@ export function useDailyPuzzle() {
   // and reprices every word on screen.
   const [mode] = useGameMode();
   const drop = useMemo(() => dropForDate(viewedDate), [viewedDate]);
+  // The chat opens on whichever puzzle is on screen (see game/viewedPuzzle.ts).
+  useEffect(() => setViewedPuzzle(viewedDate), [viewedDate]);
   const isToday = viewedDate === today;
   const canGoToPrevious = viewedDate > dropData.epoch;
   const canGoToNext = viewedDate < today;

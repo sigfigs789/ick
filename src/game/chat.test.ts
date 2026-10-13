@@ -3,6 +3,8 @@ import {
   CHAT_MAX_LENGTH,
   chatProblem,
   normaliseMessage,
+  noticeVerb,
+  NOTICE_VERBS,
   tierNoticeBody,
   topNoticeBody,
 } from "./chat";
@@ -46,17 +48,28 @@ describe("chat rules", () => {
 describe("chat notices", () => {
   const word = { date: "2026-10-13", word: "abaci", tier: "Mythic", score: "9.62", mode: "standard" as const };
 
+  const verb = noticeVerb("StormyFox47", "abaci");
+
   it("names the player, the word, its tier and its score", () => {
     expect(topNoticeBody("StormyFox47", word)).toBe(
-      "StormyFox47 banked top scoring word abaci (Mythic, 9.62)"
+      `StormyFox47 ${verb} top scoring word abaci (Mythic, 9.62)`
     );
-    expect(tierNoticeBody("StormyFox47", word)).toBe("StormyFox47 banked Mythic word abaci (9.62)");
+    expect(tierNoticeBody("StormyFox47", word)).toBe(`StormyFox47 ${verb} Mythic word abaci (9.62)`);
   });
 
   it("says when the word was banked in Freeform", () => {
     expect(topNoticeBody("StormyFox47", { ...word, mode: "freeform" })).toBe(
-      "StormyFox47 banked top scoring word abaci (Mythic, 9.62) in Freeform"
+      `StormyFox47 ${verb} top scoring word abaci (Mythic, 9.62) in Freeform`
     );
+  });
+
+  it("rotates the verb across words, the same one every time for a given word", () => {
+    expect(NOTICE_VERBS).toContain(verb);
+    expect(noticeVerb("StormyFox47", "abaci")).toBe(verb);
+    const verbs = new Set(["abaci", "quokka", "jonesing", "zephyr", "lacuna", "nimbus"].map(
+      (w) => noticeVerb("StormyFox47", w),
+    ));
+    expect(verbs.size).toBeGreaterThan(1);
   });
 
   it("has no tier line for a word under 9.5", () => {

@@ -5013,27 +5013,46 @@ h2 {
   overflow: hidden;
   animation: modal-in 0.2s var(--ease-standard);
 }
+/* The header is the puzzle the room is about: its drop, between the arrows that
+   step to the puzzles either side of it. */
 .chat__header {
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.7rem 0.75rem 0.6rem 1rem;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
   border-bottom: 1px solid var(--border);
 }
 .chat__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 800;
-}
-.chat__self {
   flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--fg-faint);
-  font-size: 0.8rem;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.chat__step {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.chat__step:hover:not(:disabled) {
+  background: var(--bg-inset);
+  color: var(--fg);
+}
+.chat__step:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.chat__step:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 .chat__close {
   align-self: center;
