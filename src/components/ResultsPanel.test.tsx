@@ -235,7 +235,7 @@ describe("ResultsPanel username", () => {
 });
 
 describe("the Freeform preview", () => {
-  it("paints one hue per letter of the mode on the heading", () => {
+  it("paints one hue per letter of the mode beside the score", () => {
     const { container } = render(
       <ResultsPanel
         date={MODE_CHOICE_START}

@@ -246,14 +246,14 @@ describe("the mode on the share", () => {
 
   it("names the mode from the choice date on", () => {
     // Two people posting the same drop are no longer posting the same game, so
-    // the heading has to say which. It rides on the heading rather than taking a
-    // line, because a share this short cannot spare a row for one word.
+    // the score has to say which. It rides on the score line rather than taking
+    // a line, because a share this short cannot spare a row for one word.
     expect(buildShareText(MODE_CHOICE_START, "ink", WORDS)).toContain(
-      "Drop: INK · Standard",
+      "Total: 5.1 · Standard",
     );
     setMode("freeform");
     expect(buildShareText(MODE_CHOICE_START, "ink", WORDS)).toContain(
-      "Drop: INK · Freeform",
+      "Total: 5.1 · Freeform",
     );
   });
 
@@ -263,20 +263,19 @@ describe("the mode on the share", () => {
     setMode("freeform");
     expect(
       buildShareText(MODE_CHOICE_START, "ink", WORDS, { mode: "standard" }),
-    ).toContain("Drop: INK · Standard");
+    ).toContain("Total: 5.1 · Standard");
   });
 
-  it("names the mode only on the heading", () => {
+  it("names the mode only beside the score", () => {
     setMode("freeform");
     const text = buildShareText(MODE_CHOICE_START, "ink", WORDS, {
       streak: 3,
       playerName: "StormyFox47",
       isToday: true,
     });
-    expect(text).toContain("Today: 5.1\nPlaying as StormyFox47");
-    // Which game produced the score is said once: on the heading, where the
-    // mode has ridden since the switch shipped.
-    expect(text).toContain("Drop: INK · Freeform");
+    expect(text).toContain("Today: 5.1 · Freeform\nPlaying as StormyFox47");
+    // Which game produced the score is said once, right beside it.
+    expect(text).not.toContain("Drop: INK · Freeform");
     expect(text.match(/Freeform/g)).toHaveLength(1);
     // The streak is a count of days rather than a score, and it is still true.
     expect(text).toContain("Streak: 3 days");

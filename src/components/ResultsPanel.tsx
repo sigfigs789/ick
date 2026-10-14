@@ -36,30 +36,33 @@ interface Props {
 const SPOILER_LABEL_ID = "results-panel-reveal-label";
 
 /**
- * Colour the mode a Freeform result names on its heading (see game/share.ts).
+ * Colour the mode a Freeform result names on its score line (see game/share.ts).
  *
  * Done here rather than in `buildShareText` because it is a property of *this*
  * rendering and not of the share: what leaves the app is plain text, which has
  * no colour to carry. So the builder stays a pure string and the preview paints
  * one token of it.
  *
- * On the heading, where the mode has ridden since the switch shipped.
- *
- * Only Freeform is painted, and a heading without it is returned untouched --
- * which is every Standard result, and every result from before the switch
- * existed, where the heading names no mode at all.
+ * Only the score line is searched, so a revealed word or a username that
+ * happens to spell the mode is left alone. Only Freeform is painted, and a line
+ * without it is returned untouched -- which is every Standard result, and every
+ * result from before the switch existed, where the score names no mode at all.
  */
-function paintMode(heading: string) {
-  const at = heading.indexOf(MODE_LABELS.freeform);
-  if (at === -1) return heading;
+function paintMode(line: string) {
+  if (!SCORE_LINE.test(line)) return line;
+  const at = line.indexOf(MODE_LABELS.freeform);
+  if (at === -1) return line;
   return (
     <>
-      {heading.slice(0, at)}
+      {line.slice(0, at)}
       <RainbowWord word={MODE_LABELS.freeform} />
-      {heading.slice(at + MODE_LABELS.freeform.length)}
+      {line.slice(at + MODE_LABELS.freeform.length)}
     </>
   );
 }
+
+/** The "Today: 12.5" / "Total: 12.5" line buildShareText ends its stats with. */
+const SCORE_LINE = /^(Today|Total): /;
 
 // Naming answers is opt-in so shared results stay spoiler-free by default; the
 // player can reveal just their rarest word ("Top") or every word ("All").
@@ -161,12 +164,12 @@ export function ResultsPanel({
         </label>
       )}
       <pre className="results-panel__preview" aria-hidden="true">
-        <strong>{paintMode(shareHeading)}</strong>
+        <strong>{shareHeading}</strong>
         {shareDetailLines.length > 0 && "\n"}
         {shareDetailLines.map((line, index) => (
           <Fragment key={index}>
             {index > 0 && "\n"}
-            {line}
+            {paintMode(line)}
           </Fragment>
         ))}
       </pre>

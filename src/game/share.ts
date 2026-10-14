@@ -146,14 +146,8 @@ export function buildShareText(
     })
     .join("\n");
 
-  // The mode rides on the heading rather than taking a line of its own: it is a
-  // fact about the puzzle, like the date and the drop beside it, and a share
-  // this short cannot spare a row to say one word. The heading also survives the
-  // X layout, which drops the stats block entirely -- so this is the one place
-  // that names the mode on every share there is.
   const mode = options.mode ?? modeForDate(dateStr);
-  const modeLabel = modeIsChosen(dateStr) ? ` · ${MODE_LABELS[mode]}` : "";
-  const lines = [`${label} — Drop: ${drop.toUpperCase()}${modeLabel}`];
+  const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
   if (resultLine) lines.push("", resultLine);
   const playerName = options.playerName || null;
   const progressLine =
@@ -172,7 +166,12 @@ export function buildShareText(
     const streak = options.streak;
     lines.push(`Streak: ${streak} day${streak === 1 ? "" : "s"}`);
   }
-  lines.push(`${scoreLabel}: ${score}`);
+  // The mode rides on the score line rather than taking a line of its own: it
+  // says which rules produced that number, and a share this short cannot spare
+  // a row to say one word. The score line also survives the X layout, which
+  // drops the rest of the stats block -- so this names the mode on every share.
+  const modeLabel = modeIsChosen(dateStr) ? ` · ${MODE_LABELS[mode]}` : "";
+  lines.push(`${scoreLabel}: ${score}${modeLabel}`);
   // Who played it, so a reader can find the sharer on the board. The X layout
   // drops it with the rest of the stats block.
   if (progressLine && playerName) lines.push(`Playing as ${playerName}`);
