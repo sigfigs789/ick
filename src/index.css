@@ -2108,6 +2108,11 @@ h2 {
   gap: 0.35rem;
   cursor: pointer;
 }
+.results-panel__name-toggle {
+  gap: 0.35rem;
+  margin-top: 0;
+  cursor: pointer;
+}
 .results-panel__spoiler-toggle input {
   width: 1rem;
   height: 1rem;

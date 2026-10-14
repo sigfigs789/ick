@@ -29,6 +29,8 @@
  * leaderboard it is a fine one.
  */
 
+import { handleFor } from "./handle";
+
 /**
  * Where this browser keeps its identity.
  *
@@ -108,6 +110,19 @@ export function loadPlayerId(): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * What to call this player: the account where there is one, the handle derived
+ * from the id where the browser is the identity.
+ *
+ * The same rule the board's own rows follow (see `nameFor` in
+ * game/leaderboard.ts). Everywhere the player is told their own name -- the line
+ * above the board, a shared result -- has to agree with the row they will find
+ * on the board, or they are told one name and shown another.
+ */
+export function selfName(playerId: string): string {
+  return account ? `u/${account}` : handleFor(playerId);
 }
 
 /** Whether this browser is on the board. */

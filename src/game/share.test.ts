@@ -110,8 +110,7 @@ describe("buildShareText", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       spoilerFree: false,
       streak: 4,
-      weekTotal: 42.3,
-      monthTotal: 118.7,
+      playerName: "StormyFox47",
       source: null,
       format: "x",
     });
@@ -120,8 +119,7 @@ describe("buildShareText", () => {
       `🟪 aardvark (${rarityScore(2.4, "2024-01-05").toFixed(1)})`,
     );
     expect(text).not.toContain("Streak:");
-    expect(text).not.toContain("Week:");
-    expect(text).not.toContain("Month:");
+    expect(text).not.toContain("Playing as");
     expect(text).not.toContain("Top:");
     expect(text).toContain("Total:");
   });
@@ -146,20 +144,16 @@ describe("buildShareText", () => {
     expect(text).not.toContain("Best:");
   });
 
-  it("names the rarest word and its 1-in-X frequency, just before the URL, when spoilers are shown", () => {
-    const text = buildShareText("2024-01-05", "str", words, {
-      spoilerFree: false,
-      source: null,
-    });
-    // aardvark (zipf 2.4) is the rarest: 10^(9 - 2.4) ≈ 3.98M -> "4M".
-    expect(text).toContain("\naardvark: 1 in 4M words\nwordink.app");
+  it("quotes no 1-in-X odds for the rarest word", () => {
+    for (const reveal of ["none", "top", "all"] as const) {
+      const text = buildShareText("2024-01-05", "str", words, { reveal });
+      expect(text).not.toMatch(/1 in \S+ words/);
+      expect(text).not.toContain("Rarest word");
+    }
   });
 
-  it("shows the rarest word's odds under a generic label, never its name, in the spoiler-free share", () => {
-    const text = buildShareText("2024-01-05", "str", words);
-    expect(text).not.toContain("aardvark");
-    // aardvark (zipf 2.4) is the rarest: 10^(9 - 2.4) ≈ 3.98M -> "4M".
-    expect(text).toContain("\nRarest word: 1 in 4M words\nwordink.app");
+  it("never names a word in the spoiler-free share", () => {
+    expect(buildShareText("2024-01-05", "str", words)).not.toContain("aardvark");
   });
 
   it('names only the rarest word, leaving the rest anonymous, when reveal is "top"', () => {
@@ -170,8 +164,6 @@ describe("buildShareText", () => {
     );
     expect(text).not.toContain("strange");
     expect(text).not.toContain("the (");
-    // The odds line names the rarest word too, rather than the generic label.
-    expect(text).toContain("\naardvark: 1 in 4M words\nwordink.app");
   });
 
   it('reveal "all" matches the deprecated spoilerFree:false, and "none" matches the default', () => {
@@ -192,11 +184,11 @@ describe("buildShareText", () => {
     );
   });
 
-  it("puts the streak over the three windows it counts", () => {
+  it("puts the streak over the score, and who played it under both", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       streak: 4,
-      weekTotal: 42.3,
-      monthTotal: 118.7,
+      playerName: "StormyFox47",
+      source: null,
     });
 
     const total = words.reduce(
@@ -204,13 +196,26 @@ describe("buildShareText", () => {
       0,
     );
     expect(text).toContain(
-      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days\nTotal: ${total.toFixed(1)} · Week: 42.3 · Month: 118.7`,
+      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days\nTotal: ${total.toFixed(1)}\nPlaying as StormyFox47\nwordink.app`,
     );
+    expect(text).not.toContain("Week:");
+    expect(text).not.toContain("Month:");
     expect(text).not.toContain("Top:");
   });
 
+  it("leaves the name off when the player has hidden it", () => {
+    for (const playerName of [null, undefined, ""]) {
+      const text = buildShareText("2024-01-05", "str", words, {
+        streak: 4,
+        playerName,
+      });
+      expect(text).not.toContain("Playing as");
+      expect(text).toContain("Streak: 4 days\nTotal: ");
+    }
+  });
+
   it('calls the puzzle score "Today" only on the current puzzle', () => {
-    const options = { streak: 4, weekTotal: 42.3, monthTotal: 118.7 };
+    const options = { streak: 4, playerName: "StormyFox47" };
 
     expect(buildShareText("2024-01-05", "str", words, options)).toContain(
       "\nTotal: ",
@@ -261,36 +266,20 @@ describe("the mode on the share", () => {
     ).toContain("Drop: INK · Standard");
   });
 
-  it("quotes its window totals, and names the mode only on the heading", () => {
+  it("names the mode only on the heading", () => {
     setMode("freeform");
     const text = buildShareText(MODE_CHOICE_START, "ink", WORDS, {
       streak: 3,
-      weekTotal: 40,
-      monthTotal: 120,
+      playerName: "StormyFox47",
       isToday: true,
     });
-    // A week total and a month total are board numbers, and Freeform used to put
-    // its own name here instead because it had no board to quote. It has one
-    // now, and these are its numbers -- a Freeform week ranked against other
-    // Freeform weeks.
-    expect(text).toContain("Today: 5.1 · Week: 40.0 · Month: 120.0");
-    // Which game produced them is still said, and still said once: on the
-    // heading, where the mode has ridden since the switch shipped.
+    expect(text).toContain("Today: 5.1\nPlaying as StormyFox47");
+    // Which game produced the score is said once: on the heading, where the
+    // mode has ridden since the switch shipped.
     expect(text).toContain("Drop: INK · Freeform");
     expect(text.match(/Freeform/g)).toHaveLength(1);
     // The streak is a count of days rather than a score, and it is still true.
     expect(text).toContain("Streak: 3 days");
-  });
-
-  it("keeps both totals in Standard", () => {
-    setMode("standard");
-    const text = buildShareText(MODE_CHOICE_START, "ink", WORDS, {
-      streak: 3,
-      weekTotal: 40,
-      monthTotal: 120,
-      isToday: true,
-    });
-    expect(text).toContain("Week: 40.0 · Month: 120.0");
   });
 
   it("says nothing on a puzzle the calendar decided", () => {

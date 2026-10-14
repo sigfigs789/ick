@@ -8,9 +8,7 @@ import {
   type BoardEntry,
   type Boards,
 } from "../game/leaderboard";
-import { loadPlayerId } from "../game/player";
-import { handleFor } from "../game/handle";
-import { accountName } from "../game/player";
+import { loadPlayerId, selfName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { currentMode, type GameMode } from "../game/mode";
 import { pageCache } from "../game/pageCache";
@@ -911,19 +909,6 @@ function Board({
       )}
     </section>
   );
-}
-
-/**
- * What to call the player reading the page.
- *
- * The same rule the board's own rows follow (see `nameFor` in
- * game/leaderboard.ts): an account is named, a browser is given a handle. They
- * have to agree, or the line above the board tells the player one name while
- * their row on it carries another.
- */
-function selfName(playerId: string): string {
-  const account = accountName();
-  return account ? `u/${account}` : handleFor(playerId);
 }
 
 /**

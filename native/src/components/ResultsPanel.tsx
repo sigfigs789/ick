@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { buildShareText, type RevealMode } from '../../../src/game/share';
-import { windowTotals } from '../../../src/game/totals';
 import { loadReveal, saveReveal } from '../../../src/game/reveal';
+import { loadShowName, saveShowName } from '../../../src/game/shareName';
+import { loadPlayerId, selfName } from '../../../src/game/player';
 import type { AcceptedWord, StreakState } from '../../../src/game/types';
 import { signalTap } from '../host/feedback';
 import { shareText as openShareSheet } from '../host/share';
@@ -52,16 +53,21 @@ export function ResultsPanel({ date, drop, words, streak, isToday = false, onLea
   };
   const [shared, setShared] = useState(false);
 
-  // Read from this device's own history rather than the board: the numbers are
-  // the boards' arithmetic, but a player who never joined one still gets them,
-  // and nothing here waits on the network to draw a preview.
-  const totals = windowTotals(date);
+  // On until the player switches it off, and remembered once they do (see
+  // src/game/shareName.ts).
+  const [showName, setShowNameState] = useState<boolean>(loadShowName);
+  const setShowName = (next: boolean) => {
+    setShowNameState(next);
+    saveShowName(next);
+  };
+  // The name the board calls this player, so the share and their row agree.
+  const playerId = loadPlayerId();
+  const playerName = playerId ? selfName(playerId) : null;
 
   const preview = buildShareText(date, drop, words, {
     reveal,
     streak: streak.currentStreak,
-    weekTotal: totals.week,
-    monthTotal: totals.month,
+    playerName: showName ? playerName : null,
     isToday,
   });
 
@@ -71,8 +77,7 @@ export function ResultsPanel({ date, drop, words, streak, isToday = false, onLea
   const outgoing = buildShareText(date, drop, words, {
     reveal,
     streak: streak.currentStreak,
-    weekTotal: totals.week,
-    monthTotal: totals.month,
+    playerName: showName ? playerName : null,
     isToday,
     source: 'share',
   });
@@ -114,6 +119,18 @@ export function ResultsPanel({ date, drop, words, streak, isToday = false, onLea
           })}
         </View>
       </View>
+
+      {playerName && (
+        <View style={styles.toggleRow}>
+          <Text style={[styles.toggleLegend, { color: theme.fgMuted }]}>Show username</Text>
+          <Switch
+            value={showName}
+            onValueChange={setShowName}
+            accessibilityLabel="Show username"
+            trackColor={{ true: theme.accent }}
+          />
+        </View>
+      )}
 
       <Text
         style={[styles.preview, { color: theme.fg, backgroundColor: theme.cardBg }]}
