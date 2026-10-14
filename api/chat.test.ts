@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { noticeVerb } from "../src/game/chat";
+import { noticeVerb, usurpVerb } from "../src/game/chat";
 import { handleFor } from "../src/game/handle";
 import handler from "./chat";
 
@@ -233,9 +233,30 @@ describe("api/chat POST banked", () => {
       p_mode: "standard",
       p_word: "abaci",
       p_score: 9.62,
+      p_tier: "Mythic",
       p_top_body: `${handle} ${verb} top scoring word abaci (Mythic, 9.62)`,
+      p_usurp_body: `${handle} ${usurpVerb(handle, "abaci")} the top score with abaci (Mythic, 9.62)`,
       p_tier_body: `${handle} ${verb} Mythic word abaci (9.62)`,
     });
+  });
+
+  it("returns a 9.5+ notice with the tier its word showed", async () => {
+    withEnv();
+    const handle = handleFor(PLAYER);
+    stubFetch([
+      {
+        status: "tier",
+        id: 10,
+        handle,
+        body: "a Legend line",
+        kind: "tier",
+        tier: "Legend",
+        created_at: "2026-10-13T10:00:00Z",
+      },
+    ]);
+    const response = await handler(banked({ word: "kakapo", tier: "Legend", score: "9.94" }));
+    expect(response.status).toBe(201);
+    expect((await response.json()).message).toMatchObject({ id: 10, kind: "tier", tier: "Legend" });
   });
 
   it("sends no tier line for a word under 9.5, and answers 202 when nothing is posted", async () => {
@@ -243,10 +264,19 @@ describe("api/chat POST banked", () => {
     const fetchMock = stubFetch([
       { status: "none", id: null, handle: null, body: null, kind: null, created_at: null },
     ]);
-    const response = await handler(banked({ word: "cat", tier: "Very Common", score: "0.4" }));
+    const response = await handler(banked({ word: "quokka", tier: "Rare", score: "7.4" }));
     expect(response.status).toBe(202);
     expect(await response.json()).toEqual({ ok: true, message: null });
     expect(rpcCall(fetchMock).args.p_tier_body).toBeNull();
+  });
+
+  it("answers a word under 7.0 without asking the database, since it can earn no notice", async () => {
+    withEnv();
+    const fetchMock = stubFetch();
+    const response = await handler(banked({ word: "cat", tier: "Very Common", score: "6.99" }));
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ ok: true, message: null });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("refuses an archive day, a bad tier and a malformed score before touching the database", async () => {

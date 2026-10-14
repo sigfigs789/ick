@@ -30,13 +30,15 @@
 // POST /api/chat   { playerId, banked: { date, mode, word, tier, score } }
 //   -> 201 { message } when the word earned a notice, 202 { message: null }
 //      when it did not, 400 malformed, 503 no credentials
-//   The game reports every word it banks on the live puzzle (see
+//   The game reports every word of 7.0 or more it banks on the live puzzle (see
 //   src/game/chatNotices.ts), and the room posts a notice of its own when the
-//   word is the puzzle's new top score or scores 9.5 or more. The scoring lives
-//   in the browser, so the score arrives as the game displayed it; whether it is
-//   a record is decided by the database (see the 20261013000000 migration).
-//   Messages carry `kind`: absent for a player's message, "top" or "tier" for a
-//   notice.
+//   word is the puzzle's new top score -- scoring 7.0 or more and beating every
+//   other player's word, or matching another player's top and usurping it -- or
+//   scores 9.5 or more. The scoring lives in the browser, so the score arrives
+//   as the game displayed it; whether it is a record is decided by the database
+//   (see the 20261013000000 and 20261014040000 migrations). Messages carry
+//   `kind`: absent for a player's message, "top" or "tier" for a notice, and a
+//   notice carries the `tier` its word showed when it is known.
 //
 // Polling rather than Supabase Realtime, deliberately: Realtime needs a Supabase
 // key in the browser and a row-level policy to go with it, and this app keeps
@@ -53,6 +55,7 @@ import {
   normaliseMessage,
   tierNoticeBody,
   topNoticeBody,
+  usurpNoticeBody,
   type BankedWord,
 } from "../src/game/chat";
 import { handleFor } from "../src/game/handle";
@@ -85,6 +88,8 @@ interface MessageRow {
   created_at: string;
   /** "message" for a player's message, "top" or "tier" for a notice. */
   kind?: string | null;
+  /** A notice's tier as the game showed it; null for a message or an old notice. */
+  tier?: string | null;
 }
 
 interface PostRow extends Partial<MessageRow> {
@@ -103,7 +108,10 @@ function reply(status: number, body?: unknown, cache = "no-store"): Response {
 
 function toMessage(row: MessageRow) {
   const message = { id: Number(row.id), handle: row.handle, body: row.body, at: row.created_at };
-  return row.kind === "top" || row.kind === "tier" ? { ...message, kind: row.kind } : message;
+  if (row.kind !== "top" && row.kind !== "tier") return message;
+  return row.tier && TIERS.has(row.tier)
+    ? { ...message, kind: row.kind, tier: row.tier }
+    : { ...message, kind: row.kind };
 }
 
 export default async function handler(request: Request): Promise<Response> {
@@ -289,9 +297,16 @@ async function handleBanked(playerId: string, raw: unknown): Promise<Response> {
   if (typeof banked === "string") return reply(400, { ok: false, reason: banked });
   const handle = handleFor(playerId);
   const top = topNoticeBody(handle, banked);
+  const usurp = usurpNoticeBody(handle, banked);
+  const tier = tierNoticeBody(handle, banked);
+  // Under 7.0 a word can be neither a top score nor a 9.5+, so there is nothing
+  // to ask the database.
+  if (!top) return reply(202, { ok: true, message: null });
   // A word the room would refuse from a player is not announced by the room
   // either -- the puzzle has its own blocklist, but this is the room's rule.
-  if (chatProblem(normaliseMessage(top))) return reply(202, { ok: true, message: null });
+  if ([top, usurp, tier].some((line) => line && chatProblem(normaliseMessage(line)))) {
+    return reply(202, { ok: true, message: null });
+  }
 
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
@@ -303,8 +318,10 @@ async function handleBanked(playerId: string, raw: unknown): Promise<Response> {
       p_mode: banked.mode,
       p_word: banked.word,
       p_score: Number(banked.score),
+      p_tier: banked.tier,
       p_top_body: top,
-      p_tier_body: tierNoticeBody(handle, banked),
+      p_usurp_body: usurp,
+      p_tier_body: tier,
     });
     const row = rows?.[0];
     if ((row?.status === "top" || row?.status === "tier") && row.id != null) {

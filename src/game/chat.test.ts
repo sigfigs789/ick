@@ -7,6 +7,9 @@ import {
   NOTICE_VERBS,
   tierNoticeBody,
   topNoticeBody,
+  USURP_VERBS,
+  usurpNoticeBody,
+  usurpVerb,
 } from "./chat";
 
 describe("chat rules", () => {
@@ -70,6 +73,25 @@ describe("chat notices", () => {
       (w) => noticeVerb("StormyFox47", w),
     ));
     expect(verbs.size).toBeGreaterThan(1);
+  });
+
+  it("says a top score taken from another player was usurped", () => {
+    const usurped = usurpVerb("StormyFox47", "abaci");
+    expect(USURP_VERBS).toContain(usurped);
+    expect(usurpNoticeBody("StormyFox47", word)).toBe(
+      `StormyFox47 ${usurped} the top score with abaci (Mythic, 9.62)`
+    );
+    expect(usurpNoticeBody("StormyFox47", { ...word, mode: "freeform" })).toBe(
+      `StormyFox47 ${usurped} the top score with abaci (Mythic, 9.62) in Freeform`
+    );
+  });
+
+  it("has no top line for a word under 7.0", () => {
+    const rare = { ...word, word: "quokka", tier: "Rare" };
+    expect(topNoticeBody("StormyFox47", { ...rare, score: "6.9" })).toBeNull();
+    expect(usurpNoticeBody("StormyFox47", { ...rare, score: "6.99" })).toBeNull();
+    expect(topNoticeBody("StormyFox47", { ...rare, score: "7.0" })).not.toBeNull();
+    expect(usurpNoticeBody("StormyFox47", { ...rare, score: "7.0" })).not.toBeNull();
   });
 
   it("has no tier line for a word under 9.5", () => {

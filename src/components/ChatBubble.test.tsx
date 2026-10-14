@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as analytics from "../analytics";
+import { reportBankedWord } from "../game/chatNotices";
 import { addDays, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { handleFor } from "../game/handle";
@@ -191,6 +192,72 @@ describe("ChatBubble", () => {
     const line = (await screen.findByText(body)).closest("li");
     expect(line).toHaveClass("chat__message--notice", "chat__message--top");
     expect(screen.queryByText("CalmOtter3", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("colours a 9.5+ notice by its tier, apart from the top score's", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        json({
+          messages: [
+            { id: 2, handle: "A1", body: "a top line", at: "2026-10-13T10:00:00Z", kind: "top", tier: "Mythic" },
+            { id: 3, handle: "B2", body: "a mythic line", at: "2026-10-13T10:01:00Z", kind: "tier", tier: "Mythic" },
+            { id: 4, handle: "C3", body: "a legend line", at: "2026-10-13T10:02:00Z", kind: "tier", tier: "Legend" },
+          ],
+        }),
+      ),
+    );
+    render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    const top = (await screen.findByText("a top line")).closest("li");
+    expect(top).not.toHaveClass("chat__message--mythic");
+    expect(screen.getByText("a mythic line").closest("li")).toHaveClass("chat__message--tier", "chat__message--mythic");
+    expect(screen.getByText("a legend line").closest("li")).toHaveClass("chat__message--tier", "chat__message--legend");
+  });
+
+  it("dots a closed bubble the moment this player's 9.5+ word is announced", async () => {
+    const today = todayDateString();
+    setViewedPuzzle(today);
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [today]: 4 }));
+    const notice = { id: 5, handle: handleFor(PLAYER), body: "my legend", at: "2026-10-13T10:00:00Z", kind: "tier" };
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === "POST" ? json({ ok: true, message: notice }, 201) : json({ latest: 4 }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ChatBubble />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(screen.getByRole("button", { name: "Open chat" })).toBeInTheDocument();
+
+    reportBankedWord({
+      date: today,
+      isToday: true,
+      word: { word: "kakapo", rarity: "Legend", zipf: 0.5 },
+      playerId: PLAYER,
+    });
+    expect(await screen.findByRole("button", { name: "Open chat, new messages" })).toBeInTheDocument();
+  });
+
+  it("shows this player's 9.5+ notice in an open room without waiting for a poll", async () => {
+    const today = todayDateString();
+    setViewedPuzzle(today);
+    const notice = { id: 5, handle: handleFor(PLAYER), body: "my mythic", at: "2026-10-13T10:00:00Z", kind: "tier" };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init?: RequestInit) =>
+        init?.method === "POST" ? json({ ok: true, message: notice }, 201) : json({ messages: [] }),
+      ),
+    );
+    render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    await screen.findByText("No messages yet. Say hello!");
+
+    reportBankedWord({
+      date: today,
+      isToday: true,
+      word: { word: "abaci", rarity: "Mythic", zipf: 0.5 },
+      playerId: PLAYER,
+    });
+    expect(await screen.findByText("my mythic")).toBeInTheDocument();
   });
 
   it("sends a message and shows it", async () => {

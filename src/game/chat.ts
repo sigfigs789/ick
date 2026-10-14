@@ -48,6 +48,12 @@ export function normaliseMessage(raw: string): string {
  */
 export const NOTICE_MIN_SCORE = 9.5;
 
+/**
+ * The least a word can score and still be announced as a puzzle's top score: an
+ * early 3.2 is the best so far, but not news.
+ */
+export const TOP_NOTICE_MIN_SCORE = 7;
+
 /** What a room notice says about one banked word. See the 20261013 migration. */
 export interface BankedWord {
   /** The puzzle it was banked on, YYYY-MM-DD. */
@@ -73,16 +79,53 @@ export const NOTICE_VERBS: readonly string[] = [
  * than at random, so the same notice always reads the same way.
  */
 export function noticeVerb(handle: string, word: string): string {
-  let hash = 0;
-  for (const ch of `${handle}:${word}`) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
-  return NOTICE_VERBS[hash % NOTICE_VERBS.length];
+  return NOTICE_VERBS[noticeHash(handle, word) % NOTICE_VERBS.length];
 }
 
-/** The line posted when `word` beats everything banked on its puzzle so far. */
-export function topNoticeBody(handle: string, banked: BankedWord): string {
+function noticeHash(handle: string, word: string): number {
+  let hash = 0;
+  for (const ch of `${handle}:${word}`) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return hash;
+}
+
+/**
+ * What a notice says the player did to the top score when they took it from
+ * another player. Rotated and picked the way NOTICE_VERBS are.
+ */
+export const USURP_VERBS: readonly string[] = [
+  "usurped", "seized", "snatched", "stole", "claimed", "took",
+];
+
+/** The usurping verb for one player's word; see noticeVerb. */
+export function usurpVerb(handle: string, word: string): string {
+  return USURP_VERBS[noticeHash(handle, word) % USURP_VERBS.length];
+}
+
+/** Whether a word scores enough to be announced as a puzzle's top score. */
+export function earnsTopNotice(score: string): boolean {
+  return Number(score) >= TOP_NOTICE_MIN_SCORE;
+}
+
+/**
+ * The line posted when `word` beats every other player's word on its puzzle so
+ * far, or null for a word under 7.0.
+ */
+export function topNoticeBody(handle: string, banked: BankedWord): string | null {
+  if (!earnsTopNotice(banked.score)) return null;
   const where = banked.mode === "freeform" ? " in Freeform" : "";
   const verb = noticeVerb(handle, banked.word);
   return `${handle} ${verb} top scoring word ${banked.word} (${banked.tier}, ${banked.score})${where}`;
+}
+
+/**
+ * The line posted when `word` takes the top score from another player -- by
+ * beating it or by matching it -- or null for a word under 7.0.
+ */
+export function usurpNoticeBody(handle: string, banked: BankedWord): string | null {
+  if (!earnsTopNotice(banked.score)) return null;
+  const where = banked.mode === "freeform" ? " in Freeform" : "";
+  const verb = usurpVerb(handle, banked.word);
+  return `${handle} ${verb} the top score with ${banked.word} (${banked.tier}, ${banked.score})${where}`;
 }
 
 /** The line posted for a 9.5+ word, or null for one that scores less. */

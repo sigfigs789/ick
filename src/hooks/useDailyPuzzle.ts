@@ -370,8 +370,8 @@ export function useDailyPuzzle() {
         // a retry bring the day down to what the player actually holds.
         retried: updated.retryUsed === true,
       });
-      // And to the chat room, which announces a puzzle's new top score and any
-      // 9.5+ word. The same fire-and-forget write, for the live puzzle only.
+      // And to the chat room, which announces a puzzle's new 7.0+ top score and
+      // any 9.5+ word. The same fire-and-forget write, for the live puzzle only.
       reportBankedWord({
         date: viewedDate,
         isToday: viewedDate === today,

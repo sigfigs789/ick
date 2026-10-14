@@ -5135,6 +5135,21 @@ h2 {
 .chat__message--notice .chat__time {
   font-size: 0.72rem;
 }
+/* A 9.5+ word that is not the top score wears its tier's colours, so it reads
+   apart from the top score's line. */
+.chat__message--mythic {
+  background: var(--rarity-mythic-bg);
+  color: var(--rarity-mythic-fg);
+}
+.chat__message--legend {
+  background: var(--rarity-legend-bg);
+  color: var(--rarity-legend-fg);
+}
+.chat__message--mythic .chat__time,
+.chat__message--legend .chat__time {
+  color: inherit;
+  opacity: 0.75;
+}
 .chat__notice {
   margin: 0;
   padding: 0.45rem 1rem;

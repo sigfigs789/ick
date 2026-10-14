@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { reportBankedWord } from "./chatNotices";
+import { onBankedNotice, reportBankedWord } from "./chatNotices";
 import { formatRarityScore } from "./dictionary";
 
 const PLAYER = "0b3c6c1e-1d0a-4c55-9b5e-2f3a4b5c6d7e";
@@ -36,5 +36,28 @@ describe("reportBankedWord", () => {
     expect(reportBankedWord({ date: "2026-10-01", isToday: false, word: WORD, playerId: PLAYER })).toBe(false);
     expect(reportBankedWord({ date: "2026-10-13", isToday: true, word: WORD, playerId: null })).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends nothing for a word under 7.0, which can earn no notice", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const common = { word: "cat", rarity: "Very Common" as const, zipf: 6 };
+    expect(Number(formatRarityScore(common.zipf, "2026-10-13"))).toBeLessThan(7);
+    expect(reportBankedWord({ date: "2026-10-13", isToday: true, word: common, playerId: PLAYER })).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("tells the chat about a 9.5+ word's notice as soon as the report lands", async () => {
+    expect(Number(formatRarityScore(WORD.zipf, "2026-10-13"))).toBeGreaterThanOrEqual(9.5);
+    const message = { id: 9, handle: "StormyFox47", body: "line", at: "2026-10-13T10:00:00Z", kind: "tier" };
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true, message }), { status: 201 })));
+    const heard = new Promise<[string, unknown]>((resolve) => {
+      const off = onBankedNotice((date, notice) => {
+        off();
+        resolve([date, notice]);
+      });
+    });
+    reportBankedWord({ date: "2026-10-13", isToday: true, word: WORD, playerId: PLAYER });
+    expect(await heard).toEqual(["2026-10-13", message]);
   });
 });

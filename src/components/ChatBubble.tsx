@@ -6,6 +6,7 @@ import {
   trackChatTime,
 } from "../analytics";
 import { CHAT_MAX_LENGTH, chatProblem, normaliseMessage, type ChatProblem } from "../game/chat";
+import { onBankedNotice } from "../game/chatNotices";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate, FIRST_PUZZLE } from "../game/drop";
 import { handleFor } from "../game/handle";
@@ -89,6 +90,19 @@ export interface ChatMessage {
    * already names the player, so it is shown as one line of its own.
    */
   kind?: "top" | "tier";
+  /** A notice's tier as the game showed it, e.g. "Mythic"; absent on older notices. */
+  tier?: string;
+}
+
+/**
+ * The extra class a notice wears. A 9.5+ line takes its tier's colours, so it
+ * reads apart from the top score's; a top score keeps the room's own.
+ */
+function noticeClass(message: ChatMessage): string {
+  if (message.kind !== "tier") return "";
+  if (message.tier === "Legend") return " chat__message--legend";
+  if (message.tier === "Mythic") return " chat__message--mythic";
+  return "";
 }
 
 const NOTICE_ICONS: Record<NonNullable<ChatMessage["kind"]>, string> = {
@@ -241,13 +255,21 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
       timer = undefined;
     };
     const onVisibility = () => (document.visibilityState === "visible" ? start() : stop());
+    // A 9.5+ word this player just banked: show its notice now and look for
+    // anything else, rather than waiting for the next poll.
+    const offBanked = onBankedNotice((room, message) => {
+      if (room !== shownDate.current) return;
+      if (message) show(room, [message]);
+      void poll();
+    });
     if (document.visibilityState !== "hidden") start();
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
       stop();
+      offBanked();
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [open, poll]);
+  }, [open, poll, show]);
 
   // Having a room open reads it: everything shown counts as seen.
   useEffect(() => {
@@ -277,7 +299,9 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
         if (!response.ok) return;
         const data = (await response.json()) as { latest?: unknown };
         if (cancelled || typeof data.latest !== "number") return;
-        latestKnown.current = data.latest;
+        // Never below what this check already knows: the CDN can answer with a
+        // newest id from before a notice this page was handed directly.
+        latestKnown.current = Math.max(latestKnown.current, data.latest);
         judge();
       } catch {
         // Offline or no endpoint (vite dev): leave the dot as it is.
@@ -298,12 +322,22 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     const onStorage = (event: StorageEvent) => {
       if (event.key === CHAT_SEEN_KEY && latestKnown.current > 0) judge();
     };
+    // A 9.5+ word this player just banked: dot its notice now, not on the next check.
+    const offBanked = onBankedNotice((banked, message) => {
+      if (banked !== room) return;
+      if (message) {
+        latestKnown.current = Math.max(latestKnown.current, message.id);
+        judge();
+      }
+      void check();
+    });
     if (document.visibilityState !== "hidden") start();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("storage", onStorage);
     return () => {
       cancelled = true;
       stop();
+      offBanked();
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("storage", onStorage);
     };
@@ -478,7 +512,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
                 message.kind ? (
                   <li
                     key={message.id}
-                    className={`chat__message chat__message--notice chat__message--${message.kind}`}
+                    className={`chat__message chat__message--notice chat__message--${message.kind}${noticeClass(message)}`}
                   >
                     <span className="chat__body">
                       <span className="chat__notice-icon" aria-hidden="true">
