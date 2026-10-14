@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { ResultsPanel } from "./ResultsPanel";
 import { buildShareText } from "../game/share";
-import { windowTotals } from "../game/totals";
+import { PLAYER_KEY } from "../game/player";
+import { handleFor } from "../game/handle";
 import { MODE_CHOICE_START } from "../game/mode";
 import type { AcceptedWord, StreakState } from "../game/types";
 
@@ -102,8 +103,6 @@ describe("ResultsPanel share toggle", () => {
       buildShareText(date, "str", words, {
         spoilerFree: true,
         streak: streak.currentStreak,
-        weekTotal: windowTotals(date).week,
-        monthTotal: windowTotals(date).month,
       }).split("\n")[0],
     );
   });
@@ -195,8 +194,48 @@ describe("ResultsPanel share toggle", () => {
   });
 });
 
+describe("ResultsPanel username", () => {
+  const PLAYER_ID = "00000000-0000-4000-8000-000000000000";
+  const preview = () =>
+    document.querySelector(".results-panel__preview")?.textContent ?? "";
+
+  beforeEach(() => {
+    localStorage.clear();
+    localStorage.setItem(PLAYER_KEY, JSON.stringify({ id: PLAYER_ID }));
+  });
+
+  it("says who is playing by default, in place of the week and month totals", () => {
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+    expect(screen.getByRole("checkbox", { name: /show username/i })).toBeChecked();
+    expect(preview()).toContain(`Playing as ${handleFor(PLAYER_ID)}`);
+    expect(preview()).not.toContain("Week:");
+    expect(preview()).not.toContain("Month:");
+    expect(preview()).not.toMatch(/1 in \S+ words/);
+  });
+
+  it("hides the name when switched off, and remembers that for the next result", async () => {
+    const { unmount } = render(
+      <ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />,
+    );
+    await userEvent.click(screen.getByRole("checkbox", { name: /show username/i }));
+    expect(preview()).not.toContain("Playing as");
+    unmount();
+
+    render(<ResultsPanel date="2025-01-02" drop="str" words={words} streak={streak} />);
+    expect(screen.getByRole("checkbox", { name: /show username/i })).not.toBeChecked();
+    expect(preview()).not.toContain("Playing as");
+  });
+
+  it("offers no toggle to a browser with no name to share", () => {
+    localStorage.clear();
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+    expect(screen.queryByRole("checkbox", { name: /show username/i })).toBeNull();
+    expect(preview()).not.toContain("Playing as");
+  });
+});
+
 describe("the Freeform preview", () => {
-  it("paints one hue per letter where the totals would be", () => {
+  it("paints one hue per letter of the mode on the heading", () => {
     const { container } = render(
       <ResultsPanel
         date={MODE_CHOICE_START}
@@ -232,7 +271,7 @@ describe("the Freeform preview", () => {
       />,
     );
     expect(container.querySelector(".rainbow-word")).toBeNull();
-    expect(screen.getByLabelText("Share result")).toHaveTextContent(/Week:/);
+    expect(screen.getByLabelText("Share result")).toHaveTextContent(/Today:/);
   });
 
   it("keeps the text that actually leaves the app plain", () => {
@@ -242,8 +281,7 @@ describe("the Freeform preview", () => {
       isToday: true,
       mode: "freeform",
       streak: 1,
-      weekTotal: 40,
-      monthTotal: 120,
+      playerName: "StormyFox47",
     });
     expect(text).toContain("· Freeform");
     expect(text).not.toContain("<");

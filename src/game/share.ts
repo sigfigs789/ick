@@ -59,32 +59,6 @@ export function puzzleNumber(dateStr: string): number {
   return daysSinceEpoch(dateStr, dropData.epoch) + 1;
 }
 
-// Abbreviate a large count as e.g. 4M, 1.2B. One decimal below 10 (so 3.98M
-// reads as 4M, 1.23B as 1.2B), whole numbers above, no trailing ".0".
-function abbreviateCount(n: number): string {
-  const units: [number, string][] = [
-    [1e12, "T"],
-    [1e9, "B"],
-    [1e6, "M"],
-    [1e3, "K"],
-  ];
-  for (const [scale, suffix] of units) {
-    if (n >= scale) {
-      const v = n / scale;
-      const rounded = v >= 10 ? Math.round(v) : Math.round(v * 10) / 10;
-      return `${rounded}${suffix}`;
-    }
-  }
-  return `${Math.round(n)}`;
-}
-
-// A word's Zipf value is log10 of its frequency per billion words, so it occurs
-// once every 10^(9 - zipf) words. Render that as the "1 in X words" odds of a
-// word being this rare or rarer.
-export function formatFrequency(zipf: number): string {
-  return `1 in ${abbreviateCount(Math.pow(10, 9 - zipf))} words`;
-}
-
 /** The rarest accepted word: lowest Zipf, i.e. the highest rarity score. */
 function rarestWord(words: AcceptedWord[]): AcceptedWord | undefined {
   return words.reduce<AcceptedWord | undefined>(
@@ -111,10 +85,12 @@ export interface ShareOptions {
   spoilerFree?: boolean;
   /** Current consecutive-day streak to include in the shared result. */
   streak?: number;
-  /** Rarity score summed across the puzzle's week (see game/totals.ts). */
-  weekTotal?: number;
-  /** Rarity score summed across the puzzle's month (see game/totals.ts). */
-  monthTotal?: number;
+  /**
+   * The name the sharer plays under (see `selfName` in game/player.ts), quoted
+   * as "Playing as …" so a reader can find them on the board. Left off when the
+   * player has chosen not to share it, or has no name to share.
+   */
+  playerName?: string | null;
   /**
    * Whether this is the current puzzle, which is what lets its score be called
    * "Today". Defaults to false: the neutral "Total" is never wrong, so a caller
@@ -158,8 +134,7 @@ export function buildShareText(
   const format = options.format ?? "default";
   const label = formatDateLabel(dateStr);
 
-  // The rarest word is the one "top" reveals, so resolve it up front and reuse
-  // it for both the per-word lines and the odds summary below.
+  // The rarest word is the one "top" reveals.
   const best = rarestWord(words);
   const resultLine = words
     .map((w) => {
@@ -180,51 +155,31 @@ export function buildShareText(
   const modeLabel = modeIsChosen(dateStr) ? ` · ${MODE_LABELS[mode]}` : "";
   const lines = [`${label} — Drop: ${drop.toUpperCase()}${modeLabel}`];
   if (resultLine) lines.push("", resultLine);
+  const playerName = options.playerName || null;
   const progressLine =
-    format === "default" &&
-    (options.streak !== undefined ||
-      options.weekTotal !== undefined ||
-      options.monthTotal !== undefined);
-  // The score's own label names its window, so that the three windows read as
-  // one series: the puzzle, the week around it, the month around that. "Today"
-  // only where it is true -- an archive result is headed with its own date, and
-  // "Today" under that date would contradict it.
+    format === "default" && (options.streak !== undefined || playerName !== null);
+  // "Today" only where it is true -- an archive result is headed with its own
+  // date, and "Today" under that date would contradict it.
   const scoreLabel = options.isToday ? "Today" : "Total";
   const score = totalRarityScore(words, dateStr).toFixed(1);
   // The blank line separates the squares from the stats block, so it belongs
   // wherever that block starts -- and there is no block to separate when the
   // score is the only line of it.
   if (resultLine && progressLine) lines.push("");
-  if (progressLine) {
-    // The streak leads because it is the one figure here that is not a score:
-    // a count of days, in different units from the three under it, and the
-    // line the other three are the detail of.
-    const streak = options.streak ?? 0;
-    lines.push(`Streak: ${streak} day${streak === 1 ? "" : "s"}`);
-    // Both modes quote their windows. A week total and a month total are board
-    // numbers -- the boards' own arithmetic, computed so a shared result agrees
-    // with the rank it claims (see game/totals.ts) -- and Freeform used to put
-    // its own name here instead, because it had no board and two sums of a
-    // window nothing compares would have invited a comparison the game did not
-    // make.
-    //
-    // It has one now (see mode.boardFor), and these are its numbers: a Freeform
-    // week is ranked against other Freeform weeks. Which game produced them is
-    // still worth saying and is still said -- on the heading above, where the
-    // mode has ridden since the switch shipped, rather than twice.
-    lines.push(
-      `${scoreLabel}: ${score} · Week: ${(options.weekTotal ?? 0).toFixed(1)} · Month: ${(options.monthTotal ?? 0).toFixed(1)}`,
-    );
+  // The score shares the streak's line rather than taking one of its own. The
+  // streak leads because it is the one figure here that is not a score: a count
+  // of days, and the score beside it is the detail of it. With no streak (the X
+  // layout, or a caller that has none) the score stands alone.
+  const scoreText = `${scoreLabel}: ${score}`;
+  if (progressLine && options.streak !== undefined) {
+    const streak = options.streak;
+    lines.push(`Streak: ${streak} day${streak === 1 ? "" : "s"} · ${scoreText}`);
   } else {
-    lines.push(`${scoreLabel}: ${score}`);
+    lines.push(scoreText);
   }
-  // Always show the rarest word's odds, but only name the word once it is being
-  // revealed ("top" or "all"); the spoiler-free share labels it "Rarest word"
-  // instead so it keeps its guarantee of never naming a word.
-  if (best) {
-    const label = reveal === "none" ? "Rarest word" : best.word;
-    lines.push(`${label}: ${formatFrequency(best.zipf)}`);
-  }
+  // Who played it, so a reader can find the sharer on the board. The X layout
+  // drops it with the rest of the stats block.
+  if (progressLine && playerName) lines.push(`Playing as ${playerName}`);
   // The link opens today's puzzle, not this one, so an archived day from before
   // the switch -- whose mode the calendar picked -- sends the sharer's own.
   lines.push(shareUrl(source, modeIsChosen(dateStr) ? mode : currentMode()));

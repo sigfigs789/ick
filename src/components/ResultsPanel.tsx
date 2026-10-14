@@ -2,8 +2,9 @@ import { Fragment, useState } from "react";
 import { buildShareText, type RevealMode } from "../game/share";
 import { RainbowWord } from "./RainbowWord";
 import { MODE_LABELS, modeForDate } from "../game/mode";
-import { windowTotals } from "../game/totals";
 import { loadReveal, saveReveal } from "../game/reveal";
+import { loadShowName, saveShowName } from "../game/shareName";
+import { loadPlayerId, selfName } from "../game/player";
 import { ShareButton } from "./ShareButton";
 import { TwitterShareButton } from "./TwitterShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
@@ -42,11 +43,7 @@ const SPOILER_LABEL_ID = "results-panel-reveal-label";
  * no colour to carry. So the builder stays a pure string and the preview paints
  * one token of it.
  *
- * On the heading, where the mode has ridden since the switch shipped. It used to
- * be painted on the stats line instead, which is where a Freeform result put its
- * name in place of the week and month totals it had no board to quote -- it has
- * one now, so the line is two numbers like everyone else's and the only mention
- * of the mode is back up here.
+ * On the heading, where the mode has ridden since the switch shipped.
  *
  * Only Freeform is painted, and a heading without it is returned untouched --
  * which is every Standard result, and every result from before the switch
@@ -88,16 +85,21 @@ export function ResultsPanel({
     setRevealState(next);
     saveReveal(next);
   };
-  // Read once per render from this browser's own history rather than the
-  // leaderboard: the numbers are the boards' arithmetic (see game/totals.ts),
-  // but a player who never joined a board still gets them, and nothing here has
-  // to wait on the network to draw a share preview.
-  const totals = windowTotals(date);
+  // On until the player switches it off, and remembered once they do (see
+  // game/shareName.ts).
+  const [showName, setShowNameState] = useState<boolean>(loadShowName);
+  const setShowName = (next: boolean) => {
+    setShowNameState(next);
+    saveShowName(next);
+  };
+  // The name the board calls this player, so the share and their row agree. A
+  // browser that could not mint an id has no name, and the line is left off.
+  const playerId = loadPlayerId();
+  const playerName = playerId ? selfName(playerId) : null;
   const sharedResultOptions = {
     reveal,
     streak: streak.currentStreak,
-    weekTotal: totals.week,
-    monthTotal: totals.month,
+    playerName: showName ? playerName : null,
     isToday,
     mode,
   };
@@ -148,6 +150,16 @@ export function ResultsPanel({
           ))}
         </div>
       </div>
+      {playerName && (
+        <label className="results-panel__spoiler-toggle results-panel__name-toggle">
+          <input
+            type="checkbox"
+            checked={showName}
+            onChange={(event) => setShowName(event.target.checked)}
+          />
+          Show username
+        </label>
+      )}
       <pre className="results-panel__preview" aria-hidden="true">
         <strong>{paintMode(shareHeading)}</strong>
         {shareDetailLines.length > 0 && "\n"}
