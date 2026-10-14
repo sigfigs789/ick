@@ -5186,6 +5186,178 @@ h2 {
   opacity: 0.45;
   cursor: default;
 }
+/* Reactions (components/ChatReactions.tsx). Every line has an add-reaction
+   button in its top-right corner -- shown on hover where there is a pointer to
+   hover with, and always, faintly, on a touch screen, where holding the line
+   down opens the same tray. */
+.chat__panel {
+  position: relative;
+}
+.chat__message {
+  position: relative;
+  padding-right: 1.9rem;
+}
+.chat__message--notice {
+  padding-right: 2.1rem;
+}
+.chat__react {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s var(--ease-standard);
+}
+.chat__message--notice .chat__react {
+  top: 0.25rem;
+  right: 0.3rem;
+  color: inherit;
+}
+.chat__message:hover .chat__react,
+.chat__message:focus-within .chat__react,
+.chat__message--reacting .chat__react {
+  opacity: 1;
+}
+.chat__react:hover {
+  background: var(--bg-inset);
+  color: var(--fg);
+}
+.chat__react:focus-visible,
+.chat__reaction:focus-visible,
+.chat__tray button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+@media (hover: none) {
+  .chat__react {
+    opacity: 0.5;
+  }
+  /* Holding a line reacts to it, so it must not also select the text or raise
+     the phone's own callout. */
+  .chat__message {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+.chat__reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+.chat__reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.chat__reaction:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+.chat__reaction:disabled {
+  cursor: default;
+}
+.chat__reaction--mine {
+  border-color: var(--accent);
+  color: var(--fg);
+  font-weight: 700;
+}
+.chat__reaction-emoji {
+  font-size: 0.95rem;
+}
+.chat__reaction-count {
+  font-variant-numeric: tabular-nums;
+}
+.chat__tray {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.2rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  animation: modal-in 0.15s var(--ease-standard);
+}
+.chat__tray-emoji,
+.chat__tray-more {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.chat__tray-more {
+  color: var(--fg-muted);
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+.chat__tray-emoji:hover,
+.chat__tray-more:hover {
+  background: var(--bg-inset);
+}
+/* The full picker, over the lower part of the panel. */
+.chat__picker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 78%;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+  background: var(--card-bg);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.12);
+  animation: modal-in 0.15s var(--ease-standard);
+  z-index: 1;
+}
+.chat__picker-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3rem 0.5rem 0.3rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--fg-muted);
+}
+.chat__picker-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.chat__picker-body .chat__emoji-picker {
+  --epr-bg-color: var(--card-bg);
+  --epr-category-label-bg-color: var(--card-bg);
+  border: none;
+  border-radius: 0;
+}
 
 /* /help: every page, one per row. */
 .help__section {
