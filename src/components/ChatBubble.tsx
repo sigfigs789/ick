@@ -7,6 +7,7 @@ import {
 } from "../analytics";
 import { CHAT_MAX_LENGTH, chatProblem, normaliseMessage, type ChatProblem } from "../game/chat";
 import { playChatMessage, playChatNotice } from "../audio/sound";
+import { onBankedNotice } from "../game/chatNotices";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate, FIRST_PUZZLE } from "../game/drop";
 import { handleFor } from "../game/handle";
@@ -254,6 +255,13 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     }
   }, [date, show]);
 
+  // A word this player just banked earned a notice: put it in the open room now
+  // rather than on the next poll, the way a sent message is.
+  useEffect(() => {
+    if (!open) return;
+    return onBankedNotice((room, notice) => show(room, [notice]));
+  }, [open, show]);
+
   // Poll while open and visible. Reopening starts from where the room was left,
   // so a closed-and-reopened bubble picks up only what it missed.
   useEffect(() => {
@@ -300,6 +308,11 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
      * nor what was read with the panel open.
      */
     let heard: number | null = null;
+    /**
+     * The newest notice this player's own words earned in the room, which the
+     * check's cached answer can be a few seconds behind.
+     */
+    let ownNotice = 0;
     const seenNow = () => Math.max(loadSeen()[room] ?? 0, seenHere.current[room] ?? 0);
     const judge = () => setUnread(unreadKind(latestKnown.current, seenNow()));
     let cancelled = false;
@@ -310,9 +323,9 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
         const data = (await response.json()) as { latest?: unknown; message?: unknown; notice?: unknown };
         if (cancelled || typeof data.latest !== "number") return;
         const found: Latest = {
-          latest: data.latest,
+          latest: Math.max(data.latest, ownNotice),
           message: typeof data.message === "number" ? data.message : 0,
-          notice: typeof data.notice === "number" ? data.notice : 0,
+          notice: Math.max(typeof data.notice === "number" ? data.notice : 0, ownNotice),
         };
         latestKnown.current = found;
         judge();
@@ -341,11 +354,27 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     const onStorage = (event: StorageEvent) => {
       if (event.key === CHAT_SEEN_KEY && latestKnown.current.latest > 0) judge();
     };
+    // A word this player just banked earned a notice: dot it now rather than on
+    // the next check. Counted as heard, so no chime -- the player is the one who
+    // banked it, and the game has just played its own sound for the word.
+    const offNotice = onBankedNotice((date, posted) => {
+      if (date !== room) return;
+      ownNotice = Math.max(ownNotice, posted.id);
+      const known = latestKnown.current;
+      latestKnown.current = {
+        latest: Math.max(known.latest, ownNotice),
+        message: known.message,
+        notice: Math.max(known.notice, ownNotice),
+      };
+      if (heard !== null) heard = Math.max(heard, ownNotice);
+      judge();
+    });
     if (document.visibilityState !== "hidden") start();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("storage", onStorage);
     return () => {
       cancelled = true;
+      offNotice();
       stop();
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("storage", onStorage);
