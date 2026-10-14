@@ -4993,6 +4993,14 @@ h2 {
   background: #e5484d;
   box-shadow: 0 0 0 2px var(--bg);
 }
+/* Blue for a player's message, green when all that is new is the room's own
+   score notices (a new top score, a 9.5+ word). */
+.chat__dot--message {
+  background: #2f78e0;
+}
+.chat__dot--notice {
+  background: #2fa457;
+}
 .chat__toggle:hover {
   background: var(--accent-hover);
 }

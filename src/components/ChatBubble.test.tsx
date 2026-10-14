@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as analytics from "../analytics";
+import { playChatMessage, playChatNotice } from "../audio/sound";
 import { addDays, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { handleFor } from "../game/handle";
@@ -30,6 +31,11 @@ vi.mock("../analytics", () => ({
   trackChatTime: vi.fn(),
   trackChatMessageSent: vi.fn(),
   trackChatMessageBlocked: vi.fn(),
+}));
+
+vi.mock("../audio/sound", () => ({
+  playChatMessage: vi.fn(),
+  playChatNotice: vi.fn(),
 }));
 
 afterEach(() => {
@@ -156,6 +162,53 @@ describe("ChatBubble", () => {
       await vi.advanceTimersByTimeAsync(30_000);
     });
     expect(await screen.findByRole("button", { name: "Open chat, new messages" })).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it("dots a player's message blue and a room's own notice green", async () => {
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 4 }));
+    vi.stubGlobal("fetch", vi.fn(async () => json({ latest: 6, message: 4, notice: 6 })));
+    const { container, unmount } = render(<ChatBubble />);
+    await screen.findByRole("button", { name: "Open chat, new messages" });
+    expect(container.querySelector(".chat__dot")).toHaveClass("chat__dot--notice");
+    unmount();
+
+    // A player's message wins over a notice when both are unread.
+    vi.stubGlobal("fetch", vi.fn(async () => json({ latest: 6, message: 5, notice: 6 })));
+    const second = render(<ChatBubble />);
+    await screen.findByRole("button", { name: "Open chat, new messages" });
+    expect(second.container.querySelector(".chat__dot")).toHaveClass("chat__dot--message");
+  });
+
+  it("chimes for a post that arrives while closed, by who posted it, not for one waiting on arrival", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 2 }));
+    let latest = { latest: 4, message: 4, notice: 3 };
+    vi.stubGlobal("fetch", vi.fn(async () => json(latest)));
+    render(<ChatBubble />);
+    await screen.findByRole("button", { name: "Open chat, new messages" });
+    expect(playChatMessage).not.toHaveBeenCalled();
+    expect(playChatNotice).not.toHaveBeenCalled();
+
+    latest = { latest: 5, message: 4, notice: 5 };
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(playChatNotice).toHaveBeenCalledTimes(1);
+    expect(playChatMessage).not.toHaveBeenCalled();
+
+    latest = { latest: 6, message: 6, notice: 5 };
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(playChatMessage).toHaveBeenCalledTimes(1);
+
+    // Nothing new, nothing played.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(playChatMessage).toHaveBeenCalledTimes(1);
+    expect(playChatNotice).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
 

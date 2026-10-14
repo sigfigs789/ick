@@ -97,6 +97,38 @@ export function playComplete(): void {
 }
 
 /**
+ * The context for a sound nobody pressed anything to hear -- a chat message
+ * arriving -- or null before the player has touched the page. A context made
+ * or resumed without a gesture stays suspended, and whatever was scheduled on
+ * it would play late, all at once, on their first tap.
+ */
+function unpromptedContext(): AudioContext | null {
+  if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return null;
+  return getContext();
+}
+
+/** A soft two-note "bloop" for another player's message in the chat. */
+export function playChatMessage(): void {
+  const c = unpromptedContext();
+  if (!c) return;
+  const now = c.currentTime;
+  tone(c, 659.25, now, 0.09, { peakGain: 0.08 }); // E5
+  tone(c, 880, now + 0.07, 0.14, { peakGain: 0.07 }); // A5
+}
+
+/**
+ * A brighter three-note twinkle for a notice the room posts itself -- a new top
+ * score or a 9.5+ word -- so it is told apart from a player's message by ear.
+ */
+export function playChatNotice(): void {
+  const c = unpromptedContext();
+  if (!c) return;
+  const now = c.currentTime;
+  const notes = [783.99, 1046.5, 1318.51]; // G5 C6 E6
+  notes.forEach((freq, i) => tone(c, freq, now + i * 0.07, 0.16, { type: "triangle", peakGain: 0.07 }));
+}
+
+/**
  * A crowd's applause, one size for each window a winner is named for.
  *
  * A week's is a room clapping: a handful of hands for a little over a second.
