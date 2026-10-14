@@ -156,8 +156,8 @@ describe("loadStreak", () => {
     expect(loadStreak()).toMatchObject({ crushedIt: 0, elite: 0, highScore: 0 });
   });
 
-  it("resets an expired streak to zero after a missed day", () => {
-    setToday("2024-01-03");
+  it("resets an expired streak to zero after two missed days", () => {
+    setToday("2024-01-04");
     localStorage.setItem(
       "ick:streak",
       JSON.stringify({ currentStreak: 2, longestStreak: 2, lastCompletedDate: "2024-01-01" })
@@ -393,9 +393,9 @@ describe("streak continuation", () => {
     expect(loadStreak().currentStreak).toBe(3);
   });
 
-  it("resets the streak after a missed day", () => {
+  it("resets the streak after two missed days", () => {
     complete("2024-01-01");
-    complete("2024-01-03"); // skipped 01-02
+    complete("2024-01-04"); // skipped 01-02 and 01-03
     expect(loadStreak().currentStreak).toBe(1);
   });
 
@@ -439,21 +439,19 @@ describe("streak freezes", () => {
     recordAcceptedWord(newProgress(date, "str"), word(`w-${date}`));
   }
 
-  it("earns a freeze on day seven and spends it on a missed day", () => {
-    for (let d = 1; d <= 7; d++) play(`2024-01-0${d}`);
-    expect(loadStreak()).toMatchObject({ currentStreak: 7, freezes: 1 });
+  it("covers a missed day with no freeze earned", () => {
+    play("2024-01-01");
+    play("2024-01-02");
+    setToday("2024-01-04"); // skipped 01-03
+    expect(loadStreak()).toMatchObject({ currentStreak: 2, frozenDates: ["2024-01-03"] });
 
-    play("2024-01-09"); // skipped 01-08
-    expect(loadStreak()).toMatchObject({
-      currentStreak: 8,
-      freezes: 0,
-      frozenDates: ["2024-01-08"],
-    });
+    play("2024-01-04");
+    expect(loadStreak()).toMatchObject({ currentStreak: 3, frozenDates: ["2024-01-03"] });
   });
 
-  it("still resets a streak with no freeze to spend", () => {
+  it("resets a streak after two missed days in a row", () => {
     for (let d = 1; d <= 3; d++) play(`2024-01-0${d}`);
-    play("2024-01-05");
+    play("2024-01-06");
     expect(loadStreak().currentStreak).toBe(1);
   });
 });

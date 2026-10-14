@@ -1,12 +1,10 @@
 import { formatScore } from "../game/dictionary";
-import { addDays } from "../game/date";
-import { wasFrozen } from "../game/streakFreeze";
+import { atRisk } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
 
 /** What the two tier counters count, said once for the tooltip and the label. */
 const CRUSHED_IT_TITLE = "Days you found a Rare word or better";
 const ELITE_TITLE = "Days you found an Extremely Rare word or better";
-const FREEZE_TITLE = "Streak freezes: each one covers a missed day";
 
 interface Props {
   streak: StreakState;
@@ -25,13 +23,9 @@ export function StreakDisplay({
   date,
   isToday = false,
 }: Props) {
-  const freezes = streak.freezes ?? 0;
-  const savedYesterday =
-    isToday &&
-    date !== undefined &&
-    streak.currentStreak > 0 &&
-    streak.lastCompletedDate !== date &&
-    wasFrozen(streak, addDays(date, -1));
+  // Yesterday was missed and covered by a freeze, so missing today too would
+  // end the streak: the flame turns to ice until today is played.
+  const frozen = isToday && date !== undefined && atRisk(streak, date);
   return (
     <div
       className="streak-display"
@@ -39,13 +33,17 @@ export function StreakDisplay({
         `Current streak: ${streak.currentStreak} days. ` +
         `${CRUSHED_IT_TITLE}: ${streak.crushedIt}. ` +
         `${ELITE_TITLE}: ${streak.elite}. ` +
-        (freezes > 0 ? `${FREEZE_TITLE}: ${freezes}. ` : "") +
+        (frozen ? "Streak frozen: play today to keep it. " : "") +
         `This puzzle's total score: ${totalRarity.toFixed(1)}. ` +
         `Rarest word so far: ${formatScore(topRarity, date)}.`
       }
     >
       <div className="streak-display__row">
-        {streak.currentStreak >= 2 ? (
+        {frozen ? (
+          <span className="streak-display__flame" aria-hidden="true">
+            🧊
+          </span>
+        ) : streak.currentStreak >= 2 ? (
           <span className="streak-display__flame" aria-hidden="true">
             🔥
           </span>
@@ -60,17 +58,10 @@ export function StreakDisplay({
           <span className="streak-display__count">{streak.elite}</span>
           <span className="streak-display__unit">Elite</span>
         </span>
-        {freezes > 0 && (
-          <span className="streak-display__tracker" title={FREEZE_TITLE}>
-            <span aria-hidden="true">🧊</span>
-            <span className="streak-display__count">{freezes}</span>
-            <span className="streak-display__unit">{freezes === 1 ? "Freeze" : "Freezes"}</span>
-          </span>
-        )}
       </div>
-      {savedYesterday && (
+      {frozen && (
         <p className="streak-display__saved">
-          A streak freeze covered yesterday. Play today to keep it going.
+          You missed yesterday, so your streak is frozen. Play today to keep it going.
         </p>
       )}
       <div className="streak-display__rarity-scores">
