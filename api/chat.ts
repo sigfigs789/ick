@@ -14,11 +14,14 @@
 //   nearly the same `after`, and one query can answer all of them.
 //
 // GET /api/chat?date=D&latest=1
-//   -> 200 { latest: ID }
+//   -> 200 { latest: ID, message: ID, notice: ID }
 //   Just the id of the newest message in puzzle D's room (0 for an empty room), so a closed
 //   bubble can tell its player something new was posted without reading the
-//   room. Every closed bubble asks the same URL, so the CDN answers nearly all
-//   of them; the longer cache only delays the unread dot by a few seconds.
+//   room. `message` and `notice` split it by who posted: the newest player's
+//   message and the newest notice the room posted itself, among the newest page
+//   (0 when the page holds none), so the dot can say which it is. Every closed
+//   bubble asks the same URL, so the CDN answers nearly all of them; the longer
+//   cache only delays the unread dot by a few seconds.
 //
 // POST /api/chat   { playerId, body, date }
 //   -> 201 { message }, 400 malformed, 422 { reason: "profane" | ... },
@@ -176,16 +179,21 @@ async function handleGet(request: Request): Promise<Response> {
 async function handleLatest(date: string): Promise<Response> {
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
   try {
-    // A fresh open of one message is the newest visible one.
-    const rows = await rpc<MessageRow[] | null>("chat_recent", {
-      p_date: date,
-      p_after: 0,
-      p_limit: 1,
-    });
-    const newest = rows?.[rows.length - 1];
+    // A fresh open is the newest page, oldest first.
+    const messages = (
+      (await rpc<MessageRow[] | null>("chat_recent", {
+        p_date: date,
+        p_after: 0,
+        p_limit: PAGE,
+      })) ?? []
+    ).map(toMessage);
+    const newest = (notice: boolean) =>
+      messages.reduce((id, m) => ("kind" in m === notice ? Math.max(id, m.id) : id), 0);
+    const message = newest(false);
+    const notice = newest(true);
     return reply(
       200,
-      { latest: newest ? Number(newest.id) : 0 },
+      { latest: Math.max(message, notice), message, notice },
       "public, max-age=0, s-maxage=15, stale-while-revalidate=15",
     );
   } catch (error: unknown) {

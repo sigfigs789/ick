@@ -6,6 +6,7 @@ import {
   trackChatTime,
 } from "../analytics";
 import { CHAT_MAX_LENGTH, chatProblem, normaliseMessage, type ChatProblem } from "../game/chat";
+import { playChatMessage, playChatNotice } from "../audio/sound";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate, FIRST_PUZZLE } from "../game/drop";
 import { handleFor } from "../game/handle";
@@ -104,6 +105,31 @@ const PROBLEM_TEXT: Record<ChatProblem | "rate-limited" | "unavailable", string>
   unavailable: "Couldn't send. Try again in a moment.",
 };
 
+/**
+ * What the dot is about: a player's message (blue) or only notices the room
+ * posted itself (green). A player's message wins when both are unread.
+ */
+type Unread = "message" | "notice" | null;
+
+/** The newest ids a closed bubble's check found; see api/chat.ts. */
+interface Latest {
+  latest: number;
+  message: number;
+  notice: number;
+}
+
+const NO_LATEST: Latest = { latest: 0, message: 0, notice: 0 };
+
+/**
+ * Which kind of post `latest` holds after `seen`. A server from before the
+ * split answers only `latest`, which is taken for a player's message.
+ */
+function unreadKind({ latest, message, notice }: Latest, seen: number): Unread {
+  if (message > seen) return "message";
+  if (notice > seen) return "notice";
+  return latest > seen ? "message" : null;
+}
+
 function timeOf(at: string): string {
   const date = new Date(at);
   if (Number.isNaN(date.getTime())) return "";
@@ -140,7 +166,9 @@ function merge(shown: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
  *
  * While closed, the button carries a dot when the room of the puzzle the game
  * is on has a message this browser has not had on screen -- for everybody,
- * a player who has never opened the chat included.
+ * a player who has never opened the chat included. It is blue for a player's
+ * message and green when all that is new is the room's own score notices, and
+ * a post that arrives while the page is open plays a chime to match.
  *
  * `lifted` raises it clear of the dev date bar, which shares the corner.
  */
@@ -156,15 +184,15 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const [draft, setDraft] = useState("");
   const [notice, setNotice] = useState("");
   const [sending, setSending] = useState(false);
-  const [unread, setUnread] = useState(false);
+  const [unread, setUnread] = useState<Unread>(null);
 
   const lastId = useRef(0);
   /** The room `messages` and `lastId` belong to, so a late answer for another is dropped. */
   const shownDate = useRef(date);
   /** What this page knows was seen, for when storage is unavailable. */
   const seenHere = useRef<Seen>({});
-  /** The newest id the last check found, to re-judge the dot against. */
-  const latestKnown = useRef(0);
+  /** The newest ids the last check found, to re-judge the dot against. */
+  const latestKnown = useRef<Latest>(NO_LATEST);
   const listRef = useRef<HTMLOListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -252,7 +280,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   // Having a room open reads it: everything shown counts as seen.
   useEffect(() => {
     if (!open || shownDate.current !== date) return;
-    if (date === gameDate) setUnread(false);
+    if (date === gameDate) setUnread(null);
     if (lastId.current > 0) {
       seenHere.current[date] = Math.max(seenHere.current[date] ?? 0, lastId.current);
       saveSeen(date, lastId.current);
@@ -265,20 +293,35 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   useEffect(() => {
     if (open) return;
     const room = gameDate;
-    latestKnown.current = 0;
-    const judge = () => {
-      const seen = Math.max(loadSeen()[room] ?? 0, seenHere.current[room] ?? 0);
-      setUnread(latestKnown.current > seen);
-    };
+    latestKnown.current = NO_LATEST;
+    /**
+     * The newest id this run of checks already knew of, so only a post that
+     * lands after the first check chimes -- not what was waiting on arrival,
+     * nor what was read with the panel open.
+     */
+    let heard: number | null = null;
+    const seenNow = () => Math.max(loadSeen()[room] ?? 0, seenHere.current[room] ?? 0);
+    const judge = () => setUnread(unreadKind(latestKnown.current, seenNow()));
     let cancelled = false;
     const check = async () => {
       try {
         const response = await fetch(`/api/chat?date=${room}&latest=1`);
         if (!response.ok) return;
-        const data = (await response.json()) as { latest?: unknown };
+        const data = (await response.json()) as { latest?: unknown; message?: unknown; notice?: unknown };
         if (cancelled || typeof data.latest !== "number") return;
-        latestKnown.current = data.latest;
+        const found: Latest = {
+          latest: data.latest,
+          message: typeof data.message === "number" ? data.message : 0,
+          notice: typeof data.notice === "number" ? data.notice : 0,
+        };
+        latestKnown.current = found;
         judge();
+        if (heard !== null && found.latest > heard) {
+          const fresh = unreadKind(found, Math.max(heard, seenNow()));
+          if (fresh === "message") playChatMessage();
+          else if (fresh === "notice") playChatNotice();
+        }
+        heard = Math.max(heard ?? 0, found.latest);
       } catch {
         // Offline or no endpoint (vite dev): leave the dot as it is.
       }
@@ -296,7 +339,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     const onVisibility = () => (document.visibilityState === "visible" ? start() : stop());
     // Another tab opening the room clears the dot here too.
     const onStorage = (event: StorageEvent) => {
-      if (event.key === CHAT_SEEN_KEY && latestKnown.current > 0) judge();
+      if (event.key === CHAT_SEEN_KEY && latestKnown.current.latest > 0) judge();
     };
     if (document.visibilityState !== "hidden") start();
     document.addEventListener("visibilitychange", onVisibility);
@@ -553,7 +596,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
             fill="currentColor"
           />
         </svg>
-        {unread && !open && <span className="chat__dot" aria-hidden="true" />}
+        {unread && !open && <span className={`chat__dot chat__dot--${unread}`} aria-hidden="true" />}
       </button>
     </div>
   );
