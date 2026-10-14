@@ -109,9 +109,10 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
     // instead of the live one, and for this win's mode rather than the reader's:
     // both winners are named whichever switch the reader is on. It answers with
     // all three boards and only one of them is read, which is the price of not
-    // adding an endpoint for a sentence that appears a few times a month.
+    // adding an endpoint for a sentence that appears a few times a month. One
+    // row, because the winner is all it reads and the boards are now whole.
     const closed = spot.window === "week" ? { week: spot.start } : { month: spot.start };
-    fetchBoards(today, { ...closed, mode: spot.mode })
+    fetchBoards(today, { ...closed, mode: spot.mode, limit: 1 })
       .then((boards) => {
         if (!live) return;
         const board = spot.window === "week" ? boards.weekly : boards.monthly;

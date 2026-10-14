@@ -145,11 +145,12 @@ function Bubble({ today, spot }: { today: string; spot: CongratsSpot }) {
     let live = true;
     // The same endpoint the board comes from, asked for the window that closed
     // rather than the one being played, and for this win's mode rather than
-    // the reader's.
+    // the reader's. One row, because the winner is all it reads and the boards
+    // are now whole.
     void (async () => {
       try {
         const closed = spot.window === 'week' ? { week: spot.start } : { month: spot.start };
-        const boards = await fetchBoards(today, { ...closed, mode: spot.mode });
+        const boards = await fetchBoards(today, { ...closed, mode: spot.mode, limit: 1 });
         if (!live) return;
         const board = spot.window === 'week' ? boards.weekly : boards.monthly;
         // A window nobody scored in has no winner to name.

@@ -2,7 +2,7 @@
 // boards, and takes the score submissions that fill them.
 //
 // GET /api/leaderboard?since=YYYY-MM-DD&month=YYYY-MM-01&day=YYYY-MM-DD
-//                      &limit=1000&player=UUID&mode=standard|freeform
+//                      &limit=999&player=UUID&mode=standard|freeform
 //   -> { weekStart, daily: [...], dailySelf, weekly: [...], weeklySelf,
 //        allTime: [...], allTimeSelf }
 //   `mode` picks which of the two boards to read. There is one per game mode
@@ -216,9 +216,15 @@ const MAX_BODY_BYTES = 64 * 1024;
  * page itself now asks for the whole board, up to the ceiling. The ceiling is
  * there to bound the response, not to shorten the board -- past it the asking
  * player's own row below the cut still says where they stand.
+ *
+ * It has to equal the clamp inside `leaderboard_board` (the 20261014030000
+ * migration): if the SQL stopped sooner, a player ranked between the two would
+ * come back as a board row rather than as their own row below the cut. And it
+ * is 999 rather than 1000 because PostgREST cuts a set of rows at max_rows
+ * (1000), and the daily board is one -- 999 rows plus the asker's own fit.
  */
 const DEFAULT_LIMIT = 15;
-const MAX_LIMIT = 1000;
+export const MAX_LIMIT = 999;
 /**
  * How many finds the feed will return. A backstop, not a page: the rows are
  * distinct words on a single drop, so reaching 500 takes the day's players

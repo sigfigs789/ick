@@ -334,8 +334,16 @@ describe("reading the boards", () => {
     const url = requestedUrl(fetchMock);
     // The whole board and the player asking: everybody on it, and the asker's
     // own row should they ever fall past the ceiling.
-    expect(url).toContain("limit=1000");
+    expect(url).toContain("limit=999");
     expect(url).toContain(`player=${playerId}`);
+  });
+
+  it("asks for fewer rows when the caller only wants the top", async () => {
+    joinBoard();
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27", { limit: 1 });
+    expect(requestedUrl(fetchMock)).toContain("limit=1&");
   });
 
   it("sends both windows, each measured on the player's own calendar", async () => {

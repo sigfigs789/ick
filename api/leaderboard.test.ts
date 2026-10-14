@@ -1,5 +1,6 @@
+/// <reference types="vite/client" />
 import { afterEach, describe, expect, it, vi } from "vitest";
-import handler, { MIN_RANKED_VERSION } from "./leaderboard";
+import handler, { MAX_LIMIT, MIN_RANKED_VERSION } from "./leaderboard";
 import { APP_VERSION } from "../src/version";
 
 const CONFIGURED = {
@@ -412,7 +413,7 @@ describe("api/leaderboard reads", () => {
     const fetchMock = stubFetch([OPEN]);
     await handler(get(`?since=${SUNDAY}&month=${MONTH}&limit=100000`));
 
-    expect(rpcCall(fetchMock)?.args.p_limit).toBe(1000);
+    expect(rpcCall(fetchMock)?.args.p_limit).toBe(999);
   });
 
   it("bounds the second board to the month the caller sent, at both ends", async () => {
@@ -541,6 +542,55 @@ describe("api/leaderboard reads", () => {
     // A board shorter than the cut has nobody underneath it: its last row is its
     // last row, not somebody hiding below.
     expect(body.allTimeSelf).toBeNull();
+  });
+
+  it("sends a player past a full board back as their own row, not a board row", async () => {
+    withEnv();
+    const row = (rank: number, id: string) => ({
+      rank,
+      player_id: id,
+      window_word: "zephyr",
+      window_zipf: 1.5,
+      total_score: 5,
+      puzzles: 1,
+    });
+    // The whole board, as the page asks for it, and the asking player under it.
+    const board = Array.from({ length: MAX_LIMIT }, (_, index) =>
+      row(index + 1, `aaaaaaaa-bbbb-4ccc-8ddd-${String(index).padStart(12, "0")}`)
+    );
+    stubFetch([
+      {
+        weekly: [...board, row(MAX_LIMIT + 438, PLAYER)],
+        allTime: [],
+        words: [],
+      },
+    ]);
+    const response = await handler(
+      get(`?since=${SUNDAY}&month=${MONTH}&limit=${MAX_LIMIT}&player=${PLAYER}`)
+    );
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(body.weekly).toHaveLength(MAX_LIMIT);
+    expect(body.weeklySelf).toMatchObject({ rank: MAX_LIMIT + 438, playerId: PLAYER });
+  });
+
+  it("caps rows where the database does, so nobody under the cut reads as on the board", async () => {
+    // The newest migration that defines `leaderboard_board` is the one live.
+    // If its clamp were lower than MAX_LIMIT, a player ranked between the two
+    // would come back inside the board with no gap above them.
+    const migrations = import.meta.glob<string>("../supabase/migrations/*.sql", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    });
+    const latest = Object.keys(migrations)
+      .sort()
+      .map((name) => migrations[name])
+      .filter((sql) => /function public\.leaderboard_board\(/.test(sql))
+      .at(-1);
+    const clamp = latest?.match(/coalesce\(p_limit, 15\), 1\), (\d+)\)/)?.[1];
+
+    expect(Number(clamp)).toBe(MAX_LIMIT);
   });
 
   it("shows the board anyway when the player id is not one", async () => {
