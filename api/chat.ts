@@ -35,7 +35,9 @@
 //
 // POST /api/chat   { playerId, date, react: { id, emoji, on } }
 //   -> 200 { reactions: [{ emoji, handles }] }, 400 malformed, 404 no such line,
-//      409 { reason: "full" }, 429 rate-limited, 503 no credentials
+//      409 { reason: "full" }, 429 rate-limited, 503 no credentials,
+//      503 { reason: "not-migrated" } when the reactions migration is not on
+//      the project
 //   Puts the player's `emoji` on line `id` of puzzle `date`'s room, or takes it
 //   back when `on` is false, and answers that line's reactions afterwards.
 //   Like a message, a reaction goes out under the handle, never the id.
@@ -71,7 +73,7 @@ import {
   type Reaction,
 } from "../src/game/chat";
 import { handleFor } from "../src/game/handle";
-import { rpc, supabaseConfigured } from "./_supabase";
+import { rpc, rpcMissing, supabaseConfigured } from "./_supabase";
 
 export const config = { runtime: "edge" };
 
@@ -112,6 +114,14 @@ interface ReactionRow {
   handles: string[] | null;
 }
 
+/**
+ * What the logs say when the reactions functions are not on the project: the
+ * 20261014040000 migration has not been pushed, which is a step somebody has to
+ * take rather than an outage to wait out (see api/folded-live.ts).
+ */
+const REACTIONS_NOT_MIGRATED =
+  "reactions are not on the project; apply supabase/migrations/20261014040000_chat_reactions.sql";
+
 function toReaction(row: ReactionRow): Reaction | null {
   if (typeof row.emoji !== "string" || !Array.isArray(row.handles) || row.handles.length === 0) {
     return null;
@@ -128,7 +138,8 @@ async function roomReactions(date: string) {
       return reaction && row.message_id != null ? [{ id: Number(row.message_id), ...reaction }] : [];
     });
   } catch (error: unknown) {
-    console.error("[chat] reactions failed:", error instanceof Error ? error.message : error);
+    if (rpcMissing(error)) console.error(`[chat] ${REACTIONS_NOT_MIGRATED}`);
+    else console.error("[chat] reactions failed:", error instanceof Error ? error.message : error);
     return undefined;
   }
 }
@@ -343,6 +354,10 @@ async function handleReact(playerId: string, rawDate: unknown, raw: unknown): Pr
     const reactions = (rows ?? []).flatMap((row) => toReaction(row) ?? []);
     return reply(200, { ok: true, reactions });
   } catch (error: unknown) {
+    if (rpcMissing(error)) {
+      console.error(`[chat] ${REACTIONS_NOT_MIGRATED}`);
+      return reply(503, { ok: false, reason: "not-migrated" });
+    }
     console.error("[chat] react failed:", error instanceof Error ? error.message : error);
     return reply(502, { ok: false, reason: "unavailable" });
   }
