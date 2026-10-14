@@ -326,16 +326,24 @@ describe("reading the boards", () => {
     });
   }
 
-  it("asks for fifteen rows, and says who is asking", async () => {
+  it("asks for the whole board, and says who is asking", async () => {
     const playerId = joinBoard();
     const fetchMock = stubFetch(boardsResponse({}));
 
     await fetchBoards("2026-08-27");
     const url = requestedUrl(fetchMock);
-    // Fifteen rows and the player asking: the two halves of a short board that
-    // still knows where everybody stands.
-    expect(url).toContain("limit=15");
+    // The whole board and the player asking: everybody on it, and the asker's
+    // own row should they ever fall past the ceiling.
+    expect(url).toContain("limit=999");
     expect(url).toContain(`player=${playerId}`);
+  });
+
+  it("asks for fewer rows when the caller only wants the top", async () => {
+    joinBoard();
+    const fetchMock = stubFetch(boardsResponse({}));
+
+    await fetchBoards("2026-08-27", { limit: 1 });
+    expect(requestedUrl(fetchMock)).toContain("limit=1&");
   });
 
   it("sends both windows, each measured on the player's own calendar", async () => {

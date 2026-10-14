@@ -380,7 +380,7 @@ describe("the leaderboard page", () => {
     stubFetch();
     render(<LeaderboardPage />);
 
-    // Five rows of the fifteen are on screen and the rest are scrolled to, so
+    // Five rows of the board are on screen and the rest are scrolled to, so
     // the list is a scrolling region -- and a region that only a thumb can
     // reach is one a keyboard cannot read.
     await waitFor(() =>

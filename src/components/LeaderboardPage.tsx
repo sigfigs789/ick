@@ -742,16 +742,16 @@ interface BoardProps {
 }
 
 /**
- * One board: the top fifteen, ranked by total score exactly as the database
+ * One board: everybody on it, ranked by total score exactly as the database
  * ordered it, and then you.
  *
- * The board is short because a leaderboard is read, not scrolled -- but a short
- * board that stops at fifteen tells everybody below it nothing at all, and "am I
- * anywhere" is the question a player brings to this page. So the server sends
- * their own row back when it falls outside the fifteen, and it goes last in the
- * same list, after a gap, where the sticky rule docks it to the bottom edge of
- * the board exactly as it docks the row of a player inside the fifteen. The rank
- * on it is the real one -- 61st of everybody, not 16th of what fits.
+ * The page asks for the whole board (see `BOARD_LIMIT`), and the list shows a
+ * few rows and scrolls to the rest. The server's ceiling bounds the response,
+ * though, and "am I anywhere" is the question a player brings to this page -- so
+ * the server sends their own row back when it falls past the cut, and it goes
+ * last in the same list, after a gap, where the sticky rule docks it to the
+ * bottom edge of the board exactly as it docks the row of a player inside it.
+ * The rank on it is the real one, not one past the last row that fits.
  */
 function Board({
   heading,
@@ -861,7 +861,7 @@ function Board({
             <span>Total score</span>
             <span>Best find</span>
           </p>
-          {/* Fifteen rows. How many of them are on screen at once is the
+          {/* The whole board. How many of its rows are on screen at once is the
               stylesheet's: three boards side by side on a laptop each cut to
               five with the rest one flick away, so no one of them runs the
               length of the page; one board on a phone running its full length,
@@ -883,7 +883,7 @@ function Board({
             ))}
             {self && (
               <>
-                {/* The gap between the top fifteen and the row below it, said in
+                {/* The gap between the board and the row below its cut, said in
                     the one way that needs no words. Decorative: the row itself
                     is marked "you" and carries its own rank, which is what a
                     screen reader needs from it. */}
@@ -891,7 +891,7 @@ function Board({
                   ⋯
                 </li>
                 {/* Last in the same scrolling list, not a second list under it.
-                    A player inside the fifteen already has their row docked to
+                    A player inside the cut already has their row docked to
                     the bottom of the board by the sticky rule, and a player
                     outside it had one sitting still underneath -- two different
                     answers to the same question, and the board looked shorter in

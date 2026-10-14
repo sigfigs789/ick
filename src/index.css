@@ -3522,8 +3522,8 @@ h2 {
 /*
  * Your own row, kept on screen however the board is scrolled.
  *
- * The board shows five rows of fifteen and scrolls to the rest, and the row
- * pinned underneath it is sent only to a player who ranks *below* the fifteen
+ * The board shows five rows and scrolls to the rest, and the row
+ * pinned underneath it is sent only to a player who ranks *below* the cut
  * -- so the guarantee ran backwards: 16th was always visible and 6th was not,
  * and a player who did well disappeared for doing it. "Where am I" is the
  * question this page is opened with, and it has to be answered at every rank.
@@ -3555,7 +3555,7 @@ h2 {
     0 0 0 1px var(--border-strong),
     var(--dock-shadow);
 }
-/* The break between the top fifteen and the player's own row after it. Three
+/* The break between the board and the player's own row after it. Three
    dots and nothing else: the gap is the message. It scrolls with the list, so
    it passes under the docked row and reappears above it at the very bottom --
    which is where the jump in rank actually needs explaining. */

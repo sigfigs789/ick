@@ -131,16 +131,18 @@ export interface Boards {
 }
 
 /**
- * How many rows each board shows.
+ * How many rows each board asks for.
  *
- * Fifteen rather than the fifty it started at: fifty is a list you scroll,
- * fifteen is a list you read, and a top fifteen is something a player can
- * picture being in. What makes the shorter board safe is that it no longer hides
- * anybody -- a player below the cut gets their own row underneath it, at their
- * real rank (see `weeklySelf`), so the board got shorter without answering fewer
- * questions.
+ * The whole board, not a top fifteen. Fifteen was a list you read rather than
+ * scrolled, but the box already shows five and scrolls to the rest, so the cut
+ * only hid people: a player sixteenth on the day had to rely on their own row
+ * under the gap to know they were there at all, and could see nobody around
+ * them. 999 is "everybody" with a ceiling on the response, and it is the
+ * server's own maximum (`MAX_LIMIT` in api/leaderboard.ts, which says why it is
+ * not a round thousand) -- a player past it still gets their own row below the
+ * cut, at their real rank.
  */
-export const BOARD_LIMIT = 15;
+export const BOARD_LIMIT = 999;
 /**
  * The first puzzle any find was ever recorded against.
  *
@@ -463,6 +465,12 @@ export interface BoardOptions extends FetchOptions {
    * landing on.
    */
   mode?: GameMode;
+  /**
+   * How many rows each board asks for. The whole board unless a caller says
+   * otherwise; one that only wants the winner's name asks for one row rather
+   * than downloading three boards of everybody to read the top of one.
+   */
+  limit?: number;
 }
 
 /**
@@ -548,7 +556,7 @@ export async function fetchBoards(
       `&month=${encodeURIComponent(month)}` +
       `&day=${encodeURIComponent(day)}` +
       `&mode=${encodeURIComponent(mode)}` +
-      `&limit=${BOARD_LIMIT}` +
+      `&limit=${options.limit ?? BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
       freshParam(options),
     { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
