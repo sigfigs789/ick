@@ -85,8 +85,9 @@ export interface ChatMessage {
   at: string;
   /**
    * Absent for a player's message. A notice the room posted itself: "top" when
-   * somebody banked the puzzle's new top score, "tier" for a 9.5+ word. Its body
-   * already names the player, so it is shown as one line of its own.
+   * somebody banked the best word anybody has on the puzzle, "tier" for a 9.5+
+   * word. Its body already names the player, so it is shown as one line of its
+   * own, colored by kind.
    */
   kind?: "top" | "tier";
 }

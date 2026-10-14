@@ -1,8 +1,9 @@
 /**
  * Tell the chat room about a word this player just banked.
  *
- * The room posts a notice when a word is the puzzle's new top score, or scores
- * 9.5 or more (see api/chat.ts and the 20261013000000 migration). Which words
+ * The room posts a notice when a word is the best anybody has banked on the
+ * puzzle so far, or scores 9.5 or more (see api/chat.ts and the 20261013000000
+ * and 20261014040000 migrations). Which words
  * those are is the server's call -- only it can see what everybody else has
  * banked -- so every word banked on the live puzzle is reported, priced the way
  * the game showed it to the player.

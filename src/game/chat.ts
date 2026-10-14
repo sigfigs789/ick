@@ -78,7 +78,10 @@ export function noticeVerb(handle: string, word: string): string {
   return NOTICE_VERBS[hash % NOTICE_VERBS.length];
 }
 
-/** The line posted when `word` beats everything banked on its puzzle so far. */
+/**
+ * The line posted when `word` beats everything anybody has banked on its puzzle
+ * so far, in either mode. See the 20261014040000 migration.
+ */
 export function topNoticeBody(handle: string, banked: BankedWord): string {
   const where = banked.mode === "freeform" ? " in Freeform" : "";
   const verb = noticeVerb(handle, banked.word);

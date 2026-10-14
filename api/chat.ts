@@ -32,9 +32,10 @@
 //      when it did not, 400 malformed, 503 no credentials
 //   The game reports every word it banks on the live puzzle (see
 //   src/game/chatNotices.ts), and the room posts a notice of its own when the
-//   word is the puzzle's new top score or scores 9.5 or more. The scoring lives
-//   in the browser, so the score arrives as the game displayed it; whether it is
-//   a record is decided by the database (see the 20261013000000 migration).
+//   word is the best anybody has banked on the puzzle so far, in either mode, or
+//   scores 9.5 or more. The scoring lives in the browser, so the score arrives as
+//   the game displayed it; whether it is the day's best is decided by the
+//   database (see the 20261013000000 and 20261014040000 migrations).
 //   Messages carry `kind`: absent for a player's message, "top" or "tier" for a
 //   notice.
 //

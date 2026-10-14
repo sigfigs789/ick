@@ -5128,6 +5128,12 @@ h2 {
   background: var(--caution-bg);
   color: var(--caution-fg);
 }
+.chat__message--tier {
+  /* A 9.5+ word that is not the day's best: Mythic's colors rather than the top
+     score's gold, so the two kinds of notice read as different things. */
+  background: var(--rarity-mythic-bg);
+  color: var(--rarity-mythic-fg);
+}
 .chat__message--notice .chat__body {
   font-size: 0.88rem;
   font-weight: 600;
