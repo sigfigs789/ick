@@ -80,6 +80,24 @@ describe("ChatBubble", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("closes when the player presses outside it, but not inside it", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json({ messages: [], latest: 0 })));
+    render(
+      <>
+        <button type="button">Elsewhere</button>
+        <ChatBubble />
+      </>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+
+    await userEvent.click(screen.getByRole("textbox", { name: "Message" }));
+    expect(screen.getByRole("dialog", { name: "Chat" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Elsewhere" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Elsewhere" })).toHaveFocus();
+  });
+
   it("steps back and forward through the puzzles' rooms", async () => {
     const before = addDays(DAY, -1);
     const fetchMock = vi.fn(async (url: string) =>
