@@ -43,10 +43,16 @@ export function normaliseMessage(raw: string): string {
 }
 
 /**
- * A word scoring this much or more is announced in the room even when it is not
- * the puzzle's record: Mythic and above, as the score is displayed.
+ * A word scoring this much or more is announced in the room: Mythic and above,
+ * as the score is displayed. Nothing under it is, the puzzle's record included.
  */
 export const NOTICE_MIN_SCORE = 9.5;
+
+/** The tiers a notice can be for; the room is colored by which. */
+export const NOTICE_TIERS: readonly string[] = ["Mythic", "Legend"];
+
+/** Stands in for the first finder's handle in an "earlier" line; the database fills it in. */
+export const FINDER_PLACEHOLDER = "{finder}";
 
 /** What a room notice says about one banked word. See the 20261013 migration. */
 export interface BankedWord {
@@ -78,19 +84,49 @@ export function noticeVerb(handle: string, word: string): string {
   return NOTICE_VERBS[hash % NOTICE_VERBS.length];
 }
 
-/** The line posted when `word` beats everything banked on its puzzle so far. */
-export function topNoticeBody(handle: string, banked: BankedWord): string {
-  const where = banked.mode === "freeform" ? " in Freeform" : "";
-  const verb = noticeVerb(handle, banked.word);
-  return `${handle} ${verb} top scoring word ${banked.word} (${banked.tier}, ${banked.score})${where}`;
+/** How every notice ends: which game the word was found in. */
+export function modeSuffix(mode: BankedWord["mode"]): string {
+  return ` in ${mode} mode`;
 }
 
-/** The line posted for a 9.5+ word, or null for one that scores less. */
-export function tierNoticeBody(handle: string, banked: BankedWord): string | null {
-  if (!(Number(banked.score) >= NOTICE_MIN_SCORE)) return null;
-  const where = banked.mode === "freeform" ? " in Freeform" : "";
+/** Whether a banked word earns a notice at all: Mythic or Legend, 9.5 or more. */
+export function earnsNotice(banked: Pick<BankedWord, "tier" | "score">): boolean {
+  return NOTICE_TIERS.includes(banked.tier) && Number(banked.score) >= NOTICE_MIN_SCORE;
+}
+
+/**
+ * The line the room posts when somebody is the first to bank a 9.5+ word on a
+ * puzzle, or null for a word that earns none.
+ */
+export function findNoticeBody(handle: string, banked: BankedWord): string | null {
+  if (!earnsNotice(banked)) return null;
   const verb = noticeVerb(handle, banked.word);
-  return `${handle} ${verb} ${banked.tier} word ${banked.word} (${banked.score})${where}`;
+  return `${handle} ${verb} ${banked.tier} word ${banked.word} (${banked.score})${modeSuffix(banked.mode)}`;
+}
+
+/**
+ * The ways of telling a player somebody got to their word first. `{finder}` is
+ * the first finder's handle, filled in by the database, which alone knows it.
+ */
+export const EARLIER_LINES: readonly ((word: string) => string)[] = [
+  (word) => `${FINDER_PLACEHOLDER} discovered ${word} earlier`,
+  (word) => `${FINDER_PLACEHOLDER} unearthed ${word} first`,
+  (word) => `${FINDER_PLACEHOLDER} beat you to ${word}`,
+  (word) => `${FINDER_PLACEHOLDER} spotted ${word} before you did`,
+  (word) => `Great minds: ${FINDER_PLACEHOLDER} found ${word} earlier`,
+  (word) => `So close! ${FINDER_PLACEHOLDER} dug up ${word} a little earlier`,
+];
+
+/**
+ * The line only the player who banked `word` sees when somebody else already
+ * announced it, with `{finder}` for the one who did; null for a word that
+ * earns no notice.
+ */
+export function earlierNoticeBody(handle: string, banked: BankedWord): string | null {
+  if (!earnsNotice(banked)) return null;
+  let hash = 0;
+  for (const ch of `${banked.word}:${handle}`) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return `${EARLIER_LINES[hash % EARLIER_LINES.length](banked.word)}${modeSuffix(banked.mode)}`;
 }
 
 /** Check a message that has already been through `normaliseMessage`. */

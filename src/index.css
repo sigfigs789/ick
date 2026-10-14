@@ -4994,7 +4994,7 @@ h2 {
   box-shadow: 0 0 0 2px var(--bg);
 }
 /* Blue for a player's message, green when all that is new is the room's own
-   score notices (a new top score, a 9.5+ word). */
+   score notices (a 9.5+ word). */
 .chat__dot--message {
   background: #2f78e0;
 }
@@ -5129,7 +5129,7 @@ h2 {
   font-size: 0.95rem;
   line-height: 1.35;
 }
-/* A line the room posts itself: a puzzle's new top score, or a 9.5+ word. */
+/* A line the room posts itself: a 9.5+ word, the first time it is banked. */
 .chat__message--notice {
   padding: 0.4rem 0.6rem;
   border-radius: 0.5rem;
@@ -5142,6 +5142,46 @@ h2 {
 }
 .chat__message--notice .chat__time {
   font-size: 0.72rem;
+}
+/* A 9.5+ word wears its tier's badge colors. The word and the mode it was found
+   in are marked the way the game marks its modes: bold for Standard, rainbow
+   letters for Freeform. */
+.chat__message--mythic {
+  background: var(--rarity-mythic-bg);
+  color: var(--rarity-mythic-fg);
+}
+.chat__message--legend {
+  background: var(--rarity-legend-bg);
+  color: var(--rarity-legend-fg);
+}
+.chat__message--mythic .chat__time,
+.chat__message--legend .chat__time,
+.chat__private {
+  color: inherit;
+  opacity: 0.75;
+}
+.chat__word strong,
+.chat__mode strong {
+  font-weight: 800;
+}
+/* Legend's fill is black in both themes, so its rainbow takes the dark theme's
+   lighter letters whatever the page is. */
+.chat__message--legend .rainbow-word__letter {
+  color: hsl(var(--rainbow-hue) 90% 68%);
+}
+@media (prefers-contrast: more) {
+  .chat__message--legend .rainbow-word__letter {
+    color: inherit;
+  }
+}
+/* The line only its player sees: set apart by an outline rather than a color. */
+.chat__message--earlier {
+  outline: 1px dashed currentColor;
+  outline-offset: -3px;
+}
+.chat__private {
+  font-size: 0.72rem;
+  font-style: italic;
 }
 .chat__notice {
   margin: 0;

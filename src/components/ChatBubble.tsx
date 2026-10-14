@@ -9,19 +9,21 @@ import {
   CHAT_MAX_LENGTH,
   chatProblem,
   isReactionEmoji,
+  modeSuffix,
   normaliseMessage,
   toggled,
   type ChatProblem,
   type Reaction,
 } from "../game/chat";
 import { playChatMessage, playChatNotice } from "../audio/sound";
-import { onBankedNotice } from "../game/chatNotices";
+import { CHAT_PRIVATE_EVENT, CHAT_PRIVATE_KEY, onBankedNotice, privateNotices } from "../game/chatNotices";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
 import { dropForDate, FIRST_PUZZLE } from "../game/drop";
 import { handleFor } from "../game/handle";
 import { pageCache } from "../game/pageCache";
 import { loadPlayerId } from "../game/player";
 import { onViewedPuzzle, viewedPuzzle } from "../game/viewedPuzzle";
+import { RainbowWord } from "./RainbowWord";
 import {
   ReactButton,
   ReactionChips,
@@ -101,17 +103,71 @@ export interface ChatMessage {
   body: string;
   at: string;
   /**
-   * Absent for a player's message. A notice the room posted itself: "top" when
-   * somebody banked the puzzle's new top score, "tier" for a 9.5+ word. Its body
-   * already names the player, so it is shown as one line of its own.
+   * Absent for a player's message. A notice the room posted itself: "find" the
+   * first time anybody banks a 9.5+ word on the puzzle, and "earlier" for the
+   * line only the player who banked it after them sees (kept in this browser;
+   * see game/chatNotices.ts). "top" and "tier" are notices from before they were
+   * once per word. Its body already names the player, so it is shown as one
+   * line of its own.
    */
-  kind?: "top" | "tier";
+  kind?: "top" | "tier" | "find" | "earlier";
+  /** What a "find" or "earlier" notice is about. */
+  word?: string;
+  mode?: "standard" | "freeform";
+  /** "Mythic" or "Legend", which the notice is colored by. */
+  tier?: string;
 }
 
 const NOTICE_ICONS: Record<NonNullable<ChatMessage["kind"]>, string> = {
   top: "🏆",
   tier: "✨",
+  find: "✨",
+  earlier: "🔎",
 };
+
+/**
+ * A notice's body with its word and its closing "in standard mode" painted the
+ * way the game marks its modes: bold for Standard, rainbow for Freeform. A body
+ * that is not shaped as expected is shown as it is.
+ */
+function NoticeBody({ message }: { message: ChatMessage }) {
+  const { body, word, mode } = message;
+  const suffix = mode ? modeSuffix(mode) : "";
+  if (!word || !/^[a-z]+$/.test(word) || !mode || !body.endsWith(suffix)) return <>{body}</>;
+  const head = body.slice(0, -suffix.length);
+  // The last time the word stands alone: it follows the handle, which may
+  // contain it.
+  const matches = [...head.matchAll(new RegExp(`\\b${word}\\b`, "g"))];
+  const at = matches.length > 0 ? matches[matches.length - 1].index : undefined;
+  const paint = (text: string) =>
+    mode === "freeform" ? (
+      <>
+        <span className="sr-only">{text}</span>
+        <span aria-hidden="true">
+          <RainbowWord word={text} />
+        </span>
+      </>
+    ) : (
+      <strong>{text}</strong>
+    );
+  const modeName = mode === "freeform" ? "freeform" : "standard";
+  return (
+    <>
+      {at === undefined ? (
+        head
+      ) : (
+        <>
+          {head.slice(0, at)}
+          <span className="chat__word">{paint(word)}</span>
+          {head.slice(at + word.length)}
+        </>
+      )}
+      {" in "}
+      <span className="chat__mode">{paint(modeName)}</span>
+      {" mode"}
+    </>
+  );
+}
 
 const PROBLEM_TEXT: Record<ChatProblem | "rate-limited" | "unavailable", string> = {
   empty: "",
@@ -197,6 +253,11 @@ function timeOf(at: string): string {
  */
 const roomCache = pageCache<{ messages: ChatMessage[]; lastId: number; reactions: Reactions }>();
 
+/** The newest id among `messages`, 0 for none. */
+function newestId(messages: readonly ChatMessage[]): number {
+  return messages.reduce((id, m) => Math.max(id, m.id), 0);
+}
+
 /** Merge a page of messages into what is shown, in id order, without repeats. */
 function merge(shown: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
   if (incoming.length === 0) return shown;
@@ -236,6 +297,8 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const [notice, setNotice] = useState("");
   const [sending, setSending] = useState(false);
   const [unread, setUnread] = useState<Unread>(null);
+  /** The lines only this player was shown, in the shown room; see game/chatNotices.ts. */
+  const [privates, setPrivates] = useState<ChatMessage[]>(() => privateNotices(date));
   const [reactions, setReactions] = useState<Reactions>({});
   /** The line whose reaction tray is open. */
   const [reacting, setReacting] = useState<number | null>(null);
@@ -270,6 +333,24 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const canGoForward = date < today;
 
   useEffect(() => onViewedPuzzle(setGameDate), []);
+
+  // The shown room's private lines, re-read when one is kept here or in another tab.
+  useEffect(() => {
+    setPrivates(privateNotices(date));
+    const reload = () => setPrivates(privateNotices(date));
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === CHAT_PRIVATE_KEY) reload();
+    };
+    window.addEventListener(CHAT_PRIVATE_EVENT, reload);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(CHAT_PRIVATE_EVENT, reload);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [date]);
+
+  /** The room as shown: its messages with this player's private lines among them. */
+  const shown = merge(messages, privates);
 
   // Opening the chat goes to the puzzle the game is on.
   useEffect(() => {
@@ -384,16 +465,19 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     };
   }, [open, poll]);
 
-  // Having a room open reads it: everything shown counts as seen.
+  // Having a room open reads it: everything shown counts as seen. A private line
+  // counts too, but never moves `lastId` -- that is the room's cursor, and a
+  // private line's id can run ahead of messages the room has not handed out yet.
   useEffect(() => {
     if (!open || shownDate.current !== date) return;
     if (date === gameDate) setUnread(null);
     const newest = messages.length > 0 ? messages[messages.length - 1].id : 0;
-    if (newest > 0) {
-      seenHere.current[date] = Math.max(seenHere.current[date] ?? 0, newest);
-      saveSeen(date, newest);
+    const read = Math.max(newest, newestId(privates));
+    if (read > 0) {
+      seenHere.current[date] = Math.max(seenHere.current[date] ?? 0, read);
+      saveSeen(date, read);
     }
-  }, [open, messages, date, gameDate]);
+  }, [open, messages, privates, date, gameDate]);
 
   // While closed, check now and then for a post in the game's puzzle's room that
   // this browser has not seen. A failed check changes nothing: the dot is a
@@ -414,7 +498,14 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
      */
     let ownNotice = 0;
     const seenNow = () => Math.max(loadSeen()[room] ?? 0, seenHere.current[room] ?? 0);
-    const judge = () => setUnread(unreadKind(latestKnown.current, seenNow()));
+    // A private line kept since the room was last read lights the dot as a notice.
+    const judge = () => {
+      const seen = seenNow();
+      setUnread(
+        unreadKind(latestKnown.current, seen) ??
+          (newestId(privateNotices(room)) > seen ? "notice" : null),
+      );
+    };
     let cancelled = false;
     const check = async () => {
       try {
@@ -452,7 +543,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     const onVisibility = () => (document.visibilityState === "visible" ? start() : stop());
     // Another tab opening the room clears the dot here too.
     const onStorage = (event: StorageEvent) => {
-      if (event.key === CHAT_SEEN_KEY && latestKnown.current.latest > 0) judge();
+      if (event.key === CHAT_SEEN_KEY || event.key === CHAT_PRIVATE_KEY) judge();
     };
     // A word this player just banked earned a notice: dot it now rather than on
     // the next check. Counted as heard, so no chime -- the player is the one who
@@ -469,15 +560,21 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
       if (heard !== null) heard = Math.max(heard, ownNotice);
       judge();
     });
+    const onPrivate = (event: Event) => {
+      if ((event as CustomEvent<string>).detail === room) judge();
+    };
+    judge();
     if (document.visibilityState !== "hidden") start();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("storage", onStorage);
+    window.addEventListener(CHAT_PRIVATE_EVENT, onPrivate);
     return () => {
       cancelled = true;
       offNotice();
       stop();
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener(CHAT_PRIVATE_EVENT, onPrivate);
     };
   }, [open, gameDate]);
 
@@ -543,7 +640,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   useEffect(() => {
     const list = listRef.current;
     if (list) list.scrollTop = list.scrollHeight;
-  }, [messages, open]);
+  }, [messages, privates, open]);
 
   // Focus the panel, not the input: focusing the input would raise the
   // on-screen keyboard and cover the chat before the player chooses to type.
@@ -706,12 +803,12 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
           <ol className="chat__list" ref={listRef} aria-live="polite">
             {!loaded ? (
               <li className="chat__empty">Loading…</li>
-            ) : messages.length === 0 ? (
+            ) : shown.length === 0 ? (
               <li className="chat__empty">
                 {loadFailed ? "Couldn't load the chat." : "No messages yet. Say hello!"}
               </li>
             ) : (
-              messages.map((message) => (
+              shown.map((message) => (
                 <ChatLine
                   key={message.id}
                   message={message}
@@ -808,9 +905,14 @@ function ChatLine({
   onMore: () => void;
 }) {
   const hold = useHold(onTray);
-  const canReact = ownHandle !== null;
+  // A private line is nobody else's to see, so it takes no reactions.
+  const canReact = ownHandle !== null && message.kind !== "earlier";
   const className = message.kind
-    ? `chat__message chat__message--notice chat__message--${message.kind}`
+    ? `chat__message chat__message--notice chat__message--${message.kind}${
+        message.tier === "Mythic" || message.tier === "Legend"
+          ? ` chat__message--${message.tier.toLowerCase()}`
+          : ""
+      }`
     : `chat__message${own ? " chat__message--own" : ""}`;
   return (
     <li className={`${className}${trayOpen ? " chat__message--reacting" : ""}`} {...(canReact ? hold : {})}>
@@ -820,11 +922,14 @@ function ChatLine({
             <span className="chat__notice-icon" aria-hidden="true">
               {NOTICE_ICONS[message.kind]}
             </span>{" "}
-            {message.body}
+            <NoticeBody message={message} />
           </span>
-          <time className="chat__time" dateTime={message.at}>
-            {timeOf(message.at)}
-          </time>
+          <span className="chat__meta">
+            <time className="chat__time" dateTime={message.at}>
+              {timeOf(message.at)}
+            </time>
+            {message.kind === "earlier" && <span className="chat__private">Only you can see this</span>}
+          </span>
         </>
       ) : (
         <>

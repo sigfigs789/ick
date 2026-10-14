@@ -43,13 +43,16 @@
 // POST /api/chat   { playerId, banked: { date, mode, word, tier, score } }
 //   -> 201 { message } when the word earned a notice, 202 { message: null }
 //      when it did not, 400 malformed, 503 no credentials
-//   The game reports every word it banks on the live puzzle (see
-//   src/game/chatNotices.ts), and the room posts a notice of its own when the
-//   word is the puzzle's new top score or scores 9.5 or more. The scoring lives
-//   in the browser, so the score arrives as the game displayed it; whether it is
-//   a record is decided by the database (see the 20261013000000 migration).
-//   Messages carry `kind`: absent for a player's message, "top" or "tier" for a
-//   notice.
+//   The game reports the Mythic and Legend words it banks on the live puzzle
+//   (see src/game/chatNotices.ts), and the room posts a notice of its own the
+//   first time anybody banks one on that puzzle in that mode. The scoring lives
+//   in the browser, so the score arrives as the game displayed it. A player who
+//   banks a word somebody already announced gets back a notice of kind
+//   "earlier" naming them, which the room shows nobody else (see the
+//   20261014050000 migration).
+//   Messages carry `kind`: absent for a player's message, "find" or "earlier"
+//   for a notice -- with the notice's `word`, `mode` and `tier` -- and "top" or
+//   "tier" for one posted before notices were once per word.
 //
 // Polling rather than Supabase Realtime, deliberately: Realtime needs a Supabase
 // key in the browser and a row-level policy to go with it, and this app keeps
@@ -63,10 +66,10 @@
 
 import {
   chatProblem,
+  earlierNoticeBody,
+  findNoticeBody,
   isReactionEmoji,
   normaliseMessage,
-  tierNoticeBody,
-  topNoticeBody,
   type BankedWord,
   type Reaction,
 } from "../src/game/chat";
@@ -98,8 +101,12 @@ interface MessageRow {
   handle: string;
   body: string;
   created_at: string;
-  /** "message" for a player's message, "top" or "tier" for a notice. */
+  /** "message" for a player's message, "find", "earlier", "top" or "tier" for a notice. */
   kind?: string | null;
+  /** What a "find" or "earlier" notice is about; null otherwise. */
+  word?: string | null;
+  mode?: string | null;
+  tier?: string | null;
 }
 
 interface PostRow extends Partial<MessageRow> {
@@ -145,7 +152,11 @@ function reply(status: number, body?: unknown, cache = "no-store"): Response {
 
 function toMessage(row: MessageRow) {
   const message = { id: Number(row.id), handle: row.handle, body: row.body, at: row.created_at };
-  return row.kind === "top" || row.kind === "tier" ? { ...message, kind: row.kind } : message;
+  if (row.kind === "top" || row.kind === "tier") return { ...message, kind: row.kind };
+  if (row.kind === "find" || row.kind === "earlier") {
+    return { ...message, kind: row.kind, word: row.word, mode: row.mode, tier: row.tier };
+  }
+  return message;
 }
 
 export default async function handler(request: Request): Promise<Response> {
@@ -377,26 +388,31 @@ async function handleBanked(playerId: string, raw: unknown): Promise<Response> {
   const banked = readBanked(raw);
   if (typeof banked === "string") return reply(400, { ok: false, reason: banked });
   const handle = handleFor(playerId);
-  const top = topNoticeBody(handle, banked);
-  // A word the room would refuse from a player is not announced by the room
-  // either -- the puzzle has its own blocklist, but this is the room's rule.
-  if (chatProblem(normaliseMessage(top))) return reply(202, { ok: true, message: null });
+  const find = findNoticeBody(handle, banked);
+  const earlier = earlierNoticeBody(handle, banked);
+  // Under 9.5 is nothing to announce. And a word the room would refuse from a
+  // player is not announced by the room either -- the puzzle has its own
+  // blocklist, but this is the room's rule.
+  if (!find || !earlier || chatProblem(normaliseMessage(find))) {
+    return reply(202, { ok: true, message: null });
+  }
 
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
-    const rows = await rpc<PostRow[] | null>("chat_bank", {
+    const rows = await rpc<PostRow[] | null>("chat_find", {
       p_player: playerId,
       p_handle: handle,
       p_date: banked.date,
       p_mode: banked.mode,
       p_word: banked.word,
+      p_tier: banked.tier,
       p_score: Number(banked.score),
-      p_top_body: top,
-      p_tier_body: tierNoticeBody(handle, banked),
+      p_find_body: find,
+      p_earlier_body: earlier,
     });
     const row = rows?.[0];
-    if ((row?.status === "top" || row?.status === "tier") && row.id != null) {
+    if ((row?.status === "find" || row?.status === "earlier") && row.id != null) {
       return reply(201, { ok: true, message: toMessage(row as MessageRow) });
     }
     return reply(202, { ok: true, message: null });
