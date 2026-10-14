@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   CHAT_MAX_LENGTH,
   chatProblem,
+  isReactionEmoji,
   normaliseMessage,
   noticeVerb,
   NOTICE_VERBS,
+  reactorsLabel,
   tierNoticeBody,
+  toggled,
   topNoticeBody,
 } from "./chat";
 
@@ -75,5 +78,34 @@ describe("chat notices", () => {
   it("has no tier line for a word under 9.5", () => {
     expect(tierNoticeBody("StormyFox47", { ...word, tier: "Elusive", score: "9.4" })).toBeNull();
     expect(tierNoticeBody("StormyFox47", { ...word, score: "9.5" })).not.toBeNull();
+  });
+});
+
+describe("chat reactions", () => {
+  it("takes one emoji of any shape", () => {
+    for (const emoji of ["👍", "❤️", "👍🏽", "🇺🇸", "1️⃣", "👨‍👩‍👧‍👦", "🏳️‍🌈", "🏴󠁧󠁢󠁳󠁣󠁴󠁿"]) {
+      expect(isReactionEmoji(emoji)).toBe(true);
+    }
+  });
+
+  it("refuses text, two emoji, and anything that is not a string", () => {
+    for (const raw of ["", "a", "1", "lol", "👍👍", "hi👍", "👍 ", "\u200d", 5, null]) {
+      expect(isReactionEmoji(raw)).toBe(false);
+    }
+  });
+
+  it("adds and takes back the player's own reaction", () => {
+    const start = [{ emoji: "🔥", handles: ["A1"] }];
+    expect(toggled(start, "🔥", "Me", true)).toEqual([{ emoji: "🔥", handles: ["A1", "Me"] }]);
+    expect(toggled(start, "👍", "Me", true)).toEqual([...start, { emoji: "👍", handles: ["Me"] }]);
+    expect(toggled([{ emoji: "🔥", handles: ["Me"] }], "🔥", "Me", false)).toEqual([]);
+    expect(toggled(start, "🔥", "Me", false)).toEqual(start);
+  });
+
+  it("names who reacted, the player as you", () => {
+    expect(reactorsLabel(["A1"], "Me")).toBe("A1");
+    expect(reactorsLabel(["A1", "Me"], "Me")).toBe("A1 and you");
+    expect(reactorsLabel(["A1", "B2", "C3"], null)).toBe("A1, B2 and C3");
+    expect(reactorsLabel(["A1", "B2", "C3", "D4"], null)).toBe("A1, B2 and 2 others");
   });
 });

@@ -28,6 +28,24 @@ function rpcCall(fetchMock: ReturnType<typeof stubFetch>) {
   return { url, args: JSON.parse(String(init.body)) as Record<string, unknown> };
 }
 
+/** Answer each RPC by name; one with no answer here fails. */
+function stubRoutes(routes: Record<string, unknown>) {
+  const fetchMock = vi.fn(async (url: string) => {
+    const name = url.split("/rpc/")[1];
+    return name in routes
+      ? new Response(JSON.stringify(routes[name]), { status: 200 })
+      : new Response("boom", { status: 500 });
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+function rpcArgs(fetchMock: ReturnType<typeof vi.fn>, name: string) {
+  const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith(`/rpc/${name}`));
+  if (!call) throw new Error(`${name} was not called`);
+  return JSON.parse(String((call[1] as RequestInit).body)) as Record<string, unknown>;
+}
+
 function post(body: unknown, origin?: string): Request {
   return new Request("https://wordink.app/api/chat", {
     method: "POST",
@@ -41,11 +59,15 @@ afterEach(() => {
 });
 
 describe("api/chat GET", () => {
-  it("reads one puzzle's room after the given id, without player ids", async () => {
+  it("reads one puzzle's room after the given id, and its reactions, without player ids", async () => {
     withEnv();
-    const fetchMock = stubFetch([
-      { id: "7", handle: "StormyFox47", body: "hi", created_at: "2026-09-29T10:00:00Z" },
-    ]);
+    const fetchMock = stubRoutes({
+      chat_recent: [{ id: "7", handle: "StormyFox47", body: "hi", created_at: "2026-09-29T10:00:00Z" }],
+      chat_room_reactions: [
+        { message_id: "3", emoji: "🔥", handles: ["CalmOtter3", "StormyFox47"] },
+        { message_id: 7, emoji: "👍", handles: ["CalmOtter3"] },
+      ],
+    });
     const response = await handler(
       new Request("https://wordink.app/api/chat?date=2026-09-29&after=6"),
     );
@@ -53,10 +75,28 @@ describe("api/chat GET", () => {
     expect(response.headers.get("cache-control")).toContain("s-maxage=2");
     expect(await response.json()).toEqual({
       messages: [{ id: 7, handle: "StormyFox47", body: "hi", at: "2026-09-29T10:00:00Z" }],
+      reactions: [
+        { id: 3, emoji: "🔥", handles: ["CalmOtter3", "StormyFox47"] },
+        { id: 7, emoji: "👍", handles: ["CalmOtter3"] },
+      ],
     });
-    const call = rpcCall(fetchMock);
-    expect(call.url).toContain("/rpc/chat_recent");
-    expect(call.args).toEqual({ p_date: "2026-09-29", p_after: 6, p_limit: 50 });
+    expect(rpcArgs(fetchMock, "chat_recent")).toEqual({ p_date: "2026-09-29", p_after: 6, p_limit: 50 });
+    expect(rpcArgs(fetchMock, "chat_room_reactions")).toEqual({ p_date: "2026-09-29" });
+  });
+
+  it("still answers the room when its reactions cannot be read", async () => {
+    withEnv();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    stubRoutes({
+      chat_recent: [{ id: "7", handle: "StormyFox47", body: "hi", created_at: "2026-09-29T10:00:00Z" }],
+    });
+    const response = await handler(
+      new Request("https://wordink.app/api/chat?date=2026-09-29&after=6"),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      messages: [{ id: 7, handle: "StormyFox47", body: "hi", at: "2026-09-29T10:00:00Z" }],
+    });
   });
 
   it("answers just the newest id for ?latest", async () => {
@@ -272,6 +312,74 @@ describe("api/chat POST banked", () => {
     expect((await handler(banked({ score: 9.6 }))).status).toBe(400);
     expect((await handler(banked({ word: "Abaci" }))).status).toBe(400);
     expect((await handler(banked({ mode: "hard" }))).status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("api/chat POST react", () => {
+  const react = (overrides: Record<string, unknown> = {}, date: unknown = "2026-09-29") =>
+    post({ playerId: PLAYER, date, react: { id: 7, emoji: "🔥", on: true, ...overrides } });
+
+  it("puts the reaction under the handle and answers the line's reactions", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      { status: "ok", emoji: "🔥", handles: ["CalmOtter3", handleFor(PLAYER)] },
+      { status: "ok", emoji: "👍🏽", handles: [handleFor(PLAYER)] },
+    ]);
+    const response = await handler(react());
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data).toEqual({
+      ok: true,
+      reactions: [
+        { emoji: "🔥", handles: ["CalmOtter3", handleFor(PLAYER)] },
+        { emoji: "👍🏽", handles: [handleFor(PLAYER)] },
+      ],
+    });
+    expect(JSON.stringify(data)).not.toContain(PLAYER);
+    const call = rpcCall(fetchMock);
+    expect(call.url).toContain("/rpc/chat_react");
+    expect(call.args).toEqual({
+      p_player: PLAYER,
+      p_handle: handleFor(PLAYER),
+      p_date: "2026-09-29",
+      p_message: 7,
+      p_emoji: "🔥",
+      p_on: true,
+    });
+  });
+
+  it("answers an empty list when the last reaction is taken back", async () => {
+    withEnv();
+    stubFetch([{ status: "ok", emoji: null, handles: null }]);
+    const response = await handler(react({ on: false }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true, reactions: [] });
+  });
+
+  it("passes the database's refusals through", async () => {
+    withEnv();
+    stubFetch([{ status: "missing", emoji: null, handles: null }]);
+    expect((await handler(react())).status).toBe(404);
+    stubFetch([{ status: "full", emoji: null, handles: null }]);
+    const full = await handler(react());
+    expect(full.status).toBe(409);
+    expect(await full.json()).toEqual({ ok: false, reason: "full" });
+    stubFetch([{ status: "rate-limited", emoji: null, handles: null }]);
+    expect((await handler(react())).status).toBe(429);
+  });
+
+  it("refuses text, a bad line and a bad room before touching the database", async () => {
+    withEnv();
+    const fetchMock = stubFetch();
+    expect((await handler(react({ emoji: "lol" }))).status).toBe(400);
+    expect((await handler(react({ emoji: "👍👍" }))).status).toBe(400);
+    expect((await handler(react({ emoji: "" }))).status).toBe(400);
+    expect((await handler(react({ id: "7" }))).status).toBe(400);
+    expect((await handler(react({ id: 0 }))).status).toBe(400);
+    expect((await handler(react({ on: "yes" }))).status).toBe(400);
+    expect((await handler(react({}, "2026-06-30"))).status).toBe(400);
+    expect((await handler(post({ playerId: PLAYER, react: "🔥" }))).status).toBe(400);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

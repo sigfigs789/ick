@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as analytics from "../analytics";
@@ -9,6 +9,7 @@ import { handleFor } from "../game/handle";
 import { PLAYER_KEY } from "../game/player";
 import { setViewedPuzzle } from "../game/viewedPuzzle";
 import { CHAT_SEEN_KEY, ChatBubble } from "./ChatBubble";
+import { HOLD_MS } from "../hooks/useHold";
 
 const PLAYER = "0b3c6c1e-1d0a-4c55-9b5e-2f3a4b5c6d7e";
 /** The puzzle the game is on in these tests: an archive day, so both arrows work. */
@@ -330,5 +331,108 @@ describe("ChatBubble", () => {
     expect(report.visibleMs).toBeGreaterThanOrEqual(5000);
     expect(report.segmentMs).toBe(report.visibleMs);
     vi.useRealTimers();
+  });
+});
+
+describe("ChatBubble reactions", () => {
+  const MESSAGE = { id: 5, handle: "CalmOtter3", body: "found quixotic", at: "2026-10-12T10:00:00Z" };
+
+  /** A room of one message, answering reaction posts with `reacted`. */
+  function room(reactions: unknown[], reacted: unknown = { ok: true, reactions: [] }, status = 200) {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === "POST") return json(reacted, status);
+      return url.includes("latest") ? json({ latest: 5 }) : json({ messages: [MESSAGE], reactions });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  function posted(fetchMock: ReturnType<typeof room>) {
+    const call = fetchMock.mock.calls.find(([, init]) => init?.method === "POST");
+    return call ? JSON.parse(String(call[1]?.body)) : undefined;
+  }
+
+  async function openRoom() {
+    render(<ChatBubble />);
+    await userEvent.click(await screen.findByRole("button", { name: /Open chat/ }));
+    await screen.findByText("found quixotic");
+  }
+
+  it("shows each line's reactions, the player's own pressed, and takes one back", async () => {
+    const own = handleFor(PLAYER);
+    const fetchMock = room(
+      [
+        { id: 5, emoji: "🔥", handles: ["A1", own] },
+        { id: 5, emoji: "👍", handles: ["B2"] },
+      ],
+      {
+        ok: true,
+        reactions: [
+          { emoji: "🔥", handles: ["A1"] },
+          { emoji: "👍", handles: ["B2"] },
+        ],
+      },
+    );
+    await openRoom();
+
+    const fire = screen.getByRole("button", { name: "🔥 2, from A1 and you" });
+    expect(fire).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "👍 1, from B2" })).toHaveAttribute("aria-pressed", "false");
+
+    await userEvent.click(fire);
+    expect(await screen.findByRole("button", { name: "🔥 1, from A1" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(posted(fetchMock)).toEqual({ playerId: PLAYER, date: DAY, react: { id: 5, emoji: "🔥", on: false } });
+  });
+
+  it("reacts from the add-reaction button's tray", async () => {
+    const own = handleFor(PLAYER);
+    const fetchMock = room([], { ok: true, reactions: [{ emoji: "🎉", handles: [own] }] });
+    await openRoom();
+
+    await userEvent.click(screen.getByRole("button", { name: "Add reaction" }));
+    await userEvent.click(screen.getByRole("button", { name: "React 🎉" }));
+    expect(await screen.findByRole("button", { name: "🎉 1, from you" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("group", { name: "React" })).not.toBeInTheDocument();
+    expect(posted(fetchMock)).toEqual({ playerId: PLAYER, date: DAY, react: { id: 5, emoji: "🎉", on: true } });
+  });
+
+  it("opens the tray when a line is held down, and Escape closes only the tray", async () => {
+    room([]);
+    await openRoom();
+    const line = screen.getByText("found quixotic");
+
+    fireEvent.pointerDown(line, { button: 0, clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(line);
+    expect(screen.queryByRole("group", { name: "React" })).not.toBeInTheDocument();
+
+    fireEvent.pointerDown(line, { button: 0, clientX: 10, clientY: 10 });
+    await act(() => new Promise((resolve) => setTimeout(resolve, HOLD_MS + 50)));
+    expect(screen.getByRole("group", { name: "React" })).toBeInTheDocument();
+
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("group", { name: "React" })).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Chat" })).toBeInTheDocument();
+  });
+
+  it("puts a refused reaction back and says why", async () => {
+    room([], { ok: false, reason: "full" }, 409);
+    await openRoom();
+    await userEvent.click(screen.getByRole("button", { name: "Add reaction" }));
+    await userEvent.click(screen.getByRole("button", { name: "React 🔥" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("can't take any more reactions");
+    expect(screen.queryByRole("button", { name: /^🔥/ })).not.toBeInTheDocument();
+  });
+
+  it("opens the full picker from the tray's +", async () => {
+    room([]);
+    await openRoom();
+    await userEvent.click(screen.getByRole("button", { name: "Add reaction" }));
+    await userEvent.click(screen.getByRole("button", { name: "More reactions" }));
+    expect(screen.getByRole("dialog", { name: "Pick a reaction" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Close reactions" }));
+    expect(screen.queryByRole("dialog", { name: "Pick a reaction" })).not.toBeInTheDocument();
   });
 });
