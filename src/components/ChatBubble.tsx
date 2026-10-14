@@ -253,6 +253,8 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  /** The panel and its button together, so a press outside both closes the panel. */
+  const rootRef = useRef<HTMLDivElement>(null);
   /** The current opening of the panel, which every chat event is tagged with. */
   const viewId = useRef("");
   /** Messages this view has put in the room, for its time reports. */
@@ -551,6 +553,21 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     if (open) panelRef.current?.focus();
   }, [open]);
 
+  // A press anywhere outside the chat closes it. The bubble's own wrapper lets
+  // presses through its gaps, so those count as outside too. Focus stays with
+  // whatever the player pressed rather than jumping back to the bubble.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (rootRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+      setReacting(null);
+      setPicking(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [open]);
+
   function close() {
     setOpen(false);
     setReacting(null);
@@ -663,7 +680,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   }
 
   return (
-    <div className={`chat${lifted ? " chat--lifted" : ""}`}>
+    <div ref={rootRef} className={`chat${lifted ? " chat--lifted" : ""}`}>
       {open && (
         <section
           ref={panelRef}
