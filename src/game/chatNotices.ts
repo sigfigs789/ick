@@ -14,6 +14,12 @@
  *
  * Fire-and-forget like the leaderboard's write (see game/leaderboard.ts, post):
  * a report that never lands costs a notice, never a word.
+ *
+ * When the word does earn a notice, the endpoint answers with it, and it is
+ * handed on to the chat (see `onBankedNotice`) so the bubble shows it at once
+ * rather than on its next check. No delay is needed first: the endpoint answers
+ * only after `chat_find` has committed the row, and asking the room again would
+ * meet the CDN's cached copy of it (see api/chat.ts) more often than not.
  */
 import { earnsNotice } from "./chat";
 import { formatRarityScore } from "./dictionary";
@@ -21,16 +27,24 @@ import { modeForDate, type GameMode } from "./mode";
 import { loadPlayerId } from "./player";
 import type { AcceptedWord } from "./types";
 
-/** A notice as the room hands it out; see ChatBubble's ChatMessage. */
-export interface PrivateNotice {
+interface NoticeFields {
   id: number;
   handle: string;
   body: string;
   at: string;
-  kind: "earlier";
   word: string;
   mode: GameMode;
   tier: string;
+}
+
+/** The room's notice for a word this player banked first; see ChatBubble's ChatMessage. */
+export interface BankedNotice extends NoticeFields {
+  kind: "find";
+}
+
+/** A line only this player is shown: somebody banked their word first. */
+export interface PrivateNotice extends NoticeFields {
+  kind: "earlier";
 }
 
 /** This browser's "earlier" lines, by puzzle: `{ "2026-10-14": [notice, ...] }`. */
@@ -42,11 +56,11 @@ export const CHAT_PRIVATE_EVENT = "ick:chat-private-notice";
 /** How many puzzles' lines are kept; the oldest go first. */
 const PRIVATE_KEPT = 30;
 
-function isPrivateNotice(value: unknown): value is PrivateNotice {
+function isNotice(value: unknown): value is BankedNotice | PrivateNotice {
   if (!value || typeof value !== "object") return false;
   const n = value as Record<string, unknown>;
   return (
-    n.kind === "earlier" &&
+    (n.kind === "find" || n.kind === "earlier") &&
     typeof n.id === "number" &&
     typeof n.handle === "string" &&
     typeof n.body === "string" &&
@@ -55,6 +69,10 @@ function isPrivateNotice(value: unknown): value is PrivateNotice {
     (n.mode === "standard" || n.mode === "freeform") &&
     typeof n.tier === "string"
   );
+}
+
+function isPrivateNotice(value: unknown): value is PrivateNotice {
+  return isNotice(value) && value.kind === "earlier";
 }
 
 function loadAll(): Record<string, PrivateNotice[]> {
@@ -93,6 +111,14 @@ export function keepPrivateNotice(date: string, notice: PrivateNotice): void {
   window.dispatchEvent(new CustomEvent(CHAT_PRIVATE_EVENT, { detail: date }));
 }
 
+const listeners = new Set<(date: string, notice: BankedNotice) => void>();
+
+/** Called with the puzzle and the room's notice whenever a word this player banks first earns one. */
+export function onBankedNotice(listener: (date: string, notice: BankedNotice) => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
 export function reportBankedWord(options: {
   date: string;
   /** Only the live puzzle is announced; an archive day sends nothing. */
@@ -125,9 +151,14 @@ export function reportBankedWord(options: {
       })
     )
       .then(async (response) => {
-        if (response.status !== 201) return;
-        const data = (await response.json()) as { message?: unknown };
-        if (isPrivateNotice(data.message)) keepPrivateNotice(date, data.message);
+        // 201 is a notice posted; 202 is a word that earned none.
+        if (response?.status !== 201) return;
+        const { message } = (await response.json()) as { message?: unknown };
+        if (!isNotice(message)) return;
+        // The room's notice goes straight to the chat; a line for this player
+        // alone is kept in this browser.
+        if (message.kind === "earlier") keepPrivateNotice(date, message);
+        else for (const listener of listeners) listener(date, message);
       })
       .catch(() => {});
     return true;
