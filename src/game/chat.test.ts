@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   CHAT_MAX_LENGTH,
   chatProblem,
+  EARLIER_LINES,
+  earlierNoticeBody,
+  earnsNotice,
+  FINDER_PLACEHOLDER,
+  findNoticeBody,
   normaliseMessage,
   noticeVerb,
   NOTICE_VERBS,
-  tierNoticeBody,
-  topNoticeBody,
 } from "./chat";
 
 describe("chat rules", () => {
@@ -50,16 +53,12 @@ describe("chat notices", () => {
 
   const verb = noticeVerb("StormyFox47", "abaci");
 
-  it("names the player, the word, its tier and its score", () => {
-    expect(topNoticeBody("StormyFox47", word)).toBe(
-      `StormyFox47 ${verb} top scoring word abaci (Mythic, 9.62)`
+  it("names the player, the word, its tier, its score and its mode", () => {
+    expect(findNoticeBody("StormyFox47", word)).toBe(
+      `StormyFox47 ${verb} Mythic word abaci (9.62) in standard mode`
     );
-    expect(tierNoticeBody("StormyFox47", word)).toBe(`StormyFox47 ${verb} Mythic word abaci (9.62)`);
-  });
-
-  it("says when the word was banked in Freeform", () => {
-    expect(topNoticeBody("StormyFox47", { ...word, mode: "freeform" })).toBe(
-      `StormyFox47 ${verb} top scoring word abaci (Mythic, 9.62) in Freeform`
+    expect(findNoticeBody("StormyFox47", { ...word, mode: "freeform", tier: "Legend", score: "9.94" })).toBe(
+      `StormyFox47 ${verb} Legend word abaci (9.94) in freeform mode`
     );
   });
 
@@ -72,8 +71,24 @@ describe("chat notices", () => {
     expect(verbs.size).toBeGreaterThan(1);
   });
 
-  it("has no tier line for a word under 9.5", () => {
-    expect(tierNoticeBody("StormyFox47", { ...word, tier: "Elusive", score: "9.4" })).toBeNull();
-    expect(tierNoticeBody("StormyFox47", { ...word, score: "9.5" })).not.toBeNull();
+  it("announces nothing under 9.5 or below Mythic", () => {
+    expect(findNoticeBody("StormyFox47", { ...word, tier: "Elusive", score: "9.4" })).toBeNull();
+    expect(findNoticeBody("StormyFox47", { ...word, tier: "Elusive", score: "9.5" })).toBeNull();
+    expect(earlierNoticeBody("StormyFox47", { ...word, tier: "Elusive", score: "9.4" })).toBeNull();
+    expect(findNoticeBody("StormyFox47", { ...word, score: "9.5" })).not.toBeNull();
+    expect(earnsNotice({ tier: "Legend", score: "10.00" })).toBe(true);
+  });
+
+  it("tells a later finder who got there first, worded a few ways", () => {
+    const line = earlierNoticeBody("CalmOtter3", word);
+    expect(line).toContain(FINDER_PLACEHOLDER);
+    expect(line).toContain("abaci");
+    expect(line?.endsWith(" in standard mode")).toBe(true);
+    expect(earlierNoticeBody("CalmOtter3", word)).toBe(line);
+    const lines = new Set(["abaci", "quokka", "jonesing", "zephyr", "lacuna", "nimbus"].map(
+      (w) => earlierNoticeBody("CalmOtter3", { ...word, word: w }),
+    ));
+    expect(lines.size).toBeGreaterThan(1);
+    expect(EARLIER_LINES.length).toBeGreaterThan(1);
   });
 });

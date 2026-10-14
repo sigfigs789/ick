@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { noticeVerb } from "../src/game/chat";
+import { earlierNoticeBody, noticeVerb } from "../src/game/chat";
 import { handleFor } from "../src/game/handle";
 import handler from "./chat";
 
@@ -212,18 +212,22 @@ describe("api/chat POST banked", () => {
       banked: { date: today, mode: "standard", word: "abaci", tier: "Mythic", score: "9.62", ...overrides },
     });
 
-  it("hands both notice lines to the database and returns the one it posted", async () => {
+  it("hands both notice lines to the database and returns the room's notice", async () => {
     withEnv();
     const handle = handleFor(PLAYER);
     const verb = noticeVerb(handle, "abaci");
+    const body = `${handle} ${verb} Mythic word abaci (9.62) in standard mode`;
     const fetchMock = stubFetch([
       {
-        status: "top",
+        status: "find",
         id: 9,
         handle,
-        body: `${handle} ${verb} top scoring word abaci (Mythic, 9.62)`,
-        kind: "top",
+        body,
+        kind: "find",
         created_at: "2026-10-13T10:00:00Z",
+        word: "abaci",
+        mode: "standard",
+        tier: "Mythic",
       },
     ]);
     const response = await handler(banked());
@@ -233,34 +237,72 @@ describe("api/chat POST banked", () => {
       message: {
         id: 9,
         handle,
-        body: `${handle} ${verb} top scoring word abaci (Mythic, 9.62)`,
+        body,
         at: "2026-10-13T10:00:00Z",
-        kind: "top",
+        kind: "find",
+        word: "abaci",
+        mode: "standard",
+        tier: "Mythic",
       },
     });
     const call = rpcCall(fetchMock);
-    expect(call.url).toContain("/rpc/chat_bank");
+    expect(call.url).toContain("/rpc/chat_find");
     expect(call.args).toEqual({
       p_player: PLAYER,
       p_handle: handle,
       p_date: today,
       p_mode: "standard",
       p_word: "abaci",
+      p_tier: "Mythic",
       p_score: 9.62,
-      p_top_body: `${handle} ${verb} top scoring word abaci (Mythic, 9.62)`,
-      p_tier_body: `${handle} ${verb} Mythic word abaci (9.62)`,
+      p_find_body: body,
+      p_earlier_body: earlierNoticeBody(handle, {
+        date: today, mode: "standard", word: "abaci", tier: "Mythic", score: "9.62",
+      }),
     });
   });
 
-  it("sends no tier line for a word under 9.5, and answers 202 when nothing is posted", async () => {
+  it("returns the private line when somebody banked the word first", async () => {
     withEnv();
-    const fetchMock = stubFetch([
-      { status: "none", id: null, handle: null, body: null, kind: null, created_at: null },
+    const handle = handleFor(PLAYER);
+    stubFetch([
+      {
+        status: "earlier",
+        id: 10,
+        handle,
+        body: "CalmOtter3 discovered abaci earlier in freeform mode",
+        kind: "earlier",
+        created_at: "2026-10-13T10:05:00Z",
+        word: "abaci",
+        mode: "freeform",
+        tier: "Mythic",
+      },
     ]);
+    const response = await handler(banked({ mode: "freeform" }));
+    expect(response.status).toBe(201);
+    expect((await response.json()).message).toMatchObject({
+      id: 10,
+      kind: "earlier",
+      body: "CalmOtter3 discovered abaci earlier in freeform mode",
+      mode: "freeform",
+    });
+  });
+
+  it("answers 202 when the player already reported the word", async () => {
+    withEnv();
+    stubFetch([{ status: "duplicate", id: null }]);
+    const response = await handler(banked());
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ ok: true, message: null });
+  });
+
+  it("does not ask the database about a word under 9.5", async () => {
+    withEnv();
+    const fetchMock = stubFetch();
     const response = await handler(banked({ word: "cat", tier: "Very Common", score: "0.4" }));
     expect(response.status).toBe(202);
     expect(await response.json()).toEqual({ ok: true, message: null });
-    expect(rpcCall(fetchMock).args.p_tier_body).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("refuses an archive day, a bad tier and a malformed score before touching the database", async () => {

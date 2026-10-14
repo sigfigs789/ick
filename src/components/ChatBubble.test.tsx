@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as analytics from "../analytics";
 import { playChatMessage, playChatNotice } from "../audio/sound";
+import { CHAT_PRIVATE_KEY } from "../game/chatNotices";
 import { addDays, todayDateString } from "../game/date";
 import { dropForDate } from "../game/drop";
 import { handleFor } from "../game/handle";
@@ -244,6 +245,76 @@ describe("ChatBubble", () => {
     const line = (await screen.findByText(body)).closest("li");
     expect(line).toHaveClass("chat__message--notice", "chat__message--top");
     expect(screen.queryByText("CalmOtter3", { exact: true })).not.toBeInTheDocument();
+  });
+
+  it("colors a found word's notice by its tier and marks the word and mode by the mode", async () => {
+    const standard = "CalmOtter3 found Mythic word abaci (9.62) in standard mode";
+    const freeform = "StormyFox47 banked Legend word quokka (9.94) in freeform mode";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        json({
+          messages: [
+            { id: 2, handle: "CalmOtter3", body: standard, at: "2026-10-13T10:00:00Z", kind: "find", word: "abaci", mode: "standard", tier: "Mythic" },
+            { id: 3, handle: "StormyFox47", body: freeform, at: "2026-10-13T10:01:00Z", kind: "find", word: "quokka", mode: "freeform", tier: "Legend" },
+          ],
+        }),
+      ),
+    );
+    const { container } = render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    const mythic = (await screen.findByText("abaci")).closest("li")!;
+    expect(mythic).toHaveClass("chat__message--notice", "chat__message--find", "chat__message--mythic");
+    expect(mythic.querySelector(".chat__word strong")).toHaveTextContent("abaci");
+    expect(mythic.querySelector(".chat__mode strong")).toHaveTextContent("standard");
+    expect(mythic.querySelector(".chat__body")).toHaveTextContent(standard);
+
+    const legend = container.querySelector(".chat__message--legend")!;
+    expect(legend.querySelectorAll(".chat__word .rainbow-word__letter")).toHaveLength("quokka".length);
+    expect(legend.querySelectorAll(".chat__mode .rainbow-word__letter")).toHaveLength("freeform".length);
+    expect(legend.querySelector("strong")).toBeNull();
+  });
+
+  it("shows this player's private 'earlier' line among the room's messages", async () => {
+    const day = todayDateString();
+    setViewedPuzzle(day);
+    localStorage.setItem(
+      CHAT_PRIVATE_KEY,
+      JSON.stringify({
+        [day]: [
+          {
+            id: 5,
+            handle: handleFor(PLAYER),
+            body: "CalmOtter3 discovered abaci earlier in standard mode",
+            at: "2026-10-13T10:05:00Z",
+            kind: "earlier",
+            word: "abaci",
+            mode: "standard",
+            tier: "Mythic",
+          },
+        ],
+      }),
+    );
+    const fetchMock = vi.fn(async (url: string) =>
+      url.includes("latest")
+        ? json({ latest: 4, message: 4, notice: 0 })
+        : json({
+            messages: [
+              { id: 4, handle: "CalmOtter3", body: "hi", at: "2026-10-13T10:00:00Z" },
+              { id: 6, handle: "CalmOtter3", body: "later", at: "2026-10-13T10:06:00Z" },
+            ],
+          }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ChatBubble />);
+    await userEvent.click(await screen.findByRole("button", { name: "Open chat, new messages" }));
+    await screen.findByText("later");
+    const bodies = [...document.querySelectorAll(".chat__message")].map((li) => li.textContent);
+    expect(bodies[1]).toContain("CalmOtter3 discovered abaci earlier in standard mode");
+    expect(bodies[1]).toContain("Only you can see this");
+    expect(bodies[2]).toContain("later");
+    // The room's cursor is its own last message, never the private line.
+    await waitFor(() => expect(JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) ?? "{}")).toEqual({ [day]: 6 }));
   });
 
   it("sends a message and shows it", async () => {
