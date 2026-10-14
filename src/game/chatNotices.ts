@@ -2,7 +2,7 @@
  * Tell the chat room about a word this player just banked.
  *
  * The room posts a notice the first time anybody banks a word scoring 9.5 or
- * more on a puzzle (see api/chat.ts and the 20261014040000 migration). Whether
+ * more on a puzzle (see api/chat.ts and the 20261014050000 migration). Whether
  * this player is the first is the server's call -- only it can see what
  * everybody else has banked -- so every Mythic or Legend word banked on the live
  * puzzle is reported, priced the way the game showed it to the player.

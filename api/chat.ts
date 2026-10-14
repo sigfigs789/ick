@@ -7,11 +7,14 @@
 // get today's puzzle on the Mountain Time calendar (see `defaultDate`).
 //
 // GET /api/chat?date=D&after=ID
-//   -> 200 { messages: [{ id, handle, body, at }] }
+//   -> 200 { messages: [{ id, handle, body, at }], reactions: [{ id, emoji, handles }] }
 //   Everything in puzzle D's room after message `after`, oldest first. `after`
 //   absent or 0 is a fresh open and gets the newest page. The bubble polls this while it is open,
 //   so it is CDN-cached for a couple of seconds: every open bubble asks for
 //   nearly the same `after`, and one query can answer all of them.
+//   `reactions` is every reaction in the room, not only on the new messages --
+//   a reaction lands on an old line as often as a new one. Left out when they
+//   cannot be read, so the room still loads without them.
 //
 // GET /api/chat?date=D&latest=1
 //   -> 200 { latest: ID, message: ID, notice: ID }
@@ -30,6 +33,13 @@
 //   the id is never sent back out -- so the only way to post as somebody is to
 //   know their id, which only their browser holds.
 //
+// POST /api/chat   { playerId, date, react: { id, emoji, on } }
+//   -> 200 { reactions: [{ emoji, handles }] }, 400 malformed, 404 no such line,
+//      409 { reason: "full" }, 429 rate-limited, 503 no credentials
+//   Puts the player's `emoji` on line `id` of puzzle `date`'s room, or takes it
+//   back when `on` is false, and answers that line's reactions afterwards.
+//   Like a message, a reaction goes out under the handle, never the id.
+//
 // POST /api/chat   { playerId, banked: { date, mode, word, tier, score } }
 //   -> 201 { message } when the word earned a notice, 202 { message: null }
 //      when it did not, 400 malformed, 503 no credentials
@@ -39,7 +49,7 @@
 //   in the browser, so the score arrives as the game displayed it. A player who
 //   banks a word somebody already announced gets back a notice of kind
 //   "earlier" naming them, which the room shows nobody else (see the
-//   20261014040000 migration).
+//   20261014050000 migration).
 //   Messages carry `kind`: absent for a player's message, "find" or "earlier"
 //   for a notice -- with the notice's `word`, `mode` and `tier` -- and "top" or
 //   "tier" for one posted before notices were once per word.
@@ -58,8 +68,10 @@ import {
   chatProblem,
   earlierNoticeBody,
   findNoticeBody,
+  isReactionEmoji,
   normaliseMessage,
   type BankedWord,
+  type Reaction,
 } from "../src/game/chat";
 import { handleFor } from "../src/game/handle";
 import { rpc, supabaseConfigured } from "./_supabase";
@@ -99,6 +111,33 @@ interface MessageRow {
 
 interface PostRow extends Partial<MessageRow> {
   status: string;
+}
+
+interface ReactionRow {
+  message_id?: number | string | null;
+  emoji: string | null;
+  handles: string[] | null;
+}
+
+function toReaction(row: ReactionRow): Reaction | null {
+  if (typeof row.emoji !== "string" || !Array.isArray(row.handles) || row.handles.length === 0) {
+    return null;
+  }
+  return { emoji: row.emoji, handles: row.handles };
+}
+
+/** The room's reactions, or undefined when they could not be read. */
+async function roomReactions(date: string) {
+  try {
+    const rows = await rpc<ReactionRow[] | null>("chat_room_reactions", { p_date: date });
+    return (rows ?? []).flatMap((row) => {
+      const reaction = toReaction(row);
+      return reaction && row.message_id != null ? [{ id: Number(row.message_id), ...reaction }] : [];
+    });
+  } catch (error: unknown) {
+    console.error("[chat] reactions failed:", error instanceof Error ? error.message : error);
+    return undefined;
+  }
 }
 
 function reply(status: number, body?: unknown, cache = "no-store"): Response {
@@ -171,14 +210,17 @@ async function handleGet(request: Request): Promise<Response> {
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
-    const rows = await rpc<MessageRow[] | null>("chat_recent", {
-      p_date: date,
-      p_after: Number(raw),
-      p_limit: PAGE,
-    });
+    const [rows, reactions] = await Promise.all([
+      rpc<MessageRow[] | null>("chat_recent", {
+        p_date: date,
+        p_after: Number(raw),
+        p_limit: PAGE,
+      }),
+      roomReactions(date),
+    ]);
     return reply(
       200,
-      { messages: (rows ?? []).map(toMessage) },
+      { messages: (rows ?? []).map(toMessage), ...(reactions ? { reactions } : {}) },
       "public, max-age=0, s-maxage=2, stale-while-revalidate=2",
     );
   } catch (error: unknown) {
@@ -241,16 +283,18 @@ async function handlePost(request: Request): Promise<Response> {
     return reply(400, { ok: false, reason: "malformed" });
   }
 
-  const { playerId, body, banked, date: rawDate } = parsed as {
+  const { playerId, body, banked, react, date: rawDate } = parsed as {
     playerId?: unknown;
     body?: unknown;
     banked?: unknown;
+    react?: unknown;
     date?: unknown;
   };
   if (typeof playerId !== "string" || !PLAYER_RE.test(playerId)) {
     return reply(400, { ok: false, reason: "bad-player" });
   }
   if (banked !== undefined) return handleBanked(playerId, banked);
+  if (react !== undefined) return handleReact(playerId, rawDate, react);
   if (typeof body !== "string") return reply(400, { ok: false, reason: "bad-body" });
   const date = roomFor(rawDate);
   if (!date) return reply(400, { ok: false, reason: "bad-date" });
@@ -274,6 +318,43 @@ async function handlePost(request: Request): Promise<Response> {
     return reply(201, { ok: true, message: toMessage(row as MessageRow) });
   } catch (error: unknown) {
     console.error("[chat] post failed:", error instanceof Error ? error.message : error);
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
+async function handleReact(playerId: string, rawDate: unknown, raw: unknown): Promise<Response> {
+  const date = roomFor(rawDate);
+  if (!date) return reply(400, { ok: false, reason: "bad-date" });
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return reply(400, { ok: false, reason: "bad-react" });
+  }
+  const { id, emoji, on } = raw as Record<string, unknown>;
+  if (typeof id !== "number" || !Number.isSafeInteger(id) || id < 1) {
+    return reply(400, { ok: false, reason: "bad-id" });
+  }
+  if (!isReactionEmoji(emoji)) return reply(400, { ok: false, reason: "bad-emoji" });
+  if (typeof on !== "boolean") return reply(400, { ok: false, reason: "bad-on" });
+
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    const rows = await rpc<(ReactionRow & { status: string })[] | null>("chat_react", {
+      p_player: playerId,
+      p_handle: handleFor(playerId),
+      p_date: date,
+      p_message: id,
+      p_emoji: emoji,
+      p_on: on,
+    });
+    const status = rows?.[0]?.status;
+    if (status === "missing") return reply(404, { ok: false, reason: "missing" });
+    if (status === "full") return reply(409, { ok: false, reason: "full" });
+    if (status === "rate-limited") return reply(429, { ok: false, reason: "rate-limited" });
+    if (status !== "ok") throw new Error("chat_react answered nothing");
+    const reactions = (rows ?? []).flatMap((row) => toReaction(row) ?? []);
+    return reply(200, { ok: true, reactions });
+  } catch (error: unknown) {
+    console.error("[chat] react failed:", error instanceof Error ? error.message : error);
     return reply(502, { ok: false, reason: "unavailable" });
   }
 }

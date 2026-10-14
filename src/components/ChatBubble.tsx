@@ -8,9 +8,12 @@ import {
 import {
   CHAT_MAX_LENGTH,
   chatProblem,
+  isReactionEmoji,
   modeSuffix,
   normaliseMessage,
+  toggled,
   type ChatProblem,
+  type Reaction,
 } from "../game/chat";
 import { playChatMessage, playChatNotice } from "../audio/sound";
 import { CHAT_PRIVATE_EVENT, CHAT_PRIVATE_KEY, onBankedNotice, privateNotices } from "../game/chatNotices";
@@ -21,6 +24,13 @@ import { pageCache } from "../game/pageCache";
 import { loadPlayerId } from "../game/player";
 import { onViewedPuzzle, viewedPuzzle } from "../game/viewedPuzzle";
 import { RainbowWord } from "./RainbowWord";
+import {
+  ReactButton,
+  ReactionChips,
+  ReactionPicker,
+  ReactionTray,
+} from "./ChatReactions";
+import { useHold } from "../hooks/useHold";
 
 /**
  * How often an open room asks for new messages.
@@ -167,6 +177,41 @@ const PROBLEM_TEXT: Record<ChatProblem | "rate-limited" | "unavailable", string>
   unavailable: "Couldn't send. Try again in a moment.",
 };
 
+const REACT_PROBLEM_TEXT: Record<"full" | "missing" | "rate-limited" | "unavailable", string> = {
+  full: "That message can't take any more reactions.",
+  missing: "That message is gone.",
+  "rate-limited": "Slow down a little. Try again in a few seconds.",
+  unavailable: "Couldn't react. Try again in a moment.",
+};
+
+/**
+ * How long a reaction the player just made outranks what the room's polls say
+ * about that line. A poll can be a couple of seconds stale from the CDN, and
+ * would otherwise flick the chip back before it catches up.
+ */
+const OWN_REACTION_HOLD_MS = 8000;
+
+/** Reactions by line id. */
+type Reactions = Record<number, Reaction[]>;
+
+/** A room's reactions as the endpoint lists them, by line. */
+function byLine(list: unknown): Reactions | null {
+  if (!Array.isArray(list)) return null;
+  const out: Reactions = {};
+  for (const item of list as { id?: unknown; emoji?: unknown; handles?: unknown }[]) {
+    if (
+      typeof item?.id !== "number" ||
+      typeof item.emoji !== "string" ||
+      !Array.isArray(item.handles) ||
+      item.handles.length === 0
+    ) {
+      continue;
+    }
+    (out[item.id] ??= []).push({ emoji: item.emoji, handles: item.handles.map(String) });
+  }
+  return out;
+}
+
 /**
  * What the dot is about: a player's message (blue) or only notices the room
  * posted itself (green). A player's message wins when both are unread.
@@ -206,7 +251,7 @@ function timeOf(at: string): string {
  * read incrementally, so a return costs a request for nothing new rather than
  * the whole room again.
  */
-const roomCache = pageCache<{ messages: ChatMessage[]; lastId: number }>();
+const roomCache = pageCache<{ messages: ChatMessage[]; lastId: number; reactions: Reactions }>();
 
 /** The newest id among `messages`, 0 for none. */
 function newestId(messages: readonly ChatMessage[]): number {
@@ -254,6 +299,11 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const [unread, setUnread] = useState<Unread>(null);
   /** The lines only this player was shown, in the shown room; see game/chatNotices.ts. */
   const [privates, setPrivates] = useState<ChatMessage[]>(() => privateNotices(date));
+  const [reactions, setReactions] = useState<Reactions>({});
+  /** The line whose reaction tray is open. */
+  const [reacting, setReacting] = useState<number | null>(null);
+  /** Whether that line's tray has given way to the full picker. */
+  const [picking, setPicking] = useState(false);
 
   const lastId = useRef(0);
   /** The room `messages` and `lastId` belong to, so a late answer for another is dropped. */
@@ -270,6 +320,10 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const viewId = useRef("");
   /** Messages this view has put in the room, for its time reports. */
   const sentThisView = useRef(0);
+  /** Lines the player reacted to lately, and until when their own view stands. */
+  const ownUntil = useRef<Record<number, number>>({});
+  /** The newest reaction request per line, so an older answer cannot undo a newer tap. */
+  const reactSeq = useRef<Record<number, number>>({});
 
   const playerId = loadPlayerId();
   const ownHandle = playerId ? handleFor(playerId) : null;
@@ -311,6 +365,9 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     const kept = roomCache.get(date);
     lastId.current = kept?.lastId ?? 0;
     setMessages(kept?.messages ?? []);
+    setReactions(kept?.reactions ?? {});
+    setReacting(null);
+    setPicking(false);
     setLoaded(kept !== undefined);
     setLoadFailed(false);
   }, [date]);
@@ -326,7 +383,36 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     if (polled) for (const m of incoming) lastId.current = Math.max(lastId.current, m.id);
     setMessages((shown) => {
       const next = merge(shown, incoming);
-      roomCache.set(room, { messages: next, lastId: lastId.current });
+      roomCache.set(room, {
+        messages: next,
+        lastId: lastId.current,
+        reactions: roomCache.get(room)?.reactions ?? {},
+      });
+      return next;
+    });
+  }, []);
+
+  /**
+   * Take the room's reactions as a poll found them -- except on a line the
+   * player has just reacted to, where what they did stands a little longer.
+   * `line` instead replaces one line's alone, from the answer to a reaction.
+   */
+  const showReactions = useCallback((room: string, found: Reactions, line?: number) => {
+    if (room !== shownDate.current) return;
+    setReactions((shown) => {
+      let next: Reactions;
+      if (line !== undefined) {
+        next = { ...shown, [line]: found[line] ?? [] };
+      } else {
+        next = { ...found };
+        const now = Date.now();
+        for (const [id, until] of Object.entries(ownUntil.current)) {
+          if (until > now) next[Number(id)] = shown[Number(id)] ?? [];
+          else delete ownUntil.current[Number(id)];
+        }
+      }
+      const kept = roomCache.get(room);
+      if (kept) roomCache.set(room, { ...kept, reactions: next });
       return next;
     });
   }, []);
@@ -336,16 +422,18 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     try {
       const response = await fetch(`/api/chat?date=${room}&after=${lastId.current}`);
       if (!response.ok) throw new Error(String(response.status));
-      const data = (await response.json()) as { messages?: ChatMessage[] };
+      const data = (await response.json()) as { messages?: ChatMessage[]; reactions?: unknown };
       if (room !== shownDate.current) return;
       show(room, data.messages ?? [], true);
+      const found = byLine(data.reactions);
+      if (found) showReactions(room, found);
       setLoadFailed(false);
     } catch {
       if (room === shownDate.current) setLoadFailed(true);
     } finally {
       if (room === shownDate.current) setLoaded(true);
     }
-  }, [date, show]);
+  }, [date, show, showReactions]);
 
   // A word this player just banked earned a notice: put it in the open room now
   // rather than on the next poll, the way a sent message is.
@@ -562,7 +650,70 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
 
   function close() {
     setOpen(false);
+    setReacting(null);
+    setPicking(false);
     buttonRef.current?.focus();
+  }
+
+  function closeReactions() {
+    setReacting(null);
+    setPicking(false);
+  }
+
+  /** Open or close `id`'s reaction tray. */
+  function trayFor(id: number) {
+    if (!ownHandle) return;
+    setPicking(false);
+    setReacting((open) => (open === id ? null : id));
+  }
+
+  /** Add the player's `emoji` to line `id`, or take it back if it is there. */
+  async function react(id: number, emoji: string) {
+    closeReactions();
+    if (!playerId || !ownHandle || !isReactionEmoji(emoji)) return;
+    const room = date;
+    const before = reactions[id] ?? [];
+    const on = !before.some((r) => r.emoji === emoji && r.handles.includes(ownHandle));
+    const seq = (reactSeq.current[id] ?? 0) + 1;
+    reactSeq.current[id] = seq;
+    ownUntil.current[id] = Date.now() + OWN_REACTION_HOLD_MS;
+    showReactions(room, { [id]: toggled(before, emoji, ownHandle, on) }, id);
+    setNotice("");
+
+    const fail = (reason: keyof typeof REACT_PROBLEM_TEXT) => {
+      if (reactSeq.current[id] !== seq) return;
+      showReactions(room, { [id]: before }, id);
+      if (room === shownDate.current) setNotice(REACT_PROBLEM_TEXT[reason]);
+    };
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ playerId, date: room, react: { id, emoji, on } }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        reactions?: unknown;
+        reason?: string;
+      };
+      if (response.ok && Array.isArray(data.reactions)) {
+        if (reactSeq.current[id] !== seq) return;
+        ownUntil.current[id] = Date.now() + OWN_REACTION_HOLD_MS;
+        const line = byLine(
+          (data.reactions as object[]).map((reaction) => ({ ...reaction, id })),
+        );
+        showReactions(room, line ?? {}, id);
+      } else if (
+        data.reason === "full" ||
+        data.reason === "missing" ||
+        data.reason === "rate-limited"
+      ) {
+        fail(data.reason);
+      } else {
+        fail("unavailable");
+      }
+    } catch {
+      fail("unavailable");
+    }
   }
 
   async function send(event: FormEvent) {
@@ -618,7 +769,9 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
           role="dialog"
           aria-label="Chat"
           onKeyDown={(event) => {
-            if (event.key === "Escape") close();
+            if (event.key !== "Escape") return;
+            if (reacting !== null) closeReactions();
+            else close();
           }}
         >
           <header className="chat__header">
@@ -655,48 +808,27 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
                 {loadFailed ? "Couldn't load the chat." : "No messages yet. Say hello!"}
               </li>
             ) : (
-              shown.map((message) =>
-                message.kind ? (
-                  <li
-                    key={message.id}
-                    className={`chat__message chat__message--notice chat__message--${message.kind}${
-                      message.tier === "Mythic" || message.tier === "Legend"
-                        ? ` chat__message--${message.tier.toLowerCase()}`
-                        : ""
-                    }`}
-                  >
-                    <span className="chat__body">
-                      <span className="chat__notice-icon" aria-hidden="true">
-                        {NOTICE_ICONS[message.kind]}
-                      </span>{" "}
-                      <NoticeBody message={message} />
-                    </span>
-                    <span className="chat__meta">
-                      <time className="chat__time" dateTime={message.at}>
-                        {timeOf(message.at)}
-                      </time>
-                      {message.kind === "earlier" && (
-                        <span className="chat__private">Only you can see this</span>
-                      )}
-                    </span>
-                  </li>
-                ) : (
-                <li
+              shown.map((message) => (
+                <ChatLine
                   key={message.id}
-                  className={`chat__message${message.handle === ownHandle ? " chat__message--own" : ""}`}
-                >
-                  <span className="chat__meta">
-                    <span className="chat__handle">{message.handle}</span>
-                    <time className="chat__time" dateTime={message.at}>
-                      {timeOf(message.at)}
-                    </time>
-                  </span>
-                  <span className="chat__body">{message.body}</span>
-                </li>
-                )
-              )
+                  message={message}
+                  own={message.handle === ownHandle}
+                  ownHandle={ownHandle}
+                  reactions={reactions[message.id] ?? []}
+                  trayOpen={reacting === message.id && !picking}
+                  onTray={() => trayFor(message.id)}
+                  onReact={(emoji) => void react(message.id, emoji)}
+                  onMore={() => setPicking(true)}
+                />
+              ))
             )}
           </ol>
+          {reacting !== null && picking && (
+            <ReactionPicker
+              onPick={(emoji) => void react(reacting, emoji)}
+              onClose={closeReactions}
+            />
+          )}
           {notice && (
             <p className="chat__notice" role="alert">
               {notice}
@@ -746,5 +878,73 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
         {unread && !open && <span className={`chat__dot chat__dot--${unread}`} aria-hidden="true" />}
       </button>
     </div>
+  );
+}
+
+/**
+ * One line of the room: a player's message or a notice, with its reactions
+ * under it. Reacting is the button beside it, or holding the line down.
+ */
+function ChatLine({
+  message,
+  own,
+  ownHandle,
+  reactions,
+  trayOpen,
+  onTray,
+  onReact,
+  onMore,
+}: {
+  message: ChatMessage;
+  own: boolean;
+  ownHandle: string | null;
+  reactions: Reaction[];
+  trayOpen: boolean;
+  onTray: () => void;
+  onReact: (emoji: string) => void;
+  onMore: () => void;
+}) {
+  const hold = useHold(onTray);
+  // A private line is nobody else's to see, so it takes no reactions.
+  const canReact = ownHandle !== null && message.kind !== "earlier";
+  const className = message.kind
+    ? `chat__message chat__message--notice chat__message--${message.kind}${
+        message.tier === "Mythic" || message.tier === "Legend"
+          ? ` chat__message--${message.tier.toLowerCase()}`
+          : ""
+      }`
+    : `chat__message${own ? " chat__message--own" : ""}`;
+  return (
+    <li className={`${className}${trayOpen ? " chat__message--reacting" : ""}`} {...(canReact ? hold : {})}>
+      {message.kind ? (
+        <>
+          <span className="chat__body">
+            <span className="chat__notice-icon" aria-hidden="true">
+              {NOTICE_ICONS[message.kind]}
+            </span>{" "}
+            <NoticeBody message={message} />
+          </span>
+          <span className="chat__meta">
+            <time className="chat__time" dateTime={message.at}>
+              {timeOf(message.at)}
+            </time>
+            {message.kind === "earlier" && <span className="chat__private">Only you can see this</span>}
+          </span>
+        </>
+      ) : (
+        <>
+          <span className="chat__meta">
+            <span className="chat__handle">{message.handle}</span>
+            <time className="chat__time" dateTime={message.at}>
+              {timeOf(message.at)}
+            </time>
+          </span>
+          <span className="chat__body">{message.body}</span>
+        </>
+      )}
+      {canReact && <ReactButton open={trayOpen} onClick={onTray} />}
+      <ReactionChips reactions={reactions} ownHandle={ownHandle} disabled={!canReact} onToggle={onReact} />
+      {trayOpen && <ReactionTray onPick={onReact} onMore={onMore} />}
+    </li>
   );
 }
