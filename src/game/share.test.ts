@@ -184,7 +184,7 @@ describe("buildShareText", () => {
     );
   });
 
-  it("puts the streak over the score, and who played it under both", () => {
+  it("puts the score beside the streak, and who played it under both", () => {
     const text = buildShareText("2024-01-05", "str", words, {
       streak: 4,
       playerName: "StormyFox47",
@@ -196,7 +196,7 @@ describe("buildShareText", () => {
       0,
     );
     expect(text).toContain(
-      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days\nTotal: ${total.toFixed(1)}\nPlaying as StormyFox47\nwordink.app`,
+      `🟪 ${rarityScore(2.4, "2024-01-05").toFixed(1)}\n\nStreak: 4 days · Total: ${total.toFixed(1)}\nPlaying as StormyFox47\nwordink.app`,
     );
     expect(text).not.toContain("Week:");
     expect(text).not.toContain("Month:");
@@ -210,7 +210,7 @@ describe("buildShareText", () => {
         playerName,
       });
       expect(text).not.toContain("Playing as");
-      expect(text).toContain("Streak: 4 days\nTotal: ");
+      expect(text).toContain("Streak: 4 days · Total: ");
     }
   });
 
@@ -218,19 +218,19 @@ describe("buildShareText", () => {
     const options = { streak: 4, playerName: "StormyFox47" };
 
     expect(buildShareText("2024-01-05", "str", words, options)).toContain(
-      "\nTotal: ",
+      " · Total: ",
     );
     expect(
       buildShareText("2024-01-05", "str", words, { ...options, isToday: true }),
-    ).toContain("\nToday: ");
+    ).toContain(" · Today: ");
     // An archive result is headed with its own date, which "Today" would
     // contradict; only the label changes, never the number.
     expect(
       buildShareText("2024-01-05", "str", words, { ...options, isToday: true }),
     ).toBe(
       buildShareText("2024-01-05", "str", words, options).replace(
-        "\nTotal: ",
-        "\nToday: ",
+        " · Total: ",
+        " · Today: ",
       ),
     );
   });
@@ -246,14 +246,14 @@ describe("the mode on the share", () => {
 
   it("names the mode from the choice date on", () => {
     // Two people posting the same drop are no longer posting the same game, so
-    // the score has to say which. It rides on the score line rather than taking
-    // a line, because a share this short cannot spare a row for one word.
+    // the heading has to say which. It rides on the heading rather than taking a
+    // line, because a share this short cannot spare a row for one word.
     expect(buildShareText(MODE_CHOICE_START, "ink", WORDS)).toContain(
-      "Total: 5.1 · Standard",
+      "Drop: INK · Standard",
     );
     setMode("freeform");
     expect(buildShareText(MODE_CHOICE_START, "ink", WORDS)).toContain(
-      "Total: 5.1 · Freeform",
+      "Drop: INK · Freeform",
     );
   });
 
@@ -263,19 +263,20 @@ describe("the mode on the share", () => {
     setMode("freeform");
     expect(
       buildShareText(MODE_CHOICE_START, "ink", WORDS, { mode: "standard" }),
-    ).toContain("Total: 5.1 · Standard");
+    ).toContain("Drop: INK · Standard");
   });
 
-  it("names the mode only beside the score", () => {
+  it("names the mode only on the heading", () => {
     setMode("freeform");
     const text = buildShareText(MODE_CHOICE_START, "ink", WORDS, {
       streak: 3,
       playerName: "StormyFox47",
       isToday: true,
     });
-    expect(text).toContain("Today: 5.1 · Freeform\nPlaying as StormyFox47");
-    // Which game produced the score is said once, right beside it.
-    expect(text).not.toContain("Drop: INK · Freeform");
+    expect(text).toContain("Streak: 3 days · Today: 5.1\nPlaying as StormyFox47");
+    // Which game produced the score is said once: on the heading, where the
+    // mode has ridden since the switch shipped.
+    expect(text).toContain("Drop: INK · Freeform");
     expect(text.match(/Freeform/g)).toHaveLength(1);
     // The streak is a count of days rather than a score, and it is still true.
     expect(text).toContain("Streak: 3 days");

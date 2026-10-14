@@ -146,8 +146,14 @@ export function buildShareText(
     })
     .join("\n");
 
+  // The mode rides on the heading rather than taking a line of its own: it is a
+  // fact about the puzzle, like the date and the drop beside it, and a share
+  // this short cannot spare a row to say one word. The heading also survives the
+  // X layout, which drops the stats block entirely -- so this is the one place
+  // that names the mode on every share there is.
   const mode = options.mode ?? modeForDate(dateStr);
-  const lines = [`${label} — Drop: ${drop.toUpperCase()}`];
+  const modeLabel = modeIsChosen(dateStr) ? ` · ${MODE_LABELS[mode]}` : "";
+  const lines = [`${label} — Drop: ${drop.toUpperCase()}${modeLabel}`];
   if (resultLine) lines.push("", resultLine);
   const playerName = options.playerName || null;
   const progressLine =
@@ -160,18 +166,17 @@ export function buildShareText(
   // wherever that block starts -- and there is no block to separate when the
   // score is the only line of it.
   if (resultLine && progressLine) lines.push("");
+  // The score shares the streak's line rather than taking one of its own. The
+  // streak leads because it is the one figure here that is not a score: a count
+  // of days, and the score beside it is the detail of it. With no streak (the X
+  // layout, or a caller that has none) the score stands alone.
+  const scoreText = `${scoreLabel}: ${score}`;
   if (progressLine && options.streak !== undefined) {
-    // The streak leads because it is the one figure here that is not a score:
-    // a count of days, and the line the score under it is the detail of.
     const streak = options.streak;
-    lines.push(`Streak: ${streak} day${streak === 1 ? "" : "s"}`);
+    lines.push(`Streak: ${streak} day${streak === 1 ? "" : "s"} · ${scoreText}`);
+  } else {
+    lines.push(scoreText);
   }
-  // The mode rides on the score line rather than taking a line of its own: it
-  // says which rules produced that number, and a share this short cannot spare
-  // a row to say one word. The score line also survives the X layout, which
-  // drops the rest of the stats block -- so this names the mode on every share.
-  const modeLabel = modeIsChosen(dateStr) ? ` · ${MODE_LABELS[mode]}` : "";
-  lines.push(`${scoreLabel}: ${score}${modeLabel}`);
   // Who played it, so a reader can find the sharer on the board. The X layout
   // drops it with the rest of the stats block.
   if (progressLine && playerName) lines.push(`Playing as ${playerName}`);
