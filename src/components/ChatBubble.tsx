@@ -229,11 +229,17 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     setLoadFailed(false);
   }, [date]);
 
-  const show = useCallback((room: string, incoming: ChatMessage[]) => {
+  /**
+   * Merge messages into the room. Only a poll's answer moves `lastId`: a message
+   * put in by hand (one this player sent, or a notice their word earned) can
+   * land just after another player's that no poll has fetched yet, and moving
+   * the cursor past it would skip that message for good.
+   */
+  const show = useCallback((room: string, incoming: ChatMessage[], polled = false) => {
     if (room !== shownDate.current) return;
+    if (polled) for (const m of incoming) lastId.current = Math.max(lastId.current, m.id);
     setMessages((shown) => {
       const next = merge(shown, incoming);
-      if (next.length > 0) lastId.current = next[next.length - 1].id;
       roomCache.set(room, { messages: next, lastId: lastId.current });
       return next;
     });
@@ -246,7 +252,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
       if (!response.ok) throw new Error(String(response.status));
       const data = (await response.json()) as { messages?: ChatMessage[] };
       if (room !== shownDate.current) return;
-      show(room, data.messages ?? []);
+      show(room, data.messages ?? [], true);
       setLoadFailed(false);
     } catch {
       if (room === shownDate.current) setLoadFailed(true);
@@ -289,9 +295,10 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   useEffect(() => {
     if (!open || shownDate.current !== date) return;
     if (date === gameDate) setUnread(null);
-    if (lastId.current > 0) {
-      seenHere.current[date] = Math.max(seenHere.current[date] ?? 0, lastId.current);
-      saveSeen(date, lastId.current);
+    const newest = messages.length > 0 ? messages[messages.length - 1].id : 0;
+    if (newest > 0) {
+      seenHere.current[date] = Math.max(seenHere.current[date] ?? 0, newest);
+      saveSeen(date, newest);
     }
   }, [open, messages, date, gameDate]);
 

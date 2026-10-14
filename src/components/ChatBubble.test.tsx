@@ -259,6 +259,36 @@ describe("ChatBubble", () => {
     expect(line).toHaveClass("chat__message--notice", "chat__message--tier");
   });
 
+  it("still fetches another player's message that landed just before this player's notice", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const theirs = { id: 6, handle: "B2", body: "theirs", at: "2026-10-12T09:59:59Z" };
+    const notice = { id: 7, handle: handleFor(PLAYER), body: "my mythic", at: "2026-10-12T10:00:00Z", kind: "tier" };
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (init?.method === "POST") return json({ ok: true, message: notice }, 201);
+      if (url.includes("after=5")) return json({ messages: [theirs, notice] });
+      return json({ messages: [{ id: 5, handle: "A1", body: "first", at: "2026-10-12T09:00:00Z" }] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    await screen.findByText("first");
+
+    reportBankedWord({ date: DAY, isToday: true, word: MYTHIC, playerId: PLAYER });
+    await screen.findByText("my mythic");
+
+    // The notice did not move the poll past message 6.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4000);
+    });
+    await screen.findByText("theirs");
+    expect(fetchMock).toHaveBeenCalledWith(`/api/chat?date=${DAY}&after=5`);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4000);
+    });
+    expect(fetchMock).toHaveBeenLastCalledWith(`/api/chat?date=${DAY}&after=7`);
+    vi.useRealTimers();
+  });
+
   it("clears the dot once the room is opened", async () => {
     localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 3 }));
     vi.stubGlobal(
