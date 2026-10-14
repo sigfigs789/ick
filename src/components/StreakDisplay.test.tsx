@@ -24,6 +24,28 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("🔥")).toBeInTheDocument();
   });
 
+  it("turns the flame to ice the day after a missed day, until it is played", () => {
+    const frozen: StreakState = {
+      ...streak,
+      currentStreak: 5,
+      lastCompletedDate: "2026-10-01",
+      frozenDates: ["2026-10-02"],
+    };
+    const { rerender } = render(<StreakDisplay streak={frozen} date="2026-10-03" isToday />);
+    expect(screen.getByText("🧊")).toBeInTheDocument();
+    expect(screen.queryByText("🔥")).not.toBeInTheDocument();
+
+    rerender(
+      <StreakDisplay
+        streak={{ ...frozen, currentStreak: 6, lastCompletedDate: "2026-10-03" }}
+        date="2026-10-03"
+        isToday
+      />
+    );
+    expect(screen.getByText("🔥")).toBeInTheDocument();
+    expect(screen.queryByText("🧊")).not.toBeInTheDocument();
+  });
+
   it("shows the current puzzle's total and top rarity", () => {
     render(<StreakDisplay streak={{ ...streak, highScore: 9.3 }} totalRarity={21.4} topRarity={8.7} />);
 

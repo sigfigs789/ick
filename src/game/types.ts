@@ -109,8 +109,10 @@ export interface StreakState {
   elite: number;
   /** Highest rarity score earned from any accepted word. */
   highScore: number;
-  /** Streak freezes held (see game/streakFreeze.ts). Absent on older saves. */
-  freezes?: number;
-  /** Recent days a freeze covered, so a covered day is never counted as played. */
+  /**
+   * Recent days a streak freeze covered (see game/streakFreeze.ts), so a
+   * covered day is never counted as played. Older saves may also carry a
+   * `freezes` count from when freezes were earned; it is no longer read.
+   */
   frozenDates?: string[];
 }
