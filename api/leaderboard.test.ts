@@ -412,7 +412,7 @@ describe("api/leaderboard reads", () => {
     const fetchMock = stubFetch([OPEN]);
     await handler(get(`?since=${SUNDAY}&month=${MONTH}&limit=100000`));
 
-    expect(rpcCall(fetchMock)?.args.p_limit).toBe(200);
+    expect(rpcCall(fetchMock)?.args.p_limit).toBe(1000);
   });
 
   it("bounds the second board to the month the caller sent, at both ends", async () => {
