@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
   trackChatMessageBlocked,
   trackChatMessageSent,
@@ -331,6 +331,8 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   /** The puzzle the game is on, which the dot is about. */
   const [gameDate, setGameDate] = useState(viewedPuzzle);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  /** The room `messages` holds, which trails `date` for the render that changes it. */
+  const [messagesDate, setMessagesDate] = useState(date);
   const [loaded, setLoaded] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [draft, setDraft] = useState("");
@@ -345,6 +347,10 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const [reacting, setReacting] = useState<number | null>(null);
   /** Whether that line's tray has given way to the full picker. */
   const [picking, setPicking] = useState(false);
+  /** Whether the shown room has answered a poll since this opening reached it. */
+  const [caughtUp, setCaughtUp] = useState(false);
+  /** The first line that was new when the room was opened, which the "New" divider sits above. */
+  const [newFrom, setNewFrom] = useState<number | null>(null);
 
   const lastId = useRef(0);
   /** The room `messages` and `lastId` belong to, so a late answer for another is dropped. */
@@ -353,6 +359,12 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const seenHere = useRef<Seen>({});
   /** The newest ids the last check found, to re-judge the dot against. */
   const latestKnown = useRef<Latest>(NO_LATEST);
+  /**
+   * How far the shown room had been read when this opening reached it, kept
+   * until the room's first answer places the divider; null once it has.
+   */
+  const readBefore = useRef<number | null>(null);
+  const dividerRef = useRef<HTMLLIElement>(null);
   const listRef = useRef<HTMLOListElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLElement>(null);
@@ -408,6 +420,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     const kept = roomCache.get(date);
     lastId.current = kept?.lastId ?? 0;
     setMessages(kept?.messages ?? []);
+    setMessagesDate(date);
     setReactions(kept?.reactions ?? {});
     setReacting(null);
     setPicking(false);
@@ -474,7 +487,10 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     } catch {
       if (room === shownDate.current) setLoadFailed(true);
     } finally {
-      if (room === shownDate.current) setLoaded(true);
+      if (room === shownDate.current) {
+        setLoaded(true);
+        setCaughtUp(true);
+      }
     }
   }, [date, show, showReactions]);
 
@@ -508,11 +524,33 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     };
   }, [open, poll]);
 
+  // Opening a room notes how far it had been read, before the effect below marks
+  // it all seen, so what was new can still be told apart from what was not.
+  useEffect(() => {
+    setCaughtUp(false);
+    setNewFrom(null);
+    readBefore.current = open ? Math.max(loadSeen()[date] ?? 0, seenHere.current[date] ?? 0) : null;
+  }, [open, date]);
+
+  // Once the room has answered, the divider goes above the first line that was
+  // waiting unread: not one this player posted, nor one that arrives while they
+  // watch. It is left out when there is nothing new, or nothing read above it.
+  useEffect(() => {
+    const read = readBefore.current;
+    if (!caughtUp || read === null || messagesDate !== date) return;
+    readBefore.current = null;
+    const lines = merge(messages, privates);
+    const first = lines.find((m) => m.id > read && (m.handle !== ownHandle || m.kind === "earlier"));
+    setNewFrom(first && first !== lines[0] ? first.id : null);
+  }, [caughtUp, messages, privates, messagesDate, date, ownHandle]);
+
   // Having a room open reads it: everything shown counts as seen. A private line
   // counts too, but never moves `lastId` -- that is the room's cursor, and a
   // private line's id can run ahead of messages the room has not handed out yet.
+  // `messagesDate` holds it back for the render that switches rooms, whose
+  // messages are still the last room's.
   useEffect(() => {
-    if (!open || shownDate.current !== date) return;
+    if (!open || shownDate.current !== date || messagesDate !== date) return;
     if (date === gameDate) {
       setUnread(null);
       setPulse(false);
@@ -523,7 +561,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
       seenHere.current[date] = Math.max(seenHere.current[date] ?? 0, read);
       saveSeen(date, read);
     }
-  }, [open, messages, privates, date, gameDate]);
+  }, [open, messages, privates, date, messagesDate, gameDate]);
 
   // While closed, check now and then for a post in the game's puzzle's room that
   // this browser has not seen. A failed check changes nothing: the dot is a
@@ -700,6 +738,16 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     const list = listRef.current;
     if (list) list.scrollTop = list.scrollHeight;
   }, [messages, privates, open]);
+
+  // A room opened on more new lines than fit starts at the divider rather than
+  // past them, so the first of them is read first.
+  useEffect(() => {
+    const list = listRef.current;
+    const divider = dividerRef.current;
+    if (!list || !divider || newFrom === null) return;
+    const above = divider.getBoundingClientRect().top - list.getBoundingClientRect().top;
+    if (above < 0) list.scrollTop += above;
+  }, [newFrom]);
 
   // Focus the panel, not the input: focusing the input would raise the
   // on-screen keyboard and cover the chat before the player chooses to type.
@@ -884,17 +932,23 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
               </li>
             ) : (
               shown.map((message) => (
-                <ChatLine
-                  key={message.id}
-                  message={message}
-                  own={message.handle === ownHandle}
-                  ownHandle={ownHandle}
-                  reactions={reactions[message.id] ?? []}
-                  trayOpen={reacting === message.id && !picking}
-                  onTray={() => trayFor(message.id)}
-                  onReact={(emoji) => void react(message.id, emoji)}
-                  onMore={() => setPicking(true)}
-                />
+                <Fragment key={message.id}>
+                  {message.id === newFrom && (
+                    <li ref={dividerRef} className="chat__divider" role="separator" aria-label="New messages">
+                      New
+                    </li>
+                  )}
+                  <ChatLine
+                    message={message}
+                    own={message.handle === ownHandle}
+                    ownHandle={ownHandle}
+                    reactions={reactions[message.id] ?? []}
+                    trayOpen={reacting === message.id && !picking}
+                    onTray={() => trayFor(message.id)}
+                    onReact={(emoji) => void react(message.id, emoji)}
+                    onMore={() => setPicking(true)}
+                  />
+                </Fragment>
               ))
             )}
           </ol>

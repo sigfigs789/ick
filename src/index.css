@@ -5279,6 +5279,26 @@ h2 {
   font-size: 0.95rem;
   line-height: 1.35;
 }
+/* Above the first line that was unread when the room was opened: what is under
+   it is new since last time. Blue, like the unread dot that sent the player here. */
+.chat__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2f78e0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.chat__divider::before,
+.chat__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+}
 /* A line the room posts itself: a 9.5+ word, the first time it is banked. It
    sits a size under players' own messages, which are what the room is for. */
 .chat__message--notice {
