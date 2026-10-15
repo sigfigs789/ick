@@ -84,7 +84,7 @@ export function noticeVerb(handle: string, word: string): string {
   return NOTICE_VERBS[hash % NOTICE_VERBS.length];
 }
 
-/** How every notice ends: which game the word was found in. */
+/** How an "earlier" line ends, and a find line did before 2026-10-15: which game the word was found in. */
 export function modeSuffix(mode: BankedWord["mode"]): string {
   return ` in ${mode} mode`;
 }
@@ -96,12 +96,15 @@ export function earnsNotice(banked: Pick<BankedWord, "tier" | "score">): boolean
 
 /**
  * The line the room posts when somebody is the first to bank a 9.5+ word on a
- * puzzle, or null for a word that earns none.
+ * puzzle, or null for a word that earns none. Kept short, "StormyFox47 nabbed
+ * abaci 9.62": the line's color carries the tier and the word's paint the mode,
+ * so neither is spelled out. Lines posted before 2026-10-15 still read "...
+ * Mythic word abaci (9.62) in standard mode", and the bubble draws both.
  */
 export function findNoticeBody(handle: string, banked: BankedWord): string | null {
   if (!earnsNotice(banked)) return null;
   const verb = noticeVerb(handle, banked.word);
-  return `${handle} ${verb} ${banked.tier} word ${banked.word} (${banked.score})${modeSuffix(banked.mode)}`;
+  return `${handle} ${verb} ${banked.word} ${banked.score}`;
 }
 
 /**
