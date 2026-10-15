@@ -374,6 +374,12 @@ describe("ChatBubble", () => {
     const divider = await screen.findByRole("separator", { name: "New messages" });
     expect(divider.nextElementSibling).toHaveTextContent("unread one");
     expect(screen.getAllByRole("separator", { name: "New messages" })).toHaveLength(1);
+    // Each unread line is marked; read ones and this player's own are not.
+    const isFresh = (text: string) => screen.getByText(text).closest("li")?.classList.contains("chat__message--fresh");
+    expect(isFresh("unread one")).toBe(true);
+    expect(isFresh("unread two")).toBe(true);
+    expect(isFresh("read two")).toBe(false);
+    expect(isFresh("mine from elsewhere")).toBe(false);
 
     // Opened again, it has all been read: no divider.
     await userEvent.click(screen.getAllByRole("button", { name: "Close chat" })[0]);
@@ -381,6 +387,7 @@ describe("ChatBubble", () => {
     await screen.findByText("unread two");
     await waitFor(() => expect(fetch).toHaveBeenCalledWith(`/api/chat?date=${DAY}&after=7`));
     expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+    expect(document.querySelector(".chat__message--fresh")).toBeNull();
   });
 
   it("marks nothing new in a room never read, nor a line that arrives while it is open", async () => {

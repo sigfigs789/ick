@@ -5285,6 +5285,7 @@ h2 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin: 0.25rem 0;
   color: #2f78e0;
   font-size: 0.72rem;
   font-weight: 700;
@@ -5295,9 +5296,20 @@ h2 {
 .chat__divider::after {
   content: "";
   flex: 1;
-  height: 1px;
+  height: 2px;
   background: currentColor;
-  opacity: 0.6;
+}
+/* Each line under the divider that was waiting unread keeps a blue edge while
+   the room stays open, so new and already-read lines differ at a glance. */
+.chat__message--fresh {
+  box-shadow: inset 3px 0 0 #2f78e0;
+  padding-left: 0.6rem;
+}
+.chat__message--fresh:not(.chat__message--notice) {
+  border-radius: 0 0.4rem 0.4rem 0;
+  background: rgb(47 120 224 / 0.08);
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
 }
 /* A line the room posts itself: a 9.5+ word, the first time it is banked. It
    sits a size under players' own messages, which are what the room is for. */
