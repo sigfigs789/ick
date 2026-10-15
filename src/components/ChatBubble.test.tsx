@@ -362,11 +362,13 @@ describe("ChatBubble", () => {
     expect(mythic).toHaveClass("chat__message--notice", "chat__message--find", "chat__message--mythic");
     expect(mythic.querySelector(".chat__word strong")).toHaveTextContent("abaci");
     expect(mythic.querySelector(".chat__mode strong")).toHaveTextContent("standard");
+    expect(mythic.querySelector(".chat__finder strong")).toHaveTextContent("CalmOtter3");
     expect(mythic.querySelector(".chat__body")).toHaveTextContent(standard);
 
     const legend = container.querySelector(".chat__message--legend")!;
     expect(legend.querySelectorAll(".chat__word .rainbow-word__letter")).toHaveLength("quokka".length);
     expect(legend.querySelectorAll(".chat__mode .rainbow-word__letter")).toHaveLength("freeform".length);
+    expect(legend.querySelectorAll(".chat__finder .rainbow-word__letter")).toHaveLength("StormyFox47".length);
     expect(legend.querySelector("strong")).toBeNull();
   });
 

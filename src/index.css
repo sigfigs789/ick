@@ -5160,6 +5160,7 @@ h2 {
   color: inherit;
   opacity: 0.75;
 }
+.chat__finder strong,
 .chat__word strong,
 .chat__mode strong {
   font-weight: 800;
