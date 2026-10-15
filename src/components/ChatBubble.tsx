@@ -125,6 +125,11 @@ const NOTICE_ICONS: Record<NonNullable<ChatMessage["kind"]>, string> = {
   earlier: "🔎",
 };
 
+/** A Standard find is the harder one, so it alone burns rather than sparkles. */
+function noticeIcon(kind: NonNullable<ChatMessage["kind"]>, mode: ChatMessage["mode"]): string {
+  return kind === "find" && mode === "standard" ? "🔥" : NOTICE_ICONS[kind];
+}
+
 /**
  * A notice's body with its word and its closing "in standard mode" painted the
  * way the game marks its modes: bold for Standard, rainbow for Freeform. A body
@@ -935,7 +940,7 @@ function ChatLine({
         message.tier === "Mythic" || message.tier === "Legend"
           ? ` chat__message--${message.tier.toLowerCase()}`
           : ""
-      }`
+      }${message.kind === "find" && message.mode ? ` chat__message--${message.mode}` : ""}`
     : `chat__message${own ? " chat__message--own" : ""}`;
   return (
     <li className={`${className}${trayOpen ? " chat__message--reacting" : ""}`} {...(canReact ? hold : {})}>
@@ -943,7 +948,7 @@ function ChatLine({
         <>
           <span className="chat__body">
             <span className="chat__notice-icon" aria-hidden="true">
-              {NOTICE_ICONS[message.kind]}
+              {noticeIcon(message.kind, message.mode)}
             </span>{" "}
             <NoticeBody message={message} />
           </span>
