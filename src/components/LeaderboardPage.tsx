@@ -25,7 +25,6 @@ import {
 import { WEEK_BEST_DAYS, weekLabel, weekStart } from "../game/week";
 import { formatScore, formatTotal } from "../game/dictionary";
 import { navigate } from "../routes";
-import { useNarrowLayout } from "../hooks/useNarrowLayout";
 import { CongratsBubble } from "./CongratsBubble";
 
 type LoadState = "loading" | "ready" | "error";
@@ -196,13 +195,13 @@ function boardState(
  * modal can do none of those, and a board is exactly the thing people want to
  * send each other.
  *
- * Three windows of the same game, all on screen at once, shortest first. Showing
- * them together is the point of having three: the interesting thing about any
- * one of them is how it differs from the others -- who is new today, who is
- * always there -- and a reader who has to click between them has to hold the
- * first in their head to see it. Today leads because it is the one anybody can
- * still win from nothing; by Thursday a week's board is mostly a week's play,
- * and a month's is a month's.
+ * One board at a time, picked from a row of pills -- Day, Week, Month, Streak --
+ * on every screen size. It used to lay the windows side by side on a laptop, on
+ * the reasoning that comparing them was the point; four boards made that row
+ * too crowded to read, and one picker everywhere means a laptop and a phone are
+ * the same page. Today leads because it is the one anybody can still win from
+ * nothing; by Thursday a week's board is mostly a week's play, and a month's is
+ * a month's.
  *
  * The finds that used to sit under all this are their own page now (see
  * FoundWordsPage): they are a list of *words* under two lists of *players*, they
@@ -269,26 +268,11 @@ export function LeaderboardPage() {
    */
   const [board] = useGameMode();
   /**
-   * Whether the page is showing one board at a time, and which one.
-   *
-   * Only ever true on the narrow layout. Three boards side by side is the whole
-   * point of the wide one -- what is interesting about any window is how it
-   * differs from the others -- but stacked on a phone that comparison is gone
-   * anyway: the second board starts below the fold, so the reader is already
-   * choosing one, just by scrolling past two. The pills make the choice a tap
-   * instead of a scroll, and put all three windows on the first screen.
-   *
-   * The day leads because it is the one anybody can still win from nothing, the
-   * same reason it is first in the stack.
-   *
-   * The choice is kept across a resize rather than reset with the layout: a
-   * window widened past the breakpoint shows all three boards, and narrowed back
-   * returns to the one that was picked.
+   * Which board the pills have picked. The day leads because it is the one
+   * anybody can still win from nothing.
    */
-  const narrow = useNarrowLayout();
   const [visibleBoard, setVisibleBoard] = useState<BoardWindow>("day");
-  /** Wide shows all three; narrow shows the one the pills have picked. */
-  const showsBoard = (which: BoardWindow) => !narrow || which === visibleBoard;
+  const showsBoard = (which: BoardWindow) => which === visibleBoard;
   const dayIsLive = day === today;
   const weekIsLive = week === thisWeek;
   const monthIsLive = month === thisMonth;
@@ -580,25 +564,25 @@ export function LeaderboardPage() {
             <li>A week counts your best {WEEK_BEST_DAYS} days of 7</li>
             <li>A month counts your best {MONTH_BEST_DAYS} days</li>
           </ul>
-          {/* Which board, on the layout that only has room for one at a time.
+          {/* Which board, at every width.
               Above the boards rather than beside each heading, because it is one
-              choice about the section and not three controls: a reader picks a
-              window here and then reads a whole board, exactly as they would on
-              a laptop -- where these do not appear at all, because there all
-              three are already on screen and a picker would be a way of hiding
-              two of them.
+              choice about the section and not four controls: a reader picks a
+              window here and then reads a whole board.
+              No Streak pill where the server sent no streak board (the Reddit
+              build), so there is never a pill for a board that is not there.
               Buttons rather than tabs: what they switch is a section of the page
               that keeps its own heading and its own back/forward nav, and a
               tablist would promise arrow-key navigation between panels that are
               not panels. `aria-pressed` says which one is on, which is the whole
               of the state. */}
-          {narrow && (
-            <div
+          <div
               className="leaderboard__windows"
               role="group"
               aria-label="Which board to show"
             >
-              {BOARD_WINDOWS.map(({ window: boardWindow, label }) => (
+              {BOARD_WINDOWS.filter(
+                ({ window: boardWindow }) => boardWindow !== "streak" || boards.streak,
+              ).map(({ window: boardWindow, label }) => (
                 <button
                   key={boardWindow}
                   type="button"
@@ -609,8 +593,7 @@ export function LeaderboardPage() {
                   {label}
                 </button>
               ))}
-            </div>
-          )}
+          </div>
           {/* The boards, and the layer the congratulation wanders over. The
               bubble is positioned against this box rather than the viewport,
               because what it is about is the standings -- it names the winner
@@ -789,8 +772,11 @@ interface BoardProps<Entry extends { playerId: string }> {
 
 /** The figures on a scored board: the window's total, and its best find. */
 const SCORE_COLUMNS = ["Total score", "Best find"] as const;
-/** The figures on the streak board: the run they are on, and their longest. */
-const STREAK_COLUMNS = ["Days in a row", "Longest"] as const;
+/**
+ * The figures on the streak board: the run they are on, which is what ranks
+ * them, and the longest they have ever had.
+ */
+const STREAK_COLUMNS = ["Current", "Longest"] as const;
 
 function scoreRow(entry: BoardEntry, isYou: boolean): ReactNode {
   return <Row key={entry.playerId} entry={entry} isYou={isYou} />;
@@ -846,11 +832,7 @@ function Board<Entry extends { playerId: string }>({
           they know they can come back. Per board, because the two windows are
           different lengths of time and the comparison between them is the whole
           reason there are two. */}
-      {/* A board with no window to step keeps the nav's row empty rather than
-          dropping it, so its rows start level with the boards beside it. */}
-      {!(onBack && onForward) ? (
-        <div className="leaderboard__board-nav leaderboard__board-nav--none" aria-hidden="true" />
-      ) : (
+      {onBack && onForward && (
       <div className="leaderboard__board-nav">
         <button
           type="button"
@@ -1104,13 +1086,12 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
       <span className="leaderboard__score">
         <span aria-hidden="true">🔥 </span>
         {entry.current}
-        <span className="sr-only"> {entry.current === 1 ? "day" : "days"} in a row</span>
+        <span className="sr-only"> {entry.current === 1 ? "day" : "days"} current streak</span>
       </span>
       <span className="leaderboard__detail">
         <span className="leaderboard__meta" />
         <span className="leaderboard__best">
-          <span className="sr-only">longest </span>
-          {entry.best} {entry.best === 1 ? "day" : "days"}
+          Longest {entry.best}
         </span>
       </span>
     </li>

@@ -120,11 +120,28 @@ function stubFetch(body: unknown = OPEN) {
   return fetchMock;
 }
 
+/** Which pill shows the board with this heading. */
+function pillFor(heading: string): string {
+  if (heading === "Streaks") return "Streak";
+  if (/week/i.test(heading)) return "Week";
+  if (/month/i.test(heading) || /^[A-Z][a-z]+ \d{4}$/.test(heading)) return "Month";
+  return "Day";
+}
+
+/**
+ * One board, by its heading, picking it with the pills first if another board
+ * is showing -- the page shows one at a time.
+ */
+function board(heading: string): HTMLElement {
+  const shown = screen.queryByRole("region", { name: heading });
+  if (shown) return shown;
+  fireEvent.click(screen.getByRole("button", { name: pillFor(heading) }));
+  return board(heading);
+}
+
 /** The rows of one board, by its heading. */
 function boardRows(heading: string) {
-  return within(screen.getByRole("region", { name: heading })).getAllByRole(
-    "listitem",
-  );
+  return within(board(heading)).getAllByRole("listitem");
 }
 
 /**
@@ -238,9 +255,10 @@ describe("the leaderboard page", () => {
     expect(boardRows("Streaks")[0]).toHaveTextContent(handleFor(ALICE));
     expect(boardRows("Streaks")[0]).toHaveTextContent("21");
     // Ranked by the run they are on, with their longest kept as the detail.
-    expect(boardRows("Streaks")[1]).toHaveTextContent("40 days");
+    expect(boardRows("Streaks")[1]).toHaveTextContent("Longest 40");
+    expect(board("Streaks")).toHaveTextContent(/Current\s*Longest/);
     // No window, so nothing to step through.
-    const streaks = screen.getByRole("region", { name: "Streaks" });
+    const streaks = board("Streaks");
     expect(within(streaks).queryByRole("button", { name: /previous/i })).toBeNull();
   });
 
@@ -395,14 +413,14 @@ describe("the leaderboard page", () => {
     // The board is bounded to this month server-side, from a window the page
     // sends -- so the one thing left to say is the day it turns over, which is
     // the first of next month.
-    const board = screen.getByRole("region", { name: MONTH_BOARD });
-    expect(board).toHaveTextContent(MONTH_BOARD);
+    const region = board(MONTH_BOARD);
+    expect(region).toHaveTextContent(MONTH_BOARD);
     // The weekday first, then the date it falls on.
-    expect(board).toHaveTextContent(/^This month\s*Resets \w+day, \w+ 1/);
+    expect(region).toHaveTextContent(/^This month\s*Resets \w+day, \w+ 1/);
     // What it used to say: a season, with the two hand-picked dates it ran
     // between under the name.
-    expect(board).not.toHaveTextContent(/Season/);
-    expect(board).not.toHaveTextContent(/–/);
+    expect(region).not.toHaveTextContent(/Season/);
+    expect(region).not.toHaveTextContent(/–/);
   });
 
   it("makes each board's list reachable by keyboard, since it scrolls", async () => {
@@ -413,14 +431,15 @@ describe("the leaderboard page", () => {
     // the list is a scrolling region -- and a region that only a thumb can
     // reach is one a keyboard cannot read.
     await waitFor(() =>
-      expect(screen.getByRole("list", { name: /This week/ })).toHaveAttribute(
+      expect(within(board("This week")).getByRole("list")).toHaveAttribute(
         "tabindex",
         "0",
       ),
     );
-    expect(
-      screen.getByRole("list", { name: new RegExp(MONTH_BOARD) }),
-    ).toHaveAttribute("tabindex", "0");
+    expect(within(board(MONTH_BOARD)).getByRole("list")).toHaveAttribute(
+      "tabindex",
+      "0",
+    );
   });
 
   it("puts the rule that governs both boards above both of them", async () => {
@@ -436,7 +455,7 @@ describe("the leaderboard page", () => {
         screen.getByText("Only puzzles played on the day they drop count"),
       ).toBeInTheDocument(),
     );
-    const monthly = screen.getByRole("region", { name: MONTH_BOARD });
+    const monthly = board(MONTH_BOARD);
     expect(monthly).not.toHaveTextContent(
       "Only puzzles played on the day they drop count",
     );
@@ -465,15 +484,15 @@ describe("the leaderboard page", () => {
     render(<LeaderboardPage />);
 
     await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
-    const board = screen.getByRole("region", { name: "This week" });
+    const region = board("This week");
     // Beside the heading, where the monthly board's own reset line sits, so the
     // two boards start level when they are side by side.
-    expect(board).toHaveTextContent("Resets on Sundays");
+    expect(region).toHaveTextContent("Resets on Sundays");
     // No dates and no countdown: a week is the window you are already in, and
     // "this week" says which days it counts.
-    expect(board).not.toHaveTextContent("From Sunday on");
-    expect(board).not.toHaveTextContent(/Resets in \d/);
-    expect(board).not.toHaveTextContent(/Aug \d+ – \d+/);
+    expect(region).not.toHaveTextContent("From Sunday on");
+    expect(region).not.toHaveTextContent(/Resets in \d/);
+    expect(region).not.toHaveTextContent(/Aug \d+ – \d+/);
   });
 
   it("drops the subtitle over the two boards", async () => {
@@ -543,11 +562,11 @@ describe("the leaderboard page", () => {
     // row says what it is in words; the scores, which are what the board is
     // ranked by, had been left to be inferred.
     await waitFor(() =>
-      expect(screen.getAllByText("Total score")).toHaveLength(3),
+      expect(screen.getAllByText("Total score")).toHaveLength(1),
     );
     // And the second figure in the same column gets the same treatment -- an
     // unlabelled number under a labelled one reads as a second total.
-    expect(screen.getAllByText("Best find")).toHaveLength(3);
+    expect(screen.getAllByText("Best find")).toHaveLength(1);
 
     // Stacked in the order the figures are, so the mapping is read straight
     // down rather than guessed. Asserted on the header's own text, since which
@@ -623,7 +642,7 @@ describe("the leaderboard page", () => {
     // nothing: by Thursday a week's board is mostly a week's play.
     await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
     expect(
-      within(screen.getByRole("region", { name: "Today" })).getByText(
+      within(board("Today")).getByText(
         "Resets at midnight",
       ),
     ).toBeInTheDocument();
@@ -964,7 +983,16 @@ describe("stepping the boards through past windows", () => {
     return { fetchMock, asked, askedDays };
   }
 
-  const step = (name: string) => screen.getByRole("button", { name });
+  /** A board's step button, picking that board with the pills first. */
+  const step = (name: string) => {
+    const unit = /day|week|month/i.exec(name)?.[0] ?? "day";
+    if (!screen.queryByRole("button", { name })) {
+      fireEvent.click(
+        screen.getByRole("button", { name: unit[0].toUpperCase() + unit.slice(1) }),
+      );
+    }
+    return screen.getByRole("button", { name });
+  };
 
   beforeEach(() => onDay(FRIDAY));
 
@@ -989,7 +1017,7 @@ describe("stepping the boards through past windows", () => {
       expect(boardRows("Aug 27")[0]).toHaveTextContent(handleFor(BOB)),
     );
     expect(
-      within(screen.getByRole("region", { name: "Aug 27" })).getByText("Final"),
+      within(board("Aug 27")).getByText("Final"),
     ).toBeInTheDocument();
     expect(askedDays).toEqual([FRIDAY, YESTERDAY]);
     // The long windows did not move: a day is not a week's worth of anything,
@@ -1010,7 +1038,7 @@ describe("stepping the boards through past windows", () => {
     });
     render(<LeaderboardPage />);
     await waitFor(() =>
-      expect(screen.getByText(handleFor(ALICE))).toBeTruthy(),
+      expect(within(board("This week")).getByText(handleFor(ALICE))).toBeTruthy(),
     );
 
     fireEvent.click(step("Previous week"));
@@ -1019,7 +1047,7 @@ describe("stepping the boards through past windows", () => {
     // under the name of a different window.
     await waitFor(() =>
       expect(
-        screen.getByRole("region", { name: "Week of Aug 16" }),
+        board("Week of Aug 16"),
       ).toBeTruthy(),
     );
     expect(boardRows("Week of Aug 16")[0].textContent).toContain(
@@ -1030,7 +1058,7 @@ describe("stepping the boards through past windows", () => {
     // And forward, back to the window the page opened on.
     fireEvent.click(step("Next week"));
     await waitFor(() =>
-      expect(screen.getByRole("region", { name: "This week" })).toBeTruthy(),
+      expect(board("This week")).toBeTruthy(),
     );
     expect(boardRows("This week")[0].textContent).toContain(handleFor(ALICE));
     expect(asked).toEqual([
@@ -1050,16 +1078,16 @@ describe("stepping the boards through past windows", () => {
     });
     render(<LeaderboardPage />);
     await waitFor(() =>
-      expect(screen.getByText(handleFor(ALICE))).toBeTruthy(),
+      expect(within(board("This week")).getByText(handleFor(ALICE))).toBeTruthy(),
     );
 
     fireEvent.click(step("Previous month"));
 
     await waitFor(() =>
-      expect(screen.getByRole("region", { name: "July 2026" })).toBeTruthy(),
+      expect(board("July 2026")).toBeTruthy(),
     );
     // The two windows are independent: only the month moved.
-    expect(screen.getByRole("region", { name: "This week" })).toBeTruthy();
+    expect(board("This week")).toBeTruthy();
     expect(asked).toEqual([
       `${THIS_WEEK}/${THIS_MONTH}`,
       `${THIS_WEEK}/${LAST_MONTH}`,
@@ -1075,7 +1103,7 @@ describe("stepping the boards through past windows", () => {
     // could ever be a score in.
     fireEvent.click(step("Previous month"));
     await waitFor(() =>
-      expect(screen.getByRole("region", { name: "July 2026" })).toBeTruthy(),
+      expect(board("July 2026")).toBeTruthy(),
     );
     expect(step("Previous month")).toBeDisabled();
   });
@@ -1099,7 +1127,7 @@ describe("stepping the boards through past windows", () => {
     });
     render(<LeaderboardPage />);
     await waitFor(() =>
-      expect(screen.getByText(handleFor(ALICE))).toBeTruthy(),
+      expect(within(board("This week")).getByText(handleFor(ALICE))).toBeTruthy(),
     );
 
     // The next boards request hangs, so the step can be looked at mid-flight.
@@ -1125,7 +1153,7 @@ describe("stepping the boards through past windows", () => {
     );
     // And the board that did not move still says what it said.
     expect(
-      within(screen.getByRole("region", { name: MONTH_BOARD })).getByText(
+      within(board(MONTH_BOARD)).getByText(
         handleFor(BOB),
       ),
     ).toBeTruthy();
@@ -1208,7 +1236,7 @@ describe("stepping the boards through past windows", () => {
     );
     render(<LeaderboardPage />);
     await waitFor(() =>
-      expect(screen.getByText(handleFor(ALICE))).toBeTruthy(),
+      expect(within(board("This week")).getByText(handleFor(ALICE))).toBeTruthy(),
     );
 
     fireEvent.click(step("Previous week"));
@@ -1225,37 +1253,15 @@ describe("stepping the boards through past windows", () => {
     // the page never falls back to "Couldn't load the boards."
     expect(screen.queryByText(/Couldn't load the boards/)).toBeNull();
     expect(
-      within(screen.getByRole("region", { name: MONTH_BOARD })).getByText(
+      within(board(MONTH_BOARD)).getByText(
         handleFor(BOB),
       ),
     ).toBeTruthy();
   });
 });
 
-/**
- * Report the viewport as narrower than the layout's 64rem breakpoint, the way a
- * phone does.
- *
- * jsdom ships no `matchMedia` at all, which is why every test above gets the
- * wide layout without asking for it (see hooks/useNarrowLayout). This stubs the
- * one query the page asks: the wide layout does not match, so the page is on a
- * phone.
- */
-function narrowViewport() {
-  vi.stubGlobal(
-    "matchMedia",
-    vi.fn((query: string) => ({
-      matches: false,
-      media: query,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    })),
-  );
-}
-
-describe("the leaderboard page on a phone", () => {
+describe("picking a board", () => {
   it("shows one board at a time, picked with the pills, starting on the day", async () => {
-    narrowViewport();
     stubFetch();
     render(<LeaderboardPage />);
 
@@ -1270,13 +1276,12 @@ describe("the leaderboard page on a phone", () => {
     expect(screen.queryByRole("region", { name: "Today" })).toBeNull();
 
     await userEvent.click(screen.getByRole("button", { name: "Month" }));
-    expect(within(screen.getByRole("region", { name: MONTH_BOARD })).getByText(
+    expect(within(board(MONTH_BOARD)).getByText(
       handleFor(BOB),
     )).toBeTruthy();
   });
 
   it("says which window is showing", async () => {
-    narrowViewport();
     stubFetch();
     render(<LeaderboardPage />);
 
@@ -1301,14 +1306,17 @@ describe("the leaderboard page on a phone", () => {
     );
   });
 
-  it("leaves the wide layout with all three boards and no pills", async () => {
+  it("offers a Streak pill only when the server sent a streak board", async () => {
+    stubFetch({ ...OPEN, streak: [], streakSelf: null });
+    const { unmount } = render(<LeaderboardPage />);
+    await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
+    expect(screen.getByRole("button", { name: "Streak" })).toBeTruthy();
+    unmount();
+
     stubFetch();
     render(<LeaderboardPage />);
-
     await waitFor(() => expect(boardRows("Today")).toHaveLength(1));
-    expect(boardRows("This week")).toHaveLength(2);
-    expect(boardRows(MONTH_BOARD)).toHaveLength(2);
-    expect(screen.queryByRole("button", { name: "Day" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Streak" })).toBeNull();
   });
 });
 
