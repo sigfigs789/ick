@@ -11,11 +11,12 @@
 --
 -- The private line's body arrives ending in the banker's own mode (see
 -- earlierNoticeBody), so its suffix is swapped for the first finder's mode. Its
--- row takes that mode too, which is what the bubble paints the line by. A
--- player who banks the word again, in either mode, is a 'duplicate'.
+-- row takes that mode, and that find's tier and score, since the two modes
+-- price a word differently and the bubble colors the line by its tier. A player
+-- who banks the word again, in either mode, is a 'duplicate'.
 --
--- Same signature and answer as before, so api/chat.ts is unchanged. Replaced in
--- place, so it is safe to re-run.
+-- Same signature and answer as before, so api/chat.ts needs no code change.
+-- Replaced in place, so it is safe to re-run.
 
 -- The first notice for a word on a puzzle, in any mode.
 create index if not exists chat_notices_date_word
@@ -41,6 +42,8 @@ as $$
 declare
   finder text;
   finder_mode text;
+  finder_tier text;
+  finder_score numeric;
   suffix text := ' in ' || p_mode || ' mode';
   earlier text := p_earlier_body;
   posted public.chat_notices%rowtype;
@@ -58,7 +61,7 @@ begin
     return;
   end if;
 
-  select n.handle, n.mode into finder, finder_mode
+  select n.handle, n.mode, n.tier, n.score into finder, finder_mode, finder_tier, finder_score
   from public.chat_notices n
   where n.puzzle_date = p_date and n.word = p_word
     and n.kind <> 'earlier' and not n.hidden
@@ -76,7 +79,7 @@ begin
     insert into public.chat_notices (player_id, handle, body, kind, puzzle_date, mode, word, score, tier)
     values (
       p_player, p_handle, replace(earlier, '{finder}', finder), 'earlier',
-      p_date, finder_mode, p_word, p_score, p_tier
+      p_date, finder_mode, p_word, finder_score, finder_tier
     )
     returning * into posted;
   end if;
