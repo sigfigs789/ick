@@ -5145,10 +5145,19 @@ h2 {
 }
 /* A 9.5+ word wears its tier's badge colors. The word and the mode it was found
    in are marked the way the game marks its modes: bold for Standard, rainbow
-   letters for Freeform. */
+   letters for Freeform.
+   Mythic's badge red reads as red on pink at chat size, so in chat light mode
+   takes a deep maroon (9.9:1, and 5.3:1 for the dimmed timestamp). Dark mode
+   keeps the badge's own light-on-dark pair. The rainbow stays as the page has
+   it: dark letters on the pale fill, light ones on the dark. */
 .chat__message--mythic {
   background: var(--rarity-mythic-bg);
-  color: var(--rarity-mythic-fg);
+  color: #6e1a12;
+}
+@media (prefers-color-scheme: dark) {
+  .chat__message--mythic {
+    color: var(--rarity-mythic-fg);
+  }
 }
 .chat__message--legend {
   background: var(--rarity-legend-bg);
