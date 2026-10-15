@@ -44,20 +44,6 @@ describe("InstructionsModal", () => {
     ).toHaveFocus();
   });
 
-  it("names Mythic and Legend as the highest ranks with their rarity thresholds", () => {
-    render(
-      <InstructionsModal
-        open
-        onClose={vi.fn()}
-      />,
-    );
-    expect(
-      screen.getByText(
-        /the highest ranks are Mythic at 9\.5\+ and Legend at 9\.9\+/i,
-      ),
-    ).toBeInTheDocument();
-  });
-
   it("closes from Escape, its close button, or the backdrop, but not an in-dialog click", async () => {
     const onClose = vi.fn();
     render(

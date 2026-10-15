@@ -230,12 +230,6 @@ export function InstructionsModal({ open, onClose }: Props) {
                 </p>
               </div>
             )}
-            <p className="modal__rarity-note">
-              Rarity scores reflect how often a word appears across books, news,
-              movies, websites, and social media—not how complex it is. Values are
-              computed using Zipf’s law. The highest ranks are Mythic at 9.5+ and
-              Legend at 9.9+.
-            </p>
             <form
               className="word-suggestion feedback-form"
               onSubmit={submitFeedback}
