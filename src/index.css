@@ -5183,12 +5183,24 @@ h2 {
 .chat__message--legend .rainbow-word__letter {
   color: hsl(var(--rainbow-hue) 90% 68%);
 }
-/* On Mythic's deep red the rainbow goes paler still, so even its red letters
-   clear 4.5:1 against the fill. */
+/* No rainbow survives Mythic's deep red: its own reds and magentas sink into
+   it, and letters pale enough to clear it are all near-white. So each rainbow
+   word sits on a chip of Legend's black and takes Legend's letters. */
+.chat__message--mythic .rainbow-word {
+  padding: 0 0.25em;
+  border-radius: 0.3em;
+  background: var(--rarity-legend-bg);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
 .chat__message--mythic .rainbow-word__letter {
-  color: hsl(var(--rainbow-hue) 95% 92%);
+  color: hsl(var(--rainbow-hue) 90% 70%);
 }
 @media (prefers-contrast: more) {
+  .chat__message--mythic .rainbow-word {
+    padding: 0;
+    background: none;
+  }
   .chat__message--mythic .rainbow-word__letter,
   .chat__message--legend .rainbow-word__letter {
     color: inherit;
