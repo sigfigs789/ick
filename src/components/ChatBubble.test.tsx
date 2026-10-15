@@ -201,6 +201,21 @@ describe("ChatBubble", () => {
     expect(second.container.querySelector(".chat__dot")).toHaveClass("chat__dot--message");
   });
 
+  it("pulses the dot while a Standard find is unread", async () => {
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 4 }));
+    vi.stubGlobal("fetch", vi.fn(async () => json({ latest: 6, message: 0, notice: 6, standard: 5 })));
+    const { container, unmount } = render(<ChatBubble />);
+    await screen.findByRole("button", { name: "Open chat, new messages" });
+    expect(container.querySelector(".chat__dot")).toHaveClass("chat__dot--notice", "chat__dot--pulse");
+    unmount();
+
+    // A Standard find already read leaves a newer Freeform one a still dot.
+    vi.stubGlobal("fetch", vi.fn(async () => json({ latest: 6, message: 0, notice: 6, standard: 3 })));
+    const second = render(<ChatBubble />);
+    await screen.findByRole("button", { name: "Open chat, new messages" });
+    expect(second.container.querySelector(".chat__dot")).not.toHaveClass("chat__dot--pulse");
+  });
+
   it("chimes for a post that arrives while closed, by who posted it, not for one waiting on arrival", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 2 }));

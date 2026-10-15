@@ -239,9 +239,11 @@ interface Latest {
   latest: number;
   message: number;
   notice: number;
+  /** The newest Standard find, which pulses the dot until it is read. */
+  standard: number;
 }
 
-const NO_LATEST: Latest = { latest: 0, message: 0, notice: 0 };
+const NO_LATEST: Latest = { latest: 0, message: 0, notice: 0, standard: 0 };
 
 /**
  * Which kind of post `latest` holds after `seen`. A server from before the
@@ -313,6 +315,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const [notice, setNotice] = useState("");
   const [sending, setSending] = useState(false);
   const [unread, setUnread] = useState<Unread>(null);
+  const [pulse, setPulse] = useState(false);
   /** The lines only this player was shown, in the shown room; see game/chatNotices.ts. */
   const [privates, setPrivates] = useState<ChatMessage[]>(() => privateNotices(date));
   const [reactions, setReactions] = useState<Reactions>({});
@@ -488,7 +491,10 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   // private line's id can run ahead of messages the room has not handed out yet.
   useEffect(() => {
     if (!open || shownDate.current !== date) return;
-    if (date === gameDate) setUnread(null);
+    if (date === gameDate) {
+      setUnread(null);
+      setPulse(false);
+    }
     const newest = messages.length > 0 ? messages[messages.length - 1].id : 0;
     const read = Math.max(newest, newestId(privates));
     if (read > 0) {
@@ -515,6 +521,8 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
      * check's cached answer can be a few seconds behind.
      */
     let ownNotice = 0;
+    /** This player's own notices: their own Standard find is no news to them. */
+    const ownIds = new Set<number>();
     const seenNow = () => Math.max(loadSeen()[room] ?? 0, seenHere.current[room] ?? 0);
     // A private line kept since the room was last read lights the dot as a notice.
     const judge = () => {
@@ -523,18 +531,26 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
         unreadKind(latestKnown.current, seen) ??
           (newestId(privateNotices(room)) > seen ? "notice" : null),
       );
+      const { standard } = latestKnown.current;
+      setPulse(standard > seen && !ownIds.has(standard));
     };
     let cancelled = false;
     const check = async () => {
       try {
         const response = await fetch(`/api/chat?date=${room}&latest=1`);
         if (!response.ok) return;
-        const data = (await response.json()) as { latest?: unknown; message?: unknown; notice?: unknown };
+        const data = (await response.json()) as {
+          latest?: unknown;
+          message?: unknown;
+          notice?: unknown;
+          standard?: unknown;
+        };
         if (cancelled || typeof data.latest !== "number") return;
         const found: Latest = {
           latest: Math.max(data.latest, ownNotice),
           message: typeof data.message === "number" ? data.message : 0,
           notice: Math.max(typeof data.notice === "number" ? data.notice : 0, ownNotice),
+          standard: typeof data.standard === "number" ? data.standard : 0,
         };
         latestKnown.current = found;
         judge();
@@ -569,11 +585,13 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     const offNotice = onBankedNotice((date, posted) => {
       if (date !== room) return;
       ownNotice = Math.max(ownNotice, posted.id);
+      ownIds.add(posted.id);
       const known = latestKnown.current;
       latestKnown.current = {
         latest: Math.max(known.latest, ownNotice),
         message: known.message,
         notice: Math.max(known.notice, ownNotice),
+        standard: known.standard,
       };
       if (heard !== null) heard = Math.max(heard, ownNotice);
       judge();
@@ -909,7 +927,9 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
             fill="currentColor"
           />
         </svg>
-        {unread && !open && <span className={`chat__dot chat__dot--${unread}`} aria-hidden="true" />}
+        {unread && !open && (
+          <span className={`chat__dot chat__dot--${unread}${pulse ? " chat__dot--pulse" : ""}`} aria-hidden="true" />
+        )}
       </button>
     </div>
   );
