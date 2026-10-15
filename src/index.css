@@ -5164,16 +5164,17 @@ h2 {
   font-size: 0.95rem;
   line-height: 1.35;
 }
-/* A line the room posts itself: a 9.5+ word, the first time it is banked. */
+/* A line the room posts itself: a 9.5+ word, the first time it is banked. It
+   sits a size under players' own messages, which are what the room is for. */
 .chat__message--notice {
-  padding: 0.4rem 0.6rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 0.5rem;
   background: var(--caution-bg);
   color: var(--caution-fg);
 }
 .chat__message--notice .chat__body {
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 .chat__message--notice .chat__time {
   font-size: 0.72rem;
@@ -5226,7 +5227,7 @@ h2 {
    the text lines up with every other line. */
 .chat__message--find.chat__message--standard {
   border: 2px solid var(--best-word-accent);
-  padding: calc(0.4rem - 2px) calc(2.1rem - 2px) calc(0.4rem - 2px) calc(0.6rem - 2px);
+  padding: calc(0.3rem - 2px) calc(2.1rem - 2px) calc(0.3rem - 2px) calc(0.6rem - 2px);
   box-shadow: var(--best-word-glow);
 }
 /* The line only its player sees: set apart by an outline rather than a color. */
