@@ -457,6 +457,12 @@ describe("streak freezes", () => {
     expect(loadStreak()).toMatchObject({ currentStreak: 15, bankedFreezes: 0 });
   });
 
+  it("lets a new streak earn from its first week once a past one reached 14 days", () => {
+    for (let d = 1; d <= 14; d++) play(`2024-01-${String(d).padStart(2, "0")}`);
+    for (let d = 20; d <= 26; d++) play(`2024-01-${d}`); // a new streak, 7 days
+    expect(loadStreak()).toMatchObject({ currentStreak: 7, longestStreak: 14, bankedFreezes: 1 });
+  });
+
   it("drops saved freezes when a new streak starts", () => {
     for (let d = 1; d <= 14; d++) play(`2024-01-${String(d).padStart(2, "0")}`);
     play("2024-01-20");
