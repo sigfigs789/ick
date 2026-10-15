@@ -349,6 +349,88 @@ describe("ChatBubble", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Open chat" })).toBeInTheDocument());
   });
 
+  it("marks where the lines new since the room was last read begin", async () => {
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 4 }));
+    const line = (id: number, handle: string, body: string) => ({ id, handle, body, at: "2026-10-12T10:00:00Z" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("latest")
+          ? json({ latest: 7 })
+          : json({
+              messages: [
+                line(3, "A1", "read one"),
+                line(4, "A1", "read two"),
+                line(5, handleFor(PLAYER), "mine from elsewhere"),
+                line(6, "B2", "unread one"),
+                line(7, "B2", "unread two"),
+              ],
+            }),
+      ),
+    );
+    render(<ChatBubble />);
+    await userEvent.click(await screen.findByRole("button", { name: "Open chat, new messages" }));
+
+    const divider = await screen.findByRole("separator", { name: "New messages" });
+    expect(divider.nextElementSibling).toHaveTextContent("unread one");
+    expect(screen.getAllByRole("separator", { name: "New messages" })).toHaveLength(1);
+    // Each unread line is marked; read ones and this player's own are not.
+    const isFresh = (text: string) => screen.getByText(text).closest("li")?.classList.contains("chat__message--fresh");
+    expect(isFresh("unread one")).toBe(true);
+    expect(isFresh("unread two")).toBe(true);
+    expect(isFresh("read two")).toBe(false);
+    expect(isFresh("mine from elsewhere")).toBe(false);
+
+    // Opened again, it has all been read: no divider.
+    await userEvent.click(screen.getAllByRole("button", { name: "Close chat" })[0]);
+    await userEvent.click(await screen.findByRole("button", { name: "Open chat" }));
+    await screen.findByText("unread two");
+    await waitFor(() => expect(fetch).toHaveBeenCalledWith(`/api/chat?date=${DAY}&after=7`));
+    expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+    expect(document.querySelector(".chat__message--fresh")).toBeNull();
+  });
+
+  it("marks nothing new in a room never read, nor a line that arrives while it is open", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let messages = [{ id: 1, handle: "A1", body: "first", at: "2026-10-12T10:00:00Z" }];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => (url.includes("latest") ? json({ latest: 1 }) : json({ messages }))),
+    );
+    render(<ChatBubble />);
+    await userEvent.click(await screen.findByRole("button", { name: "Open chat, new messages" }));
+    await screen.findByText("first");
+    expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+
+    messages = [{ id: 2, handle: "B2", body: "live one", at: "2026-10-12T10:01:00Z" }];
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4000);
+    });
+    expect(await screen.findByText("live one")).toBeInTheDocument();
+    expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it("does not count one room's lines as read in the room stepped to", async () => {
+    const before = addDays(DAY, -1);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.includes("latest")
+          ? json({ latest: 0 })
+          : url.includes(`date=${before}`)
+            ? json({ messages: [{ id: 1, handle: "A1", body: "older room", at: "2026-10-11T10:00:00Z" }] })
+            : json({ messages: [{ id: 9, handle: "B2", body: "this room", at: "2026-10-12T10:00:00Z" }] }),
+      ),
+    );
+    render(<ChatBubble />);
+    await userEvent.click(screen.getByRole("button", { name: "Open chat" }));
+    await screen.findByText("this room");
+    await userEvent.click(screen.getByRole("button", { name: "Previous puzzle's chat" }));
+    await screen.findByText("older room");
+    expect(JSON.parse(localStorage.getItem(CHAT_SEEN_KEY) ?? "{}")).toEqual({ [DAY]: 9, [before]: 1 });
+  });
+
   it("shows a notice as a line of its own, without a handle above it", async () => {
     const body = "CalmOtter3 banked top scoring word abaci (Mythic, 9.62)";
     vi.stubGlobal(
