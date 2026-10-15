@@ -365,8 +365,8 @@ describe("ChatBubble", () => {
   });
 
   it("colors a found word's notice by its tier and marks the word and mode by the mode", async () => {
-    const standard = "CalmOtter3 found Mythic word abaci (9.62) in standard mode";
-    const freeform = "StormyFox47 banked Legend word quokka (9.94) in freeform mode";
+    const standard = "CalmOtter3 found abaci 9.62";
+    const freeform = "StormyFox47 banked quokka 9.94";
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
@@ -375,7 +375,7 @@ describe("ChatBubble", () => {
             { id: 2, handle: "CalmOtter3", body: standard, at: "2026-10-13T10:00:00Z", kind: "find", word: "abaci", mode: "standard", tier: "Mythic" },
             { id: 3, handle: "StormyFox47", body: freeform, at: "2026-10-13T10:01:00Z", kind: "find", word: "quokka", mode: "freeform", tier: "Legend" },
             { id: 5, handle: "QuietLynx8", body: "QuietLynx8 found Legend word quincunx (9.97) in standard mode", at: "2026-10-13T10:01:30Z", kind: "find", word: "quincunx", mode: "standard", tier: "Legend" },
-            { id: 4, handle: "ArcticCanyon34", body: "ArcticCanyon34 banked Legend word omphalopsychite (9.99) in standard mode", at: "2026-10-13T10:02:00Z", kind: "find", word: "omphalopsychite", mode: "standard", tier: "Legend" },
+            { id: 4, handle: "ArcticCanyon34", body: "ArcticCanyon34 banked omphalopsychite 9.99", at: "2026-10-13T10:02:00Z", kind: "find", word: "omphalopsychite", mode: "standard", tier: "Legend" },
           ],
         }),
       ),
@@ -385,7 +385,9 @@ describe("ChatBubble", () => {
     const mythic = (await screen.findByText("abaci")).closest("li")!;
     expect(mythic).toHaveClass("chat__message--notice", "chat__message--find", "chat__message--mythic");
     expect(mythic.querySelector(".chat__word strong")).toHaveTextContent("abaci");
-    expect(mythic.querySelector(".chat__mode strong")).toHaveTextContent("standard");
+    // The mode is the word's paint, and is said only to screen readers.
+    expect(mythic.querySelector(".chat__mode")).toBeNull();
+    expect(mythic.querySelector(".chat__body .sr-only:last-child")).toHaveTextContent("in standard mode");
     expect(mythic).toHaveClass("chat__message--standard");
     // Picked by the line's id (2 here), and never Freeform's ✨.
     expect(mythic.querySelector(".chat__notice-icon")).toHaveTextContent("⚡");
@@ -395,12 +397,14 @@ describe("ChatBubble", () => {
     expect(topLegend.querySelector(".chat__notice-icon")).toHaveTextContent("💎");
     const legend997 = (await screen.findByText("quincunx")).closest("li")!;
     expect(legend997.querySelector(".chat__notice-icon")).toHaveTextContent("💥");
+    // A line posted before the notice was shortened still paints its mode.
+    expect(legend997.querySelector(".chat__mode strong")).toHaveTextContent("standard");
     expect(mythic.querySelector(".chat__finder strong")).toHaveTextContent("CalmOtter3");
-    expect(mythic.querySelector(".chat__body")).toHaveTextContent(standard);
+    expect(mythic.querySelector(".chat__body")).toHaveTextContent(`${standard} in standard mode`);
 
     const legend = container.querySelector(".chat__message--legend")!;
     expect(legend.querySelectorAll(".chat__word .rainbow-word__letter")).toHaveLength("quokka".length);
-    expect(legend.querySelectorAll(".chat__mode .rainbow-word__letter")).toHaveLength("freeform".length);
+    expect(legend.querySelector(".chat__mode")).toBeNull();
     expect(legend).toHaveClass("chat__message--freeform");
     expect(legend.querySelector(".chat__notice-icon")).toHaveTextContent("✨");
     expect(legend.querySelectorAll(".chat__finder .rainbow-word__letter")).toHaveLength("StormyFox47".length);

@@ -268,7 +268,7 @@ describe("api/chat POST banked", () => {
     withEnv();
     const handle = handleFor(PLAYER);
     const verb = noticeVerb(handle, "abaci");
-    const body = `${handle} ${verb} Mythic word abaci (9.62) in standard mode`;
+    const body = `${handle} ${verb} abaci 9.62`;
     const fetchMock = stubFetch([
       {
         status: "find",

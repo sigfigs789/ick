@@ -140,10 +140,13 @@ const STANDARD_FIND_ICONS = [
 const TOP_LEGEND_ICON = "💎";
 const TOP_LEGEND_MIN = 9.99;
 
-/** The score a find notice's body shows, as "(9.99) in standard mode". */
+/**
+ * The score a find notice's body ends with: "abaci 9.99", or "(9.99) in
+ * standard mode" on a line posted before the notice was shortened.
+ */
 function noticeScore(body: string): number | null {
-  const match = /\((\d+(?:\.\d+)?)\) in (?:standard|freeform) mode$/.exec(body);
-  return match ? Number(match[1]) : null;
+  const match = /(?:\((\d+(?:\.\d+)?)\) in (?:standard|freeform) mode| (\d+\.\d+))$/.exec(body);
+  return match ? Number(match[1] ?? match[2]) : null;
 }
 
 function noticeIcon(message: ChatMessage & { kind: NonNullable<ChatMessage["kind"]> }): string {
@@ -153,16 +156,20 @@ function noticeIcon(message: ChatMessage & { kind: NonNullable<ChatMessage["kind
 }
 
 /**
- * A notice's body with its word and its closing "in standard mode" painted the
+ * A notice's body with its word and any closing "in standard mode" painted the
  * way the game marks its modes: bold for Standard, rainbow for Freeform. A "find"
- * notice's opening handle is painted the same way. A body that is not shaped as
- * expected is shown as it is.
+ * notice's opening handle is painted the same way. A find no longer names its
+ * mode (see findNoticeBody), so it is said to screen readers alone. A body that
+ * is not shaped as expected is shown as it is.
  */
 function NoticeBody({ message }: { message: ChatMessage }) {
   const { body, word, mode } = message;
   const suffix = mode ? modeSuffix(mode) : "";
-  if (!word || !/^[a-z]+$/.test(word) || !mode || !body.endsWith(suffix)) return <>{body}</>;
-  const head = body.slice(0, -suffix.length);
+  const suffixed = !!mode && body.endsWith(suffix);
+  if (!word || !/^[a-z]+$/.test(word) || !mode || (!suffixed && message.kind !== "find")) {
+    return <>{body}</>;
+  }
+  const head = suffixed ? body.slice(0, -suffix.length) : body;
   // The last time the word stands alone: it follows the handle, which may
   // contain it.
   const matches = [...head.matchAll(new RegExp(`\\b${word}\\b`, "g"))];
@@ -195,9 +202,15 @@ function NoticeBody({ message }: { message: ChatMessage }) {
           {head.slice(at + word.length)}
         </>
       )}
-      {" in "}
-      <span className="chat__mode">{paint(modeName)}</span>
-      {" mode"}
+      {suffixed ? (
+        <>
+          {" in "}
+          <span className="chat__mode">{paint(modeName)}</span>
+          {" mode"}
+        </>
+      ) : (
+        <span className="sr-only">{` in ${modeName} mode`}</span>
+      )}
     </>
   );
 }
