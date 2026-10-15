@@ -223,6 +223,35 @@ describe("the leaderboard page", () => {
     expect(monthly[0]).toHaveTextContent("310.5");
   });
 
+  it("shows the streak board beside the others when the server sends one", async () => {
+    stubFetch({
+      ...OPEN,
+      streak: [
+        { rank: 1, playerId: ALICE, current: 21, best: 21 },
+        { rank: 2, playerId: BOB, current: 3, best: 40 },
+      ],
+      streakSelf: null,
+    });
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("Streaks")).toHaveLength(2));
+    expect(boardRows("Streaks")[0]).toHaveTextContent(handleFor(ALICE));
+    expect(boardRows("Streaks")[0]).toHaveTextContent("21");
+    // Ranked by the run they are on, with their longest kept as the detail.
+    expect(boardRows("Streaks")[1]).toHaveTextContent("40 days");
+    // No window, so nothing to step through.
+    const streaks = screen.getByRole("region", { name: "Streaks" });
+    expect(within(streaks).queryByRole("button", { name: /previous/i })).toBeNull();
+  });
+
+  it("leaves the streak board out when the server has none", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() => expect(boardRows("This week")).toHaveLength(2));
+    expect(screen.queryByRole("region", { name: "Streaks" })).toBeNull();
+  });
+
   it("crowns the top row of each board and leaves the rest plain", async () => {
     stubFetch();
     render(<LeaderboardPage />);

@@ -522,6 +522,33 @@ describe("reading the boards", () => {
     expect(boards.monthlySelf?.rank).toBe(214);
   });
 
+  it("asks for the streak board and reads it", async () => {
+    const fetchMock = stubFetch(
+      boardsResponse({
+        streak: [
+          { rank: 1, playerId: "me", current: 12, best: 30 },
+          { rank: 2, playerId: "you", current: 0, best: 4 },
+        ],
+        streakSelf: { playerId: "late", current: 2, best: 2 },
+      })
+    );
+
+    const boards = await fetchBoards("2026-08-27");
+    expect(requestedUrl(fetchMock)).toContain("streak=1");
+    // A row on no streak is not a row on the streak board, and a self row
+    // without a rank is dropped like any other board's.
+    expect(boards.streak).toEqual([
+      { rank: 1, playerId: "me", name: handleFor("me"), current: 12, best: 30 },
+    ]);
+    expect(boards.streakSelf).toBeNull();
+  });
+
+  it("leaves the streak board out when the server sent none", async () => {
+    stubFetch(boardsResponse({}));
+    const boards = await fetchBoards("2026-08-27");
+    expect(boards.streak).toBeNull();
+  });
+
   it("has no row below the cut when the player is on the board", async () => {
     stubFetch(boardsResponse({ weekly: [{ rank: 1, playerId: "me", windowWord: "inkling", windowZipf: 2.9, score: 12, puzzles: 2 }] }));
 

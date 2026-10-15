@@ -386,6 +386,56 @@ describe("api/leaderboard reads", () => {
     });
   });
 
+  it("adds the streak board when asked, counted up to the reader's today", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      OPEN,
+      [
+        { rank: 1, player_id: PLAYER, current_streak: 15, best_streak: 20, streak_since: "2026-08-11" },
+        { rank: 140, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", current_streak: 1, best_streak: 3 },
+      ],
+    ]);
+    const response = await handler(
+      get(`?since=${SUNDAY}&month=${MONTH}&today=2026-08-25&streak=1&limit=10&mode=freeform`)
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.streak).toEqual([
+      { rank: 1, playerId: PLAYER, current: 15, best: 20, since: "2026-08-11" },
+    ]);
+    expect(body.streakSelf).toMatchObject({ rank: 140, current: 1, best: 3 });
+    // No mode: a day played either way keeps a streak alive.
+    expect(rpcCall(fetchMock, 1)?.url).toBe(
+      "https://project.supabase.co/rest/v1/rpc/leaderboard_streaks"
+    );
+    expect(rpcCall(fetchMock, 1)?.args).toEqual({
+      p_today: "2026-08-25",
+      p_limit: 10,
+      p_player: null,
+    });
+  });
+
+  it("loses only the streak board when its read fails", async () => {
+    withEnv();
+    stubFetch([OPEN, 404]);
+    const response = await handler(get(`?since=${SUNDAY}&month=${MONTH}&streak=1`));
+
+    // A deploy that lands before the migration costs the board that is not
+    // there yet, and nothing else.
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.streak).toEqual([]);
+    expect(body.allTime).toHaveLength(2);
+  });
+
+  it("runs no streak query for a caller that did not ask for one", async () => {
+    withEnv();
+    const fetchMock = stubFetch([OPEN]);
+    await handler(get(`?since=${SUNDAY}&month=${MONTH}&today=2026-08-25`));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("drops a day that names no real puzzle rather than refusing the boards", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);

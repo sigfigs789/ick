@@ -3159,7 +3159,8 @@ h2 {
    here for, and a control that outweighs them is one more thing to look past. */
 .leaderboard__windows {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
   gap: 2px;
   margin-bottom: 1rem;
   padding: 3px;
@@ -3212,9 +3213,23 @@ h2 {
   .app--wide {
     max-width: 62rem;
   }
+  /* Four boards need more than three did, and only the leaderboard has four --
+     every other wide page keeps the width it reads at. */
+  .app--wide:has(.leaderboard__boards) {
+    max-width: 76rem;
+  }
   .leaderboard__boards {
-    grid-template-columns: repeat(3, 1fr);
+    /* One column per board, however many the page is showing: the streak board
+       is left out where the server has none (the Reddit build). */
+    grid-template-columns: none;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
     column-gap: 1.5rem;
+  }
+  /* The streak board's empty nav row, as tall as the arrows on the boards
+     beside it -- only here, where the boards are side by side. */
+  .leaderboard__board-nav--none {
+    min-height: 2rem;
   }
   .leaderboard__board + .leaderboard__board {
     padding-top: 0;
