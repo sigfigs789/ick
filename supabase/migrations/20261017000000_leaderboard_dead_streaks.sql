@@ -9,6 +9,10 @@
 -- A player with one day played is left off: one puzzle is a visit, not a
 -- streak that was lost.
 --
+-- Without a report for that last day, the saved freezes are taken as the
+-- most a streak can hold (2), so the board waits until the run is certainly
+-- over rather than guessing it is.
+--
 -- The run lengths come from the game's own report when it is about the same
 -- last day played (most players who died before reports existed have none),
 -- and otherwise from the days in leaderboard_scores by the free-day rule the
@@ -53,6 +57,11 @@ as $$
     left join public.leaderboard_player_streaks r on r.player_id = p.player_id
     where (p_today - 1) - p.last_played > 1 + case
       when r.last_played = p.last_played then r.saved_freezes
+      -- No report for the last day played (a failed streak write, or a game
+      -- too old to send one): assume the most a streak can hold, so a run the
+      -- game still shows as frozen is never listed here. Saved freezes did not
+      -- exist before 2026-10-15, so a run that ended earlier had none.
+      when p.last_played >= date '2026-10-15' then 2
       else 0
     end
   ),
