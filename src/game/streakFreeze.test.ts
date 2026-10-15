@@ -77,6 +77,17 @@ describe("saved freezes", () => {
     expect(earnFreeze(streakOf({ currentStreak: 36, bankedFreezes: 0 })).bankedFreezes).toBe(0);
   });
 
+  it("keeps the cap a past streak reached, so a returning player earns from their first week", () => {
+    const returning = { longestStreak: 40, bankedFreezes: 0 };
+    expect(earnFreeze(streakOf({ ...returning, currentStreak: 7 })).bankedFreezes).toBe(1);
+    expect(earnFreeze(streakOf({ ...returning, currentStreak: 14, bankedFreezes: 1 })).bankedFreezes).toBe(2);
+    // A past 14-day streak caps at one.
+    expect(earnFreeze(streakOf({ longestStreak: 20, currentStreak: 7, bankedFreezes: 0 })).bankedFreezes).toBe(1);
+    expect(
+      earnFreeze(streakOf({ longestStreak: 20, currentStreak: 21, bankedFreezes: 1 })).bankedFreezes
+    ).toBe(1);
+  });
+
   it("covers missed days past the grace day, one each", () => {
     const after = applyFreezes(streakOf({ bankedFreezes: 2 }), "2026-10-05");
     expect(after).toMatchObject({

@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { atRisk, freezeCap, savedFreezeCovering } from "../game/streakFreeze";
+import { atRisk, savedFreezeCovering, streakFreezeCap } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
 
 /** How saved freezes work, for the freeze badge's popup. */
@@ -83,7 +83,7 @@ export function StreakDisplay({
   const frozen = isToday && date !== undefined && savedFreezeCovering(streak, date);
   const risky = isToday && date !== undefined && atRisk(streak, date);
   const banked = streak.bankedFreezes ?? 0;
-  const cap = freezeCap(streak.currentStreak);
+  const cap = streakFreezeCap(streak);
   return (
     <div
       className="streak-display"

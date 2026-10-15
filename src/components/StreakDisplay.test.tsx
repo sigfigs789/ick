@@ -96,6 +96,11 @@ describe("StreakDisplay", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("shows the cap the longest streak earned, even on a short current one", () => {
+    render(<StreakDisplay streak={{ ...streak, currentStreak: 3, longestStreak: 45 }} />);
+    expect(screen.getByRole("button", { name: /streak freezes/i }).textContent).toBe("🧊0/2");
+  });
+
   it("shows the current puzzle's total only", () => {
     render(<StreakDisplay streak={{ ...streak, highScore: 9.3, crushedIt: 4, elite: 1 }} totalRarity={21.4} />);
 
