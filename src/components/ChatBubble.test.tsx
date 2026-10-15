@@ -382,7 +382,7 @@ describe("ChatBubble", () => {
     expect(mythic).toHaveClass("chat__message--standard");
     // Picked by the line's id (2 here), and never Freeform's ✨.
     expect(mythic.querySelector(".chat__notice-icon")).toHaveTextContent("⚡");
-    // 💎 and 🏆 are a Standard Legend's at 9.99 or more; under that it rotates
+    // 💎 is a Standard Legend's at 9.99 or more; under that it rotates
     // like a Mythic (id 5 here).
     const topLegend = (await screen.findByText("omphalopsychite")).closest("li")!;
     expect(topLegend.querySelector(".chat__notice-icon")).toHaveTextContent("💎");
