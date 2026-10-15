@@ -694,6 +694,64 @@ export async function fetchTotalBoard(
   return { entries, self: parseTotal(body.totalSelf, 0) };
 }
 
+/** One row of the dead-streaks board: a streak that ended and never restarted. */
+export interface DeadStreakEntry {
+  rank: number;
+  playerId: string;
+  name: string;
+  /** Days in the run that ended. */
+  lost: number;
+  /** The longest run they ever had, which is what ranks them. */
+  best: number;
+  /** Their last day played. */
+  lastPlayed: string;
+  /** How many days they played in all. */
+  days: number;
+}
+
+/** Read the dead-streaks board, dropping anything malformed. */
+function parseDeadStreaks(raw: unknown): DeadStreakEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const entries: DeadStreakEntry[] = [];
+  for (const item of raw as Record<string, unknown>[]) {
+    if (!item || typeof item !== "object") continue;
+    const { rank, playerId, lost, best, lastPlayed, days } = item;
+    if (typeof playerId !== "string" || typeof lastPlayed !== "string") continue;
+    if (typeof best !== "number" || !Number.isFinite(best) || best < 1) continue;
+    const lostDays = typeof lost === "number" && Number.isFinite(lost) ? lost : 0;
+    entries.push({
+      rank: typeof rank === "number" && Number.isFinite(rank) ? rank : entries.length + 1,
+      playerId,
+      name: nameFor(playerId, item.source),
+      lost: lostDays,
+      best: Math.max(best, lostDays),
+      lastPlayed,
+      days: typeof days === "number" && Number.isFinite(days) ? days : 0,
+    });
+  }
+  return entries;
+}
+
+/**
+ * Read the dead-streaks board: players with two or more days played whose
+ * streak ended and who never came back, longest streak first.
+ *
+ * Counted up to the player's own today, like the streak board. Rejects on
+ * failure; the caller turns that into the page's error state.
+ */
+export async function fetchDeadStreaks(
+  date: string = todayDateString(),
+  options: FetchOptions = {}
+): Promise<DeadStreakEntry[]> {
+  const response = await fetch(
+    `/api/leaderboard?dead=1&today=${encodeURIComponent(date)}${freshParam(options)}`,
+    { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), cache: "no-store" }
+  );
+  if (!response.ok) throw new Error(`leaderboard dead streaks ${response.status}`);
+  const body = (await response.json()) as Record<string, unknown>;
+  return parseDeadStreaks(body.deadStreaks);
+}
+
 /**
  * Read today's finds.
  *

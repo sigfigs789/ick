@@ -1,5 +1,6 @@
 import {
   ANALYTICS_PATH,
+  DEAD_STREAKS_PATH,
   FEEDBACK_PATH,
   FOLD_REVIEW_PATH,
   FOLDED_LIVE_PATH,
@@ -31,6 +32,7 @@ const PLAYER_PAGES: PageLink[] = [
 
 const CURATOR_PAGES: PageLink[] = [
   { path: ANALYTICS_PATH, label: "Analytics", note: "Who plays and whether they come back." },
+  { path: DEAD_STREAKS_PATH, label: "Dead streaks", note: "Streaks that ended and never came back." },
   { path: FEEDBACK_PATH, label: "Feedback", note: "Notes players have left.", keyed: true },
   { path: FREEFORM_FEEDBACK_PATH, label: "Freeform feedback", note: "The Freeform week verdict.", keyed: true },
   { path: FOLD_REVIEW_PATH, label: "Fold review", note: "Approve or reject the scoring’s folds.", keyed: true },

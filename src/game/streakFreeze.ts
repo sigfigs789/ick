@@ -8,11 +8,15 @@
  * automatically on the next load after the missed day.
  *
  * The grace day only follows a played day. Past it, a missed day is covered
- * only by a saved freeze (`bankedFreezes`), which a long streak earns: one for
- * every seven days played -- the streak count, which frozen days do not add to
- * -- held up to a cap that grows with the streak (see `freezeCap`). Saved freezes are spent one per missed day, after the grace
- * day, and only when there are enough to cover the whole gap -- a gap they
- * cannot cover resets the streak and they go with it.
+ * only by a saved freeze (`bankedFreezes`), earned one for every seven days
+ * played -- the streak count, which frozen days do not add to -- and held up
+ * to a cap set by the longest streak the player has ever had (see
+ * `streakFreezeCap`). The cap is permanent: a player who once reached 30 days
+ * can hold two on every streak after, so a returning player starts earning
+ * from their first week. Saved freezes are spent one per missed day, after the
+ * grace day, and only when there are enough to cover the whole gap -- a gap
+ * they cannot cover resets the streak and the freezes go with it, though the
+ * cap stays.
  *
  * So the day after a covered day is a day a streak can be lost if no saved
  * freeze is left, and that is when `atRisk` is true and the game says so in a
@@ -40,14 +44,19 @@ const FROZEN_DATES_KEPT_DAYS = 62;
 const DAYS_PER_EARNED_FREEZE = 7;
 
 /**
- * The most saved freezes a streak of `days` can hold: none under two weeks,
- * one until thirty days, two from then on. A freeze earned past the cap is
- * not kept.
+ * The most saved freezes a player whose longest streak is `days` can hold:
+ * none under two weeks, one from 14 days, two from 30. A freeze earned past
+ * the cap is not kept.
  */
 export function freezeCap(days: number): number {
   if (days >= 30) return 2;
   if (days >= 14) return 1;
   return 0;
+}
+
+/** The cap for this player: set by the longest streak they have ever had. */
+export function streakFreezeCap(streak: StreakState): number {
+  return freezeCap(Math.max(streak.longestStreak, streak.currentStreak));
 }
 
 /** Saved freezes after the streak reaches `currentStreak` played days. */
@@ -56,7 +65,7 @@ export function earnFreeze(streak: StreakState): StreakState {
   if (streak.currentStreak === 0 || streak.currentStreak % DAYS_PER_EARNED_FREEZE !== 0) {
     return streak;
   }
-  const earned = Math.min(banked + 1, freezeCap(streak.currentStreak));
+  const earned = Math.min(banked + 1, streakFreezeCap(streak));
   return earned > banked ? { ...streak, bankedFreezes: earned } : streak;
 }
 

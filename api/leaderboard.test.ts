@@ -495,6 +495,34 @@ describe("api/leaderboard reads", () => {
     expect(response.status).toBe(502);
   });
 
+  it("returns the dead-streaks board on its own, counted up to the reader's today", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      [
+        { rank: 1, player_id: PLAYER, lost_streak: 4, best_streak: 12, last_played: "2026-08-20", days_played: 30 },
+      ],
+    ]);
+    const response = await handler(get("?dead=1&today=2026-08-25"));
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.deadStreaks).toEqual([
+      { rank: 1, playerId: PLAYER, lost: 4, best: 12, lastPlayed: "2026-08-20", days: 30 },
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(rpcCall(fetchMock)?.url).toBe(
+      "https://project.supabase.co/rest/v1/rpc/leaderboard_dead_streaks"
+    );
+    expect(rpcCall(fetchMock)?.args).toEqual({ p_today: "2026-08-25", p_limit: 100 });
+  });
+
+  it("reports a failed dead-streaks read as unavailable", async () => {
+    withEnv();
+    stubFetch([404]);
+    const response = await handler(get("?dead=1&today=2026-08-25"));
+    expect(response.status).toBe(502);
+  });
+
   it("runs no streak query for a caller that did not ask for one", async () => {
     withEnv();
     const fetchMock = stubFetch([OPEN]);

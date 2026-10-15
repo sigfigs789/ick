@@ -37,6 +37,9 @@ describe("routes", () => {
     expect(routeFor("/leaderboard-total")).toBe("leaderboard-total");
     expect(routeFor("/leaderboard-total/")).toBe("leaderboard-total");
     expect(pathFor("leaderboard-total")).toBe("/leaderboard-total");
+    expect(routeFor("/dead-streaks")).toBe("dead-streaks");
+    expect(routeFor("/dead-streaks/")).toBe("dead-streaks");
+    expect(pathFor("dead-streaks")).toBe("/dead-streaks");
   });
 
   it("treats anything else as the game, rather than a client-rendered 404", () => {
