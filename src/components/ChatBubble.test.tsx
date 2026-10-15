@@ -378,7 +378,8 @@ describe("ChatBubble", () => {
     expect(mythic.querySelector(".chat__word strong")).toHaveTextContent("abaci");
     expect(mythic.querySelector(".chat__mode strong")).toHaveTextContent("standard");
     expect(mythic).toHaveClass("chat__message--standard");
-    expect(mythic.querySelector(".chat__notice-icon")).toHaveTextContent("🔥");
+    // Picked by the line's id (2 here), and never Freeform's ✨.
+    expect(mythic.querySelector(".chat__notice-icon")).toHaveTextContent("👑");
     expect(mythic.querySelector(".chat__finder strong")).toHaveTextContent("CalmOtter3");
     expect(mythic.querySelector(".chat__body")).toHaveTextContent(standard);
 

@@ -125,9 +125,17 @@ const NOTICE_ICONS: Record<NonNullable<ChatMessage["kind"]>, string> = {
   earlier: "🔎",
 };
 
-/** A Standard find is the harder one, so it alone burns rather than sparkles. */
-function noticeIcon(kind: NonNullable<ChatMessage["kind"]>, mode: ChatMessage["mode"]): string {
-  return kind === "find" && mode === "standard" ? "🔥" : NOTICE_ICONS[kind];
+/**
+ * A Standard find is the harder one, so it never sparkles: ✨ is Freeform's. It
+ * takes one of these instead, picked by the notice's id so every player sees
+ * the same one on the same line. 🏆 and 🔎 are left out, being other notices'.
+ */
+const STANDARD_FIND_ICONS = ["🔥", "💎", "👑", "⚡", "🎯", "🤯", "💥", "🚀"];
+
+function noticeIcon(message: ChatMessage & { kind: NonNullable<ChatMessage["kind"]> }): string {
+  return message.kind === "find" && message.mode === "standard"
+    ? STANDARD_FIND_ICONS[message.id % STANDARD_FIND_ICONS.length]
+    : NOTICE_ICONS[message.kind];
 }
 
 /**
@@ -974,7 +982,7 @@ function ChatLine({
         <>
           <span className="chat__body">
             <span className="chat__notice-icon" aria-hidden="true">
-              {noticeIcon(message.kind, message.mode)}
+              {noticeIcon({ ...message, kind: message.kind })}
             </span>{" "}
             <NoticeBody message={message} />
           </span>
