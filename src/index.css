@@ -3147,11 +3147,10 @@ h2 {
 .leaderboard__board {
   min-width: 0;
 }
-/* The window picker, on the narrow layout only -- the component renders it
-   nowhere else (see LeaderboardPage), because a laptop already has all three
-   boards on screen and a picker there would only hide two of them.
+/* The board picker, at every width: one board at a time, on a laptop as on a
+   phone (see LeaderboardPage).
 
-   A segmented control rather than three loose buttons: one inset track with the
+   A segmented control rather than loose buttons: one inset track with the
    chosen third raised out of it, which is the shape the phone app uses for the
    same three windows (native/src/screens/LeaderboardScreen.tsx) and the shape
    iOS has taught everybody to read as "one of these". Small, because it is a
@@ -3159,7 +3158,8 @@ h2 {
    here for, and a control that outweighs them is one more thing to look past. */
 .leaderboard__windows {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
   gap: 2px;
   margin-bottom: 1rem;
   padding: 3px;
@@ -3197,31 +3197,6 @@ h2 {
 .leaderboard__board + .leaderboard__board {
   padding-top: 1.9rem;
   border-top: 2px solid var(--border-strong);
-}
-/* Side by side once there is room for it, which is the whole reason this page is
-   wider than the game's column. The interesting thing about a weekly board is
-   how it differs from the monthly one -- who is new, who is always there -- and a
-   reader who has to scroll between them has to hold the first in their head to
-   see it. Only worth doing now that a board is five rows tall: at fifteen, the
-   pair was two screens and the comparison was theoretical.
-   The rule between them turns on its side and stays the heavier one. */
-@media (min-width: 64rem) {
-  /* Wider still than the 46rem the page reads at, because three boards side by
-     side need it -- and only at a width that actually has it, so a laptop gets
-     the comparison and a phone gets one column. */
-  .app--wide {
-    max-width: 62rem;
-  }
-  .leaderboard__boards {
-    grid-template-columns: repeat(3, 1fr);
-    column-gap: 1.5rem;
-  }
-  .leaderboard__board + .leaderboard__board {
-    padding-top: 0;
-    border-top: 0;
-    padding-left: 1.5rem;
-    border-left: 2px solid var(--border-strong);
-  }
 }
 .leaderboard__board-heading {
   margin: 0;
@@ -3340,52 +3315,9 @@ h2 {
      each side). What the list has to hold clear of its scrolling edges. */
   --dock-bleed: 4px;
 }
-/* Five rows and the top of the sixth -- the cap the wide layout keeps, where
-   three boards share the page and none of them can have all of it. The narrow
-   layout lifts it a little further down this file. The sliver is the
-   affordance: a list cut
-   cleanly at five looks like a list of five, and overlay scrollbars only appear
-   once you are already scrolling -- so the half-row is what says there is more.
-   `contain` keeps a flick inside the board from carrying on into the page.
-
-   The side padding is room for the docked row's outline. Scrolling on one axis
-   clips both, and the row filled the box to the pixel -- so its ring and shadow
-   were cut off flush at the left and right edges and the docked card read as a
-   band with square sides. The negative margin gives the padding back to the
-   page, so every row still starts and ends exactly where the column header
-   above it does. */
-.leaderboard__list {
-  max-height: calc(var(--row-height) * 5 + 0.95rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  padding-inline: var(--dock-bleed);
-  margin-inline: calc(-1 * var(--dock-bleed));
-}
-/* On the narrow layout the five-row cap is a rule against a page that no longer
-   exists. Five was the answer to three boards stacked in one scroll: a board at
-   its full length pushed the next heading off the screen, and the page read as
-   one long column of names. The pills made each window its own page -- there is
-   only ever one board under them -- so the room the other two used to need is
-   just room, and a board that stops a third of the way down a phone is throwing
-   it away.
-
-   No number replaces the five. The page becomes a column the height of the
-   screen, and the list is the part of it that gives: everything around it --
-   heading, nav, column header, the back button under it -- takes what it needs
-   and the board's rows take the rest. So the cut lands exactly above the back
-   button on every phone, and the page itself never scrolls; only the rows do,
-   which is the one scroll a reader wants here.
-
-   `flex-shrink` and not `flex-grow`: a board of three rows stays three rows
-   tall rather than stretching into a box with a hole under its last name. The
-   list only ever shrinks, and only as far as the screen makes it.
-
-   Scoped by `:has()` because the height has to come from the app shell, which
-   is shared with the finds page -- this is the one page that wants it. */
-/* On the narrow layout the board is not a box inside a page -- it is the page.
-   The five-row cap and the scroller under it were the answer to three boards
-   stacked in one column: a board at its full length pushed the next heading off
+/* At every width the board is not a box inside a page -- it is the page.
+   The five-row cap and the scroller under it were the answer to three or four
+   boards sharing one page: a board at its full length pushed the next heading off
    the screen, and the whole thing read as one long list of names with headings
    loose in it. The pills ended that. There is only ever one board under them,
    so there is nothing below it to protect, and a list that stops a third of the
@@ -3400,17 +3332,15 @@ h2 {
    resolve against the page, so your row rides the bottom of the screen while it
    is below the fold and sits in the flow once you reach it. Same rule, same
    behaviour, one scrollport up. */
-@media (max-width: 63.999rem) {
-  .leaderboard__list {
-    max-height: none;
-    overflow-y: visible;
-    /* Both were the scroller's: nothing to contain, and the side padding was
-       room for the docked row's ring against a clipped edge that is now gone.
-       Left in place they would only inset the rows from the column header. */
-    overscroll-behavior: auto;
-    padding-inline: 0;
-    margin-inline: 0;
-  }
+.leaderboard__list {
+  max-height: none;
+  overflow-y: visible;
+  /* Both were the scroller's: nothing to contain, and the side padding was
+     room for the docked row's ring against a clipped edge that is now gone.
+     Left in place they would only inset the rows from the column header. */
+  overscroll-behavior: auto;
+  padding-inline: 0;
+  margin-inline: 0;
 }
 /* Rank and score are fixed columns; the name takes what is left and the detail
    line tucks under it, so a long name wraps instead of shoving the score off the

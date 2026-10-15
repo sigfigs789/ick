@@ -24,7 +24,7 @@ export function StreakDisplay({
   isToday = false,
 }: Props) {
   // Yesterday was missed and covered by a freeze, so missing today too would
-  // end the streak: the flame turns to ice until today is played.
+  // end the streak: the flame turns to an hourglass until today is played.
   const frozen = isToday && date !== undefined && atRisk(streak, date);
   return (
     <div
@@ -41,7 +41,7 @@ export function StreakDisplay({
       <div className="streak-display__row">
         {frozen ? (
           <span className="streak-display__flame" aria-hidden="true">
-            🧊
+            ⏳
           </span>
         ) : streak.currentStreak >= 2 ? (
           <span className="streak-display__flame" aria-hidden="true">

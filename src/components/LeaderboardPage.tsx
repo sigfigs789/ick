@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   fetchBoards,
   dayFloor,
@@ -7,6 +7,7 @@ import {
   type FetchOptions,
   type BoardEntry,
   type Boards,
+  type StreakEntry,
 } from "../game/leaderboard";
 import { loadPlayerId, selfName } from "../game/player";
 import { addDays, formatDateLabel, todayDateString } from "../game/date";
@@ -24,13 +25,15 @@ import {
 import { WEEK_BEST_DAYS, weekLabel, weekStart } from "../game/week";
 import { formatScore, formatTotal } from "../game/dictionary";
 import { navigate } from "../routes";
-import { useNarrowLayout } from "../hooks/useNarrowLayout";
 import { CongratsBubble } from "./CongratsBubble";
 
 type LoadState = "loading" | "ready" | "error";
 
-/** One of the three windows the page counts, as the pills name them. */
-type BoardWindow = "day" | "week" | "month";
+/**
+ * One of the boards the page shows, as the pills name them: the three windows,
+ * and the streak board, which has none.
+ */
+type BoardWindow = "day" | "week" | "month" | "streak";
 
 /**
  * The three windows in the order they are shown, shortest first, with the word
@@ -46,6 +49,7 @@ const BOARD_WINDOWS: { window: BoardWindow; label: string }[] = [
   { window: "day", label: "Day" },
   { window: "week", label: "Week" },
   { window: "month", label: "Month" },
+  { window: "streak", label: "Streak" },
 ];
 
 /**
@@ -111,14 +115,21 @@ const boardCache = {
   day: pageCache<Pick<Boards, "daily" | "dailySelf">>(),
   week: pageCache<Pick<Boards, "weekly" | "weeklySelf" | "weekStart">>(),
   month: pageCache<Pick<Boards, "monthly" | "monthlySelf">>(),
+  // No window to step, so keyed by the day it was counted up to: a streak is
+  // only true as of a date, and a page reopened tomorrow has to ask again.
+  streak: pageCache<Pick<Boards, "streak" | "streakSelf">>(),
 };
 
 function cacheKey(board: GameMode, window: string): string {
   return `${loadPlayerId() ?? ""}:${windowKey(board, window)}`;
 }
 
-function remember(windows: Windows, loaded: Boards) {
+function remember(windows: Windows, loaded: Boards, today: string) {
   const { board } = windows;
+  boardCache.streak.set(cacheKey(board, `streak:${today}`), {
+    streak: loaded.streak,
+    streakSelf: loaded.streakSelf,
+  });
   boardCache.day.set(cacheKey(board, windows.day), {
     daily: loaded.daily,
     dailySelf: loaded.dailySelf,
@@ -134,14 +145,15 @@ function remember(windows: Windows, loaded: Boards) {
   });
 }
 
-/** All three boards for these windows, if every one of them has been read. */
-function recall(windows: Windows): Boards | null {
+/** Every board for these windows, if every one of them has been read. */
+function recall(windows: Windows, today: string): Boards | null {
   const { board } = windows;
   const day = boardCache.day.get(cacheKey(board, windows.day));
   const week = boardCache.week.get(cacheKey(board, windows.week));
   const month = boardCache.month.get(cacheKey(board, windows.month));
-  if (!day || !week || !month) return null;
-  return { ...day, ...week, ...month, mode: board };
+  const streak = boardCache.streak.get(cacheKey(board, `streak:${today}`));
+  if (!day || !week || !month || !streak) return null;
+  return { ...day, ...week, ...month, ...streak, mode: board };
 }
 
 /** The windows a page opens on, and their boards if this visit has read them. */
@@ -153,7 +165,7 @@ function openingBoards(): { windows: Windows; boards: Boards | null } {
     month: monthStart(day),
     board: currentMode(),
   };
-  return { windows, boards: recall(windows) };
+  return { windows, boards: recall(windows, day) };
 }
 
 /**
@@ -183,13 +195,13 @@ function boardState(
  * modal can do none of those, and a board is exactly the thing people want to
  * send each other.
  *
- * Three windows of the same game, all on screen at once, shortest first. Showing
- * them together is the point of having three: the interesting thing about any
- * one of them is how it differs from the others -- who is new today, who is
- * always there -- and a reader who has to click between them has to hold the
- * first in their head to see it. Today leads because it is the one anybody can
- * still win from nothing; by Thursday a week's board is mostly a week's play,
- * and a month's is a month's.
+ * One board at a time, picked from a row of pills -- Day, Week, Month, Streak --
+ * on every screen size. It used to lay the windows side by side on a laptop, on
+ * the reasoning that comparing them was the point; four boards made that row
+ * too crowded to read, and one picker everywhere means a laptop and a phone are
+ * the same page. Today leads because it is the one anybody can still win from
+ * nothing; by Thursday a week's board is mostly a week's play, and a month's is
+ * a month's.
  *
  * The finds that used to sit under all this are their own page now (see
  * FoundWordsPage): they are a list of *words* under two lists of *players*, they
@@ -256,26 +268,11 @@ export function LeaderboardPage() {
    */
   const [board] = useGameMode();
   /**
-   * Whether the page is showing one board at a time, and which one.
-   *
-   * Only ever true on the narrow layout. Three boards side by side is the whole
-   * point of the wide one -- what is interesting about any window is how it
-   * differs from the others -- but stacked on a phone that comparison is gone
-   * anyway: the second board starts below the fold, so the reader is already
-   * choosing one, just by scrolling past two. The pills make the choice a tap
-   * instead of a scroll, and put all three windows on the first screen.
-   *
-   * The day leads because it is the one anybody can still win from nothing, the
-   * same reason it is first in the stack.
-   *
-   * The choice is kept across a resize rather than reset with the layout: a
-   * window widened past the breakpoint shows all three boards, and narrowed back
-   * returns to the one that was picked.
+   * Which board the pills have picked. The day leads because it is the one
+   * anybody can still win from nothing.
    */
-  const narrow = useNarrowLayout();
   const [visibleBoard, setVisibleBoard] = useState<BoardWindow>("day");
-  /** Wide shows all three; narrow shows the one the pills have picked. */
-  const showsBoard = (which: BoardWindow) => !narrow || which === visibleBoard;
+  const showsBoard = (which: BoardWindow) => which === visibleBoard;
   const dayIsLive = day === today;
   const weekIsLive = week === thisWeek;
   const monthIsLive = month === thisMonth;
@@ -359,7 +356,7 @@ export function LeaderboardPage() {
     // request below only checks it: a reader stepping back and forward is
     // looking for something they have just seen, and a skeleton in its place
     // says it has gone. The answer swaps in when it lands, as a refresh does.
-    const cached = recall(windows);
+    const cached = recall(windows, today);
     if (cached) {
       setBoards(cached);
       setShown(windows);
@@ -371,7 +368,7 @@ export function LeaderboardPage() {
     const request = ++boardsRequest.current;
     fetchBoards(today, { day, week, month, mode: board })
       .then((loaded) => {
-        remember(windows, loaded);
+        remember(windows, loaded, today);
         if (request !== boardsRequest.current) return;
         setBoards(loaded);
         setShown(windows);
@@ -407,7 +404,7 @@ export function LeaderboardPage() {
       const request = ++boardsRequest.current;
       fetchBoards(today, { ...options, day, week, month, mode: board })
         .then((loaded) => {
-          remember({ day, week, month, board }, loaded);
+          remember({ day, week, month, board }, loaded, today);
           if (request !== boardsRequest.current) return;
           setBoards(loaded);
           setShown({ day, week, month, board });
@@ -567,25 +564,25 @@ export function LeaderboardPage() {
             <li>A week counts your best {WEEK_BEST_DAYS} days of 7</li>
             <li>A month counts your best {MONTH_BEST_DAYS} days</li>
           </ul>
-          {/* Which board, on the layout that only has room for one at a time.
+          {/* Which board, at every width.
               Above the boards rather than beside each heading, because it is one
-              choice about the section and not three controls: a reader picks a
-              window here and then reads a whole board, exactly as they would on
-              a laptop -- where these do not appear at all, because there all
-              three are already on screen and a picker would be a way of hiding
-              two of them.
+              choice about the section and not four controls: a reader picks a
+              window here and then reads a whole board.
+              No Streak pill where the server sent no streak board (the Reddit
+              build), so there is never a pill for a board that is not there.
               Buttons rather than tabs: what they switch is a section of the page
               that keeps its own heading and its own back/forward nav, and a
               tablist would promise arrow-key navigation between panels that are
               not panels. `aria-pressed` says which one is on, which is the whole
               of the state. */}
-          {narrow && (
-            <div
+          <div
               className="leaderboard__windows"
               role="group"
               aria-label="Which board to show"
             >
-              {BOARD_WINDOWS.map(({ window: boardWindow, label }) => (
+              {BOARD_WINDOWS.filter(
+                ({ window: boardWindow }) => boardWindow !== "streak" || boards.streak,
+              ).map(({ window: boardWindow, label }) => (
                 <button
                   key={boardWindow}
                   type="button"
@@ -596,8 +593,7 @@ export function LeaderboardPage() {
                   {label}
                 </button>
               ))}
-            </div>
-          )}
+          </div>
           {/* The boards, and the layer the congratulation wanders over. The
               bubble is positioned against this box rather than the viewport,
               because what it is about is the standings -- it names the winner
@@ -634,6 +630,8 @@ export function LeaderboardPage() {
                   state={dayState}
                   onRetry={load}
                   unit="day"
+                  columns={SCORE_COLUMNS}
+                  renderRow={scoreRow}
                   canGoBack={day > dayFloor()}
                   canGoForward={!dayIsLive}
                   onBack={() => setDay(addDays(day, -1))}
@@ -667,6 +665,8 @@ export function LeaderboardPage() {
                   // through the weeks that have finished, forward to the one they
                   // are playing. See the note on the nav in `Board`.
                   unit="week"
+                  columns={SCORE_COLUMNS}
+                  renderRow={scoreRow}
                   canGoBack={week > weekFloor()}
                   canGoForward={!weekIsLive}
                   onBack={() => setWeek(addDays(week, -7))}
@@ -696,10 +696,31 @@ export function LeaderboardPage() {
                   state={monthState}
                   onRetry={load}
                   unit="month"
+                  columns={SCORE_COLUMNS}
+                  renderRow={scoreRow}
                   canGoBack={month > monthFloor()}
                   canGoForward={!monthIsLive}
                   onBack={() => setMonth(previousMonthStart(month))}
                   onForward={() => setMonth(nextMonthStart(month))}
+                />
+              )}
+              {boards.streak && showsBoard("streak") && (
+                <Board
+                  heading="Streaks"
+                  // Not a window, so nothing resets: a streak ends when its
+                  // player stops, which is the one thing worth saying here.
+                  headingDetail="Who's on a run now"
+                  entries={boards.streak}
+                  self={boards.streakSelf}
+                  emptyMessage="Nobody's on a streak. Play today to start one."
+                  playerId={playerId}
+                  // Read with the other three and never stepped, so once the
+                  // page has boards this one is never waiting on anything.
+                  state="ready"
+                  onRetry={load}
+                  unit="streak board"
+                  columns={STREAK_COLUMNS}
+                  renderRow={streakRow}
                 />
               )}
             </div>
@@ -718,13 +739,17 @@ export function LeaderboardPage() {
   );
 }
 
-interface BoardProps {
+interface BoardProps<Entry extends { playerId: string }> {
   heading: string;
   /** A note beside the heading, set smaller -- when the board resets. */
   headingDetail?: string;
-  entries: BoardEntry[];
+  entries: Entry[];
   /** This player's own row, when they rank below the last one shown. */
-  self: BoardEntry | null;
+  self: Entry | null;
+  /** What the two stacked figures on the right of each row are. */
+  columns: readonly [string, string];
+  /** One row of this board. */
+  renderRow: (entry: Entry, isYou: boolean) => ReactNode;
   emptyMessage: string;
   playerId: string | null;
   /**
@@ -738,10 +763,27 @@ interface BoardProps {
   onRetry: () => void;
   /** What this board's window is called in its own controls: "week", "month". */
   unit: string;
-  canGoBack: boolean;
-  canGoForward: boolean;
-  onBack: () => void;
-  onForward: () => void;
+  /** Stepping the window. A board with no window (the streaks) leaves these out. */
+  canGoBack?: boolean;
+  canGoForward?: boolean;
+  onBack?: () => void;
+  onForward?: () => void;
+}
+
+/** The figures on a scored board: the window's total, and its best find. */
+const SCORE_COLUMNS = ["Total score", "Best find"] as const;
+/**
+ * The figures on the streak board: the run they are on, which is what ranks
+ * them, and the longest they have ever had.
+ */
+const STREAK_COLUMNS = ["Streak", "Longest streak"] as const;
+
+function scoreRow(entry: BoardEntry, isYou: boolean): ReactNode {
+  return <Row key={entry.playerId} entry={entry} isYou={isYou} />;
+}
+
+function streakRow(entry: StreakEntry, isYou: boolean): ReactNode {
+  return <StreakRow key={entry.playerId} entry={entry} isYou={isYou} />;
 }
 
 /**
@@ -756,11 +798,13 @@ interface BoardProps {
  * bottom edge of the board exactly as it docks the row of a player inside it.
  * The rank on it is the real one, not one past the last row that fits.
  */
-function Board({
+function Board<Entry extends { playerId: string }>({
   heading,
   headingDetail,
   entries,
   self,
+  columns,
+  renderRow,
   emptyMessage,
   playerId,
   state,
@@ -770,7 +814,7 @@ function Board({
   canGoForward,
   onBack,
   onForward,
-}: BoardProps) {
+}: BoardProps<Entry>) {
   return (
     <section className="leaderboard__board" aria-label={heading}>
       <h2 className="leaderboard__board-heading">
@@ -788,6 +832,7 @@ function Board({
           they know they can come back. Per board, because the two windows are
           different lengths of time and the comparison between them is the whole
           reason there are two. */}
+      {onBack && onForward && (
       <div className="leaderboard__board-nav">
         <button
           type="button"
@@ -810,6 +855,7 @@ function Board({
           <span aria-hidden="true">›</span>
         </button>
       </div>
+      )}
       {state === "error" ? (
         // Named for the board it belongs to: there are three retries on this
         // page now -- two boards and the feed -- and three buttons called "Try
@@ -861,8 +907,8 @@ function Board({
               which is the confusion this is here to end, not a smaller version
               of it. */}
           <p className="leaderboard__columns">
-            <span>Total score</span>
-            <span>Best find</span>
+            <span>{columns[0]}</span>
+            <span>{columns[1]}</span>
           </p>
           {/* The whole board. How many of its rows are on screen at once is the
               stylesheet's: three boards side by side on a laptop each cut to
@@ -877,13 +923,7 @@ function Board({
             tabIndex={0}
             aria-label={`${heading}, top ${entries.length}`}
           >
-            {entries.map((entry) => (
-              <Row
-                key={entry.playerId}
-                entry={entry}
-                isYou={playerId === entry.playerId}
-              />
-            ))}
+            {entries.map((entry) => renderRow(entry, playerId === entry.playerId))}
             {self && (
               <>
                 {/* The gap between the board and the row below its cut, said in
@@ -904,7 +944,7 @@ function Board({
                     it back into the flow after the gap.
                     Always "you": the server sends this row only to the player it
                     belongs to. */}
-                <Row entry={self} isYou />
+                {renderRow(self, true)}
               </>
             )}
           </ol>
@@ -1007,6 +1047,62 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
             )}
           </span>
         )}
+      </span>
+    </li>
+  );
+}
+
+/**
+ * One row of the streak board: who, how many days in a row, and their longest.
+ *
+ * The same row as a scored board's, with the run where the total goes and the
+ * longest run where the best find goes -- so the two boards read alike, and a
+ * reader who knows one already knows where to look on the other.
+ */
+function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
+  const isLeader = entry.rank === 1;
+  return (
+    <li
+      className={`leaderboard__row${isLeader ? " leaderboard__row--leader" : ""}${
+        isYou ? " leaderboard__row--you" : ""
+      }`}
+    >
+      <span className="leaderboard__rank">
+        {isLeader ? (
+          <>
+            <span className="leaderboard__rank-trophy" aria-hidden="true">
+              🏆
+            </span>
+            <span className="sr-only">{entry.rank}</span>
+          </>
+        ) : (
+          entry.rank
+        )}
+      </span>
+      <span className="leaderboard__name">
+        {entry.name}
+        {isYou && <span className="leaderboard__you">you</span>}
+      </span>
+      <span className="leaderboard__score">
+        {/* ⏳ on the day the run can be lost, as the game marks it (see
+            components/StreakDisplay.tsx): yesterday was missed and today is
+            not played yet. Neither on a run of one day, which is a start
+            rather than a streak and does not earn the fire. */}
+        {entry.current > 1 && (
+          <span aria-hidden="true">{entry.atRisk ? "⏳" : "🔥"} </span>
+        )}
+        {entry.current}
+        <span className="sr-only">
+          {" "}
+          {entry.current === 1 ? "day" : "days"} current streak
+          {entry.atRisk ? ", at risk" : ""}
+        </span>
+      </span>
+      <span className="leaderboard__detail">
+        <span className="leaderboard__meta" />
+        <span className="leaderboard__best">
+          Longest {entry.best}
+        </span>
       </span>
     </li>
   );

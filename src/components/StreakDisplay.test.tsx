@@ -32,7 +32,7 @@ describe("StreakDisplay", () => {
       frozenDates: ["2026-10-02"],
     };
     const { rerender } = render(<StreakDisplay streak={frozen} date="2026-10-03" isToday />);
-    expect(screen.getByText("🧊")).toBeInTheDocument();
+    expect(screen.getByText("⏳")).toBeInTheDocument();
     expect(screen.queryByText("🔥")).not.toBeInTheDocument();
 
     rerender(
@@ -43,7 +43,7 @@ describe("StreakDisplay", () => {
       />
     );
     expect(screen.getByText("🔥")).toBeInTheDocument();
-    expect(screen.queryByText("🧊")).not.toBeInTheDocument();
+    expect(screen.queryByText("⏳")).not.toBeInTheDocument();
   });
 
   it("shows the current puzzle's total and top rarity", () => {
