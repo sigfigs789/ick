@@ -102,10 +102,6 @@ export function DropDisplay({
         ))}
       </View>
 
-      {reveal && (
-        <Text style={[styles.ceiling, { color: theme.fgFaint }]}>Best possible score: 10.0</Text>
-      )}
-
       {completed && reveal && hidden && (
         <View style={styles.reveal}>
           <Pressable
@@ -225,10 +221,6 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: '800',
     letterSpacing: 2,
-  },
-  ceiling: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   reveal: {
     alignItems: 'center',

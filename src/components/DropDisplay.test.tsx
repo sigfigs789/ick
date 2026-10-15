@@ -22,9 +22,9 @@ describe("DropDisplay", () => {
     expect(screen.getByText("Aug 11's drop")).toBeInTheDocument();
   });
 
-  it("shows the best-possible score but not the rarity or word while playing", () => {
+  it("shows neither a score, the rarity nor the word while playing", () => {
     render(<DropDisplay drop="str" />);
-    expect(screen.getByText("Best possible score: 10.0")).toBeInTheDocument();
+    expect(screen.queryByText(/best possible score/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/mythic/i)).not.toBeInTheDocument();
     expect(document.querySelector(".drop-display__ceiling-word")).not.toBeInTheDocument();
   });
