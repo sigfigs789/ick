@@ -367,6 +367,7 @@ describe("ChatBubble", () => {
           messages: [
             { id: 2, handle: "CalmOtter3", body: standard, at: "2026-10-13T10:00:00Z", kind: "find", word: "abaci", mode: "standard", tier: "Mythic" },
             { id: 3, handle: "StormyFox47", body: freeform, at: "2026-10-13T10:01:00Z", kind: "find", word: "quokka", mode: "freeform", tier: "Legend" },
+            { id: 4, handle: "ArcticCanyon34", body: "ArcticCanyon34 banked Legend word omphalopsychite (9.99) in standard mode", at: "2026-10-13T10:02:00Z", kind: "find", word: "omphalopsychite", mode: "standard", tier: "Legend" },
           ],
         }),
       ),
@@ -379,7 +380,10 @@ describe("ChatBubble", () => {
     expect(mythic.querySelector(".chat__mode strong")).toHaveTextContent("standard");
     expect(mythic).toHaveClass("chat__message--standard");
     // Picked by the line's id (2 here), and never Freeform's ✨.
-    expect(mythic.querySelector(".chat__notice-icon")).toHaveTextContent("👑");
+    expect(mythic.querySelector(".chat__notice-icon")).toHaveTextContent("⚡");
+    // 💎 and 🏆 are a Standard Legend's alone.
+    const standardLegend = (await screen.findByText("omphalopsychite")).closest("li")!;
+    expect(standardLegend.querySelector(".chat__notice-icon")).toHaveTextContent("💎");
     expect(mythic.querySelector(".chat__finder strong")).toHaveTextContent("CalmOtter3");
     expect(mythic.querySelector(".chat__body")).toHaveTextContent(standard);
 

@@ -119,7 +119,7 @@ export interface ChatMessage {
 }
 
 const NOTICE_ICONS: Record<NonNullable<ChatMessage["kind"]>, string> = {
-  top: "🏆",
+  top: "🥇",
   tier: "✨",
   find: "✨",
   earlier: "🔎",
@@ -128,14 +128,16 @@ const NOTICE_ICONS: Record<NonNullable<ChatMessage["kind"]>, string> = {
 /**
  * A Standard find is the harder one, so it never sparkles: ✨ is Freeform's. It
  * takes one of these instead, picked by the notice's id so every player sees
- * the same one on the same line. 🏆 and 🔎 are left out, being other notices'.
+ * the same one on the same line. 💎 and 🏆 are Legend's alone; 🥇 and 🔎 are
+ * left out, being other notices'.
  */
-const STANDARD_FIND_ICONS = ["🔥", "💎", "👑", "⚡", "🎯", "🤯", "💥", "🚀"];
+const STANDARD_FIND_ICONS = ["🔥", "👑", "⚡", "🎯", "🤯", "💥", "🚀"];
+const STANDARD_LEGEND_ICONS = ["💎", "🏆"];
 
 function noticeIcon(message: ChatMessage & { kind: NonNullable<ChatMessage["kind"]> }): string {
-  return message.kind === "find" && message.mode === "standard"
-    ? STANDARD_FIND_ICONS[message.id % STANDARD_FIND_ICONS.length]
-    : NOTICE_ICONS[message.kind];
+  if (message.kind !== "find" || message.mode !== "standard") return NOTICE_ICONS[message.kind];
+  const icons = message.tier === "Legend" ? STANDARD_LEGEND_ICONS : STANDARD_FIND_ICONS;
+  return icons[message.id % icons.length];
 }
 
 /**
