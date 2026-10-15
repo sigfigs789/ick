@@ -411,6 +411,21 @@ describe("api/chat POST react", () => {
     expect((await handler(react())).status).toBe(429);
   });
 
+  it("names an unapplied migration rather than a passing outage", async () => {
+    withEnv();
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    stubFetch(undefined, 404);
+    const response = await handler(react());
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ ok: false, reason: "not-migrated" });
+    expect(String(logged.mock.calls[0]?.[0])).toContain("20261014040000_chat_reactions.sql");
+
+    stubFetch(undefined, 500);
+    const outage = await handler(react());
+    expect(outage.status).toBe(502);
+    expect(await outage.json()).toEqual({ ok: false, reason: "unavailable" });
+  });
+
   it("refuses text, a bad line and a bad room before touching the database", async () => {
     withEnv();
     const fetchMock = stubFetch();

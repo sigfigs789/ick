@@ -591,6 +591,15 @@ describe("ChatBubble reactions", () => {
     expect(screen.queryByRole("button", { name: /^🔥/ })).not.toBeInTheDocument();
   });
 
+  it("says reactions are not available, not to try again, when the server has none", async () => {
+    room([], { ok: false, reason: "not-migrated" }, 503);
+    await openRoom();
+    await userEvent.click(screen.getByRole("button", { name: "Add reaction" }));
+    await userEvent.click(screen.getByRole("button", { name: "React 🔥" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Reactions aren't available yet.");
+    expect(screen.queryByRole("button", { name: /^🔥/ })).not.toBeInTheDocument();
+  });
+
   it("opens the full picker from the tray's +", async () => {
     room([]);
     await openRoom();

@@ -177,10 +177,15 @@ const PROBLEM_TEXT: Record<ChatProblem | "rate-limited" | "unavailable", string>
   unavailable: "Couldn't send. Try again in a moment.",
 };
 
-const REACT_PROBLEM_TEXT: Record<"full" | "missing" | "rate-limited" | "unavailable", string> = {
+const REACT_PROBLEM_TEXT: Record<
+  "full" | "missing" | "rate-limited" | "not-migrated" | "unavailable",
+  string
+> = {
   full: "That message can't take any more reactions.",
   missing: "That message is gone.",
   "rate-limited": "Slow down a little. Try again in a few seconds.",
+  // The server has no reactions yet (api/chat.ts); trying again won't help.
+  "not-migrated": "Reactions aren't available yet.",
   unavailable: "Couldn't react. Try again in a moment.",
 };
 
@@ -722,7 +727,8 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
       } else if (
         data.reason === "full" ||
         data.reason === "missing" ||
-        data.reason === "rate-limited"
+        data.reason === "rate-limited" ||
+        data.reason === "not-migrated"
       ) {
         fail(data.reason);
       } else {
