@@ -1,11 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { formatScore } from "../game/dictionary";
 import { atRisk, freezeCap, savedFreezeCovering } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
-
-/** What the two tier counters count, said once for the tooltip and the label. */
-const CRUSHED_IT_TITLE = "Days you found a Rare word or better";
-const ELITE_TITLE = "Days you found an Extremely Rare word or better";
 
 /** How saved freezes work, for the freeze badge's popup. */
 const FREEZE_RULES =
@@ -70,8 +65,7 @@ function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
 interface Props {
   streak: StreakState;
   totalRarity?: number;
-  topRarity?: number;
-  /** Puzzle date, so the top score formats for the scoring system in effect that day. */
+  /** Puzzle date, which decides whether today's freeze state is shown. */
   date?: string;
   /** Whether `date` is today's puzzle, which is when a freeze spent yesterday is news. */
   isToday?: boolean;
@@ -80,7 +74,6 @@ interface Props {
 export function StreakDisplay({
   streak,
   totalRarity = 0,
-  topRarity = 0,
   date,
   isToday = false,
 }: Props) {
@@ -96,13 +89,10 @@ export function StreakDisplay({
       className="streak-display"
       aria-label={
         `Current streak: ${streak.currentStreak} days. ` +
-        `${CRUSHED_IT_TITLE}: ${streak.crushedIt}. ` +
-        `${ELITE_TITLE}: ${streak.elite}. ` +
         (frozen ? "A saved freeze is covering your streak. " : "") +
         (risky ? "Play today to keep your streak. " : "") +
         `Streak freezes: ${banked} of ${cap}. ` +
-        `This puzzle's total score: ${totalRarity.toFixed(1)}. ` +
-        `Rarest word so far: ${formatScore(topRarity, date)}.`
+        `This puzzle's total score: ${totalRarity.toFixed(1)}.`
       }
     >
       <div className="streak-display__row">
@@ -118,14 +108,6 @@ export function StreakDisplay({
         <span className="streak-display__count">{streak.currentStreak}</span>
         <span className="streak-display__unit">day streak</span>
         <FreezeBadge banked={banked} cap={cap} />
-        <span className="streak-display__tracker" title={CRUSHED_IT_TITLE}>
-          <span className="streak-display__count">{streak.crushedIt}</span>
-          <span className="streak-display__unit">Crushed it</span>
-        </span>
-        <span className="streak-display__tracker" title={ELITE_TITLE}>
-          <span className="streak-display__count">{streak.elite}</span>
-          <span className="streak-display__unit">Elite</span>
-        </span>
       </div>
       {risky && (
         <p className="streak-display__saved">You missed yesterday. Play today to keep your streak.</p>
@@ -134,10 +116,6 @@ export function StreakDisplay({
         <span className="streak-display__rarity-score">
           <span>Total</span>
           <strong>{totalRarity.toFixed(1)}</strong>
-        </span>
-        <span className="streak-display__rarity-score">
-          <span>Top</span>
-          <strong>{formatScore(topRarity, date)}</strong>
         </span>
       </div>
     </div>

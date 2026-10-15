@@ -1959,21 +1959,14 @@ h2 {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
-.streak-display__tracker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-left: 0.15rem;
-  padding-left: 0.65rem;
-  border-left: 1px solid var(--border);
-}
+/* Plain text that opens the freeze popup: clickable, not dressed as a button. */
 .streak-display__freezes {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.1rem 0.4rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  margin-left: 0.25rem;
+  padding: 0;
+  border: 0;
   background: none;
   color: inherit;
   font: inherit;

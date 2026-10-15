@@ -96,11 +96,14 @@ describe("StreakDisplay", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("shows the current puzzle's total and top rarity", () => {
-    render(<StreakDisplay streak={{ ...streak, highScore: 9.3 }} totalRarity={21.4} topRarity={8.7} />);
+  it("shows the current puzzle's total only", () => {
+    render(<StreakDisplay streak={{ ...streak, highScore: 9.3, crushedIt: 4, elite: 1 }} totalRarity={21.4} />);
 
     const scores = document.querySelector(".streak-display__rarity-scores");
-    expect(scores?.textContent).toBe("Total21.4Top8.7");
+    expect(scores?.textContent).toBe("Total21.4");
+    // Only the total: no top score and no Crushed it / Elite counters.
+    expect(screen.queryByText("Crushed it")).not.toBeInTheDocument();
+    expect(screen.queryByText("Elite")).not.toBeInTheDocument();
     expect(screen.queryByText("High score")).not.toBeInTheDocument();
   });
 });

@@ -153,12 +153,13 @@ describe("GuessLog", () => {
     expect(screen.getByText("Copied!")).toBeInTheDocument();
   });
 
-  it("shows all trackers without a duplicate completion heading", () => {
+  it("shows the streak without a duplicate completion heading", () => {
     const words: AcceptedWord[] = [{ word: "strut", rarity: "Rare", zipf: 3.2 }];
     render(<GuessLog acceptedWords={words} completed streak={streak} />);
     expect(screen.queryByRole("heading", { name: /you won/i })).not.toBeInTheDocument();
-    expect(screen.getByText("Crushed it")).toBeInTheDocument();
-    expect(screen.getByText("Elite")).toBeInTheDocument();
+    expect(screen.getByText("day streak")).toBeInTheDocument();
+    expect(screen.queryByText("Crushed it")).not.toBeInTheDocument();
+    expect(screen.queryByText("Elite")).not.toBeInTheDocument();
     expect(screen.queryByText(/guess.*left/i)).not.toBeInTheDocument();
   });
 });

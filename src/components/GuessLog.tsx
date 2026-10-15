@@ -4,7 +4,6 @@ import { bestWord } from "../game/rank";
 import {
   baseFormSubstitution,
   formatRarityScore,
-  topRarityScore,
   totalRarityScore,
 } from "../game/dictionary";
 import { copyText } from "../clipboard";
@@ -363,7 +362,6 @@ export function GuessLog({
           <StreakDisplay
             streak={streak}
             totalRarity={totalRarityScore(acceptedWords, date)}
-            topRarity={topRarityScore(acceptedWords, date)}
             date={date}
           />
         </div>
