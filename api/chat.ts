@@ -17,13 +17,14 @@
 //   cannot be read, so the room still loads without them.
 //
 // GET /api/chat?date=D&latest=1
-//   -> 200 { latest: ID, message: ID, notice: ID, standard: ID }
+//   -> 200 { latest: ID, message: ID, notice: ID, standard: [{ id, handle }] }
 //   Just the id of the newest message in puzzle D's room (0 for an empty room), so a closed
 //   bubble can tell its player something new was posted without reading the
 //   room. `message` and `notice` split it by who posted: the newest player's
 //   message and the newest notice the room posted itself, among the newest page
-//   (0 when the page holds none), so the dot can say which it is. `standard` is
-//   the newest notice of a 9.5+ word first found in Standard, which pulses it. Every closed
+//   (0 when the page holds none), so the dot can say which it is. `standard` lists
+//   the page's notices of a 9.5+ word first found in Standard, with who found it,
+//   so the dot can pulse for one somebody else found.
 //   bubble asks the same URL, so the CDN answers nearly all of them; the longer
 //   cache only delays the unread dot by a few seconds.
 //
@@ -256,10 +257,9 @@ async function handleLatest(date: string): Promise<Response> {
       messages.reduce((id, m) => ("kind" in m === notice ? Math.max(id, m.id) : id), 0);
     const message = newest(false);
     const notice = newest(true);
-    const standard = messages.reduce(
-      (id, m) => ("mode" in m && m.kind === "find" && m.mode === "standard" ? Math.max(id, m.id) : id),
-      0,
-    );
+    const standard = messages
+      .filter((m) => "mode" in m && m.kind === "find" && m.mode === "standard")
+      .map((m) => ({ id: m.id, handle: m.handle }));
     return reply(
       200,
       { latest: Math.max(message, notice), message, notice, standard },

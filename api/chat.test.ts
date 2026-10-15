@@ -109,7 +109,7 @@ describe("api/chat GET", () => {
     );
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toContain("s-maxage=15");
-    expect(await response.json()).toEqual({ latest: 12, message: 12, notice: 0, standard: 0 });
+    expect(await response.json()).toEqual({ latest: 12, message: 12, notice: 0, standard: [] });
     expect(rpcCall(fetchMock).args).toEqual({ p_date: "2026-09-29", p_after: 0, p_limit: 50 });
   });
 
@@ -124,10 +124,10 @@ describe("api/chat GET", () => {
     const response = await handler(
       new Request("https://wordink.app/api/chat?date=2026-09-29&latest=1"),
     );
-    expect(await response.json()).toEqual({ latest: 13, message: 12, notice: 13, standard: 0 });
+    expect(await response.json()).toEqual({ latest: 13, message: 12, notice: 13, standard: [] });
   });
 
-  it("names the newest Standard find in ?latest, which a Freeform one does not move", async () => {
+  it("lists the Standard finds in ?latest with their finders, leaving Freeform ones out", async () => {
     withEnv();
     stubFetch([
       { id: "20", handle: "CalmOtter3", body: "b", created_at: "2026-09-29T10:00:00Z", kind: "find", word: "abaci", mode: "standard", tier: "Mythic" },
@@ -136,7 +136,7 @@ describe("api/chat GET", () => {
     const response = await handler(
       new Request("https://wordink.app/api/chat?date=2026-09-29&latest=1"),
     );
-    expect(await response.json()).toEqual({ latest: 21, message: 0, notice: 21, standard: 20 });
+    expect(await response.json()).toEqual({ latest: 21, message: 0, notice: 21, standard: [{ id: 20, handle: "CalmOtter3" }] });
   });
 
   it("gives a request that names no puzzle today's room on Mountain Time", async () => {
@@ -164,7 +164,7 @@ describe("api/chat GET", () => {
     withEnv();
     stubFetch([]);
     const response = await handler(new Request("https://wordink.app/api/chat?latest=1"));
-    expect(await response.json()).toEqual({ latest: 0, message: 0, notice: 0, standard: 0 });
+    expect(await response.json()).toEqual({ latest: 0, message: 0, notice: 0, standard: [] });
   });
 
   it("refuses a malformed cursor", async () => {

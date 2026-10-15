@@ -201,19 +201,48 @@ describe("ChatBubble", () => {
     expect(second.container.querySelector(".chat__dot")).toHaveClass("chat__dot--message");
   });
 
-  it("pulses the dot while a Standard find is unread", async () => {
+  it("pulses the green dot while somebody else's Standard find is unread", async () => {
     localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 4 }));
-    vi.stubGlobal("fetch", vi.fn(async () => json({ latest: 6, message: 0, notice: 6, standard: 5 })));
+    const dotFor = async (latest: object) => {
+      vi.stubGlobal("fetch", vi.fn(async () => json(latest)));
+      const view = render(<ChatBubble />);
+      await screen.findByRole("button", { name: "Open chat, new messages" });
+      const dot = view.container.querySelector(".chat__dot");
+      view.unmount();
+      return dot;
+    };
+    const other = { id: 5, handle: "CalmOtter3" };
+    expect(await dotFor({ latest: 6, message: 0, notice: 6, standard: [other] })).toHaveClass(
+      "chat__dot--notice",
+      "chat__dot--pulse",
+    );
+    // Read already, it leaves a newer Freeform find a still dot.
+    expect(await dotFor({ latest: 6, message: 0, notice: 6, standard: [{ ...other, id: 3 }] })).not.toHaveClass(
+      "chat__dot--pulse",
+    );
+    // A player's unread message keeps the dot blue and still.
+    const blue = await dotFor({ latest: 7, message: 7, notice: 6, standard: [other] });
+    expect(blue).toHaveClass("chat__dot--message");
+    expect(blue).not.toHaveClass("chat__dot--pulse");
+  });
+
+  it("never pulses for this player's own Standard find, even after a reload", async () => {
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 4 }));
+    const mine = { id: 6, handle: handleFor(PLAYER) };
+    vi.stubGlobal("fetch", vi.fn(async () => json({ latest: 6, message: 0, notice: 6, standard: [mine] })));
     const { container, unmount } = render(<ChatBubble />);
     await screen.findByRole("button", { name: "Open chat, new messages" });
-    expect(container.querySelector(".chat__dot")).toHaveClass("chat__dot--notice", "chat__dot--pulse");
+    expect(container.querySelector(".chat__dot")).not.toHaveClass("chat__dot--pulse");
     unmount();
 
-    // A Standard find already read leaves a newer Freeform one a still dot.
-    vi.stubGlobal("fetch", vi.fn(async () => json({ latest: 6, message: 0, notice: 6, standard: 3 })));
+    // Their own newer find does not hide somebody else's older unread one.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => json({ latest: 6, message: 0, notice: 6, standard: [{ id: 5, handle: "CalmOtter3" }, mine] })),
+    );
     const second = render(<ChatBubble />);
     await screen.findByRole("button", { name: "Open chat, new messages" });
-    expect(second.container.querySelector(".chat__dot")).not.toHaveClass("chat__dot--pulse");
+    expect(second.container.querySelector(".chat__dot")).toHaveClass("chat__dot--pulse");
   });
 
   it("chimes for a post that arrives while closed, by who posted it, not for one waiting on arrival", async () => {
