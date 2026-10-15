@@ -409,7 +409,7 @@ function FoldRules({
         <p className="folded-live__guidance-title">When to reject</p>
         <p className="folded-live__rules-copy">
           Rarely. Reject only a clear violation, where the two words are unrelated and
-          the fold matched on spelling alone. If you have any doubt, don{"’"}t reject it.
+          the fold applied a rule inappropriately. If you have any doubt, don{"’"}t reject it.
         </p>
         <ul className="folded-live__cases">
           <li>
