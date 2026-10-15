@@ -5146,9 +5146,13 @@ h2 {
 /* A 9.5+ word wears its tier's badge colors. The word and the mode it was found
    in are marked the way the game marks its modes: bold for Standard, rainbow
    letters for Freeform. */
+/* Mythic's badge pairs red letters with a pink fill, which reads as red on red
+   at chat size, and its own red letters vanish into it in a Freeform rainbow.
+   In chat it takes a solid deep red with white letters instead (6.6:1), the
+   same in both themes, the way Legend keeps its black. */
 .chat__message--mythic {
-  background: var(--rarity-mythic-bg);
-  color: var(--rarity-mythic-fg);
+  background: #b42318;
+  color: #fff;
 }
 .chat__message--legend {
   background: var(--rarity-legend-bg);
@@ -5169,7 +5173,13 @@ h2 {
 .chat__message--legend .rainbow-word__letter {
   color: hsl(var(--rainbow-hue) 90% 68%);
 }
+/* On Mythic's deep red the rainbow goes paler still, so even its red letters
+   clear 4.5:1 against the fill. */
+.chat__message--mythic .rainbow-word__letter {
+  color: hsl(var(--rainbow-hue) 95% 92%);
+}
 @media (prefers-contrast: more) {
+  .chat__message--mythic .rainbow-word__letter,
   .chat__message--legend .rainbow-word__letter {
     color: inherit;
   }
