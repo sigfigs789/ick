@@ -47,11 +47,12 @@
 //      when it did not, 400 malformed, 503 no credentials
 //   The game reports the Mythic and Legend words it banks on the live puzzle
 //   (see src/game/chatNotices.ts), and the room posts a notice of its own the
-//   first time anybody banks one on that puzzle in that mode. The scoring lives
-//   in the browser, so the score arrives as the game displayed it. A player who
-//   banks a word somebody already announced gets back a notice of kind
-//   "earlier" naming them, which the room shows nobody else (see the
-//   20261014050000 migration).
+//   first time anybody banks one on that puzzle, in either mode. The scoring
+//   lives in the browser, so the score arrives as the game displayed it. A
+//   player who banks a word somebody already announced, in either mode, gets
+//   back a notice of kind "earlier" naming them and the mode they found it in,
+//   which the room shows nobody else (see the 20261014050000 and 20261015100000
+//   migrations).
 //   Messages carry `kind`: absent for a player's message, "find" or "earlier"
 //   for a notice -- with the notice's `word`, `mode` and `tier` -- and "top" or
 //   "tier" for one posted before notices were once per word.
