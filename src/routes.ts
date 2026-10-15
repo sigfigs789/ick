@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 /**
  * The whole router.
  *
- * Eleven pages, no library. `vercel.json` already rewrites every non-`/api/` path
+ * Twelve pages, no library. `vercel.json` already rewrites every non-`/api/` path
  * to `index.html`, so a real URL is a matter of reading `location.pathname` and
  * pushing to it -- and both of the pages beside the game want a real URL: they
  * are pages you link someone to, open in a second tab, and reach with the back
@@ -52,6 +52,9 @@ import { useEffect, useState } from "react";
  * here (see game/transfer.ts). Nothing in the game shows that id, so a page
  * that does had better be one nobody arrives at by wandering.
  *
+ * `/leaderboard-total` ranks every player by how many puzzles they have
+ * played, either mode. Unlinked from the header: the tabs are the daily round,
+ * and this is a standing tally beside it, reached from /help.
  * `/dead-streaks` ranks the players whose streak ended and who never came back,
  * longest streak first. Unlinked from the game: it is a page about the players
  * who left, not one for the players still here.
@@ -79,6 +82,7 @@ export type Route =
   | "analytics"
   | "transfer"
   | "help"
+  | "leaderboard-total"
   | "dead-streaks";
 
 export const LEADERBOARD_PATH = "/leaderboard";
@@ -91,6 +95,7 @@ export const FOLDED_LIVE_PATH = "/folded-live";
 export const ANALYTICS_PATH = "/analytics";
 export const TRANSFER_PATH = "/transfer";
 export const HELP_PATH = "/help";
+export const LEADERBOARD_TOTAL_PATH = "/leaderboard-total";
 export const DEAD_STREAKS_PATH = "/dead-streaks";
 
 /**
@@ -142,6 +147,7 @@ export function routeFor(pathname: string): Route {
   if (path === ANALYTICS_PATH) return "analytics";
   if (path === TRANSFER_PATH) return "transfer";
   if (path === HELP_PATH) return "help";
+  if (path === LEADERBOARD_TOTAL_PATH) return "leaderboard-total";
   if (path === DEAD_STREAKS_PATH) return "dead-streaks";
   return "game";
 }
@@ -158,6 +164,7 @@ export function pathFor(route: Route): string {
   if (route === "analytics") return ANALYTICS_PATH;
   if (route === "transfer") return TRANSFER_PATH;
   if (route === "help") return HELP_PATH;
+  if (route === "leaderboard-total") return LEADERBOARD_TOTAL_PATH;
   if (route === "dead-streaks") return DEAD_STREAKS_PATH;
   return "/";
 }

@@ -34,6 +34,9 @@ describe("routes", () => {
     expect(routeFor("/help")).toBe("help");
     expect(routeFor("/help/")).toBe("help");
     expect(pathFor("help")).toBe("/help");
+    expect(routeFor("/leaderboard-total")).toBe("leaderboard-total");
+    expect(routeFor("/leaderboard-total/")).toBe("leaderboard-total");
+    expect(pathFor("leaderboard-total")).toBe("/leaderboard-total");
     expect(routeFor("/dead-streaks")).toBe("dead-streaks");
     expect(routeFor("/dead-streaks/")).toBe("dead-streaks");
     expect(pathFor("dead-streaks")).toBe("/dead-streaks");

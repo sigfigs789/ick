@@ -635,6 +635,65 @@ export async function fetchBoards(
   return readBoards((await response.json()) as Record<string, unknown>, since, mode);
 }
 
+/** One row of the puzzles-played board. */
+export interface TotalEntry {
+  rank: number;
+  playerId: string;
+  name: string;
+  /** Distinct puzzles played, either mode -- what ranks them. */
+  puzzles: number;
+  firstPlayed: string;
+  lastPlayed: string;
+}
+
+/** The puzzles-played board, and the asking player's row from below its cut. */
+export interface TotalBoard {
+  entries: TotalEntry[];
+  self: TotalEntry | null;
+}
+
+/** Read one puzzles-played row, or null for one that is malformed. */
+function parseTotal(raw: unknown, fallbackRank: number): TotalEntry | null {
+  if (!raw || typeof raw !== "object") return null;
+  const item = raw as Record<string, unknown>;
+  const { rank, playerId, puzzles, firstPlayed, lastPlayed } = item;
+  if (typeof playerId !== "string" || !playerId) return null;
+  if (typeof puzzles !== "number" || !Number.isFinite(puzzles) || puzzles < 1) return null;
+  return {
+    rank: typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank,
+    playerId,
+    name: nameFor(playerId, item.source),
+    puzzles,
+    firstPlayed: typeof firstPlayed === "string" ? firstPlayed : "",
+    lastPlayed: typeof lastPlayed === "string" ? lastPlayed : "",
+  };
+}
+
+/**
+ * Read the puzzles-played board: every player, most puzzles played first.
+ *
+ * `player` is the reader, so their own row comes back from below the cut.
+ * Rejects on failure; the caller turns that into the page's error state.
+ */
+export async function fetchTotalBoard(
+  player: string | null,
+  options: FetchOptions = {}
+): Promise<TotalBoard> {
+  const who = player ? `&player=${encodeURIComponent(player)}` : "";
+  const response = await fetch(`/api/leaderboard?total=1${who}${freshParam(options)}`, {
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`leaderboard total ${response.status}`);
+  const body = (await response.json()) as Record<string, unknown>;
+  const entries: TotalEntry[] = [];
+  for (const item of Array.isArray(body.total) ? body.total : []) {
+    const entry = parseTotal(item, entries.length + 1);
+    if (entry) entries.push(entry);
+  }
+  return { entries, self: parseTotal(body.totalSelf, 0) };
+}
+
 /** One row of the dead-streaks board: a streak that ended and never restarted. */
 export interface DeadStreakEntry {
   rank: number;

@@ -17,6 +17,9 @@
 //   still alive on `today` (see the 20261016000000 migration). It ignores
 //   `mode` -- a day played in either counts, as it does for the game's own
 //   streak -- and has no window.
+//   `total=1` returns only the puzzles-played board (`total`, `totalSelf`):
+//   every player, most puzzles played first, either mode (see the
+//   20261017100000 migration). It takes `player` and nothing else.
 //   `dead=1` returns only the dead-streaks board (`deadStreaks`): players with
 //   two or more days played whose streak ended and who never came back, longest
 //   streak first (see the 20261017000000 migration).
@@ -854,6 +857,64 @@ async function handleWordsGet(params: URLSearchParams): Promise<Response> {
   }
 }
 
+/** One row of the puzzles-played board, as `leaderboard_total_played` returns it. */
+interface TotalRow {
+  rank: number;
+  player_id: string;
+  puzzles: number;
+  first_played: string;
+  last_played: string;
+}
+
+/** One puzzles-played row, as the client receives it. */
+interface TotalEntry {
+  rank: number;
+  playerId: string;
+  puzzles: number;
+  firstPlayed: string;
+  lastPlayed: string;
+}
+
+/**
+ * Every player, most puzzles played first.
+ *
+ * Its own request: it has no window, so none of the boards' dates apply. It
+ * carries `player`, so the asking player's row comes back from below the cut
+ * the same way it does on the other boards.
+ */
+async function handleTotalGet(params: URLSearchParams): Promise<Response> {
+  const claimedPlayer = params.get("player") ?? "";
+  const player = UUID_RE.test(claimedPlayer) ? claimedPlayer.toLowerCase() : null;
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    const rows = await rpc<TotalRow[]>("leaderboard_total_played", {
+      p_limit: MAX_LIMIT,
+      p_player: player,
+    });
+    const entries: TotalEntry[] = [];
+    let self: TotalEntry | null = null;
+    for (const [index, row] of (Array.isArray(rows) ? rows : []).entries()) {
+      const entry: TotalEntry = {
+        rank: Number(row.rank) || index + 1,
+        playerId: String(row.player_id),
+        puzzles: Number(row.puzzles) || 0,
+        firstPlayed: String(row.first_played),
+        lastPlayed: String(row.last_played),
+      };
+      if (entry.rank > MAX_LIMIT) self = entry;
+      else entries.push(entry);
+    }
+    return reply(200, { total: entries, totalSelf: self }, 60);
+  } catch (error) {
+    console.error(
+      "[leaderboard] total read failed:",
+      error instanceof Error ? error.message : error
+    );
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
 /** One row of the dead-streaks board, as `leaderboard_dead_streaks` returns it. */
 interface DeadStreakRow {
   rank: number;
@@ -910,6 +971,8 @@ async function handleGet(request: Request): Promise<Response> {
   // that is the whole point of it: a URL identical for every player is a URL the
   // CDN can answer once.
   if (params.get("words") === "1") return handleWordsGet(params);
+  // The puzzles-played board, on its own: it has no window to validate.
+  if (params.get("total") === "1") return handleTotalGet(params);
   // The dead-streaks board, on its own for the same reason.
   if (params.get("dead") === "1") return handleDeadStreaksGet(params);
   const since = params.get("since") ?? "";

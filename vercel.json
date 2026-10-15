@@ -35,6 +35,15 @@
           "value": "no-store, max-age=0"
         }
       ]
+    },
+    {
+      "source": "/leaderboard-total",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
     }
   ],
   "rewrites": [

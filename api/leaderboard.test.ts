@@ -9,6 +9,7 @@ const CONFIGURED = {
 };
 
 const PLAYER = "3f1a2b4c-5d6e-4f70-8901-23456789abcd";
+const OTHER_TOTAL = "9e8d7c6b-5a49-4382-9716-0a1b2c3d4e5f";
 // A Sunday, and the only date these tests use as a window start.
 const SUNDAY = "2026-08-23";
 // The month that Sunday falls in -- the monthly board's window, sent by the
@@ -456,6 +457,42 @@ describe("api/leaderboard reads", () => {
     const body = (await response.json()) as Record<string, unknown>;
     expect(body.streak).toEqual([]);
     expect(body.allTime).toHaveLength(2);
+  });
+
+  it("returns the puzzles-played board on its own, with the reader's row below the cut", async () => {
+    withEnv();
+    const fetchMock = stubFetch([
+      [
+        { rank: 1, player_id: OTHER_TOTAL, puzzles: 40, first_played: "2026-07-01", last_played: "2026-08-24" },
+        { rank: 1000, player_id: PLAYER, puzzles: 1, first_played: "2026-08-25", last_played: "2026-08-25" },
+      ],
+    ]);
+    const response = await handler(get(`?total=1&player=${PLAYER}`));
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body.total).toEqual([
+      { rank: 1, playerId: OTHER_TOTAL, puzzles: 40, firstPlayed: "2026-07-01", lastPlayed: "2026-08-24" },
+    ]);
+    expect(body.totalSelf).toEqual({
+      rank: 1000,
+      playerId: PLAYER,
+      puzzles: 1,
+      firstPlayed: "2026-08-25",
+      lastPlayed: "2026-08-25",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(rpcCall(fetchMock)?.url).toBe(
+      "https://project.supabase.co/rest/v1/rpc/leaderboard_total_played"
+    );
+    expect(rpcCall(fetchMock)?.args).toEqual({ p_limit: 999, p_player: PLAYER });
+  });
+
+  it("reports a failed puzzles-played read as unavailable", async () => {
+    withEnv();
+    stubFetch([404]);
+    const response = await handler(get("?total=1"));
+    expect(response.status).toBe(502);
   });
 
   it("returns the dead-streaks board on its own, counted up to the reader's today", async () => {
