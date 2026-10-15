@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { formatScore } from "../game/dictionary";
-import { atRisk, freezeCap, isFrozen } from "../game/streakFreeze";
+import { atRisk, freezeCap, savedFreezeCovering } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
 
 /** What the two tier counters count, said once for the tooltip and the label. */
@@ -9,16 +9,16 @@ const ELITE_TITLE = "Days you found an Extremely Rare word or better";
 
 /** How saved freezes work, for the freeze badge's popup. */
 const FREEZE_RULES =
-  "A freeze keeps your streak alive for one missed day. Earn one for every 7 days " +
-  "played. You can hold 1 after a 14 day streak and 2 after a 30 day streak.";
+  "🧊 keeps your streak alive for one more day. Earn an 🧊 every 7 days played. " +
+  "You can hold 1 🧊 after a 14 day streak and 2 🧊 after a 30 day streak.";
 
 function freezeSummary(banked: number, cap: number): string {
-  if (cap === 0) return "No freezes saved yet.";
-  return `${banked} of ${cap} ${cap === 1 ? "freeze" : "freezes"} saved.`;
+  if (banked === 0) return "No 🧊 acquired";
+  return `${banked} of ${cap} 🧊 acquired`;
 }
 
 /**
- * The ❄️ saved/max badge. Selecting it opens a popup with the count and the
+ * The 🧊 saved/max badge. Selecting it opens a popup with the count and the
  * rules; selecting it again, anywhere outside it, or Escape closes it.
  */
 function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
@@ -49,10 +49,10 @@ function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
         className="streak-display__freezes"
         aria-expanded={open}
         aria-controls={popupId}
-        aria-label={`Streak freezes: ${freezeSummary(banked, cap)}`}
+        aria-label={`Streak freezes: ${banked} of ${cap}`}
         onClick={() => setOpen((was) => !was)}
       >
-        <span aria-hidden="true">❄️</span>
+        <span aria-hidden="true">🧊</span>
         <span className="streak-display__count">
           {banked}/{cap}
         </span>
@@ -84,9 +84,10 @@ export function StreakDisplay({
   date,
   isToday = false,
 }: Props) {
-  // Yesterday was missed and covered by a freeze: the flame turns to ice until
-  // today is played. At risk when no saved freeze is left to cover today too.
-  const frozen = isToday && date !== undefined && isFrozen(streak, date);
+  // The free missed day keeps the flame. Only a saved freeze covering a longer
+  // gap turns it to ice, until today is played. At risk -- missing today ends
+  // the streak -- is said in a line under it rather than with another icon.
+  const frozen = isToday && date !== undefined && savedFreezeCovering(streak, date);
   const risky = isToday && date !== undefined && atRisk(streak, date);
   const banked = streak.bankedFreezes ?? 0;
   const cap = freezeCap(streak.currentStreak);
@@ -97,8 +98,9 @@ export function StreakDisplay({
         `Current streak: ${streak.currentStreak} days. ` +
         `${CRUSHED_IT_TITLE}: ${streak.crushedIt}. ` +
         `${ELITE_TITLE}: ${streak.elite}. ` +
-        (frozen ? "Streak frozen: play today to keep it. " : "") +
-        `${freezeSummary(banked, cap)} ` +
+        (frozen ? "A saved freeze is covering your streak. " : "") +
+        (risky ? "Play today to keep your streak. " : "") +
+        `Streak freezes: ${banked} of ${cap}. ` +
         `This puzzle's total score: ${totalRarity.toFixed(1)}. ` +
         `Rarest word so far: ${formatScore(topRarity, date)}.`
       }
@@ -125,13 +127,8 @@ export function StreakDisplay({
           <span className="streak-display__unit">Elite</span>
         </span>
       </div>
-      {frozen && (
-        <p className="streak-display__saved">
-          {risky
-            ? "You missed yesterday, so your streak is frozen. Play today to keep it going."
-            : "You missed yesterday, so your streak is frozen. Play today to keep it going, " +
-              "or a saved freeze will cover today."}
-        </p>
+      {risky && (
+        <p className="streak-display__saved">You missed yesterday. Play today to keep your streak.</p>
       )}
       <div className="streak-display__rarity-scores">
         <span className="streak-display__rarity-score">

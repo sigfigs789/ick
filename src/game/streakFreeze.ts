@@ -15,9 +15,10 @@
  * cannot cover resets the streak and they go with it.
  *
  * So the day after a covered day is a day a streak can be lost if no saved
- * freeze is left, and that is when `atRisk` is true. The streak shows 🧊 instead
- * of 🔥 on any day after a covered one (see `isFrozen` and
- * components/StreakDisplay.tsx). Playing that day turns it back to fire.
+ * freeze is left, and that is when `atRisk` is true and the game says so in a
+ * line under the streak. The free day itself keeps 🔥; the streak shows 🧊 only
+ * while a saved freeze is covering (see `savedFreezeCovering` and
+ * components/StreakDisplay.tsx). Playing turns it back to fire.
  *
  * A frozen day keeps the streak alive but does not add to it: the count is
  * still days actually played. And it is remembered (`frozenDates`), because a
@@ -96,23 +97,49 @@ export function applyFreezes(streak: StreakState, today: string): StreakState {
 }
 
 /**
- * Whether yesterday was covered rather than played and today has not been
- * played yet: the streak is being held by a freeze.
+ * Whether a saved freeze, not the free day, is what is keeping the streak
+ * alive today: two or more days have gone unplayed since the last played day
+ * and today has not been played yet. The one day the streak shows 🧊; on the
+ * free day it stays 🔥.
  */
-export function isFrozen(streak: StreakState, today: string): boolean {
-  return (
-    streak.currentStreak > 0 &&
-    streak.lastCompletedDate !== today &&
-    wasFrozen(streak, addDays(today, -1))
-  );
+export function savedFreezeCovering(streak: StreakState, today: string): boolean {
+  if (streak.currentStreak === 0 || !streak.lastCompletedDate) return false;
+  return daysSinceEpoch(today, streak.lastCompletedDate) - 1 >= 2;
 }
 
 /**
  * Whether the streak is lost if `today` goes unplayed: yesterday was covered,
- * so there is no grace day, and no saved freeze is left.
+ * so there is no free day, and no saved freeze is left.
  */
 export function atRisk(streak: StreakState, today: string): boolean {
-  return isFrozen(streak, today) && (streak.bankedFreezes ?? 0) === 0;
+  return (
+    streak.currentStreak > 0 &&
+    streak.lastCompletedDate !== today &&
+    wasFrozen(streak, addDays(today, -1)) &&
+    (streak.bankedFreezes ?? 0) === 0
+  );
+}
+
+/**
+ * The streak as it stood on its last played day, which is what the streak
+ * board is sent (see game/leaderboard.ts). The board works out the rest from
+ * that day alone: the run is alive while the days missed since are no more
+ * than the free day plus the freezes saved then. So the saved count is the one
+ * from before any were spent on the gap -- every covered day after the first
+ * since the last played day took one.
+ */
+export function streakReport(
+  streak: StreakState
+): { current: number; best: number; saved: number; lastPlayed: string } | null {
+  const lastPlayed = streak.lastCompletedDate;
+  if (streak.currentStreak === 0 || !lastPlayed) return null;
+  const coveredSince = (streak.frozenDates ?? []).filter((d) => d > lastPlayed).length;
+  return {
+    current: streak.currentStreak,
+    best: Math.max(streak.longestStreak, streak.currentStreak),
+    saved: (streak.bankedFreezes ?? 0) + Math.max(0, coveredSince - 1),
+    lastPlayed,
+  };
 }
 
 /** Whether a freeze covered `date`. */

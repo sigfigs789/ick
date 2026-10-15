@@ -105,6 +105,35 @@ describe("api/leaderboard submissions", () => {
     });
   });
 
+  it("records the game's own streak beside the scores", async () => {
+    withEnv();
+    const fetchMock = stubFetch([[], []]);
+    const streak = { current: 40, best: 52, saved: 2, lastPlayed: SUNDAY };
+    const response = await handler(post({ ...score(), streak }));
+
+    expect(response.status).toBe(202);
+    expect(rpcCall(fetchMock, 1)).toEqual({
+      url: "https://project.supabase.co/rest/v1/rpc/submit_leaderboard_streak",
+      args: { p_player_id: PLAYER, p_current: 40, p_best: 52, p_saved: 2, p_last_played: SUNDAY },
+    });
+  });
+
+  it("drops a streak that does not add up and keeps the scores", async () => {
+    withEnv();
+    for (const streak of [
+      { current: 5, best: 4, saved: 0, lastPlayed: SUNDAY }, // best below current
+      { current: 5, best: 5, saved: 3, lastPlayed: SUNDAY }, // more saved than the cap
+      { current: 500, best: 500, saved: 0, lastPlayed: SUNDAY }, // longer than there have been puzzles
+      { current: 5, best: 5, saved: 0, lastPlayed: "2026-13-01" },
+    ]) {
+      const fetchMock = stubFetch([[], []]);
+      const response = await handler(post({ ...score(), streak }));
+      expect(response.status).toBe(202);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(rpcCall(fetchMock)?.url).toContain("submit_leaderboard_scores");
+    }
+  });
+
   it("takes a whole history in one request", async () => {
     withEnv();
     const fetchMock = stubFetch([[]]);
@@ -391,7 +420,7 @@ describe("api/leaderboard reads", () => {
     const fetchMock = stubFetch([
       OPEN,
       [
-        { rank: 1, player_id: PLAYER, current_streak: 15, best_streak: 20, streak_since: "2026-08-11", at_risk: true },
+        { rank: 1, player_id: PLAYER, current_streak: 15, best_streak: 20, frozen: true },
         { rank: 140, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", current_streak: 1, best_streak: 3 },
       ],
     ]);
@@ -402,7 +431,7 @@ describe("api/leaderboard reads", () => {
     expect(response.status).toBe(200);
     const body = (await response.json()) as Record<string, unknown>;
     expect(body.streak).toEqual([
-      { rank: 1, playerId: PLAYER, current: 15, best: 20, since: "2026-08-11", atRisk: true },
+      { rank: 1, playerId: PLAYER, current: 15, best: 20, frozen: true },
     ]);
     expect(body.streakSelf).toMatchObject({ rank: 140, current: 1, best: 3 });
     // No mode: a day played either way keeps a streak alive.

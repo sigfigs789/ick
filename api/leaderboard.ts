@@ -13,9 +13,10 @@
 //   The daily board counts the single puzzle `day`; the weekly board counts the
 //   seven days from `since`; the third counts the month `month` begins.
 //   `streak=1` adds the streak board (`streak`, `streakSelf`): players ranked by
-//   the run they are on now, counted up to `today` by the game's own freeze
-//   rule (see the 20261015200000 migration). It ignores `mode` -- a day played
-//   in either counts, as it does for the game's own streak -- and has no window.
+//   the run they are on now, as their own game last reported it, kept while
+//   still alive on `today` (see the 20261016000000 migration). It ignores
+//   `mode` -- a day played in either counts, as it does for the game's own
+//   streak -- and has no window.
 //   `day` is optional: a caller that omits it gets the two boards it always got,
 //   and no second query is run on its behalf. It is the one window that is a
 //   single date, so it is sent as one rather than as a pair. Neither has to be the window the caller is currently
@@ -424,9 +425,8 @@ interface StreakRow {
   player_id: string;
   current_streak: number;
   best_streak: number;
-  streak_since?: string | null;
-  /** Missed yesterday and not played today; absent before 20261015220000. */
-  at_risk?: boolean | null;
+  /** A saved freeze is covering the run today; absent before 20261016000000. */
+  frozen?: boolean | null;
 }
 
 /** One streak row, as the client receives it. */
@@ -435,9 +435,8 @@ interface StreakEntry {
   playerId: string;
   current: number;
   best: number;
-  since?: string;
-  /** Sent only when true: the run is lost if today goes unplayed. */
-  atRisk?: true;
+  /** Sent only when true: a saved freeze is covering the run today. */
+  frozen?: true;
 }
 
 /** The streak board split at the cut, the same way `toBoard` splits the others. */
@@ -454,10 +453,7 @@ function toStreakBoard(
       playerId: String(row.player_id),
       current: Number(row.current_streak) || 0,
       best: Number(row.best_streak) || 0,
-      ...(typeof row.streak_since === "string" && row.streak_since
-        ? { since: row.streak_since.slice(0, 10) }
-        : {}),
-      ...(row.at_risk === true ? { atRisk: true as const } : {}),
+      ...(row.frozen === true ? { frozen: true as const } : {}),
     };
     if (entry.rank > limit) self = entry;
     else entries.push(entry);
@@ -684,11 +680,45 @@ function readFound(raw: unknown): FoundEntry[] | string {
 }
 
 /** A whole submission, or a string saying what was wrong with it. */
+/** The game's own streak as of its last played day, for the streak board. */
+interface StreakReport {
+  current: number;
+  best: number;
+  saved: number;
+  lastPlayed: string;
+}
+
+/** The most saved freezes the game lets a streak hold (see freezeCap). */
+const MAX_SAVED_FREEZES = 2;
+
+/**
+ * The reported streak, or null for one that is absent or does not add up. A
+ * bad one is dropped rather than failing the batch: the scores beside it are
+ * the write that matters, and the streak is repaired by the next one.
+ *
+ * Bounded by what is possible, not checked against the days on the board: a
+ * run can be no longer than the days there have been puzzles, which is the
+ * same trust the scores themselves are taken on.
+ */
+function readStreakReport(raw: unknown): StreakReport | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const { current, best, saved, lastPlayed } = raw as Record<string, unknown>;
+  if (typeof lastPlayed !== "string" || !validPuzzleDate(lastPlayed)) return null;
+  const possible =
+    Math.round((Date.parse(`${lastPlayed}T00:00:00Z`) - Date.parse(`${EPOCH}T00:00:00Z`)) / 86_400_000) + 1;
+  if (!Number.isInteger(current) || (current as number) < 1 || (current as number) > possible) return null;
+  if (!Number.isInteger(best) || (best as number) < (current as number) || (best as number) > possible) {
+    return null;
+  }
+  if (!Number.isInteger(saved) || (saved as number) < 0 || (saved as number) > MAX_SAVED_FREEZES) return null;
+  return { current: current as number, best: best as number, saved: saved as number, lastPlayed };
+}
+
 function readSubmission(parsed: unknown):
-  | { playerId: string; scores: ScoreEntry[] }
+  | { playerId: string; scores: ScoreEntry[]; streak: StreakReport | null }
   | string {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return "malformed-body";
-  const { playerId, version, scores } = parsed as Record<string, unknown>;
+  const { playerId, version, scores, streak } = parsed as Record<string, unknown>;
 
   if (typeof playerId !== "string" || !UUID_RE.test(playerId)) return "bad-player-id";
   // Absent is every client from before the field, and is simply below the floor.
@@ -711,7 +741,7 @@ function readSubmission(parsed: unknown):
     if (typeof score === "string") return score;
     checked.push(ranked ? score : { ...score, unranked: true });
   }
-  return { playerId, scores: checked };
+  return { playerId, scores: checked, streak: readStreakReport(streak) };
 }
 
 /**
@@ -1039,6 +1069,21 @@ async function handlePost(request: Request, context?: EdgeContext): Promise<Resp
     },
     context
   );
+  // The streak board's row, from the game's own count. Its own write, so a
+  // deploy that lands before the migration loses the streak and not the scores.
+  if (submission.streak) {
+    await record(
+      "rpc/submit_leaderboard_streak",
+      {
+        p_player_id: submission.playerId,
+        p_current: submission.streak.current,
+        p_best: submission.streak.best,
+        p_saved: submission.streak.saved,
+        p_last_played: submission.streak.lastPlayed,
+      },
+      context
+    );
+  }
   // 202 rather than 200: the write may be handed to `waitUntil` and finish after
   // this response, so the endpoint can honestly say it accepted the scores,
   // never that the rows landed. `days` echoes what was accepted, which is the

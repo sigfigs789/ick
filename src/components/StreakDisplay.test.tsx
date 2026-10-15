@@ -12,6 +12,11 @@ const streak: StreakState = {
   highScore: 0,
 };
 
+/** The icon beside the count -- the badge carries its own 🧊, so not by text. */
+function flame(): string | undefined {
+  return document.querySelector(".streak-display__flame")?.textContent ?? undefined;
+}
+
 describe("StreakDisplay", () => {
   it("hides the flame until a streak reaches two days", () => {
     const { rerender } = render(<StreakDisplay streak={streak} />);
@@ -24,38 +29,64 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("🔥")).toBeInTheDocument();
   });
 
-  it("turns the flame to ice the day after a missed day, until it is played", () => {
-    const frozen: StreakState = {
+  it("keeps the flame on the free missed day, with a line saying to play today", () => {
+    const missed: StreakState = {
       ...streak,
       currentStreak: 5,
       lastCompletedDate: "2026-10-01",
       frozenDates: ["2026-10-02"],
     };
-    const { rerender } = render(<StreakDisplay streak={frozen} date="2026-10-03" isToday />);
-    expect(screen.getByText("⏳")).toBeInTheDocument();
-    expect(screen.queryByText("🔥")).not.toBeInTheDocument();
+    const { rerender } = render(<StreakDisplay streak={missed} date="2026-10-03" isToday />);
+    expect(flame()).toBe("🔥");
+    expect(screen.getByText("You missed yesterday. Play today to keep your streak.")).toBeInTheDocument();
 
     rerender(
       <StreakDisplay
-        streak={{ ...frozen, currentStreak: 6, lastCompletedDate: "2026-10-03" }}
+        streak={{ ...missed, currentStreak: 6, lastCompletedDate: "2026-10-03" }}
         date="2026-10-03"
         isToday
       />
     );
     expect(screen.getByText("🔥")).toBeInTheDocument();
-    expect(screen.queryByText("⏳")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Play today/)).not.toBeInTheDocument();
+  });
+
+  it("turns the flame to ice while a saved freeze covers a missed day, until today is played", () => {
+    const covered: StreakState = {
+      ...streak,
+      currentStreak: 20,
+      lastCompletedDate: "2026-10-01",
+      frozenDates: ["2026-10-02", "2026-10-03"],
+      bankedFreezes: 0,
+    };
+    const { rerender } = render(<StreakDisplay streak={covered} date="2026-10-04" isToday />);
+    expect(flame()).toBe("🧊");
+    // No freeze left for today, so it says so.
+    expect(screen.getByText(/Play today to keep your streak/)).toBeInTheDocument();
+
+    rerender(<StreakDisplay streak={{ ...covered, bankedFreezes: 1 }} date="2026-10-04" isToday />);
+    expect(screen.queryByText(/Play today to keep your streak/)).not.toBeInTheDocument();
+
+    rerender(
+      <StreakDisplay
+        streak={{ ...covered, currentStreak: 21, lastCompletedDate: "2026-10-04" }}
+        date="2026-10-04"
+        isToday
+      />
+    );
+    expect(screen.getByText("🔥")).toBeInTheDocument();
   });
 
   it("shows saved freezes out of the most the streak can hold, with the rules in a popup", () => {
     render(<StreakDisplay streak={{ ...streak, currentStreak: 31, bankedFreezes: 1 }} />);
     const badge = screen.getByRole("button", { name: /streak freezes/i });
-    expect(badge.textContent).toBe("❄️1/2");
+    expect(badge.textContent).toBe("🧊1/2");
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
-    expect(popup.textContent).toContain("1 of 2 freezes saved.");
-    expect(popup.textContent).toContain("Earn one for every 7 days played.");
+    expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
+    expect(popup.textContent).toContain("Earn an 🧊 every 7 days played.");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -63,18 +94,6 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     fireEvent.pointerDown(document.body);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("keeps the ice but drops the warning when a saved freeze can cover today", () => {
-    render(
-      <StreakDisplay
-        streak={{ ...streak, currentStreak: 20, lastCompletedDate: "2026-10-01", frozenDates: ["2026-10-02"], bankedFreezes: 1 }}
-        date="2026-10-03"
-        isToday
-      />
-    );
-    expect(screen.getByText("🧊")).toBeInTheDocument();
-    expect(screen.getByText(/a saved freeze will cover today/)).toBeInTheDocument();
   });
 
   it("shows the current puzzle's total and top rarity", () => {
