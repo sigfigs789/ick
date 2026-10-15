@@ -5280,19 +5280,35 @@ h2 {
   line-height: 1.35;
 }
 /* A line the room posts itself: a 9.5+ word, the first time it is banked. It
-   sits a size under players' own messages, which are what the room is for. */
+   stays small and slim, its time beside it rather than under it, so a busy
+   drop's finds do not crowd out players' own messages, which are what the room
+   is for. Reactions still take a row of their own. */
 .chat__message--notice {
-  padding: 0.3rem 0.6rem;
-  border-radius: 0.5rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.4rem;
+  row-gap: 0;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.4rem;
   background: var(--caution-bg);
   color: var(--caution-fg);
 }
 .chat__message--notice .chat__body {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 500;
+  line-height: 1.3;
 }
 .chat__message--notice .chat__time {
-  font-size: 0.72rem;
+  font-size: 0.64rem;
+}
+.chat__message--notice .chat__reactions,
+.chat__message--notice .chat__tray {
+  flex-basis: 100%;
+}
+.chat__message--notice .chat__reactions {
+  margin-top: 0.15rem;
+  margin-bottom: 0.1rem;
 }
 /* A 9.5+ word wears its tier's badge colors. The word and the mode it was found
    in are marked the way the game marks its modes: bold for Standard, rainbow
@@ -5342,7 +5358,7 @@ h2 {
    the text lines up with every other line. */
 .chat__message--find.chat__message--standard {
   border: 2px solid var(--best-word-accent);
-  padding: calc(0.3rem - 2px) calc(2.1rem - 2px) calc(0.3rem - 2px) calc(0.6rem - 2px);
+  padding: calc(0.15rem - 2px) calc(1.7rem - 2px) calc(0.15rem - 2px) calc(0.5rem - 2px);
   box-shadow: var(--best-word-glow);
 }
 /* The line only its player sees: set apart by an outline rather than a color. */
@@ -5351,7 +5367,7 @@ h2 {
   outline-offset: -3px;
 }
 .chat__private {
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   font-style: italic;
 }
 .chat__notice {
@@ -5409,7 +5425,7 @@ h2 {
   padding-right: 1.9rem;
 }
 .chat__message--notice {
-  padding-right: 2.1rem;
+  padding-right: 1.7rem;
 }
 .chat__react {
   position: absolute;
@@ -5428,15 +5444,22 @@ h2 {
   opacity: 0;
   transition: opacity 0.12s var(--ease-standard);
 }
+/* A notice is a single slim line, so its button shrinks to fit it. */
 .chat__message--notice .chat__react {
-  top: 0.25rem;
-  right: 0.3rem;
+  top: 0;
+  right: 0.2rem;
+  width: 1.25rem;
+  height: 1.25rem;
   color: inherit;
+}
+.chat__message--notice .chat__react svg {
+  width: 0.85rem;
+  height: 0.85rem;
 }
 /* Measured from inside a Standard find's 2px border, so it gives that back. */
 .chat__message--standard .chat__react {
-  top: calc(0.25rem - 2px);
-  right: calc(0.3rem - 2px);
+  top: -2px;
+  right: calc(0.2rem - 2px);
 }
 .chat__message:hover .chat__react,
 .chat__message:focus-within .chat__react,
