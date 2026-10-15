@@ -132,7 +132,7 @@ const NOTICE_ICONS: Record<NonNullable<ChatMessage["kind"]>, string> = {
  * only it. 🥇 is shared with the retired top-score notices, which only a few old
  * rooms still hold; 🔎 is left out, being the "earlier" line's.
  */
-const STANDARD_FIND_ICONS = ["🔥", "👑", "⚡", "🎯", "🤯", "💥", "🚀", "🥇", "🏅"];
+const STANDARD_FIND_ICONS = ["🔥", "👑", "⚡", "🎯", "🤯", "💥", "🚀", "🥇", "🏅", "🕺", "💃"];
 const TOP_LEGEND_ICON = "💎";
 const TOP_LEGEND_MIN = 9.99;
 
