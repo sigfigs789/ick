@@ -9,8 +9,8 @@
  *
  * The grace day only follows a played day. Past it, a missed day is covered
  * only by a saved freeze (`bankedFreezes`), which a long streak earns: one for
- * every seven days of streak, held up to a cap that grows with the streak (see
- * `freezeCap`). Saved freezes are spent one per missed day, after the grace
+ * every seven days played -- the streak count, which frozen days do not add to
+ * -- held up to a cap that grows with the streak (see `freezeCap`). Saved freezes are spent one per missed day, after the grace
  * day, and only when there are enough to cover the whole gap -- a gap they
  * cannot cover resets the streak and they go with it.
  *
@@ -35,7 +35,7 @@ import type { StreakState } from "./types";
  */
 const FROZEN_DATES_KEPT_DAYS = 62;
 
-/** A saved freeze is earned on every seventh day of a streak. */
+/** A saved freeze is earned on every seventh day played in a streak. */
 const DAYS_PER_EARNED_FREEZE = 7;
 
 /**

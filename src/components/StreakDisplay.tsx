@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { formatScore } from "../game/dictionary";
 import { atRisk, freezeCap, isFrozen } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
@@ -7,14 +7,64 @@ import type { StreakState } from "../game/types";
 const CRUSHED_IT_TITLE = "Days you found a Rare word or better";
 const ELITE_TITLE = "Days you found an Extremely Rare word or better";
 
-/** How saved freezes work, for the freeze badge's tooltip and its click-open note. */
+/** How saved freezes work, for the freeze badge's popup. */
 const FREEZE_RULES =
-  "A saved freeze covers a missed day after your one free day. You earn one " +
-  "for every 7 days of your streak, and can hold 1 from a 14-day streak and 2 from 30 days.";
+  "A freeze keeps your streak alive for one missed day. Earn one for every 7 days " +
+  "played. You can hold 1 after a 14 day streak and 2 after a 30 day streak.";
 
 function freezeSummary(banked: number, cap: number): string {
-  if (cap === 0) return "No saved freezes yet.";
-  return `${banked} of ${cap} saved ${cap === 1 ? "freeze" : "freezes"}.`;
+  if (cap === 0) return "No freezes saved yet.";
+  return `${banked} of ${cap} ${cap === 1 ? "freeze" : "freezes"} saved.`;
+}
+
+/**
+ * The ❄️ saved/max badge. Selecting it opens a popup with the count and the
+ * rules; selecting it again, anywhere outside it, or Escape closes it.
+ */
+function FreezeBadge({ banked, cap }: { banked: number; cap: number }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  const popupId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <span className="streak-display__freeze-wrap" ref={wrapRef}>
+      <button
+        type="button"
+        className="streak-display__freezes"
+        aria-expanded={open}
+        aria-controls={popupId}
+        aria-label={`Streak freezes: ${freezeSummary(banked, cap)}`}
+        onClick={() => setOpen((was) => !was)}
+      >
+        <span aria-hidden="true">❄️</span>
+        <span className="streak-display__count">
+          {banked}/{cap}
+        </span>
+      </button>
+      {open && (
+        <span className="streak-display__freeze-popup" id={popupId} role="dialog" aria-label="Streak freezes">
+          <strong>{freezeSummary(banked, cap)}</strong>
+          <span>{FREEZE_RULES}</span>
+        </span>
+      )}
+    </span>
+  );
 }
 
 interface Props {
@@ -34,14 +84,12 @@ export function StreakDisplay({
   date,
   isToday = false,
 }: Props) {
-  const [showFreezes, setShowFreezes] = useState(false);
   // Yesterday was missed and covered by a freeze: the flame turns to ice until
   // today is played. At risk when no saved freeze is left to cover today too.
   const frozen = isToday && date !== undefined && isFrozen(streak, date);
   const risky = isToday && date !== undefined && atRisk(streak, date);
   const banked = streak.bankedFreezes ?? 0;
   const cap = freezeCap(streak.currentStreak);
-  const freezeNote = `${freezeSummary(banked, cap)} ${FREEZE_RULES}`;
   return (
     <div
       className="streak-display"
@@ -67,19 +115,7 @@ export function StreakDisplay({
         ) : null}
         <span className="streak-display__count">{streak.currentStreak}</span>
         <span className="streak-display__unit">day streak</span>
-        <button
-          type="button"
-          className="streak-display__freezes"
-          title={freezeNote}
-          aria-expanded={showFreezes}
-          aria-label={`Saved streak freezes: ${freezeSummary(banked, cap)}`}
-          onClick={() => setShowFreezes((open) => !open)}
-        >
-          <span aria-hidden="true">❄️</span>
-          <span className="streak-display__count">
-            {banked}/{cap}
-          </span>
-        </button>
+        <FreezeBadge banked={banked} cap={cap} />
         <span className="streak-display__tracker" title={CRUSHED_IT_TITLE}>
           <span className="streak-display__count">{streak.crushedIt}</span>
           <span className="streak-display__unit">Crushed it</span>
@@ -89,7 +125,6 @@ export function StreakDisplay({
           <span className="streak-display__unit">Elite</span>
         </span>
       </div>
-      {showFreezes && <p className="streak-display__saved">{freezeNote}</p>}
       {frozen && (
         <p className="streak-display__saved">
           {risky

@@ -46,15 +46,23 @@ describe("StreakDisplay", () => {
     expect(screen.queryByText("🧊")).not.toBeInTheDocument();
   });
 
-  it("shows saved freezes out of the most the streak can hold, with the rules on click", () => {
+  it("shows saved freezes out of the most the streak can hold, with the rules in a popup", () => {
     render(<StreakDisplay streak={{ ...streak, currentStreak: 31, bankedFreezes: 1 }} />);
-    const badge = screen.getByRole("button", { name: /saved streak freezes/i });
+    const badge = screen.getByRole("button", { name: /streak freezes/i });
     expect(badge.textContent).toBe("❄️1/2");
-    expect(badge.getAttribute("title")).toMatch(/1 of 2 saved freezes.*every 7 days/);
 
-    expect(screen.queryByText(/every 7 days/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     fireEvent.click(badge);
-    expect(screen.getByText(/1 of 2 saved freezes.*every 7 days/)).toBeInTheDocument();
+    const popup = screen.getByRole("dialog", { name: "Streak freezes" });
+    expect(popup.textContent).toContain("1 of 2 freezes saved.");
+    expect(popup.textContent).toContain("Earn one for every 7 days played.");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    fireEvent.click(badge);
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("keeps the ice but drops the warning when a saved freeze can cover today", () => {
