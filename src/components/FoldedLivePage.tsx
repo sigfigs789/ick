@@ -403,7 +403,8 @@ function FoldRules({
       <summary className="folded-live__rules-summary">How folding works</summary>
       <p className="folded-live__rules-copy">
         In Standard, words score as their common form: {"“"}plays{"”"} counts as{" "}
-        {"“"}play{"”"}.
+        {"“"}play{"”"}. Standard is for players who prefer to find unfamiliar words rather
+        than words in unfamiliar forms.
       </p>
       <div className="folded-live__guidance">
         <p className="folded-live__guidance-title">When to reject</p>
