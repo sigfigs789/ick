@@ -5145,14 +5145,19 @@ h2 {
 }
 /* A 9.5+ word wears its tier's badge colors. The word and the mode it was found
    in are marked the way the game marks its modes: bold for Standard, rainbow
-   letters for Freeform. */
-/* Mythic's badge pairs red letters with a pink fill, which reads as red on red
-   at chat size, and its own red letters vanish into it in a Freeform rainbow.
-   In chat it takes a solid deep red with white letters instead (6.6:1), the
-   same in both themes, the way Legend keeps its black. */
+   letters for Freeform.
+   Mythic's badge red reads as red on pink at chat size, so in chat light mode
+   takes a deep maroon (9.9:1, and 5.3:1 for the dimmed timestamp). Dark mode
+   keeps the badge's own light-on-dark pair. The rainbow stays as the page has
+   it: dark letters on the pale fill, light ones on the dark. */
 .chat__message--mythic {
-  background: #b42318;
-  color: #fff;
+  background: var(--rarity-mythic-bg);
+  color: #6e1a12;
+}
+@media (prefers-color-scheme: dark) {
+  .chat__message--mythic {
+    color: var(--rarity-mythic-fg);
+  }
 }
 .chat__message--legend {
   background: var(--rarity-legend-bg);
@@ -5164,16 +5169,6 @@ h2 {
   color: inherit;
   opacity: 0.75;
 }
-/* At 0.75 the dimmed white blends to 4.3:1 on Mythic's red; 0.9 keeps 5.6:1.
-   The page's blue focus ring all but vanishes on that red, so it goes white. */
-.chat__message--mythic .chat__time,
-.chat__message--mythic .chat__private {
-  opacity: 0.9;
-}
-.chat__message--mythic .chat__react:focus-visible,
-.chat__message--mythic .chat__reaction:focus-visible {
-  outline-color: #fff;
-}
 .chat__word strong,
 .chat__mode strong {
   font-weight: 800;
@@ -5183,25 +5178,7 @@ h2 {
 .chat__message--legend .rainbow-word__letter {
   color: hsl(var(--rainbow-hue) 90% 68%);
 }
-/* No rainbow survives Mythic's deep red: its own reds and magentas sink into
-   it, and letters pale enough to clear it are all near-white. So each rainbow
-   word sits on a chip of Legend's black and takes Legend's letters. */
-.chat__message--mythic .rainbow-word {
-  padding: 0 0.25em;
-  border-radius: 0.3em;
-  background: var(--rarity-legend-bg);
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-}
-.chat__message--mythic .rainbow-word__letter {
-  color: hsl(var(--rainbow-hue) 90% 70%);
-}
 @media (prefers-contrast: more) {
-  .chat__message--mythic .rainbow-word {
-    padding: 0;
-    background: none;
-  }
-  .chat__message--mythic .rainbow-word__letter,
   .chat__message--legend .rainbow-word__letter {
     color: inherit;
   }
