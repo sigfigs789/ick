@@ -1100,7 +1100,15 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
       </span>
       <span className="leaderboard__detail">
         <span className="leaderboard__meta" />
-        <span className="leaderboard__best">
+        {/* Gold when the longest run beats the current one: a strong
+            player on a recent lapse, not a weak one. */}
+        <span
+          className={
+            entry.best > entry.current
+              ? "leaderboard__best leaderboard__best--past"
+              : "leaderboard__best"
+          }
+        >
           Longest {entry.best}
         </span>
       </span>

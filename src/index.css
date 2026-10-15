@@ -3580,6 +3580,10 @@ h2 {
   min-width: 0;
   white-space: nowrap;
 }
+.leaderboard__best--past {
+  color: var(--rarity-elusive-fg);
+  font-weight: 600;
+}
 .leaderboard__best-word {
   min-width: 0;
   overflow: hidden;
