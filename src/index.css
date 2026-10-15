@@ -4151,6 +4151,121 @@ h2 {
   cursor: not-allowed;
 }
 
+/* The ruleset, shut until opened or pointed at from a row. */
+.folded-live__rules {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--card-bg);
+}
+.folded-live__rules-summary {
+  font-weight: 800;
+  cursor: pointer;
+}
+.folded-live__rules[open] .folded-live__rules-summary {
+  margin-bottom: 0.6rem;
+}
+.folded-live__rules-copy {
+  margin: 0 0 0.6rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.folded-live__guidance {
+  margin: 0 0 0.8rem;
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid var(--danger-fg);
+  background: var(--danger-bg);
+  border-radius: 0.3rem;
+}
+.folded-live__guidance-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--danger-fg);
+}
+.folded-live__cases {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+.folded-live__verdict {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.folded-live__verdict--wrong {
+  color: var(--danger-fg);
+}
+.folded-live__verdict--right {
+  color: var(--fg-muted);
+}
+/* The rule a row's link pointed at. */
+.folded-live__rule {
+  scroll-margin: 4rem;
+  border-radius: 0.3rem;
+  transition: background-color 0.3s;
+}
+.folded-live__rule--pointed {
+  background: var(--danger-bg);
+  outline: 0.4rem solid var(--danger-bg);
+}
+.folded-live__rule-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Reject's warning opens under its row, the full width of it. */
+.folded-live__item {
+  flex-wrap: wrap;
+}
+.folded-live__warning {
+  flex: 1 0 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--danger-fg);
+  border-radius: 0.5rem;
+  background: var(--danger-bg);
+}
+.folded-live__warning-title {
+  margin: 0 0 0.3rem;
+  font-weight: 800;
+  color: var(--danger-fg);
+}
+.folded-live__warning-copy {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.folded-live__warning-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+/* Keeping the fold is the easy answer, so it is the filled button. */
+.folded-live__keep {
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.4rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.folded-live__keep:hover {
+  background: var(--accent-hover);
+}
+
 /* The Freeform week report at /freeform-feedback: the vote above, the notes
    below. Its own block rather than more `review__` rules, because this page is
    not a queue -- nothing here is marked, and the thing at the top is a tally

@@ -12,7 +12,14 @@ vi.mock("../game/corpus", () => ({
 
 vi.mock("../game/foldedRows", () => ({
   foldedRows: () => [
-    { word: "timelessly", base: "time", ownZipf: 1.2, baseZipf: 5.4, finders: 2 },
+    {
+      word: "timelessly",
+      base: "time",
+      ownZipf: 1.2,
+      baseZipf: 5.4,
+      finders: 2,
+      rule: "adverbs-and-quality-nouns",
+    },
   ],
 }));
 
@@ -36,6 +43,9 @@ function stubFetch(live: { status: number; body: unknown }) {
     })
   );
 }
+
+// jsdom lays nothing out, so it has no scrollIntoView for the rule link to call.
+Element.prototype.scrollIntoView = vi.fn();
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -87,5 +97,43 @@ describe("FoldedLivePage", () => {
     render(<FoldedLivePage />);
     expect(screen.getByText("timelessly")).toBeTruthy();
     expect(screen.queryByText("Loading…")).toBeNull();
+  });
+
+  it("warns before a rejection is written, and names the rule the fold used", async () => {
+    stubFetch({ status: 200, body: { rejections: [] } });
+    render(<FoldedLivePage />);
+    expect(await screen.findByText("timelessly")).toBeTruthy();
+    const posts = () =>
+      vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === "POST").length;
+
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    expect(screen.getByText("Only reject clearly unrelated words")).toBeTruthy();
+    expect(screen.getByText(/Check the word against that rule first/)).toBeTruthy();
+    expect(posts()).toBe(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Keep the fold" }));
+    expect(screen.queryByText("Only reject clearly unrelated words")).toBeNull();
+    expect(posts()).toBe(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Reject" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reject anyway" }));
+    expect(posts()).toBe(1);
+    expect(await screen.findByRole("button", { name: "Undo" })).toBeTruthy();
+  });
+
+  it("opens the ruleset at a row's rule", async () => {
+    stubFetch({ status: 200, body: { rejections: [] } });
+    render(<FoldedLivePage />);
+    expect(await screen.findByText("timelessly")).toBeTruthy();
+    const rules = document.querySelector("details.folded-live__rules") as HTMLDetailsElement;
+    expect(rules.open).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: "Adverbs and quality nouns" }));
+    expect(rules.open).toBe(true);
+    await waitFor(() =>
+      expect(
+        document.getElementById("fold-rule-adverbs-and-quality-nouns")?.className
+      ).toContain("folded-live__rule--pointed")
+    );
   });
 });

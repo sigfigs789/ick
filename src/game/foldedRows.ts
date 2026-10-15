@@ -3,6 +3,7 @@
 
 import { corpusEntry } from "./corpus";
 import { foldTrace, isDictionaryWord, unattestedZipf } from "./dictionary";
+import { foldRuleId } from "./foldRules";
 import type { FoundWord } from "./leaderboard";
 
 /** One folded word on the puzzle, as the page shows it. */
@@ -14,6 +15,11 @@ export interface FoldedRow {
   baseZipf: number;
   /** How many players banked it. */
   finders: number;
+  /**
+   * The `foldRuleset` id of the rule the fold is judged on, its loosest link.
+   * Absent on a rejected word the feed no longer carries, which is not traced.
+   */
+  rule?: string;
 }
 
 /**
@@ -46,6 +52,7 @@ export function foldedRows(date: string, finds: readonly FoundWord[]): FoldedRow
       ownZipf: trace.ownZipf,
       baseZipf: trace.baseZipf,
       finders: find.finders,
+      rule: foldRuleId(trace.path),
     });
   }
   return rows.sort((a, b) => b.baseZipf - b.ownZipf - (a.baseZipf - a.ownZipf));

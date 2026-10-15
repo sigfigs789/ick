@@ -4,6 +4,7 @@ import { addDays, todayDateString } from "../game/date";
 import { loadCorpus } from "../game/corpus";
 import { formatRarityScore, rarityForZipf, usesFreeformRules } from "../game/dictionary";
 import { foldedRows, type FoldedRow } from "../game/foldedRows";
+import { foldRuleset, type FoldRule } from "../game/foldRules";
 import { feedFloor, fetchFoundWords } from "../game/leaderboard";
 import {
   fetchLiveFoldRejections,
@@ -65,6 +66,11 @@ export function FoldedLivePage() {
   const [liveState, setLiveState] = useState<LiveState>(opening?.liveState ?? "ok");
   const [saveFailed, setSaveFailed] = useState(false);
   const [reload, setReload] = useState(0);
+  /** The row whose Reject is waiting on the warning, by word. */
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  /** The rule a row's link last pointed at, highlighted in the ruleset. */
+  const [pointedRule, setPointedRule] = useState<string | null>(null);
   const live = useRef(true);
 
   useEffect(() => {
@@ -75,10 +81,28 @@ export function FoldedLivePage() {
   }, []);
 
   const freeformOnly = usesFreeformRules(date, "standard");
+  const ruleset = foldRuleset(date);
+  const ruleById = new Map(ruleset.map((rule) => [rule.id, rule]));
+
+  useEffect(() => {
+    if (!pointedRule) return;
+    document
+      .getElementById(`fold-rule-${pointedRule}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [pointedRule]);
+
+  /** Open the ruleset at the rule a fold used. */
+  const showRule = (id: string) => {
+    setRulesOpen(true);
+    setPointedRule(null);
+    // Set after the open lands, so the scroll finds the rule laid out.
+    requestAnimationFrame(() => setPointedRule(id));
+  };
 
   useEffect(() => {
     let cancelled = false;
     setSaveFailed(false);
+    setConfirming(null);
     // A puzzle already read goes straight back up and the read below only
     // checks it; one not read yet starts empty, so no other puzzle's rows sit
     // under this one's heading while it loads.
@@ -156,6 +180,7 @@ export function FoldedLivePage() {
           return next;
         });
       setSaveFailed(false);
+      setConfirming(null);
       apply(want);
       setLiveFoldRejection(date, { word: row.word, base: row.base }, want)
         .then((stored) => {
@@ -182,7 +207,8 @@ export function FoldedLivePage() {
           </h1>
           <p className="page-head__note">
             Words players banked in Standard that scored as a common form. Reject a fold and
-            that word scores as is on this puzzle — players who open it are told.
+            that word scores as is on this puzzle — players who open it are told. Reject
+            rarely: only a clear violation.
           </p>
         </div>
         <button
@@ -204,6 +230,15 @@ export function FoldedLivePage() {
         onPrevious={() => setDate((d) => (d > floor ? addDays(d, -1) : d))}
         onNext={() => setDate((d) => (d < today ? addDays(d, 1) : d))}
       />
+
+      {ruleset.length > 0 && (
+        <FoldRules
+          rules={ruleset}
+          open={rulesOpen}
+          onToggle={setRulesOpen}
+          pointed={pointedRule}
+        />
+      )}
 
       {state === "loading" && <p className="review__status">Loading…</p>}
       {state === "error" && (
@@ -258,6 +293,8 @@ export function FoldedLivePage() {
           {rows.map((row) => {
             const isRejected = rejected.has(row.word);
             const priced = Number.isFinite(row.ownZipf) && Number.isFinite(row.baseZipf);
+            const rule = row.rule ? ruleById.get(row.rule) : undefined;
+            const warning = confirming === row.word && !isRejected;
             return (
               <li
                 key={row.word}
@@ -291,6 +328,18 @@ export function FoldedLivePage() {
                         {row.finders} {row.finders === 1 ? "player" : "players"}
                       </span>
                     )}
+                    {rule && (
+                      <span>
+                        Rule:{" "}
+                        <button
+                          type="button"
+                          className="folded-live__rule-link"
+                          onClick={() => showRule(rule.id)}
+                        >
+                          {rule.title}
+                        </button>
+                      </span>
+                    )}
                     {isRejected && <span>Scoring as is</span>}
                   </p>
                 </div>
@@ -298,11 +347,20 @@ export function FoldedLivePage() {
                   type="button"
                   className={`folded-live__reject${isRejected ? " folded-live__reject--on" : ""}`}
                   aria-pressed={isRejected}
+                  aria-expanded={isRejected ? undefined : warning}
                   disabled={liveState !== "ok"}
-                  onClick={() => toggle(row)}
+                  onClick={() => (isRejected ? toggle(row) : setConfirming(warning ? null : row.word))}
                 >
                   {isRejected ? "Undo" : "Reject"}
                 </button>
+                {warning && (
+                  <RejectWarning
+                    rule={rule}
+                    onShowRule={showRule}
+                    onKeep={() => setConfirming(null)}
+                    onReject={() => toggle(row)}
+                  />
+                )}
               </li>
             );
           })}
@@ -317,5 +375,139 @@ export function FoldedLivePage() {
         Back to today{"’"}s puzzle
       </button>
     </main>
+  );
+}
+
+/**
+ * The fold's rules, shut by default: the page is a queue first. A row's "Rule:"
+ * link opens it at the rule that row was folded by, so a reviewer judges the
+ * fold against what the rule claims rather than against a hunch.
+ */
+function FoldRules({
+  rules,
+  open,
+  onToggle,
+  pointed,
+}: {
+  rules: FoldRule[];
+  open: boolean;
+  onToggle: (open: boolean) => void;
+  pointed: string | null;
+}) {
+  return (
+    <details
+      className="folded-live__rules"
+      open={open}
+      onToggle={(e) => onToggle(e.currentTarget.open)}
+    >
+      <summary className="folded-live__rules-summary">How folding works</summary>
+      <p className="folded-live__rules-copy">
+        In Standard a word scores as the most common form it folds to, so a rare
+        spelling of a common word doesn{"’"}t score like a rare word. A fold is right
+        when the word is just a form of its base: the same word inflected, negated, or
+        made into another part of speech.
+      </p>
+      <div className="folded-live__guidance">
+        <p className="folded-live__guidance-title">When to reject</p>
+        <p className="folded-live__rules-copy">
+          Rarely. Reject only a clear violation, where the two words are unrelated and
+          the fold matched on spelling alone. If you have any doubt, don{"’"}t reject it.
+        </p>
+        <ul className="folded-live__cases">
+          <li>
+            <span className="folded-live__verdict folded-live__verdict--wrong">Wrong fold</span>{" "}
+            <b>hearses</b> → <b>hears</b>: a hearse is not a form of hear. Reject.
+          </li>
+          <li>
+            <span className="folded-live__verdict folded-live__verdict--right">Right fold</span>{" "}
+            <b>uncompile</b> → <b>compile</b>: it{"’"}s just the negative of compile. Keep.
+          </li>
+        </ul>
+      </div>
+      <ul className="common-form__groups">
+        {rules.map((rule) => (
+          <li
+            key={rule.id}
+            id={`fold-rule-${rule.id}`}
+            className={`common-form__group folded-live__rule${pointed === rule.id ? " folded-live__rule--pointed" : ""}`}
+          >
+            <p className="common-form__group-title">{rule.title}</p>
+            {rule.affixes.length > 0 && (
+              <p className="common-form__affixes">
+                {rule.affixes.map((affix) => (
+                  <span key={affix} className="common-form__affix">
+                    {affix}
+                  </span>
+                ))}
+              </p>
+            )}
+            {rule.note && <p className="common-form__example">{rule.note}</p>}
+            {rule.example && (
+              <p className="common-form__example">
+                {rule.example.word} → {rule.example.base}
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+/**
+ * What Reject asks before it writes. A rejection reprices every player holding
+ * the word, live, so the warning names the rule the fold used and makes keeping
+ * the fold the easy answer.
+ */
+function RejectWarning({
+  rule,
+  onShowRule,
+  onKeep,
+  onReject,
+}: {
+  rule: FoldRule | undefined;
+  onShowRule: (id: string) => void;
+  onKeep: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <div className="folded-live__warning" role="alert">
+      <p className="folded-live__warning-title">Only reject clearly unrelated words</p>
+      <p className="folded-live__warning-copy">
+        Rejecting a word changes live scores retroactively and can break players{"’"} trust.
+        It should be done <b>very</b> rarely. Only reject words that are clearly unrelated,
+        e.g. hearses → hears. Words that are the negative of each other should be folded
+        per the rules (
+        <button
+          type="button"
+          className="folded-live__rule-link"
+          onClick={() => onShowRule("prefixes")}
+        >
+          see above
+        </button>
+        ).
+      </p>
+      {rule && (
+        <p className="folded-live__warning-copy">
+          This fold used{" "}
+          <button
+            type="button"
+            className="folded-live__rule-link"
+            onClick={() => onShowRule(rule.id)}
+          >
+            {rule.title}
+          </button>
+          . Check the word against that rule first before rejecting.
+        </p>
+      )}
+      <div className="folded-live__warning-actions">
+        <button type="button" className="folded-live__keep" onClick={onKeep}>
+          Keep the fold
+        </button>
+        <button type="button" className="folded-live__reject" onClick={onReject}>
+          Reject anyway
+        </button>
+      </div>
+    </div>
   );
 }
