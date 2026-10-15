@@ -17,6 +17,9 @@
 //   still alive on `today` (see the 20261016000000 migration). It ignores
 //   `mode` -- a day played in either counts, as it does for the game's own
 //   streak -- and has no window.
+//   `dead=1` returns only the dead-streaks board (`deadStreaks`): players with
+//   two or more days played whose streak ended and who never came back, longest
+//   streak first (see the 20261017000000 migration).
 //   `day` is optional: a caller that omits it gets the two boards it always got,
 //   and no second query is run on its behalf. It is the one window that is a
 //   single date, so it is sent as one rather than as a pair. Neither has to be the window the caller is currently
@@ -851,6 +854,55 @@ async function handleWordsGet(params: URLSearchParams): Promise<Response> {
   }
 }
 
+/** One row of the dead-streaks board, as `leaderboard_dead_streaks` returns it. */
+interface DeadStreakRow {
+  rank: number;
+  player_id: string;
+  lost_streak: number;
+  best_streak: number;
+  last_played: string;
+  days_played: number;
+}
+
+/** The most rows the dead-streaks board returns. */
+const DEAD_STREAKS_LIMIT = 100;
+
+/**
+ * Players whose streak ended and who never came back, longest streak first.
+ *
+ * Its own request, like the finds feed: it carries no player, so one URL per
+ * day serves every reader from the CDN. Counted up to the reader's `today`,
+ * since a missed day is a day on their calendar (see the 20261017000000
+ * migration).
+ */
+async function handleDeadStreaksGet(params: URLSearchParams): Promise<Response> {
+  const claimedToday = params.get("today") ?? "";
+  const today = validPuzzleDate(claimedToday) ? claimedToday : utcToday();
+  if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  try {
+    const rows = await rpc<DeadStreakRow[]>("leaderboard_dead_streaks", {
+      p_today: today,
+      p_limit: DEAD_STREAKS_LIMIT,
+    });
+    const deadStreaks = (Array.isArray(rows) ? rows : []).map((row, index) => ({
+      rank: Number(row.rank) || index + 1,
+      playerId: String(row.player_id),
+      lost: Number(row.lost_streak) || 0,
+      best: Number(row.best_streak) || 0,
+      lastPlayed: String(row.last_played),
+      days: Number(row.days_played) || 0,
+    }));
+    return reply(200, { deadStreaks }, 300);
+  } catch (error) {
+    console.error(
+      "[leaderboard] dead streaks read failed:",
+      error instanceof Error ? error.message : error
+    );
+    return reply(502, { ok: false, reason: "unavailable" });
+  }
+}
+
 async function handleGet(request: Request): Promise<Response> {
   const params = new URL(request.url).searchParams;
   // The finds feed, on its own. Checked before anything else is read, because
@@ -858,6 +910,8 @@ async function handleGet(request: Request): Promise<Response> {
   // that is the whole point of it: a URL identical for every player is a URL the
   // CDN can answer once.
   if (params.get("words") === "1") return handleWordsGet(params);
+  // The dead-streaks board, on its own for the same reason.
+  if (params.get("dead") === "1") return handleDeadStreaksGet(params);
   const since = params.get("since") ?? "";
   if (!validWindowStart(since)) {
     return reply(400, { ok: false, reason: "bad-since" });

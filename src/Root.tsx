@@ -3,6 +3,7 @@ import App from "./App";
 import { trackLeaderboardJoined, trackModeAssigned } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
 import { AnalyticsPage } from "./components/AnalyticsPage";
+import { DeadStreaksPage } from "./components/DeadStreaksPage";
 import { ChatBubble } from "./components/ChatBubble";
 import { FeedbackPage } from "./components/FeedbackPage";
 import { FoundWordsPage } from "./components/FoundWordsPage";
@@ -331,6 +332,8 @@ export function Root() {
         <AnalyticsPage />
       ) : route === "transfer" ? (
         <TransferPage />
+      ) : route === "dead-streaks" ? (
+        <DeadStreaksPage />
       ) : route === "help" ? (
         <HelpPage />
       ) : (

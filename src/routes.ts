@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 /**
  * The whole router.
  *
- * Ten pages, no library. `vercel.json` already rewrites every non-`/api/` path
+ * Eleven pages, no library. `vercel.json` already rewrites every non-`/api/` path
  * to `index.html`, so a real URL is a matter of reading `location.pathname` and
  * pushing to it -- and both of the pages beside the game want a real URL: they
  * are pages you link someone to, open in a second tab, and reach with the back
@@ -52,6 +52,10 @@ import { useEffect, useState } from "react";
  * here (see game/transfer.ts). Nothing in the game shows that id, so a page
  * that does had better be one nobody arrives at by wandering.
  *
+ * `/dead-streaks` ranks the players whose streak ended and who never came back,
+ * longest streak first. Unlinked from the game: it is a page about the players
+ * who left, not one for the players still here.
+ *
  * `/help` is the index of all of the above, because nine pages, most of them
  * linked from nowhere, is more URLs than anyone remembers. Unlinked for the
  * same reason the curator pages are: it is mostly a list of them.
@@ -74,7 +78,8 @@ export type Route =
   | "folded-live"
   | "analytics"
   | "transfer"
-  | "help";
+  | "help"
+  | "dead-streaks";
 
 export const LEADERBOARD_PATH = "/leaderboard";
 export const FOUND_WORDS_PATH = "/found-words";
@@ -86,6 +91,7 @@ export const FOLDED_LIVE_PATH = "/folded-live";
 export const ANALYTICS_PATH = "/analytics";
 export const TRANSFER_PATH = "/transfer";
 export const HELP_PATH = "/help";
+export const DEAD_STREAKS_PATH = "/dead-streaks";
 
 /**
  * Whether the route lives in memory rather than in the address bar, and what it
@@ -136,6 +142,7 @@ export function routeFor(pathname: string): Route {
   if (path === ANALYTICS_PATH) return "analytics";
   if (path === TRANSFER_PATH) return "transfer";
   if (path === HELP_PATH) return "help";
+  if (path === DEAD_STREAKS_PATH) return "dead-streaks";
   return "game";
 }
 
@@ -151,6 +158,7 @@ export function pathFor(route: Route): string {
   if (route === "analytics") return ANALYTICS_PATH;
   if (route === "transfer") return TRANSFER_PATH;
   if (route === "help") return HELP_PATH;
+  if (route === "dead-streaks") return DEAD_STREAKS_PATH;
   return "/";
 }
 
