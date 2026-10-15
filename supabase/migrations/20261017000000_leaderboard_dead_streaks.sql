@@ -32,18 +32,18 @@ create or replace function public.leaderboard_dead_streaks(
 language sql
 stable
 as $$
-  with days as (
-    -- One row per day played, either mode, keeping the earliest arrival.
-    select s.player_id, s.puzzle_date, min(s.created_at) as first_played_at
+  with players as (
+    -- One aggregate over the scores, which the primary key (player_id,
+    -- puzzle_date, mode) can answer; the per-day rows and window functions
+    -- below run only for the players this narrows to.
+    select
+      s.player_id,
+      count(distinct s.puzzle_date)::integer as days_played,
+      max(s.puzzle_date) as last_played
     from public.leaderboard_scores s
     where s.puzzle_date <= p_today
-    group by s.player_id, s.puzzle_date
-  ),
-  players as (
-    select d.player_id, count(*)::integer as days_played, max(d.puzzle_date) as last_played
-    from days d
-    group by d.player_id
-    having count(*) >= 2
+    group by s.player_id
+    having count(distinct s.puzzle_date) >= 2
   ),
   gone as (
     select
@@ -65,6 +65,14 @@ as $$
       else 0
     end
   ),
+  days as (
+    -- One row per day played, either mode, keeping the earliest arrival.
+    select s.player_id, s.puzzle_date, min(s.created_at) as first_played_at
+    from public.leaderboard_scores s
+    join gone g on g.player_id = s.player_id
+    where s.puzzle_date <= p_today
+    group by s.player_id, s.puzzle_date
+  ),
   breaks as (
     select
       d.player_id,
@@ -79,7 +87,6 @@ as $$
         else 1
       end as starts_run
     from days d
-    join gone g on g.player_id = d.player_id
   ),
   runs as (
     select
