@@ -914,7 +914,7 @@ anything that matters.
   saves and locks it (so it's reviewable later) but never touches the
   streak — only a valid answer submitted on its own real calendar date
   counts. A single missed day is covered by a streak freeze (the 🔥 turns
-  to 🧊 until the next day is played); missing two in a row resets the
+  to ⏳ until the next day is played); missing two in a row resets the
   streak to zero. Those checks live in `storage.ts` and `streakFreeze.ts`,
   which ignore archive puzzles and clear expired streaks on load.
 

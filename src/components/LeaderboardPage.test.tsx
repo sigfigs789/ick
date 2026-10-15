@@ -257,13 +257,13 @@ describe("the leaderboard page", () => {
     expect(boardRows("Streaks")[0]).toHaveTextContent("21");
     // Ranked by the run they are on, with their longest kept as the detail.
     expect(boardRows("Streaks")[1]).toHaveTextContent("Longest 40");
-    // Fire for a run that is safe, ice for one that is lost if today is missed.
+    // Fire for a run that is safe, an hourglass for one lost if today is missed.
     expect(boardRows("Streaks")[0]).toHaveTextContent("🔥");
-    expect(boardRows("Streaks")[1]).toHaveTextContent("🧊");
+    expect(boardRows("Streaks")[1]).toHaveTextContent("⏳");
     expect(boardRows("Streaks")[1]).not.toHaveTextContent("🔥");
     expect(boardRows("Streaks")[1]).toHaveTextContent("at risk");
-    // A one-day run is a start, not a streak: no fire and no ice.
-    expect(boardRows("Streaks")[2]).not.toHaveTextContent(/🔥|🧊/u);
+    // A one-day run is a start, not a streak: no fire and no hourglass.
+    expect(boardRows("Streaks")[2]).not.toHaveTextContent(/🔥|⏳/u);
     expect(board("Streaks")).toHaveTextContent(/Streak\s*Longest streak/);
     // No window, so nothing to step through.
     const streaks = board("Streaks");

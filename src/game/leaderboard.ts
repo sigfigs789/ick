@@ -74,7 +74,7 @@ export interface StreakEntry {
   best: number;
   /**
    * They missed yesterday and have not played today, so today decides whether
-   * the run survives -- the day the game shows 🧊 instead of 🔥.
+   * the run survives -- the day the game shows ⏳ instead of 🔥.
    */
   atRisk: boolean;
 }

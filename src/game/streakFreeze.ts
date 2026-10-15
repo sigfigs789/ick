@@ -10,7 +10,7 @@
  * What it buys is one day of grace, not two. A covered day has to be followed
  * by a played one; miss the day after a frozen day too and the streak resets.
  * So the day after a freeze is the one day a streak can be lost, and that is
- * when the streak shows 🧊 instead of 🔥 (see `atRisk` and
+ * when the streak shows ⏳ instead of 🔥 (see `atRisk` and
  * components/StreakDisplay.tsx). Playing that day turns it back to fire.
  *
  * A frozen day keeps the streak alive but does not add to it: the count is
