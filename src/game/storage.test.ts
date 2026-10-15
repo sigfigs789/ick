@@ -449,6 +449,20 @@ describe("streak freezes", () => {
     expect(loadStreak()).toMatchObject({ currentStreak: 3, frozenDates: ["2024-01-03"] });
   });
 
+  it("earns a saved freeze at 14 days that covers a second missed day", () => {
+    for (let d = 1; d <= 14; d++) play(`2024-01-${String(d).padStart(2, "0")}`);
+    expect(loadStreak()).toMatchObject({ currentStreak: 14, bankedFreezes: 1 });
+
+    play("2024-01-17"); // skipped 01-15 (grace) and 01-16 (saved freeze)
+    expect(loadStreak()).toMatchObject({ currentStreak: 15, bankedFreezes: 0 });
+  });
+
+  it("drops saved freezes when a new streak starts", () => {
+    for (let d = 1; d <= 14; d++) play(`2024-01-${String(d).padStart(2, "0")}`);
+    play("2024-01-20");
+    expect(loadStreak()).toMatchObject({ currentStreak: 1, bankedFreezes: 0 });
+  });
+
   it("resets a streak after two missed days in a row", () => {
     for (let d = 1; d <= 3; d++) play(`2024-01-0${d}`);
     play("2024-01-06");

@@ -4,7 +4,7 @@ import { maxGuessesFor } from "./constants";
 import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
-import { applyFreezes, coveredThrough } from "./streakFreeze";
+import { applyFreezes, coveredThrough, earnFreeze } from "./streakFreeze";
 
 /**
  * The two key families a player's record lives under.
@@ -321,8 +321,9 @@ export function resetProgress(date: string, drop: string): DailyProgress {
 
 export function loadStreak(): StreakState {
   const streak = { ...EMPTY_STREAK, ...safeParse<StreakState>(localStorage.getItem(STREAK_KEY)) };
-  // A single missed day is covered by a freeze; a longer gap resets the
-  // streak (see game/streakFreeze.ts).
+  // A single missed day is covered by the grace day and a longer gap by saved
+  // freezes, if there are enough; otherwise the streak resets (see
+  // game/streakFreeze.ts).
   const current = applyFreezes(streak, todayDateString());
   if (current !== streak) saveStreak(current);
   return current;
@@ -413,8 +414,10 @@ function updateStreakOnValidAnswer(date: string): void {
     lastCompletedDate: date,
     crushedIt: streak.crushedIt,
     elite: streak.elite,
+    // Saved freezes belong to the streak that earned them.
+    bankedFreezes: continuesStreak ? streak.bankedFreezes : 0,
   };
-  saveStreak(updated);
+  saveStreak(earnFreeze(updated));
 }
 
 function incrementCompletionTotal(): void {

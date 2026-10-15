@@ -17,7 +17,7 @@ import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
 import { isWinningRarity } from "./game/rank";
 import { completedWholeMonth } from "./game/perfectMonth";
-import { topRarityScore, totalRarityScore } from "./game/dictionary";
+import { totalRarityScore } from "./game/dictionary";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import {
@@ -287,7 +287,6 @@ export default function App() {
           <StreakDisplay
             streak={streak}
             totalRarity={totalRarityScore(progress.acceptedWords, date)}
-            topRarity={topRarityScore(progress.acceptedWords, date)}
             date={date}
             isToday={isToday}
           />

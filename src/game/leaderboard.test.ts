@@ -18,6 +18,7 @@ import { MODE_CHOICE_START, resetModeCache, setMode } from "./mode";
 import { FIRST_PUZZLE } from "./drop";
 import type { AcceptedWord, DailyProgress } from "./types";
 import { APP_VERSION } from "../version";
+import { STREAK_KEY } from "./storage";
 
 const WORDS: AcceptedWord[] = [
   { word: "inkling", rarity: "Rare", zipf: 2.6 },
@@ -206,6 +207,37 @@ function stored(date: string, firstWordAt = `${date}T20:00:00`): DailyProgress {
     completedAt: firstWordAt,
   };
 }
+
+describe("sending the streak", () => {
+  it("sends the game's own streak, as of its last played day, with the scores", () => {
+    joinBoard();
+    const today = todayDateString();
+    localStorage.setItem(
+      STREAK_KEY,
+      JSON.stringify({
+        currentStreak: 31,
+        longestStreak: 40,
+        lastCompletedDate: today,
+        bankedFreezes: 2,
+        totalCompleted: 31,
+        crushedIt: 0,
+        elite: 0,
+        highScore: 0,
+      })
+    );
+    const fetchMock = stubFetch();
+
+    submitScore({ date: today, isToday: true, words: WORDS });
+    expect(posted(fetchMock).streak).toEqual({ current: 31, best: 40, saved: 2, lastPlayed: today });
+  });
+
+  it("sends no streak when there is none", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+    submitScore({ date: todayDateString(), isToday: true, words: WORDS });
+    expect(posted(fetchMock)).not.toHaveProperty("streak");
+  });
+});
 
 describe("importing a joining player's history", () => {
   it("sends every remembered day in one request", () => {
@@ -526,7 +558,7 @@ describe("reading the boards", () => {
     const fetchMock = stubFetch(
       boardsResponse({
         streak: [
-          { rank: 1, playerId: "me", current: 12, best: 30, atRisk: true },
+          { rank: 1, playerId: "me", current: 12, best: 30, frozen: true },
           { rank: 2, playerId: "you", current: 0, best: 4 },
         ],
         streakSelf: { playerId: "late", current: 2, best: 2 },
@@ -538,7 +570,7 @@ describe("reading the boards", () => {
     // A row on no streak is not a row on the streak board, and a self row
     // without a rank is dropped like any other board's.
     expect(boards.streak).toEqual([
-      { rank: 1, playerId: "me", name: handleFor("me"), current: 12, best: 30, atRisk: true },
+      { rank: 1, playerId: "me", name: handleFor("me"), current: 12, best: 30, frozen: true },
     ]);
     expect(boards.streakSelf).toBeNull();
   });

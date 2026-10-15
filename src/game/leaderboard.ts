@@ -23,7 +23,8 @@ import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { currentMode, freeformForDate, modeForDate, type GameMode } from "./mode";
-import { playedHistory, playedOnItsDay } from "./storage";
+import { loadStreak, playedHistory, playedOnItsDay } from "./storage";
+import { streakReport } from "./streakFreeze";
 import { offlineVerdict } from "./submit";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
 import { monthStart } from "./month";
@@ -58,11 +59,10 @@ export interface BoardEntry {
 /**
  * One row of the streak board: a player on a run right now.
  *
- * Counted on the server from the days on the board, by the same rule the game's
- * own 🔥 uses -- one missed day is frozen over, two end it (see
- * game/streakFreeze.ts and the 20261015200000 migration) -- so the number here
- * is the number the player sees beside their puzzle, as long as every day they
- * played reached the board.
+ * The numbers are the ones each player's own game reported with its last write
+ * (see `streakReport` in game/streakFreeze.ts and the 20261016000000
+ * migration), so the number here is the number the player sees beside their
+ * puzzle. The server only decides whether the run is still alive today.
  */
 export interface StreakEntry {
   rank: number;
@@ -73,10 +73,10 @@ export interface StreakEntry {
   /** The longest run they have ever had, this one included. */
   best: number;
   /**
-   * They missed yesterday and have not played today, so today decides whether
-   * the run survives -- the day the game shows ⏳ instead of 🔥.
+   * A saved freeze is covering missed days and today is not played yet -- the
+   * day the game shows 🧊 instead of 🔥. The free missed day keeps the 🔥.
    */
-  atRisk: boolean;
+  frozen: boolean;
 }
 
 /**
@@ -320,7 +320,7 @@ function parseStreak(
   fallbackRank?: number
 ): StreakEntry | null {
   if (!item || typeof item !== "object") return null;
-  const { rank, playerId, current, best, atRisk } = item;
+  const { rank, playerId, current, best, frozen } = item;
   if (typeof playerId !== "string") return null;
   if (typeof current !== "number" || !Number.isFinite(current) || current < 1) return null;
   const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
@@ -331,7 +331,7 @@ function parseStreak(
     name: nameFor(playerId, item.source),
     current,
     best: typeof best === "number" && Number.isFinite(best) ? Math.max(best, current) : current,
-    atRisk: atRisk === true,
+    frozen: frozen === true,
   };
 }
 
@@ -876,6 +876,15 @@ function post(playerId: string, scores: ScorePayload[]): boolean {
   return true;
 }
 
+/** The streak to send, or null when there is none or it cannot be read. */
+function currentStreakReport(): ReturnType<typeof streakReport> {
+  try {
+    return streakReport(loadStreak());
+  } catch {
+    return null;
+  }
+}
+
 /** `post`, handing back the request for a caller that wants to see it land. */
 function send(playerId: string, scores: ScorePayload[]): Promise<Response> | null {
   // `version` is the release this client's scoring was built from. The server
@@ -883,7 +892,18 @@ function send(playerId: string, scores: ScorePayload[]): Promise<Response> | nul
   // api/leaderboard.ts): a phone app is a frozen copy of these rules, so an
   // install that never updates would otherwise keep pricing words by a system
   // the website has since replaced, on the same board.
-  const body = JSON.stringify({ playerId, version: APP_VERSION, scores });
+  //
+  // `streak` is the game's own streak as of its last played day, for the streak
+  // board, which shows what the game shows rather than working it out again
+  // from the days on the board (see streakReport in game/streakFreeze.ts). Sent
+  // with every write, so a sync on open repairs it the way it repairs the days.
+  const streak = currentStreakReport();
+  const body = JSON.stringify({
+    playerId,
+    version: APP_VERSION,
+    scores,
+    ...(streak ? { streak } : {}),
+  });
   try {
     return Promise.resolve(fetch("/api/leaderboard", {
       method: "POST",
