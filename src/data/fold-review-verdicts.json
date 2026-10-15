@@ -1,1 +1,152 @@
-{}
+{
+  "archaize": {
+    "base": "archaic",
+    "since": "2026-10-18",
+    "reason": "Folded onto `archae` (archaize > archae), costing 0.50 points; it is a form of `archaic` (Zipf 3.36). Flagged by the daily fold check for the 2026-10-18 `HA` drop (means make archaic; archae unrelated) and confirmed on adversarial re-review (archae unrelated; archaize means make archaic)."
+  },
+  "archaized": {
+    "base": "archaic",
+    "since": "2026-10-18",
+    "reason": "Folded onto `archae` (archaized > archaize > archae), costing 0.50 points; it is a form of `archaic` (Zipf 3.36). Flagged by the daily fold check for the 2026-10-18 `HA` drop (lands on archae, not archaic) and confirmed on adversarial re-review (archae unrelated; built on archaic)."
+  },
+  "archaizer": {
+    "base": "archaic",
+    "since": "2026-10-18",
+    "reason": "Folded onto `archae` (archaizer > archaize > archae), costing 0.52 points; it is a form of `archaic` (Zipf 3.36). Flagged by the daily fold check for the 2026-10-18 `HA` drop (lands on archae, not archaic) and confirmed on adversarial re-review (archae unrelated; built on archaic)."
+  },
+  "archaizes": {
+    "base": "archaic",
+    "since": "2026-10-18",
+    "reason": "Folded onto `archae` (archaizes > archaize > archae), costing 0.53 points; it is a form of `archaic` (Zipf 3.36). Flagged by the daily fold check for the 2026-10-18 `HA` drop (lands on archae, not archaic) and confirmed on adversarial re-review (archae unrelated; built on archaic)."
+  },
+  "chalones": {
+    "base": "chalone",
+    "since": "2026-10-18",
+    "reason": "Folded onto `chalon` (chalones > chalon), costing 0.20 points; it is a form of `chalone` (Zipf 1.50). Flagged by the daily fold check for the 2026-10-18 `HA` drop (Plural of chalone hormone, not chalon) and confirmed on adversarial re-review (Chalon is fabric; chalone is hormone)."
+  },
+  "chattable": {
+    "base": "chat",
+    "since": "2026-10-18",
+    "reason": "Folded onto `chatty` (chattable > chatty), costing 2.33 points; it is a form of `chat` (Zipf 4.57). Flagged by the daily fold check for the 2026-10-18 `HA` drop (able to chat, not chatty) and confirmed on adversarial re-review (Chatty means talkative; chattable from chat)."
+  },
+  "hackies": {
+    "base": "hackie",
+    "since": "2026-10-18",
+    "reason": "Folded onto `hacky` (hackies > hacky), costing 1.35 points; it is a form of `hackie` (Zipf 0.88). Flagged by the daily fold check for the 2026-10-18 `HA` drop (plural of hackie, taxi driver) and confirmed on adversarial re-review (Hackie taxi driver, not adjective hacky)."
+  },
+  "hadjes": {
+    "base": "hadj",
+    "since": "2026-10-18",
+    "reason": "Folded onto `hadji` (hadjes > hadjis > hadji), costing 1.42 points; it is a form of `hadj` (Zipf 1.87). Flagged by the daily fold check for the 2026-10-18 `HA` drop (plural of hadj (pilgrimage), not hadji) and confirmed on adversarial re-review (Pilgrimage plural, not the pilgrim)."
+  },
+  "hagrider": {
+    "base": "hagride",
+    "since": "2026-10-18",
+    "reason": "Folded onto `hagrid` (hagrider > hagrid), costing 1.87 points; it is a form of `hagride` (Zipf -0.26). Flagged by the daily fold check for the 2026-10-18 `HA` drop (hagrid is a character, not hagride) and confirmed on adversarial re-review (Lands on proper name Hagrid)."
+  },
+  "hagriders": {
+    "base": "hagride",
+    "since": "2026-10-18",
+    "reason": "Folded onto `hagrid` (hagriders > hagrider > hagrid), costing 1.88 points; it is a form of `hagride` (Zipf -0.26). Flagged by the daily fold check for the 2026-10-18 `HA` drop (hagrid is a character, not hagride) and confirmed on adversarial re-review (Lands on proper name Hagrid)."
+  },
+  "hagrides": {
+    "base": "hagride",
+    "since": "2026-10-18",
+    "reason": "Folded onto `hagrid` (hagrides > hagrid), costing 1.86 points; it is a form of `hagride` (Zipf -0.26). Flagged by the daily fold check for the 2026-10-18 `HA` drop (-s strip overshot; base is hagride) and confirmed on adversarial re-review (Strip overshot onto name Hagrid)."
+  },
+  "hagriding": {
+    "base": "hagride",
+    "since": "2026-10-18",
+    "reason": "Folded onto `hagrid` (hagriding > hagrid), costing 1.85 points; it is a form of `hagride` (Zipf -0.26). Flagged by the daily fold check for the 2026-10-18 `HA` drop (-ing strip lands on name hagrid) and confirmed on adversarial re-review (Strip overshot onto name Hagrid)."
+  },
+  "handlable": {
+    "base": "handle",
+    "since": "2026-10-18",
+    "reason": "Folded onto `hand` (handlable > handly > hand), costing 5.87 points; it is a form of `handle` (Zipf 4.79). Flagged by the daily fold check for the 2026-10-18 `HA` drop (means able to be handled) and confirmed on adversarial re-review (Bad path via handly; base is handle)."
+  },
+  "hangees": {
+    "base": "hang",
+    "since": "2026-10-18",
+    "reason": "Folded onto `hange` (hangees > hange), costing 0.98 points; it is a form of `hang` (Zipf 4.60). Flagged by the daily fold check for the 2026-10-18 `HA` drop (hangee is one who is hanged) and confirmed on adversarial re-review (Hange is junk; base is hang)."
+  },
+  "hawsed": {
+    "base": "hawse",
+    "since": "2026-10-18",
+    "reason": "Folded onto `haw` (hawsed > haws > haw), costing 2.57 points; it is a form of `hawse` (Zipf 1.36). Flagged by the daily fold check for the 2026-10-18 `HA` drop (nautical hawse verb, not haw) and confirmed on adversarial re-review (Nautical hawse, unrelated to haw)."
+  },
+  "hawsing": {
+    "base": "hawse",
+    "since": "2026-10-18",
+    "reason": "Folded onto `haw` (hawsing > haws > haw), costing 2.57 points; it is a form of `hawse` (Zipf 1.36). Flagged by the daily fold check for the 2026-10-18 `HA` drop (nautical hawse verb, not haw) and confirmed on adversarial re-review (Nautical hawse, unrelated to haw)."
+  },
+  "prehabilitated": {
+    "base": "rehabilitated",
+    "since": "2026-10-18",
+    "reason": "Folded onto `habilitated` (prehabilitated > habilitated), costing 0.65 points; it is a form of `rehabilitated` (Zipf 2.97). Flagged by the daily fold check for the 2026-10-18 `HA` drop (coined from rehabilitation, not habilitation) and confirmed on adversarial re-review (Built on rehabilitation, not habilitation)."
+  },
+  "prehabilitation": {
+    "base": "rehabilitation",
+    "since": "2026-10-18",
+    "reason": "Folded onto `habilitation` (prehabilitation > habilitation), costing 1.10 points; it is a form of `rehabilitation` (Zipf 3.99). Flagged by the daily fold check for the 2026-10-18 `HA` drop (pre-surgery rehab, built on rehabilitation) and confirmed on adversarial re-review (Built on rehabilitation, not habilitation)."
+  },
+  "prehabilitative": {
+    "base": "rehabilitative",
+    "since": "2026-10-18",
+    "reason": "Folded onto `habilitative` (prehabilitative > habilitative), costing 0.90 points; it is a form of `rehabilitative` (Zipf 2.40). Flagged by the daily fold check for the 2026-10-18 `HA` drop (coined from rehabilitative, not habilitative) and confirmed on adversarial re-review (Built on rehabilitative, not habilitative)."
+  },
+  "shaggability": {
+    "base": "shag",
+    "since": "2026-10-18",
+    "reason": "Folded onto `shaggy` (shaggability > shaggable > shaggy), costing 2.73 points; it is a form of `shag` (Zipf 3.02). Flagged by the daily fold check for the 2026-10-18 `HA` drop (shaggable comes from shag, not shaggy) and confirmed on adversarial re-review (From slang shag, not shaggy)."
+  },
+  "shaggable": {
+    "base": "shag",
+    "since": "2026-10-18",
+    "reason": "Folded onto `shaggy` (shaggable > shaggy), costing 2.69 points; it is a form of `shag` (Zipf 3.02). Flagged by the daily fold check for the 2026-10-18 `HA` drop (from slang shag, not shaggy hair) and confirmed on adversarial re-review (From slang shag, not shaggy)."
+  },
+  "shantied": {
+    "base": "shanty",
+    "since": "2026-10-18",
+    "reason": "Folded onto `shanti` (shantied > shanti), costing 2.20 points; it is a form of `shanty` (Zipf 2.75). Flagged by the daily fold check for the 2026-10-18 `HA` drop (from shanty, not shanti peace) and confirmed on adversarial re-review (From shanty, not shanti peace)."
+  },
+  "shanties": {
+    "base": "shanty",
+    "since": "2026-10-18",
+    "reason": "Folded onto `shanti` (shanties > shanti), costing 0.67 points; it is a form of `shanty` (Zipf 2.75). Flagged by the daily fold check for the 2026-10-18 `HA` drop (plural of shanty, not shanti) and confirmed on adversarial re-review (Plural of shanty, not shanti)."
+  },
+  "spirochaetales": {
+    "base": "spirochaete",
+    "since": "2026-10-18",
+    "reason": "Folded onto `spirochaetal` (spirochaetales > spirochaetal), costing 0.45 points; it is a form of `spirochaete` (Zipf 2.00). Flagged by the daily fold check for the 2026-10-18 `HA` drop (taxonomic order name, not plural of adjective) and confirmed on adversarial re-review (Taxonomic order, not adjective plural)."
+  },
+  "thaness": {
+    "base": "thane",
+    "since": "2026-10-18",
+    "reason": "Folded onto `tha` (thaness > tha), costing 3.34 points; it is a form of `thane` (Zipf 2.88). Flagged by the daily fold check for the 2026-10-18 `HA` drop (female thane, unrelated to dialect tha) and confirmed on adversarial re-review (Female thane, unrelated to tha)."
+  },
+  "thanesses": {
+    "base": "thane",
+    "since": "2026-10-18",
+    "reason": "Folded onto `tha` (thanesses > thaness > tha), costing 3.34 points; it is a form of `thane` (Zipf 2.88). Flagged by the daily fold check for the 2026-10-18 `HA` drop (female thanes, unrelated to dialect tha) and confirmed on adversarial re-review (Female thanes, unrelated to tha)."
+  },
+  "unfishable": {
+    "base": "fish",
+    "since": "2026-10-18",
+    "reason": "Folded onto `fishy` (unfishable > unfishy > fishy), costing 2.84 points; it is a form of `fish` (Zipf 4.90). Flagged by the daily fold check for the 2026-10-18 `HA` drop (not fishable, not unsuspicious) and confirmed on adversarial re-review (Fishy means suspicious; base is fish)."
+  },
+  "unhackneyedness": {
+    "base": "unhackneyed",
+    "since": "2026-10-18",
+    "reason": "Folded onto `hackney` (unhackneyedness > hackneyedness > hackneyed > hackney), costing 2.71 points; it is a form of `unhackneyed` (Zipf 1.92). Flagged by the daily fold check for the 2026-10-18 `HA` drop (hackneyed means trite, not hackney horse) and confirmed on adversarial re-review (Trite sense, not hackney horse)."
+  },
+  "unshaggable": {
+    "base": "shag",
+    "since": "2026-10-18",
+    "reason": "Folded onto `shaggy` (unshaggable > shaggable > shaggy), costing 2.74 points; it is a form of `shag` (Zipf 3.02). Flagged by the daily fold check for the 2026-10-18 `HA` drop (shaggable is from shag, not shaggy) and confirmed on adversarial re-review (From slang shag, not shaggy)."
+  },
+  "whaly": {
+    "base": "whale",
+    "since": "2026-10-18",
+    "reason": "Folded onto `wha` (whaly > wha), costing 2.88 points; it is a form of `whale` (Zipf 3.98). Flagged by the daily fold check for the 2026-10-18 `HA` drop (whale plus -y, not \"wha\") and confirmed on adversarial re-review (Whale plus -y, not wha)."
+  }
+}
