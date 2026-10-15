@@ -1125,6 +1125,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `cat`, costing 3.07 points. Flagged in the 2026-09-22 semantic audit (cates are delicacies, not cat) and confirmed on adversarial re-review (cates are delicacies, not cat)."
   },
+  "cathartes": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `cathartic` (cathartes > cathart > cathartic), costing 1.76 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (Vulture genus name, not purging) and confirmed on adversarial re-review (Vulture genus, unrelated to cathartic)."
+  },
   "cathole": {
     "since": "2026-09-27",
     "reason": "Folded onto `catholic`, costing 4.96 points. Flagged in the 2026-09-22 semantic audit (cathole is a latrine hole) and confirmed on adversarial re-review (latrine hole, unrelated to catholic)."
@@ -1181,9 +1185,29 @@
     "since": "2026-09-27",
     "reason": "A bird's call. `chac` is not its base."
   },
+  "chader": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `chad` (chader > chad), costing 3.76 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (Variant of chadar shawl, not chad) and confirmed on adversarial re-review (Shawl variant, unrelated to chad)."
+  },
+  "chaders": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `chad` (chaders > chader > chad), costing 3.77 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (Plural of chader shawl, not chad) and confirmed on adversarial re-review (Shawl plural, unrelated to chad)."
+  },
+  "chaines": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `chain` (chaines > chain), costing 3.92 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (Ballet turns (cha\u00een\u00e9s), not chains) and confirmed on adversarial re-review (Ballet turn sense, not chains)."
+  },
+  "chaires": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `chair` (chaires > chair), costing 4.75 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (Japanese tea caddies, not chairs) and confirmed on adversarial re-review (Tea caddies, unrelated to chairs)."
+  },
   "chaises": {
     "since": "2026-09-27",
     "reason": "Folded onto `chai`, costing 2.33 points. Flagged in the 2026-09-22 semantic audit (chaise plural, not chai) and confirmed on adversarial re-review (chaise carriage versus chai tea)."
+  },
+  "champers": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `champ` (champers > champer > champ), costing 2.89 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (British slang for champagne, not champ) and confirmed on adversarial re-review (Champagne slang, unrelated to champ)."
   },
   "champerses": {
     "since": "2026-09-27",
@@ -1220,6 +1244,10 @@
   "chasses": {
     "since": "2026-09-27",
     "reason": "Folded onto `chassis`, costing 2.48 points. Flagged in the 2026-09-22 semantic audit (plural of chasse, not chassis) and confirmed on adversarial re-review (chasse dance step versus chassis)."
+  },
+  "chaver": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `chav` (chaver > chav), costing 1.46 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (Hebrew loanword \"friend\", not chav+-er) and confirmed on adversarial re-review (Hebrew loanword, unrelated to chav)."
   },
   "chees": {
     "since": "2026-09-27",
@@ -4457,6 +4485,18 @@
     "since": "2026-10-11",
     "reason": "Folded onto `foothold` (footholders > footholder > foothold), costing 2.59 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (foot+holder, not foothold+er) and confirmed on adversarial re-review (foot plus holder, not foothold plus -er)."
   },
+  "forehandedly": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `forehand` (forehandedly > forehanded > forehand), costing 2.00 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (means prudently, not a forehand stroke) and confirmed on adversarial re-review (Prudence sense drifted from forehand stroke)."
+  },
+  "forehandedness": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `forehand` (forehandedness > forehanded > forehand), costing 1.87 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (means foresight or thrift, not the stroke) and confirmed on adversarial re-review (Prudence sense drifted from forehand stroke)."
+  },
+  "forehandednesses": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `forehand` (forehandednesses > forehandedness > forehanded > forehand), costing 2.08 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (prudence sense, unrelated to tennis forehand) and confirmed on adversarial re-review (Prudence sense drifted from forehand stroke)."
+  },
   "fores": {
     "since": "2026-08-21",
     "reason": "The plural or third-person form of `fore`, not `for`. Its true base is rarer than the form, so exemption preserves its own measured value rather than taking the unrelated -es fold."
@@ -4532,6 +4572,14 @@
   "frassest": {
     "since": "2026-09-27",
     "reason": "Folded onto `fra`, costing 2.92 points. Flagged in the 2026-09-22 semantic audit (from frass, not fra) and confirmed on adversarial re-review (from frass; fra unrelated)."
+  },
+  "freehandedness": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `freehand` (freehandedness > freehanded > freehand), costing 1.79 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (means generosity, not drawing freehand) and confirmed on adversarial re-review (Generosity sense drifted from freehand)."
+  },
+  "freehandednesses": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `freehand` (freehandednesses > freehandedness > freehanded > freehand), costing 1.86 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (generosity sense, not freehand drawing) and confirmed on adversarial re-review (Generosity sense drifted from freehand)."
   },
   "freester": {
     "since": "2026-09-27",
@@ -4889,6 +4937,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `hack`, costing 4.25 points. Flagged in the 2026-09-22 semantic audit (hackly from hackle, not hack) and confirmed on adversarial re-review (hackly from hackle, not hack)."
   },
+  "hadder": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hadd` (hadder > hadd), costing 0.87 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (Scots word for heather, not hadd+er) and confirmed on adversarial re-review (Scots heather, unrelated to hadd)."
+  },
   "hades": {
     "since": "2026-09-27",
     "reason": "Folded onto `had`, costing 4.52 points. Flagged in the 2026-09-22 semantic audit (Greek underworld, not had) and confirmed on adversarial re-review (Greek underworld, not had)."
@@ -4905,6 +4957,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `hal`, costing 1.08 points. Flagged in the 2026-09-22 semantic audit (plural of hale, not hal) and confirmed on adversarial re-review (hale overstripped to hal)."
   },
+  "halser": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `halse` (halser > halse), costing 0.83 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (archaic variant of hawser, not halse+er) and confirmed on adversarial re-review (Hawser variant, unrelated to halse)."
+  },
+  "halsers": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `halse` (halsers > halser > halse), costing 0.84 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (plural of halser (hawser), unrelated to halse) and confirmed on adversarial re-review (Hawser variant, unrelated to halse)."
+  },
   "halteres": {
     "since": "2026-09-27",
     "reason": "Folded onto `halter`, costing 1.87 points. Flagged in the 2026-09-22 semantic audit (halteres from halter? no, insect organ) and confirmed on adversarial re-review (halteres insect organ, unrelated)."
@@ -4912,6 +4972,10 @@
   "hames": {
     "since": "2026-09-27",
     "reason": "Folded onto `ham`, costing 2.83 points. Flagged in the 2026-09-22 semantic audit (plural of hame; -s overshot) and confirmed on adversarial re-review (hame is a collar part)."
+  },
+  "hamperless": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hampered` (hamperless > hamper > hampered), costing 2.93 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (without a basket, not hampered) and confirmed on adversarial re-review (Basket sense, not hampered impeded)."
   },
   "handes": {
     "since": "2026-09-27",
@@ -4921,9 +4985,25 @@
     "since": "2026-09-27",
     "reason": "Folded onto `hap`, costing 2.85 points. Flagged in the 2026-09-22 semantic audit (hapless from hap, meaning drifted) and confirmed on adversarial re-review (hapless sense drifted from hap)."
   },
+  "happeningest": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `happened` (happeningest > happening > happen > happened), costing 5.60 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (slang \"most trendy\", not about happen) and confirmed on adversarial re-review (Slang trendy sense drifted from happen)."
+  },
+  "harders": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `harder` (harders > harder), costing 4.51 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (plural of harder, a mullet fish) and confirmed on adversarial re-review (Mullet fish, not comparative harder)."
+  },
   "hardly": {
     "since": "2026-09-27",
     "reason": "Folded onto `hard`, costing 1.45 points. Flagged in the 2026-09-22 semantic audit (hardly means barely, not hard) and confirmed on adversarial re-review (hardly means barely, drifted)."
+  },
+  "hardwearing": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hardwear` (hardwearing > hardwear), costing 0.31 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (compound hard-wearing; hardwear is not its base) and confirmed on adversarial re-review (Hardwear is not its base)."
+  },
+  "harees": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hare` (harees > hare), costing 3.38 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (harees is an Arabic dish, not hares) and confirmed on adversarial re-review (Arabic dish, unrelated to hares)."
   },
   "hases": {
     "since": "2026-09-27",
@@ -4932,6 +5012,26 @@
   "hasting": {
     "since": "2026-09-27",
     "reason": "Folded onto `hastings`, costing 2.78 points. Flagged in the 2026-09-22 semantic audit (hasting from haste, Hastings place) and confirmed on adversarial re-review (haste-based, Hastings proper name)."
+  },
+  "hattered": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hatter` (hattered > hatter), costing 2.18 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (dialect verb \"hatter\", to harass or exhaust) and confirmed on adversarial re-review (Dialect harass verb, not hat maker)."
+  },
+  "hattering": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hatter` (hattering > hatter), costing 2.18 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (dialect verb \"hatter\", to harass or exhaust) and confirmed on adversarial re-review (Dialect harass verb, not hat maker)."
+  },
+  "haulsed": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `haul` (haulsed > hauls > haul), costing 3.70 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (past tense of haulse, not hauls) and confirmed on adversarial re-review (Haulse is separate verb, not haul)."
+  },
+  "haulses": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `haul` (haulses > hauls > haul), costing 3.70 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (inflection of haulse, not hauls) and confirmed on adversarial re-review (Haulse is separate verb, not haul)."
+  },
+  "haulsing": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `haul` (haulsing > hauls > haul), costing 3.70 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (participle of haulse, not hauls) and confirmed on adversarial re-review (Haulse is separate verb, not haul)."
   },
   "haymower": {
     "since": "2026-09-27",
@@ -6789,6 +6889,16 @@
     "since": "2026-09-27",
     "reason": "Folded onto `awning`, costing 2.38 points. Flagged in the 2026-09-22 semantic audit (from awn, not awning) and confirmed on adversarial re-review (awn bristle versus awning canopy)."
   },
+  "overcharger": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `chargers` (overcharger > overchargers > chargers), costing 3.40 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (one who overcharges, not charger) and confirmed on adversarial re-review (Charger device or horse, different sense).",
+    "scope": "prefix"
+  },
+  "overchargers": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `chargers` (overchargers > chargers), costing 3.42 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (one who overcharges, not charger) and confirmed on adversarial re-review (Charger device or horse, different sense).",
+    "scope": "prefix"
+  },
   "overcone": {
     "since": "2026-09-27",
     "reason": "Folded onto `con`, costing 4.57 points. Flagged in the 2026-09-22 semantic audit (cone, not con) and confirmed on adversarial re-review (cone, not con)."
@@ -6813,9 +6923,34 @@
     "since": "2026-09-27",
     "reason": "Folded onto `gal`, costing 3.91 points. Flagged in the 2026-09-22 semantic audit (galled from gall, not gal) and confirmed on adversarial re-review (gall, not gal)."
   },
+  "overhail": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hail` (overhail > hail), costing 3.77 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (archaic variant of overhaul, not hail) and confirmed on adversarial re-review (Overhaul variant, unrelated to hail).",
+    "scope": "prefix"
+  },
+  "overhailed": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hail` (overhailed > overhail > hail), costing 3.76 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (archaic overhaul sense, unrelated to hail) and confirmed on adversarial re-review (Overhaul variant, unrelated to hail).",
+    "scope": "prefix"
+  },
+  "overhailing": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hail` (overhailing > overhail > hail), costing 3.77 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (archaic overhaul sense, unrelated to hail) and confirmed on adversarial re-review (Overhaul variant, unrelated to hail).",
+    "scope": "prefix"
+  },
+  "overhails": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hail` (overhails > overhail > hail), costing 3.77 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (archaic overhaul sense, unrelated to hail) and confirmed on adversarial re-review (Overhaul variant, unrelated to hail).",
+    "scope": "prefix"
+  },
   "overhale": {
     "since": "2026-09-27",
     "reason": "Folded onto `hal`, costing 3.72 points. Flagged in the 2026-09-22 semantic audit (hal is not a word) and confirmed on adversarial re-review (from hale; \"hal\" is not the base)."
+  },
+  "overhalls": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hall` (overhalls > halls > hall), costing 5.12 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (archaic overhaul variant, not halls) and confirmed on adversarial re-review (Overhaul variant, unrelated to halls).",
+    "scope": "prefix"
   },
   "overhaulable": {
     "since": "2026-09-27",
@@ -6904,6 +7039,21 @@
   "oversetter": {
     "since": "2026-09-27",
     "reason": "Folded onto `setter`, costing 2.78 points. Flagged in the 2026-09-22 semantic audit (overset agent, not setter) and confirmed on adversarial re-review (overset agent, not setter)."
+  },
+  "overshadowing": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `shadow` (overshadowing > overshadowings > shadowings > shadowing > shadow), costing 2.85 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (overshadow means eclipse, skips overshadow hub) and confirmed on adversarial re-review (Eclipse sense drifted from shadow).",
+    "scope": "prefix"
+  },
+  "overshadowingly": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `shadow` (overshadowingly > overshadowing > overshadowings > shadowings > shadowing > shadow), costing 4.50 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (overshadow means eclipse, skips overshadow hub) and confirmed on adversarial re-review (Eclipse sense drifted from shadow).",
+    "scope": "prefix"
+  },
+  "overshadowings": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `shadow` (overshadowings > shadowings > shadowing > shadow), costing 4.50 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (overshadow means eclipse, skips overshadow hub) and confirmed on adversarial re-review (Eclipse sense drifted from shadow).",
+    "scope": "prefix"
   },
   "overshower": {
     "since": "2026-09-27",
@@ -7740,6 +7890,14 @@
     "since": "2026-09-27",
     "scope": "prefix",
     "reason": "The prepuce is the foreskin; `puce` is a colour."
+  },
+  "preraphaelite": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `raphaelite` (preraphaelite > raphaelite), costing 1.40 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (art movement name, not prefixed form) and confirmed on adversarial re-review (Movement name, opposite of Raphaelite)."
+  },
+  "preraphaelites": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `raphaelite` (preraphaelites > preraphaelite > raphaelite), costing 1.43 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (art movement name, not prefixed form) and confirmed on adversarial re-review (Movement name, opposite of Raphaelite)."
   },
   "presager": {
     "since": "2026-09-27",
@@ -8636,6 +8794,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `severe`, costing 4.97 points. Flagged in the 2026-09-22 semantic audit (from sever, not severe) and confirmed on adversarial re-review (from sever, not severe)."
   },
+  "shahed": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `shah` (shahed > shah), costing 3.14 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (Iranian drone name, not verb shah) and confirmed on adversarial re-review (Drone name, unrelated to shah)."
+  },
   "shaheds": {
     "since": "2026-09-27",
     "reason": "Folded onto `shah`, costing 3.91 points. Flagged in the 2026-09-22 semantic audit (shahed/shaheds distinct from shah plural) and confirmed on adversarial re-review (Shahed drone name, not shah)."
@@ -8647,6 +8809,14 @@
   "shamaness": {
     "since": "2026-09-27",
     "reason": "Folded onto `shama`, costing 1.49 points. Flagged in the 2026-09-22 semantic audit (shamaness from shaman, not shama) and confirmed on adversarial re-review (shama is a bird, unrelated)."
+  },
+  "shambled": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `shambles` (shambled > shamble > shambles), costing 2.18 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (shamble walk, not shambles mess) and confirmed on adversarial re-review (Shamble walk, not shambles mess)."
+  },
+  "shambling": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `shambles` (shambling > shamble > shambles), costing 1.38 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (shamble walk, not shambles mess) and confirmed on adversarial re-review (Shamble walk, not shambles mess)."
   },
   "shamblingly": {
     "since": "2026-09-27",
@@ -9467,6 +9637,10 @@
     "since": "2026-08-24",
     "reason": "The Georgian currency subunit. The bare -s strip reads the video game `tetris` as its plural (9.94 -> 7.06)."
   },
+  "thanatoses": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `thanatos` (thanatoses > thanatos), costing 1.42 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (plural of thanatosis, not the Thanatos) and confirmed on adversarial re-review (Plural of thanatosis, not Thanatos)."
+  },
   "thanes": {
     "since": "2026-09-27",
     "reason": "Folded onto `than`, costing 6.23 points. Flagged in the 2026-09-22 semantic audit (thane is a noble) and confirmed on adversarial re-review (thane is a noble)."
@@ -9947,9 +10121,24 @@
     "since": "2026-09-27",
     "reason": "Folded onto `crackers`, costing 3.41 points. Flagged in the 2026-09-22 semantic audit (undercrackers means underpants, not crackers) and confirmed on adversarial re-review (underpants, unrelated to crackers)."
   },
+  "underhand": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hand` (underhand > underhands > hands > hand), costing 4.10 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (means sneaky, no longer about hands) and confirmed on adversarial re-review (Sneaky sense drifted from hand).",
+    "scope": "prefix"
+  },
+  "underhanded": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hand` (underhanded > underhand > underhands > hands > hand), costing 4.12 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (means deceitful, unrelated to hand) and confirmed on adversarial re-review (Deceitful sense drifted from hand).",
+    "scope": "prefix"
+  },
   "underhandedly": {
     "since": "2026-09-27",
     "reason": "Folded onto `hand`, costing 6.03 points. Flagged in the 2026-09-22 semantic audit (underhanded is sly, not hand) and confirmed on adversarial re-review (underhanded means sly, drifted)."
+  },
+  "underhandedness": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hand` (underhandedness > underhanded > underhand > underhands > hands > hand), costing 5.44 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (deceitfulness, not about hands) and confirmed on adversarial re-review (Deceitfulness drifted from hand).",
+    "scope": "prefix"
   },
   "underhandednesses": {
     "since": "2026-09-27",
@@ -9970,6 +10159,11 @@
   "underhandness": {
     "since": "2026-09-27",
     "reason": "Folded onto `hand`, costing 6.20 points. Flagged in the 2026-09-22 semantic audit (underhand drifted from hand) and confirmed on adversarial re-review (underhand means secretive, drifted)."
+  },
+  "underhands": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `hand` (underhands > hands > hand), costing 5.84 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (form of underhand, not hand) and confirmed on adversarial re-review (Underhand form, drifted from hand).",
+    "scope": "prefix"
   },
   "underletter": {
     "since": "2026-09-27",
@@ -10474,6 +10668,22 @@
     "since": "2026-09-27",
     "reason": "Folded onto `severe`, costing 4.97 points. Flagged in the 2026-09-22 semantic audit (unsevered from sever) and confirmed on adversarial re-review (from sever, not severe)."
   },
+  "unshar": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `share` (unshar > unshares > shares > share), costing 5.04 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (Unix shell-archive unpacker, not un-share) and confirmed on adversarial re-review (Shell-archive tool, not un-share)."
+  },
+  "unsharred": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `share` (unsharred > unshar > unshares > shares > share), costing 5.60 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (verb unshar (shell archive), not share) and confirmed on adversarial re-review (Shell-archive tool, not un-share)."
+  },
+  "unsharring": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `share` (unsharring > unshar > unshares > shares > share), costing 5.60 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (verb unshar (shell archive), not share) and confirmed on adversarial re-review (Shell-archive tool, not un-share)."
+  },
+  "unshars": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `share` (unshars > unshar > unshares > shares > share), costing 5.59 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (verb unshar (shell archive), not share) and confirmed on adversarial re-review (Shell-archive tool, not un-share)."
+  },
   "unshutter": {
     "since": "2026-09-27",
     "reason": "Folded onto `shut`, costing 5.29 points. Flagged in the 2026-09-22 semantic audit (shutter is not shut plus er) and confirmed on adversarial re-review (shutter noun, not shut+er)."
@@ -10752,6 +10962,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `wel`, costing 1.18 points. Flagged in the 2026-09-22 semantic audit (wels is singular; strip overshot) and confirmed on adversarial re-review (wel not base of wels)."
   },
+  "whames": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `wham` (whames > wham), costing 2.17 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (plural of whame, a gadfly) and confirmed on adversarial re-review (Gadfly whame, unrelated to wham)."
+  },
+  "whareer": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `whare` (whareer > whare), costing 1.15 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (contraction of wherever, not Maori house) and confirmed on adversarial re-review (Wherever contraction, not Maori house)."
+  },
   "wheaty": {
     "since": "2026-09-27",
     "reason": "Folded onto `wheaties`, costing 1.27 points. Flagged in the 2026-09-22 semantic audit (from wheat, not wheaties) and confirmed on adversarial re-review (wheaties is unrelated plural/brand)."
@@ -10863,6 +11081,10 @@
   "wurliest": {
     "since": "2026-09-27",
     "reason": "Folded onto `wur`, costing 0.72 points. Flagged in the 2026-09-22 semantic audit (wur is not base) and confirmed on adversarial re-review (wur is not a word)."
+  },
+  "xanthanes": {
+    "since": "2026-10-18",
+    "reason": "Folded onto `xanthan` (xanthanes > xanthan), costing 1.03 points. Flagged by the daily fold check for the 2026-10-18 `HA` drop (plural of xanthane, a different compound) and confirmed on adversarial re-review (Xanthane is a different compound)."
   },
   "xemes": {
     "since": "2026-09-27",
