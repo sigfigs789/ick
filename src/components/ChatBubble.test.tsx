@@ -364,6 +364,7 @@ describe("ChatBubble", () => {
     expect(mythic.querySelector(".chat__mode strong")).toHaveTextContent("standard");
     expect(mythic).toHaveClass("chat__message--standard");
     expect(mythic.querySelector(".chat__notice-icon")).toHaveTextContent("🔥");
+    expect(mythic.querySelector(".chat__finder strong")).toHaveTextContent("CalmOtter3");
     expect(mythic.querySelector(".chat__body")).toHaveTextContent(standard);
 
     const legend = container.querySelector(".chat__message--legend")!;
@@ -371,6 +372,7 @@ describe("ChatBubble", () => {
     expect(legend.querySelectorAll(".chat__mode .rainbow-word__letter")).toHaveLength("freeform".length);
     expect(legend).toHaveClass("chat__message--freeform");
     expect(legend.querySelector(".chat__notice-icon")).toHaveTextContent("✨");
+    expect(legend.querySelectorAll(".chat__finder .rainbow-word__letter")).toHaveLength("StormyFox47".length);
     expect(legend.querySelector("strong")).toBeNull();
   });
 

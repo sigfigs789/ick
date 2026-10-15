@@ -132,8 +132,9 @@ function noticeIcon(kind: NonNullable<ChatMessage["kind"]>, mode: ChatMessage["m
 
 /**
  * A notice's body with its word and its closing "in standard mode" painted the
- * way the game marks its modes: bold for Standard, rainbow for Freeform. A body
- * that is not shaped as expected is shown as it is.
+ * way the game marks its modes: bold for Standard, rainbow for Freeform. A "find"
+ * notice's opening handle is painted the same way. A body that is not shaped as
+ * expected is shown as it is.
  */
 function NoticeBody({ message }: { message: ChatMessage }) {
   const { body, word, mode } = message;
@@ -156,13 +157,18 @@ function NoticeBody({ message }: { message: ChatMessage }) {
       <strong>{text}</strong>
     );
   const modeName = mode === "freeform" ? "freeform" : "standard";
+  // A "find" notice opens with its finder's handle, painted like the word so the
+  // line is about who found it as much as what they found.
+  const named = message.kind === "find" && head.startsWith(`${message.handle} `);
+  const start = named ? message.handle.length : 0;
   return (
     <>
-      {at === undefined ? (
-        head
+      {named && <span className="chat__finder">{paint(message.handle)}</span>}
+      {at === undefined || at < start ? (
+        head.slice(start)
       ) : (
         <>
-          {head.slice(0, at)}
+          {head.slice(start, at)}
           <span className="chat__word">{paint(word)}</span>
           {head.slice(at + word.length)}
         </>
