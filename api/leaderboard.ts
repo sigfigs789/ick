@@ -12,6 +12,10 @@
 //   Standard, which is the board that existed before there were two.
 //   The daily board counts the single puzzle `day`; the weekly board counts the
 //   seven days from `since`; the third counts the month `month` begins.
+//   `streak=1` adds the streak board (`streak`, `streakSelf`): players ranked by
+//   the run they are on now, counted up to `today` by the game's own freeze
+//   rule (see the 20261015200000 migration). It ignores `mode` -- a day played
+//   in either counts, as it does for the game's own streak -- and has no window.
 //   `day` is optional: a caller that omits it gets the two boards it always got,
 //   and no second query is run on its behalf. It is the one window that is a
 //   single date, so it is sent as one rather than as a pair. Neither has to be the window the caller is currently
@@ -408,6 +412,53 @@ function toBoard(rows: BoardRow[] | null, limit: number): { entries: BoardEntry[
   let self: BoardEntry | null = null;
   for (const [index, row] of rows.entries()) {
     const entry = toEntry(row, index);
+    if (entry.rank > limit) self = entry;
+    else entries.push(entry);
+  }
+  return { entries, self };
+}
+
+/** One row of the streak board, as `leaderboard_streaks` returns it. */
+interface StreakRow {
+  rank: number;
+  player_id: string;
+  current_streak: number;
+  best_streak: number;
+  streak_since?: string | null;
+  /** Missed yesterday and not played today; absent before 20261015220000. */
+  at_risk?: boolean | null;
+}
+
+/** One streak row, as the client receives it. */
+interface StreakEntry {
+  rank: number;
+  playerId: string;
+  current: number;
+  best: number;
+  since?: string;
+  /** Sent only when true: the run is lost if today goes unplayed. */
+  atRisk?: true;
+}
+
+/** The streak board split at the cut, the same way `toBoard` splits the others. */
+function toStreakBoard(
+  rows: StreakRow[] | null,
+  limit: number
+): { entries: StreakEntry[]; self: StreakEntry | null } {
+  if (!Array.isArray(rows)) return { entries: [], self: null };
+  const entries: StreakEntry[] = [];
+  let self: StreakEntry | null = null;
+  for (const [index, row] of rows.entries()) {
+    const entry: StreakEntry = {
+      rank: Number(row.rank) || index + 1,
+      playerId: String(row.player_id),
+      current: Number(row.current_streak) || 0,
+      best: Number(row.best_streak) || 0,
+      ...(typeof row.streak_since === "string" && row.streak_since
+        ? { since: row.streak_since.slice(0, 10) }
+        : {}),
+      ...(row.at_risk === true ? { atRisk: true as const } : {}),
+    };
     if (entry.rank > limit) self = entry;
     else entries.push(entry);
   }
@@ -814,6 +865,15 @@ async function handleGet(request: Request): Promise<Response> {
   // Which of the two boards. Read rather than validated, for the reason
   // `readMode` gives: an unreadable mode gets Standard, not an error page.
   const mode = readMode(params.get("mode"));
+  // The streak board, for a caller that asks for it, counted up to the reader's
+  // own today -- what "yesterday" is depends on their calendar, not UTC's.
+  const claimedToday = params.get("today") ?? "";
+  const streakDay =
+    params.get("streak") === "1"
+      ? validPuzzleDate(claimedToday)
+        ? claimedToday
+        : utcToday()
+      : null;
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
@@ -829,7 +889,7 @@ async function handleGet(request: Request): Promise<Response> {
     // `leaderboard_boards` to a third window, which means dropping and
     // recreating a function every request in flight is using, for a query it can
     // already run.
-    const [result, dailyRows] = await Promise.all([
+    const [result, dailyRows, streakRows] = await Promise.all([
       rpc<BoardsResult>("leaderboard_boards", {
         p_since: since,
         p_limit: limit,
@@ -870,8 +930,26 @@ async function handleGet(request: Request): Promise<Response> {
             p_mode: mode,
           })
         : Promise.resolve(null),
+      // The streak board, from its own function. A failure here empties that
+      // one board rather than taking the other three down with it -- it is the
+      // newest of the four, and a deploy that lands before its migration should
+      // cost exactly the board that is not there yet.
+      streakDay
+        ? rpc<StreakRow[]>("leaderboard_streaks", {
+            p_today: streakDay,
+            p_limit: limit,
+            p_player: player,
+          }).catch((error: unknown) => {
+            console.error(
+              "[leaderboard] streak read failed:",
+              error instanceof Error ? error.message : error
+            );
+            return null;
+          })
+        : Promise.resolve(null),
     ]);
     const daily = toBoard(dailyRows, limit);
+    const streak = toStreakBoard(streakRows ?? null, limit);
     const weekly = toBoard(result?.weekly ?? null, limit);
     const allTime = toBoard(result?.allTime ?? null, limit);
     return reply(
@@ -894,6 +972,9 @@ async function handleGet(request: Request): Promise<Response> {
         weeklySelf: weekly.self,
         allTime: allTime.entries,
         allTimeSelf: allTime.self,
+        // Absent, rather than empty, for a caller that did not ask: an empty
+        // list says nobody is on a streak, which is a different claim.
+        ...(streakDay ? { streak: streak.entries, streakSelf: streak.self } : {}),
       },
       // A minute: long enough that a burst of opens costs one query, short
       // enough that a player who just scored sees themselves move.

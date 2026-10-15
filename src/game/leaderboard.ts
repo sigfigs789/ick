@@ -56,6 +56,30 @@ export interface BoardEntry {
 }
 
 /**
+ * One row of the streak board: a player on a run right now.
+ *
+ * Counted on the server from the days on the board, by the same rule the game's
+ * own 🔥 uses -- one missed day is frozen over, two end it (see
+ * game/streakFreeze.ts and the 20261015200000 migration) -- so the number here
+ * is the number the player sees beside their puzzle, as long as every day they
+ * played reached the board.
+ */
+export interface StreakEntry {
+  rank: number;
+  playerId: string;
+  name: string;
+  /** Days played in the run they are on now. */
+  current: number;
+  /** The longest run they have ever had, this one included. */
+  best: number;
+  /**
+   * They missed yesterday and have not played today, so today decides whether
+   * the run survives -- the day the game shows ⏳ instead of 🔥.
+   */
+  atRisk: boolean;
+}
+
+/**
  * A word somebody found, as the feed shows it.
  *
  * Priced and labelled by today's dictionary, like everything else on the page --
@@ -118,6 +142,17 @@ export interface Boards {
   monthly: BoardEntry[];
   /** The same, on the monthly board. */
   monthlySelf: BoardEntry | null;
+  /**
+   * Everybody on a streak, longest first. One list for both modes: a day played
+   * either way keeps the game's own streak alive, so it keeps this one alive too.
+   *
+   * Null when the server sent no streak board at all -- the Reddit build's own
+   * endpoint, which renders this page and has no such board -- so the page can
+   * leave it out rather than claim nobody is on a streak.
+   */
+  streak: StreakEntry[] | null;
+  /** The same row-below-the-cut, on the streak board. */
+  streakSelf: StreakEntry | null;
   /** The day the weekly board is counting from, echoed back by the server. */
   weekStart: string;
   /**
@@ -266,6 +301,38 @@ function nameFor(playerId: string, source: unknown): string {
   if (source === "r") return `u/${playerId}`;
   if (source === "w") return `w/${handleFor(playerId)}`;
   return handleFor(playerId);
+}
+
+/** Read the streak board, dropping anything malformed. */
+function parseStreaks(raw: unknown): StreakEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const entries: StreakEntry[] = [];
+  for (const item of raw as Record<string, unknown>[]) {
+    const entry = parseStreak(item, entries.length + 1);
+    if (entry) entries.push(entry);
+  }
+  return entries;
+}
+
+/** One streak row, or null. Like `parseEntry`, a self row needs its own rank. */
+function parseStreak(
+  item: Record<string, unknown> | null,
+  fallbackRank?: number
+): StreakEntry | null {
+  if (!item || typeof item !== "object") return null;
+  const { rank, playerId, current, best, atRisk } = item;
+  if (typeof playerId !== "string") return null;
+  if (typeof current !== "number" || !Number.isFinite(current) || current < 1) return null;
+  const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
+  if (ranked === undefined) return null;
+  return {
+    rank: ranked,
+    playerId,
+    name: nameFor(playerId, item.source),
+    current,
+    best: typeof best === "number" && Number.isFinite(best) ? Math.max(best, current) : current,
+    atRisk: atRisk === true,
+  };
 }
 
 /** Read the player's own row from below the cut, or null if there isn't one. */
@@ -556,6 +623,9 @@ export async function fetchBoards(
       `&month=${encodeURIComponent(month)}` +
       `&day=${encodeURIComponent(day)}` +
       `&mode=${encodeURIComponent(mode)}` +
+      // The streak board rides along: it has no window to step, so it is the
+      // same answer on every request the page makes, and it is one cheap read.
+      `&streak=1` +
       `&limit=${options.limit ?? BOARD_LIMIT}` +
       (playerId ? `&player=${encodeURIComponent(playerId)}` : "") +
       freshParam(options),
@@ -611,6 +681,8 @@ function readBoards(
     weeklySelf: parseSelf(body.weeklySelf),
     monthly: parseBoard(body.allTime),
     monthlySelf: parseSelf(body.allTimeSelf),
+    streak: Array.isArray(body.streak) ? parseStreaks(body.streak) : null,
+    streakSelf: parseStreak((body.streakSelf ?? null) as Record<string, unknown> | null),
     weekStart: typeof body.weekStart === "string" ? body.weekStart : since,
     // What came back, falling back to what was asked for -- which covers the
     // dev fixture and a deployment that predates the second board.
