@@ -402,10 +402,8 @@ function FoldRules({
     >
       <summary className="folded-live__rules-summary">How folding works</summary>
       <p className="folded-live__rules-copy">
-        In Standard a word scores as the most common form it folds to, so a rare
-        spelling of a common word doesn{"’"}t score like a rare word. A fold is right
-        when the word is just a form of its base: the same word inflected, negated, or
-        made into another part of speech.
+        In Standard, words score as their common form: {"“"}plays{"”"} counts as{" "}
+        {"“"}play{"”"}.
       </p>
       <div className="folded-live__guidance">
         <p className="folded-live__guidance-title">When to reject</p>
