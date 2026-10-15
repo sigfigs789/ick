@@ -5164,6 +5164,16 @@ h2 {
   color: inherit;
   opacity: 0.75;
 }
+/* At 0.75 the dimmed white blends to 4.3:1 on Mythic's red; 0.9 keeps 5.6:1.
+   The page's blue focus ring all but vanishes on that red, so it goes white. */
+.chat__message--mythic .chat__time,
+.chat__message--mythic .chat__private {
+  opacity: 0.9;
+}
+.chat__message--mythic .chat__react:focus-visible,
+.chat__message--mythic .chat__reaction:focus-visible {
+  outline-color: #fff;
+}
 .chat__word strong,
 .chat__mode strong {
   font-weight: 800;
