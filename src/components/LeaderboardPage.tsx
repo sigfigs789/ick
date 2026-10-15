@@ -579,9 +579,6 @@ export function LeaderboardPage() {
             <li>Only puzzles played on the day they drop count</li>
             <li>A week counts your best {WEEK_BEST_DAYS} days of 7</li>
             <li>A month counts your best {MONTH_BEST_DAYS} days</li>
-            {boards.streak && (
-              <li>A streak forgives one missed day, not two in a row</li>
-            )}
           </ul>
           {/* Which board, on the layout that only has room for one at a time.
               Above the boards rather than beside each heading, because it is one
