@@ -13,6 +13,7 @@ import { FreeformModal } from "./components/FreeformModal";
 import { HelpPage } from "./components/HelpPage";
 import { InstructionsModal } from "./components/InstructionsModal";
 import { LeaderboardPage } from "./components/LeaderboardPage";
+import { TotalLeaderboardPage } from "./components/TotalLeaderboardPage";
 import { SuggestedWordsPage } from "./components/SuggestedWordsPage";
 import { TransferPage } from "./components/TransferPage";
 import { DevDateBar } from "./dev/DevDateBar";
@@ -331,6 +332,8 @@ export function Root() {
         <AnalyticsPage />
       ) : route === "transfer" ? (
         <TransferPage />
+      ) : route === "leaderboard-total" ? (
+        <TotalLeaderboardPage />
       ) : route === "help" ? (
         <HelpPage />
       ) : (

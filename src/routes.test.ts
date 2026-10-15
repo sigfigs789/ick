@@ -34,6 +34,9 @@ describe("routes", () => {
     expect(routeFor("/help")).toBe("help");
     expect(routeFor("/help/")).toBe("help");
     expect(pathFor("help")).toBe("/help");
+    expect(routeFor("/leaderboard-total")).toBe("leaderboard-total");
+    expect(routeFor("/leaderboard-total/")).toBe("leaderboard-total");
+    expect(pathFor("leaderboard-total")).toBe("/leaderboard-total");
   });
 
   it("treats anything else as the game, rather than a client-rendered 404", () => {
