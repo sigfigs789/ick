@@ -201,6 +201,28 @@ describe("ChatBubble", () => {
     expect(second.container.querySelector(".chat__dot")).toHaveClass("chat__dot--message");
   });
 
+  it("pulses the green dot while a Standard find is unread", async () => {
+    localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 4 }));
+    const dotFor = async (latest: object) => {
+      vi.stubGlobal("fetch", vi.fn(async () => json(latest)));
+      const view = render(<ChatBubble />);
+      await screen.findByRole("button", { name: "Open chat, new messages" });
+      const dot = view.container.querySelector(".chat__dot");
+      view.unmount();
+      return dot;
+    };
+    expect(await dotFor({ latest: 6, message: 0, notice: 6, standard: 5 })).toHaveClass(
+      "chat__dot--notice",
+      "chat__dot--pulse",
+    );
+    // Read already, it leaves a newer Freeform find a still dot.
+    expect(await dotFor({ latest: 6, message: 0, notice: 6, standard: 3 })).not.toHaveClass("chat__dot--pulse");
+    // A player's unread message keeps the dot blue and still.
+    const blue = await dotFor({ latest: 7, message: 7, notice: 6, standard: 5 });
+    expect(blue).toHaveClass("chat__dot--message");
+    expect(blue).not.toHaveClass("chat__dot--pulse");
+  });
+
   it("chimes for a post that arrives while closed, by who posted it, not for one waiting on arrival", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 2 }));
@@ -233,7 +255,7 @@ describe("ChatBubble", () => {
     vi.useRealTimers();
   });
 
-  it("dots a notice this player's word earned at once, without waiting for a check or chiming", async () => {
+  it("dots a notice this player's word earned at once, pulsing for a Standard find, without waiting for a check or chiming", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     localStorage.setItem(CHAT_SEEN_KEY, JSON.stringify({ [DAY]: 4 }));
     const notice = { id: 5, handle: handleFor(PLAYER), body: "my mythic", at: "2026-10-12T10:00:00Z", kind: "find", word: "abaci", mode: "standard", tier: "Mythic" };
@@ -249,14 +271,14 @@ describe("ChatBubble", () => {
 
     reportBankedWord({ date: DAY, isToday: true, word: MYTHIC, playerId: PLAYER });
     await screen.findByRole("button", { name: "Open chat, new messages" });
-    expect(container.querySelector(".chat__dot")).toHaveClass("chat__dot--notice");
+    expect(container.querySelector(".chat__dot")).toHaveClass("chat__dot--notice", "chat__dot--pulse");
 
-    // The next check's cached answer has not caught up: the dot stays, and the
-    // notice already heard does not chime.
+    // The next check's cached answer has not caught up: the dot stays, still
+    // pulsing, and the notice already heard does not chime.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(30_000);
     });
-    expect(container.querySelector(".chat__dot")).toHaveClass("chat__dot--notice");
+    expect(container.querySelector(".chat__dot")).toHaveClass("chat__dot--notice", "chat__dot--pulse");
     expect(playChatNotice).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
@@ -352,6 +374,8 @@ describe("ChatBubble", () => {
           messages: [
             { id: 2, handle: "CalmOtter3", body: standard, at: "2026-10-13T10:00:00Z", kind: "find", word: "abaci", mode: "standard", tier: "Mythic" },
             { id: 3, handle: "StormyFox47", body: freeform, at: "2026-10-13T10:01:00Z", kind: "find", word: "quokka", mode: "freeform", tier: "Legend" },
+            { id: 5, handle: "QuietLynx8", body: "QuietLynx8 found Legend word quincunx (9.97) in standard mode", at: "2026-10-13T10:01:30Z", kind: "find", word: "quincunx", mode: "standard", tier: "Legend" },
+            { id: 4, handle: "ArcticCanyon34", body: "ArcticCanyon34 banked Legend word omphalopsychite (9.99) in standard mode", at: "2026-10-13T10:02:00Z", kind: "find", word: "omphalopsychite", mode: "standard", tier: "Legend" },
           ],
         }),
       ),
@@ -362,11 +386,24 @@ describe("ChatBubble", () => {
     expect(mythic).toHaveClass("chat__message--notice", "chat__message--find", "chat__message--mythic");
     expect(mythic.querySelector(".chat__word strong")).toHaveTextContent("abaci");
     expect(mythic.querySelector(".chat__mode strong")).toHaveTextContent("standard");
+    expect(mythic).toHaveClass("chat__message--standard");
+    // Picked by the line's id (2 here), and never Freeform's ✨.
+    expect(mythic.querySelector(".chat__notice-icon")).toHaveTextContent("⚡");
+    // 💎 is a Standard Legend's at 9.99 or more; under that it rotates
+    // like a Mythic (id 5 here).
+    const topLegend = (await screen.findByText("omphalopsychite")).closest("li")!;
+    expect(topLegend.querySelector(".chat__notice-icon")).toHaveTextContent("💎");
+    const legend997 = (await screen.findByText("quincunx")).closest("li")!;
+    expect(legend997.querySelector(".chat__notice-icon")).toHaveTextContent("💥");
+    expect(mythic.querySelector(".chat__finder strong")).toHaveTextContent("CalmOtter3");
     expect(mythic.querySelector(".chat__body")).toHaveTextContent(standard);
 
     const legend = container.querySelector(".chat__message--legend")!;
     expect(legend.querySelectorAll(".chat__word .rainbow-word__letter")).toHaveLength("quokka".length);
     expect(legend.querySelectorAll(".chat__mode .rainbow-word__letter")).toHaveLength("freeform".length);
+    expect(legend).toHaveClass("chat__message--freeform");
+    expect(legend.querySelector(".chat__notice-icon")).toHaveTextContent("✨");
+    expect(legend.querySelectorAll(".chat__finder .rainbow-word__letter")).toHaveLength("StormyFox47".length);
     expect(legend.querySelector("strong")).toBeNull();
   });
 

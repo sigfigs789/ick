@@ -4998,8 +4998,43 @@ h2 {
 .chat__dot--message {
   background: #2f78e0;
 }
+/* Green is the room cheering a 9.5+ find, so it is a size up and brighter than
+   a plain unread dot, and pulses while a find in Standard is unread. */
 .chat__dot--notice {
-  background: #2fa457;
+  width: 0.95rem;
+  height: 0.95rem;
+  background: #22c55e;
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 6px 1px color-mix(in srgb, #22c55e 60%, transparent);
+}
+.chat__dot--pulse {
+  animation: chat-dot-pulse 1.4s var(--ease-standard) infinite;
+}
+@keyframes chat-dot-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 2px var(--bg),
+      0 0 0 2px color-mix(in srgb, #22c55e 70%, transparent);
+  }
+  70% {
+    transform: scale(1.15);
+    box-shadow:
+      0 0 0 2px var(--bg),
+      0 0 0 10px transparent;
+  }
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 2px var(--bg),
+      0 0 0 10px transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat__dot--pulse {
+    animation: none;
+  }
 }
 .chat__toggle:hover {
   background: var(--accent-hover);
@@ -5129,26 +5164,36 @@ h2 {
   font-size: 0.95rem;
   line-height: 1.35;
 }
-/* A line the room posts itself: a 9.5+ word, the first time it is banked. */
+/* A line the room posts itself: a 9.5+ word, the first time it is banked. It
+   sits a size under players' own messages, which are what the room is for. */
 .chat__message--notice {
-  padding: 0.4rem 0.6rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 0.5rem;
   background: var(--caution-bg);
   color: var(--caution-fg);
 }
 .chat__message--notice .chat__body {
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 500;
 }
 .chat__message--notice .chat__time {
   font-size: 0.72rem;
 }
 /* A 9.5+ word wears its tier's badge colors. The word and the mode it was found
    in are marked the way the game marks its modes: bold for Standard, rainbow
-   letters for Freeform. */
+   letters for Freeform.
+   Mythic's badge red reads as red on pink at chat size, so in chat light mode
+   takes a deep maroon (9.9:1, and 5.3:1 for the dimmed timestamp). Dark mode
+   keeps the badge's own light-on-dark pair. The rainbow stays as the page has
+   it: dark letters on the pale fill, light ones on the dark. */
 .chat__message--mythic {
   background: var(--rarity-mythic-bg);
-  color: var(--rarity-mythic-fg);
+  color: #6e1a12;
+}
+@media (prefers-color-scheme: dark) {
+  .chat__message--mythic {
+    color: var(--rarity-mythic-fg);
+  }
 }
 .chat__message--legend {
   background: var(--rarity-legend-bg);
@@ -5160,6 +5205,7 @@ h2 {
   color: inherit;
   opacity: 0.75;
 }
+.chat__finder strong,
 .chat__word strong,
 .chat__mode strong {
   font-weight: 800;
@@ -5173,6 +5219,16 @@ h2 {
   .chat__message--legend .rainbow-word__letter {
     color: inherit;
   }
+}
+/* A find in Standard, the game without Freeform's help, is the bigger feat: it
+   wears the gold edge and halo the guess log gives a player's best word.
+   The edge is a real border, which follows the rounded corners: an inset
+   shadow bar bent into a crescent there. Its 2px comes out of the padding, so
+   the text lines up with every other line. */
+.chat__message--find.chat__message--standard {
+  border: 2px solid var(--best-word-accent);
+  padding: calc(0.3rem - 2px) calc(2.1rem - 2px) calc(0.3rem - 2px) calc(0.6rem - 2px);
+  box-shadow: var(--best-word-glow);
 }
 /* The line only its player sees: set apart by an outline rather than a color. */
 .chat__message--earlier {
@@ -5261,6 +5317,11 @@ h2 {
   top: 0.25rem;
   right: 0.3rem;
   color: inherit;
+}
+/* Measured from inside a Standard find's 2px border, so it gives that back. */
+.chat__message--standard .chat__react {
+  top: calc(0.25rem - 2px);
+  right: calc(0.3rem - 2px);
 }
 .chat__message:hover .chat__react,
 .chat__message:focus-within .chat__react,
