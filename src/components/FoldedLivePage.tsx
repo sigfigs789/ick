@@ -474,7 +474,7 @@ function RejectWarning({
       <p className="folded-live__warning-copy">
         Rejecting a word changes live scores retroactively and can break players{"’"} trust.
         It should be done <b>very</b> rarely. Only reject words that are clearly unrelated,
-        e.g. hearses → hears.
+        e.g. hearses → hears. If you have any doubt on rejecting a word, keep it as is.
       </p>
       {rule && (
         <p className="folded-live__warning-copy">
