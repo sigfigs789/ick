@@ -1967,6 +1967,18 @@ h2 {
   padding-left: 0.65rem;
   border-left: 1px solid var(--border);
 }
+.streak-display__freezes {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
 .streak-display__count {
   font-family: var(--font-display);
   font-weight: 800;

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { StreakDisplay } from "./StreakDisplay";
 import type { StreakState } from "../game/types";
@@ -44,6 +44,29 @@ describe("StreakDisplay", () => {
     );
     expect(screen.getByText("🔥")).toBeInTheDocument();
     expect(screen.queryByText("🧊")).not.toBeInTheDocument();
+  });
+
+  it("shows saved freezes out of the most the streak can hold, with the rules on click", () => {
+    render(<StreakDisplay streak={{ ...streak, currentStreak: 31, bankedFreezes: 1 }} />);
+    const badge = screen.getByRole("button", { name: /saved streak freezes/i });
+    expect(badge.textContent).toBe("❄️1/2");
+    expect(badge.getAttribute("title")).toMatch(/1 of 2 saved freezes.*every 7 days/);
+
+    expect(screen.queryByText(/every 7 days/)).not.toBeInTheDocument();
+    fireEvent.click(badge);
+    expect(screen.getByText(/1 of 2 saved freezes.*every 7 days/)).toBeInTheDocument();
+  });
+
+  it("keeps the ice but drops the warning when a saved freeze can cover today", () => {
+    render(
+      <StreakDisplay
+        streak={{ ...streak, currentStreak: 20, lastCompletedDate: "2026-10-01", frozenDates: ["2026-10-02"], bankedFreezes: 1 }}
+        date="2026-10-03"
+        isToday
+      />
+    );
+    expect(screen.getByText("🧊")).toBeInTheDocument();
+    expect(screen.getByText(/a saved freeze will cover today/)).toBeInTheDocument();
   });
 
   it("shows the current puzzle's total and top rarity", () => {
