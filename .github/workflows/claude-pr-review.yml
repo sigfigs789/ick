@@ -9,9 +9,9 @@ name: Claude PR review
 # It does not rerun on every push. Ask for another pass with "@claude review
 # this again" (claude.yml), or rerun this workflow from the PR's Checks tab.
 #
-# PRs opened with the built-in GITHUB_TOKEN -- the daily fold check's -- start no
-# `pull_request` workflows, so they never reach this; claude-review-fold-pr.yml
-# reviews those.
+# The daily fold check's PRs are left to claude-review-fold-pr.yml (see the job's
+# `if`). claude-build.yml's PRs do reach this, opened as github-actions, which is
+# why that bot is in `allowed_bots`.
 #
 # Runs on the Claude subscription: it needs the CLAUDE_CODE_OAUTH_TOKEN
 # repository secret, as the other Claude workflows do.
@@ -55,6 +55,9 @@ jobs:
           # The run's own token, so the action does not need the Claude GitHub
           # App installed.
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # claude-build.yml's PRs are opened as github-actions, and the action
+          # refuses a bot actor unless it is listed here.
+          allowed_bots: "github-actions"
           claude_args: >-
             --model claude-opus-5-5
             --max-turns 60
