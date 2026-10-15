@@ -7,9 +7,7 @@ const ALICE = "11111111-1111-4111-8111-111111111111";
 const BOB = "22222222-2222-4222-8222-222222222222";
 
 function stubDeadStreaks(body: unknown, status = 200) {
-  const fetchMock = vi.fn(
-    async (_url: string) => new Response(JSON.stringify(body), { status })
-  );
+  const fetchMock = vi.fn(async () => new Response(JSON.stringify(body), { status }));
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
@@ -35,7 +33,7 @@ describe("DeadStreaksPage", () => {
     expect(rows[0]).toHaveTextContent("Lost 3");
     expect(rows[0]).toHaveTextContent("20 days played");
     expect(rows[1]).toHaveTextContent(handleFor(BOB));
-    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("/api/leaderboard?dead=1&today=");
+    expect(String((fetchMock.mock.calls[0] as unknown[] | undefined)?.[0])).toContain("/api/leaderboard?dead=1&today=");
   });
 
   it("says so when nobody has lost a streak", async () => {
