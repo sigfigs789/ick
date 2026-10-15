@@ -526,7 +526,7 @@ describe("reading the boards", () => {
     const fetchMock = stubFetch(
       boardsResponse({
         streak: [
-          { rank: 1, playerId: "me", current: 12, best: 30 },
+          { rank: 1, playerId: "me", current: 12, best: 30, atRisk: true },
           { rank: 2, playerId: "you", current: 0, best: 4 },
         ],
         streakSelf: { playerId: "late", current: 2, best: 2 },
@@ -538,7 +538,7 @@ describe("reading the boards", () => {
     // A row on no streak is not a row on the streak board, and a self row
     // without a rank is dropped like any other board's.
     expect(boards.streak).toEqual([
-      { rank: 1, playerId: "me", name: handleFor("me"), current: 12, best: 30 },
+      { rank: 1, playerId: "me", name: handleFor("me"), current: 12, best: 30, atRisk: true },
     ]);
     expect(boards.streakSelf).toBeNull();
   });

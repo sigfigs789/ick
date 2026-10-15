@@ -425,6 +425,8 @@ interface StreakRow {
   current_streak: number;
   best_streak: number;
   streak_since?: string | null;
+  /** Missed yesterday and not played today; absent before 20261015220000. */
+  at_risk?: boolean | null;
 }
 
 /** One streak row, as the client receives it. */
@@ -434,6 +436,8 @@ interface StreakEntry {
   current: number;
   best: number;
   since?: string;
+  /** Sent only when true: the run is lost if today goes unplayed. */
+  atRisk?: true;
 }
 
 /** The streak board split at the cut, the same way `toBoard` splits the others. */
@@ -453,6 +457,7 @@ function toStreakBoard(
       ...(typeof row.streak_since === "string" && row.streak_since
         ? { since: row.streak_since.slice(0, 10) }
         : {}),
+      ...(row.at_risk === true ? { atRisk: true as const } : {}),
     };
     if (entry.rank > limit) self = entry;
     else entries.push(entry);

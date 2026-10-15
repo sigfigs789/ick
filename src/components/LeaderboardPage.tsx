@@ -1084,9 +1084,16 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
         {isYou && <span className="leaderboard__you">you</span>}
       </span>
       <span className="leaderboard__score">
-        <span aria-hidden="true">🔥 </span>
+        {/* 🧊 on the day the run can be lost, as the game marks it (see
+            components/StreakDisplay.tsx): yesterday was missed and today is
+            not played yet. */}
+        <span aria-hidden="true">{entry.atRisk ? "🧊" : "🔥"} </span>
         {entry.current}
-        <span className="sr-only"> {entry.current === 1 ? "day" : "days"} current streak</span>
+        <span className="sr-only">
+          {" "}
+          {entry.current === 1 ? "day" : "days"} current streak
+          {entry.atRisk ? ", at risk" : ""}
+        </span>
       </span>
       <span className="leaderboard__detail">
         <span className="leaderboard__meta" />

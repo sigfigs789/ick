@@ -72,6 +72,11 @@ export interface StreakEntry {
   current: number;
   /** The longest run they have ever had, this one included. */
   best: number;
+  /**
+   * They missed yesterday and have not played today, so today decides whether
+   * the run survives -- the day the game shows 🧊 instead of 🔥.
+   */
+  atRisk: boolean;
 }
 
 /**
@@ -315,7 +320,7 @@ function parseStreak(
   fallbackRank?: number
 ): StreakEntry | null {
   if (!item || typeof item !== "object") return null;
-  const { rank, playerId, current, best } = item;
+  const { rank, playerId, current, best, atRisk } = item;
   if (typeof playerId !== "string") return null;
   if (typeof current !== "number" || !Number.isFinite(current) || current < 1) return null;
   const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
@@ -326,6 +331,7 @@ function parseStreak(
     name: nameFor(playerId, item.source),
     current,
     best: typeof best === "number" && Number.isFinite(best) ? Math.max(best, current) : current,
+    atRisk: atRisk === true,
   };
 }
 
