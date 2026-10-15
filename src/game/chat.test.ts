@@ -57,9 +57,9 @@ describe("chat notices", () => {
   const verb = noticeVerb("StormyFox47", "abaci");
 
   it("names the player, the word and its score, leaving tier and mode to the coloring", () => {
-    expect(findNoticeBody("StormyFox47", word)).toBe(`StormyFox47 ${verb} abaci 9.62`);
+    expect(findNoticeBody("StormyFox47", word)).toBe(`StormyFox47 ${verb} abaci 9.62!`);
     expect(findNoticeBody("StormyFox47", { ...word, mode: "freeform", tier: "Legend", score: "9.94" })).toBe(
-      `StormyFox47 ${verb} abaci 9.94`
+      `StormyFox47 ${verb} abaci 9.94!`
     );
   });
 

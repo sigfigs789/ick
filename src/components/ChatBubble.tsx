@@ -141,11 +141,11 @@ const TOP_LEGEND_ICON = "💎";
 const TOP_LEGEND_MIN = 9.99;
 
 /**
- * The score a find notice's body ends with: "abaci 9.99", or "(9.99) in
- * standard mode" on a line posted before the notice was shortened.
+ * The score a find notice's body ends with: "abaci 9.99!", or "abaci 9.99" or
+ * "(9.99) in standard mode" on a line posted before.
  */
 function noticeScore(body: string): number | null {
-  const match = /(?:\((\d+(?:\.\d+)?)\) in (?:standard|freeform) mode| (\d+\.\d+))$/.exec(body);
+  const match = /(?:\((\d+(?:\.\d+)?)\) in (?:standard|freeform) mode| (\d+\.\d+)!?)$/.exec(body);
   return match ? Number(match[1] ?? match[2]) : null;
 }
 
