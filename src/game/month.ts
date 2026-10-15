@@ -17,6 +17,33 @@
 
 import { todayDateString } from "./date";
 
+/**
+ * How many of a month's puzzles its total counts: each player's best 26.
+ *
+ * MONTHLY BOARD RULE: the monthly board ranks players by the sum of their 26
+ * highest daily totals in the calendar month, not every day they played.
+ * Summing every day made the board a test of attendance first, and made a
+ * 31-day month worth more than February. 26 leaves room for a few days off, and
+ * every day past the 26th still helps by replacing a worse one -- the week's
+ * best-days rule (see WEEK_BEST_DAYS) applied to the month. The board's own copy
+ * of this number is in the database
+ * (20261015010000_leaderboard_month_best_26.sql), which cannot import it; the
+ * client reads this one so a shared month total agrees with the board.
+ */
+export const MONTH_BEST_DAYS = 26;
+
+/**
+ * The first month MONTH_BEST_DAYS applies to. Months before it count every day
+ * played, as they were ranked at the time; the database makes the same cut
+ * (20261015010000_leaderboard_month_best_26.sql).
+ */
+export const MONTH_BEST_DAYS_START = "2026-10-01";
+
+/** How many days `start`'s month counts: MONTH_BEST_DAYS from October 2026, else all. */
+export function monthBestDays(start: string): number {
+  return start >= MONTH_BEST_DAYS_START ? MONTH_BEST_DAYS : Infinity;
+}
+
 /** The first of the month `date` falls in, as YYYY-MM-DD. */
 export function monthStart(date: string = todayDateString()): string {
   // String slicing rather than Date arithmetic: the first of the month is the

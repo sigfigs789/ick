@@ -6,7 +6,8 @@
  * joined a board. The arithmetic is the boards': a window total is the sum of
  * each day's `totalRarityScore`, scored at that day's own date, over the days
  * inside the window (see leaderboard.scoreFor) -- for the week, only the best
- * WEEK_BEST_DAYS of them, as the weekly board counts. So a player who has been
+ * WEEK_BEST_DAYS of them, as the weekly board counts, and for the month only the
+ * best MONTH_BEST_DAYS from October 2026 on, as the monthly board counts. So a player who has been
  * submitting all along reads the same number here that the board shows them.
  *
  * Only days played on their own calendar date count, the same eligibility the
@@ -32,7 +33,7 @@
 
 import { todayDateString } from "./date";
 import { totalRarityScore } from "./dictionary";
-import { monthStart } from "./month";
+import { monthBestDays, monthStart } from "./month";
 import { countsOnBoard, modeForDate, type GameMode } from "./mode";
 import { playedOnItsDay } from "./storage";
 import { WEEK_BEST_DAYS, weekStart } from "./week";
@@ -40,7 +41,7 @@ import { WEEK_BEST_DAYS, weekStart } from "./week";
 export interface WindowTotals {
   /** Summed rarity score across the puzzle's week, Sunday onward, best WEEK_BEST_DAYS days. */
   week: number;
-  /** Summed rarity score across the puzzle's calendar month. */
+  /** Summed rarity score across the puzzle's calendar month, best MONTH_BEST_DAYS days from October 2026. */
   month: number;
 }
 
@@ -55,7 +56,7 @@ export function windowTotals(
   // calendar, which is the board those days were actually ranked on.
   const board = mode;
   const weekDays: number[] = [];
-  let monthTotal = 0;
+  const monthDays: number[] = [];
   for (const progress of playedOnItsDay()) {
     // Days after the puzzle being shared are somebody else's window as far as
     // this result is concerned, and would read as a total the player cannot
@@ -64,13 +65,20 @@ export function windowTotals(
     if (!countsOnBoard(board, progress.date, progress.mode)) continue;
     const score = totalRarityScore(progress.acceptedWords, progress.date);
     if (progress.date >= week) weekDays.push(score);
-    if (progress.date >= month) monthTotal += score;
+    if (progress.date >= month) monthDays.push(score);
   }
-  const weekTotal = weekDays
+  return {
+    week: round(bestDaysTotal(weekDays, WEEK_BEST_DAYS)),
+    month: round(bestDaysTotal(monthDays, monthBestDays(month))),
+  };
+}
+
+/** The sum of the `best` highest of `days`, as the boards' `p_best` counts them. */
+function bestDaysTotal(days: number[], best: number): number {
+  return days
     .sort((a, b) => b - a)
-    .slice(0, WEEK_BEST_DAYS)
+    .slice(0, best)
     .reduce((sum, score) => sum + score, 0);
-  return { week: round(weekTotal), month: round(monthTotal) };
 }
 
 // Rounded once at the end rather than per day, so the window total matches the

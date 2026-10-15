@@ -14,6 +14,7 @@ import { currentMode, type GameMode } from "../game/mode";
 import { pageCache } from "../game/pageCache";
 import { useGameMode } from "../hooks/useGameMode";
 import {
+  MONTH_BEST_DAYS,
   monthLabel,
   monthResetLabel,
   monthStart,
@@ -557,12 +558,14 @@ export function LeaderboardPage() {
               of the lists, so a reader wants it on the way in. Underneath them
               it had nothing to sit against -- a bullet adrift under the last
               row. Outside the grid below, so it sits against the first board
-              rather than a column gap away from it. The week's best-days rule
-              sits beside it for the same reason: it decides what a weekly total
-              is before anybody reads one (see WEEK_BEST_DAYS). */}
+              rather than a column gap away from it. The week's and the month's
+              best-days rules sit beside it for the same reason: they decide what
+              a weekly or monthly total is before anybody reads one (see
+              WEEK_BEST_DAYS and MONTH_BEST_DAYS). */}
           <ul className="leaderboard__rules">
             <li>Only puzzles played on the day they drop count</li>
             <li>A week counts your best {WEEK_BEST_DAYS} days of 7</li>
+            <li>A month counts your best {MONTH_BEST_DAYS} days</li>
           </ul>
           {/* Which board, on the layout that only has room for one at a time.
               Above the boards rather than beside each heading, because it is one
