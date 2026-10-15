@@ -66,7 +66,7 @@ describe("windowTotals", () => {
     );
   });
 
-  it("counts the week's best four days, as the weekly board does, and every day of the month", () => {
+  it("counts the week's best four days, as the weekly board does, and every day of a short month", () => {
     // Sunday the 16th to Saturday the 22nd, read from the Saturday. The three
     // one-word days are the worst, so they are the three the week drops.
     vi.setSystemTime(new Date("2026-08-22T12:00:00"));
@@ -79,6 +79,28 @@ describe("windowTotals", () => {
     const best = dates.reduce((sum, date) => sum + scored(date, words), 0);
     const all = thinDates.reduce((sum, date) => sum + scored(date, thin), best);
     expect(windowTotals("2026-08-22")).toEqual({ week: round(best), month: round(all) });
+  });
+
+  it("counts the month's best 26 days from October 2026, as the monthly board does", () => {
+    // Twenty-six full days and five thin ones in October, read from the 31st:
+    // the five thin days are the worst, so they are the five the month drops.
+    vi.setSystemTime(new Date("2026-10-31T12:00:00"));
+    const dates = Array.from({ length: 26 }, (_, i) => `2026-10-${String(i + 1).padStart(2, "0")}`);
+    const thinDates = ["2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31"];
+    const thin = [word("strange", 4.1)];
+    for (const date of [...dates, ...thinDates]) store(date, date < "2026-10-27" ? words : thin);
+
+    const best = dates.reduce((sum, date) => sum + scored(date, words), 0);
+    expect(windowTotals("2026-10-31", "standard").month).toBe(round(best));
+  });
+
+  it("counts every day of a month before October 2026", () => {
+    vi.setSystemTime(new Date("2026-08-31T12:00:00"));
+    const dates = Array.from({ length: 31 }, (_, i) => `2026-08-${String(i + 1).padStart(2, "0")}`);
+    for (const date of dates) store(date, words);
+
+    const all = dates.reduce((sum, date) => sum + scored(date, words), 0);
+    expect(windowTotals("2026-08-31").month).toBe(round(all));
   });
 
   it("ignores days after the puzzle, so an older result reads its own windows", () => {

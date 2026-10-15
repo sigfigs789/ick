@@ -413,6 +413,15 @@ describe("the leaderboard page", () => {
     );
   });
 
+  it("says a month counts each player's best 26 days", async () => {
+    stubFetch();
+    render(<LeaderboardPage />);
+
+    await waitFor(() =>
+      expect(screen.getByText("A month counts your best 26 days")).toBeInTheDocument(),
+    );
+  });
+
   it("says a week counts each player's best four days", async () => {
     stubFetch();
     render(<LeaderboardPage />);
