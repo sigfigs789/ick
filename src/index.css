@@ -5220,8 +5220,7 @@ h2 {
   }
 }
 /* A find in Standard, the game without Freeform's help, is the bigger feat: it
-   wears the gold edge and halo the guess log gives a player's best word. A
-   Freeform find steps back a size so the two never read as equals.
+   wears the gold edge and halo the guess log gives a player's best word.
    The edge is a real border, which follows the rounded corners: an inset
    shadow bar bent into a crescent there. Its 2px comes out of the padding, so
    the text lines up with every other line. */
@@ -5229,14 +5228,6 @@ h2 {
   border: 2px solid var(--best-word-accent);
   padding: calc(0.4rem - 2px) calc(2.1rem - 2px) calc(0.4rem - 2px) calc(0.6rem - 2px);
   box-shadow: var(--best-word-glow);
-}
-.chat__message--find.chat__message--freeform {
-  padding-top: 0.3rem;
-  padding-bottom: 0.3rem;
-}
-.chat__message--find.chat__message--freeform .chat__body {
-  font-size: 0.8rem;
-  font-weight: 500;
 }
 /* The line only its player sees: set apart by an outline rather than a color. */
 .chat__message--earlier {
