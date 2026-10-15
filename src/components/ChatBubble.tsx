@@ -128,11 +128,15 @@ const NOTICE_ICONS: Record<NonNullable<ChatMessage["kind"]>, string> = {
 /**
  * A Standard find is the harder one, so it never sparkles: ✨ is Freeform's. It
  * takes one of these instead, picked by the notice's id so every player sees
- * the same one on the same line. 💎 is kept for a Legend at 9.99 or more, and
- * only it. 🥇 is shared with the retired top-score notices, which only a few old
+ * the same one on the same line: any celebration but a star or sparkle, which
+ * would read as Freeform's. 💎 is kept for a Legend at 9.99 or more, and only
+ * it. 🥇 is shared with the retired top-score notices, which only a few old
  * rooms still hold; 🔎 is left out, being the "earlier" line's.
  */
-const STANDARD_FIND_ICONS = ["🔥", "👑", "⚡", "🎯", "🤯", "💥", "🚀", "🥇", "🏅", "🕺", "💃"];
+const STANDARD_FIND_ICONS = [
+  "🔥", "👑", "⚡", "🎯", "🤯", "💥", "🚀", "🥇", "🏅", "🏆", "🕺", "💃", "🎉",
+  "🎊", "🥳", "🙌", "👏", "💪", "🤩", "😎", "🎆", "🍾", "🥂", "🪅", "🎈", "🤘",
+];
 const TOP_LEGEND_ICON = "💎";
 const TOP_LEGEND_MIN = 9.99;
 
