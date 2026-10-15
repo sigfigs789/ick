@@ -256,7 +256,7 @@ describe("the leaderboard page", () => {
     expect(boardRows("Streaks")[0]).toHaveTextContent("21");
     // Ranked by the run they are on, with their longest kept as the detail.
     expect(boardRows("Streaks")[1]).toHaveTextContent("Longest 40");
-    expect(board("Streaks")).toHaveTextContent(/Current\s*Longest/);
+    expect(board("Streaks")).toHaveTextContent(/Streak\s*Longest/);
     // No window, so nothing to step through.
     const streaks = board("Streaks");
     expect(within(streaks).queryByRole("button", { name: /previous/i })).toBeNull();

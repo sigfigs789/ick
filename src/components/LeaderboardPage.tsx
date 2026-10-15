@@ -776,7 +776,7 @@ const SCORE_COLUMNS = ["Total score", "Best find"] as const;
  * The figures on the streak board: the run they are on, which is what ranks
  * them, and the longest they have ever had.
  */
-const STREAK_COLUMNS = ["Current", "Longest"] as const;
+const STREAK_COLUMNS = ["Streak", "Longest"] as const;
 
 function scoreRow(entry: BoardEntry, isYou: boolean): ReactNode {
   return <Row key={entry.playerId} entry={entry} isYou={isYou} />;
