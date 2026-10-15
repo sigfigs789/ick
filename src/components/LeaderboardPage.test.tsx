@@ -246,12 +246,13 @@ describe("the leaderboard page", () => {
       streak: [
         { rank: 1, playerId: ALICE, current: 21, best: 21 },
         { rank: 2, playerId: BOB, current: 3, best: 40, atRisk: true },
+        { rank: 3, playerId: CAROL, current: 1, best: 6, atRisk: true },
       ],
       streakSelf: null,
     });
     render(<LeaderboardPage />);
 
-    await waitFor(() => expect(boardRows("Streaks")).toHaveLength(2));
+    await waitFor(() => expect(boardRows("Streaks")).toHaveLength(3));
     expect(boardRows("Streaks")[0]).toHaveTextContent(handleFor(ALICE));
     expect(boardRows("Streaks")[0]).toHaveTextContent("21");
     // Ranked by the run they are on, with their longest kept as the detail.
@@ -261,6 +262,8 @@ describe("the leaderboard page", () => {
     expect(boardRows("Streaks")[1]).toHaveTextContent("🧊");
     expect(boardRows("Streaks")[1]).not.toHaveTextContent("🔥");
     expect(boardRows("Streaks")[1]).toHaveTextContent("at risk");
+    // A one-day run is a start, not a streak: no fire and no ice.
+    expect(boardRows("Streaks")[2]).not.toHaveTextContent(/🔥|🧊/u);
     expect(board("Streaks")).toHaveTextContent(/Streak\s*Longest streak/);
     // No window, so nothing to step through.
     const streaks = board("Streaks");

@@ -1086,8 +1086,11 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
       <span className="leaderboard__score">
         {/* 🧊 on the day the run can be lost, as the game marks it (see
             components/StreakDisplay.tsx): yesterday was missed and today is
-            not played yet. */}
-        <span aria-hidden="true">{entry.atRisk ? "🧊" : "🔥"} </span>
+            not played yet. Neither on a run of one day, which is a start
+            rather than a streak and does not earn the fire. */}
+        {entry.current > 1 && (
+          <span aria-hidden="true">{entry.atRisk ? "🧊" : "🔥"} </span>
+        )}
         {entry.current}
         <span className="sr-only">
           {" "}
