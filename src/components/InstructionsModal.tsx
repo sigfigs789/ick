@@ -143,7 +143,9 @@ export function InstructionsModal({ open, onClose }: Props) {
   );
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    // Not a decision about the game: nothing pressed while it is open counts
+    // toward the visit's first interaction (see watchFirstInteraction).
+    <div className="modal-overlay" onClick={onClose} data-not-interaction="">
       <div
         ref={cardRef}
         className="modal modal--paged"

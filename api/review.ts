@@ -10,13 +10,11 @@
 // GET /api/review?list=freeform&limit=200
 //   -> { tally: { love, boo }, byDate: [{ date, love, boo }],
 //        notes: [{ id, text, at, date, vote }] }
-// GET /api/review?list=analytics&days=60
-// GET /api/review?list=analytics&days=1&date=YYYY-MM-DD   (today: that one puzzle)
-// GET /api/review?list=analytics&days=N&date=YYYY-MM-DD   (a picked range: N days ending on date)
-//   -> { report: { asOf, totals, daily, retention, cohorts, weekday, modes,
-//                  depth, funnel, sources, sessions, hours, chat, onboarding,
-//                  copies } }
-//   400 bad-list / bad-limit / bad-days / bad-date, 401 unauthorised, 405 wrong method,
+// GET /api/review?list=analytics&from=YYYY-MM-DD&to=YYYY-MM-DD&today=YYYY-MM-DD
+//   (every date optional: no `from` is all time, no `to` the latest day)
+//   -> { report: { today, firstDay, from, to, groups, modes, chat, chatSince,
+//                  daily } }
+//   400 bad-list / bad-limit / bad-date, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
 // POST /api/review
@@ -81,8 +79,6 @@ export const config = { runtime: "edge" };
 /** Long enough for a triage pass; a bound rather than a page. */
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
-/** How far back the analytics page's time series reach unless asked otherwise. */
-const DEFAULT_ANALYTICS_DAYS = 60;
 
 /** One row as `list_suggested_words` returns it. */
 interface SuggestedRow {
@@ -356,65 +352,30 @@ async function handleGet(request: Request): Promise<Response> {
 
   try {
     if (list === "analytics") {
-      // A window in days rather than a row limit: the report is one document,
-      // and what a reader varies is how far back its time series reach.
-      // The window's last puzzle: the viewer's calendar date in the today window,
-      // or the last day of a picked range. Sent as-is, not worked out here from a
-      // clock: "today" is the puzzle the reader is on. Checked only for being a
-      // real date; the functions take the latest puzzle anybody played when it
-      // is missing.
-      const date = params.get("date");
-      if (date !== null && !isCalendarDate(date)) {
+      // The window's ends and the viewer's own puzzle, sent as-is rather than
+      // worked out here from a clock: "today" is the puzzle the reader is on.
+      // Checked only for being real dates in order; the function takes the
+      // first and latest day anybody turned up for an end that is missing.
+      const dates: Record<"from" | "to" | "today", string | null> = {
+        from: params.get("from"),
+        to: params.get("to"),
+        today: params.get("today"),
+      };
+      if (Object.values(dates).some((d) => d !== null && !isCalendarDate(d))) {
         return reply(400, { ok: false, reason: "bad-date" });
       }
-      const rawDays = params.get("days");
-      let days = DEFAULT_ANALYTICS_DAYS;
-      if (rawDays !== null) {
-        days = Number(rawDays);
-        // 1 is the today window, one puzzle; a preset is a week to a year; a
-        // range, which comes with its last day, is any width up to a year.
-        const ok = date !== null ? days >= 1 && days <= 365 : days === 1 || (days >= 7 && days <= 365);
-        if (!Number.isInteger(days) || !ok) {
-          return reply(400, { ok: false, reason: "bad-days" });
-        }
+      if (dates.from !== null && dates.to !== null && dates.from > dates.to) {
+        return reply(400, { ok: false, reason: "bad-date" });
       }
-      const args = date !== null ? { p_days: days, p_date: date } : { p_days: days };
       // Passed through as the database built it. The function is the one place
-      // these numbers are defined (see the 2026-09-27 migration), and a second
+      // these numbers are defined (see the 2026-10-18 migration), and a second
       // copy of every field name here would be a second place for them to drift.
-      //
-      // The chat room's numbers are their own function (see the 20260930010000
-      // migration), read alongside and set on the report as `chat`. A failure
-      // there costs only the chat section: the page renders without it rather
-      // than losing every other number over one it can do without. The new
-      // players' starting modes (the 20260930020000 migration) are read and set
-      // on it as `onboarding` the same way. That one is cohorts, not a window of
-      // puzzles, so it takes no date and clamps a today window up to its own
-      // shortest. Copies into the other mode (the 20261001000000 migration)
-      // take the window exactly as chat does, and are set on it as `copies`.
-      // What the players who come back went through (the 20261005000000
-      // migration) takes it the same way, and is set on it as `returners`, and
-      // whether players who hit a 10.00 come back more (the 20261006000000
-      // migration) as `perfects`. Answers scored from Claude's estimated Zipf
-      // (the 20261006100000 migration) take it the same way too, and are set on
-      // it as `estimates`.
-      const optional = (name: string, fnArgs: Record<string, unknown>) =>
-        rpc<Record<string, unknown> | null>(name, fnArgs).catch((error: unknown) => {
-          console.error(`[review] ${name} failed:`, error instanceof Error ? error.message : error);
-          return null;
-        });
-      const [report, chat, onboarding, copies, returners, perfects, estimates] = await Promise.all([
-        rpc<Record<string, unknown> | null>("analytics_report", args),
-        optional("chat_report", args),
-        optional("onboarding_report", { p_days: days }),
-        optional("copy_report", args),
-        optional("retention_report", args),
-        optional("perfect_report", args),
-        optional("estimated_score_report", args),
-      ]);
-      return reply(200, {
-        report: { ...(report ?? {}), chat, onboarding, copies, returners, perfects, estimates },
+      const report = await rpc<Record<string, unknown> | null>("analytics_overview", {
+        p_from: dates.from,
+        p_to: dates.to,
+        p_today: dates.today,
       });
+      return reply(200, { report: report ?? {} });
     }
     if (list === "freeform") {
       // Two reads rather than one, because the votes and the notes are two

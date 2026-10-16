@@ -1,36 +1,56 @@
 import { useState, type KeyboardEvent, type MouseEvent } from "react";
-import type { AnalyticsReport } from "../game/review";
+import type { AnalyticsReport, DayMetrics, Group } from "../game/review";
 import { daysSinceEpoch } from "../game/date";
+import { FREEFORM_TRIAL_END, FREEFORM_TRIAL_START } from "../game/mode";
 import { dowOf, fmt, pct } from "./analyticsFormat";
 
 type Day = AnalyticsReport["daily"][number];
+
+/** The first puzzle the chat announced finds on by itself (#442). */
+const CHAT_NOTICES_START = "2026-10-13";
 
 const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /**
- * What the chart can plot, one tab each. `tone` colours a tab's day-over-day
- * change green when up and red when down; a looker is neither good news nor
- * bad, so that tab's change stays grey.
+ * The four key numbers, one tab each. A day's number is not final while it is
+ * `live`: the puzzle still in play for the first three, and for returns, until
+ * all seven puzzles after it are over. The line is dashed over those days.
  */
-const METRICS = [
-  { key: "players", label: "Players", value: (d: Day) => d.players, tone: true },
-  { key: "newPlayers", label: "New players", value: (d: Day) => d.newPlayers, tone: true },
-  { key: "lookers", label: "Only looked", value: (d: Day) => d.lookers, tone: false },
-] as const;
+const METRICS: ReadonlyArray<{
+  key: keyof DayMetrics;
+  label: string;
+  live: (d: Day, today: string) => boolean;
+  liveNote: string;
+}> = [
+  { key: "players", label: "Players", live: (d, today) => d.date >= today, liveNote: "still in play" },
+  { key: "acted", label: "Did something", live: (d, today) => d.date >= today, liveNote: "still in play" },
+  { key: "guessed", label: "Guessed", live: (d, today) => d.date >= today, liveNote: "still in play" },
+  { key: "returned", label: "Back within 7 days", live: (d) => !d.closed, liveNote: "too soon to tell" },
+];
 
 type MetricKey = (typeof METRICS)[number]["key"];
 
 /**
- * One puzzle's numbers at a time, picked off a line through the window.
+ * One puzzle's numbers at a time, picked off a line through the window, for
+ * one grouping of players.
  *
  * The tabs along the top read the day under the pointer, or the pinned one when
  * the pointer is elsewhere: hover to look, click (or arrow keys, or the date
- * box) to pin. The pinned day starts on the viewer's own date, the same "today"
- * the tiles above read. A puzzle still in play -- today's, and tomorrow's once
- * anybody is on it -- is drawn dashed, because its count is not final.
+ * box) to pin. The pinned day starts on `focus` -- the window's one day, when
+ * it is a single puzzle -- or else the viewer's own date.
  */
-export function DailyChart({ daily, today }: { daily: Day[]; today: string }) {
+export function DailyChart({
+  daily,
+  group,
+  today,
+  focus,
+}: {
+  daily: Day[];
+  group: Group;
+  today: string;
+  focus?: string;
+}) {
   const [metric, setMetric] = useState<MetricKey>("players");
   const [pinned, setPinned] = useState<string | null>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -39,7 +59,8 @@ export function DailyChart({ daily, today }: { daily: Day[]; today: string }) {
 
   const n = daily.length;
   const todayIndex = daily.findIndex((d) => d.date === today);
-  const fallback = todayIndex >= 0 ? todayIndex : n - 1;
+  const focusIndex = focus === undefined ? -1 : daily.findIndex((d) => d.date === focus);
+  const fallback = focusIndex >= 0 ? focusIndex : todayIndex >= 0 ? todayIndex : n - 1;
   const pinnedIndex = pinned === null ? -1 : daily.findIndex((d) => d.date === pinned);
   const selected = pinnedIndex >= 0 ? pinnedIndex : fallback;
   // A hover left over from a longer window can point past this one's end.
@@ -47,19 +68,39 @@ export function DailyChart({ daily, today }: { daily: Day[]; today: string }) {
   const day = daily[shown];
   const current = METRICS.find((m) => m.key === metric) ?? METRICS[0];
 
-  const values = daily.map(current.value);
+  const valueOf = (d: Day, key: MetricKey) => d.groups[group][key];
+  // Beside each number: Players as the share of them who are new (for
+  // everyone; within a grouping that is all or none, or not known), and the
+  // rest as a share of the day's players.
+  const shareOf = (d: Day, key: MetricKey): string | null => {
+    const players = valueOf(d, "players");
+    if (players === 0) return null;
+    if (key === "players") return group === "all" ? `${pct(d.groups.new.players / players)} new` : null;
+    return pct(valueOf(d, key) / players);
+  };
+  const values = daily.map((d) => valueOf(d, current.key));
   const { top, ticks } = scale(Math.max(...values));
   const x = (i: number) => (n === 1 ? 50 : (i / (n - 1)) * 100);
   const y = (v: number) => 100 - (v / top) * 100;
   const points = values.map((v, i) => `${x(i)} ${y(v)}`);
 
-  // Solid up to the last finished puzzle, dashed from there into the ones still
-  // in play. With nothing finished in the window, the whole line is dashed.
-  const firstLive = daily.findIndex((d) => d.date >= today);
+  // Solid up to the last final day, dashed from there into the ones that are
+  // not. With nothing final in the window, the whole line is dashed.
+  const firstLive = daily.findIndex((d) => current.live(d, today));
   const split = firstLive < 0 ? n - 1 : Math.max(0, firstLive - 1);
   const solid = points.slice(0, split + 1);
   const dashed = firstLive < 0 ? [] : points.slice(split);
   const area = `M ${x(0)} 100 L ${points.join(" L ")} L ${x(n - 1)} 100 Z`;
+
+  // Days worth seeing the line against, where the window has them: the
+  // Freeform trial week's first and last puzzle, and the chat's automatic
+  // notices going live.
+  const lastTrialDay = daily.findIndex((d) => d.date >= FREEFORM_TRIAL_END) - 1;
+  const markers = [
+    { i: daily.findIndex((d) => d.date === FREEFORM_TRIAL_START), label: "Freeform week" },
+    { i: daily[lastTrialDay]?.date >= FREEFORM_TRIAL_START ? lastTrialDay : -1, label: "end" },
+    { i: daily.findIndex((d) => d.date === CHAT_NOTICES_START), label: "Chat auto messages" },
+  ].filter((m) => m.i >= 0);
 
   // About seven dates along the axis, the last day's always among them, and on
   // a phone every other one (daily__xlabel--minor).
@@ -92,15 +133,15 @@ export function DailyChart({ daily, today }: { daily: Day[]; today: string }) {
 
   const describe = (i: number) => {
     const d = daily[i];
-    return `${current.label} ${fmt(current.value(d))} on ${longDate(d.date)}`;
+    return `${current.label} ${fmt(valueOf(d, current.key))} on ${longDate(d.date)}`;
   };
 
   return (
     <div className="daily">
       <div className="daily__tabs" role="tablist" aria-label="Daily metric">
         {METRICS.map((m) => {
-          const value = m.value(day);
-          const prev = shown > 0 ? m.value(daily[shown - 1]) : null;
+          const value = valueOf(day, m.key);
+          const share = shareOf(day, m.key);
           return (
             <button
               key={m.key}
@@ -113,7 +154,7 @@ export function DailyChart({ daily, today }: { daily: Day[]; today: string }) {
               <span className="daily__tab-label">{m.label}</span>
               <span className="daily__tab-row">
                 <span className="daily__tab-value">{fmt(value)}</span>
-                {prev !== null && <Change value={value} prev={prev} tone={m.tone} />}
+                {share !== null && <span className="daily__change">{share}</span>}
               </span>
             </button>
           );
@@ -164,7 +205,6 @@ export function DailyChart({ daily, today }: { daily: Day[]; today: string }) {
             )}
             <span className="daily__caption">
               {longDate(day.date)} · {relative(day.date, today)}
-              {shown > 0 && `, change vs ${shortDate(daily[shown - 1].date)}`}
             </span>
           </div>
 
@@ -203,6 +243,11 @@ export function DailyChart({ daily, today }: { daily: Day[]; today: string }) {
               {hover !== null && hover !== selected && (
                 <span className="daily__cross daily__cross--pinned" style={{ left: `${x(selected)}%` }} />
               )}
+              {markers.map((m) => (
+                <span key={m.label} className="daily__marker" style={{ left: `${x(m.i)}%` }}>
+                  <span className="daily__marker-label">{m.label}</span>
+                </span>
+              ))}
               <span className="daily__cross" style={{ left: `${x(shown)}%` }} />
               <span className="daily__dot" style={{ left: `${x(shown)}%`, top: `${y(values[shown])}%` }} />
               <div
@@ -217,12 +262,12 @@ export function DailyChart({ daily, today }: { daily: Day[]; today: string }) {
                 <span className="daily__tip-date">
                   {shortDate(day.date)} · {SHORT_WEEKDAYS[dowOf(day.date)]}
                 </span>
-                {metric === "players" && day.standard > 0 && day.freeform > 0 && (
+                {metric !== "players" && valueOf(day, "players") > 0 && (
                   <span className="daily__tip-date">
-                    {fmt(day.standard)} Standard · {fmt(day.freeform)} Freeform
+                    {pct(values[shown] / valueOf(day, "players"))} of {fmt(valueOf(day, "players"))} players
                   </span>
                 )}
-                {day.date >= today && <span className="daily__tip-date">still in play</span>}
+                {current.live(day, today) && <span className="daily__tip-date">{current.liveNote}</span>}
               </div>
             </div>
             <div className="daily__xaxis" aria-hidden="true">
@@ -245,21 +290,6 @@ export function DailyChart({ daily, today }: { daily: Day[]; today: string }) {
         </>
       )}
     </div>
-  );
-}
-
-function Change({ value, prev, tone }: { value: number; prev: number; tone: boolean }) {
-  const diff = value - prev;
-  const text =
-    prev > 0 ? `${diff >= 0 ? "+" : "−"}${pct(Math.abs(diff) / prev)}` : `${diff >= 0 ? "+" : "−"}${fmt(Math.abs(diff))}`;
-  const direction = diff > 0 ? "up" : diff < 0 ? "down" : "flat";
-  return (
-    <span
-      className={`daily__change daily__change--${tone ? direction : "flat"}`}
-      title={`${fmt(prev)} the day before`}
-    >
-      {text}
-    </span>
   );
 }
 

@@ -610,6 +610,9 @@ export function trackVisitEngaged(outcome: VisitOutcome, via: EngagedVia = "gues
 const PRESSABLE =
   'button, a, input, select, textarea, label, summary, [role="button"], [role="link"], [role="tab"], [role="switch"], [role="menuitem"], [role="checkbox"]';
 
+/** What a press inside of, or a key while it is open, is not an interaction. */
+const NOT_INTERACTION = "[data-not-interaction]";
+
 /** Keys that only change what the next key means. */
 const MODIFIER_KEYS = new Set(["Shift", "Control", "Alt", "Meta", "CapsLock", "Fn"]);
 
@@ -620,6 +623,10 @@ const MODIFIER_KEYS = new Set(["Shift", "Control", "Alt", "Meta", "CapsLock", "F
  * the analytics page's engaged and idle visitor counts read. Carries the same
  * params as `site_visit`, `puzzle_date` among them, so the today window can
  * count it by puzzle.
+ *
+ * Presses on the How to play sheet do not count, and nor do keys while it is
+ * open: dismissing the instructions a first visit opens with is not doing
+ * anything. The sheet marks itself with `data-not-interaction`.
  *
  * Listens in the capture phase so a control that stops propagation still
  * counts, and stops listening after the first press or once the session has
@@ -633,9 +640,11 @@ export function watchFirstInteraction(): () => void {
     if (outcome) send("visit_interacted", visitProperties(outcome), visitId(outcome));
   };
   const onClick = (e: MouseEvent) => {
-    if (e.target instanceof Element && e.target.closest(PRESSABLE)) report();
+    if (!(e.target instanceof Element) || e.target.closest(NOT_INTERACTION)) return;
+    if (e.target.closest(PRESSABLE)) report();
   };
   const onKey = (e: KeyboardEvent) => {
+    if (document.querySelector(NOT_INTERACTION)) return;
     if (!MODIFIER_KEYS.has(e.key)) report();
   };
   function stop() {
