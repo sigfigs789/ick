@@ -43,7 +43,7 @@ export const SPANS: ReadonlyArray<{ days: number | null; label: string }> = [
 ];
 
 export function daysAgoLabel(ago: number): string {
-  return ago === 0 ? "Today" : ago === 1 ? "1 day ago" : `${ago} days ago`;
+  return ago === 0 ? "Today" : ago === 1 ? "1 day" : `${ago} days`;
 }
 
 /** The window's first and last puzzle, both counted. A null `from` is all time. */

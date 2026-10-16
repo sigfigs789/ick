@@ -115,9 +115,9 @@ describe("AnalyticsPage", () => {
     render(<AnalyticsPage />);
     await screen.findByRole("heading", { name: "Key numbers" });
 
-    await userEvent.click(screen.getByRole("button", { name: "3 days ago" }));
+    await userEvent.click(screen.getByRole("button", { name: "3 days" }));
     await waitFor(() => expect(lastUrl(fetchMock)).toContain("from=2026-10-13&to=2026-10-13&today=2026-10-16"));
-    expect(await screen.findByRole("button", { name: "3 days ago" })).toHaveAttribute("aria-pressed", "true");
+    expect(await screen.findByRole("button", { name: "3 days" })).toHaveAttribute("aria-pressed", "true");
 
     await userEvent.click(screen.getByRole("button", { name: "All time" }));
     await waitFor(() => expect(lastUrl(fetchMock)).toContain("list=analytics&to=2026-10-16&today=2026-10-16"));

@@ -154,22 +154,6 @@ function Report({
       </div>
 
       <Section
-        title="Key numbers"
-        note={span}
-      >
-        <ul className="review__meta analytics__bullets">
-          <li><strong>Players</strong>: opened the game</li>
-          <li><strong>Did something</strong>: any tap, look or guess</li>
-          <li><strong>Guessed</strong>: banked a word</li>
-          <li><strong>Back within 7 days</strong>: played again in the next 7 days (recent days still counting up)</li>
-          <li><strong>New</strong>: first visit in this window. <strong>Started in</strong>: mode on first visit</li>
-        </ul>
-        <MetricsTable
-          rows={GROUPS.map((g) => ({ key: g, label: GROUP_NAMES[g], metrics: report.groups[g] }))}
-        />
-      </Section>
-
-      <Section
         title="Day by day"
         note="Click or use the arrow keys to pin a day. % is of the day's players."
       >
@@ -192,6 +176,22 @@ function Report({
           group={group}
           today={today}
           focus={single ? shown.to : undefined}
+        />
+      </Section>
+
+      <Section
+        title="Key numbers"
+        note={span}
+      >
+        <ul className="review__meta analytics__bullets">
+          <li><strong>Players</strong>: opened the game</li>
+          <li><strong>Did something</strong>: any tap, look or guess</li>
+          <li><strong>Guessed</strong>: banked a word</li>
+          <li><strong>Back within 7 days</strong>: played again in the next 7 days (recent days still counting up)</li>
+          <li><strong>New</strong>: first visit in this window. <strong>Started in</strong>: mode on first visit</li>
+        </ul>
+        <MetricsTable
+          rows={GROUPS.map((g) => ({ key: g, label: GROUP_NAMES[g], metrics: report.groups[g] }))}
         />
       </Section>
 
