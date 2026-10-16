@@ -10,6 +10,7 @@ import {
   trackModeChanged,
   trackLeaderboardOpened,
   trackLeaderboardJoined,
+  trackModeAssigned,
   trackChatOpened,
   trackFoundWordsOpened,
   trackWordSuggestion,
@@ -20,7 +21,8 @@ import {
 } from "./analytics";
 import { puzzleNumber } from "./game/share";
 import { FREEFORM_TRIAL_START } from "./game/mode";
-import { recordVisit } from "./game/visits";
+import { recordVisit, type VisitOutcome } from "./game/visits";
+import { APP_VERSION } from "./version";
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
@@ -29,8 +31,87 @@ afterEach(() => {
   track.mockClear();
 });
 
+function outcome(overrides: Partial<VisitOutcome["state"]> = {}, rest: Partial<VisitOutcome> = {}): VisitOutcome {
+  return {
+    isFirstVisit: false,
+    isNewDay: true,
+    state: {
+      source: "reddit",
+      lastSource: "t",
+      firstVisitDate: "2024-01-01",
+      lastVisitDate: "2024-01-03",
+      timesReturned: 2,
+      daysReturned: 1,
+      ...overrides,
+    },
+    ...rest,
+  };
+}
+
 /** The live puzzle the visit, session, share and mode events are stamped with. */
 const LIVE_DATE = expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/);
+
+describe("visit events", () => {
+  it("site_visit and visit_engaged carry identical params", () => {
+    const o = outcome();
+    trackVisit(o);
+    trackVisitEngaged(o);
+
+    const expected = {
+      app_version: APP_VERSION,
+      visit_type: "returning",
+      source: "reddit",
+      last_source: "twitter",
+      times_returned: 2,
+      days_returned: 1,
+      new_day: true,
+      puzzle_date: LIVE_DATE,
+    };
+    expect(track).toHaveBeenNthCalledWith(1, "site_visit", expected);
+    // Plus what engaged it, which a guess is unless the caller says otherwise.
+    expect(track).toHaveBeenNthCalledWith(2, "visit_engaged", { ...expected, via: "guess" });
+  });
+
+  it("stamps the running build on both visit events", () => {
+    // Version distribution is read off these two events: they fire once per
+    // session, so a count by app_version is a count of sessions per build --
+    // which is what says whether an old bundle is still in circulation.
+    trackVisit(outcome());
+    trackVisitEngaged(outcome());
+
+    for (const [, payload] of track.mock.calls) {
+      expect(payload).toMatchObject({ app_version: APP_VERSION });
+    }
+    expect(typeof APP_VERSION).toBe("number");
+  });
+
+  it("maps share-link codes to readable source labels", () => {
+    trackVisit(outcome({ source: "sh" }));
+    trackVisit(outcome({ source: "t" }));
+    trackVisit(outcome({ source: "r" }));
+    trackVisit(outcome({ source: null }));
+    trackVisit(outcome({ source: "reddit" }));
+
+    const sources = track.mock.calls.map((call) => (call[1] as { source: string }).source);
+    expect(sources).toEqual(["share", "twitter", "reddit", "direct", "reddit"]);
+  });
+
+  it("passes an unrecognized s code through verbatim", () => {
+    trackVisit(outcome({ source: "z" }));
+    trackVisit(outcome({ source: "newsletter" }));
+
+    const sources = track.mock.calls.map((call) => (call[1] as { source: string }).source);
+    expect(sources).toEqual(["z", "newsletter"]);
+  });
+
+  it("tags a first-ever visit", () => {
+    trackVisit(outcome({ timesReturned: 0 }, { isFirstVisit: true }));
+    expect(track).toHaveBeenCalledWith(
+      "site_visit",
+      expect.objectContaining({ visit_type: "first" })
+    );
+  });
+});
 
 describe("looking at the boards and the finds", () => {
   it("names the live puzzle on both open events", () => {
@@ -266,10 +347,12 @@ describe("supabase mirror", () => {
 });
 
 describe("counted events", () => {
-  it("counts play, leaderboards, found words and opening chat", () => {
+  it("counts play, leaderboards, found words, opening chat and arrivals", () => {
     trackLeaderboardJoined(false);
     trackFoundWordsOpened("header");
     trackChatOpened("standard");
+    trackModeAssigned({ mode: "standard", reason: "default", source: null, date: "2026-10-16" });
+    expect(track).toHaveBeenCalledWith("mode_assigned", expect.objectContaining({ mode: "standard", reason: "default" }));
     expect(track).toHaveBeenCalledWith("chat_opened", expect.anything());
     expect(track).toHaveBeenCalledWith("leaderboard_joined", { rename: false });
     expect(track).toHaveBeenCalledWith("found_words_opened", { from: "header", puzzle_date: LIVE_DATE });
