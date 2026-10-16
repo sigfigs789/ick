@@ -768,10 +768,14 @@ h2 {
    pieces land on the grid: the date label on a line above, the tiles level
    with the arrows, and the reveal on a full-width line below. The side columns
    share what is left equally, so the tiles stay centred on the page. The row
-   takes over the drop's own spacing below, so the page keeps its rhythm. */
+   takes over the drop's own spacing below, so the page keeps its rhythm.
+   The arrows hold still from drop to drop and through the reveal: the side
+   columns take no size from the full-width lines (minmax(0, ...)), and the
+   label keeps to one line, so nothing above or beside the arrows can move
+   them. */
 .puzzle-nav--drop {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   column-gap: 1.25rem;
   margin-bottom: 1.75rem;
 }
@@ -784,6 +788,10 @@ h2 {
 }
 .puzzle-nav--drop .drop-display__label {
   grid-row: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .puzzle-nav--drop .drop-display__value {
   grid-row: 2;
