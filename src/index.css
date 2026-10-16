@@ -764,15 +764,54 @@ h2 {
   gap: 0.4rem;
   margin: 0 0 1.5rem;
 }
-/* The drop between the arrows: the row takes over the drop's own spacing below,
-   so the page keeps the same rhythm it had with the drop on a line of its own. */
+/* The drop between the arrows. Its box steps aside (display: contents) so its
+   pieces land on the grid: the date label on a line above, the tiles level
+   with the arrows, and the reveal on a full-width line below. The side columns
+   share what is left equally, so the tiles stay centred on the page. The row
+   takes over the drop's own spacing below, so the page keeps its rhythm. */
 .puzzle-nav--drop {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  column-gap: 1.25rem;
   margin-bottom: 1.75rem;
 }
 .puzzle-nav--drop > .drop-display {
-  flex: 0 1 auto;
-  min-width: 0;
-  margin-bottom: 0;
+  display: contents;
+}
+.puzzle-nav--drop .drop-display__label,
+.puzzle-nav--drop .drop-display__reveal {
+  grid-column: 1 / -1;
+}
+.puzzle-nav--drop .drop-display__label {
+  grid-row: 1;
+}
+.puzzle-nav--drop .drop-display__value {
+  grid-row: 2;
+  grid-column: 2;
+}
+.puzzle-nav--drop .drop-display__reveal {
+  grid-row: 3;
+}
+.puzzle-nav--drop > .puzzle-nav__arrow {
+  grid-row: 2;
+}
+.puzzle-nav--drop > .puzzle-nav__arrow:first-child {
+  grid-column: 1;
+  justify-self: end;
+}
+.puzzle-nav--drop > .puzzle-nav__arrow:last-child {
+  grid-column: 3;
+  justify-self: start;
+}
+/* Too narrow for the words beside the tiles: the glyphs carry it, and the
+   buttons' aria-labels still name them. */
+@media (max-width: 400px) {
+  .puzzle-nav--drop {
+    column-gap: 0.9rem;
+  }
+  .puzzle-nav--drop > .puzzle-nav__arrow > span:not([aria-hidden]) {
+    display: none;
+  }
 }
 .puzzle-nav__arrow,
 .found-words__arrow,
@@ -863,6 +902,7 @@ h2 {
   justify-content: center;
   width: 3.1rem;
   height: 3.1rem;
+  flex-shrink: 0;
   font-family: var(--font-display);
   font-size: 1.85rem;
   font-weight: 800;
