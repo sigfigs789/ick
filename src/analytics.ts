@@ -40,6 +40,7 @@ const COUNTED_EVENTS: ReadonlySet<string> = new Set([
   "answer_retried",
   "answer_revealed",
   "puzzle_completed",
+  "answer_copied",
   "visit_engaged",
   "visit_interacted",
   "leaderboard_opened",
