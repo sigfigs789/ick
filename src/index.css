@@ -765,43 +765,44 @@ h2 {
   margin: 0 0 1.5rem;
 }
 /* The drop between the arrows. Its box steps aside (display: contents) so its
-   pieces land on the grid: the date label on a line above, the tiles level
-   with the arrows, and the reveal on a full-width line below. The side columns
-   share what is left equally, so the tiles stay centred on the page. The row
-   takes over the drop's own spacing below, so the page keeps its rhythm.
-   The arrows hold still from drop to drop and through the reveal: the side
-   columns take no size from the full-width lines (minmax(0, ...)), and the
-   label keeps to one line, so nothing above or beside the arrows can move
-   them. */
+   pieces land on the grid: the date label between the arrows, centred on them,
+   then the tiles and the reveal on full-width lines below. The row takes over
+   the drop's own spacing below, so the page keeps its rhythm.
+   The arrows hold still from drop to drop and through the reveal: the middle
+   column has a fixed width, so a longer or shorter date can't shift them, and
+   the side columns take no size from the full-width lines (minmax(0, ...)). */
 .puzzle-nav--drop {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 9rem minmax(0, 1fr);
+  align-items: center;
   column-gap: 1.25rem;
   margin-bottom: 1.75rem;
 }
 .puzzle-nav--drop > .drop-display {
   display: contents;
 }
-.puzzle-nav--drop .drop-display__label,
-.puzzle-nav--drop .drop-display__reveal {
-  grid-column: 1 / -1;
-}
 .puzzle-nav--drop .drop-display__label {
   grid-row: 1;
+  grid-column: 2;
   min-width: 0;
+  margin: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.puzzle-nav--drop .drop-display__value,
+.puzzle-nav--drop .drop-display__reveal {
+  grid-column: 1 / -1;
+}
 .puzzle-nav--drop .drop-display__value {
   grid-row: 2;
-  grid-column: 2;
+  margin-top: 0.6rem;
 }
 .puzzle-nav--drop .drop-display__reveal {
   grid-row: 3;
 }
 .puzzle-nav--drop > .puzzle-nav__arrow {
-  grid-row: 2;
+  grid-row: 1;
 }
 .puzzle-nav--drop > .puzzle-nav__arrow:first-child {
   grid-column: 1;
@@ -811,7 +812,7 @@ h2 {
   grid-column: 3;
   justify-self: start;
 }
-/* Too narrow for the words beside the tiles: the glyphs carry it, and the
+/* Too narrow for the words beside the date: the glyphs carry it, and the
    buttons' aria-labels still name them. */
 @media (max-width: 400px) {
   .puzzle-nav--drop {
