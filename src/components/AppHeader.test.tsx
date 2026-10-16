@@ -125,126 +125,6 @@ describe("the trial week's button", () => {
       screen.queryByRole("button", { name: /switch to/i }),
     ).not.toBeInTheDocument();
   });
-});
-
-describe("the mode switch", () => {
-  it("is absent when neither era is offered", () => {
-    render(<AppHeader route="game" onHowToPlay={howToPlay} />);
-    expect(
-      screen.queryByRole("button", { name: /switch to/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /freeform week/i }),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText(/change mode/i)).not.toBeInTheDocument();
-  });
-
-  it("names the mode you are in and where pressing goes", async () => {
-    const onModeChange = vi.fn();
-    render(
-      <AppHeader
-        route="game"
-        onHowToPlay={howToPlay}
-        mode="standard"
-        onModeChange={onModeChange}
-        badgeLabel="Change mode"
-      />,
-    );
-    // The label is where you are; the accessible name carries the destination,
-    // which is the half a screen reader needs and the glyph cannot give.
-    const button = screen.getByRole("button", {
-      name: "Mode: Standard. Switch to Freeform.",
-    });
-    expect(button).toHaveTextContent("Standard");
-    expect(screen.getByText(/change mode/i)).toBeInTheDocument();
-    await userEvent.click(button);
-    expect(onModeChange).toHaveBeenCalledWith("freeform");
-  });
-
-  it("switches back the other way from Freeform", async () => {
-    const onModeChange = vi.fn();
-    render(
-      <AppHeader
-        route="game"
-        onHowToPlay={howToPlay}
-        mode="freeform"
-        onModeChange={onModeChange}
-      />,
-    );
-    await userEvent.click(
-      screen.getByRole("button", { name: /switch to standard/i }),
-    );
-    expect(onModeChange).toHaveBeenCalledWith("standard");
-  });
-
-  it("says whatever it is handed, so the next piece of news can use the badge", () => {
-    render(
-      <AppHeader
-        route="game"
-        onHowToPlay={howToPlay}
-        mode="standard"
-        onModeChange={vi.fn()}
-        badgeLabel="Two ways to play"
-      />,
-    );
-    expect(screen.getByText(/two ways to play/i)).toBeInTheDocument();
-  });
-
-  it("draws the switch alone when there is no news to put under it", () => {
-    render(
-      <AppHeader
-        route="game"
-        onHowToPlay={howToPlay}
-        mode="standard"
-        onModeChange={vi.fn()}
-      />,
-    );
-    expect(
-      screen.getByRole("button", { name: /switch to freeform/i }),
-    ).toBeInTheDocument();
-    expect(document.querySelector(".app__mode-badge")).toBeNull();
-  });
-
-  it("says the badge is finished the moment the switch is pressed", async () => {
-    const onBadgeDone = vi.fn();
-    render(
-      <AppHeader
-        route="game"
-        onHowToPlay={howToPlay}
-        mode="standard"
-        onModeChange={vi.fn()}
-        badgeLabel="Change mode"
-        onBadgeDone={onBadgeDone}
-      />,
-    );
-
-    // Pressing it is the badge having worked: it exists to point at this
-    // control, and a used control has nothing left to point at.
-    await userEvent.click(
-      screen.getByRole("button", { name: /switch to freeform/i }),
-    );
-    expect(onBadgeDone).toHaveBeenCalled();
-  });
-
-  it("switches from the badge itself, and finishes it too", async () => {
-    const onModeChange = vi.fn();
-    const onBadgeDone = vi.fn();
-    render(
-      <AppHeader
-        route="game"
-        onHowToPlay={howToPlay}
-        mode="standard"
-        onModeChange={onModeChange}
-        badgeLabel="Change mode"
-        onBadgeDone={onBadgeDone}
-      />,
-    );
-
-    // The badge is the part of the pair the eye is on, so it takes the press.
-    await userEvent.click(screen.getByText(/change mode/i));
-    expect(onModeChange).toHaveBeenCalledWith("freeform");
-    expect(onBadgeDone).toHaveBeenCalled();
-  });
 
   it("says the badge is finished once its ten seconds are up", () => {
     vi.useFakeTimers();
@@ -254,9 +134,8 @@ describe("the mode switch", () => {
         <AppHeader
           route="game"
           onHowToPlay={howToPlay}
-          mode="standard"
-          onModeChange={vi.fn()}
-          badgeLabel="Change mode"
+          onFreeform={vi.fn()}
+          badgeLabel="Freeform extended 1 week"
           onBadgeDone={onBadgeDone}
         />,
       );
@@ -282,10 +161,9 @@ describe("the mode switch", () => {
         <AppHeader
           route="game"
           onHowToPlay={howToPlay}
-          mode="standard"
           // Fresh arrows every render, as the real parent hands over.
-          onModeChange={() => {}}
-          badgeLabel="Change mode"
+          onFreeform={() => {}}
+          badgeLabel="Freeform extended 1 week"
           onBadgeDone={() => onBadgeDone()}
         />
       );
@@ -306,28 +184,27 @@ describe("the mode switch", () => {
     }
   });
 
-  it("fades a finished badge and leaves the switch alone", () => {
+  it("fades a finished badge and leaves the button alone", () => {
     vi.useFakeTimers();
     try {
       render(
         <AppHeader
           route="game"
           onHowToPlay={howToPlay}
-          mode="standard"
-          onModeChange={vi.fn()}
-          badgeLabel="Change mode"
+          onFreeform={vi.fn()}
+          badgeLabel="Freeform extended 1 week"
           badge={false}
         />,
       );
 
       // Faded rather than unmounted: it is absolutely positioned, so fading it
-      // moves nothing, and the switch it points at stays exactly where the eye
+      // moves nothing, and the button it points at stays exactly where the eye
       // found it -- permanently, which is the half that must not fade.
-      expect(screen.getByText(/change mode/i)).toHaveClass(
-        "app__mode-badge--faded",
+      expect(screen.getByText(/freeform extended 1 week/i)).toHaveClass(
+        "app__freeform-badge--faded",
       );
       expect(
-        screen.getByRole("button", { name: /switch to freeform/i }),
+        screen.getByRole("button", { name: /freeform week/i }),
       ).toBeInTheDocument();
 
       // And no timer for a badge that is already done.
@@ -337,6 +214,71 @@ describe("the mode switch", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe("the mode switch", () => {
+  it("is absent when neither era is offered", () => {
+    render(<AppHeader route="game" onHowToPlay={howToPlay} />);
+    expect(
+      screen.queryByRole("button", { name: /switch to/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /freeform week/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/change mode/i)).not.toBeInTheDocument();
+  });
+
+  it("names the mode you are in and where pressing goes", async () => {
+    const onModeChange = vi.fn();
+    render(
+      <AppHeader
+        route="game"
+        onHowToPlay={howToPlay}
+        mode="standard"
+        onModeChange={onModeChange}
+      />,
+    );
+    // The label is where you are; the accessible name carries the destination,
+    // which is the half a screen reader needs and the glyph cannot give.
+    const button = screen.getByRole("button", {
+      name: "Mode: Standard. Switch to Freeform.",
+    });
+    expect(button).toHaveTextContent("Standard");
+    await userEvent.click(button);
+    expect(onModeChange).toHaveBeenCalledWith("freeform");
+  });
+
+  it("switches back the other way from Freeform", async () => {
+    const onModeChange = vi.fn();
+    render(
+      <AppHeader
+        route="game"
+        onHowToPlay={howToPlay}
+        mode="freeform"
+        onModeChange={onModeChange}
+      />,
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: /switch to standard/i }),
+    );
+    expect(onModeChange).toHaveBeenCalledWith("standard");
+  });
+
+  it("wears no badge, even when handed a label", () => {
+    render(
+      <AppHeader
+        route="game"
+        onHowToPlay={howToPlay}
+        mode="standard"
+        onModeChange={vi.fn()}
+        badgeLabel="Two ways to play"
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: /switch to freeform/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/two ways to play/i)).toBeNull();
   });
 });
 

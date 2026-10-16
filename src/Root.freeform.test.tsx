@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Root } from "./Root";
@@ -176,85 +176,10 @@ describe("the mode switch, from the choice date on", () => {
     expect(modeButton()).toHaveTextContent("Freeform");
   });
 
-  it("keeps the badge up for a player who has not met it", () => {
+  it("puts no badge under the switch", () => {
     render(<Root />);
-    expect(screen.getByText(/change mode/i)).not.toHaveClass(
-      "app__mode-badge--faded",
-    );
-  });
-
-  it("retires the badge for good once the switch has been used", async () => {
-    const first = render(<Root />);
-    await userEvent.click(modeButton());
-    expect(screen.getByText(/change mode/i)).toHaveClass(
-      "app__mode-badge--faded",
-    );
-    first.unmount();
-
-    // The badge exists to point at a control nobody has seen. A player who has
-    // used it has seen it, and does not need telling again tomorrow.
-    render(<Root />);
-    expect(screen.getByText(/change mode/i)).toHaveClass(
-      "app__mode-badge--faded",
-    );
-  });
-
-  it("retires the badge for good once its ten seconds are up", () => {
-    vi.useFakeTimers();
-    try {
-      const first = render(<Root />);
-      expect(screen.getByText(/change mode/i)).not.toHaveClass(
-        "app__mode-badge--faded",
-      );
-
-      act(() => {
-        vi.advanceTimersByTime(10_000);
-      });
-      expect(screen.getByText(/change mode/i)).toHaveClass(
-        "app__mode-badge--faded",
-      );
-      first.unmount();
-
-      // Ten seconds in front of the player is the badge having had its chance,
-      // and it does not get a second one tomorrow either.
-      render(<Root />);
-      expect(screen.getByText(/change mode/i)).toHaveClass(
-        "app__mode-badge--faded",
-      );
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("leaves the switch itself alone once the badge is retired", () => {
-    localStorage.setItem("ick:seen:mode-toggle-badge", "1");
-    render(<Root />);
-    // The switch is a control, not an unread marker: it stays for good, and
-    // only the label under it goes.
     expect(modeButton()).toBeInTheDocument();
-    expect(screen.getByText(/change mode/i)).toHaveClass(
-      "app__mode-badge--faded",
-    );
-  });
-
-  it("writes its own bit and none of the week's", () => {
-    vi.useFakeTimers();
-    try {
-      render(<Root />);
-      act(() => {
-        vi.advanceTimersByTime(10_000);
-      });
-
-      // Each announcement keeps its own flag, so retiring one never counts as
-      // having met another -- in any direction.
-      expect(localStorage.getItem("ick:seen:mode-toggle-badge")).toBe("1");
-      expect(localStorage.getItem("ick:seen:freeform-badge")).toBeNull();
-      expect(
-        localStorage.getItem("ick:seen:freeform-extended-badge"),
-      ).toBeNull();
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(screen.queryByText(/change mode/i)).toBeNull();
   });
 
   it("does not open the trial sheet, which is over", () => {
