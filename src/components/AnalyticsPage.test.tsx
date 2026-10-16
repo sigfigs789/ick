@@ -101,10 +101,10 @@ describe("AnalyticsPage", () => {
     expect(everyone).toHaveTextContent("100");
     expect(everyone).toHaveTextContent("80 80%");
     expect(everyone).toHaveTextContent("50 50%");
-    // Every return seen so far, with the rate over the closed weeks.
-    expect(everyone).toHaveTextContent("30 50% of 40");
+    // Every return seen so far, as a share of the players.
+    expect(everyone).toHaveTextContent("30 30%");
     const fresh = within(section("Key numbers")).getByRole("row", { name: /^New players/ });
-    expect(fresh).toHaveTextContent("10 7 days not over");
+    expect(fresh).toHaveTextContent("10 14%");
     for (const name of ["Returning players", "Started in Standard", "Started in Freeform"]) {
       expect(within(section("Key numbers")).getByRole("row", { name: new RegExp(`^${name}`) })).toBeInTheDocument();
     }
@@ -152,15 +152,15 @@ describe("AnalyticsPage", () => {
 
     const standard = within(section("Puzzle type")).getByRole("row", { name: /^Standard/ });
     expect(standard).toHaveTextContent("35");
-    expect(standard).toHaveTextContent("12 25% of 20");
+    expect(standard).toHaveTextContent("12 34%");
     expect(within(section("Puzzle type")).getByRole("row", { name: /^Freeform/ })).toHaveTextContent(
-      "4 7 days not over",
+      "4 27%",
     );
 
     const chat = section("Chat");
     expect(within(chat).getAllByText("Opened chat")).toHaveLength(5);
     expect(within(chat).getAllByText("Didn't")).toHaveLength(5);
-    expect(within(chat).getByText(/recorded from Sep 29/)).toBeInTheDocument();
+    expect(within(chat).getByText(/since Sep 29/)).toBeInTheDocument();
   });
 
   it("says when the report could not load", async () => {

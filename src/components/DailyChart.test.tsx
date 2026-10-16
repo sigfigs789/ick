@@ -43,23 +43,23 @@ function caption() {
 }
 
 describe("DailyChart", () => {
-  it("starts on the viewer's today, with the change against the day before", () => {
+  it("starts on the viewer's today, each number with its share of the day's players", () => {
     render(<DailyChart daily={DAILY} group="all" today="2026-09-28" />);
 
     expect(screen.getByLabelText("Day")).toHaveValue("2026-09-28");
     expect(within(tab("Players")).getByText("45")).toBeInTheDocument();
-    expect(within(tab("Players")).getByText("−10%")).toBeInTheDocument();
-    expect(within(tab("Guessed")).getByText("+200%")).toBeInTheDocument();
-    expect(within(tab("Back within 7 days")).getByText("+0")).toBeInTheDocument();
-    expect(caption()).toHaveTextContent("Mon Sep 28 · Today, change vs Sep 27");
+    expect(within(tab("Players")).getByText("10% new")).toBeInTheDocument();
+    expect(within(tab("Guessed")).getByText("200%")).toBeInTheDocument();
+    expect(within(tab("Did something")).getByText("67%")).toBeInTheDocument();
+    expect(within(tab("Back within 7 days")).getByText("0%")).toBeInTheDocument();
+    expect(caption()).toHaveTextContent("Mon Sep 28 · Today");
   });
 
   it("falls back to the latest puzzle when today is not in the window", () => {
     render(<DailyChart daily={DAILY} group="all" today="2026-10-05" />);
     expect(screen.getByLabelText("Day")).toHaveValue("2026-09-29");
     expect(caption()).toHaveTextContent("6 days ago");
-    // Nothing the day before to take a share of: the change is a count.
-    expect(within(tab("Back within 7 days")).getByText("+3")).toBeInTheDocument();
+    expect(within(tab("Back within 7 days")).getByText("10%")).toBeInTheDocument();
   });
 
   it("hops a day at a time with the buttons and the arrow keys, and back to today", async () => {
@@ -122,9 +122,28 @@ describe("DailyChart", () => {
     expect(document.querySelector(".daily__tip")).toHaveTextContent("67% of 45 players");
   });
 
-  it("reads the grouping it is given", () => {
+  it("reads the grouping it is given, with no share of new beside its players", () => {
     render(<DailyChart daily={DAILY} group="new" today="2026-09-28" />);
     expect(within(tab("Players")).getByText("4.5")).toBeInTheDocument();
+    expect(within(tab("Players")).queryByText(/new/)).not.toBeInTheDocument();
+  });
+
+  it("marks the Freeform trial week's first and last day", () => {
+    const trial = ["2026-09-13", "2026-09-14", "2026-09-20", "2026-09-26", "2026-09-27"].map((d) => day(d, 10, 5, 5, 1));
+    render(<DailyChart daily={trial} group="all" today="2026-09-27" />);
+    const labels = [...document.querySelectorAll(".daily__marker-label")].map((m) => m.textContent);
+    expect(labels).toEqual(["Freeform week", "end"]);
+  });
+
+  it("marks only the end for a window that starts on the trial's last day", () => {
+    render(<DailyChart daily={DAILY} group="all" today="2026-09-28" />);
+    const labels = [...document.querySelectorAll(".daily__marker-label")].map((m) => m.textContent);
+    expect(labels).toEqual(["end"]);
+  });
+
+  it("draws no trial marks for a window after it", () => {
+    render(<DailyChart daily={DAILY.slice(1)} group="all" today="2026-09-28" />);
+    expect(document.querySelector(".daily__marker")).not.toBeInTheDocument();
   });
 
   it("starts on the day it is asked to focus", () => {
@@ -135,7 +154,7 @@ describe("DailyChart", () => {
   it("marks a day whose seven days are not over in the returns tab", async () => {
     render(<DailyChart daily={DAILY} group="all" today="2026-09-29" focus="2026-09-27" />);
     await userEvent.click(tab("Back within 7 days"));
-    expect(document.querySelector(".daily__tip")).toHaveTextContent("7 days not over yet");
+    expect(document.querySelector(".daily__tip")).toHaveTextContent("too soon to tell");
     // Dashed from the last closed day on.
     expect(document.querySelector(".daily__line--live")).toBeInTheDocument();
   });

@@ -354,6 +354,27 @@ describe("pressing anything", () => {
     }
   });
 
+  it("does not count closing How to play, or keys while it is open", () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    recordVisit("");
+    document.body.innerHTML =
+      '<div data-not-interaction=""><button id="close">×</button></div><button id="play">Play</button>';
+    const stop = watchFirstInteraction();
+    try {
+      document.getElementById("close")!.click();
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      expect(interacted()).toHaveLength(0);
+
+      document.querySelector("[data-not-interaction]")!.remove();
+      document.getElementById("play")!.click();
+      expect(interacted()).toHaveLength(1);
+    } finally {
+      stop();
+      document.body.innerHTML = "";
+    }
+  });
+
   it("counts a key press", () => {
     localStorage.clear();
     sessionStorage.clear();

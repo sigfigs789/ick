@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import type { AnalyticsReport, DayMetrics, Group } from "../game/review";
 import { daysSinceEpoch } from "../game/date";
+import { FREEFORM_TRIAL_END, FREEFORM_TRIAL_START } from "../game/mode";
 import { dowOf, fmt, pct } from "./analyticsFormat";
 
 type Day = AnalyticsReport["daily"][number];
@@ -22,7 +23,7 @@ const METRICS: ReadonlyArray<{
   { key: "players", label: "Players", live: (d, today) => d.date >= today, liveNote: "still in play" },
   { key: "acted", label: "Did something", live: (d, today) => d.date >= today, liveNote: "still in play" },
   { key: "guessed", label: "Guessed", live: (d, today) => d.date >= today, liveNote: "still in play" },
-  { key: "returned", label: "Back within 7 days", live: (d) => !d.closed, liveNote: "7 days not over yet" },
+  { key: "returned", label: "Back within 7 days", live: (d) => !d.closed, liveNote: "too soon to tell" },
 ];
 
 type MetricKey = (typeof METRICS)[number]["key"];
@@ -65,6 +66,15 @@ export function DailyChart({
   const current = METRICS.find((m) => m.key === metric) ?? METRICS[0];
 
   const valueOf = (d: Day, key: MetricKey) => d.groups[group][key];
+  // Beside each number: Players as the share of them who are new (for
+  // everyone; within a grouping that is all or none, or not known), and the
+  // rest as a share of the day's players.
+  const shareOf = (d: Day, key: MetricKey): string | null => {
+    const players = valueOf(d, "players");
+    if (players === 0) return null;
+    if (key === "players") return group === "all" ? `${pct(d.groups.new.players / players)} new` : null;
+    return pct(valueOf(d, key) / players);
+  };
   const values = daily.map((d) => valueOf(d, current.key));
   const { top, ticks } = scale(Math.max(...values));
   const x = (i: number) => (n === 1 ? 50 : (i / (n - 1)) * 100);
@@ -78,6 +88,13 @@ export function DailyChart({
   const solid = points.slice(0, split + 1);
   const dashed = firstLive < 0 ? [] : points.slice(split);
   const area = `M ${x(0)} 100 L ${points.join(" L ")} L ${x(n - 1)} 100 Z`;
+
+  // The Freeform trial week's first and last puzzle, where the window has them.
+  const lastTrialDay = daily.findIndex((d) => d.date >= FREEFORM_TRIAL_END) - 1;
+  const markers = [
+    { i: daily.findIndex((d) => d.date === FREEFORM_TRIAL_START), label: "Freeform week" },
+    { i: daily[lastTrialDay]?.date >= FREEFORM_TRIAL_START ? lastTrialDay : -1, label: "end" },
+  ].filter((m) => m.i >= 0);
 
   // About seven dates along the axis, the last day's always among them, and on
   // a phone every other one (daily__xlabel--minor).
@@ -118,7 +135,7 @@ export function DailyChart({
       <div className="daily__tabs" role="tablist" aria-label="Daily metric">
         {METRICS.map((m) => {
           const value = valueOf(day, m.key);
-          const prev = shown > 0 ? valueOf(daily[shown - 1], m.key) : null;
+          const share = shareOf(day, m.key);
           return (
             <button
               key={m.key}
@@ -131,7 +148,7 @@ export function DailyChart({
               <span className="daily__tab-label">{m.label}</span>
               <span className="daily__tab-row">
                 <span className="daily__tab-value">{fmt(value)}</span>
-                {prev !== null && <Change value={value} prev={prev} />}
+                {share !== null && <span className="daily__change">{share}</span>}
               </span>
             </button>
           );
@@ -182,7 +199,6 @@ export function DailyChart({
             )}
             <span className="daily__caption">
               {longDate(day.date)} · {relative(day.date, today)}
-              {shown > 0 && `, change vs ${shortDate(daily[shown - 1].date)}`}
             </span>
           </div>
 
@@ -221,6 +237,11 @@ export function DailyChart({
               {hover !== null && hover !== selected && (
                 <span className="daily__cross daily__cross--pinned" style={{ left: `${x(selected)}%` }} />
               )}
+              {markers.map((m) => (
+                <span key={m.label} className="daily__marker" style={{ left: `${x(m.i)}%` }}>
+                  <span className="daily__marker-label">{m.label}</span>
+                </span>
+              ))}
               <span className="daily__cross" style={{ left: `${x(shown)}%` }} />
               <span className="daily__dot" style={{ left: `${x(shown)}%`, top: `${y(values[shown])}%` }} />
               <div
@@ -263,21 +284,6 @@ export function DailyChart({
         </>
       )}
     </div>
-  );
-}
-
-function Change({ value, prev }: { value: number; prev: number }) {
-  const diff = value - prev;
-  const text =
-    prev > 0 ? `${diff >= 0 ? "+" : "−"}${pct(Math.abs(diff) / prev)}` : `${diff >= 0 ? "+" : "−"}${fmt(Math.abs(diff))}`;
-  const direction = diff > 0 ? "up" : diff < 0 ? "down" : "flat";
-  return (
-    <span
-      className={`daily__change daily__change--${direction}`}
-      title={`${fmt(prev)} the day before`}
-    >
-      {text}
-    </span>
   );
 }
 

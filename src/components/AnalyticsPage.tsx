@@ -7,7 +7,6 @@ import {
   type AnalyticsReport,
   type Group,
   type KeyMetrics,
-  type Returns,
 } from "../game/review";
 import {
   DAYS_AGO,
@@ -156,20 +155,23 @@ function Report({
 
       <Section
         title="Key numbers"
-        note={`${span}. Players turned up; did something pressed anything, looked or guessed; guessed banked a word. Back within 7 days counts a player who turned up again on any of the seven puzzles after their first in the window: every return seen so far, with the rate over the players whose seven days are over.`}
+        note={span}
       >
+        <ul className="review__meta analytics__bullets">
+          <li><strong>Players</strong>: opened the game</li>
+          <li><strong>Did something</strong>: any tap, look or guess</li>
+          <li><strong>Guessed</strong>: banked a word</li>
+          <li><strong>Back within 7 days</strong>: played again in the next 7 days (recent days still counting up)</li>
+          <li><strong>New</strong>: first visit in this window. <strong>Started in</strong>: mode on first visit</li>
+        </ul>
         <MetricsTable
           rows={GROUPS.map((g) => ({ key: g, label: GROUP_NAMES[g], metrics: report.groups[g] }))}
         />
-        <p className="review__meta">
-          New is a first day ever in the window; returning is everybody else. The starting mode is the one a player
-          was put in on first arrival. The app reports no opens, so its players count once they guess.
-        </p>
       </Section>
 
       <Section
         title="Day by day"
-        note="Hover the line to read any puzzle; click, use the arrow keys or pick a date to pin one. The change beside each number is against the puzzle before."
+        note="Click or use the arrow keys to pin a day. % is of the day's players."
       >
         <div className="analytics__groups" role="group" aria-label="Players">
           {GROUPS.map((g) => (
@@ -195,7 +197,7 @@ function Report({
 
       <Section
         title="Puzzle type"
-        note={`${span}. The players who banked a word in each mode, and of them, who turned up again within seven days of their first such puzzle, in either mode. A player who played both counts in both.`}
+        note={`${span}. Who guessed in each mode, and how many came back.`}
       >
         <div className="analytics__table-wrap">
           <table className="analytics__table">
@@ -215,7 +217,7 @@ function Report({
                   </th>
                   <td>{fmt(report.modes[mode].guessed)}</td>
                   <td>
-                    <ReturnsCell returns={report.modes[mode].returned} />
+                    <Count n={report.modes[mode].returned.soFar} of={report.modes[mode].guessed} />
                   </td>
                 </tr>
               ))}
@@ -226,9 +228,7 @@ function Report({
 
       <Section
         title="Chat"
-        note={`${span}. Each grouping, split by whether the player opened the chat in the window${
-          report.chatSince ? ` (recorded from ${shortDate(report.chatSince)})` : ""
-        }. Opening it is doing something, so that column is everybody for the ones who did.`}
+        note={`${span}. Opened chat vs didn't${report.chatSince ? `, since ${shortDate(report.chatSince)}` : ""}.`}
       >
         <MetricsTable
           split
@@ -284,7 +284,7 @@ function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: boolean }) 
                   <Count n={m.guessed} of={m.players} />
                 </td>
                 <td>
-                  <ReturnsCell returns={m.returned} />
+                  <Count n={m.returned.soFar} of={m.players} />
                 </td>
               </tr>
             );
@@ -300,20 +300,6 @@ function Count({ n, of }: { n: number; of: number }) {
     <>
       {fmt(n)}
       {of > 0 && <span className="analytics__n"> {pct(n / of)}</span>}
-    </>
-  );
-}
-
-/** Every return seen so far, and the rate once some players' seven days are over. */
-function ReturnsCell({ returns }: { returns: Returns }) {
-  const { rate, soFar } = returns;
-  return (
-    <>
-      {fmt(soFar)}
-      <span className="analytics__n">
-        {" "}
-        {rate.cohort > 0 ? `${pct(rate.returned / rate.cohort)} of ${fmt(rate.cohort)}` : "7 days not over"}
-      </span>
     </>
   );
 }

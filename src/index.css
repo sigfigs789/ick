@@ -4437,10 +4437,6 @@ h2 {
   --viz-freeform: #eb6834;
   --viz-single: #2a78d6;
   --viz-area: rgba(42, 120, 214, 0.12);
-  --viz-up-bg: #dcf5e3;
-  --viz-up-fg: #157a3a;
-  --viz-down-bg: #fde2e2;
-  --viz-down-fg: #b42323;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -4448,10 +4444,6 @@ h2 {
     --viz-freeform: #d95926;
     --viz-single: #3987e5;
     --viz-area: rgba(57, 135, 229, 0.18);
-    --viz-up-bg: #173a24;
-    --viz-up-fg: #6fdc95;
-    --viz-down-bg: #43191b;
-    --viz-down-fg: #f59090;
   }
 }
 /* The window picker stays at the top of the screen for the length of the
@@ -4530,6 +4522,10 @@ h2 {
 .analytics__note {
   margin: 0 0 0.8rem;
 }
+.analytics__bullets {
+  margin: 0 0 0.8rem;
+  padding-left: 1.1rem;
+}
 .analytics__swatch {
   display: inline-block;
   width: 0.7rem;
@@ -4598,14 +4594,6 @@ h2 {
   font-variant-numeric: tabular-nums;
   background: var(--border);
   color: var(--fg-muted);
-}
-.daily__change--up {
-  background: var(--viz-up-bg);
-  color: var(--viz-up-fg);
-}
-.daily__change--down {
-  background: var(--viz-down-bg);
-  color: var(--viz-down-fg);
 }
 .daily__controls {
   display: flex;
@@ -4704,6 +4692,23 @@ h2 {
 }
 .daily__line--live {
   stroke-dasharray: 5 5;
+}
+/* The Freeform trial week's first and last day: short ticks with a label. */
+.daily__marker {
+  position: absolute;
+  top: 0;
+  height: 1.4rem;
+  width: 0;
+  border-left: 1px dashed var(--fg-muted);
+  pointer-events: none;
+}
+.daily__marker-label {
+  position: absolute;
+  top: 0;
+  left: 0.25rem;
+  color: var(--fg-muted);
+  font-size: 0.65rem;
+  white-space: nowrap;
 }
 .daily__cross {
   position: absolute;
