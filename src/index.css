@@ -981,7 +981,7 @@ h2 {
   font-size: 0.82rem;
   line-height: 1.45;
   color: var(--fg-muted);
-  text-align: center;
+  text-align: left;
 }
 /* The tier's colours without the badge's tag or dot: a pill the width of the
    number, since the reveal sits on one line under the drop. The palette comes
@@ -1036,39 +1036,6 @@ h2 {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 800;
-}
-/* The mode, in the log's heading: the header switch's pill in miniature --
-   plain for Standard, rainbow letters for Freeform -- so the two read as one
-   signal. */
-.guess-log__mode {
-  display: inline-block;
-  margin-right: 0.4rem;
-  padding: 0.12rem 0.55rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--card-bg);
-  color: var(--fg);
-  font-size: 0.8rem;
-  font-weight: 700;
-  vertical-align: 0.05em;
-}
-.guess-log__mode--freeform {
-  border-color: var(--border-strong);
-}
-/* As a button: the chip's own look, with the header switch's press feedback. */
-.guess-log__mode--button {
-  font-family: inherit;
-  line-height: inherit;
-  cursor: pointer;
-  transition:
-    background-color 0.15s var(--ease-standard),
-    transform 0.15s var(--ease-standard);
-}
-.guess-log__mode--button:hover {
-  background: var(--bg-inset);
-}
-.guess-log__mode--button:active {
-  transform: scale(0.94);
 }
 /* Freeform's game wears its name's rainbow on its borders: the cards and the
    input, so a glance at the board says which game it is without reading a

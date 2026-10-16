@@ -337,44 +337,18 @@ describe("GuessLog guess count", () => {
     });
   });
 
-  describe("the mode in the heading", () => {
+  describe("the heading", () => {
     const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
 
-    it("names the game the log belongs to", () => {
-      render(<GuessLog acceptedWords={words} date="2026-10-01" mode="freeform" />);
-      expect(screen.getByRole("heading", { name: "Freeform guess log" })).toBeInTheDocument();
-      const chip = document.querySelector(".guess-log__mode--freeform")!;
-      // Rainbow letters on screen, and the word once for a screen reader.
-      expect(chip.querySelectorAll(".rainbow-word__letter")).toHaveLength("Freeform".length);
-      expect(chip.querySelector(".sr-only")).toHaveTextContent("Freeform");
-    });
-
-    it("keeps naming it once the puzzle is finished, without the count", () => {
-      render(<GuessLog acceptedWords={words} date="2026-10-01" mode="standard" completed streak={streak} />);
-      expect(screen.getByRole("heading", { name: "Standard guess log" })).toBeInTheDocument();
-      expect(screen.queryByText(/of 4 guesses/)).not.toBeInTheDocument();
-    });
-
-    it("switches to the other mode from the chip", async () => {
-      const onModeChange = vi.fn();
-      render(
-        <GuessLog acceptedWords={words} date="2026-10-01" mode="standard" onModeChange={onModeChange} />
-      );
-      const chip = screen.getByRole("button", { name: "Standard. Change to Freeform." });
-      // No swap arrow: it reads as a label.
-      expect(chip).toHaveTextContent(/^Standard$/);
-      await userEvent.click(chip);
-      expect(onModeChange).toHaveBeenCalledWith("freeform");
-    });
-
-    it("is a plain label when nothing can switch", () => {
-      render(<GuessLog acceptedWords={words} date="2026-10-01" mode="freeform" />);
+    it("says \"Guesses\" with no mode chip", () => {
+      render(<GuessLog acceptedWords={words} date="2026-10-01" />);
+      expect(screen.getByRole("heading", { name: "Guesses" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Change to/ })).not.toBeInTheDocument();
     });
 
-    it("says only \"Guess log\" on a puzzle with one game", () => {
-      render(<GuessLog acceptedWords={words} date="2026-09-20" />);
-      expect(screen.getByRole("heading", { name: "Guess log" })).toBeInTheDocument();
+    it("is gone once the puzzle is finished", () => {
+      render(<GuessLog acceptedWords={words} date="2026-10-01" completed streak={streak} />);
+      expect(screen.queryByRole("heading", { name: "Guesses" })).not.toBeInTheDocument();
     });
   });
 });
