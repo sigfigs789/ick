@@ -132,9 +132,9 @@ export function AppHeader({
    */
   onBadgeDone?: () => void;
 }) {
-  // Whether this header has anything in its news-or-control slot, which is what
-  // a badge needs to sit under. Either era counts; they never coincide.
-  const switchable = Boolean(onFreeform) || Boolean(mode && onModeChange);
+  // Whether this header has the trial's button, the only thing a badge sits
+  // under. The mode switch that replaced it wears none.
+  const switchable = Boolean(onFreeform);
 
   /**
    * The current `onBadgeDone`, reachable from a timer that must not be restarted
@@ -190,13 +190,7 @@ export function AppHeader({
     return () => clearTimeout(timer);
   }, [switchable, badge, badgeLabel]);
 
-  /**
-   * Switch modes and retire the badge in the same gesture. Pressing either one
-   * is the badge having worked -- it exists to point at this control, and once
-   * the control has been used it has nothing left to point at.
-   */
   function changeMode(next: GameMode) {
-    onBadgeDone?.();
     onModeChange?.(next);
   }
 
@@ -268,8 +262,7 @@ export function AppHeader({
 
             A word rather than a glyph, for the same reason it was a word when
             it announced the week: an icon here would be a second circle beside
-            the "?" saying even less. The label names the mode you are in, and
-            the badge under it says the label is something you can press. */}
+            the "?" saying even less. The label names the mode you are in. */}
         {/* The trial's button, while the trial is running. Unchanged from the
             week it was built for: a word rather than a glyph, because an "i" in
             a circle is the same shape as the "?" beside it and says less. */}
@@ -304,22 +297,6 @@ export function AppHeader({
         {mode && onModeChange && (
           <div className="app__mode-nav" ref={modeNav}>
             <ModeToggle mode={mode} onChange={changeMode} />
-            {/* Decoration: the toggle's own accessible name already says both
-                the mode and where pressing goes, so the badge is not announced
-                a second time -- and it is skipped by the keyboard for the same
-                reason. It takes a press anyway, because it is the part of the
-                pair the eye is on, and a label that ignores the finger aimed at
-                it reads as broken. The button behind it is the accessible
-                control and does the same thing. */}
-            {badgeLabel && (
-              <span
-                className={`app__mode-badge${badge ? "" : " app__mode-badge--faded"}`}
-                aria-hidden="true"
-                onClick={() => changeMode(mode === "standard" ? "freeform" : "standard")}
-              >
-                {badgeLabel}
-              </span>
-            )}
           </div>
         )}
         <button
