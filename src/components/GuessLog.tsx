@@ -9,12 +9,10 @@ import {
 import { copyText } from "../clipboard";
 import { raritySymbol } from "../game/share";
 import { CommonFormModal } from "./CommonFormModal";
-import { RainbowWord } from "./RainbowWord";
 import { RarityBadge } from "./RarityBadge";
 import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
-import { MODE_LABELS, otherMode as otherOf, type GameMode } from "../game/mode";
-import { trackModeChanged } from "../analytics";
+import { MODE_LABELS, type GameMode } from "../game/mode";
 import type { CrossModePreview } from "../game/crossMode";
 
 /** The clipboard form of a logged word: "<tier square> <word> (<score>)".
@@ -55,17 +53,6 @@ interface Props {
   copying?: string | null;
   /** Submit a word to `otherMode` as well. */
   onCopyToOtherMode?: (word: string) => void;
-  /**
-   * The mode this log belongs to, named in its heading. Absent on a puzzle the
-   * switch does not decide (see `modeIsChosen`), which has only the one game.
-   */
-  mode?: GameMode;
-  /**
-   * Switch to the other mode. When given, the heading's mode chip is a button
-   * that does it -- the same switch as the header's, in the place the eye
-   * already is.
-   */
-  onModeChange?: (mode: GameMode) => void;
 }
 
 export function GuessLog({
@@ -81,8 +68,6 @@ export function GuessLog({
   crossMode,
   copying = null,
   onCopyToOtherMode,
-  mode,
-  onModeChange,
 }: Props) {
   const best = bestWord(acceptedWords);
   const maxGuesses = maxGuessesFor(date);
@@ -122,42 +107,20 @@ export function GuessLog({
 
   return (
     <section className={`guess-log${completed ? " guess-log--completed" : ""}`} aria-label="Your guesses">
-      {/* Kept on a finished puzzle when there is a mode to name: the log is
-          still one of two, and the other mode's game is a tap away. The count
-          is what a finished puzzle has no use for. */}
-      {(!completed || mode) && (
+      {!completed && (
         <div className="guess-log__header">
-          <h2 className="guess-log__title">
-            {/* Styled as the header's switch is -- Freeform's name in rainbow
-                letters, Standard's plain -- so the two read as one signal, and
-                named here because this is where the eye is while playing. */}
-            {mode && (
-              <ModeChip
-                mode={mode}
-                onChange={
-                  onModeChange
-                    ? () => {
-                        const next = otherOf(mode);
-                        trackModeChanged(mode, next, "guess_log");
-                        onModeChange(next);
-                      }
-                    : undefined
-                }
-              />
-            )}
-            {mode ? "guess log" : "Guess log"}
-          </h2>
+          {/* No mode named here: the header's switch already says which game
+              this is. */}
+          <h2 className="guess-log__title">Guesses</h2>
           {/* Guesses only. The retry used to sit here too, as a second "X of
               Y" beside this one -- but it is a single yes/no reserve, not a
               running tally, and pairing it with a real multi-step count made
               it read as the same kind of number when it isn't. That state now
               lives on the retry control itself, below: the button *is* the
               indicator, available or spent, no fraction required. */}
-          {!completed && (
-            <span className="guess-log__count">
-              {acceptedWords.length} of {maxGuesses} guesses
-            </span>
-          )}
+          <span className="guess-log__count">
+            {acceptedWords.length} of {maxGuesses} guesses
+          </span>
         </div>
       )}
 
@@ -429,39 +392,3 @@ function OtherModeRow({
   );
 }
 
-/**
- * The mode named in the log's heading: Freeform in its rainbow letters,
- * Standard plain. A button when it can switch, with no swap arrow -- it reads
- * as the label it is, and pressing it is a shortcut for the header's switch.
- *
- * Named "Change to <other>" rather than the header's "Switch to <other>" so
- * the two controls stay distinguishable by name.
- */
-function ModeChip({ mode, onChange }: { mode: GameMode; onChange?: () => void }) {
-  const label = MODE_LABELS[mode];
-  const face =
-    mode === "freeform" ? (
-      // The word once for a screen reader, and the rainbow -- one span per
-      // letter -- kept out of its way.
-      <>
-        <span className="sr-only">{label}</span>
-        <span aria-hidden="true">
-          <RainbowWord word={label} />
-        </span>
-      </>
-    ) : (
-      label
-    );
-  const className = `guess-log__mode guess-log__mode--${mode}`;
-  if (!onChange) return <span className={className}>{face}</span>;
-  return (
-    <button
-      type="button"
-      className={`${className} guess-log__mode--button`}
-      onClick={onChange}
-      aria-label={`${label}. Change to ${MODE_LABELS[otherOf(mode)]}.`}
-    >
-      {face}
-    </button>
-  );
-}
