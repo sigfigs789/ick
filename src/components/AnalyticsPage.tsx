@@ -285,6 +285,14 @@ function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: boolean }) 
                 </td>
                 <td>
                   <Count n={m.returned.soFar} of={m.players} />
+                  {m.returned.guessers.cohort > 0 && (
+                    <>
+                      <br />
+                      <span className="analytics__n">
+                        {pct(m.returned.guessers.returned / m.returned.guessers.cohort)} of guessers
+                      </span>
+                    </>
+                  )}
                 </td>
               </tr>
             );
