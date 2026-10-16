@@ -28,8 +28,9 @@ type EventProps = Record<string, string | number | boolean | null>;
 
 /**
  * The only events that are counted: player interactions with the three main
- * pages -- play, leaderboards and found words. Everything else is admin or
- * diagnostic traffic (feedback, chat, share and Reddit arrivals, scoring checks,
+ * pages -- play, leaderboards and found words -- plus opening the chat bubble on
+ * them. Everything else is admin or diagnostic traffic (feedback, chat messages
+ * and timing, share and Reddit arrivals, scoring checks,
  * Freeform votes, mode bookkeeping) and is dropped before it reaches either sink.
  * Every event passes through `send` or the two direct feedback calls, which check
  * this set, so an event missing from it cannot be recorded by accident.
@@ -46,6 +47,7 @@ const COUNTED_EVENTS: ReadonlySet<string> = new Set([
   "leaderboard_opened",
   "leaderboard_joined",
   "found_words_opened",
+  "chat_opened",
 ]);
 
 function isCounted(name: string): boolean {

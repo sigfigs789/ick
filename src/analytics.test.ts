@@ -10,6 +10,7 @@ import {
   trackModeChanged,
   trackLeaderboardOpened,
   trackLeaderboardJoined,
+  trackChatOpened,
   trackFoundWordsOpened,
   trackWordSuggestion,
   trackRedditArrival,
@@ -265,14 +266,16 @@ describe("supabase mirror", () => {
 });
 
 describe("counted events", () => {
-  it("counts play, leaderboards and found words", () => {
+  it("counts play, leaderboards, found words and opening chat", () => {
     trackLeaderboardJoined(false);
     trackFoundWordsOpened("header");
+    trackChatOpened("standard");
+    expect(track).toHaveBeenCalledWith("chat_opened", expect.anything());
     expect(track).toHaveBeenCalledWith("leaderboard_joined", { rename: false });
     expect(track).toHaveBeenCalledWith("found_words_opened", { from: "header", puzzle_date: LIVE_DATE });
   });
 
-  it("drops everything else: feedback, Freeform votes, chat, shares and arrivals", () => {
+  it("drops everything else: feedback, Freeform votes, shares and arrivals", () => {
     trackFeedbackSubmitted("a note");
     trackFreeformVote("love", "2026-09-15");
     trackFreeformFeedback("a note", "2026-09-15", "love");
