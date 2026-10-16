@@ -29,4 +29,24 @@ describe("PuzzleNav", () => {
     expect(onPrevious).toHaveBeenCalledTimes(1);
     expect(onNext).not.toHaveBeenCalled();
   });
+
+  it("puts what it is given between the arrows in place of the puzzle number", () => {
+    render(
+      <PuzzleNav
+        date="2026-08-12"
+        puzzleNumber={957}
+        canGoToPrevious
+        canGoToNext
+        onPrevious={() => {}}
+        onNext={() => {}}
+      >
+        <p>Aug 12's drop</p>
+      </PuzzleNav>
+    );
+
+    expect(screen.queryByText(/puzzle #957/i)).not.toBeInTheDocument();
+    const middle = screen.getByText("Aug 12's drop");
+    expect(screen.getByRole("button", { name: /previous puzzle/i }).nextElementSibling).toBe(middle);
+    expect(screen.getByRole("button", { name: /next puzzle/i }).previousElementSibling).toBe(middle);
+  });
 });

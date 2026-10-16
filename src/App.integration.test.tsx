@@ -17,11 +17,10 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
-import { addDays, todayDateString } from "./game/date";
+import { addDays, formatDateLabel, todayDateString } from "./game/date";
 import { maxGuessesFor } from "./game/constants";
 import { dropForDate } from "./game/drop";
 import { evaluateSubmission } from "./game/submit";
-import { puzzleNumber } from "./game/share";
 import { resetLiveCheckSession } from "./game/liveValidate";
 import { markSeen } from "./game/whatsNew";
 import dictionaryWords from "./data/dictionary.json";
@@ -300,7 +299,8 @@ describe("gameplay end to end", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /previous puzzle/i }));
 
-    expect(screen.getByText(new RegExp(`Puzzle #${puzzleNumber(YESTERDAY)}`))).toBeInTheDocument();
+    expect(screen.getByText(`${formatDateLabel(YESTERDAY)}'s drop`)).toBeInTheDocument();
+    expect(screen.queryByText(/Puzzle #/)).not.toBeInTheDocument();
     expect(screen.getByText(/playing an old puzzle/i)).toBeInTheDocument();
     expect(loggedWords()).toEqual([]);
 
@@ -309,7 +309,7 @@ describe("gameplay end to end", () => {
 
     await userEvent.click(screen.getByRole("button", { name: /next puzzle/i }));
 
-    expect(screen.getByText(new RegExp(`Puzzle #${puzzleNumber(TODAY)}`))).toBeInTheDocument();
+    expect(screen.getByText("Today's drop")).toBeInTheDocument();
     expect(screen.queryByText(/playing an old puzzle/i)).not.toBeInTheDocument();
     await waitFor(() => expect(loggedWords()).toEqual([todayWord]));
     expect(savedProgress(YESTERDAY)?.acceptedWords.map((w) => w.word)).toEqual([yesterdayWord]);

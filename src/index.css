@@ -764,6 +764,16 @@ h2 {
   gap: 0.4rem;
   margin: 0 0 1.5rem;
 }
+/* The drop between the arrows: the row takes over the drop's own spacing below,
+   so the page keeps the same rhythm it had with the drop on a line of its own. */
+.puzzle-nav--drop {
+  margin-bottom: 1.75rem;
+}
+.puzzle-nav--drop > .drop-display {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
 .puzzle-nav__arrow,
 .found-words__arrow,
 .leaderboard__board-arrow {

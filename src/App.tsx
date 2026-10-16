@@ -215,15 +215,18 @@ export default function App() {
           canGoToNext={canGoToNext}
           onPrevious={goToPrevious}
           onNext={goToNext}
-        />
-        <DropDisplay
-          drop={drop}
-          date={date}
-          isToday={isToday}
-          completed={progress.completed}
-          retryOffered={retryOffered}
-          onReveal={revealAnswer}
-        />
+        >
+          {/* Between the arrows, in place of the puzzle number and date: the
+              drop's own label already names the day it belongs to. */}
+          <DropDisplay
+            drop={drop}
+            date={date}
+            isToday={isToday}
+            completed={progress.completed}
+            retryOffered={retryOffered}
+            onReveal={revealAnswer}
+          />
+        </PuzzleNav>
         {/* Over the words it is about: a fold rejected live on this puzzle
             moved one of them (see game/liveFoldRescore.ts). */}
         <FoldedLiveNotice
