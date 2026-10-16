@@ -29,7 +29,7 @@ type EventProps = Record<string, string | number | boolean | null>;
 /**
  * The only events that are counted: player interactions with the three main
  * pages -- play, leaderboards and found words -- plus opening the chat bubble on
- * them. Everything else is admin or diagnostic traffic (feedback, chat messages
+ * them, and the two arrival events the report counts players by. Everything else is admin or diagnostic traffic (feedback, chat messages
  * and timing, share and Reddit arrivals, scoring checks,
  * Freeform votes, mode bookkeeping) and is dropped before it reaches either sink.
  * Every event passes through `send` or the two direct feedback calls, which check
@@ -48,6 +48,10 @@ const COUNTED_EVENTS: ReadonlySet<string> = new Set([
   "leaderboard_joined",
   "found_words_opened",
   "chat_opened",
+  // Who turned up and which mode they started in: the report's Players column
+  // and starting-mode split are read off these two.
+  "site_visit",
+  "mode_assigned",
 ]);
 
 function isCounted(name: string): boolean {
