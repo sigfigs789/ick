@@ -773,9 +773,9 @@ h2 {
    the side columns take no size from the full-width lines (minmax(0, ...)). */
 .puzzle-nav--drop {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 8rem minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 7rem minmax(0, 1fr);
   align-items: center;
-  column-gap: 0.5rem;
+  column-gap: 0.25rem;
   margin-bottom: 1.75rem;
 }
 .puzzle-nav--drop > .drop-display {
@@ -815,9 +815,6 @@ h2 {
 /* Too narrow for the words beside the date: the glyphs carry it, and the
    buttons' aria-labels still name them. */
 @media (max-width: 400px) {
-  .puzzle-nav--drop {
-    column-gap: 0.4rem;
-  }
   .puzzle-nav--drop > .puzzle-nav__arrow > span:not([aria-hidden]) {
     display: none;
   }
