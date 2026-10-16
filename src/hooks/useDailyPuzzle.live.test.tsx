@@ -39,6 +39,12 @@ vi.mock("../game/liveFoldRejections", async (importOriginal) => ({
   fetchLiveFoldRejections: vi.fn(async () => []),
 }));
 
+/** The payload of the one event named `name`, or undefined if it never fired. */
+function eventPayload(name: string): Record<string, unknown> | undefined {
+  const call = track.mock.calls.find(([event]) => event === name);
+  return call?.[1] as Record<string, unknown> | undefined;
+}
+
 // A submission that clears every offline rule -- real letters, contains today's
 // drop, not the drop itself -- but is not on the curated list, which is the only
 // case that reaches the live fallback.
@@ -292,7 +298,106 @@ describe("useDailyPuzzle live fallback", () => {
     expect(result.current.feedback?.kind).toBe("accepted");
   }, 15000);
 
-  it("stops looking up words once the quota is spent", async () => {
+  it("reports an approved word, its rarity, and that it counted", async () => {
+    stubValidate(playable(3.0));
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord(OFF_LIST_WORD);
+    });
+
+    expect(eventPayload("merriam_webster_approved")).toMatchObject({
+      word: OFF_LIST_WORD,
+      rarity: "Rare",
+      zipf: 3,
+      attested: true,
+      applied: true,
+      within_handoff: true,
+    });
+  });
+
+  it("reports the failure reason when the lookup fails", async () => {
+    stubValidate({
+      word: OFF_LIST_WORD,
+      outcome: "error",
+      reason: "quota-exceeded",
+      detail: "daily limit",
+      status: 403,
+      zipf: null,
+      pos: [],
+      firstUse: null,
+    });
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord(OFF_LIST_WORD);
+    });
+
+    expect(eventPayload("merriam_webster_failed")).toMatchObject({
+      word: OFF_LIST_WORD,
+      reason: "quota-exceeded",
+      detail: "daily limit",
+      status: 403,
+    });
+    // A failed lookup says nothing about the word, so nothing is approved.
+    expect(eventPayload("merriam_webster_approved")).toBeUndefined();
+  });
+
+  it("reports a rejected word as neither approved nor a failure", async () => {
+    stubValidate({
+      word: OFF_LIST_WORD,
+      outcome: "rejected",
+      reason: "archaic",
+      zipf: null,
+      pos: ["adverb"],
+      firstUse: null,
+    });
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord(OFF_LIST_WORD);
+    });
+
+    expect(eventPayload("merriam_webster_approved")).toBeUndefined();
+    expect(eventPayload("merriam_webster_failed")).toBeUndefined();
+  });
+
+  it("still reports an approval that lands after the handoff", async () => {
+    stubValidate(playable(3.0), 5400);
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord(OFF_LIST_WORD);
+    });
+    expect(eventPayload("merriam_webster_approved")).toBeUndefined();
+
+    await waitFor(
+      () => {
+        expect(eventPayload("merriam_webster_approved")).toBeDefined();
+      },
+      { timeout: 9000 },
+    );
+    expect(eventPayload("merriam_webster_approved")).toMatchObject({
+      applied: true,
+      within_handoff: false,
+    });
+  }, 15000);
+
+  it("sends no event at all for an offline player", async () => {
+    stubValidate(playable(3.0));
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    const { result } = renderHook(() => useDailyPuzzle());
+
+    await act(async () => {
+      await result.current.submitWord(OFF_LIST_WORD);
+    });
+
+    expect(eventPayload("merriam_webster_approved")).toBeUndefined();
+    expect(eventPayload("merriam_webster_failed")).toBeUndefined();
+    vi.restoreAllMocks();
+  });
+
+  it("stops looking up words once the quota is spent, but reports it once", async () => {
     const fetchMock = stubValidate({
       word: OFF_LIST_WORD,
       outcome: "error",
@@ -309,12 +414,16 @@ describe("useDailyPuzzle live fallback", () => {
       await result.current.submitWord(OFF_LIST_WORD);
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(eventPayload("merriam_webster_failed")).toBeDefined();
 
-    // A second off-list word spends no request.
+    // A second off-list word spends no request and does not re-report the
+    // failure -- it was already reported when it was discovered.
+    track.mockClear();
     await act(async () => {
       await result.current.submitWord(`${DROP.toLowerCase()}qxw`);
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(eventPayload("merriam_webster_failed")).toBeUndefined();
     // The player still gets the ordinary rejection.
     expect(result.current.feedback?.kind).toBe("rejected");
   });
