@@ -13,8 +13,6 @@ import { arrivalSource, recordVisit } from "./visits";
 
 const TODAY = "2026-09-30";
 const HOST = "wordink.app";
-const heads = () => 0.1;
-const tails = () => 0.9;
 
 beforeEach(() => {
   localStorage.clear();
@@ -51,66 +49,40 @@ describe("share codes", () => {
 });
 
 describe("chooseStartingMode", () => {
-  it("follows the mode a friend shared", () => {
-    expect(chooseStartingMode("?s=sh.f", "", HOST, tails)).toEqual({
-      mode: "freeform",
-      reason: "shared",
-      source: "sh",
-    });
-    expect(chooseStartingMode("?s=t.s", "", HOST, heads)).toMatchObject({
-      mode: "standard",
-      reason: "shared",
-    });
-  });
-
-  it("keeps Standard for a share link with no mode", () => {
-    expect(chooseStartingMode("?s=sh", "", HOST, heads)).toEqual({
+  it("starts a friend's link in Standard, whatever mode it was shared from", () => {
+    expect(chooseStartingMode("?s=sh.f", "", HOST)).toEqual({
       mode: "standard",
       reason: "default",
       source: "sh",
     });
-    expect(chooseStartingMode("?s=t", "", HOST, heads)).toMatchObject({ reason: "default" });
+    expect(chooseStartingMode("?s=t.s", "", HOST)).toMatchObject({ mode: "standard", reason: "default" });
+    expect(chooseStartingMode("?s=sh", "", HOST)).toMatchObject({ mode: "standard", reason: "default" });
   });
 
-  it("splits unattributed arrivals like any other source", () => {
-    expect(chooseStartingMode("", "", HOST, heads)).toEqual({
-      mode: "freeform",
-      reason: "split",
-      source: null,
-    });
-    expect(chooseStartingMode("", `https://${HOST}/leaderboard`, HOST, tails)).toEqual({
+  it("starts every other arrival in Standard", () => {
+    expect(chooseStartingMode("", "", HOST)).toEqual({ mode: "standard", reason: "default", source: null });
+    expect(chooseStartingMode("", "https://www.reddit.com/r/wordgames", HOST)).toEqual({
       mode: "standard",
-      reason: "split",
-      source: null,
-    });
-  });
-
-  it("splits every other source down the middle", () => {
-    expect(chooseStartingMode("", "https://www.reddit.com/r/wordgames", HOST, heads)).toEqual({
-      mode: "freeform",
-      reason: "split",
+      reason: "default",
       source: "reddit",
     });
-    expect(chooseStartingMode("?utm_source=newsletter", "", HOST, tails)).toEqual({
-      mode: "standard",
-      reason: "split",
-      source: "newsletter",
-    });
+    expect(chooseStartingMode("?utm_source=newsletter", "", HOST)).toMatchObject({ source: "newsletter" });
   });
 });
 
 describe("assignStartingMode", () => {
-  it("starts a new player in the chosen mode and remembers it", () => {
-    const assignment = assignStartingMode("?s=sh.f", TODAY, "", HOST, tails);
-    expect(assignment).toEqual({ mode: "freeform", reason: "shared", source: "sh", date: TODAY });
-    expect(currentMode()).toBe("freeform");
+  it("starts a new player in Standard and remembers it", () => {
+    const assignment = assignStartingMode("?s=sh.f", TODAY, "", HOST);
+    expect(assignment).toEqual({ mode: "standard", reason: "default", source: "sh", date: TODAY });
+    expect(localStorage.getItem("ick:mode")).toBe("standard");
     resetModeCache();
-    expect(currentMode()).toBe("freeform");
+    expect(currentMode()).toBe("standard");
   });
 
   it("runs once: a second open keeps what the first picked", () => {
-    assignStartingMode("", TODAY, "https://www.google.com/", HOST, heads);
-    expect(assignStartingMode("?s=sh.s", TODAY, "", HOST, tails)).toBeNull();
+    assignStartingMode("", TODAY, "https://www.google.com/", HOST);
+    setMode("freeform");
+    expect(assignStartingMode("?s=sh.s", TODAY, "", HOST)).toBeNull();
     expect(currentMode()).toBe("freeform");
   });
 
@@ -123,7 +95,7 @@ describe("assignStartingMode", () => {
   it("leaves a returning unattributed player in the mode they had", () => {
     recordVisit("", TODAY, "", HOST);
     setMode("standard");
-    expect(assignStartingMode("", TODAY, "", HOST, heads)).toBeNull();
+    expect(assignStartingMode("", TODAY, "", HOST)).toBeNull();
     expect(currentMode()).toBe("standard");
   });
 

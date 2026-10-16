@@ -8,18 +8,14 @@ import { arrivalSource, hasVisited } from "./visits";
  *
  * Everyone who has already opened the game keeps whatever they have: this runs
  * once, for a browser with no visit on record, no mode chosen and no puzzle
- * played, and never again. What it picks for them depends on how they arrived:
+ * played, and never again. It starts every one of them in Standard, however
+ * they arrived -- a friend's Freeform link included.
  *
- *   - `shared`   a link a friend copied or posted, carrying the mode it was
- *                shared from (`?s=sh.f`, `?s=t.s` -- see `shareCode`). They
- *                start where their friend is, so the result they were sent is
- *                the game they are about to play.
- *   - `default`  a share link from before links carried a mode. Standard, as
- *                it has always been.
- *   - `split`    everyone else -- Reddit, Google, any other site, and arrivals
- *                with no source at all (no code, no referrer). Half start in
- *                Freeform and half in Standard, at random, so the two can be
- *                compared on players who chose neither.
+ * It used to sort them: a share link started a player in the mode it was shared
+ * from (`shared`), and everyone else was split 50/50 between the two modes
+ * (`split`). Both are retired; `reason` is always `default` now, and the old
+ * values stay in the type because /analytics still reports the players they
+ * started.
  *
  * Whatever it picks is only a starting point. The switch in the header works
  * the same as ever, and moving it is recorded like any other switch.
@@ -87,20 +83,13 @@ function isNewPlayer(): boolean {
   return !hasVisited() && playedPuzzleCount() === 0;
 }
 
-/** Which mode a new player arriving through `search`/`referrer` starts in. */
+/** Which mode a new player arriving through `search`/`referrer` starts in: Standard. */
 export function chooseStartingMode(
   search: string,
   referrer?: string,
   selfHost?: string,
-  random: () => number = Math.random,
 ): Pick<ModeAssignment, "mode" | "reason" | "source"> {
-  const source = arrivalSource(search, referrer, selfHost);
-  const shared = sharedModeFromSearch(search);
-  if (shared) return { mode: shared, reason: "shared", source };
-  if (source !== null && SHARE_CODES.has(source)) {
-    return { mode: DEFAULT_MODE, reason: "default", source };
-  }
-  return { mode: random() < 0.5 ? "freeform" : "standard", reason: "split", source };
+  return { mode: DEFAULT_MODE, reason: "default", source: arrivalSource(search, referrer, selfHost) };
 }
 
 /** This page load's assignment, until the one caller that reports it takes it. */
@@ -118,11 +107,10 @@ export function assignStartingMode(
   today: string = todayDateString(),
   referrer?: string,
   selfHost?: string,
-  random?: () => number,
 ): ModeAssignment | null {
   if (!isNewPlayer()) return null;
   const assignment: ModeAssignment = {
-    ...chooseStartingMode(search, referrer, selfHost, random),
+    ...chooseStartingMode(search, referrer, selfHost),
     date: today,
   };
   try {
