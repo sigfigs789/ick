@@ -27,6 +27,32 @@ import { APP_VERSION } from "./version";
 type EventProps = Record<string, string | number | boolean | null>;
 
 /**
+ * The only events that are counted: player interactions with the three main
+ * pages -- play, leaderboards and found words. Everything else is admin or
+ * diagnostic traffic (feedback, chat, share and Reddit arrivals, scoring checks,
+ * Freeform votes, mode bookkeeping) and is dropped before it reaches either sink.
+ * Every event passes through `send` or the two direct feedback calls, which check
+ * this set, so an event missing from it cannot be recorded by accident.
+ */
+const COUNTED_EVENTS: ReadonlySet<string> = new Set([
+  "answer_accepted",
+  "answer_rejected",
+  "answer_retried",
+  "answer_revealed",
+  "puzzle_completed",
+  "answer_copied",
+  "visit_engaged",
+  "visit_interacted",
+  "leaderboard_opened",
+  "leaderboard_joined",
+  "found_words_opened",
+]);
+
+function isCounted(name: string): boolean {
+  return COUNTED_EVENTS.has(name);
+}
+
+/**
  * Mirror one event into Supabase, alongside the copy Vercel Analytics receives.
  *
  * Fire-and-forget by construction: `sendBeacon` hands the request to the browser,
@@ -108,7 +134,7 @@ export function isReporting(): boolean {
  * properties on (see `mirror`).
  */
 function send(name: string, props?: EventProps, mirrorOnly?: EventProps): void {
-  if (!reporting) return;
+  if (!reporting || !isCounted(name)) return;
   // Called with one argument when there are no properties, exactly as before, so
   // an event with no dimensions still reaches Vercel as a bare event name.
   if (props) track(name, props);
@@ -386,6 +412,7 @@ export function trackMerriamWebsterFailed(date: string, drop: string, check: Liv
 const VERCEL_VALUE_CHARS = 255;
 
 export function trackFeedbackSubmitted(rawFeedback: string) {
+  if (!isCounted("feedback_submitted")) return;
   const note = rawFeedback.trim();
   track("feedback_submitted", { feedback: note.slice(0, VERCEL_VALUE_CHARS) });
   mirror("feedback_submitted", { feedback: note });
@@ -444,6 +471,7 @@ export function trackFreeformFeedback(
   date: string,
   vote: "love" | "boo" | null
 ) {
+  if (!isCounted("freeform_feedback")) return;
   const note = rawFeedback.trim();
   const voter = loadPlayerId();
   track("freeform_feedback", {

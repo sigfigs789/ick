@@ -77,13 +77,6 @@ function verdict(word: string, outcome: string, reason: string | null = null) {
   return { word, outcome, reason, zipf: null, pos: [], firstUse: null };
 }
 
-/** The `rejection_message_shown` reasons fired so far, in order. */
-function reasonsShown(): unknown[] {
-  return track.mock.calls
-    .filter(([event]) => event === "rejection_message_shown")
-    .map(([, payload]) => (payload as Record<string, unknown>).rejection_reason);
-}
-
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
@@ -115,7 +108,6 @@ describe("useDailyPuzzle spelling nudge", () => {
 
     expect(result.current.feedback?.kind).toBe("rejected");
     expect(result.current.feedback?.message).toBe(REJECTION_MESSAGES["check-your-spelling"]);
-    expect(reasonsShown()).toEqual(["check-your-spelling"]);
     // Still a rejection in every other respect.
     expect(result.current.progress.acceptedWords).toEqual([]);
     expect(result.current.progress.rejectedAttempts).toEqual([NEAR_MISS]);
@@ -130,7 +122,6 @@ describe("useDailyPuzzle spelling nudge", () => {
     });
 
     expect(result.current.feedback?.message).toBe(REJECTION_MESSAGES["not-a-word"]);
-    expect(reasonsShown()).toEqual(["not-a-word"]);
   });
 
   it("nudges when the lookup itself failed, since the word is still unfound", async () => {
@@ -158,7 +149,6 @@ describe("useDailyPuzzle spelling nudge", () => {
 
     // Spelled exactly as meant -- there is no typo to go looking for.
     expect(result.current.feedback?.message).toBe(REJECTION_MESSAGES["obsolete"]);
-    expect(reasonsShown()).toEqual(["obsolete"]);
   });
 
   it("leaves every other rejection alone", async () => {

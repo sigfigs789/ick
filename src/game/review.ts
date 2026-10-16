@@ -322,6 +322,8 @@ export type Group = (typeof GROUPS)[number];
 export interface Returns {
   rate: Rate;
   soFar: number;
+  /** The players who banked a word and whose seven days are over, and how many came back. */
+  guessers: Rate;
 }
 
 /** The four key numbers for one set of players over the window. */
@@ -380,7 +382,12 @@ function text(raw: unknown): string | null {
 
 function returns(raw: unknown): Returns {
   const r = obj(raw);
-  return { rate: { cohort: count(r.cohort), returned: count(r.returned) }, soFar: count(r.soFar) };
+  const g = obj(r.guessers);
+  return {
+    rate: { cohort: count(r.cohort), returned: count(r.returned) },
+    soFar: count(r.soFar),
+    guessers: { cohort: count(g.cohort), returned: count(g.returned) },
+  };
 }
 
 function metrics(raw: unknown): KeyMetrics {
