@@ -141,6 +141,13 @@ describe("DailyChart", () => {
     expect(labels).toEqual(["end"]);
   });
 
+  it("marks the day chat's auto messages began", () => {
+    const days = ["2026-10-12", "2026-10-13", "2026-10-14"].map((d) => day(d, 10, 5, 5, 1));
+    render(<DailyChart daily={days} group="all" today="2026-10-14" />);
+    const labels = [...document.querySelectorAll(".daily__marker-label")].map((m) => m.textContent);
+    expect(labels).toEqual(["Chat auto messages"]);
+  });
+
   it("draws no trial marks for a window after it", () => {
     render(<DailyChart daily={DAILY.slice(1)} group="all" today="2026-09-28" />);
     expect(document.querySelector(".daily__marker")).not.toBeInTheDocument();

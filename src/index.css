@@ -4693,11 +4693,12 @@ h2 {
 .daily__line--live {
   stroke-dasharray: 5 5;
 }
-/* The Freeform trial week's first and last day: short ticks with a label. */
+/* Days to read the line against (the Freeform week, chat notices): dashed
+   lines, top to bottom, with a label. */
 .daily__marker {
   position: absolute;
   top: 0;
-  height: 1.4rem;
+  bottom: 0;
   width: 0;
   border-left: 1px dashed var(--fg-muted);
   pointer-events: none;

@@ -6,6 +6,9 @@ import { dowOf, fmt, pct } from "./analyticsFormat";
 
 type Day = AnalyticsReport["daily"][number];
 
+/** The first puzzle the chat announced finds on by itself (#442). */
+const CHAT_NOTICES_START = "2026-10-13";
+
 const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -89,11 +92,14 @@ export function DailyChart({
   const dashed = firstLive < 0 ? [] : points.slice(split);
   const area = `M ${x(0)} 100 L ${points.join(" L ")} L ${x(n - 1)} 100 Z`;
 
-  // The Freeform trial week's first and last puzzle, where the window has them.
+  // Days worth seeing the line against, where the window has them: the
+  // Freeform trial week's first and last puzzle, and the chat's automatic
+  // notices going live.
   const lastTrialDay = daily.findIndex((d) => d.date >= FREEFORM_TRIAL_END) - 1;
   const markers = [
     { i: daily.findIndex((d) => d.date === FREEFORM_TRIAL_START), label: "Freeform week" },
     { i: daily[lastTrialDay]?.date >= FREEFORM_TRIAL_START ? lastTrialDay : -1, label: "end" },
+    { i: daily.findIndex((d) => d.date === CHAT_NOTICES_START), label: "Chat auto messages" },
   ].filter((m) => m.i >= 0);
 
   // About seven dates along the axis, the last day's always among them, and on
