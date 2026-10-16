@@ -71,7 +71,10 @@ export interface BankedWord {
  * notices in it does not read as one line pasted over and over.
  */
 export const NOTICE_VERBS: readonly string[] = [
-  "banked", "found", "unearthed", "dug up", "struck", "landed", "spotted", "nabbed",
+  "banked", "found", "unearthed", "dug up", "landed", "spotted", "nabbed",
+  "discovered", "uncovered", "excavated", "turned up", "dredged up", "fished out",
+  "rooted out", "sniffed out", "tracked down", "hunted down", "stumbled on",
+  "came across", "snagged", "mined",
 ];
 
 /**
