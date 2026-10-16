@@ -874,15 +874,6 @@ h2 {
 .drop-display__letter:nth-child(3) {
   animation-delay: 0.19s;
 }
-.drop-display__ceiling {
-  margin: 0.7rem 0 0;
-  font-size: 0.78rem;
-  color: var(--fg-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-}
 .drop-display__ceiling-word {
   display: inline-flex;
   align-items: center;

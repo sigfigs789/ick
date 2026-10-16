@@ -69,11 +69,6 @@ export function DropDisplay({
           </span>
         ))}
       </p>
-      {reveal && (
-        <p className="drop-display__ceiling">
-          Best possible score: 10.0
-        </p>
-      )}
       {completed && reveal && hidden && (
         <div className="drop-display__reveal">
           <button
