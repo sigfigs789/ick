@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { formatDateLabel } from "../game/date";
 
 interface Props {
@@ -7,6 +8,11 @@ interface Props {
   canGoToNext: boolean;
   onPrevious: () => void;
   onNext: () => void;
+  /**
+   * What sits between the arrows. The game puts the drop itself there, which
+   * already names the day; without it, the puzzle number and date stand in.
+   */
+  children?: ReactNode;
 }
 
 export function PuzzleNav({
@@ -16,9 +22,10 @@ export function PuzzleNav({
   canGoToNext,
   onPrevious,
   onNext,
+  children,
 }: Props) {
   return (
-    <div className="puzzle-nav">
+    <div className={children ? "puzzle-nav puzzle-nav--drop" : "puzzle-nav"}>
       <button
         type="button"
         className="puzzle-nav__arrow"
@@ -29,9 +36,11 @@ export function PuzzleNav({
         <span aria-hidden="true">‹</span>
         <span>Previous</span>
       </button>
-      <p className="app__puzzle-number" aria-live="polite">
-        Puzzle #{puzzleNumber} · {formatDateLabel(date)}
-      </p>
+      {children ?? (
+        <p className="app__puzzle-number" aria-live="polite">
+          Puzzle #{puzzleNumber} · {formatDateLabel(date)}
+        </p>
+      )}
       <button
         type="button"
         className="puzzle-nav__arrow"
