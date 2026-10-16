@@ -5082,7 +5082,7 @@ h2 {
   background: #2f78e0;
 }
 /* Green is the room cheering a 9.5+ find, so it is a size up and brighter than
-   a plain unread dot, and pulses while a find in Standard is unread. */
+   a plain unread dot. */
 .chat__dot--notice {
   width: 0.95rem;
   height: 0.95rem;
@@ -5090,34 +5090,6 @@ h2 {
   box-shadow:
     0 0 0 2px var(--bg),
     0 0 6px 1px color-mix(in srgb, #22c55e 60%, transparent);
-}
-.chat__dot--pulse {
-  animation: chat-dot-pulse 1.4s var(--ease-standard) infinite;
-}
-@keyframes chat-dot-pulse {
-  0% {
-    transform: scale(1);
-    box-shadow:
-      0 0 0 2px var(--bg),
-      0 0 0 2px color-mix(in srgb, #22c55e 70%, transparent);
-  }
-  70% {
-    transform: scale(1.15);
-    box-shadow:
-      0 0 0 2px var(--bg),
-      0 0 0 10px transparent;
-  }
-  100% {
-    transform: scale(1);
-    box-shadow:
-      0 0 0 2px var(--bg),
-      0 0 0 10px transparent;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .chat__dot--pulse {
-    animation: none;
-  }
 }
 .chat__toggle:hover {
   background: var(--accent-hover);

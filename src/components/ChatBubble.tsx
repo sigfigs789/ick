@@ -274,11 +274,9 @@ interface Latest {
   latest: number;
   message: number;
   notice: number;
-  /** The newest Standard find, this player's own included, which pulses the dot until read. */
-  standard: number;
 }
 
-const NO_LATEST: Latest = { latest: 0, message: 0, notice: 0, standard: 0 };
+const NO_LATEST: Latest = { latest: 0, message: 0, notice: 0 };
 
 /**
  * Which kind of post `latest` holds after `seen`. A server from before the
@@ -352,7 +350,6 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
   const [notice, setNotice] = useState("");
   const [sending, setSending] = useState(false);
   const [unread, setUnread] = useState<Unread>(null);
-  const [pulse, setPulse] = useState(false);
   /** The lines only this player was shown, in the shown room; see game/chatNotices.ts. */
   const [privates, setPrivates] = useState<ChatMessage[]>(() => privateNotices(date));
   const [reactions, setReactions] = useState<Reactions>({});
@@ -572,7 +569,6 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     if (!open || shownDate.current !== date || messagesDate !== date) return;
     if (date === gameDate) {
       setUnread(null);
-      setPulse(false);
     }
     const newest = messages.length > 0 ? messages[messages.length - 1].id : 0;
     const read = Math.max(newest, newestId(privates));
@@ -600,8 +596,6 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
      * check's cached answer can be a few seconds behind.
      */
     let ownNotice = 0;
-    /** Likewise the newest Standard find among them, which pulses the dot too. */
-    let ownStandard = 0;
     const seenNow = () => Math.max(loadSeen()[room] ?? 0, seenHere.current[room] ?? 0);
     // A private line kept since the room was last read lights the dot as a notice.
     const judge = () => {
@@ -610,8 +604,6 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
         unreadKind(latestKnown.current, seen) ??
         (newestId(privateNotices(room)) > seen ? "notice" : null);
       setUnread(kind);
-      // Only the green dot pulses: a player's message keeps its still blue one.
-      setPulse(kind === "notice" && latestKnown.current.standard > seen);
     };
     let cancelled = false;
     const check = async () => {
@@ -622,14 +614,12 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
           latest?: unknown;
           message?: unknown;
           notice?: unknown;
-          standard?: unknown;
         };
         if (cancelled || typeof data.latest !== "number") return;
         const found: Latest = {
           latest: Math.max(data.latest, ownNotice),
           message: typeof data.message === "number" ? data.message : 0,
           notice: Math.max(typeof data.notice === "number" ? data.notice : 0, ownNotice),
-          standard: Math.max(typeof data.standard === "number" ? data.standard : 0, ownStandard),
         };
         latestKnown.current = found;
         judge();
@@ -664,14 +654,11 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
     const offNotice = onBankedNotice((date, posted) => {
       if (date !== room) return;
       ownNotice = Math.max(ownNotice, posted.id);
-      if (posted.mode === "standard") ownStandard = Math.max(ownStandard, posted.id);
       const known = latestKnown.current;
       latestKnown.current = {
         latest: Math.max(known.latest, ownNotice),
         message: known.message,
         notice: Math.max(known.notice, ownNotice),
-        // The player's own Standard find pulses too, from the moment it posts.
-        standard: Math.max(known.standard, ownStandard),
       };
       if (heard !== null) heard = Math.max(heard, ownNotice);
       judge();
@@ -1025,7 +1012,7 @@ export function ChatBubble({ lifted = false }: { lifted?: boolean }) {
           />
         </svg>
         {unread && !open && (
-          <span className={`chat__dot chat__dot--${unread}${pulse ? " chat__dot--pulse" : ""}`} aria-hidden="true" />
+          <span className={`chat__dot chat__dot--${unread}`} aria-hidden="true" />
         )}
       </button>
     </div>
