@@ -10,13 +10,9 @@
 // GET /api/review?list=freeform&limit=200
 //   -> { tally: { love, boo }, byDate: [{ date, love, boo }],
 //        notes: [{ id, text, at, date, vote }] }
-// GET /api/review?list=analytics&days=60
-// GET /api/review?list=analytics&days=1&date=YYYY-MM-DD   (today: that one puzzle)
-// GET /api/review?list=analytics&days=N&date=YYYY-MM-DD   (a picked range: N days ending on date)
-//   -> { report: { asOf, totals, daily, retention, cohorts, weekday, modes,
-//                  depth, funnel, sources, sessions, hours, chat, onboarding,
-//                  copies } }
-//   400 bad-list / bad-limit / bad-days / bad-date, 401 unauthorised, 405 wrong method,
+// GET /api/review?list=analytics&days=60   (7 to 365)
+//   -> { report: { asOf, windowDays, daily, modes, sources } }
+//   400 bad-list / bad-limit / bad-days, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
 // POST /api/review
@@ -357,64 +353,21 @@ async function handleGet(request: Request): Promise<Response> {
   try {
     if (list === "analytics") {
       // A window in days rather than a row limit: the report is one document,
-      // and what a reader varies is how far back its time series reach.
-      // The window's last puzzle: the viewer's calendar date in the today window,
-      // or the last day of a picked range. Sent as-is, not worked out here from a
-      // clock: "today" is the puzzle the reader is on. Checked only for being a
-      // real date; the functions take the latest puzzle anybody played when it
-      // is missing.
-      const date = params.get("date");
-      if (date !== null && !isCalendarDate(date)) {
-        return reply(400, { ok: false, reason: "bad-date" });
-      }
+      // and what a reader varies is how far back it reaches -- a week to a year.
       const rawDays = params.get("days");
       let days = DEFAULT_ANALYTICS_DAYS;
       if (rawDays !== null) {
         days = Number(rawDays);
-        // 1 is the today window, one puzzle; a preset is a week to a year; a
-        // range, which comes with its last day, is any width up to a year.
-        const ok = date !== null ? days >= 1 && days <= 365 : days === 1 || (days >= 7 && days <= 365);
-        if (!Number.isInteger(days) || !ok) {
+        if (!Number.isInteger(days) || days < 7 || days > 365) {
           return reply(400, { ok: false, reason: "bad-days" });
         }
       }
-      const args = date !== null ? { p_days: days, p_date: date } : { p_days: days };
       // Passed through as the database built it. The function is the one place
-      // these numbers are defined (see the 2026-09-27 migration), and a second
-      // copy of every field name here would be a second place for them to drift.
-      //
-      // The chat room's numbers are their own function (see the 20260930010000
-      // migration), read alongside and set on the report as `chat`. A failure
-      // there costs only the chat section: the page renders without it rather
-      // than losing every other number over one it can do without. The new
-      // players' starting modes (the 20260930020000 migration) are read and set
-      // on it as `onboarding` the same way. That one is cohorts, not a window of
-      // puzzles, so it takes no date and clamps a today window up to its own
-      // shortest. Copies into the other mode (the 20261001000000 migration)
-      // take the window exactly as chat does, and are set on it as `copies`.
-      // What the players who come back went through (the 20261005000000
-      // migration) takes it the same way, and is set on it as `returners`, and
-      // whether players who hit a 10.00 come back more (the 20261006000000
-      // migration) as `perfects`. Answers scored from Claude's estimated Zipf
-      // (the 20261006100000 migration) take it the same way too, and are set on
-      // it as `estimates`.
-      const optional = (name: string, fnArgs: Record<string, unknown>) =>
-        rpc<Record<string, unknown> | null>(name, fnArgs).catch((error: unknown) => {
-          console.error(`[review] ${name} failed:`, error instanceof Error ? error.message : error);
-          return null;
-        });
-      const [report, chat, onboarding, copies, returners, perfects, estimates] = await Promise.all([
-        rpc<Record<string, unknown> | null>("analytics_report", args),
-        optional("chat_report", args),
-        optional("onboarding_report", { p_days: days }),
-        optional("copy_report", args),
-        optional("retention_report", args),
-        optional("perfect_report", args),
-        optional("estimated_score_report", args),
-      ]);
-      return reply(200, {
-        report: { ...(report ?? {}), chat, onboarding, copies, returners, perfects, estimates },
-      });
+      // these numbers are defined (see the 20261018000000 migration), and a
+      // second copy of every field name here would be a second place for them
+      // to drift.
+      const report = await rpc<Record<string, unknown> | null>("analytics_report", { p_days: days });
+      return reply(200, { report: report ?? {} });
     }
     if (list === "freeform") {
       // Two reads rather than one, because the votes and the notes are two
@@ -515,11 +468,4 @@ function byDate(votes: readonly FreeformVoteRow[]): Array<Tally & { date: string
   return [...days.entries()]
     .map(([date, counts]) => ({ date, ...counts }))
     .sort((a, b) => a.date.localeCompare(b.date));
-}
-
-/** YYYY-MM-DD naming a day the calendar has (not 2026-02-30). */
-function isCalendarDate(date: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
-  const parsed = new Date(`${date}T00:00:00Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date;
 }
