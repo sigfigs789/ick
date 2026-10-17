@@ -441,6 +441,18 @@ lives in `supabase/migrations/`.
   validates the shape (snake_case name, at most 32 flat scalar properties) and
   inserts it.
 
+- **The idle hint test** (`src/game/idleHint.ts`) — an A/B test of typing a
+  hint into the empty word box (`💡 try "strangle"`, in the placeholder's
+  colour) once it has sat empty for 7 seconds in a first-ever session, or 10
+  seconds in a later one. The hint is an Uncommon or Rare word with the drop that
+  the puzzle would accept. Each of the two experiments is its own sticky 50/50
+  split. Both arms send `idle_hint_triggered` when the clock runs out (control
+  just sees nothing), and `idle_hint_report` (the 2026-10-20 migration) compares
+  the players who sat idle in each arm: typing, guessing, words, best score,
+  finishing, sharing, time on site and 7-day return. It is the "Idle hint test"
+  section of `/analytics`. Key play events also carry `idle_hint_experiment`
+  and `idle_hint_variant` in the Supabase mirror.
+
 - **`suggested_words`** — the review queue, a view rather than a table. It pools
   the two places a candidate arrives from: live MW approvals still marked `new`
   in `word_sightings`, and words players typed into the How to play suggestion

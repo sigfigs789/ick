@@ -21,6 +21,7 @@ import { currentVisit, markSessionEngaged, markSessionInteracted, type VisitOutc
 import { markLook, markShare, type SessionTimeReport } from "./game/sessionTime";
 import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
+import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
 import { APP_VERSION } from "./version";
 
 /** The scalar property values both Vercel Analytics and /api/events accept. */
@@ -166,7 +167,7 @@ export function trackAcceptedAnswer(
     rarity: word.rarity,
     streak_days: streakDays,
     score_source: scoreSource(date, word),
-  });
+  }, idleHintArmProps());
 }
 
 /**
@@ -474,7 +475,7 @@ export function trackPuzzleCompleted(progress: DailyProgress, streak: StreakStat
     best_word: best?.word ?? "None",
     won: progress.won ?? false,
     streak_days: streak.currentStreak,
-  });
+  }, idleHintArmProps());
 }
 
 /**
@@ -502,13 +503,13 @@ function visitDimensions() {
  */
 export function trackResultCopied(mode: GameMode) {
   markShare();
-  send("result_copied", { method: "copy", mode, ...visitDimensions() });
+  send("result_copied", { method: "copy", mode, ...visitDimensions() }, idleHintArmProps());
 }
 
 /** Record a click on the X share button. */
 export function trackResultSharedOnX(mode: GameMode) {
   markShare();
-  send("result_shared_on_x", { method: "x", mode, ...visitDimensions() });
+  send("result_shared_on_x", { method: "x", mode, ...visitDimensions() }, idleHintArmProps());
 }
 
 /**
@@ -685,7 +686,7 @@ export function trackSessionTime(report: SessionTimeReport) {
     looked: report.looked,
     report_number: report.reportNumber,
     ...visitDimensions(),
-  });
+  }, idleHintArmProps());
 }
 
 /**
@@ -855,4 +856,85 @@ export function campaignSourceFromSearch(search: string): "share" | "twitter" | 
   if (code === "t") return "twitter";
   if (code === "r") return "reddit";
   return null;
+}
+
+/**
+ * The idle hint experiment (see game/idleHint.ts), in four events, all to both
+ * sinks. Each carries `experiment` (`new` or `returning`) and `variant`
+ * (`control` or `treatment`), and `player_id` rides along from `mirror`, which
+ * is what `idle_hint_report` joins every later play, share and return to.
+ *
+ * - `idle_hint_assigned`: the draw, once per player per experiment.
+ * - `idle_hint_triggered`: the box sat empty for the experiment's delay. Sent
+ *   by both arms -- `shown` says whether anything appeared -- so the players
+ *   who sat idle can be compared arm against arm. Carries the word that was (or,
+ *   in control, would have been) hinted.
+ * - `idle_hint_typed`: the first keystroke after the trigger, and how long it
+ *   took to come.
+ * - `idle_hint_word_submitted`: the player submitted the hinted word. Sent by
+ *   control too, which is the baseline: how often somebody plays that word
+ *   without being told to.
+ */
+function idleHintProps(arm: IdleHintArm, date: string) {
+  return {
+    experiment: arm.experiment,
+    variant: arm.variant,
+    delay_ms: IDLE_HINT_DELAY_MS[arm.experiment],
+    puzzle_date: date,
+    puzzle_number: puzzleNumber(date),
+    // The live puzzle, which is the day the visit, the session and any share
+    // are counted on -- the played one can be an archived puzzle.
+    live_date: todayDateString(),
+  };
+}
+
+/**
+ * The arm the session is in, for the mirror alone, on the events the key
+ * numbers are made of (answers, completions, shares, session time) -- so the
+ * log can be split by arm without a join. Vercel never sees these: it keeps
+ * few properties, and the experiment's report is read from Supabase.
+ */
+function idleHintArmProps(): EventProps {
+  const arm = currentIdleHintArm();
+  return {
+    idle_hint_experiment: arm?.experiment ?? null,
+    idle_hint_variant: arm?.variant ?? null,
+  };
+}
+
+export function trackIdleHintAssigned(arm: IdleHintArm, date: string) {
+  send("idle_hint_assigned", { ...idleHintProps(arm, date), mode: modeOf(date) });
+}
+
+export function trackIdleHintTriggered(
+  arm: IdleHintArm,
+  date: string,
+  word: AcceptedWord,
+  answerCount: number
+) {
+  send("idle_hint_triggered", {
+    ...idleHintProps(arm, date),
+    mode: modeOf(date),
+    shown: arm.variant === "treatment",
+    word: word.word,
+    rarity: word.rarity,
+    score: rarityScore(word.zipf, date),
+    answer_count: answerCount,
+  });
+}
+
+export function trackIdleHintTyped(arm: IdleHintArm, date: string, msAfterTrigger: number) {
+  send("idle_hint_typed", {
+    ...idleHintProps(arm, date),
+    ms_after_trigger: Math.round(msAfterTrigger),
+  });
+}
+
+export function trackIdleHintWordSubmitted(
+  arm: IdleHintArm,
+  date: string,
+  word: string,
+  accepted: boolean
+) {
+  send("idle_hint_word_submitted", { ...idleHintProps(arm, date), word, accepted });
 }

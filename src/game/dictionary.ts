@@ -3097,6 +3097,40 @@ export function learnableWordForDrop(drop: string, date?: string): AcceptedWord 
 }
 
 /**
+ * Every dictionary word containing `drop` that scores in one of `tiers` under
+ * `date`'s puzzle, in dictionary order -- the pool the idle hint picks from (see
+ * game/idleHint.ts). Same containment and rejection rules as `bestWordForDrop`;
+ * the drop itself is never a candidate.
+ *
+ * Only words that score as themselves under Standard's rules, whichever mode is
+ * being played: a word Standard folds onto a base is a mechanical form of
+ * another word (`fulfillings`, `ploughings`, `smears`), and a hint is meant to
+ * read as a word somebody would think of. The caller still runs the pick
+ * through the real submission check, which knows about the words already
+ * banked.
+ */
+export function wordsForDropInTiers(
+  drop: string,
+  tiers: readonly Rarity[],
+  date?: string
+): AcceptedWord[] {
+  const needle = drop.toLowerCase();
+  const standard = scoringFor(date, "standard");
+  const found: AcceptedWord[] = [];
+  for (let i = 0; i < WORDS.length; i++) {
+    const word = WORDS[i];
+    if (word === needle || !word.includes(needle)) continue;
+    const info = rarityFor(word, date);
+    if (!info || !tiers.includes(info.rarity)) continue;
+    const own = withEstimate(word, standard.zipfAt(i), date);
+    if (adjustedZipf(word, own, standard, date) > own) continue;
+    if (curatedRejection(word, date) !== undefined) continue;
+    found.push({ word, ...info });
+  }
+  return found;
+}
+
+/**
  * A playable answer for `drop` that `word` is only a letter or two away from, or
  * undefined when the guess isn't close to anything -- the signal behind the
  * "check your spelling" nudge (see game/nearMiss.ts for the rule).
