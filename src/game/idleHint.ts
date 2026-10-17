@@ -10,7 +10,7 @@ import type { AcceptedWord, Rarity } from "./types";
  *
  * When the word box stays empty for a while, the treatment arm sees a word
  * typed into the box's placeholder, a letter at a time behind "...", held,
- * then erased a letter at a time -- and 7 seconds later another, three in all:
+ * then erased a letter at a time -- and a second later another, three in all:
  * Common or Very Common words that contain the drop and that the puzzle would
  * accept (see `useIdleHint` for the rhythm). They are a way in, not a
  * giveaway: those are the bottom of the scale, and the player still has to
@@ -57,10 +57,10 @@ export const IDLE_HINT_ROUNDS = 3;
 export const IDLE_HINT_PREFIX = "...";
 
 /** How long a typed hint stays up before it is erased. */
-export const IDLE_HINT_HOLD_MS = 3_500;
+export const IDLE_HINT_HOLD_MS = 2_000;
 
 /** The empty box between one hint being erased and the next being typed. */
-export const IDLE_HINT_GAP_MS = 7_000;
+export const IDLE_HINT_GAP_MS = 1_000;
 
 const ASSIGNMENT_KEY = "ick:idle-hint";
 

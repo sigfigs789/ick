@@ -23,9 +23,9 @@ import {
 import { playKeystroke } from "../audio/sound";
 
 /** How fast the hint types itself into the placeholder, per character. */
-export const IDLE_HINT_TYPE_MS = 70;
+export const IDLE_HINT_TYPE_MS = 120;
 /** How fast it is erased, per character: a held-down backspace is quicker than typing. */
-export const IDLE_HINT_ERASE_MS = 45;
+export const IDLE_HINT_ERASE_MS = 90;
 
 interface Options {
   drop: string;
@@ -89,7 +89,7 @@ function whenIdle(work: () => void): () => void {
  *
  * When the clock runs out the loop starts, in both arms (only treatment sees
  * it): a hint is typed into the placeholder a character at a time, each with a
- * keystroke sound, held for 3.5s and erased a character at a time; 7s later the
+ * keystroke sound, held for 2s and erased a character at a time; 1s later the
  * next one, three hints in all, and then it is over. A dialog or a hidden tab
  * pauses it. The first character the player types ends it for the puzzle, for
  * this page load.

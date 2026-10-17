@@ -445,7 +445,7 @@ lives in `supabase/migrations/`.
   hints into the empty word box once it has sat empty for 7 seconds, in a
   first-ever session and in later ones alike. A hint (`...strong`) is
   typed into the placeholder a character at a time with a keystroke sound,
-  held 3.5s and erased; the next follows 7s later, three in all, each a
+  held 2s and erased; the next follows 1s later, three in all, each a
   Common or Very Common word with the drop that the puzzle would accept. The first letter the player types ends the loop. The
   clock waits for How to play (or any dialog) to close, and focusing the box
   does not stop it. Add `?idle-hint=treatment` (or `=control`) to the URL to

@@ -1,7 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SubmitForm } from "./SubmitForm";
-import { idleHintText, idleHintWords } from "../game/idleHint";
+import { IDLE_HINT_GAP_MS, IDLE_HINT_HOLD_MS, idleHintText, idleHintWords } from "../game/idleHint";
+import { IDLE_HINT_ERASE_MS, IDLE_HINT_TYPE_MS } from "../hooks/useIdleHint";
 import { recordVisit } from "../game/visits";
 import type { AcceptedWord } from "../game/types";
 
@@ -16,7 +17,10 @@ const HINTS = idleHintWords(DROP, DATE, []);
 const [HINT] = HINTS;
 const DEFAULT = "type a word…";
 /** Typing a hint out, holding it and erasing it, end to end. */
-const showMs = (word: string) => idleHintText(word).length * (70 + 45) + 3_500;
+const showMs = (word: string) =>
+  idleHintText(word).length * (IDLE_HINT_TYPE_MS + IDLE_HINT_ERASE_MS) + IDLE_HINT_HOLD_MS;
+/** Typing a hint out in full. */
+const typeMs = (word: string) => idleHintText(word).length * IDLE_HINT_TYPE_MS;
 
 beforeEach(() => {
   localStorage.clear();
@@ -80,7 +84,7 @@ async function until(done: () => boolean, max = 60_000): Promise<number> {
 }
 
 describe("the idle hint", () => {
-  it("types three words into the placeholder, 7 seconds apart, then stops", async () => {
+  it("types three words into the placeholder, a second apart, then stops", async () => {
     inArm("new", "treatment");
     const input = renderForm();
     expect(HINTS).toHaveLength(3);
@@ -104,24 +108,24 @@ describe("the idle hint", () => {
     ]);
 
     // A character at a time.
-    await wait(80);
+    await wait(IDLE_HINT_TYPE_MS + 10);
     expect(input.placeholder).toBe(".");
     for (const [i, hint] of HINTS.entries()) {
       const text = idleHintText(hint.word);
       if (i > 0) {
-        // Seven seconds of an empty box between hints.
+        // A second of an empty box between hints.
         const gap = await until(() => input.placeholder !== DEFAULT);
-        expect(gap).toBeGreaterThanOrEqual(7_000);
-        expect(gap).toBeLessThan(7_200);
+        expect(gap).toBeGreaterThanOrEqual(IDLE_HINT_GAP_MS);
+        expect(gap).toBeLessThan(IDLE_HINT_GAP_MS + IDLE_HINT_TYPE_MS + 100);
       }
       const typing = await until(() => input.placeholder === text);
-      expect(typing).toBeGreaterThanOrEqual((text.length - 2) * 70);
-      // Held for 3.5 seconds, then erased a character at a time.
+      expect(typing).toBeGreaterThanOrEqual((text.length - 2) * IDLE_HINT_TYPE_MS);
+      // Held for 2 seconds, then erased a character at a time.
       const held = await until(() => input.placeholder !== text);
-      expect(held).toBeGreaterThanOrEqual(3_500);
-      expect(held).toBeLessThan(3_700);
+      expect(held).toBeGreaterThanOrEqual(IDLE_HINT_HOLD_MS);
+      expect(held).toBeLessThan(IDLE_HINT_HOLD_MS + IDLE_HINT_ERASE_MS + 100);
       expect(input.placeholder).toBe(text.slice(0, -1));
-      await until(() => input.placeholder === DEFAULT, text.length * 45 + 200);
+      await until(() => input.placeholder === DEFAULT, text.length * IDLE_HINT_ERASE_MS + 200);
     }
     // A key sound for every character typed and every one erased.
     const keys = HINTS.reduce((n, w) => n + idleHintText(w.word).length * 2, 0);
@@ -164,7 +168,7 @@ describe("the idle hint", () => {
     expect(document.activeElement).toBe(input);
     await wait(2_000);
     expect(events("idle_hint_triggered")).toHaveLength(1);
-    await wait(idleHintText(HINT.word).length * 70 + 20);
+    await wait(typeMs(HINT.word) + 20);
     expect(input.placeholder).toBe(idleHintText(HINT.word));
   });
 
@@ -191,7 +195,7 @@ describe("the idle hint", () => {
     inArm("new", "treatment");
     const input = renderForm();
 
-    await wait(7_000 + 210);
+    await wait(7_000 + 3 * IDLE_HINT_TYPE_MS + 30);
     const shown = input.placeholder;
     expect(shown).toBe("...");
     const dialog = document.createElement("div");
@@ -205,7 +209,7 @@ describe("the idle hint", () => {
     await act(async () => {
       dialog.remove();
     });
-    await wait(idleHintText(HINT.word).length * 70);
+    await wait(typeMs(HINT.word));
     expect(input.placeholder).toBe(idleHintText(HINT.word));
   });
 
@@ -214,7 +218,7 @@ describe("the idle hint", () => {
     const input = renderForm();
 
     await wait(7_000);
-    await wait(idleHintText(HINT.word).length * 70 + 20);
+    await wait(typeMs(HINT.word) + 20);
     expect(input.placeholder).toBe(idleHintText(HINT.word));
     expect(localStorage.getItem("ick:idle-hint")).toBeNull();
     expect(track).not.toHaveBeenCalled();
@@ -228,7 +232,7 @@ describe("the idle hint", () => {
     for (const hint of HINTS) {
       await wait(showMs(hint.word) + 100);
       expect(input.placeholder).toBe(DEFAULT);
-      await wait(7_000);
+      await wait(IDLE_HINT_GAP_MS);
     }
     expect(playKeystroke).not.toHaveBeenCalled();
     expect(events("idle_hint_triggered")).toEqual([
