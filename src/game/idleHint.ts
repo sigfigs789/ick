@@ -171,7 +171,17 @@ export function idleHintWord(
   return undefined;
 }
 
-/** The placeholder the hint types out, in full. */
+/** The placeholder the hint types out, in full: the emoji, then the word. */
 export function idleHintText(word: string): string {
-  return `${IDLE_HINT_EMOJI} try "${word}"`;
+  return `${IDLE_HINT_EMOJI} ${word}`;
+}
+
+/**
+ * An arm forced with `?idle-hint=treatment` (or `=control`), for trying the
+ * hint out without waiting on a coin flip. A forced arm is never stored or
+ * reported, so it cannot leak into the experiment's numbers.
+ */
+export function forcedIdleHintVariant(search: string = window.location.search): IdleHintVariant | null {
+  const value = new URLSearchParams(search).get("idle-hint");
+  return isVariant(value) ? value : null;
 }

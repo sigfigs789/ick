@@ -4,6 +4,7 @@ import {
   assignIdleHintArm,
   currentIdleHintArm,
   idleHintExperiment,
+  forcedIdleHintVariant,
   idleHintText,
   idleHintWord,
 } from "./idleHint";
@@ -91,6 +92,13 @@ describe("idleHintWord", () => {
   });
 
   it("types the word behind an emoji", () => {
-    expect(idleHintText("strudel")).toBe('💡 try "strudel"');
+    expect(idleHintText("strudel")).toBe("💡 strudel");
+  });
+
+  it("reads a forced arm off the query string", () => {
+    expect(forcedIdleHintVariant("?idle-hint=treatment")).toBe("treatment");
+    expect(forcedIdleHintVariant("?idle-hint=control")).toBe("control");
+    expect(forcedIdleHintVariant("?idle-hint=yes")).toBeNull();
+    expect(forcedIdleHintVariant("")).toBeNull();
   });
 });

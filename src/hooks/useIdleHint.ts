@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   IDLE_HINT_DELAY_MS,
   assignIdleHintArm,
+  forcedIdleHintVariant,
+  idleHintExperiment,
   idleHintText,
   idleHintWord,
   type IdleHintArm,
@@ -14,6 +16,7 @@ import {
   trackIdleHintTyped,
   trackIdleHintWordSubmitted,
 } from "../analytics";
+import { playKeystroke } from "../audio/sound";
 
 /** How fast the hint types itself into the placeholder, per character. */
 export const IDLE_HINT_TYPE_MS = 70;
@@ -39,12 +42,12 @@ interface Trigger {
   answerCount: number;
 }
 
-function prefersReducedMotion(): boolean {
-  try {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch {
-    return false;
-  }
+/**
+ * Whether a dialog is covering the page -- How to play on a first visit, or any
+ * other sheet. Every modal in the app marks itself aria-modal.
+ */
+function dialogOpen(): boolean {
+  return typeof document !== "undefined" && document.querySelector('[aria-modal="true"]') !== null;
 }
 
 function pageVisible(): boolean {
@@ -55,17 +58,24 @@ function pageVisible(): boolean {
  * The idle hint, for the word box (see game/idleHint.ts).
  *
  * Draws the player's arm on mount, then runs the experiment's clock whenever
- * the box is empty, the puzzle is open and the tab is in view; typing, hiding
- * the tab or moving to another puzzle starts it over. It fires once per puzzle
+ * the box is empty, the puzzle is open, no dialog is up and the tab is in view;
+ * typing, opening a dialog, hiding the tab or moving to another puzzle starts it
+ * over. Focusing the box does not: a player who tapped in and is stuck is the
+ * one the hint is for. It fires once per puzzle
  * per page load, in both arms, and only the treatment arm gets a placeholder.
  *
- * Returns the placeholder to show, if any -- typed out a character at a time --
+ * Returns the placeholder to show, if any -- typed out a character at a time,
+ * with a keystroke sound for each --
  * and `onSubmitted`, which the form calls with every submission so a submitted
  * hint word is counted.
  */
 export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Options) {
   const [arm, setArm] = useState<IdleHintArm | null>(null);
   const [visible, setVisible] = useState(pageVisible);
+  const [covered, setCovered] = useState(dialogOpen);
+  // A forced arm (`?idle-hint=treatment`) is for trying the hint out: it runs
+  // without reporting anything, so it never counts towards the experiment.
+  const forced = useRef(forcedIdleHintVariant()).current;
   const [trigger, setTrigger] = useState<Trigger | null>(null);
   const [typedChars, setTypedChars] = useState(0);
   const fired = useRef(new Set<string>());
@@ -80,14 +90,19 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
   // already stored, so the assignment is reported once.
   const assignDate = useRef(date);
   useEffect(() => {
-    if (!enabled || !isReporting()) return;
+    if (!enabled) return;
+    if (forced) {
+      setArm({ experiment: idleHintExperiment(), variant: forced });
+      return;
+    }
+    if (!isReporting()) return;
     const drawn = assignIdleHintArm();
     if (!drawn) return;
     if (drawn.fresh && assignDate.current) {
       trackIdleHintAssigned(drawn, assignDate.current);
     }
     setArm({ experiment: drawn.experiment, variant: drawn.variant });
-  }, [enabled]);
+  }, [enabled, forced]);
 
   useEffect(() => {
     const onChange = () => setVisible(pageVisible());
@@ -95,9 +110,21 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
     return () => document.removeEventListener("visibilitychange", onChange);
   }, []);
 
+  useEffect(() => {
+    const observer = new MutationObserver(() => setCovered(dialogOpen()));
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["aria-modal"],
+    });
+    setCovered(dialogOpen());
+    return () => observer.disconnect();
+  }, []);
+
   const empty = value === "";
   useEffect(() => {
-    if (!arm || !date || disabled || !empty || !visible) return;
+    if (!arm || !date || disabled || !empty || !visible || covered) return;
     if (fired.current.has(key)) return;
     const timer = window.setTimeout(() => {
       fired.current.add(key);
@@ -105,23 +132,23 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
       // No word to offer is no trigger in either arm, so both arms stay
       // comparable.
       if (!word) return;
-      trackIdleHintTriggered(arm, date, word, accepted.current.length);
-      setTypedChars(prefersReducedMotion() ? Infinity : 0);
+      if (!forced) trackIdleHintTriggered(arm, date, word, accepted.current.length);
+      setTypedChars(0);
       setTrigger({ key, word: word.word, at: Date.now(), answerCount: accepted.current.length });
     }, IDLE_HINT_DELAY_MS[arm.experiment]);
     return () => window.clearTimeout(timer);
-  }, [arm, date, drop, key, disabled, empty, visible]);
+  }, [arm, date, drop, key, disabled, empty, visible, covered, forced]);
 
   const live = trigger !== null && trigger.key === key ? trigger : null;
 
   // The first keystroke after the trigger, once per trigger.
   useEffect(() => {
-    if (!arm || !date || !live || empty) return;
+    if (!arm || !date || !live || empty || forced) return;
     const id = `${live.key}:${live.at}`;
     if (typedReported.current === id) return;
     typedReported.current = id;
     trackIdleHintTyped(arm, date, Date.now() - live.at);
-  }, [arm, date, live, empty]);
+  }, [arm, date, live, empty, forced]);
 
   const shown =
     arm?.variant === "treatment" && live !== null && live.answerCount === (acceptedWords?.length ?? 0)
@@ -131,17 +158,21 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
   const chars = shown === null ? [] : Array.from(shown);
   const fullLength = chars.length;
 
-  // Typed into the placeholder a character at a time; reduced motion gets the
-  // whole thing at once (typedChars starts at Infinity).
+  // Typed into the placeholder a character at a time, each with the sound of a
+  // key going down (a space is typed silently, as a pause between words).
   useEffect(() => {
     if (shown === null || typedChars >= fullLength) return;
-    const timer = window.setTimeout(() => setTypedChars((n) => n + 1), IDLE_HINT_TYPE_MS);
+    const next = Array.from(shown)[typedChars];
+    const timer = window.setTimeout(() => {
+      if (next.trim() !== "") playKeystroke();
+      setTypedChars((n) => n + 1);
+    }, IDLE_HINT_TYPE_MS);
     return () => window.clearTimeout(timer);
   }, [shown, typedChars, fullLength]);
 
   const onSubmitted = useCallback(
     (raw: string, wasAccepted: boolean) => {
-      if (!arm || !date || !live) return;
+      if (!arm || !date || !live || forced) return;
       const word = raw.trim().toLowerCase();
       if (word !== live.word) return;
       const id = `${live.key}:${live.at}`;
@@ -149,7 +180,7 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
       submitReported.current = id;
       trackIdleHintWordSubmitted(arm, date, word, wasAccepted);
     },
-    [arm, date, live]
+    [arm, date, live, forced]
   );
 
   return {

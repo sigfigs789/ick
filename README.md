@@ -442,9 +442,12 @@ lives in `supabase/migrations/`.
   inserts it.
 
 - **The idle hint test** (`src/game/idleHint.ts`) — an A/B test of typing a
-  hint into the empty word box (`💡 try "strangle"`, in the placeholder's
-  colour) once it has sat empty for 7 seconds in a first-ever session, or 10
-  seconds in a later one. The hint is an Uncommon or Rare word with the drop that
+  hint into the empty word box (`💡 strangle`, in the placeholder's colour, a
+  character at a time with a keystroke sound) once it has sat empty for 7
+  seconds in a first-ever session, or 10 seconds in a later one. The clock
+  waits for How to play (or any dialog) to close, and focusing the box does not
+  stop it; only typing does. Add `?idle-hint=treatment` (or `=control`) to the
+  URL to force an arm while testing; a forced arm is never stored or reported. The hint is an Uncommon or Rare word with the drop that
   the puzzle would accept. Each of the two experiments is its own sticky 50/50
   split. Both arms send `idle_hint_triggered` when the clock runs out (control
   just sees nothing), and `idle_hint_report` (the 2026-10-20 migration) compares
