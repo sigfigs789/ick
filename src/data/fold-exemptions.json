@@ -7590,10 +7590,6 @@
     "since": "2026-09-27",
     "reason": "Folded onto `prat`, costing 1.76 points. Flagged in the 2026-09-22 semantic audit (from prate, not prat) and confirmed on adversarial re-review (prate chatter unrelated to prat)."
   },
-  "prattly": {
-    "since": "2026-10-19",
-    "reason": "Folded onto `pratt` (prattly > pratt), costing 3.28 points. Flagged by the daily fold check for the 2026-10-19 `RAT` drop (pratt is surname; not its adjective) and confirmed on adversarial re-review (Pratt is a surname; no shared meaning)."
-  },
   "preachier": {
     "since": "2026-09-27",
     "scope": "prefix",

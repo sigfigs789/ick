@@ -184,6 +184,11 @@
     "since": "2026-10-19",
     "reason": "Folded onto `rational` (overrationalizing > overrationalize > overrational > rational), costing 3.96 points; it is a form of `rationalize` (Zipf 2.89). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (built on rationalize (justify), not rational) and confirmed on adversarial re-review (Rationalize's justify sense drifted from rational)."
   },
+  "prattly": {
+    "base": "prattle",
+    "since": "2026-10-19",
+    "reason": "Folded onto `pratt` (prattly > pratt), costing 3.28 points; it is a form of `prattle` (Zipf 2.18). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (pratt is surname; not its adjective) and confirmed on adversarial re-review (Pratt is a surname; no shared meaning); redirected rather than exempted on PR review (prattle + -y, like bubbly, giggly)."
+  },
   "prefigurate": {
     "base": "prefigure",
     "since": "2026-10-19",
