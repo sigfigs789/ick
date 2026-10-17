@@ -1081,6 +1081,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `cap`, costing 2.11 points. Flagged in the 2026-09-22 semantic audit (plural of cape, overshot) and confirmed on adversarial re-review (cape not from cap)."
   },
+  "carates": {
+    "since": "2026-10-19",
+    "reason": "Folded onto `carat` (carates > carat), costing 2.69 points. Flagged by the daily fold check for the 2026-10-19 `RAT` drop (plural of carate, a skin disease) and confirmed on adversarial re-review (Skin disease plural, not gem weight)."
+  },
   "cardinalised": {
     "since": "2026-09-27",
     "reason": "Folded onto `cardinalis`, costing 0.76 points. Flagged in the 2026-09-22 semantic audit (cardinalis is a genus name) and confirmed on adversarial re-review (Cardinalis is a genus name)."
@@ -1967,6 +1971,16 @@
     "reason": "Folded onto `ase` by stripping de- to `ases`. Not de- + `ases`: a garbled form, like the exempted \"deasses\". Judged in the 2026-10-02 de- audit (a form of an exempted family, or reached once its siblings were exempted).",
     "scope": "prefix"
   },
+  "deaspiration": {
+    "since": "2026-10-19",
+    "reason": "Folded onto `aspirations` (deaspiration > deaspirations > aspirations), costing 3.39 points. Flagged by the daily fold check for the 2026-10-19 `RAT` drop (phonetic sense, not ambitions) and confirmed on adversarial re-review (Phonetic aspiration, not ambitions).",
+    "scope": "prefix"
+  },
+  "deaspirations": {
+    "since": "2026-10-19",
+    "reason": "Folded onto `aspirations` (deaspirations > aspirations), costing 3.40 points. Flagged by the daily fold check for the 2026-10-19 `RAT` drop (phonetic sense, not ambitions) and confirmed on adversarial re-review (Phonetic aspiration, not ambitions).",
+    "scope": "prefix"
+  },
   "deassed": {
     "since": "2026-10-04",
     "reason": "Folded onto `ass`, costing up to 4.21 points, by stripping de- to `assed`. Not de- + `assed`: form of deas (Scots dais/seat); unrelated to ass. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
@@ -2462,6 +2476,11 @@
   "dedecorated": {
     "since": "2026-10-04",
     "reason": "Folded onto `decorated`, costing up to 4.10 points, by stripping de- to `decorated`. Not de- + `decorated`: obsolete: disgraced (Latin dedecus); not un-decorated. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dedecorates": {
+    "since": "2026-10-19",
+    "reason": "Folded onto `decorated` (dedecorates > decorates > decorate > decorated), costing 3.80 points. Flagged by the daily fold check for the 2026-10-19 `RAT` drop (means disgrace, not un-decorate) and confirmed on adversarial re-review (Latin dedecus disgrace, unrelated to decorate).",
     "scope": "prefix"
   },
   "dedecorating": {
@@ -4832,6 +4851,10 @@
   "granadoes": {
     "since": "2026-09-27",
     "reason": "Folded onto `granados`, costing 1.48 points. Flagged in the 2026-09-22 semantic audit (granados unrelated; granado plural) and confirmed on adversarial re-review (granados unrelated to granado)."
+  },
+  "grats": {
+    "since": "2026-10-19",
+    "reason": "Folded onto `grat` (grats > grat), costing 0.18 points. Flagged by the daily fold check for the 2026-10-19 `RAT` drop (clipping of congrats, not plural) and confirmed on adversarial re-review (Clipping of congrats; grat not base)."
   },
   "graveliest": {
     "since": "2026-09-27",
@@ -8722,6 +8745,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `scrappy`, costing 2.87 points. Flagged in the 2026-09-22 semantic audit (scrap + -able, not scrappy) and confirmed on adversarial re-review (from scrap; scrappy is different sense)."
   },
+  "scratchies": {
+    "since": "2026-10-19",
+    "reason": "Folded onto `scratchy` (scratchies > scratchy), costing 1.95 points. Flagged by the daily fold check for the 2026-10-19 `RAT` drop (plural noun scratchie, not adjective scratchy) and confirmed on adversarial re-review (Scratch-ticket noun, not adjective scratchy)."
+  },
   "scutes": {
     "since": "2026-09-27",
     "reason": "Folded onto `scut`, costing 0.10 points. Flagged in the 2026-09-22 semantic audit (scute is plate; scut is tail) and confirmed on adversarial re-review (scute is plate, scut tail)."
@@ -10116,6 +10143,11 @@
   "underassess": {
     "since": "2026-09-27",
     "reason": "Folded onto `ass`, costing 5.60 points. Flagged in the 2026-09-22 semantic audit (assess unrelated to ass) and confirmed on adversarial re-review (assess unrelated to ass)."
+  },
+  "underate": {
+    "since": "2026-10-19",
+    "reason": "Folded onto `derating` (underate > derate > derating), costing 0.59 points. Flagged by the daily fold check for the 2026-10-19 `RAT` drop (past of undereat, not derate) and confirmed on adversarial re-review (Past of undereat; derate overshoot).",
+    "scope": "prefix"
   },
   "undercrackers": {
     "since": "2026-09-27",

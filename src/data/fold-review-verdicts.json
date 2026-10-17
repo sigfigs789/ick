@@ -1,4 +1,19 @@
 {
+  "apparated": {
+    "base": "apparate",
+    "since": "2026-10-19",
+    "reason": "Folded onto `apparat` (apparated > apparat), costing 0.66 points; it is a form of `apparate` (Zipf 1.52). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (teleport verb, not Soviet apparat) and confirmed on adversarial re-review (Harry Potter teleport verb, unrelated to apparat)."
+  },
+  "apparates": {
+    "base": "apparate",
+    "since": "2026-10-19",
+    "reason": "Folded onto `apparat` (apparates > apparat), costing 0.68 points; it is a form of `apparate` (Zipf 1.52). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (teleport verb, not Soviet apparat) and confirmed on adversarial re-review (Harry Potter teleport verb, unrelated to apparat)."
+  },
+  "apparating": {
+    "base": "apparate",
+    "since": "2026-10-19",
+    "reason": "Folded onto `apparat` (apparating > apparat), costing 0.68 points; it is a form of `apparate` (Zipf 1.52). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (teleport verb, not Soviet apparat) and confirmed on adversarial re-review (Harry Potter teleport verb, unrelated to apparat)."
+  },
   "archaize": {
     "base": "archaic",
     "since": "2026-10-18",
@@ -28,6 +43,26 @@
     "base": "chat",
     "since": "2026-10-18",
     "reason": "Folded onto `chatty` (chattable > chatty), costing 2.33 points; it is a form of `chat` (Zipf 4.57). Flagged by the daily fold check for the 2026-10-18 `HA` drop (able to chat, not chatty) and confirmed on adversarial re-review (Chatty means talkative; chattable from chat)."
+  },
+  "curateless": {
+    "base": "curate",
+    "since": "2026-10-19",
+    "reason": "Folded onto `curated` (curateless > curate > curated), costing 3.09 points; it is a form of `curate` (Zipf 3.03). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (clergy curate, not curated) and confirmed on adversarial re-review (Clergy noun, not the verb curated)."
+  },
+  "derated": {
+    "base": "derate",
+    "since": "2026-10-19",
+    "reason": "Folded onto `rat` (derated > derat > derats > rats > rat), costing 3.77 points; it is a form of `derate` (Zipf 1.16). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (past of derate, not derat) and confirmed on adversarial re-review (Reduce rating, nothing to do with rats)."
+  },
+  "derater": {
+    "base": "derate",
+    "since": "2026-10-19",
+    "reason": "Folded onto `rat` (derater > derat > derats > rats > rat), costing 4.11 points; it is a form of `derate` (Zipf 1.16). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (agent of derate, reduce rating) and confirmed on adversarial re-review (Reduce rating, nothing to do with rats)."
+  },
+  "derates": {
+    "base": "derate",
+    "since": "2026-10-19",
+    "reason": "Folded onto `rat` (derates > derat > derats > rats > rat), costing 3.95 points; it is a form of `derate` (Zipf 1.16). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (verb form of derate) and confirmed on adversarial re-review (Reduce rating, nothing to do with rats)."
   },
   "hackies": {
     "base": "hackie",
@@ -79,6 +114,116 @@
     "since": "2026-10-18",
     "reason": "Folded onto `haw` (hawsing > haws > haw), costing 2.57 points; it is a form of `hawse` (Zipf 1.36). Flagged by the daily fold check for the 2026-10-18 `HA` drop (nautical hawse verb, not haw) and confirmed on adversarial re-review (Nautical hawse, unrelated to haw)."
   },
+  "nondeliberating": {
+    "base": "deliberate",
+    "since": "2026-10-19",
+    "reason": "Folded onto `nondeliberate` (nondeliberating > nondeliberate), costing 0.24 points; it is a form of `deliberate` (Zipf 3.82). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (verb sense, not adjective unintentional) and confirmed on adversarial re-review (Verb deliberate, not adjective unintentional)."
+  },
+  "numerately": {
+    "base": "numerate",
+    "since": "2026-10-19",
+    "reason": "Folded onto `numerated` (numerately > numerate > numerated), costing 0.63 points; it is a form of `numerate` (Zipf 1.51). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (adverb of adjective numerate, not enumerated) and confirmed on adversarial re-review (Numerate means numerically literate, not counted)."
+  },
+  "operatise": {
+    "base": "opera",
+    "since": "2026-10-19",
+    "reason": "Folded onto `operating` (operatise > operate > operating), costing 4.94 points; it is a form of `opera` (Zipf 4.27). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (make into opera, not operate) and confirmed on adversarial re-review (Built on opera, not operate)."
+  },
+  "operatised": {
+    "base": "opera",
+    "since": "2026-10-19",
+    "reason": "Folded onto `operating` (operatised > operatise > operate > operating), costing 4.92 points; it is a form of `opera` (Zipf 4.27). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (make into opera, not operate) and confirmed on adversarial re-review (Built on opera, not operate)."
+  },
+  "operatises": {
+    "base": "opera",
+    "since": "2026-10-19",
+    "reason": "Folded onto `operating` (operatises > operatise > operate > operating), costing 4.92 points; it is a form of `opera` (Zipf 4.27). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (make into opera, not operate) and confirmed on adversarial re-review (Built on opera, not operate)."
+  },
+  "operatising": {
+    "base": "opera",
+    "since": "2026-10-19",
+    "reason": "Folded onto `operating` (operatising > operatise > operate > operating), costing 4.94 points; it is a form of `opera` (Zipf 4.27). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (make into opera, not operate) and confirmed on adversarial re-review (Built on opera, not operate)."
+  },
+  "operatize": {
+    "base": "opera",
+    "since": "2026-10-19",
+    "reason": "Folded onto `operating` (operatize > operate > operating), costing 4.90 points; it is a form of `opera` (Zipf 4.27). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (make into opera, not operate) and confirmed on adversarial re-review (Built on opera, not operate)."
+  },
+  "operatized": {
+    "base": "opera",
+    "since": "2026-10-19",
+    "reason": "Folded onto `operating` (operatized > operatize > operate > operating), costing 4.91 points; it is a form of `opera` (Zipf 4.27). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (make into opera, not operate) and confirmed on adversarial re-review (Built on opera, not operate)."
+  },
+  "operatizes": {
+    "base": "opera",
+    "since": "2026-10-19",
+    "reason": "Folded onto `operating` (operatizes > operatize > operate > operating), costing 4.92 points; it is a form of `opera` (Zipf 4.27). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (make into opera, not operate) and confirmed on adversarial re-review (Built on opera, not operate)."
+  },
+  "operatizing": {
+    "base": "opera",
+    "since": "2026-10-19",
+    "reason": "Folded onto `operating` (operatizing > operatize > operate > operating), costing 4.94 points; it is a form of `opera` (Zipf 4.27). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (make into opera, not operate) and confirmed on adversarial re-review (Built on opera, not operate)."
+  },
+  "overrationalize": {
+    "base": "rationalize",
+    "since": "2026-10-19",
+    "reason": "Folded onto `rational` (overrationalize > overrational > rational), costing 3.95 points; it is a form of `rationalize` (Zipf 2.89). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (built on rationalize (justify), not rational) and confirmed on adversarial re-review (Rationalize's justify sense drifted from rational)."
+  },
+  "overrationalized": {
+    "base": "rationalize",
+    "since": "2026-10-19",
+    "reason": "Folded onto `rational` (overrationalized > overrationalize > overrational > rational), costing 3.96 points; it is a form of `rationalize` (Zipf 2.89). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (built on rationalize (justify), not rational) and confirmed on adversarial re-review (Rationalize's justify sense drifted from rational)."
+  },
+  "overrationalizes": {
+    "base": "rationalize",
+    "since": "2026-10-19",
+    "reason": "Folded onto `rational` (overrationalizes > overrationalize > overrational > rational), costing 3.96 points; it is a form of `rationalize` (Zipf 2.89). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (built on rationalize (justify), not rational) and confirmed on adversarial re-review (Rationalize's justify sense drifted from rational)."
+  },
+  "overrationalizing": {
+    "base": "rationalize",
+    "since": "2026-10-19",
+    "reason": "Folded onto `rational` (overrationalizing > overrationalize > overrational > rational), costing 3.96 points; it is a form of `rationalize` (Zipf 2.89). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (built on rationalize (justify), not rational) and confirmed on adversarial re-review (Rationalize's justify sense drifted from rational)."
+  },
+  "prattly": {
+    "base": "prattle",
+    "since": "2026-10-19",
+    "reason": "Folded onto `pratt` (prattly > pratt), costing 3.28 points; it is a form of `prattle` (Zipf 2.18). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (pratt is surname; not its adjective) and confirmed on adversarial re-review (Pratt is a surname; no shared meaning); redirected rather than exempted on PR review (prattle + -y, like bubbly, giggly)."
+  },
+  "prefigurate": {
+    "base": "prefigure",
+    "since": "2026-10-19",
+    "reason": "Folded onto `figurate` (prefigurate > figurate), costing 0.23 points; it is a form of `prefigure` (Zipf 1.57). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (means foreshadow, not figurate shape) and confirmed on adversarial re-review (Foreshadow, from prefigure, not figurate)."
+  },
+  "prefigurated": {
+    "base": "prefigure",
+    "since": "2026-10-19",
+    "reason": "Folded onto `figurate` (prefigurated > prefigurate > figurate), costing 0.24 points; it is a form of `prefigure` (Zipf 1.57). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (foreshadowed, not figurate) and confirmed on adversarial re-review (Foreshadow, from prefigure, not figurate)."
+  },
+  "prefigurates": {
+    "base": "prefigure",
+    "since": "2026-10-19",
+    "reason": "Folded onto `figurate` (prefigurates > prefigurate > figurate), costing 0.24 points; it is a form of `prefigure` (Zipf 1.57). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (foreshadows, not figurate) and confirmed on adversarial re-review (Foreshadow, from prefigure, not figurate)."
+  },
+  "prefigurating": {
+    "base": "prefigure",
+    "since": "2026-10-19",
+    "reason": "Folded onto `figurate` (prefigurating > prefigurate > figurate), costing 0.24 points; it is a form of `prefigure` (Zipf 1.57). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (foreshadowing, not figurate) and confirmed on adversarial re-review (Foreshadow, from prefigure, not figurate)."
+  },
+  "prefiguratively": {
+    "base": "prefigure",
+    "since": "2026-10-19",
+    "reason": "Folded onto `figurative` (prefiguratively > figuratively > figurative), costing 2.59 points; it is a form of `prefigure` (Zipf 1.57). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (foreshadowingly, not figuratively) and confirmed on adversarial re-review (Foreshadowing sense, not figurative speech)."
+  },
+  "prefigurativeness": {
+    "base": "prefigure",
+    "since": "2026-10-19",
+    "reason": "Folded onto `figurative` (prefigurativeness > figurativeness > figurative), costing 2.66 points; it is a form of `prefigure` (Zipf 1.57). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (foreshadowing quality, not figurativeness) and confirmed on adversarial re-review (Foreshadowing sense, not figurative speech)."
+  },
+  "prefigurativenesses": {
+    "base": "prefigure",
+    "since": "2026-10-19",
+    "reason": "Folded onto `figurative` (prefigurativenesses > prefigurativeness > figurativeness > figurative), costing 2.66 points; it is a form of `prefigure` (Zipf 1.57). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (foreshadowing quality, not figurativeness) and confirmed on adversarial re-review (Foreshadowing sense, not figurative speech)."
+  },
   "prehabilitated": {
     "base": "rehabilitated",
     "since": "2026-10-18",
@@ -93,6 +238,46 @@
     "base": "rehabilitative",
     "since": "2026-10-18",
     "reason": "Folded onto `habilitative` (prehabilitative > habilitative), costing 0.90 points; it is a form of `rehabilitative` (Zipf 2.40). Flagged by the daily fold check for the 2026-10-18 `HA` drop (coined from rehabilitative, not habilitative) and confirmed on adversarial re-review (Built on rehabilitative, not habilitative)."
+  },
+  "quadratization": {
+    "base": "quadratic",
+    "since": "2026-10-19",
+    "reason": "Folded onto `quadrate` (quadratization > quadratize > quadrate), costing 1.05 points; it is a form of `quadratic` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (means make quadratic, not square shape) and confirmed on adversarial re-review (Make quadratic, not square shape)."
+  },
+  "quadratizations": {
+    "base": "quadratic",
+    "since": "2026-10-19",
+    "reason": "Folded onto `quadrate` (quadratizations > quadratization > quadratize > quadrate), costing 1.05 points; it is a form of `quadratic` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (means make quadratic, not square shape) and confirmed on adversarial re-review (Make quadratic, not square shape)."
+  },
+  "quadratize": {
+    "base": "quadratic",
+    "since": "2026-10-19",
+    "reason": "Folded onto `quadrate` (quadratize > quadrate), costing 1.04 points; it is a form of `quadratic` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (means make quadratic, not square shape) and confirmed on adversarial re-review (Make quadratic, not square shape)."
+  },
+  "quadratized": {
+    "base": "quadratic",
+    "since": "2026-10-19",
+    "reason": "Folded onto `quadrate` (quadratized > quadratize > quadrate), costing 1.05 points; it is a form of `quadratic` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (means make quadratic, not square shape) and confirmed on adversarial re-review (Make quadratic, not square shape)."
+  },
+  "quadratizes": {
+    "base": "quadratic",
+    "since": "2026-10-19",
+    "reason": "Folded onto `quadrate` (quadratizes > quadratize > quadrate), costing 1.05 points; it is a form of `quadratic` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (means make quadratic, not square shape) and confirmed on adversarial re-review (Make quadratic, not square shape)."
+  },
+  "quadratizing": {
+    "base": "quadratic",
+    "since": "2026-10-19",
+    "reason": "Folded onto `quadrate` (quadratizing > quadratize > quadrate), costing 1.04 points; it is a form of `quadratic` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (means make quadratic, not square shape) and confirmed on adversarial re-review (Make quadratic, not square shape)."
+  },
+  "rationales": {
+    "base": "rationale",
+    "since": "2026-10-19",
+    "reason": "Folded onto `rational` (rationales > rational), costing 2.38 points; it is a form of `rationale` (Zipf 3.53). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (plural of rationale, not rational) and confirmed on adversarial re-review (Plural of rationale, not adjective rational)."
+  },
+  "rationes": {
+    "base": "ratio",
+    "since": "2026-10-19",
+    "reason": "Folded onto `rations` (rationes > ration > rations), costing 2.81 points; it is a form of `ratio` (Zipf 4.37). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (Latin plural of ratio) and confirmed on adversarial re-review (Latin plural of ratio, not ration)."
   },
   "shaggability": {
     "base": "shag",
