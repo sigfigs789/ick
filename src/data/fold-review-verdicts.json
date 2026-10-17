@@ -94,6 +94,31 @@
     "since": "2026-10-18",
     "reason": "Folded onto `habilitative` (prehabilitative > habilitative), costing 0.90 points; it is a form of `rehabilitative` (Zipf 2.40). Flagged by the daily fold check for the 2026-10-18 `HA` drop (coined from rehabilitative, not habilitative) and confirmed on adversarial re-review (Built on rehabilitative, not habilitative)."
   },
+  "quined": {
+    "base": "quine",
+    "since": "2026-10-20",
+    "reason": "Folded onto `quin` (quined > quin), costing 2.09 points; it is a form of `quine` (Zipf 2.36). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (from quine program, not quin) and confirmed on adversarial re-review (quine is self-replicating program, not quin)."
+  },
+  "quines": {
+    "base": "quine",
+    "since": "2026-10-20",
+    "reason": "Folded onto `quin` (quines > quin), costing 1.82 points; it is a form of `quine` (Zipf 2.36). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (plural of quine, not quin) and confirmed on adversarial re-review (plural of quine, not quin)."
+  },
+  "quining": {
+    "base": "quine",
+    "since": "2026-10-20",
+    "reason": "Folded onto `quin` (quining > quin), costing 2.05 points; it is a form of `quine` (Zipf 2.36). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (from quine, not quin) and confirmed on adversarial re-review (from quine, not quin)."
+  },
+  "quintes": {
+    "base": "quinte",
+    "since": "2026-10-20",
+    "reason": "Folded onto `quint` (quintes > quint), costing 1.91 points; it is a form of `quinte` (Zipf 1.82). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (plural of fencing parry quinte) and confirmed on adversarial re-review (fencing parry quinte, not quint)."
+  },
+  "risquing": {
+    "base": "risk",
+    "since": "2026-10-20",
+    "reason": "Folded onto `risque` (risquing > risque), costing 1.72 points; it is a form of `risk` (Zipf 5.05). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (archaic spelling of risking, not racy) and confirmed on adversarial re-review (archaic risque means risk, not racy)."
+  },
   "shaggability": {
     "base": "shag",
     "since": "2026-10-18",
