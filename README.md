@@ -442,7 +442,7 @@ lives in `supabase/migrations/`.
   inserts it.
 
 - **The idle hint test** (`src/game/idleHint.ts`) — an A/B test of typing
-  hints into the empty word box once it has sat empty for 7 seconds, in a
+  hints into the empty word box once it has sat empty for 5 seconds, in a
   first-ever session and in later ones alike. A hint (`...strong`) is
   typed into the placeholder a character at a time with a keystroke sound,
   held 2s and erased; the next follows 1s later, three in all, each a

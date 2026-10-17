@@ -89,7 +89,7 @@ describe("the idle hint", () => {
     const input = renderForm();
     expect(HINTS).toHaveLength(3);
 
-    await wait(6_900);
+    await wait(4_900);
     expect(input.placeholder).toBe(DEFAULT);
     expect(events("idle_hint_triggered")).toHaveLength(0);
 
@@ -99,7 +99,7 @@ describe("the idle hint", () => {
         experiment: "new",
         variant: "treatment",
         shown: true,
-        delay_ms: 7_000,
+        delay_ms: 5_000,
         word: HINT.word,
         words: HINTS.map((w) => w.word).join(","),
         rarity: HINT.rarity,
@@ -142,7 +142,7 @@ describe("the idle hint", () => {
     inArm("new", "treatment");
     const input = renderForm();
 
-    await wait(7_000 + 500);
+    await wait(5_000 + 500);
     expect(input.placeholder).not.toBe(DEFAULT);
     fireEvent.change(input, { target: { value: "s" } });
     expect(events("idle_hint_typed")).toEqual([
@@ -162,7 +162,7 @@ describe("the idle hint", () => {
     inArm("new", "treatment");
     const input = renderForm();
 
-    await wait(5_000);
+    await wait(3_000);
     act(() => input.focus());
     fireEvent.focus(input);
     expect(document.activeElement).toBe(input);
@@ -185,7 +185,7 @@ describe("the idle hint", () => {
     await act(async () => {
       dialog.remove();
     });
-    await wait(6_900);
+    await wait(4_900);
     expect(events("idle_hint_triggered")).toHaveLength(0);
     await wait(100);
     expect(events("idle_hint_triggered")).toHaveLength(1);
@@ -195,7 +195,7 @@ describe("the idle hint", () => {
     inArm("new", "treatment");
     const input = renderForm();
 
-    await wait(7_000 + 3 * IDLE_HINT_TYPE_MS + 30);
+    await wait(5_000 + 3 * IDLE_HINT_TYPE_MS + 30);
     const shown = input.placeholder;
     expect(shown).toBe("...");
     const dialog = document.createElement("div");
@@ -217,7 +217,7 @@ describe("the idle hint", () => {
     window.history.replaceState(null, "", "/?idle-hint=treatment");
     const input = renderForm();
 
-    await wait(7_000);
+    await wait(5_000);
     await wait(typeMs(HINT.word) + 20);
     expect(input.placeholder).toBe(idleHintText(HINT.word));
     expect(localStorage.getItem("ick:idle-hint")).toBeNull();
@@ -228,7 +228,7 @@ describe("the idle hint", () => {
     inArm("new", "control");
     const input = renderForm();
 
-    await wait(7_000);
+    await wait(5_000);
     for (const hint of HINTS) {
       await wait(showMs(hint.word) + 100);
       expect(input.placeholder).toBe(DEFAULT);
@@ -240,15 +240,15 @@ describe("the idle hint", () => {
     ]);
   });
 
-  it("waits 7 seconds for a returning player too", async () => {
+  it("waits 5 seconds for a returning player too", async () => {
     inArm("returning", "treatment");
     renderForm();
 
-    await wait(6_900);
+    await wait(4_900);
     expect(events("idle_hint_triggered")).toHaveLength(0);
     await wait(100);
     expect(events("idle_hint_triggered")).toEqual([
-      expect.objectContaining({ experiment: "returning", delay_ms: 7_000 }),
+      expect.objectContaining({ experiment: "returning", delay_ms: 5_000 }),
     ]);
   });
 
@@ -256,13 +256,13 @@ describe("the idle hint", () => {
     inArm("new", "treatment");
     const input = renderForm();
 
-    await wait(5_000);
+    await wait(3_000);
     fireEvent.change(input, { target: { value: "st" } });
     await wait(10_000);
     expect(events("idle_hint_triggered")).toHaveLength(0);
 
     fireEvent.change(input, { target: { value: "" } });
-    await wait(7_000);
+    await wait(5_000);
     expect(events("idle_hint_triggered")).toHaveLength(1);
   });
 
@@ -282,7 +282,7 @@ describe("the idle hint", () => {
     const onSubmit = vi.fn().mockResolvedValue({ ok: true });
     const input = renderForm({ onSubmit });
 
-    await wait(7_000 + 1_500);
+    await wait(5_000 + 1_500);
     fireEvent.change(input, { target: { value: HINT.word } });
     await act(async () => {
       fireEvent.submit(input.form!);

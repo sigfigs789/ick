@@ -16,7 +16,7 @@ import type { AcceptedWord, Rarity } from "./types";
  * giveaway: those are the bottom of the scale, and the player still has to
  * find something rarer to do well. The first keystroke ends the loop.
  *
- * Two experiments, each split 50/50 on its own, both hinted after 7 seconds:
+ * Two experiments, each split 50/50 on its own, both hinted after 5 seconds:
  *   - `new`: a first-ever session.
  *   - `returning`: any later session.
  *
@@ -43,8 +43,8 @@ export interface IdleHintArm {
 
 /** How long the box has to sit empty, per experiment. */
 export const IDLE_HINT_DELAY_MS: Record<IdleHintExperiment, number> = {
-  new: 7_000,
-  returning: 7_000,
+  new: 5_000,
+  returning: 5_000,
 };
 
 /** The tiers a hint is drawn from. */

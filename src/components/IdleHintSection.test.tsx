@@ -48,11 +48,11 @@ describe("IdleHintSection", () => {
     const fetchMock = stubFetch(REPORT);
     render(<IdleHintSection from="2026-10-10" to="2026-10-16" today="2026-10-16" />);
 
-    const table = (await screen.findByText("New players, after 7s")).closest("table") as HTMLElement;
+    const table = (await screen.findByText("New players, after 5s")).closest("table") as HTMLElement;
     expect(String(fetchMock.mock.calls[0][0])).toContain(
       "list=idle-hint&from=2026-10-10&to=2026-10-16&today=2026-10-16",
     );
-    expect(screen.getByText("Returning players, after 7s")).toBeInTheDocument();
+    expect(screen.getByText("Returning players, after 5s")).toBeInTheDocument();
 
     const guessed = within(table).getByRole("row", { name: /guessed after/i });
     expect(guessed).toHaveTextContent("40 40%");
