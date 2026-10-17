@@ -1,0 +1,52 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+  assignUiVariant,
+  isNewPlayUi,
+  setUiVariantForTest,
+  takeFreshUiAssignment,
+  uiVariant,
+} from "./uiVariant";
+
+describe("assignUiVariant", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    setUiVariantForTest("control");
+  });
+
+  it("splits a browser with no assignment by the coin, and reports it once", () => {
+    expect(assignUiVariant("", () => 0.7)).toBe("v2");
+    expect(isNewPlayUi()).toBe(true);
+    expect(takeFreshUiAssignment()).toEqual({ variant: "v2", visitType: "first" });
+    expect(takeFreshUiAssignment()).toBeNull();
+
+    localStorage.clear();
+    expect(assignUiVariant("", () => 0.2)).toBe("control");
+  });
+
+  it("keeps a browser's variant across opens without reporting it again", () => {
+    assignUiVariant("", () => 0.9);
+    takeFreshUiAssignment();
+    setUiVariantForTest("control");
+    expect(assignUiVariant("", () => 0.1)).toBe("v2");
+    expect(takeFreshUiAssignment()).toBeNull();
+  });
+
+  it("splits returning players too, and says they were returning", () => {
+    localStorage.setItem("ick:visits", JSON.stringify({ timesReturned: 3 }));
+    assignUiVariant("", () => 0.9);
+    expect(takeFreshUiAssignment()).toEqual({ variant: "v2", visitType: "returning" });
+  });
+
+  it("lets ?ui= force a variant, remembered but never reported", () => {
+    expect(assignUiVariant("?ui=v2", () => 0.1)).toBe("v2");
+    expect(takeFreshUiAssignment()).toBeNull();
+    expect(assignUiVariant("", () => 0.1)).toBe("v2");
+    expect(assignUiVariant("?ui=control")).toBe("control");
+    expect(uiVariant()).toBe("control");
+  });
+
+  it("ignores an unknown stored value and assigns afresh", () => {
+    localStorage.setItem("ick:ui-variant", "purple");
+    expect(assignUiVariant("", () => 0.9)).toBe("v2");
+  });
+});

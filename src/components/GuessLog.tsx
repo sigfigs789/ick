@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { maxGuessesFor } from "../game/constants";
 import { bestWord } from "../game/rank";
 import {
@@ -53,6 +53,10 @@ interface Props {
   copying?: string | null;
   /** Submit a word to `otherMode` as well. */
   onCopyToOtherMode?: (word: string) => void;
+  /** The new play screen is on (see game/uiVariant.ts). */
+  newUi?: boolean;
+  /** Sits in the header beside the count: the new play screen's Share. */
+  headerAction?: ReactNode;
 }
 
 export function GuessLog({
@@ -68,6 +72,8 @@ export function GuessLog({
   crossMode,
   copying = null,
   onCopyToOtherMode,
+  newUi = false,
+  headerAction,
 }: Props) {
   const best = bestWord(acceptedWords);
   const maxGuesses = maxGuessesFor(date);
@@ -91,6 +97,29 @@ export function GuessLog({
   // Derived rather than cleared by hand: spending the retry flips `canRetry`,
   // and so does the day rolling over under a tab left open overnight.
   const picking = arming && canRetry;
+
+  // New play screen: the word that has just landed, lit for a moment so the
+  // eye finds it under the input. Only a word added while the log is on screen
+  // -- not the words a puzzle loads with, or a puzzle switch.
+  const [landed, setLanded] = useState<string | null>(null);
+  const seen = useRef({ date, count: acceptedWords.length });
+  useEffect(() => {
+    const before = seen.current;
+    seen.current = { date, count: acceptedWords.length };
+    if (!newUi || before.date !== date || acceptedWords.length <= before.count) return;
+    const word = acceptedWords[acceptedWords.length - 1].word;
+    setLanded(word);
+    const timer = window.setTimeout(() => setLanded((w) => (w === word ? null : w)), 1600);
+    return () => window.clearTimeout(timer);
+  }, [acceptedWords, date, newUi]);
+
+  // New play screen: the per-word "Submit to <other mode>" controls stay
+  // folded behind one line under the log, so a card carries the word and its
+  // score and not a link to a game a new player may not know exists.
+  const [offeringOther, setOfferingOther] = useState(false);
+  const anyReady =
+    otherMode !== undefined &&
+    acceptedWords.some((w) => crossMode?.[w.word]?.state === "ready");
 
   function retry(w: AcceptedWord) {
     setArming(false);
@@ -121,6 +150,7 @@ export function GuessLog({
           <span className="guess-log__count">
             {acceptedWords.length} of {maxGuesses} guesses
           </span>
+          {headerAction}
         </div>
       )}
 
@@ -131,7 +161,9 @@ export function GuessLog({
         // "the drop" to a player who may not have met the word yet. What an
         // empty slot is for is saying what will fill it.
         <p className="guess-log__empty">
-          No words yet — every one you find lands here.
+          {newUi
+            ? "No words yet — aim for the rarest word you can find."
+            : "No words yet — every one you find lands here."}
         </p>
       ) : (
         <ol className="guess-log__list">
@@ -160,7 +192,7 @@ export function GuessLog({
                 key={w.word}
                 className={`guess-log__entry${isBest ? " guess-log__entry--best" : ""}${
                   picking ? " guess-log__entry--picking" : ""
-                }`}
+                }${landed === w.word ? " guess-log__entry--landed" : ""}`}
               >
                 {/* One button, two jobs. While the retry is armed the whole card
                     is the thing you tap to drop that word, which is why the
@@ -170,6 +202,7 @@ export function GuessLog({
                   type="button"
                   className={`guess-log__entry-button${isCopied ? " guess-log__entry-button--copied" : ""}`}
                   onClick={() => (picking ? retry(w) : copyWord(w))}
+                  title={newUi && !picking ? "Tap to copy" : undefined}
                   aria-label={
                     picking
                       ? `Retry "${w.word}" (${w.rarity}, guess ${i + 1}) — clear it and try again`
@@ -242,7 +275,8 @@ export function GuessLog({
                     A sibling of the card for the same reason the note above
                     is, and hidden while the retry is armed for the same reason
                     too. */}
-                {elsewhere && otherMode && !picking && (
+                {elsewhere && otherMode && !picking &&
+                  (!newUi || offeringOther || elsewhere.state === "copied") && (
                   <OtherModeRow
                     word={w.word}
                     mode={otherMode}
@@ -250,12 +284,28 @@ export function GuessLog({
                     copying={copying}
                     onCopy={onCopyToOtherMode}
                     date={date}
+                    newUi={newUi}
                   />
                 )}
               </li>
             );
           })}
         </ol>
+      )}
+
+      {newUi && anyReady && otherMode && !picking && (
+        <p className="guess-log__other-offer">
+          <button
+            type="button"
+            className="guess-log__other-offer-button"
+            aria-expanded={offeringOther}
+            onClick={() => setOfferingOther((was) => !was)}
+          >
+            {offeringOther
+              ? `Hide ${MODE_LABELS[otherMode]} options`
+              : `Also play these words in ${MODE_LABELS[otherMode]} mode`}
+          </button>
+        </p>
       )}
 
       {/* Under the log rather than over it: the retry is about the words above
@@ -308,7 +358,7 @@ export function GuessLog({
         </div>
       )}
 
-      {!completed && guessesLeft > 0 && acceptedWords.length > 0 && (
+      {!newUi && !completed && guessesLeft > 0 && acceptedWords.length > 0 && (
         <p className="guess-log__remaining">
           Aim for the highest rarity you can find.
         </p>
@@ -349,6 +399,7 @@ function OtherModeRow({
   copying,
   onCopy,
   date,
+  newUi = false,
 }: {
   word: string;
   mode: GameMode;
@@ -356,6 +407,8 @@ function OtherModeRow({
   preview: CrossModePreview;
   copying: string | null;
   onCopy?: (word: string) => void;
+  /** The new play screen words it as playing, not submitting. */
+  newUi?: boolean;
 }) {
   const label = MODE_LABELS[mode];
   return (
@@ -368,7 +421,13 @@ function OtherModeRow({
           onClick={() => onCopy?.(word)}
           aria-label={`Submit “${word}” to ${label}. Uses one ${label} guess.`}
         >
-          {copying === word ? "Submitting…" : `Submit to ${label}`}
+          {copying === word
+            ? newUi
+              ? "Playing…"
+              : "Submitting…"
+            : newUi
+              ? `Play in ${label}`
+              : `Submit to ${label}`}
         </button>
       )}
       {preview.state === "copied" && (

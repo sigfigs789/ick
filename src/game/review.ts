@@ -359,6 +359,10 @@ export interface AnalyticsReport {
   /** Each grouping, split by whether the player opened the chat in the window. */
   chat: Record<Group, { opened: KeyMetrics; notOpened: KeyMetrics }>;
   chatSince: string | null;
+  /** Each grouping, split by play-screen variant (see game/uiVariant.ts). */
+  ui: Record<Group, { control: KeyMetrics; v2: KeyMetrics }>;
+  /** The first day a browser was put in the experiment, or null before it ran. */
+  uiSince: string | null;
   daily: Array<{ date: string; closed: boolean; groups: Record<Group, DayMetrics> }>;
 }
 
@@ -417,6 +421,8 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     modes: { standard: mode(modes.standard), freeform: mode(modes.freeform) },
     chat: byGroup(r.chat, (raw) => ({ opened: metrics(obj(raw).opened), notOpened: metrics(obj(raw).notOpened) })),
     chatSince: text(r.chatSince),
+    ui: byGroup(r.ui, (raw) => ({ control: metrics(obj(raw).control), v2: metrics(obj(raw).v2) })),
+    uiSince: text(r.uiSince),
     daily: list(r.daily)
       .filter((d) => text(d.date))
       .map((d) => ({

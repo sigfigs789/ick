@@ -14,6 +14,11 @@ const streak: StreakState = {
 };
 
 describe("GuessLog", () => {
+  it("asks for the rarest word in the new play screen's empty state", () => {
+    render(<GuessLog acceptedWords={[]} newUi />);
+    expect(screen.getByText(/aim for the rarest word/i)).toBeInTheDocument();
+  });
+
   it("shows an empty state with no guesses", () => {
     render(<GuessLog acceptedWords={[]} />);
     expect(screen.getByText(/no words yet/i)).toBeInTheDocument();
@@ -311,6 +316,45 @@ describe("GuessLog guess count", () => {
       expect(submit).toHaveLength(1);
       expect(submit[0]).toHaveTextContent("Submit to Freeform");
       await userEvent.click(submit[0]);
+      expect(onCopy).toHaveBeenCalledWith("kindless");
+    });
+
+    it("folds the controls behind one line on the new play screen", async () => {
+      const onCopy = vi.fn();
+      render(
+        <GuessLog
+          acceptedWords={words}
+          date="2026-10-01"
+          otherMode="freeform"
+          onCopyToOtherMode={onCopy}
+          newUi
+          crossMode={{
+            kindless: {
+              state: "ready",
+              word: { word: "kindless", rarity: "Legend", zipf: 0.4 },
+              score: "9.91",
+              needsLiveCheck: false,
+            },
+            kindly: {
+              state: "copied",
+              word: { word: "kindly", rarity: "Uncommon", zipf: 3.9 },
+              score: "5.20",
+            },
+            kinder: { state: "refused", reason: "archaic" },
+          }}
+        />
+      );
+
+      // Folded: a score already earned there still shows, nothing else does.
+      expect(screen.getByText("5.20")).toBeInTheDocument();
+      expect(screen.queryByText("Not playable in Freeform")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Submit “.*” to Freeform/ })).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "Also play these words in Freeform mode" }));
+      expect(screen.getByText("Not playable in Freeform")).toBeInTheDocument();
+      const play = screen.getByRole("button", { name: /^Submit “kindless” to Freeform/ });
+      expect(play).toHaveTextContent("Play in Freeform");
+      await userEvent.click(play);
       expect(onCopy).toHaveBeenCalledWith("kindless");
     });
 

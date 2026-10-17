@@ -11,6 +11,8 @@ import { PuzzleNav } from "./components/PuzzleNav";
 import { FoldedLiveNotice } from "./components/FoldedLiveNotice";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
+import { QuickShareButton } from "./components/QuickShareButton";
+import { isNewPlayUi } from "./game/uiVariant";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
@@ -80,6 +82,9 @@ export default function App() {
   const [showPerfectMonth, setShowPerfectMonth] = useState(false);
   const endPerfectMonth = useCallback(() => setShowPerfectMonth(false), []);
   const sound = useSound();
+  // The play-screen experiment (see game/uiVariant.ts): settled before the
+  // first render and fixed for the browser, so it never changes under a player.
+  const newUi = isNewPlayUi();
 
   // The compact share-link code identifies its origin without exposing a
   // long UTM parameter in the result text.
@@ -179,6 +184,30 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfectMonth, date]);
 
+  const guessEntry = (
+    <>
+      {!progress.completed && (
+        <SubmitForm
+          drop={drop}
+          disabled={progress.completed}
+          feedback={feedback}
+          checking={checking}
+          onSubmit={submitWord}
+          date={date}
+          mode={playMode}
+        />
+      )}
+      <FeedbackRegion
+        feedback={feedback}
+        note={liveNote}
+        reserveSpace={!progress.completed}
+        onWordRules={() => setShowWordRules(true)}
+        settledNote={!newUi}
+        visibleMs={newUi ? (feedback?.kind === "accepted" ? 4000 : 8000) : undefined}
+      />
+    </>
+  );
+
   return (
     <>
       {showPerfectMonth ? (
@@ -231,6 +260,10 @@ export default function App() {
           notices={foldNotices}
           onDismiss={dismissFoldNotices}
         />
+        {/* The new play screen puts the input straight under the drop, so it
+            stays where it is as words land below it rather than being pushed
+            down the page by each one. */}
+        {newUi && guessEntry}
         <GuessLog
           acceptedWords={progress.acceptedWords}
           completed={progress.completed}
@@ -244,35 +277,22 @@ export default function App() {
           crossMode={crossMode}
           copying={copying}
           onCopyToOtherMode={copyToOtherMode}
+          newUi={newUi}
+          headerAction={
+            newUi && progress.acceptedWords.length > 0 ? (
+              <QuickShareButton
+                date={date}
+                drop={drop}
+                words={progress.acceptedWords}
+                streak={streak}
+                isToday={isToday}
+                mode={progress.mode}
+              />
+            ) : undefined
+          }
         />
 
-        {!progress.completed && (
-          <SubmitForm
-            drop={drop}
-            disabled={progress.completed}
-            feedback={feedback}
-            checking={checking}
-            onSubmit={submitWord}
-            date={date}
-            mode={playMode}
-          />
-        )}
-        <FeedbackRegion
-          feedback={feedback}
-          note={liveNote}
-          reserveSpace={!progress.completed}
-          onWordRules={() => setShowWordRules(true)}
-        />
-
-        {DEV_TOOLS && (
-          <button
-            type="button"
-            className="dev-reset-button"
-            onClick={resetAnswers}
-          >
-            Reset answers
-          </button>
-        )}
+        {!newUi && guessEntry}
 
         {!progress.completed && !isToday && (
           <p className="archive-note">
@@ -287,6 +307,8 @@ export default function App() {
             totalRarity={totalRarityScore(progress.acceptedWords, date)}
             date={date}
             isToday={isToday}
+            hideEmpty={newUi}
+            hasWords={progress.acceptedWords.length > 0}
           />
         )}
 
@@ -314,6 +336,18 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Dev only, and pinned beside the dev date bar rather than in the
+          column, so a dev screenshot of the board matches production. */}
+      {DEV_TOOLS && (
+        <button
+          type="button"
+          className="dev-reset-button"
+          onClick={resetAnswers}
+        >
+          Reset answers
+        </button>
+      )}
 
       <WordRulesModal
         open={showWordRules}

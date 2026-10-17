@@ -19,6 +19,15 @@ interface Props {
    */
   reserveSpace?: boolean;
   onWordRules: () => void;
+  /**
+   * Whether the note stays up once the lookup answers. Off on the new play
+   * screen (see game/uiVariant.ts): the settled note ("Not found") only
+   * repeated the verdict the toast under it gives in full, so there the note
+   * shows only while it is still waiting.
+   */
+  settledNote?: boolean;
+  /** How long a verdict stays up, in ms. */
+  visibleMs?: number;
 }
 
 const VISIBLE_MS = 12000;
@@ -48,6 +57,8 @@ export function FeedbackRegion({
   note,
   reserveSpace = true,
   onWordRules,
+  settledNote = true,
+  visibleMs = VISIBLE_MS,
 }: Props) {
   const [shown, setShown] = useState(false);
   const [noteShown, setNoteShown] = useState(false);
@@ -55,8 +66,10 @@ export function FeedbackRegion({
   useEffect(() => {
     if (!feedback) return;
     setShown(true);
-    const timer = window.setTimeout(() => setShown(false), VISIBLE_MS);
+    const timer = window.setTimeout(() => setShown(false), visibleMs);
     return () => window.clearTimeout(timer);
+    // Timed from the verdict's arrival; a change of length alone is not news.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
   // The note holds while the lookup is still running -- it has no verdict to
@@ -69,8 +82,9 @@ export function FeedbackRegion({
     }
     setNoteShown(true);
     if (!feedback) return;
-    const timer = window.setTimeout(() => setNoteShown(false), VISIBLE_MS);
+    const timer = window.setTimeout(() => setNoteShown(false), visibleMs);
     return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [note, feedback]);
 
   // A note still in flight ends in an ellipsis; a settled one ("Found it!")
@@ -78,6 +92,7 @@ export function FeedbackRegion({
   // that character: the stem stays a plain text node and carries the
   // announcement, and the dots are decoration the screen reader never sees.
   const pendingStem = note?.endsWith("…") ? note.slice(0, -1) : null;
+  const showNote = Boolean(note) && (settledNote || pendingStem !== null);
 
   // A trailing run of zero-width spaces, sized by `feedback.key`, makes
   // consecutive identical messages (e.g. rejecting the same word twice)
@@ -101,7 +116,7 @@ export function FeedbackRegion({
 
   return (
     <>
-      {note && (
+      {showNote && (
         // Deliberately not role="status": the toast below is the page's single
         // status region, and aria-live alone still announces this when it changes.
         <p className={`live-note${noteShown ? " live-note--shown" : ""}`} aria-live="polite">

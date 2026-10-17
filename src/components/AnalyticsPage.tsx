@@ -227,11 +227,26 @@ function Report({
       </Section>
 
       <Section
+        title="Play screen test"
+        note={`${span}. Current play screen vs the new one, each browser assigned 50/50${
+          report.uiSince ? `, since ${shortDate(report.uiSince)}` : ""
+        }.`}
+      >
+        <MetricsTable
+          split="Play screen"
+          rows={GROUPS.flatMap((g) => [
+            { key: `${g}-control`, label: GROUP_NAMES[g], side: "Current", metrics: report.ui[g].control },
+            { key: `${g}-v2`, label: GROUP_NAMES[g], side: "New", metrics: report.ui[g].v2 },
+          ])}
+        />
+      </Section>
+
+      <Section
         title="Chat"
         note={`${span}. Opened chat vs didn't${report.chatSince ? `, since ${shortDate(report.chatSince)}` : ""}.`}
       >
         <MetricsTable
-          split
+          split="Chat"
           rows={GROUPS.flatMap((g) => [
             { key: `${g}-opened`, label: GROUP_NAMES[g], side: "Opened chat", metrics: report.chat[g].opened },
             { key: `${g}-not`, label: GROUP_NAMES[g], side: "Didn't", metrics: report.chat[g].notOpened },
@@ -249,15 +264,18 @@ interface MetricsRow {
   metrics: KeyMetrics;
 }
 
-/** The four key numbers, a row per set of players; `split` pairs rows under one label. */
-function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: boolean }) {
+/**
+ * The four key numbers, a row per set of players; `split` pairs rows under one
+ * label, and names the column that tells the pair apart.
+ */
+function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: string }) {
   return (
     <div className="analytics__table-wrap">
       <table className="analytics__table">
         <thead>
           <tr>
             <th scope="col">Who</th>
-            {split && <th scope="col">Chat</th>}
+            {split && <th scope="col">{split}</th>}
             <th scope="col">Players</th>
             <th scope="col">Did something</th>
             <th scope="col">Guessed</th>
