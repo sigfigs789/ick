@@ -6,7 +6,7 @@ import {
   idleHintExperiment,
   forcedIdleHintVariant,
   idleHintText,
-  idleHintWord,
+  idleHintWords,
 } from "./idleHint";
 import { evaluateSubmission } from "./submit";
 import { recordVisit } from "./visits";
@@ -70,29 +70,36 @@ describe("the idle hint experiments", () => {
   });
 });
 
-describe("idleHintWord", () => {
-  it("picks an Uncommon or Rare word with the drop that the puzzle would accept", () => {
-    const hint = idleHintWord("str", DATE, []);
-    expect(hint).toBeDefined();
-    expect(hint!.word).toContain("str");
-    expect(IDLE_HINT_TIERS).toContain(hint!.rarity);
-    expect(evaluateSubmission(hint!.word, "str", [], DATE).ok).toBe(true);
+describe("idleHintWords", () => {
+  it("picks three Common or Very Common words with the drop that the puzzle would accept together", () => {
+    const hints = idleHintWords("str", DATE, []);
+    expect(hints).toHaveLength(3);
+    const banked = [];
+    for (const hint of hints) {
+      expect(hint.word).toContain("str");
+      expect(hint.word.length).toBeGreaterThanOrEqual(5);
+      expect(IDLE_HINT_TIERS).toContain(hint.rarity);
+      // Distinct roots: each is still accepted after the ones before it.
+      expect(evaluateSubmission(hint.word, "str", [...banked], DATE).ok).toBe(true);
+      banked.push(hint);
+    }
   });
 
-  it("is the same pick on every call", () => {
-    expect(idleHintWord("ou", DATE, [])?.word).toBe(idleHintWord("ou", DATE, [])?.word);
+  it("is the same picks on every call", () => {
+    expect(idleHintWords("ou", DATE, []).map((w) => w.word)).toEqual(
+      idleHintWords("ou", DATE, []).map((w) => w.word)
+    );
   });
 
   it("never hints a word already banked", () => {
-    const first = idleHintWord("str", DATE, [])!;
-    const next = idleHintWord("str", DATE, [first]);
-    expect(next).toBeDefined();
-    expect(next!.word).not.toBe(first.word);
-    expect(evaluateSubmission(next!.word, "str", [first], DATE).ok).toBe(true);
+    const [first] = idleHintWords("str", DATE, []);
+    const next = idleHintWords("str", DATE, [first]);
+    expect(next).toHaveLength(3);
+    expect(next.map((w) => w.word)).not.toContain(first.word);
   });
 
-  it("types the word behind an emoji", () => {
-    expect(idleHintText("strudel")).toBe("💡 strudel");
+  it("types the word behind an ellipsis", () => {
+    expect(idleHintText("strong")).toBe("...strong");
   });
 
   it("reads a forced arm off the query string", () => {

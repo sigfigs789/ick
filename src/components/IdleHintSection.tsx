@@ -43,7 +43,7 @@ export function IdleHintSection({ from, to, today }: { from: string | null; to: 
     <section className="analytics__section">
       <h2 className="analytics__heading">Idle hint test</h2>
       <p className="review__meta analytics__note">
-        A word typed into the empty box after a few idle seconds, for half of each group.
+        Common words typed into the empty box after a few idle seconds, for half of each group.
         Everything below "Sat idle" is over the players who sat idle that long, in either arm.
         {state.kind === "ready" && state.report.since ? ` Running since ${state.report.since}.` : ""}
       </p>
@@ -79,7 +79,7 @@ const ROWS: Row[] = [
   { label: "Best score (guessers)", value: (m) => (m.guessed ? (m.bestScore / m.guessed).toFixed(2) : "–") },
   { label: "Finished", rate: (m) => ({ n: m.finished, of: m.triggered }) },
   { label: "Shared", rate: (m) => ({ n: m.shared, of: m.triggered }) },
-  { label: "Played the hint word", rate: (m) => ({ n: m.usedHint, of: m.triggered }) },
+  { label: "Played a hint word", rate: (m) => ({ n: m.usedHint, of: m.triggered }) },
   {
     label: "Median time on site",
     value: (m) => (m.medianVisibleMs === null ? "–" : `${Math.round(m.medianVisibleMs / 1000)}s`),

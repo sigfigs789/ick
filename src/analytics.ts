@@ -868,10 +868,11 @@ export function campaignSourceFromSearch(search: string): "share" | "twitter" | 
  * - `idle_hint_triggered`: the box sat empty for the experiment's delay. Sent
  *   by both arms -- `shown` says whether anything appeared -- so the players
  *   who sat idle can be compared arm against arm. Carries the word that was (or,
- *   in control, would have been) hinted.
- * - `idle_hint_typed`: the first keystroke after the trigger, and how long it
- *   took to come.
- * - `idle_hint_word_submitted`: the player submitted the hinted word. Sent by
+ *   in control, would have been) hinted first, and the rotation that follows it.
+ * - `idle_hint_typed`: the first keystroke after the trigger, which ends the
+ *   loop, and how long it took to come.
+ * - `idle_hint_word_submitted`: the player submitted a word the loop had
+ *   reached. Sent by
  *   control too, which is the baseline: how often somebody plays that word
  *   without being told to.
  */
@@ -909,14 +910,17 @@ export function trackIdleHintAssigned(arm: IdleHintArm, date: string) {
 export function trackIdleHintTriggered(
   arm: IdleHintArm,
   date: string,
-  word: AcceptedWord,
+  words: readonly AcceptedWord[],
   answerCount: number
 ) {
+  const [word] = words;
   send("idle_hint_triggered", {
     ...idleHintProps(arm, date),
     mode: modeOf(date),
     shown: arm.variant === "treatment",
     word: word.word,
+    // The whole rotation, in order; `word` is the first of it.
+    words: words.map((w) => w.word).join(","),
     rarity: word.rarity,
     score: rarityScore(word.zipf, date),
     answer_count: answerCount,

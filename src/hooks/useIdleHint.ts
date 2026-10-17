@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   IDLE_HINT_DELAY_MS,
+  IDLE_HINT_GAP_MS,
+  IDLE_HINT_HOLD_MS,
+  IDLE_HINT_ROUNDS,
   assignIdleHintArm,
   forcedIdleHintVariant,
   idleHintExperiment,
+  idleHintPool,
   idleHintText,
-  idleHintWord,
+  idleHintWords,
   type IdleHintArm,
 } from "../game/idleHint";
 import type { AcceptedWord } from "../game/types";
@@ -20,6 +24,8 @@ import { playKeystroke } from "../audio/sound";
 
 /** How fast the hint types itself into the placeholder, per character. */
 export const IDLE_HINT_TYPE_MS = 70;
+/** How fast it is erased, per character: a held-down backspace is quicker than typing. */
+export const IDLE_HINT_ERASE_MS = 45;
 
 interface Options {
   drop: string;
@@ -32,14 +38,22 @@ interface Options {
   disabled: boolean;
 }
 
-interface Trigger {
+type Phase = "typing" | "holding" | "erasing" | "waiting" | "over";
+
+interface Loop {
   /** The puzzle it fired on. */
   key: string;
-  word: string;
-  /** When, in epoch milliseconds. */
+  /** The words it types, in order (fewer than three only on a thin drop). */
+  words: readonly string[];
+  /** When it fired, in epoch milliseconds. */
   at: number;
-  /** The words banked when it fired: banking another retires the hint. */
-  answerCount: number;
+  /** How many hints have been typed and erased so far. */
+  done: number;
+  phase: Phase;
+  /** How much of the current hint is in the placeholder. */
+  chars: number;
+  /** The player typed: the loop is over for this puzzle. */
+  stopped: boolean;
 }
 
 /**
@@ -54,6 +68,16 @@ function pageVisible(): boolean {
   return typeof document === "undefined" || document.visibilityState !== "hidden";
 }
 
+/** Runs `work` when the main thread is free, or after a beat where it can't tell. */
+function whenIdle(work: () => void): () => void {
+  if (typeof window.requestIdleCallback === "function") {
+    const id = window.requestIdleCallback(work, { timeout: 3_000 });
+    return () => window.cancelIdleCallback(id);
+  }
+  const id = window.setTimeout(work, 1_500);
+  return () => window.clearTimeout(id);
+}
+
 /**
  * The idle hint, for the word box (see game/idleHint.ts).
  *
@@ -61,13 +85,17 @@ function pageVisible(): boolean {
  * the box is empty, the puzzle is open, no dialog is up and the tab is in view;
  * typing, opening a dialog, hiding the tab or moving to another puzzle starts it
  * over. Focusing the box does not: a player who tapped in and is stuck is the
- * one the hint is for. It fires once per puzzle
- * per page load, in both arms, and only the treatment arm gets a placeholder.
+ * one the hint is for.
  *
- * Returns the placeholder to show, if any -- typed out a character at a time,
- * with a keystroke sound for each --
- * and `onSubmitted`, which the form calls with every submission so a submitted
- * hint word is counted.
+ * When the clock runs out the loop starts, in both arms (only treatment sees
+ * it): a hint is typed into the placeholder a character at a time, each with a
+ * keystroke sound, held for 3.5s and erased a character at a time; 7s later the
+ * next one, three hints in all, and then it is over. A dialog or a hidden tab
+ * pauses it. The first character the player types ends it for the puzzle, for
+ * this page load.
+ *
+ * Returns the placeholder to show, if any, and `onSubmitted`, which the form
+ * calls with every submission so a submitted hint word is counted.
  */
 export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Options) {
   const [arm, setArm] = useState<IdleHintArm | null>(null);
@@ -76,8 +104,7 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
   // A forced arm (`?idle-hint=treatment`) is for trying the hint out: it runs
   // without reporting anything, so it never counts towards the experiment.
   const forced = useRef(forcedIdleHintVariant()).current;
-  const [trigger, setTrigger] = useState<Trigger | null>(null);
-  const [typedChars, setTypedChars] = useState(0);
+  const [loop, setLoop] = useState<Loop | null>(null);
   const fired = useRef(new Set<string>());
   const typedReported = useRef<string | null>(null);
   const submitReported = useRef<string | null>(null);
@@ -122,59 +149,93 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
     return () => observer.disconnect();
   }, []);
 
-  const empty = value === "";
+  // The hint words cost a scan of the whole dictionary, so it is done while
+  // the player is still reading the board, not when the clock runs out.
   useEffect(() => {
-    if (!arm || !date || disabled || !empty || !visible || covered) return;
+    if (!arm || !date) return;
+    return whenIdle(() => idleHintPool(drop, date));
+  }, [arm, date, drop]);
+
+  const empty = value === "";
+  const live = loop !== null && loop.key === key ? loop : null;
+  const started = live !== null;
+
+  useEffect(() => {
+    if (!arm || !date || disabled || !empty || !visible || covered || started) return;
     if (fired.current.has(key)) return;
     const timer = window.setTimeout(() => {
       fired.current.add(key);
-      const word = idleHintWord(drop, date, accepted.current);
+      const words = idleHintWords(drop, date, accepted.current);
       // No word to offer is no trigger in either arm, so both arms stay
       // comparable.
-      if (!word) return;
-      if (!forced) trackIdleHintTriggered(arm, date, word, accepted.current.length);
-      setTypedChars(0);
-      setTrigger({ key, word: word.word, at: Date.now(), answerCount: accepted.current.length });
+      if (words.length === 0) return;
+      if (!forced) trackIdleHintTriggered(arm, date, words, accepted.current.length);
+      setLoop({
+        key,
+        words: words.map((w) => w.word),
+        at: Date.now(),
+        done: 0,
+        phase: "typing",
+        chars: 0,
+        stopped: false,
+      });
     }, IDLE_HINT_DELAY_MS[arm.experiment]);
     return () => window.clearTimeout(timer);
-  }, [arm, date, drop, key, disabled, empty, visible, covered, forced]);
+  }, [arm, date, drop, key, disabled, empty, visible, covered, forced, started]);
 
-  const live = trigger !== null && trigger.key === key ? trigger : null;
-
-  // The first keystroke after the trigger, once per trigger.
+  // The first character typed ends the loop, and is reported once.
   useEffect(() => {
-    if (!arm || !date || !live || empty || forced) return;
+    if (!live || live.stopped || empty) return;
+    setLoop({ ...live, stopped: true });
+    if (!arm || !date || forced) return;
     const id = `${live.key}:${live.at}`;
     if (typedReported.current === id) return;
     typedReported.current = id;
     trackIdleHintTyped(arm, date, Date.now() - live.at);
   }, [arm, date, live, empty, forced]);
 
-  const shown =
-    arm?.variant === "treatment" && live !== null && live.answerCount === (acceptedWords?.length ?? 0)
-      ? idleHintText(live.word)
-      : null;
-  // By code point, so the emoji is typed as one character rather than two.
-  const chars = shown === null ? [] : Array.from(shown);
-  const fullLength = chars.length;
+  const shows = arm?.variant === "treatment";
+  const running = live !== null && !live.stopped && !disabled && visible && !covered;
+  const text = live === null ? "" : idleHintText(live.words[live.done % live.words.length]);
+  // By code point, so nothing outside the basic plane is typed as two halves.
+  const chars = Array.from(text);
 
-  // Typed into the placeholder a character at a time, each with the sound of a
-  // key going down (a space is typed silently, as a pause between words).
+  // One step of the loop at a time; a pause just leaves the step's timer unset.
   useEffect(() => {
-    if (shown === null || typedChars >= fullLength) return;
-    const next = Array.from(shown)[typedChars];
-    const timer = window.setTimeout(() => {
-      if (next.trim() !== "") playKeystroke();
-      setTypedChars((n) => n + 1);
-    }, IDLE_HINT_TYPE_MS);
-    return () => window.clearTimeout(timer);
-  }, [shown, typedChars, fullLength]);
+    if (!running || live === null) return;
+    const letters = Array.from(text);
+    const step = (ms: number, next: Partial<Loop>, sound = false) => {
+      const timer = window.setTimeout(() => {
+        if (sound && shows) playKeystroke();
+        setLoop((l) => (l === null || l.key !== live.key ? l : { ...l, ...next }));
+      }, ms);
+      return () => window.clearTimeout(timer);
+    };
+    switch (live.phase) {
+      case "typing":
+        if (live.chars >= letters.length) return step(0, { phase: "holding" });
+        return step(IDLE_HINT_TYPE_MS, { chars: live.chars + 1 }, true);
+      case "holding":
+        return step(IDLE_HINT_HOLD_MS, { phase: "erasing" });
+      case "erasing":
+        if (live.chars <= 0) {
+          return step(0, { phase: live.done + 1 >= IDLE_HINT_ROUNDS ? "over" : "waiting", done: live.done + 1 });
+        }
+        return step(IDLE_HINT_ERASE_MS, { chars: live.chars - 1 }, true);
+      case "waiting":
+        return step(IDLE_HINT_GAP_MS, { phase: "typing", chars: 0 });
+      case "over":
+        return;
+    }
+  }, [running, live, text, shows]);
 
   const onSubmitted = useCallback(
     (raw: string, wasAccepted: boolean) => {
       if (!arm || !date || !live || forced) return;
       const word = raw.trim().toLowerCase();
-      if (word !== live.word) return;
+      // Any hint the loop had reached, in either arm.
+      const reached = live.words.slice(0, Math.min(live.done + 1, live.words.length));
+      if (!reached.includes(word)) return;
       const id = `${live.key}:${live.at}`;
       if (submitReported.current === id) return;
       submitReported.current = id;
@@ -183,8 +244,6 @@ export function useIdleHint({ drop, date, acceptedWords, value, disabled }: Opti
     [arm, date, live, forced]
   );
 
-  return {
-    placeholder: shown === null ? null : chars.slice(0, typedChars).join(""),
-    onSubmitted,
-  };
+  const placeholder = shows && live !== null && !live.stopped && live.chars > 0 ? chars.slice(0, live.chars).join("") : null;
+  return { placeholder, onSubmitted };
 }

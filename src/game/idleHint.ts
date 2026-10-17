@@ -9,10 +9,12 @@ import type { AcceptedWord, Rarity } from "./types";
  * without typing.
  *
  * When the word box stays empty for a while, the treatment arm sees a word
- * typed into the box's placeholder, a letter at a time, behind an emoji -- an
- * Uncommon or Rare word that contains the drop and that the puzzle would
- * accept. It is a starting point, not a giveaway: those tiers are the middle of
- * the scale, and the player still has to find something rarer to do well.
+ * typed into the box's placeholder, a letter at a time behind "...", held,
+ * then erased a letter at a time -- and 7 seconds later another, three in all:
+ * Common or Very Common words that contain the drop and that the puzzle would
+ * accept (see `useIdleHint` for the rhythm). They are a way in, not a
+ * giveaway: those are the bottom of the scale, and the player still has to
+ * find something rarer to do well. The first keystroke ends the loop.
  *
  * Two experiments, each split 50/50 on its own:
  *   - `new`: a first-ever session. The hint comes after 7 seconds.
@@ -46,10 +48,19 @@ export const IDLE_HINT_DELAY_MS: Record<IdleHintExperiment, number> = {
 };
 
 /** The tiers a hint is drawn from. */
-export const IDLE_HINT_TIERS: readonly Rarity[] = ["Uncommon", "Rare"];
+export const IDLE_HINT_TIERS: readonly Rarity[] = ["Very Common", "Common"];
 
-/** The emoji the hint is typed behind. */
-export const IDLE_HINT_EMOJI = "💡";
+/** How many hints a puzzle gets, each a different word where the drop has enough. */
+export const IDLE_HINT_ROUNDS = 3;
+
+/** What each hint is typed behind. */
+export const IDLE_HINT_PREFIX = "...";
+
+/** How long a typed hint stays up before it is erased. */
+export const IDLE_HINT_HOLD_MS = 3_500;
+
+/** The empty box between one hint being erased and the next being typed. */
+export const IDLE_HINT_GAP_MS = 7_000;
 
 const ASSIGNMENT_KEY = "ick:idle-hint";
 
@@ -140,40 +151,66 @@ const MAX_LETTERS = 10;
 const SENSITIVE =
   /(erot|nippl|porn|orgasm|genital|penis|vagin|semen|sperm|whore|bitch|incest|rapist|suicid|murder|corpse|nazi|cocaine|heroin)|^(sex|nude|naked|rape|breast|anus|anal(?!y)|kill|slave)/;
 
+const pools = new Map<string, AcceptedWord[]>();
+
 /**
- * The word to hint for this puzzle: Uncommon or Rare, containing the drop, 5 to
- * 10 letters, scored as itself rather than folded onto a base, and one the
- * puzzle would actually take right now -- run through the same check a
- * submission gets, so it is never a word already banked (or the same root as
- * one), never a reviewed rejection, and never something the chat would refuse
- * as profane or that touches a sensitive stem.
+ * Every word a hint for this puzzle could be, in a stable per-puzzle order and
+ * before the words already banked are checked: Common or Very Common,
+ * containing the drop, 5 to 10 letters, scored as itself rather than folded onto a base, and
+ * clear of the sensitive stems.
  *
- * The same pick for everybody on the same puzzle with the same words banked,
- * and the same across a reload, so the hint is not a slot machine.
+ * It scans the whole dictionary (up to ~300ms for a drop like IN), so it is
+ * memoised per puzzle and the hook builds it in an idle callback well before
+ * the hint is due, rather than on the main thread the moment an idle player
+ * might start typing.
  */
-export function idleHintWord(
+export function idleHintPool(drop: string, date: string): readonly AcceptedWord[] {
+  const key = `${date}:${drop.toLowerCase()}`;
+  let pool = pools.get(key);
+  if (!pool) {
+    pool = wordsForDropInTiers(drop, IDLE_HINT_TIERS, date)
+      .filter(({ word }) => word.length >= MIN_LETTERS && word.length <= MAX_LETTERS && !SENSITIVE.test(word))
+      .map((w) => ({ w, key: hash(`${key}:${w.word}`) }))
+      .sort((a, b) => a.key - b.key)
+      .map(({ w }) => w);
+    pools.set(key, pool);
+  }
+  return pool;
+}
+
+/**
+ * The words to hint for this puzzle, in the order they are shown: up to three
+ * from the pool that the puzzle would actually take right now -- each run
+ * through the same check a submission gets, against the words banked and the
+ * hints picked before it, so none is a word already banked, the same root as
+ * one or as another hint, a reviewed rejection, or something the chat would
+ * refuse as profane.
+ *
+ * The same picks for everybody on the same puzzle with the same words banked,
+ * and the same across a reload, so the hint is not a slot machine. Every drop
+ * has at least one; 98% have three.
+ */
+export function idleHintWords(
   drop: string,
   date: string,
   accepted: readonly AcceptedWord[]
-): AcceptedWord | undefined {
-  const candidates = wordsForDropInTiers(drop, IDLE_HINT_TIERS, date)
-    .filter(({ word }) => word.length >= MIN_LETTERS && word.length <= MAX_LETTERS && !SENSITIVE.test(word))
-    .map((w) => ({ w, key: hash(`${date}:${drop.toLowerCase()}:${w.word}`) }))
-    .sort((a, b) => a.key - b.key);
-  for (let i = 0; i < candidates.length && i < MAX_TRIES; i++) {
-    const { word } = candidates[i].w;
+): AcceptedWord[] {
+  const pool = idleHintPool(drop, date);
+  const picked: AcceptedWord[] = [];
+  for (let i = 0; i < pool.length && i < MAX_TRIES && picked.length < IDLE_HINT_ROUNDS; i++) {
+    const { word } = pool[i];
     if (chatProblem(word) === "profane") continue;
-    const result = evaluateSubmission(word, drop, [...accepted], date);
+    const result = evaluateSubmission(word, drop, [...accepted, ...picked], date);
     if (result.ok && result.word && IDLE_HINT_TIERS.includes(result.word.rarity)) {
-      return result.word;
+      picked.push(result.word);
     }
   }
-  return undefined;
+  return picked;
 }
 
-/** The placeholder the hint types out, in full: the emoji, then the word. */
+/** The placeholder a hint types out, in full. */
 export function idleHintText(word: string): string {
-  return `${IDLE_HINT_EMOJI} ${word}`;
+  return `${IDLE_HINT_PREFIX}${word}`;
 }
 
 /**

@@ -8,9 +8,11 @@
 --   idle_hint_assigned        the draw, once per player per experiment.
 --   idle_hint_triggered       the box sat empty for the delay. Both arms send
 --                             it -- `shown` is true only for treatment -- with
---                             the word hinted (or that would have been).
+--                             the first word hinted (or that would have been)
+--                             and the rotation after it.
 --   idle_hint_typed           the first keystroke after the trigger.
---   idle_hint_word_submitted  the hinted word was submitted, either arm.
+--   idle_hint_word_submitted  a word the hint loop had reached was submitted,
+--                             either arm.
 --
 -- Most players type before the clock runs out and are never hinted, in either
 -- arm, so comparing everybody assigned would bury the effect in players it
@@ -27,7 +29,7 @@
 --                players who guessed (the page divides).
 --   finished     completed that puzzle afterwards.
 --   shared       copied or posted a result within the day.
---   usedHint     submitted the hinted word and had it accepted. In control
+--   usedHint     submitted a hinted word and had it accepted. In control
 --                that is the word turning up on its own, which is the baseline.
 --   medianVisibleMs  median of the player's visible time on site that day,
 --                summed over the day's sessions.
@@ -35,8 +37,12 @@
 --                a banked word, the same rule analytics_overview uses -- as a
 --                closed-cohort rate (`cohort`/`returned`) and `soFar`.
 --
--- `assigned` beside them is everybody drawn into the arm in the window, so
--- the trigger rate is readable, and so a split that is not 50/50 is visible.
+-- `assigned` beside them is everybody drawn into the arm by the end of the
+-- window -- everyone who could have been triggered in it, so the triggered
+-- players are always a subset and the trigger rate is readable -- and so a
+-- split that is not 50/50 is visible. (Counting only the draws inside the
+-- window would leave out players assigned earlier and triggered inside it, and
+-- push the rate over 100%.)
 --
 -- The window runs on the live puzzle the trigger happened on (`live_date`),
 -- which is the day a visit, a share and a return are counted on; the puzzle
@@ -198,7 +204,7 @@ as $$
       jsonb_build_object(
         'assigned', (select count(*) from assigned a, bounds b
                      where a.experiment = k.experiment and a.variant = k.variant
-                       and a.live_day between b.win_start and b.win_end),
+                       and a.live_day <= b.win_end),
         'triggered', count(p.player_id),
         'typed', count(p.player_id) filter (where p.typed),
         'guessed', count(p.player_id) filter (where p.words > 0),
