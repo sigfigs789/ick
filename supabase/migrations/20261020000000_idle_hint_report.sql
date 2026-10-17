@@ -2,8 +2,8 @@
 -- /analytics page.
 --
 -- Two experiments, each a 50/50 split of its own players: `new` (a first-ever
--- session, hinted after 7 seconds of an empty word box) and `returning` (any
--- later session, after 10). The client sends:
+-- session) and `returning` (any later session), both hinted after 7 seconds of
+-- an empty word box. The client sends:
 --
 --   idle_hint_assigned        the draw, once per player per experiment.
 --   idle_hint_triggered       the box sat empty for the delay. Both arms send

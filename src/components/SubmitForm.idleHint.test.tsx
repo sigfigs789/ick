@@ -236,15 +236,15 @@ describe("the idle hint", () => {
     ]);
   });
 
-  it("waits 10 seconds for a returning player", async () => {
+  it("waits 7 seconds for a returning player too", async () => {
     inArm("returning", "treatment");
     renderForm();
 
-    await wait(9_900);
+    await wait(6_900);
     expect(events("idle_hint_triggered")).toHaveLength(0);
     await wait(100);
     expect(events("idle_hint_triggered")).toEqual([
-      expect.objectContaining({ experiment: "returning", delay_ms: 10_000 }),
+      expect.objectContaining({ experiment: "returning", delay_ms: 7_000 }),
     ]);
   });
 
