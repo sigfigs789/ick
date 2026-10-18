@@ -1052,6 +1052,13 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
   );
 }
 
+/** The hover text for a streak row's icon. */
+function streakIconTitle(entry: StreakEntry): string | undefined {
+  if (entry.frozen) return "Missed days: a saved freeze is covering them";
+  if (entry.covered) return "Missed a day: the free day is covering it";
+  return undefined;
+}
+
 /**
  * One row of the streak board: who, how many days in a row, and their longest.
  *
@@ -1084,27 +1091,25 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
         {isYou && <span className="leaderboard__you">you</span>}
       </span>
       <span className="leaderboard__score">
-        {/* 🧊 while a saved freeze is covering the run, as the game marks it
-            (see components/StreakDisplay.tsx). Neither on a run of one day,
-            which is a start rather than a streak and does not earn the fire. */}
+        {/* One icon for how the run stands: 🧊 while a saved freeze is covering
+            it, as the game marks it (see components/StreakDisplay.tsx); ⏳
+            while the free day is covering a missed day; 🔥 for a run played
+            through yesterday. None on a run of one day, which is a start
+            rather than a streak. */}
         {entry.current > 1 && (
-          <span aria-hidden="true">{entry.frozen ? "🧊" : "🔥"} </span>
-        )}
-        {entry.current}
-        {/* ⏳ while a freeze -- the free day or a saved one -- is holding the
-            run up: a day missed and today not played yet. Beside the 🔥 or
-            🧊 rather than instead, so 🧊 still means what it does in game. */}
-        {entry.current > 1 && entry.covered && (
-          <span aria-hidden="true" title="Missed a day: a freeze is covering it">
-            {" "}
-            ⏳
+          <span aria-hidden="true" title={streakIconTitle(entry)}>
+            {entry.frozen ? "🧊" : entry.covered ? "⏳" : "🔥"}{" "}
           </span>
         )}
+        {entry.current}
         <span className="sr-only">
           {" "}
           {entry.current === 1 ? "day" : "days"} current streak
-          {entry.frozen ? ", covered by a saved freeze" : ""}
-          {entry.current > 1 && entry.covered ? ", missed a day and a freeze is covering it" : ""}
+          {entry.frozen
+            ? ", covered by a saved freeze"
+            : entry.current > 1 && entry.covered
+              ? ", missed a day, covered by the free day"
+              : ""}
         </span>
       </span>
       <span className="leaderboard__detail">
