@@ -113,7 +113,10 @@ export function GuessLog({
 
   return (
     <section className={`guess-log${completed ? " guess-log--completed" : ""}`} aria-label="Your guesses">
-      {!completed && (
+      {/* Gone on a finished puzzle, except on the new play screen, where the
+          Share beside the count is how the share panel is reached -- and a
+          finished puzzle is the likeliest moment to want it. */}
+      {(!completed || newUi) && (
         <div className="guess-log__header">
           {/* No mode named here: the header's switch already says which game
               this is. */}
@@ -340,6 +343,8 @@ export function GuessLog({
             streak={streak}
             totalRarity={totalRarityScore(acceptedWords, date)}
             date={date}
+            hideEmpty={newUi}
+            hasWords={acceptedWords.length > 0}
           />
         </div>
       )}

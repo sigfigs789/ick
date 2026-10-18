@@ -186,11 +186,15 @@ describe("the new play screen's share panel", () => {
     expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
   });
 
-  it("is there from the start once the puzzle is over", () => {
+  it("keeps the guess count and its Share on a finished puzzle, opening the panel the same way", async () => {
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({ progress: { ...inPlay.progress, completed: true } }) as ReturnType<typeof useDailyPuzzle>,
     );
     render(<App />);
+    expect(screen.getByText(/1 of \d+ guesses/)).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: /share result/i })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^share$/i }));
     expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
   });
 });

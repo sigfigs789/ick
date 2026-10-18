@@ -324,22 +324,20 @@ export default function App() {
 
             The panel reads the live word list, so a share taken now and a
             share taken three words later are both current. */}
-        {/* On the new play screen, only once asked for -- or once the puzzle
-            is over, when the guess count and its Share are gone and this is
-            the one way left to share. */}
-        {progress.acceptedWords.length > 0 &&
-          (!newUi || shareRequests > 0 || progress.completed) && (
-            <ResultsPanel
-              date={date}
-              drop={drop}
-              words={progress.acceptedWords}
-              streak={streak}
-              isToday={isToday}
-              mode={progress.mode}
-              collapsible={newUi}
-              scrollSignal={shareRequests}
-            />
-          )}
+        {/* On the new play screen, only once asked for by the Share beside the
+            guess count, which stays on a finished puzzle too. */}
+        {progress.acceptedWords.length > 0 && (!newUi || shareRequests > 0) && (
+          <ResultsPanel
+            date={date}
+            drop={drop}
+            words={progress.acceptedWords}
+            streak={streak}
+            isToday={isToday}
+            mode={progress.mode}
+            collapsible={newUi}
+            scrollSignal={shareRequests}
+          />
+        )}
       </main>
 
       {/* Dev only, and pinned beside the dev date bar rather than in the

@@ -14,6 +14,19 @@ const streak: StreakState = {
 };
 
 describe("GuessLog", () => {
+  it("keeps the header and its action on a finished puzzle in the new play screen", () => {
+    const words: AcceptedWord[] = [{ word: "strut", rarity: "Rare", zipf: 3.2 }];
+    const { rerender } = render(
+      <GuessLog acceptedWords={words} completed newUi headerAction={<button type="button">Share</button>} />,
+    );
+    expect(screen.getByRole("heading", { name: "Guesses" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share" })).toBeInTheDocument();
+
+    // The current play screen still drops it once the puzzle is over.
+    rerender(<GuessLog acceptedWords={words} completed headerAction={<button type="button">Share</button>} />);
+    expect(screen.queryByRole("heading", { name: "Guesses" })).not.toBeInTheDocument();
+  });
+
   it("asks for the rarest word in the new play screen's empty state", () => {
     render(<GuessLog acceptedWords={[]} newUi />);
     expect(screen.getByText(/aim for the rarest word/i)).toBeInTheDocument();
