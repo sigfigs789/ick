@@ -45,6 +45,17 @@ describe("assignUiVariant", () => {
     expect(uiVariant()).toBe("control");
   });
 
+  it("puts NorthernBear87 on v2 without reporting or remembering it", () => {
+    // An id whose handle is NorthernBear87 (see game/handle.ts).
+    localStorage.setItem("ick:player", JSON.stringify({ id: "tester-3185178" }));
+    localStorage.setItem("ick:ui-variant", "control");
+    expect(assignUiVariant("", () => 0.1)).toBe("v2");
+    expect(isNewPlayUi()).toBe(true);
+    expect(takeFreshUiAssignment()).toBeNull();
+    expect(localStorage.getItem("ick:ui-variant")).toBe("control");
+    expect(assignUiVariant("?ui=control")).toBe("control");
+  });
+
   it("ignores an unknown stored value and assigns afresh", () => {
     localStorage.setItem("ick:ui-variant", "purple");
     expect(assignUiVariant("", () => 0.9)).toBe("v2");

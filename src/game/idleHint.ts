@@ -2,6 +2,7 @@ import { wordsForDropInTiers } from "./dictionary";
 import { evaluateSubmission } from "./submit";
 import { chatProblem } from "./chat";
 import { isReturningSession } from "./visits";
+import { isTester } from "./testers";
 import type { AcceptedWord, Rarity } from "./types";
 
 /**
@@ -216,9 +217,12 @@ export function idleHintText(word: string): string {
 /**
  * An arm forced with `?idle-hint=treatment` (or `=control`), for trying the
  * hint out without waiting on a coin flip. A forced arm is never stored or
- * reported, so it cannot leak into the experiment's numbers.
+ * reported, so it cannot leak into the experiment's numbers. A hand-picked
+ * tester (see game/testers.ts) is forced to treatment the same way, unless the
+ * query string says otherwise.
  */
 export function forcedIdleHintVariant(search: string = window.location.search): IdleHintVariant | null {
   const value = new URLSearchParams(search).get("idle-hint");
-  return isVariant(value) ? value : null;
+  if (isVariant(value)) return value;
+  return isTester() ? "treatment" : null;
 }
