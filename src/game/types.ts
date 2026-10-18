@@ -120,4 +120,9 @@ export interface StreakState {
    * grace day (see game/streakFreeze.ts). Absent means none.
    */
   bankedFreezes?: number;
+  /**
+   * Set once the streak has been given the saved freezes it would have earned
+   * had freezes existed before 2026-10-15 (see `backdateFreezes`).
+   */
+  freezesBackdated?: true;
 }
