@@ -174,6 +174,20 @@ function clap(c: AudioContext, startTime: number, peak: number, pitch: number) {
   src.start(startTime, Math.random() * 0.04, decay + 0.01);
 }
 
+/**
+ * One key of a keyboard going down: a short, bright tick of noise over a soft
+ * low knock, a little different each time so a run of them sounds like hands
+ * typing rather than a metronome. For the idle hint typing itself out, which
+ * nobody pressed anything to start, so it stays quiet before the first tap.
+ */
+export function playKeystroke(): void {
+  const c = unpromptedContext();
+  if (!c) return;
+  const now = c.currentTime;
+  clap(c, now, 0.05 + Math.random() * 0.03, 2500 + Math.random() * 1500);
+  tone(c, 140 + Math.random() * 40, now, 0.03, { type: "triangle", peakGain: 0.03 });
+}
+
 /** Applause for the winner of the week or month that just closed. */
 export function playApplause(closed: "week" | "month"): void {
   const c = getContext();

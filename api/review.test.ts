@@ -452,6 +452,25 @@ describe("api/review", () => {
     });
   });
 
+  it("passes the idle hint report through for the same window, without a key", async () => {
+    withEnv({ ...CONFIGURED, REVIEW_TOKEN: "sesame" });
+    const report = { since: "2026-10-17", experiments: {} };
+    const fetchMock = stubFetch(report);
+
+    const response = await handler(get("?list=idle-hint&from=2026-10-10&to=2026-10-16&today=2026-10-16"));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ report });
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(String(calls[0][0]).split("/").pop()).toBe("idle_hint_report");
+    expect(JSON.parse(String(calls[0][1].body))).toEqual({
+      p_from: "2026-10-10",
+      p_to: "2026-10-16",
+      p_today: "2026-10-16",
+    });
+    expect((await handler(get("?list=idle-hint&from=2026-02-30"))).status).toBe(400);
+  });
+
   it("sends a missing end as null: all time, up to the latest day", async () => {
     withEnv();
     const fetchMock = stubFetch({});
