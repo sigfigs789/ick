@@ -13,10 +13,7 @@
 // GET /api/review?list=analytics&from=YYYY-MM-DD&to=YYYY-MM-DD&today=YYYY-MM-DD
 //   (every date optional: no `from` is all time, no `to` the latest day)
 //   -> { report: { today, firstDay, from, to, groups, modes, chat, chatSince,
-//                  daily } }
-// GET /api/review?list=idle-hint&from=YYYY-MM-DD&to=YYYY-MM-DD&today=YYYY-MM-DD
-//   (same dates as analytics)
-//   -> { report: { today, from, to, since, experiments } }
+//                  idleHint, idleHintSince, daily } }
 //   400 bad-list / bad-limit / bad-date, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
@@ -55,8 +52,6 @@
 //   analytics        anybody. Every number in it is an aggregate -- nobody can
 //                    be read out of it -- and the maintainer wants to open it
 //                    without a key. Still linked from nowhere.
-//   idle-hint        anybody, on the same terms: the idle hint experiment's
-//                    numbers, one more section of the analytics page.
 //   freeform         keyed, on the same terms as the feedback below it: the
 //                    notes are the same kind of thing, and the tally beside
 //                    them is a trial's running result, which is not a number to
@@ -322,8 +317,7 @@ async function handleGet(request: Request): Promise<Response> {
     list !== "suggested-words" &&
     list !== "feedback" &&
     list !== "freeform" &&
-    list !== "analytics" &&
-    list !== "idle-hint"
+    list !== "analytics"
   ) {
     return reply(400, { ok: false, reason: "bad-list" });
   }
@@ -335,7 +329,7 @@ async function handleGet(request: Request): Promise<Response> {
   // unset token: that would take the feedback page away from a deployment that
   // has always read it without one, which is a thing to opt into rather than to
   // wake up to.
-  const open = list === "suggested-words" || list === "analytics" || list === "idle-hint";
+  const open = list === "suggested-words" || list === "analytics";
   if (!open && (process.env.REVIEW_TOKEN ?? "") !== "" && !authorised(request)) {
     return reply(401, { ok: false, reason: "unauthorised" });
   }
@@ -357,7 +351,7 @@ async function handleGet(request: Request): Promise<Response> {
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
-    if (list === "analytics" || list === "idle-hint") {
+    if (list === "analytics") {
       // The window's ends and the viewer's own puzzle, sent as-is rather than
       // worked out here from a clock: "today" is the puzzle the reader is on.
       // Checked only for being real dates in order; the function takes the
@@ -374,17 +368,13 @@ async function handleGet(request: Request): Promise<Response> {
         return reply(400, { ok: false, reason: "bad-date" });
       }
       // Passed through as the database built it. The function is the one place
-      // these numbers are defined (see the 2026-10-18 migration, and the
-      // 2026-10-20 one for the idle hint), and a second
+      // these numbers are defined (see the 2026-10-18 migration), and a second
       // copy of every field name here would be a second place for them to drift.
-      const report = await rpc<Record<string, unknown> | null>(
-        list === "analytics" ? "analytics_overview" : "idle_hint_report",
-        {
-          p_from: dates.from,
-          p_to: dates.to,
-          p_today: dates.today,
-        },
-      );
+      const report = await rpc<Record<string, unknown> | null>("analytics_overview", {
+        p_from: dates.from,
+        p_to: dates.to,
+        p_today: dates.today,
+      });
       return reply(200, { report: report ?? {} });
     }
     if (list === "freeform") {

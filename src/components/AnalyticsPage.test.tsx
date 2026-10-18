@@ -24,16 +24,12 @@ const groups = {
   all: metrics(100, 80, 50, 30, 40, 20),
   new: metrics(70, 50, 25, 10),
   returning: metrics(30, 30, 25, 20, 10, 8),
-  standard: metrics(60, 50, 35, 20),
-  freeform: metrics(40, 30, 15, 10),
 };
 
 const dayGroups = (players: number) => ({
   all: { players, acted: players - 2, guessed: players - 4, shared: 0, returned: 1 },
   new: { players: 1, acted: 1, guessed: 1, shared: 0, returned: 0 },
   returning: { players: players - 1, acted: 0, guessed: 0, shared: 0, returned: 0 },
-  standard: { players, acted: 0, guessed: 0, shared: 0, returned: 0 },
-  freeform: { players: 0, acted: 0, guessed: 0, shared: 0, returned: 0 },
 });
 
 /** The shape `analytics_overview` returns. */
@@ -51,10 +47,14 @@ const REPORT = {
     all: { opened: metrics(10, 10, 8, 6, 5, 4), notOpened: metrics(90, 70, 42, 24, 35, 16) },
     new: { opened: metrics(4, 4, 2, 1), notOpened: metrics(66, 46, 23, 9) },
     returning: { opened: metrics(6, 6, 6, 5), notOpened: metrics(24, 24, 19, 15) },
-    standard: { opened: metrics(8, 8, 7, 5), notOpened: metrics(52, 42, 28, 15) },
-    freeform: { opened: metrics(2, 2, 1, 1), notOpened: metrics(38, 28, 14, 9) },
   },
   chatSince: "2026-09-29",
+  idleHint: {
+    all: { control: metrics(20, 18, 8, 5), treatment: metrics(22, 21, 12, 9) },
+    new: { control: metrics(12, 10, 4, 2), treatment: metrics(13, 12, 7, 5) },
+    returning: { control: metrics(8, 8, 4, 3), treatment: metrics(9, 9, 5, 4) },
+  },
+  idleHintSince: "2026-10-18",
   daily: [
     { date: "2026-10-15", closed: false, groups: dayGroups(40) },
     { date: "2026-10-16", closed: false, groups: dayGroups(20) },
@@ -113,9 +113,9 @@ describe("AnalyticsPage", () => {
     expect(within(section("Play screen test")).getAllByRole("row", { name: /^Everyone/ })).toHaveLength(1);
     const fresh = within(section("Key numbers")).getByRole("row", { name: /^New players/ });
     expect(fresh).toHaveTextContent("10 14%");
-    for (const name of ["Returning players", "Started in Standard", "Started in Freeform"]) {
-      expect(within(section("Key numbers")).getByRole("row", { name: new RegExp(`^${name}`) })).toBeInTheDocument();
-    }
+    expect(within(section("Key numbers")).getByRole("row", { name: /^Returning players/ })).toBeInTheDocument();
+    expect(within(section("Key numbers")).getAllByRole("row")).toHaveLength(4);
+    expect(screen.queryByText(/Started in/)).not.toBeInTheDocument();
   });
 
   it("asks for one puzzle a few days back, or all time", async () => {
@@ -166,9 +166,26 @@ describe("AnalyticsPage", () => {
     );
 
     const chat = section("Chat");
-    expect(within(chat).getAllByText("Opened chat")).toHaveLength(5);
-    expect(within(chat).getAllByText("Didn't")).toHaveLength(5);
+    expect(within(chat).getAllByText("Opened chat")).toHaveLength(3);
+    expect(within(chat).getAllByText("Didn't")).toHaveLength(3);
     expect(within(chat).getByText(/since Sep 29/)).toBeInTheDocument();
+  });
+
+  it("tables the key numbers for each idle hint arm, by grouping", async () => {
+    const fetchMock = stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Idle hint test" });
+
+    // One report: the idle hint numbers come with the rest.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const idle = section("Idle hint test");
+    expect(within(idle).getByRole("columnheader", { name: "Arm" })).toBeInTheDocument();
+    expect(within(idle).getAllByText("No hint")).toHaveLength(3);
+    expect(within(idle).getAllByText("Hint")).toHaveLength(3);
+    const everyone = within(idle).getByRole("row", { name: /^Everyone/ });
+    expect(everyone).toHaveTextContent("20");
+    expect(everyone).toHaveTextContent("8 40%");
+    expect(within(idle).getByText(/since Oct 18/)).toBeInTheDocument();
   });
 
   it("says when the report could not load", async () => {

@@ -452,10 +452,10 @@ lives in `supabase/migrations/`.
   force an arm while testing; a forced arm is never stored or reported. Each
   of the two experiments is its own sticky 50/50 split. Both arms send
   `idle_hint_triggered` when the clock runs out (control
-  just sees nothing), and `idle_hint_report` (the 2026-10-20 migration) compares
-  the players who sat idle in each arm: typing, guessing, words, best score,
-  finishing, sharing, time on site and 7-day return. It is the "Idle hint test"
-  section of `/analytics`. Key play events also carry `idle_hint_experiment`
+  just sees nothing). The "Idle hint test" section of `/analytics` shows the
+  page's key numbers for the players who sat idle in each arm, by
+  everyone, new and returning (`analytics_overview`, the 2026-10-21
+  migration; the older `idle_hint_report` is still in the database, unread). Key play events also carry `idle_hint_experiment`
   and `idle_hint_variant` in the Supabase mirror.
 
 - **`suggested_words`** — the review queue, a view rather than a table. It pools
