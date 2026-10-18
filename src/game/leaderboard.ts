@@ -77,6 +77,11 @@ export interface StreakEntry {
    * day the game shows 🧊 instead of 🔥. The free missed day keeps the 🔥.
    */
   frozen: boolean;
+  /**
+   * At least one day missed and today not played: the free day or a saved
+   * freeze is holding the run up, so it is at risk. Wider than `frozen`.
+   */
+  covered: boolean;
 }
 
 /**
@@ -320,7 +325,7 @@ function parseStreak(
   fallbackRank?: number
 ): StreakEntry | null {
   if (!item || typeof item !== "object") return null;
-  const { rank, playerId, current, best, frozen } = item;
+  const { rank, playerId, current, best, frozen, covered } = item;
   if (typeof playerId !== "string") return null;
   if (typeof current !== "number" || !Number.isFinite(current) || current < 1) return null;
   const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
@@ -332,6 +337,7 @@ function parseStreak(
     current,
     best: typeof best === "number" && Number.isFinite(best) ? Math.max(best, current) : current,
     frozen: frozen === true,
+    covered: covered === true,
   };
 }
 

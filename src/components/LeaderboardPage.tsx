@@ -1091,10 +1091,20 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
           <span aria-hidden="true">{entry.frozen ? "🧊" : "🔥"} </span>
         )}
         {entry.current}
+        {/* ⏳ while a freeze -- the free day or a saved one -- is holding the
+            run up: a day missed and today not played yet. Beside the 🔥 or
+            🧊 rather than instead, so 🧊 still means what it does in game. */}
+        {entry.current > 1 && entry.covered && (
+          <span aria-hidden="true" title="Missed a day: a freeze is covering it">
+            {" "}
+            ⏳
+          </span>
+        )}
         <span className="sr-only">
           {" "}
           {entry.current === 1 ? "day" : "days"} current streak
           {entry.frozen ? ", covered by a saved freeze" : ""}
+          {entry.current > 1 && entry.covered ? ", missed a day and a freeze is covering it" : ""}
         </span>
       </span>
       <span className="leaderboard__detail">

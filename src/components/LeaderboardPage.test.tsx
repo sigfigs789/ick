@@ -245,8 +245,8 @@ describe("the leaderboard page", () => {
       ...OPEN,
       streak: [
         { rank: 1, playerId: ALICE, current: 21, best: 21 },
-        { rank: 2, playerId: BOB, current: 3, best: 40, frozen: true },
-        { rank: 3, playerId: CAROL, current: 1, best: 6, frozen: true },
+        { rank: 2, playerId: BOB, current: 3, best: 40, frozen: true, covered: true },
+        { rank: 3, playerId: CAROL, current: 1, best: 6, frozen: true, covered: true },
       ],
       streakSelf: null,
     });
@@ -262,8 +262,12 @@ describe("the leaderboard page", () => {
     expect(boardRows("Streaks")[1]).toHaveTextContent("🧊");
     expect(boardRows("Streaks")[1]).not.toHaveTextContent("🔥");
     expect(boardRows("Streaks")[1]).toHaveTextContent("covered by a saved freeze");
-    // A one-day run is a start, not a streak: no fire and no ice.
-    expect(boardRows("Streaks")[2]).not.toHaveTextContent(/🔥|🧊/u);
+    // An hourglass beside it while a freeze is covering a missed day.
+    expect(boardRows("Streaks")[1]).toHaveTextContent("⏳");
+    expect(boardRows("Streaks")[1]).toHaveTextContent("a freeze is covering it");
+    expect(boardRows("Streaks")[0]).not.toHaveTextContent("⏳");
+    // A one-day run is a start, not a streak: no fire, no ice, no hourglass.
+    expect(boardRows("Streaks")[2]).not.toHaveTextContent(/🔥|🧊|⏳/u);
     expect(board("Streaks")).toHaveTextContent(/Streak\s*Longest streak/);
     // No window, so nothing to step through.
     const streaks = board("Streaks");
