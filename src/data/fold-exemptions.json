@@ -1445,6 +1445,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `clit`, costing 2.93 points. Flagged in the 2026-09-22 semantic audit (clitter unrelated to clit) and confirmed on adversarial re-review (clitter unrelated to clit)."
   },
+  "cliving": {
+    "since": "2026-10-21",
+    "reason": "Folded onto `clive` (cliving > clive), costing 3.35 points. Flagged by the daily fold check for the 2026-10-21 `IVI` drop (not Clive the name; obsolete cleave) and confirmed on adversarial re-review (Clive's frequency comes from the name, not cleave)."
+  },
   "clothless": {
     "since": "2026-09-27",
     "reason": "Folded onto `clothes`, costing 5.20 points. Flagged in the 2026-09-22 semantic audit (cloth is not clothes) and confirmed on adversarial re-review (cloth not clothes)."
