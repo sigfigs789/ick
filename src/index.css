@@ -5565,3 +5565,49 @@ h2 {
 .results-panel__options-toggle:hover {
   color: var(--fg);
 }
+
+/* The new play screen's share panel: the preview of what Share copies on top,
+   the choices folded under it, and Share across the bottom, where the
+   leaderboard link used to sit. It arrives from the Share beside the guess
+   count, so it rises a little further than the plain panel and stops clear of
+   the top edge when scrolled to. */
+.results-panel--collapsible {
+  scroll-margin-top: 1rem;
+  animation: share-panel-in 0.45s var(--ease-standard);
+}
+@keyframes share-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.results-panel--collapsible .results-panel__preview {
+  margin-top: 0;
+}
+.results-panel__options {
+  text-align: left;
+}
+.results-panel__share-actions--bottom {
+  margin-top: 1rem;
+}
+.results-panel__share-actions--bottom .share-button {
+  width: 100%;
+}
+
+/* The new play screen puts the input right under the drop, so a notice over
+   the input would cover the letters being played. It hangs below the input
+   instead, pointing up at it. */
+:root[data-ui="v2"] .de-prefix-hint:not(.folded-live-notice) {
+  top: calc(100% + 0.6rem);
+  bottom: auto;
+}
+:root[data-ui="v2"] .de-prefix-hint:not(.folded-live-notice)::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--accent);
+}

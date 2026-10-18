@@ -1,4 +1,4 @@
-import { Fragment, useId, useState } from "react";
+import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { buildShareText, type RevealMode } from "../game/share";
 import { RainbowWord } from "./RainbowWord";
 import { MODE_LABELS, modeForDate } from "../game/mode";
@@ -29,13 +29,19 @@ interface Props {
    */
   mode?: GameMode;
   /**
-   * Fold the answer and username choices and the preview behind a "Share
-   * options" toggle, leaving Share itself one tap. The new play screen (see
-   * game/uiVariant.ts) does this: most players share with the choices they
-   * already have, and the open panel pushed the rest of the page down the
-   * moment the first word landed.
+   * The new play screen's layout (see game/uiVariant.ts): the preview of what
+   * Share copies first, the answer and username choices folded behind a
+   * "Share options" toggle under it, and Share itself at the bottom. Most
+   * players share with the choices they already have, so the choices stay out
+   * of the way until asked for.
    */
   collapsible?: boolean;
+  /**
+   * Bumped each time the player asks for this panel from elsewhere (the Share
+   * beside the guess count), which scrolls it into view. 0 never scrolls, so
+   * a panel that is simply on the page when it loads stays where it is.
+   */
+  scrollSignal?: number;
 }
 
 const SPOILER_LABEL_ID = "results-panel-reveal-label";
@@ -82,10 +88,18 @@ export function ResultsPanel({
   isToday = false,
   mode,
   collapsible = false,
+  scrollSignal = 0,
 }: Props) {
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (scrollSignal === 0) return;
+    const reduced =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    sectionRef.current?.scrollIntoView?.({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  }, [scrollSignal]);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const optionsId = useId();
-  const showOptions = !collapsible || optionsOpen;
   // Starts from the player's last choice, "Top" until they make one (see
   // game/reveal.ts).
   const [reveal, setRevealState] = useState<RevealMode>(loadReveal);
@@ -119,12 +133,67 @@ export function ResultsPanel({
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   // The mode the shares report, which is the one buildShareText tags the link with.
   const sharedMode = mode ?? modeForDate(date);
-  return (
-    <section className="results-panel" aria-label="Share result">
-      <div className="results-panel__share-actions">
-        <ShareButton text={copiedShareText} onShared={() => trackResultCopied(sharedMode)} />
+  const shareButton = (
+    <ShareButton text={copiedShareText} onShared={() => trackResultCopied(sharedMode)} />
+  );
+  const preview = (
+    <pre className="results-panel__preview" aria-hidden="true">
+      <strong>{paintMode(shareHeading)}</strong>
+      {shareDetailLines.length > 0 && "\n"}
+      {shareDetailLines.map((line, index) => (
+        <Fragment key={index}>
+          {index > 0 && "\n"}
+          {line}
+        </Fragment>
+      ))}
+    </pre>
+  );
+  const choices = (
+    <>
+      {/* A radiogroup rather than a fieldset: the label sits on the same row
+          as the options, and a <legend> can't join a flex row. */}
+      <div
+        className="results-panel__spoiler-toggle"
+        role="radiogroup"
+        aria-labelledby={SPOILER_LABEL_ID}
+      >
+        <span id={SPOILER_LABEL_ID}>Show answers</span>
+        <div className="results-panel__spoiler-options">
+          {REVEAL_OPTIONS.map((option) => (
+            <label key={option.value}>
+              <input
+                type="radio"
+                name="results-panel-reveal"
+                value={option.value}
+                checked={reveal === option.value}
+                onChange={() => setReveal(option.value)}
+              />
+              {option.label}
+            </label>
+          ))}
+        </div>
       </div>
-      {collapsible && (
+      {playerName && (
+        <label className="results-panel__spoiler-toggle results-panel__name-toggle">
+          <input
+            type="checkbox"
+            checked={showName}
+            onChange={(event) => setShowName(event.target.checked)}
+          />
+          Show username
+        </label>
+      )}
+    </>
+  );
+
+  if (collapsible) {
+    return (
+      <section
+        ref={sectionRef}
+        className="results-panel results-panel--collapsible"
+        aria-label="Share result"
+      >
+        {preview}
         <button
           type="button"
           className="results-panel__options-toggle"
@@ -134,54 +203,23 @@ export function ResultsPanel({
         >
           Share options <span aria-hidden="true">{optionsOpen ? "▴" : "▾"}</span>
         </button>
-      )}
-      {showOptions && (
-        <div id={optionsId}>
-          {/* A radiogroup rather than a fieldset: the label sits on the same
-              row as the options, and a <legend> can't join a flex row. */}
-          <div
-            className="results-panel__spoiler-toggle"
-            role="radiogroup"
-            aria-labelledby={SPOILER_LABEL_ID}
-          >
-            <span id={SPOILER_LABEL_ID}>Show answers</span>
-            <div className="results-panel__spoiler-options">
-              {REVEAL_OPTIONS.map((option) => (
-                <label key={option.value}>
-                  <input
-                    type="radio"
-                    name="results-panel-reveal"
-                    value={option.value}
-                    checked={reveal === option.value}
-                    onChange={() => setReveal(option.value)}
-                  />
-                  {option.label}
-                </label>
-              ))}
-            </div>
+        {optionsOpen && (
+          <div id={optionsId} className="results-panel__options">
+            {choices}
           </div>
-          {playerName && (
-            <label className="results-panel__spoiler-toggle results-panel__name-toggle">
-              <input
-                type="checkbox"
-                checked={showName}
-                onChange={(event) => setShowName(event.target.checked)}
-              />
-              Show username
-            </label>
-          )}
-          <pre className="results-panel__preview" aria-hidden="true">
-            <strong>{paintMode(shareHeading)}</strong>
-            {shareDetailLines.length > 0 && "\n"}
-            {shareDetailLines.map((line, index) => (
-              <Fragment key={index}>
-                {index > 0 && "\n"}
-                {line}
-              </Fragment>
-            ))}
-          </pre>
+        )}
+        <div className="results-panel__share-actions results-panel__share-actions--bottom">
+          {shareButton}
         </div>
-      )}
+      </section>
+    );
+  }
+
+  return (
+    <section ref={sectionRef} className="results-panel" aria-label="Share result">
+      <div className="results-panel__share-actions">{shareButton}</div>
+      {choices}
+      {preview}
     </section>
   );
 }

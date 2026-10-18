@@ -83,6 +83,12 @@ export default function App() {
   // The play-screen experiment (see game/uiVariant.ts): settled before the
   // first render and fixed for the browser, so it never changes under a player.
   const newUi = isNewPlayUi();
+  // New play screen: the share panel stays out of the way until the Share
+  // beside the guess count is pressed, which opens it and scrolls to it. Each
+  // press bumps the count, so a second press scrolls back to it again. A new
+  // puzzle starts closed.
+  const [shareRequests, setShareRequests] = useState(0);
+  useEffect(() => setShareRequests(0), [date]);
 
   // The compact share-link code identifies its origin without exposing a
   // long UTM parameter in the result text.
@@ -280,6 +286,7 @@ export default function App() {
                 streak={streak}
                 isToday={isToday}
                 mode={progress.mode}
+                onShared={() => setShareRequests((n) => n + 1)}
               />
             ) : undefined
           }
@@ -317,17 +324,22 @@ export default function App() {
 
             The panel reads the live word list, so a share taken now and a
             share taken three words later are both current. */}
-        {progress.acceptedWords.length > 0 && (
-          <ResultsPanel
-            date={date}
-            drop={drop}
-            words={progress.acceptedWords}
-            streak={streak}
-            isToday={isToday}
-            mode={progress.mode}
-            collapsible={newUi}
-          />
-        )}
+        {/* On the new play screen, only once asked for -- or once the puzzle
+            is over, when the guess count and its Share are gone and this is
+            the one way left to share. */}
+        {progress.acceptedWords.length > 0 &&
+          (!newUi || shareRequests > 0 || progress.completed) && (
+            <ResultsPanel
+              date={date}
+              drop={drop}
+              words={progress.acceptedWords}
+              streak={streak}
+              isToday={isToday}
+              mode={progress.mode}
+              collapsible={newUi}
+              scrollSignal={shareRequests}
+            />
+          )}
       </main>
 
       {/* Dev only, and pinned beside the dev date bar rather than in the

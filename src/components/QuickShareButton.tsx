@@ -15,18 +15,20 @@ interface Props {
   streak: StreakState;
   isToday: boolean;
   mode?: GameMode;
+  /** After the copy: the page opens the share panel and scrolls to it. */
+  onShared?: () => void;
 }
 
 /**
  * Share from the top of the guess log, on the new play screen (see
- * game/uiVariant.ts), so a player does not have to scroll to the results panel
- * to post a word they are pleased with.
+ * game/uiVariant.ts). One tap copies the result and opens the share panel
+ * below, which shows what was copied and the choices behind it.
  *
  * Copies exactly what the panel's own Share button would: the text is built at
  * the moment of the tap from the same saved choices the panel reads and writes
  * (answers shown, username on or off), so the two can never disagree.
  */
-export function QuickShareButton({ date, drop, words, streak, isToday, mode }: Props) {
+export function QuickShareButton({ date, drop, words, streak, isToday, mode, onShared }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function share() {
@@ -43,6 +45,7 @@ export function QuickShareButton({ date, drop, words, streak, isToday, mode }: P
     await copyText(text);
     setCopied(true);
     trackResultCopied(mode ?? modeForDate(date));
+    onShared?.();
     window.setTimeout(() => setCopied(false), 2000);
   }
 

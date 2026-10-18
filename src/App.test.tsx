@@ -1,10 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { markSeen } from "./game/whatsNew";
+import { setUiVariantForTest } from "./game/uiVariant";
 
 vi.mock("./hooks/useDailyPuzzle", () => ({ useDailyPuzzle: vi.fn() }));
 vi.mock("./hooks/useSound", () => ({ useSound: vi.fn() }));
@@ -151,5 +152,45 @@ describe("the results on a finished puzzle", () => {
     render(<App />);
 
     expect(screen.queryByRole("button", { name: "See the leaderboard" })).not.toBeInTheDocument();
+  });
+});
+
+describe("the new play screen's share panel", () => {
+  const inPlay = {
+    progress: {
+      date: "2026-08-13",
+      drop: "str",
+      acceptedWords: [{ word: "strange", rarity: "Common", zipf: 4.6 }],
+      rejectedAttempts: [],
+      completed: false,
+    },
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    setUiVariantForTest("v2");
+    Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+  afterEach(() => setUiVariantForTest("control"));
+
+  it("stays hidden until the Share beside the guesses is pressed, then opens and scrolls to it", async () => {
+    vi.mocked(useDailyPuzzle).mockReturnValue(puzzle(inPlay) as ReturnType<typeof useDailyPuzzle>);
+    render(<App />);
+
+    expect(screen.queryByRole("region", { name: /share result/i })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /^share$/i }));
+
+    expect(navigator.clipboard.writeText).toHaveBeenCalled();
+    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+  });
+
+  it("is there from the start once the puzzle is over", () => {
+    vi.mocked(useDailyPuzzle).mockReturnValue(
+      puzzle({ progress: { ...inPlay.progress, completed: true } }) as ReturnType<typeof useDailyPuzzle>,
+    );
+    render(<App />);
+    expect(screen.getByRole("region", { name: /share result/i })).toBeInTheDocument();
   });
 });
