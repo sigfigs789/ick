@@ -21,6 +21,7 @@ import {
 } from "./analyticsFormat";
 import { todayDateString } from "../game/date";
 import { DailyChart } from "./DailyChart";
+import { IdleHintSection } from "./IdleHintSection";
 
 /**
  * How the game is doing, as a page at /analytics.
@@ -253,6 +254,8 @@ function Report({
           ])}
         />
       </Section>
+
+      <IdleHintSection from={from} to={to} today={today} />
     </div>
   );
 }

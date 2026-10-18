@@ -195,6 +195,7 @@ export default function App() {
           onSubmit={submitWord}
           date={date}
           mode={playMode}
+          acceptedWords={progress.acceptedWords}
         />
       )}
       <FeedbackRegion

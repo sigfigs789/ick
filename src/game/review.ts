@@ -138,7 +138,7 @@ export function keyQuery(): string {
 }
 
 async function read<T>(
-  list: "suggested-words" | "feedback" | "freeform" | "analytics",
+  list: "suggested-words" | "feedback" | "freeform" | "analytics" | "idle-hint",
   pick: (body: Record<string, unknown>) => T,
   extra = "",
 ): Promise<T> {
@@ -173,6 +173,12 @@ export function fetchFreeform(): Promise<FreeformVerdict> {
 export function fetchAnalytics(from: string | null, to: string, today: string): Promise<AnalyticsReport> {
   const window = `${from ? `&from=${from}` : ""}&to=${to}&today=${today}`;
   return read("analytics", (body) => parseAnalytics(body.report), window);
+}
+
+/** The idle hint A/B test over the same window (see game/idleHint.ts). */
+export function fetchIdleHintReport(from: string | null, to: string, today: string): Promise<IdleHintReport> {
+  const window = `${from ? `&from=${from}` : ""}&to=${to}&today=${today}`;
+  return read("idle-hint", (body) => parseIdleHintReport(body.report), window);
 }
 
 /**
@@ -433,5 +439,77 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
           return { players: count(m.players), acted: count(m.acted), guessed: count(m.guessed), returned: count(m.returned) };
         }),
       })),
+  };
+}
+
+/**
+ * One arm of the idle hint test, as `idle_hint_report` builds it (see the
+ * 2026-10-20 migration, which defines every field). Everything but `assigned`
+ * is over the players who sat idle long enough to be hinted.
+ */
+export interface IdleHintArmMetrics {
+  assigned: number;
+  triggered: number;
+  typed: number;
+  guessed: number;
+  /** Words banked after the trigger, summed over the triggered players. */
+  words: number;
+  /** Best score after the trigger, summed over the players who guessed. */
+  bestScore: number;
+  finished: number;
+  shared: number;
+  usedHint: number;
+  medianVisibleMs: number | null;
+  returned: Returns;
+}
+
+export const IDLE_HINT_EXPERIMENTS = ["new", "returning"] as const;
+export const IDLE_HINT_VARIANTS = ["control", "treatment"] as const;
+
+export interface IdleHintReport {
+  today: string | null;
+  from: string | null;
+  to: string | null;
+  /** The first day anybody was triggered. */
+  since: string | null;
+  experiments: Record<
+    (typeof IDLE_HINT_EXPERIMENTS)[number],
+    Record<(typeof IDLE_HINT_VARIANTS)[number], IdleHintArmMetrics>
+  >;
+}
+
+function idleHintArm(raw: unknown): IdleHintArmMetrics {
+  const m = obj(raw);
+  return {
+    assigned: count(m.assigned),
+    triggered: count(m.triggered),
+    typed: count(m.typed),
+    guessed: count(m.guessed),
+    words: count(m.words),
+    bestScore: count(m.bestScore),
+    finished: count(m.finished),
+    shared: count(m.shared),
+    usedHint: count(m.usedHint),
+    medianVisibleMs: typeof m.medianVisibleMs === "number" && Number.isFinite(m.medianVisibleMs)
+      ? m.medianVisibleMs
+      : null,
+    returned: returns(m.returned),
+  };
+}
+
+/** The report as a typed value; a part the database left out reads as zeros. */
+export function parseIdleHintReport(raw: unknown): IdleHintReport {
+  const r = obj(raw);
+  const experiments = obj(r.experiments);
+  const byArm = (raw: unknown) => {
+    const e = obj(raw);
+    return { control: idleHintArm(e.control), treatment: idleHintArm(e.treatment) };
+  };
+  return {
+    today: text(r.today),
+    from: text(r.from),
+    to: text(r.to),
+    since: text(r.since),
+    experiments: { new: byArm(experiments.new), returning: byArm(experiments.returning) },
   };
 }
