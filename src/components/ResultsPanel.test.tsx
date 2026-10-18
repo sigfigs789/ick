@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ResultsPanel } from "./ResultsPanel";
 import { buildShareText } from "../game/share";
 import { PLAYER_KEY } from "../game/player";
@@ -152,45 +152,41 @@ describe("ResultsPanel share toggle", () => {
     );
   });
 
-  it("offers an accessible X composer link with space for a player note", () => {
-    render(
-      <ResultsPanel
-        date="2025-01-01"
-        drop="str"
-        words={words}
-        streak={streak}
-      />,
-    );
-
-    const twitterLink = screen.getByRole("link", { name: /share on x/i });
-    expect(twitterLink).toHaveAttribute("target", "_blank");
-    expect(twitterLink).toHaveAttribute("title", "Share on X");
-    expect(twitterLink.getAttribute("href")).toContain(
-      "twitter.com/intent/tweet",
-    );
-    expect(decodeURIComponent(twitterLink.getAttribute("href") ?? "")).toMatch(
-      /\n\n────\n.*\nwordink\.app\/\?s=t\.[fs]$/s,
-    );
+  it("offers one Share, with no X button and no leaderboard link", () => {
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+    expect(screen.getByRole("button", { name: /^share$/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /share on x/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /leaderboard/i })).not.toBeInTheDocument();
   });
 
-  it("keeps answers in the X post when the player opts in, using the compact layout", async () => {
-    render(
-      <ResultsPanel
-        date="2025-01-01"
-        drop="str"
-        words={words}
-        streak={streak}
-      />,
-    );
-    await userEvent.click(screen.getByRole("radio", { name: /^all$/i }));
+  it("shows what Share copies, folds the choices, and puts Share last when collapsible", async () => {
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} collapsible />);
+    const panel = screen.getByRole("region", { name: /share result/i });
+    // The preview of what was copied is there from the start.
+    const preview = document.querySelector(".results-panel__preview");
+    expect(preview).not.toBeNull();
+    // The choices are not, until asked for.
+    expect(screen.queryByRole("radio", { name: /^all$/i })).not.toBeInTheDocument();
+    // Share is the panel's last control.
+    const buttons = within(panel).getAllByRole("button");
+    expect(buttons[buttons.length - 1]).toHaveAccessibleName(/^share$/i);
 
-    const xPost = decodeURIComponent(
-      screen.getByRole("link", { name: /share on x/i }).getAttribute("href") ??
-        "",
-    );
-    expect(xPost).toContain("strange (4.6)");
-    expect(xPost).not.toContain("Streak:");
-    expect(xPost).not.toContain("Top:");
+    const toggle = screen.getByRole("button", { name: /share options/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("radio", { name: /^all$/i })).toBeInTheDocument();
+  });
+
+  it("scrolls itself into view each time it is asked for, and not before", () => {
+    const scrollIntoView = vi.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    const props = { date: "2025-01-01", drop: "str", words, streak, collapsible: true };
+    const { rerender } = render(<ResultsPanel {...props} scrollSignal={0} />);
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    rerender(<ResultsPanel {...props} scrollSignal={1} />);
+    rerender(<ResultsPanel {...props} scrollSignal={2} />);
+    expect(scrollIntoView).toHaveBeenCalledTimes(2);
   });
 });
 

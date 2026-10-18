@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  trackUiVariantAssigned,
   campaignSourceFromSearch,
   trackShareArrival,
   trackTwitterArrival,
@@ -7,7 +8,6 @@ import {
   trackWordSuggestion,
   trackRedditArrival,
   trackResultCopied,
-  trackResultSharedOnX,
   trackMerriamWebsterApproved,
   trackMerriamWebsterFailed,
   trackUnattestedScore,
@@ -32,6 +32,7 @@ import type { LiveCheck } from "./game/liveValidate";
 import type { RarityInfo } from "./game/types";
 import { recordVisit, type VisitOutcome } from "./game/visits";
 import { APP_VERSION } from "./version";
+import { setUiVariantForTest } from "./game/uiVariant";
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
@@ -126,10 +127,8 @@ describe("share attribution", () => {
   it("tags a share with the mode of the puzzle shared", () => {
     localStorage.clear();
     trackResultCopied("freeform");
-    trackResultSharedOnX("standard");
 
     expect(track).toHaveBeenCalledWith("result_copied", expect.objectContaining({ mode: "freeform" }));
-    expect(track).toHaveBeenCalledWith("result_shared_on_x", expect.objectContaining({ mode: "standard" }));
   });
 
   it("tags a share-link arrival with the mode the link carried", () => {
@@ -154,15 +153,6 @@ describe("share attribution", () => {
       puzzle_date: "2026-09-30",
     });
     expect(track).toHaveBeenCalledWith("mode_assigned", expect.objectContaining({ source: "direct" }));
-  });
-
-  it("tracks copied results separately from X shares, tagged by method", () => {
-    localStorage.clear();
-    trackResultCopied("standard");
-    trackResultSharedOnX("freeform");
-
-    expect(track).toHaveBeenCalledWith("result_copied", expect.objectContaining({ method: "copy" }));
-    expect(track).toHaveBeenCalledWith("result_shared_on_x", expect.objectContaining({ method: "x" }));
   });
 
   it("stamps a share with both the original and most-recent origin", () => {
@@ -192,20 +182,20 @@ describe("share attribution", () => {
     sessionStorage.clear();
     recordVisit("?s=t");
 
-    trackResultSharedOnX("freeform");
+    trackResultCopied("freeform");
 
     expect(track).toHaveBeenCalledWith(
-      "result_shared_on_x",
+      "result_copied",
       expect.objectContaining({ source: "twitter" })
     );
   });
 
   it("falls back to a direct first-time cohort when no visit was recorded", () => {
     localStorage.clear();
-    trackResultSharedOnX("freeform");
+    trackResultCopied("freeform");
 
-    expect(track).toHaveBeenCalledWith("result_shared_on_x", {
-      method: "x",
+    expect(track).toHaveBeenCalledWith("result_copied", {
+      method: "copy",
       mode: "freeform",
       source: "direct",
       last_source: "direct",
@@ -653,8 +643,36 @@ describe("supabase mirror", () => {
     expect(body.type).toBe("application/json");
     expect(await payload(body)).toEqual({
       name: "word_suggested",
-      props: { word: "quixotic", player_id: null },
+      props: { word: "quixotic", player_id: null, ui_variant: "control" },
     });
+  });
+
+  it("stamps every mirrored row with the play-screen variant, and only the mirror", async () => {
+    vi.stubEnv("MODE", "production");
+    const beacon = stubBeacon();
+    setUiVariantForTest("v2");
+
+    trackWordSuggestion("quixotic");
+
+    expect(track).toHaveBeenCalledWith("word_suggested", { word: "quixotic" });
+    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
+    expect(await payload(body)).toMatchObject({ props: { ui_variant: "v2" } });
+    setUiVariantForTest("control");
+  });
+
+  it("reports a browser's play-screen assignment", async () => {
+    vi.stubEnv("MODE", "production");
+    const beacon = stubBeacon();
+
+    trackUiVariantAssigned({ variant: "v2", visitType: "returning" });
+
+    expect(track).toHaveBeenCalledWith("ui_variant_assigned", {
+      variant: "v2",
+      visit_type: "returning",
+      puzzle_date: LIVE_DATE,
+    });
+    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
+    expect(await payload(body)).toMatchObject({ name: "ui_variant_assigned", props: { variant: "v2" } });
   });
 
   it("mirrors a visit's id to Supabase only", async () => {
@@ -682,7 +700,7 @@ describe("supabase mirror", () => {
     const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
     expect(await payload(body)).toEqual({
       name: "mode_changed",
-      props: { from: "standard", to: "freeform", via: "header", puzzle_date: LIVE_DATE, player_id: "player-1" },
+      props: { from: "standard", to: "freeform", via: "header", puzzle_date: LIVE_DATE, player_id: "player-1", ui_variant: "control" },
     });
     // ...and not on Vercel, which cannot group by it.
     expect(track).toHaveBeenCalledWith("mode_changed", {
@@ -719,7 +737,7 @@ describe("supabase mirror", () => {
     // An event with no properties of its own still says whose it was.
     expect(await payload(init.body)).toEqual({
       name: "arrived_from_reddit",
-      props: { player_id: null },
+      props: { player_id: null, ui_variant: "control" },
     });
     vi.unstubAllGlobals();
   });
@@ -741,7 +759,7 @@ describe("supabase mirror", () => {
     const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
     expect(await payload(body)).toEqual({
       name: "freeform_vote",
-      props: { vote: "boo", date: "2026-09-15", voter: "player-1", player_id: "player-1" },
+      props: { vote: "boo", date: "2026-09-15", voter: "player-1", player_id: "player-1", ui_variant: "control" },
     });
     localStorage.clear();
   });
@@ -758,7 +776,7 @@ describe("supabase mirror", () => {
     const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
     expect(await payload(body)).toEqual({
       name: "freeform_vote",
-      props: { vote: "love", date: "2026-09-15", voter: null, player_id: null },
+      props: { vote: "love", date: "2026-09-15", voter: null, player_id: null, ui_variant: "control" },
     });
   });
 

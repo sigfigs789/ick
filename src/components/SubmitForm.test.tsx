@@ -4,6 +4,19 @@ import { describe, expect, it, vi } from "vitest";
 import { SubmitForm } from "./SubmitForm";
 
 describe("SubmitForm", () => {
+  it("says Play on the new play screen's button", async () => {
+    const onSubmit = vi.fn();
+    render(
+      <SubmitForm drop="str" disabled={false} feedback={null} onSubmit={onSubmit} submitLabel="Play" />
+    );
+
+    await userEvent.type(screen.getByLabelText(/enter a word containing "STR"/i), "strange");
+    await userEvent.click(screen.getByRole("button", { name: "Play" }));
+
+    expect(onSubmit).toHaveBeenCalledWith("strange");
+    expect(screen.queryByRole("button", { name: /submit/i })).not.toBeInTheDocument();
+  });
+
   it("submits the typed word and clears the box", async () => {
     const onSubmit = vi.fn();
     render(

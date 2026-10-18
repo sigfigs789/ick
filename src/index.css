@@ -666,9 +666,16 @@ h2 {
   color: var(--fg-faint);
 }
 
+/* Pinned to the corner opposite the dev date bar, outside the play column, so
+   a dev screenshot of the board matches production. */
 .dev-reset-button {
+  position: fixed;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 50;
   display: block;
-  margin: 1rem auto 0;
+  margin: 0;
+  padding: 0.25rem 0.4rem;
   border: 0;
   background: transparent;
   color: var(--fg-faint);
@@ -956,11 +963,6 @@ h2 {
 .drop-display__reveal-button:hover {
   background: var(--card-bg);
 }
-.drop-display__reveal-cost {
-  margin: 0.25rem 0 0;
-  font-size: 0.75rem;
-  color: var(--fg-faint);
-}
 /* The confirm carries the weight because it is the answer to the question the
    dialog asks; "Never mind" stays quiet, but keeps a real border so it is not
    mistaken for a disabled control. */
@@ -1167,13 +1169,14 @@ h2 {
     transform: scale(1);
   }
 }
-/* The whole card is the tap target: pressing anywhere copies the word.
+/* The card's top row. While the retry is armed it is a button and the whole
+ * card is the tap target; the rest of the time it is plain text.
  *
- * A grid rather than a flex row so the crown, copy icon and rarity badge align
+ * A grid rather than a flex row so the crown, retry hint and rarity badge align
  * on the *word* rather than on the card: they share row one, and the base-form
  * note (when there is one) hangs below in row two without dragging their
  * alignment down with it. The spacer column is what pushes the badge right, so
- * the icon stays beside the word it belongs to.
+ * the hint stays beside the word it belongs to.
  *
  * Spacing is margins rather than a column-gap: the crown column collapses to
  * zero on a word that isn't the best one, and a gap would still hold its gutter
@@ -1198,45 +1201,19 @@ h2 {
 .guess-log__entry-button:hover {
   background: var(--bg-inset);
 }
+/* The card at rest: plain text, nothing to tap. */
+.guess-log__entry-button--static {
+  cursor: default;
+}
+.guess-log__entry-button--static:hover {
+  background: none;
+}
 .guess-log__entry-meta {
   grid-column: 5;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-left: 0.6rem;
-}
-.guess-log__entry-button:hover .guess-log__copy-hint,
-.guess-log__entry-button:focus-visible .guess-log__copy-hint {
-  opacity: 1;
-}
-.guess-log__entry-button--copied .guess-log__copy-hint {
-  opacity: 1;
-  color: var(--best-word-accent);
-}
-/* A faint copy affordance that firms up on hover/focus and turns into a
- * checkmark once the word is copied. */
-.guess-log__copy-hint {
-  grid-column: 3;
-  margin-left: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  color: var(--fg-muted);
-  opacity: 0.45;
-  transition:
-    opacity 0.15s var(--ease-standard),
-    color 0.15s var(--ease-standard);
-}
-/* Share-button-style "Copied!" confirmation that replaces the copy icon on tap. */
-.guess-log__copied {
-  grid-column: 3;
-  margin-left: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--best-word-accent);
 }
 .guess-log__crown {
   grid-column: 1;
@@ -1427,7 +1404,7 @@ h2 {
 .guess-log__entry--picking .guess-log__entry-button:focus-visible {
   background: var(--bg-inset);
 }
-/* Sits exactly where the copy affordance does, because it replaces it. */
+/* Beside the word, in the column the card keeps free for it. */
 .guess-log__retry-hint {
   grid-column: 3;
   margin-left: 0.5rem;
@@ -3698,23 +3675,6 @@ h2 {
 .leaderboard__note--playing {
   margin: 0;
 }
-.results-panel__leaderboard {
-  display: block;
-  width: 100%;
-  margin-top: 0.7rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 0.6rem;
-  padding: 0.6rem;
-  background: var(--card-bg);
-  color: var(--fg);
-  font-family: var(--font-display);
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.results-panel__leaderboard:hover {
-  background: var(--bg-inset);
-}
 
 @media (max-width: 420px) {
   .drop-display__letter {
@@ -5433,4 +5393,216 @@ h2 {
   flex-basis: 100%;
   font-size: 0.85rem;
   color: var(--fg-muted);
+}
+
+/* ------------------------------------------------------------------------
+   The new play screen (see src/game/uiVariant.ts). Half of all browsers get
+   it, by `data-ui="v2"` on the root element, so every rule here is scoped to
+   that and the current screen is left exactly as it was.
+   ------------------------------------------------------------------------ */
+
+/* Room under the last card for the chat button, which floats over the bottom
+   right corner of every page. */
+:root[data-ui="v2"] .app {
+  padding-bottom: 6rem;
+}
+
+/* The tiles are there from the first frame and settle into place, rather than
+   fading up from nothing: a throttled or paused animation (a background tab, a
+   slow phone) left the drop blank under its label. */
+:root[data-ui="v2"] .drop-display__letter {
+  opacity: 1;
+  transform: scale(0.92);
+  animation-name: tile-settle;
+}
+@keyframes tile-settle {
+  to {
+    transform: scale(1);
+  }
+}
+
+/* The input now sits right under the drop, and the guess log under it. */
+:root[data-ui="v2"] .play .submit-form {
+  margin-bottom: 0.25rem;
+}
+:root[data-ui="v2"] .play .feedback:not(.feedback--collapsed) {
+  margin-bottom: 1rem;
+}
+
+/* Arrows on the drop row read as quiet links rather than buttons: on today's
+   puzzle Previous is the only one live, and it leads into the archive, which
+   is not where most players are headed. */
+:root[data-ui="v2"] .puzzle-nav--drop > .puzzle-nav__arrow {
+  border-color: transparent;
+  background: transparent;
+  color: var(--fg-muted);
+}
+:root[data-ui="v2"] .puzzle-nav--drop > .puzzle-nav__arrow:not(:disabled):hover {
+  background: var(--bg-inset);
+  color: var(--fg);
+}
+:root[data-ui="v2"] .puzzle-nav--drop > .puzzle-nav__arrow:disabled {
+  visibility: hidden;
+}
+
+/* Share, beside the guess count. */
+:root[data-ui="v2"] .guess-log__header {
+  align-items: center;
+}
+:root[data-ui="v2"] .guess-log__count {
+  margin-left: auto;
+}
+.quick-share {
+  min-height: 2rem;
+  padding: 0.3rem 0.8rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.quick-share:hover {
+  background: var(--accent-hover);
+}
+
+/* Freeform's rainbow stays on the input, where it says which game is being
+   typed into; the cards go back to the neutral border, so the gold best word
+   is the one card that stands out. */
+:root[data-ui="v2"]
+  .play--freeform
+  .guess-log__entry:not(.guess-log__entry--best):not(.guess-log__entry--picking) {
+  border-color: var(--border-strong);
+  background: var(--card-bg);
+}
+
+/* The word that has just landed lights up for a moment, so the eye finds it
+   under the input. */
+.guess-log__entry--landed {
+  animation:
+    slot-fill 0.38s var(--ease-standard),
+    entry-landed 1.6s var(--ease-standard);
+}
+@keyframes entry-landed {
+  0%,
+  40% {
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--focus-ring) 35%, transparent),
+      var(--card-shadow);
+  }
+  100% {
+    box-shadow: var(--card-shadow);
+  }
+}
+
+/* The one line that opens the other mode's submit links. */
+.guess-log__other-offer {
+  margin: 0.6rem 0 0;
+  text-align: center;
+}
+.guess-log__other-offer-button {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+.guess-log__other-offer-button:hover {
+  color: var(--fg);
+}
+
+/* An empty box means "type something", not "finished": an outline, so it does
+   not read as the dead grey of a disabled control. */
+:root[data-ui="v2"] .submit-form button:disabled {
+  opacity: 1;
+  background: transparent;
+  color: var(--fg-faint);
+  box-shadow: inset 0 0 0 2px var(--border-strong);
+}
+
+/* A little more room on a wide screen, where the cards read as thin strips. */
+@media (min-width: 600px) {
+  :root[data-ui="v2"] .app:not(.app--wide) {
+    max-width: 34rem;
+  }
+  :root[data-ui="v2"] .guess-log__entry-button {
+    min-height: 3.9rem;
+  }
+  :root[data-ui="v2"] .guess-log__word {
+    font-size: 1.3rem;
+  }
+  :root[data-ui="v2"] .guess-log__entry .rarity-badge {
+    font-size: 0.76rem;
+  }
+}
+
+/* "Share options", folding the answer and username choices and the preview on
+   the new play screen (see ResultsPanel's `collapsible`). */
+.results-panel__options-toggle {
+  display: block;
+  margin: 0.75rem auto 0;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.results-panel__options-toggle:hover {
+  color: var(--fg);
+}
+
+/* The new play screen's share panel: the preview of what Share copies on top,
+   the choices folded under it, and Share across the bottom, where the
+   leaderboard link used to sit. It arrives from the Share beside the guess
+   count, so it rises a little further than the plain panel and stops clear of
+   the top edge when scrolled to. */
+.results-panel--collapsible {
+  scroll-margin-top: 1rem;
+  animation: share-panel-in 0.45s var(--ease-standard);
+}
+@keyframes share-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.results-panel--collapsible .results-panel__preview {
+  margin-top: 0;
+}
+.results-panel__options {
+  text-align: left;
+}
+.results-panel__share-actions--bottom {
+  margin-top: 1rem;
+}
+.results-panel__share-actions--bottom .share-button {
+  width: 100%;
+}
+
+/* The new play screen puts the input right under the drop, so a notice over
+   the input would cover the letters being played. It hangs below the input
+   instead, pointing up at it. */
+:root[data-ui="v2"] .de-prefix-hint:not(.folded-live-notice) {
+  top: calc(100% + 0.6rem);
+  bottom: auto;
+}
+:root[data-ui="v2"] .de-prefix-hint:not(.folded-live-notice)::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--accent);
 }

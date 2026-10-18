@@ -13,8 +13,8 @@ const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /**
- * The four key numbers, one tab each. A day's number is not final while it is
- * `live`: the puzzle still in play for the first three, and for returns, until
+ * The key numbers, one tab each. A day's number is not final while it is
+ * `live`: the puzzle still in play for the first four, and for returns, until
  * all seven puzzles after it are over. The line is dashed over those days.
  */
 const METRICS: ReadonlyArray<{
@@ -26,6 +26,7 @@ const METRICS: ReadonlyArray<{
   { key: "players", label: "Players", live: (d, today) => d.date >= today, liveNote: "still in play" },
   { key: "acted", label: "Did something", live: (d, today) => d.date >= today, liveNote: "still in play" },
   { key: "guessed", label: "Guessed", live: (d, today) => d.date >= today, liveNote: "still in play" },
+  { key: "shared", label: "Shared", live: (d, today) => d.date >= today, liveNote: "still in play" },
   { key: "returned", label: "Back within 7 days", live: (d) => !d.closed, liveNote: "too soon to tell" },
 ];
 

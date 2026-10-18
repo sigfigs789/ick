@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { isNewPlayUi } from "../game/uiVariant";
 import { trackFoundWordsOpened, trackLeaderboardOpened } from "../analytics";
 import { navigate, type Route } from "../routes";
 import { ModeToggle } from "./ModeToggle";
@@ -161,8 +162,14 @@ export function AppHeader({
    */
   const modeNav = useRef<HTMLDivElement>(null);
   const [docked, setDocked] = useState(false);
+  // The new play screen (see game/uiVariant.ts) leaves the puzzle out again:
+  // its input sits right under the drop, so the header's switch is on screen
+  // whenever a guess is typed, and the docked copy only ever floated over the
+  // guess cards.
   const dockable =
-    Boolean(mode && onModeChange) && DOCKED_SWITCH_ROUTES.includes(route);
+    Boolean(mode && onModeChange) &&
+    DOCKED_SWITCH_ROUTES.includes(route) &&
+    !(route === "game" && isNewPlayUi());
   useEffect(() => {
     const target = modeNav.current;
     // No observer (jsdom, very old browsers) is no dock: the header's switch

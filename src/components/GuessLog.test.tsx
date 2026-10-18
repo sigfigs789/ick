@@ -14,6 +14,24 @@ const streak: StreakState = {
 };
 
 describe("GuessLog", () => {
+  it("keeps the header and its action on a finished puzzle in the new play screen", () => {
+    const words: AcceptedWord[] = [{ word: "strut", rarity: "Rare", zipf: 3.2 }];
+    const { rerender } = render(
+      <GuessLog acceptedWords={words} completed newUi headerAction={<button type="button">Share</button>} />,
+    );
+    expect(screen.getByRole("heading", { name: "Guesses" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Share" })).toBeInTheDocument();
+
+    // The current play screen still drops it once the puzzle is over.
+    rerender(<GuessLog acceptedWords={words} completed headerAction={<button type="button">Share</button>} />);
+    expect(screen.queryByRole("heading", { name: "Guesses" })).not.toBeInTheDocument();
+  });
+
+  it("asks for the rarest word in the new play screen's empty state", () => {
+    render(<GuessLog acceptedWords={[]} newUi />);
+    expect(screen.getByText(/aim for the rarest word/i)).toBeInTheDocument();
+  });
+
   it("shows an empty state with no guesses", () => {
     render(<GuessLog acceptedWords={[]} />);
     expect(screen.getByText(/no words yet/i)).toBeInTheDocument();
@@ -46,10 +64,10 @@ describe("GuessLog", () => {
       { word: "materialnesses", rarity: "Common", zipf: 4.95 },
     ];
     render(<GuessLog acceptedWords={words} />);
-    expect(screen.getByText(/scored as its common form, “material”/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /scored as its common form "material"/i })
-    ).toBeInTheDocument();
+    // In the reading order now: the card has no label of its own to carry it.
+    const note = screen.getByText(/scored as its common form, “material”/i);
+    expect(note).toBeInTheDocument();
+    expect(note.closest("[aria-hidden]")).toBeNull();
   });
 
   it("explains the fold behind the note's More info", async () => {
@@ -140,17 +158,10 @@ describe("GuessLog", () => {
     expect(strangeEntry).not.toHaveClass("guess-log__entry--best");
   });
 
-  it("copies the tier square, word, and score when tapped and flashes a confirmation", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
+  it("leaves a word at rest as plain text, with nothing to tap", () => {
     const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
     render(<GuessLog acceptedWords={words} />);
-
-    await userEvent.click(screen.getByRole("button", { name: /copy "strange"/i }));
-
-    // "🟫 strange (<score>)" — the brown square is the Common tier.
-    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/^🟫 strange \(.+\)$/));
-    expect(screen.getByText("Copied!")).toBeInTheDocument();
+    expect(screen.getByText("strange").closest("button")).toBeNull();
   });
 
   it("shows the streak without a duplicate completion heading", () => {
@@ -179,14 +190,12 @@ describe("GuessLog retry", () => {
     const onRetry = vi.fn();
     render(<GuessLog acceptedWords={words} canRetry retryOffered onRetry={onRetry} />);
 
-    // Until it is armed, tapping a word still copies it.
     await userEvent.click(screen.getByRole("button", { name: /retry 1 word/i }));
     await userEvent.click(screen.getByRole("button", { name: /^Retry "strange"/i }));
 
     expect(onRetry).toHaveBeenCalledWith("strange");
-    // And it disarms itself, so the next tap copies again rather than dropping
-    // a second word.
-    expect(screen.getByRole("button", { name: /^Copy "strut"/i })).toBeInTheDocument();
+    // And it disarms itself, so a second tap cannot drop a second word.
+    expect(screen.queryByRole("button", { name: /^Retry "strut"/i })).not.toBeInTheDocument();
   });
 
   it("says the limit in the button's own label, before it is ever pressed", () => {
@@ -210,7 +219,7 @@ describe("GuessLog retry", () => {
     await userEvent.click(screen.getByRole("button", { name: /never mind/i }));
 
     expect(onRetry).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /^Copy "strange"/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Retry "strange"/i })).not.toBeInTheDocument();
   });
 
   it("replaces the control with a quiet, inert note once the retry is spent", () => {
@@ -311,6 +320,45 @@ describe("GuessLog guess count", () => {
       expect(submit).toHaveLength(1);
       expect(submit[0]).toHaveTextContent("Submit to Freeform");
       await userEvent.click(submit[0]);
+      expect(onCopy).toHaveBeenCalledWith("kindless");
+    });
+
+    it("folds the controls behind one line on the new play screen", async () => {
+      const onCopy = vi.fn();
+      render(
+        <GuessLog
+          acceptedWords={words}
+          date="2026-10-01"
+          otherMode="freeform"
+          onCopyToOtherMode={onCopy}
+          newUi
+          crossMode={{
+            kindless: {
+              state: "ready",
+              word: { word: "kindless", rarity: "Legend", zipf: 0.4 },
+              score: "9.91",
+              needsLiveCheck: false,
+            },
+            kindly: {
+              state: "copied",
+              word: { word: "kindly", rarity: "Uncommon", zipf: 3.9 },
+              score: "5.20",
+            },
+            kinder: { state: "refused", reason: "archaic" },
+          }}
+        />
+      );
+
+      // Folded: a score already earned there still shows, nothing else does.
+      expect(screen.getByText("5.20")).toBeInTheDocument();
+      expect(screen.queryByText("Not playable in Freeform")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Submit “.*” to Freeform/ })).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: "Also play these words in Freeform mode" }));
+      expect(screen.getByText("Not playable in Freeform")).toBeInTheDocument();
+      const play = screen.getByRole("button", { name: /^Submit “kindless” to Freeform/ });
+      expect(play).toHaveTextContent("Play in Freeform");
+      await userEvent.click(play);
       expect(onCopy).toHaveBeenCalledWith("kindless");
     });
 

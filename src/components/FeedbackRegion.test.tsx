@@ -31,6 +31,33 @@ describe("FeedbackRegion", () => {
     expect(region).not.toHaveClass("feedback--shown");
   });
 
+  it("drops a settled note on the new play screen, where the toast says it in full", () => {
+    const toast = { kind: "rejected" as const, message: "Not found. Not in available dictionaries.", key: 2 };
+    const { rerender } = render(
+      <FeedbackRegion feedback={null} note={PENDING} settledNote={false} onWordRules={vi.fn()} />
+    );
+    expect(screen.getByText(/Digging through dictionaries/)).toBeInTheDocument();
+
+    rerender(<FeedbackRegion feedback={toast} note="Not found" settledNote={false} onWordRules={vi.fn()} />);
+    expect(screen.queryByText("Not found")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Not found. Not in available dictionaries.");
+  });
+
+  it("holds a verdict for the time it is given", () => {
+    vi.useFakeTimers();
+    render(
+      <FeedbackRegion
+        feedback={{ kind: "accepted", message: "accepted", key: 1 }}
+        visibleMs={4000}
+        onWordRules={vi.fn()}
+      />
+    );
+    const region = screen.getByRole("status");
+    expect(region).toHaveClass("feedback--shown");
+    act(() => vi.advanceTimersByTime(4000));
+    expect(region).not.toHaveClass("feedback--shown");
+  });
+
   it("keeps a live region in the DOM when there is no feedback", () => {
     render(<FeedbackRegion feedback={null} onWordRules={vi.fn()} />);
 

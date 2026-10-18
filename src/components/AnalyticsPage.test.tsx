@@ -15,6 +15,8 @@ const metrics = (players: number, acted: number, guessed: number, soFar: number,
   players,
   acted,
   guessed,
+  // Two in five guessers share, so the column has its own number to show.
+  shared: Math.round(guessed * 0.4),
   returned: { cohort, returned, soFar },
 });
 
@@ -27,11 +29,11 @@ const groups = {
 };
 
 const dayGroups = (players: number) => ({
-  all: { players, acted: players - 2, guessed: players - 4, returned: 1 },
-  new: { players: 1, acted: 1, guessed: 1, returned: 0 },
-  returning: { players: players - 1, acted: 0, guessed: 0, returned: 0 },
-  standard: { players, acted: 0, guessed: 0, returned: 0 },
-  freeform: { players: 0, acted: 0, guessed: 0, returned: 0 },
+  all: { players, acted: players - 2, guessed: players - 4, shared: 0, returned: 1 },
+  new: { players: 1, acted: 1, guessed: 1, shared: 0, returned: 0 },
+  returning: { players: players - 1, acted: 0, guessed: 0, shared: 0, returned: 0 },
+  standard: { players, acted: 0, guessed: 0, shared: 0, returned: 0 },
+  freeform: { players: 0, acted: 0, guessed: 0, shared: 0, returned: 0 },
 });
 
 /** The shape `analytics_overview` returns. */
@@ -103,6 +105,12 @@ describe("AnalyticsPage", () => {
     expect(everyone).toHaveTextContent("50 50%");
     // Every return seen so far, as a share of the players.
     expect(everyone).toHaveTextContent("30 30%");
+    // Sharers, of the players and -- the only ones who can -- of the guessers.
+    expect(everyone).toHaveTextContent("20 20%");
+    expect(everyone).toHaveTextContent("40% of guessers");
+    expect(within(section("Key numbers")).getByRole("columnheader", { name: "Shared" })).toBeInTheDocument();
+    // The play-screen test pairs every grouping's rows by variant.
+    expect(within(section("Play screen test")).getAllByRole("row", { name: /^Everyone/ })).toHaveLength(1);
     const fresh = within(section("Key numbers")).getByRole("row", { name: /^New players/ });
     expect(fresh).toHaveTextContent("10 14%");
     for (const name of ["Returning players", "Started in Standard", "Started in Freeform"]) {

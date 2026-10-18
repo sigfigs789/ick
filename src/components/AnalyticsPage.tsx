@@ -26,11 +26,12 @@ import { IdleHintSection } from "./IdleHintSection";
 /**
  * How the game is doing, as a page at /analytics.
  *
- * Four numbers, and the same four everywhere: the players who turned up, the
- * ones who did anything, the ones who guessed (banked a word), and the ones who
- * came back within seven days. They are split by who the players are -- new or
- * returning, and the mode they were started in -- by the puzzle type they
- * played, and by whether they opened the chat. Every number is built in one
+ * Five numbers, and the same five everywhere: the players who turned up, the
+ * ones who did anything, the ones who guessed (banked a word), the ones who
+ * shared their result, and the ones who came back within seven days. They are
+ * split by who the players are -- new or returning, and the mode they were
+ * started in -- by the puzzle type they played, by whether they opened the
+ * chat, and by which play screen they were shown. Every number is built in one
  * place, `analytics_overview` (see the 2026-10-18 migration), and this page
  * only draws them.
  *
@@ -188,6 +189,7 @@ function Report({
           <li><strong>Players</strong>: opened the game</li>
           <li><strong>Did something</strong>: any tap, look or guess</li>
           <li><strong>Guessed</strong>: banked a word</li>
+          <li><strong>Shared</strong>: copied their result with Share (the second line is the share of guessers, the only players who can)</li>
           <li><strong>Back within 7 days</strong>: played again in the next 7 days (recent days still counting up)</li>
           <li><strong>New</strong>: first visit in this window. <strong>Started in</strong>: mode on first visit</li>
         </ul>
@@ -228,11 +230,26 @@ function Report({
       </Section>
 
       <Section
+        title="Play screen test"
+        note={`${span}. Current play screen vs the new one, each browser assigned 50/50${
+          report.uiSince ? `, since ${shortDate(report.uiSince)}` : ""
+        }.`}
+      >
+        <MetricsTable
+          split="Play screen"
+          rows={GROUPS.flatMap((g) => [
+            { key: `${g}-control`, label: GROUP_NAMES[g], side: "Current", metrics: report.ui[g].control },
+            { key: `${g}-v2`, label: GROUP_NAMES[g], side: "New", metrics: report.ui[g].v2 },
+          ])}
+        />
+      </Section>
+
+      <Section
         title="Chat"
         note={`${span}. Opened chat vs didn't${report.chatSince ? `, since ${shortDate(report.chatSince)}` : ""}.`}
       >
         <MetricsTable
-          split
+          split="Chat"
           rows={GROUPS.flatMap((g) => [
             { key: `${g}-opened`, label: GROUP_NAMES[g], side: "Opened chat", metrics: report.chat[g].opened },
             { key: `${g}-not`, label: GROUP_NAMES[g], side: "Didn't", metrics: report.chat[g].notOpened },
@@ -252,18 +269,22 @@ interface MetricsRow {
   metrics: KeyMetrics;
 }
 
-/** The four key numbers, a row per set of players; `split` pairs rows under one label. */
-function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: boolean }) {
+/**
+ * The key numbers, a row per set of players; `split` pairs rows under one
+ * label, and names the column that tells the pair apart.
+ */
+function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: string }) {
   return (
     <div className="analytics__table-wrap">
       <table className="analytics__table">
         <thead>
           <tr>
             <th scope="col">Who</th>
-            {split && <th scope="col">Chat</th>}
+            {split && <th scope="col">{split}</th>}
             <th scope="col">Players</th>
             <th scope="col">Did something</th>
             <th scope="col">Guessed</th>
+            <th scope="col">Shared</th>
             <th scope="col">Back within 7 days</th>
           </tr>
         </thead>
@@ -285,6 +306,15 @@ function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: boolean }) 
                 </td>
                 <td>
                   <Count n={m.guessed} of={m.players} />
+                </td>
+                <td>
+                  <Count n={m.shared} of={m.players} />
+                  {m.guessed > 0 && (
+                    <>
+                      <br />
+                      <span className="analytics__n">{pct(m.shared / m.guessed)} of guessers</span>
+                    </>
+                  )}
                 </td>
                 <td>
                   <Count n={m.returned.soFar} of={m.players} />

@@ -23,6 +23,7 @@ import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
 import { APP_VERSION } from "./version";
+import { uiVariant, type UiVariantAssignment } from "./game/uiVariant";
 
 /** The scalar property values both Vercel Analytics and /api/events accept. */
 type EventProps = Record<string, string | number | boolean | null>;
@@ -55,7 +56,12 @@ type EventProps = Record<string, string | number | boolean | null>;
 function mirror(name: string, props?: EventProps): void {
   if (import.meta.env.MODE === "test" || !reporting) return;
   try {
-    const body = JSON.stringify({ name, props: { ...props, player_id: loadPlayerId() } });
+    // The play-screen variant rides on every row for the same reason the id
+    // does: the experiment is read per player, across every event they send.
+    const body = JSON.stringify({
+      name,
+      props: { ...props, player_id: loadPlayerId(), ui_variant: uiVariant() },
+    });
     if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
       navigator.sendBeacon("/api/events", new Blob([body], { type: "application/json" }));
       return;
@@ -506,12 +512,6 @@ export function trackResultCopied(mode: GameMode) {
   send("result_copied", { method: "copy", mode, ...visitDimensions() }, idleHintArmProps());
 }
 
-/** Record a click on the X share button. */
-export function trackResultSharedOnX(mode: GameMode) {
-  markShare();
-  send("result_shared_on_x", { method: "x", mode, ...visitDimensions() }, idleHintArmProps());
-}
-
 /**
  * Record visitors who arrive through an X share link, with the mode the link
  * was shared from -- `none` for a link from before links carried one -- and the
@@ -539,6 +539,19 @@ export function trackModeAssigned(assignment: ModeAssignment) {
     reason: assignment.reason,
     source: visitSource(assignment.source),
     puzzle_date: assignment.date,
+  });
+}
+
+/**
+ * The play-screen variant a browser was put in (see game/uiVariant.ts). Sent once
+ * per browser, ever, after the board id exists -- the row the report's UI test
+ * section groups players by.
+ */
+export function trackUiVariantAssigned(assignment: UiVariantAssignment) {
+  send("ui_variant_assigned", {
+    variant: assignment.variant,
+    visit_type: assignment.visitType,
+    puzzle_date: todayDateString(),
   });
 }
 

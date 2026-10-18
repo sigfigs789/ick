@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useId, useRef, useState } from "react";
 import { buildShareText, type RevealMode } from "../game/share";
 import { RainbowWord } from "./RainbowWord";
 import { MODE_LABELS, modeForDate } from "../game/mode";
@@ -6,10 +6,9 @@ import { loadReveal, saveReveal } from "../game/reveal";
 import { loadShowName, saveShowName } from "../game/shareName";
 import { loadPlayerId, selfName } from "../game/player";
 import { ShareButton } from "./ShareButton";
-import { TwitterShareButton } from "./TwitterShareButton";
 import type { AcceptedWord, StreakState } from "../game/types";
 import type { GameMode } from "../game/mode";
-import { trackResultCopied, trackResultSharedOnX } from "../analytics";
+import { trackResultCopied } from "../analytics";
 
 interface Props {
   date: string;
@@ -29,8 +28,20 @@ interface Props {
    * played in.
    */
   mode?: GameMode;
-  /** Opens the leaderboard. Omitted in tests that only exercise sharing. */
-  onLeaderboard?: () => void;
+  /**
+   * The new play screen's layout (see game/uiVariant.ts): the preview of what
+   * Share copies first, the answer and username choices folded behind a
+   * "Share options" toggle under it, and Share itself at the bottom. Most
+   * players share with the choices they already have, so the choices stay out
+   * of the way until asked for.
+   */
+  collapsible?: boolean;
+  /**
+   * Bumped each time the player asks for this panel from elsewhere (the Share
+   * beside the guess count), which scrolls it into view. 0 never scrolls, so
+   * a panel that is simply on the page when it loads stays where it is.
+   */
+  scrollSignal?: number;
 }
 
 const SPOILER_LABEL_ID = "results-panel-reveal-label";
@@ -76,8 +87,19 @@ export function ResultsPanel({
   streak,
   isToday = false,
   mode,
-  onLeaderboard,
+  collapsible = false,
+  scrollSignal = 0,
 }: Props) {
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (scrollSignal === 0) return;
+    const reduced =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    sectionRef.current?.scrollIntoView?.({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  }, [scrollSignal]);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const optionsId = useId();
   // Starts from the player's last choice, "Top" until they make one (see
   // game/reveal.ts).
   const [reveal, setRevealState] = useState<RevealMode>(loadReveal);
@@ -108,27 +130,28 @@ export function ResultsPanel({
     ...sharedResultOptions,
     source: "share",
   });
-  const twitterShareText = `\n\n────\n${buildShareText(date, drop, words, {
-    reveal,
-    source: "twitter",
-    format: "x",
-    isToday,
-    mode,
-  })}`;
   const [shareHeading, ...shareDetailLines] = shareText.split("\n");
   // The mode the shares report, which is the one buildShareText tags the link with.
   const sharedMode = mode ?? modeForDate(date);
-  return (
-    <section className="results-panel" aria-label="Share result">
-      <div className="results-panel__share-actions">
-        <ShareButton text={copiedShareText} onShared={() => trackResultCopied(sharedMode)} />
-        <TwitterShareButton
-          text={twitterShareText}
-          onShared={() => trackResultSharedOnX(sharedMode)}
-        />
-      </div>
-      {/* A radiogroup rather than a fieldset: the label sits on the same row as
-          the options, and a <legend> can't join a flex row. */}
+  const shareButton = (
+    <ShareButton text={copiedShareText} onShared={() => trackResultCopied(sharedMode)} />
+  );
+  const preview = (
+    <pre className="results-panel__preview" aria-hidden="true">
+      <strong>{paintMode(shareHeading)}</strong>
+      {shareDetailLines.length > 0 && "\n"}
+      {shareDetailLines.map((line, index) => (
+        <Fragment key={index}>
+          {index > 0 && "\n"}
+          {line}
+        </Fragment>
+      ))}
+    </pre>
+  );
+  const choices = (
+    <>
+      {/* A radiogroup rather than a fieldset: the label sits on the same row
+          as the options, and a <legend> can't join a flex row. */}
       <div
         className="results-panel__spoiler-toggle"
         role="radiogroup"
@@ -160,24 +183,43 @@ export function ResultsPanel({
           Show username
         </label>
       )}
-      <pre className="results-panel__preview" aria-hidden="true">
-        <strong>{paintMode(shareHeading)}</strong>
-        {shareDetailLines.length > 0 && "\n"}
-        {shareDetailLines.map((line, index) => (
-          <Fragment key={index}>
-            {index > 0 && "\n"}
-            {line}
-          </Fragment>
-        ))}
-      </pre>
-      {onLeaderboard && (
-        // The second way in, and the one that will get used: a finished puzzle
-        // is the moment a player actually wants to know where the score put
-        // them. The header trophy is for every other moment.
-        <button type="button" className="results-panel__leaderboard" onClick={onLeaderboard}>
-          See the leaderboard
+    </>
+  );
+
+  if (collapsible) {
+    return (
+      <section
+        ref={sectionRef}
+        className="results-panel results-panel--collapsible"
+        aria-label="Share result"
+      >
+        {preview}
+        <button
+          type="button"
+          className="results-panel__options-toggle"
+          aria-expanded={optionsOpen}
+          aria-controls={optionsId}
+          onClick={() => setOptionsOpen((was) => !was)}
+        >
+          Share options <span aria-hidden="true">{optionsOpen ? "▴" : "▾"}</span>
         </button>
-      )}
+        {optionsOpen && (
+          <div id={optionsId} className="results-panel__options">
+            {choices}
+          </div>
+        )}
+        <div className="results-panel__share-actions results-panel__share-actions--bottom">
+          {shareButton}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section ref={sectionRef} className="results-panel" aria-label="Share result">
+      <div className="results-panel__share-actions">{shareButton}</div>
+      {choices}
+      {preview}
     </section>
   );
 }

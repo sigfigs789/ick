@@ -332,11 +332,13 @@ export interface Returns {
   guessers: Rate;
 }
 
-/** The four key numbers for one set of players over the window. */
+/** The key numbers for one set of players over the window. */
 export interface KeyMetrics {
   players: number;
   acted: number;
   guessed: number;
+  /** Shared their result on a day in the window (only possible once they have guessed). */
+  shared: number;
   returned: Returns;
 }
 
@@ -345,6 +347,7 @@ export interface DayMetrics {
   players: number;
   acted: number;
   guessed: number;
+  shared: number;
   returned: number;
 }
 
@@ -365,6 +368,10 @@ export interface AnalyticsReport {
   /** Each grouping, split by whether the player opened the chat in the window. */
   chat: Record<Group, { opened: KeyMetrics; notOpened: KeyMetrics }>;
   chatSince: string | null;
+  /** Each grouping, split by play-screen variant (see game/uiVariant.ts). */
+  ui: Record<Group, { control: KeyMetrics; v2: KeyMetrics }>;
+  /** The first day a browser was put in the experiment, or null before it ran. */
+  uiSince: string | null;
   daily: Array<{ date: string; closed: boolean; groups: Record<Group, DayMetrics> }>;
 }
 
@@ -398,7 +405,13 @@ function returns(raw: unknown): Returns {
 
 function metrics(raw: unknown): KeyMetrics {
   const m = obj(raw);
-  return { players: count(m.players), acted: count(m.acted), guessed: count(m.guessed), returned: returns(m.returned) };
+  return {
+    players: count(m.players),
+    acted: count(m.acted),
+    guessed: count(m.guessed),
+    shared: count(m.shared),
+    returned: returns(m.returned),
+  };
 }
 
 function byGroup<T>(raw: unknown, read: (raw: unknown) => T): Record<Group, T> {
@@ -423,6 +436,8 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     modes: { standard: mode(modes.standard), freeform: mode(modes.freeform) },
     chat: byGroup(r.chat, (raw) => ({ opened: metrics(obj(raw).opened), notOpened: metrics(obj(raw).notOpened) })),
     chatSince: text(r.chatSince),
+    ui: byGroup(r.ui, (raw) => ({ control: metrics(obj(raw).control), v2: metrics(obj(raw).v2) })),
+    uiSince: text(r.uiSince),
     daily: list(r.daily)
       .filter((d) => text(d.date))
       .map((d) => ({
@@ -430,7 +445,13 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
         closed: d.closed === true,
         groups: byGroup(d.groups, (raw) => {
           const m = obj(raw);
-          return { players: count(m.players), acted: count(m.acted), guessed: count(m.guessed), returned: count(m.returned) };
+          return {
+            players: count(m.players),
+            acted: count(m.acted),
+            guessed: count(m.guessed),
+            shared: count(m.shared),
+            returned: count(m.returned),
+          };
         }),
       })),
   };

@@ -18,6 +18,32 @@ function flame(): string | undefined {
 }
 
 describe("StreakDisplay", () => {
+  it("leaves out the zeros on the new play screen", () => {
+    const { container, rerender } = render(
+      <StreakDisplay streak={streak} hideEmpty hasWords={false} />
+    );
+    // A new player with nothing yet: no strip at all.
+    expect(container).toBeEmptyDOMElement();
+
+    // A streak but no freeze held and no word today: the streak alone.
+    rerender(<StreakDisplay streak={{ ...streak, currentStreak: 3 }} hideEmpty hasWords={false} />);
+    expect(screen.getByText("day streak")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Streak freezes/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("Total")).not.toBeInTheDocument();
+
+    // A freeze held and a word banked: both come back.
+    rerender(
+      <StreakDisplay
+        streak={{ ...streak, currentStreak: 9, bankedFreezes: 1 }}
+        totalRarity={7.5}
+        hideEmpty
+        hasWords
+      />
+    );
+    expect(screen.getByRole("button", { name: /Streak freezes/ })).toBeInTheDocument();
+    expect(screen.getByText("Total")).toBeInTheDocument();
+  });
+
   it("hides the flame until a streak reaches two days", () => {
     const { rerender } = render(<StreakDisplay streak={streak} />);
     expect(screen.queryByText("🔥")).not.toBeInTheDocument();

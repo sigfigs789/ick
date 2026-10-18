@@ -31,6 +31,11 @@ interface Props {
    * the box in the idle hint experiment -- see hooks/useIdleHint.ts.
    */
   acceptedWords?: readonly AcceptedWord[];
+  /**
+   * The button's word. The new play screen (see game/uiVariant.ts) says
+   * "Play": a guess is a move in the game, not a form being sent.
+   */
+  submitLabel?: string;
 }
 
 export function SubmitForm({
@@ -42,6 +47,7 @@ export function SubmitForm({
   date,
   mode,
   acceptedWords,
+  submitLabel = "Submit",
 }: Props) {
   const [value, setValue] = useState("");
   const idleHint = useIdleHint({ drop, date, acceptedWords, value, disabled });
@@ -155,7 +161,7 @@ export function SubmitForm({
           // the click/submit even fires.
           onMouseDown={(e) => e.preventDefault()}
         >
-          Submit
+          {submitLabel}
         </button>
       </div>
     </form>

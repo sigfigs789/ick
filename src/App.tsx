@@ -11,6 +11,8 @@ import { PuzzleNav } from "./components/PuzzleNav";
 import { FoldedLiveNotice } from "./components/FoldedLiveNotice";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
+import { QuickShareButton } from "./components/QuickShareButton";
+import { isNewPlayUi } from "./game/uiVariant";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
@@ -24,7 +26,6 @@ import {
   trackRedditArrival,
   trackShareArrival,
   trackTwitterArrival,
-  trackLeaderboardOpened,
   trackSessionTime,
   trackVisit,
   watchFirstInteraction,
@@ -32,7 +33,6 @@ import {
 } from "./analytics";
 import { recordVisit } from "./game/visits";
 import { sharedModeFromSearch } from "./game/onboarding";
-import { navigate } from "./routes";
 import {
   beginSession,
   endSessionSegment,
@@ -80,6 +80,15 @@ export default function App() {
   const [showPerfectMonth, setShowPerfectMonth] = useState(false);
   const endPerfectMonth = useCallback(() => setShowPerfectMonth(false), []);
   const sound = useSound();
+  // The play-screen experiment (see game/uiVariant.ts): settled before the
+  // first render and fixed for the browser, so it never changes under a player.
+  const newUi = isNewPlayUi();
+  // New play screen: the share panel stays out of the way until the Share
+  // beside the guess count is pressed, which opens it and scrolls to it. Each
+  // press bumps the count, so a second press scrolls back to it again. A new
+  // puzzle starts closed.
+  const [shareRequests, setShareRequests] = useState(0);
+  useEffect(() => setShareRequests(0), [date]);
 
   // The compact share-link code identifies its origin without exposing a
   // long UTM parameter in the result text.
@@ -137,13 +146,6 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
 
-  function openLeaderboard() {
-    trackLeaderboardOpened("results");
-    // Nothing to retire here: the badge on the header's Leaderboards tab is
-    // retired by arriving on the page, from whichever door (see AppHeader).
-    navigate("leaderboard");
-  }
-
   const hasWinningWord = progress.acceptedWords.some((word) =>
     isWinningRarity(word.rarity),
   );
@@ -178,6 +180,32 @@ export default function App() {
     setShowPerfectMonth(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfectMonth, date]);
+
+  const guessEntry = (
+    <>
+      {!progress.completed && (
+        <SubmitForm
+          drop={drop}
+          disabled={progress.completed}
+          feedback={feedback}
+          checking={checking}
+          onSubmit={submitWord}
+          date={date}
+          mode={playMode}
+          acceptedWords={progress.acceptedWords}
+          submitLabel={newUi ? "Play" : undefined}
+        />
+      )}
+      <FeedbackRegion
+        feedback={feedback}
+        note={liveNote}
+        reserveSpace={!progress.completed}
+        onWordRules={() => setShowWordRules(true)}
+        settledNote={!newUi}
+        visibleMs={newUi ? (feedback?.kind === "accepted" ? 4000 : 8000) : undefined}
+      />
+    </>
+  );
 
   return (
     <>
@@ -231,6 +259,10 @@ export default function App() {
           notices={foldNotices}
           onDismiss={dismissFoldNotices}
         />
+        {/* The new play screen puts the input straight under the drop, so it
+            stays where it is as words land below it rather than being pushed
+            down the page by each one. */}
+        {newUi && guessEntry}
         <GuessLog
           acceptedWords={progress.acceptedWords}
           completed={progress.completed}
@@ -244,36 +276,23 @@ export default function App() {
           crossMode={crossMode}
           copying={copying}
           onCopyToOtherMode={copyToOtherMode}
+          newUi={newUi}
+          headerAction={
+            newUi && progress.acceptedWords.length > 0 ? (
+              <QuickShareButton
+                date={date}
+                drop={drop}
+                words={progress.acceptedWords}
+                streak={streak}
+                isToday={isToday}
+                mode={progress.mode}
+                onShared={() => setShareRequests((n) => n + 1)}
+              />
+            ) : undefined
+          }
         />
 
-        {!progress.completed && (
-          <SubmitForm
-            drop={drop}
-            disabled={progress.completed}
-            feedback={feedback}
-            checking={checking}
-            onSubmit={submitWord}
-            date={date}
-            mode={playMode}
-            acceptedWords={progress.acceptedWords}
-          />
-        )}
-        <FeedbackRegion
-          feedback={feedback}
-          note={liveNote}
-          reserveSpace={!progress.completed}
-          onWordRules={() => setShowWordRules(true)}
-        />
-
-        {DEV_TOOLS && (
-          <button
-            type="button"
-            className="dev-reset-button"
-            onClick={resetAnswers}
-          >
-            Reset answers
-          </button>
-        )}
+        {!newUi && guessEntry}
 
         {!progress.completed && !isToday && (
           <p className="archive-note">
@@ -288,6 +307,8 @@ export default function App() {
             totalRarity={totalRarityScore(progress.acceptedWords, date)}
             date={date}
             isToday={isToday}
+            hideEmpty={newUi}
+            hasWords={progress.acceptedWords.length > 0}
           />
         )}
 
@@ -303,7 +324,9 @@ export default function App() {
 
             The panel reads the live word list, so a share taken now and a
             share taken three words later are both current. */}
-        {progress.acceptedWords.length > 0 && (
+        {/* On the new play screen, only once asked for by the Share beside the
+            guess count, which stays on a finished puzzle too. */}
+        {progress.acceptedWords.length > 0 && (!newUi || shareRequests > 0) && (
           <ResultsPanel
             date={date}
             drop={drop}
@@ -311,10 +334,23 @@ export default function App() {
             streak={streak}
             isToday={isToday}
             mode={progress.mode}
-            onLeaderboard={openLeaderboard}
+            collapsible={newUi}
+            scrollSignal={shareRequests}
           />
         )}
       </main>
+
+      {/* Dev only, and pinned beside the dev date bar rather than in the
+          column, so a dev screenshot of the board matches production. */}
+      {DEV_TOOLS && (
+        <button
+          type="button"
+          className="dev-reset-button"
+          onClick={resetAnswers}
+        >
+          Reset answers
+        </button>
+      )}
 
       <WordRulesModal
         open={showWordRules}
