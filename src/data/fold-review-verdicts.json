@@ -269,6 +269,26 @@
     "since": "2026-10-19",
     "reason": "Folded onto `quadrate` (quadratizing > quadratize > quadrate), costing 1.04 points; it is a form of `quadratic` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (means make quadratic, not square shape) and confirmed on adversarial re-review (Make quadratic, not square shape)."
   },
+  "quined": {
+    "base": "quine",
+    "since": "2026-10-20",
+    "reason": "Folded onto `quin` (quined > quin), costing 2.09 points; it is a form of `quine` (Zipf 2.36). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (from quine program, not quin) and confirmed on adversarial re-review (quine is self-replicating program, not quin)."
+  },
+  "quines": {
+    "base": "quine",
+    "since": "2026-10-20",
+    "reason": "Folded onto `quin` (quines > quin), costing 1.82 points; it is a form of `quine` (Zipf 2.36). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (plural of quine, not quin) and confirmed on adversarial re-review (plural of quine, not quin)."
+  },
+  "quining": {
+    "base": "quine",
+    "since": "2026-10-20",
+    "reason": "Folded onto `quin` (quining > quin), costing 2.05 points; it is a form of `quine` (Zipf 2.36). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (from quine, not quin) and confirmed on adversarial re-review (from quine, not quin)."
+  },
+  "quintes": {
+    "base": "quinte",
+    "since": "2026-10-20",
+    "reason": "Folded onto `quint` (quintes > quint), costing 1.91 points; it is a form of `quinte` (Zipf 1.82). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (plural of fencing parry quinte) and confirmed on adversarial re-review (fencing parry quinte, not quint)."
+  },
   "rationales": {
     "base": "rationale",
     "since": "2026-10-19",
@@ -278,6 +298,11 @@
     "base": "ratio",
     "since": "2026-10-19",
     "reason": "Folded onto `rations` (rationes > ration > rations), costing 2.81 points; it is a form of `ratio` (Zipf 4.37). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (Latin plural of ratio) and confirmed on adversarial re-review (Latin plural of ratio, not ration)."
+  },
+  "risquing": {
+    "base": "risk",
+    "since": "2026-10-20",
+    "reason": "Folded onto `risque` (risquing > risque), costing 1.72 points; it is a form of `risk` (Zipf 5.05). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (archaic spelling of risking, not racy) and confirmed on adversarial re-review (archaic risque means risk, not racy)."
   },
   "shaggability": {
     "base": "shag",

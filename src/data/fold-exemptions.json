@@ -8209,6 +8209,26 @@
     "since": "2026-09-27",
     "reason": "Folded onto `quart`, costing 2.56 points. Flagged in the 2026-09-22 semantic audit (quarte fencing term, not quart) and confirmed on adversarial re-review (quarte fencing, not quart)."
   },
+  "quiched": {
+    "since": "2026-10-20",
+    "reason": "Folded onto `quiche` (quiched > quiche), costing 1.95 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (verb quich (to stir), not quiche) and confirmed on adversarial re-review (quich means to stir, unrelated to quiche)."
+  },
+  "quiching": {
+    "since": "2026-10-20",
+    "reason": "Folded onto `quiche` (quiching > quiche), costing 1.97 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (verb quich (to stir), not quiche) and confirmed on adversarial re-review (quich means to stir, unrelated to quiche)."
+  },
+  "quiner": {
+    "since": "2026-10-20",
+    "reason": "Folded onto `quin` (quiner > quin), costing 2.09 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (not an agent of quin) and confirmed on adversarial re-review (unrelated to quin (quintuplet, scallop))."
+  },
+  "quiners": {
+    "since": "2026-10-20",
+    "reason": "Folded onto `quin` (quiners > quiner > quin), costing 2.08 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (not built on quin) and confirmed on adversarial re-review (unrelated to quin (quintuplet, scallop))."
+  },
+  "quinize": {
+    "since": "2026-10-20",
+    "reason": "Folded onto `quin` (quinize > quin), costing 2.09 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (treat with quinine, not quin) and confirmed on adversarial re-review (quinine treatment, not quin)."
+  },
   "quinzees": {
     "since": "2026-09-27",
     "reason": "Folded onto `quinze`, costing 1.37 points. Flagged in the 2026-09-22 semantic audit (quinze is card game, unrelated) and confirmed on adversarial re-review (quinze card game vs quinzee shelter)."
@@ -8216,6 +8236,10 @@
   "quisser": {
     "since": "2026-09-27",
     "reason": "Folded onto `quis`, costing 1.48 points. Flagged in the 2026-09-22 semantic audit (quis unrelated to quisser) and confirmed on adversarial re-review (quis is unrelated Latin)."
+  },
+  "quites": {
+    "since": "2026-10-20",
+    "reason": "Folded onto `quite` (quites > quite), costing 4.90 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (bullfighting quite, not adverb quite) and confirmed on adversarial re-review (bullfighting quite, not the adverb)."
   },
   "rabes": {
     "since": "2026-09-27",
@@ -9248,6 +9272,22 @@
   "springes": {
     "since": "2026-09-27",
     "reason": "Folded onto `spring`, costing 4.40 points. Flagged in the 2026-09-22 semantic audit (springe is a snare) and confirmed on adversarial re-review (springe is a snare, distinct word)."
+  },
+  "squitter": {
+    "since": "2026-10-20",
+    "reason": "Folded onto `squit` (squitter > squit), costing 0.05 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (squitter (squirt, diarrhoea) not from squit) and confirmed on adversarial re-review (squitter means squirt or diarrhoea, unrelated)."
+  },
+  "squittered": {
+    "since": "2026-10-20",
+    "reason": "Folded onto `squit` (squittered > squitter > squit), costing 0.09 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (past of squitter, not squit) and confirmed on adversarial re-review (past tense of squitter, unrelated to squit)."
+  },
+  "squittering": {
+    "since": "2026-10-20",
+    "reason": "Folded onto `squit` (squittering > squitter > squit), costing 0.09 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (participle of squitter, not squit) and confirmed on adversarial re-review (participle of squitter, unrelated to squit)."
+  },
+  "squitters": {
+    "since": "2026-10-20",
+    "reason": "Folded onto `squit` (squitters > squitter > squit), costing 0.02 points. Flagged by the daily fold check for the 2026-10-20 `QUI` drop (plural of squitter, not squit) and confirmed on adversarial re-review (plural of squitter, unrelated to squit)."
   },
   "stainlesses": {
     "since": "2026-09-27",
