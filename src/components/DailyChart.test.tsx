@@ -7,6 +7,8 @@ const metrics = (players: number, acted: number, guessed: number, returned: numb
   players,
   acted,
   guessed,
+  // Half the guessers, so the Shared tab has a number of its own to read.
+  shared: guessed / 2,
   returned,
 });
 
