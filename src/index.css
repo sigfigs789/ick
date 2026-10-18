@@ -1174,13 +1174,14 @@ h2 {
     transform: scale(1);
   }
 }
-/* The whole card is the tap target: pressing anywhere copies the word.
+/* The card's top row. While the retry is armed it is a button and the whole
+ * card is the tap target; the rest of the time it is plain text.
  *
- * A grid rather than a flex row so the crown, copy icon and rarity badge align
+ * A grid rather than a flex row so the crown, retry hint and rarity badge align
  * on the *word* rather than on the card: they share row one, and the base-form
  * note (when there is one) hangs below in row two without dragging their
  * alignment down with it. The spacer column is what pushes the badge right, so
- * the icon stays beside the word it belongs to.
+ * the hint stays beside the word it belongs to.
  *
  * Spacing is margins rather than a column-gap: the crown column collapses to
  * zero on a word that isn't the best one, and a gap would still hold its gutter
@@ -1205,45 +1206,19 @@ h2 {
 .guess-log__entry-button:hover {
   background: var(--bg-inset);
 }
+/* The card at rest: plain text, nothing to tap. */
+.guess-log__entry-button--static {
+  cursor: default;
+}
+.guess-log__entry-button--static:hover {
+  background: none;
+}
 .guess-log__entry-meta {
   grid-column: 5;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   margin-left: 0.6rem;
-}
-.guess-log__entry-button:hover .guess-log__copy-hint,
-.guess-log__entry-button:focus-visible .guess-log__copy-hint {
-  opacity: 1;
-}
-.guess-log__entry-button--copied .guess-log__copy-hint {
-  opacity: 1;
-  color: var(--best-word-accent);
-}
-/* A faint copy affordance that firms up on hover/focus and turns into a
- * checkmark once the word is copied. */
-.guess-log__copy-hint {
-  grid-column: 3;
-  margin-left: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  color: var(--fg-muted);
-  opacity: 0.45;
-  transition:
-    opacity 0.15s var(--ease-standard),
-    color 0.15s var(--ease-standard);
-}
-/* Share-button-style "Copied!" confirmation that replaces the copy icon on tap. */
-.guess-log__copied {
-  grid-column: 3;
-  margin-left: 0.5rem;
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--best-word-accent);
 }
 .guess-log__crown {
   grid-column: 1;
@@ -1434,7 +1409,7 @@ h2 {
 .guess-log__entry--picking .guess-log__entry-button:focus-visible {
   background: var(--bg-inset);
 }
-/* Sits exactly where the copy affordance does, because it replaces it. */
+/* Beside the word, in the column the card keeps free for it. */
 .guess-log__retry-hint {
   grid-column: 3;
   margin-left: 0.5rem;
@@ -5542,11 +5517,6 @@ h2 {
   100% {
     box-shadow: var(--card-shadow);
   }
-}
-
-/* Tap-to-copy says so: the icon is visible at rest, not only on hover. */
-:root[data-ui="v2"] .guess-log__copy-hint {
-  opacity: 0.75;
 }
 
 /* The one line that opens the other mode's submit links. */

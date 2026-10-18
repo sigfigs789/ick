@@ -51,10 +51,10 @@ describe("GuessLog", () => {
       { word: "materialnesses", rarity: "Common", zipf: 4.95 },
     ];
     render(<GuessLog acceptedWords={words} />);
-    expect(screen.getByText(/scored as its common form, “material”/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /scored as its common form "material"/i })
-    ).toBeInTheDocument();
+    // In the reading order now: the card has no label of its own to carry it.
+    const note = screen.getByText(/scored as its common form, “material”/i);
+    expect(note).toBeInTheDocument();
+    expect(note.closest("[aria-hidden]")).toBeNull();
   });
 
   it("explains the fold behind the note's More info", async () => {
@@ -145,17 +145,10 @@ describe("GuessLog", () => {
     expect(strangeEntry).not.toHaveClass("guess-log__entry--best");
   });
 
-  it("copies the tier square, word, and score when tapped and flashes a confirmation", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
+  it("leaves a word at rest as plain text, with nothing to tap", () => {
     const words: AcceptedWord[] = [{ word: "strange", rarity: "Common", zipf: 4.6 }];
     render(<GuessLog acceptedWords={words} />);
-
-    await userEvent.click(screen.getByRole("button", { name: /copy "strange"/i }));
-
-    // "🟫 strange (<score>)" — the brown square is the Common tier.
-    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/^🟫 strange \(.+\)$/));
-    expect(screen.getByText("Copied!")).toBeInTheDocument();
+    expect(screen.getByText("strange").closest("button")).toBeNull();
   });
 
   it("shows the streak without a duplicate completion heading", () => {
@@ -184,14 +177,12 @@ describe("GuessLog retry", () => {
     const onRetry = vi.fn();
     render(<GuessLog acceptedWords={words} canRetry retryOffered onRetry={onRetry} />);
 
-    // Until it is armed, tapping a word still copies it.
     await userEvent.click(screen.getByRole("button", { name: /retry 1 word/i }));
     await userEvent.click(screen.getByRole("button", { name: /^Retry "strange"/i }));
 
     expect(onRetry).toHaveBeenCalledWith("strange");
-    // And it disarms itself, so the next tap copies again rather than dropping
-    // a second word.
-    expect(screen.getByRole("button", { name: /^Copy "strut"/i })).toBeInTheDocument();
+    // And it disarms itself, so a second tap cannot drop a second word.
+    expect(screen.queryByRole("button", { name: /^Retry "strut"/i })).not.toBeInTheDocument();
   });
 
   it("says the limit in the button's own label, before it is ever pressed", () => {
@@ -215,7 +206,7 @@ describe("GuessLog retry", () => {
     await userEvent.click(screen.getByRole("button", { name: /never mind/i }));
 
     expect(onRetry).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /^Copy "strange"/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Retry "strange"/i })).not.toBeInTheDocument();
   });
 
   it("replaces the control with a quiet, inert note once the retry is spent", () => {

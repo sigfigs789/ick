@@ -1,12 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { maxGuessesFor } from "../game/constants";
 import { bestWord } from "../game/rank";
-import {
-  baseFormSubstitution,
-  formatRarityScore,
-  totalRarityScore,
-} from "../game/dictionary";
-import { copyText } from "../clipboard";
+import { baseFormSubstitution, totalRarityScore } from "../game/dictionary";
 import { raritySymbol } from "../game/share";
 import { CommonFormModal } from "./CommonFormModal";
 import { RarityBadge } from "./RarityBadge";
@@ -14,13 +9,6 @@ import { StreakDisplay } from "./StreakDisplay";
 import type { AcceptedWord, StreakState } from "../game/types";
 import { MODE_LABELS, type GameMode } from "../game/mode";
 import type { CrossModePreview } from "../game/crossMode";
-
-/** The clipboard form of a logged word: "<tier square> <word> (<score>)".
- * Reuses the share-results palette so a pasted word matches the share text. */
-function copyTextForWord(w: AcceptedWord, date?: string): string {
-  const score = w.zipf !== undefined ? ` (${formatRarityScore(w.zipf, date)})` : "";
-  return `${raritySymbol(w.rarity, date)} ${w.word}${score}`;
-}
 
 interface Props {
   acceptedWords: AcceptedWord[];
@@ -79,13 +67,10 @@ export function GuessLog({
   const maxGuesses = maxGuessesFor(date);
   const guessesLeft = maxGuesses - acceptedWords.length;
 
-  // Tap a logged word to copy it to the clipboard, flashing a brief confirmation.
-  const [copiedWord, setCopiedWord] = useState<string | null>(null);
   // Armed by the retry button, and spent by tapping a word.
   //
   // Two taps rather than a retry control on every row: the log is four cards on
-  // a phone, three of which are already carrying a crown, a copy affordance and
-  // a rarity badge, and a fourth control per row would crowd the one thing the
+  // a phone, three of which are already carrying a crown and a rarity badge, and a fourth control per row would crowd the one thing the
   // card exists to show. Arming also gives the rule somewhere to be said at the
   // moment it applies -- once per day -- instead of a footnote nobody reads
   // until they have already spent it.
@@ -126,14 +111,6 @@ export function GuessLog({
     onRetry?.(w.word);
   }
 
-  function copyWord(w: AcceptedWord) {
-    void copyText(copyTextForWord(w, date));
-    setCopiedWord(w.word);
-    window.setTimeout(() => {
-      setCopiedWord((current) => (current === w.word ? null : current));
-    }, 1500);
-  }
-
   return (
     <section className={`guess-log${completed ? " guess-log--completed" : ""}`} aria-label="Your guesses">
       {!completed && (
@@ -169,7 +146,6 @@ export function GuessLog({
         <ol className="guess-log__list">
           {acceptedWords.map((w, i) => {
             const isBest = best !== undefined && w.word === best.word;
-            const isCopied = copiedWord === w.word;
             // Shown for every word scored as another form, whatever it cost.
             // With two modes one switch apart, the same word reads at two
             // prices, and a Standard score with no note beside it looks like a
@@ -194,53 +170,44 @@ export function GuessLog({
                   picking ? " guess-log__entry--picking" : ""
                 }${landed === w.word ? " guess-log__entry--landed" : ""}`}
               >
-                {/* One button, two jobs. While the retry is armed the whole card
-                    is the thing you tap to drop that word, which is why the
-                    retry control could not simply live *inside* this button --
-                    a button in a button is not markup a browser will render. */}
-                <button
-                  type="button"
-                  className={`guess-log__entry-button${isCopied ? " guess-log__entry-button--copied" : ""}`}
-                  onClick={() => (picking ? retry(w) : copyWord(w))}
-                  title={newUi && !picking ? "Tap to copy" : undefined}
-                  aria-label={
-                    picking
-                      ? `Retry "${w.word}" (${w.rarity}, guess ${i + 1}) — clear it and try again`
-                      : isCopied
-                        ? `Copied "${w.word}"`
-                        : `Copy "${w.word}" (${w.rarity}${
-                            baseNote ? `, scored as its common form "${baseNote.base}"` : ""
-                          }, guess ${i + 1})`
-                  }
-                >
-                  {isBest && (
-                    <span className="guess-log__crown" aria-hidden="true" title="Your best word so far">
-                      👑
-                    </span>
-                  )}
-                  <span className="guess-log__word">{w.word}</span>
-                  {picking ? (
-                    // Replaces the copy affordance rather than joining it: while
-                    // the retry is armed, tapping this card does not copy.
+                {/* The card is a button only while the retry is armed, when
+                    tapping it drops that word. It used to copy the word to the
+                    clipboard the rest of the time, which nobody used. The
+                    retry control cannot live *inside* this button: a button in
+                    a button is not markup a browser will render. */}
+                {picking ? (
+                  <button
+                    type="button"
+                    className="guess-log__entry-button"
+                    onClick={() => retry(w)}
+                    aria-label={`Retry "${w.word}" (${w.rarity}, guess ${i + 1}) — clear it and try again`}
+                  >
+                    {isBest && (
+                      <span className="guess-log__crown" aria-hidden="true" title="Your best word so far">
+                        👑
+                      </span>
+                    )}
+                    <span className="guess-log__word">{w.word}</span>
                     <span className="guess-log__retry-hint" aria-hidden="true">
                       Retry
                     </span>
-                  ) : isCopied ? (
-                    <span className="guess-log__copied" role="status">
-                      Copied!
+                    <span className="guess-log__entry-meta">
+                      <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
                     </span>
-                  ) : (
-                    <span className="guess-log__copy-hint" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" width="16" height="16">
-                        <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
-                        <path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3" fill="none" stroke="currentColor" strokeWidth="2" />
-                      </svg>
+                  </button>
+                ) : (
+                  <div className="guess-log__entry-button guess-log__entry-button--static">
+                    {isBest && (
+                      <span className="guess-log__crown" role="img" aria-label="Best word" title="Your best word so far">
+                        👑
+                      </span>
+                    )}
+                    <span className="guess-log__word">{w.word}</span>
+                    <span className="guess-log__entry-meta">
+                      <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
                     </span>
-                  )}
-                  <span className="guess-log__entry-meta">
-                    <RarityBadge rarity={w.rarity} zipf={w.zipf} date={date} />
-                  </span>
-                </button>
+                  </div>
+                )}
                 {/* Outside the card's button rather than in it, which is what
                     the "More info" control costs: a button cannot contain
                     another one, and the note is the only thing on the card
@@ -252,13 +219,10 @@ export function GuessLog({
                     hole in that target. */}
                 {baseNote && !picking && (
                   <p className="guess-log__base-note">
-                    {/* The text is already in the button's aria-label above,
-                        so the visible copy stays out of the reading order --
-                        but the control beside it must not, hence a label of
-                        its own that names the word it is about. */}
-                    <span aria-hidden="true">
-                      Scored as its common form, “{baseNote.base}”
-                    </span>
+                    {/* Read in place: the card above is plain text now, with no
+                        label of its own to carry this. The control beside it
+                        has a label naming the word it is about. */}
+                    <span>Scored as its common form, “{baseNote.base}”</span>
                     <button
                       type="button"
                       className="guess-log__base-note-info"
