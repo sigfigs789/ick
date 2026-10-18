@@ -1,17 +1,16 @@
 name: Claude PR review
 
-# Claude Code reviews every pull request against main when it opens (drafts
-# included, since most PRs here start as drafts), when it is reopened, and when
-# a draft is marked ready for review. It leaves inline comments on the lines it
+# Claude Code reviews a pull request against main only when asked: add the
+# `claude review` label to the PR. It leaves inline comments on the lines it
 # has concerns about and one summary comment. It does not approve, request
-# changes, push, or merge -- it only comments.
+# changes, push, or merge -- it only comments. When it finishes it takes the
+# label off again, so adding the label back asks for another pass.
 #
-# It does not rerun on every push. Ask for another pass with "@claude review
-# this again" (claude.yml), or rerun this workflow from the PR's Checks tab.
+# Nothing runs when a PR opens or on pushes. "@claude review this" (claude.yml)
+# also gets a review, from the agent that can edit the branch.
 #
 # The daily fold check's PRs are left to claude-review-fold-pr.yml (see the job's
-# `if`). claude-build.yml's PRs do reach this, opened as github-actions, which is
-# why that bot is in `allowed_bots`.
+# `if`).
 #
 # Runs on the Claude subscription: it needs the CLAUDE_CODE_OAUTH_TOKEN
 # repository secret, as the other Claude workflows do.
@@ -19,7 +18,7 @@ name: Claude PR review
 on:
   pull_request:
     branches: [main]
-    types: [opened, reopened, ready_for_review]
+    types: [labeled]
 
 permissions:
   contents: read
@@ -29,16 +28,19 @@ permissions:
   statuses: read
   id-token: write
 
-concurrency:
-  group: claude-pr-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
-
 jobs:
   review:
-    # Forks get no secrets, and fold check PRs have their own reviewer.
+    # Only the `claude review` label. Forks get no secrets, and fold check PRs
+    # have their own reviewer.
     if: >-
+      github.event.label.name == 'claude review' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       !startsWith(github.event.pull_request.head.ref, 'codex/fold-check-')
+    # In the job, not the workflow, so adding some other label doesn't cancel a
+    # review in progress.
+    concurrency:
+      group: claude-pr-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -55,9 +57,6 @@ jobs:
           # The run's own token, so the action does not need the Claude GitHub
           # App installed.
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # claude-build.yml's PRs are opened as github-actions, and the action
-          # refuses a bot actor unless it is listed here.
-          allowed_bots: "github-actions"
           claude_args: >-
             --model claude-opus-5-5
             --max-turns 60
@@ -91,3 +90,12 @@ jobs:
             one-line verdict, then the issues ranked by severity. If you find
             nothing worth raising, say so in one line -- do not invent issues.
             Do not edit files.
+
+      - name: Take the label off
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          gh pr edit ${{ github.event.pull_request.number }}
+          --repo ${{ github.repository }}
+          --remove-label "claude review"
