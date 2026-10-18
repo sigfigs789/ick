@@ -20,8 +20,6 @@ const day = (date: string, players: number, acted: number, guessed: number, retu
     all: metrics(players, acted, guessed, returned),
     new: metrics(players / 10, acted / 10, guessed / 10, returned / 10),
     returning: metrics(0, 0, 0, 0),
-    standard: metrics(players, acted, guessed, returned),
-    freeform: metrics(0, 0, 0, 0),
   },
 });
 

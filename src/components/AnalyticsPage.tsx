@@ -4,6 +4,7 @@ import { useReviewList } from "./reviewList";
 import {
   fetchAnalytics,
   GROUPS,
+  IDLE_HINT_VARIANTS,
   type AnalyticsReport,
   type Group,
   type KeyMetrics,
@@ -21,7 +22,7 @@ import {
 } from "./analyticsFormat";
 import { todayDateString } from "../game/date";
 import { DailyChart } from "./DailyChart";
-import { IdleHintSection } from "./IdleHintSection";
+import { IDLE_HINT_DELAY_MS } from "../game/idleHint";
 
 /**
  * How the game is doing, as a page at /analytics.
@@ -29,11 +30,11 @@ import { IdleHintSection } from "./IdleHintSection";
  * Five numbers, and the same five everywhere: the players who turned up, the
  * ones who did anything, the ones who guessed (banked a word), the ones who
  * shared their result, and the ones who came back within seven days. They are
- * split by who the players are -- new or returning, and the mode they were
- * started in -- by the puzzle type they played, by whether they opened the
- * chat, and by which play screen they were shown. Every number is built in one
- * place, `analytics_overview` (see the 2026-10-18 migration), and this page
- * only draws them.
+ * split by who the players are -- new or returning -- by the puzzle type they
+ * played, by whether they opened the chat, by which play screen they were
+ * shown, and by the idle hint test's arm. Every number is built in one place,
+ * `analytics_overview` (see the 2026-10-18 and 2026-10-21 migrations), and
+ * this page only draws them.
  *
  * Unlinked, but open without a key (see api/review.ts). Nothing on it
  * identifies anybody -- the smallest group any number is taken over is a day's
@@ -45,9 +46,9 @@ const GROUP_NAMES: Record<Group, string> = {
   all: "Everyone",
   new: "New players",
   returning: "Returning players",
-  standard: "Started in Standard",
-  freeform: "Started in Freeform",
 };
+
+const VARIANT_NAMES = { control: "No hint", treatment: "Hint" } as const;
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -191,7 +192,7 @@ function Report({
           <li><strong>Guessed</strong>: banked a word</li>
           <li><strong>Shared</strong>: copied their result with Share (the second line is the share of guessers, the only players who can)</li>
           <li><strong>Back within 7 days</strong>: played again in the next 7 days (recent days still counting up)</li>
-          <li><strong>New</strong>: first visit in this window. <strong>Started in</strong>: mode on first visit</li>
+          <li><strong>New</strong>: first visit in this window</li>
         </ul>
         <MetricsTable
           rows={GROUPS.map((g) => ({ key: g, label: GROUP_NAMES[g], metrics: report.groups[g] }))}
@@ -257,7 +258,24 @@ function Report({
         />
       </Section>
 
-      <IdleHintSection from={from} to={to} today={today} />
+      <Section
+        title="Idle hint test"
+        note={`${span}. Players who sat idle ${IDLE_HINT_DELAY_MS.new / 1000}s, no hint vs hint, each player assigned 50/50${
+          report.idleHintSince ? `, since ${shortDate(report.idleHintSince)}` : ""
+        }. New is a first-ever session, returning any later one.`}
+      >
+        <MetricsTable
+          split="Arm"
+          rows={GROUPS.flatMap((g) =>
+            IDLE_HINT_VARIANTS.map((v) => ({
+              key: `${g}-${v}`,
+              label: GROUP_NAMES[g],
+              side: VARIANT_NAMES[v],
+              metrics: report.idleHint[g][v],
+            })),
+          )}
+        />
+      </Section>
     </div>
   );
 }
