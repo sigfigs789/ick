@@ -196,6 +196,7 @@ export default function App() {
           date={date}
           mode={playMode}
           acceptedWords={progress.acceptedWords}
+          submitLabel={newUi ? "Play" : undefined}
         />
       )}
       <FeedbackRegion
