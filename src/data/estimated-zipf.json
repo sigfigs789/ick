@@ -422366,6 +422366,33 @@
         "zythia": -0.8
       },
       "note": "Local sweep (Claude Code subagents), 2026-10-18; every playable unattested word for 2026-11-09..2026-12-09 (31 puzzles), less 388 estimates below -3 that record drops"
+    },
+    {
+      "since": "2026-11-10",
+      "drop": "NTR",
+      "model": "claude-opus-5-5",
+      "source": "claude",
+      "run": "https://github.com/sigfigs789/ick/actions/runs/39149518493",
+      "estimatedAt": "2026-10-18T17:26:23Z",
+      "zipf": {
+        "anteroventrolaterally": -0.9,
+        "caudoventrolaterally": -0.7,
+        "cineventriculographic": -1.0,
+        "contradistinctionally": -1.3,
+        "intracerebrovascular": -0.9,
+        "intradenominationally": -1.2,
+        "intraerythrocytically": -1.0,
+        "intraesterifications": -0.8,
+        "juxtaparaventricular": -0.4,
+        "magnetocentrifugally": -1.2,
+        "microcentrifugations": -1.0,
+        "microultracentrifuge": -0.6,
+        "nontranscriptionally": -1.0,
+        "periintraventricular": -1.1,
+        "posterolateroventral": -1.1,
+        "uncontrovertableness": -1.4,
+        "ventriculoatriostomy": -0.3
+      }
     }
   ]
 }
