@@ -167,16 +167,17 @@ describe("loadStreak", () => {
   });
 
   it("back-dates saved freezes once, before counting missed days", () => {
-    // Last played three days ago: the free day covers one missed day, and only
-    // a back-dated freeze covers the second.
+    // A 48-day run before freezes existed, then four days on a new one, last
+    // played three days ago: the free day covers one missed day, and only a
+    // back-dated freeze covers the second.
     setToday("2026-10-18");
     localStorage.setItem(
       "ick:streak",
-      JSON.stringify({ currentStreak: 35, longestStreak: 35, lastCompletedDate: "2026-10-15" })
+      JSON.stringify({ currentStreak: 4, longestStreak: 48, lastCompletedDate: "2026-10-15" })
     );
 
     expect(loadStreak()).toMatchObject({
-      currentStreak: 35,
+      currentStreak: 4,
       bankedFreezes: 1,
       freezesBackdated: true,
     });

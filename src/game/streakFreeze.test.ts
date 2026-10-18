@@ -163,7 +163,7 @@ describe("streakReport", () => {
 });
 
 describe("backdateFreezes", () => {
-  it("grants one per seven days played, within the cap", () => {
+  it("fills the streak to the cap its longest run set", () => {
     expect(backdateFreezes(streakOf({ currentStreak: 40, longestStreak: 40 }))).toMatchObject({
       bankedFreezes: 2,
       freezesBackdated: true,
@@ -172,9 +172,10 @@ describe("backdateFreezes", () => {
     expect(backdateFreezes(streakOf({ currentStreak: 10, longestStreak: 10 })).bankedFreezes).toBe(0);
   });
 
-  it("uses the cap from the longest streak ever", () => {
-    // 21 days played earns three, held to two by a past 30-day run.
-    expect(backdateFreezes(streakOf({ currentStreak: 21, longestStreak: 35 })).bankedFreezes).toBe(2);
+  it("does not depend on the length of the current run", () => {
+    // A 48-day run before freezes existed, then a new run four days in.
+    expect(backdateFreezes(streakOf({ currentStreak: 4, longestStreak: 48 })).bankedFreezes).toBe(2);
+    expect(backdateFreezes(streakOf({ currentStreak: 1, longestStreak: 20 })).bankedFreezes).toBe(1);
   });
 
   it("never takes freezes away", () => {
@@ -183,7 +184,7 @@ describe("backdateFreezes", () => {
   });
 
   it("runs only once", () => {
-    const once = backdateFreezes(streakOf({ currentStreak: 40, longestStreak: 40 }));
+    const once = backdateFreezes(streakOf({ currentStreak: 4, longestStreak: 40 }));
     const spent = { ...once, bankedFreezes: 0 };
     expect(backdateFreezes(spent)).toBe(spent);
   });
