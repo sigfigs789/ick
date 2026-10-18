@@ -1,5 +1,6 @@
 import { hasVisited } from "./visits";
 import { playedPuzzleCount } from "./storage";
+import { isTester } from "./testers";
 
 /**
  * The play-screen experiment: half of all browsers, new and returning alike,
@@ -37,8 +38,11 @@ function parse(raw: string | null): UiVariant | null {
  *
  * `?ui=v2` or `?ui=control` forces one and remembers it, for checking either
  * layout by hand; a forced variant is not reported as an assignment, so it
- * cannot skew the split. A browser whose storage cannot be written stays on
- * control unreported: it would be re-split on every open.
+ * cannot skew the split. A hand-picked tester (see game/testers.ts) gets v2
+ * the same way, unreported, but not remembered: the browser keeps whatever it
+ * was assigned for if they are ever taken off the list. A browser whose
+ * storage cannot be written stays on control unreported: it would be re-split
+ * on every open.
  */
 export function assignUiVariant(search: string, random: () => number = Math.random): UiVariant {
   const forced = parse(new URLSearchParams(search).get("ui"));
@@ -46,6 +50,10 @@ export function assignUiVariant(search: string, random: () => number = Math.rand
     if (forced) {
       localStorage.setItem(KEY, forced);
       current = forced;
+      return current;
+    }
+    if (isTester()) {
+      current = "v2";
       return current;
     }
     const stored = parse(localStorage.getItem(KEY));
