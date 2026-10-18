@@ -4,7 +4,7 @@ import { maxGuessesFor } from "./constants";
 import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
-import { applyFreezes, coveredThrough, earnFreeze } from "./streakFreeze";
+import { applyFreezes, backdateFreezes, coveredThrough, earnFreeze } from "./streakFreeze";
 
 /**
  * The two key families a player's record lives under.
@@ -320,12 +320,16 @@ export function resetProgress(date: string, drop: string): DailyProgress {
 }
 
 export function loadStreak(): StreakState {
-  const streak = { ...EMPTY_STREAK, ...safeParse<StreakState>(localStorage.getItem(STREAK_KEY)) };
+  const stored = { ...EMPTY_STREAK, ...safeParse<StreakState>(localStorage.getItem(STREAK_KEY)) };
+  // Saved freezes the streak would have earned before they existed, granted
+  // once and before the missed days are counted, so a player already in a gap
+  // today is covered by them.
+  const streak = backdateFreezes(stored);
   // A single missed day is covered by the grace day and a longer gap by saved
   // freezes, if there are enough; otherwise the streak resets (see
   // game/streakFreeze.ts).
   const current = applyFreezes(streak, todayDateString());
-  if (current !== streak) saveStreak(current);
+  if (current !== stored) saveStreak(current);
   return current;
 }
 

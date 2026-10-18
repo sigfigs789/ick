@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyFreezes,
   atRisk,
+  backdateFreezes,
   coveredThrough,
   earnFreeze,
   freezeCap,
@@ -158,5 +159,37 @@ describe("streakReport", () => {
     // The free day, then one saved freeze, spent since: still reported as 2.
     expect(streakReport(applyFreezes(start, "2026-10-03"))).toEqual(expected);
     expect(streakReport(applyFreezes(start, "2026-10-04"))).toEqual(expected);
+  });
+});
+
+describe("backdateFreezes", () => {
+  it("grants one per seven days played, within the cap", () => {
+    expect(backdateFreezes(streakOf({ currentStreak: 40, longestStreak: 40 }))).toMatchObject({
+      bankedFreezes: 2,
+      freezesBackdated: true,
+    });
+    expect(backdateFreezes(streakOf({ currentStreak: 20, longestStreak: 20 })).bankedFreezes).toBe(1);
+    expect(backdateFreezes(streakOf({ currentStreak: 10, longestStreak: 10 })).bankedFreezes).toBe(0);
+  });
+
+  it("uses the cap from the longest streak ever", () => {
+    // 21 days played earns three, held to two by a past 30-day run.
+    expect(backdateFreezes(streakOf({ currentStreak: 21, longestStreak: 35 })).bankedFreezes).toBe(2);
+  });
+
+  it("never takes freezes away", () => {
+    const streak = streakOf({ currentStreak: 15, longestStreak: 35, bankedFreezes: 2 });
+    expect(backdateFreezes(streak).bankedFreezes).toBe(2);
+  });
+
+  it("runs only once", () => {
+    const once = backdateFreezes(streakOf({ currentStreak: 40, longestStreak: 40 }));
+    const spent = { ...once, bankedFreezes: 0 };
+    expect(backdateFreezes(spent)).toBe(spent);
+  });
+
+  it("leaves a streak that has ended alone", () => {
+    const ended = streakOf({ currentStreak: 0, longestStreak: 40 });
+    expect(backdateFreezes(ended)).toBe(ended);
   });
 });

@@ -69,6 +69,24 @@ export function earnFreeze(streak: StreakState): StreakState {
   return earned > banked ? { ...streak, bankedFreezes: earned } : streak;
 }
 
+/**
+ * Give a streak the saved freezes it would have earned had freezes existed
+ * all along, once. Saved freezes shipped on 2026-10-15 with every streak at
+ * none, so a player forty days in had to play another week for their first.
+ * This tops the streak up to one per seven days played, within its cap, and
+ * marks it so it never runs again. Never takes freezes away; a player who
+ * spent one since 10-15 may get it back, which is the generous side to err on.
+ */
+export function backdateFreezes(streak: StreakState): StreakState {
+  if (streak.freezesBackdated || streak.currentStreak === 0) return streak;
+  const banked = streak.bankedFreezes ?? 0;
+  const owed = Math.min(
+    Math.floor(streak.currentStreak / DAYS_PER_EARNED_FREEZE),
+    streakFreezeCap(streak)
+  );
+  return { ...streak, bankedFreezes: Math.max(banked, owed), freezesBackdated: true };
+}
+
 /** The last day the streak reaches: the last day played, or a later frozen one. */
 export function coveredThrough(streak: StreakState): string | undefined {
   let latest = streak.lastCompletedDate;

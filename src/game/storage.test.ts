@@ -165,6 +165,27 @@ describe("loadStreak", () => {
 
     expect(loadStreak()).toMatchObject({ currentStreak: 0, longestStreak: 2 });
   });
+
+  it("back-dates saved freezes once, before counting missed days", () => {
+    // Last played three days ago: the free day covers one missed day, and only
+    // a back-dated freeze covers the second.
+    setToday("2026-10-18");
+    localStorage.setItem(
+      "ick:streak",
+      JSON.stringify({ currentStreak: 35, longestStreak: 35, lastCompletedDate: "2026-10-15" })
+    );
+
+    expect(loadStreak()).toMatchObject({
+      currentStreak: 35,
+      bankedFreezes: 1,
+      freezesBackdated: true,
+    });
+    // Stored, so the next load does not grant them again.
+    expect(JSON.parse(localStorage.getItem("ick:streak") ?? "{}")).toMatchObject({
+      bankedFreezes: 1,
+      freezesBackdated: true,
+    });
+  });
 });
 
 describe("recordAcceptedWord", () => {
