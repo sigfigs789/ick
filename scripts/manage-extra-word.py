@@ -6,8 +6,7 @@ Three provenance lists feed the playable dictionary:
   - scripts/suggested-words.txt  -> "suggested": player-submitted words that were
                                     accepted
   - scripts/online-words.txt     -> "online": rare words discovered online for an
-                                    upcoming drop by the "Add rare words found
-                                    online" GitHub Action (scripts/find-online-words.py)
+                                    upcoming drop
 
 All three feed dictionary.json; the split only records where a word came from.
 Adding a word inserts it straight into dictionary.json (see insert_into_dictionary)
