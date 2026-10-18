@@ -1,6 +1,6 @@
 name: Estimate unattested Zipf
 
-# Every day, Claude guesses a frequency for the words the puzzle three days out
+# Every day, Claude guesses a frequency for the words the next unswept puzzle
 # can accept that no frequency corpus measures -- the words that would otherwise
 # score the unattested sentinel, a flat 10.00 Legend -- and opens ONE pull
 # request recording the guesses in src/data/estimated-zipf.json.
@@ -29,9 +29,12 @@ name: Estimate unattested Zipf
 #      unattested words, overall and per swept drop, into
 #      src/data/zipf-coverage.json, so the PR shows how far the sweep got.
 #
-# Three days ahead, like the daily fold check, so the PR has two days to merge
-# and the fold check sees the same puzzle: the batch applies from its puzzle's
-# date on. Two days out by UTC is the soonest a run may target -- that puzzle has
+# The daily run targets the first puzzle src/data/zipf-coverage.json still
+# shows unattested words for -- the local sweep finished every puzzle through
+# 2026-11-09, so re-running three days out found nothing -- but never sooner
+# than three days ahead, like the daily fold check, so the PR has two days to
+# merge: the batch applies from its puzzle's date on. The ledger only moves when
+# an estimate PR merges, so an unmerged PR is redone by the next day's run. Two days out by UTC is the soonest a run may target -- that puzzle has
 # not started anywhere yet. Merge it before that date, or it re-prices a puzzle
 # being played.
 #
@@ -59,7 +62,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: Puzzle date (YYYY-MM-DD). Defaults to three days from today (UTC).
+        description: Puzzle date (YYYY-MM-DD). Defaults to the first puzzle the coverage ledger shows unswept, at least three days out (UTC).
         required: false
         type: string
       model:
@@ -137,7 +140,22 @@ jobs:
           INPUT_DATE: ${{ inputs.date }}
         run: |
           set -euo pipefail
-          date="${INPUT_DATE:-$(date -u -d '+3 days' +%F)}"
+          # With no date given, start where the sweep stopped: the first puzzle
+          # at least three days out that the coverage ledger still shows
+          # playable unattested words for (past its last puzzle, the day after).
+          if [ -z "$INPUT_DATE" ]; then
+            ledger=src/data/zipf-coverage.json
+            soonest=$(date -u -d '+3 days' +%F)
+            date=$(jq -r --arg soonest "$soonest" \
+              '[.puzzles[] | select(.date >= $soonest and .unattested > 0)][0].date // empty' "$ledger")
+            if [ -z "$date" ]; then
+              date=$(date -u -d "$(jq -r '.puzzles[-1].date' "$ledger") +1 day" +%F)
+              [[ "$date" < "$soonest" ]] && date="$soonest"
+            fi
+            echo "First puzzle the sweep has not finished: $date"
+          else
+            date="$INPUT_DATE"
+          fi
           if ! [[ "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
             echo "::error::date must be YYYY-MM-DD, got '$date'"
             exit 1
