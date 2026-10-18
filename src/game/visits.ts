@@ -231,6 +231,26 @@ function markSessionOnce(key: string): VisitOutcome | null {
   }
 }
 
+/**
+ * Whether this session is a returning player's, as opposed to a first-timer's.
+ *
+ * Reads this session's own outcome once `recordVisit` has run. Before then it
+ * answers from the stored state instead -- any record at all is an earlier
+ * session's, so this one is a return -- which matters to a child component's
+ * effect, since those run ahead of the App effect that records the visit.
+ */
+export function isReturningSession(): boolean {
+  const raw = safeGet(sessionStorage, VISIT_SESSION_KEY);
+  if (raw) {
+    try {
+      return !(JSON.parse(raw) as VisitOutcome).isFirstVisit;
+    } catch {
+      // Fall through to the stored state.
+    }
+  }
+  return hasVisited();
+}
+
 /** Whether this browser has ever recorded a visit. */
 export function hasVisited(): boolean {
   return safeGet(localStorage, VISITS_KEY) !== null;

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Feedback } from "../hooks/useDailyPuzzle";
-import type { SubmissionResult } from "../game/types";
+import type { AcceptedWord, SubmissionResult } from "../game/types";
 import type { GameMode } from "../game/mode";
 import { DePrefixHint } from "./DePrefixHint";
 import { FoldHint } from "./FoldHint";
+import { useIdleHint } from "../hooks/useIdleHint";
 
 /** One breath of the border pulse, matching input-checking-pulse in index.css. */
 const PULSE_MS = 1200;
@@ -25,6 +26,11 @@ interface Props {
    */
   date?: string;
   mode?: GameMode;
+  /**
+   * The words banked on this puzzle. Passing them (with `date`) is what puts
+   * the box in the idle hint experiment -- see hooks/useIdleHint.ts.
+   */
+  acceptedWords?: readonly AcceptedWord[];
 }
 
 export function SubmitForm({
@@ -35,8 +41,10 @@ export function SubmitForm({
   onSubmit,
   date,
   mode,
+  acceptedWords,
 }: Props) {
   const [value, setValue] = useState("");
+  const idleHint = useIdleHint({ drop, date, acceptedWords, value, disabled });
   const rowRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLSpanElement>(null);
@@ -84,6 +92,9 @@ export function SubmitForm({
     // the player can keep typing their next guess without tapping back in.
     inputRef.current?.focus();
     const result = await onSubmit(submitted);
+    // Undefined is a caller that does not answer with a verdict, which is
+    // only ever an accepting one.
+    idleHint.onSubmitted(submitted, !result || result.ok);
     // A rejected word stays in the box. A near miss is usually a letter away
     // from an accepted one, and retyping it from scratch is the player's
     // punishment for having been close.
@@ -132,7 +143,7 @@ export function SubmitForm({
             value={value}
             disabled={disabled}
             onChange={(e) => setValue(e.target.value)}
-            placeholder={disabled ? "" : "type a word…"}
+            placeholder={disabled ? "" : (idleHint.placeholder ?? "type a word…")}
             maxLength={30}
           />
         </span>
