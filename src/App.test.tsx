@@ -134,8 +134,8 @@ describe("App", () => {
   });
 });
 
-describe("the leaderboard link on the results", () => {
-  it("offers the results link on a finished puzzle", () => {
+describe("the results on a finished puzzle", () => {
+  it("carries no leaderboard link -- the header's tab is the way there", () => {
     localStorage.clear();
     vi.mocked(useDailyPuzzle).mockReturnValue(
       puzzle({
@@ -150,6 +150,6 @@ describe("the leaderboard link on the results", () => {
     );
     render(<App />);
 
-    expect(screen.getByRole("button", { name: "See the leaderboard" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "See the leaderboard" })).not.toBeInTheDocument();
   });
 });

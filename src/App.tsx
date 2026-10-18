@@ -26,7 +26,6 @@ import {
   trackRedditArrival,
   trackShareArrival,
   trackTwitterArrival,
-  trackLeaderboardOpened,
   trackSessionTime,
   trackVisit,
   watchFirstInteraction,
@@ -34,7 +33,6 @@ import {
 } from "./analytics";
 import { recordVisit } from "./game/visits";
 import { sharedModeFromSearch } from "./game/onboarding";
-import { navigate } from "./routes";
 import {
   beginSession,
   endSessionSegment,
@@ -141,13 +139,6 @@ export default function App() {
     // trigger playback.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback]);
-
-  function openLeaderboard() {
-    trackLeaderboardOpened("results");
-    // Nothing to retire here: the badge on the header's Leaderboards tab is
-    // retired by arriving on the page, from whichever door (see AppHeader).
-    navigate("leaderboard");
-  }
 
   const hasWinningWord = progress.acceptedWords.some((word) =>
     isWinningRarity(word.rarity),
@@ -334,7 +325,7 @@ export default function App() {
             streak={streak}
             isToday={isToday}
             mode={progress.mode}
-            onLeaderboard={openLeaderboard}
+            collapsible={newUi}
           />
         )}
       </main>

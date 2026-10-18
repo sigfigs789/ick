@@ -3680,23 +3680,6 @@ h2 {
 .leaderboard__note--playing {
   margin: 0;
 }
-.results-panel__leaderboard {
-  display: block;
-  width: 100%;
-  margin-top: 0.7rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 0.6rem;
-  padding: 0.6rem;
-  background: var(--card-bg);
-  color: var(--fg);
-  font-family: var(--font-display);
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.results-panel__leaderboard:hover {
-  background: var(--bg-inset);
-}
 
 @media (max-width: 420px) {
   .drop-display__letter {
@@ -5563,4 +5546,22 @@ h2 {
   :root[data-ui="v2"] .guess-log__entry .rarity-badge {
     font-size: 0.76rem;
   }
+}
+
+/* "Share options", folding the answer and username choices and the preview on
+   the new play screen (see ResultsPanel's `collapsible`). */
+.results-panel__options-toggle {
+  display: block;
+  margin: 0.75rem auto 0;
+  padding: 0.25rem 0.5rem;
+  border: none;
+  background: none;
+  color: var(--fg-muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.results-panel__options-toggle:hover {
+  color: var(--fg);
 }

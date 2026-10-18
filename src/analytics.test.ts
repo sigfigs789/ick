@@ -8,7 +8,6 @@ import {
   trackWordSuggestion,
   trackRedditArrival,
   trackResultCopied,
-  trackResultSharedOnX,
   trackMerriamWebsterApproved,
   trackMerriamWebsterFailed,
   trackUnattestedScore,
@@ -128,10 +127,8 @@ describe("share attribution", () => {
   it("tags a share with the mode of the puzzle shared", () => {
     localStorage.clear();
     trackResultCopied("freeform");
-    trackResultSharedOnX("standard");
 
     expect(track).toHaveBeenCalledWith("result_copied", expect.objectContaining({ mode: "freeform" }));
-    expect(track).toHaveBeenCalledWith("result_shared_on_x", expect.objectContaining({ mode: "standard" }));
   });
 
   it("tags a share-link arrival with the mode the link carried", () => {
@@ -156,15 +153,6 @@ describe("share attribution", () => {
       puzzle_date: "2026-09-30",
     });
     expect(track).toHaveBeenCalledWith("mode_assigned", expect.objectContaining({ source: "direct" }));
-  });
-
-  it("tracks copied results separately from X shares, tagged by method", () => {
-    localStorage.clear();
-    trackResultCopied("standard");
-    trackResultSharedOnX("freeform");
-
-    expect(track).toHaveBeenCalledWith("result_copied", expect.objectContaining({ method: "copy" }));
-    expect(track).toHaveBeenCalledWith("result_shared_on_x", expect.objectContaining({ method: "x" }));
   });
 
   it("stamps a share with both the original and most-recent origin", () => {
@@ -194,20 +182,20 @@ describe("share attribution", () => {
     sessionStorage.clear();
     recordVisit("?s=t");
 
-    trackResultSharedOnX("freeform");
+    trackResultCopied("freeform");
 
     expect(track).toHaveBeenCalledWith(
-      "result_shared_on_x",
+      "result_copied",
       expect.objectContaining({ source: "twitter" })
     );
   });
 
   it("falls back to a direct first-time cohort when no visit was recorded", () => {
     localStorage.clear();
-    trackResultSharedOnX("freeform");
+    trackResultCopied("freeform");
 
-    expect(track).toHaveBeenCalledWith("result_shared_on_x", {
-      method: "x",
+    expect(track).toHaveBeenCalledWith("result_copied", {
+      method: "copy",
       mode: "freeform",
       source: "direct",
       last_source: "direct",

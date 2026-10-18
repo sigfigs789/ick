@@ -512,12 +512,6 @@ export function trackResultCopied(mode: GameMode) {
   send("result_copied", { method: "copy", mode, ...visitDimensions() }, idleHintArmProps());
 }
 
-/** Record a click on the X share button. */
-export function trackResultSharedOnX(mode: GameMode) {
-  markShare();
-  send("result_shared_on_x", { method: "x", mode, ...visitDimensions() }, idleHintArmProps());
-}
-
 /**
  * Record visitors who arrive through an X share link, with the mode the link
  * was shared from -- `none` for a link from before links carried one -- and the

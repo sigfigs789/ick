@@ -152,45 +152,25 @@ describe("ResultsPanel share toggle", () => {
     );
   });
 
-  it("offers an accessible X composer link with space for a player note", () => {
-    render(
-      <ResultsPanel
-        date="2025-01-01"
-        drop="str"
-        words={words}
-        streak={streak}
-      />,
-    );
-
-    const twitterLink = screen.getByRole("link", { name: /share on x/i });
-    expect(twitterLink).toHaveAttribute("target", "_blank");
-    expect(twitterLink).toHaveAttribute("title", "Share on X");
-    expect(twitterLink.getAttribute("href")).toContain(
-      "twitter.com/intent/tweet",
-    );
-    expect(decodeURIComponent(twitterLink.getAttribute("href") ?? "")).toMatch(
-      /\n\n────\n.*\nwordink\.app\/\?s=t\.[fs]$/s,
-    );
+  it("offers one Share, with no X button and no leaderboard link", () => {
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} />);
+    expect(screen.getByRole("button", { name: /^share$/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /share on x/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /leaderboard/i })).not.toBeInTheDocument();
   });
 
-  it("keeps answers in the X post when the player opts in, using the compact layout", async () => {
-    render(
-      <ResultsPanel
-        date="2025-01-01"
-        drop="str"
-        words={words}
-        streak={streak}
-      />,
-    );
-    await userEvent.click(screen.getByRole("radio", { name: /^all$/i }));
+  it("folds the options and preview behind a toggle when collapsible", async () => {
+    render(<ResultsPanel date="2025-01-01" drop="str" words={words} streak={streak} collapsible />);
+    expect(screen.getByRole("button", { name: /^share$/i })).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: /^all$/i })).not.toBeInTheDocument();
+    expect(document.querySelector(".results-panel__preview")).toBeNull();
 
-    const xPost = decodeURIComponent(
-      screen.getByRole("link", { name: /share on x/i }).getAttribute("href") ??
-        "",
-    );
-    expect(xPost).toContain("strange (4.6)");
-    expect(xPost).not.toContain("Streak:");
-    expect(xPost).not.toContain("Top:");
+    const toggle = screen.getByRole("button", { name: /share options/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("radio", { name: /^all$/i })).toBeInTheDocument();
+    expect(document.querySelector(".results-panel__preview")).not.toBeNull();
   });
 });
 
