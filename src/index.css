@@ -963,11 +963,6 @@ h2 {
 .drop-display__reveal-button:hover {
   background: var(--card-bg);
 }
-.drop-display__reveal-cost {
-  margin: 0.25rem 0 0;
-  font-size: 0.75rem;
-  color: var(--fg-faint);
-}
 /* The confirm carries the weight because it is the answer to the question the
    dialog asks; "Never mind" stays quiet, but keeps a real border so it is not
    mistaken for a disabled control. */

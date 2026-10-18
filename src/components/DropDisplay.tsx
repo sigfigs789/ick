@@ -78,10 +78,8 @@ export function DropDisplay({
           >
             Word of the day
           </button>
-          {/* The cost is said before the button is pressed as well as in the
-              modal: a player deciding whether to tap should not have to tap to
-              find out what it costs. */}
-          <p className="drop-display__reveal-cost">Uses your retry</p>
+          {/* The cost is said in the modal the button opens, before anything
+              is spent, so the button needs no caption of its own. */}
           <RevealWordModal
             open={confirmingReveal}
             onConfirm={() => {
