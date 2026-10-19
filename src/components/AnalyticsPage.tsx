@@ -24,6 +24,7 @@ import {
 import { todayDateString } from "../game/date";
 import { DailyChart } from "./DailyChart";
 import { IDLE_HINT_DELAY_MS } from "../game/idleHint";
+import { handleFor } from "../game/handle";
 
 /**
  * How the game is doing, as a page at /analytics.
@@ -347,6 +348,34 @@ function MuseSection({ muse, span }: { muse: MuseReport; span: string }) {
                   : "No"}
               </td>
             </tr>
+            {muse.bots.length > 0 && (
+              <tr>
+                <th scope="colgroup" colSpan={7} className="analytics__n">
+                  By bot, named as on the leaderboard
+                </th>
+              </tr>
+            )}
+            {muse.bots.map((b) => (
+              <tr key={b.playerId} className="analytics__row--pair">
+                <th scope="row" title={b.playerId}>
+                  {handleFor(b.playerId)}
+                  {b.lastSeen && <span className="analytics__n"> {shortDate(b.lastSeen.slice(0, 10))}</span>}
+                </th>
+                <td>{fmt(b.visits)}</td>
+                <td>{fmt(b.puzzles)}</td>
+                <td>{avg(b.avgScore)}</td>
+                <td>{avg(b.avgWords)}</td>
+                <td>{avg(b.avgRejected)}</td>
+                <td>{chatCell(b.chatDays > 0, b.messages)}</td>
+              </tr>
+            ))}
+            {muse.bots.length > 0 && muse.days.length > 0 && (
+              <tr>
+                <th scope="colgroup" colSpan={7} className="analytics__n">
+                  By puzzle
+                </th>
+              </tr>
+            )}
             {muse.days.map((d) => (
               <tr key={d.date} className="analytics__row--pair">
                 <th scope="row">

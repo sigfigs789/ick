@@ -411,6 +411,17 @@ export interface MuseReport extends MuseNumbers {
   lastSeen: string | null;
   /** Newest puzzle first. */
   days: Array<MuseNumbers & { date: string; chatOpened: boolean }>;
+  /** Each browser it played from in the window, most recently seen first. */
+  bots: MuseBot[];
+}
+
+/** One Muse browser: its board identity and how it played in the window. */
+export interface MuseBot extends MuseNumbers {
+  /** The leaderboard id; the board's name for it is `handleFor(playerId)`. */
+  playerId: string;
+  chatDays: number;
+  firstSeen: string | null;
+  lastSeen: string | null;
 }
 
 export const IDLE_HINT_VARIANTS = ["control", "treatment"] as const;
@@ -463,6 +474,15 @@ function muse(raw: unknown): MuseReport {
     days: list(m.days)
       .filter((d) => text(d.date))
       .map((d) => ({ ...museNumbers(d), date: d.date as string, chatOpened: d.chatOpened === true })),
+    bots: list(m.bots)
+      .filter((b) => text(b.playerId))
+      .map((b) => ({
+        ...museNumbers(b),
+        playerId: b.playerId as string,
+        chatDays: count(b.chatDays),
+        firstSeen: text(b.firstSeen),
+        lastSeen: text(b.lastSeen),
+      })),
   };
 }
 
