@@ -153,6 +153,42 @@ export function joinBoard(): string | null {
   return id;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/**
+ * Play as a given id, for Muse AI: `?visitor=mos-muse&player=<uuid>`.
+ *
+ * Muse starts each run in a fresh browser, so without this every run mints a
+ * new id and lands on the board as a new player. Passing the id it played under
+ * before keeps it one row.
+ *
+ * Narrow on purpose, because an id is the whole identity (see game/transfer.ts
+ * on why that link asks before it adopts anything):
+ *   - only alongside a visitor tag in the same URL, so a player's link never
+ *     carries it;
+ *   - only into a browser with no id yet, so a link can never replace the
+ *     identity of somebody who already plays -- the worst it can do is make a
+ *     newcomer start out as Muse;
+ *   - only a UUID, the shape `newId` mints.
+ *
+ * The id rides in the query, which the transfer link avoids, and so reaches
+ * the server's logs. That is acceptable for Muse's own ids and nothing else.
+ * Returns the adopted id, or null when nothing was adopted.
+ */
+export function adoptPlayerFromUrl(search: string): string | null {
+  const params = new URLSearchParams(search);
+  if (!params.get("visitor")) return null;
+  const id = params.get("player")?.trim().toLowerCase();
+  if (!id || !UUID.test(id)) return null;
+  if (loadPlayerId()) return null;
+  try {
+    localStorage.setItem(PLAYER_KEY, JSON.stringify({ id }));
+  } catch {
+    return null;
+  }
+  return id;
+}
+
 /** Leave the board. Rejoining later is joining as somebody new. */
 export function leaveBoard(): void {
   try {
