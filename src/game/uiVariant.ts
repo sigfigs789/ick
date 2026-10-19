@@ -5,17 +5,18 @@ import { isTester } from "./testers";
  * The play-screen experiment: the reworked play screen ("v2") against the
  * current one ("control"), compared on the analytics page's key numbers.
  *
- * Two experiments, each split 50/50 on its own, the same way as the idle hint
+ * Two experiments, each drawn on its own coin, the same way as the idle hint
  * (see game/idleHint.ts):
- *   - `new`: a first-ever session.
- *   - `returning`: any later session.
+ *   - `new`: a first-ever session. 70% get v2 and 30% control, to send most
+ *     new players to the v2 flow (50/50 until 2026-10-19).
+ *   - `returning`: any later session, split 50/50.
  *
  * A player is placed in each experiment the first time they open the game as
  * that kind of player, and keeps the arm for good. The two draws are
  * independent, so a new player's arm says nothing about the one they get once
- * they come back -- each experiment stays a clean 50/50 of its own players,
- * at the cost of about half of new players seeing the other screen on their
- * first return. Within a session the screen never changes: a session's kind is
+ * they come back -- each experiment stays a clean split of its own players,
+ * at the cost of some new players seeing the other screen on their first
+ * return. Within a session the screen never changes: a session's kind is
  * settled by its first page load (see game/visits.ts `isReturningSession`).
  *
  * Every event mirrored to Supabase carries the session's variant (see
@@ -41,11 +42,15 @@ const FORCED_KEY = "ick:ui-forced";
  * The single, everyone-alike draw from before the split by experiment. Taken
  * over as the arm of the first experiment that needs one, so nobody already in
  * the test changes screens when this ships; it was a fair coin, so it keeps
- * that experiment 50/50.
+ * that experiment 50/50. Anyone holding one has visited before, so it is the
+ * returning experiment that takes it over, and that one is still 50/50.
  */
 const LEGACY_KEY = "ick:ui-variant";
 
 type Arms = Partial<Record<UiExperiment, UiVariant>>;
+
+/** The share of each experiment's fresh draws put on v2. */
+export const V2_SHARE: Record<UiExperiment, number> = { new: 0.7, returning: 0.5 };
 
 let current: UiVariant = "control";
 let fresh: UiVariantAssignment | null = null;
@@ -114,7 +119,7 @@ export function assignUiVariant(search: string, random: () => number = Math.rand
       return current;
     }
     const legacy = parse(localStorage.getItem(LEGACY_KEY));
-    const variant: UiVariant = legacy ?? (random() < 0.5 ? "control" : "v2");
+    const variant: UiVariant = legacy ?? (random() < V2_SHARE[experiment] ? "v2" : "control");
     localStorage.setItem(ARMS_KEY, JSON.stringify({ ...arms, [experiment]: variant }));
     localStorage.removeItem(LEGACY_KEY);
     current = variant;

@@ -242,7 +242,7 @@ function Report({
 
       <Section
         title="Play screen test"
-        note={`${span}. Play screen v1 (the one before the test) vs v2, new and returning players each split 50/50 on their own${
+        note={`${span}. Play screen v1 (the one before the test) vs v2, new and returning players each split on their own: new 50/50 at first and 30/70 since Oct 19, returning 50/50${
           report.uiSince ? `, since ${shortDate(report.uiSince)}` : ""
         }. New is a first-ever session, counted on that day; returning any later one, counted from the day it was split.`}
       >
