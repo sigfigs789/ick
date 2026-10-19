@@ -3106,7 +3106,6 @@ h2 {
       scale(calc(var(--drop-size) * 0.9));
   }
 }
-}
 .leaderboard__imported {
   color: var(--success-fg);
   font-weight: 700;

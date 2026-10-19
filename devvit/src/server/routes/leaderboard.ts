@@ -22,6 +22,7 @@ import {
   BOARD_LIMIT,
   DATE_RE,
   MAX_SCORES,
+  boardMode,
   validScore,
   type BoardsResponse,
   type ScoreSubmission,
@@ -61,6 +62,8 @@ leaderboard.get('/', async (c) => {
   const week = weekStartOf(puzzleDate(url.searchParams.get('since') ?? today));
   const month = monthStartOf(puzzleDate(url.searchParams.get('month') ?? today));
   const limit = boundedLimit(url.searchParams.get('limit'));
+  // Which of the two boards. Anything unreadable is Standard, as on the website.
+  const mode = boardMode(url.searchParams.get('mode'));
 
   // Who is asking is the account, not the query string. A logged-out reader gets
   // the boards and no self row, which is exactly what the website does for a
@@ -68,16 +71,16 @@ leaderboard.get('/', async (c) => {
   const user = (await reddit.getCurrentUsername()) ?? null;
 
   const [daily, weekly, monthly] = await Promise.all([
-    readBoard('d', day, limit),
-    readBoard('w', week, limit),
-    readBoard('m', month, limit),
+    readBoard('d', day, limit, mode),
+    readBoard('w', week, limit, mode),
+    readBoard('m', month, limit, mode),
   ]);
 
   const [dailySelf, weeklySelf, monthlySelf] = user
     ? await Promise.all([
-        readSelf('d', day, user, daily),
-        readSelf('w', week, user, weekly),
-        readSelf('m', month, user, monthly),
+        readSelf('d', day, user, daily, mode),
+        readSelf('w', week, user, weekly, mode),
+        readSelf('m', month, user, monthly, mode),
       ])
     : [null, null, null];
 
@@ -93,6 +96,7 @@ leaderboard.get('/', async (c) => {
     // The monthly board, under the name the wire has always used for it.
     allTime: monthly,
     allTimeSelf: monthlySelf,
+    mode,
   };
   return c.json(body);
 });

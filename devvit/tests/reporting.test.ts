@@ -22,11 +22,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const setReporting = vi.hoisted(() => vi.fn());
 const setAccount = vi.hoisted(() => vi.fn());
 const setInMemoryRouting = vi.hoisted(() => vi.fn());
+const setPlayerMessages = vi.hoisted(() => vi.fn());
 const render = vi.hoisted(() => vi.fn());
 
 vi.mock("../../src/analytics", () => ({ setReporting }));
 vi.mock("../../src/game/player", () => ({ setAccount }));
 vi.mock("../../src/routes", () => ({ setInMemoryRouting }));
+vi.mock("../../src/game/playerMessages", () => ({ setPlayerMessages }));
 vi.mock("../../src/Root", () => ({ Root: () => null }));
 vi.mock("react-dom/client", () => ({ createRoot: () => ({ render }) }));
 vi.mock("../../src/index.css", () => ({}));
@@ -46,6 +48,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   setReporting.mockClear();
   setAccount.mockClear();
+  setPlayerMessages.mockClear();
 });
 
 describe("the Reddit build's reporting switch", () => {
@@ -79,5 +82,20 @@ describe("the Reddit build's reporting switch", () => {
     // It must not also leave reporting on.
     expect(setAccount).not.toHaveBeenCalled();
     expect(setReporting).toHaveBeenCalledWith(false);
+  });
+});
+
+describe("the Reddit build's player-messages switch", () => {
+  it("hides chat, suggestions and feedback whoever is playing", async () => {
+    // The chat room would carry the username itself, so this must hold for a
+    // signed-in player as much as for one with no account.
+    await boot(async () => Response.json({ username: "some_redditor" }));
+    expect(setPlayerMessages).toHaveBeenCalledWith(false);
+
+    setPlayerMessages.mockClear();
+    await boot(async () => {
+      throw new Error("offline");
+    });
+    expect(setPlayerMessages).toHaveBeenCalledWith(false);
   });
 });

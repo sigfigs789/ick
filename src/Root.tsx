@@ -29,6 +29,7 @@ import { syncHistory } from "./game/leaderboard";
 import { hasJoined, joinBoard } from "./game/player";
 import { playedPuzzleCount } from "./game/storage";
 import { hasSeen, headerBadgeFor, markSeen } from "./game/whatsNew";
+import { takesPlayerMessages } from "./game/playerMessages";
 import { useRoute } from "./routes";
 
 /**
@@ -358,8 +359,8 @@ export function Root() {
       {/* Development and preview builds, or production opened with `?dev=1`
           (see src/dev/devTools.ts). */}
       {DEV_TOOLS && <DevDateBar />}
-      {/* The chat room's corner button, on every page. */}
-      <ChatBubble lifted={DEV_TOOLS} />
+      {/* The chat room's corner button, on every page that has a chat room. */}
+      {takesPlayerMessages() && <ChatBubble lifted={DEV_TOOLS} />}
       <InstructionsModal
         open={showInstructions}
         onClose={() => {

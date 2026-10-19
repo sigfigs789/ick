@@ -122,6 +122,19 @@ own serverless Node runtime, with Redis beside it.
   build is careful not to do anywhere else. The seam is `setReporting` in
   `src/analytics.ts`, on everywhere but here.
 
+- **Two boards, one per mode.** Standard and Freeform rank separately, as on
+  the website: each day goes on the board for the rules it was played under,
+  Freeform's keys sit under `f:`, and the finds feed stays shared.
+- **Live fold rejections**, read from the website on the import's schedule and
+  served at `/api/folded-live`, so a word priced up there is priced up here
+  too. Needs the `20261023000000` migration.
+- **No chat, suggestions or feedback notes.** Each writes to the website's
+  database, so `setPlayerMessages(false)` hides them rather than letting them
+  post into nothing (see `src/game/playerMessages.ts`). The post's comments are
+  the chat. The streak, total and dead-streak boards are absent the same way:
+  the streak tab only shows when the server sends one, and the other two pages
+  are unreachable without a URL bar.
+
 ## What still has to be built
 
 - **Progress still lives in localStorage**, and the leaderboard does not cover
@@ -134,9 +147,6 @@ own serverless Node runtime, with Redis beside it.
   that remains.
 - **`/api/events`.** The analytics mirror, which has no reader and so is the
   least urgent thing here.
-- **Routing has no server.** `src/routes.ts` leans on the `vercel.json` rewrite
-  to `index.html`. There is no rewrite layer here; the five pages need hash or
-  in-memory routing.
 - **The bundle is being shipped as it is** -- 5.8 MB, 1.6 MB gzipped, almost all
   of it the dictionary. A deliberate call rather than an oversight; see below.
 
@@ -198,7 +208,7 @@ Reddit's own players, which is a working board.
     devvit settings set supabaseUrl        # defaults to the live project already
     devvit settings set supabaseAnonKey    # the anon key -- NOT service-role
 
-The `20260911060000` and `20260911070000` migrations have to be applied to the
+The `20260911060000`, `20260911070000` and `20261023000000` migrations have to be applied to the
 website's Supabase first, or the anon key has nothing it may call. `permissions.http.domains` names the live project's host exactly
 (`hjjdnbftdwswkfqnsejt`, the us-east-2 one -- the older us-east-1 project of the
 same name holds none of these tables).
