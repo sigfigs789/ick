@@ -1,4 +1,24 @@
 {
+  "amassed": {
+    "base": "amass",
+    "since": "2026-10-22",
+    "reason": "Folded onto `ama` (amassed > amas > ama), costing 0.33 points; it is a form of `amass` (Zipf 2.77). Flagged by the daily fold check for the 2026-10-22 `AM` drop (past tense of amass, not ama) and confirmed on adversarial re-review (past tense of amass; ama unrelated)."
+  },
+  "amasser": {
+    "base": "amass",
+    "since": "2026-10-22",
+    "reason": "Folded onto `ama` (amasser > amas > ama), costing 3.06 points; it is a form of `amass` (Zipf 2.77). Flagged by the daily fold check for the 2026-10-22 `AM` drop (one who amasses, not ama) and confirmed on adversarial re-review (agent noun of amass, not ama)."
+  },
+  "amendes": {
+    "base": "amende",
+    "since": "2026-10-22",
+    "reason": "Folded onto `amended` (amendes > amend > amended), costing 3.56 points; it is a form of `amende` (Zipf 1.52). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of amende, a French fine) and confirmed on adversarial re-review (French fine, distinct from verb amend)."
+  },
+  "amoles": {
+    "base": "amole",
+    "since": "2026-10-22",
+    "reason": "Folded onto `amol` (amoles > amol), costing 0.78 points; it is a form of `amole` (Zipf 1.19). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of amole, soap plant root) and confirmed on adversarial re-review (amol is not a word; base amole)."
+  },
   "apparated": {
     "base": "apparate",
     "since": "2026-10-19",
@@ -34,6 +54,16 @@
     "since": "2026-10-18",
     "reason": "Folded onto `archae` (archaizes > archaize > archae), costing 0.53 points; it is a form of `archaic` (Zipf 3.36). Flagged by the daily fold check for the 2026-10-18 `HA` drop (lands on archae, not archaic) and confirmed on adversarial re-review (archae unrelated; built on archaic)."
   },
+  "bramblings": {
+    "base": "brambling",
+    "since": "2026-10-22",
+    "reason": "Folded onto `bramble` (bramblings > brambling > bramble), costing 1.80 points; it is a form of `brambling` (Zipf 1.20). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of the bird brambling) and confirmed on adversarial re-review (finch name, not the bramble bush)."
+  },
+  "camases": {
+    "base": "camas",
+    "since": "2026-10-22",
+    "reason": "Folded onto `cama` (camases > camas > cama), costing 1.30 points; it is a form of `camas` (Zipf 2.14). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of camas plant, not cama) and confirmed on adversarial re-review (plural of camas plant)."
+  },
   "chalones": {
     "base": "chalone",
     "since": "2026-10-18",
@@ -49,10 +79,45 @@
     "since": "2026-10-21",
     "reason": "Folded onto `chives` (chiving > chive > chives), costing 1.89 points; it is a form of `chiv` (Zipf 1.31). Flagged by the daily fold check for the 2026-10-21 `IVI` drop (stabbing with chiv, not herb chives) and confirmed on adversarial re-review (Chiving means stabbing, from chiv; not chives)."
   },
+  "crames": {
+    "base": "crame",
+    "since": "2026-10-22",
+    "reason": "Folded onto `cram` (crames > cram), costing 2.66 points; it is a form of `crame` (Zipf 1.33). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of crame, a booth) and confirmed on adversarial re-review (Scots booth, unrelated to cram)."
+  },
   "curateless": {
     "base": "curate",
     "since": "2026-10-19",
     "reason": "Folded onto `curated` (curateless > curate > curated), costing 3.09 points; it is a form of `curate` (Zipf 3.03). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (clergy curate, not curated) and confirmed on adversarial re-review (Clergy noun, not the verb curated)."
+  },
+  "deaminization": {
+    "base": "amine",
+    "since": "2026-10-22",
+    "reason": "Folded onto `amin` (deaminization > deaminize > aminize > amin), costing 2.40 points; it is a form of `amine` (Zipf 2.79). Flagged by the daily fold check for the 2026-10-22 `AM` drop (amin is not amine) and confirmed on adversarial re-review (amine chemistry; amin is different word)."
+  },
+  "deaminizations": {
+    "base": "amine",
+    "since": "2026-10-22",
+    "reason": "Folded onto `amin` (deaminizations > deaminization > deaminize > aminize > amin), costing 2.70 points; it is a form of `amine` (Zipf 2.79). Flagged by the daily fold check for the 2026-10-22 `AM` drop (amin is not amine) and confirmed on adversarial re-review (amine chemistry; amin is different word)."
+  },
+  "deaminize": {
+    "base": "amine",
+    "since": "2026-10-22",
+    "reason": "Folded onto `amin` (deaminize > aminize > amin), costing 2.64 points; it is a form of `amine` (Zipf 2.79). Flagged by the daily fold check for the 2026-10-22 `AM` drop (amin is not amine) and confirmed on adversarial re-review (amine chemistry; amin is different word)."
+  },
+  "deaminized": {
+    "base": "amine",
+    "since": "2026-10-22",
+    "reason": "Folded onto `amin` (deaminized > deaminize > aminize > amin), costing 2.25 points; it is a form of `amine` (Zipf 2.79). Flagged by the daily fold check for the 2026-10-22 `AM` drop (amin is not amine) and confirmed on adversarial re-review (amine chemistry; amin is different word)."
+  },
+  "deaminizes": {
+    "base": "amine",
+    "since": "2026-10-22",
+    "reason": "Folded onto `amin` (deaminizes > deaminize > aminize > amin), costing 2.66 points; it is a form of `amine` (Zipf 2.79). Flagged by the daily fold check for the 2026-10-22 `AM` drop (amin is not amine) and confirmed on adversarial re-review (amine chemistry; amin is different word)."
+  },
+  "deaminizing": {
+    "base": "amine",
+    "since": "2026-10-22",
+    "reason": "Folded onto `amin` (deaminizing > deaminize > aminize > amin), costing 2.62 points; it is a form of `amine` (Zipf 2.79). Flagged by the daily fold check for the 2026-10-22 `AM` drop (amin is not amine) and confirmed on adversarial re-review (amine chemistry; amin is different word)."
   },
   "derated": {
     "base": "derate",
@@ -68,6 +133,56 @@
     "base": "derate",
     "since": "2026-10-19",
     "reason": "Folded onto `rat` (derates > derat > derats > rats > rat), costing 3.95 points; it is a form of `derate` (Zipf 1.16). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (verb form of derate) and confirmed on adversarial re-review (Reduce rating, nothing to do with rats)."
+  },
+  "dreamees": {
+    "base": "dream",
+    "since": "2026-10-22",
+    "reason": "Folded onto `dreame` (dreamees > dreame), costing 0.23 points; it is a form of `dream` (Zipf 4.91). Flagged by the daily fold check for the 2026-10-22 `AM` drop (dreame is not a word) and confirmed on adversarial re-review (dreame is not a word)."
+  },
+  "dynamisation": {
+    "base": "dynamic",
+    "since": "2026-10-22",
+    "reason": "Folded onto `dynam` (dynamisation > dynamise > dynam), costing 0.41 points; it is a form of `dynamic` (Zipf 4.31). Flagged by the daily fold check for the 2026-10-22 `AM` drop (means making dynamic, not the dynam unit) and confirmed on adversarial re-review (from dynamic, not the dynam unit)."
+  },
+  "dynamisations": {
+    "base": "dynamic",
+    "since": "2026-10-22",
+    "reason": "Folded onto `dynam` (dynamisations > dynamisation > dynamise > dynam), costing 0.44 points; it is a form of `dynamic` (Zipf 4.31). Flagged by the daily fold check for the 2026-10-22 `AM` drop (means making dynamic, not the dynam unit) and confirmed on adversarial re-review (from dynamic, not the dynam unit)."
+  },
+  "dynamise": {
+    "base": "dynamic",
+    "since": "2026-10-22",
+    "reason": "Folded onto `dynam` (dynamise > dynam), costing 0.35 points; it is a form of `dynamic` (Zipf 4.31). Flagged by the daily fold check for the 2026-10-22 `AM` drop (means make dynamic, not the dynam unit) and confirmed on adversarial re-review (from dynamic, not the dynam unit)."
+  },
+  "dynamised": {
+    "base": "dynamic",
+    "since": "2026-10-22",
+    "reason": "Folded onto `dynamis` (dynamised > dynamis), costing 0.41 points; it is a form of `dynamic` (Zipf 4.31). Flagged by the daily fold check for the 2026-10-22 `AM` drop (verb form, not Greek dynamis) and confirmed on adversarial re-review (English verb from dynamic, not dynamis)."
+  },
+  "dynamises": {
+    "base": "dynamic",
+    "since": "2026-10-22",
+    "reason": "Folded onto `dynamis` (dynamises > dynamis), costing 0.44 points; it is a form of `dynamic` (Zipf 4.31). Flagged by the daily fold check for the 2026-10-22 `AM` drop (verb form, not Greek dynamis) and confirmed on adversarial re-review (English verb from dynamic, not dynamis)."
+  },
+  "dynamising": {
+    "base": "dynamic",
+    "since": "2026-10-22",
+    "reason": "Folded onto `dynamis` (dynamising > dynamis), costing 0.41 points; it is a form of `dynamic` (Zipf 4.31). Flagged by the daily fold check for the 2026-10-22 `AM` drop (verb form, not Greek dynamis) and confirmed on adversarial re-review (English verb from dynamic, not dynamis)."
+  },
+  "flamines": {
+    "base": "flamen",
+    "since": "2026-10-22",
+    "reason": "Folded onto `flamin` (flamines > flamin), costing 0.40 points; it is a form of `flamen` (Zipf 1.30). Flagged by the daily fold check for the 2026-10-22 `AM` drop (Latin plural of flamen, priest) and confirmed on adversarial re-review (Latin plural of flamen, priest)."
+  },
+  "forenames": {
+    "base": "forename",
+    "since": "2026-10-22",
+    "reason": "Folded onto `forenamed` (forenames > forename > forenamed), costing 0.57 points; it is a form of `forename` (Zipf 1.57). Flagged by the daily fold check for the 2026-10-22 `AM` drop (forenamed means aforementioned, not first name) and confirmed on adversarial re-review (forenamed means aforementioned, different sense)."
+  },
+  "gamines": {
+    "base": "gamine",
+    "since": "2026-10-22",
+    "reason": "Folded onto `gamins` (gamines > gamin > gamins), costing 0.86 points; it is a form of `gamine` (Zipf 1.59). Flagged by the daily fold check for the 2026-10-22 `AM` drop (gamine is elfin girl, distinct word) and confirmed on adversarial re-review (gamine sense drifted to elfin girl)."
   },
   "hackies": {
     "base": "hackie",
@@ -119,10 +234,50 @@
     "since": "2026-10-18",
     "reason": "Folded onto `haw` (hawsing > haws > haw), costing 2.57 points; it is a form of `hawse` (Zipf 1.36). Flagged by the daily fold check for the 2026-10-18 `HA` drop (nautical hawse verb, not haw) and confirmed on adversarial re-review (Nautical hawse, unrelated to haw)."
   },
+  "kames": {
+    "base": "kame",
+    "since": "2026-10-22",
+    "reason": "Folded onto `kam` (kames > kam), costing 1.73 points; it is a form of `kame` (Zipf 2.20). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of kame, not kam) and confirmed on adversarial re-review (plural of kame; kam unrelated)."
+  },
+  "lameds": {
+    "base": "lamed",
+    "since": "2026-10-22",
+    "reason": "Folded onto `lame` (lameds > lamed > lame), costing 3.75 points; it is a form of `lamed` (Zipf 1.70). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of Hebrew letter lamed) and confirmed on adversarial re-review (Hebrew letter, not lame)."
+  },
+  "lamester": {
+    "base": "lam",
+    "since": "2026-10-22",
+    "reason": "Folded onto `lamest` (lamester > lamest), costing 1.61 points; it is a form of `lam` (Zipf 3.44). Flagged by the daily fold check for the 2026-10-22 `AM` drop (fugitive on the lam, not lamest) and confirmed on adversarial re-review (fugitive on the lam, not lamest)."
+  },
+  "lamesters": {
+    "base": "lam",
+    "since": "2026-10-22",
+    "reason": "Folded onto `lamest` (lamesters > lamester > lamest), costing 1.63 points; it is a form of `lam` (Zipf 3.44). Flagged by the daily fold check for the 2026-10-22 `AM` drop (fugitive on the lam, not lamest) and confirmed on adversarial re-review (fugitives on the lam, not lamest)."
+  },
+  "laminable": {
+    "base": "laminate",
+    "since": "2026-10-22",
+    "reason": "Folded onto `lamin` (laminable > lamin), costing 1.17 points; it is a form of `laminate` (Zipf 2.87). Flagged by the daily fold check for the 2026-10-22 `AM` drop (able to be laminated, not lamin protein) and confirmed on adversarial re-review (from laminate, not lamin protein)."
+  },
+  "lamperses": {
+    "base": "lampers",
+    "since": "2026-10-22",
+    "reason": "Folded onto `lamp` (lamperses > lampers > lamper > lamp), costing 3.94 points; it is a form of `lampers` (Zipf 0.68). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of lampers disease, not lamp) and confirmed on adversarial re-review (plural of lampers disease, not lamp)."
+  },
   "nondeliberating": {
     "base": "deliberate",
     "since": "2026-10-19",
     "reason": "Folded onto `nondeliberate` (nondeliberating > nondeliberate), costing 0.24 points; it is a form of `deliberate` (Zipf 3.82). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (verb sense, not adjective unintentional) and confirmed on adversarial re-review (Verb deliberate, not adjective unintentional)."
+  },
+  "nongamer": {
+    "base": "gamer",
+    "since": "2026-10-22",
+    "reason": "Folded onto `nongame` (nongamer > nongame), costing 0.24 points; it is a form of `gamer` (Zipf 3.62). Flagged by the daily fold check for the 2026-10-22 `AM` drop (non-player, not nongame wildlife) and confirmed on adversarial re-review (non-player, not nongame wildlife)."
+  },
+  "nongaming": {
+    "base": "gaming",
+    "since": "2026-10-22",
+    "reason": "Folded onto `nongame` (nongaming > nongame), costing 0.24 points; it is a form of `gaming` (Zipf 4.36). Flagged by the daily fold check for the 2026-10-22 `AM` drop (not gaming, not nongame wildlife) and confirmed on adversarial re-review (not gaming, not nongame wildlife)."
   },
   "numerately": {
     "base": "numerate",
@@ -198,6 +353,11 @@
     "base": "prattle",
     "since": "2026-10-19",
     "reason": "Folded onto `pratt` (prattly > pratt), costing 3.28 points; it is a form of `prattle` (Zipf 2.18). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (pratt is surname; not its adjective) and confirmed on adversarial re-review (Pratt is a surname; no shared meaning); redirected rather than exempted on PR review (prattle + -y, like bubbly, giggly)."
+  },
+  "preambulatory": {
+    "base": "preamble",
+    "since": "2026-10-22",
+    "reason": "Folded onto `ambulatory` (preambulatory > ambulatory), costing 2.20 points; it is a form of `preamble` (Zipf 2.87). Flagged by the daily fold check for the 2026-10-22 `AM` drop (means introductory, relating to a preamble) and confirmed on adversarial re-review (relates to preamble, not walking)."
   },
   "prefigurate": {
     "base": "prefigure",
@@ -299,6 +459,11 @@
     "since": "2026-10-20",
     "reason": "Folded onto `quint` (quintes > quint), costing 1.91 points; it is a form of `quinte` (Zipf 1.82). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (plural of fencing parry quinte) and confirmed on adversarial re-review (fencing parry quinte, not quint)."
   },
+  "ramees": {
+    "base": "ramee",
+    "since": "2026-10-22",
+    "reason": "Folded onto `rame` (ramees > rame), costing 1.07 points; it is a form of `ramee` (Zipf 1.26). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of ramee (ramie), not rame) and confirmed on adversarial re-review (ramie fiber, unrelated to rame)."
+  },
   "rationales": {
     "base": "rationale",
     "since": "2026-10-19",
@@ -309,10 +474,30 @@
     "since": "2026-10-19",
     "reason": "Folded onto `rations` (rationes > ration > rations), costing 2.81 points; it is a form of `ratio` (Zipf 4.37). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (Latin plural of ratio) and confirmed on adversarial re-review (Latin plural of ratio, not ration)."
   },
+  "reamed": {
+    "base": "ream",
+    "since": "2026-10-22",
+    "reason": "Folded onto `reams` (reamed > ream > reams), costing 0.61 points; it is a form of `ream` (Zipf 2.44). Flagged by the daily fold check for the 2026-10-22 `AM` drop (verb ream (bore), not paper reams) and confirmed on adversarial re-review (bore verb, landed on paper reams)."
+  },
+  "reaming": {
+    "base": "ream",
+    "since": "2026-10-22",
+    "reason": "Folded onto `reams` (reaming > ream > reams), costing 0.83 points; it is a form of `ream` (Zipf 2.44). Flagged by the daily fold check for the 2026-10-22 `AM` drop (verb ream (bore), not paper reams) and confirmed on adversarial re-review (bore verb, landed on paper reams)."
+  },
+  "reamings": {
+    "base": "ream",
+    "since": "2026-10-22",
+    "reason": "Folded onto `reams` (reamings > reaming > ream > reams), costing 1.91 points; it is a form of `ream` (Zipf 2.44). Flagged by the daily fold check for the 2026-10-22 `AM` drop (verb ream (bore), not paper reams) and confirmed on adversarial re-review (bore verb, landed on paper reams)."
+  },
   "risquing": {
     "base": "risk",
     "since": "2026-10-20",
     "reason": "Folded onto `risque` (risquing > risque), costing 1.72 points; it is a form of `risk` (Zipf 5.05). Flagged by the daily fold check for the 2026-10-20 `QUI` drop (archaic spelling of risking, not racy) and confirmed on adversarial re-review (archaic risque means risk, not racy)."
+  },
+  "scammable": {
+    "base": "scam",
+    "since": "2026-10-22",
+    "reason": "Folded onto `scammy` (scammable > scammy), costing 0.55 points; it is a form of `scam` (Zipf 3.94). Flagged by the daily fold check for the 2026-10-22 `AM` drop (from scam, not scammy) and confirmed on adversarial re-review (from verb scam; scammy means dodgy)."
   },
   "shaggability": {
     "base": "shag",
@@ -334,10 +519,55 @@
     "since": "2026-10-18",
     "reason": "Folded onto `shanti` (shanties > shanti), costing 0.67 points; it is a form of `shanty` (Zipf 2.75). Flagged by the daily fold check for the 2026-10-18 `HA` drop (plural of shanty, not shanti) and confirmed on adversarial re-review (Plural of shanty, not shanti)."
   },
+  "spammable": {
+    "base": "spam",
+    "since": "2026-10-22",
+    "reason": "Folded onto `spammy` (spammable > spammy), costing 1.40 points; it is a form of `spam` (Zipf 4.05). Flagged by the daily fold check for the 2026-10-22 `AM` drop (able to be spammed, not spammy) and confirmed on adversarial re-review (from verb spam; spammy is different)."
+  },
   "spirochaetales": {
     "base": "spirochaete",
     "since": "2026-10-18",
     "reason": "Folded onto `spirochaetal` (spirochaetales > spirochaetal), costing 0.45 points; it is a form of `spirochaete` (Zipf 2.00). Flagged by the daily fold check for the 2026-10-18 `HA` drop (taxonomic order name, not plural of adjective) and confirmed on adversarial re-review (Taxonomic order, not adjective plural)."
+  },
+  "squames": {
+    "base": "squame",
+    "since": "2026-10-22",
+    "reason": "Folded onto `squam` (squames > squam), costing 0.35 points; it is a form of `squame` (Zipf 1.19). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of squame, not squam) and confirmed on adversarial re-review (plural of squame; squam unrelated)."
+  },
+  "stampedable": {
+    "base": "stampede",
+    "since": "2026-10-22",
+    "reason": "Folded onto `stamp` (stampedable > stamped > stamp), costing 4.02 points; it is a form of `stampede` (Zipf 3.13). Flagged by the daily fold check for the 2026-10-22 `AM` drop (built on stampede, not stamp) and confirmed on adversarial re-review (built on stampede, not stamp)."
+  },
+  "stampeded": {
+    "base": "stampede",
+    "since": "2026-10-22",
+    "reason": "Folded onto `stamp` (stampeded > stamped > stamp), costing 2.99 points; it is a form of `stampede` (Zipf 3.13). Flagged by the daily fold check for the 2026-10-22 `AM` drop (past tense of stampede, not stamp) and confirmed on adversarial re-review (past tense of stampede, not stamp)."
+  },
+  "stampeding": {
+    "base": "stampede",
+    "since": "2026-10-22",
+    "reason": "Folded onto `stamp` (stampeding > stamped > stamp), costing 2.80 points; it is a form of `stampede` (Zipf 3.13). Flagged by the daily fold check for the 2026-10-22 `AM` drop (form of stampede, not stamp) and confirmed on adversarial re-review (form of stampede, not stamp)."
+  },
+  "stampedingly": {
+    "base": "stampede",
+    "since": "2026-10-22",
+    "reason": "Folded onto `stamp` (stampedingly > stampeding > stamped > stamp), costing 4.03 points; it is a form of `stampede` (Zipf 3.13). Flagged by the daily fold check for the 2026-10-22 `AM` drop (derived from stampede, not stamp) and confirmed on adversarial re-review (derived from stampede, not stamp)."
+  },
+  "steamies": {
+    "base": "steamie",
+    "since": "2026-10-22",
+    "reason": "Folded onto `steamy` (steamies > steamy), costing 2.61 points; it is a form of `steamie` (Zipf 1.60). Flagged by the daily fold check for the 2026-10-22 `AM` drop (Scots washhouse, not steamy) and confirmed on adversarial re-review (Scots washhouse, not steamy)."
+  },
+  "subprogrammer": {
+    "base": "programmer",
+    "since": "2026-10-22",
+    "reason": "Folded onto `subprogramme` (subprogrammer > subprogramme), costing 0.88 points; it is a form of `programmer` (Zipf 3.56). Flagged by the daily fold check for the 2026-10-22 `AM` drop (junior programmer, not a form of subprogramme) and confirmed on adversarial re-review (junior programmer, not subprogramme)."
+  },
+  "subprogrammers": {
+    "base": "programmer",
+    "since": "2026-10-22",
+    "reason": "Folded onto `subprogramme` (subprogrammers > subprogrammer > subprogramme), costing 0.87 points; it is a form of `programmer` (Zipf 3.56). Flagged by the daily fold check for the 2026-10-22 `AM` drop (junior programmers, not a form of subprogramme) and confirmed on adversarial re-review (junior programmers, not subprogramme)."
   },
   "thaness": {
     "base": "thane",
@@ -349,10 +579,30 @@
     "since": "2026-10-18",
     "reason": "Folded onto `tha` (thanesses > thaness > tha), costing 3.34 points; it is a form of `thane` (Zipf 2.88). Flagged by the daily fold check for the 2026-10-18 `HA` drop (female thanes, unrelated to dialect tha) and confirmed on adversarial re-review (Female thanes, unrelated to tha)."
   },
+  "underdamper": {
+    "base": "damper",
+    "since": "2026-10-22",
+    "reason": "Folded onto `damp` (underdamper > underdamp > damp), costing 3.35 points; it is a form of `damper` (Zipf 2.94). Flagged by the daily fold check for the 2026-10-22 `AM` drop (piano damper part, not from underdamp) and confirmed on adversarial re-review (piano damper part, not underdamping)."
+  },
+  "underdampers": {
+    "base": "damper",
+    "since": "2026-10-22",
+    "reason": "Folded onto `damp` (underdampers > underdamper > underdamp > damp), costing 3.35 points; it is a form of `damper` (Zipf 2.94). Flagged by the daily fold check for the 2026-10-22 `AM` drop (piano damper part, not from underdamp) and confirmed on adversarial re-review (piano damper parts, not underdamping)."
+  },
   "underliving": {
     "base": "live",
     "since": "2026-10-21",
     "reason": "Folded onto `life` (underliving > underlive > underlives > lives > life), costing 6.62 points; it is a form of `live` (Zipf 5.54). Flagged by the daily fold check for the 2026-10-21 `IVI` drop (verb live, not noun life) and confirmed on adversarial re-review (Verb underlive comes from live, not noun life)."
+  },
+  "underream": {
+    "base": "ream",
+    "since": "2026-10-22",
+    "reason": "Folded onto `reams` (underream > ream > reams), costing 1.91 points; it is a form of `ream` (Zipf 2.44). Flagged by the daily fold check for the 2026-10-22 `AM` drop (landed on paper reams, not ream) and confirmed on adversarial re-review (bore verb, landed on paper reams)."
+  },
+  "underreamer": {
+    "base": "ream",
+    "since": "2026-10-22",
+    "reason": "Folded onto `reams` (underreamer > underream > ream > reams), costing 1.91 points; it is a form of `ream` (Zipf 2.44). Flagged by the daily fold check for the 2026-10-22 `AM` drop (landed on paper reams, not ream) and confirmed on adversarial re-review (boring tool, landed on paper reams)."
   },
   "unfishable": {
     "base": "fish",
@@ -364,10 +614,65 @@
     "since": "2026-10-18",
     "reason": "Folded onto `hackney` (unhackneyedness > hackneyedness > hackneyed > hackney), costing 2.71 points; it is a form of `unhackneyed` (Zipf 1.92). Flagged by the daily fold check for the 2026-10-18 `HA` drop (hackneyed means trite, not hackney horse) and confirmed on adversarial re-review (Trite sense, not hackney horse)."
   },
+  "unreamed": {
+    "base": "ream",
+    "since": "2026-10-22",
+    "reason": "Folded onto `reams` (unreamed > reamed > ream > reams), costing 1.91 points; it is a form of `ream` (Zipf 2.44). Flagged by the daily fold check for the 2026-10-22 `AM` drop (landed on paper reams, not ream) and confirmed on adversarial re-review (bore verb, landed on paper reams)."
+  },
+  "unscammable": {
+    "base": "scam",
+    "since": "2026-10-22",
+    "reason": "Folded onto `scammy` (unscammable > scammable > scammy), costing 0.59 points; it is a form of `scam` (Zipf 3.94). Flagged by the daily fold check for the 2026-10-22 `AM` drop (scammy is adjective; base is scam) and confirmed on adversarial re-review (from verb scam; scammy means dodgy)."
+  },
   "unshaggable": {
     "base": "shag",
     "since": "2026-10-18",
     "reason": "Folded onto `shaggy` (unshaggable > shaggable > shaggy), costing 2.74 points; it is a form of `shag` (Zipf 3.02). Flagged by the daily fold check for the 2026-10-18 `HA` drop (shaggable is from shag, not shaggy) and confirmed on adversarial re-review (From slang shag, not shaggy)."
+  },
+  "unspammable": {
+    "base": "spam",
+    "since": "2026-10-22",
+    "reason": "Folded onto `spammy` (unspammable > spammable > spammy), costing 1.43 points; it is a form of `spam` (Zipf 4.05). Flagged by the daily fold check for the 2026-10-22 `AM` drop (spammy is adjective; means able to be spammed) and confirmed on adversarial re-review (from verb spam; spammy is different)."
+  },
+  "unstampeded": {
+    "base": "stampede",
+    "since": "2026-10-22",
+    "reason": "Folded onto `stamp` (unstampeded > unstamped > unstamp > stamp), costing 4.03 points; it is a form of `stampede` (Zipf 3.13). Flagged by the daily fold check for the 2026-10-22 `AM` drop (not stampeded, unrelated to stamp) and confirmed on adversarial re-review (not stampeded; unrelated to stamp)."
+  },
+  "untrammel": {
+    "base": "trammel",
+    "since": "2026-10-22",
+    "reason": "Folded onto `trammell` (untrammel > untrammelling > trammelling > trammell), costing 1.43 points; it is a form of `trammel` (Zipf 1.95). Flagged by the daily fold check for the 2026-10-22 `AM` drop (trammell is misspelling/surname, base trammel) and confirmed on adversarial re-review (trammell is surname/misspelling; base trammel)."
+  },
+  "untrammeled": {
+    "base": "trammel",
+    "since": "2026-10-22",
+    "reason": "Folded onto `trammell` (untrammeled > untrammel > untrammelling > trammelling > trammell), costing 0.70 points; it is a form of `trammel` (Zipf 1.95). Flagged by the daily fold check for the 2026-10-22 `AM` drop (trammell is misspelling/surname, base trammel) and confirmed on adversarial re-review (trammell is surname/misspelling; base trammel)."
+  },
+  "untrammeledness": {
+    "base": "trammel",
+    "since": "2026-10-22",
+    "reason": "Folded onto `trammell` (untrammeledness > untrammeled > untrammel > untrammelling > trammelling > trammell), costing 1.44 points; it is a form of `trammel` (Zipf 1.95). Flagged by the daily fold check for the 2026-10-22 `AM` drop (trammell is misspelling/surname, base trammel) and confirmed on adversarial re-review (trammell is surname/misspelling; base trammel)."
+  },
+  "untrammeling": {
+    "base": "trammel",
+    "since": "2026-10-22",
+    "reason": "Folded onto `trammell` (untrammeling > untrammel > untrammelling > trammelling > trammell), costing 1.44 points; it is a form of `trammel` (Zipf 1.95). Flagged by the daily fold check for the 2026-10-22 `AM` drop (trammell is misspelling/surname, base trammel) and confirmed on adversarial re-review (trammell is surname/misspelling; base trammel)."
+  },
+  "untrammelled": {
+    "base": "trammel",
+    "since": "2026-10-22",
+    "reason": "Folded onto `trammell` (untrammelled > untrammel > untrammelling > trammelling > trammell), costing 0.64 points; it is a form of `trammel` (Zipf 1.95). Flagged by the daily fold check for the 2026-10-22 `AM` drop (trammell is misspelling/surname, base trammel) and confirmed on adversarial re-review (trammell is surname/misspelling; base trammel)."
+  },
+  "untrammelling": {
+    "base": "trammel",
+    "since": "2026-10-22",
+    "reason": "Folded onto `trammell` (untrammelling > trammelling > trammell), costing 1.43 points; it is a form of `trammel` (Zipf 1.95). Flagged by the daily fold check for the 2026-10-22 `AM` drop (trammell is misspelling/surname, base trammel) and confirmed on adversarial re-review (trammell is surname/misspelling; base trammel)."
+  },
+  "untrammels": {
+    "base": "trammel",
+    "since": "2026-10-22",
+    "reason": "Folded onto `trammell` (untrammels > untrammel > untrammelling > trammelling > trammell), costing 1.43 points; it is a form of `trammel` (Zipf 1.95). Flagged by the daily fold check for the 2026-10-22 `AM` drop (trammell is misspelling/surname, base trammel) and confirmed on adversarial re-review (trammell is surname/misspelling; base trammel)."
   },
   "whaly": {
     "base": "whale",

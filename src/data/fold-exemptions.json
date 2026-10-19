@@ -143,6 +143,18 @@
     "since": "2026-09-27",
     "reason": "Folded onto `ama`, costing 0.92 points. Flagged in the 2026-09-22 semantic audit (amass verb, ama unrelated) and confirmed on adversarial re-review (ama unrelated to amass)."
   },
+  "ambassed": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `amba` (ambassed > ambas > amba), costing 1.27 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (not a form of amba) and confirmed on adversarial re-review (unrelated letters; no link to amba)."
+  },
+  "ambassing": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `amba` (ambassing > ambas > amba), costing 1.28 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (not a form of amba) and confirmed on adversarial re-review (unrelated letters; no link to amba)."
+  },
+  "ambeer": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `ambe` (ambeer > ambe), costing 0.30 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (tobacco juice, not ambe plus er) and confirmed on adversarial re-review (tobacco juice; not ambe plus -er)."
+  },
   "ambeers": {
     "since": "2026-09-27",
     "reason": "Folded onto `ambe`, costing 0.48 points. Flagged in the 2026-09-22 semantic audit (ambeer not built on ambe) and confirmed on adversarial re-review (ambeer unrelated to ambe)."
@@ -154,6 +166,10 @@
   "amides": {
     "since": "2026-09-27",
     "reason": "Folded onto `amid`, costing 2.69 points. Flagged in the 2026-09-22 semantic audit (amides chemical; amid unrelated) and confirmed on adversarial re-review (chemical amide unrelated to amid)."
+  },
+  "amids": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `amid` (amids > amid), costing 3.78 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of amide, not preposition amid) and confirmed on adversarial re-review (chemistry noun, not preposition amid)."
   },
   "amines": {
     "since": "2026-09-27",
@@ -174,6 +190,10 @@
   "amply": {
     "since": "2026-09-27",
     "reason": "Folded onto `amp`, costing 1.64 points. Flagged in the 2026-09-22 semantic audit (from ample, not amp) and confirmed on adversarial re-review (from ample, not amp)."
+  },
+  "amygdalases": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `amygdala` (amygdalases > amygdalas > amygdala), costing 2.27 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of enzyme amygdalase, not amygdala) and confirmed on adversarial re-review (enzyme on amygdalin, not brain amygdala)."
   },
   "analogises": {
     "since": "2026-09-27",
@@ -305,6 +325,16 @@
   "antigene": {
     "since": "2026-09-27",
     "reason": "The older spelling of `antigen`, and the same coinage; the strip reads it as anti- + `gene`, which is the meaning it does not have.",
+    "scope": "prefix"
+  },
+  "antigram": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `grams` (antigram > antigrams > grams), costing 3.61 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (wordplay term, not anti- plus gram) and confirmed on adversarial re-review (wordplay term, unrelated to gram units).",
+    "scope": "prefix"
+  },
+  "antigrams": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `grams` (antigrams > grams), costing 3.61 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of antigram, unrelated to grams) and confirmed on adversarial re-review (plural of antigram, unrelated to grams).",
     "scope": "prefix"
   },
   "antigrav": {
@@ -777,6 +807,10 @@
     "since": "2026-09-27",
     "reason": "To roar. `bellows` the airblower is a separate noun, and the reverse fold capped the verb at it."
   },
+  "benamees": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `benamed` (benamees > bename > benamed), costing 0.07 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of benamee, not bename) and confirmed on adversarial re-review (benami holder, unrelated to bename)."
+  },
   "benames": {
     "since": "2026-09-27",
     "reason": "Folded onto `benami`, costing 0.96 points. Flagged in the 2026-09-22 semantic audit (benami vs bename, different words) and confirmed on adversarial re-review (benami versus bename, unrelated)."
@@ -1060,6 +1094,26 @@
   "calorizer": {
     "since": "2026-09-27",
     "reason": "Folded onto `calor`, costing 1.35 points. Flagged in the 2026-09-22 semantic audit (calor is not the base) and confirmed on adversarial re-review (calorize from calorie/calorium, not calor)."
+  },
+  "camas": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `cama` (camas > cama), costing 0.03 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (camas plant, not plural of cama) and confirmed on adversarial re-review (camas plant, unrelated to cama hybrid)."
+  },
+  "camed": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `came` (camed > came), costing 5.82 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (leaded glass came, not verb came) and confirmed on adversarial re-review (glazier's lead came, not verb came)."
+  },
+  "cames": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `came` (cames > came), costing 5.43 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of glazier's came strip) and confirmed on adversarial re-review (glazier's lead strips, not verb came)."
+  },
+  "cameses": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `came` (cameses > cames > came), costing 6.03 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (glazier's came, not verb came) and confirmed on adversarial re-review (glazier's came, not verb came)."
+  },
+  "caming": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `came` (caming > came), costing 6.00 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (leaded glass came, not verb came) and confirmed on adversarial re-review (leaded came work, not verb came)."
   },
   "camises": {
     "since": "2026-09-27",
@@ -1793,6 +1847,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `cru`, costing 1.52 points. Flagged in the 2026-09-22 semantic audit (plural of cruse, overshot) and confirmed on adversarial re-review (cru is wine vineyard, unrelated)."
   },
+  "cryptogames": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `cryptogam` (cryptogames > cryptogam), costing 0.55 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (crypto games, not cryptogam plants) and confirmed on adversarial re-review (reads as crypto games, not cryptogams)."
+  },
   "cubes": {
     "since": "2026-09-27",
     "reason": "Folded onto `cubs`, costing 0.65 points. Flagged in the 2026-09-22 semantic audit (plural of cube, not cub) and confirmed on adversarial re-review (cube unrelated to cub)."
@@ -2146,6 +2204,16 @@
   "decameral": {
     "since": "2026-10-04",
     "reason": "Folded onto `cameral`, costing up to 0.52 points, by stripping de- to `cameral`. Not de- + `cameral`: having ten chambers (deca-); not de- + cameral. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "decamper": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `camper` (decamper > camper), costing 2.84 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (one who decamps, not camper) and confirmed on adversarial re-review (one who decamps, not a camper).",
+    "scope": "prefix"
+  },
+  "decampers": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `camper` (decampers > decamper > camper), costing 2.85 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (one who decamps, not camper) and confirmed on adversarial re-review (those who decamp, not campers).",
     "scope": "prefix"
   },
   "decan": {
@@ -2960,6 +3028,16 @@
     "since": "2026-09-27",
     "reason": "Folded onto `deline`, costing 0.56 points. Flagged in the 2026-09-22 semantic audit (deline not the base of delineable) and confirmed on adversarial re-review (deline is not the base)."
   },
+  "delineament": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `lineaments` (delineament > delineaments > lineaments), costing 0.78 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (archaic noun of delineate, not lineament) and confirmed on adversarial re-review (archaic noun of delineate, not features).",
+    "scope": "prefix"
+  },
+  "delineaments": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `lineaments` (delineaments > lineaments), costing 0.78 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (archaic noun of delineate, not lineament) and confirmed on adversarial re-review (archaic noun of delineate, not features).",
+    "scope": "prefix"
+  },
   "delined": {
     "since": "2026-10-04",
     "reason": "Folded onto `line`, costing up to 5.66 points, by stripping de- to `lined`. Not de- + `lined`: obsolete: delineated; not de- + line. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
@@ -3013,6 +3091,11 @@
   "deloping": {
     "since": "2026-10-04",
     "reason": "Folded onto `lope`, costing up to 2.19 points, by stripping de- to `loping`. Not de- + `loping`: firing into the air in a duel; unrelated to lope. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "delorazepam": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `lorazepam` (delorazepam > lorazepam), costing 1.45 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (distinct drug, not a lorazepam form) and confirmed on adversarial re-review (distinct benzodiazepine, not lorazepam form).",
     "scope": "prefix"
   },
   "delubra": {
@@ -4436,6 +4519,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `fini`, costing 1.83 points. Flagged in the 2026-09-22 semantic audit (finis vs fini, distinct words) and confirmed on adversarial re-review (finis distinct from fini)."
   },
+  "firedamper": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `firedamp` (firedamper > firedamp), costing 0.64 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (fire damper device, not methane gas) and confirmed on adversarial re-review (fire damper device, not methane firedamp)."
+  },
+  "firedampers": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `firedamp` (firedampers > firedamper > firedamp), costing 0.62 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (fire damper device, not methane gas) and confirmed on adversarial re-review (fire damper device, not methane firedamp)."
+  },
   "fittable": {
     "since": "2026-09-27",
     "reason": "Folded onto `fitts`, costing 1.37 points. Flagged in the 2026-09-22 semantic audit (fitts is not the base) and confirmed on adversarial re-review (fitts is not the base)."
@@ -4839,6 +4930,10 @@
   "grainering": {
     "since": "2026-09-27",
     "reason": "Folded onto `grainers`, costing 0.83 points. Flagged in the 2026-09-22 semantic audit (grainer vs grain verb mismatch) and confirmed on adversarial re-review (anti- prefix; wait, grainer root shared)."
+  },
+  "grames": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `grams` (grames > gram > grams), costing 3.61 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of archaic grame (sorrow), not gram) and confirmed on adversarial re-review (archaic sorrow, unrelated to gram)."
   },
   "gramine": {
     "since": "2026-09-27",
@@ -5530,9 +5625,17 @@
     "since": "2026-09-27",
     "reason": "Folded onto `jade`, costing 3.82 points. Flagged in the 2026-09-22 semantic audit (jaded unrelated to jade stone) and confirmed on adversarial re-review (jaded unrelated to jade stone)."
   },
+  "jambees": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `jambe` (jambees > jambe), costing 0.49 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of jambee, a cane, not jambe) and confirmed on adversarial re-review (jambee cane, unrelated to jambe)."
+  },
   "jammable": {
     "since": "2026-09-27",
     "reason": "Folded onto `jammy`, costing 1.92 points. Flagged in the 2026-09-22 semantic audit (jammable from jam, not jammy) and confirmed on adversarial re-review (jammable from jam, not jammy)."
+  },
+  "jammies": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `jammy` (jammies > jammy), costing 0.12 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (pajamas slang, not plural of jammy) and confirmed on adversarial re-review (pajamas slang, not the adjective jammy)."
   },
   "janes": {
     "since": "2026-09-27",
@@ -5650,6 +5753,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `kay`, costing 4.08 points. Flagged in the 2026-09-22 semantic audit (from kail/kale, not kay) and confirmed on adversarial re-review (from kail, not kay)."
   },
+  "kamees": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `kame` (kamees > kame), costing 1.38 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (variant of kameez shirt, not kame) and confirmed on adversarial re-review (shirt variant, not glacial kame)."
+  },
+  "kameeses": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `kame` (kameeses > kamees > kame), costing 1.38 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of kamees shirt, not kame) and confirmed on adversarial re-review (plural of kamees shirt, not kame)."
+  },
   "kanates": {
     "since": "2026-09-27",
     "reason": "Folded onto `kanat`, costing 0.15 points. Flagged in the 2026-09-22 semantic audit (kanate/khanate, not qanat) and confirmed on adversarial re-review (khanate versus qanat)."
@@ -5757,6 +5868,14 @@
   "laminites": {
     "since": "2026-09-27",
     "reason": "Folded onto `laminitis`, costing 1.25 points. Flagged in the 2026-09-22 semantic audit (laminite differs from laminitis) and confirmed on adversarial re-review (laminite differs from laminitis)."
+  },
+  "lamper": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `lamp` (lamper > lamp), costing 3.89 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (dialect for lamprey, not lamp) and confirmed on adversarial re-review (dialect lamprey, not lamp)."
+  },
+  "lampers": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `lamp` (lampers > lamper > lamp), costing 3.86 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (horse mouth disease (lampas), not lamp) and confirmed on adversarial re-review (horse mouth disease, not lamp)."
   },
   "lapsability": {
     "since": "2026-09-27",
@@ -7158,6 +7277,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `pap`, costing 2.28 points. Flagged in the 2026-09-22 semantic audit (plural of pape, uncertain overshoot) and confirmed on adversarial re-review (pape is not pap)."
   },
+  "paramed": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `param` (paramed > param), costing 1.72 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (clipped paramedic, not tense of param) and confirmed on adversarial re-review (clipped paramedic, not param)."
+  },
+  "parameds": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `param` (parameds > paramed > param), costing 1.71 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of paramed (paramedic), not param) and confirmed on adversarial re-review (plural of paramed, not param)."
+  },
   "pareses": {
     "since": "2026-09-27",
     "reason": "Folded onto `paris`, costing 4.28 points. Flagged in the 2026-09-22 semantic audit (pareses from paresis, not Paris) and confirmed on adversarial re-review (paresis plural, unrelated to Paris)."
@@ -7585,6 +7712,10 @@
   "potes": {
     "since": "2026-09-27",
     "reason": "Folded onto `pot`, costing 4.06 points. Flagged in the 2026-09-22 semantic audit (plural of pote/poet unclear) and confirmed on adversarial re-review (pote plural, overshot onto pot)."
+  },
+  "prames": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `pram` (prames > pram), costing 2.16 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of prame; overshot to pram) and confirmed on adversarial re-review (flat barge; everyday pram is carriage)."
   },
   "prates": {
     "since": "2026-09-27",
@@ -8685,6 +8816,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `samiti`, costing 1.63 points. Flagged in the 2026-09-22 semantic audit (samite fabric vs samiti assembly) and confirmed on adversarial re-review (samite fabric versus samiti assembly)."
   },
+  "samplesize": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `sample` (samplesize > samples > sample), costing 4.62 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (compound \"sample size\", not form of sample) and confirmed on adversarial re-review (closed compound, not inflection of sample)."
+  },
+  "samplesizes": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `sample` (samplesizes > samplesize > samples > sample), costing 4.61 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (compound \"sample size\", not form of sample) and confirmed on adversarial re-review (closed compound, not inflection of sample)."
+  },
   "saple": {
     "since": "2026-09-27",
     "reason": "Folded onto `sapling`, costing 1.27 points. Flagged in the 2026-09-22 semantic audit (saple not a sapling form) and confirmed on adversarial re-review (saple not a sapling form)."
@@ -9565,6 +9704,10 @@
   "talliable": {
     "since": "2026-09-27",
     "reason": "Folded onto `tallie`, costing 0.55 points. Flagged in the 2026-09-22 semantic audit (base misspelled; should be tally) and confirmed on adversarial re-review (tallie is not the base)."
+  },
+  "tamas": {
+    "since": "2026-10-22",
+    "reason": "Folded onto `tama` (tamas > tama), costing 0.82 points. Flagged by the daily fold check for the 2026-10-22 `AM` drop (Sanskrit guna, singular, not plural of tama) and confirmed on adversarial re-review (Sanskrit guna singular, not plural)."
   },
   "tanglier": {
     "since": "2026-09-27",
