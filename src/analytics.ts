@@ -23,6 +23,7 @@ import { todayDateString } from "./game/date";
 import { parseSourceCode, type ModeAssignment } from "./game/onboarding";
 import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game/idleHint";
 import { APP_VERSION } from "./version";
+import { isBotUserAgent } from "./game/botUa";
 import { uiVariant, type UiVariantAssignment } from "./game/uiVariant";
 
 /** The scalar property values both Vercel Analytics and /api/events accept. */
@@ -601,7 +602,27 @@ function visitId(outcome: VisitOutcome) {
  * visitors can be measured by count, by distinct days, and by origin.
  */
 export function trackVisit(outcome: VisitOutcome) {
-  send("site_visit", visitProperties(outcome), visitId(outcome));
+  send("site_visit", visitProperties(outcome), { ...visitId(outcome), ...botSignals() });
+}
+
+/**
+ * What the browser says about itself that tells an automated visit from a
+ * person, on `site_visit` only and to Supabase alone: `webdriver` is set by
+ * every driven browser that plays by the spec, `bot_ua` is the user agent naming
+ * itself a bot (the raw string is never sent), and `visibility` is whether the
+ * page was even on screen when it loaded. The /analytics page drops a player any
+ * of the first two flag (see analytics_overview).
+ */
+function botSignals(): EventProps {
+  try {
+    return {
+      webdriver: typeof navigator !== "undefined" && navigator.webdriver === true,
+      bot_ua: typeof navigator !== "undefined" && isBotUserAgent(navigator.userAgent),
+      visibility: typeof document !== "undefined" ? document.visibilityState : null,
+    };
+  } catch {
+    return {};
+  }
 }
 
 /** What first made a visit more than an open and a close. */

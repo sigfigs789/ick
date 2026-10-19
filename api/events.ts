@@ -18,6 +18,7 @@
 // Supabase directly.
 
 import { record, supabaseConfigured, type EdgeContext } from "./_supabase";
+import { isBotUserAgent } from "../src/game/botUa";
 
 export const config = { runtime: "edge" };
 
@@ -111,6 +112,11 @@ export default async function handler(request: Request, context?: EdgeContext): 
   // credentials is a setup problem, and an empty table is a miserable way to
   // discover it. The client ignores this either way.
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
+
+  // The request's own user agent, read here rather than trusted from the body:
+  // a visit's client signals can be absent (an old bundle) or faked, the header
+  // costs nothing to check, and only the verdict is stored, never the string.
+  if (name === "site_visit") cleaned.server_bot_ua = isBotUserAgent(request.headers.get("user-agent"));
 
   await record("analytics_events", { name, props: cleaned }, context);
   return reply(202);

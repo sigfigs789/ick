@@ -689,6 +689,29 @@ describe("supabase mirror", () => {
     expect(await payload(body)).toMatchObject({ name: "visit_engaged", props: { visit_id: visit.visitId } });
   });
 
+  it("mirrors a visit's bot signals to Supabase only, on site_visit alone", async () => {
+    vi.stubEnv("MODE", "production");
+    const beacon = stubBeacon();
+    localStorage.clear();
+    sessionStorage.clear();
+    const visit = recordVisit("")!;
+
+    trackVisit(visit);
+    trackVisitEngaged(visit);
+
+    for (const [, props] of track.mock.calls) {
+      expect(props).not.toHaveProperty("webdriver");
+      expect(props).not.toHaveProperty("bot_ua");
+    }
+    const [, siteVisit] = beacon.mock.calls[0] as unknown as [string, Blob];
+    expect(await payload(siteVisit)).toMatchObject({
+      name: "site_visit",
+      props: { webdriver: false, bot_ua: false, visibility: "visible" },
+    });
+    const [, engaged] = beacon.mock.calls[1] as unknown as [string, Blob];
+    expect((await payload(engaged)).props).not.toHaveProperty("webdriver");
+  });
+
   it("stamps every mirrored event with the player it came from", async () => {
     vi.stubEnv("MODE", "production");
     localStorage.setItem("ick:player", JSON.stringify({ id: "player-1" }));
