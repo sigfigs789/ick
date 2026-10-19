@@ -33,6 +33,7 @@ import type { RarityInfo } from "./game/types";
 import { recordVisit, type VisitOutcome } from "./game/visits";
 import { APP_VERSION } from "./version";
 import { setUiVariantForTest } from "./game/uiVariant";
+import { resetVisitorTagForTest, visitorTag } from "./game/visitor";
 
 const track = vi.hoisted(() => vi.fn());
 vi.mock("@vercel/analytics", () => ({ track }));
@@ -733,6 +734,20 @@ describe("supabase mirror", () => {
       puzzle_date: LIVE_DATE,
     });
     localStorage.clear();
+  });
+
+  it("tags every mirrored event from a known visitor, and only the mirror", async () => {
+    vi.stubEnv("MODE", "production");
+    const beacon = stubBeacon();
+    visitorTag("?visitor=mos-muse");
+
+    trackWordSuggestion("quixotic");
+
+    expect(track).toHaveBeenCalledWith("word_suggested", { word: "quixotic" });
+    const [, body] = beacon.mock.calls[0] as unknown as [string, Blob];
+    expect(await payload(body)).toMatchObject({ props: { visitor: "mos-muse" } });
+    localStorage.clear();
+    resetVisitorTagForTest();
   });
 
   it("mirrors nothing from a host with reporting off, even an event sent to it directly", () => {

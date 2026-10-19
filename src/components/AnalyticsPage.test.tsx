@@ -60,6 +60,22 @@ const REPORT = {
     { date: "2026-10-15", closed: false, groups: dayGroups(40) },
     { date: "2026-10-16", closed: false, groups: dayGroups(20) },
   ],
+  muse: {
+    visits: 5,
+    browsers: 1,
+    puzzles: 3,
+    avgScore: 35.789,
+    avgWords: 4,
+    avgRejected: 12.5,
+    chatDays: 1,
+    messages: 2,
+    firstSeen: "2026-10-14T03:51:53+00:00",
+    lastSeen: "2026-10-16T23:45:10+00:00",
+    days: [
+      { date: "2026-10-16", visits: 3, puzzles: 2, avgScore: 36.5, avgWords: 4, avgRejected: 10, chatOpened: true, messages: 2 },
+      { date: "2026-10-15", visits: 2, puzzles: 1, avgScore: 34.36, avgWords: 4, avgRejected: 17.5, chatOpened: false, messages: 0 },
+    ],
+  },
 };
 
 function stubFetch(report: unknown = REPORT) {
@@ -112,6 +128,9 @@ describe("AnalyticsPage", () => {
     expect(within(section("Key numbers")).getByRole("columnheader", { name: "Shared" })).toBeInTheDocument();
     // The play-screen test pairs every grouping's rows by variant.
     expect(within(section("Play screen test")).getAllByRole("row", { name: /^Everyone/ })).toHaveLength(1);
+    // Named v1 and v2, never "new", which reads as new players.
+    expect(within(section("Play screen test")).getAllByRole("cell", { name: "v1" })).toHaveLength(3);
+    expect(within(section("Play screen test")).getAllByRole("cell", { name: "v2" })).toHaveLength(3);
     const fresh = within(section("Key numbers")).getByRole("row", { name: /^New players/ });
     expect(fresh).toHaveTextContent("10 14%");
     expect(within(section("Key numbers")).getByRole("row", { name: /^Returning players/ })).toBeInTheDocument();
@@ -194,6 +213,32 @@ describe("AnalyticsPage", () => {
     expect(everyone).toHaveTextContent("20");
     expect(everyone).toHaveTextContent("8 40%");
     expect(within(idle).getByText(/since Oct 18/)).toBeInTheDocument();
+  });
+
+  it("tables Muse AI apart from the players, in all and by puzzle", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Muse AI" });
+
+    const muse = section("Muse AI");
+    expect(within(muse).getByText(/left out of every number above, last seen Oct 16/)).toBeInTheDocument();
+    const all = within(muse).getByRole("row", { name: /^All/ });
+    expect(all).toHaveTextContent("35.79");
+    expect(all).toHaveTextContent("12.50");
+    expect(all).toHaveTextContent("Opened on 1, 2 sent");
+    expect(within(muse).getByRole("row", { name: /^Fri Oct 16/ })).toHaveTextContent("Yes, 2 sent");
+    expect(within(muse).getByRole("row", { name: /^Thu Oct 15/ })).toHaveTextContent(/34\.36.*No$/);
+  });
+
+  it("says Muse AI has not played when the report has no sign of it", async () => {
+    stubFetch({ ...REPORT, muse: undefined });
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Muse AI" });
+
+    const muse = section("Muse AI");
+    expect(within(muse).getByText(/not seen yet/)).toBeInTheDocument();
+    expect(within(muse).getAllByRole("row")).toHaveLength(2);
+    expect(within(muse).getByRole("row", { name: /^All/ })).toHaveTextContent("–");
   });
 
   it("says when the report could not load", async () => {

@@ -381,6 +381,33 @@ export interface AnalyticsReport {
    */
   botsFiltered: number;
   daily: Array<{ date: string; closed: boolean; groups: Record<Group, DayMetrics> }>;
+  /** Muse AI, which every number above leaves out (see game/visitor.ts). */
+  muse: MuseReport;
+}
+
+/** How Muse AI played in the window, by puzzle. Averages are null with no puzzles. */
+export interface MuseNumbers {
+  /** Times it opened the game. */
+  visits: number;
+  /** Puzzles it banked at least one word in. */
+  puzzles: number;
+  avgScore: number | null;
+  avgWords: number | null;
+  /** Tries turned away, per puzzle played. */
+  avgRejected: number | null;
+  /** Messages it wrote in the chat. */
+  messages: number;
+}
+
+export interface MuseReport extends MuseNumbers {
+  /** Distinct browsers it played from. */
+  browsers: number;
+  /** Puzzles it opened the chat on. */
+  chatDays: number;
+  firstSeen: string | null;
+  lastSeen: string | null;
+  /** Newest puzzle first. */
+  days: Array<MuseNumbers & { date: string; chatOpened: boolean }>;
 }
 
 export const IDLE_HINT_VARIANTS = ["control", "treatment"] as const;
@@ -402,6 +429,38 @@ function count(raw: unknown): number {
 
 function text(raw: unknown): string | null {
   return typeof raw === "string" ? raw : null;
+}
+
+function average(raw: unknown): number | null {
+  // Postgres numerics arrive as numbers; a string is read too, in case one
+  // ever comes back quoted.
+  const n = typeof raw === "string" ? Number(raw) : raw;
+  return typeof n === "number" && Number.isFinite(n) ? n : null;
+}
+
+function museNumbers(m: Json): MuseNumbers {
+  return {
+    visits: count(m.visits),
+    puzzles: count(m.puzzles),
+    avgScore: average(m.avgScore),
+    avgWords: average(m.avgWords),
+    avgRejected: average(m.avgRejected),
+    messages: count(m.messages),
+  };
+}
+
+function muse(raw: unknown): MuseReport {
+  const m = obj(raw);
+  return {
+    ...museNumbers(m),
+    browsers: count(m.browsers),
+    chatDays: count(m.chatDays),
+    firstSeen: text(m.firstSeen),
+    lastSeen: text(m.lastSeen),
+    days: list(m.days)
+      .filter((d) => text(d.date))
+      .map((d) => ({ ...museNumbers(d), date: d.date as string, chatOpened: d.chatOpened === true })),
+  };
 }
 
 function returns(raw: unknown): Returns {
@@ -471,5 +530,6 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
           };
         }),
       })),
+    muse: muse(r.muse),
   };
 }

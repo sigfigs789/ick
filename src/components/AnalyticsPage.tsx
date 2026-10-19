@@ -8,6 +8,7 @@ import {
   type AnalyticsReport,
   type Group,
   type KeyMetrics,
+  type MuseReport,
 } from "../game/review";
 import {
   DAYS_AGO,
@@ -35,6 +36,9 @@ import { IDLE_HINT_DELAY_MS } from "../game/idleHint";
  * shown, and by the idle hint test's arm. Every number is built in one place,
  * `analytics_overview` (see the 2026-10-18 and 2026-10-21 migrations), and
  * this page only draws them.
+ *
+ * Muse AI, an agent the maintainer sends to play (see game/visitor.ts), is
+ * left out of all of it and has a section of its own at the end.
  *
  * Unlinked, but open without a key (see api/review.ts). Nothing on it
  * identifies anybody -- the smallest group any number is taken over is a day's
@@ -237,15 +241,15 @@ function Report({
 
       <Section
         title="Play screen test"
-        note={`${span}. Current play screen vs the new one, each browser assigned 50/50${
+        note={`${span}. Play screen v1 (the one before the test) vs v2, each browser assigned 50/50${
           report.uiSince ? `, since ${shortDate(report.uiSince)}` : ""
-        }.`}
+        }. Each player counts from the day they were assigned.`}
       >
         <MetricsTable
           split="Play screen"
           rows={GROUPS.flatMap((g) => [
-            { key: `${g}-control`, label: GROUP_NAMES[g], side: "Current", metrics: report.ui[g].control },
-            { key: `${g}-v2`, label: GROUP_NAMES[g], side: "New", metrics: report.ui[g].v2 },
+            { key: `${g}-control`, label: GROUP_NAMES[g], side: "v1", metrics: report.ui[g].control },
+            { key: `${g}-v2`, label: GROUP_NAMES[g], side: "v2", metrics: report.ui[g].v2 },
           ])}
         />
       </Section>
@@ -281,7 +285,85 @@ function Report({
           )}
         />
       </Section>
+
+      <MuseSection muse={report.muse} span={span} />
     </div>
+  );
+}
+
+/** An average to two places, or a dash when there was nothing to average. */
+function avg(n: number | null): string {
+  return n === null ? "–" : n.toFixed(2);
+}
+
+function chatCell(opened: boolean, messages: number): string {
+  if (!opened && messages === 0) return "No";
+  return messages > 0 ? `Yes, ${fmt(messages)} sent` : "Opened";
+}
+
+/**
+ * Muse AI, the agent sent to play the game with `?visitor=mos-muse`: kept out
+ * of every number above and shown here on its own, by puzzle.
+ */
+function MuseSection({ muse, span }: { muse: MuseReport; span: string }) {
+  const seen = muse.lastSeen ? `, last seen ${shortDate(muse.lastSeen.slice(0, 10))}` : ", not seen yet";
+  return (
+    <Section
+      title="Muse AI"
+      note={`${span}. The agent that plays with ?visitor=mos-muse, left out of every number above${seen}.`}
+    >
+      <ul className="review__meta analytics__bullets">
+        <li><strong>Puzzles</strong>: puzzles it banked at least one word in</li>
+        <li><strong>Avg score</strong>: the puzzle's total score, averaged over its puzzles</li>
+        <li><strong>Words</strong>: words banked per puzzle; <strong>Rejected</strong>: tries turned away per puzzle</li>
+        <li><strong>Chat</strong>: opened the chat, and how many messages it wrote</li>
+      </ul>
+      <div className="analytics__table-wrap">
+        <table className="analytics__table">
+          <thead>
+            <tr>
+              <th scope="col">Puzzle</th>
+              <th scope="col">Visits</th>
+              <th scope="col">Puzzles</th>
+              <th scope="col">Avg score</th>
+              <th scope="col">Words</th>
+              <th scope="col">Rejected</th>
+              <th scope="col">Chat</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">
+                All{muse.browsers > 1 && <span className="analytics__n"> {fmt(muse.browsers)} browsers</span>}
+              </th>
+              <td>{fmt(muse.visits)}</td>
+              <td>{fmt(muse.puzzles)}</td>
+              <td>{avg(muse.avgScore)}</td>
+              <td>{avg(muse.avgWords)}</td>
+              <td>{avg(muse.avgRejected)}</td>
+              <td>
+                {muse.chatDays > 0 || muse.messages > 0
+                  ? `Opened on ${fmt(muse.chatDays)}, ${fmt(muse.messages)} sent`
+                  : "No"}
+              </td>
+            </tr>
+            {muse.days.map((d) => (
+              <tr key={d.date} className="analytics__row--pair">
+                <th scope="row">
+                  {SHORT_WEEKDAYS[dowOf(d.date)]} {shortDate(d.date)}
+                </th>
+                <td>{fmt(d.visits)}</td>
+                <td>{fmt(d.puzzles)}</td>
+                <td>{avg(d.avgScore)}</td>
+                <td>{avg(d.avgWords)}</td>
+                <td>{avg(d.avgRejected)}</td>
+                <td>{chatCell(d.chatOpened, d.messages)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Section>
   );
 }
 

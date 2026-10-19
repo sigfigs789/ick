@@ -25,6 +25,7 @@ import { IDLE_HINT_DELAY_MS, currentIdleHintArm, type IdleHintArm } from "./game
 import { APP_VERSION } from "./version";
 import { isBotUserAgent } from "./game/botUa";
 import { uiVariant, type UiVariantAssignment } from "./game/uiVariant";
+import { visitorTag } from "./game/visitor";
 
 /** The scalar property values both Vercel Analytics and /api/events accept. */
 type EventProps = Record<string, string | number | boolean | null>;
@@ -59,9 +60,17 @@ function mirror(name: string, props?: EventProps): void {
   try {
     // The play-screen variant rides on every row for the same reason the id
     // does: the experiment is read per player, across every event they send.
+    // So is a known visitor's tag (see game/visitor.ts), and only when there is
+    // one: the report sets those browsers apart from the players.
+    const visitor = visitorTag();
     const body = JSON.stringify({
       name,
-      props: { ...props, player_id: loadPlayerId(), ui_variant: uiVariant() },
+      props: {
+        ...props,
+        player_id: loadPlayerId(),
+        ui_variant: uiVariant(),
+        ...(visitor ? { visitor } : {}),
+      },
     });
     if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
       navigator.sendBeacon("/api/events", new Blob([body], { type: "application/json" }));
