@@ -242,9 +242,9 @@ function Report({
 
       <Section
         title="Play screen test"
-        note={`${span}. Play screen v1 (the one before the test) vs v2, each browser assigned 50/50${
+        note={`${span}. Play screen v1 (the one before the test) vs v2, new and returning players each split 50/50 on their own${
           report.uiSince ? `, since ${shortDate(report.uiSince)}` : ""
-        }. Each player counts from the day they were assigned.`}
+        }. New is a first-ever session, counted on that day; returning any later one, counted from the day it was split.`}
       >
         <MetricsTable
           split="Play screen"

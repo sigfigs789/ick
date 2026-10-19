@@ -553,14 +553,17 @@ export function trackModeAssigned(assignment: ModeAssignment) {
 }
 
 /**
- * The play-screen variant a browser was put in (see game/uiVariant.ts). Sent once
- * per browser, ever, after the board id exists -- the row the report's UI test
- * section groups players by.
+ * The play-screen variant a browser was put in for one experiment, new or
+ * returning (see game/uiVariant.ts). Sent once per browser per experiment,
+ * ever, after the board id exists -- the row the report's UI test section
+ * groups players by. `visit_type` is kept alongside for reports that predate
+ * the experiment.
  */
 export function trackUiVariantAssigned(assignment: UiVariantAssignment) {
   send("ui_variant_assigned", {
     variant: assignment.variant,
-    visit_type: assignment.visitType,
+    experiment: assignment.experiment,
+    visit_type: assignment.experiment === "new" ? "first" : "returning",
     puzzle_date: todayDateString(),
   });
 }
