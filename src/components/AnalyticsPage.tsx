@@ -242,7 +242,7 @@ function Report({
 
       <Section
         title="Play screen test"
-        note={`${span}. Play screen v1 (the one before the test) vs v2, each browser assigned 50/50${
+        note={`${span}. Play screen v1 (the one before the test) vs v2, each browser assigned 50/50 at first and 30/70 since Oct 19${
           report.uiSince ? `, since ${shortDate(report.uiSince)}` : ""
         }. Each player counts from the day they were assigned.`}
       >

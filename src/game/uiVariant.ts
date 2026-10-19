@@ -3,9 +3,11 @@ import { playedPuzzleCount } from "./storage";
 import { isTester } from "./testers";
 
 /**
- * The play-screen experiment: half of all browsers, new and returning alike,
- * get the reworked play screen ("v2") and the other half keep the current one
- * ("control"), so the two can be compared on the analytics page's key numbers.
+ * The play-screen experiment: browsers not yet assigned, new and returning
+ * alike, get the reworked play screen ("v2") 70% of the time and keep the
+ * current one ("control") the other 30%, so the two can be compared on the
+ * analytics page's key numbers. The split was 50/50 until 2026-10-19; browsers
+ * assigned before then keep what they got.
  *
  * Assigned once per browser and remembered, so a player never flips between
  * layouts. Every event mirrored to Supabase carries the variant (see
@@ -25,6 +27,9 @@ export interface UiVariantAssignment {
 }
 
 const KEY = "ick:ui-variant";
+
+/** The share of newly assigned browsers put on v2. */
+export const V2_SHARE = 0.7;
 
 let current: UiVariant = "control";
 let fresh: UiVariantAssignment | null = null;
@@ -62,7 +67,7 @@ export function assignUiVariant(search: string, random: () => number = Math.rand
       return current;
     }
     const returning = hasVisited() || playedPuzzleCount() > 0;
-    const variant: UiVariant = random() < 0.5 ? "control" : "v2";
+    const variant: UiVariant = random() < V2_SHARE ? "v2" : "control";
     localStorage.setItem(KEY, variant);
     current = variant;
     fresh = { variant, visitType: returning ? "returning" : "first" };
