@@ -195,7 +195,7 @@ function Report({
           <li><strong>Did something</strong>: any tap, look or guess</li>
           <li><strong>Guessed</strong>: banked a word</li>
           <li><strong>Shared</strong>: copied their result with Share (the second line is the share of guessers, the only players who can)</li>
-          <li><strong>Back within 7 days</strong>: played again in the next 7 days (recent days still counting up)</li>
+          <li><strong>Back within 7 days</strong>: played again in the next 7 days (recent days still counting up; the second line is the share of guessers)</li>
           <li><strong>New</strong>: first visit in this window</li>
         </ul>
         <MetricsTable
@@ -423,12 +423,10 @@ function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: string }) {
                 </td>
                 <td>
                   <Count n={m.returned.soFar} of={m.players} />
-                  {m.returned.guessers.cohort > 0 && (
+                  {m.guessed > 0 && (
                     <>
                       <br />
-                      <span className="analytics__n">
-                        {pct(m.returned.guessers.returned / m.returned.guessers.cohort)} of guessers
-                      </span>
+                      <span className="analytics__n">{pct(m.returned.guessers.soFar / m.guessed)} of guessers</span>
                     </>
                   )}
                 </td>

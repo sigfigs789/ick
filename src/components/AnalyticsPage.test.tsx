@@ -17,7 +17,8 @@ const metrics = (players: number, acted: number, guessed: number, soFar: number,
   guessed,
   // Two in five guessers share, so the column has its own number to show.
   shared: Math.round(guessed * 0.4),
-  returned: { cohort, returned, soFar },
+  // A bit under half the guessers are back so far, a number apart from Shared's.
+  returned: { cohort, returned, soFar, guessers: { cohort: 0, returned: 0, soFar: Math.round(guessed * 0.48) } },
 });
 
 const groups = {
@@ -125,6 +126,8 @@ describe("AnalyticsPage", () => {
     // Sharers, of the players and -- the only ones who can -- of the guessers.
     expect(everyone).toHaveTextContent("20 20%");
     expect(everyone).toHaveTextContent("40% of guessers");
+    // Guessers back so far, of the guessers, shown before any seven days close.
+    expect(everyone).toHaveTextContent("48% of guessers");
     expect(within(section("Key numbers")).getByRole("columnheader", { name: "Shared" })).toBeInTheDocument();
     // The play-screen test pairs every grouping's rows by variant.
     expect(within(section("Play screen test")).getAllByRole("row", { name: /^Everyone/ })).toHaveLength(1);
