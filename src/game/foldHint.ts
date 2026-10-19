@@ -4,13 +4,11 @@ import { playedPuzzleCount } from "./storage";
 
 /**
  * Who sees FoldHint, the notice over the input that a word will score as its
- * common form. Kept out of the component so the "de-" notice can ask too.
+ * common form.
  */
 
 /** Remembered once the player has closed the notice or opened its More info. */
 const SEEN_KEY = "ick:fold-hint";
-/** Also put away: More info is the same explainer the "de-" notice opens. */
-const DE_PREFIX_SEEN_KEY = "ick:de-prefix-hint";
 
 /**
  * How many puzzles a player is new for. Counted at the start of a puzzle, so
@@ -29,7 +27,6 @@ function seen(): boolean {
 export function markFoldHintSeen(): void {
   try {
     localStorage.setItem(SEEN_KEY, "1");
-    localStorage.setItem(DE_PREFIX_SEEN_KEY, "1");
   } catch {
     // Private mode: the notice comes back next visit, which is harmless.
   }
@@ -37,8 +34,7 @@ export function markFoldHintSeen(): void {
 
 /**
  * Whether this player would still be shown the notice: new, and has not put it
- * away. The "de-" notice stands down for them, because "will now rescore" is
- * news only to a player who saw it score the old way.
+ * away.
  */
 export function foldHintEligible(): boolean {
   return !seen() && playedPuzzleCount() < NEW_PLAYER_PUZZLES;
@@ -58,12 +54,20 @@ const MIN_STEM = 2;
 const MIN_SUFFIX = 4;
 
 /**
+ * Affixes the notice never names, though they still fold. "de-" opens far
+ * more words than it builds ("deserve", "detail", "decide"), so a notice on
+ * every one of them warned about a fold that was not coming.
+ */
+const UNANNOUNCED = new Set(["de-"]);
+
+/**
  * The affix in `value` the fold reads through on `date`'s puzzle in `mode`,
- * written the way the Common forms sheet lists it ("de-", "-ness"). A prefix
- * counts the moment it is typed, so "de" is caught before "deser..." gets any
- * further; a suffix once there is a stem in front of it. The longest of each
- * wins ("-iest" over "-est"). An opening wins over an ending, so the notice
- * "de" put up stays put through "deser", which ends in "-er" only by the way.
+ * written the way the Common forms sheet lists it ("over-", "-ness"). A prefix
+ * counts the moment it is typed, so "over" is caught before "overpl..." gets
+ * any further; a suffix once there is a stem in front of it. The longest of
+ * each wins ("-iest" over "-est"). An opening wins over an ending, so the
+ * notice "over" put up stays put through "overkindness", which ends in "-ness"
+ * only by the way.
  *
  * Read off `foldAffixGroups`, the same date-scoped list the sheet shows, so
  * the notice never names an affix the sheet it opens leaves out. Empty in
@@ -72,7 +76,9 @@ const MIN_SUFFIX = 4;
 export function typedFoldAffix(value: string, date?: string, mode?: GameMode): string | undefined {
   const text = value.trim().toLowerCase();
   if (!text) return undefined;
-  const affixes = foldAffixGroups(date, mode).flatMap((group) => group.affixes);
+  const affixes = foldAffixGroups(date, mode)
+    .flatMap((group) => group.affixes)
+    .filter((affix) => !UNANNOUNCED.has(affix));
   const longest = (matches: string[]) =>
     matches.sort((a, b) => b.length - a.length)[0] as string | undefined;
 
