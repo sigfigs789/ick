@@ -1,45 +1,90 @@
-import { hasVisited } from "./visits";
-import { playedPuzzleCount } from "./storage";
+import { isReturningSession } from "./visits";
 import { isTester } from "./testers";
 
 /**
- * The play-screen experiment: browsers not yet assigned, new and returning
- * alike, get the reworked play screen ("v2") 70% of the time and keep the
- * current one ("control") the other 30%, so the two can be compared on the
- * analytics page's key numbers. The split was 50/50 until 2026-10-19; browsers
- * assigned before then keep what they got.
+ * The play-screen experiment: the reworked play screen ("v2") against the
+ * current one ("control"), compared on the analytics page's key numbers.
  *
- * Assigned once per browser and remembered, so a player never flips between
- * layouts. Every event mirrored to Supabase carries the variant (see
- * analytics.ts `mirror`), and the assignment itself is reported once, as
- * `ui_variant_assigned`, which is the row the report groups players by.
+ * Two experiments, each drawn on its own coin, the same way as the idle hint
+ * (see game/idleHint.ts):
+ *   - `new`: a first-ever session. 70% get v2 and 30% control, to send most
+ *     new players to the v2 flow (50/50 until 2026-10-19).
+ *   - `returning`: any later session, split 50/50.
+ *
+ * A player is placed in each experiment the first time they open the game as
+ * that kind of player, and keeps the arm for good. The two draws are
+ * independent, so a new player's arm says nothing about the one they get once
+ * they come back -- each experiment stays a clean split of its own players,
+ * at the cost of some new players seeing the other screen on their first
+ * return. Within a session the screen never changes: a session's kind is
+ * settled by its first page load (see game/visits.ts `isReturningSession`).
+ *
+ * Every event mirrored to Supabase carries the session's variant (see
+ * analytics.ts `mirror`), and each draw is reported once, as
+ * `ui_variant_assigned` with its experiment, which is the row the report
+ * groups players by.
  *
  * Only the web entry assigns (main.tsx). Anywhere else -- the Reddit post,
  * tests -- stays on "control" unless something sets it explicitly.
  */
 
 export type UiVariant = "control" | "v2";
+export type UiExperiment = "new" | "returning";
 
 export interface UiVariantAssignment {
+  experiment: UiExperiment;
   variant: UiVariant;
-  /** Whether this browser had played or visited before it was assigned. */
-  visitType: "first" | "returning";
 }
 
-const KEY = "ick:ui-variant";
+const ARMS_KEY = "ick:ui-arms";
+const FORCED_KEY = "ick:ui-forced";
+/**
+ * The single, everyone-alike draw from before the split by experiment. Taken
+ * over as the arm of the first experiment that needs one, so nobody already in
+ * the test changes screens when this ships; it was a fair coin, so it keeps
+ * that experiment 50/50. Anyone holding one has visited before, so it is the
+ * returning experiment that takes it over, and that one is still 50/50.
+ */
+const LEGACY_KEY = "ick:ui-variant";
 
-/** The share of newly assigned browsers put on v2. */
-export const V2_SHARE = 0.7;
+type Arms = Partial<Record<UiExperiment, UiVariant>>;
+
+/** The share of each experiment's fresh draws put on v2. */
+export const V2_SHARE: Record<UiExperiment, number> = { new: 0.7, returning: 0.5 };
 
 let current: UiVariant = "control";
 let fresh: UiVariantAssignment | null = null;
 
-function parse(raw: string | null): UiVariant | null {
+function parse(raw: unknown): UiVariant | null {
   return raw === "control" || raw === "v2" ? raw : null;
 }
 
+function loadArms(): Arms {
+  const raw = localStorage.getItem(ARMS_KEY);
+  if (!raw) return {};
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return {};
+  }
+  if (!parsed || typeof parsed !== "object") return {};
+  const stored = parsed as Record<string, unknown>;
+  const out: Arms = {};
+  const first = parse(stored.new);
+  const returning = parse(stored.returning);
+  if (first) out.new = first;
+  if (returning) out.returning = returning;
+  return out;
+}
+
+/** Which experiment this session belongs to. */
+export function uiExperiment(): UiExperiment {
+  return isReturningSession() ? "returning" : "new";
+}
+
 /**
- * Settle this browser's variant before the first render.
+ * Settle this session's variant before the first render.
  *
  * `?ui=v2` or `?ui=control` forces one and remembers it, for checking either
  * layout by hand; a forced variant is not reported as an assignment, so it
@@ -53,7 +98,7 @@ export function assignUiVariant(search: string, random: () => number = Math.rand
   const forced = parse(new URLSearchParams(search).get("ui"));
   try {
     if (forced) {
-      localStorage.setItem(KEY, forced);
+      localStorage.setItem(FORCED_KEY, forced);
       current = forced;
       return current;
     }
@@ -61,23 +106,31 @@ export function assignUiVariant(search: string, random: () => number = Math.rand
       current = "v2";
       return current;
     }
-    const stored = parse(localStorage.getItem(KEY));
-    if (stored) {
-      current = stored;
+    const remembered = parse(localStorage.getItem(FORCED_KEY));
+    if (remembered) {
+      current = remembered;
       return current;
     }
-    const returning = hasVisited() || playedPuzzleCount() > 0;
-    const variant: UiVariant = random() < V2_SHARE ? "v2" : "control";
-    localStorage.setItem(KEY, variant);
+    const experiment = uiExperiment();
+    const arms = loadArms();
+    const existing = arms[experiment];
+    if (existing) {
+      current = existing;
+      return current;
+    }
+    const legacy = parse(localStorage.getItem(LEGACY_KEY));
+    const variant: UiVariant = legacy ?? (random() < V2_SHARE[experiment] ? "v2" : "control");
+    localStorage.setItem(ARMS_KEY, JSON.stringify({ ...arms, [experiment]: variant }));
+    localStorage.removeItem(LEGACY_KEY);
     current = variant;
-    fresh = { variant, visitType: returning ? "returning" : "first" };
+    fresh = { experiment, variant };
   } catch {
     current = "control";
   }
   return current;
 }
 
-/** This browser's variant. */
+/** This session's variant. */
 export function uiVariant(): UiVariant {
   return current;
 }

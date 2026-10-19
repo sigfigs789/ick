@@ -5396,8 +5396,8 @@ h2 {
 }
 
 /* ------------------------------------------------------------------------
-   The new play screen (see src/game/uiVariant.ts). Half of all browsers get
-   it, by `data-ui="v2"` on the root element, so every rule here is scoped to
+   The new play screen (see src/game/uiVariant.ts). Half of new and half of
+   returning players get it, by `data-ui="v2"` on the root element, so every rule here is scoped to
    that and the current screen is left exactly as it was.
    ------------------------------------------------------------------------ */
 

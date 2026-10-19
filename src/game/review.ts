@@ -365,7 +365,10 @@ export interface AnalyticsReport {
   /** Each grouping, split by whether the player opened the chat in the window. */
   chat: Record<Group, { opened: KeyMetrics; notOpened: KeyMetrics }>;
   chatSince: string | null;
-  /** Each grouping, split by play-screen variant (see game/uiVariant.ts). */
+  /**
+   * The play-screen test's two experiments, new and returning, each split by
+   * the variant it drew (see game/uiVariant.ts); `all` is each player once.
+   */
   ui: Record<Group, { control: KeyMetrics; v2: KeyMetrics }>;
   /** The first day a browser was put in the experiment, or null before it ran. */
   uiSince: string | null;
