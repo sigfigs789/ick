@@ -41,6 +41,8 @@ import {
   BOARD_LIMIT,
   MAX_LIMIT,
   WORDS_LIMIT,
+  boardMode,
+  type BoardMode,
   type BoardRow,
   type FoundRow,
   type ScoreSubmission,
@@ -61,12 +63,26 @@ interface DayRow {
   at: number;
 }
 
-const boardKey = (window: Window, start: string) => `board:${window}:${start}`;
+/**
+ * The key prefix for one mode's boards.
+ *
+ * Standard keeps the keys it had before there were modes, so nothing written
+ * then has to move; Freeform's are the same keys under `f:`. The finds feed is
+ * not split -- a word found is a word found, under either rules, exactly as on
+ * the website.
+ */
+const scope = (mode: BoardMode) => (mode === 'freeform' ? 'f:' : '');
+
+const boardKey = (window: Window, start: string, mode: BoardMode) =>
+  `${scope(mode)}board:${window}:${start}`;
 /** The rarest word each player found inside one window: field = username. */
-const bestKey = (window: Window, start: string) => `best:${window}:${start}`;
+const bestKey = (window: Window, start: string, mode: BoardMode) =>
+  `${scope(mode)}best:${window}:${start}`;
 /** How many puzzles each player scored on inside one window: field = username. */
-const puzzlesKey = (window: Window, start: string) => `puzzles:${window}:${start}`;
-const dayKey = (date: string, user: string) => `day:${date}:${user}`;
+const puzzlesKey = (window: Window, start: string, mode: BoardMode) =>
+  `${scope(mode)}puzzles:${window}:${start}`;
+const dayKey = (date: string, user: string, mode: BoardMode) =>
+  `${scope(mode)}day:${date}:${user}`;
 /** When a player first scored anything, which is the boards' last tie-break. */
 const JOINED_KEY = 'joined';
 /** One puzzle's distinct words, scored by when each was last seen. */
@@ -93,6 +109,8 @@ export async function submitScores(
   // twice, and the second write would otherwise be resolved against a row the
   // first has already moved. Ranked rather than merged per field, so the day's
   // word and its numbers always come from the same entry.
+  // Keyed by mode as well: a day played under both rules is two rows on two
+  // boards, not one row the second write gets to overwrite.
   const byDate = new Map<string, ScoreSubmission>();
   for (const score of scores) {
     // An unranked day -- Freeform by choice, or played after its own date --
@@ -101,9 +119,10 @@ export async function submitScores(
       await recordFinds(user, score);
       continue;
     }
-    const held = byDate.get(score.date);
+    const key = `${boardMode(score.mode)}:${score.date}`;
+    const held = byDate.get(key);
     if (!held || score.total > held.total || (score.total === held.total && score.zipf < held.zipf)) {
-      byDate.set(score.date, score);
+      byDate.set(key, score);
     }
   }
 
@@ -117,7 +136,8 @@ export async function submitScores(
 
 /** One day's write, and the four aggregates it has to carry with it. */
 async function writeDay(user: string, score: ScoreSubmission): Promise<boolean> {
-  const previous = await readDay(score.date, user);
+  const mode = boardMode(score.mode);
+  const previous = await readDay(score.date, user, mode);
 
   // Monotonic, except across a retry. A day's score only ever goes up, so a
   // late-arriving early submission cannot undo a better one and a re-sent
@@ -143,7 +163,7 @@ async function writeDay(user: string, score: ScoreSubmission): Promise<boolean> 
     words: score.retried ? score.words : Math.max(previous?.words ?? 0, score.words),
     at: previous?.at ?? Date.now(),
   };
-  await redis.hSet(dayKey(score.date, user), {
+  await redis.hSet(dayKey(score.date, user, mode), {
     word: row.word,
     zipf: String(row.zipf),
     total: String(row.total),
@@ -157,23 +177,23 @@ async function writeDay(user: string, score: ScoreSubmission): Promise<boolean> 
   const delta = total - (previous?.total ?? 0);
   const week = weekStartOf(score.date);
   const month = monthStartOf(score.date);
-  await redis.zAdd(boardKey('d', score.date), { member: user, score: total });
+  await redis.zAdd(boardKey('d', score.date, mode), { member: user, score: total });
   if (delta !== 0) {
-    await redis.zIncrBy(boardKey('w', week), user, delta);
-    await redis.zIncrBy(boardKey('m', month), user, delta);
+    await redis.zIncrBy(boardKey('w', week, mode), user, delta);
+    await redis.zIncrBy(boardKey('m', month, mode), user, delta);
   }
 
   // A day the player had not scored before is a new puzzle in both windows.
   if (!previous) {
-    await redis.hSet(puzzlesKey('d', score.date), { [user]: '1' });
-    await redis.hIncrBy(puzzlesKey('w', week), user, 1);
-    await redis.hIncrBy(puzzlesKey('m', month), user, 1);
+    await redis.hSet(puzzlesKey('d', score.date, mode), { [user]: '1' });
+    await redis.hIncrBy(puzzlesKey('w', week, mode), user, 1);
+    await redis.hIncrBy(puzzlesKey('m', month, mode), user, 1);
   }
 
   await Promise.all([
-    rememberBest('d', score.date, user, score),
-    rememberBest('w', week, user, score),
-    rememberBest('m', month, user, score),
+    rememberBest('d', score.date, user, score, mode),
+    rememberBest('w', week, user, score, mode),
+    rememberBest('m', month, user, score, mode),
   ]);
   await recordFinds(user, score);
   return true;
@@ -193,9 +213,10 @@ async function rememberBest(
   window: Window,
   start: string,
   user: string,
-  score: ScoreSubmission
+  score: ScoreSubmission,
+  mode: BoardMode
 ): Promise<void> {
-  const key = bestKey(window, start);
+  const key = bestKey(window, start, mode);
   const held = await redis.hGet(key, user);
   if (held) {
     const [, zipf] = splitBest(held);
@@ -243,13 +264,14 @@ async function recordFinds(user: string, score: ScoreSubmission): Promise<void> 
 export async function readBoard(
   window: Window,
   start: string,
-  limit: number = BOARD_LIMIT
+  limit: number = BOARD_LIMIT,
+  mode: BoardMode = 'standard'
 ): Promise<BoardRow[]> {
   const bounded = Math.min(Math.max(limit, 1), MAX_LIMIT);
   // Over-read so a tie straddling the cut is broken on the same footing as one
   // inside it: without this, the fifteenth and sixteenth rows on equal totals
   // would be separated by Redis's member ordering rather than by their words.
-  const raw = await redis.zRange(boardKey(window, start), 0, bounded * 2 - 1, {
+  const raw = await redis.zRange(boardKey(window, start, mode), 0, bounded * 2 - 1, {
     reverse: true,
     by: 'rank',
   });
@@ -262,8 +284,8 @@ export async function readBoard(
     users.length === 0
       ? [[], [], []]
       : await Promise.all([
-          redis.hMGet(bestKey(window, start), users),
-          redis.hMGet(puzzlesKey(window, start), users),
+          redis.hMGet(bestKey(window, start, mode), users),
+          redis.hMGet(puzzlesKey(window, start, mode), users),
           redis.hMGet(JOINED_KEY, users),
         ]);
 
@@ -288,7 +310,7 @@ export async function readBoard(
   // They carry no arrival time -- the import publishes an aggregate, not a
   // history -- so the last tie-break falls through to the id, which is stable.
   // Only a tie on total *and* on rarest word ever reaches it.
-  const theirs = (await importedBoard(window, start)).map((row) => ({
+  const theirs = (await importedBoard(window, start, mode)).map((row) => ({
     user: row.playerId,
     total: round1(row.score),
     word: row.windowWord,
@@ -330,10 +352,11 @@ export async function readSelf(
   window: Window,
   start: string,
   user: string,
-  board: readonly BoardRow[]
+  board: readonly BoardRow[],
+  mode: BoardMode = 'standard'
 ): Promise<BoardRow | null> {
   if (board.some((row) => row.source === 'r' && row.playerId === user)) return null;
-  const key = boardKey(window, start);
+  const key = boardKey(window, start, mode);
   const total = await redis.zScore(key, user);
   if (total === undefined || total === null) return null;
 
@@ -348,13 +371,13 @@ export async function readSelf(
     Promise.all([
       redis.zCard(key),
       redis.zRank(key, user),
-      importedBoard(window, start),
+      importedBoard(window, start, mode),
     ]).then(
       ([size, below, imported]) =>
         size - (below ?? 0) + imported.filter((row) => row.score > total).length
     ),
-    redis.hGet(bestKey(window, start), user),
-    redis.hGet(puzzlesKey(window, start), user),
+    redis.hGet(bestKey(window, start, mode), user),
+    redis.hGet(puzzlesKey(window, start, mode), user),
   ]);
   const [word, zipf] = splitBest(best ?? '');
 
@@ -417,8 +440,8 @@ export async function readFinds(date: string, limit = WORDS_LIMIT): Promise<Foun
   return [...merged.values()];
 }
 
-async function readDay(date: string, user: string): Promise<DayRow | null> {
-  const stored = await redis.hGetAll(dayKey(date, user));
+async function readDay(date: string, user: string, mode: BoardMode): Promise<DayRow | null> {
+  const stored = await redis.hGetAll(dayKey(date, user, mode));
   if (!stored || !stored.word) return null;
   return {
     word: stored.word,

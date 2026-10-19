@@ -8,6 +8,7 @@ import {
 } from "react";
 import { trackFeedbackSubmitted } from "../analytics";
 import { modeIsChosen } from "../game/mode";
+import { takesPlayerMessages } from "../game/playerMessages";
 import { todayDateString } from "../game/date";
 import { CommonFormBody } from "./CommonFormModal";
 
@@ -232,41 +233,43 @@ export function InstructionsModal({ open, onClose }: Props) {
                 </p>
               </div>
             )}
-            <form
-              className="word-suggestion feedback-form"
-              onSubmit={submitFeedback}
-            >
-              <div className="word-suggestion__row feedback-form__row">
-                <textarea
-                  id="game-feedback"
-                  className="feedback-form__input"
-                  aria-label="Share feedback or leave a suggestion"
-                  value={feedback}
-                  onChange={(event) => {
-                    setFeedback(event.target.value);
-                    setSent(false);
-                  }}
-                  placeholder="Share feedback"
-                  rows={2}
-                />
-                <button type="submit" disabled={!feedback.trim()}>
-                  Send
-                </button>
-              </div>
-              {/* role="status" so the confirmation is announced and not only seen:
-                  the box empties either way, and an empty box is not an answer.
+            {takesPlayerMessages() && (
+              <form
+                className="word-suggestion feedback-form"
+                onSubmit={submitFeedback}
+              >
+                <div className="word-suggestion__row feedback-form__row">
+                  <textarea
+                    id="game-feedback"
+                    className="feedback-form__input"
+                    aria-label="Share feedback or leave a suggestion"
+                    value={feedback}
+                    onChange={(event) => {
+                      setFeedback(event.target.value);
+                      setSent(false);
+                    }}
+                    placeholder="Share feedback"
+                    rows={2}
+                  />
+                  <button type="submit" disabled={!feedback.trim()}>
+                    Send
+                  </button>
+                </div>
+                {/* role="status" so the confirmation is announced and not only seen:
+                    the box empties either way, and an empty box is not an answer.
 
-                  No link to /feedback from here, deliberately. The word queue is
-                  offered to whoever suggests a word, because a queue of words is
-                  everybody's; a note is something one player wrote to us, and
-                  pointing the next player at the pile of them is a different thing
-                  to publish. See src/routes.ts. */}
-              {sent && (
-                <p className="word-suggestion__thanks" role="status">
-                  Thanks for the feedback!
-                </p>
-              )}
-            </form>
+                    No link to /feedback from here, deliberately. The word queue is
+                    offered to whoever suggests a word, because a queue of words is
+                    everybody's; a note is something one player wrote to us, and
+                    pointing the next player at the pile of them is a different thing
+                    to publish. See src/routes.ts. */}
+                {sent && (
+                  <p className="word-suggestion__thanks" role="status">
+                    Thanks for the feedback!
+                  </p>
+                )}
+              </form>
+            )}
             <p className="modal__signoff">
               Made by one person, for fun. Thanks for playing. 🙂
             </p>

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { foldAffixGroups } from "../game/dictionary";
 import type { GameMode } from "../game/mode";
+import { takesPlayerMessages } from "../game/playerMessages";
 import { navigate } from "../routes";
 
 interface Props {
@@ -160,20 +161,22 @@ export function CommonFormBody({ word, date, mode, onLeave }: BodyProps) {
           is reviewable by hand, and the note is the moment someone has a
           specific one in mind -- the same argument that puts the word
           suggestion box inside the word rules panel. */}
-      <p className="modal__copy modal__signoff">
-        {word ? "Think this one got the wrong form?" : "Think a word got the wrong form?"}{" "}
-        <button
-          type="button"
-          className="common-form__link"
-          onClick={() => {
-            onLeave();
-            navigate("feedback");
-          }}
-        >
-          Tell me about it
-        </button>{" "}
-        — every fold is reviewable.
-      </p>
+      {takesPlayerMessages() && (
+        <p className="modal__copy modal__signoff">
+          {word ? "Think this one got the wrong form?" : "Think a word got the wrong form?"}{" "}
+          <button
+            type="button"
+            className="common-form__link"
+            onClick={() => {
+              onLeave();
+              navigate("feedback");
+            }}
+          >
+            Tell me about it
+          </button>{" "}
+          — every fold is reviewable.
+        </p>
+      )}
     </>
   );
 }

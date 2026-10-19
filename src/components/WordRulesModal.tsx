@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { trackWordSuggestion } from "../analytics";
 import { usesFreeformRules } from "../game/dictionary";
 import { modeIsChosen } from "../game/mode";
+import { takesPlayerMessages } from "../game/playerMessages";
 import { useGameMode } from "../hooks/useGameMode";
 import { navigate } from "../routes";
 
@@ -84,43 +85,46 @@ export function WordRulesModal({ open, date, onClose }: Props) {
             : usesFreeformRules(date)
               ? "It's freeform week, so proper nouns, abbreviations, and obsolete, archaic or dated words all count. Misspellings, offensive words, hyphenated words and words with punctuation are the only ones left out."
               : "To keep play consistent, proper nouns, abbreviations, misspellings, obsolete, archaic, or dated words, hyphenated words, and words with punctuation aren't eligible for play."}{" "}
-          Know a good word that's missing? Suggest it and everybody gets to play it.
+          {takesPlayerMessages() &&
+            "Know a good word that's missing? Suggest it and everybody gets to play it."}
         </p>
-        <form className="word-suggestion" onSubmit={submitSuggestion}>
-          <label htmlFor="word-suggestion">Suggest a word</label>
-          <div className="word-suggestion__row">
-            <input
-              id="word-suggestion"
-              value={suggestion}
-              onChange={(event) => {
-                setSuggestion(event.target.value);
-                setSent(false);
-              }}
-              placeholder="Enter a word"
-              autoComplete="off"
-              maxLength={80}
-            />
-            <button type="submit" disabled={!suggestion.trim()}>
-              Suggest word
-            </button>
-          </div>
-          {/* role="status" so the confirmation is announced and not only seen. */}
-          {sent && (
-            <p className="word-suggestion__thanks" role="status">
-              Thanks for the suggestion!{" "}
-              <button
-                type="button"
-                className="word-suggestion__link"
-                onClick={() => {
-                  onClose();
-                  navigate("suggested-words");
+        {takesPlayerMessages() && (
+          <form className="word-suggestion" onSubmit={submitSuggestion}>
+            <label htmlFor="word-suggestion">Suggest a word</label>
+            <div className="word-suggestion__row">
+              <input
+                id="word-suggestion"
+                value={suggestion}
+                onChange={(event) => {
+                  setSuggestion(event.target.value);
+                  setSent(false);
                 }}
-              >
-                See suggestions
+                placeholder="Enter a word"
+                autoComplete="off"
+                maxLength={80}
+              />
+              <button type="submit" disabled={!suggestion.trim()}>
+                Suggest word
               </button>
-            </p>
-          )}
-        </form>
+            </div>
+            {/* role="status" so the confirmation is announced and not only seen. */}
+            {sent && (
+              <p className="word-suggestion__thanks" role="status">
+                Thanks for the suggestion!{" "}
+                <button
+                  type="button"
+                  className="word-suggestion__link"
+                  onClick={() => {
+                    onClose();
+                    navigate("suggested-words");
+                  }}
+                >
+                  See suggestions
+                </button>
+              </p>
+            )}
+          </form>
+        )}
       </div>
     </div>
   );

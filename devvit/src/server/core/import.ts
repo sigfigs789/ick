@@ -21,14 +21,16 @@
  */
 
 import { redis, settings } from '@devvit/web/server';
-import { MAX_LIMIT, type BoardRow, type FoundRow } from '../../shared/leaderboard';
+import { MAX_LIMIT, type BoardMode, type BoardRow, type FoundRow } from '../../shared/leaderboard';
 
 /** How long an imported board stays usable after the job that wrote it. */
 const IMPORT_TTL_SECONDS = 6 * 60 * 60;
 
 /** Where one imported board is cached. Mirrors the live board's key shape. */
-const importBoardKey = (window: string, start: string) => `import:b:${window}:${start}`;
+const importBoardKey = (window: string, start: string, mode: BoardMode) =>
+  `import:b:${mode === 'freeform' ? 'f:' : ''}${window}:${start}`;
 const importFindsKey = (date: string) => `import:f:${date}`;
+const importFoldsKey = (date: string) => `import:r:${date}`;
 
 /** One row as `leaderboard_public_board` returns it -- the SQL's own spelling. */
 interface RawBoardRow {
@@ -109,13 +111,20 @@ async function callRpc<T>(name: string, args: Record<string, unknown>): Promise<
  * own before anything is ranked: importing only the website's top fifteen would
  * drop a player who is sixteenth there and third on the combined board.
  */
-export async function importBoard(window: string, start: string): Promise<number> {
+export async function importBoard(
+  window: string,
+  start: string,
+  mode: BoardMode = 'standard'
+): Promise<number> {
   const rows = await callRpc<RawBoardRow>('leaderboard_public_board', {
     // A monthly or daily window is a date the website's own SQL has never been
     // asked for, but it takes any window start -- the function is bounded at the
     // near end only and the caller decides what the window means.
     p_since: start,
     p_limit: MAX_LIMIT,
+    // One board per mode on the website as here, and the function's own
+    // default is Standard -- so Freeform has to be asked for by name.
+    p_mode: mode,
   });
   if (!rows) return 0;
 
@@ -131,8 +140,8 @@ export async function importBoard(window: string, start: string): Promise<number
     source: 'w',
   }));
 
-  await redis.set(importBoardKey(window, start), JSON.stringify(board));
-  await redis.expire(importBoardKey(window, start), IMPORT_TTL_SECONDS);
+  await redis.set(importBoardKey(window, start, mode), JSON.stringify(board));
+  await redis.expire(importBoardKey(window, start, mode), IMPORT_TTL_SECONDS);
   return board.length;
 }
 
@@ -159,9 +168,39 @@ export async function importFinds(date: string): Promise<number> {
   return finds.length;
 }
 
+/** One live fold rejection, in the keys the shared client reads. */
+export type FoldRejection = { word: string; base: string };
+
+/**
+ * Fetch one puzzle's live fold rejections from the website and cache them.
+ *
+ * A rejection raises a word on that puzzle, and the website's players are
+ * already scored with it -- so a Reddit player who banked the same word has to
+ * be too, or one board would hold the same word at two prices.
+ */
+export async function importFoldRejections(date: string): Promise<number> {
+  const rows = await callRpc<FoldRejection>('list_live_fold_rejections_public', { p_date: date });
+  if (!rows) return 0;
+  const rejections = rows
+    .filter((row) => typeof row.word === 'string' && row.word && typeof row.base === 'string' && row.base)
+    .map((row) => ({ word: row.word, base: row.base }));
+  await redis.set(importFoldsKey(date), JSON.stringify(rejections));
+  await redis.expire(importFoldsKey(date), IMPORT_TTL_SECONDS);
+  return rejections.length;
+}
+
+/** The live fold rejections imported for one puzzle. */
+export async function importedFoldRejections(date: string): Promise<FoldRejection[]> {
+  return readCached<FoldRejection>(importFoldsKey(date));
+}
+
 /** The board imported for one window, or none when nothing has landed yet. */
-export async function importedBoard(window: string, start: string): Promise<BoardRow[]> {
-  return readCached<BoardRow>(importBoardKey(window, start));
+export async function importedBoard(
+  window: string,
+  start: string,
+  mode: BoardMode = 'standard'
+): Promise<BoardRow[]> {
+  return readCached<BoardRow>(importBoardKey(window, start, mode));
 }
 
 /** The finds imported for one puzzle. */

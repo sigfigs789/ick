@@ -425,3 +425,31 @@ describe("the website's players, merged in", () => {
     expect(await readFinds(WED)).toEqual([]);
   });
 });
+
+describe("the two modes", () => {
+  it("keep a Freeform day off the Standard board", async () => {
+    await submitScores("ann", [score({ mode: "freeform", total: 30 })]);
+    expect(await readBoard("w", WEEK)).toEqual([]);
+    expect((await readBoard("w", WEEK, undefined, "freeform"))[0]).toMatchObject({
+      playerId: "ann",
+      score: 30,
+    });
+  });
+
+  it("hold one day played under both rules as two rows", async () => {
+    await submitScores("ann", [score({ total: 12 }), score({ mode: "freeform", total: 30 })]);
+    expect((await readBoard("d", WED))[0]?.score).toBe(12);
+    expect((await readBoard("d", WED, undefined, "freeform"))[0]?.score).toBe(30);
+  });
+
+  it("put a day with an unreadable mode on Standard rather than dropping it", async () => {
+    await submitScores("ann", [score({ mode: "sideways" })]);
+    expect((await readBoard("d", WED))[0]?.playerId).toBe("ann");
+  });
+
+  it("share one finds feed", async () => {
+    await submitScores("ann", [score({ found: [{ word: "zarf", zipf: 1.1 }] })]);
+    await submitScores("bob", [score({ mode: "freeform", found: [{ word: "zarf", zipf: 1.1 }] })]);
+    expect((await readFinds(WED)).find((f) => f.word === "zarf")?.finders).toBe(2);
+  });
+});

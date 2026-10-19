@@ -16,8 +16,6 @@
   --paper: #fafafa;
   --muted: #5d6066;
   --line: #d3d6da;
-  /* The Mythic dot, which colours "Ink" in the wordmark everywhere else. */
-  --mythic: #e5484d;
 }
 
 * {
@@ -39,23 +37,16 @@
   text-align: center;
 }
 
-.splash__mark {
-  width: 84px;
-  height: 84px;
-  border-radius: 20px;
-  /* The mark carries its own dark ground, so nothing is drawn behind it. */
-  display: block;
-}
-
 .splash__name {
   margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  line-height: 0;
 }
 
-.splash__name-ink {
-  color: var(--mythic);
+/* Sized by width, with the height following the cut's own proportions. */
+.splash__wordmark {
+  display: block;
+  width: min(240px, 70vw);
+  height: auto;
 }
 
 .splash__tagline {
@@ -116,13 +107,8 @@
     padding: 1rem;
   }
 
-  .splash__mark {
-    width: 56px;
-    height: 56px;
-  }
-
-  .splash__name {
-    font-size: 1.35rem;
+  .splash__wordmark {
+    width: min(170px, 60vw);
   }
 
   .splash__tagline {

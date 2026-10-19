@@ -25,6 +25,7 @@ import { earnsNotice } from "./chat";
 import { formatRarityScore } from "./dictionary";
 import { modeForDate, type GameMode } from "./mode";
 import { loadPlayerId } from "./player";
+import { takesPlayerMessages } from "./playerMessages";
 import type { AcceptedWord } from "./types";
 
 interface NoticeFields {
@@ -131,7 +132,8 @@ export function reportBankedWord(options: {
   const { date, isToday, word } = options;
   const mode = options.mode ?? modeForDate(date);
   const playerId = options.playerId ?? loadPlayerId();
-  if (!playerId || !isToday) return false;
+  // No chat room here, so nobody to announce it to (see playerMessages.ts).
+  if (!playerId || !isToday || !takesPlayerMessages()) return false;
   const banked = {
     date,
     mode,

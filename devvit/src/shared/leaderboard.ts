@@ -63,6 +63,23 @@ export interface BoardsResponse {
   /** The monthly board, under the name the wire has always used for it. */
   allTime: BoardRow[];
   allTimeSelf: BoardRow | null;
+  /** Which board these are, so the client can tell an answer to the other mode. */
+  mode: BoardMode;
+}
+
+/**
+ * Which of the two boards a day belongs on: the rules it was played under.
+ *
+ * The website keeps one board per mode, and the shared client asks for one by
+ * name (`&mode=`) and sends each day with the mode it was played in. A day
+ * whose mode is missing or unreadable goes on Standard, which is what a client
+ * from before modes meant -- the same fallback `readMode` makes on the website.
+ */
+export type BoardMode = 'standard' | 'freeform';
+
+/** A mode off the wire, or Standard for anything that is not one. */
+export function boardMode(value: unknown): BoardMode {
+  return value === 'freeform' ? 'freeform' : 'standard';
 }
 
 /** One puzzle's score, as the game submits it. */
@@ -74,6 +91,8 @@ export interface ScoreSubmission {
   top: number;
   words: number;
   retried?: boolean;
+  /** The board the day goes on; read through `boardMode`, never directly. */
+  mode?: unknown;
   /**
    * A day that goes on the finds feed and not the board: one played in Freeform
    * by choice, or one played after its own date. See the website's
@@ -136,6 +155,8 @@ export function validScore(value: unknown): value is ScoreSubmission {
     inRange(s.words, 0, MAX_WORDS) &&
     (s.retried === undefined || typeof s.retried === 'boolean') &&
     (s.unranked === undefined || typeof s.unranked === 'boolean')
+    // `mode` is deliberately not checked: an unreadable one is not a reason to
+    // lose the day, it is a day for Standard (see `boardMode`).
   );
 }
 

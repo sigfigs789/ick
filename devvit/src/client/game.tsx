@@ -17,6 +17,7 @@ import { Root } from '../../../src/Root';
 import { setInMemoryRouting } from '../../../src/routes';
 import { setReporting } from '../../../src/analytics';
 import { setAccount } from '../../../src/game/player';
+import { setPlayerMessages } from '../../../src/game/playerMessages';
 
 /**
  * Play as the Reddit account, not as the browser.
@@ -59,6 +60,13 @@ setInMemoryRouting(true);
 // stays in this file, next to the call that creates the problem it solves --
 // devvit/tests/reporting.test.ts fails if either stops being true.
 setReporting(false);
+
+// No chat room, no suggestion box, no feedback notes. Each of them writes to the
+// website's own database, through paths this build does not serve, and would
+// carry a Reddit player's words -- and with chat, their username -- off Reddit.
+// Hidden rather than left to fail, because a box that empties and says "Thanks"
+// having sent nothing is worse than no box. The post's comments are the chat.
+setPlayerMessages(false);
 
 // `Root` rather than `App`: the puzzle is one of five pages, and the other four
 // -- the header, the boards, the finds -- are the rest of the game. Rendering

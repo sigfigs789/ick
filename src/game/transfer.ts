@@ -389,9 +389,11 @@ async function gunzip(bytes: Uint8Array): Promise<Uint8Array | null> {
  * a failed test run, for a failure that is already being reported properly by
  * the side that is actually being read.
  */
-function feed(writable: WritableStream<Uint8Array>, bytes: Uint8Array): void {
+function feed(writable: WritableStream<BufferSource>, bytes: Uint8Array): void {
   const writer = writable.getWriter();
-  writer.write(bytes).catch(() => {});
+  // A copy, so the chunk is backed by a plain ArrayBuffer: newer DOM typings
+  // will not take a view that could sit on a SharedArrayBuffer as a BufferSource.
+  writer.write(new Uint8Array(bytes)).catch(() => {});
   writer.close().catch(() => {});
 }
 

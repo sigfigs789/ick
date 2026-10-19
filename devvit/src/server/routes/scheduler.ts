@@ -7,7 +7,7 @@
  */
 
 import { Hono } from 'hono';
-import { importBoard, importFinds } from '../core/import';
+import { importBoard, importFinds, importFoldRejections } from '../core/import';
 import { createPuzzlePost } from '../core/puzzle';
 import { gameDay, monthStartOf, weekStartOf } from '../../shared/windows';
 
@@ -33,19 +33,27 @@ export async function importEverything(): Promise<number> {
   const yesterday = shiftDays(today, -1);
   const tomorrow = shiftDays(today, 1);
 
-  const imported = await Promise.all([
+  // Both boards, since the website keeps one per mode and a player reads the
+  // one for the mode they play.
+  const boards = (['standard', 'freeform'] as const).flatMap((mode) => [
     // Both weeks and both months a player's local date can fall in, so a reader
     // on either side of the date line finds their window already cached.
-    importBoard('w', weekStartOf(yesterday)),
-    importBoard('w', weekStartOf(tomorrow)),
-    importBoard('m', monthStartOf(yesterday)),
-    importBoard('m', monthStartOf(tomorrow)),
-    importBoard('d', yesterday),
-    importBoard('d', today),
-    importBoard('d', tomorrow),
+    importBoard('w', weekStartOf(yesterday), mode),
+    importBoard('w', weekStartOf(tomorrow), mode),
+    importBoard('m', monthStartOf(yesterday), mode),
+    importBoard('m', monthStartOf(tomorrow), mode),
+    importBoard('d', yesterday, mode),
+    importBoard('d', today, mode),
+    importBoard('d', tomorrow, mode),
+  ]);
+  const imported = await Promise.all([
+    ...boards,
     importFinds(yesterday),
     importFinds(today),
     importFinds(tomorrow),
+    importFoldRejections(yesterday),
+    importFoldRejections(today),
+    importFoldRejections(tomorrow),
   ]);
 
   const rows = imported.reduce((sum, count) => sum + count, 0);

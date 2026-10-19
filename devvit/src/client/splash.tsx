@@ -16,9 +16,15 @@ import { createRoot } from 'react-dom/client';
 
 export const Splash = () => (
   <div className="splash">
-    <img className="splash__mark" src="/icon.png" alt="" width={84} height={84} />
+    {/* The wordmark the app stores show, cut from native/assets/icon.png, as an
+        image rather than set in type: the frame cannot load the site's fonts,
+        and a fallback face would make the name look like somebody else's. One
+        cut per theme, because Reddit draws the post on the viewer's. */}
     <h1 className="splash__name">
-      Word<span className="splash__name-ink">Ink</span>
+      <picture>
+        <source srcSet="/wordmark-dark.png" media="(prefers-color-scheme: dark)" />
+        <img className="splash__wordmark" src="/wordmark.png" alt="WordInk" width={839} height={164} />
+      </picture>
     </h1>
     <p className="splash__tagline">
       A daily game where you find the rarest word you can that contains
