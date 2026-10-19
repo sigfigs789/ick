@@ -145,7 +145,7 @@ describe("AnalyticsPage", () => {
     stubFetch();
     render(<AnalyticsPage />);
     await screen.findByRole("heading", { name: "Key numbers" });
-    expect(within(section("Key numbers")).getByText(/84 automated visitors left out/)).toBeInTheDocument();
+    expect(within(section("Bots left out")).getByText(/automated visitors/)).toHaveTextContent("84 automated visitors");
   });
 
   it("asks for one puzzle a few days back, or all time", async () => {

@@ -201,11 +201,20 @@ function Report({
         <MetricsTable
           rows={GROUPS.map((g) => ({ key: g, label: GROUP_NAMES[g], metrics: report.groups[g] }))}
         />
-        <p className="review__meta analytics__note analytics__bots">
-          {fmt(report.botsFiltered)} automated {report.botsFiltered === 1 ? "visitor" : "visitors"} left
-          out of every number here: arrived within 2 seconds of another new player and never did anything,
-          or said they were a bot.
+      </Section>
+
+      <Section
+        title="Bots left out"
+        note={`${span}. Left out of every number on this page.`}
+      >
+        <p className="analytics__bots">
+          <strong>{fmt(report.botsFiltered)}</strong> automated{" "}
+          {report.botsFiltered === 1 ? "visitor" : "visitors"}
         </p>
+        <ul className="review__meta analytics__bullets">
+          <li><strong>Ghost twins</strong>: arrived within 2 seconds of another new player and never pressed anything, stayed, or guessed</li>
+          <li><strong>Self-declared</strong>: the browser said it was automated or its user agent named a bot</li>
+        </ul>
       </Section>
 
       <Section
