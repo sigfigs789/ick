@@ -5,6 +5,7 @@ import {
   currentIdleHintArm,
   idleHintExperiment,
   forcedIdleHintVariant,
+  pinIdleHintVariant,
   idleHintText,
   idleHintWords,
 } from "./idleHint";
@@ -100,6 +101,17 @@ describe("idleHintWords", () => {
 
   it("types the word behind an ellipsis", () => {
     expect(idleHintText("strong")).toBe("...strong");
+  });
+
+  it("puts a pinned host on its arm whatever the query string says", () => {
+    pinIdleHintVariant("treatment");
+    try {
+      expect(forcedIdleHintVariant("")).toBe("treatment");
+      expect(forcedIdleHintVariant("?idle-hint=control")).toBe("treatment");
+    } finally {
+      pinIdleHintVariant(null);
+    }
+    expect(forcedIdleHintVariant("")).toBeNull();
   });
 
   it("reads a forced arm off the query string", () => {

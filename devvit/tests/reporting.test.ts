@@ -23,12 +23,16 @@ const setReporting = vi.hoisted(() => vi.fn());
 const setAccount = vi.hoisted(() => vi.fn());
 const setInMemoryRouting = vi.hoisted(() => vi.fn());
 const setPlayerMessages = vi.hoisted(() => vi.fn());
+const pinUiVariant = vi.hoisted(() => vi.fn());
+const pinIdleHintVariant = vi.hoisted(() => vi.fn());
 const render = vi.hoisted(() => vi.fn());
 
 vi.mock("../../src/analytics", () => ({ setReporting }));
 vi.mock("../../src/game/player", () => ({ setAccount }));
 vi.mock("../../src/routes", () => ({ setInMemoryRouting }));
 vi.mock("../../src/game/playerMessages", () => ({ setPlayerMessages }));
+vi.mock("../../src/game/uiVariant", () => ({ pinUiVariant }));
+vi.mock("../../src/game/idleHint", () => ({ pinIdleHintVariant }));
 vi.mock("../../src/Root", () => ({ Root: () => null }));
 vi.mock("react-dom/client", () => ({ createRoot: () => ({ render }) }));
 vi.mock("../../src/index.css", () => ({}));
@@ -49,6 +53,8 @@ afterEach(() => {
   setReporting.mockClear();
   setAccount.mockClear();
   setPlayerMessages.mockClear();
+  pinUiVariant.mockClear();
+  pinIdleHintVariant.mockClear();
 });
 
 describe("the Reddit build's reporting switch", () => {
@@ -97,5 +103,18 @@ describe("the Reddit build's player-messages switch", () => {
       throw new Error("offline");
     });
     expect(setPlayerMessages).toHaveBeenCalledWith(false);
+  });
+});
+
+describe("the Reddit build's play screen", () => {
+  it("is v2 for every player, outside the website's test", async () => {
+    await boot(async () => Response.json({ username: "some_redditor" }));
+    expect(pinUiVariant).toHaveBeenCalledWith("v2");
+    expect(pinUiVariant).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the idle hint to every player, outside the website's test", async () => {
+    await boot(async () => Response.json({ username: "some_redditor" }));
+    expect(pinIdleHintVariant).toHaveBeenCalledWith("treatment");
   });
 });

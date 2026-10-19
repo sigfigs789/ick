@@ -24,8 +24,9 @@ import { isTester } from "./testers";
  * `ui_variant_assigned` with its experiment, which is the row the report
  * groups players by.
  *
- * Only the web entry assigns (main.tsx). Anywhere else -- the Reddit post,
- * tests -- stays on "control" unless something sets it explicitly.
+ * Only the web entry assigns (main.tsx). The Reddit post is outside the
+ * experiment and pins v2 (see `pinUiVariant`); anywhere else -- tests -- stays
+ * on "control" unless something sets it explicitly.
  */
 
 export type UiVariant = "control" | "v2";
@@ -145,6 +146,20 @@ export function takeFreshUiAssignment(): UiVariantAssignment | null {
   const taken = fresh;
   fresh = null;
   return taken;
+}
+
+/**
+ * Put a host outside the experiment on one screen for good. Call before the
+ * first render.
+ *
+ * For a host that reports nothing, so a split there would be measured by
+ * nobody: the Reddit post, which shows v2 to every player. Not an assignment --
+ * nothing is stored and nothing is reported -- so it can never leak into the
+ * website's numbers.
+ */
+export function pinUiVariant(variant: UiVariant): void {
+  current = variant;
+  fresh = null;
 }
 
 /** Tests only. */
