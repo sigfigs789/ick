@@ -127,6 +127,9 @@ describe("AnalyticsPage", () => {
     expect(within(section("Key numbers")).getByRole("columnheader", { name: "Shared" })).toBeInTheDocument();
     // The play-screen test pairs every grouping's rows by variant.
     expect(within(section("Play screen test")).getAllByRole("row", { name: /^Everyone/ })).toHaveLength(1);
+    // Named v1 and v2, never "new", which reads as new players.
+    expect(within(section("Play screen test")).getAllByRole("cell", { name: "v1" })).toHaveLength(3);
+    expect(within(section("Play screen test")).getAllByRole("cell", { name: "v2" })).toHaveLength(3);
     const fresh = within(section("Key numbers")).getByRole("row", { name: /^New players/ });
     expect(fresh).toHaveTextContent("10 14%");
     expect(within(section("Key numbers")).getByRole("row", { name: /^Returning players/ })).toBeInTheDocument();

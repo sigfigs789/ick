@@ -236,15 +236,15 @@ function Report({
 
       <Section
         title="Play screen test"
-        note={`${span}. Current play screen vs the new one, each browser assigned 50/50${
+        note={`${span}. Play screen v1 (the one before the test) vs v2, each browser assigned 50/50${
           report.uiSince ? `, since ${shortDate(report.uiSince)}` : ""
-        }.`}
+        }. Each player counts from the day they were assigned.`}
       >
         <MetricsTable
           split="Play screen"
           rows={GROUPS.flatMap((g) => [
-            { key: `${g}-control`, label: GROUP_NAMES[g], side: "Current", metrics: report.ui[g].control },
-            { key: `${g}-v2`, label: GROUP_NAMES[g], side: "New", metrics: report.ui[g].v2 },
+            { key: `${g}-control`, label: GROUP_NAMES[g], side: "v1", metrics: report.ui[g].control },
+            { key: `${g}-v2`, label: GROUP_NAMES[g], side: "v2", metrics: report.ui[g].v2 },
           ])}
         />
       </Section>
