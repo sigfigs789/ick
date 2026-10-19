@@ -14,7 +14,7 @@
 -- is read from, so its score and words are the ones the board keeps. Visits,
 -- rejected tries and chat come from its events.
 --
--- The function is otherwise 20261021100000_analytics_drop_start_mode_idle_hint.sql,
+-- The function is otherwise 20261022000000_analytics_ui_test_from_assignment.sql,
 -- whose notes stand; same signature, so a replace, and the grant is given again.
 
 create or replace function public.analytics_overview(
@@ -123,9 +123,9 @@ as $$
     from player_days d
     group by 1
   ),
-  -- The play-screen variant each player was put in, first report wins.
+  -- The play-screen variant each player was put in, and the day, first report wins.
   ui_assigned as (
-    select distinct on (player_id) player_id, variant
+    select distinct on (player_id) player_id, variant, day
     from events
     where name = 'ui_variant_assigned'
       and variant in ('control', 'v2')
@@ -160,7 +160,6 @@ as $$
       w.level,
       w.chatted,
       w.shared,
-      u.variant as ui_variant,
       a.first_day >= b.win_start as is_new,
       w.anchor + 7 < b.today as closed,
       exists (
@@ -169,7 +168,6 @@ as $$
       ) as returned
     from win_players w
       join arrivals a on a.player_id = w.player_id
-      left join ui_assigned u on u.player_id = w.player_id
       cross join bounds b
   ),
   win_grouped as (
@@ -234,31 +232,69 @@ as $$
     ) x
   ),
 
+  -- The play-screen test: each assigned player in the window, once, counting
+  -- only their days from the assignment on -- a day before it was played on
+  -- the old screen, whichever side they were later put on.
+  ui_players as (
+    select
+      d.player_id,
+      u.variant as ui_variant,
+      min(d.day) as anchor,
+      max(d.level) as level,
+      bool_or(sh.player_id is not null) as shared
+    from player_days d
+      join ui_assigned u on u.player_id = d.player_id and d.day >= u.day
+      cross join bounds b
+      left join share_days sh on sh.player_id = d.player_id and sh.day = d.day
+    where d.day between b.win_start and b.win_end
+    group by 1, 2
+  ),
+  ui_grouped as (
+    select g.grp, r.*
+    from (
+      select
+        w.player_id,
+        w.ui_variant,
+        w.level,
+        w.shared,
+        a.first_day >= b.win_start as is_new,
+        w.anchor + 7 < b.today as closed,
+        exists (
+          select 1 from player_days n
+          where n.player_id = w.player_id and n.day > w.anchor and n.day <= w.anchor + 7
+        ) as returned
+      from ui_players w
+        join arrivals a on a.player_id = w.player_id
+        cross join bounds b
+    ) r
+      cross join lateral (values
+        ('all'), (case when r.is_new then 'new' else 'returning' end)) as g(grp)
+  ),
   ui as (
     select coalesce(jsonb_object_agg(x.grp, x.v), '{}'::jsonb) as v
     from (
       select
         k.grp,
         jsonb_object_agg(s.variant, jsonb_build_object(
-          'players', (select count(*) from win_grouped r
+          'players', (select count(*) from ui_grouped r
                       where r.grp = k.grp and r.ui_variant = s.variant),
-          'acted', (select count(*) from win_grouped r
+          'acted', (select count(*) from ui_grouped r
                     where r.grp = k.grp and r.ui_variant = s.variant and r.level >= 2),
-          'guessed', (select count(*) from win_grouped r
+          'guessed', (select count(*) from ui_grouped r
                       where r.grp = k.grp and r.ui_variant = s.variant and r.level = 3),
-          'shared', (select count(*) from win_grouped r
+          'shared', (select count(*) from ui_grouped r
                      where r.grp = k.grp and r.ui_variant = s.variant and r.shared),
           'returned', jsonb_build_object(
-            'cohort', (select count(*) from win_grouped r
+            'cohort', (select count(*) from ui_grouped r
                        where r.grp = k.grp and r.ui_variant = s.variant and r.closed),
-            'returned', (select count(*) from win_grouped r
+            'returned', (select count(*) from ui_grouped r
                          where r.grp = k.grp and r.ui_variant = s.variant and r.closed and r.returned),
-            'soFar', (select count(*) from win_grouped r
+            'soFar', (select count(*) from ui_grouped r
                       where r.grp = k.grp and r.ui_variant = s.variant and r.returned),
             'guessers', jsonb_build_object(
-              'cohort', (select count(*) from win_grouped r
+              'cohort', (select count(*) from ui_grouped r
                          where r.grp = k.grp and r.ui_variant = s.variant and r.level = 3 and r.closed),
-              'returned', (select count(*) from win_grouped r
+              'returned', (select count(*) from ui_grouped r
                            where r.grp = k.grp and r.ui_variant = s.variant and r.level = 3 and r.closed and r.returned)))
         )) as v
       from (values ('all'), ('new'), ('returning')) as k(grp)
