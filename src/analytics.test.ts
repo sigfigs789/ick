@@ -665,10 +665,11 @@ describe("supabase mirror", () => {
     vi.stubEnv("MODE", "production");
     const beacon = stubBeacon();
 
-    trackUiVariantAssigned({ variant: "v2", visitType: "returning" });
+    trackUiVariantAssigned({ variant: "v2", experiment: "returning" });
 
     expect(track).toHaveBeenCalledWith("ui_variant_assigned", {
       variant: "v2",
+      experiment: "returning",
       visit_type: "returning",
       puzzle_date: LIVE_DATE,
     });
