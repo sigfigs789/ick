@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Feedback } from "../hooks/useDailyPuzzle";
 import type { AcceptedWord, SubmissionResult } from "../game/types";
 import type { GameMode } from "../game/mode";
-import { DePrefixHint } from "./DePrefixHint";
 import { FoldHint } from "./FoldHint";
 import { useIdleHint } from "../hooks/useIdleHint";
 
@@ -21,8 +20,8 @@ interface Props {
    */
   onSubmit: (word: string) => void | SubmissionResult | Promise<SubmissionResult | void>;
   /**
-   * The puzzle and mode being played, for the notices over the input (see
-   * DePrefixHint and FoldHint).
+   * The puzzle and mode being played, for the notice over the input (see
+   * FoldHint).
    */
   date?: string;
   mode?: GameMode;
@@ -132,7 +131,6 @@ export function SubmitForm({
         className={`submit-form__row${checking || pulsing ? " submit-form__row--checking" : ""}`}
         ref={rowRef}
       >
-        <DePrefixHint value={value} date={date} mode={mode} />
         <FoldHint value={value} date={date} mode={mode} />
         {/* Wraps the input alone, and catches the pulse's animation events as
             they bubble up from it. */}
