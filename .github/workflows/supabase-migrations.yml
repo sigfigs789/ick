@@ -1,0 +1,55 @@
+name: Apply Supabase migrations
+
+# Pushes supabase/migrations to the WordInk production database whenever main
+# gains a migration, so a merged migration can no longer sit unapplied while
+# code that expects it is already deployed (20260925010000_leaderboard_finds_mode
+# went unapplied for four days that way).
+#
+# Plain `db push`, never `--include-all`: if prod's history holds a version main
+# doesn't have (a branch applied early) or main has one older than prod's
+# latest (a version collision), the push fails and this job goes red instead of
+# guessing. Fix those by hand.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Two merges in quick succession must apply in order, and a push must never be
+# cancelled halfway.
+concurrency:
+  group: supabase-migrations
+  cancel-in-progress: false
+
+jobs:
+  push:
+    name: Push migrations to production
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      # config.toml's project_id is only a local label; this is the prod ref.
+      PROJECT_REF: hjjdnbftdwswkfqnsejt
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link the WordInk project
+        run: supabase link --project-ref "$PROJECT_REF"
+
+      - name: List pending migrations
+        run: supabase db push --dry-run
+
+      - name: Apply pending migrations
+        run: supabase db push --yes
