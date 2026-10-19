@@ -101,6 +101,30 @@ describe("api/events input gate", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("stamps a site_visit with the verdict on its user agent, never the string", async () => {
+    withEnv();
+    const fetchMock = stubFetch();
+    await handler(
+      post(
+        { name: "site_visit", props: { source: "direct" } },
+        { headers: { "user-agent": "Mozilla/5.0 HeadlessChrome/126.0.0.0 Safari/537.36" } }
+      )
+    );
+    expect(inserted(fetchMock)?.row).toEqual({
+      name: "site_visit",
+      props: { source: "direct", server_bot_ua: true },
+    });
+  });
+
+  it("leaves every other event's props as sent", async () => {
+    withEnv();
+    const fetchMock = stubFetch();
+    await handler(
+      post({ name: "visit_interacted", props: {} }, { headers: { "user-agent": "HeadlessChrome/126" } })
+    );
+    expect(inserted(fetchMock)?.row).toEqual({ name: "visit_interacted", props: {} });
+  });
+
   it("refuses a post from another origin", async () => {
     withEnv();
     const fetchMock = stubFetch();

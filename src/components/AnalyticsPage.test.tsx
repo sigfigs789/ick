@@ -56,6 +56,7 @@ const REPORT = {
     returning: { control: metrics(8, 8, 4, 3), treatment: metrics(9, 9, 5, 4) },
   },
   idleHintSince: "2026-10-18",
+  botsFiltered: 84,
   daily: [
     { date: "2026-10-15", closed: false, groups: dayGroups(40) },
     { date: "2026-10-16", closed: false, groups: dayGroups(20) },
@@ -138,6 +139,13 @@ describe("AnalyticsPage", () => {
     expect(within(section("Key numbers")).getByRole("row", { name: /^Returning players/ })).toBeInTheDocument();
     expect(within(section("Key numbers")).getAllByRole("row")).toHaveLength(4);
     expect(screen.queryByText(/Started in/)).not.toBeInTheDocument();
+  });
+
+  it("says how many automated visitors the numbers leave out", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Key numbers" });
+    expect(within(section("Key numbers")).getByText(/84 automated visitors left out/)).toBeInTheDocument();
   });
 
   it("asks for one puzzle a few days back, or all time", async () => {

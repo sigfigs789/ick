@@ -201,6 +201,11 @@ function Report({
         <MetricsTable
           rows={GROUPS.map((g) => ({ key: g, label: GROUP_NAMES[g], metrics: report.groups[g] }))}
         />
+        <p className="review__meta analytics__note analytics__bots">
+          {fmt(report.botsFiltered)} automated {report.botsFiltered === 1 ? "visitor" : "visitors"} left
+          out of every number here: arrived within 2 seconds of another new player and never did anything,
+          or said they were a bot.
+        </p>
       </Section>
 
       <Section

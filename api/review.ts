@@ -13,7 +13,7 @@
 // GET /api/review?list=analytics&from=YYYY-MM-DD&to=YYYY-MM-DD&today=YYYY-MM-DD
 //   (every date optional: no `from` is all time, no `to` the latest day)
 //   -> { report: { today, firstDay, from, to, groups, modes, chat, chatSince,
-//                  idleHint, idleHintSince, daily } }
+//                  idleHint, idleHintSince, botsFiltered, daily } }
 //   400 bad-list / bad-limit / bad-date, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //

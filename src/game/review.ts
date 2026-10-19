@@ -377,6 +377,12 @@ export interface AnalyticsReport {
   idleHint: Record<Group, Record<IdleHintVariant, KeyMetrics>>;
   /** The first day anybody was triggered. */
   idleHintSince: string | null;
+  /**
+   * Players dropped from every number above as automated, by the day of their
+   * first visit: a same-second twin that never did anything, or a visit that
+   * said it was a bot (see the analytics_filter_bots migration).
+   */
+  botsFiltered: number;
   daily: Array<{ date: string; closed: boolean; groups: Record<Group, DayMetrics> }>;
   /** Muse AI, which every number above leaves out (see game/visitor.ts). */
   muse: MuseReport;
@@ -510,6 +516,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       treatment: metrics(obj(raw).treatment),
     })),
     idleHintSince: text(r.idleHintSince),
+    botsFiltered: count(r.botsFiltered),
     daily: list(r.daily)
       .filter((d) => text(d.date))
       .map((d) => ({
