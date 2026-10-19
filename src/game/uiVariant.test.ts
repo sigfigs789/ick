@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   assignUiVariant,
   isNewPlayUi,
+  pinUiVariant,
   setUiVariantForTest,
   takeFreshUiAssignment,
   uiVariant,
@@ -91,5 +92,22 @@ describe("assignUiVariant", () => {
     expect(assignUiVariant("", () => 0.1)).toBe("v2");
     localStorage.setItem("ick:ui-arms", "{not json");
     expect(assignUiVariant("", () => 0.9)).toBe("control");
+  });
+});
+
+describe("pinUiVariant", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    setUiVariantForTest("control");
+  });
+
+  it("puts the session on the pinned screen without storing or reporting a draw", () => {
+    pinUiVariant("v2");
+    expect(uiVariant()).toBe("v2");
+    expect(isNewPlayUi()).toBe(true);
+    expect(takeFreshUiAssignment()).toBeNull();
+    expect(localStorage.getItem("ick:ui-arms")).toBeNull();
+    expect(localStorage.getItem("ick:ui-forced")).toBeNull();
   });
 });

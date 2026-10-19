@@ -214,14 +214,30 @@ export function idleHintText(word: string): string {
   return `${IDLE_HINT_PREFIX}${word}`;
 }
 
+let pinned: IdleHintVariant | null = null;
+
+/**
+ * Put a host outside the experiment on one arm for good. Call before the first
+ * render.
+ *
+ * For a host that reports nothing, where a draw would be measured by nobody --
+ * the Reddit post, which shows the hint to every player. It goes through the
+ * forced path below, so it is never stored or reported either.
+ */
+export function pinIdleHintVariant(variant: IdleHintVariant | null): void {
+  pinned = variant;
+}
+
 /**
  * An arm forced with `?idle-hint=treatment` (or `=control`), for trying the
  * hint out without waiting on a coin flip. A forced arm is never stored or
  * reported, so it cannot leak into the experiment's numbers. A hand-picked
  * tester (see game/testers.ts) is forced to treatment the same way, unless the
- * query string says otherwise.
+ * query string says otherwise. A host's pin (see `pinIdleHintVariant`) comes
+ * before both.
  */
 export function forcedIdleHintVariant(search: string = window.location.search): IdleHintVariant | null {
+  if (pinned) return pinned;
   const value = new URLSearchParams(search).get("idle-hint");
   if (isVariant(value)) return value;
   return isTester() ? "treatment" : null;
