@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   accountName,
+  adoptPlayerFromUrl,
   hasJoined,
   joinBoard,
   leaveBoard,
@@ -116,5 +117,31 @@ describe("playing as an account", () => {
     const id = joinBoard();
     expect(id).not.toBe("some_redditor");
     expect(loadPlayerId()).toBe(id);
+  });
+});
+
+describe("Muse AI playing as a given id", () => {
+  const MUSE = "6d3f9ffe-1d46-4ae7-bf8a-b9c68bebd2a4";
+
+  it("adopts the id into a fresh browser, and joining keeps it", () => {
+    expect(adoptPlayerFromUrl(`?visitor=mos-muse&player=${MUSE.toUpperCase()}`)).toBe(MUSE);
+    expect(joinBoard()).toBe(MUSE);
+  });
+
+  it("needs a visitor tag in the same URL", () => {
+    expect(adoptPlayerFromUrl(`?player=${MUSE}`)).toBeNull();
+    expect(hasJoined()).toBe(false);
+  });
+
+  it("never replaces a browser's existing id", () => {
+    const mine = joinBoard();
+    expect(adoptPlayerFromUrl(`?visitor=mos-muse&player=${MUSE}`)).toBeNull();
+    expect(loadPlayerId()).toBe(mine);
+  });
+
+  it("ignores anything that is not a uuid", () => {
+    expect(adoptPlayerFromUrl("?visitor=mos-muse&player=BoldCinder11")).toBeNull();
+    expect(adoptPlayerFromUrl("?visitor=mos-muse&player=")).toBeNull();
+    expect(hasJoined()).toBe(false);
   });
 });
