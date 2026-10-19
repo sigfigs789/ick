@@ -76,6 +76,18 @@ const REPORT = {
       { date: "2026-10-16", visits: 3, puzzles: 2, avgScore: 36.5, avgWords: 4, avgRejected: 10, chatOpened: true, messages: 2 },
       { date: "2026-10-15", visits: 2, puzzles: 1, avgScore: 34.36, avgWords: 4, avgRejected: 17.5, chatOpened: false, messages: 0 },
     ],
+    bots: [
+      {
+        playerId: "6d3f9ffe-1d46-4ae7-bf8a-b9c68bebd2a4",
+        visits: 3, puzzles: 2, avgScore: 36.5, avgWords: 4, avgRejected: 10, chatDays: 1, messages: 2,
+        firstSeen: "2026-10-15T03:51:53+00:00", lastSeen: "2026-10-16T23:45:10+00:00",
+      },
+      {
+        playerId: "8475da09-7190-486f-a93f-df8d826dac52",
+        visits: 2, puzzles: 1, avgScore: 34.36, avgWords: 4, avgRejected: 17.5, chatDays: 0, messages: 0,
+        firstSeen: "2026-10-14T03:51:53+00:00", lastSeen: "2026-10-15T20:00:00+00:00",
+      },
+    ],
   },
 };
 
@@ -231,6 +243,17 @@ describe("AnalyticsPage", () => {
     expect(all).toHaveTextContent("Opened on 1, 2 sent");
     expect(within(muse).getByRole("row", { name: /^Fri Oct 16/ })).toHaveTextContent("Yes, 2 sent");
     expect(within(muse).getByRole("row", { name: /^Thu Oct 15/ })).toHaveTextContent(/34\.36.*No$/);
+  });
+
+  it("breaks Muse AI out by bot, under its leaderboard name", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Muse AI" });
+
+    const muse = section("Muse AI");
+    const first = within(muse).getByRole("row", { name: /^BoldCinder11/ });
+    expect(first).toHaveTextContent(/Oct 16.*36\.50.*Yes, 2 sent$/);
+    expect(within(muse).getByRole("row", { name: /^IdleOsprey15/ })).toHaveTextContent(/34\.36.*No$/);
   });
 
   it("says Muse AI has not played when the report has no sign of it", async () => {
