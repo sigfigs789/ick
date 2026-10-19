@@ -234,7 +234,7 @@ function Report({
         title="Play screen test"
         note={`${span}. Current play screen vs the new one, each browser assigned 50/50${
           report.uiSince ? `, since ${shortDate(report.uiSince)}` : ""
-        }.`}
+        }. Each player counts from the day they were assigned.`}
       >
         <MetricsTable
           split="Play screen"
