@@ -21,11 +21,12 @@
 --     the rule only catches visits from here on.
 --
 -- The page shows how many players it dropped this way in the window
--- ('botsFiltered', counted by the day of their first visit), so the exclusion
--- is visible rather than silent.
+-- ('botsFiltered', counted by the day of their first visit, Muse not among
+-- them since it has its own section), so the exclusion is visible rather than
+-- silent.
 --
--- The function is otherwise 20261021100000_analytics_drop_start_mode_idle_hint.sql,
--- whose notes stand; same signature, so a replace, and the grant is given again.
+-- The function is otherwise 20261022200000_analytics_guessers_so_far.sql
+-- (Muse and the guessers' soFar included), whose notes stand; same signature, so a replace, and the grant is given again.
 
 create or replace function public.analytics_overview(
   p_from date default null,
@@ -37,9 +38,13 @@ language sql
 stable
 as $$
   with
-  -- Browsers that ever arrived from GitHub or Vercel -- the people building
-  -- the game, clicking through from a pull request or a deploy -- and the
-  -- players listed by hand.
+  -- Muse AI's browsers: any that ever sent the tag.
+  muse_players as (
+    select distinct e.props ->> 'player_id' as player_id
+    from public.analytics_events e
+    where e.props ->> 'visitor' = 'mos-muse'
+      and e.props ->> 'player_id' is not null
+  ),
   -- Each player's first site_visit: when, and on which puzzle (the same day
   -- rule as events, below).
   first_visits as (
@@ -91,6 +96,9 @@ as $$
         or e.props ->> 'bot_ua' = 'true'
         or e.props ->> 'server_bot_ua' = 'true')
   ),
+  -- Browsers that ever arrived from GitHub or Vercel -- the people building
+  -- the game, clicking through from a pull request or a deploy -- the players
+  -- listed by hand, and Muse.
   excluded_players as (
     select player_id from bot_players
     union
@@ -101,6 +109,8 @@ as $$
         or e.props ->> 'last_source' ~ '(^|\.)(github(\.com|\.io)?|vercel\.(com|app))$')
     union
     select player_id from public.analytics_excluded_players
+    union
+    select player_id from muse_players
   ),
   -- The date is checked before it is cast: the endpoint that writes events is
   -- public, and one malformed row must not take the report down.
@@ -248,7 +258,8 @@ as $$
             'soFar', count(r.player_id) filter (where r.returned),
             'guessers', jsonb_build_object(
               'cohort', count(r.player_id) filter (where r.level = 3 and r.closed),
-              'returned', count(r.player_id) filter (where r.level = 3 and r.closed and r.returned)))
+              'returned', count(r.player_id) filter (where r.level = 3 and r.closed and r.returned),
+              'soFar', count(r.player_id) filter (where r.level = 3 and r.returned)))
         ) as v
       from (values ('all'), ('new'), ('returning')) as k(grp)
         left join win_grouped r on r.grp = k.grp
@@ -280,7 +291,9 @@ as $$
               'cohort', (select count(*) from win_grouped r
                          where r.grp = k.grp and r.chatted = s.chatted and r.level = 3 and r.closed),
               'returned', (select count(*) from win_grouped r
-                           where r.grp = k.grp and r.chatted = s.chatted and r.level = 3 and r.closed and r.returned)))
+                           where r.grp = k.grp and r.chatted = s.chatted and r.level = 3 and r.closed and r.returned),
+              'soFar', (select count(*) from win_grouped r
+                        where r.grp = k.grp and r.chatted = s.chatted and r.level = 3 and r.returned)))
         )) as v
       from (values ('all'), ('new'), ('returning')) as k(grp)
         cross join (values ('opened', true), ('notOpened', false)) as s(side, chatted)
@@ -313,7 +326,9 @@ as $$
               'cohort', (select count(*) from win_grouped r
                          where r.grp = k.grp and r.ui_variant = s.variant and r.level = 3 and r.closed),
               'returned', (select count(*) from win_grouped r
-                           where r.grp = k.grp and r.ui_variant = s.variant and r.level = 3 and r.closed and r.returned)))
+                           where r.grp = k.grp and r.ui_variant = s.variant and r.level = 3 and r.closed and r.returned),
+              'soFar', (select count(*) from win_grouped r
+                        where r.grp = k.grp and r.ui_variant = s.variant and r.level = 3 and r.returned)))
         )) as v
       from (values ('all'), ('new'), ('returning')) as k(grp)
         cross join (values ('control'), ('v2')) as s(variant)
@@ -375,7 +390,8 @@ as $$
               'soFar', count(r.player_id) filter (where r.returned),
               'guessers', jsonb_build_object(
                 'cohort', count(r.player_id) filter (where r.level = 3 and r.closed),
-                'returned', count(r.player_id) filter (where r.level = 3 and r.closed and r.returned)))
+                'returned', count(r.player_id) filter (where r.level = 3 and r.closed and r.returned),
+                'soFar', count(r.player_id) filter (where r.level = 3 and r.returned)))
           ) as v
         from (values ('all'), ('new'), ('returning')) as k(grp)
           cross join (values ('control'), ('treatment')) as s(variant)
@@ -472,6 +488,78 @@ as $$
     ) order by d.day), '[]'::jsonb) as v
     from (select day, jsonb_object_agg(grp, v) as groups from day_counts group by day) d,
       bounds b
+  ),
+
+  -- Muse AI's events, by the puzzle each one belongs to.
+  muse_events as (
+    select
+      e.name,
+      e.props ->> 'player_id' as player_id,
+      case
+        when e.props ->> 'puzzle_date' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+          and pg_input_is_valid(e.props ->> 'puzzle_date', 'date')
+        then (e.props ->> 'puzzle_date')::date
+        else (e.created_at at time zone 'America/Denver')::date
+      end as day,
+      e.created_at
+    from public.analytics_events e
+      join muse_players m on m.player_id = e.props ->> 'player_id'
+    where e.name in ('site_visit', 'answer_rejected', 'chat_opened', 'chat_message_sent')
+  ),
+  muse_win as (
+    select m.*
+    from muse_events m
+      cross join bounds b
+    where m.day between coalesce(b.win_start, m.day) and coalesce(b.win_end, m.day)
+  ),
+  -- A puzzle Muse played is a board row: a browser, a date, a mode, with the
+  -- total and the words it banked -- the rows the players' Guessed is read from.
+  muse_puzzles as (
+    select s.puzzle_date as day, s.total_score as score, s.words
+    from public.leaderboard_scores s
+      join muse_players m on m.player_id = s.player_id::text
+      cross join bounds b
+    where s.puzzle_date between coalesce(b.win_start, s.puzzle_date) and coalesce(b.win_end, s.puzzle_date)
+  ),
+  muse_days as (
+    select
+      d.day,
+      (select count(*) from muse_win w where w.day = d.day and w.name = 'site_visit') as visits,
+      (select count(*) from muse_puzzles p where p.day = d.day) as puzzles,
+      (select round(avg(p.score), 2) from muse_puzzles p where p.day = d.day) as avg_score,
+      (select round(avg(p.words), 2) from muse_puzzles p where p.day = d.day) as avg_words,
+      (select round((select count(*) from muse_win w where w.day = d.day and w.name = 'answer_rejected')
+        / nullif((select count(*) from muse_puzzles p where p.day = d.day), 0)::numeric, 2)) as avg_rejected,
+      exists (select 1 from muse_win w where w.day = d.day and w.name = 'chat_opened') as chat_opened,
+      (select count(*) from muse_win w where w.day = d.day and w.name = 'chat_message_sent') as messages
+    from (select day from muse_win union select day from muse_puzzles) d
+  ),
+  muse as (
+    select jsonb_build_object(
+      'visits', (select count(*) from muse_win where name = 'site_visit'),
+      'browsers', (select count(distinct player_id) from muse_win),
+      'puzzles', (select count(*) from muse_puzzles),
+      'avgScore', (select round(avg(score), 2) from muse_puzzles),
+      'avgWords', (select round(avg(words), 2) from muse_puzzles),
+      -- A rejection's own mode is the date's, not the one played, so tries are
+      -- counted by day and spread over that window's puzzles.
+      'avgRejected', (select round((select count(*) from muse_win where name = 'answer_rejected')
+        / nullif((select count(*) from muse_puzzles), 0)::numeric, 2)),
+      'chatDays', (select count(*) from muse_days where chat_opened),
+      'messages', (select count(*) from muse_win where name = 'chat_message_sent'),
+      'firstSeen', (select min(created_at) from muse_events),
+      'lastSeen', (select max(created_at) from muse_events),
+      'days', (select coalesce(jsonb_agg(jsonb_build_object(
+        'date', day,
+        'visits', visits,
+        'puzzles', puzzles,
+        'avgScore', avg_score,
+        'avgWords', avg_words,
+        'avgRejected', avg_rejected,
+        'chatOpened', chat_opened,
+        'messages', messages
+      ) order by day desc), '[]'::jsonb) from muse_days)
+    ) as v
   )
 
   select jsonb_build_object(
@@ -493,17 +581,19 @@ as $$
         and e.props ->> 'live_date' ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
         and pg_input_is_valid(e.props ->> 'live_date', 'date')),
     'daily', (select v from daily),
+    'muse', (select v from muse),
     'botsFiltered', (
       select count(*)
       from bot_players p
         join first_visits f on f.player_id = p.player_id
         cross join bounds b
-      where f.day between b.win_start and b.win_end)
+      where f.day between b.win_start and b.win_end
+        and not exists (select 1 from muse_players m where m.player_id = p.player_id))
   );
 $$;
 
 comment on function public.analytics_overview(date, date, date) is
-  'Players, players who acted, guessed, shared and returned within 7 days -- by new/returning, puzzle type, chat, play-screen variant and idle hint arm -- for the /analytics page, as one JSON document, with automated visits dropped and counted in botsFiltered. Read by api/review.ts.';
+  'Players, players who acted, guessed, shared and returned within 7 days -- by new/returning, puzzle type, chat, play-screen variant and idle hint arm, with Muse AI apart -- for the /analytics page, as one JSON document, with automated visits dropped and counted in botsFiltered. Read by api/review.ts.';
 
 -- Explicit: service_role does not inherit what public is given, and a clean
 -- stack grants it nothing by default.
