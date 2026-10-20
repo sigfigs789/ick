@@ -568,7 +568,7 @@ describe("reading the boards", () => {
             atRisk: true,
           },
           { rank: 2, playerId: "you", current: 0, best: 4 },
-          { rank: 3, playerId: "gone", current: 5, best: 9, lost: true },
+          { rank: null, playerId: "gone", current: 5, best: 9, lost: true },
         ],
         streakSelf: { playerId: "late", current: 2, best: 2 },
       })
@@ -591,7 +591,7 @@ describe("reading the boards", () => {
         lost: false,
       },
       {
-        rank: 3,
+        rank: null,
         playerId: "gone",
         name: handleFor("gone"),
         current: 5,

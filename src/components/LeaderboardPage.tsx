@@ -1091,10 +1091,12 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
     <li
       className={`leaderboard__row${isLeader ? " leaderboard__row--leader" : ""}${
         isYou ? " leaderboard__row--you" : ""
-      }`}
+      }${entry.lost ? " leaderboard__row--lost" : ""}`}
     >
+      {/* A lost run keeps its place but no number: the live runs below it
+          are ranked as if it were not there, because it no longer is. */}
       <span className="leaderboard__rank">
-        {isLeader ? (
+        {entry.rank === null ? null : isLeader ? (
           <>
             <span className="leaderboard__rank-trophy" aria-hidden="true">
               🏆

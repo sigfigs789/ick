@@ -446,8 +446,10 @@ describe("api/leaderboard reads", () => {
           best_streak: 4,
           covered: true,
         },
+        // A lost run: placed by its length, ranked nowhere.
         {
-          rank: 4,
+          rank: null,
+          place: 4,
           player_id: "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           current_streak: 3,
           best_streak: 6,
@@ -483,7 +485,7 @@ describe("api/leaderboard reads", () => {
         covered: true,
         atRisk: true,
       },
-      { rank: 4, playerId: "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee", current: 3, best: 6, lost: true },
+      { rank: null, playerId: "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee", current: 3, best: 6, lost: true },
     ]);
     expect(body.streakSelf).toMatchObject({ rank: 140, current: 1, best: 3 });
     // No mode: a day played either way keeps a streak alive.

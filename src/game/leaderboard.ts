@@ -65,7 +65,8 @@ export interface BoardEntry {
  * puzzle. The server only decides whether the run is still alive today.
  */
 export interface StreakEntry {
-  rank: number;
+  /** Null on a lost run: it keeps its place on the board but holds no rank. */
+  rank: number | null;
   playerId: string;
   name: string;
   /** Days played in the run they are on now. */
@@ -323,7 +324,8 @@ function parseStreaks(raw: unknown): StreakEntry[] {
   if (!Array.isArray(raw)) return [];
   const entries: StreakEntry[] = [];
   for (const item of raw as Record<string, unknown>[]) {
-    const entry = parseStreak(item, entries.length + 1);
+    // A lost run holds no rank, so the fallback counts the live runs alone.
+    const entry = parseStreak(item, entries.filter((e) => e.rank !== null).length + 1);
     if (entry) entries.push(entry);
   }
   return entries;
@@ -339,9 +341,9 @@ function parseStreak(
   if (typeof playerId !== "string") return null;
   if (typeof current !== "number" || !Number.isFinite(current) || current < 1) return null;
   const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
-  if (ranked === undefined) return null;
+  if (ranked === undefined && lost !== true) return null;
   return {
-    rank: ranked,
+    rank: lost === true ? null : (ranked as number),
     playerId,
     name: nameFor(playerId, item.source),
     current,

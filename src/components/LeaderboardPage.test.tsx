@@ -265,18 +265,20 @@ describe("the leaderboard page", () => {
         },
         // Ended a day or two ago: kept, at the length it reached, with a skull.
         {
-          rank: 6,
+          rank: null,
           playerId: "66666666-6666-4666-8666-666666666666",
           current: 9,
           best: 12,
           lost: true,
         },
+        // Below the lost run, and ranked as if it were not there.
+        { rank: 6, playerId: "77777777-7777-4777-8777-777777777777", current: 8, best: 8 },
       ],
       streakSelf: null,
     });
     render(<LeaderboardPage />);
 
-    await waitFor(() => expect(boardRows("Streaks")).toHaveLength(6));
+    await waitFor(() => expect(boardRows("Streaks")).toHaveLength(7));
     expect(boardRows("Streaks")[0]).toHaveTextContent(handleFor(ALICE));
     expect(boardRows("Streaks")[0]).toHaveTextContent("21");
     // Ranked by the run they are on, with their longest kept as the detail.
@@ -304,6 +306,11 @@ describe("the leaderboard page", () => {
     expect(boardRows("Streaks")[5]).not.toHaveTextContent(/🔥|🧊|⏳/u);
     expect(boardRows("Streaks")[5]).toHaveTextContent("9");
     expect(boardRows("Streaks")[5]).toHaveTextContent("lost");
+    // Struck out and unnumbered; the next live run takes the rank it left.
+    expect(boardRows("Streaks")[5]).toHaveClass("leaderboard__row--lost");
+    expect(boardRows("Streaks")[5].querySelector(".leaderboard__rank")).toBeEmptyDOMElement();
+    expect(boardRows("Streaks")[6]).not.toHaveClass("leaderboard__row--lost");
+    expect(boardRows("Streaks")[6].querySelector(".leaderboard__rank")).toHaveTextContent(/^6$/);
     expect(board("Streaks")).toHaveTextContent(/Streak\s*Longest streak/);
     // No window, so nothing to step through.
     const streaks = board("Streaks");

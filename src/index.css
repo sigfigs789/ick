@@ -3471,6 +3471,29 @@ h2 {
   letter-spacing: 0.1em;
   text-align: center;
 }
+/*
+ * A streak that has ended, kept on the board for its first two days over.
+ *
+ * Struck through end to end and greyed: the player is out, and the row stays
+ * only so the board can say so. The grey goes on the contents rather than the
+ * row, so a docked "you" row keeps the solid fill the rows pass beneath.
+ */
+.leaderboard__row--lost {
+  position: relative;
+}
+.leaderboard__row--lost > * {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+.leaderboard__row--lost::after {
+  content: "";
+  position: absolute;
+  left: 0.4rem;
+  right: 0.4rem;
+  top: 50%;
+  border-top: 1.5px solid var(--fg-faint);
+  pointer-events: none;
+}
 .leaderboard__rank {
   grid-area: rank;
   color: var(--fg-faint);
