@@ -45,6 +45,15 @@ describe("the header", () => {
     );
   });
 
+  it("puts the finds before the boards", () => {
+    render(<Harness />);
+
+    const labels = screen
+      .getAllByRole("button", { name: /^(Play|Words found|Leaderboards)$/ })
+      .map((tab) => tab.textContent);
+    expect(labels).toEqual(["Play", "Words found", "Leaderboards"]);
+  });
+
   it("goes to each page, and moves the current marker with it", async () => {
     render(<Harness />);
 

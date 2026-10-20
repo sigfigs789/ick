@@ -17,7 +17,7 @@ and nothing to buy.
    number out of ten and a tier, from Very Common up to Legend.
 4. Your best word and your total go on the board, and every word anybody found
    shows up in the finds feed. Three tabs across the top: **Play**,
-   **Leaderboards**, and **Words found**.
+   **Words found**, and **Leaderboards**.
 
 Old puzzles are playable by stepping back with the arrows. They do not count
 towards the board or the streak, for the obvious reason that the answers are

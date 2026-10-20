@@ -15,8 +15,8 @@ to buy.
 3. Each accepted word is scored on how rare it is, measured against published
    word-frequency data rather than on length or difficulty.
 4. Your best word and your total go on the board. Three tabs across the top:
-   **Play**, **Leaderboards**, and **Words found** — everything anybody turned
-   up on that day's puzzle.
+   **Play**, **Words found** — everything anybody turned up on that day's
+   puzzle — and **Leaderboards**.
 
 There are two ways to play. **Standard** scores a word as its common form, so
 `plays` is worth what `play` is worth; **Freeform** scores every word on its

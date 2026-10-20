@@ -28,11 +28,11 @@ type Route = 'game' | 'leaderboard' | 'found-words';
  */
 const TABS: { route: Route; label: string }[] = [
   { route: 'game', label: 'Play' },
-  { route: 'leaderboard', label: 'Leaderboards' },
   // "Words found" rather than "Today's finds": it opens on today but stepping
   // back a day is a thing it offers, and a tab that promises today then shows
   // Tuesday has misnamed itself.
   { route: 'found-words', label: 'Words found' },
+  { route: 'leaderboard', label: 'Leaderboards' },
 ];
 
 /**
