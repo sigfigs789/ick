@@ -274,7 +274,8 @@ describe("the leaderboard page", () => {
     // Ranked by the run they are on, with their longest kept as the detail.
     expect(boardRows("Streaks")[1]).toHaveTextContent("Longest 40");
     // One icon a row: fire for a run played through yesterday, ice while a
-    // saved freeze is covering it, an hourglass when missing today ends it.
+    // saved freeze is covering it or ready to, an hourglass when missing today
+    // ends it.
     expect(boardRows("Streaks")[0]).toHaveTextContent("🔥");
     expect(boardRows("Streaks")[0]).not.toHaveTextContent(/🧊|⏳/u);
     expect(boardRows("Streaks")[1]).toHaveTextContent("🧊");
@@ -286,9 +287,11 @@ describe("the leaderboard page", () => {
     expect(boardRows("Streaks")[2]).toHaveTextContent("at risk today");
     // A one-day run is a start, not a streak: no icon at all.
     expect(boardRows("Streaks")[3]).not.toHaveTextContent(/🔥|🧊|⏳/u);
-    // The free day with a freeze to spare is not at risk, so it keeps its fire.
-    expect(boardRows("Streaks")[4]).toHaveTextContent("🔥");
-    expect(boardRows("Streaks")[4]).not.toHaveTextContent(/🧊|⏳|at risk/u);
+    // The free day with a freeze to spare is not at risk: ice, for the freeze
+    // standing ready to cover today.
+    expect(boardRows("Streaks")[4]).toHaveTextContent("🧊");
+    expect(boardRows("Streaks")[4]).not.toHaveTextContent(/🔥|⏳|at risk/u);
+    expect(boardRows("Streaks")[4]).toHaveTextContent("a saved freeze will cover today");
     expect(board("Streaks")).toHaveTextContent(/Streak\s*Longest streak/);
     // No window, so nothing to step through.
     const streaks = board("Streaks");

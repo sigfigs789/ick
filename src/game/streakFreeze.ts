@@ -20,9 +20,10 @@
  *
  * So the day after a covered day is a day a streak can be lost if no saved
  * freeze is left, and that is when `atRisk` is true and the streak shows ⏳.
- * The free day with a freeze to spare keeps 🔥; the streak shows 🧊 while a
- * saved freeze is covering (see `savedFreezeCovering` and
- * components/StreakDisplay.tsx), at risk or not. Playing turns it back to fire.
+ * The streak shows 🧊 while a saved freeze is covering (see
+ * `savedFreezeCovering` and components/StreakDisplay.tsx), at risk or not, and
+ * on the free day when a saved freeze is left to cover today
+ * (`missedYesterday`). Playing turns it back to fire.
  *
  * A frozen day keeps the streak alive but does not add to it: the count is
  * still days actually played. And it is remembered (`frozenDates`), because a
@@ -128,8 +129,7 @@ export function applyFreezes(streak: StreakState, today: string): StreakState {
 /**
  * Whether a saved freeze, not the free day, is what is keeping the streak
  * alive today: two or more days have gone unplayed since the last played day
- * and today has not been played yet. The one day the streak shows 🧊; on the
- * free day it stays 🔥.
+ * and today has not been played yet.
  */
 export function savedFreezeCovering(streak: StreakState, today: string): boolean {
   if (streak.currentStreak === 0 || !streak.lastCompletedDate) return false;
