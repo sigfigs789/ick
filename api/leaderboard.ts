@@ -435,6 +435,11 @@ interface StreakRow {
   frozen?: boolean | null;
   /** A missed day is being covered by a freeze; absent before 20261021200000. */
   covered?: boolean | null;
+  /**
+   * Missing today ends the run: the free day and every saved freeze are spent.
+   * Absent before 20261023100000.
+   */
+  at_risk?: boolean | null;
 }
 
 /** One streak row, as the client receives it. */
@@ -447,6 +452,8 @@ interface StreakEntry {
   frozen?: true;
   /** Sent only when true: a missed day is being covered by a freeze. */
   covered?: true;
+  /** Sent only when true: missing today ends the run. */
+  atRisk?: true;
 }
 
 /** The streak board split at the cut, the same way `toBoard` splits the others. */
@@ -465,6 +472,9 @@ function toStreakBoard(
       best: Number(row.best_streak) || 0,
       ...(row.frozen === true ? { frozen: true as const } : {}),
       ...(row.covered === true ? { covered: true as const } : {}),
+      // A database from before 20261023100000 has no `at_risk`, and every run
+      // it marked covered was the one it called at risk.
+      ...((row.at_risk ?? row.covered) === true ? { atRisk: true as const } : {}),
     };
     if (entry.rank > limit) self = entry;
     else entries.push(entry);

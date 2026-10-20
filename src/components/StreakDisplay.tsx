@@ -88,11 +88,20 @@ export function StreakDisplay({
   hideEmpty = false,
   hasWords = true,
 }: Props) {
-  // The free missed day keeps the flame. Only a saved freeze covering a longer
-  // gap turns it to ice, until today is played. At risk -- missing today ends
-  // the streak -- is said in a line under it rather than with another icon.
+  // One icon for how the streak stands, as the streak board marks it (see
+  // components/LeaderboardPage.tsx): 🧊 while a saved freeze is covering a
+  // missed day, until today is played; ⏳ when missing today ends the streak;
+  // 🔥 otherwise, the free missed day with a freeze to spare included.
   const frozen = isToday && date !== undefined && savedFreezeCovering(streak, date);
   const risky = isToday && date !== undefined && atRisk(streak, date);
+  const icon = frozen ? "🧊" : risky ? "⏳" : streak.currentStreak >= 2 ? "🔥" : null;
+  const iconTitle = frozen
+    ? risky
+      ? "A saved freeze is covering your streak, and none is left: play today to keep it"
+      : "A saved freeze is covering your streak"
+    : risky
+      ? "You missed yesterday: play today to keep your streak"
+      : undefined;
   const banked = streak.bankedFreezes ?? 0;
   const cap = streakFreezeCap(streak);
   const showFreezes = !hideEmpty || banked > 0;
@@ -112,22 +121,15 @@ export function StreakDisplay({
     >
       {showStreak && (
         <div className="streak-display__row">
-          {frozen ? (
-            <span className="streak-display__flame" aria-hidden="true">
-              🧊
+          {icon && (
+            <span className="streak-display__flame" aria-hidden="true" title={iconTitle}>
+              {icon}
             </span>
-          ) : streak.currentStreak >= 2 ? (
-            <span className="streak-display__flame" aria-hidden="true">
-              🔥
-            </span>
-          ) : null}
+          )}
           <span className="streak-display__count">{streak.currentStreak}</span>
           <span className="streak-display__unit">day streak</span>
           {showFreezes && <FreezeBadge banked={banked} cap={cap} />}
         </div>
-      )}
-      {risky && (
-        <p className="streak-display__saved">You missed yesterday. Play today to keep your streak.</p>
       )}
       {showTotal && (
         <div className="streak-display__rarity-scores">

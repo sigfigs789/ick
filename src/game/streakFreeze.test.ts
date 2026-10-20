@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyFreezes,
   atRisk,
+  missedYesterday,
   backdateFreezes,
   coveredThrough,
   earnFreeze,
@@ -127,6 +128,11 @@ describe("atRisk", () => {
   it("is false the day after a freeze while a saved freeze is left", () => {
     const frozen = applyFreezes(streakOf({ bankedFreezes: 1 }), "2026-10-03");
     expect(atRisk(frozen, "2026-10-03")).toBe(false);
+    // Still a missed day, which the game says without calling it a risk.
+    expect(missedYesterday(frozen, "2026-10-03")).toBe(true);
+    expect(missedYesterday({ ...frozen, lastCompletedDate: "2026-10-03" }, "2026-10-03")).toBe(
+      false
+    );
   });
 
   it("is false on an ordinary day", () => {

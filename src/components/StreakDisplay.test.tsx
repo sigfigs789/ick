@@ -55,7 +55,7 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("🔥")).toBeInTheDocument();
   });
 
-  it("keeps the flame on the free missed day, with a line saying to play today", () => {
+  it("turns the flame to an hourglass when missing today ends the streak", () => {
     const missed: StreakState = {
       ...streak,
       currentStreak: 5,
@@ -63,8 +63,8 @@ describe("StreakDisplay", () => {
       frozenDates: ["2026-10-02"],
     };
     const { rerender } = render(<StreakDisplay streak={missed} date="2026-10-03" isToday />);
-    expect(flame()).toBe("🔥");
-    expect(screen.getByText("You missed yesterday. Play today to keep your streak.")).toBeInTheDocument();
+    expect(flame()).toBe("⏳");
+    expect(screen.getByLabelText(/Play today to keep your streak/)).toBeInTheDocument();
 
     rerender(
       <StreakDisplay
@@ -73,8 +73,25 @@ describe("StreakDisplay", () => {
         isToday
       />
     );
-    expect(screen.getByText("🔥")).toBeInTheDocument();
-    expect(screen.queryByText(/Play today/)).not.toBeInTheDocument();
+    expect(flame()).toBe("🔥");
+    expect(screen.queryByLabelText(/Play today/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the flame on the free missed day while a saved freeze is left for today", () => {
+    const missed: StreakState = {
+      ...streak,
+      currentStreak: 15,
+      longestStreak: 15,
+      lastCompletedDate: "2026-10-02",
+      frozenDates: ["2026-10-03"],
+      bankedFreezes: 1,
+    };
+    const { rerender } = render(<StreakDisplay streak={missed} date="2026-10-04" isToday />);
+    expect(flame()).toBe("🔥");
+    expect(screen.queryByLabelText(/Play today/)).not.toBeInTheDocument();
+
+    rerender(<StreakDisplay streak={{ ...missed, bankedFreezes: 0 }} date="2026-10-04" isToday />);
+    expect(flame()).toBe("⏳");
   });
 
   it("turns the flame to ice while a saved freeze covers a missed day, until today is played", () => {
@@ -86,12 +103,17 @@ describe("StreakDisplay", () => {
       bankedFreezes: 0,
     };
     const { rerender } = render(<StreakDisplay streak={covered} date="2026-10-04" isToday />);
+    // Ice wins over the hourglass; no freeze left for today is in the hover text.
     expect(flame()).toBe("🧊");
-    // No freeze left for today, so it says so.
-    expect(screen.getByText(/Play today to keep your streak/)).toBeInTheDocument();
+    expect(document.querySelector(".streak-display__flame")).toHaveAttribute(
+      "title",
+      expect.stringMatching(/none is left/)
+    );
+    expect(screen.getByLabelText(/Play today to keep your streak/)).toBeInTheDocument();
 
     rerender(<StreakDisplay streak={{ ...covered, bankedFreezes: 1 }} date="2026-10-04" isToday />);
-    expect(screen.queryByText(/Play today to keep your streak/)).not.toBeInTheDocument();
+    expect(flame()).toBe("🧊");
+    expect(screen.queryByLabelText(/Play today/)).not.toBeInTheDocument();
 
     rerender(
       <StreakDisplay
@@ -100,7 +122,7 @@ describe("StreakDisplay", () => {
         isToday
       />
     );
-    expect(screen.getByText("🔥")).toBeInTheDocument();
+    expect(flame()).toBe("🔥");
   });
 
   it("shows saved freezes out of the most the streak can hold, with the rules in a popup", () => {

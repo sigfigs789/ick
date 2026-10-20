@@ -558,7 +558,15 @@ describe("reading the boards", () => {
     const fetchMock = stubFetch(
       boardsResponse({
         streak: [
-          { rank: 1, playerId: "me", current: 12, best: 30, frozen: true, covered: true },
+          {
+            rank: 1,
+            playerId: "me",
+            current: 12,
+            best: 30,
+            frozen: true,
+            covered: true,
+            atRisk: true,
+          },
           { rank: 2, playerId: "you", current: 0, best: 4 },
         ],
         streakSelf: { playerId: "late", current: 2, best: 2 },
@@ -578,6 +586,7 @@ describe("reading the boards", () => {
         best: 30,
         frozen: true,
         covered: true,
+        atRisk: true,
       },
     ]);
     expect(boards.streakSelf).toBeNull();

@@ -79,9 +79,14 @@ export interface StreakEntry {
   frozen: boolean;
   /**
    * At least one day missed and today not played: the free day or a saved
-   * freeze is holding the run up, so it is at risk. Wider than `frozen`.
+   * freeze is holding the run up. Wider than `frozen`.
    */
   covered: boolean;
+  /**
+   * Missing today ends the run: the free day and every saved freeze are spent.
+   * The day the game shows ⏳ (`atRisk` in game/streakFreeze.ts). A run with a freeze left for today is not at risk.
+   */
+  atRisk: boolean;
 }
 
 /**
@@ -325,7 +330,7 @@ function parseStreak(
   fallbackRank?: number
 ): StreakEntry | null {
   if (!item || typeof item !== "object") return null;
-  const { rank, playerId, current, best, frozen, covered } = item;
+  const { rank, playerId, current, best, frozen, covered, atRisk } = item;
   if (typeof playerId !== "string") return null;
   if (typeof current !== "number" || !Number.isFinite(current) || current < 1) return null;
   const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
@@ -338,6 +343,7 @@ function parseStreak(
     best: typeof best === "number" && Number.isFinite(best) ? Math.max(best, current) : current,
     frozen: frozen === true,
     covered: covered === true,
+    atRisk: atRisk === true,
   };
 }
 

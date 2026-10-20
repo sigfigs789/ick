@@ -19,10 +19,10 @@
  * cap stays.
  *
  * So the day after a covered day is a day a streak can be lost if no saved
- * freeze is left, and that is when `atRisk` is true and the game says so in a
- * line under the streak. The free day itself keeps 🔥; the streak shows 🧊 only
- * while a saved freeze is covering (see `savedFreezeCovering` and
- * components/StreakDisplay.tsx). Playing turns it back to fire.
+ * freeze is left, and that is when `atRisk` is true and the streak shows ⏳.
+ * The free day with a freeze to spare keeps 🔥; the streak shows 🧊 while a
+ * saved freeze is covering (see `savedFreezeCovering` and
+ * components/StreakDisplay.tsx), at risk or not. Playing turns it back to fire.
  *
  * A frozen day keeps the streak alive but does not add to it: the count is
  * still days actually played. And it is remembered (`frozenDates`), because a
@@ -137,16 +137,25 @@ export function savedFreezeCovering(streak: StreakState, today: string): boolean
 }
 
 /**
- * Whether the streak is lost if `today` goes unplayed: yesterday was covered,
- * so there is no free day, and no saved freeze is left.
+ * Whether yesterday went unplayed and was covered, and today is not played
+ * yet: the free day is spent, so only a saved freeze stands between the
+ * streak and missing today. The streak board's `covered`.
  */
-export function atRisk(streak: StreakState, today: string): boolean {
+export function missedYesterday(streak: StreakState, today: string): boolean {
   return (
     streak.currentStreak > 0 &&
     streak.lastCompletedDate !== today &&
-    wasFrozen(streak, addDays(today, -1)) &&
-    (streak.bankedFreezes ?? 0) === 0
+    wasFrozen(streak, addDays(today, -1))
   );
+}
+
+/**
+ * Whether the streak is lost if `today` goes unplayed: yesterday was covered,
+ * so there is no free day, and no saved freeze is left. The streak board's
+ * `atRisk`.
+ */
+export function atRisk(streak: StreakState, today: string): boolean {
+  return missedYesterday(streak, today) && (streak.bankedFreezes ?? 0) === 0;
 }
 
 /**

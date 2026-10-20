@@ -1054,9 +1054,24 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
 
 /** The hover text for a streak row's icon. */
 function streakIconTitle(entry: StreakEntry): string | undefined {
+  if (entry.frozen && entry.atRisk) {
+    return "Missed days: a saved freeze is covering them, and none is left for today";
+  }
   if (entry.frozen) return "Missed days: a saved freeze is covering them";
-  if (entry.covered) return "Missed a day: the free day is covering it";
+  if (entry.atRisk) return "Missed a day: the free day is covering it, and no freeze is left for today";
+  if (entry.covered) return "Missed a day: the free day is covering it, and a saved freeze is left";
   return undefined;
+}
+
+/** What a screen reader hears after a streak row's count. */
+function streakStatus(entry: StreakEntry): string {
+  if (entry.current <= 1 && !entry.frozen) return "";
+  const held = entry.frozen
+    ? ", covered by a saved freeze"
+    : entry.covered
+      ? ", missed a day, covered by the free day"
+      : "";
+  return held + (entry.atRisk ? ", at risk today" : "");
 }
 
 /**
@@ -1093,23 +1108,21 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
       <span className="leaderboard__score">
         {/* One icon for how the run stands: 🧊 while a saved freeze is covering
             it, as the game marks it (see components/StreakDisplay.tsx); ⏳
-            while the free day is covering a missed day; 🔥 for a run played
-            through yesterday. None on a run of one day, which is a start
-            rather than a streak. */}
+            when the free day is covering a missed day and no saved freeze is
+            left, so missing today ends it, as the game marks it too; 🔥
+            otherwise, the free day with a
+            freeze to spare included, as in the game. None on a run of one
+            day, which is a start rather than a streak. */}
         {entry.current > 1 && (
           <span aria-hidden="true" title={streakIconTitle(entry)}>
-            {entry.frozen ? "🧊" : entry.covered ? "⏳" : "🔥"}{" "}
+            {entry.frozen ? "🧊" : entry.atRisk ? "⏳" : "🔥"}{" "}
           </span>
         )}
         {entry.current}
         <span className="sr-only">
           {" "}
           {entry.current === 1 ? "day" : "days"} current streak
-          {entry.frozen
-            ? ", covered by a saved freeze"
-            : entry.current > 1 && entry.covered
-              ? ", missed a day, covered by the free day"
-              : ""}
+          {streakStatus(entry)}
         </span>
       </span>
       <span className="leaderboard__detail">
