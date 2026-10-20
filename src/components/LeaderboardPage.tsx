@@ -1109,8 +1109,8 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
         {/* One icon for how the run stands: 🧊 while a saved freeze is covering
             it, as the game marks it (see components/StreakDisplay.tsx); ⏳
             when the free day is covering a missed day and no saved freeze is
-            left, so missing today ends it -- the day the game says "Play
-            today to keep your streak"; 🔥 otherwise, the free day with a
+            left, so missing today ends it, as the game marks it too; 🔥
+            otherwise, the free day with a
             freeze to spare included, as in the game. None on a run of one
             day, which is a start rather than a streak. */}
         {entry.current > 1 && (

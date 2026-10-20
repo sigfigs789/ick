@@ -19,10 +19,10 @@
  * cap stays.
  *
  * So the day after a covered day is a day a streak can be lost if no saved
- * freeze is left, and that is when `atRisk` is true and the game says so in a
- * line under the streak. The free day itself keeps 🔥; the streak shows 🧊 only
- * while a saved freeze is covering (see `savedFreezeCovering` and
- * components/StreakDisplay.tsx). Playing turns it back to fire.
+ * freeze is left, and that is when `atRisk` is true and the streak shows ⏳.
+ * The free day with a freeze to spare keeps 🔥; the streak shows 🧊 while a
+ * saved freeze is covering (see `savedFreezeCovering` and
+ * components/StreakDisplay.tsx), at risk or not. Playing turns it back to fire.
  *
  * A frozen day keeps the streak alive but does not add to it: the count is
  * still days actually played. And it is remembered (`frozenDates`), because a

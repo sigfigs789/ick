@@ -84,8 +84,7 @@ export interface StreakEntry {
   covered: boolean;
   /**
    * Missing today ends the run: the free day and every saved freeze are spent.
-   * The day the game says "Play today to keep your streak" (`atRisk` in
-   * game/streakFreeze.ts). A run with a freeze left for today is not at risk.
+   * The day the game shows ⏳ (`atRisk` in game/streakFreeze.ts). A run with a freeze left for today is not at risk.
    */
   atRisk: boolean;
 }

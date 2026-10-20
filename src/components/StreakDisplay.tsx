@@ -1,10 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import {
-  atRisk,
-  missedYesterday,
-  savedFreezeCovering,
-  streakFreezeCap,
-} from "../game/streakFreeze";
+import { atRisk, savedFreezeCovering, streakFreezeCap } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
 
 /** How saved freezes work, for the freeze badge's popup. */
@@ -93,14 +88,20 @@ export function StreakDisplay({
   hideEmpty = false,
   hasWords = true,
 }: Props) {
-  // The free missed day keeps the flame. Only a saved freeze covering a longer
-  // gap turns it to ice, until today is played. At risk -- missing today ends
-  // the streak -- is said in a line under it rather than with another icon.
-  // So is a missed day with a saved freeze still to spare, which the streak
-  // board also shows, so the player hears it here first.
+  // One icon for how the streak stands, as the streak board marks it (see
+  // components/LeaderboardPage.tsx): 🧊 while a saved freeze is covering a
+  // missed day, until today is played; ⏳ when missing today ends the streak;
+  // 🔥 otherwise, the free missed day with a freeze to spare included.
   const frozen = isToday && date !== undefined && savedFreezeCovering(streak, date);
   const risky = isToday && date !== undefined && atRisk(streak, date);
-  const spared = isToday && date !== undefined && !risky && missedYesterday(streak, date);
+  const icon = frozen ? "🧊" : risky ? "⏳" : streak.currentStreak >= 2 ? "🔥" : null;
+  const iconTitle = frozen
+    ? risky
+      ? "A saved freeze is covering your streak, and none is left: play today to keep it"
+      : "A saved freeze is covering your streak"
+    : risky
+      ? "You missed yesterday: play today to keep your streak"
+      : undefined;
   const banked = streak.bankedFreezes ?? 0;
   const cap = streakFreezeCap(streak);
   const showFreezes = !hideEmpty || banked > 0;
@@ -114,34 +115,21 @@ export function StreakDisplay({
         `Current streak: ${streak.currentStreak} days. ` +
         (frozen ? "A saved freeze is covering your streak. " : "") +
         (risky ? "Play today to keep your streak. " : "") +
-        (spared ? "You missed yesterday. A saved freeze will cover today if you miss it. " : "") +
         `Streak freezes: ${banked} of ${cap}. ` +
         `This puzzle's total score: ${totalRarity.toFixed(1)}.`
       }
     >
       {showStreak && (
         <div className="streak-display__row">
-          {frozen ? (
-            <span className="streak-display__flame" aria-hidden="true">
-              🧊
+          {icon && (
+            <span className="streak-display__flame" aria-hidden="true" title={iconTitle}>
+              {icon}
             </span>
-          ) : streak.currentStreak >= 2 ? (
-            <span className="streak-display__flame" aria-hidden="true">
-              🔥
-            </span>
-          ) : null}
+          )}
           <span className="streak-display__count">{streak.currentStreak}</span>
           <span className="streak-display__unit">day streak</span>
           {showFreezes && <FreezeBadge banked={banked} cap={cap} />}
         </div>
-      )}
-      {risky && (
-        <p className="streak-display__saved">You missed yesterday. Play today to keep your streak.</p>
-      )}
-      {spared && (
-        <p className="streak-display__saved">
-          You missed yesterday. Your saved 🧊 will cover today if you miss it.
-        </p>
       )}
       {showTotal && (
         <div className="streak-display__rarity-scores">
