@@ -710,7 +710,7 @@ interface StreakReport {
 }
 
 /** The most saved freezes the game lets a streak hold (see freezeCap). */
-const MAX_SAVED_FREEZES = 2;
+const MAX_SAVED_FREEZES = 3;
 
 /**
  * The reported streak, or null for one that is absent or does not add up. A

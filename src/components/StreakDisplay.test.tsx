@@ -142,12 +142,12 @@ describe("StreakDisplay", () => {
   it("shows saved freezes out of the most the streak can hold, with the rules in a popup", () => {
     render(<StreakDisplay streak={{ ...streak, currentStreak: 31, bankedFreezes: 1 }} />);
     const badge = screen.getByRole("button", { name: /streak freezes/i });
-    expect(badge.textContent).toBe("🧊1/2");
+    expect(badge.textContent).toBe("🧊1/3");
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
-    expect(popup.querySelector("strong")?.textContent).toBe("1 of 2 🧊 acquired");
+    expect(popup.querySelector("strong")?.textContent).toBe("1 of 3 🧊 acquired");
     expect(popup.textContent).toContain("Earn an 🧊 every 7 days played.");
 
     fireEvent.keyDown(document, { key: "Escape" });
@@ -160,7 +160,7 @@ describe("StreakDisplay", () => {
 
   it("shows the cap the longest streak earned, even on a short current one", () => {
     render(<StreakDisplay streak={{ ...streak, currentStreak: 3, longestStreak: 45 }} />);
-    expect(screen.getByRole("button", { name: /streak freezes/i }).textContent).toBe("🧊0/2");
+    expect(screen.getByRole("button", { name: /streak freezes/i }).textContent).toBe("🧊0/3");
   });
 
   it("shows the current puzzle's total only", () => {

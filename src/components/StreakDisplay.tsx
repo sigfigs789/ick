@@ -5,7 +5,7 @@ import type { StreakState } from "../game/types";
 /** How saved freezes work, for the freeze badge's popup. */
 const FREEZE_RULES =
   "🧊 keeps your streak alive for one more day. Earn an 🧊 every 7 days played. " +
-  "You can hold 1 🧊 after a 14 day streak and 2 🧊 after a 30 day streak.";
+  "You can hold 1 🧊 after a 7 day streak, 2 🧊 after 14 days and 3 🧊 after 28 days.";
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return "No 🧊 acquired";

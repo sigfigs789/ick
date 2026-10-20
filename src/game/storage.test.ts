@@ -178,12 +178,12 @@ describe("loadStreak", () => {
 
     expect(loadStreak()).toMatchObject({
       currentStreak: 4,
-      bankedFreezes: 1,
+      bankedFreezes: 2,
       freezesBackdated: true,
     });
     // Stored, so the next load does not grant them again.
     expect(JSON.parse(localStorage.getItem("ick:streak") ?? "{}")).toMatchObject({
-      bankedFreezes: 1,
+      bankedFreezes: 2,
       freezesBackdated: true,
     });
   });
@@ -471,15 +471,15 @@ describe("streak freezes", () => {
     expect(loadStreak()).toMatchObject({ currentStreak: 3, frozenDates: ["2024-01-03"] });
   });
 
-  it("earns a saved freeze at 14 days that covers a second missed day", () => {
-    for (let d = 1; d <= 14; d++) play(`2024-01-${String(d).padStart(2, "0")}`);
-    expect(loadStreak()).toMatchObject({ currentStreak: 14, bankedFreezes: 1 });
+  it("earns a saved freeze at 7 days that covers a second missed day", () => {
+    for (let d = 1; d <= 7; d++) play(`2024-01-0${d}`);
+    expect(loadStreak()).toMatchObject({ currentStreak: 7, bankedFreezes: 1 });
 
-    play("2024-01-17"); // skipped 01-15 (grace) and 01-16 (saved freeze)
-    expect(loadStreak()).toMatchObject({ currentStreak: 15, bankedFreezes: 0 });
+    play("2024-01-10"); // skipped 01-08 (grace) and 01-09 (saved freeze)
+    expect(loadStreak()).toMatchObject({ currentStreak: 8, bankedFreezes: 0 });
   });
 
-  it("lets a new streak earn from its first week once a past one reached 14 days", () => {
+  it("lets a new streak earn from its first week up to the cap a past one reached", () => {
     for (let d = 1; d <= 14; d++) play(`2024-01-${String(d).padStart(2, "0")}`);
     for (let d = 20; d <= 26; d++) play(`2024-01-${d}`); // a new streak, 7 days
     expect(loadStreak()).toMatchObject({ currentStreak: 7, longestStreak: 14, bankedFreezes: 1 });

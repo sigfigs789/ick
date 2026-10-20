@@ -65,29 +65,30 @@ describe("applyFreezes", () => {
 });
 
 describe("saved freezes", () => {
-  it("caps at none under 14 days, one until 30, two from 30", () => {
-    expect([1, 13, 14, 29, 30, 365].map(freezeCap)).toEqual([0, 0, 1, 1, 2, 2]);
+  it("caps at none in the first week, one from 7 days, two from 14, three from 28", () => {
+    expect([1, 6, 7, 13, 14, 27, 28, 365].map(freezeCap)).toEqual([0, 0, 1, 1, 2, 2, 3, 3]);
   });
 
   it("earns one on every seventh day, up to the cap", () => {
-    expect(earnFreeze(streakOf({ currentStreak: 7 })).bankedFreezes).toBeUndefined();
-    expect(earnFreeze(streakOf({ currentStreak: 13 })).bankedFreezes).toBeUndefined();
-    expect(earnFreeze(streakOf({ currentStreak: 14 })).bankedFreezes).toBe(1);
-    expect(earnFreeze(streakOf({ currentStreak: 21, bankedFreezes: 1 })).bankedFreezes).toBe(1);
-    expect(earnFreeze(streakOf({ currentStreak: 35, bankedFreezes: 1 })).bankedFreezes).toBe(2);
-    expect(earnFreeze(streakOf({ currentStreak: 42, bankedFreezes: 2 })).bankedFreezes).toBe(2);
-    expect(earnFreeze(streakOf({ currentStreak: 36, bankedFreezes: 0 })).bankedFreezes).toBe(0);
+    const fresh = { longestStreak: 0 };
+    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 6 })).bankedFreezes).toBeUndefined();
+    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 7 })).bankedFreezes).toBe(1);
+    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 14, bankedFreezes: 1 })).bankedFreezes).toBe(2);
+    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 21, bankedFreezes: 2 })).bankedFreezes).toBe(2);
+    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 28, bankedFreezes: 2 })).bankedFreezes).toBe(3);
+    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 42, bankedFreezes: 3 })).bankedFreezes).toBe(3);
+    expect(earnFreeze(streakOf({ ...fresh, currentStreak: 36, bankedFreezes: 0 })).bankedFreezes).toBe(0);
   });
 
   it("keeps the cap a past streak reached, so a returning player earns from their first week", () => {
     const returning = { longestStreak: 40, bankedFreezes: 0 };
     expect(earnFreeze(streakOf({ ...returning, currentStreak: 7 })).bankedFreezes).toBe(1);
-    expect(earnFreeze(streakOf({ ...returning, currentStreak: 14, bankedFreezes: 1 })).bankedFreezes).toBe(2);
-    // A past 14-day streak caps at one.
-    expect(earnFreeze(streakOf({ longestStreak: 20, currentStreak: 7, bankedFreezes: 0 })).bankedFreezes).toBe(1);
+    expect(earnFreeze(streakOf({ ...returning, currentStreak: 14, bankedFreezes: 2 })).bankedFreezes).toBe(3);
+    // A past 14-day streak caps at two.
+    expect(earnFreeze(streakOf({ longestStreak: 20, currentStreak: 7, bankedFreezes: 1 })).bankedFreezes).toBe(2);
     expect(
-      earnFreeze(streakOf({ longestStreak: 20, currentStreak: 21, bankedFreezes: 1 })).bankedFreezes
-    ).toBe(1);
+      earnFreeze(streakOf({ longestStreak: 20, currentStreak: 21, bankedFreezes: 2 })).bankedFreezes
+    ).toBe(2);
   });
 
   it("covers missed days past the grace day, one each", () => {
@@ -171,22 +172,23 @@ describe("streakReport", () => {
 describe("backdateFreezes", () => {
   it("fills the streak to the cap its longest run set", () => {
     expect(backdateFreezes(streakOf({ currentStreak: 40, longestStreak: 40 }))).toMatchObject({
-      bankedFreezes: 2,
+      bankedFreezes: 3,
       freezesBackdated: true,
     });
-    expect(backdateFreezes(streakOf({ currentStreak: 20, longestStreak: 20 })).bankedFreezes).toBe(1);
-    expect(backdateFreezes(streakOf({ currentStreak: 10, longestStreak: 10 })).bankedFreezes).toBe(0);
+    expect(backdateFreezes(streakOf({ currentStreak: 20, longestStreak: 20 })).bankedFreezes).toBe(2);
+    expect(backdateFreezes(streakOf({ currentStreak: 10, longestStreak: 10 })).bankedFreezes).toBe(1);
+    expect(backdateFreezes(streakOf({ currentStreak: 5, longestStreak: 5 })).bankedFreezes).toBe(0);
   });
 
   it("does not depend on the length of the current run", () => {
     // A 48-day run before freezes existed, then a new run four days in.
-    expect(backdateFreezes(streakOf({ currentStreak: 4, longestStreak: 48 })).bankedFreezes).toBe(2);
-    expect(backdateFreezes(streakOf({ currentStreak: 1, longestStreak: 20 })).bankedFreezes).toBe(1);
+    expect(backdateFreezes(streakOf({ currentStreak: 4, longestStreak: 48 })).bankedFreezes).toBe(3);
+    expect(backdateFreezes(streakOf({ currentStreak: 1, longestStreak: 20 })).bankedFreezes).toBe(2);
   });
 
   it("never takes freezes away", () => {
-    const streak = streakOf({ currentStreak: 15, longestStreak: 35, bankedFreezes: 2 });
-    expect(backdateFreezes(streak).bankedFreezes).toBe(2);
+    const streak = streakOf({ currentStreak: 15, longestStreak: 20, bankedFreezes: 3 });
+    expect(backdateFreezes(streak).bankedFreezes).toBe(3);
   });
 
   it("runs only once", () => {
