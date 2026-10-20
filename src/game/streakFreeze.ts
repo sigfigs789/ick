@@ -137,16 +137,25 @@ export function savedFreezeCovering(streak: StreakState, today: string): boolean
 }
 
 /**
- * Whether the streak is lost if `today` goes unplayed: yesterday was covered,
- * so there is no free day, and no saved freeze is left.
+ * Whether yesterday went unplayed and was covered, and today is not played
+ * yet: the free day is spent, so only a saved freeze stands between the
+ * streak and missing today. The streak board's `covered`.
  */
-export function atRisk(streak: StreakState, today: string): boolean {
+export function missedYesterday(streak: StreakState, today: string): boolean {
   return (
     streak.currentStreak > 0 &&
     streak.lastCompletedDate !== today &&
-    wasFrozen(streak, addDays(today, -1)) &&
-    (streak.bankedFreezes ?? 0) === 0
+    wasFrozen(streak, addDays(today, -1))
   );
+}
+
+/**
+ * Whether the streak is lost if `today` goes unplayed: yesterday was covered,
+ * so there is no free day, and no saved freeze is left. The streak board's
+ * `atRisk`.
+ */
+export function atRisk(streak: StreakState, today: string): boolean {
+  return missedYesterday(streak, today) && (streak.bankedFreezes ?? 0) === 0;
 }
 
 /**

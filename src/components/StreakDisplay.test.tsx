@@ -92,6 +92,8 @@ describe("StreakDisplay", () => {
 
     rerender(<StreakDisplay streak={{ ...covered, bankedFreezes: 1 }} date="2026-10-04" isToday />);
     expect(screen.queryByText(/Play today to keep your streak/)).not.toBeInTheDocument();
+    // A freeze left for today: not at risk, but the missed day is still news.
+    expect(screen.getByText(/saved 🧊 will cover today/)).toBeInTheDocument();
 
     rerender(
       <StreakDisplay
@@ -101,6 +103,34 @@ describe("StreakDisplay", () => {
       />
     );
     expect(screen.getByText("🔥")).toBeInTheDocument();
+  });
+
+  it("says the free day covered yesterday when a saved freeze is left for today", () => {
+    const missed: StreakState = {
+      ...streak,
+      currentStreak: 15,
+      longestStreak: 15,
+      lastCompletedDate: "2026-10-02",
+      frozenDates: ["2026-10-03"],
+      bankedFreezes: 1,
+    };
+    const { rerender } = render(<StreakDisplay streak={missed} date="2026-10-04" isToday />);
+    expect(screen.getByText("🔥")).toBeInTheDocument();
+    expect(screen.getByText(/You missed yesterday\. Your saved 🧊 will cover today/)).toBeInTheDocument();
+    expect(screen.queryByText(/Play today to keep your streak/)).not.toBeInTheDocument();
+
+    rerender(<StreakDisplay streak={{ ...missed, bankedFreezes: 0 }} date="2026-10-04" isToday />);
+    expect(screen.getByText(/Play today to keep your streak/)).toBeInTheDocument();
+    expect(screen.queryByText(/will cover today/)).not.toBeInTheDocument();
+
+    rerender(
+      <StreakDisplay
+        streak={{ ...missed, currentStreak: 16, lastCompletedDate: "2026-10-04" }}
+        date="2026-10-04"
+        isToday
+      />
+    );
+    expect(screen.queryByText(/You missed yesterday/)).not.toBeInTheDocument();
   });
 
   it("shows saved freezes out of the most the streak can hold, with the rules in a popup", () => {

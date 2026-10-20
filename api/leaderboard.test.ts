@@ -428,6 +428,23 @@ describe("api/leaderboard reads", () => {
           best_streak: 20,
           frozen: true,
           covered: true,
+          at_risk: false,
+        },
+        {
+          rank: 2,
+          player_id: "bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          current_streak: 9,
+          best_streak: 9,
+          covered: true,
+          at_risk: true,
+        },
+        // A database from before at_risk: covered was what it called at risk.
+        {
+          rank: 3,
+          player_id: "cccccccc-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          current_streak: 4,
+          best_streak: 4,
+          covered: true,
         },
         { rank: 140, player_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", current_streak: 1, best_streak: 3 },
       ],
@@ -440,6 +457,22 @@ describe("api/leaderboard reads", () => {
     const body = (await response.json()) as Record<string, unknown>;
     expect(body.streak).toEqual([
       { rank: 1, playerId: PLAYER, current: 15, best: 20, frozen: true, covered: true },
+      {
+        rank: 2,
+        playerId: "bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+        current: 9,
+        best: 9,
+        covered: true,
+        atRisk: true,
+      },
+      {
+        rank: 3,
+        playerId: "cccccccc-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+        current: 4,
+        best: 4,
+        covered: true,
+        atRisk: true,
+      },
     ]);
     expect(body.streakSelf).toMatchObject({ rank: 140, current: 1, best: 3 });
     // No mode: a day played either way keeps a streak alive.

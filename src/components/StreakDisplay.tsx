@@ -1,5 +1,10 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { atRisk, savedFreezeCovering, streakFreezeCap } from "../game/streakFreeze";
+import {
+  atRisk,
+  missedYesterday,
+  savedFreezeCovering,
+  streakFreezeCap,
+} from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
 
 /** How saved freezes work, for the freeze badge's popup. */
@@ -91,8 +96,11 @@ export function StreakDisplay({
   // The free missed day keeps the flame. Only a saved freeze covering a longer
   // gap turns it to ice, until today is played. At risk -- missing today ends
   // the streak -- is said in a line under it rather than with another icon.
+  // So is a missed day with a saved freeze still to spare, which the streak
+  // board also shows, so the player hears it here first.
   const frozen = isToday && date !== undefined && savedFreezeCovering(streak, date);
   const risky = isToday && date !== undefined && atRisk(streak, date);
+  const spared = isToday && date !== undefined && !risky && missedYesterday(streak, date);
   const banked = streak.bankedFreezes ?? 0;
   const cap = streakFreezeCap(streak);
   const showFreezes = !hideEmpty || banked > 0;
@@ -106,6 +114,7 @@ export function StreakDisplay({
         `Current streak: ${streak.currentStreak} days. ` +
         (frozen ? "A saved freeze is covering your streak. " : "") +
         (risky ? "Play today to keep your streak. " : "") +
+        (spared ? "You missed yesterday. A saved freeze will cover today if you miss it. " : "") +
         `Streak freezes: ${banked} of ${cap}. ` +
         `This puzzle's total score: ${totalRarity.toFixed(1)}.`
       }
@@ -128,6 +137,11 @@ export function StreakDisplay({
       )}
       {risky && (
         <p className="streak-display__saved">You missed yesterday. Play today to keep your streak.</p>
+      )}
+      {spared && (
+        <p className="streak-display__saved">
+          You missed yesterday. Your saved 🧊 will cover today if you miss it.
+        </p>
       )}
       {showTotal && (
         <div className="streak-display__rarity-scores">
