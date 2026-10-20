@@ -3471,6 +3471,28 @@ h2 {
   letter-spacing: 0.1em;
   text-align: center;
 }
+/*
+ * A streak that has ended, kept on the board for its first two days over.
+ *
+ * Struck through and greyed: the player is out, and the row stays
+ * only so the board can say so. The grey goes on the contents rather than the
+ * row, so a docked "you" row keeps the solid fill the rows pass beneath.
+ */
+.leaderboard__row--lost > * {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+/* The strike is a grid item of its own, laid across the top line only --
+   from the name through the streak -- and centred in it however tall that
+   line is. */
+.leaderboard__row--lost::after {
+  content: "";
+  grid-row: 1;
+  grid-column: name-start / score-end;
+  align-self: center;
+  border-top: 1.5px solid var(--fg-faint);
+  pointer-events: none;
+}
 .leaderboard__rank {
   grid-area: rank;
   color: var(--fg-faint);

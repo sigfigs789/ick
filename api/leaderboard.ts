@@ -427,7 +427,13 @@ function toBoard(rows: BoardRow[] | null, limit: number): { entries: BoardEntry[
 
 /** One row of the streak board, as `leaderboard_streaks` returns it. */
 interface StreakRow {
-  rank: number;
+  /** Among live runs only; null on a lost run from 20261025100000. */
+  rank: number | null;
+  /**
+   * The row's position among every row listed, lost runs included -- the cut
+   * `p_limit` makes. Absent before 20261025100000, when `rank` was that.
+   */
+  place?: number | null;
   player_id: string;
   current_streak: number;
   best_streak: number;
@@ -440,11 +446,17 @@ interface StreakRow {
    * Absent before 20261023100000.
    */
   at_risk?: boolean | null;
+  /**
+   * The run has ended, and is listed for its first two days over. Absent
+   * before 20261025000000.
+   */
+  lost?: boolean | null;
 }
 
 /** One streak row, as the client receives it. */
 interface StreakEntry {
-  rank: number;
+  /** Null on a lost run: it keeps its place on the board but holds no rank. */
+  rank: number | null;
   playerId: string;
   current: number;
   best: number;
@@ -454,6 +466,8 @@ interface StreakEntry {
   covered?: true;
   /** Sent only when true: missing today ends the run. */
   atRisk?: true;
+  /** Sent only when true: the run has ended, and is listed for two days. */
+  lost?: true;
 }
 
 /** The streak board split at the cut, the same way `toBoard` splits the others. */
@@ -465,8 +479,10 @@ function toStreakBoard(
   const entries: StreakEntry[] = [];
   let self: StreakEntry | null = null;
   for (const [index, row] of rows.entries()) {
+    const lost = row.lost === true;
+    const place = Number(row.place ?? row.rank) || index + 1;
     const entry: StreakEntry = {
-      rank: Number(row.rank) || index + 1,
+      rank: lost ? null : Number(row.rank) || index + 1,
       playerId: String(row.player_id),
       current: Number(row.current_streak) || 0,
       best: Number(row.best_streak) || 0,
@@ -475,8 +491,9 @@ function toStreakBoard(
       // A database from before 20261023100000 has no `at_risk`, and every run
       // it marked covered was the one it called at risk.
       ...((row.at_risk ?? row.covered) === true ? { atRisk: true as const } : {}),
+      ...(lost ? { lost: true as const } : {}),
     };
-    if (entry.rank > limit) self = entry;
+    if (place > limit) self = entry;
     else entries.push(entry);
   }
   return { entries, self };
