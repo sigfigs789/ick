@@ -123,7 +123,7 @@ describe("api/leaderboard submissions", () => {
     withEnv();
     for (const streak of [
       { current: 5, best: 4, saved: 0, lastPlayed: SUNDAY }, // best below current
-      { current: 5, best: 5, saved: 3, lastPlayed: SUNDAY }, // more saved than the cap
+      { current: 5, best: 5, saved: 4, lastPlayed: SUNDAY }, // more saved than the cap
       { current: 500, best: 500, saved: 0, lastPlayed: SUNDAY }, // longer than there have been puzzles
       { current: 5, best: 5, saved: 0, lastPlayed: "2026-13-01" },
     ]) {

@@ -932,8 +932,9 @@ anything that matters.
   streak — only a valid answer submitted on its own real calendar date
   counts. A single missed day is always free (the 🔥 stays). Past that,
   saved freezes cover missed days, one each: a streak earns one every 7
-  days played and holds up to 1 once it has ever reached 14 days and 2
-  once it has ever reached 30 (the cap never goes back down), and the 🔥
+  days played and holds up to 1 once it has ever reached 7 days, 2 once it
+  has ever reached 14 and 3 once it has ever reached 28 (the cap never goes
+  back down), and the 🔥
   turns to 🧊 while one is covering. A gap they cannot cover resets the
   streak to zero. Those checks live in `storage.ts` and `streakFreeze.ts`,
   which ignore archive puzzles and clear expired streaks on load. The

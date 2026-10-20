@@ -228,7 +228,7 @@ describe("sending the streak", () => {
     const fetchMock = stubFetch();
 
     submitScore({ date: today, isToday: true, words: WORDS });
-    expect(posted(fetchMock).streak).toEqual({ current: 31, best: 40, saved: 2, lastPlayed: today });
+    expect(posted(fetchMock).streak).toEqual({ current: 31, best: 40, saved: 3, lastPlayed: today });
   });
 
   it("sends no streak when there is none", () => {
