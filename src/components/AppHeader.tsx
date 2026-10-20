@@ -53,12 +53,12 @@ interface Tab {
  */
 const TABS: readonly Tab[] = [
   { route: "game", label: "Play" },
-  { route: "leaderboard", label: "Leaderboards" },
   // "Words found" rather than "Today's finds": the page does not only hold
   // today's -- it opens there, but stepping back a day is a thing it offers,
   // and a tab that promises today then shows Tuesday has misnamed itself. The
   // heading on the page is the one that says which day you are looking at.
   { route: "found-words", label: "Words found" },
+  { route: "leaderboard", label: "Leaderboards" },
 ];
 
 /**
