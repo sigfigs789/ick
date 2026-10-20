@@ -440,6 +440,11 @@ interface StreakRow {
    * Absent before 20261023100000.
    */
   at_risk?: boolean | null;
+  /**
+   * The run has ended, and is listed for its first two days over. Absent
+   * before 20261025000000.
+   */
+  lost?: boolean | null;
 }
 
 /** One streak row, as the client receives it. */
@@ -454,6 +459,8 @@ interface StreakEntry {
   covered?: true;
   /** Sent only when true: missing today ends the run. */
   atRisk?: true;
+  /** Sent only when true: the run has ended, and is listed for two days. */
+  lost?: true;
 }
 
 /** The streak board split at the cut, the same way `toBoard` splits the others. */
@@ -475,6 +482,7 @@ function toStreakBoard(
       // A database from before 20261023100000 has no `at_risk`, and every run
       // it marked covered was the one it called at risk.
       ...((row.at_risk ?? row.covered) === true ? { atRisk: true as const } : {}),
+      ...(row.lost === true ? { lost: true as const } : {}),
     };
     if (entry.rank > limit) self = entry;
     else entries.push(entry);

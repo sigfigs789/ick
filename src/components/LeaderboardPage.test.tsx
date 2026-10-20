@@ -263,12 +263,20 @@ describe("the leaderboard page", () => {
           best: 15,
           covered: true,
         },
+        // Ended a day or two ago: kept, at the length it reached, with a skull.
+        {
+          rank: 6,
+          playerId: "66666666-6666-4666-8666-666666666666",
+          current: 9,
+          best: 12,
+          lost: true,
+        },
       ],
       streakSelf: null,
     });
     render(<LeaderboardPage />);
 
-    await waitFor(() => expect(boardRows("Streaks")).toHaveLength(5));
+    await waitFor(() => expect(boardRows("Streaks")).toHaveLength(6));
     expect(boardRows("Streaks")[0]).toHaveTextContent(handleFor(ALICE));
     expect(boardRows("Streaks")[0]).toHaveTextContent("21");
     // Ranked by the run they are on, with their longest kept as the detail.
@@ -292,6 +300,10 @@ describe("the leaderboard page", () => {
     expect(boardRows("Streaks")[4]).toHaveTextContent("🧊");
     expect(boardRows("Streaks")[4]).not.toHaveTextContent(/🔥|⏳|at risk/u);
     expect(boardRows("Streaks")[4]).toHaveTextContent("a saved freeze will cover today");
+    expect(boardRows("Streaks")[5]).toHaveTextContent("💀");
+    expect(boardRows("Streaks")[5]).not.toHaveTextContent(/🔥|🧊|⏳/u);
+    expect(boardRows("Streaks")[5]).toHaveTextContent("9");
+    expect(boardRows("Streaks")[5]).toHaveTextContent("lost");
     expect(board("Streaks")).toHaveTextContent(/Streak\s*Longest streak/);
     // No window, so nothing to step through.
     const streaks = board("Streaks");

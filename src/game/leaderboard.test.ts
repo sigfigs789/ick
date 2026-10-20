@@ -568,6 +568,7 @@ describe("reading the boards", () => {
             atRisk: true,
           },
           { rank: 2, playerId: "you", current: 0, best: 4 },
+          { rank: 3, playerId: "gone", current: 5, best: 9, lost: true },
         ],
         streakSelf: { playerId: "late", current: 2, best: 2 },
       })
@@ -587,6 +588,18 @@ describe("reading the boards", () => {
         frozen: true,
         covered: true,
         atRisk: true,
+        lost: false,
+      },
+      {
+        rank: 3,
+        playerId: "gone",
+        name: handleFor("gone"),
+        current: 5,
+        best: 9,
+        frozen: false,
+        covered: false,
+        atRisk: false,
+        lost: true,
       },
     ]);
     expect(boards.streakSelf).toBeNull();

@@ -87,6 +87,11 @@ export interface StreakEntry {
    * The day the game shows ⏳ (`atRisk` in game/streakFreeze.ts). A run with a freeze left for today is not at risk.
    */
   atRisk: boolean;
+  /**
+   * The run has ended: the board keeps it, at the length it reached, for its
+   * first two days over and marks it 💀. Playing again replaces it.
+   */
+  lost: boolean;
 }
 
 /**
@@ -330,7 +335,7 @@ function parseStreak(
   fallbackRank?: number
 ): StreakEntry | null {
   if (!item || typeof item !== "object") return null;
-  const { rank, playerId, current, best, frozen, covered, atRisk } = item;
+  const { rank, playerId, current, best, frozen, covered, atRisk, lost } = item;
   if (typeof playerId !== "string") return null;
   if (typeof current !== "number" || !Number.isFinite(current) || current < 1) return null;
   const ranked = typeof rank === "number" && Number.isFinite(rank) ? rank : fallbackRank;
@@ -344,6 +349,7 @@ function parseStreak(
     frozen: frozen === true,
     covered: covered === true,
     atRisk: atRisk === true,
+    lost: lost === true,
   };
 }
 

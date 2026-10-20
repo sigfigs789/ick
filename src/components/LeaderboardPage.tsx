@@ -1054,6 +1054,7 @@ function Row({ entry, isYou }: { entry: BoardEntry; isYou: boolean }) {
 
 /** The hover text for a streak row's icon. */
 function streakIconTitle(entry: StreakEntry): string | undefined {
+  if (entry.lost) return "Streak lost: it leaves the board after two days";
   if (entry.frozen && entry.atRisk) {
     return "Missed days: a saved freeze is covering them, and none is left for today";
   }
@@ -1065,6 +1066,7 @@ function streakIconTitle(entry: StreakEntry): string | undefined {
 
 /** What a screen reader hears after a streak row's count. */
 function streakStatus(entry: StreakEntry): string {
+  if (entry.lost) return ", lost";
   if (entry.current <= 1 && !entry.frozen) return "";
   const held = entry.frozen
     ? ", covered by a saved freeze"
@@ -1112,12 +1114,21 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
             components/StreakDisplay.tsx): 🧊 while a saved freeze is covering
             it, or after the free day covered a missed day with a freeze left
             for today; ⏳ when the free day is covering a missed day and no
-            saved freeze is left, so missing today ends it; 🔥 for a run played
-            through yesterday. None on a run of one day, which is a start
+            saved freeze is left, so missing today ends it; 💀 for a run that
+            has ended, listed for its first two days over; 🔥 for a run played
+            through yesterday. None on a live run of one day, which is a start
             rather than a streak. */}
-        {entry.current > 1 && (
+        {(entry.current > 1 || entry.lost) && (
           <span aria-hidden="true" title={streakIconTitle(entry)}>
-            {entry.frozen ? "🧊" : entry.atRisk ? "⏳" : entry.covered ? "🧊" : "🔥"}{" "}
+            {entry.lost
+              ? "💀"
+              : entry.frozen
+                ? "🧊"
+                : entry.atRisk
+                  ? "⏳"
+                  : entry.covered
+                    ? "🧊"
+                    : "🔥"}{" "}
           </span>
         )}
         {entry.current}
