@@ -1059,7 +1059,7 @@ function streakIconTitle(entry: StreakEntry): string | undefined {
   }
   if (entry.frozen) return "Missed days: a saved freeze is covering them";
   if (entry.atRisk) return "Missed a day: the free day is covering it, and no freeze is left for today";
-  if (entry.covered) return "Missed a day: the free day is covering it, and a saved freeze is left";
+  if (entry.covered) return "Missed a day: the free day is covering it, and a saved freeze will cover today";
   return undefined;
 }
 
@@ -1069,7 +1069,9 @@ function streakStatus(entry: StreakEntry): string {
   const held = entry.frozen
     ? ", covered by a saved freeze"
     : entry.covered
-      ? ", missed a day, covered by the free day"
+      ? entry.atRisk
+        ? ", missed a day, covered by the free day"
+        : ", missed a day, a saved freeze will cover today"
       : "";
   return held + (entry.atRisk ? ", at risk today" : "");
 }
@@ -1106,16 +1108,16 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
         {isYou && <span className="leaderboard__you">you</span>}
       </span>
       <span className="leaderboard__score">
-        {/* One icon for how the run stands: 🧊 while a saved freeze is covering
-            it, as the game marks it (see components/StreakDisplay.tsx); ⏳
-            when the free day is covering a missed day and no saved freeze is
-            left, so missing today ends it, as the game marks it too; 🔥
-            otherwise, the free day with a
-            freeze to spare included, as in the game. None on a run of one
-            day, which is a start rather than a streak. */}
+        {/* One icon for how the run stands, as the game marks it (see
+            components/StreakDisplay.tsx): 🧊 while a saved freeze is covering
+            it, or after the free day covered a missed day with a freeze left
+            for today; ⏳ when the free day is covering a missed day and no
+            saved freeze is left, so missing today ends it; 🔥 for a run played
+            through yesterday. None on a run of one day, which is a start
+            rather than a streak. */}
         {entry.current > 1 && (
           <span aria-hidden="true" title={streakIconTitle(entry)}>
-            {entry.frozen ? "🧊" : entry.atRisk ? "⏳" : "🔥"}{" "}
+            {entry.frozen ? "🧊" : entry.atRisk ? "⏳" : entry.covered ? "🧊" : "🔥"}{" "}
           </span>
         )}
         {entry.current}

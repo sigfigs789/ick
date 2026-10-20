@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { atRisk, savedFreezeCovering, streakFreezeCap } from "../game/streakFreeze";
+import { atRisk, missedYesterday, savedFreezeCovering, streakFreezeCap } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
 
 /** How saved freezes work, for the freeze badge's popup. */
@@ -90,23 +90,28 @@ export function StreakDisplay({
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
   // components/LeaderboardPage.tsx): 🧊 while a saved freeze is covering a
-  // missed day, until today is played; ⏳ when missing today ends the streak;
-  // 🔥 otherwise, the free missed day with a freeze to spare included.
+  // missed day, or stands ready to cover today after the free day covered
+  // yesterday, until today is played; ⏳ when missing today ends the streak;
+  // 🔥 otherwise.
   const frozen = isToday && date !== undefined && savedFreezeCovering(streak, date);
   const risky = isToday && date !== undefined && atRisk(streak, date);
-  const icon = frozen ? "🧊" : risky ? "⏳" : streak.currentStreak >= 2 ? "🔥" : null;
+  const guarded = !frozen && !risky && isToday && date !== undefined && missedYesterday(streak, date);
+  const icon =
+    frozen || guarded ? "🧊" : risky ? "⏳" : streak.currentStreak >= 2 ? "🔥" : null;
   const iconTitle = frozen
     ? risky
       ? "A saved freeze is covering your streak, and none is left: play today to keep it"
       : "A saved freeze is covering your streak"
     : risky
       ? "You missed yesterday: play today to keep your streak"
-      : undefined;
+      : guarded
+        ? "You missed yesterday: a saved freeze will cover today if you miss it"
+        : undefined;
   const banked = streak.bankedFreezes ?? 0;
   const cap = streakFreezeCap(streak);
   const showFreezes = !hideEmpty || banked > 0;
   const showTotal = !hideEmpty || hasWords;
-  const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky;
+  const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky || guarded;
   if (!showStreak && !showTotal) return null;
   return (
     <div
@@ -114,6 +119,7 @@ export function StreakDisplay({
       aria-label={
         `Current streak: ${streak.currentStreak} days. ` +
         (frozen ? "A saved freeze is covering your streak. " : "") +
+        (guarded ? "You missed yesterday. A saved freeze will cover today if you miss it. " : "") +
         (risky ? "Play today to keep your streak. " : "") +
         `Streak freezes: ${banked} of ${cap}. ` +
         `This puzzle's total score: ${totalRarity.toFixed(1)}.`
