@@ -364,36 +364,6 @@
     "since": "2026-10-22",
     "reason": "Folded onto `ambulatory` (preambulatory > ambulatory), costing 2.20 points; it is a form of `preamble` (Zipf 2.87). Flagged by the daily fold check for the 2026-10-22 `AM` drop (means introductory, relating to a preamble) and confirmed on adversarial re-review (relates to preamble, not walking)."
   },
-  "precipitantly": {
-    "base": "precipitant",
-    "since": "2026-10-23",
-    "reason": "Folded onto `precipitants` (precipitantly > precipitant > precipitants), costing 1.56 points; it is a form of `precipitant` (Zipf 1.23). Flagged by the daily fold check for the 2026-10-23 `CIP` drop (hasty adjective, not chemical precipitants) and confirmed on adversarial re-review (hasty adjective; base lands on chemical noun)."
-  },
-  "precipitantness": {
-    "base": "precipitant",
-    "since": "2026-10-23",
-    "reason": "Folded onto `precipitants` (precipitantness > precipitant > precipitants), costing 1.77 points; it is a form of `precipitant` (Zipf 1.23). Flagged by the daily fold check for the 2026-10-23 `CIP` drop (hasty adjective, not chemical precipitants) and confirmed on adversarial re-review (hastiness, not plural chemical agents)."
-  },
-  "precipitantnesses": {
-    "base": "precipitant",
-    "since": "2026-10-23",
-    "reason": "Folded onto `precipitants` (precipitantnesses > precipitantness > precipitant > precipitants), costing 1.77 points; it is a form of `precipitant` (Zipf 1.23). Flagged by the daily fold check for the 2026-10-23 `CIP` drop (hasty adjective, not chemical precipitants) and confirmed on adversarial re-review (hastiness, not plural chemical agents)."
-  },
-  "precipitately": {
-    "base": "precipitate",
-    "since": "2026-10-23",
-    "reason": "Folded onto `precipitated` (precipitately > precipitate > precipitated), costing 2.07 points; it is a form of `precipitate` (Zipf 2.78). Flagged by the daily fold check for the 2026-10-23 `CIP` drop (hasty adjective, not verb precipitated) and confirmed on adversarial re-review (adjective hasty; distinct lexeme from verb)."
-  },
-  "precipitateness": {
-    "base": "precipitate",
-    "since": "2026-10-23",
-    "reason": "Folded onto `precipitated` (precipitateness > precipitate > precipitated), costing 2.39 points; it is a form of `precipitate` (Zipf 2.78). Flagged by the daily fold check for the 2026-10-23 `CIP` drop (hasty adjective, not verb precipitated) and confirmed on adversarial re-review (adjective hastiness, not verb past tense)."
-  },
-  "precipitatenesses": {
-    "base": "precipitate",
-    "since": "2026-10-23",
-    "reason": "Folded onto `precipitated` (precipitatenesses > precipitateness > precipitate > precipitated), costing 2.48 points; it is a form of `precipitate` (Zipf 2.78). Flagged by the daily fold check for the 2026-10-23 `CIP` drop (hasty adjective, not verb precipitated) and confirmed on adversarial re-review (adjective hastiness, not verb past tense)."
-  },
   "prefigurate": {
     "base": "prefigure",
     "since": "2026-10-19",
@@ -648,11 +618,6 @@
     "base": "unhackneyed",
     "since": "2026-10-18",
     "reason": "Folded onto `hackney` (unhackneyedness > hackneyedness > hackneyed > hackney), costing 2.71 points; it is a form of `unhackneyed` (Zipf 1.92). Flagged by the daily fold check for the 2026-10-18 `HA` drop (hackneyed means trite, not hackney horse) and confirmed on adversarial re-review (Trite sense, not hackney horse)."
-  },
-  "unprecipitate": {
-    "base": "precipitate",
-    "since": "2026-10-23",
-    "reason": "Folded onto `precipitated` (unprecipitate > unprecipitated > precipitated), costing 2.48 points; it is a form of `precipitate` (Zipf 2.78). Flagged by the daily fold check for the 2026-10-23 `CIP` drop (adjective \"not hasty,\" not past participle) and confirmed on adversarial re-review (\"not hasty\" adjective, not unprecipitated participle)."
   },
   "unreamed": {
     "base": "ream",
