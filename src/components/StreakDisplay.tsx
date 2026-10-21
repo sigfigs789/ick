@@ -90,9 +90,9 @@ export function StreakDisplay({
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
   // components/LeaderboardPage.tsx): 🧊 while a saved freeze is covering a
-  // missed day, or stands ready to cover today after the free day covered
-  // yesterday, until today is played; ⏳ when missing today ends the streak;
-  // 🔥 otherwise.
+  // missed day -- from the first one, once the player has a freeze cap -- or
+  // stands ready to cover today after the free day covered yesterday, until
+  // today is played; ⏳ when missing today ends the streak; 🔥 otherwise.
   const frozen = isToday && date !== undefined && savedFreezeCovering(streak, date);
   const risky = isToday && date !== undefined && atRisk(streak, date);
   const guarded = !frozen && !risky && isToday && date !== undefined && missedYesterday(streak, date);

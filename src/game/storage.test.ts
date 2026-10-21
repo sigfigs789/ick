@@ -168,8 +168,8 @@ describe("loadStreak", () => {
 
   it("back-dates saved freezes once, before counting missed days", () => {
     // A 48-day run before freezes existed, then four days on a new one, last
-    // played three days ago: the free day covers one missed day, and only a
-    // back-dated freeze covers the second.
+    // played three days ago: with a cap there is no free day, so back-dated
+    // freezes cover both missed days.
     setToday("2026-10-18");
     localStorage.setItem(
       "ick:streak",
@@ -178,12 +178,12 @@ describe("loadStreak", () => {
 
     expect(loadStreak()).toMatchObject({
       currentStreak: 4,
-      bankedFreezes: 2,
+      bankedFreezes: 1,
       freezesBackdated: true,
     });
     // Stored, so the next load does not grant them again.
     expect(JSON.parse(localStorage.getItem("ick:streak") ?? "{}")).toMatchObject({
-      bankedFreezes: 2,
+      bankedFreezes: 1,
       freezesBackdated: true,
     });
   });
@@ -471,12 +471,15 @@ describe("streak freezes", () => {
     expect(loadStreak()).toMatchObject({ currentStreak: 3, frozenDates: ["2024-01-03"] });
   });
 
-  it("earns a saved freeze at 7 days that covers a second missed day", () => {
+  it("earns a saved freeze at 7 days that covers a missed day, with no free day after", () => {
     for (let d = 1; d <= 7; d++) play(`2024-01-0${d}`);
     expect(loadStreak()).toMatchObject({ currentStreak: 7, bankedFreezes: 1 });
 
-    play("2024-01-10"); // skipped 01-08 (grace) and 01-09 (saved freeze)
+    play("2024-01-09"); // skipped 01-08 (saved freeze)
     expect(loadStreak()).toMatchObject({ currentStreak: 8, bankedFreezes: 0 });
+
+    play("2024-01-11"); // skipped 01-10, with no freeze left and no free day
+    expect(loadStreak()).toMatchObject({ currentStreak: 1, longestStreak: 8 });
   });
 
   it("lets a new streak earn from its first week up to the cap a past one reached", () => {

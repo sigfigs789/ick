@@ -25,6 +25,11 @@ function streakOf(overrides: Partial<StreakState>): StreakState {
   };
 }
 
+/** A player whose longest run is under a week: no freeze cap yet, so the grace day. */
+function uncappedOf(overrides: Partial<StreakState>): StreakState {
+  return streakOf({ currentStreak: 5, longestStreak: 5, ...overrides });
+}
+
 describe("applyFreezes", () => {
   it("leaves a streak that reaches yesterday alone", () => {
     const streak = streakOf({});
@@ -32,34 +37,34 @@ describe("applyFreezes", () => {
   });
 
   it("covers one missed day without anything earned and keeps the count", () => {
-    const after = applyFreezes(streakOf({}), "2026-10-03");
-    expect(after).toMatchObject({ currentStreak: 10, frozenDates: ["2026-10-02"] });
+    const after = applyFreezes(uncappedOf({}), "2026-10-03");
+    expect(after).toMatchObject({ currentStreak: 5, frozenDates: ["2026-10-02"] });
     expect(coveredThrough(after)).toBe("2026-10-02");
   });
 
   it("is idempotent across reloads on the same day", () => {
-    const once = applyFreezes(streakOf({}), "2026-10-03");
+    const once = applyFreezes(uncappedOf({}), "2026-10-03");
     expect(applyFreezes(once, "2026-10-03")).toBe(once);
   });
 
   it("resets a gap of two missed days", () => {
-    const after = applyFreezes(streakOf({}), "2026-10-04");
-    expect(after).toMatchObject({ currentStreak: 0, longestStreak: 10 });
+    const after = applyFreezes(uncappedOf({}), "2026-10-04");
+    expect(after).toMatchObject({ currentStreak: 0, longestStreak: 5 });
   });
 
   it("does not freeze the day after a frozen day", () => {
-    const frozen = applyFreezes(streakOf({}), "2026-10-03");
+    const frozen = applyFreezes(uncappedOf({}), "2026-10-03");
     expect(applyFreezes(frozen, "2026-10-04").currentStreak).toBe(0);
   });
 
   it("covers a later missed day again once a day has been played", () => {
-    const streak = streakOf({ lastCompletedDate: "2026-10-03", frozenDates: ["2026-10-02"] });
+    const streak = uncappedOf({ lastCompletedDate: "2026-10-03", frozenDates: ["2026-10-02"] });
     const after = applyFreezes(streak, "2026-10-05");
-    expect(after).toMatchObject({ currentStreak: 10, frozenDates: ["2026-10-02", "2026-10-04"] });
+    expect(after).toMatchObject({ currentStreak: 5, frozenDates: ["2026-10-02", "2026-10-04"] });
   });
 
   it("forgets covered days after two months", () => {
-    const after = applyFreezes(streakOf({ frozenDates: ["2026-07-01"] }), "2026-10-03");
+    const after = applyFreezes(uncappedOf({ frozenDates: ["2026-07-01"] }), "2026-10-03");
     expect(after.frozenDates).toEqual(["2026-10-02"]);
   });
 });
@@ -91,17 +96,29 @@ describe("saved freezes", () => {
     ).toBe(2);
   });
 
-  it("covers missed days past the grace day, one each", () => {
-    const after = applyFreezes(streakOf({ bankedFreezes: 2 }), "2026-10-05");
+  it("gives no grace day once the player has a freeze cap: every missed day spends one", () => {
+    const after = applyFreezes(streakOf({ bankedFreezes: 3 }), "2026-10-05");
     expect(after).toMatchObject({
       currentStreak: 10,
       bankedFreezes: 0,
       frozenDates: ["2026-10-02", "2026-10-03", "2026-10-04"],
     });
+    expect(applyFreezes(streakOf({ bankedFreezes: 1 }), "2026-10-03")).toMatchObject({
+      currentStreak: 10,
+      bankedFreezes: 0,
+      frozenDates: ["2026-10-02"],
+    });
+  });
+
+  it("resets a capped streak with no saved freeze on its first missed day", () => {
+    expect(applyFreezes(streakOf({}), "2026-10-03")).toMatchObject({ currentStreak: 0 });
+    // The cap is set by the longest run, so a short new run is not let off.
+    const returning = streakOf({ currentStreak: 2, longestStreak: 30, bankedFreezes: 0 });
+    expect(applyFreezes(returning, "2026-10-03").currentStreak).toBe(0);
   });
 
   it("spends the same whether the gap is seen at once or a day at a time", () => {
-    const start = streakOf({ bankedFreezes: 1 });
+    const start = streakOf({ bankedFreezes: 2 });
     const stepwise = applyFreezes(applyFreezes(start, "2026-10-03"), "2026-10-04");
     expect(stepwise).toEqual(applyFreezes(start, "2026-10-04"));
     expect(stepwise).toMatchObject({ currentStreak: 10, bankedFreezes: 0 });
@@ -114,20 +131,23 @@ describe("saved freezes", () => {
   });
 
   it("resets, losing the saved freezes, when they cannot cover the whole gap", () => {
-    const after = applyFreezes(streakOf({ bankedFreezes: 1 }), "2026-10-05");
+    const after = applyFreezes(streakOf({ bankedFreezes: 2 }), "2026-10-05");
     expect(after).toMatchObject({ currentStreak: 0, bankedFreezes: 0 });
   });
 });
 
 describe("atRisk", () => {
   it("is true the day after a freeze until that day is played", () => {
-    const frozen = applyFreezes(streakOf({}), "2026-10-03");
+    const frozen = applyFreezes(uncappedOf({}), "2026-10-03");
     expect(atRisk(frozen, "2026-10-03")).toBe(true);
     expect(atRisk({ ...frozen, lastCompletedDate: "2026-10-03" }, "2026-10-03")).toBe(false);
+    // A capped player whose last saved freeze covered yesterday.
+    const spent = applyFreezes(streakOf({ bankedFreezes: 1 }), "2026-10-03");
+    expect(atRisk(spent, "2026-10-03")).toBe(true);
   });
 
   it("is false the day after a freeze while a saved freeze is left", () => {
-    const frozen = applyFreezes(streakOf({ bankedFreezes: 1 }), "2026-10-03");
+    const frozen = applyFreezes(streakOf({ bankedFreezes: 2 }), "2026-10-03");
     expect(atRisk(frozen, "2026-10-03")).toBe(false);
     // Still a missed day, which the game says without calling it a risk.
     expect(missedYesterday(frozen, "2026-10-03")).toBe(true);
@@ -143,9 +163,14 @@ describe("atRisk", () => {
 });
 
 describe("savedFreezeCovering", () => {
-  it("is false on the free missed day and true once a saved freeze covers one", () => {
-    const start = streakOf({ bankedFreezes: 1 });
+  it("is false on the grace day and true once a saved freeze covers one", () => {
+    const start = uncappedOf({});
     expect(savedFreezeCovering(applyFreezes(start, "2026-10-03"), "2026-10-03")).toBe(false);
+  });
+
+  it("is true from the first missed day once the player has a freeze cap", () => {
+    const start = streakOf({ bankedFreezes: 2 });
+    expect(savedFreezeCovering(applyFreezes(start, "2026-10-03"), "2026-10-03")).toBe(true);
     expect(savedFreezeCovering(applyFreezes(start, "2026-10-04"), "2026-10-04")).toBe(true);
   });
 
@@ -163,9 +188,15 @@ describe("streakReport", () => {
     const start = streakOf({ longestStreak: 30, bankedFreezes: 2 });
     const expected = { current: 10, best: 30, saved: 2, lastPlayed: "2026-10-01" };
     expect(streakReport(start)).toEqual(expected);
-    // The free day, then one saved freeze, spent since: still reported as 2.
+    // One saved freeze, then another, spent since: still reported as 2.
     expect(streakReport(applyFreezes(start, "2026-10-03"))).toEqual(expected);
     expect(streakReport(applyFreezes(start, "2026-10-04"))).toEqual(expected);
+  });
+
+  it("does not count the grace day as a saved freeze spent", () => {
+    const start = uncappedOf({});
+    const expected = { current: 5, best: 5, saved: 0, lastPlayed: "2026-10-01" };
+    expect(streakReport(applyFreezes(start, "2026-10-03"))).toEqual(expected);
   });
 });
 

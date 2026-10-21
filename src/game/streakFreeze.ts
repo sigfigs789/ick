@@ -2,27 +2,29 @@
  * Streak freezes: missed days that do not cost the streak.
  *
  * An all-or-nothing streak punishes hardest the players it should keep. Someone
- * forty days in who misses a Saturday drops to zero, and a streak that is gone
- * stops being a reason to come back. So a single missed day is always covered,
- * for every player, with nothing to earn or bank: the grace day is applied
- * automatically on the next load after the missed day.
+ * a few days in who misses a Saturday drops to zero, and a streak that is gone
+ * stops being a reason to come back. So a player who cannot hold a freeze yet
+ * gets a single missed day covered, with nothing to earn or bank: the grace
+ * day (or free day) is applied automatically on the next load after the
+ * missed day, and only follows a played day.
  *
- * The grace day only follows a played day. Past it, a missed day is covered
- * only by a saved freeze (`bankedFreezes`), earned one for every seven days
- * played -- the streak count, which frozen days do not add to -- and held up
- * to a cap set by the longest streak the player has ever had (see
- * `streakFreezeCap`). The cap is permanent: a player who once reached 28 days
- * can hold three on every streak after, so a returning player starts earning
- * from their first week. Saved freezes are spent one per missed day, after the
- * grace day, and only when there are enough to cover the whole gap -- a gap
- * they cannot cover resets the streak and the freezes go with it, though the
- * cap stays.
+ * Past that, a missed day is covered only by a saved freeze
+ * (`bankedFreezes`), earned one for every seven days played -- the streak
+ * count, which frozen days do not add to -- and held up to a cap set by the
+ * longest streak the player has ever had (see `streakFreezeCap`). The cap is
+ * permanent: a player who once reached 28 days can hold three on every streak
+ * after, so a returning player starts earning from their first week. Once a
+ * player has a cap, the grace day is gone for good (see `graceDays`): every
+ * missed day spends a saved freeze or ends the streak. Saved freezes are spent
+ * one per missed day, and only when there are enough to cover the whole gap
+ * -- a gap they cannot cover resets the streak and the freezes go with it,
+ * though the cap stays.
  *
  * So the day after a covered day is a day a streak can be lost if no saved
  * freeze is left, and that is when `atRisk` is true and the streak shows ⏳.
  * The streak shows 🧊 while a saved freeze is covering (see
  * `savedFreezeCovering` and components/StreakDisplay.tsx), at risk or not, and
- * on the free day when a saved freeze is left to cover today
+ * on the grace day when a saved freeze is left to cover today
  * (`missedYesterday`). Playing turns it back to fire.
  *
  * A frozen day keeps the streak alive but does not add to it: the count is
@@ -59,6 +61,15 @@ export function freezeCap(days: number): number {
 /** The cap for this player: set by the longest streak they have ever had. */
 export function streakFreezeCap(streak: StreakState): number {
   return freezeCap(Math.max(streak.longestStreak, streak.currentStreak));
+}
+
+/**
+ * Missed days covered for free after a played day: one until the player has a
+ * freeze cap, none after. A player who can hold freezes covers every missed
+ * day with one or loses the streak.
+ */
+export function graceDays(streak: StreakState): number {
+  return streakFreezeCap(streak) > 0 ? 0 : 1;
 }
 
 /** Saved freezes after the streak reaches `currentStreak` played days. */
@@ -103,7 +114,7 @@ export function coveredThrough(streak: StreakState): string | undefined {
 /**
  * The streak as it stands on `today`: the missed days since the streak was
  * last covered are covered by the grace day (when the last covered day was
- * played) and then by saved freezes, or the streak resets. Unchanged when
+ * played and the player has no freeze cap yet) and then by saved freezes, or the streak resets. Unchanged when
  * nothing was missed.
  */
 export function applyFreezes(streak: StreakState, today: string): StreakState {
@@ -113,7 +124,7 @@ export function applyFreezes(streak: StreakState, today: string): StreakState {
 
   const missed = daysSinceEpoch(yesterday, covered);
   // Only a played day can be followed by the grace day: a covered day cannot.
-  const grace = covered === streak.lastCompletedDate ? 1 : 0;
+  const grace = covered === streak.lastCompletedDate ? graceDays(streak) : 0;
   const banked = streak.bankedFreezes ?? 0;
   const spent = missed - grace;
   if (spent > banked) return { ...streak, currentStreak: 0, bankedFreezes: 0 };
@@ -128,18 +139,19 @@ export function applyFreezes(streak: StreakState, today: string): StreakState {
 }
 
 /**
- * Whether a saved freeze, not the free day, is what is keeping the streak
- * alive today: two or more days have gone unplayed since the last played day
- * and today has not been played yet.
+ * Whether a saved freeze, not the grace day, is what is keeping the streak
+ * alive today: more days have gone unplayed since the last played day than the
+ * grace day covers -- two or more without a freeze cap, one or more with one
+ * -- and today has not been played yet.
  */
 export function savedFreezeCovering(streak: StreakState, today: string): boolean {
   if (streak.currentStreak === 0 || !streak.lastCompletedDate) return false;
-  return daysSinceEpoch(today, streak.lastCompletedDate) - 1 >= 2;
+  return daysSinceEpoch(today, streak.lastCompletedDate) - 1 > graceDays(streak);
 }
 
 /**
  * Whether yesterday went unplayed and was covered, and today is not played
- * yet: the free day is spent, so only a saved freeze stands between the
+ * yet: no grace day is left, so only a saved freeze stands between the
  * streak and missing today. The streak board's `covered`.
  */
 export function missedYesterday(streak: StreakState, today: string): boolean {
@@ -152,7 +164,7 @@ export function missedYesterday(streak: StreakState, today: string): boolean {
 
 /**
  * Whether the streak is lost if `today` goes unplayed: yesterday was covered,
- * so there is no free day, and no saved freeze is left. The streak board's
+ * so there is no grace day, and no saved freeze is left. The streak board's
  * `atRisk`.
  */
 export function atRisk(streak: StreakState, today: string): boolean {
@@ -163,9 +175,10 @@ export function atRisk(streak: StreakState, today: string): boolean {
  * The streak as it stood on its last played day, which is what the streak
  * board is sent (see game/leaderboard.ts). The board works out the rest from
  * that day alone: the run is alive while the days missed since are no more
- * than the free day plus the freezes saved then. So the saved count is the one
- * from before any were spent on the gap -- every covered day after the first
- * since the last played day took one.
+ * than the grace day (none once the reported best sets a freeze cap) plus the
+ * freezes saved then. So the saved count is the one from before any were spent
+ * on the gap -- every covered day since the last played day took one, past
+ * the grace day when there is one.
  */
 export function streakReport(
   streak: StreakState
@@ -176,7 +189,7 @@ export function streakReport(
   return {
     current: streak.currentStreak,
     best: Math.max(streak.longestStreak, streak.currentStreak),
-    saved: (streak.bankedFreezes ?? 0) + Math.max(0, coveredSince - 1),
+    saved: (streak.bankedFreezes ?? 0) + Math.max(0, coveredSince - graceDays(streak)),
     lastPlayed,
   };
 }
