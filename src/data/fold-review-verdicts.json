@@ -284,6 +284,11 @@
     "since": "2026-10-19",
     "reason": "Folded onto `numerated` (numerately > numerate > numerated), costing 0.63 points; it is a form of `numerate` (Zipf 1.51). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (adverb of adjective numerate, not enumerated) and confirmed on adversarial re-review (Numerate means numerically literate, not counted)."
   },
+  "occipitalised": {
+    "base": "occipital",
+    "since": "2026-10-23",
+    "reason": "Folded onto `occipitalis` (occipitalised > occipitalis), costing 0.24 points; it is a form of `occipital` (Zipf 2.68). Flagged by the daily fold check for the 2026-10-23 `CIP` drop (from occipital, not occipitalis muscle) and confirmed on adversarial re-review (from adjective occipital, not Latin muscle name)."
+  },
   "operatise": {
     "base": "opera",
     "since": "2026-10-19",
