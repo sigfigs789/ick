@@ -325,9 +325,8 @@ export function loadStreak(): StreakState {
   // once and before the missed days are counted, so a player already in a gap
   // today is covered by them.
   const streak = backdateFreezes(stored);
-  // A single missed day is covered by the grace day and a longer gap by saved
-  // freezes, if there are enough; otherwise the streak resets (see
-  // game/streakFreeze.ts).
+  // Missed days are covered by saved freezes, one each, if there are enough;
+  // otherwise the streak resets (see game/streakFreeze.ts).
   const current = applyFreezes(streak, todayDateString());
   if (current !== stored) saveStreak(current);
   return current;

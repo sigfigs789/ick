@@ -26,7 +26,7 @@ describe("StreakDisplay", () => {
     expect(container).toBeEmptyDOMElement();
 
     // A streak too short to hold a freeze and no word today: the streak alone.
-    rerender(<StreakDisplay streak={{ ...streak, currentStreak: 3 }} hideEmpty hasWords={false} />);
+    rerender(<StreakDisplay streak={{ ...streak, currentStreak: 2 }} hideEmpty hasWords={false} />);
     expect(screen.getByText("day streak")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Streak freezes/ })).not.toBeInTheDocument();
     expect(screen.queryByText("Total")).not.toBeInTheDocument();
@@ -61,7 +61,7 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("🔥")).toBeInTheDocument();
   });
 
-  it("turns the flame to an hourglass when missing today ends the streak", () => {
+  it("tells the player to play today when missing today ends the streak", () => {
     const missed: StreakState = {
       ...streak,
       currentStreak: 5,
@@ -69,7 +69,8 @@ describe("StreakDisplay", () => {
       frozenDates: ["2026-10-02"],
     };
     const { rerender } = render(<StreakDisplay streak={missed} date="2026-10-03" isToday />);
-    expect(flame()).toBe("⏳");
+    // With no free day, the missed day spent a saved freeze, so ice wins over the hourglass.
+    expect(flame()).toBe("🧊");
     expect(screen.getByLabelText(/Play today to keep your streak/)).toBeInTheDocument();
 
     rerender(
@@ -83,7 +84,8 @@ describe("StreakDisplay", () => {
     expect(screen.queryByLabelText(/Play today/)).not.toBeInTheDocument();
   });
 
-  it("shows ice on the free missed day while a saved freeze is left for today", () => {
+  it("shows ice from the first missed day once the player has a freeze cap", () => {
+    // A 15-day run has no free day: the missed day spent a saved freeze.
     const missed: StreakState = {
       ...streak,
       currentStreak: 15,
@@ -96,13 +98,16 @@ describe("StreakDisplay", () => {
     expect(flame()).toBe("🧊");
     expect(document.querySelector(".streak-display__flame")).toHaveAttribute(
       "title",
-      expect.stringMatching(/saved freeze will cover today/)
+      "A saved freeze is covering your streak"
     );
-    expect(screen.getByLabelText(/A saved freeze will cover today/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Play today/)).not.toBeInTheDocument();
 
     rerender(<StreakDisplay streak={{ ...missed, bankedFreezes: 0 }} date="2026-10-04" isToday />);
-    expect(flame()).toBe("⏳");
+    expect(flame()).toBe("🧊");
+    expect(document.querySelector(".streak-display__flame")).toHaveAttribute(
+      "title",
+      expect.stringMatching(/none is left/)
+    );
 
     rerender(
       <StreakDisplay
@@ -174,7 +179,7 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
     expect(popup.querySelector("strong")?.textContent).toBe("1 of 3 🧊 acquired");
-    expect(popup.textContent).toContain("Earn an 🧊 every 7 days played.");
+    expect(popup.textContent).toContain("Earn your first 🧊 on day 3, then one every 7 days played.");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

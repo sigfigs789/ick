@@ -116,8 +116,8 @@ export interface StreakState {
    */
   frozenDates?: string[];
   /**
-   * Saved freezes, earned by a long streak and spent on missed days past the
-   * grace day (see game/streakFreeze.ts). Absent means none.
+   * Saved freezes, earned by a long streak and spent on missed days (see
+   * game/streakFreeze.ts). Absent means none.
    */
   bankedFreezes?: number;
   /**

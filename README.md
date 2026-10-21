@@ -930,13 +930,13 @@ anything that matters.
   one resumes where you left off. Completing an archived puzzle still
   saves and locks it (so it's reviewable later) but never touches the
   streak — only a valid answer submitted on its own real calendar date
-  counts. A single missed day is always free (the 🔥 stays). Past that,
-  saved freezes cover missed days, one each: a streak earns one every 7
-  days played and holds up to 1 once it has ever reached 7 days, 2 once it
-  has ever reached 14 and 3 once it has ever reached 28 (the cap never goes
-  back down), and the 🔥
-  turns to 🧊 while one is covering. A gap they cannot cover resets the
-  streak to zero. Those checks live in `storage.ts` and `streakFreeze.ts`,
+  counts. Saved freezes cover missed days, one each: a streak earns its
+  first on day 3 and then one every 7 days played, and holds up to 1 once
+  it has ever reached 3 days, 2 once it has ever reached 14 and 3 once it
+  has ever reached 28 (the cap never goes back down), and the 🔥 turns to
+  🧊 while one is covering. There is no free missed day: every missed day
+  spends a freeze or ends the streak, and a gap they cannot cover resets
+  the streak to zero. Those checks live in `storage.ts` and `streakFreeze.ts`,
   which ignore archive puzzles and clear expired streaks on load. The
   streak board shows each player's streak as their game reports it.
 

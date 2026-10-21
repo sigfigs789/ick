@@ -75,16 +75,17 @@ export interface StreakEntry {
   best: number;
   /**
    * A saved freeze is covering missed days and today is not played yet -- the
-   * day the game shows 🧊 instead of 🔥. The free missed day keeps the 🔥.
+   * day the game shows 🧊 instead of 🔥.
    */
   frozen: boolean;
   /**
-   * At least one day missed and today not played: the free day or a saved
-   * freeze is holding the run up. Wider than `frozen`.
+   * At least one day missed and today not played: a saved freeze is holding
+   * the run up. The same as `frozen` since 20261026000000, which dropped the
+   * free day; wider than it before.
    */
   covered: boolean;
   /**
-   * Missing today ends the run: the free day and every saved freeze are spent.
+   * Missing today ends the run: every saved freeze is spent.
    * The day the game shows ⏳ (`atRisk` in game/streakFreeze.ts). A run with a freeze left for today is not at risk.
    */
   atRisk: boolean;

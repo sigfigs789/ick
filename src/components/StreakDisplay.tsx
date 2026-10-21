@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { atRisk, missedYesterday, savedFreezeCovering, streakFreezeCap, wasFrozen } from "../game/streakFreeze";
+import { atRisk, savedFreezeCovering, streakFreezeCap, wasFrozen } from "../game/streakFreeze";
 import type { StreakState } from "../game/types";
 
 /** How saved freezes work, for the freeze badge's popup. */
 const FREEZE_RULES =
-  "🧊 keeps your streak alive for one more day. Earn an 🧊 every 7 days played. " +
-  "You can hold 1 🧊 after a 7 day streak, 2 🧊 after 14 days and 3 🧊 after 28 days.";
+  "🧊 keeps your streak alive for one more day. Earn your first 🧊 on day 3, then one every 7 days played. " +
+  "You can hold 1 🧊 after a 3 day streak, 2 🧊 after 14 days and 3 🧊 after 28 days.";
 
 function freezeSummary(banked: number, cap: number): string {
   if (banked === 0) return "No 🧊 acquired";
@@ -90,16 +90,13 @@ export function StreakDisplay({
 }: Props) {
   // One icon for how the streak stands, as the streak board marks it (see
   // components/LeaderboardPage.tsx): 🧊 while a saved freeze is covering a
-  // missed day, or stands ready to cover today after the free day covered
-  // yesterday, until today is played; ⏳ when missing today ends the streak;
+  // missed day, until today is played; ⏳ when missing today ends the streak;
   // 🔥 otherwise. A past puzzle whose day a freeze covered shows 🧊 too: that
   // day the streak was kept by a freeze, not by play.
   const frozen = isToday && date !== undefined && savedFreezeCovering(streak, date);
   const risky = isToday && date !== undefined && atRisk(streak, date);
-  const guarded = !frozen && !risky && isToday && date !== undefined && missedYesterday(streak, date);
   const coveredDay = !isToday && date !== undefined && wasFrozen(streak, date);
-  const icon =
-    frozen || guarded || coveredDay ? "🧊" : risky ? "⏳" : streak.currentStreak >= 2 ? "🔥" : null;
+  const icon = frozen || coveredDay ? "🧊" : risky ? "⏳" : streak.currentStreak >= 2 ? "🔥" : null;
   const iconTitle = coveredDay
     ? "A freeze kept your streak alive on this day"
     : frozen
@@ -108,15 +105,13 @@ export function StreakDisplay({
       : "A saved freeze is covering your streak"
     : risky
       ? "You missed yesterday: play today to keep your streak"
-      : guarded
-        ? "You missed yesterday: a saved freeze will cover today if you miss it"
-        : undefined;
+      : undefined;
   const banked = streak.bankedFreezes ?? 0;
   const cap = streakFreezeCap(streak);
   // Hidden only before the player can hold a freeze at all.
   const showFreezes = !hideEmpty || cap > 0;
   const showTotal = !hideEmpty || hasWords;
-  const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky || guarded;
+  const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky;
   if (!showStreak && !showTotal) return null;
   return (
     <div
@@ -125,7 +120,6 @@ export function StreakDisplay({
         `Current streak: ${streak.currentStreak} days. ` +
         (coveredDay ? "A freeze kept your streak alive on this day. " : "") +
         (frozen ? "A saved freeze is covering your streak. " : "") +
-        (guarded ? "You missed yesterday. A saved freeze will cover today if you miss it. " : "") +
         (risky ? "Play today to keep your streak. " : "") +
         `Streak freezes: ${banked} of ${cap}. ` +
         `This puzzle's total score: ${totalRarity.toFixed(1)}.`
