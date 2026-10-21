@@ -16,10 +16,10 @@
  * streak and the freezes go with it, though the cap stays.
  *
  * So the day after a covered day is a day a streak can be lost if no saved
- * freeze is left, and that is when `atRisk` is true. The streak shows 🧊 while
- * a saved freeze is covering (see `savedFreezeCovering` and
- * components/StreakDisplay.tsx), at risk or not. Playing turns it back to
- * fire.
+ * freeze is left, and that is when `atRisk` is true and the streak shows ⏳.
+ * Otherwise it shows 🧊 while a saved freeze is covering (see
+ * `savedFreezeCovering` and components/StreakDisplay.tsx). Playing turns it
+ * back to fire.
  *
  * A frozen day keeps the streak alive but does not add to it: the count is
  * still days actually played. And it is remembered (`frozenDates`), because a
@@ -28,7 +28,7 @@
  */
 
 import { addDays, daysSinceEpoch } from "./date";
-import type { StreakState } from "./types";
+import type { FreezeCount, StreakState } from "./types";
 
 /**
  * How long a covered day is remembered. Only the current month is ever asked
@@ -112,15 +112,60 @@ export function applyFreezes(streak: StreakState, today: string): StreakState {
 
   const missed = daysSinceEpoch(yesterday, covered);
   const banked = streak.bankedFreezes ?? 0;
-  if (missed > banked) return { ...streak, currentStreak: 0, bankedFreezes: 0 };
-
   const keepFrom = addDays(today, -FROZEN_DATES_KEPT_DAYS);
-  const newlyFrozen = Array.from({ length: missed }, (_, i) => addDays(covered, i + 1));
+  const cap = streakFreezeCap(streak);
+  const missedDates = Array.from({ length: missed }, (_, i) => addDays(covered, i + 1)).filter(
+    (d) => d >= keepFrom
+  );
+  if (missed > banked) {
+    // The freezes went with the streak, from the first missed day.
+    const lost = missedDates.map((d): [string, FreezeCount] => [d, { banked: 0, cap }]);
+    return {
+      ...streak,
+      currentStreak: 0,
+      bankedFreezes: 0,
+      freezeHistory: keptHistory({ ...streak.freezeHistory, ...Object.fromEntries(lost) }, keepFrom),
+    };
+  }
+
+  // Each covered day spent one, so it ends the day with one fewer than the last.
+  const spent = missedDates.map((d): [string, FreezeCount] => [
+    d,
+    { banked: banked - daysSinceEpoch(d, covered), cap },
+  ]);
   return {
     ...streak,
     bankedFreezes: banked - missed,
-    frozenDates: [...(streak.frozenDates ?? []), ...newlyFrozen].filter((d) => d >= keepFrom),
+    frozenDates: [...(streak.frozenDates ?? []), ...missedDates].filter((d) => d >= keepFrom),
+    freezeHistory: keptHistory({ ...streak.freezeHistory, ...Object.fromEntries(spent) }, keepFrom),
   };
+}
+
+function keptHistory(
+  history: Record<string, FreezeCount>,
+  keepFrom: string
+): Record<string, FreezeCount> {
+  return Object.fromEntries(Object.entries(history).filter(([d]) => d >= keepFrom));
+}
+
+/** The streak with the saved freezes it holds now recorded as `date`'s. */
+export function recordFreezes(streak: StreakState, date: string): StreakState {
+  const keepFrom = addDays(date, -FROZEN_DATES_KEPT_DAYS);
+  const count = { banked: streak.bankedFreezes ?? 0, cap: streakFreezeCap(streak) };
+  return {
+    ...streak,
+    freezeHistory: keptHistory({ ...streak.freezeHistory, [date]: count }, keepFrom),
+  };
+}
+
+/**
+ * The saved freezes and cap the streak held at the end of `date`, for a past
+ * puzzle. A day with no record -- before records were kept, or never played
+ * nor covered -- shows the ones held now, as every day did before.
+ */
+export function freezesOn(streak: StreakState, date: string | undefined): FreezeCount {
+  const recorded = date === undefined ? undefined : streak.freezeHistory?.[date];
+  return recorded ?? { banked: streak.bankedFreezes ?? 0, cap: streakFreezeCap(streak) };
 }
 
 /**

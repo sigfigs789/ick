@@ -4,7 +4,13 @@ import { maxGuessesFor } from "./constants";
 import { rarityFor, rarityScore, usesRetunedTiers } from "./dictionary";
 import { isEliteRarity, isWinningRarity } from "./rank";
 import type { AcceptedWord, DailyProgress, StreakState } from "./types";
-import { applyFreezes, backdateFreezes, coveredThrough, earnFreeze } from "./streakFreeze";
+import {
+  applyFreezes,
+  backdateFreezes,
+  coveredThrough,
+  earnFreeze,
+  recordFreezes,
+} from "./streakFreeze";
 
 /**
  * The two key families a player's record lives under.
@@ -420,7 +426,8 @@ function updateStreakOnValidAnswer(date: string): void {
     // Saved freezes belong to the streak that earned them.
     bankedFreezes: continuesStreak ? streak.bankedFreezes : 0,
   };
-  saveStreak(earnFreeze(updated));
+  // Recorded after the day's freeze is earned, so the day shows what it ended with.
+  saveStreak(recordFreezes(earnFreeze(updated), date));
 }
 
 function incrementCompletionTotal(): void {

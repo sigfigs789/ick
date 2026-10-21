@@ -100,6 +100,12 @@ export interface DailyProgress {
   firstWordAt?: string; // ISO timestamp
 }
 
+/** Saved freezes out of the most the streak could hold. */
+export interface FreezeCount {
+  banked: number;
+  cap: number;
+}
+
 export interface StreakState {
   currentStreak: number;
   longestStreak: number;
@@ -120,6 +126,12 @@ export interface StreakState {
    * game/streakFreeze.ts). Absent means none.
    */
   bankedFreezes?: number;
+  /**
+   * Saved freezes and the cap as they stood at the end of each recent day the
+   * streak was played or covered, so a past puzzle shows the freezes held on
+   * its day rather than today's (see `freezesOn` in game/streakFreeze.ts).
+   */
+  freezeHistory?: Record<string, FreezeCount>;
   /**
    * Set once the streak has been given the saved freezes it would have earned
    * had freezes existed before 2026-10-15 (see `backdateFreezes`).

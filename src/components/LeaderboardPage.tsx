@@ -1113,10 +1113,9 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
       </span>
       <span className="leaderboard__score">
         {/* One icon for how the run stands, as the game marks it (see
-            components/StreakDisplay.tsx): 🧊 while a saved freeze is covering
-            it, or after the free day covered a missed day with a freeze left
-            for today; ⏳ when the free day is covering a missed day and no
-            saved freeze is left, so missing today ends it; 💀 for a run that
+            components/StreakDisplay.tsx): ⏳ when missed days have spent
+            every saved freeze, so missing today ends it; 🧊 while a saved
+            freeze is covering it with one left for today; 💀 for a run that
             has ended, listed for its first two days over; 🔥 for a run played
             through yesterday. None on a live run of one day, which is a start
             rather than a streak. */}
@@ -1124,13 +1123,11 @@ function StreakRow({ entry, isYou }: { entry: StreakEntry; isYou: boolean }) {
           <span aria-hidden="true" title={streakIconTitle(entry)}>
             {entry.lost
               ? "💀"
-              : entry.frozen
-                ? "🧊"
-                : entry.atRisk
-                  ? "⏳"
-                  : entry.covered
-                    ? "🧊"
-                    : "🔥"}{" "}
+              : entry.atRisk
+                ? "⏳"
+                : entry.frozen || entry.covered
+                  ? "🧊"
+                  : "🔥"}{" "}
           </span>
         )}
         {entry.current}

@@ -69,8 +69,8 @@ describe("StreakDisplay", () => {
       frozenDates: ["2026-10-02"],
     };
     const { rerender } = render(<StreakDisplay streak={missed} date="2026-10-03" isToday />);
-    // With no free day, the missed day spent a saved freeze, so ice wins over the hourglass.
-    expect(flame()).toBe("🧊");
+    // The missed day spent the last saved freeze: the hourglass wins over the ice.
+    expect(flame()).toBe("⏳");
     expect(screen.getByLabelText(/Play today to keep your streak/)).toBeInTheDocument();
 
     rerender(
@@ -103,7 +103,7 @@ describe("StreakDisplay", () => {
     expect(screen.queryByLabelText(/Play today/)).not.toBeInTheDocument();
 
     rerender(<StreakDisplay streak={{ ...missed, bankedFreezes: 0 }} date="2026-10-04" isToday />);
-    expect(flame()).toBe("🧊");
+    expect(flame()).toBe("⏳");
     expect(document.querySelector(".streak-display__flame")).toHaveAttribute(
       "title",
       expect.stringMatching(/none is left/)
@@ -128,8 +128,8 @@ describe("StreakDisplay", () => {
       bankedFreezes: 0,
     };
     const { rerender } = render(<StreakDisplay streak={covered} date="2026-10-04" isToday />);
-    // Ice wins over the hourglass; no freeze left for today is in the hover text.
-    expect(flame()).toBe("🧊");
+    // No freeze left for today: the hourglass wins over the ice.
+    expect(flame()).toBe("⏳");
     expect(document.querySelector(".streak-display__flame")).toHaveAttribute(
       "title",
       expect.stringMatching(/none is left/)
@@ -187,6 +187,27 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     fireEvent.pointerDown(document.body);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows a past puzzle the freezes held on its day, and today the ones held now", () => {
+    const later: StreakState = {
+      ...streak,
+      currentStreak: 20,
+      longestStreak: 20,
+      lastCompletedDate: "2026-10-10",
+      bankedFreezes: 0,
+      freezeHistory: { "2026-10-05": { banked: 1, cap: 2 } },
+    };
+    const badge = () => screen.getByRole("button", { name: /streak freezes/i }).textContent;
+    const { rerender } = render(<StreakDisplay streak={later} date="2026-10-05" />);
+    expect(badge()).toBe("🧊1/2");
+
+    // A day with no record shows the ones held now.
+    rerender(<StreakDisplay streak={later} date="2026-10-04" />);
+    expect(badge()).toBe("🧊0/2");
+
+    rerender(<StreakDisplay streak={later} date="2026-10-10" isToday />);
+    expect(badge()).toBe("🧊0/2");
   });
 
   it("shows the cap the longest streak earned, even on a short current one", () => {
