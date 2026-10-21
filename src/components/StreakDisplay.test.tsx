@@ -55,7 +55,7 @@ describe("StreakDisplay", () => {
     expect(screen.getByText("🔥")).toBeInTheDocument();
   });
 
-  it("turns the flame to an hourglass when missing today ends the streak", () => {
+  it("tells the player to play today when missing today ends the streak", () => {
     const missed: StreakState = {
       ...streak,
       currentStreak: 5,
@@ -63,7 +63,8 @@ describe("StreakDisplay", () => {
       frozenDates: ["2026-10-02"],
     };
     const { rerender } = render(<StreakDisplay streak={missed} date="2026-10-03" isToday />);
-    expect(flame()).toBe("⏳");
+    // With no free day, the missed day spent a saved freeze, so ice wins over the hourglass.
+    expect(flame()).toBe("🧊");
     expect(screen.getByLabelText(/Play today to keep your streak/)).toBeInTheDocument();
 
     rerender(
@@ -152,7 +153,7 @@ describe("StreakDisplay", () => {
     fireEvent.click(badge);
     const popup = screen.getByRole("dialog", { name: "Streak freezes" });
     expect(popup.querySelector("strong")?.textContent).toBe("1 of 3 🧊 acquired");
-    expect(popup.textContent).toContain("Earn an 🧊 every 7 days played.");
+    expect(popup.textContent).toContain("Earn your first 🧊 on day 3, then one every 7 days played.");
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

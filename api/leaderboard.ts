@@ -442,8 +442,7 @@ interface StreakRow {
   /** A missed day is being covered by a freeze; absent before 20261021200000. */
   covered?: boolean | null;
   /**
-   * Missing today ends the run: the free day (only before a freeze cap) and
-   * every saved freeze are spent.
+   * Missing today ends the run: every saved freeze is spent.
    * Absent before 20261023100000.
    */
   at_risk?: boolean | null;

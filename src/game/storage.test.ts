@@ -461,14 +461,21 @@ describe("streak freezes", () => {
     recordAcceptedWord(newProgress(date, "str"), word(`w-${date}`));
   }
 
-  it("covers a missed day with no freeze earned", () => {
+  it("earns a saved freeze on day 3 that covers a missed day", () => {
+    for (let d = 1; d <= 3; d++) play(`2024-01-0${d}`);
+    expect(loadStreak()).toMatchObject({ currentStreak: 3, bankedFreezes: 1 });
+    setToday("2024-01-05"); // skipped 01-04
+    expect(loadStreak()).toMatchObject({ currentStreak: 3, bankedFreezes: 0, frozenDates: ["2024-01-04"] });
+
+    play("2024-01-05");
+    expect(loadStreak()).toMatchObject({ currentStreak: 4, frozenDates: ["2024-01-04"] });
+  });
+
+  it("gives no free missed day before the first freeze is earned", () => {
     play("2024-01-01");
     play("2024-01-02");
-    setToday("2024-01-04"); // skipped 01-03
-    expect(loadStreak()).toMatchObject({ currentStreak: 2, frozenDates: ["2024-01-03"] });
-
-    play("2024-01-04");
-    expect(loadStreak()).toMatchObject({ currentStreak: 3, frozenDates: ["2024-01-03"] });
+    setToday("2024-01-04"); // skipped 01-03, with no freeze yet
+    expect(loadStreak()).toMatchObject({ currentStreak: 0, longestStreak: 2 });
   });
 
   it("earns a saved freeze at 7 days that covers a missed day, with no free day after", () => {
@@ -484,8 +491,10 @@ describe("streak freezes", () => {
 
   it("lets a new streak earn from its first week up to the cap a past one reached", () => {
     for (let d = 1; d <= 14; d++) play(`2024-01-${String(d).padStart(2, "0")}`);
-    for (let d = 20; d <= 26; d++) play(`2024-01-${d}`); // a new streak, 7 days
-    expect(loadStreak()).toMatchObject({ currentStreak: 7, longestStreak: 14, bankedFreezes: 1 });
+    for (let d = 20; d <= 22; d++) play(`2024-01-${d}`); // a new streak, 3 days
+    expect(loadStreak()).toMatchObject({ currentStreak: 3, longestStreak: 14, bankedFreezes: 1 });
+    for (let d = 23; d <= 26; d++) play(`2024-01-${d}`); // 7 days
+    expect(loadStreak()).toMatchObject({ currentStreak: 7, longestStreak: 14, bankedFreezes: 2 });
   });
 
   it("drops saved freezes when a new streak starts", () => {

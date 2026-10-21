@@ -1,15 +1,15 @@
--- No free day once a player has a freeze cap.
+-- No free missed day.
 --
 -- A missed day used to be covered for free after every played day, for every
--- player. Now that only holds until the player can hold a saved freeze -- a
--- best run of 7 days or more (`freezeCap` in src/game/streakFreeze.ts). Past
--- that, each missed day spends a saved freeze or ends the run, so the days a
+-- player, with saved freezes covering from the second. Now there is no free
+-- day: each missed day spends a saved freeze or ends the run, so the days a
 -- run survives are the saved freezes alone, and a missed day covered at all is
--- covered by a freeze (`frozen`).
+-- covered by a freeze (`frozen` is the same as `covered`). The first freeze is
+-- earned on a run's third day (`earnFreeze` in src/game/streakFreeze.ts).
 --
--- The game reports its saved freezes the same way (`streakReport`), counting
--- the free day only for a player without a cap. Same columns as
--- 20261025100000, so the function is replaced in place.
+-- The game reports its saved freezes the same way (`streakReport`), with no
+-- free day subtracted. Same columns as 20261025100000, so the function is
+-- replaced in place.
 create or replace function public.leaderboard_streaks(
   p_today date,
   p_limit integer default 15,
@@ -37,19 +37,13 @@ as $$
       -- Days missed through yesterday. Negative for a player whose calendar is
       -- ahead of the reader's and has played their today already.
       (p_today - 1) - s.last_played as missed,
-      g.grace,
-      (p_today - 1) - s.last_played > g.grace + s.saved_freezes as lost
+      (p_today - 1) - s.last_played > s.saved_freezes as lost
     from public.leaderboard_player_streaks s
-    -- The free day, only for a player with no freeze cap yet (a best run under
-    -- 7 days, `freezeCap` in src/game/streakFreeze.ts).
-    cross join lateral (
-      select case when s.best_streak >= 7 then 0 else 1 end as grace
-    ) g
-    -- The free day plus the saved freezes cover this many missed days; a run
-    -- past that stays listed for its first two days lost, if it was a streak.
-    where (p_today - 1) - s.last_played <= g.grace + s.saved_freezes
+    -- The saved freezes cover this many missed days; a run past that stays
+    -- listed for its first two days lost, if it was a streak.
+    where (p_today - 1) - s.last_played <= s.saved_freezes
        or (
-         (p_today - 1) - s.last_played <= g.grace + s.saved_freezes + 2
+         (p_today - 1) - s.last_played <= s.saved_freezes + 2
          and s.current_streak >= 2
        )
   ),
@@ -68,9 +62,9 @@ as $$
       l.current_streak,
       l.best_streak,
       l.lost,
-      not l.lost and l.missed > l.grace as frozen,
+      not l.lost and l.missed >= 1 as frozen,
       not l.lost and l.missed >= 1 as covered,
-      not l.lost and l.missed >= 1 and l.missed = l.grace + l.saved_freezes as at_risk
+      not l.lost and l.missed >= 1 and l.missed = l.saved_freezes as at_risk
     from listed l
   )
   select r.rank, r.place, r.player_id, r.current_streak, r.best_streak,
