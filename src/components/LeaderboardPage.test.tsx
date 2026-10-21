@@ -246,7 +246,8 @@ describe("the leaderboard page", () => {
       streak: [
         { rank: 1, playerId: ALICE, current: 21, best: 21 },
         { rank: 2, playerId: BOB, current: 3, best: 40, frozen: true, covered: true },
-        { rank: 3, playerId: CAROL, current: 2, best: 6, covered: true, atRisk: true },
+        // Every saved freeze spent on missed days: the hourglass, not the ice.
+        { rank: 3, playerId: CAROL, current: 2, best: 6, frozen: true, covered: true, atRisk: true },
         {
           rank: 4,
           playerId: "44444444-4444-4444-8444-444444444444",
@@ -293,7 +294,7 @@ describe("the leaderboard page", () => {
     expect(boardRows("Streaks")[1]).toHaveTextContent("covered by a saved freeze");
     expect(boardRows("Streaks")[2]).toHaveTextContent("⏳");
     expect(boardRows("Streaks")[2]).not.toHaveTextContent(/🔥|🧊/u);
-    expect(boardRows("Streaks")[2]).toHaveTextContent("covered by the free day");
+    expect(boardRows("Streaks")[2]).toHaveTextContent("covered by a saved freeze");
     expect(boardRows("Streaks")[2]).toHaveTextContent("at risk today");
     // A one-day run is a start, not a streak: no icon at all.
     expect(boardRows("Streaks")[3]).not.toHaveTextContent(/🔥|🧊|⏳/u);

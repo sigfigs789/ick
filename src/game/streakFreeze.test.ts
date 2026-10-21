@@ -7,6 +7,8 @@ import {
   coveredThrough,
   earnFreeze,
   freezeCap,
+  freezesOn,
+  recordFreezes,
   savedFreezeCovering,
   streakReport,
 } from "./streakFreeze";
@@ -70,6 +72,19 @@ describe("applyFreezes", () => {
     });
     const after = applyFreezes(streak, "2026-10-05");
     expect(after).toMatchObject({ currentStreak: 10, frozenDates: ["2026-10-02", "2026-10-04"] });
+  });
+
+  it("records the freezes each covered day ended with", () => {
+    const after = applyFreezes(streakOf({ longestStreak: 30, bankedFreezes: 3 }), "2026-10-04");
+    expect(freezesOn(after, "2026-10-02")).toEqual({ banked: 2, cap: 3 });
+    expect(freezesOn(after, "2026-10-03")).toEqual({ banked: 1, cap: 3 });
+    // Today, not covered yet, is what is held now.
+    expect(freezesOn(after, "2026-10-04")).toEqual({ banked: 1, cap: 3 });
+  });
+
+  it("records none held on the days of a gap that ended the streak", () => {
+    const after = applyFreezes(streakOf({ longestStreak: 30, bankedFreezes: 1 }), "2026-10-04");
+    expect(freezesOn(after, "2026-10-02")).toEqual({ banked: 0, cap: 3 });
   });
 
   it("forgets covered days after two months", () => {
@@ -231,5 +246,20 @@ describe("backdateFreezes", () => {
   it("leaves a streak that has ended alone", () => {
     const ended = streakOf({ currentStreak: 0, longestStreak: 40 });
     expect(backdateFreezes(ended)).toBe(ended);
+  });
+});
+
+describe("recordFreezes", () => {
+  it("keeps a played day's freezes for its puzzle after they change", () => {
+    const played = recordFreezes(streakOf({ currentStreak: 14, longestStreak: 14, bankedFreezes: 1 }), "2026-10-01");
+    expect(freezesOn(played, "2026-10-01")).toEqual({ banked: 1, cap: 2 });
+    const spent = applyFreezes(played, "2026-10-03");
+    expect(freezesOn(spent, "2026-10-01")).toEqual({ banked: 1, cap: 2 });
+    expect(freezesOn(spent, "2026-10-02")).toEqual({ banked: 0, cap: 2 });
+  });
+
+  it("forgets days after two months", () => {
+    const old = recordFreezes(streakOf({ bankedFreezes: 1 }), "2026-07-01");
+    expect(recordFreezes(old, "2026-10-01").freezeHistory).not.toHaveProperty("2026-07-01");
   });
 });
