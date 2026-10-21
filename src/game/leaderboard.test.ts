@@ -172,6 +172,41 @@ describe("submitting a score", () => {
     );
   });
 
+  it("ranks a day started on its own date and finished from the archive later", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+    // First word banked on the day itself, the rest in a session two days on.
+    // The history import ranks this day in full, so the live path must too, or
+    // the board holds only the words from the first session.
+    expect(
+      submitScore({
+        date: "2026-07-04",
+        isToday: false,
+        words: WORDS,
+        firstWordAt: new Date(2026, 6, 4, 20, 0).toISOString(),
+      })
+    ).toBe(true);
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day.date).toBe("2026-07-04");
+    expect(day.unranked).toBeUndefined();
+    expect(day.words).toBe(WORDS.length);
+  });
+
+  it("keeps a past day started after its own date off the board", () => {
+    joinBoard();
+    const fetchMock = stubFetch();
+    expect(
+      submitScore({
+        date: "2026-07-04",
+        isToday: false,
+        words: WORDS,
+        firstWordAt: new Date(2026, 6, 6, 12, 0).toISOString(),
+      })
+    ).toBe(true);
+    const [day] = posted(fetchMock).scores as Record<string, unknown>[];
+    expect(day.unranked).toBe(true);
+  });
+
   it("sends nothing before the first word is accepted", () => {
     joinBoard();
     const fetchMock = stubFetch();

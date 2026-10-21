@@ -230,10 +230,24 @@ export function playedBefore(date: string): boolean {
 }
 
 export function playedOnItsDay(): DailyProgress[] {
-  return playedHistory().filter((progress) => {
-    const playedAt = progress.firstWordAt ?? progress.completedAt;
-    return Boolean(playedAt) && playedOnDate(playedAt!, progress.date);
-  });
+  return playedHistory().filter(startedOnItsDay);
+}
+
+/**
+ * Whether one record was played on its own day: the rule `playedOnItsDay`
+ * filters the history by, for one day.
+ *
+ * Exported for the live path, which has to agree with it. A day is judged by
+ * when it was *started*, so a puzzle begun on its own date and finished from
+ * the archive in a later session is still that day's -- the history import ranks
+ * the whole of it, and the per-word submission has to as well, or the board
+ * holds only the words banked before the player left (see submitScore).
+ */
+export function startedOnItsDay(
+  progress: Pick<DailyProgress, "date" | "firstWordAt" | "completedAt">
+): boolean {
+  const playedAt = progress.firstWordAt ?? progress.completedAt;
+  return Boolean(playedAt) && playedOnDate(playedAt!, progress.date);
 }
 
 /**

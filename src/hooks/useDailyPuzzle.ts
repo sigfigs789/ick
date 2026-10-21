@@ -369,6 +369,9 @@ export function useDailyPuzzle() {
         // is monotonic per day, so this is what lets the first word banked after
         // a retry bring the day down to what the player actually holds.
         retried: updated.retryUsed === true,
+        // When the day was started, so a puzzle begun on its own date and
+        // finished from the archive later still lands on the board it is on.
+        firstWordAt: updated.firstWordAt,
       });
       // And to the chat room, which announces a puzzle's new top score and any
       // 9.5+ word. The same fire-and-forget write, for the live puzzle only.
@@ -626,13 +629,15 @@ export function useDailyPuzzle() {
       //
       // Archive play leaves the board alone: `submitScore` sends an old day
       // unranked, so retrying a word on it corrects this browser's record and
-      // no board row. (The feed keeps the word -- it was found.)
+      // no board row. (The feed keeps the word -- it was found.) A day started
+      // on its own date is the exception, and is corrected like today's.
       submitScore({
         date: viewedDate,
         isToday,
         words: updated.acceptedWords,
         retried: true,
         mode: updated.mode,
+        firstWordAt: updated.firstWordAt,
       });
       trackAnswerRetried(
         viewedDate,
@@ -792,6 +797,7 @@ export function useDailyPuzzle() {
             words: banked.acceptedWords,
             mode: to,
             retried: banked.retryUsed === true,
+            firstWordAt: banked.firstWordAt,
           })
         );
         if (banked.completed) asMode(to, () => trackPuzzleCompleted(banked, updatedStreak));

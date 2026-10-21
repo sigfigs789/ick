@@ -23,7 +23,7 @@ import { FIRST_PUZZLE } from "./drop";
 import { handleFor } from "./handle";
 import { loadPlayerId } from "./player";
 import { currentMode, freeformForDate, modeForDate, type GameMode } from "./mode";
-import { loadStreak, playedHistory, playedOnItsDay } from "./storage";
+import { loadStreak, playedHistory, playedOnItsDay, startedOnItsDay } from "./storage";
 import { streakReport } from "./streakFreeze";
 import { offlineVerdict } from "./submit";
 import type { AcceptedWord, DailyProgress, Rarity } from "./types";
@@ -1064,7 +1064,9 @@ function send(playerId: string, scores: ScorePayload[]): Promise<Response> | nul
  * A puzzle that isn't today's is sent, but `unranked`: archive play is off the
  * board for the same reason it is off the streak (you can look up the answers),
  * and on the feed because the feed is a record of what was found on each drop,
- * not a ranking. See below.
+ * not a ranking. See below. The exception is a puzzle that was *started* on its
+ * own day (`firstWordAt`) and is being finished in a later session: that day is
+ * on the board already, so the rest of its words go there too.
  */
 export function submitScore(options: {
   date: string;
@@ -1078,18 +1080,29 @@ export function submitScore(options: {
    * the player flipped modes is judged by the game it was submitted to.
    */
   mode?: GameMode;
+  /**
+   * When the day's first word was banked (DailyProgress.firstWordAt), which is
+   * what decides whether a past puzzle is still ranked. See below.
+   */
+  firstWordAt?: string;
   playerId?: string | null;
 }): boolean {
-  const { date, isToday, words, retried } = options;
+  const { date, isToday, words, retried, firstWordAt } = options;
   const mode = options.mode ?? modeForDate(date);
   const playerId = options.playerId ?? loadPlayerId();
   if (!playerId || words.length === 0) return false;
-  // Played after its own day -- out of the archive, or on a tab left open past
-  // midnight. The words go up to that drop's feed, and the day goes nowhere near
-  // a board: a past puzzle's answers are a page away, so a score earned on it
-  // says nothing about the player. The server writes an `unranked` day's finds
-  // and skips its board row.
-  if (!isToday) {
+  // Played after its own day, out of the archive. The words go up to that
+  // drop's feed, and the day goes nowhere near a board: a past puzzle's answers
+  // are a page away, so a score earned on it says nothing about the player. The
+  // server writes an `unranked` day's finds and skips its board row.
+  //
+  // Unless the day was started on its own date. That day already has a board
+  // row from its first word, and `backfillHistory` re-sends the whole of it
+  // ranked on the next open, because `playedOnItsDay` judges a day by when it
+  // was started. Sending the later words unranked here only left the board
+  // holding the first session's total -- one word of four -- until that sync
+  // happened to run, and forever if it never did.
+  if (!isToday && !startedOnItsDay({ date, firstWordAt })) {
     return post(playerId, [
       scoreFor(date, words, { withFound: true, retried, unranked: true, mode }),
     ]);
