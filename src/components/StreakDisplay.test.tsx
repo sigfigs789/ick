@@ -25,11 +25,17 @@ describe("StreakDisplay", () => {
     // A new player with nothing yet: no strip at all.
     expect(container).toBeEmptyDOMElement();
 
-    // A streak but no freeze held and no word today: the streak alone.
-    rerender(<StreakDisplay streak={{ ...streak, currentStreak: 3 }} hideEmpty hasWords={false} />);
+    // A streak too short to hold a freeze and no word today: the streak alone.
+    rerender(<StreakDisplay streak={{ ...streak, currentStreak: 2 }} hideEmpty hasWords={false} />);
     expect(screen.getByText("day streak")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Streak freezes/ })).not.toBeInTheDocument();
     expect(screen.queryByText("Total")).not.toBeInTheDocument();
+
+    // Long enough to hold a freeze, with none held: the badge shows 0 of the cap.
+    rerender(
+      <StreakDisplay streak={{ ...streak, currentStreak: 15, longestStreak: 15 }} hideEmpty hasWords={false} />
+    );
+    expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("🧊0/2");
 
     // A freeze held and a word banked: both come back.
     rerender(
@@ -141,6 +147,26 @@ describe("StreakDisplay", () => {
         isToday
       />
     );
+    expect(flame()).toBe("🔥");
+  });
+
+  it("shows ice, not fire, on a past puzzle whose day a freeze covered", () => {
+    const kept: StreakState = {
+      ...streak,
+      currentStreak: 12,
+      longestStreak: 12,
+      lastCompletedDate: "2026-10-05",
+      frozenDates: ["2026-10-03"],
+    };
+    const { rerender } = render(<StreakDisplay streak={kept} date="2026-10-03" />);
+    expect(flame()).toBe("🧊");
+    expect(document.querySelector(".streak-display__flame")).toHaveAttribute(
+      "title",
+      expect.stringMatching(/freeze kept your streak alive on this day/)
+    );
+
+    // A played day keeps the fire.
+    rerender(<StreakDisplay streak={kept} date="2026-10-04" />);
     expect(flame()).toBe("🔥");
   });
 
