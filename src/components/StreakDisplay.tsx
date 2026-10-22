@@ -72,8 +72,8 @@ interface Props {
   /**
    * The new play screen (see game/uiVariant.ts): leave out what would only be
    * zeros -- the freeze badge until the player can hold a freeze, the total until a word
-   * is banked, and the whole strip for a player with neither a streak nor a
-   * word yet.
+   * is banked, and the whole strip for a player with neither a streak, a
+   * freeze cap, nor a word yet.
    */
   hideEmpty?: boolean;
   /** Whether this puzzle has a banked word, for `hideEmpty`. */
@@ -109,10 +109,12 @@ export function StreakDisplay({
         : undefined;
   // A past puzzle shows the freezes held on its day; today's shows today's.
   const { banked, cap } = freezesOn(streak, isToday ? undefined : date);
-  // Hidden only before the player can hold a freeze at all.
+  // Hidden only before the player can hold a freeze at all. The cap is set by
+  // the longest streak ever, so a player whose streak has ended still has one
+  // to show, and the row stays for it.
   const showFreezes = !hideEmpty || cap > 0;
   const showTotal = !hideEmpty || hasWords;
-  const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky;
+  const showStreak = !hideEmpty || streak.currentStreak > 0 || frozen || risky || cap > 0;
   if (!showStreak && !showTotal) return null;
   return (
     <div
