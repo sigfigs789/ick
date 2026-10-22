@@ -452,6 +452,18 @@ describe("api/review", () => {
     });
   });
 
+  it("waits longer for the analytics overview than a game read does", async () => {
+    withEnv();
+    stubFetch({});
+    const timeout = vi.spyOn(AbortSignal, "timeout");
+
+    await handler(get("?list=analytics&to=2026-10-16"));
+
+    // The report takes about two seconds to build, the game's own cap.
+    expect(timeout).toHaveBeenCalledWith(8000);
+    timeout.mockRestore();
+  });
+
   it("no longer serves the idle hint report on its own", async () => {
     withEnv(CONFIGURED);
     stubFetch({});
