@@ -337,7 +337,8 @@ function Report({
 const GROWTH_WEEKS = 12;
 
 /**
- * Weekly active players and their growth on the week before, by grouping.
+ * Weekly active and playing players, each with its growth on the week before,
+ * and the share of the active ones who played, by grouping.
  * Weeks run Sunday to Saturday, the latest the one today's puzzle is in, and do not follow the window.
  */
 function GrowthSection({ weekly }: { weekly: WeekActives[] }) {
@@ -350,7 +351,9 @@ function GrowthSection({ weekly }: { weekly: WeekActives[] }) {
     >
       <ul className="review__meta analytics__bullets">
         <li><strong>Weekly active players</strong>: opened the game on any puzzle that week</li>
-        <li><strong>WAU growth</strong>: the change on the week before</li>
+        <li><strong>Weekly playing players</strong>: banked a word in any puzzle that week</li>
+        <li><strong>Growth</strong>: each one's change on the week before</li>
+        <li><strong>Open to play</strong>: the share of the week's active players who played</li>
         <li><strong>New</strong>: first-ever visit that week; <strong>Returning</strong>: visited before it</li>
       </ul>
       <div className="analytics__groups" role="group" aria-label="Weekly players">
@@ -373,6 +376,9 @@ function GrowthSection({ weekly }: { weekly: WeekActives[] }) {
               <th scope="col">Week</th>
               <th scope="col">Weekly active players</th>
               <th scope="col">WAU growth</th>
+              <th scope="col">Weekly playing players</th>
+              <th scope="col">Playing growth</th>
+              <th scope="col">Open to play</th>
             </tr>
           </thead>
           <tbody>
@@ -384,6 +390,9 @@ function GrowthSection({ weekly }: { weekly: WeekActives[] }) {
                 </th>
                 <td>{fmt(w.players[group])}</td>
                 <td>{growth(w.players[group], weekly[i + 1]?.players[group])}</td>
+                <td>{fmt(w.playing[group])}</td>
+                <td>{growth(w.playing[group], weekly[i + 1]?.playing[group])}</td>
+                <td>{w.players[group] ? pct(w.playing[group] / w.players[group]) : "–"}</td>
               </tr>
             ))}
           </tbody>

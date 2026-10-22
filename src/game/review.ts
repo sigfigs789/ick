@@ -405,9 +405,10 @@ export interface AnalyticsReport {
   botsFiltered: number;
   daily: Array<{ date: string; closed: boolean; groups: Record<Group, DayMetrics> }>;
   /**
-   * Weekly active players, newest week first: Sunday to Saturday, the latest
-   * the week `today` is in, up to 13 weeks whatever the window (see the
-   * 2026-10-27 migrations). New is a player whose first-ever day is in the week.
+   * Weekly active and playing players, newest week first: Sunday to Saturday,
+   * the latest the week `today` is in, up to 13 weeks whatever the window (see
+   * the 2026-10-27 and 2026-10-30 migrations). New is a player whose
+   * first-ever day is in the week.
    */
   weekly: WeekActives[];
   /**
@@ -426,6 +427,8 @@ export interface WeekActives {
   start: string;
   end: string;
   players: Record<Group, number>;
+  /** The week's playing players: the ones who banked a word in any of its puzzles. */
+  playing: Record<Group, number>;
   /**
    * Where the week's players came from: new (first-ever day that week), kept
    * (played the week before too) or resurrected (played before, but not the
@@ -635,6 +638,7 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
         start: w.start as string,
         end: w.end as string,
         players: byGroup(w.groups, count),
+        playing: byGroup(w.playing, count),
         flow: {
           new: count(obj(w.flow).new),
           kept: count(obj(w.flow).kept),
