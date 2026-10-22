@@ -9,6 +9,7 @@ import {
   type Group,
   type KeyMetrics,
   type MuseReport,
+  type WeekActives,
 } from "../game/review";
 import {
   DAYS_AGO,
@@ -16,6 +17,7 @@ import {
   daysAgoLabel,
   dowOf,
   fmt,
+  growth,
   moveRange,
   pct,
   windowDates,
@@ -37,7 +39,8 @@ import { handleFor } from "../game/handle";
  * opened the chat, by which play screen they were shown, and by the idle hint
  * test's arm. Every number is built in one place, `analytics_overview` (see the
  * 2026-10-18, 2026-10-21 and 2026-10-26 migrations), and this page only draws
- * them.
+ * them. Growth, weekly active players by the same groupings, comes from the
+ * same place (the 2026-10-27 migration).
  *
  * Muse AI, an agent the maintainer sends to play (see game/visitor.ts), is
  * left out of all of it and has a section of its own at the end.
@@ -212,6 +215,8 @@ function Report({
         </p>
       </Section>
 
+      <GrowthSection weekly={report.weekly} />
+
       <Section
         title="Puzzle type"
         note={`${span}. Who guessed in each mode, and how many came back.`}
@@ -292,6 +297,65 @@ function Report({
 
       <MuseSection muse={report.muse} span={span} />
     </div>
+  );
+}
+
+/** Weeks the growth table shows; the report carries one more, for the oldest one's growth. */
+const GROWTH_WEEKS = 12;
+
+/**
+ * Weekly active players and their growth on the week before, by grouping.
+ * Weeks are seven puzzles ending on today's, and do not follow the window.
+ */
+function GrowthSection({ weekly }: { weekly: WeekActives[] }) {
+  const [group, setGroup] = useState<Group>("all");
+  return (
+    <Section
+      title="Growth"
+      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window: each week is seven puzzles ending on today's, so the latest is still counting up.`}
+    >
+      <ul className="review__meta analytics__bullets">
+        <li><strong>Weekly active players</strong>: opened the game on any puzzle that week</li>
+        <li><strong>WAU growth</strong>: the change on the week before</li>
+        <li><strong>New</strong>: first-ever visit that week; <strong>Returning</strong>: visited before it</li>
+      </ul>
+      <div className="analytics__groups" role="group" aria-label="Weekly players">
+        {GROUPS.map((g) => (
+          <button
+            key={g}
+            type="button"
+            className="analytics__window-button"
+            aria-pressed={g === group}
+            onClick={() => setGroup(g)}
+          >
+            {GROUP_NAMES[g]}
+          </button>
+        ))}
+      </div>
+      <div className="analytics__table-wrap">
+        <table className="analytics__table">
+          <thead>
+            <tr>
+              <th scope="col">Week</th>
+              <th scope="col">Weekly active players</th>
+              <th scope="col">WAU growth</th>
+            </tr>
+          </thead>
+          <tbody>
+            {weekly.slice(0, GROWTH_WEEKS).map((w, i) => (
+              <tr key={w.end}>
+                <th scope="row">
+                  {shortDate(w.start)} to {shortDate(w.end)}
+                  {i === 0 && <span className="analytics__n"> so far</span>}
+                </th>
+                <td>{fmt(w.players[group])}</td>
+                <td>{growth(w.players[group], weekly[i + 1]?.players[group])}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Section>
   );
 }
 
