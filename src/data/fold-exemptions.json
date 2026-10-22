@@ -1815,6 +1815,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `crap`, costing 3.67 points. Flagged in the 2026-09-22 semantic audit (plural of crape, not crap) and confirmed on adversarial re-review (crape is crepe fabric, not crap)."
   },
+  "crepieres": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `crepy` (crepieres > crepier > crepy), costing 0.27 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (crepe pans, not more crepy) and confirmed on adversarial re-review (plural of crepiere, a crepe pan)."
+  },
   "crimini": {
     "since": "2026-09-27",
     "reason": "Folded onto `criminis`, costing 1.45 points. Flagged in the 2026-09-22 semantic audit (crimini interjection, not criminis) and confirmed on adversarial re-review (criminis unrelated Latin genitive)."
@@ -3442,9 +3446,19 @@
     "reason": "Folded onto `pass`, costing up to 5.68 points, by stripping de- to `pass`. Not de- + `pass`: French depasser: to exceed; not reverse of pass. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
   },
+  "depatriated": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `patriate` (depatriated > patriated > patriate), costing 0.61 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (leave homeland; unrelated to constitutional patriate) and confirmed on adversarial re-review (leave homeland; patriate is constitutional term).",
+    "scope": "prefix"
+  },
   "depatriates": {
     "since": "2026-10-04",
     "reason": "Folded onto `patriate`, costing up to 0.78 points, by stripping de- to `patriates`. Not de- + `patriates`: leaves one's homeland; not reverse of patriate. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "depatriating": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `patriate` (depatriating > patriating > patriate), costing 0.61 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (leave homeland; unrelated to constitutional patriate) and confirmed on adversarial re-review (leave homeland; patriate is constitutional term).",
     "scope": "prefix"
   },
   "depeached": {
@@ -3460,6 +3474,81 @@
   "depeaching": {
     "since": "2026-10-04",
     "reason": "Folded onto `peach`, costing up to 3.86 points, by stripping de- to `peaching`. Not de- + `peaching`: obsolete depeach: dispatch; unrelated to peach. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deperditions": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `perdition` (deperditions > perditions > perdition), costing 1.76 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (gradual loss, not damnation) and confirmed on adversarial re-review (gradual loss, not damnation).",
+    "scope": "prefix"
+  },
+  "deperm": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `perm` (deperm > perm), costing 2.63 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (demagnetize ships, not hair perm) and confirmed on adversarial re-review (demagnetize ships; unrelated to hair perm).",
+    "scope": "prefix"
+  },
+  "depermed": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `perm` (depermed > deperm > perm), costing 2.65 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (demagnetized, not hair perm) and confirmed on adversarial re-review (demagnetized; unrelated to hair perm).",
+    "scope": "prefix"
+  },
+  "deperming": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `perm` (deperming > deperm > perm), costing 2.65 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (demagnetizing, not hair perm) and confirmed on adversarial re-review (demagnetizing; unrelated to hair perm).",
+    "scope": "prefix"
+  },
+  "deperms": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `perm` (deperms > deperm > perm), costing 2.65 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (demagnetizes, not hair perm) and confirmed on adversarial re-review (demagnetizes; unrelated to hair perm).",
+    "scope": "prefix"
+  },
+  "depersonalisation": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `personalised` (depersonalisation > depersonalise > depersonalises > personalises > personalise > personalised), costing 2.40 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (loss of self, not customised) and confirmed on adversarial re-review (loss of self, not customised).",
+    "scope": "prefix"
+  },
+  "depersonalisations": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `personalised` (depersonalisations > personalisations > personalisation > personalise > personalised), costing 2.70 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (make impersonal, not customise) and confirmed on adversarial re-review (make impersonal, not customise).",
+    "scope": "prefix"
+  },
+  "depersonalise": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `personalised` (depersonalise > depersonalises > personalises > personalise > personalised), costing 2.55 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (make impersonal, not customise) and confirmed on adversarial re-review (make impersonal, not customise).",
+    "scope": "prefix"
+  },
+  "depersonalised": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `personalised` (depersonalised > depersonalise > depersonalises > personalises > personalise > personalised), costing 1.94 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (make impersonal, not customise) and confirmed on adversarial re-review (make impersonal, not customise).",
+    "scope": "prefix"
+  },
+  "depersonalises": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `personalised` (depersonalises > personalises > personalise > personalised), costing 2.64 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (make impersonal, not customise) and confirmed on adversarial re-review (make impersonal, not customise).",
+    "scope": "prefix"
+  },
+  "depersonalising": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `personalised` (depersonalising > depersonalise > depersonalises > personalises > personalise > personalised), costing 2.49 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (make impersonal, not customise) and confirmed on adversarial re-review (make impersonal, not customise).",
+    "scope": "prefix"
+  },
+  "depersonalization": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `personalized` (depersonalization > depersonalizations > personalizations > personalization > personalize > personalized), costing 1.92 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (make impersonal, not customize) and confirmed on adversarial re-review (loss of self, not customized).",
+    "scope": "prefix"
+  },
+  "depersonalizations": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `personalized` (depersonalizations > personalizations > personalization > personalize > personalized), costing 3.15 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (make impersonal, not customize) and confirmed on adversarial re-review (make impersonal, not customize).",
+    "scope": "prefix"
+  },
+  "depersonalizer": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `personalized` (depersonalizer > personalizer > personalize > personalized), costing 3.22 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (make impersonal, not customize) and confirmed on adversarial re-review (make impersonal, not customize).",
+    "scope": "prefix"
+  },
+  "depersonalizers": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `personalized` (depersonalizers > depersonalizer > personalizer > personalize > personalized), costing 3.22 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (make impersonal, not customize) and confirmed on adversarial re-review (make impersonal, not customize).",
     "scope": "prefix"
   },
   "depeter": {
@@ -3502,6 +3591,10 @@
     "reason": "Folded onto `porter`, costing up to 3.59 points, by stripping de- to `porters`. Not de- + `porters`: those who expel people from a country. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
   },
+  "depositees": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `deposite` (depositees > deposite), costing 0.23 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (plural of depositee, not deposite) and confirmed on adversarial re-review (plural of depositee; misparsed)."
+  },
   "depositionally": {
     "since": "2026-10-04",
     "reason": "Folded onto `positional`, costing up to 1.07 points, by stripping de- to `positionally`. Not de- + `positionally`: relating to deposition (deposit/depose), not position. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
@@ -3537,6 +3630,16 @@
     "reason": "Folded onto `presh`, costing up to 0.51 points, by stripping de- to `presh`. Not de- + `presh`: slang for depressed/depressing; unrelated to presh. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
     "scope": "prefix"
   },
+  "depressability": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `press` (depressability > depressable > pressable > press), costing 5.54 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (built on depress, not press) and confirmed on adversarial re-review (built on depress, not press).",
+    "scope": "prefix"
+  },
+  "depressable": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `press` (depressable > pressable > press), costing 5.54 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (built on depress, not press) and confirmed on adversarial re-review (built on depress, not press).",
+    "scope": "prefix"
+  },
   "depressingness": {
     "since": "2026-10-04",
     "reason": "Folded onto `press`, costing up to 1.46 points, by stripping de- to `pressingness`. Not de- + `pressingness`: quality of being depressing; not de- + press. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
@@ -3545,6 +3648,11 @@
   "depreter": {
     "since": "2026-10-04",
     "reason": "Folded onto `preter`, costing up to 0.55 points, by stripping de- to `preter`. Not de- + `preter`: unrelated obsolete word; not de- + preter. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "deprivate": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `private` (deprivate > private), costing 5.58 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (archaic for deprive, not private) and confirmed on adversarial re-review (archaic for deprive, not private).",
     "scope": "prefix"
   },
   "depulses": {
@@ -6565,6 +6673,14 @@
     "since": "2026-09-27",
     "reason": "Folded onto `nephritis`, costing 1.47 points. Flagged in the 2026-09-22 semantic audit (nephrite mineral, nephritis disease) and confirmed on adversarial re-review (nephrite mineral vs nephritis disease)."
   },
+  "nephros": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `nephro` (nephros > nephro), costing 0.65 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (kidney noun, not plural of prefix) and confirmed on adversarial re-review (kidney noun; nephro is only combining form)."
+  },
+  "nephroses": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `nephro` (nephroses > nephros > nephro), costing 0.60 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (plural of nephrosis, not nephros) and confirmed on adversarial re-review (plural of nephrosis, not nephros)."
+  },
   "nerite": {
     "since": "2026-09-27",
     "reason": "Folded onto `neritic`, costing 0.43 points. Flagged in the 2026-09-22 semantic audit (snail versus coastal zone) and confirmed on adversarial re-review (nerite snail vs neritic zone)."
@@ -6889,6 +7005,14 @@
   "outhousey": {
     "since": "2026-09-27",
     "reason": "Folded onto `housey`, costing 0.54 points. Flagged in the 2026-09-22 semantic audit (from outhouse, not housey) and confirmed on adversarial re-review (outhousey from outhouse, not housey)."
+  },
+  "outkeeper": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `keep` (outkeeper > outkeep > keep), costing 6.23 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (surveying tally instrument, not keeper) and confirmed on adversarial re-review (surveying tally instrument, not keeper)."
+  },
+  "outkeepers": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `keep` (outkeepers > outkeeper > outkeep > keep), costing 6.25 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (surveying tally instrument) and confirmed on adversarial re-review (surveying tally instrument, not keeper)."
   },
   "outlayings": {
     "since": "2026-09-27",
@@ -7393,6 +7517,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `pent`, costing 2.72 points. Flagged in the 2026-09-22 semantic audit (pentise is a penthouse variant) and confirmed on adversarial re-review (pentise is penthouse variant)."
   },
+  "pepsis": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `pepsi` (pepsis > pepsi), costing 2.63 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (wasp genus, not plural of brand) and confirmed on adversarial re-review (wasp genus, not plural of Pepsi)."
+  },
   "peptisable": {
     "since": "2026-09-27",
     "reason": "Folded onto `pept`, costing 1.14 points. Flagged in the 2026-09-22 semantic audit (pept is not a word) and confirmed on adversarial re-review (pept is not a word)."
@@ -7400,6 +7528,10 @@
   "peptisations": {
     "since": "2026-09-27",
     "reason": "Folded onto `pept`, costing 1.14 points. Flagged in the 2026-09-22 semantic audit (pept is not a word) and confirmed on adversarial re-review (pept is not a word)."
+  },
+  "peptise": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `pept` (peptise > pept), costing 0.80 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (pept is not a word) and confirmed on adversarial re-review (pept is not a word)."
   },
   "peptisers": {
     "since": "2026-09-27",
@@ -8000,6 +8132,38 @@
     "scope": "prefix",
     "reason": "Premunition is a state of partial immunity; `munitions` are weapons."
   },
+  "prephenate": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `phenate` (prephenate > phenate), costing 0.83 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (biochemical name, not pre- plus phenate) and confirmed on adversarial re-review (biochemical name, not pre- plus phenate)."
+  },
+  "prephenates": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `phenate` (prephenates > prephenate > phenate), costing 0.88 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (biochemical name, not pre- plus phenate) and confirmed on adversarial re-review (biochemical name, not pre- plus phenate)."
+  },
+  "preponder": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `ponder` (preponder > ponder), costing 2.93 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (means preponderate, not pre-ponder) and confirmed on adversarial re-review (means outweigh, not think over)."
+  },
+  "prepondered": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `ponder` (prepondered > preponder > ponder), costing 2.97 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (preponder means outweigh, not ponder) and confirmed on adversarial re-review (preponder means outweigh, not ponder)."
+  },
+  "prepondering": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `ponder` (prepondering > preponder > ponder), costing 2.94 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (preponder means outweigh, not ponder) and confirmed on adversarial re-review (preponder means outweigh, not ponder)."
+  },
+  "preponderous": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `ponderous` (preponderous > ponderous), costing 1.77 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (means preponderant, not ponderous) and confirmed on adversarial re-review (means preponderant, not ponderous)."
+  },
+  "preponderously": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `ponderous` (preponderously > ponderously > ponderous), costing 1.77 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (means preponderantly, not ponderously) and confirmed on adversarial re-review (means preponderantly, not ponderously)."
+  },
+  "preponders": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `ponder` (preponders > preponder > ponder), costing 2.96 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (preponder means outweigh, not ponder) and confirmed on adversarial re-review (preponder means outweigh, not ponder)."
+  },
   "prepositive": {
     "since": "2026-09-27",
     "scope": "prefix",
@@ -8548,9 +8712,37 @@
     "since": "2026-09-27",
     "reason": "Folded onto `rent`, costing 4.44 points. Flagged in the 2026-09-22 semantic audit (rente, annuity; overshot) and confirmed on adversarial re-review (plural of rente, strip overshot)."
   },
+  "repasted": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `repasts` (repasted > repast > repasts), costing 1.54 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (paste again, not repast meal) and confirmed on adversarial re-review (paste again, not repast meal)."
+  },
   "repastes": {
     "since": "2026-09-27",
     "reason": "Folded onto `repasts`, costing 1.92 points. Flagged in the 2026-09-22 semantic audit (repaste vs repasts, overshot strip) and confirmed on adversarial re-review (repaste distinct from repast strip)."
+  },
+  "repasting": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `repasts` (repasting > repast > repasts), costing 1.54 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (paste again, not repast meal) and confirmed on adversarial re-review (paste again, not repast meal)."
+  },
+  "repenned": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `repens` (repenned > repen > repens), costing 1.17 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (pen again, not botanical repens) and confirmed on adversarial re-review (pen again, not botanical repens)."
+  },
+  "repenning": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `repens` (repenning > repen > repens), costing 0.73 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (pen again, not botanical repens) and confirmed on adversarial re-review (pen again, not botanical repens)."
+  },
+  "replaned": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `replan` (replaned > replan), costing 0.43 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (past of replane, not replan) and confirmed on adversarial re-review (past of replane, not replan)."
+  },
+  "replanes": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `replan` (replanes > replan), costing 0.43 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (form of replane, not replan) and confirmed on adversarial re-review (form of replane, not replan)."
+  },
+  "replaning": {
+    "since": "2026-10-24",
+    "reason": "Folded onto `replan` (replaning > replan), costing 0.38 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (form of replane, not replan) and confirmed on adversarial re-review (form of replane, not replan)."
   },
   "replicases": {
     "since": "2026-09-27",

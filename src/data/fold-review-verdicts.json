@@ -79,10 +79,25 @@
     "since": "2026-10-21",
     "reason": "Folded onto `chives` (chiving > chive > chives), costing 1.89 points; it is a form of `chiv` (Zipf 1.31). Flagged by the daily fold check for the 2026-10-21 `IVI` drop (stabbing with chiv, not herb chives) and confirmed on adversarial re-review (Chiving means stabbing, from chiv; not chives)."
   },
+  "conceptibility": {
+    "base": "conceive",
+    "since": "2026-10-24",
+    "reason": "Folded onto `concept` (conceptibility > conceptible > concept), costing 4.97 points; it is a form of `conceive` (Zipf 3.40). Flagged by the daily fold check for the 2026-10-24 `EP` drop (means conceivability, not concept) and confirmed on adversarial re-review (means conceivability; concept is different sense)."
+  },
+  "conceptible": {
+    "base": "conceive",
+    "since": "2026-10-24",
+    "reason": "Folded onto `concept` (conceptible > concept), costing 4.97 points; it is a form of `conceive` (Zipf 3.40). Flagged by the daily fold check for the 2026-10-24 `EP` drop (means conceivable, from conceive) and confirmed on adversarial re-review (means conceivable, from conceive not concept)."
+  },
   "crames": {
     "base": "crame",
     "since": "2026-10-22",
     "reason": "Folded onto `cram` (crames > cram), costing 2.66 points; it is a form of `crame` (Zipf 1.33). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of crame, a booth) and confirmed on adversarial re-review (Scots booth, unrelated to cram)."
+  },
+  "crepiers": {
+    "base": "crepe",
+    "since": "2026-10-24",
+    "reason": "Folded onto `crepy` (crepiers > crepier > crepy), costing 0.26 points; it is a form of `crepe` (Zipf 2.87). Flagged by the daily fold check for the 2026-10-24 `EP` drop (crepe makers, not more crepy) and confirmed on adversarial re-review (crepe makers, not comparative of crepy)."
   },
   "curateless": {
     "base": "curate",
@@ -118,6 +133,36 @@
     "base": "amine",
     "since": "2026-10-22",
     "reason": "Folded onto `amin` (deaminizing > deaminize > aminize > amin), costing 2.62 points; it is a form of `amine` (Zipf 2.79). Flagged by the daily fold check for the 2026-10-22 `AM` drop (amin is not amine) and confirmed on adversarial re-review (amine chemistry; amin is different word)."
+  },
+  "deprivatization": {
+    "base": "privatization",
+    "since": "2026-10-24",
+    "reason": "Folded onto `private` (deprivatization > deprivatize > deprivate > private), costing 5.57 points; it is a form of `privatization` (Zipf 3.27). Flagged by the daily fold check for the 2026-10-24 `EP` drop (hop via deprivate (deprive) wrong) and confirmed on adversarial re-review (hop via deprivate (deprive) is wrong)."
+  },
+  "deprivatizations": {
+    "base": "privatization",
+    "since": "2026-10-24",
+    "reason": "Folded onto `private` (deprivatizations > deprivatization > deprivatize > deprivate > private), costing 5.57 points; it is a form of `privatization` (Zipf 3.27). Flagged by the daily fold check for the 2026-10-24 `EP` drop (hop via deprivate (deprive) wrong) and confirmed on adversarial re-review (hop via deprivate (deprive) is wrong)."
+  },
+  "deprivatize": {
+    "base": "privatize",
+    "since": "2026-10-24",
+    "reason": "Folded onto `private` (deprivatize > deprivate > private), costing 5.58 points; it is a form of `privatize` (Zipf 2.55). Flagged by the daily fold check for the 2026-10-24 `EP` drop (hop via deprivate (deprive) wrong) and confirmed on adversarial re-review (hop via deprivate (deprive) is wrong)."
+  },
+  "deprivatized": {
+    "base": "privatize",
+    "since": "2026-10-24",
+    "reason": "Folded onto `private` (deprivatized > deprivatize > deprivate > private), costing 5.57 points; it is a form of `privatize` (Zipf 2.55). Flagged by the daily fold check for the 2026-10-24 `EP` drop (hop via deprivate (deprive) wrong) and confirmed on adversarial re-review (hop via deprivate (deprive) is wrong)."
+  },
+  "deprivatizes": {
+    "base": "privatize",
+    "since": "2026-10-24",
+    "reason": "Folded onto `private` (deprivatizes > deprivatize > deprivate > private), costing 5.58 points; it is a form of `privatize` (Zipf 2.55). Flagged by the daily fold check for the 2026-10-24 `EP` drop (hop via deprivate (deprive) wrong) and confirmed on adversarial re-review (hop via deprivate (deprive) is wrong)."
+  },
+  "deprivatizing": {
+    "base": "privatize",
+    "since": "2026-10-24",
+    "reason": "Folded onto `private` (deprivatizing > deprivatize > deprivate > private), costing 5.55 points; it is a form of `privatize` (Zipf 2.55). Flagged by the daily fold check for the 2026-10-24 `EP` drop (hop via deprivate (deprive) wrong) and confirmed on adversarial re-review (hop via deprivate (deprive) is wrong)."
   },
   "derated": {
     "base": "derate",
@@ -168,6 +213,16 @@
     "base": "dynamic",
     "since": "2026-10-22",
     "reason": "Folded onto `dynamis` (dynamising > dynamis), costing 0.41 points; it is a form of `dynamic` (Zipf 4.31). Flagged by the daily fold check for the 2026-10-22 `AM` drop (verb form, not Greek dynamis) and confirmed on adversarial re-review (English verb from dynamic, not dynamis)."
+  },
+  "ephemerides": {
+    "base": "ephemeris",
+    "since": "2026-10-24",
+    "reason": "Folded onto `ephemerids` (ephemerides > ephemerid > ephemerids), costing 0.12 points; it is a form of `ephemeris` (Zipf 2.08). Flagged by the daily fold check for the 2026-10-24 `EP` drop (plural of ephemeris, not ephemerid mayfly) and confirmed on adversarial re-review (plural of ephemeris, not mayfly)."
+  },
+  "epimeres": {
+    "base": "epimere",
+    "since": "2026-10-24",
+    "reason": "Folded onto `epimer` (epimeres > epimer), costing 1.09 points; it is a form of `epimere` (Zipf 0.95). Flagged by the daily fold check for the 2026-10-24 `EP` drop (embryonic segment, not stereoisomer epimer) and confirmed on adversarial re-review (plural of epimere, not stereoisomer)."
   },
   "flamines": {
     "base": "flamen",
@@ -354,6 +409,31 @@
     "since": "2026-10-19",
     "reason": "Folded onto `rational` (overrationalizing > overrationalize > overrational > rational), costing 3.96 points; it is a form of `rationalize` (Zipf 2.89). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (built on rationalize (justify), not rational) and confirmed on adversarial re-review (Rationalize's justify sense drifted from rational)."
   },
+  "peptisation": {
+    "base": "peptise",
+    "since": "2026-10-24",
+    "reason": "Folded onto `pept` (peptisation > peptise > pept), costing 0.48 points; it is a form of `peptise` (Zipf 0.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (pept is not a word) and confirmed on adversarial re-review (pept is not a word)."
+  },
+  "peptised": {
+    "base": "peptise",
+    "since": "2026-10-24",
+    "reason": "Folded onto `pept` (peptised > peptise > pept), costing 0.69 points; it is a form of `peptise` (Zipf 0.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (pept is not a word) and confirmed on adversarial re-review (pept is not a word)."
+  },
+  "peptiser": {
+    "base": "peptise",
+    "since": "2026-10-24",
+    "reason": "Folded onto `pept` (peptiser > peptise > pept), costing 0.80 points; it is a form of `peptise` (Zipf 0.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (pept is not a word) and confirmed on adversarial re-review (pept is not a word)."
+  },
+  "peptises": {
+    "base": "peptise",
+    "since": "2026-10-24",
+    "reason": "Folded onto `pept` (peptises > peptise > pept), costing 0.82 points; it is a form of `peptise` (Zipf 0.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (pept is not a word) and confirmed on adversarial re-review (pept is not a word)."
+  },
+  "peptising": {
+    "base": "peptise",
+    "since": "2026-10-24",
+    "reason": "Folded onto `pept` (peptising > peptise > pept), costing 0.67 points; it is a form of `peptise` (Zipf 0.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (pept is not a word) and confirmed on adversarial re-review (pept is not a word)."
+  },
   "prattly": {
     "base": "prattle",
     "since": "2026-10-19",
@@ -363,6 +443,11 @@
     "base": "preamble",
     "since": "2026-10-22",
     "reason": "Folded onto `ambulatory` (preambulatory > ambulatory), costing 2.20 points; it is a form of `preamble` (Zipf 2.87). Flagged by the daily fold check for the 2026-10-22 `AM` drop (means introductory, relating to a preamble) and confirmed on adversarial re-review (relates to preamble, not walking)."
+  },
+  "preantiseptic": {
+    "base": "antiseptic",
+    "since": "2026-10-24",
+    "reason": "Folded onto `septic` (preantiseptic > antiseptic > septic), costing 2.74 points; it is a form of `antiseptic` (Zipf 2.81). Flagged by the daily fold check for the 2026-10-24 `EP` drop (antiseptic is opposite of septic) and confirmed on adversarial re-review (antiseptic is opposite of septic)."
   },
   "prefigurate": {
     "base": "prefigure",
@@ -413,6 +498,71 @@
     "base": "rehabilitative",
     "since": "2026-10-18",
     "reason": "Folded onto `habilitative` (prehabilitative > habilitative), costing 0.90 points; it is a form of `rehabilitative` (Zipf 2.40). Flagged by the daily fold check for the 2026-10-18 `HA` drop (coined from rehabilitative, not habilitative) and confirmed on adversarial re-review (Built on rehabilitative, not habilitative)."
+  },
+  "preparse": {
+    "base": "parse",
+    "since": "2026-10-24",
+    "reason": "Folded onto `par` (preparse > preparsed > parsed > pars > par), costing 4.07 points; it is a form of `parse` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-24 `EP` drop (lands on par, not parse) and confirmed on adversarial re-review (lands on par, not parse)."
+  },
+  "preparsed": {
+    "base": "parse",
+    "since": "2026-10-24",
+    "reason": "Folded onto `par` (preparsed > parsed > pars > par), costing 4.08 points; it is a form of `parse` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-24 `EP` drop (lands on par, not parse) and confirmed on adversarial re-review (lands on par, not parse)."
+  },
+  "preparser": {
+    "base": "parser",
+    "since": "2026-10-24",
+    "reason": "Folded onto `par` (preparser > preparse > preparsed > parsed > pars > par), costing 4.08 points; it is a form of `parser` (Zipf 2.63). Flagged by the daily fold check for the 2026-10-24 `EP` drop (lands on par, not parser) and confirmed on adversarial re-review (lands on par, not parser)."
+  },
+  "preparsers": {
+    "base": "parser",
+    "since": "2026-10-24",
+    "reason": "Folded onto `par` (preparsers > preparser > preparse > preparsed > parsed > pars > par), costing 4.08 points; it is a form of `parser` (Zipf 2.63). Flagged by the daily fold check for the 2026-10-24 `EP` drop (lands on par, not parser) and confirmed on adversarial re-review (lands on par, not parser)."
+  },
+  "preparses": {
+    "base": "parse",
+    "since": "2026-10-24",
+    "reason": "Folded onto `par` (preparses > preparse > preparsed > parsed > pars > par), costing 4.09 points; it is a form of `parse` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-24 `EP` drop (lands on par, not parse) and confirmed on adversarial re-review (lands on par, not parse)."
+  },
+  "preparsing": {
+    "base": "parse",
+    "since": "2026-10-24",
+    "reason": "Folded onto `par` (preparsing > parsing > pars > par), costing 4.07 points; it is a form of `parse` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-24 `EP` drop (lands on par, not parse) and confirmed on adversarial re-review (lands on par, not parse)."
+  },
+  "prepositionals": {
+    "base": "prepositional",
+    "since": "2026-10-24",
+    "reason": "Folded onto `positional` (prepositionals > positionals > positional), costing 2.49 points; it is a form of `prepositional` (Zipf 2.17). Flagged by the daily fold check for the 2026-10-24 `EP` drop (grammatical preposition, not position) and confirmed on adversarial re-review (grammatical preposition, not position)."
+  },
+  "prepositioned": {
+    "base": "position",
+    "since": "2026-10-24",
+    "reason": "Folded onto `preposition` (prepositioned > preposition), costing 1.65 points; it is a form of `position` (Zipf 5.21). Flagged by the daily fold check for the 2026-10-24 `EP` drop (pre-position, not grammatical preposition) and confirmed on adversarial re-review (pre-position verb, not grammatical preposition)."
+  },
+  "prepositioning": {
+    "base": "position",
+    "since": "2026-10-24",
+    "reason": "Folded onto `preposition` (prepositioning > preposition), costing 1.47 points; it is a form of `position` (Zipf 5.21). Flagged by the daily fold check for the 2026-10-24 `EP` drop (pre-position, not grammatical preposition) and confirmed on adversarial re-review (pre-position verb, not grammatical preposition)."
+  },
+  "prepositionless": {
+    "base": "preposition",
+    "since": "2026-10-24",
+    "reason": "Folded onto `position` (prepositionless > positionless > position), costing 5.61 points; it is a form of `preposition` (Zipf 2.62). Flagged by the daily fold check for the 2026-10-24 `EP` drop (lacking prepositions, not positions) and confirmed on adversarial re-review (lacking prepositions, not positions)."
+  },
+  "prepositionlessness": {
+    "base": "preposition",
+    "since": "2026-10-24",
+    "reason": "Folded onto `position` (prepositionlessness > positionlessness > positionless > position), costing 5.61 points; it is a form of `preposition` (Zipf 2.62). Flagged by the daily fold check for the 2026-10-24 `EP` drop (lacking prepositions, not positions) and confirmed on adversarial re-review (lacking prepositions, not positions)."
+  },
+  "prepossessedly": {
+    "base": "prepossessed",
+    "since": "2026-10-24",
+    "reason": "Folded onto `possess` (prepossessedly > possessedly > possessed > possess), costing 3.91 points; it is a form of `prepossessed` (Zipf 2.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (prepossess means prejudice, not possess) and confirmed on adversarial re-review (prepossessed means biased, not possessed)."
+  },
+  "prepossessedness": {
+    "base": "prepossessed",
+    "since": "2026-10-24",
+    "reason": "Folded onto `possess` (prepossessedness > possessedness > possessed > possess), costing 3.91 points; it is a form of `prepossessed` (Zipf 2.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (prepossess means prejudice, not possess) and confirmed on adversarial re-review (prepossessed means biased, not possessed)."
   },
   "quadratization": {
     "base": "quadratic",
@@ -494,6 +644,91 @@
     "since": "2026-10-22",
     "reason": "Folded onto `reams` (reamings > reaming > ream > reams), costing 1.91 points; it is a form of `ream` (Zipf 2.44). Flagged by the daily fold check for the 2026-10-22 `AM` drop (verb ream (bore), not paper reams) and confirmed on adversarial re-review (bore verb, landed on paper reams)."
   },
+  "repetitioned": {
+    "base": "petition",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repetition` (repetitioned > repetition), costing 3.14 points; it is a form of `petition` (Zipf 4.30). Flagged by the daily fold check for the 2026-10-24 `EP` drop (petitioned again, not repetition) and confirmed on adversarial re-review (petitioned again, not repetition)."
+  },
+  "repetitioning": {
+    "base": "petition",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repetition` (repetitioning > repetition), costing 3.15 points; it is a form of `petition` (Zipf 4.30). Flagged by the daily fold check for the 2026-10-24 `EP` drop (petitioning again, not repetition) and confirmed on adversarial re-review (petitioning again, not repetition)."
+  },
+  "repiner": {
+    "base": "repine",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (repiner > repin > repined), costing 0.96 points; it is a form of `repine` (Zipf 1.07). Flagged by the daily fold check for the 2026-10-24 `EP` drop (one who repines, not repin) and confirmed on adversarial re-review (one who repines, not repin)."
+  },
+  "repiners": {
+    "base": "repine",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (repiners > repiner > repin > repined), costing 0.97 points; it is a form of `repine` (Zipf 1.07). Flagged by the daily fold check for the 2026-10-24 `EP` drop (one who repines, not repin) and confirmed on adversarial re-review (one who repines, not repin)."
+  },
+  "repines": {
+    "base": "repine",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (repines > repin > repined), costing 0.36 points; it is a form of `repine` (Zipf 1.07). Flagged by the daily fold check for the 2026-10-24 `EP` drop (form of repine, not repin) and confirmed on adversarial re-review (form of repine, not repin)."
+  },
+  "repining": {
+    "base": "repine",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (repining > repin > repined), costing 0.87 points; it is a form of `repine` (Zipf 1.07). Flagged by the daily fold check for the 2026-10-24 `EP` drop (form of repine, not repin) and confirmed on adversarial re-review (form of repine, not repin)."
+  },
+  "repiningly": {
+    "base": "repine",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (repiningly > repining > repin > repined), costing 1.01 points; it is a form of `repine` (Zipf 1.07). Flagged by the daily fold check for the 2026-10-24 `EP` drop (from repine, not repin) and confirmed on adversarial re-review (from repine, not repin)."
+  },
+  "repinings": {
+    "base": "repine",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (repinings > repining > repin > repined), costing 0.98 points; it is a form of `repine` (Zipf 1.07). Flagged by the daily fold check for the 2026-10-24 `EP` drop (from repine, not repin) and confirmed on adversarial re-review (from repine, not repin)."
+  },
+  "repinned": {
+    "base": "repin",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (repinned > repin > repined), costing 1.02 points; it is a form of `repin` (Zipf 1.87). Flagged by the daily fold check for the 2026-10-24 `EP` drop (repin past, landed on repined) and confirmed on adversarial re-review (repin form wrongly landed on repined)."
+  },
+  "repinning": {
+    "base": "repin",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (repinning > repin > repined), costing 0.99 points; it is a form of `repin` (Zipf 1.87). Flagged by the daily fold check for the 2026-10-24 `EP` drop (repin form, landed on repined) and confirmed on adversarial re-review (repin form wrongly landed on repined)."
+  },
+  "repinnings": {
+    "base": "repin",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (repinnings > repinning > repin > repined), costing 1.03 points; it is a form of `repin` (Zipf 1.87). Flagged by the daily fold check for the 2026-10-24 `EP` drop (repin form, landed on repined) and confirmed on adversarial re-review (repin form wrongly landed on repined)."
+  },
+  "replated": {
+    "base": "replate",
+    "since": "2026-10-24",
+    "reason": "Folded onto `replat` (replated > replat), costing 0.12 points; it is a form of `replate` (Zipf 1.21). Flagged by the daily fold check for the 2026-10-24 `EP` drop (past of replate, not replat) and confirmed on adversarial re-review (past of replate, not replat)."
+  },
+  "replates": {
+    "base": "replate",
+    "since": "2026-10-24",
+    "reason": "Folded onto `replat` (replates > replat), costing 0.93 points; it is a form of `replate` (Zipf 1.21). Flagged by the daily fold check for the 2026-10-24 `EP` drop (form of replate, not replat) and confirmed on adversarial re-review (form of replate, not replat)."
+  },
+  "replating": {
+    "base": "replate",
+    "since": "2026-10-24",
+    "reason": "Folded onto `replat` (replating > replat), costing 0.20 points; it is a form of `replate` (Zipf 1.21). Flagged by the daily fold check for the 2026-10-24 `EP` drop (form of replate, not replat) and confirmed on adversarial re-review (form of replate, not replat)."
+  },
+  "replatings": {
+    "base": "replate",
+    "since": "2026-10-24",
+    "reason": "Folded onto `replat` (replatings > replating > replat), costing 1.00 points; it is a form of `replate` (Zipf 1.21). Flagged by the daily fold check for the 2026-10-24 `EP` drop (form of replate, not replat) and confirmed on adversarial re-review (form of replate, not replat)."
+  },
+  "reposed": {
+    "base": "repose",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repo` (reposed > repos > repo), costing 1.60 points; it is a form of `repose` (Zipf 2.75). Flagged by the daily fold check for the 2026-10-24 `EP` drop (past of repose, not repo) and confirmed on adversarial re-review (past of repose, not repo)."
+  },
+  "reproable": {
+    "base": "reprove",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repro` (reproable > repro), costing 1.45 points; it is a form of `reprove` (Zipf 1.79). Flagged by the daily fold check for the 2026-10-24 `EP` drop (archaic reprovable, not repro) and confirmed on adversarial re-review (archaic reprovable, not repro)."
+  },
   "risquing": {
     "base": "risk",
     "since": "2026-10-20",
@@ -523,6 +758,16 @@
     "base": "shanty",
     "since": "2026-10-18",
     "reason": "Folded onto `shanti` (shanties > shanti), costing 0.67 points; it is a form of `shanty` (Zipf 2.75). Flagged by the daily fold check for the 2026-10-18 `HA` drop (plural of shanty, not shanti) and confirmed on adversarial re-review (Plural of shanty, not shanti)."
+  },
+  "sheepling": {
+    "base": "sheep",
+    "since": "2026-10-24",
+    "reason": "Folded onto `sheeple` (sheepling > sheeple), costing 1.58 points; it is a form of `sheep` (Zipf 4.19). Flagged by the daily fold check for the 2026-10-24 `EP` drop (young sheep, not sheeple) and confirmed on adversarial re-review (young sheep, not sheeple)."
+  },
+  "sheeplings": {
+    "base": "sheep",
+    "since": "2026-10-24",
+    "reason": "Folded onto `sheeple` (sheeplings > sheepling > sheeple), costing 1.62 points; it is a form of `sheep` (Zipf 4.19). Flagged by the daily fold check for the 2026-10-24 `EP` drop (young sheep, not sheeple) and confirmed on adversarial re-review (young sheep, not sheeple); plural of sheepling, scored as `sheep` on maintainer review."
   },
   "spammable": {
     "base": "spam",
@@ -619,10 +864,25 @@
     "since": "2026-10-18",
     "reason": "Folded onto `hackney` (unhackneyedness > hackneyedness > hackneyed > hackney), costing 2.71 points; it is a form of `unhackneyed` (Zipf 1.92). Flagged by the daily fold check for the 2026-10-18 `HA` drop (hackneyed means trite, not hackney horse) and confirmed on adversarial re-review (Trite sense, not hackney horse)."
   },
+  "unprepossessedly": {
+    "base": "prepossessed",
+    "since": "2026-10-24",
+    "reason": "Folded onto `possess` (unprepossessedly > prepossessedly > possessedly > possessed > possess), costing 3.91 points; it is a form of `prepossessed` (Zipf 2.43). Flagged by the daily fold check for the 2026-10-24 `EP` drop (prepossessed means biased, not possessed) and confirmed on adversarial re-review (prepossessed means biased, not possessed)."
+  },
   "unreamed": {
     "base": "ream",
     "since": "2026-10-22",
     "reason": "Folded onto `reams` (unreamed > reamed > ream > reams), costing 1.91 points; it is a form of `ream` (Zipf 2.44). Flagged by the daily fold check for the 2026-10-22 `AM` drop (landed on paper reams, not ream) and confirmed on adversarial re-review (bore verb, landed on paper reams)."
+  },
+  "unrepining": {
+    "base": "repine",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (unrepining > repining > repin > repined), costing 1.00 points; it is a form of `repine` (Zipf 1.07). Flagged by the daily fold check for the 2026-10-24 `EP` drop (from repine, hop repin is pin again) and confirmed on adversarial re-review (from repine; repin hop is wrong)."
+  },
+  "unrepiningly": {
+    "base": "repine",
+    "since": "2026-10-24",
+    "reason": "Folded onto `repined` (unrepiningly > repiningly > repining > repin > repined), costing 1.03 points; it is a form of `repine` (Zipf 1.07). Flagged by the daily fold check for the 2026-10-24 `EP` drop (from repine, hop repin is pin again) and confirmed on adversarial re-review (from repine; repin hop is wrong)."
   },
   "unscammable": {
     "base": "scam",
