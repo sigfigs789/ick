@@ -69,12 +69,14 @@ const REPORT = {
   weekly: [
     {
       start: "2026-10-11", end: "2026-10-17", groups: { all: 120, new: 80, returning: 40 },
+      playing: { all: 50, new: 30, returning: 20 },
       flow: { new: 80, kept: 30, resurrected: 10, resurrectedStayed: 3, lost: 70 },
       nextWeekOver: false,
       played: { oneDay: 30, twoToThree: 10, fourPlus: 10 },
     },
     {
       start: "2026-10-04", end: "2026-10-10", groups: { all: 100, new: 70, returning: 30 },
+      playing: { all: 25, new: 15, returning: 10 },
       flow: { new: 70, kept: 26, resurrected: 4, resurrectedStayed: 1, lost: 0 },
       nextWeekOver: true,
       played: { oneDay: 20, twoToThree: 5, fourPlus: 0 },
@@ -265,20 +267,22 @@ describe("AnalyticsPage", () => {
     expect(players()).toHaveTextContent("19");
   });
 
-  it("tables weekly active players and WAU growth for the grouping picked", async () => {
+  it("tables weekly active and playing players, their growth and open to play for the grouping picked", async () => {
     stubFetch();
     render(<AnalyticsPage />);
     await screen.findByRole("heading", { name: "Growth" });
     const growth = section("Growth");
     const week = (name: RegExp) => within(growth).getByRole("row", { name });
 
-    expect(week(/^Oct 11 to Oct 17 so far/)).toHaveTextContent("120+20%");
+    expect(week(/^Oct 11 to Oct 17 so far/)).toHaveTextContent("120+20%50+100%42%");
     // Nothing the week before to grow from.
-    expect(week(/^Oct 4 to Oct 10/)).toHaveTextContent("100–");
+    expect(week(/^Oct 4 to Oct 10/)).toHaveTextContent("100–25–25%");
+    // A week from before the report carried playing players reads as none played.
+    expect(week(/^Sep 27 to Oct 3/)).toHaveTextContent("0–0––");
     await userEvent.click(within(growth).getByRole("button", { name: "Returning players" }));
-    expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("40+33%");
+    expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("40+33%20+100%50%");
     await userEvent.click(within(growth).getByRole("button", { name: "New players" }));
-    expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("80+14%");
+    expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("80+14%30+100%38%");
   });
 
   it("tables retention by arrival week, for everyone or the first week's guessers", async () => {

@@ -24,6 +24,7 @@ function week(players: number, extra: Partial<WeekActives> = {}): WeekActives {
     start: "2026-10-04",
     end: "2026-10-10",
     players: { all: players, new: 0, returning: players },
+    playing: { all: 0, new: 0, returning: 0 },
     flow: { new: 0, kept: 0, resurrected: 0, resurrectedStayed: 0, lost: 0 },
     nextWeekOver: true,
     played: { oneDay: 0, twoToThree: 0, fourPlus: 0 },
