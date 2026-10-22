@@ -54,10 +54,20 @@
     "since": "2026-10-18",
     "reason": "Folded onto `archae` (archaizes > archaize > archae), costing 0.53 points; it is a form of `archaic` (Zipf 3.36). Flagged by the daily fold check for the 2026-10-18 `HA` drop (lands on archae, not archaic) and confirmed on adversarial re-review (archae unrelated; built on archaic)."
   },
+  "blatted": {
+    "base": "blat",
+    "since": "2026-10-25",
+    "reason": "Folded onto `blatt` (blatted > blatt), costing 1.71 points; it is a form of `blat` (Zipf 1.94). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (past tense of blat, not blatt) and confirmed on adversarial re-review (past tense of blat, not blatt)."
+  },
   "bramblings": {
     "base": "brambling",
     "since": "2026-10-22",
     "reason": "Folded onto `bramble` (bramblings > brambling > bramble), costing 1.80 points; it is a form of `brambling` (Zipf 1.20). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of the bird brambling) and confirmed on adversarial re-review (finch name, not the bramble bush)."
+  },
+  "butted": {
+    "base": "butt",
+    "since": "2026-10-25",
+    "reason": "Folded onto `but` (butted > but), costing 5.84 points; it is a form of `butt` (Zipf 4.28). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (past of butt, not but) and confirmed on adversarial re-review (past of butt; \"but\" is unrelated)."
   },
   "camases": {
     "base": "camas",
@@ -78,6 +88,26 @@
     "base": "chiv",
     "since": "2026-10-21",
     "reason": "Folded onto `chives` (chiving > chive > chives), costing 1.89 points; it is a form of `chiv` (Zipf 1.31). Flagged by the daily fold check for the 2026-10-21 `IVI` drop (stabbing with chiv, not herb chives) and confirmed on adversarial re-review (Chiving means stabbing, from chiv; not chives)."
+  },
+  "coattest": {
+    "base": "attest",
+    "since": "2026-10-25",
+    "reason": "Folded onto `coat` (coattest > coat), costing 4.35 points; it is a form of `attest` (Zipf 3.25). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (co-attest, not superlative of coat) and confirmed on adversarial re-review (co-attest; coat is unrelated)."
+  },
+  "coattested": {
+    "base": "attest",
+    "since": "2026-10-25",
+    "reason": "Folded onto `coat` (coattested > coattest > coat), costing 4.36 points; it is a form of `attest` (Zipf 3.25). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (co-attest, not coat) and confirmed on adversarial re-review (co-attest; coat is unrelated)."
+  },
+  "coattesting": {
+    "base": "attest",
+    "since": "2026-10-25",
+    "reason": "Folded onto `coat` (coattesting > coattest > coat), costing 4.39 points; it is a form of `attest` (Zipf 3.25). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (co-attest, not coat) and confirmed on adversarial re-review (co-attest; coat is unrelated)."
+  },
+  "coattests": {
+    "base": "attest",
+    "since": "2026-10-25",
+    "reason": "Folded onto `coat` (coattests > coattest > coat), costing 4.39 points; it is a form of `attest` (Zipf 3.25). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (co-attest, not coat) and confirmed on adversarial re-review (co-attest; coat is unrelated)."
   },
   "crames": {
     "base": "crame",
@@ -179,6 +209,26 @@
     "since": "2026-10-22",
     "reason": "Folded onto `forenamed` (forenames > forename > forenamed), costing 0.57 points; it is a form of `forename` (Zipf 1.57). Flagged by the daily fold check for the 2026-10-22 `AM` drop (forenamed means aforementioned, not first name) and confirmed on adversarial re-review (forenamed means aforementioned, different sense)."
   },
+  "frittered": {
+    "base": "fritter",
+    "since": "2026-10-25",
+    "reason": "Folded onto `fritters` (frittered > fritter > fritters), costing 0.82 points; it is a form of `fritter` (Zipf 2.26). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (verb sense, not food fritters) and confirmed on adversarial re-review (waste-verb fritter, different word from food)."
+  },
+  "fritterer": {
+    "base": "fritter",
+    "since": "2026-10-25",
+    "reason": "Folded onto `fritters` (fritterer > fritter > fritters), costing 1.79 points; it is a form of `fritter` (Zipf 2.26). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (wastes things, not food fritters) and confirmed on adversarial re-review (waste-verb fritter, different word from food)."
+  },
+  "fritterers": {
+    "base": "fritter",
+    "since": "2026-10-25",
+    "reason": "Folded onto `fritters` (fritterers > fritterer > fritter > fritters), costing 1.79 points; it is a form of `fritter` (Zipf 2.26). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (wastes things, not food fritters) and confirmed on adversarial re-review (waste-verb fritter, different word from food)."
+  },
+  "frittering": {
+    "base": "fritter",
+    "since": "2026-10-25",
+    "reason": "Folded onto `fritters` (frittering > fritter > fritters), costing 1.14 points; it is a form of `fritter` (Zipf 2.26). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (verb sense, not food fritters) and confirmed on adversarial re-review (waste-verb fritter, different word from food)."
+  },
   "gamines": {
     "base": "gamine",
     "since": "2026-10-22",
@@ -263,6 +313,26 @@
     "base": "lampers",
     "since": "2026-10-22",
     "reason": "Folded onto `lamp` (lamperses > lampers > lamper > lamp), costing 3.94 points; it is a form of `lampers` (Zipf 0.68). Flagged by the daily fold check for the 2026-10-22 `AM` drop (plural of lampers disease, not lamp) and confirmed on adversarial re-review (plural of lampers disease, not lamp)."
+  },
+  "matted": {
+    "base": "mat",
+    "since": "2026-10-25",
+    "reason": "Folded onto `matt` (matted > matt), costing 2.51 points; it is a form of `mat` (Zipf 3.84). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (tangled, from mat, not matt finish) and confirmed on adversarial re-review (tangled, from mat, not matt finish)."
+  },
+  "mattedly": {
+    "base": "matted",
+    "since": "2026-10-25",
+    "reason": "Folded onto `matt` (mattedly > matted > matt), costing 4.62 points; it is a form of `matted` (Zipf 2.75). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (from matted/mat, not matt) and confirmed on adversarial re-review (tangled sense, from mat, not matt)."
+  },
+  "mattedness": {
+    "base": "matted",
+    "since": "2026-10-25",
+    "reason": "Folded onto `matt` (mattedness > matted > matt), costing 4.64 points; it is a form of `matted` (Zipf 2.75). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (from matted/mat, not matt) and confirmed on adversarial re-review (tangled sense, from mat, not matt)."
+  },
+  "mitted": {
+    "base": "mitt",
+    "since": "2026-10-25",
+    "reason": "Folded onto `mit` (mitted > mit), costing 3.38 points; it is a form of `mitt` (Zipf 3.33). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (wearing mitts; mit is unrelated) and confirmed on adversarial re-review (wearing mitts; mit is unrelated)."
   },
   "nondeliberating": {
     "base": "deliberate",
@@ -413,6 +483,21 @@
     "base": "rehabilitative",
     "since": "2026-10-18",
     "reason": "Folded onto `habilitative` (prehabilitative > habilitative), costing 0.90 points; it is a form of `rehabilitative` (Zipf 2.40). Flagged by the daily fold check for the 2026-10-18 `HA` drop (coined from rehabilitative, not habilitative) and confirmed on adversarial re-review (Built on rehabilitative, not habilitative)."
+  },
+  "prematted": {
+    "base": "mat",
+    "since": "2026-10-25",
+    "reason": "Folded onto `matt` (prematted > matted > matt), costing 4.66 points; it is a form of `mat` (Zipf 3.84). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (matted comes from mat, not matt) and confirmed on adversarial re-review (from mat, not matt finish)."
+  },
+  "preoutfitted": {
+    "base": "outfit",
+    "since": "2026-10-25",
+    "reason": "Folded onto `fit` (preoutfitted > preoutfit > preoutfitting > outfitting > outfittings > fittings > fitting > fit), costing 5.19 points; it is a form of `outfit` (Zipf 4.22). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (outfit's meaning drifted from fit) and confirmed on adversarial re-review (outfit has drifted from fit)."
+  },
+  "putted": {
+    "base": "putt",
+    "since": "2026-10-25",
+    "reason": "Folded onto `put` (putted > put), costing 5.14 points; it is a form of `putt` (Zipf 3.15). Flagged by the daily fold check for the 2026-10-25 `TTE` drop (golf putt past tense, not put) and confirmed on adversarial re-review (golf putt has drifted from put)."
   },
   "quadratization": {
     "base": "quadratic",

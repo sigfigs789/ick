@@ -1699,6 +1699,10 @@
     "since": "2026-09-27",
     "reason": "Excellent, splendid. The slang adjective, not the act of sealing a bottle."
   },
+  "corvetted": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `corvette` (corvetted > corvette), costing 2.95 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (from curvet/corvet, not warship) and confirmed on adversarial re-review (from curvet, not the warship)."
+  },
   "cosherings": {
     "since": "2026-09-27",
     "reason": "Folded onto `cosh`, costing 1.66 points. Flagged in the 2026-09-22 semantic audit (coshering is from cosher, not cosh) and confirmed on adversarial re-review (cosher unrelated to cosh)."
@@ -3151,6 +3155,16 @@
   "dematin": {
     "since": "2026-10-04",
     "reason": "Folded onto `matin`, costing up to 1.83 points, by stripping de- to `matin`. Not de- + `matin`: erythrocyte actin-bundling protein; unrelated to matin. Judged in the 2026-10-02 de- audit and confirmed on adversarial re-review.",
+    "scope": "prefix"
+  },
+  "dematter": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `matter` (dematter > matter), costing 5.85 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (fur-mat tool, not matter) and confirmed on adversarial re-review (fur-mat tool, not physical matter).",
+    "scope": "prefix"
+  },
+  "dematters": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `matter` (dematters > dematter > matter), costing 5.86 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (fur-mat tools, not matter) and confirmed on adversarial re-review (fur-mat tool, not physical matter).",
     "scope": "prefix"
   },
   "dematting": {
@@ -6025,6 +6039,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `lit`, costing 2.68 points. Flagged in the 2026-09-22 semantic audit (plural of lite, not lit) and confirmed on adversarial re-review (lite plural, not lit)."
   },
+  "litterly": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `litter` (litterly > litter), costing 2.89 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (misspelling of literally, not litter) and confirmed on adversarial re-review (misspelling of literally, unrelated to litter)."
+  },
   "littly": {
     "since": "2026-09-27",
     "reason": "Folded onto `littlies`, costing 0.27 points. Flagged in the 2026-09-22 semantic audit (adverb-looking; littlies unrelated form) and confirmed on adversarial re-review (little unrelated to littlies)."
@@ -6734,6 +6752,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `not`, costing 2.79 points. Flagged in the 2026-09-22 semantic audit (note plural; -s strip overshot) and confirmed on adversarial re-review (note plural; -s strip overshot)."
   },
+  "notted": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `not` (notted > not), costing 7.84 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (archaic nott (shorn), not \"not\") and confirmed on adversarial re-review (archaic nott (shorn), unrelated to not)."
+  },
   "nowed": {
     "since": "2026-09-27",
     "reason": "Heraldic for knotted. Not `now` with a tense ending."
@@ -6809,6 +6831,10 @@
   "osteites": {
     "since": "2026-09-27",
     "reason": "Folded onto `osteitis`, costing 0.96 points. Flagged in the 2026-09-22 semantic audit (osteite vs osteitis mismatch) and confirmed on adversarial re-review (mineral versus inflammation)."
+  },
+  "otterly": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `otter` (otterly > otter), costing 2.99 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (pun on utterly, not otter) and confirmed on adversarial re-review (pun on utterly, not about otters)."
   },
   "outards": {
     "since": "2026-09-27",
@@ -7361,6 +7387,10 @@
     "since": "2026-09-27",
     "reason": "Folded onto `patty`, costing 3.59 points. Flagged in the 2026-09-22 semantic audit (from pat, not patty) and confirmed on adversarial re-review (from pat; patty is food)."
   },
+  "pattes": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `patti` (pattes > pattis > patti), costing 2.73 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (not a form of patti) and confirmed on adversarial re-review (letters only shared, not a patti form)."
+  },
   "paytable": {
     "since": "2026-09-27",
     "reason": "Folded onto `payt`, costing 0.33 points. Flagged in the 2026-09-22 semantic audit (payt is not a word) and confirmed on adversarial re-review (payt is not a word)."
@@ -7775,6 +7805,10 @@
     "since": "2026-09-27",
     "scope": "prefix",
     "reason": "A prebend is a cathedral stipend; nothing to do with bending."
+  },
+  "prebutted": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `but` (prebutted > butted > but), costing 7.76 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (from prebut, not the word but) and confirmed on adversarial re-review (from prebut, unrelated to but)."
   },
   "precaution": {
     "since": "2026-09-27",
@@ -9040,6 +9074,18 @@
     "since": "2026-09-27",
     "reason": "Folded onto `shimmy`, costing 2.31 points. Flagged in the 2026-09-22 semantic audit (from shim, not shimmy) and confirmed on adversarial re-review (from shim, not shimmy)."
   },
+  "shittested": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `shit` (shittested > shittest > shit), costing 6.00 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (from \"shit test\", not superlative) and confirmed on adversarial re-review (compound \"shit test\", not a superlative)."
+  },
+  "shittesting": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `shit` (shittesting > shittest > shit), costing 5.99 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (from \"shit test\", not superlative) and confirmed on adversarial re-review (compound \"shit test\", not a superlative)."
+  },
+  "shittests": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `shit` (shittests > shittest > shit), costing 5.97 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (plural of \"shit test\", not superlative) and confirmed on adversarial re-review (compound \"shit test\", not a superlative)."
+  },
   "shives": {
     "since": "2026-09-27",
     "reason": "Folded onto `shiv`, costing 2.13 points. Flagged in the 2026-09-22 semantic audit (plural of shive, overshot) and confirmed on adversarial re-review (shive not from shiv)."
@@ -9244,6 +9290,22 @@
     "since": "2026-09-27",
     "reason": "Folded onto `snit`, costing 1.22 points. Flagged in the 2026-09-22 semantic audit (from snite; temper fit unrelated) and confirmed on adversarial re-review (snite unrelated to snit)."
   },
+  "snitter": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `snit` (snitter > snit), costing 0.91 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (dialect giggle, not snit) and confirmed on adversarial re-review (dialect giggle, unrelated to snit)."
+  },
+  "snittered": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `snit` (snittered > snitter > snit), costing 0.93 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (dialect giggle, not snit) and confirmed on adversarial re-review (dialect giggle, unrelated to snit)."
+  },
+  "snittering": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `snit` (snittering > snitter > snit), costing 0.93 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (dialect giggle, not snit) and confirmed on adversarial re-review (dialect giggle, unrelated to snit)."
+  },
+  "snitters": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `snit` (snitters > snitter > snit), costing 0.94 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (dialect giggle, not snit) and confirmed on adversarial re-review (dialect giggle, unrelated to snit)."
+  },
   "snop": {
     "since": "2026-09-27",
     "reason": "Folded onto `snopes`, costing 1.91 points. Flagged in the 2026-09-22 semantic audit (snopes unrelated to snop) and confirmed on adversarial re-review (snop unrelated to snopes)."
@@ -9411,6 +9473,14 @@
   "springes": {
     "since": "2026-09-27",
     "reason": "Folded onto `spring`, costing 4.40 points. Flagged in the 2026-09-22 semantic audit (springe is a snare) and confirmed on adversarial re-review (springe is a snare, distinct word)."
+  },
+  "squattered": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `squatters` (squattered > squatter > squatters), costing 2.21 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (dialect verb splash, not squatters) and confirmed on adversarial re-review (dialect splash verb, not squatters)."
+  },
+  "squattering": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `squatters` (squattering > squatter > squatters), costing 2.21 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (dialect verb splash, not squatters) and confirmed on adversarial re-review (dialect splash verb, not squatters)."
   },
   "squitter": {
     "since": "2026-10-20",
@@ -9648,6 +9718,14 @@
   "swathings": {
     "since": "2026-09-27",
     "reason": "Folded onto `swath`, costing 2.56 points. Flagged in the 2026-09-22 semantic audit (swathings from swathe) and confirmed on adversarial re-review (swathe to wrap, not swath)."
+  },
+  "swattered": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `swatter` (swattered > swatter), costing 1.05 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (dialect verb splash, not fly swatter) and confirmed on adversarial re-review (dialect splash verb, not fly swatter)."
+  },
+  "swattering": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `swatter` (swattering > swatter), costing 1.04 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (dialect verb splash, not fly swatter) and confirmed on adversarial re-review (dialect splash verb, not fly swatter)."
   },
   "swithers": {
     "since": "2026-09-27",
@@ -11221,6 +11299,14 @@
     "since": "2026-10-11",
     "reason": "Folded onto `whoops` (whoopings > whooping > whoop > whoops), costing 2.96 points. Flagged by the daily fold check for the 2026-10-11 `HO` drop (final base whoops differs from whoop) and confirmed on adversarial re-review (chain overshoots to the exclamation whoops)."
   },
+  "whutter": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `whut` (whutter > whut), costing 1.23 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (dialect verb, not slang whut) and confirmed on adversarial re-review (dialect verb, unrelated to slang whut)."
+  },
+  "whuttering": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `whut` (whuttering > whutter > whut), costing 1.24 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (participle of whutter, not whut) and confirmed on adversarial re-review (participle of whutter, not whut)."
+  },
   "whves": {
     "since": "2026-09-27",
     "reason": "Folded onto `whf`, costing 0.68 points. Flagged in the 2026-09-22 semantic audit (not a form of that) and confirmed on adversarial re-review (whf is not a base)."
@@ -11312,6 +11398,10 @@
   "yeat": {
     "since": "2026-09-27",
     "reason": "Folded onto `yeats`, costing 2.00 points. Flagged in the 2026-09-22 semantic audit (not a form of Yeats) and confirmed on adversarial re-review (yeat unrelated to Yeats)."
+  },
+  "yetted": {
+    "since": "2026-10-25",
+    "reason": "Folded onto `yet` (yetted > yet), costing 6.08 points. Flagged by the daily fold check for the 2026-10-25 `TTE` drop (Scots metal-casting verb, not yet) and confirmed on adversarial re-review (Scots casting verb, unrelated to yet)."
   },
   "yike": {
     "since": "2026-09-27",
