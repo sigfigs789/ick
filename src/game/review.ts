@@ -334,17 +334,29 @@ export interface KeyMetrics {
   players: number;
   acted: number;
   guessed: number;
+  /** Finished a puzzle in the window: used every guess, or locked in. */
+  completed: number;
   /** Shared their result on a day in the window (only possible once they have guessed). */
   shared: number;
+  /**
+   * Back the very next puzzle, read like `returned`: the rate over the players
+   * whose next day is over, and every return seen yet.
+   */
+  nextDay: Returns;
   returned: Returns;
 }
 
-/** The key numbers for one puzzle. `returned` is a floor until the day is `closed`. */
+/**
+ * The key numbers for one puzzle. `nextDay` is a floor until the day is
+ * `nextClosed`, and `returned` until it is `closed`.
+ */
 export interface DayMetrics {
   players: number;
   acted: number;
   guessed: number;
+  completed: number;
   shared: number;
+  nextDay: number;
   returned: number;
 }
 
@@ -360,8 +372,11 @@ export interface AnalyticsReport {
   from: string | null;
   to: string | null;
   groups: Record<Group, KeyMetrics>;
-  /** By the puzzle type a word was banked in. */
-  modes: Record<"standard" | "freeform", { guessed: number; returned: Returns }>;
+  /**
+   * By the puzzle type a word was banked in; `completed` is a puzzle finished
+   * in that type. Everyone here guessed, so the returns' `guessers` is all zeros.
+   */
+  modes: Record<"standard" | "freeform", ModeMetrics>;
   /** Each grouping, split by whether the player opened the chat in the window. */
   chat: Record<Group, { opened: KeyMetrics; notOpened: KeyMetrics }>;
   chatSince: string | null;
@@ -386,9 +401,17 @@ export interface AnalyticsReport {
    * said it was a bot (see the analytics_filter_bots migration).
    */
   botsFiltered: number;
-  daily: Array<{ date: string; closed: boolean; groups: Record<Group, DayMetrics> }>;
+  daily: Array<{ date: string; closed: boolean; nextClosed: boolean; groups: Record<Group, DayMetrics> }>;
   /** Muse AI, which every number above leaves out (see game/visitor.ts). */
   muse: MuseReport;
+}
+
+/** The players who banked a word in one puzzle type. */
+export interface ModeMetrics {
+  guessed: number;
+  completed: number;
+  nextDay: Returns;
+  returned: Returns;
 }
 
 /** How Muse AI played in the window, by puzzle. Averages are null with no puzzles. */
@@ -505,7 +528,9 @@ function metrics(raw: unknown): KeyMetrics {
     players: count(m.players),
     acted: count(m.acted),
     guessed: count(m.guessed),
+    completed: count(m.completed),
     shared: count(m.shared),
+    nextDay: returns(m.nextDay),
     returned: returns(m.returned),
   };
 }
@@ -522,7 +547,15 @@ function byGroup<T>(raw: unknown, read: (raw: unknown) => T): Record<Group, T> {
 export function parseAnalytics(raw: unknown): AnalyticsReport {
   const r = obj(raw);
   const modes = obj(r.modes);
-  const mode = (raw: unknown) => ({ guessed: count(obj(raw).guessed), returned: returns(obj(raw).returned) });
+  const mode = (raw: unknown): ModeMetrics => {
+    const m = obj(raw);
+    return {
+      guessed: count(m.guessed),
+      completed: count(m.completed),
+      nextDay: returns(m.nextDay),
+      returned: returns(m.returned),
+    };
+  };
   return {
     today: text(r.today),
     firstDay: text(r.firstDay),
@@ -545,13 +578,16 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
       .map((d) => ({
         date: d.date as string,
         closed: d.closed === true,
+        nextClosed: d.nextClosed === true,
         groups: byGroup(d.groups, (raw) => {
           const m = obj(raw);
           return {
             players: count(m.players),
             acted: count(m.acted),
             guessed: count(m.guessed),
+            completed: count(m.completed),
             shared: count(m.shared),
+            nextDay: count(m.nextDay),
             returned: count(m.returned),
           };
         }),

@@ -15,8 +15,17 @@ const metrics = (players: number, acted: number, guessed: number, soFar: number,
   players,
   acted,
   guessed,
+  // Seven in ten guessers finish, so the column has its own number to show.
+  completed: Math.round(guessed * 0.7),
   // Two in five guessers share, so the column has its own number to show.
   shared: Math.round(guessed * 0.4),
+  // Back the next day: a quarter of the players, and of the guessers 36%.
+  nextDay: {
+    cohort: 0,
+    returned: 0,
+    soFar: Math.round(players * 0.25),
+    guessers: { cohort: 0, returned: 0, soFar: Math.round(guessed * 0.36) },
+  },
   // A bit under half the guessers are back so far, a number apart from Shared's.
   returned: { cohort, returned, soFar, guessers: { cohort: 0, returned: 0, soFar: Math.round(guessed * 0.48) } },
 });
@@ -28,9 +37,9 @@ const groups = {
 };
 
 const dayGroups = (players: number) => ({
-  all: { players, acted: players - 2, guessed: players - 4, shared: 0, returned: 1 },
-  new: { players: 1, acted: 1, guessed: 1, shared: 0, returned: 0 },
-  returning: { players: players - 1, acted: 0, guessed: 0, shared: 0, returned: 0 },
+  all: { players, acted: players - 2, guessed: players - 4, completed: 2, shared: 0, nextDay: 1, returned: 1 },
+  new: { players: 1, acted: 1, guessed: 1, completed: 0, shared: 0, nextDay: 0, returned: 0 },
+  returning: { players: players - 1, acted: 0, guessed: 0, completed: 0, shared: 0, nextDay: 0, returned: 0 },
 });
 
 /** The shape `analytics_overview` returns. */
@@ -41,8 +50,18 @@ const REPORT = {
   to: "2026-10-16",
   groups,
   modes: {
-    standard: { guessed: 35, returned: { cohort: 20, returned: 5, soFar: 12 } },
-    freeform: { guessed: 15, returned: { cohort: 0, returned: 0, soFar: 4 } },
+    standard: {
+      guessed: 35,
+      completed: 21,
+      nextDay: { cohort: 30, returned: 6, soFar: 7 },
+      returned: { cohort: 20, returned: 5, soFar: 12 },
+    },
+    freeform: {
+      guessed: 15,
+      completed: 3,
+      nextDay: { cohort: 0, returned: 0, soFar: 2 },
+      returned: { cohort: 0, returned: 0, soFar: 4 },
+    },
   },
   chat: {
     all: { opened: metrics(10, 10, 8, 6, 5, 4), notOpened: metrics(90, 70, 42, 24, 35, 16) },
@@ -58,8 +77,8 @@ const REPORT = {
   idleHintSince: "2026-10-18",
   botsFiltered: 84,
   daily: [
-    { date: "2026-10-15", closed: false, groups: dayGroups(40) },
-    { date: "2026-10-16", closed: false, groups: dayGroups(20) },
+    { date: "2026-10-15", closed: false, nextClosed: false, groups: dayGroups(40) },
+    { date: "2026-10-16", closed: false, nextClosed: false, groups: dayGroups(20) },
   ],
   muse: {
     visits: 5,
@@ -141,6 +160,14 @@ describe("AnalyticsPage", () => {
     // Guessers back so far, of the guessers, shown before any seven days close.
     expect(everyone).toHaveTextContent("48% of guessers");
     expect(within(section("Key numbers")).getByRole("columnheader", { name: "Shared" })).toBeInTheDocument();
+    // Completed, of the players and of the guessers (the ones who started a puzzle).
+    expect(everyone).toHaveTextContent("35 35%");
+    expect(everyone).toHaveTextContent("70% of guessers");
+    // Back the very next day, of the players and of the guessers.
+    expect(everyone).toHaveTextContent("25 25%");
+    expect(everyone).toHaveTextContent("36% of guessers");
+    expect(within(section("Key numbers")).getByRole("columnheader", { name: "Completed" })).toBeInTheDocument();
+    expect(within(section("Key numbers")).getByRole("columnheader", { name: "Back next day" })).toBeInTheDocument();
     // The play-screen test pairs every grouping's rows by variant.
     expect(within(section("Play screen test")).getAllByRole("row", { name: /^Everyone/ })).toHaveLength(1);
     // Named v1 and v2, never "new", which reads as new players.
@@ -202,6 +229,9 @@ describe("AnalyticsPage", () => {
 
     const standard = within(section("Puzzle type")).getByRole("row", { name: /^Standard/ });
     expect(standard).toHaveTextContent("35");
+    // Completed and back the next day, of the mode's guessers.
+    expect(standard).toHaveTextContent("21 60%");
+    expect(standard).toHaveTextContent("7 20%");
     expect(standard).toHaveTextContent("12 34%");
     expect(within(section("Puzzle type")).getByRole("row", { name: /^Freeform/ })).toHaveTextContent(
       "4 27%",

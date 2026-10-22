@@ -29,13 +29,14 @@ import { handleFor } from "../game/handle";
 /**
  * How the game is doing, as a page at /analytics.
  *
- * Five numbers, and the same five everywhere: the players who turned up, the
+ * Seven numbers, and the same seven everywhere: the players who turned up, the
  * ones who did anything, the ones who guessed (banked a word), the ones who
- * shared their result, and the ones who came back within seven days. They are
+ * completed the puzzle, the ones who shared their result, and the ones who came
+ * back the next day and within seven days. They are
  * split by who the players are -- new or returning -- by the puzzle type they
  * played, by whether they opened the chat, by which play screen they were
  * shown, and by the idle hint test's arm. Every number is built in one place,
- * `analytics_overview` (see the 2026-10-18 and 2026-10-21 migrations), and
+ * `analytics_overview` (see the 2026-10-18, 2026-10-21 and 2026-10-27 migrations), and
  * this page only draws them.
  *
  * Muse AI, an agent the maintainer sends to play (see game/visitor.ts), is
@@ -195,7 +196,9 @@ function Report({
           <li><strong>Players</strong>: opened the game</li>
           <li><strong>Did something</strong>: any tap, look or guess</li>
           <li><strong>Guessed</strong>: banked a word</li>
+          <li><strong>Completed</strong>: finished the puzzle, every guess used or locked in (the second line is the share of guessers, the players who started one)</li>
           <li><strong>Shared</strong>: copied their result with Share (the second line is the share of guessers, the only players who can)</li>
+          <li><strong>Back next day</strong>: played the very next puzzle (yesterday's still counting up; the second line is the share of guessers)</li>
           <li><strong>Back within 7 days</strong>: played again in the next 7 days (recent days still counting up; the second line is the share of guessers)</li>
           <li><strong>New</strong>: first visit in this window</li>
         </ul>
@@ -211,7 +214,7 @@ function Report({
 
       <Section
         title="Puzzle type"
-        note={`${span}. Who guessed in each mode, and how many came back.`}
+        note={`${span}. Who guessed in each mode, how many of them finished one, and how many came back.`}
       >
         <div className="analytics__table-wrap">
           <table className="analytics__table">
@@ -219,6 +222,8 @@ function Report({
               <tr>
                 <th scope="col">Puzzle type</th>
                 <th scope="col">Guessed an answer</th>
+                <th scope="col">Completed</th>
+                <th scope="col">Back next day</th>
                 <th scope="col">Back within 7 days</th>
               </tr>
             </thead>
@@ -230,6 +235,12 @@ function Report({
                     {mode === "standard" ? "Standard" : "Freeform"}
                   </th>
                   <td>{fmt(report.modes[mode].guessed)}</td>
+                  <td>
+                    <Count n={report.modes[mode].completed} of={report.modes[mode].guessed} />
+                  </td>
+                  <td>
+                    <Count n={report.modes[mode].nextDay.soFar} of={report.modes[mode].guessed} />
+                  </td>
                   <td>
                     <Count n={report.modes[mode].returned.soFar} of={report.modes[mode].guessed} />
                   </td>
@@ -418,7 +429,9 @@ function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: string }) {
             <th scope="col">Players</th>
             <th scope="col">Did something</th>
             <th scope="col">Guessed</th>
+            <th scope="col">Completed</th>
             <th scope="col">Shared</th>
+            <th scope="col">Back next day</th>
             <th scope="col">Back within 7 days</th>
           </tr>
         </thead>
@@ -442,22 +455,20 @@ function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: string }) {
                   <Count n={m.guessed} of={m.players} />
                 </td>
                 <td>
+                  <Count n={m.completed} of={m.players} />
+                  <OfGuessers n={m.completed} guessed={m.guessed} />
+                </td>
+                <td>
                   <Count n={m.shared} of={m.players} />
-                  {m.guessed > 0 && (
-                    <>
-                      <br />
-                      <span className="analytics__n">{pct(m.shared / m.guessed)} of guessers</span>
-                    </>
-                  )}
+                  <OfGuessers n={m.shared} guessed={m.guessed} />
+                </td>
+                <td>
+                  <Count n={m.nextDay.soFar} of={m.players} />
+                  <OfGuessers n={m.nextDay.guessers.soFar} guessed={m.guessed} />
                 </td>
                 <td>
                   <Count n={m.returned.soFar} of={m.players} />
-                  {m.guessed > 0 && (
-                    <>
-                      <br />
-                      <span className="analytics__n">{pct(m.returned.guessers.soFar / m.guessed)} of guessers</span>
-                    </>
-                  )}
+                  <OfGuessers n={m.returned.guessers.soFar} guessed={m.guessed} />
                 </td>
               </tr>
             );
@@ -473,6 +484,17 @@ function Count({ n, of }: { n: number; of: number }) {
     <>
       {fmt(n)}
       {of > 0 && <span className="analytics__n"> {pct(n / of)}</span>}
+    </>
+  );
+}
+
+/** A second line under a count: its share of the guessers, when there were any. */
+function OfGuessers({ n, guessed }: { n: number; guessed: number }) {
+  if (guessed === 0) return null;
+  return (
+    <>
+      <br />
+      <span className="analytics__n">{pct(n / guessed)} of guessers</span>
     </>
   );
 }

@@ -7,15 +7,28 @@ const metrics = (players: number, acted: number, guessed: number, returned: numb
   players,
   acted,
   guessed,
+  // Three in five guessers finish, so Completed has a number of its own.
+  completed: guessed * 0.6,
   // Half the guessers, so the Shared tab has a number of its own to read.
   shared: guessed / 2,
+  // Half of those back within seven days were back the next day.
+  nextDay: returned / 2,
   returned,
 });
 
 /** Everyone's numbers, and the new players' a tenth of them. */
-const day = (date: string, players: number, acted: number, guessed: number, returned: number, closed = false) => ({
+const day = (
+  date: string,
+  players: number,
+  acted: number,
+  guessed: number,
+  returned: number,
+  closed = false,
+  nextClosed = closed,
+) => ({
   date,
   closed,
+  nextClosed,
   groups: {
     all: metrics(players, acted, guessed, returned),
     new: metrics(players / 10, acted / 10, guessed / 10, returned / 10),
@@ -25,8 +38,8 @@ const day = (date: string, players: number, acted: number, guessed: number, retu
 
 const DAILY = [
   day("2026-09-26", 40, 30, 20, 10, true),
-  day("2026-09-27", 50, 40, 30, 0),
-  day("2026-09-28", 45, 30, 90, 0),
+  day("2026-09-27", 50, 40, 30, 0, false, true),
+  day("2026-09-28", 45, 30, 90, 0, false, true),
   day("2026-09-29", 30, 20, 10, 3),
 ];
 
@@ -164,5 +177,22 @@ describe("DailyChart", () => {
     expect(document.querySelector(".daily__tip")).toHaveTextContent("too soon to tell");
     // Dashed from the last closed day on.
     expect(document.querySelector(".daily__line--live")).toBeInTheDocument();
+  });
+
+  it("has a tab for the players who completed the puzzle, of the day's players", () => {
+    render(<DailyChart daily={DAILY} group="all" today="2026-09-28" focus="2026-09-26" />);
+    expect(within(tab("Completed")).getByText("12")).toBeInTheDocument();
+    expect(within(tab("Completed")).getByText("30%")).toBeInTheDocument();
+  });
+
+  it("has a tab for the players back the next day, final once that day is over", async () => {
+    render(<DailyChart daily={DAILY} group="all" today="2026-09-29" focus="2026-09-26" />);
+    expect(within(tab("Back next day")).getByText("5")).toBeInTheDocument();
+    expect(within(tab("Back next day")).getByText("13%")).toBeInTheDocument();
+    await userEvent.click(tab("Back next day"));
+    expect(document.querySelector(".daily__tip")).not.toHaveTextContent("too soon to tell");
+
+    fireEvent.keyDown(screen.getByRole("slider"), { key: "End" });
+    expect(document.querySelector(".daily__tip")).toHaveTextContent("too soon to tell");
   });
 });
