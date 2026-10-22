@@ -17,8 +17,12 @@ const metrics = (players: number, acted: number, guessed: number, soFar: number,
   guessed,
   // Two in five guessers share, so the column has its own number to show.
   shared: Math.round(guessed * 0.4),
+  // Seven in ten guessers finish, a number apart from the others.
+  completed: Math.round(guessed * 0.7),
   // A bit under half the guessers are back so far, a number apart from Shared's.
   returned: { cohort, returned, soFar, guessers: { cohort: 0, returned: 0, soFar: Math.round(guessed * 0.48) } },
+  // Half of those back so far came the next day, and a quarter of the guessers.
+  nextDay: { cohort: 0, returned: 0, soFar: Math.round(soFar / 2), guessers: { cohort: 0, returned: 0, soFar: Math.round(guessed * 0.24) } },
 });
 
 const groups = {
@@ -28,9 +32,9 @@ const groups = {
 };
 
 const dayGroups = (players: number) => ({
-  all: { players, acted: players - 2, guessed: players - 4, shared: 0, returned: 1 },
-  new: { players: 1, acted: 1, guessed: 1, shared: 0, returned: 0 },
-  returning: { players: players - 1, acted: 0, guessed: 0, shared: 0, returned: 0 },
+  all: { players, acted: players - 2, guessed: players - 4, shared: 0, completed: 0, returned: 1, nextDay: 1 },
+  new: { players: 1, acted: 1, guessed: 1, shared: 0, completed: 0, returned: 0, nextDay: 0 },
+  returning: { players: players - 1, acted: 0, guessed: 0, shared: 0, completed: 0, returned: 0, nextDay: 0 },
 });
 
 /** The shape `analytics_overview` returns. */
@@ -141,6 +145,17 @@ describe("AnalyticsPage", () => {
     // Guessers back so far, of the guessers, shown before any seven days close.
     expect(everyone).toHaveTextContent("48% of guessers");
     expect(within(section("Key numbers")).getByRole("columnheader", { name: "Shared" })).toBeInTheDocument();
+    // Finishers, of the players and of the guessers.
+    expect(everyone).toHaveTextContent("35 35%70% of guessers");
+    // Back the next day, of the players and of the guessers.
+    expect(everyone).toHaveTextContent("15 15%24% of guessers");
+    expect(within(section("Key numbers")).getByRole("columnheader", { name: "Completed" })).toBeInTheDocument();
+    expect(within(section("Key numbers")).getByRole("columnheader", { name: "Back next day" })).toBeInTheDocument();
+    // Every table of the key numbers has the new columns.
+    for (const title of ["Play screen test", "Chat", "Idle hint test"]) {
+      expect(within(section(title)).getByRole("columnheader", { name: "Completed" })).toBeInTheDocument();
+      expect(within(section(title)).getByRole("columnheader", { name: "Back next day" })).toBeInTheDocument();
+    }
     // The play-screen test pairs every grouping's rows by variant.
     expect(within(section("Play screen test")).getAllByRole("row", { name: /^Everyone/ })).toHaveLength(1);
     // Named v1 and v2, never "new", which reads as new players.

@@ -14,8 +14,8 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 
 /**
  * The key numbers, one tab each. A day's number is not final while it is
- * `live`: the puzzle still in play for the first four, and for returns, until
- * all seven puzzles after it are over. The line is dashed over those days.
+ * `live`: the puzzle still in play for the first five, and for returns, until
+ * the puzzle after it (or all seven) is over. The line is dashed over those days.
  */
 const METRICS: ReadonlyArray<{
   key: keyof DayMetrics;
@@ -26,7 +26,14 @@ const METRICS: ReadonlyArray<{
   { key: "players", label: "Players", live: (d, today) => d.date >= today, liveNote: "still in play" },
   { key: "acted", label: "Did something", live: (d, today) => d.date >= today, liveNote: "still in play" },
   { key: "guessed", label: "Guessed", live: (d, today) => d.date >= today, liveNote: "still in play" },
+  { key: "completed", label: "Completed", live: (d, today) => d.date >= today, liveNote: "still in play" },
   { key: "shared", label: "Shared", live: (d, today) => d.date >= today, liveNote: "still in play" },
+  {
+    key: "nextDay",
+    label: "Back next day",
+    live: (d, today) => daysSinceEpoch(today, d.date) < 2,
+    liveNote: "too soon to tell",
+  },
   { key: "returned", label: "Back within 7 days", live: (d) => !d.closed, liveNote: "too soon to tell" },
 ];
 

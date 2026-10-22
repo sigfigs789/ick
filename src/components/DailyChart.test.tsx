@@ -9,7 +9,10 @@ const metrics = (players: number, acted: number, guessed: number, returned: numb
   guessed,
   // Half the guessers, so the Shared tab has a number of its own to read.
   shared: guessed / 2,
+  // Three in ten guessers finish, and half the returns come the next day.
+  completed: (guessed * 3) / 10,
   returned,
+  nextDay: returned / 2,
 });
 
 /** Everyone's numbers, and the new players' a tenth of them. */
@@ -156,6 +159,23 @@ describe("DailyChart", () => {
   it("starts on the day it is asked to focus", () => {
     render(<DailyChart daily={DAILY} group="all" today="2026-09-29" focus="2026-09-27" />);
     expect(screen.getByLabelText("Day")).toHaveValue("2026-09-27");
+  });
+
+  it("tabs the puzzles finished and the players back the next day", () => {
+    render(<DailyChart daily={DAILY} group="all" today="2026-09-28" focus="2026-09-26" />);
+    // 6 of 40 players finished; 5 of them came back the next day.
+    expect(within(tab("Completed")).getByText("6")).toBeInTheDocument();
+    expect(within(tab("Completed")).getByText("15%")).toBeInTheDocument();
+    expect(within(tab("Back next day")).getByText("5")).toBeInTheDocument();
+    expect(within(tab("Back next day")).getByText("13%")).toBeInTheDocument();
+  });
+
+  it("marks a day as too soon in the next-day tab until the puzzle after it is over", async () => {
+    render(<DailyChart daily={DAILY} group="all" today="2026-09-29" focus="2026-09-27" />);
+    await userEvent.click(tab("Back next day"));
+    expect(document.querySelector(".daily__tip")).not.toHaveTextContent("too soon to tell");
+    fireEvent.change(screen.getByLabelText("Day"), { target: { value: "2026-09-28" } });
+    expect(document.querySelector(".daily__tip")).toHaveTextContent("too soon to tell");
   });
 
   it("marks a day whose seven days are not over in the returns tab", async () => {
