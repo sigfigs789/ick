@@ -9208,10 +9208,6 @@
     "since": "2026-09-27",
     "reason": "Folded onto `shambles`, costing 2.94 points. Flagged in the 2026-09-22 semantic audit (shambling walk, not shambles) and confirmed on adversarial re-review (shamble walk differs from shambles)."
   },
-  "sheeplings": {
-    "since": "2026-10-24",
-    "reason": "Folded onto `sheeple` (sheeplings > sheepling > sheeple), costing 1.62 points. Flagged by the daily fold check for the 2026-10-24 `EP` drop (young sheep, not sheeple) and confirmed on adversarial re-review (young sheep, not sheeple)."
-  },
   "shides": {
     "since": "2026-09-27",
     "reason": "Folded onto `shid`, costing 0.52 points. Flagged in the 2026-09-22 semantic audit (shide is wood, unrelated) and confirmed on adversarial re-review (shid is not a word)."

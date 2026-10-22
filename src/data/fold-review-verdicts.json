@@ -764,6 +764,11 @@
     "since": "2026-10-24",
     "reason": "Folded onto `sheeple` (sheepling > sheeple), costing 1.58 points; it is a form of `sheep` (Zipf 4.19). Flagged by the daily fold check for the 2026-10-24 `EP` drop (young sheep, not sheeple) and confirmed on adversarial re-review (young sheep, not sheeple)."
   },
+  "sheeplings": {
+    "base": "sheep",
+    "since": "2026-10-24",
+    "reason": "Folded onto `sheeple` (sheeplings > sheepling > sheeple), costing 1.62 points; it is a form of `sheep` (Zipf 4.19). Flagged by the daily fold check for the 2026-10-24 `EP` drop (young sheep, not sheeple) and confirmed on adversarial re-review (young sheep, not sheeple); plural of sheepling, scored as `sheep` on maintainer review."
+  },
   "spammable": {
     "base": "spam",
     "since": "2026-10-22",
