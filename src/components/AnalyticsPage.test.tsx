@@ -66,9 +66,9 @@ const REPORT = {
     { date: "2026-10-16", closed: false, groups: dayGroups(20) },
   ],
   weekly: [
-    { start: "2026-10-10", end: "2026-10-16", groups: { all: 120, new: 80, returning: 40 } },
-    { start: "2026-10-03", end: "2026-10-09", groups: { all: 100, new: 70, returning: 30 } },
-    { start: "2026-09-26", end: "2026-10-02", groups: { all: 0, new: 0, returning: 0 } },
+    { start: "2026-10-11", end: "2026-10-17", groups: { all: 120, new: 80, returning: 40 } },
+    { start: "2026-10-04", end: "2026-10-10", groups: { all: 100, new: 70, returning: 30 } },
+    { start: "2026-09-27", end: "2026-10-03", groups: { all: 0, new: 0, returning: 0 } },
   ],
   muse: {
     visits: 5,
@@ -222,13 +222,13 @@ describe("AnalyticsPage", () => {
     const growth = section("Growth");
     const week = (name: RegExp) => within(growth).getByRole("row", { name });
 
-    expect(week(/^Oct 10 to Oct 16 so far/)).toHaveTextContent("120+20%");
+    expect(week(/^Oct 11 to Oct 17 so far/)).toHaveTextContent("120+20%");
     // Nothing the week before to grow from.
-    expect(week(/^Oct 3 to Oct 9/)).toHaveTextContent("100–");
+    expect(week(/^Oct 4 to Oct 10/)).toHaveTextContent("100–");
     await userEvent.click(within(growth).getByRole("button", { name: "Returning players" }));
-    expect(week(/^Oct 10 to Oct 16/)).toHaveTextContent("40+33%");
+    expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("40+33%");
     await userEvent.click(within(growth).getByRole("button", { name: "New players" }));
-    expect(week(/^Oct 10 to Oct 16/)).toHaveTextContent("80+14%");
+    expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("80+14%");
   });
 
   it("tables both puzzle types, and the chat split for every grouping", async () => {
