@@ -37,6 +37,11 @@ describe("StreakDisplay", () => {
     );
     expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("🧊0/2");
 
+    // A streak that has ended keeps the cap its longest streak set: 0 of 3.
+    rerender(<StreakDisplay streak={{ ...streak, longestStreak: 28 }} hideEmpty hasWords={false} />);
+    expect(screen.getByText("day streak")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Streak freezes/ }).textContent).toBe("🧊0/3");
+
     // A freeze held and a word banked: both come back.
     rerender(
       <StreakDisplay
