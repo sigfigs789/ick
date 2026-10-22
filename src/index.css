@@ -4466,6 +4466,41 @@ h2 {
 .analytics__note {
   margin: 0 0 0.8rem;
 }
+/* A section's verdict: a pill on the number it is judged by, and the marks under it. */
+.analytics__bench {
+  margin: 0 0 0.6rem;
+}
+.analytics__bench-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+.analytics__bench-criteria {
+  margin: 0.2rem 0 0;
+}
+.analytics__verdict {
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+}
+.analytics__verdict--weak {
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+}
+.analytics__verdict--promising {
+  background: var(--caution-bg);
+  color: var(--caution-fg);
+}
+.analytics__verdict--great {
+  background: var(--success-bg);
+  color: var(--success-fg);
+}
 .analytics__bullets {
   margin: 0 0 0.8rem;
   padding-left: 1.1rem;
