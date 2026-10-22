@@ -14,9 +14,10 @@
 //   (every date optional: no `from` is all time, no `to` the latest day)
 //   -> { report: { today, firstDay, from, to, groups, modes, chat, chatSince,
 //                  idleHint, idleHintSince, botsFiltered, daily } }
-// GET /api/review?list=analytics-gameplay&from=...&to=...&today=...
-//   (the same dates) -> { report: { today, from, to, retention, leaderboard,
-//                                   sharing, scores } }, for /analyticsV2.
+// GET /api/review?list=analytics-v2&today=YYYY-MM-DD
+//   -> { report: { today, trackedSince, daily, retention, cohorts, weekly,
+//                  sources, window, scores } }, for /analyticsV2: its own
+//   report, from its own function (see the 2026-10-30 migration).
 //   400 bad-list / bad-limit / bad-date, 401 unauthorised, 405 wrong method,
 //   503 no credentials, 502 upstream unavailable.
 //
@@ -321,7 +322,7 @@ async function handleGet(request: Request): Promise<Response> {
     list !== "feedback" &&
     list !== "freeform" &&
     list !== "analytics" &&
-    list !== "analytics-gameplay"
+    list !== "analytics-v2"
   ) {
     return reply(400, { ok: false, reason: "bad-list" });
   }
@@ -333,7 +334,7 @@ async function handleGet(request: Request): Promise<Response> {
   // unset token: that would take the feedback page away from a deployment that
   // has always read it without one, which is a thing to opt into rather than to
   // wake up to.
-  const open = list === "suggested-words" || list === "analytics" || list === "analytics-gameplay";
+  const open = list === "suggested-words" || list === "analytics" || list === "analytics-v2";
   if (!open && (process.env.REVIEW_TOKEN ?? "") !== "" && !authorised(request)) {
     return reply(401, { ok: false, reason: "unauthorised" });
   }
@@ -355,7 +356,14 @@ async function handleGet(request: Request): Promise<Response> {
   if (!supabaseConfigured()) return reply(503, { ok: false, reason: "unconfigured" });
 
   try {
-    if (list === "analytics" || list === "analytics-gameplay") {
+    if (list === "analytics-v2") {
+      // One date: the puzzle the reader is on, which every window ends at.
+      const today = params.get("today");
+      if (today === null || !isCalendarDate(today)) return reply(400, { ok: false, reason: "bad-date" });
+      const report = await rpc<Record<string, unknown> | null>("analytics_v2", { p_today: today });
+      return reply(200, { report: report ?? {} });
+    }
+    if (list === "analytics") {
       // The window's ends and the viewer's own puzzle, sent as-is rather than
       // worked out here from a clock: "today" is the puzzle the reader is on.
       // Checked only for being real dates in order; the function takes the
@@ -374,10 +382,7 @@ async function handleGet(request: Request): Promise<Response> {
       // Passed through as the database built it. The function is the one place
       // these numbers are defined (see the 2026-10-18 migration), and a second
       // copy of every field name here would be a second place for them to drift.
-      // The gameplay report is the same kind of thing, from its own function
-      // (see the 2026-10-30 migration), and takes the same three dates.
-      const fn = list === "analytics" ? "analytics_overview" : "analytics_gameplay";
-      const report = await rpc<Record<string, unknown> | null>(fn, {
+      const report = await rpc<Record<string, unknown> | null>("analytics_overview", {
         p_from: dates.from,
         p_to: dates.to,
         p_today: dates.today,

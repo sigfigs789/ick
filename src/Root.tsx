@@ -3,7 +3,7 @@ import App from "./App";
 import { trackLeaderboardJoined, trackModeAssigned, trackUiVariantAssigned } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
 import { AnalyticsPage } from "./components/AnalyticsPage";
-import { AnalyticsV2Page } from "./components/AnalyticsV2Page";
+import { AnalyticsV2Page } from "./analyticsV2/AnalyticsV2Page";
 import { DeadStreaksPage } from "./components/DeadStreaksPage";
 import { ChatBubble } from "./components/ChatBubble";
 import { FeedbackPage } from "./components/FeedbackPage";
