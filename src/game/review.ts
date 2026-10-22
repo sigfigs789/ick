@@ -316,14 +316,15 @@ export const GROUPS = ["all", "new", "returning"] as const;
 export type Group = (typeof GROUPS)[number];
 
 /**
- * Returns within seven days: `rate` over the players whose seven days are over,
- * and `soFar`, every return seen yet, for a window too recent to have a rate.
+ * Returns within a wait (seven days, or the next day): `rate` over the players
+ * whose wait is over, and `soFar`, every return seen yet, for a window too
+ * recent to have a rate.
  */
 export interface Returns {
   rate: Rate;
   soFar: number;
   /**
-   * The players who banked a word: those whose seven days are over and how many
+   * The players who banked a word: those whose wait is over and how many
    * of them came back, and `soFar`, every guesser seen back yet.
    */
   guessers: Rate & { soFar: number };
@@ -336,16 +337,25 @@ export interface KeyMetrics {
   guessed: number;
   /** Shared their result on a day in the window (only possible once they have guessed). */
   shared: number;
+  /** Finished a puzzle on a day in the window: used every guess or locked in (only a guesser can). */
+  completed: number;
   returned: Returns;
+  /** Played again on the very next puzzle, read like `returned` with a one-day wait. */
+  nextDay: Returns;
 }
 
-/** The key numbers for one puzzle. `returned` is a floor until the day is `closed`. */
+/**
+ * The key numbers for one puzzle. `returned` is a floor until the day is
+ * `closed`, and `nextDay` until the puzzle after it is over.
+ */
 export interface DayMetrics {
   players: number;
   acted: number;
   guessed: number;
   shared: number;
+  completed: number;
   returned: number;
+  nextDay: number;
 }
 
 /**
@@ -506,7 +516,9 @@ function metrics(raw: unknown): KeyMetrics {
     acted: count(m.acted),
     guessed: count(m.guessed),
     shared: count(m.shared),
+    completed: count(m.completed),
     returned: returns(m.returned),
+    nextDay: returns(m.nextDay),
   };
 }
 
@@ -552,7 +564,9 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
             acted: count(m.acted),
             guessed: count(m.guessed),
             shared: count(m.shared),
+            completed: count(m.completed),
             returned: count(m.returned),
+            nextDay: count(m.nextDay),
           };
         }),
       })),
