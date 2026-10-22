@@ -67,9 +67,35 @@ const REPORT = {
     { date: "2026-10-16", closed: false, groups: dayGroups(20) },
   ],
   weekly: [
-    { start: "2026-10-11", end: "2026-10-17", groups: { all: 120, new: 80, returning: 40 } },
-    { start: "2026-10-04", end: "2026-10-10", groups: { all: 100, new: 70, returning: 30 } },
+    {
+      start: "2026-10-11", end: "2026-10-17", groups: { all: 120, new: 80, returning: 40 },
+      flow: { new: 80, kept: 30, resurrected: 10, resurrectedStayed: 3, lost: 70 },
+      nextWeekOver: false,
+      played: { oneDay: 30, twoToThree: 10, fourPlus: 10 },
+    },
+    {
+      start: "2026-10-04", end: "2026-10-10", groups: { all: 100, new: 70, returning: 30 },
+      flow: { new: 70, kept: 26, resurrected: 4, resurrectedStayed: 1, lost: 0 },
+      nextWeekOver: true,
+      played: { oneDay: 20, twoToThree: 5, fourPlus: 0 },
+    },
     { start: "2026-09-27", end: "2026-10-03", groups: { all: 0, new: 0, returning: 0 } },
+  ],
+  cohorts: [
+    { start: "2026-10-11", players: 80, guessers: 20, weeks: [] },
+    {
+      start: "2026-10-04", players: 70, guessers: 20,
+      weeks: [{ players: 14, guessers: 8 }],
+    },
+    {
+      start: "2026-09-27", players: 50, guessers: 10,
+      weeks: [{ players: 10, guessers: 5 }, { players: 5, guessers: 4 }],
+    },
+  ],
+  sources: [
+    { source: "direct", players: 50, guessed: 15, returned: { cohort: 0, returned: 0, soFar: 5 } },
+    { source: "share", players: 12, guessed: 9, returned: { cohort: 0, returned: 0, soFar: 6 } },
+    { source: "news.ycombinator.com", players: 8, guessed: 1, returned: { cohort: 0, returned: 0, soFar: 0 } },
   ],
   muse: {
     visits: 5,
@@ -230,6 +256,66 @@ describe("AnalyticsPage", () => {
     expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("40+33%");
     await userEvent.click(within(growth).getByRole("button", { name: "New players" }));
     expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("80+14%");
+  });
+
+  it("tables retention by arrival week, for everyone or the first week's guessers", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Retention by arrival week" });
+    const cohorts = section("Retention by arrival week");
+    const row = (name: RegExp) => within(cohorts).getByRole("row", { name });
+
+    // As many week columns as the oldest row has weeks.
+    expect(within(cohorts).getByRole("columnheader", { name: "Week 2" })).toBeInTheDocument();
+    expect(within(cohorts).queryByRole("columnheader", { name: "Week 3" })).toBeNull();
+    // The last week of each row is still counting up.
+    expect(row(/^Sep 27/)).toHaveTextContent("Sep 275020%10% so far");
+    expect(row(/^Oct 4/)).toHaveTextContent("Oct 47020% so far");
+    expect(row(/^Oct 11/)).toHaveTextContent("Oct 1180");
+    await userEvent.click(within(cohorts).getByRole("button", { name: "Guessed in their first week" }));
+    expect(row(/^Sep 27/)).toHaveTextContent("Sep 271050%40% so far");
+    expect(row(/^Oct 4/)).toHaveTextContent("Oct 42040% so far");
+  });
+
+  it("tables the core players: how many of each week's puzzles its players played", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Core players" });
+    const core = section("Core players");
+
+    expect(within(core).getByRole("row", { name: /^Oct 11 to Oct 17 so far/ })).toHaveTextContent(
+      "5030 60%10 20%10 20%",
+    );
+    expect(within(core).getByRole("row", { name: /^Oct 4 to Oct 10/ })).toHaveTextContent("2520 80%5 20%0 0%");
+  });
+
+  it("tables each week's new, kept, resurrected and lost players", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Resurrected players" });
+    const flow = section("Resurrected players");
+
+    // Stayed is still counting up while the week after is.
+    expect(within(flow).getByRole("row", { name: /^Oct 11 to Oct 17 so far/ })).toHaveTextContent(
+      "12080 67%30 25%10 8%3 30% so far70+20",
+    );
+    expect(within(flow).getByRole("row", { name: /^Oct 4 to Oct 10/ })).toHaveTextContent(
+      "10070 70%26 26%4 4%1 25%0+74",
+    );
+  });
+
+  it("tables the window's new players by source, and the new players per sharer", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+    await screen.findByRole("heading", { name: "Where new players come from" });
+    const sources = section("Where new players come from");
+
+    // 12 from share links, over the 20 players who shared.
+    expect(sources).toHaveTextContent("Share links brought 12 new players, from 20 players who shared: 0.60 per sharer.");
+    expect(within(sources).getByRole("row", { name: /^Share link/ })).toHaveTextContent("12 17%9 75%6 50%");
+    expect(within(sources).getByRole("row", { name: /^Direct/ })).toHaveTextContent("50 71%15 30%5 10%");
+    // A site the page has no name for keeps its host.
+    expect(within(sources).getByRole("rowheader", { name: "news.ycombinator.com" })).toBeInTheDocument();
   });
 
   it("tables the key numbers for both puzzle types, and the chat split, for every grouping", async () => {
