@@ -8,9 +8,9 @@
 -- that mode), completed and shared any, and the returns run from their first
 -- day in the window. `modes` gains `both` beside `standard` and `freeform`.
 --
--- The function is otherwise 20261028100000_analytics_modes_sunday_weeks.sql,
--- whose notes stand; same signature, so a replace, and the grant is given
--- again.
+-- The function is otherwise 20261029000000_analytics_retention_cohorts.sql
+-- (#552), whose notes stand; same signature, so a replace, and the grant is
+-- given again.
 
 create or replace function public.analytics_overview(
   p_from date default null,
@@ -504,7 +504,7 @@ as $$
     ) y
   ),
 
-  -- By puzzle type (see the notes at the top): every mode each player's day
+  -- By puzzle type (see the note at the top): every mode each player's day
   -- shows, by the board, the switch or the events that name one.
   mode_seen as (
     select player_id, day, mode, created_at from events
@@ -666,8 +666,8 @@ as $$
   ),
 
   -- Weekly active players, newest week first (see the note at the top).
-  -- extract(dow) is 0 on a Sunday, so this is the Sunday on or before today.
   weeks as (
+    -- extract(dow) is 0 on a Sunday, so this is the Sunday on or before today.
     select k, w.sunday - 7 * k as week_start, w.sunday - 7 * k + 6 as week_end
     from (select b.today - extract(dow from b.today)::int as sunday, b.first_day from bounds b) w,
       generate_series(0, 12) as k
@@ -685,6 +685,49 @@ as $$
       left join arrivals a on a.player_id = d.player_id
     group by 1, 2
   ),
+  -- The Sunday of every week each player turned up in.
+  player_weeks as (
+    select distinct d.player_id, d.day - extract(dow from d.day)::int as sunday
+    from player_days d
+  ),
+  -- Where each week's players came from, and who of the week before was lost.
+  week_flow as (
+    select
+      w.week_start,
+      count(pw.player_id) filter (where a.first_day < w.week_start and prev.player_id is not null) as kept,
+      count(pw.player_id) filter (where a.first_day < w.week_start and prev.player_id is null) as resurrected,
+      count(pw.player_id) filter (
+        where a.first_day < w.week_start and prev.player_id is null and nxt.player_id is not null
+      ) as resurrected_stayed,
+      (select count(*) from player_weeks l
+       where l.sunday = w.week_start - 7
+         and not exists (
+           select 1 from player_weeks t where t.player_id = l.player_id and t.sunday = w.week_start)
+      ) as lost
+    from weeks w
+      left join player_weeks pw on pw.sunday = w.week_start
+      left join arrivals a on a.player_id = pw.player_id
+      left join player_weeks prev on prev.player_id = pw.player_id and prev.sunday = w.week_start - 7
+      left join player_weeks nxt on nxt.player_id = pw.player_id and nxt.sunday = w.week_start + 7
+    group by 1
+  ),
+  -- How many of the week's puzzles each player banked a word in.
+  week_play_days as (
+    select w.week_start, p.player_id, count(distinct p.day) as days
+    from weeks w
+      join plays p on p.day between w.week_start and w.week_end
+    group by 1, 2
+  ),
+  week_played as (
+    select
+      w.week_start,
+      count(p.player_id) filter (where p.days = 1) as one_day,
+      count(p.player_id) filter (where p.days between 2 and 3) as two_to_three,
+      count(p.player_id) filter (where p.days >= 4) as four_plus
+    from weeks w
+      left join week_play_days p on p.week_start = w.week_start
+    group by 1
+  ),
   weekly as (
     select coalesce(jsonb_agg(jsonb_build_object(
       'start', w.week_start,
@@ -692,9 +735,108 @@ as $$
       'groups', jsonb_build_object(
         'all', w.players,
         'new', w.new_players,
-        'returning', w.returning_players)
+        'returning', w.returning_players),
+      'flow', jsonb_build_object(
+        'new', w.new_players,
+        'kept', f.kept,
+        'resurrected', f.resurrected,
+        'resurrectedStayed', f.resurrected_stayed,
+        'lost', f.lost),
+      'nextWeekOver', w.week_end + 7 < b.today,
+      'played', jsonb_build_object(
+        'oneDay', p.one_day,
+        'twoToThree', p.two_to_three,
+        'fourPlus', p.four_plus)
     ) order by w.week_end desc), '[]'::jsonb) as v
     from week_counts w
+      join week_flow f on f.week_start = w.week_start
+      join week_played p on p.week_start = w.week_start
+      cross join bounds b
+  ),
+
+  -- Retention by the week players arrived (see the note at the top).
+  cohort_players as (
+    select
+      c.player_id,
+      c.cohort,
+      exists (
+        select 1 from plays p
+        where p.player_id = c.player_id and p.day between c.cohort and c.cohort + 6
+      ) as guessed
+    from (
+      select a.player_id, a.first_day - extract(dow from a.first_day)::int as cohort
+      from arrivals a
+    ) c
+  ),
+  cohort_cells as (
+    select
+      c.cohort,
+      (pw.sunday - c.cohort) / 7 as k,
+      count(*) as players,
+      count(*) filter (where c.guessed) as guessers
+    from cohort_players c
+      join player_weeks pw on pw.player_id = c.player_id and pw.sunday > c.cohort
+    group by 1, 2
+  ),
+  cohorts as (
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'start', s.cohort,
+      'players', s.players,
+      'guessers', s.guessers,
+      'weeks', (
+        select coalesce(jsonb_agg(jsonb_build_object(
+          'players', coalesce(x.players, 0),
+          'guessers', coalesce(x.guessers, 0)
+        ) order by g.k), '[]'::jsonb)
+        from generate_series(1, (s.this_sunday - s.cohort) / 7) as g(k)
+          left join cohort_cells x on x.cohort = s.cohort and x.k = g.k)
+    ) order by s.cohort desc), '[]'::jsonb) as v
+    from (
+      select
+        c.cohort,
+        b.today - extract(dow from b.today)::int as this_sunday,
+        count(*) as players,
+        count(*) filter (where c.guessed) as guessers
+      from cohort_players c
+        cross join bounds b
+      group by 1, 2
+    ) s
+    where s.cohort >= s.this_sunday - 7 * 12
+  ),
+
+  -- Each player's first-touch source: the one their first site_visit carried.
+  first_sources as (
+    select distinct on (e.props ->> 'player_id')
+      e.props ->> 'player_id' as player_id,
+      coalesce(nullif(e.props ->> 'source', ''), 'direct') as source
+    from public.analytics_events e
+    where e.name = 'site_visit'
+      and e.props ->> 'player_id' is not null
+    order by e.props ->> 'player_id', e.created_at
+  ),
+  sources as (
+    select coalesce(jsonb_agg(jsonb_build_object(
+      'source', x.source,
+      'players', x.players,
+      'guessed', x.guessed,
+      'returned', jsonb_build_object(
+        'cohort', x.closed,
+        'returned', x.returned,
+        'soFar', x.so_far)
+    ) order by x.players desc, x.source), '[]'::jsonb) as v
+    from (
+      select
+        coalesce(s.source, 'direct') as source,
+        count(*) as players,
+        count(*) filter (where r.level = 3) as guessed,
+        count(*) filter (where r.closed) as closed,
+        count(*) filter (where r.closed and r.returned) as returned,
+        count(*) filter (where r.returned) as so_far
+      from win_rows r
+        left join first_sources s on s.player_id = r.player_id
+      where r.is_new
+      group by 1
+    ) x
   ),
 
   -- Muse AI's events, by the puzzle each one belongs to.
@@ -817,6 +959,8 @@ as $$
         and pg_input_is_valid(e.props ->> 'live_date', 'date')),
     'daily', (select v from daily),
     'weekly', (select v from weekly),
+    'cohorts', (select v from cohorts),
+    'sources', (select v from sources),
     'muse', (select v from muse),
     'botsFiltered', (
       select count(*)
@@ -829,7 +973,7 @@ as $$
 $$;
 
 comment on function public.analytics_overview(date, date, date) is
-  'Players, players who acted, guessed, shared, completed a puzzle, came back the next day and returned within 7 days -- by new/returning, puzzle type (Standard, Freeform or both, by new/returning), chat, play-screen arm (by its own new/returning experiments) and idle hint arm, with Muse AI apart and by bot, and weekly active players by new/returning for the latest 13 Sunday-to-Saturday weeks -- for the /analytics page, as one JSON document, with automated visits dropped and counted in botsFiltered. Read by api/review.ts.';
+  'Players, players who acted, guessed, shared, completed a puzzle, came back the next day and returned within 7 days -- by new/returning, puzzle type (Standard, Freeform or both, by new/returning), chat, play-screen arm (by its own new/returning experiments) and idle hint arm, with Muse AI apart and by bot; weekly active players by new/returning for the latest 13 Sunday-to-Saturday weeks, with each week''s new/kept/resurrected/lost players and days played; retention by arrival week; and the window''s new players by source -- for the /analytics page, as one JSON document, with automated visits dropped and counted in botsFiltered. Read by api/review.ts.';
 
 -- Explicit: service_role does not inherit what public is given, and a clean
 -- stack grants it nothing by default.
