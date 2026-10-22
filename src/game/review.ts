@@ -330,6 +330,10 @@ export interface Returns {
   guessers: Rate & { soFar: number };
 }
 
+/** The modes a player was in over the window: one of them, or both. */
+export const PUZZLE_TYPES = ["standard", "freeform", "both"] as const;
+export type PuzzleType = (typeof PUZZLE_TYPES)[number];
+
 /** The key numbers for one set of players over the window. */
 export interface KeyMetrics {
   players: number;
@@ -371,10 +375,10 @@ export interface AnalyticsReport {
   to: string | null;
   groups: Record<Group, KeyMetrics>;
   /**
-   * Each grouping, split by the puzzle type the player was in on a day in the
-   * window; a player in both is in both (see the 2026-10-28 migration).
+   * Each grouping, split by the puzzle types the player was in over the
+   * window: one of them, or both (see the 2026-10-28 migrations).
    */
-  modes: Record<Group, Record<"standard" | "freeform", KeyMetrics>>;
+  modes: Record<Group, Record<PuzzleType, KeyMetrics>>;
   /** Each grouping, split by whether the player opened the chat in the window. */
   chat: Record<Group, { opened: KeyMetrics; notOpened: KeyMetrics }>;
   chatSince: string | null;
@@ -593,7 +597,10 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
     from: text(r.from),
     to: text(r.to),
     groups: byGroup(r.groups, metrics),
-    modes: byGroup(r.modes, (raw) => ({ standard: metrics(obj(raw).standard), freeform: metrics(obj(raw).freeform) })),
+    modes: byGroup(r.modes, (raw) => {
+      const m = obj(raw);
+      return Object.fromEntries(PUZZLE_TYPES.map((t) => [t, metrics(m[t])])) as Record<PuzzleType, KeyMetrics>;
+    }),
     chat: byGroup(r.chat, (raw) => ({ opened: metrics(obj(raw).opened), notOpened: metrics(obj(raw).notOpened) })),
     chatSince: text(r.chatSince),
     ui: byGroup(r.ui, (raw) => ({ control: metrics(obj(raw).control), v2: metrics(obj(raw).v2) })),

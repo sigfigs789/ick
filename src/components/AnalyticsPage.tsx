@@ -5,11 +5,13 @@ import {
   fetchAnalytics,
   GROUPS,
   IDLE_HINT_VARIANTS,
+  PUZZLE_TYPES,
   type AnalyticsReport,
   type Cohort,
   type Group,
   type KeyMetrics,
   type MuseReport,
+  type PuzzleType,
   type SourceRow,
   type WeekActives,
 } from "../game/review";
@@ -233,21 +235,21 @@ function Report({
 
       <Section
         title="Puzzle type"
-        note={`${span}. Standard vs Freeform, by the mode a player was in that day, so a player in both is in both. Guessed is a word banked in that mode; the returns count from their first day in it, and a return in either mode.`}
+        note={`${span}. Played only Standard, only Freeform, or both, so each player is in one row and the three add up to the key numbers. A day's mode is the one played, switched to or given, else the one the player last had.`}
       >
         <MetricsTable
           split="Puzzle type"
           rows={GROUPS.flatMap((g) =>
-            (["standard", "freeform"] as const).map((mode) => ({
-              key: `${g}-${mode}`,
+            PUZZLE_TYPES.map((type) => ({
+              key: `${g}-${type}`,
               label: GROUP_NAMES[g],
               side: (
                 <>
-                  <span className={`analytics__swatch analytics__swatch--${mode}`} aria-hidden="true" />
-                  {mode === "standard" ? "Standard" : "Freeform"}
+                  <span className={`analytics__swatch analytics__swatch--${type}`} aria-hidden="true" />
+                  {PUZZLE_TYPE_NAMES[type]}
                 </>
               ),
-              metrics: report.modes[g][mode],
+              metrics: report.modes[g][type],
             })),
           )}
         />
@@ -713,9 +715,15 @@ interface MetricsRow {
   metrics: KeyMetrics;
 }
 
+const PUZZLE_TYPE_NAMES: Record<PuzzleType, string> = {
+  standard: "Standard only",
+  freeform: "Freeform only",
+  both: "Both",
+};
+
 /**
- * The key numbers, a row per set of players; `split` pairs rows under one
- * label, and names the column that tells the pair apart.
+ * The key numbers, a row per set of players; `split` sets rows in a row with
+ * the same label under it, and names the column that tells them apart.
  */
 function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: string }) {
   return (
@@ -737,11 +745,13 @@ function MetricsTable({ rows, split }: { rows: MetricsRow[]; split?: string }) {
         <tbody>
           {rows.map((r, i) => {
             const m = r.metrics;
-            const first = !split || i % 2 === 0;
+            const first = !split || i === 0 || rows[i - 1].label !== r.label;
+            let span = 1;
+            while (split && rows[i + span]?.label === r.label) span++;
             return (
-              <tr key={r.key} className={split && i % 2 === 1 ? "analytics__row--pair" : undefined}>
+              <tr key={r.key} className={first ? undefined : "analytics__row--pair"}>
                 {first && (
-                  <th scope="row" rowSpan={split ? 2 : undefined}>
+                  <th scope="row" rowSpan={split ? span : undefined}>
                     {r.label}
                   </th>
                 )}
