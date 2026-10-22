@@ -79,6 +79,11 @@ export const config = { runtime: "edge" };
 /** Long enough for a triage pass; a bound rather than a page. */
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
+/**
+ * The analytics report takes about two seconds to build -- the game's own cap --
+ * and nobody playing waits on it, so it gets longer before it is given up on.
+ */
+const ANALYTICS_TIMEOUT_MS = 8000;
 
 /** One row as `list_suggested_words` returns it. */
 interface SuggestedRow {
@@ -374,7 +379,7 @@ async function handleGet(request: Request): Promise<Response> {
         p_from: dates.from,
         p_to: dates.to,
         p_today: dates.today,
-      });
+      }, ANALYTICS_TIMEOUT_MS);
       return reply(200, { report: report ?? {} });
     }
     if (list === "freeform") {
