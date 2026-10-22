@@ -4801,6 +4801,10 @@ h2 {
   color: var(--fg-faint);
   font-size: 0.75rem;
 }
+/* A retention cell, tinted by its share (--heat, 0 to 1). */
+.analytics__heat {
+  background: color-mix(in srgb, var(--viz-single) calc(var(--heat, 0) * 60%), transparent);
+}
 /* A grouping's chat rows share its label; only the pair's last row ends it. */
 .analytics__table tr:has(+ .analytics__row--pair) td {
   border-bottom-style: dashed;

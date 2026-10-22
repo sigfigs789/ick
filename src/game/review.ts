@@ -410,6 +410,13 @@ export interface AnalyticsReport {
    * 2026-10-27 migrations). New is a player whose first-ever day is in the week.
    */
   weekly: WeekActives[];
+  /**
+   * Retention by the week players arrived, newest first, up to 13 weeks (see
+   * the 2026-10-29 migration).
+   */
+  cohorts: Cohort[];
+  /** The window's new players by where their first visit came from, most first. */
+  sources: SourceRow[];
   /** Muse AI, which every number above leaves out (see game/visitor.ts). */
   muse: MuseReport;
 }
@@ -419,6 +426,37 @@ export interface WeekActives {
   start: string;
   end: string;
   players: Record<Group, number>;
+  /**
+   * Where the week's players came from: new (first-ever day that week), kept
+   * (played the week before too) or resurrected (played before, but not the
+   * week before). Lost is the week before's players who did not turn up.
+   */
+  flow: { new: number; kept: number; resurrected: number; resurrectedStayed: number; lost: number };
+  /** Whether the week after is over, so `resurrectedStayed` is final. */
+  nextWeekOver: boolean;
+  /** Players by how many of the week's puzzles they banked a word in. */
+  played: { oneDay: number; twoToThree: number; fourPlus: number };
+}
+
+/**
+ * The players whose first-ever day fell in the week starting `start`, and how
+ * many of them turned up in each later week: `weeks[0]` is the week after, and
+ * the last one is still counting up. `guessers` is the same for the ones who
+ * banked a word in their first week.
+ */
+export interface Cohort {
+  start: string;
+  players: number;
+  guessers: number;
+  weeks: Array<{ players: number; guessers: number }>;
+}
+
+/** New players from one first-touch source (see game/visits.ts). */
+export interface SourceRow {
+  source: string;
+  players: number;
+  guessed: number;
+  returned: { rate: Rate; soFar: number };
 }
 
 /** How Muse AI played in the window, by puzzle. Averages are null with no puzzles. */
@@ -597,7 +635,39 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
         start: w.start as string,
         end: w.end as string,
         players: byGroup(w.groups, count),
+        flow: {
+          new: count(obj(w.flow).new),
+          kept: count(obj(w.flow).kept),
+          resurrected: count(obj(w.flow).resurrected),
+          resurrectedStayed: count(obj(w.flow).resurrectedStayed),
+          lost: count(obj(w.flow).lost),
+        },
+        nextWeekOver: w.nextWeekOver === true,
+        played: {
+          oneDay: count(obj(w.played).oneDay),
+          twoToThree: count(obj(w.played).twoToThree),
+          fourPlus: count(obj(w.played).fourPlus),
+        },
       })),
+    cohorts: list(r.cohorts)
+      .filter((c) => text(c.start))
+      .map((c) => ({
+        start: c.start as string,
+        players: count(c.players),
+        guessers: count(c.guessers),
+        weeks: list(c.weeks).map((w) => ({ players: count(w.players), guessers: count(w.guessers) })),
+      })),
+    sources: list(r.sources)
+      .filter((s) => text(s.source))
+      .map((s) => {
+        const ret = obj(s.returned);
+        return {
+          source: s.source as string,
+          players: count(s.players),
+          guessed: count(s.guessed),
+          returned: { rate: { cohort: count(ret.cohort), returned: count(ret.returned) }, soFar: count(ret.soFar) },
+        };
+      }),
     muse: muse(r.muse),
   };
 }

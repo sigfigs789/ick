@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useState, type CSSProperties, type ReactNode } from "react";
 import { ReviewPage } from "./ReviewPage";
 import { useReviewList } from "./reviewList";
 import {
@@ -7,10 +7,12 @@ import {
   IDLE_HINT_VARIANTS,
   PUZZLE_TYPES,
   type AnalyticsReport,
+  type Cohort,
   type Group,
   type KeyMetrics,
   type MuseReport,
   type PuzzleType,
+  type SourceRow,
   type WeekActives,
 } from "../game/review";
 import {
@@ -22,6 +24,8 @@ import {
   growth,
   moveRange,
   pct,
+  SHARE_SOURCES,
+  sourceName,
   windowDates,
   type AnalyticsWindow,
 } from "./analyticsFormat";
@@ -42,7 +46,9 @@ import { handleFor } from "../game/handle";
  * test's arm. Every number is built in one place, `analytics_overview` (see the
  * 2026-10-18, 2026-10-21 and 2026-10-26 migrations), and this page only draws
  * them. Growth, weekly active players by the same groupings, comes from the
- * same place (the 2026-10-27 migration).
+ * same place (the 2026-10-27 migration), and so do the sections on whether
+ * players stay -- retention by arrival week, core players, resurrected players
+ * -- and where new players come from (the 2026-10-29 migration).
  *
  * Muse AI, an agent the maintainer sends to play (see game/visitor.ts), is
  * left out of all of it and has a section of its own at the end.
@@ -217,7 +223,15 @@ function Report({
         </p>
       </Section>
 
+      <SourcesSection sources={report.sources} sharers={report.groups.all.shared} span={span} />
+
       <GrowthSection weekly={report.weekly} />
+
+      <CohortSection cohorts={report.cohorts} />
+
+      <CoreSection weekly={report.weekly} />
+
+      <ResurrectedSection weekly={report.weekly} />
 
       <Section
         title="Puzzle type"
@@ -348,6 +362,244 @@ function GrowthSection({ weekly }: { weekly: WeekActives[] }) {
           </tbody>
         </table>
       </div>
+    </Section>
+  );
+}
+
+/** Weeks after arrival the retention table has columns for. */
+const COHORT_WEEKS = 12;
+
+/**
+ * Retention by arrival week: of the players whose first-ever day fell in a
+ * week, the share who turned up again in each week after. A curve that levels
+ * off above zero is an audience that stays.
+ */
+function CohortSection({ cohorts }: { cohorts: Cohort[] }) {
+  const [who, setWho] = useState<"players" | "guessers">("players");
+  const columns = Math.min(COHORT_WEEKS, Math.max(0, ...cohorts.map((c) => c.weeks.length)));
+  return (
+    <Section
+      title="Retention by arrival week"
+      note="The latest 13 weeks, whatever the window. Each row is the players whose first-ever visit fell in that Sunday-to-Saturday week; each column the share of them who turned up in a later week. The last cell in each row is still counting up."
+    >
+      <div className="analytics__groups" role="group" aria-label="Arrivals">
+        {(["players", "guessers"] as const).map((w) => (
+          <button
+            key={w}
+            type="button"
+            className="analytics__window-button"
+            aria-pressed={w === who}
+            onClick={() => setWho(w)}
+          >
+            {w === "players" ? "Everyone" : "Guessed in their first week"}
+          </button>
+        ))}
+      </div>
+      <div className="analytics__table-wrap">
+        <table className="analytics__table">
+          <thead>
+            <tr>
+              <th scope="col">Arrived</th>
+              <th scope="col">Players</th>
+              {Array.from({ length: columns }, (_, k) => (
+                <th key={k} scope="col">Week {k + 1}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {cohorts.map((c) => {
+              const size = c[who];
+              return (
+                <tr key={c.start}>
+                  <th scope="row">{shortDate(c.start)}</th>
+                  <td>{fmt(size)}</td>
+                  {Array.from({ length: columns }, (_, k) => {
+                    const cell = c.weeks[k];
+                    if (!cell || size === 0) return <td key={k} />;
+                    const share = cell[who] / size;
+                    const open = k === c.weeks.length - 1;
+                    return (
+                      <td
+                        key={k}
+                        className="analytics__heat"
+                        style={{ "--heat": share } as CSSProperties}
+                        title={`${fmt(cell[who])} of ${fmt(size)}${open ? ", still counting up" : ""}`}
+                      >
+                        {pct(share)}
+                        {open && <span className="analytics__n"> so far</span>}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Section>
+  );
+}
+
+/**
+ * How often each week's players played: the ones who banked a word on one of
+ * its puzzles, two or three, or four or more -- the core, for whom the game is
+ * a habit.
+ */
+function CoreSection({ weekly }: { weekly: WeekActives[] }) {
+  return (
+    <Section
+      title="Core players"
+      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window, Sunday to Saturday; the latest is still counting up. Players who banked a word that week, by how many of its 7 puzzles they played.`}
+    >
+      <div className="analytics__table-wrap">
+        <table className="analytics__table">
+          <thead>
+            <tr>
+              <th scope="col">Week</th>
+              <th scope="col">Played</th>
+              <th scope="col">1 day</th>
+              <th scope="col">2–3 days</th>
+              <th scope="col">Core: 4+ days</th>
+            </tr>
+          </thead>
+          <tbody>
+            {weekly.slice(0, GROWTH_WEEKS).map((w, i) => {
+              const played = w.played.oneDay + w.played.twoToThree + w.played.fourPlus;
+              return (
+                <tr key={w.end}>
+                  <th scope="row">
+                    {shortDate(w.start)} to {shortDate(w.end)}
+                    {i === 0 && <span className="analytics__n"> so far</span>}
+                  </th>
+                  <td>{fmt(played)}</td>
+                  <td><Count n={w.played.oneDay} of={played} /></td>
+                  <td><Count n={w.played.twoToThree} of={played} /></td>
+                  <td>
+                    <strong>{fmt(w.played.fourPlus)}</strong>
+                    {played > 0 && <span className="analytics__n"> {pct(w.played.fourPlus / played)}</span>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Section>
+  );
+}
+
+/**
+ * Where each week's players came from -- new, kept from the week before, or
+ * resurrected after missing at least the week before -- and how many of the
+ * week before's were lost. Resurrected players who stay are a sign the game
+ * pulls people back; ones who leave again are a visit, not a return.
+ */
+function ResurrectedSection({ weekly }: { weekly: WeekActives[] }) {
+  return (
+    <Section
+      title="Resurrected players"
+      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window, Sunday to Saturday; the latest is still counting up.`}
+    >
+      <ul className="review__meta analytics__bullets">
+        <li><strong>Kept</strong>: played the week before too</li>
+        <li><strong>Resurrected</strong>: played before, but missed at least the week before</li>
+        <li><strong>Stayed</strong>: of the resurrected, turned up again the week after</li>
+        <li><strong>Lost</strong>: played the week before, not this week</li>
+        <li><strong>Net</strong>: new + resurrected − lost</li>
+      </ul>
+      <div className="analytics__table-wrap">
+        <table className="analytics__table">
+          <thead>
+            <tr>
+              <th scope="col">Week</th>
+              <th scope="col">Players</th>
+              <th scope="col">New</th>
+              <th scope="col">Kept</th>
+              <th scope="col">Resurrected</th>
+              <th scope="col">Stayed</th>
+              <th scope="col">Lost</th>
+              <th scope="col">Net</th>
+            </tr>
+          </thead>
+          <tbody>
+            {weekly.slice(0, GROWTH_WEEKS).map((w, i) => {
+              const f = w.flow;
+              const net = f.new + f.resurrected - f.lost;
+              return (
+                <tr key={w.end}>
+                  <th scope="row">
+                    {shortDate(w.start)} to {shortDate(w.end)}
+                    {i === 0 && <span className="analytics__n"> so far</span>}
+                  </th>
+                  <td>{fmt(w.players.all)}</td>
+                  <td><Count n={f.new} of={w.players.all} /></td>
+                  <td><Count n={f.kept} of={w.players.all} /></td>
+                  <td><Count n={f.resurrected} of={w.players.all} /></td>
+                  <td>
+                    {f.resurrected === 0 ? "–" : (
+                      <>
+                        {fmt(f.resurrectedStayed)}
+                        <span className="analytics__n">
+                          {" "}{pct(f.resurrectedStayed / f.resurrected)}{w.nextWeekOver ? "" : " so far"}
+                        </span>
+                      </>
+                    )}
+                  </td>
+                  <td>{fmt(f.lost)}</td>
+                  <td>{net > 0 ? `+${fmt(net)}` : net < 0 ? `−${fmt(-net)}` : "0"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Section>
+  );
+}
+
+/**
+ * The window's new players by where their first visit came from, and how well
+ * each source's players took to the game. Share links are the game growing on
+ * its own: new players from them over the players who shared.
+ */
+function SourcesSection({ sources, sharers, span }: { sources: SourceRow[]; sharers: number; span: string }) {
+  const newPlayers = sources.reduce((sum, s) => sum + s.players, 0);
+  const fromShares = sources.filter((s) => SHARE_SOURCES.has(s.source)).reduce((sum, s) => sum + s.players, 0);
+  return (
+    <Section
+      title="Where new players come from"
+      note={`${span}. New players by the link or site their first-ever visit came from.`}
+    >
+      <p className="review__meta analytics__note">
+        Share links brought {fmt(fromShares)} new {fromShares === 1 ? "player" : "players"}
+        {sharers > 0
+          ? `, from ${fmt(sharers)} ${sharers === 1 ? "player" : "players"} who shared: ${(fromShares / sharers).toFixed(2)} per sharer.`
+          : "; nobody shared in this window."}
+      </p>
+      {newPlayers > 0 && (
+        <div className="analytics__table-wrap">
+          <table className="analytics__table">
+            <thead>
+              <tr>
+                <th scope="col">Source</th>
+                <th scope="col">New players</th>
+                <th scope="col">Guessed</th>
+                <th scope="col">Back within 7 days</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sources.map((s) => (
+                <tr key={s.source}>
+                  <th scope="row">{sourceName(s.source)}</th>
+                  <td><Count n={s.players} of={newPlayers} /></td>
+                  <td><Count n={s.guessed} of={s.players} /></td>
+                  <td><Count n={s.returned.soFar} of={s.players} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Section>
   );
 }
