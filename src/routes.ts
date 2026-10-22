@@ -44,7 +44,9 @@ import { useEffect, useState } from "react";
  * back, and what that depends on. Unlinked, since a running account of how the
  * game is doing is not a page for the players, but not keyed: every number on
  * it is an aggregate, and it should open without a password (see
- * components/AnalyticsPage.tsx).
+ * components/AnalyticsPage.tsx). `/analyticsV2` is the same kind of page: the
+ * daily dashboard, scored against the bands for a daily word game (see
+ * components/AnalyticsV2Page.tsx).
  *
  * `/transfer` is unlinked too, and for a reason of its own rather than an
  * editorial one: it is where a player moves themselves to a new browser, and
@@ -80,6 +82,7 @@ export type Route =
   | "fold-review"
   | "folded-live"
   | "analytics"
+  | "analytics-v2"
   | "transfer"
   | "help"
   | "leaderboard-total"
@@ -93,6 +96,7 @@ export const FREEFORM_FEEDBACK_PATH = "/freeform-feedback";
 export const FOLD_REVIEW_PATH = "/fold";
 export const FOLDED_LIVE_PATH = "/folded-live";
 export const ANALYTICS_PATH = "/analytics";
+export const ANALYTICS_V2_PATH = "/analyticsV2";
 export const TRANSFER_PATH = "/transfer";
 export const HELP_PATH = "/help";
 export const LEADERBOARD_TOTAL_PATH = "/leaderboard-total";
@@ -145,6 +149,8 @@ export function routeFor(pathname: string): Route {
   if (path === FOLD_REVIEW_PATH) return "fold-review";
   if (path === FOLDED_LIVE_PATH) return "folded-live";
   if (path === ANALYTICS_PATH) return "analytics";
+  // Either case, since a typed URL is as likely to be all lowercase.
+  if (path.toLowerCase() === ANALYTICS_V2_PATH.toLowerCase()) return "analytics-v2";
   if (path === TRANSFER_PATH) return "transfer";
   if (path === HELP_PATH) return "help";
   if (path === LEADERBOARD_TOTAL_PATH) return "leaderboard-total";
@@ -162,6 +168,7 @@ export function pathFor(route: Route): string {
   if (route === "fold-review") return FOLD_REVIEW_PATH;
   if (route === "folded-live") return FOLDED_LIVE_PATH;
   if (route === "analytics") return ANALYTICS_PATH;
+  if (route === "analytics-v2") return ANALYTICS_V2_PATH;
   if (route === "transfer") return TRANSFER_PATH;
   if (route === "help") return HELP_PATH;
   if (route === "leaderboard-total") return LEADERBOARD_TOTAL_PATH;

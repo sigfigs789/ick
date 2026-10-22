@@ -1,0 +1,65 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { AnalyticsV2Page } from "./AnalyticsV2Page";
+
+vi.mock("../game/date", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../game/date")>()),
+  todayDateString: () => "2026-10-22",
+}));
+
+const REPORT = {
+  today: "2026-10-22",
+  trackedSince: "2026-09-25",
+  daily: [],
+  retention: {
+    d1: { players: { cohort: 281, returned: 35 }, visitors: { cohort: 957, returned: 189 } },
+    d7: { players: { cohort: 250, returned: 20 }, visitors: { cohort: 663, returned: 25 } },
+    d30: { players: { cohort: 216, returned: 6 }, visitors: { cohort: 216, returned: 7 } },
+  },
+  cohorts: [{ start: "2026-10-04", players: 64, weeks: [13] }],
+  weekly: [
+    { start: "2026-10-18", visitors: 257, players: 76, newPlayers: 50, daysPlayed: { 1: 52 } },
+    { start: "2026-10-11", visitors: 443, players: 134, newPlayers: 93, daysPlayed: { 1: 95, 3: 9, 7: 8 } },
+  ],
+  sources: [{ source: "share", recent: 16, prior: 8, recentPlayers: 12, priorPlayers: 8 }],
+  window: {
+    visitors: 1028,
+    firstVisits: 978,
+    firstVisitPlayed: 253,
+    players: 326,
+    playerDays: 922,
+    sharedDays: 161,
+    afterShare: { shared: { cohort: 157, returned: 107 }, notShared: { cohort: 745, returned: 365 } },
+  },
+  scores: { tiers: [{ tier: "Legend", finished: 223, shared: 43, cohort: 218, returned: 139 }], buckets: { 9: 232 } },
+};
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe("AnalyticsV2Page", () => {
+  it("asks for the reader's puzzle and draws the scorecard and every section", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ report: REPORT }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<AnalyticsV2Page />);
+
+    expect(await screen.findByRole("heading", { name: "Scorecard" })).toBeTruthy();
+    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain("list=analytics-v2&today=2026-10-22");
+    for (const name of ["Acquisition", "Retention", "Engagement", "Virality", "Momentum", "Why players come back"]) {
+      expect(screen.getByRole("heading", { name })).toBeTruthy();
+    }
+    // D7: 20 of 250 is 8%, in the gap between going nowhere (under 5%) and promising (10%).
+    const d7 = screen.getByRole("rowheader", { name: "D7 retention" }).closest("tr")!;
+    expect(d7.textContent).toContain("8%");
+    expect(d7.textContent).toContain("In between");
+    // Activation: 253 of 978 first-time visitors banked a word.
+    expect(screen.getByText("26%")).toBeTruthy();
+  });
+
+  it("leaves a visitor rate blank when its window starts before visits were tracked", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ report: REPORT }), { status: 200 })));
+    render(<AnalyticsV2Page />);
+
+    await screen.findByRole("heading", { name: "Retention" });
+    expect(screen.getAllByText(/visitors not enough history/)).toHaveLength(3);
+  });
+});
