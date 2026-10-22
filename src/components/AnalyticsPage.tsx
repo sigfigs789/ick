@@ -305,14 +305,14 @@ const GROWTH_WEEKS = 12;
 
 /**
  * Weekly active players and their growth on the week before, by grouping.
- * Weeks are seven puzzles ending on today's, and do not follow the window.
+ * Weeks run Sunday to Saturday, the latest the one today's puzzle is in, and do not follow the window.
  */
 function GrowthSection({ weekly }: { weekly: WeekActives[] }) {
   const [group, setGroup] = useState<Group>("all");
   return (
     <Section
       title="Growth"
-      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window: each week is seven puzzles ending on today's, so the latest is still counting up.`}
+      note={`The latest ${GROWTH_WEEKS} weeks, whatever the window: each week runs Sunday to Saturday, so the latest is still counting up.`}
     >
       <ul className="review__meta analytics__bullets">
         <li><strong>Weekly active players</strong>: opened the game on any puzzle that week</li>

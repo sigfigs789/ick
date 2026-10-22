@@ -398,9 +398,9 @@ export interface AnalyticsReport {
   botsFiltered: number;
   daily: Array<{ date: string; closed: boolean; groups: Record<Group, DayMetrics> }>;
   /**
-   * Weekly active players, newest week first: seven puzzles ending on `today`,
-   * then the seven before, up to 13 weeks whatever the window (see the
-   * 2026-10-27 migration). New is a player whose first-ever day is in the week.
+   * Weekly active players, newest week first: Sunday to Saturday, the latest
+   * the week `today` is in, up to 13 weeks whatever the window (see the
+   * 2026-10-27 migrations). New is a player whose first-ever day is in the week.
    */
   weekly: WeekActives[];
   /** Muse AI, which every number above leaves out (see game/visitor.ts). */
