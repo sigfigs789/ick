@@ -181,12 +181,12 @@ function lift(arm: Rate, against: Rate, least: number): number | null {
 
 const guessedRate = (m: KeyMetrics): Rate => ({ cohort: m.players, returned: m.guessed });
 
-/** Puzzle type: Freeform's next-day return against Standard's, for everyone. */
+/** Puzzle type: Freeform-only players' next-day return against Standard-only players', for everyone. */
 export function puzzleTypeBenchmark(modes: Record<"standard" | "freeform", KeyMetrics>): Benchmark {
   const least = 30;
   return benchmark(
     lift(modes.freeform.nextDay.rate, modes.standard.nextDay.rate, least),
-    "Freeform vs Standard, back next day",
+    "Freeform only vs Standard only, back next day",
     { unit: "points", promising: -0.05, great: 0.05 },
     `${least} players a mode whose next day is over`,
   );

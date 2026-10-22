@@ -4520,6 +4520,9 @@ h2 {
 .analytics__swatch--freeform {
   background: var(--viz-freeform);
 }
+.analytics__swatch--both {
+  background: linear-gradient(135deg, var(--viz-standard) 50%, var(--viz-freeform) 50%);
+}
 /* The day-by-day line: metric tabs over a line you can hop along a day at a time. */
 .daily {
   border: 1px solid var(--border);
