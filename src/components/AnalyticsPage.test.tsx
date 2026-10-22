@@ -200,6 +200,29 @@ describe("AnalyticsPage", () => {
     expect(screen.queryByText(/Started in/)).not.toBeInTheDocument();
   });
 
+  it("opens every section on a verdict and the marks for each", async () => {
+    stubFetch();
+    render(<AnalyticsPage />);
+
+    await screen.findByRole("heading", { name: "Key numbers" });
+    // Half the window's players guessed: great, with the marks that make it so.
+    const day = within(section("Day by day"));
+    expect(day.getByText("Great")).toBeInTheDocument();
+    expect(section("Day by day")).toHaveTextContent("50% of players guessed");
+    expect(section("Day by day")).toHaveTextContent("Weak under 30% · Promising 30% to 50% · Great 50% or more");
+    // Nobody's next day is over yet, so there is nothing to judge.
+    expect(within(section("Key numbers")).getByText("Too early")).toBeInTheDocument();
+    expect(section("Key numbers")).toHaveTextContent("back for the next puzzle · needs 20 players whose next day is over");
+    // 12 new players from share links over 20 sharers.
+    expect(section("Where new players come from")).toHaveTextContent("Great0.60 new players per sharer");
+    for (const title of [
+      "Growth", "Retention by arrival week", "Core players", "Resurrected players",
+      "Puzzle type", "Play screen test", "Chat", "Idle hint test", "Muse AI",
+    ]) {
+      expect(section(title)).toHaveTextContent(/(Weak|Promising|Great|Too early)/);
+    }
+  });
+
   it("says how many automated visitors the numbers leave out", async () => {
     stubFetch();
     render(<AnalyticsPage />);

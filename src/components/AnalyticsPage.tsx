@@ -29,6 +29,23 @@ import {
   windowDates,
   type AnalyticsWindow,
 } from "./analyticsFormat";
+import {
+  chatBenchmark,
+  cohortBenchmark,
+  coreBenchmark,
+  dayByDayBenchmark,
+  growthBenchmark,
+  idleHintBenchmark,
+  keyNumbersBenchmark,
+  museBenchmark,
+  playScreenBenchmark,
+  puzzleTypeBenchmark,
+  resurrectedBenchmark,
+  sourcesBenchmark,
+  VERDICTS,
+  type Benchmark,
+  type Verdict,
+} from "./analyticsBenchmarks";
 import { todayDateString } from "../game/date";
 import { DailyChart } from "./DailyChart";
 import { IDLE_HINT_DELAY_MS } from "../game/idleHint";
@@ -52,6 +69,9 @@ import { handleFor } from "../game/handle";
  *
  * Muse AI, an agent the maintainer sends to play (see game/visitor.ts), is
  * left out of all of it and has a section of its own at the end.
+ *
+ * Each section opens on a verdict -- weak, promising or great -- on the one
+ * number it is judged by, with the marks for each (see analyticsBenchmarks.ts).
  *
  * Unlinked, but open without a key (see api/review.ts). Nothing on it
  * identifies anybody -- the smallest group any number is taken over is a day's
@@ -175,6 +195,7 @@ function Report({
 
       <Section
         title="Day by day"
+        benchmark={dayByDayBenchmark(report.groups.all)}
         note="Click or use the arrow keys to pin a day. % is of the day's players."
       >
         <div className="analytics__groups" role="group" aria-label="Players">
@@ -201,6 +222,7 @@ function Report({
 
       <Section
         title="Key numbers"
+        benchmark={keyNumbersBenchmark(report.groups.all)}
         note={span}
       >
         <ul className="review__meta analytics__bullets">
@@ -235,6 +257,7 @@ function Report({
 
       <Section
         title="Puzzle type"
+        benchmark={puzzleTypeBenchmark(report.modes.all)}
         note={`${span}. Played only Standard, only Freeform, or both, so each player is in one row and the three add up to the key numbers. A day's mode is the one played, switched to or given, else the one the player last had.`}
       >
         <MetricsTable
@@ -257,6 +280,7 @@ function Report({
 
       <Section
         title="Play screen test"
+        benchmark={playScreenBenchmark(report.ui.all)}
         note={`${span}. Play screen v1 (the one before the test) vs v2, new and returning players each split on their own: new 50/50 at first and 30/70 since Oct 19, returning 50/50${
           report.uiSince ? `, since ${shortDate(report.uiSince)}` : ""
         }. New is a first-ever session, counted on that day; returning any later one, counted from the day it was split.`}
@@ -272,6 +296,7 @@ function Report({
 
       <Section
         title="Chat"
+        benchmark={chatBenchmark(report.chat.all)}
         note={`${span}. Opened chat vs didn't${report.chatSince ? `, since ${shortDate(report.chatSince)}` : ""}.`}
       >
         <MetricsTable
@@ -285,6 +310,7 @@ function Report({
 
       <Section
         title="Idle hint test"
+        benchmark={idleHintBenchmark(report.idleHint.all)}
         note={`${span}. Players who sat idle ${IDLE_HINT_DELAY_MS.new / 1000}s, no hint vs hint, each player assigned 50/50${
           report.idleHintSince ? `, since ${shortDate(report.idleHintSince)}` : ""
         }. New is a first-ever session, returning any later one.`}
@@ -319,6 +345,7 @@ function GrowthSection({ weekly }: { weekly: WeekActives[] }) {
   return (
     <Section
       title="Growth"
+      benchmark={growthBenchmark(weekly)}
       note={`The latest ${GROWTH_WEEKS} weeks, whatever the window: each week runs Sunday to Saturday, so the latest is still counting up.`}
     >
       <ul className="review__meta analytics__bullets">
@@ -380,6 +407,7 @@ function CohortSection({ cohorts }: { cohorts: Cohort[] }) {
   return (
     <Section
       title="Retention by arrival week"
+      benchmark={cohortBenchmark(cohorts)}
       note="The latest 13 weeks, whatever the window. Each row is the players whose first-ever visit fell in that Sunday-to-Saturday week; each column the share of them who turned up in a later week. The last cell in each row is still counting up."
     >
       <div className="analytics__groups" role="group" aria-label="Arrivals">
@@ -449,6 +477,7 @@ function CoreSection({ weekly }: { weekly: WeekActives[] }) {
   return (
     <Section
       title="Core players"
+      benchmark={coreBenchmark(weekly)}
       note={`The latest ${GROWTH_WEEKS} weeks, whatever the window, Sunday to Saturday; the latest is still counting up. Players who banked a word that week, by how many of its 7 puzzles they played.`}
     >
       <div className="analytics__table-wrap">
@@ -498,6 +527,7 @@ function ResurrectedSection({ weekly }: { weekly: WeekActives[] }) {
   return (
     <Section
       title="Resurrected players"
+      benchmark={resurrectedBenchmark(weekly)}
       note={`The latest ${GROWTH_WEEKS} weeks, whatever the window, Sunday to Saturday; the latest is still counting up.`}
     >
       <ul className="review__meta analytics__bullets">
@@ -568,6 +598,7 @@ function SourcesSection({ sources, sharers, span }: { sources: SourceRow[]; shar
   return (
     <Section
       title="Where new players come from"
+      benchmark={sourcesBenchmark(sources, sharers)}
       note={`${span}. New players by the link or site their first-ever visit came from.`}
     >
       <p className="review__meta analytics__note">
@@ -623,6 +654,7 @@ function MuseSection({ muse, span }: { muse: MuseReport; span: string }) {
   return (
     <Section
       title="Muse AI"
+      benchmark={museBenchmark(muse)}
       note={`${span}. The agent that plays with ?visitor=mos-muse, left out of every number above${seen}.`}
     >
       <ul className="review__meta analytics__bullets">
@@ -803,10 +835,53 @@ function Count({ n, of, guessers, byGuessers = n }: { n: number; of: number; gue
   );
 }
 
-function Section({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
+const VERDICT_NAMES: Record<Verdict, string> = { weak: "Weak", promising: "Promising", great: "Great" };
+
+/** A section's verdict on its one number, and what each verdict needs. */
+function BenchmarkLine({ benchmark: b }: { benchmark: Benchmark }) {
+  return (
+    <div className="analytics__bench">
+      <p className="analytics__bench-line">
+        <span className={`analytics__verdict analytics__verdict--${b.verdict ?? "early"}`}>
+          {b.verdict ? VERDICT_NAMES[b.verdict] : "Too early"}
+        </span>
+        {b.value === null ? (
+          <span>
+            {b.measure} · needs {b.needs}
+          </span>
+        ) : (
+          <span>
+            <strong>{b.value}</strong> {b.measure}
+          </span>
+        )}
+      </p>
+      <p className="analytics__n analytics__bench-criteria">
+        {VERDICTS.map((v, i) => (
+          <span key={v}>
+            {i > 0 && " · "}
+            {VERDICT_NAMES[v]} {b.criteria[v]}
+          </span>
+        ))}
+      </p>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  note,
+  benchmark,
+  children,
+}: {
+  title: string;
+  note?: string;
+  benchmark?: Benchmark;
+  children: ReactNode;
+}) {
   return (
     <section className="analytics__section">
       <h2 className="analytics__heading">{title}</h2>
+      {benchmark && <BenchmarkLine benchmark={benchmark} />}
       {note && <p className="review__meta analytics__note">{note}</p>}
       {children}
     </section>
