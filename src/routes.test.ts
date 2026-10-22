@@ -31,6 +31,9 @@ describe("routes", () => {
     expect(routeFor("/analytics")).toBe("analytics");
     expect(routeFor("/analytics/")).toBe("analytics");
     expect(pathFor("analytics")).toBe("/analytics");
+    expect(routeFor("/analyticsV2")).toBe("analytics-v2");
+    expect(routeFor("/analyticsv2/")).toBe("analytics-v2");
+    expect(pathFor("analytics-v2")).toBe("/analyticsV2");
     expect(routeFor("/help")).toBe("help");
     expect(routeFor("/help/")).toBe("help");
     expect(pathFor("help")).toBe("/help");

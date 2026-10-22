@@ -452,6 +452,24 @@ describe("api/review", () => {
     });
   });
 
+  it("passes the gameplay report through from its own function, without a key", async () => {
+    withEnv(CONFIGURED);
+    const report = { today: "2026-10-16", retention: { d1: { cohort: 10, returned: 2 } } };
+    const fetchMock = stubFetch(report);
+
+    const response = await handler(get("?list=analytics-gameplay&from=2026-09-20&to=2026-10-16&today=2026-10-16"));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ report });
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    expect(String(calls[0][0]).split("/").pop()).toBe("analytics_gameplay");
+    expect(JSON.parse(String(calls[0][1].body))).toEqual({
+      p_from: "2026-09-20",
+      p_to: "2026-10-16",
+      p_today: "2026-10-16",
+    });
+  });
+
   it("no longer serves the idle hint report on its own", async () => {
     withEnv(CONFIGURED);
     stubFetch({});

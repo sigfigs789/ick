@@ -3,6 +3,7 @@ import App from "./App";
 import { trackLeaderboardJoined, trackModeAssigned, trackUiVariantAssigned } from "./analytics";
 import { AppHeader } from "./components/AppHeader";
 import { AnalyticsPage } from "./components/AnalyticsPage";
+import { AnalyticsV2Page } from "./components/AnalyticsV2Page";
 import { DeadStreaksPage } from "./components/DeadStreaksPage";
 import { ChatBubble } from "./components/ChatBubble";
 import { FeedbackPage } from "./components/FeedbackPage";
@@ -335,6 +336,8 @@ export function Root() {
         <FoldedLivePage />
       ) : route === "analytics" ? (
         <AnalyticsPage />
+      ) : route === "analytics-v2" ? (
+        <AnalyticsV2Page />
       ) : route === "transfer" ? (
         <TransferPage />
       ) : route === "leaderboard-total" ? (

@@ -138,7 +138,7 @@ export function keyQuery(): string {
 }
 
 async function read<T>(
-  list: "suggested-words" | "feedback" | "freeform" | "analytics",
+  list: "suggested-words" | "feedback" | "freeform" | "analytics" | "analytics-gameplay",
   pick: (body: Record<string, unknown>) => T,
   extra = "",
 ): Promise<T> {
@@ -173,6 +173,21 @@ export function fetchFreeform(): Promise<FreeformVerdict> {
 export function fetchAnalytics(from: string | null, to: string, today: string): Promise<AnalyticsReport> {
   const window = `${from ? `&from=${from}` : ""}&to=${to}&today=${today}`;
   return read("analytics", (body) => parseAnalytics(body.report), window);
+}
+
+/**
+ * Why players come back, over the same window: strict day-N retention, the
+ * leaderboard, sharing, and the score a puzzle was finished on (see the
+ * 2026-10-30 migration). Null when the function is not in the database yet, so
+ * the page can draw everything else.
+ */
+export async function fetchGameplay(from: string | null, to: string, today: string): Promise<GameplayReport | null> {
+  const window = `${from ? `&from=${from}` : ""}&to=${to}&today=${today}`;
+  try {
+    return await read("analytics-gameplay", (body) => parseGameplay(body.report), window);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -493,6 +508,57 @@ export interface MuseBot extends MuseNumbers {
   chatDays: number;
   firstSeen: string | null;
   lastSeen: string | null;
+}
+
+/** What `analytics_gameplay` returns: the numbers /analyticsV2 has beyond the overview. */
+export interface GameplayReport {
+  /**
+   * Of the players whose first-ever day is in the 28 days up to the last one
+   * whose day N is over, how many turned up on exactly that day.
+   */
+  retention: Record<"d1" | "d7" | "d30", Rate>;
+  leaderboard: {
+    /** The window's players, and how many of them opened the leaderboard. */
+    players: number;
+    viewers: number;
+    /** Times it was opened, and player-days it was opened on. */
+    opens: number;
+    viewDays: number;
+    /** Guessing days whose next puzzle is over, by whether the board was opened that day, and how many were back. */
+    viewed: Rate;
+    notViewed: Rate;
+  };
+  /** The same guessing days, by whether a result was shared that day. */
+  sharing: { shared: Rate; notShared: Rate };
+  /** The window's finished puzzles by the tier of the best word, most first. */
+  scores: Array<{ tier: string; finished: number; shared: number } & Rate>;
+}
+
+function rate(raw: unknown): Rate {
+  const r = obj(raw);
+  return { cohort: count(r.cohort), returned: count(r.returned) };
+}
+
+export function parseGameplay(raw: unknown): GameplayReport {
+  const r = obj(raw);
+  const ret = obj(r.retention);
+  const lb = obj(r.leaderboard);
+  const sh = obj(r.sharing);
+  return {
+    retention: { d1: rate(ret.d1), d7: rate(ret.d7), d30: rate(ret.d30) },
+    leaderboard: {
+      players: count(lb.players),
+      viewers: count(lb.viewers),
+      opens: count(lb.opens),
+      viewDays: count(lb.viewDays),
+      viewed: rate(lb.viewed),
+      notViewed: rate(lb.notViewed),
+    },
+    sharing: { shared: rate(sh.shared), notShared: rate(sh.notShared) },
+    scores: list(r.scores)
+      .filter((s) => text(s.tier))
+      .map((s) => ({ tier: s.tier as string, finished: count(s.finished), shared: count(s.shared), ...rate(s) })),
+  };
 }
 
 export const IDLE_HINT_VARIANTS = ["control", "treatment"] as const;
