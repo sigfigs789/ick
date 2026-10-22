@@ -16,6 +16,16 @@ export function pct(share: number): string {
   return `${Math.round(share * 100)}%`;
 }
 
+/**
+ * The change from `before` to `now` as a signed percent, or a dash when there
+ * was nothing before to grow from.
+ */
+export function growth(now: number, before: number | undefined): string {
+  if (before === undefined || before === 0) return "–";
+  const change = Math.round(((now - before) / before) * 100);
+  return change > 0 ? `+${change}%` : change < 0 ? `−${-change}%` : "0%";
+}
+
 /** A date `n` days from `date`, both YYYY-MM-DD. */
 export function addDays(date: string, n: number): string {
   const d = new Date(`${date}T00:00:00Z`);

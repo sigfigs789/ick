@@ -397,8 +397,21 @@ export interface AnalyticsReport {
    */
   botsFiltered: number;
   daily: Array<{ date: string; closed: boolean; groups: Record<Group, DayMetrics> }>;
+  /**
+   * Weekly active players, newest week first: seven puzzles ending on `today`,
+   * then the seven before, up to 13 weeks whatever the window (see the
+   * 2026-10-27 migration). New is a player whose first-ever day is in the week.
+   */
+  weekly: WeekActives[];
   /** Muse AI, which every number above leaves out (see game/visitor.ts). */
   muse: MuseReport;
+}
+
+/** One week's active players: the ones who turned up on any of its puzzles. */
+export interface WeekActives {
+  start: string;
+  end: string;
+  players: Record<Group, number>;
 }
 
 /** How Muse AI played in the window, by puzzle. Averages are null with no puzzles. */
@@ -569,6 +582,13 @@ export function parseAnalytics(raw: unknown): AnalyticsReport {
             nextDay: count(m.nextDay),
           };
         }),
+      })),
+    weekly: list(r.weekly)
+      .filter((w) => text(w.start) && text(w.end))
+      .map((w) => ({
+        start: w.start as string,
+        end: w.end as string,
+        players: byGroup(w.groups, count),
       })),
     muse: muse(r.muse),
   };
