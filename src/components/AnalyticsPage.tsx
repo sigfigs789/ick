@@ -219,33 +219,24 @@ function Report({
 
       <Section
         title="Puzzle type"
-        note={`${span}. Who guessed in each mode, and how many came back.`}
+        note={`${span}. Standard vs Freeform, by the mode a player was in that day, so a player in both is in both. Guessed is a word banked in that mode; the returns count from their first day in it, and a return in either mode.`}
       >
-        <div className="analytics__table-wrap">
-          <table className="analytics__table">
-            <thead>
-              <tr>
-                <th scope="col">Puzzle type</th>
-                <th scope="col">Guessed an answer</th>
-                <th scope="col">Back within 7 days</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(["standard", "freeform"] as const).map((mode) => (
-                <tr key={mode}>
-                  <th scope="row">
-                    <span className={`analytics__swatch analytics__swatch--${mode}`} aria-hidden="true" />
-                    {mode === "standard" ? "Standard" : "Freeform"}
-                  </th>
-                  <td>{fmt(report.modes[mode].guessed)}</td>
-                  <td>
-                    <Count n={report.modes[mode].returned.soFar} of={report.modes[mode].guessed} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <MetricsTable
+          split="Puzzle type"
+          rows={GROUPS.flatMap((g) =>
+            (["standard", "freeform"] as const).map((mode) => ({
+              key: `${g}-${mode}`,
+              label: GROUP_NAMES[g],
+              side: (
+                <>
+                  <span className={`analytics__swatch analytics__swatch--${mode}`} aria-hidden="true" />
+                  {mode === "standard" ? "Standard" : "Freeform"}
+                </>
+              ),
+              metrics: report.modes[g][mode],
+            })),
+          )}
+        />
       </Section>
 
       <Section
@@ -466,7 +457,7 @@ function MuseSection({ muse, span }: { muse: MuseReport; span: string }) {
 interface MetricsRow {
   key: string;
   label: string;
-  side?: string;
+  side?: ReactNode;
   metrics: KeyMetrics;
 }
 

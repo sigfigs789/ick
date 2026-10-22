@@ -45,8 +45,9 @@ const REPORT = {
   to: "2026-10-16",
   groups,
   modes: {
-    standard: { guessed: 35, returned: { cohort: 20, returned: 5, soFar: 12 } },
-    freeform: { guessed: 15, returned: { cohort: 0, returned: 0, soFar: 4 } },
+    all: { standard: metrics(85, 66, 35, 12, 20, 5), freeform: metrics(20, 17, 15, 4) },
+    new: { standard: metrics(60, 42, 18, 5), freeform: metrics(12, 9, 8, 2) },
+    returning: { standard: metrics(25, 24, 17, 7), freeform: metrics(8, 8, 7, 2) },
   },
   chat: {
     all: { opened: metrics(10, 10, 8, 6, 5, 4), notOpened: metrics(90, 70, 42, 24, 35, 16) },
@@ -231,17 +232,30 @@ describe("AnalyticsPage", () => {
     expect(week(/^Oct 11 to Oct 17/)).toHaveTextContent("80+14%");
   });
 
-  it("tables both puzzle types, and the chat split for every grouping", async () => {
+  it("tables the key numbers for both puzzle types, and the chat split, for every grouping", async () => {
     stubFetch();
     render(<AnalyticsPage />);
     await screen.findByRole("heading", { name: "Puzzle type" });
 
-    const standard = within(section("Puzzle type")).getByRole("row", { name: /^Standard/ });
-    expect(standard).toHaveTextContent("35");
-    expect(standard).toHaveTextContent("12 34%");
-    expect(within(section("Puzzle type")).getByRole("row", { name: /^Freeform/ })).toHaveTextContent(
-      "4 27%",
-    );
+    const types = section("Puzzle type");
+    expect(within(types).getAllByText("Standard")).toHaveLength(3);
+    expect(within(types).getAllByText("Freeform")).toHaveLength(3);
+    // Every key number has its column, as in Key numbers.
+    for (const name of ["Players", "Did something", "Guessed", "Completed", "Shared", "Back next day", "Back within 7 days"]) {
+      expect(within(types).getByRole("columnheader", { name })).toBeInTheDocument();
+    }
+    const standard = within(types).getByRole("row", { name: /^Everyone Standard/ });
+    expect(standard).toHaveTextContent("85");
+    expect(standard).toHaveTextContent("66 78%");
+    expect(standard).toHaveTextContent("35 41%");
+    // Completed and shared over the players, and over the guessers.
+    expect(standard).toHaveTextContent("25 29%71% of guessers");
+    expect(standard).toHaveTextContent("14 16%40% of guessers");
+    expect(standard).toHaveTextContent("12 14%49% of guessers");
+    // The pair's second row is Everyone's Freeform, under the same label.
+    const [freeform] = within(types).getAllByRole("row", { name: /^Freeform/ });
+    expect(freeform).toHaveTextContent("20");
+    expect(freeform).toHaveTextContent("15 75%");
 
     const chat = section("Chat");
     expect(within(chat).getAllByText("Opened chat")).toHaveLength(3);

@@ -370,8 +370,11 @@ export interface AnalyticsReport {
   from: string | null;
   to: string | null;
   groups: Record<Group, KeyMetrics>;
-  /** By the puzzle type a word was banked in. */
-  modes: Record<"standard" | "freeform", { guessed: number; returned: Returns }>;
+  /**
+   * Each grouping, split by the puzzle type the player was in on a day in the
+   * window; a player in both is in both (see the 2026-10-28 migration).
+   */
+  modes: Record<Group, Record<"standard" | "freeform", KeyMetrics>>;
   /** Each grouping, split by whether the player opened the chat in the window. */
   chat: Record<Group, { opened: KeyMetrics; notOpened: KeyMetrics }>;
   chatSince: string | null;
@@ -546,15 +549,13 @@ function byGroup<T>(raw: unknown, read: (raw: unknown) => T): Record<Group, T> {
  */
 export function parseAnalytics(raw: unknown): AnalyticsReport {
   const r = obj(raw);
-  const modes = obj(r.modes);
-  const mode = (raw: unknown) => ({ guessed: count(obj(raw).guessed), returned: returns(obj(raw).returned) });
   return {
     today: text(r.today),
     firstDay: text(r.firstDay),
     from: text(r.from),
     to: text(r.to),
     groups: byGroup(r.groups, metrics),
-    modes: { standard: mode(modes.standard), freeform: mode(modes.freeform) },
+    modes: byGroup(r.modes, (raw) => ({ standard: metrics(obj(raw).standard), freeform: metrics(obj(raw).freeform) })),
     chat: byGroup(r.chat, (raw) => ({ opened: metrics(obj(raw).opened), notOpened: metrics(obj(raw).notOpened) })),
     chatSince: text(r.chatSince),
     ui: byGroup(r.ui, (raw) => ({ control: metrics(obj(raw).control), v2: metrics(obj(raw).v2) })),
