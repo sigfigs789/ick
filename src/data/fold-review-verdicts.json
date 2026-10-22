@@ -240,9 +240,9 @@
     "reason": "Folded onto `amin` (deaminizing > deaminize > aminize > amin), costing 2.62 points; it is a form of `amine` (Zipf 2.79). Flagged by the daily fold check for the 2026-10-22 `AM` drop (amin is not amine) and confirmed on adversarial re-review (amine chemistry; amin is different word)."
   },
   "dearomatises": {
-    "base": "aromatise",
+    "base": "aromatic",
     "since": "2026-10-26",
-    "reason": "Folded onto `aromat` (dearomatises > dearomatise > aromatise > aromat), costing 0.87 points; it is a form of `aromatise` (Zipf 0.34). Flagged by the daily fold check for the 2026-10-26 `SES` drop (aromat is not the base) and confirmed on adversarial re-review (aromat is not a real base)."
+    "reason": "Folded onto `aromat` (dearomatises > dearomatise > aromatise > aromat), costing 0.87 points; it is a form of `aromatic` (Zipf 3.32), the base `aromatises` is redirected to. Flagged by the daily fold check for the 2026-10-26 `SES` drop (aromat is not the base) and confirmed on adversarial re-review (aromat is not a real base)."
   },
   "debasednesses": {
     "base": "debase",
@@ -975,9 +975,9 @@
     "reason": "Folded onto `quadrate` (quadratizing > quadratize > quadrate), costing 1.04 points; it is a form of `quadratic` (Zipf 2.98). Flagged by the daily fold check for the 2026-10-19 `RAT` drop (means make quadratic, not square shape) and confirmed on adversarial re-review (Make quadratic, not square shape)."
   },
   "quantises": {
-    "base": "quantise",
+    "base": "quantize",
     "since": "2026-10-26",
-    "reason": "Folded onto `quant` (quantises > quantise > quant), costing 1.82 points; it is a form of `quantise` (Zipf 0.99). Flagged by the daily fold check for the 2026-10-26 `SES` drop (quant is a pole or analyst) and confirmed on adversarial re-review (quant is a pole or analyst)."
+    "reason": "Folded onto `quant` (quantises > quantise > quant), costing 1.82 points; it is a form of `quantize` (Zipf 1.56), since `quantise` itself still folds onto `quant`. Flagged by the daily fold check for the 2026-10-26 `SES` drop (quant is a pole or analyst) and confirmed on adversarial re-review (quant is a pole or analyst)."
   },
   "quases": {
     "base": "quas",

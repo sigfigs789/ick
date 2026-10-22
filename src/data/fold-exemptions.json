@@ -10811,16 +10811,6 @@
     "reason": "Folded onto `decillionth` (undecillionths > undecillionth > decillionth), costing 0.10 points. Flagged by the daily fold check for the 2026-10-09 `ILL` drop (un- means eleven, different number) and confirmed on adversarial re-review (un- means eleven, so a different number).",
     "scope": "prefix"
   },
-  "undemeaned": {
-    "since": "2026-10-28",
-    "reason": "Folded onto `mean` (undemeaned > demeaned > demean > demeanes > meanes > mean), costing 6.07 points. Flagged by the daily fold check for the 2026-10-28 `EME` drop (demean is not de- plus mean) and confirmed on adversarial re-review (un- plus demeaned; demean is not de-mean).",
-    "scope": "prefix"
-  },
-  "undemeaning": {
-    "since": "2026-10-28",
-    "reason": "Folded onto `mean` (undemeaning > demeaning > demean > demeanes > meanes > mean), costing 6.08 points. Flagged by the daily fold check for the 2026-10-28 `EME` drop (demean is not de- plus mean) and confirmed on adversarial re-review (un- plus demeaning; demean is not de-mean).",
-    "scope": "prefix"
-  },
   "underacinated": {
     "since": "2026-09-27",
     "reason": "Folded onto `deracinated`, costing 0.55 points. Flagged in the 2026-09-22 semantic audit (under- vs de-; different prefix) and confirmed on adversarial re-review (under- and de- different prefixes)."
