@@ -13,6 +13,7 @@ import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { ImprovementCelebration } from "./components/ImprovementCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
+import { YesterdaysBest } from "./components/YesterdaysBest";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
 import { useForceUpdate } from "./hooks/useForceUpdate";
@@ -320,6 +321,12 @@ export default function App() {
             ) : undefined
           }
         />
+
+        {/* Under the guesses rather than under the drop: it arrives with a
+            request, and anything landing above the input would push the input
+            down the page as it did. Today's puzzle only -- on an archived day
+            "yesterday" is a day the player is not looking at. */}
+        {isToday && <YesterdaysBest date={date} />}
 
         {!progress.completed && !isToday && (
           <p className="archive-note">

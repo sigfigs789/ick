@@ -851,6 +851,28 @@ h2 {
   text-align: center;
 }
 
+/* One quiet line under the guesses: yesterday's rarest find. */
+.yesterdays-best {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem 0.4rem;
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+  color: var(--fg-muted);
+  text-align: center;
+}
+.yesterdays-best__word {
+  font-family: var(--font-display);
+  font-weight: 800;
+  text-transform: lowercase;
+  color: var(--fg);
+}
+.yesterdays-best__finders {
+  color: var(--fg-faint);
+}
+
 /* Drop display */
 .drop-display {
   text-align: center;
