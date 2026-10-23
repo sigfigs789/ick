@@ -5813,3 +5813,65 @@ h2 {
   border-radius: 3px 3px 0 0;
   background: var(--accent);
 }
+
+/* The come-back card (components/ComeBackCard.tsx): under today's banked word,
+   when the next drop lands, what playing it does for the streak, and the daily
+   reminder. Quieter than the share panel above it -- no shadow, a muted
+   border -- since it is the last thing on the page, not the main event. */
+.come-back {
+  margin-top: 1rem;
+  padding: 1rem 1.2rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: 1rem;
+  text-align: center;
+  animation: panel-in 0.4s var(--ease-standard);
+}
+.come-back__countdown {
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+}
+.come-back__countdown strong {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+.come-back__goal {
+  margin: 0.35rem 0 0;
+  font-weight: 700;
+}
+.come-back__detail,
+.come-back__added {
+  margin: 0.2rem 0 0;
+  color: var(--fg-muted);
+  font-size: 0.85rem;
+}
+.come-back__added {
+  margin-top: 0.6rem;
+}
+.come-back__reminder-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.come-back__reminder {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.come-back__reminder-options .come-back__reminder {
+  margin-top: 0;
+}
+.come-back__reminder:hover {
+  border-color: var(--border-strong);
+}

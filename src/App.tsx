@@ -12,6 +12,7 @@ import { FoldedLiveNotice } from "./components/FoldedLiveNotice";
 import { ConfettiBurst } from "./components/ConfettiBurst";
 import { PerfectMonthCelebration } from "./components/PerfectMonthCelebration";
 import { QuickShareButton } from "./components/QuickShareButton";
+import { ComeBackCard } from "./components/ComeBackCard";
 import { isNewPlayUi } from "./game/uiVariant";
 import { useDailyPuzzle } from "./hooks/useDailyPuzzle";
 import { useSound } from "./hooks/useSound";
@@ -337,6 +338,15 @@ export default function App() {
             collapsible={newUi}
             scrollSignal={shareRequests}
           />
+        )}
+
+        {/* Once today's word is banked -- which is when the streak counts the
+            day, whether or not the puzzle is locked in -- say when the next
+            drop lands and what coming back for it is worth (see
+            game/comeBack.ts). Last on the page, so it never sits between a
+            player and the guesses they have left. */}
+        {isToday && progress.acceptedWords.length > 0 && (
+          <ComeBackCard date={date} streak={streak} offerReminder={isReporting()} />
         )}
       </main>
 

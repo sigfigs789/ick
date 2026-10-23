@@ -890,6 +890,14 @@ export function trackAnswerCopied(details: {
   });
 }
 
+/**
+ * A daily reminder added from the come-back card (see game/comeBack.ts), and
+ * which calendar it went to. Returns through it arrive as source `rem`.
+ */
+export function trackReminderAdded(via: "ics" | "google") {
+  send("reminder_added", { via, puzzle_date: todayDateString() });
+}
+
 export function trackLeaderboardJoined(isRename: boolean) {
   send("leaderboard_joined", { rename: isRename });
 }
